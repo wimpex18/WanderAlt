@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WanderAlt — Profile</title>
+  <meta name="description" content="Your WanderAlt account — bookmarks, password, sign out." />
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="./catalog.js"></script>
+  <script defer src="./city.js"></script>
+  <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+  <script defer src="./bookmark.js"></script>
+  <script defer src="./profile.js"></script>
+</head>
+<body data-page="profile">
+
+  <a class="skip-link" href="#profile-main">Skip to profile</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar__inner">
+      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
+        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
+        <span class="wordmark">WanderAlt</span>
+      </a>
+      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="city-dot" aria-hidden="true"></span>
+        <span class="city-selector__name">TALLINN</span>
+        <span class="city-selector__chev" aria-hidden="true">
+          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <main id="profile-main" class="page" role="main">
+
+    <!-- Profile head — avatar + email + stats strip. -->
+    <header class="profile-head">
+      <p class="eyebrow" style="margin-bottom:var(--s-3)">Account</p>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="profile-avatar" aria-hidden="true"></div>
+        <div style="flex:1;min-width:0;">
+          <h1 class="profile-head__email" id="profile-email">&hellip;</h1>
+          <p class="profile-head__meta" id="profile-meta"></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Saved picks — count + view link + export. -->
+    <section class="profile-section" aria-labelledby="profile-bookmarks-label">
+      <header class="section-head">
+        <h2 id="profile-bookmarks-label" class="section-title">Saved picks</h2>
+        <p class="section-sub" id="profile-bookmark-count">&hellip;</p>
+      </header>
+      <div class="profile-actions">
+        <a class="auth-panel__submit" href="./saved.html">View reading list &rarr;</a>
+        <button class="auth-panel__close" id="profile-export-btn" type="button">Export JSON</button>
+      </div>
+    </section>
+
+    <!-- Change password. -->
+    <section class="profile-section" aria-labelledby="profile-password-label">
+      <header class="section-head">
+        <h2 id="profile-password-label" class="section-title">Change password</h2>
+      </header>
+      <input class="auth-panel__input" id="profile-pw" type="password"
+             placeholder="New password (min 6 chars)" autocomplete="new-password" />
+      <div class="profile-actions">
+        <button class="auth-panel__submit" id="profile-pw-submit" type="button">Update password</button>
+      </div>
+      <p class="auth-panel__status" id="profile-pw-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Weekly digest opt-in. -->
+    <section class="profile-section" aria-labelledby="profile-digest-label">
+      <header class="section-head">
+        <h2 id="profile-digest-label" class="section-title">Weekly digest</h2>
+      </header>
+      <label class="profile-toggle" id="profile-digest-wrap">
+        <input type="checkbox" class="profile-toggle__check" id="profile-digest-check"
+               aria-describedby="profile-digest-desc" />
+        <span class="profile-toggle__label">Email me a weekly briefing</span>
+      </label>
+      <p class="meta profile-section__line" id="profile-digest-desc" style="margin-top:var(--s-2)">
+        Sent Saturday mornings — 5 picks + a short editorial intro. No tracking links.
+      </p>
+      <p class="auth-panel__status" id="profile-digest-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Session — sign out + delete account. -->
+    <section class="profile-section" aria-labelledby="profile-signout-label">
+      <header class="section-head">
+        <h2 id="profile-signout-label" class="section-title">Session</h2>
+      </header>
+      <div class="profile-actions">
+        <button class="auth-panel__close" id="profile-signout" type="button">Sign out</button>
+      </div>
+      <p class="profile-section__line" style="margin-top:var(--s-6)">
+        <button class="profile-danger-btn" id="profile-delete-btn" type="button">Delete account&hellip;</button>
+      </p>
+      <div class="profile-delete-confirm" id="profile-delete-confirm" hidden>
+        <p class="profile-delete-confirm__warning">This permanently deletes your account and all saved data. Type DELETE to confirm.</p>
+        <input class="auth-panel__input" id="profile-delete-input" type="text"
+               placeholder="DELETE" autocomplete="off" />
+        <div class="profile-actions">
+          <button class="auth-panel__submit" id="profile-delete-submit" type="button">Delete my account</button>
+          <button class="auth-panel__close" id="profile-delete-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+      <p class="auth-panel__status" id="profile-delete-status" aria-live="polite"></p>
+    </section>
+
+    <footer class="colophon">
+      <p class="colophon__line">WanderAlt &middot; Curated by humans, not algorithms.</p>
+    </footer>
+
+  </main>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__inner">      <a class="nav__item" data-nav="briefing" href="./index.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M5 3h11l3 3v15H5V3z" />
+          <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+        <span class="nav__label">Briefing</span>
+      </a>
+      <a class="nav__item" data-nav="map" href="./map.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" />
+          <path d="M9 4v16M15 6v16" />
+        </svg>
+        <span class="nav__label">Map</span>
+      </a>
+      <a class="nav__item" data-nav="search" href="./search.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="11" cy="11" r="6" />
+          <path d="M20 20l-4.5-4.5" />
+        </svg>
+        <span class="nav__label">Search</span>
+      </a>
+      <a class="nav__item" data-nav="saved" href="./saved.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4-6 4V3z" />
+        </svg>
+        <span class="nav__label">Saved</span>
+      </a>
+      <a class="nav__item" data-nav="profile" href="./profile.html" aria-current="page">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20c0-4 3.1-7 7-7s7 3 7 7" />
+        </svg>
+        <span class="nav__label">Profile</span>
+      </a>    </div>
+  </nav>
+
+</body>
+</html>

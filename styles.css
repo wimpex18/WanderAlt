@@ -1,0 +1,2572 @@
+/* ============================================================
+   WanderAlt — Briefing
+   Editorial minimalism. Voice-first hierarchy.
+   Mobile canonical: 390px. Desktop reading column: ~680px.
+   All tokens live in :root so the aesthetic is tuneable in one place.
+   ============================================================ */
+
+:root {
+  /* ---------- Color — Compass palette ---------- */
+  --c-paper:        #ffffff;
+  --c-paper-deep:   #fafaf9;
+  --c-ink:          #0a0a0c;
+  --c-ink-soft:     #1f1f23;
+  --c-ink-mute:     #71717a;
+  --c-rule:         #e7e5e4;
+  --c-rule-strong:  #d4d4d4;
+  --c-accent:       oklch(0.42 0.07 195);   /* deep petrol */
+  --c-accent-soft:  oklch(0.96 0.015 195);
+  --c-lime:         oklch(0.86 0.16 113);   /* signal lime */
+  --c-faint:        #a1a1aa;
+
+  /* ---------- Type families — Compass ---------- */
+  --ff-display: 'DM Serif Display', 'Source Serif 4', Georgia, serif;
+  --ff-body:    'Geist', -apple-system, system-ui, sans-serif;
+  --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ---------- Type scale (mobile first) ---------- */
+  --fs-eyebrow:    11px;
+  --fs-meta:       12px;
+  --fs-body:       16px;
+  --fs-pick:       18px;
+  --fs-venue:      17px;
+  --fs-transition: 11px;
+  --fs-quote:      32px;   /* tuned down from 38 — 3 lines on mobile, not 11 */
+
+  /* ---------- Leading ---------- */
+  --lh-tight: 1.04;
+  --lh-snug:  1.22;
+  --lh-body:  1.5;
+
+  /* ---------- Space scale (4px base) ---------- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-7:  32px;
+  --s-8:  40px;
+  --s-9:  56px;
+  --s-10: 72px;
+
+  /* ---------- Layout ---------- */
+  --gutter:         20px;
+  --reading-max:    680px;
+  --radius:         8px;
+  --radius-card:    12px;
+  --radius-thumb:   8px;
+  --rule-w:         1px;
+  --nav-h:          68px;
+
+  /* ---------- Motion ---------- */
+  --t-fast: 120ms ease;
+}
+
+/* ============================================================
+   Reset / base
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-optical-sizing: auto;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+ol, ul { margin: 0; padding: 0; list-style: none; }
+p { margin: 0; }
+h1, h2, h3 { margin: 0; font-weight: 400; }
+img, svg { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Global focus style — accent ring, sharp corners. */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+/* Text selection — reinforces accent. */
+::selection {
+  background: var(--c-accent);
+  color: var(--c-paper);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+}
+
+/* Visually hidden but available to screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link:focus {
+  left: var(--gutter);
+  top: var(--s-2);
+  background: var(--c-ink);
+  color: var(--c-paper);
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  z-index: 100;
+}
+
+/* ============================================================
+   Top bar
+   ============================================================ */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--c-paper);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+
+/* Logo mark — petrol square + lime diamond */
+.logo-mark {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: var(--c-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark__diamond {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: var(--c-lime);
+  transform: rotate(45deg);
+}
+
+.topbar__inner {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: var(--s-3) var(--gutter);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.wordmark {
+  font-family: var(--ff-body);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1;
+  color: var(--c-ink);
+}
+.wordmark:hover { color: var(--c-accent); }
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--c-ink);
+}
+
+.city-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--c-ink);
+  padding: var(--s-1) var(--s-2);
+  margin: calc(-1 * var(--s-1)) calc(-1 * var(--s-2));
+}
+
+.city-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-lime);
+  flex-shrink: 0;
+}
+/* Inline SVG chevron — the old text "⌄" glyph rendered as a stray
+   character on several systems (Android + some Windows fonts).
+   SVG stroke inherits currentColor so hover still recolors. */
+.city-selector__chev {
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(1px);
+}
+.city-selector__chev svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  fill: none;
+}
+.city-selector:hover { color: var(--c-accent); }
+
+/* City-switcher dropdown — anchored to .topbar__right */
+.city-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--c-paper);
+  border: 1px solid var(--c-ink);
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  min-width: 140px;
+  z-index: 200;
+}
+.city-dropdown__item {
+  padding: var(--s-2) var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.city-dropdown__item:hover,
+.city-dropdown__item:focus     { background: rgba(26,26,26,.06); outline: none; }
+.city-dropdown__item[aria-selected="true"] { color: var(--c-accent); }
+
+/* ============================================================
+   Page layout
+   ============================================================ */
+
+.page {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.rule {
+  border: 0;
+  border-top: var(--rule-w) solid var(--c-rule);
+  margin: 0;
+}
+
+.eyebrow {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0;
+}
+
+.meta {
+  display: block;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  color: var(--c-ink-mute);
+  line-height: 1.4;
+}
+/* Keep separator + time together as one non-breaking unit. */
+.meta__time { white-space: nowrap; }
+
+/* ============================================================
+   Tonight hero — voice-first
+   The quote is the loudest typographic moment, but fits in 2–3 lines.
+   ============================================================ */
+
+.tonight {
+  padding: var(--s-3) 0 var(--s-5);
+}
+
+.tonight__quote {
+  margin: var(--s-4) 0 var(--s-3);
+  padding: 14px 14px;
+  border: 0;
+  border-left: 3px solid var(--c-lime);
+  background: var(--c-paper-deep);
+  border-radius: 0 8px 8px 0;
+}
+.tonight__quote p {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-quote);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.005em;
+  color: var(--c-ink-soft);
+  text-wrap: balance;
+}
+
+.tonight__attr {
+  margin-top: var(--s-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  white-space: nowrap;        /* never orphan the rule onto its own line */
+}
+.tonight__attr-line {
+  display: inline-block;
+  width: 20px;
+  height: 1px;
+  background: var(--c-accent);
+  flex: 0 0 auto;
+}
+
+.tonight__transition {
+  margin: var(--s-5) 0 var(--s-3);
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-transition);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+}
+.tonight__transition .arrow {
+  font-family: var(--ff-body);
+  color: var(--c-accent);
+  font-size: 13px;
+  transform: translateY(1px);
+}
+
+.tonight__venue {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--s-4);
+  align-items: start;
+  padding-top: var(--s-1);
+}
+.tonight__venue-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding-top: 2px;
+}
+.tonight__venue-name {
+  font-family: var(--ff-body);
+  font-weight: 500;
+  font-size: var(--fs-venue);
+  line-height: var(--lh-snug);
+  color: var(--c-ink);
+  text-wrap: pretty;
+}
+.tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
+
+/* ── Surprise me — mono link-button below Tonight hero ── */
+.surprise-btn {
+  display: inline-block;
+  margin: var(--s-4) 0 var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.surprise-btn:hover { color: var(--c-accent); }
+.surprise-btn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Thumbnails (CSS-only; no image downloads this pass)
+   Halftone dot pattern reads as printed reproduction.
+   ============================================================ */
+
+.thumb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-thumb);
+  overflow: hidden;
+  position: relative;
+  background-image: linear-gradient(135deg, oklch(0.88 0.02 195) 0%, oklch(0.78 0.03 195) 100%);
+  flex: 0 0 auto;
+}
+.thumb--lg { width: 72px; height: 72px; background-size: 6px 6px; }
+/* Real photo overrides the halftone dot pattern */
+.thumb--has-img {
+  background-size: cover;
+  background-position: center;
+}
+.thumb--has-img .thumb__fallback { display: none; }
+.photo-credit {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  opacity: 0.55;
+  margin: 3px 0 0;
+  line-height: 1.3;
+}
+.thumb__fallback {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--c-ink-mute);
+  background: var(--c-paper);
+  padding: 2px 6px;
+  border-radius: var(--radius);
+}
+
+/* ============================================================
+   This week — list of 4 picks
+   ============================================================ */
+
+.thisweek {
+  padding: var(--s-2) 0 var(--s-7);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-5) 0 var(--s-3);
+  border-top: var(--rule-w) solid var(--c-rule-strong);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  margin-bottom: 0;
+}
+.section-title {
+  font-family: var(--ff-body);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  color: var(--c-ink);
+}
+.section-sub {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  margin-left: auto;
+}
+
+.picks { display: flex; flex-direction: column; }
+
+.pick {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--s-2);
+  padding: var(--s-4) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.pick:last-child { border-bottom: 0; }
+
+/* .pick__link is now a <div> grid container — see briefing.js for why.
+   The thumb and title each get their own <a> so the via-handle <a>
+   isn't nested inside another <a>. */
+.pick__link {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+.pick__img       { display: block; }
+.pick__title-link { display: block; }
+.pick__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+  min-width: 0;
+}
+.pick__title {
+  font-family: var(--ff-body);
+  font-weight: 600;
+  font-size: var(--fs-pick);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.2px;
+  color: var(--c-ink);
+  text-wrap: pretty;
+  transition: color var(--t-fast);
+}
+.pick__title-link:hover .pick__title,
+.pick__img:hover ~ .pick__body .pick__title-link .pick__title {
+  color: var(--c-accent);
+}
+
+.via {
+  margin-top: var(--s-1);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  letter-spacing: 0.02em;
+}
+.via .handle { color: var(--c-accent); }
+
+.bookmark {
+  position: relative;          /* contain the absolutely-placed checkbox */
+  color: var(--c-ink-soft);
+  padding: var(--s-2);
+  margin: -6px -8px 0 0;
+  border-radius: var(--radius);
+  align-self: start;
+  cursor: pointer;
+}
+.bookmark:hover { color: var(--c-accent); }
+
+/* Hidden checkbox — visually invisible, stays in focus order. */
+.bookmark__check {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Suppress the global focus ring on the clipped input;
+   transfer it to the visible SVG instead. */
+.bookmark__check:focus-visible { outline: none; }
+.bookmark__check:focus-visible ~ svg {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+/* Checked state — fill the icon with the accent color regardless of hover. */
+.bookmark__check:checked ~ svg path {
+  fill: var(--c-accent);
+  stroke: var(--c-accent);
+}
+
+/* ============================================================
+   MAP PAGE
+   ------------------------------------------------------------
+   Full-bleed map canvas between the topbar and the bottom nav.
+   Hand-drawn city plane (dashed neighborhood blobs, river, sea),
+   overlaid uppercase mono filter chips at the top, ↑ N compass
+   top-right, teardrop pins positioned by % coords, and a peek
+   bottom sheet with the selected pin's details.
+
+   Reference: project/src/map.jsx in the Claude Design handoff.
+   ============================================================ */
+
+/* Full-bleed wrapper — escapes .page's reading-column padding. */
+.map-bleed {
+  position: relative;
+  background: oklch(0.94 0.01 195);
+  /* Mobile: fills the viewport between topbar (~49px) and nav (60px).
+     Desktop breakpoint overrides to a fixed tall panel. */
+  height: calc(100vh - 49px - var(--nav-h) - env(safe-area-inset-bottom, 0px));
+  margin: 0 calc(-1 * var(--gutter));
+  overflow: hidden;
+}
+.map-plane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Overlaid filter chips on the map. Sharp corners, black outline,
+   uppercase mono — per the handoff. */
+.map-filters {
+  position: absolute;
+  top: var(--s-3);
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: var(--s-2);
+  padding: 0 var(--gutter);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  z-index: 2;
+}
+.map-filters::-webkit-scrollbar { display: none; }
+
+.m-chip {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background: var(--c-paper);
+  color: var(--c-ink-soft);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: 999px;
+  font-family: var(--ff-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.m-chip:hover { background: var(--c-paper-deep); border-color: var(--c-rule-strong); }
+.m-chip--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-ink);
+}
+.m-chip--on:hover { background: var(--c-ink); }
+
+/* Compass — top-right, above the map plane. */
+.map-compass {
+  position: absolute;
+  right: var(--gutter);
+  top: calc(var(--s-3) + 44px);     /* sits below the chip row */
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--c-ink-mute);
+  text-align: center;
+  line-height: 1.3;
+  z-index: 2;
+}
+.map-compass__arrow {
+  display: block;
+  font-size: 14px;
+  color: var(--c-ink);
+  margin-bottom: 2px;
+}
+
+/* Teardrop pin — numbered, positioned by inline style (left%/top%). */
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: 28px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-pin svg { display: block; }
+
+/* Pin colors are driven by `aria-pressed`, not by inline SVG fills,
+   so map.js can swap selection by toggling one attribute. CSS wins
+   over presentation attributes, so any leftover inline `fill` is
+   overridden here. Selected pin gets the accent fill; the rest are
+   paper on ink. */
+.map-pin svg path { fill: var(--c-paper); stroke: var(--c-ink); }
+.map-pin svg text { fill: var(--c-ink); }
+.map-pin[aria-pressed="true"] svg path { fill: var(--c-lime); stroke: var(--c-ink); }
+.map-pin[aria-pressed="true"] svg text { fill: var(--c-ink); }
+
+/* Peek bottom sheet — starts at natural (peek) height.
+   Drag-expand is wired in map.js: drag the handle up to snap
+   to 60 vh; tap the handle to toggle; drag down to collapse. */
+.map-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--c-paper);
+  border-top: var(--rule-w) solid var(--c-rule);
+  /* Tight top padding — the peek sheet already eats ~160px of a small
+     map area; every pixel back to the map is worth it. */
+  padding: 10px var(--gutter) var(--s-3);
+  display: flex;
+  flex-direction: column;
+  z-index: 3;
+  overflow: hidden;
+}
+/* Small mono "N / total" indicator in the top-right of the sheet.
+   Tells the user the sheet is one of many — missing affordance in v1. */
+.map-sheet__pos {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--c-ink-mute);
+  white-space: nowrap;
+  margin: 0;
+}
+.map-sheet__pos strong {
+  color: var(--c-ink);
+  font-weight: 500;
+}
+.map-sheet__handle {
+  width: 40px;
+  height: 3px;
+  background: var(--c-ink);
+  opacity: 0.4;
+  margin: 0 auto var(--s-2);
+  border-radius: 2px;
+}
+.map-sheet__head {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+.map-sheet__num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--c-lime);
+  color: var(--c-ink);
+  display: grid;
+  place-items: center;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Tonight live indicator inside map sheet head */
+.map-sheet__tonight {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.map-sheet__tonight-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  position: relative;
+}
+.map-sheet__tonight-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1px solid var(--c-accent);
+  opacity: 0.5;
+  animation: wa-pulse 1.8s ease-out infinite;
+}
+.map-sheet__body {
+  flex: 1;
+  min-width: 0;
+}
+.map-sheet__title {
+  font-family: var(--ff-body);
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+  margin-top: 4px;
+  text-wrap: pretty;
+}
+.map-sheet__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: var(--rule-w) solid var(--c-rule);
+  background: transparent;
+  color: var(--c-ink-mute);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.map-sheet__close:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.map-sheet__quote {
+  margin-top: var(--s-3);
+  padding: 10px 12px;
+  border-left: 3px solid var(--c-lime);
+  background: var(--c-paper-deep);
+  border-radius: 0 8px 8px 0;
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--c-ink-soft);
+}
+.map-sheet__quote .handle {
+  font-family: var(--ff-mono);
+  font-style: normal;
+  font-size: 10px;
+  color: var(--c-ink-mute);
+  margin-left: 6px;
+  letter-spacing: 0.04em;
+}
+.map-sheet__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) 0 var(--s-2);
+}
+/* .map-sheet__cta is .btn-primary with override for flex */
+.map-sheet__cta {
+  flex: 1;
+}
+
+/* ============================================================
+   SEARCH PAGE
+   ------------------------------------------------------------
+   Minimal: topbar → hairline-underlined serif-italic input →
+   curator rows (handle · italic quote · pick count). No chips,
+   no cards, no horizontal scroll.
+
+   Reference: project/src/search.jsx
+   ============================================================ */
+
+.search-input-wrap {
+  padding: var(--s-4) 0 var(--s-4);
+}
+
+/* Bordered box container — sits around the bare input */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  transition: border-color var(--t-fast);
+}
+.search-box:focus-within {
+  border-color: var(--c-accent);
+  background: var(--c-paper);
+}
+.search-box__icon {
+  color: var(--c-ink-mute);
+  flex-shrink: 0;
+  display: flex;
+}
+.search-box__kbd {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--c-ink-mute);
+  padding: 3px 7px;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.search-input {
+  display: block;
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-family: var(--ff-body);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--c-ink);
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-input::placeholder {
+  color: var(--c-faint);
+  font-style: italic;
+  opacity: 1;
+}
+.search-input:focus-visible { outline: none; }
+
+.search-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) 0 var(--s-2);
+}
+.search-section-head .meta { margin-left: auto; }
+
+/* Variant for the Results header — title block on the left,
+   sort control on the right. Override the default `meta { margin-left: auto }`
+   so the count stays inside its own block. */
+.search-section-head--sort { align-items: center; flex-wrap: wrap; }
+.search-section-head--sort .meta { margin-left: 0; }
+
+/* Sort dropdown — looks like a row label + chev, not a chunky form input. */
+.search-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.search-sort select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: 6px;
+  padding: 6px 28px 6px 10px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+  cursor: pointer;
+  line-height: 1.2;
+}
+.search-sort select:hover  { color: var(--c-ink); border-color: var(--c-rule-strong); }
+.search-sort select:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+.search-sort select:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+.search-sort__chev {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px; height: 10px;
+  pointer-events: none;
+  color: var(--c-ink-mute);
+}
+.search-sort__chev svg {
+  width: 100%; height: 100%;
+  fill: none; stroke: currentColor;
+  stroke-width: 1.4; stroke-linecap: round;
+}
+
+.curator-rows {
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+.curator-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--s-4);
+  align-items: baseline;
+  padding: var(--s-4) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.curator-row:last-child { border-bottom: 0; }
+.curator-row__handle {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink);
+  white-space: nowrap;
+}
+.curator-row__quote {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--c-ink-mute);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.curator-row__count {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  white-space: nowrap;
+}
+.curator-row { cursor: pointer; }
+.curator-row:hover .curator-row__handle { color: var(--c-accent); }
+
+/* Browse rows — sit below Curators on the Search empty-state.
+   Same grammar as curator-row (3-col grid), but the left column is
+   the neighborhood/kind label and the right column is the pick count.
+   No italic quote — keeps density up so the page earns its screen. */
+.browse-rows {
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+.browse-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-4);
+  align-items: baseline;
+  padding: var(--s-3) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  cursor: pointer;
+}
+.browse-row:last-child { border-bottom: 0; }
+.browse-row__label {
+  font-family: var(--ff-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-ink);
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.browse-row__label-icon {
+  color: var(--c-accent);
+  display: flex;
+  flex-shrink: 0;
+}
+.browse-row__count {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  white-space: nowrap;
+}
+.browse-row:hover .browse-row__label { color: var(--c-accent); }
+
+/* ============================================================
+   SAVED PAGE
+   ------------------------------------------------------------
+   "Your reading list." Segmented tabs: Going · Reading · Past.
+   Three row variants:
+     - Going:   time column on the left (TONIGHT/FRI/SAT)
+     - Reading: plain rows (no time column)
+     - Past:    compact single-line rows (dimmed title + date)
+
+   Reference: project/src/saved.jsx
+   ============================================================ */
+
+.reading-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) 0 var(--s-4);
+}
+.reading-head__title {
+  font-family: var(--ff-body);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  color: var(--c-ink);
+}
+.reading-head__count {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  white-space: nowrap;
+}
+
+/* Visually-hidden radios that drive segment selection.
+   Kept in the keyboard tab order so arrow-keys cycle segments.
+   Sibling selectors below (`#seg-X:checked ~ ...`) read their state. */
+.seg__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  /* Don't `display: none` — would drop the input from the focus order. */
+}
+
+/* Compass pill-container tabs */
+.seg-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--c-paper-deep);
+  border-radius: 10px;
+  padding: 4px;
+  border: var(--rule-w) solid var(--c-rule);
+  margin: 0;
+}
+.seg-tab {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background var(--t-fast), border-color var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.seg-tab__label {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
+  transition: color var(--t-fast);
+}
+.seg-tab__count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: var(--ff-mono);
+  background: var(--c-paper);
+  color: var(--c-ink-mute);
+  border: var(--rule-w) solid var(--c-rule);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.seg-tab:hover .seg-tab__label { color: var(--c-ink); }
+
+/* Active-tab styling — white card lifts out of the surface */
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"],
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
+  background: var(--c-paper);
+  border-color: var(--c-rule);
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
+  color: var(--c-ink);
+  font-weight: 600;
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__count,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__count {
+  background: var(--c-lime);
+  color: var(--c-ink);
+  border-color: transparent;
+}
+
+/* Focus ring */
+#seg-going:focus-visible   ~ .seg-tabs label[for="seg-going"],
+#seg-reading:focus-visible ~ .seg-tabs label[for="seg-reading"],
+#seg-past:focus-visible    ~ .seg-tabs label[for="seg-past"] {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Per-segment notes and lists — hide all by default, show the
+   one matching the checked radio. Chained class selectors
+   (`.list-rows.list-rows--going`) raise specificity above the base
+   `.list-rows { display: flex }` rule lower in this file, regardless
+   of source order. */
+.seg-note,
+.list-rows.list-rows--going,
+.list-rows.list-rows--reading,
+.list-rows.list-rows--past {
+  display: none;
+}
+#seg-going:checked   ~ .seg-note--going,
+#seg-reading:checked ~ .seg-note--reading,
+#seg-past:checked    ~ .seg-note--past {
+  display: block;
+}
+#seg-going:checked   ~ .list-rows.list-rows--going,
+#seg-reading:checked ~ .list-rows.list-rows--reading,
+#seg-past:checked    ~ .list-rows.list-rows--past {
+  display: flex;
+  flex-direction: column;
+}
+
+.seg-note {
+  padding: var(--s-3) 0 var(--s-1);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+}
+
+/* Stretch the Saved page to fill the viewport so the colophon anchors
+   at the bottom rather than floating mid-screen on short lists.
+   48px ≈ topbar height. Scoped to saved so Briefing is unaffected. */
+body[data-page="saved"] .page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--nav-h) - 48px);
+}
+body[data-page="saved"] .colophon {
+  margin-top: auto;
+}
+
+/* List of saved items. No thumbs, no bookmark icons. */
+.list-rows { display: flex; flex-direction: column; }
+
+.list-row {
+  padding: var(--s-4) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.list-row:last-child { border-bottom: 0; }
+
+/* Bookmarkable row — content + bookmark icon on the right */
+.list-row--bookmarkable {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--s-2);
+}
+.list-row--bookmarkable .bookmark {
+  margin: -6px -8px 0 0;
+}
+
+/* Going row — grid with left time column */
+.list-row--going {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+.list-row__time {
+  /* Align mono cap-height with the serif title baseline by matching
+     the title's line-height. Avoids the magic-number padding-top. */
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  line-height: calc(17px * 1.2);     /* matches .list-row__title */
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+.list-row__title {
+  font-family: var(--ff-body);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  color: var(--c-ink);
+  text-wrap: balance;
+}
+.list-row__title:hover { color: var(--c-accent); }
+.list-row__meta {
+  margin-top: 4px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--c-ink-mute);
+}
+.list-row__quote {
+  margin-top: 6px;
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--c-ink-mute);
+}
+.list-row__quote .handle {
+  font-family: var(--ff-mono);
+  font-style: normal;
+  font-size: 10px;
+  color: var(--c-ink-mute);
+  margin-left: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* Past row — compact single-line */
+.list-row--past {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+}
+.list-row--past .list-row__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list-row--past .list-row__meta {
+  margin: 0;
+  color: var(--c-rule-strong);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Empty-state line for any list */
+.empty-line {
+  padding: var(--s-8) 0 var(--s-5);
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--c-ink-mute);
+  text-wrap: pretty;
+}
+
+/* ============================================================
+   VENUE DETAIL PAGE
+   ------------------------------------------------------------
+   Reuses .tonight__quote, .tonight__attr, .tonight__venue,
+   .eyebrow, .meta, .bookmark, .rule, .list-rows from the
+   shared system; adds only layout-specific shells.
+   ============================================================ */
+
+.venue-back {
+  display: inline-block;
+  padding: var(--s-4) 0 var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+}
+.venue-back:hover { color: var(--c-accent); }
+
+.venue-head {
+  padding: var(--s-3) 0 var(--s-5);
+}
+.venue-head .eyebrow {
+  margin-bottom: var(--s-2);
+}
+.venue-title {
+  font-family: var(--ff-body);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  letter-spacing: -0.5px;
+  color: var(--c-ink);
+  text-wrap: pretty;
+  margin: 0 0 var(--s-2);
+}
+
+/* Venue-row: thumbnail + info block + bookmark in one line. */
+.venue-venue {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--s-2);
+  padding: var(--s-5) 0 var(--s-4);
+}
+.venue-venue .tonight__venue {
+  padding-top: 0;
+}
+/* Suppress the inherited nav-link hover on the venue block —
+   we're already on this page, it's not a clickable link. */
+.venue-venue .tonight__venue:hover .tonight__venue-name {
+  color: var(--c-ink);
+}
+
+/* ── Why this matters (venue-context) ───────────────────────── */
+.venue-context {
+  margin: var(--s-5) 0;
+  border-top: var(--rule-w) solid var(--c-rule);
+  padding-top: var(--s-4);
+}
+.venue-context__toggle {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  list-style: none;          /* hide the default triangle in Firefox */
+  user-select: none;
+}
+.venue-context__toggle::-webkit-details-marker { display: none; }
+.venue-context__toggle:hover { color: var(--c-accent); }
+.venue-context[open] .venue-context__toggle { color: var(--c-ink-soft); }
+.venue-context__body {
+  padding-top: var(--s-4);
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-ink-soft);
+  text-wrap: pretty;
+}
+.venue-context__body p { margin: 0 0 var(--s-4); }
+.venue-context__body p:last-child { margin-bottom: 0; }
+
+/* ── Venue enrichment details (website / address / short_desc) ── */
+.venue-details {
+  display:     flex;
+  flex-direction: column;
+  gap:         var(--s-2);
+  padding:     var(--s-4) 0 var(--s-2);
+  border-top:  var(--rule-w) solid var(--c-rule);
+}
+.venue-details__website {
+  font-family:  var(--ff-mono);
+  font-size:    var(--fs-meta);
+  color:        var(--c-accent);
+  text-decoration: none;
+  letter-spacing: .03em;
+}
+.venue-details__website:hover { text-decoration: underline; }
+.venue-details__address {
+  font-family:  var(--ff-mono);
+  font-size:    var(--fs-meta);
+  color:        var(--c-ink-mute);
+  text-decoration: none;
+}
+.venue-details__address:hover { color: var(--c-ink); text-decoration: underline; }
+.venue-details__desc {
+  font-family:  var(--ff-body);
+  font-size:    14px;
+  color:        var(--c-ink-soft);
+  line-height:  1.5;
+  margin:       0;
+}
+
+/* Make the map sheet title linkable. */
+.map-sheet__title a { color: inherit; }
+.map-sheet__title a:hover { color: var(--c-accent); }
+
+@media (min-width: 768px) {
+  .venue-title { font-size: 32px; }
+  .venue-head  { padding: var(--s-5) 0 var(--s-6); }
+}
+
+/* ============================================================
+   CURATOR PROFILE PAGE
+   ------------------------------------------------------------
+   Reuses .venue-back, .rule, .eyebrow, .list-rows, .list-row
+   from the shared system; adds only the profile-specific parts.
+   ============================================================ */
+
+.curator-profile {
+  padding: var(--s-5) 0 var(--s-3);
+}
+.curator-profile__handle {
+  font-family: var(--ff-mono);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+  margin: 0 0 var(--s-2);
+}
+.curator-profile__tagline {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 18px;
+  line-height: var(--lh-snug);
+  color: var(--c-ink-mute);
+  margin: 0;
+}
+.curator-profile__bio {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-ink-soft);
+  text-wrap: pretty;
+  margin: 0 0 var(--s-2);
+}
+
+@media (min-width: 768px) {
+  .curator-profile { padding: var(--s-6) 0 var(--s-4); }
+  .curator-profile__handle { font-size: 26px; }
+  .curator-profile__tagline { font-size: 22px; }
+}
+
+/* ============================================================
+   HANDLE LINKS
+   ------------------------------------------------------------
+   .handle as an <a> element should look identical to .handle
+   as a <span> plus get a hover state. The existing .via .handle
+   rule sets color:accent on spans; we extend it to links and add
+   hover for all handle links outside .via.
+   ============================================================ */
+
+a.handle {
+  color: var(--c-accent);
+  text-decoration: none;
+}
+a.handle:hover {
+  color: var(--c-ink);
+}
+
+/* ============================================================
+   TOPBAR RIGHT GROUP
+   ------------------------------------------------------------
+   Auth button + city-selector live inside .topbar__right so
+   they stay flush right without disrupting the wordmark left.
+   ============================================================ */
+
+.topbar__right {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+}
+
+.auth-btn {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  padding: var(--s-1) 0;
+  white-space: nowrap;
+}
+.auth-btn:hover { color: var(--c-accent); }
+/* Hidden when the user is signed in — the Profile nav tab covers
+   the same intent, so showing both is duplicative. */
+.auth-btn[hidden] { display: none; }
+
+/* ============================================================
+   AUTH OVERLAY + PANEL
+   ============================================================ */
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+.auth-overlay[hidden] { display: none !important; }
+
+.auth-panel {
+  width: 100%;
+  background: var(--c-paper);
+  border-top: var(--rule-w) solid var(--c-rule);
+  border-radius: 16px 16px 0 0;
+  padding: var(--s-7) var(--gutter) calc(var(--s-7) + env(safe-area-inset-bottom, 0px));
+}
+.auth-panel__title {
+  font-family: var(--ff-body);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: var(--lh-snug);
+  color: var(--c-ink);
+  margin: 0 0 var(--s-2);
+}
+.auth-panel__desc {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  letter-spacing: 0.02em;
+  margin: 0 0 var(--s-5);
+}
+.auth-panel__input {
+  display: block;
+  width: 100%;
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+  padding: var(--s-3) var(--s-4);
+  color: var(--c-ink);
+  outline: none;
+  transition: border-color var(--t-fast);
+}
+.auth-panel__input:focus {
+  border-color: var(--c-accent);
+  background: var(--c-paper);
+}
+.auth-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-5);
+}
+.auth-panel__submit {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--t-fast);
+}
+.auth-panel__submit:hover:not(:disabled) { background: var(--c-ink-soft); color: var(--c-paper); }
+.auth-panel__submit:disabled { opacity: 0.4; cursor: default; }
+.auth-panel__close {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  background: transparent;
+  color: var(--c-ink);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+}
+.auth-panel__close:hover { border-color: var(--c-ink); }
+.auth-panel__status {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  margin-top: var(--s-4);
+  min-height: 1.4em;
+}
+
+/* Google OAuth button — outlined, mono-cap row above email field. */
+.auth-panel__google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  width: 100%;
+  margin: 0 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border: var(--rule-w) solid var(--c-rule-strong);
+  border-radius: var(--radius);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink);
+  background: transparent;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.auth-panel__google:hover { border-color: var(--c-ink); }
+.auth-panel__google svg { flex: 0 0 18px; }
+
+/* "or" divider — flanked by 1px rules. */
+.auth-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  letter-spacing: 0.04em;
+}
+.auth-panel__divider::before,
+.auth-panel__divider::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+
+/* Inline link row — "Forgot password? · Create account" etc. */
+.auth-panel__links {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin: var(--s-4) 0 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+}
+.auth-panel__link {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  color: var(--c-ink-mute);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.auth-panel__link:hover { color: var(--c-accent); }
+
+/* Anchor variant of submit (used in account panel for "View profile"). */
+a.auth-panel__submit { display: inline-block; }
+
+@media (min-width: 768px) {
+  .auth-overlay { align-items: center; justify-content: center; }
+  .auth-panel {
+    width: 400px;
+    border: var(--rule-w) solid var(--c-rule-strong);
+    padding: var(--s-7);
+  }
+}
+
+/* ============================================================
+   PROFILE PAGE
+   Reuses .section-head, .section-title, .auth-panel__input,
+   .auth-panel__submit, .auth-panel__close, .auth-panel__status
+   from elsewhere; adds only the profile-specific shell.
+   ============================================================ */
+
+.profile-head {
+  padding: var(--s-5) 0 var(--s-4);
+}
+.profile-head .eyebrow { margin-bottom: var(--s-2); }
+.profile-head__email {
+  font-family: var(--ff-body);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-2);
+  word-break: break-all;
+}
+.profile-head__meta {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  margin: 0;
+}
+
+/* Profile avatar circle */
+.profile-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, oklch(0.82 0.03 195), oklch(0.48 0.08 195));
+  border: 1px solid var(--c-rule);
+  flex-shrink: 0;
+}
+
+.profile-section {
+  padding-bottom: var(--s-4);
+}
+
+/* Bordered card wrapper for each profile section */
+.profile-section .section-head {
+  border-top: var(--rule-w) solid var(--c-rule);
+  border-bottom: 0;
+  padding: var(--s-4) 0 var(--s-3);
+}
+.profile-section__line {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  color: var(--c-ink-soft);
+  padding: var(--s-4) 0 0;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-5);
+}
+
+/* Digest opt-in toggle */
+.profile-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  cursor: pointer;
+  margin-top: var(--s-4);
+}
+.profile-toggle__check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--c-accent);
+  cursor: pointer;
+}
+.profile-toggle__label {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  color: var(--c-ink);
+}
+
+/* Danger-zone text button (delete account) */
+.profile-danger-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.7;
+}
+.profile-danger-btn:hover { opacity: 1; }
+
+/* Delete confirm box */
+.profile-delete-confirm {
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  border: var(--rule-w) solid var(--c-rule);
+}
+.profile-delete-confirm__warning {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.03em;
+  color: var(--c-accent);
+  margin: 0 0 var(--s-3);
+}
+
+@media (min-width: 768px) {
+  .profile-head { padding: var(--s-6) 0 var(--s-4); }
+  .profile-head__email { font-size: 36px; }
+}
+
+/* ============================================================
+   Colophon
+   ============================================================ */
+
+.colophon {
+  padding: var(--s-5) 0 var(--s-6);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+.colophon__line {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Nav — bottom tab bar on mobile
+   ============================================================ */
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: var(--c-paper);
+  border-top: var(--rule-w) solid var(--c-rule);
+  padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Pill container — the five items float inside */
+.nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--c-paper-deep);
+  border-radius: 999px;
+  padding: 4px;
+  height: 52px;
+}
+
+.nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  height: 100%;
+  color: var(--c-ink-mute);
+  position: relative;
+  border-radius: 999px;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.nav__icon { display: block; }
+.nav__label {
+  font-family: var(--ff-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* Active tab — filled pill background */
+body[data-page="briefing"] .nav__item[data-nav="briefing"],
+body[data-page="map"]      .nav__item[data-nav="map"],
+body[data-page="search"]   .nav__item[data-nav="search"],
+body[data-page="saved"]    .nav__item[data-nav="saved"],
+body[data-page="profile"]  .nav__item[data-nav="profile"] {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  flex: 0 0 auto;
+  padding: 0 16px;
+}
+/* Hide labels on inactive tabs — icon only */
+.nav__item .nav__label { display: none; }
+/* Show label only on active tab */
+body[data-page="briefing"] .nav__item[data-nav="briefing"] .nav__label,
+body[data-page="map"]      .nav__item[data-nav="map"]      .nav__label,
+body[data-page="search"]   .nav__item[data-nav="search"]   .nav__label,
+body[data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
+body[data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
+  display: block;
+}
+/* Show label inline next to icon on active tab */
+body[data-page="briefing"] .nav__item[data-nav="briefing"],
+body[data-page="map"]      .nav__item[data-nav="map"],
+body[data-page="search"]   .nav__item[data-nav="search"],
+body[data-page="saved"]    .nav__item[data-nav="saved"],
+body[data-page="profile"]  .nav__item[data-nav="profile"] {
+  flex-direction: row;
+  gap: 6px;
+}
+
+.nav__item:hover { color: var(--c-ink-soft); }
+
+/* ============================================================
+   Responsive — desktop (>= 768px)
+   Decision: bottom tab bar becomes a top masthead nav under the
+   wordmark. Rationale: a side rail would compete with the single-
+   column editorial read; a persistent bottom bar on desktop feels
+   app-y; a masthead nav reinforces the "cultural weekly" metaphor.
+   ============================================================ */
+
+@media (min-width: 768px) {
+  :root {
+    --gutter:      32px;
+    --reading-max: 840px;
+    --fs-quote:    44px;
+    --fs-pick:     20px;
+    --fs-venue:    18px;
+  }
+
+  body {
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Topbar no longer needs to be sticky on desktop —
+     the masthead nav underneath provides orientation,
+     and dropping sticky removes the magic-number offset. */
+  .topbar { position: static; order: 1; }
+  .topbar__inner { padding: var(--s-5) var(--gutter); }
+  .wordmark { font-size: 20px; }
+  .logo-mark { width: 30px; height: 30px; }
+
+  .tonight { padding: var(--s-8) 0 var(--s-7); }
+  .tonight__quote { margin: var(--s-4) 0 var(--s-4); }
+  .tonight__transition { margin: var(--s-6) 0 var(--s-3); }
+  .tonight__venue {
+    grid-template-columns: 88px 1fr;
+    gap: var(--s-5);
+  }
+  .thumb--lg { width: 88px; height: 88px; }
+  .thumb { width: 64px; height: 64px; }
+  .pick__link { grid-template-columns: 64px 1fr; }
+
+  .section-title { font-size: 32px; }
+  .section-head { padding: var(--s-5) 0 var(--s-3); }
+  .pick { padding: var(--s-4) 0; }
+
+  /* Map page: full-bleed canvas. Use most of the viewport so the
+     plate is the page's center of gravity, not a small panel that
+     looks abandoned with empty space below it. */
+  .map-bleed {
+    height: calc(100vh - 200px);
+    min-height: 580px;
+    max-height: 820px;
+    margin: var(--s-4) calc(-1 * var(--gutter)) var(--s-6);
+    border-top: var(--rule-w) solid var(--c-rule);
+    border-bottom: var(--rule-w) solid var(--c-rule);
+  }
+  /* On wider screens, give the peek sheet a defined max-width and
+     center it so it doesn't span the whole 960px column edge-to-edge. */
+  .map-sheet {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 720px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* Saved reading head scales up */
+  .reading-head { padding: var(--s-6) 0 var(--s-4); }
+  .reading-head__title { font-size: 36px; }
+
+  /* Search input scales up on wider screens */
+  .search-input { font-size: 28px; }
+  .search-input-wrap { padding: var(--s-7) 0 var(--s-5); }
+
+  /* Bottom nav → top masthead bar */
+  .nav {
+    position: static;
+    order: 2;
+    border-top: 0;
+    border-bottom: var(--rule-w) solid var(--c-rule);
+    padding: 0 var(--gutter);
+    max-width: var(--reading-max);
+    margin: 0 auto;
+    background: transparent;
+  }
+  .nav__inner {
+    background: transparent;
+    border-radius: 0;
+    height: auto;
+    padding: 0;
+    gap: var(--s-6);
+    justify-content: flex-start;
+  }
+  .page { order: 3; width: 100%; padding-bottom: var(--s-8); }
+
+  .nav__item {
+    flex-direction: row;
+    flex: 0 0 auto;
+    height: auto;
+    padding: var(--s-3) 0;
+    gap: var(--s-2);
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--c-ink-mute);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  /* Show all labels on desktop */
+  .nav__item .nav__label { display: block; }
+  body[data-page="briefing"] .nav__item[data-nav="briefing"],
+  body[data-page="map"]      .nav__item[data-nav="map"],
+  body[data-page="search"]   .nav__item[data-nav="search"],
+  body[data-page="saved"]    .nav__item[data-nav="saved"],
+  body[data-page="profile"]  .nav__item[data-nav="profile"] {
+    flex-direction: row;
+    padding: var(--s-3) 0;
+    color: var(--c-ink);
+    border-bottom-color: var(--c-accent);
+  }
+  .nav__icon { width: 16px; height: 16px; }
+  .nav__label { font-size: 11px; font-weight: 500; }
+}
+
+/* ============================================================
+   Large desktop — slightly more breathing room, same reading width
+   ============================================================ */
+
+@media (min-width: 1100px) {
+  :root { --reading-max: 960px; --fs-quote: 52px; }
+  .tonight { padding: var(--s-9) 0 var(--s-8); }
+}
+
+/* ============================================================
+   Motion preferences
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Mood chips — inline strip (Briefing, Search)
+   ------------------------------------------------------------
+   Same .m-chip / .m-chip--on tokens as the map filter chips,
+   but in normal document flow rather than absolute-positioned.
+   Negative margins bleed to the edge so the strip scrolls full
+   width on mobile, matching the editorial column width rule.
+   ============================================================ */
+
+.mood-chips {
+  display: flex;
+  gap: var(--s-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  /* Full-bleed horizontal scroll matches the map-filters pattern. */
+  margin: 0 calc(-1 * var(--gutter)) var(--s-6);
+  padding: 0 var(--gutter) 2px;   /* 2px bottom prevents chip border clip */
+}
+.mood-chips::-webkit-scrollbar { display: none; }
+
+/* Second chip row for the map page (mood, positioned below the first row). */
+.map-filters--mood {
+  top: calc(var(--s-3) + 34px + var(--s-2));
+}
+
+/* ============================================================
+   404 PAGE
+   ============================================================ */
+
+.not-found {
+  padding: var(--s-8) 0 var(--s-7);
+}
+.not-found .eyebrow {
+  margin-bottom: var(--s-4);
+}
+.not-found__copy {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-ink-soft);
+  max-width: 42ch;
+  text-wrap: pretty;
+  margin: var(--s-5) 0 var(--s-6);
+}
+.not-found__back {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+}
+.not-found__back:hover { color: var(--c-accent); }
+
+/* ============================================================
+   LOADING SKELETON — pre-catalog-ready placeholder text
+   A single muted mono line. No shimmer, no spinner.
+   ============================================================ */
+
+.loading-line {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  padding: var(--s-5) 0;
+}
+
+/* ============================================================
+   MATCH ME — single AI pick discovery on Search page
+   ------------------------------------------------------------
+   Two additions to the search input area:
+     .match-toggle  — small mono link-button below the input
+     .match-wrap    — container for the result card + Try again
+     .match-result  — the matched pick rendered as a hero card
+     .match-loading — spinner state text
+   ============================================================ */
+
+/* Toggle button: "Match me →" / "← Search" */
+.match-toggle {
+  display: inline-block;
+  margin-top: var(--s-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.match-toggle:hover { color: var(--c-accent); }
+
+/* Active mode: input gets a different placeholder style and a
+   slightly stronger underline to signal the mode change.       */
+[data-mode="match"] .search-input {
+  border-bottom-color: var(--c-accent);
+}
+[data-mode="match"] .search-input::placeholder {
+  color: var(--c-ink-soft);
+  font-style: italic;
+  opacity: 1;
+}
+
+/* Match result container */
+.match-wrap {
+  padding: var(--s-5) 0 var(--s-4);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+
+/* Loading state */
+.match-loading {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  padding: var(--s-5) 0;
+}
+
+/* Error state */
+.match-error {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.02em;
+  color: var(--c-ink-mute);
+  padding: var(--s-4) 0;
+}
+
+/* The matched pick — Tonight-hero-style layout.
+   .match-card reuses tonight__quote + tonight__attr + tonight__venue
+   tokens so no new variables are needed.                        */
+.match-card {
+  display: flex;
+  flex-direction: column;
+}
+.match-card__why {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: var(--fs-quote);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.005em;
+  color: var(--c-ink);
+  text-indent: -0.22em;
+  text-wrap: balance;
+  margin: 0 0 var(--s-4);
+}
+.match-card__attr {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin-bottom: var(--s-5);
+  white-space: nowrap;
+}
+.match-card__attr-line {
+  display: inline-block;
+  width: 20px;
+  height: 1px;
+  background: var(--c-accent);
+  flex: 0 0 auto;
+}
+
+/* "Try again →" button */
+.match-again {
+  display: inline-block;
+  margin-top: var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.match-again:hover { color: var(--c-accent); }
+
+@media (min-width: 768px) {
+  .match-card__why { font-size: 44px; }
+}
+@media (min-width: 1100px) {
+  .match-card__why { font-size: 52px; }
+}
+
+/* ============================================================
+   CURATOR'S COLUMN — weekly editorial above This Week
+   ------------------------------------------------------------
+   Rendered by briefing.js from the `columns` Supabase table.
+   Three elements: eyebrow (Column · Issue N), body paragraphs
+   (first para in italic per editorial convention), signature
+   (— @handle · date).
+   ============================================================ */
+
+.column {
+  padding: var(--s-6) 0 var(--s-5);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+
+.column__eyebrow {
+  /* Reuses .eyebrow tokens but we add bottom spacing here. */
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0 0 var(--s-4);
+}
+
+.column__body {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-ink-soft);
+  text-wrap: pretty;
+}
+
+/* Paragraphs within the column — each gets top spacing. */
+.column__body p {
+  margin: 0 0 var(--s-4);
+}
+.column__body p:last-child { margin-bottom: 0; }
+
+/* First paragraph gets italic treatment per the editorial voice. */
+.column__body p:first-child {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 18px;
+  line-height: var(--lh-snug);
+  color: var(--c-ink);
+}
+
+.column__sig {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+}
+.column__sig .handle { color: var(--c-accent); }
+
+@media (min-width: 768px) {
+  .column { padding: var(--s-7) 0 var(--s-6); }
+  .column__body p:first-child { font-size: 20px; }
+}
+
+/* ============================================================
+   Print masthead — hidden on screen, visible in print only
+   ============================================================ */
+
+.print-head {
+  display: none;   /* hidden on screen */
+}
+
+/* ============================================================
+   Print stylesheet — editorial 1-page newsletter
+   ------------------------------------------------------------
+   Hides all navigation chrome and renders a clean reading
+   column with a masthead line and page numbers.
+   ============================================================ */
+
+@media print {
+  /* ── Show masthead ── */
+  .print-head {
+    display: block;
+    font-family: var(--ff-mono);
+    font-size: 9pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-bottom: 8pt;
+    margin-bottom: 14pt;
+    border-bottom: 1pt solid #000;
+  }
+
+  /* ── Hide all chrome ── */
+  .topbar,
+  .nav,
+  .bookmark,
+  .auth-overlay,
+  .auth-trigger,
+  .skip-link,
+  .mood-chips,
+  .surprise-btn,
+  .map-filters,
+  .map-compass,
+  .map-sheet,
+  .city-selector__chev { display: none !important; }
+
+  /* ── Body resets ── */
+  body {
+    background: #fff;
+    color: #000;
+    padding: 0;
+    font-size: 17.6px;   /* ~10% up from 16 */
+    line-height: 1.45;
+  }
+
+  /* ── Reading column ── */
+  .page {
+    max-width: var(--reading-max);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── Links clean ── */
+  a,
+  .handle,
+  .tonight__attr a { color: #000; text-decoration: none; }
+  .tonight__attr-line { background: #000; }
+
+  /* ── Page numbers ── */
+  @page {
+    margin: 20mm;
+    @bottom-right {
+      content: counter(page);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9pt;
+      color: #555;
+    }
+  }
+}
+
+/* ============================================================
+   COMPASS COMPONENTS
+   Additions for the Direction B redesign (May 2026).
+   ============================================================ */
+
+/* Tonight card — bordered surface card with 12px radius */
+.tonight-card {
+  margin: 8px 0 0;
+  padding: var(--s-4) var(--s-4) var(--s-4);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+}
+.tonight-card__head { margin-bottom: var(--s-3); }
+.tonight-card__meta {
+  display: flex; align-items: center; gap: 8px;
+  margin: var(--s-3) 0 6px; flex-wrap: wrap;
+}
+.tonight-card__title {
+  display: block;
+  font-family: var(--ff-body);
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.5px; line-height: 1.2;
+  color: var(--c-ink);
+  margin-bottom: 4px;
+}
+/* Override the global --fs-quote scale-up inside the briefing card —
+   the bordered card is a surface, not a hero, so the quote should
+   scale alongside body type, not dominate the page. */
+.tonight-card .tonight__quote {
+  margin: var(--s-3) 0 var(--s-2);
+  padding: 12px 14px;
+}
+.tonight-card .tonight__quote p {
+  font-size: 22px;
+  line-height: 1.25;
+}
+@media (min-width: 768px) {
+  .tonight-card { padding: var(--s-5) var(--s-5); }
+  .tonight-card__title { font-size: 26px; }
+  .tonight-card .tonight__quote p { font-size: 26px; }
+}
+@media (min-width: 1100px) {
+  .tonight-card .tonight__quote p { font-size: 28px; }
+}
+
+/* Tonight pill badge — lime pill with live dot */
+.tonight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--c-lime);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--c-ink);
+  margin-bottom: var(--s-3);
+}
+.tonight-badge__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-ink);
+  flex-shrink: 0;
+  position: relative;
+}
+/* Pulsing ring — the "green motion element" */
+.tonight-badge__dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-ink);
+  opacity: 0.5;
+  animation: wa-pulse 1.8s ease-out infinite;
+}
+
+/* Kind badge — petrol square + mono label */
+.kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 6px;
+  background: var(--c-paper);
+  border: var(--rule-w) solid var(--c-rule);
+  flex-shrink: 0;
+}
+.kind-badge__icon {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  background: var(--c-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-paper);
+  flex-shrink: 0;
+}
+.kind-badge__label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+  font-weight: 500;
+}
+
+/* Tonight venue name — sans, heavier */
+.tonight__venue-name {
+  font-family: var(--ff-body);
+  font-weight: 600;
+  font-size: var(--fs-venue);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.2px;
+  color: var(--c-ink);
+  text-wrap: pretty;
+}
+.tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
+
+/* CTA buttons in tonight card */
+.tonight-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: var(--s-4);
+}
+.btn-primary {
+  flex: 1;
+  padding: 11px 0;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t-fast);
+  text-align: center;
+  display: block;
+}
+.btn-primary:hover { background: var(--c-ink-soft); }
+.btn-secondary {
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--c-ink);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color var(--t-fast);
+}
+.btn-secondary:hover { border-color: var(--c-ink); }
+
+/* Curator handle color in Compass = petrol */
+.handle, a.handle { color: var(--c-accent); }
+a.handle:hover { color: var(--c-ink); }
+
+/* ── wa-pulse animation for live dot ── */
+@keyframes wa-pulse {
+  0%   { opacity: 0.5; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.5); }
+}

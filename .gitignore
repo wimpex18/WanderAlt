@@ -1,0 +1,17 @@
+# Local dev secrets — never commit. Cloud sessions set these as env vars
+# in the cloud environment settings instead.
+local-secrets.js
+
+# Personal Claude Code settings (machine-specific permissions, etc.)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Reference archive (wireframes, market research) — kept on disk, not synced
+# to the cloud repo to keep clones light.
+docs/archive/
+
+# Node / npx caches
+node_modules/
+
+# macOS
+.DS_Store

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WanderAlt — Saved · Tallinn</title>
+  <meta name="description" content="Your reading list — places, nights, and writing you've saved." />
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="./catalog.js"></script>
+  <script defer src="./city.js"></script>
+  <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+  <script defer src="./bookmark.js"></script>
+  <script defer src="./saved.js"></script>
+</head>
+<body data-page="saved">
+
+  <a class="skip-link" href="#saved-main">Skip to saved</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar__inner">
+      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
+        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
+        <span class="wordmark">WanderAlt</span>
+      </a>
+      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="city-dot" aria-hidden="true"></span>
+        <span class="city-selector__name">TALLINN</span>
+        <span class="city-selector__chev" aria-hidden="true">
+          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <main id="saved-main" class="page" role="main">
+
+    <!-- Print masthead (hidden on screen, shown in @media print). -->
+    <p class="print-head" aria-hidden="true"></p>
+
+    <!-- Reading-list head: display title + active count (mono, right).
+         Matches handoff saved.jsx. -->
+    <header class="reading-head">
+      <h1 class="reading-head__title">Your reading list</h1>
+      <p class="reading-head__count">0 active &middot; 0 past</p>
+    </header>
+
+    <!-- Segment switcher — CSS-only via :checked sibling selectors.
+         The radios live BEFORE everything they style; the visible
+         tabs are <label>s pointing at them. Keyboard arrow-key
+         navigation between segments is built into the radio group. -->
+    <input type="radio" name="seg" id="seg-going"   class="seg__input" checked>
+    <input type="radio" name="seg" id="seg-reading" class="seg__input">
+    <input type="radio" name="seg" id="seg-past"    class="seg__input">
+
+    <nav class="seg-tabs" aria-label="Saved filters">
+      <label for="seg-going" class="seg-tab">
+        <span class="seg-tab__label">Going</span>
+        <span class="seg-tab__count">0</span>
+      </label>
+      <label for="seg-reading" class="seg-tab">
+        <span class="seg-tab__label">Reading</span>
+        <span class="seg-tab__count">0</span>
+      </label>
+      <label for="seg-past" class="seg-tab">
+        <span class="seg-tab__label">Past</span>
+        <span class="seg-tab__count">3</span>
+      </label>
+    </nav>
+
+    <!-- Per-segment notes. Only the matching one is shown via :checked. -->
+    <p class="seg-note seg-note--going">you said you&rsquo;d go &middot; soonest first</p>
+    <p class="seg-note seg-note--reading">saved, no date set</p>
+    <p class="seg-note seg-note--past">quiet archive</p>
+
+    <!-- Going — bookmarked entries with a day/time (events).
+         Populated by saved.js from WA.Bookmarks + WA.catalog. -->
+    <ol class="list-rows list-rows--going" role="list">
+    </ol>
+
+    <!-- Reading — bookmarked entries without a day (permanent places).
+         Populated by saved.js from WA.Bookmarks + WA.catalog. -->
+    <ol class="list-rows list-rows--reading" role="list">
+    </ol>
+
+    <!-- Past list — compact single-line: dimmed title + mono date. -->
+    <ol class="list-rows list-rows--past" role="list">
+
+      <li class="list-row list-row--past">
+        <p class="list-row__title">Skweee night at Sveta Baar</p>
+        <p class="list-row__meta">Apr 11</p>
+      </li>
+
+      <li class="list-row list-row--past">
+        <p class="list-row__title">Algirdas &Scaron;e&scaron;kus &mdash; retrospective</p>
+        <p class="list-row__meta">Mar 22</p>
+      </li>
+
+      <li class="list-row list-row--past">
+        <p class="list-row__title">Late winter readings, Lugemik</p>
+        <p class="list-row__meta">Mar 8</p>
+      </li>
+
+    </ol>
+
+    <footer class="colophon">
+      <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
+    </footer>
+
+  </main>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__inner">      <a class="nav__item" data-nav="briefing" href="./index.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M5 3h11l3 3v15H5V3z" />
+          <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+        <span class="nav__label">Briefing</span>
+      </a>
+      <a class="nav__item" data-nav="map" href="./map.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" />
+          <path d="M9 4v16M15 6v16" />
+        </svg>
+        <span class="nav__label">Map</span>
+      </a>
+      <a class="nav__item" data-nav="search" href="./search.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="11" cy="11" r="6" />
+          <path d="M20 20l-4.5-4.5" />
+        </svg>
+        <span class="nav__label">Search</span>
+      </a>
+      <a class="nav__item" data-nav="saved" href="./saved.html" aria-current="page">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4-6 4V3z" />
+        </svg>
+        <span class="nav__label">Saved</span>
+      </a>
+      <a class="nav__item" data-nav="profile" href="./profile.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20c0-4 3.1-7 7-7s7 3 7 7" />
+        </svg>
+        <span class="nav__label">Profile</span>
+      </a>    </div>
+  </nav>
+
+</body>
+</html>

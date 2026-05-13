@@ -1,0 +1,108 @@
+# WanderAlt — Claude Code instructions
+
+Static site for underground/alternative culture in European cities. First city: Tallinn. Curated by humans, not algorithms — **curator voice is the loudest thing on every screen.**
+
+For deeper context, read these on demand (do NOT auto-import — they bloat context):
+- `README.md` — product overview, deploy instructions, current roadmap
+- `HANDOFF.md` — engineering reference (tokens, components, state matrices, per-page specs)
+
+## Project overview
+
+- **Stack:** static HTML + CSS + vanilla JS. **No build step, no framework.**
+- **Backend:** Supabase (REST + Edge Functions + pg_cron). Project ID `aqnsmmbrspkbfcvougeh`, region `eu-central-1`.
+- **Anon key:** in `supabase.js` (public on purpose — RLS is SELECT-only for tables, INSERT only for `bookmarks` and `digest_opt_ins`).
+- **Service role key:** never commit. Set as env var `SUPABASE_SERVICE_ROLE_KEY` in cloud env, or paste into admin panel localStorage locally.
+- **Canonical mobile viewport:** 390×844. Desktop breakpoint: **768px** (bottom nav → top masthead; content caps at 680px). Quote scales again at 1100px.
+
+## Key commands
+
+```bash
+npm start          # local dev server at http://localhost:5173 (npx http-server, no cache)
+npm run admin      # admin panel server at http://localhost:8080
+```
+
+There is no test suite. Verify changes by opening `localhost:5173` (or `localhost:8080/admin.html`) in a browser and inspecting visually — or by reading the rendered DOM via Chrome MCP.
+
+Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never via `supabase functions deploy` CLI (the user doesn't have it installed).
+
+## File map
+
+| File | Role |
+|---|---|
+| `index.html` / `briefing.js` | Briefing — landing page (Tonight + This Week) |
+| `map.html` / `map.js` | Map screen with 7 dynamic pins + drag-expand sheet |
+| `search.html` / `search.js` | Live keyword search + AI "match me" mode |
+| `saved.html` / `saved.js` | Going / Reading / Past segments |
+| `venue.html` / `venue.js` | Pick detail page — quote, venue, context, more from curator |
+| `curator.html` / `curator.js` | Curator profile — bio + all picks |
+| `profile.html` / `profile.js` | Account — bookmarks, digest, export, delete |
+| `admin.html` / `admin.js` | Admin panel — pick/venue CRUD, pipeline, column approval, enrichment |
+| `catalog.js` | Static fallback catalog (used if Supabase fetch fails). Exposes `WA.catalog`, `WA.past`, `WA.curators` |
+| `supabase.js` | Live data fetcher; exposes `WA.BASE_URL` + `WA.ANON_KEY`; fires `wa:catalog-ready` |
+| `auth.js` | Email/password + Google OAuth, password reset; dispatches `wa:signed-in` / `wa:signed-out` |
+| `bookmark.js` | localStorage primary store + Supabase cloud sync; fires `wa:bookmarks-synced` |
+| `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter) |
+| `styles.css` | All styles. Every design decision lives as a `:root` CSS variable. |
+
+## Visual conventions (Claude cannot infer these)
+
+- Strictly left-aligned. **No centered blocks.**
+- No gradients, no box-shadows, max corner radius 4px.
+- Section dividers are **1px horizontal rules**, never background changes or large gaps.
+- Single accent: oxblood `#8a2a1a` — only for curator handles, arrows, hover, active state.
+- Background: warm newsprint `#f6f3ec`, never pure white.
+- **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
+- All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
+- Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow.
+
+## Content conventions
+
+- **Real Tallinn places only:** Sveta Baar, Fotografiska, Paavli Kultuurivabrik, Kai Art Center, Uus Laine, Kelm, EKKM, Lugemik, Telliskivi, etc. No fake venues, no marketing-voice copy.
+- **Curator handles** follow Telegram convention: `@handle` or `sigmundtells` (no `@` for channel-name style).
+- **Metadata format:** `Neighborhood · type · day + time`.
+- **Editorial voice:** no em-dashes in headlines, no exclamation marks, no "discover", no marketing voice. Reads like the back page of a newsletter.
+
+## Working rules
+
+- When asked for a visual change, **make only that change** — do not refactor adjacent code.
+- Don't add CSS variables, npm packages, or dependencies without asking.
+- Keep `README.md` updated when structure or feature scope changes.
+- Always end a session with **2–3 short "next step" suggestions** so the user knows what's left.
+
+## Supabase pipeline — token-efficient rules (CRITICAL)
+
+The user is on a constrained plan. Polling burns quota and accomplishes nothing.
+
+- **Never poll.** Do not fire repeated `net.http_post` calls. Do not check `staging_messages` more than once per assistant turn.
+- **Fire once, then stop.** Trigger a cron / edge function, tell the user "queue is draining, check back in ~10 min", and end the turn.
+- **Health checks are one-shot queries:**
+  ```sql
+  -- queue depth
+  SELECT status, COUNT(*) FROM staging_messages GROUP BY status;
+  -- active picks
+  SELECT COUNT(*) FROM picks WHERE archived_at IS NULL;
+  -- recent ingest results
+  SELECT fn, status, inserted, rejected, error, finished_at
+    FROM ingest_log ORDER BY id DESC LIMIT 5;
+  ```
+- **Crons own the schedule.** `process-staging` runs every 30 min; `ingest-telegram` nightly at 02:15 UTC; `generate-context` at 02:30; `enrich-venues` at 03:30; `send-digest` Saturday 09:00 UTC. Only touch a schedule if the user asks.
+- **Edge function versions:** deploy via Supabase MCP, confirm the returned version number, then stop. Do not test-fire manually in a loop.
+
+## LLM model policy (do not deviate)
+
+- **Gemini:** `gemini-2.5-flash` everywhere. `-pro` and `gemini-2.0-flash` return 404 "no longer available to new users" — never use them.
+  - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
+- **Groq:** `llama-3.3-70b-versatile` for real-time `match-pick`; also fallback in `process-staging`.
+- Current per-function status:
+  - `process-staging` → Gemini 2.5 Flash + Groq fallback
+  - `draft-column`, `generate-context`, `send-digest`, `enrich-venues` → Gemini 2.5 Flash
+  - `match-pick` → Groq only
+
+## Cloud-session notes
+
+This repo is designed to run identically locally and in Claude Code on the web:
+
+- No setup script needed — open any `.html` in a browser or run `npm start`.
+- `local-secrets.js` is gitignored. Cloud sessions need the same secrets set as **environment variables** in the cloud env settings (not in code).
+- `.claude/settings.local.json` is gitignored — its permissions are machine-local and don't transfer.
+- Reference assets (wireframes, market-research PDF) live in `docs/archive/` which is gitignored to keep cloud clones light.

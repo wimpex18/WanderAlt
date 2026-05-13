@@ -1,0 +1,294 @@
+/* ============================================================
+   WanderAlt — Venue detail page
+   ------------------------------------------------------------
+   Reads ?id=<slug> from the URL, finds the entry in
+   window.WA.catalog, and renders the full pick detail.
+
+   Layout (voice-first, matching the Briefing aesthetic):
+     ← Back link
+     Eyebrow · h1 title · meta
+     ──────
+     Big curator quote (tonight__quote)
+     Attribution (tonight__attr)
+     ──────
+     Thumbnail + venue name + meta + bookmark
+     ──────
+     More from @handle (if other picks exist by the same curator)
+     Colophon
+
+   Load order (venue.html):
+     catalog.js → supabase.js → bookmark.js → venue.js
+   ============================================================ */
+(() => {
+  const bookmarkSVG = () =>
+    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+         stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+       <path d="M6 3h12v18l-6-4-6 4V3z" />
+     </svg>`;
+
+  const thumbEl = (entry, large = false) => {
+    const cls   = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
+    const style  = entry.imageUrl
+      ? ` style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')"` : '';
+    const label  = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
+    return `<span class="${cls}" role="img" aria-label="${label}"${style}>` +
+           `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${entry.thumbInitials}</span>` +
+           `</span>`;
+  };
+
+  const buildMeta = (entry) => {
+    const parts = [entry.neighborhood, entry.kind];
+    if (entry.day && entry.day !== 'Tonight') parts.push(`${entry.day} ${entry.time}`);
+    else if (entry.time)                      parts.push(entry.time);
+    return parts.filter(Boolean).join(' · ');
+  };
+
+  /* Infer a labelled back link from the previous page. */
+  const backLink = () => {
+    try {
+      const ref = new URL(document.referrer).pathname;
+      if (ref.endsWith('search.html')) return { href: './search.html', label: '&larr; Search' };
+      if (ref.endsWith('map.html'))    return { href: './map.html',    label: '&larr; Map' };
+      if (ref.endsWith('saved.html'))  return { href: './saved.html',  label: '&larr; Saved' };
+    } catch (_) { /* cross-origin or empty referrer */ }
+    return { href: './index.html', label: '&larr; Briefing' };
+  };
+
+  const render = (entry, catalog) => {
+    const main = document.getElementById('venue-main');
+    if (!main) return;
+
+    /* Update tab title and meta description with live content. */
+    document.title = `WanderAlt — ${entry.title} · Tallinn`;
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.content = `${entry.quote} — ${entry.handle}`;
+
+    /* OG / Twitter card — set image, title, and description. */
+    const OG_BASE = (window.WA && window.WA.BASE_URL)
+      ? `${window.WA.BASE_URL}/functions/v1/og-image`
+      : null;
+    if (OG_BASE) {
+      const ogImg = `${OG_BASE}?id=${encodeURIComponent(entry.id)}`;
+      document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]')
+        .forEach(m => m.setAttribute('content', ogImg));
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', `WanderAlt — ${entry.title} · Tallinn`);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute('content', `${entry.quote} — ${entry.handle}`);
+    }
+
+    const { href, label } = backLink();
+    const eyebrow  = (entry.pin && entry.pin.eyebrow)
+                  || (entry.day === 'Tonight' ? 'Tonight' : entry.day)
+                  || 'Place';
+    const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[entry.id]);
+
+    /* Other picks by the same curator (excludes current entry); cap at 5. */
+    const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
+    const more     = moreAll.slice(0, 5);
+    const moreRest = moreAll.length - more.length;
+
+    main.innerHTML = `
+      <a class="venue-back" href="${href}">${label}</a>
+
+      <article aria-label="${entry.title}">
+
+        <div class="venue-head">
+          <p class="eyebrow">${eyebrow}</p>
+          <h1 class="venue-title">${entry.title}</h1>
+          <p class="meta">${buildMeta(entry)}</p>
+        </div>
+
+        <hr class="rule" style="margin-bottom:var(--s-2)">
+
+        <section class="tonight" aria-label="Curator quote">
+          <blockquote class="tonight__quote">
+            <p>&ldquo;${entry.quote}&rdquo;</p>
+            <footer class="tonight__attr">
+              <span class="tonight__attr-line" aria-hidden="true"></span><a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a>
+            </footer>
+          </blockquote>
+        </section>
+
+        <hr class="rule" style="margin-top:var(--s-4)">
+
+        <div class="venue-venue">
+          <div class="tonight__venue">
+            ${thumbEl(entry, true)}
+            ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
+            <span class="tonight__venue-body">
+              <span class="tonight__venue-name">${entry.venue}</span>
+              <span class="meta">${entry.neighborhood} &middot; ${entry.kind}${entry.time ? ' &middot; ' + entry.time : ''}</span>
+            </span>
+          </div>
+          <label class="bookmark">
+            <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
+                   aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
+            ${bookmarkSVG()}
+          </label>
+        </div>
+
+        <!-- Venue details — website / address / short_desc; async-populated by fetchVenueDetails() -->
+        <div id="venue-details" class="venue-details" hidden></div>
+
+        <div class="venue-actions" style="display:flex;gap:10px;align-items:center;margin-top:var(--s-5)">
+          <a class="btn-primary" href="venue.html?id=${entry.id}" style="flex:1;text-align:center;">I&rsquo;m going &rarr;</a>
+        </div>
+
+        <!-- Why this matters — async-populated by fetchContext() after render -->
+        <details class="venue-context" id="venue-context" hidden>
+          <summary class="venue-context__toggle">Read more &rarr;</summary>
+          <div class="venue-context__body" id="venue-context-body"></div>
+        </details>
+
+        ${more.length ? `
+        <hr class="rule" style="margin-bottom:0">
+        <section aria-labelledby="more-label">
+          <header class="search-section-head">
+            <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
+          </header>
+          <ol class="list-rows" role="list">
+            ${more.map(e =>
+              /* Title is the venue link; quote handle is a sibling <a>.
+                 Wrapping the whole row in an <a> would nest the handle
+                 link, which browsers eject from the DOM tree. */
+              `<li class="list-row">
+                 <p class="list-row__title">
+                   <a href="venue.html?id=${e.id}">${e.title}</a>
+                 </p>
+                 <p class="list-row__meta">${buildMeta(e)}</p>
+                 <p class="list-row__quote">&mdash; ${e.quote}
+                   <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
+                 </p>
+               </li>`
+            ).join('')}
+          </ol>
+          ${moreRest > 0 ? `
+          <p class="meta" style="margin-top:var(--s-3)">
+            <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">View all ${moreAll.length} picks &rarr;</a>
+          </p>` : ''}
+        </section>` : ''}
+
+      </article>
+
+      <footer class="colophon">
+        <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
+      </footer>
+    `;
+
+    /* Async fetch context_md from Supabase and reveal the <details>. */
+    const fetchContext = async () => {
+      const base = window.WA && window.WA.BASE_URL;
+      const key  = window.WA && window.WA.ANON_KEY;
+      if (!base || !key) return;
+
+      try {
+        const r = await fetch(
+          `${base}/rest/v1/picks?id=eq.${encodeURIComponent(entry.id)}&select=context_md&limit=1`,
+          { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+        );
+        if (!r.ok) return;
+        const rows = await r.json();
+        const ctx  = rows[0]?.context_md;
+        if (!ctx) return;
+
+        const detailsEl = document.getElementById('venue-context');
+        const bodyEl    = document.getElementById('venue-context-body');
+        if (!detailsEl || !bodyEl) return;
+
+        /* Convert double newlines to paragraph breaks */
+        bodyEl.innerHTML = ctx
+          .split(/\n\n+/)
+          .filter(p => p.trim())
+          .map(p => `<p>${p.trim()}</p>`)
+          .join('');
+
+        detailsEl.hidden = false;
+      } catch (_) { /* gracefully absent */ }
+    };
+
+    fetchContext();
+
+    /* Async fetch enrichment data (website, address, short_desc) from venue_details. */
+    const fetchVenueDetails = async () => {
+      const base = window.WA && window.WA.BASE_URL;
+      const key  = window.WA && window.WA.ANON_KEY;
+      if (!base || !key) return;
+
+      const city     = 'tallinn'; // multi-city: entry.city when available
+      const venueKey = entry.venue.toLowerCase();
+
+      try {
+        const r = await fetch(
+          `${base}/rest/v1/venue_details` +
+          `?city=eq.${encodeURIComponent(city)}` +
+          `&venue_key=eq.${encodeURIComponent(venueKey)}` +
+          `&select=website,address,short_desc,lat,lng&limit=1`,
+          { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+        );
+        if (!r.ok) return;
+        const rows = await r.json();
+        const vd   = rows[0];
+        if (!vd) return;
+
+        const el = document.getElementById('venue-details');
+        if (!el) return;
+
+        const parts = [];
+        if (vd.website) {
+          let domain = vd.website;
+          try { domain = new URL(vd.website).hostname.replace(/^www\./, ''); } catch (_) {}
+          parts.push(
+            `<a class="venue-details__website" href="${vd.website}"` +
+            ` target="_blank" rel="noopener noreferrer">${domain} ↗</a>`
+          );
+        }
+        if (vd.address) {
+          const mq = encodeURIComponent(vd.address + ', ' + city);
+          parts.push(
+            `<a class="venue-details__address" href="https://maps.google.com/?q=${mq}"` +
+            ` target="_blank" rel="noopener noreferrer">${vd.address} ↗</a>`
+          );
+        }
+        if (vd.short_desc) {
+          parts.push(`<p class="venue-details__desc">${vd.short_desc}</p>`);
+        }
+        if (!parts.length) return;
+
+        el.innerHTML = parts.join('\n');
+        el.hidden = false;
+      } catch (_) { /* gracefully absent */ }
+    };
+
+    fetchVenueDetails();
+
+    /* Wire bookmark toggle. */
+    const cb = main.querySelector('.bookmark__check');
+    if (cb && window.WA.Bookmarks) {
+      cb.addEventListener('change', () => {
+        window.WA.Bookmarks.set(entry.id, cb.checked);
+      });
+    }
+  };
+
+  const renderNotFound = () => {
+    const main = document.getElementById('venue-main');
+    if (!main) return;
+    const { href, label } = backLink();
+    main.innerHTML = `
+      <a class="venue-back" href="${href}">${label}</a>
+      <p class="empty-line">This pick isn&rsquo;t in the catalog &mdash; it may have moved.</p>
+    `;
+  };
+
+  const init = () => {
+    const catalog = (window.WA && window.WA.catalog) || [];
+    const id      = new URLSearchParams(window.location.search).get('id');
+    const entry   = id ? catalog.find(e => e.id === id) : null;
+
+    if (entry) render(entry, catalog);
+    else       renderNotFound();
+  };
+
+  document.addEventListener('wa:catalog-ready', init);
+})();
