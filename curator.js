@@ -12,6 +12,7 @@
      ──────
      Bio (body serif)
      ──────
+     Mood-tag filter chips (if ≥2 distinct tags)
      Picks by this curator (list-row format)
      Colophon
 
@@ -67,11 +68,32 @@
     }
 
     const { href, label } = backLink();
-
-    /* Cap the displayed list; show a note if the catalog has more. */
     const MAX_SHOWN = 30;
-    const shown     = picks.slice(0, MAX_SHOWN);
-    const remaining = picks.length - shown.length;
+    const allTags   = [...new Set(picks.flatMap(e => e.moodTags || []))].sort();
+
+    const buildRows = (entries) => entries.slice(0, MAX_SHOWN).map(e => {
+      const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
+      return `<li class="list-row list-row--bookmarkable">
+               <div>
+                 <p class="list-row__title">
+                   <a href="venue.html?id=${e.id}">${e.title}</a>
+                 </p>
+                 <p class="list-row__meta">${buildMeta(e)}</p>
+                 <p class="list-row__quote">&mdash; ${e.quote}</p>
+                 ${e.moodTags && e.moodTags.length
+                   ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${
+                       e.moodTags.map(t =>
+                         `<span style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);">${t}</span>`
+                       ).join('')}</p>`
+                   : ''}
+               </div>
+               <label class="bookmark">
+                 <input type="checkbox" class="bookmark__check" data-id="${e.id}"
+                        aria-label="Bookmark: ${e.title}" ${isMarked ? 'checked' : ''}>
+                 ${bookmarkSVG()}
+               </label>
+             </li>`;
+    }).join('');
 
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
@@ -95,27 +117,15 @@
           <header class="search-section-head">
             <p id="picks-label" class="eyebrow">${picks.length} pick${picks.length !== 1 ? 's' : ''} in Tallinn</p>
           </header>
-          <ol class="list-rows" role="list">
-            ${shown.map(e => {
-              const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
-              return `<li class="list-row list-row--bookmarkable">
-                 <div>
-                   <p class="list-row__title">
-                     <a href="venue.html?id=${e.id}">${e.title}</a>
-                   </p>
-                   <p class="list-row__meta">${buildMeta(e)}</p>
-                   <p class="list-row__quote">&mdash; ${e.quote}</p>
-                   ${e.moodTags && e.moodTags.length ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${e.moodTags.map(t => `<span style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);">${t}</span>`).join('')}</p>` : ''}
-                 </div>
-                 <label class="bookmark">
-                   <input type="checkbox" class="bookmark__check" data-id="${e.id}"
-                          aria-label="Bookmark: ${e.title}" ${isMarked ? 'checked' : ''}>
-                   ${bookmarkSVG()}
-                 </label>
-               </li>`;
-            }).join('')}
+          ${allTags.length >= 2 ? `
+          <div class="m-chips" id="curator-chips" style="margin-bottom:var(--s-4);">
+            <button class="m-chip m-chip--active" type="button" data-tag="">All</button>
+            ${allTags.map(t => `<button class="m-chip" type="button" data-tag="${t}">${t}</button>`).join('')}
+          </div>` : ''}
+          <ol class="list-rows" role="list" id="curator-picks-list">
+            ${buildRows(picks)}
           </ol>
-          ${remaining > 0 ? `<p class="meta" style="margin-top:var(--s-3)">Showing 30 of ${picks.length} picks.</p>` : ''}
+          ${picks.length > MAX_SHOWN ? `<p class="meta" style="margin-top:var(--s-3)">Showing 30 of ${picks.length} picks.</p>` : ''}
         </section>` : `
         <p class="empty-line" style="margin-top:var(--s-6)">No current picks from this curator.</p>
         `}
@@ -126,6 +136,51 @@
         <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
       </footer>
     `;
+
+    /* Wire share button. */
+    const shareBtn = main.querySelector('#curator-share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          shareBtn.textContent = 'Copied ✓';
+          setTimeout(() => { shareBtn.textContent = 'Share →'; }, 2000);
+        });
+      });
+    }
+
+    /* Wire mood-tag filter chips. */
+    const chipsEl = main.querySelector('#curator-chips');
+    const listEl  = main.querySelector('#curator-picks-list');
+    if (chipsEl && listEl) {
+      chipsEl.addEventListener('click', (ev) => {
+        const chip = ev.target.closest('[data-tag]');
+        if (!chip) return;
+        const tag = chip.dataset.tag;
+        chipsEl.querySelectorAll('[data-tag]').forEach(c =>
+          c.classList.toggle('m-chip--active', c === chip));
+        const filtered = tag
+          ? picks.filter(e => (e.moodTags || []).includes(tag))
+          : picks;
+        listEl.innerHTML = buildRows(filtered);
+      });
+    }
+
+    /* Wire bookmark toggles. */
+    if (window.WA.Bookmarks) {
+      document.addEventListener('change', (e) => {
+        const cb = e.target.closest('.bookmark__check');
+        if (!cb) return;
+        window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
+      });
+
+      /* Re-sync checkbox states when cloud bookmarks arrive. */
+      document.addEventListener('wa:bookmarks-synced', () => {
+        const store = window.WA.Bookmarks.get();
+        document.querySelectorAll('.bookmark__check').forEach(cb => {
+          cb.checked = !!(store[cb.dataset.id]);
+        });
+      });
+    }
   };
 
   const renderNotFound = () => {
@@ -155,34 +210,6 @@
     if (!curator) { renderNotFound(); return; }
 
     render(curator, picks);
-
-    /* Wire share button. */
-    const shareBtn = main.querySelector('#curator-share-btn');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-          shareBtn.textContent = 'Copied ✓';
-          setTimeout(() => { shareBtn.textContent = 'Share →'; }, 2000);
-        });
-      });
-    }
-
-    /* Wire bookmark toggles. */
-    if (window.WA.Bookmarks) {
-      document.addEventListener('change', (e) => {
-        const cb = e.target.closest('.bookmark__check');
-        if (!cb) return;
-        window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
-      });
-
-      /* Re-sync checkbox states when cloud bookmarks arrive. */
-      document.addEventListener('wa:bookmarks-synced', () => {
-        const store = window.WA.Bookmarks.get();
-        document.querySelectorAll('.bookmark__check').forEach(cb => {
-          cb.checked = !!(store[cb.dataset.id]);
-        });
-      });
-    }
   };
 
   document.addEventListener('wa:catalog-ready', init);
