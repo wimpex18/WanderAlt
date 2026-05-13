@@ -81,6 +81,7 @@
         <div class="curator-profile">
           <p class="curator-profile__handle">${curator.handle}</p>
           ${curator.tagline ? `<p class="curator-profile__tagline">${curator.tagline}</p>` : ''}
+          <button type="button" id="curator-share-btn" style="margin-top:var(--s-3);font-family:var(--ff-mono);font-size:11px;letter-spacing:0.06em;color:var(--c-ink-mute);background:none;border:1px solid var(--c-rule);border-radius:3px;padding:4px 10px;cursor:pointer;">Share &rarr;</button>
         </div>
 
         ${curator.bio ? `
@@ -104,6 +105,7 @@
                    </p>
                    <p class="list-row__meta">${buildMeta(e)}</p>
                    <p class="list-row__quote">&mdash; ${e.quote}</p>
+                   ${e.moodTags && e.moodTags.length ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${e.moodTags.map(t => `<span style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);">${t}</span>`).join('')}</p>` : ''}
                  </div>
                  <label class="bookmark">
                    <input type="checkbox" class="bookmark__check" data-id="${e.id}"
@@ -153,6 +155,17 @@
     if (!curator) { renderNotFound(); return; }
 
     render(curator, picks);
+
+    /* Wire share button. */
+    const shareBtn = main.querySelector('#curator-share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          shareBtn.textContent = 'Copied ✓';
+          setTimeout(() => { shareBtn.textContent = 'Share →'; }, 2000);
+        });
+      });
+    }
 
     /* Wire bookmark toggles. */
     if (window.WA.Bookmarks) {
