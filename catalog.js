@@ -29,20 +29,20 @@ window.WA.catalog = [
 
   /* ── Tonight hero ─────────────────────────────────────────── */
   {
-    id:            ‘ethics-of-failure’,
-    title:         ‘On the ethics of failure — a lecture’,
-    venue:         ‘Fotografiska’,
-    neighborhood:  ‘Vanalinn’,
-    kind:          ‘talk’,
-    day:           ‘Tonight’,
-    time:          ‘19:00’,
-    quote:         ‘That sharp essayist’s brain.’,
-    handle:        ‘@raul.reads’,
-    thumbInitials: ‘OE’,
+    id:            'ethics-of-failure',
+    title:         'On the ethics of failure — a lecture',
+    venue:         'Fotografiska',
+    neighborhood:  'Vanalinn',
+    kind:          'talk',
+    day:           'Tonight',
+    time:          '19:00',
+    quote:         "That sharp essayist's brain.",
+    handle:        '@raul.reads',
+    thumbInitials: 'OE',
     tonight:       true,
     thisWeek:      false,
-    moodTags:      [‘quiet’, ‘indoors’, ‘solo’, ‘ticketed’],
-    pin:           { num: 1, left: ‘58%’, top: ‘30%’, eyebrow: ‘Tonight’ },
+    moodTags:      ['quiet', 'indoors', 'solo', 'ticketed'],
+    pin:           { num: 1, left: '58%', top: '30%', eyebrow: 'Tonight' },
     world_x: 1060, world_y: 510
   },
 
