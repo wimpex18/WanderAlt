@@ -1,418 +1,415 @@
 /* ============================================================
-   WanderAlt — map sheet wiring + filter chips + drag-expand
-   ------------------------------------------------------------
-   Tap a pin → the bottom sheet swaps to that pin's content.
-   Pin payload is read from window.WA.catalog (catalog.js);
-   pin buttons in the HTML only need data-pin="N".
-
-   Selected state is driven by aria-pressed; CSS does the
-   visual work (accent fill on the selected pin).
-   The close button hides the sheet; tapping any pin re-opens.
-
-   Filter chips (All / Tonight / This week / Places) show and
-   hide pins by matching catalog flags: tonight, thisWeek,
-   and day===null (permanent places). The pos counter in the
-   sheet updates to reflect the filtered total.
-
-   Drag-expand: pointerdown on .map-sheet__handle lets the user
-   drag the sheet up (or tap the handle to toggle). Snaps to
-   either a peek height or 60 vh on release.
+   WanderAlt — Map page
+   Illustrated Tallinn map with pan/zoom, pin overlay,
+   two-row filter chips (time + category), bottom sheet
+   (mobile) and side panel (desktop), locate FAB.
    ============================================================ */
 (() => {
-  /* Build the meta string shown in the map sheet:
-     - Named-day events: venue · kind · Day HH:MM
-     - Tonight / permanent places: neighborhood · kind · time  */
-  const buildMeta = (entry) => {
-    const parts = (entry.day && entry.day !== 'Tonight')
-      ? [entry.venue, entry.kind, `${entry.day} ${entry.time}`]
-      : [entry.neighborhood, entry.kind, entry.time].filter(Boolean);
-    return parts.join(' · ');
-  };
+  const WORLD_W = 1800, WORLD_H = 1200;
+  const MIN_ZOOM = 0.28, MAX_ZOOM = 2.4;
 
-  const pad2 = (n) => String(n).padStart(2, '0');
+  // ── State ─────────────────────────────────────────────────────
+  let zoom = 0.5, tx = 0, ty = 0;
+  let drag = null, dragged = false;
+  let activeId = null;
+  let timeFilter = 'all';        // all | tonight | thisweek | places
+  let catFilters = new Set();    // set of category ids; empty = show all
+  let userLoc = null;            // { worldX, worldY } | null
+  let locStatus = 'off';         // off | locating | on | error
+  let userPuckEl = null;
 
-  /* Chip label → catalog predicate. Keys match textContent.toLowerCase(). */
-  const CHIP_PREDICATES = {
-    'all':       ()  => true,
-    'tonight':   (e) => !!e.tonight,
-    'this week': (e) => !!e.thisWeek,
-    'places':    (e) => !e.day,
-  };
+  // ── DOM refs (set in boot) ─────────────────────────────────────
+  let viewport, worldWrap, pinsEl, sheetEl, detailEl;
 
-  /* ── Walking-radius filter ─────────────────────────────────── */
-  const WALK_KM = 1.0;   /* ~12-min walk */
+  // ── Coordinate helpers ────────────────────────────────────────
+  const worldToScreen = (wx, wy) => ({
+    x: wx * zoom + tx,
+    y: wy * zoom + ty,
+  });
 
-  const haversineKm = (lat1, lng1, lat2, lng2) => {
-    const R = 6371;
-    const φ = (lat2 - lat1) * Math.PI / 180;
-    const λ = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(φ / 2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(λ / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
+  // ── Pan/Zoom ──────────────────────────────────────────────────
+  function applyTransform() {
+    worldWrap.style.transform = `translate(${tx}px,${ty}px) scale(${zoom})`;
+    positionPins();
+    if (userLoc) positionPuck();
+  }
 
-  let _venueCoords = null;   /* venue_key → {lat,lng}, loaded once */
-  let _userLat     = null;
-  let _userLng     = null;
+  function fitView() {
+    const rect = viewport.getBoundingClientRect();
+    const fitW = (rect.width  - 8) / WORLD_W;
+    const fitH = (rect.height - 8) / WORLD_H;
+    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min(fitW, fitH * 1.12)));
+    zoom = z;
+    tx = (rect.width  - WORLD_W * z) / 2;
+    ty = (rect.height - WORLD_H * z) / 2 - 24;
+    applyTransform();
+  }
 
-  /* Inject numbered pin buttons from catalog into .map-bleed.
-     Removes any static placeholder pins in the HTML first so the
-     live catalog is always the single source of truth.            */
-  const renderPins = (pinEntries) => {
-    const bleed = document.querySelector('.map-bleed');
-    if (!bleed) return;
+  function zoomAround(mx, my, nextZoom) {
+    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+    tx = mx - (mx - tx) * (z / zoom);
+    ty = my - (my - ty) * (z / zoom);
+    zoom = z;
+    applyTransform();
+  }
 
-    /* Clear static pins. */
-    bleed.querySelectorAll('.map-pin').forEach(p => p.remove());
-    if (!pinEntries.length) return;
+  function initPanZoom() {
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      zoomAround(e.clientX - rect.left, e.clientY - rect.top, zoom * Math.exp(-e.deltaY * 0.0014));
+    }, { passive: false });
 
-    const sheet = bleed.querySelector('.map-sheet');
-
-    pinEntries.forEach((entry, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'map-pin';
-      btn.type      = 'button';
-      btn.style.left = entry.pin.left;
-      btn.style.top  = entry.pin.top;
-      btn.setAttribute('aria-label', `Pin ${entry.pin.num}: ${entry.title}`);
-      btn.setAttribute('data-pin',   String(entry.pin.num));
-      if (i === 0) btn.setAttribute('aria-pressed', 'true');
-      btn.innerHTML =
-        `<svg width="28" height="36" viewBox="0 0 28 36" aria-hidden="true">
-           <path d="M14 1 C 5 1 1 8 1 14 C 1 22 14 35 14 35 C 14 35 27 22 27 14 C 27 8 23 1 14 1 Z"
-                 stroke-width="1.2" stroke-linejoin="round" />
-           <text x="14" y="18" text-anchor="middle"
-                 font-family="'JetBrains Mono', monospace" font-size="11"
-                 font-weight="600">${entry.pin.num}</text>
-         </svg>`;
-      /* Insert before the sheet so pins sit beneath it in stacking order. */
-      bleed.insertBefore(btn, sheet || null);
+    viewport.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      drag = { x: e.clientX, y: e.clientY, tx, ty };
+      dragged = false;
+      viewport.setPointerCapture(e.pointerId);
     });
+    viewport.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!dragged && Math.hypot(dx, dy) > 5) dragged = true;
+      tx = drag.tx + dx;
+      ty = drag.ty + dy;
+      applyTransform();
+    });
+    viewport.addEventListener('pointerup', () => { drag = null; });
+
+    // touch pinch-zoom
+    let tc = null;
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        const r = viewport.getBoundingClientRect();
+        tc = {
+          dist: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY),
+          zoom,
+          mx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left,
+          my: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top,
+        };
+      }
+    }, { passive: true });
+    viewport.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && tc) {
+        e.preventDefault();
+        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        zoomAround(tc.mx, tc.my, tc.zoom * (d / tc.dist));
+      }
+    }, { passive: false });
+    viewport.addEventListener('touchend', () => { tc = null; });
+  }
+
+  // ── Zoom controls ─────────────────────────────────────────────
+  function initZoomControls() {
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+      const r = viewport.getBoundingClientRect();
+      zoomAround(r.width / 2, r.height / 2, zoom * 1.35);
+    });
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+      const r = viewport.getBoundingClientRect();
+      zoomAround(r.width / 2, r.height / 2, zoom / 1.35);
+    });
+    document.getElementById('btn-zoom-fit')?.addEventListener('click', fitView);
+  }
+
+  // ── Kind normalisation ────────────────────────────────────────
+  const KIND_MAP = {
+    'gig': 'music', 'club': 'music', 'noise': 'music',
+    'talk': 'culture', 'lecture': 'culture', 'exhibition': 'culture', 'gallery': 'culture',
+    'record store': 'vinyl', 'bookshop': 'vinyl',
+    'thrift': 'market',
+  };
+  function normaliseKind(k) { return KIND_MAP[k] || k; }
+
+  // ── Filters ───────────────────────────────────────────────────
+  function getVisibleEntries() {
+    return (window.WA?.catalog || []).filter(e => {
+      if (!e.world_x || !e.world_y) return false;
+      if (timeFilter === 'tonight'  && !e.tonight) return false;
+      if (timeFilter === 'thisweek' && !e.thisWeek && !e.tonight) return false;
+      if (timeFilter === 'places'   && e.day) return false;
+      if (catFilters.size > 0 && !catFilters.has(normaliseKind(e.kind))) return false;
+      return true;
+    });
+  }
+
+  function renderTimeChips() {
+    const row = document.querySelector('.map-filter-time');
+    if (!row) return;
+    const chips = [
+      { id: 'all',      label: 'All' },
+      { id: 'tonight',  label: 'Tonight' },
+      { id: 'thisweek', label: 'This week' },
+      { id: 'places',   label: 'Places' },
+    ];
+    row.innerHTML = chips.map(c =>
+      `<button class="m-chip${timeFilter === c.id ? ' m-chip--on' : ''}" data-time="${c.id}" type="button">${c.label}</button>`
+    ).join('');
+    row.querySelectorAll('[data-time]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        timeFilter = btn.dataset.time;
+        renderTimeChips();
+        renderPins();
+      });
+    });
+  }
+
+  function renderCatChips() {
+    const row = document.querySelector('.map-filter-cat');
+    if (!row) return;
+    const cats = window.WA?.MAP_CATEGORIES || [];
+    const catC = window.WA?.MAP_CAT || {};
+    row.innerHTML = cats.map(cat => {
+      const on = catFilters.has(cat.id);
+      const c  = catC[cat.id];
+      return `<button class="m-chip map-cat-chip${on ? ' m-chip--cat-on' : ''}" data-cat="${cat.id}" type="button"
+        style="${on ? `background:${c?.bg||'#333'};color:#fff;border-color:${c?.bg||'#333'}` : ''}"
+      >${cat.label}</button>`;
+    }).join('');
+    row.querySelectorAll('[data-cat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.cat;
+        catFilters.has(id) ? catFilters.delete(id) : catFilters.add(id);
+        renderCatChips();
+        renderPins();
+      });
+    });
+  }
+
+  // ── Pins ──────────────────────────────────────────────────────
+  const PIN_ICONS = {
+    music:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><line x1="4" y1="13" x2="4" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="14" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="14" x2="12" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="13" x2="16" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    drink:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><path d="M5 6h10l-1.4 9a2 2 0 01-2 1.6h-3.2a2 2 0 01-2-1.6L5 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.5 9h7" stroke="currentColor" stroke-width="1.2"/></svg>`,
+    vinyl:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="0.8" fill="currentColor"/></svg>`,
+    market:  `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><path d="M3 7h14l-1 2v6a1 1 0 01-1 1H5a1 1 0 01-1-1V9L3 7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M4 7l1.5-3h9L16 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+    culture: `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><rect x="3" y="4" width="14" height="11" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9" r="2" stroke="currentColor" stroke-width="1.3"/></svg>`,
+    art:     `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><rect x="6" y="3" width="8" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="8" x2="10" y2="11" stroke="currentColor" stroke-width="1.5"/><path d="M6 11h8l-1 6a1 1 0 01-1 1H8a1 1 0 01-1-1l-1-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
   };
 
-  const init = () => {
-    const catalog    = (window.WA && window.WA.catalog) || [];
-    /* Sort by pin number so pin 1 is always the default selection. */
-    const pinEntries = catalog.filter(e => e.pin)
-                              .sort((a, b) => a.pin.num - b.pin.num);
+  function pinHTML(entry) {
+    const kind = normaliseKind(entry.kind);
+    const catC = window.WA?.MAP_CAT || {};
+    const c = catC[kind] || { bg: '#333', fg: '#fff' };
+    const active = entry.id === activeId;
+    const num = entry.pin?.num ?? '';
+    return `<button class="map-pin-new${active ? ' map-pin-new--active' : ''}"
+      data-id="${entry.id}" type="button"
+      aria-label="${entry.title}" aria-pressed="${active}"
+      style="left:0;top:0;--pin-bg:${c.bg};--pin-fg:${c.fg}">
+      <span class="map-pin-new__tail"></span>
+      <span class="map-pin-new__circle">
+        <span class="map-pin-new__icon">${PIN_ICONS[kind] || ''}</span>
+      </span>
+      ${num !== '' ? `<span class="map-pin-new__badge">${num}</span>` : ''}
+    </button>`;
+  }
 
-    /* Render dynamic pins before querying the DOM for them. */
-    renderPins(pinEntries);
-
-    /* The SVG neighborhood labels (KALAMAJA, VANALINN, etc.) are
-       baked in as Tallinn-specific text. Hide them for other cities
-       so the abstract cartography reads as a generic city plane.   */
-    if ((window.WA && window.WA.CITY) !== 'tallinn') {
-      document.querySelectorAll('.map-plane text').forEach(t => { t.style.display = 'none'; });
-    }
-
-    const pins       = Array.from(document.querySelectorAll('.map-pin[data-pin]'));
-    const sheet      = document.querySelector('.map-sheet');
-    if (!pins.length || !sheet) return;
-
-    /* visibleTotal tracks the count after the active chip filter.
-       Starts at all pins; updated by wireChips. */
-    let visibleTotal = pinEntries.length;
-
-    const elNum     = sheet.querySelector('.map-sheet__num');
-    const elPos     = sheet.querySelector('.map-sheet__pos');
-    const elEyebrow = sheet.querySelector('.eyebrow');
-    const elTitle   = sheet.querySelector('.map-sheet__title');
-    const elMeta    = sheet.querySelector('.meta');
-    const elQuote   = sheet.querySelector('.map-sheet__quote');
-    const elCta     = sheet.querySelector('.map-sheet__cta');
-    const elBm      = sheet.querySelector('.map-sheet__bookmark');
-    const closeBtn  = sheet.querySelector('.map-sheet__close');
-    const handle    = sheet.querySelector('.map-sheet__handle');
-
-    const curatorLink = (entry) => {
-      const href = `curator.html?handle=${encodeURIComponent(entry.handle)}`;
-      return `<a class="handle" href="${href}">${entry.handle}</a>`;
-    };
-
-    const select = (pin) => {
-      const n     = Number(pin.dataset.pin);
-      const entry = pinEntries.find(e => e.pin.num === n);
+  function positionPins() {
+    if (!pinsEl) return;
+    const catalog = window.WA?.catalog || [];
+    pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
+      const entry = catalog.find(e => e.id === btn.dataset.id);
       if (!entry) return;
+      const s = worldToScreen(entry.world_x, entry.world_y);
+      btn.style.left = `${s.x}px`;
+      btn.style.top  = `${s.y}px`;
+    });
+  }
 
-      pins.forEach(p => p.removeAttribute('aria-pressed'));
-      pin.setAttribute('aria-pressed', 'true');
-
-      if (elNum)     elNum.textContent     = String(n);
-      if (elEyebrow) elEyebrow.textContent = entry.pin.eyebrow;
-      if (elTitle)   elTitle.innerHTML      = `<a href="venue.html?id=${entry.id}">${entry.title}</a>`;
-      if (elMeta)    elMeta.textContent    = buildMeta(entry);
-
-      if (elPos) {
-        elPos.innerHTML = `<strong>${pad2(n)}</strong> &thinsp;/&thinsp; ${pad2(visibleTotal)}`;
-        elPos.setAttribute('aria-label', `Pin ${n} of ${visibleTotal}`);
-      }
-
-      if (elQuote) {
-        elQuote.innerHTML = `— ${entry.quote} ${curatorLink(entry)}`;
-      }
-
-      if (elCta) {
-        elCta.href = `venue.html?id=${encodeURIComponent(entry.id)}`;
-      }
-
-      if (elBm) {
-        elBm.dataset.id = entry.id;
-        elBm.setAttribute('aria-label', `Bookmark: ${entry.title}`);
-        elBm.checked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[entry.id]);
-      }
-
-      sheet.hidden = false;
-      collapseToPeek();
-    };
-
-    /* Track active filter states so both chip and mood filters compose. */
-    let activeChipPred = () => true;
-    let activeMoodTags = [];
-
-    /* Recompute which pins are visible given the current chip + mood state. */
-    const applyVisibility = () => {
-      const visible = new Set(
-        pinEntries
-          .filter(e => activeChipPred(e))
-          .filter(e => !activeMoodTags.length ||
-                       activeMoodTags.every(tag => e.moodTags && e.moodTags.includes(tag)))
-          .map(e => e.pin.num)
-      );
-
-      pins.forEach(pin => { pin.hidden = !visible.has(Number(pin.dataset.pin)); });
-      visibleTotal = visible.size;
-
-      /* If selected pin was hidden, jump to first visible or close sheet. */
-      const pressed = pins.find(p => p.getAttribute('aria-pressed') === 'true');
-      if (!pressed || pressed.hidden) {
-        const first = pins.find(p => !p.hidden);
-        if (first) select(first);
-        else {
-          sheet.hidden = true;
-          pins.forEach(p => p.removeAttribute('aria-pressed'));
+  function renderPins() {
+    if (!pinsEl) return;
+    pinsEl.innerHTML = getVisibleEntries().map(pinHTML).join('');
+    positionPins();
+    pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
+      btn.addEventListener('pointerdown', e => e.stopPropagation());
+      btn.addEventListener('click', () => {
+        if (dragged) return;
+        const id = btn.dataset.id;
+        activeId = (activeId === id) ? null : id;
+        renderPins();
+        if (activeId) {
+          const entry = (window.WA?.catalog || []).find(e => e.id === activeId);
+          if (entry) openDetail(entry);
+        } else {
+          closeDetail();
         }
-      } else {
-        select(pressed); /* re-render pos counter with new total */
-      }
-    };
+      });
+    });
+  }
 
-    /* Async handler for the Nearby chip.
-       1. Requests geolocation (cached after first use).
-       2. Fetches venue_details lat/lng for this city (cached after first use).
-       3. Sets the predicate to Haversine ≤ WALK_KM and re-applies visibility.
-       Falls back to "All" silently if location is denied or unavailable. */
-    const activateNearby = async (chip, chips) => {
-      if (!navigator.geolocation) {
-        chips.forEach(c => c.classList.remove('m-chip--on'));
-        const allChip = chips.find(c => c.textContent.trim().toLowerCase() === 'all');
-        if (allChip) allChip.classList.add('m-chip--on');
-        activeChipPred = () => true;
-        applyVisibility();
+  // ── User location puck ────────────────────────────────────────
+  function positionPuck() {
+    if (!userPuckEl || !userLoc) return;
+    const s = worldToScreen(userLoc.worldX, userLoc.worldY);
+    userPuckEl.style.left = `${s.x}px`;
+    userPuckEl.style.top  = `${s.y}px`;
+  }
+
+  function showPuck() {
+    if (!userPuckEl) {
+      userPuckEl = document.createElement('div');
+      userPuckEl.className = 'map-user-puck';
+      userPuckEl.innerHTML = `<span class="map-user-puck__pulse"></span><span class="map-user-puck__halo"></span><span class="map-user-puck__dot"></span>`;
+      pinsEl.appendChild(userPuckEl);
+    }
+    userPuckEl.hidden = false;
+    positionPuck();
+  }
+
+  // ── Locate FAB ────────────────────────────────────────────────
+  function initLocate() {
+    const btn = document.getElementById('btn-locate');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      if (locStatus === 'on') {
+        locStatus = 'off'; userLoc = null;
+        if (userPuckEl) userPuckEl.hidden = true;
+        btn.classList.remove('map-locate-fab--on', 'map-locate-fab--locating');
         return;
       }
+      if (!navigator.geolocation) return;
+      locStatus = 'locating';
+      btn.classList.add('map-locate-fab--locating');
+      navigator.geolocation.getCurrentPosition(pos => {
+        const w = (window.WA?.geoToWorld || (() => ({ x: 1030, y: 580 })))(pos.coords.latitude, pos.coords.longitude);
+        userLoc = { worldX: Math.max(20, Math.min(WORLD_W-20, w.x)), worldY: Math.max(20, Math.min(WORLD_H-20, w.y)) };
+        locStatus = 'on';
+        btn.classList.remove('map-locate-fab--locating');
+        btn.classList.add('map-locate-fab--on');
+        showPuck();
+        const rect = viewport.getBoundingClientRect();
+        const s = worldToScreen(userLoc.worldX, userLoc.worldY);
+        tx += rect.width / 2 - s.x;
+        ty += rect.height / 2 - s.y;
+        applyTransform();
+      }, () => {
+        locStatus = 'error';
+        btn.classList.remove('map-locate-fab--locating');
+      }, { enableHighAccuracy: true, timeout: 8000 });
+    });
+  }
 
-      if (!_userLat) chip.textContent = 'Locating…';
+  // ── Detail sheet / panel ──────────────────────────────────────
+  function detailHTML(entry) {
+    const kind = normaliseKind(entry.kind);
+    const catC = window.WA?.MAP_CAT || {};
+    const c = catC[kind] || { bg:'#444', fg:'#fff', label: entry.kind };
+    const eyebrow = entry.pin?.eyebrow || c.label || '';
+    const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
+    const img = entry.imageUrl
+      ? `<img src="${entry.imageUrl}" alt="" class="map-detail__img" loading="lazy"/>`
+      : `<div class="map-detail__img-ph" style="--ph-bg:${c.bg}"></div>`;
+    const q = entry.quote
+      ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
+      : '';
+    return `<div class="map-detail__head">
+        <span class="map-detail__eyebrow">${eyebrow}</span>
+        <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
+      </div>
+      <h2 class="map-detail__title"><a href="venue.html?id=${entry.id}">${entry.title}</a></h2>
+      <p class="meta">${meta}</p>
+      <div class="map-detail__media">${img}</div>
+      ${q}
+      <div class="map-detail__foot">
+        <a class="btn-primary map-detail__cta" href="venue.html?id=${entry.id}">I&rsquo;m going &rarr;</a>
+        <label class="btn-secondary bookmark">
+          <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save"/>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>
+          Save
+        </label>
+      </div>`;
+  }
 
-      try {
-        if (!_userLat) {
-          const pos = await new Promise((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject,
-              { timeout: 8000, maximumAge: 60000 })
-          );
-          _userLat = pos.coords.latitude;
-          _userLng = pos.coords.longitude;
-        }
+  function syncBookmarks(root) {
+    if (!window.WA?.bookmarks?.isBookmarked) return;
+    root.querySelectorAll('.bookmark__check').forEach(cb => {
+      cb.checked = WA.bookmarks.isBookmarked(cb.dataset.id);
+    });
+  }
 
-        if (!_venueCoords) {
-          const res = await fetch(
-            `${window.WA.BASE_URL}/rest/v1/venue_details` +
-            `?city=eq.${(window.WA.CITY || 'tallinn')}&select=venue_key,lat,lng`,
-            { headers: { apikey: window.WA.ANON_KEY, Authorization: `Bearer ${window.WA.ANON_KEY}` } }
-          );
-          const rows = await res.json();
-          _venueCoords = Object.fromEntries(
-            rows.filter(r => r.lat && r.lng)
-                .map(r => [r.venue_key, { lat: +r.lat, lng: +r.lng }])
-          );
-        }
-
-        chip.textContent = 'Nearby';
-        activeChipPred = (entry) => {
-          const c = _venueCoords[entry.venue.toLowerCase()];
-          return !!c && haversineKm(_userLat, _userLng, c.lat, c.lng) <= WALK_KM;
-        };
-        applyVisibility();
-
-      } catch {
-        chip.textContent = 'Nearby';
-        chips.forEach(c => c.classList.remove('m-chip--on'));
-        const allChip = chips.find(c => c.textContent.trim().toLowerCase() === 'all');
-        if (allChip) allChip.classList.add('m-chip--on');
-        activeChipPred = () => true;
-        applyVisibility();
-      }
-    };
-
-    const wireChips = () => {
-      /* Scope to .map-filters only — mood chips (.mood-chips) are separate. */
-      const chips = Array.from(document.querySelectorAll('.map-filters .m-chip'));
-      if (!chips.length) return;
-
-      chips.forEach(chip => {
-        chip.addEventListener('click', () => {
-          chips.forEach(c => c.classList.remove('m-chip--on'));
-          chip.classList.add('m-chip--on');
-
-          const label = chip.textContent.trim().toLowerCase();
-          if (label === 'nearby') { activateNearby(chip, chips); return; }
-          activeChipPred = CHIP_PREDICATES[label] || (() => true);
-          applyVisibility();
-        });
+  function openDetail(entry) {
+    const html = detailHTML(entry);
+    const isDesktop = window.matchMedia('(min-width:768px)').matches;
+    if (isDesktop) {
+      detailEl.innerHTML = html;
+      detailEl.hidden = false;
+      sheetEl.hidden = true;
+      syncBookmarks(detailEl);
+    } else {
+      sheetEl.innerHTML = `<div class="map-sheet__handle" aria-hidden="true"></div>${html}`;
+      sheetEl.hidden = false;
+      detailEl.hidden = true;
+      syncBookmarks(sheetEl);
+      initSheetDrag();
+    }
+    document.getElementById('detail-close')?.addEventListener('click', () => {
+      closeDetail(); activeId = null; renderPins();
+    });
+    [sheetEl, detailEl].forEach(el => {
+      el.addEventListener('change', e => {
+        const cb = e.target.closest('.bookmark__check');
+        if (!cb || !window.WA?.bookmarks) return;
+        cb.checked ? WA.bookmarks.add(cb.dataset.id) : WA.bookmarks.remove(cb.dataset.id);
       });
-    };
+    });
+  }
 
-    /* Mood filter: responds to wa:mood-changed from mood-chips.js */
-    document.addEventListener('wa:mood-changed', (e) => {
-      activeMoodTags = e.detail.tags;
-      applyVisibility();
+  function closeDetail() {
+    sheetEl.hidden = true;
+    detailEl.hidden = true;
+    sheetEl.style.transform = '';
+  }
+
+  function initSheetDrag() {
+    const handle = sheetEl.querySelector('.map-sheet__handle');
+    if (!handle) return;
+    let startY = null;
+    handle.addEventListener('pointerdown', e => { startY = e.clientY; handle.setPointerCapture(e.pointerId); });
+    handle.addEventListener('pointermove', e => {
+      if (startY == null) return;
+      const dy = e.clientY - startY;
+      if (dy > 0) sheetEl.style.transform = `translateY(${dy}px)`;
+    });
+    handle.addEventListener('pointerup', e => {
+      const dy = e.clientY - startY;
+      sheetEl.style.transform = '';
+      startY = null;
+      if (dy > 80) { closeDetail(); activeId = null; renderPins(); }
+    });
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────
+  function boot() {
+    viewport  = document.getElementById('map-viewport');
+    worldWrap = document.getElementById('map-world-wrap');
+    pinsEl    = document.getElementById('map-pins');
+    sheetEl   = document.getElementById('map-sheet');
+    detailEl  = document.getElementById('map-detail');
+    if (!viewport || !worldWrap || !pinsEl) return;
+
+    // Inject illustrated SVG world
+    if (window.WA?.mapWorldSVG) worldWrap.innerHTML = WA.mapWorldSVG();
+
+    initPanZoom();
+    initZoomControls();
+    initLocate();
+
+    document.addEventListener('wa:bookmarks-synced', () => {
+      syncBookmarks(sheetEl); syncBookmarks(detailEl);
     });
 
-    /* ── Drag-expand ─────────────────────────────────────────
-       Drag the sheet handle to reveal more of the sheet.
-       Tapping (no drag) the handle toggles peek ↔ expand.    */
+    renderTimeChips();
+    renderCatChips();
 
-    let dragStartY   = 0;
-    let dragStartH   = 0;
-    let isDragging   = false;
-    const SNAP_DELTA = 48;   /* px drag needed to commit to expand */
-
-    const peekHeight  = () => {
-      /* Natural height from CSS — measured before any inline style. */
-      const style = sheet.style.height;
-      sheet.style.height = '';
-      const h = sheet.getBoundingClientRect().height;
-      if (style) sheet.style.height = style;
-      return h;
-    };
-    const expandHeight = () => Math.round(window.innerHeight * 0.60);
-
-    let _peekH = null;
-    const getPeekH = () => {
-      if (!_peekH) _peekH = peekHeight();
-      return _peekH;
-    };
-
-    const collapseToPeek = () => {
-      _peekH = null;   /* re-measure after content changes */
-      sheet.style.transition = 'height 280ms cubic-bezier(0.4, 0, 0.2, 1)';
-      sheet.style.height     = '';
-      sheet.style.overflowY  = '';
-      sheet.dataset.expanded = 'false';
-    };
-
-    const expandSheet = () => {
-      const h = expandHeight();
-      sheet.style.transition = 'height 280ms cubic-bezier(0.4, 0, 0.2, 1)';
-      sheet.style.height     = `${h}px`;
-      sheet.style.overflowY  = 'auto';
-      sheet.dataset.expanded = 'true';
-    };
-
-    const toggleExpand = () => {
-      if (sheet.dataset.expanded === 'true') collapseToPeek();
-      else                                   expandSheet();
-    };
-
-    if (handle) {
-      handle.style.cursor = 'grab';
-
-      handle.addEventListener('pointerdown', (e) => {
-        dragStartY  = e.clientY;
-        dragStartH  = sheet.getBoundingClientRect().height;
-        isDragging  = false;
-        handle.style.cursor = 'grabbing';
-        handle.setPointerCapture(e.pointerId);
-
-        /* Disable transition during live drag. */
-        sheet.style.transition = 'none';
-      });
-
-      handle.addEventListener('pointermove', (e) => {
-        const delta = dragStartY - e.clientY;   /* positive = dragging up */
-        if (Math.abs(delta) < 4) return;
-        isDragging = true;
-
-        const min = getPeekH() * 0.4;
-        const max = expandHeight();
-        const h   = Math.min(max, Math.max(min, dragStartH + delta));
-        sheet.style.height = `${h}px`;
-        if (h > getPeekH()) sheet.style.overflowY = 'auto';
-        else                 sheet.style.overflowY = '';
-      });
-
-      const endDrag = (e) => {
-        handle.style.cursor = 'grab';
-        const delta = dragStartY - e.clientY;
-
-        if (!isDragging) {
-          /* Pure tap — toggle. */
-          toggleExpand();
-        } else if (delta > SNAP_DELTA) {
-          expandSheet();
-        } else if (delta < -SNAP_DELTA) {
-          collapseToPeek();
-        } else {
-          /* Small drag — snap back to whichever is closer. */
-          const midpoint = (getPeekH() + expandHeight()) / 2;
-          if (sheet.getBoundingClientRect().height > midpoint) expandSheet();
-          else collapseToPeek();
-        }
-        isDragging = false;
-      };
-
-      handle.addEventListener('pointerup',     endDrag);
-      handle.addEventListener('pointercancel', () => {
-        isDragging = false;
-        collapseToPeek();
-        handle.style.cursor = 'grab';
-      });
+    function onCatalogReady() {
+      renderPins();
+      fitView();
     }
 
-    pins.forEach(pin => pin.addEventListener('click', () => select(pin)));
+    if (window.WA?.catalog?.length) onCatalogReady();
+    document.addEventListener('wa:catalog-ready', onCatalogReady);
+  }
 
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        sheet.hidden = true;
-        pins.forEach(p => p.removeAttribute('aria-pressed'));
-      });
-    }
-
-    wireChips();
-
-    /* Bookmark toggle in the sheet foot. */
-    if (elBm && window.WA.Bookmarks) {
-      elBm.addEventListener('change', () => {
-        window.WA.Bookmarks.set(elBm.dataset.id, elBm.checked);
-      });
-      /* Keep checkbox in sync when bookmarks change from another source. */
-      document.addEventListener('wa:bookmarks-synced', () => {
-        const pressed = pins.find(p => p.getAttribute('aria-pressed') === 'true');
-        if (!pressed) return;
-        const n = Number(pressed.dataset.pin);
-        const entry = pinEntries.find(e => e.pin.num === n);
-        if (entry && elBm) {
-          elBm.checked = !!(window.WA.Bookmarks.get()[entry.id]);
-        }
-      });
-    }
-
-    /* Auto-select whichever pin is marked pressed in the HTML
-       (pin 1 by default) to populate the sheet from catalog. */
-    const initial = pins.find(p => p.getAttribute('aria-pressed') === 'true');
-    if (initial) select(initial);
-  };
-
-  document.addEventListener('wa:catalog-ready', init);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

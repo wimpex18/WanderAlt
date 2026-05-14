@@ -42,7 +42,8 @@ window.WA.catalog = [
     tonight:       true,
     thisWeek:      false,
     moodTags:      [‘quiet’, ‘indoors’, ‘solo’, ‘ticketed’],
-    pin:           { num: 1, left: ‘58%’, top: ‘30%’, eyebrow: ‘Tonight’ }
+    pin:           { num: 1, left: ‘58%’, top: ‘30%’, eyebrow: ‘Tonight’ },
+    world_x: 1060, world_y: 510
   },
 
   /* ── This week ────────────────────────────────────────────── */
@@ -60,7 +61,8 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ['loud', 'social', 'ticketed'],
-    pin:           { num: 3, left: '22%', top: '58%', eyebrow: 'Fri' }
+    pin:           { num: 3, left: '22%', top: '58%', eyebrow: 'Fri' },
+    world_x: 245,  world_y: 685
   },
   {
     id:            'marge-monko-soft-power',
@@ -76,7 +78,8 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ['quiet', 'indoors', 'solo', 'walk-up'],
-    pin:           { num: 4, left: '72%', top: '52%', eyebrow: 'Sat' }
+    pin:           { num: 4, left: '72%', top: '52%', eyebrow: 'Sat' },
+    world_x: 690,  world_y: 330
   },
   {
     id:            'uus-laine',
@@ -110,7 +113,8 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ['quiet', 'indoors', 'solo', 'walk-up'],
-    pin:           { num: 5, left: '46%', top: '70%', eyebrow: 'Place' }
+    pin:           { num: 5, left: '46%', top: '70%', eyebrow: 'Place' },
+    world_x: 650,  world_y: 480
   },
   {
     id:            'vota-voi-jata',
@@ -126,7 +130,8 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ['quiet', 'indoors', 'solo', 'walk-up'],
-    pin:           { num: 6, left: '64%', top: '76%', eyebrow: 'Place' }
+    pin:           { num: 6, left: '64%', top: '76%', eyebrow: 'Place' },
+    world_x: 780,  world_y: 760
   },
   {
     id:            'koogi-galerii',
@@ -142,7 +147,8 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ['quiet', 'indoors', 'solo', 'walk-up'],
-    pin:           { num: 7, left: '28%', top: '22%', eyebrow: 'Place' }
+    pin:           { num: 7, left: '28%', top: '22%', eyebrow: 'Place' },
+    world_x: 620,  world_y: 600
   },
 
   /* ── Reading / saved (no Briefing or map presence yet) ───── */

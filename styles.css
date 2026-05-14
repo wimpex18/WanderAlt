@@ -2610,3 +2610,368 @@ a.handle:hover { color: var(--c-ink); }
   0%   { opacity: 0.5; transform: scale(1); }
   100% { opacity: 0; transform: scale(2.5); }
 }
+
+/* ============================================================
+   ILLUSTRATED MAP — new pan/zoom components
+   Scoped to body[data-page="map"]. Overrides old .map-bleed
+   sizing where needed; old map-pin/map-sheet tokens preserved
+   for graceful fallback.
+   ============================================================ */
+
+/* Two filter rows — stack above the viewport */
+.map-filter-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: var(--s-2);
+  padding: 0 var(--s-4);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  z-index: 4;
+  pointer-events: none;
+}
+.map-filter-row > * { pointer-events: auto; }
+.map-filter-row::-webkit-scrollbar { display: none; }
+.map-filter-time { top: 10px; }
+.map-filter-cat  { top: 50px; }
+
+/* Pannable viewport fills the bleed section */
+.map-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  background: oklch(0.88 0.018 210);   /* sea colour as bg */
+}
+.map-viewport:active { cursor: grabbing; }
+
+/* World wrap — only element that receives CSS transform */
+.map-world-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;   /* SVG itself is decorative */
+}
+.map-world-wrap svg { display: block; }
+
+/* Pin overlay — screen-space, not transformed */
+.map-pins {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ── Illustrated pin marker ───────────────────────────────── */
+.map-pin-new {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: 40px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+  transition: filter 140ms ease, transform 140ms ease;
+  z-index: 1;
+}
+.map-pin-new--active {
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
+  transform: translate(-50%, -100%) scale(1.12);
+  z-index: 2;
+}
+.map-pin-new__tail {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--pin-bg, #333);
+}
+.map-pin-new__circle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pin-bg, #333);
+  border: 1.8px solid rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pin-fg, #fff);
+}
+.map-pin-new__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pin-fg, #fff);
+}
+.map-pin-new__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.45);
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ── Category chip override (coloured active state) ─────── */
+.map-cat-chip { transition: background 140ms ease, color 140ms ease, border-color 140ms ease; }
+
+/* ── Zoom controls ─────────────────────────────────────────── */
+.map-zoom-ctrl {
+  position: absolute;
+  right: var(--s-4);
+  bottom: calc(var(--s-7) + 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 8;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+}
+.map-zoom-btn {
+  width: 36px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-body);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--c-ink);
+  background: var(--c-paper);
+  border: none;
+  border-top: 1px solid var(--c-rule);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.map-zoom-btn:first-child { border-top: none; }
+.map-zoom-btn:hover { background: var(--c-paper-deep); }
+.map-zoom-btn--fit { font-size: 14px; border-top: 1px solid var(--c-rule); }
+
+/* ── Locate FAB ─────────────────────────────────────────────── */
+.map-locate-fab {
+  position: absolute;
+  right: var(--s-4);
+  bottom: var(--s-7);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 8;
+  color: var(--c-ink-mute);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.map-locate-fab--on    { color: #8a2a1a; border-color: #8a2a1a; }
+.map-locate-fab--locating { color: var(--c-ink-mute); animation: wa-pulse 1s ease infinite; }
+
+/* ── Mobile bottom sheet (detail) ──────────────────────────── */
+.map-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--c-paper);
+  border-top: 1px solid var(--c-rule);
+  border-radius: 12px 12px 0 0;
+  padding: 0 var(--s-4) var(--s-5);
+  z-index: 20;
+  max-height: 55vh;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 220ms ease;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
+  will-change: transform;
+}
+
+/* ── Desktop side panel ─────────────────────────────────────── */
+.map-detail {
+  position: absolute;
+  top: 96px;
+  right: var(--s-4);
+  width: 320px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule);
+  border-radius: 8px;
+  padding: var(--s-4);
+  z-index: 20;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.10);
+  max-height: calc(100% - 112px);
+  overflow-y: auto;
+}
+
+/* Shared detail content styles */
+.map-detail__head,
+.map-sheet .map-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+  padding-top: var(--s-3);
+}
+.map-detail__eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  font-weight: 500;
+}
+.map-detail__close {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--c-rule);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.map-detail__close:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.map-detail__title {
+  font-family: var(--ff-body);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 var(--s-1);
+  color: var(--c-ink);
+}
+.map-detail__title a { color: inherit; }
+.map-detail__title a:hover { color: #8a2a1a; }
+.map-detail__media { margin: var(--s-3) 0; }
+.map-detail__img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+.map-detail__img-ph {
+  width: 100%;
+  height: 100px;
+  border-radius: 4px;
+  background: var(--ph-bg, #8a2a1a);
+  opacity: 0.18;
+}
+.map-detail__quote {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--c-ink-soft);
+  margin: var(--s-3) 0;
+  padding-left: var(--s-3);
+  border-left: 3px solid #8a2a1a;
+}
+.map-detail__quote cite {
+  display: block;
+  font-style: normal;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #8a2a1a;
+  margin-top: var(--s-2);
+}
+.map-detail__foot {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+.map-detail__cta { flex: 1; text-align: center; padding: 10px 0; font-size: 13px; }
+
+/* ── Mobile sheet handle ────────────────────────────────────── */
+.map-sheet .map-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-rule-strong);
+  margin: var(--s-2) auto var(--s-1);
+  cursor: ns-resize;
+}
+
+/* ── User location puck ─────────────────────────────────────── */
+.map-user-puck {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 7;
+  width: 30px;
+  height: 30px;
+}
+.map-user-puck__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: oklch(0.62 0.18 245);
+  opacity: 0.32;
+  animation: wa-loc-pulse 2.2s ease-out infinite;
+}
+.map-user-puck__halo {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+}
+.map-user-puck__dot {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: oklch(0.55 0.2 245);
+  border: 2px solid #fff;
+}
+@keyframes wa-loc-pulse {
+  0%   { transform: scale(1);   opacity: 0.32; }
+  70%  { transform: scale(2.5); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Desktop layout overrides */
+@media (min-width: 768px) {
+  .map-sheet { display: none; }
+  .map-detail { display: block; }
+  .map-bleed {
+    height: calc(100vh - 56px);
+    margin: 0 calc(-1 * var(--gutter));
+  }
+}
