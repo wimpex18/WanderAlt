@@ -36,12 +36,18 @@
 
   function fitView() {
     const rect = viewport.getBoundingClientRect();
-    const fitW = (rect.width  - 8) / WORLD_W;
-    const fitH = (rect.height - 8) / WORLD_H;
-    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min(fitW, fitH * 1.12)));
+    const fitW = rect.width  / WORLD_W;
+    const fitH = rect.height / WORLD_H;
+    // Mobile: zoom up so districts read at a usable scale (pan reveals the rest).
+    // Desktop: fit the whole island in view.
+    const isWide = rect.width >= 768;
+    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
+      isWide ? Math.min(fitW * 0.94, fitH * 1.05)
+             : Math.min(fitW * 1.55, fitH * 1.10)));
     zoom = z;
-    tx = (rect.width  - WORLD_W * z) / 2;
-    ty = (rect.height - WORLD_H * z) / 2 - 24;
+    // Centre on Old Town (~900, 580 in world units) — most interesting district.
+    tx = (rect.width  / 2) - 900 * z;
+    ty = (rect.height / 2) - 580 * z;
     applyTransform();
   }
 
@@ -330,6 +336,7 @@
   function openDetail(entry) {
     const html = detailHTML(entry);
     const isDesktop = window.matchMedia('(min-width:768px)').matches;
+    document.body.classList.add('map-detail-open');
     if (isDesktop) {
       detailEl.innerHTML = html;
       detailEl.hidden = false;
@@ -358,6 +365,7 @@
     sheetEl.hidden = true;
     detailEl.hidden = true;
     sheetEl.style.transform = '';
+    document.body.classList.remove('map-detail-open');
   }
 
   function initSheetDrag() {

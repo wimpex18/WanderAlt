@@ -2637,27 +2637,40 @@ a.handle:hover { color: var(--c-ink); }
 .map-filter-time { top: 10px; }
 .map-filter-cat  { top: 50px; }
 
-/* Pannable viewport fills the bleed section */
+/* Pannable viewport fills the bleed section.
+   Background is intentionally NOT the sea colour — using cream lets the
+   SVG island shape read as an island on a page, not blend into the
+   surround. */
 .map-viewport {
   position: absolute;
   inset: 0;
   overflow: hidden;
   cursor: grab;
   touch-action: none;
-  background: oklch(0.88 0.018 210);   /* sea colour as bg */
+  background: var(--c-paper-deep);
 }
 .map-viewport:active { cursor: grabbing; }
 
-/* World wrap — only element that receives CSS transform */
+/* World wrap — only element that receives CSS transform.
+   Globally we cap svg { max-width: 100% }; the world SVG must render
+   at its intrinsic 1800x1200 so the scale transform lands correctly. */
 .map-world-wrap {
   position: absolute;
   top: 0;
   left: 0;
+  width: 1800px;
+  height: 1200px;
   transform-origin: 0 0;
   will-change: transform;
-  pointer-events: none;   /* SVG itself is decorative */
+  pointer-events: none;
 }
-.map-world-wrap svg { display: block; }
+.map-world-wrap svg {
+  display: block;
+  max-width: none;
+  max-height: none;
+  width: 1800px;
+  height: 1200px;
+}
 
 /* Pin overlay — screen-space, not transformed */
 .map-pins {
@@ -2973,5 +2986,17 @@ a.handle:hover { color: var(--c-ink); }
   .map-bleed {
     height: calc(100vh - 56px);
     margin: 0 calc(-1 * var(--gutter));
+  }
+}
+
+/* Mobile: when the detail sheet is open, the sheet (z-index 20, up to
+   55vh tall) covers the zoom + locate controls (z-index 8, bottom-right).
+   Push them above the sheet so the user can still zoom while reading.   */
+@media (max-width: 767px) {
+  body.map-detail-open .map-zoom-ctrl {
+    bottom: calc(55vh + 48px);
+  }
+  body.map-detail-open .map-locate-fab {
+    bottom: calc(55vh + 4px);
   }
 }

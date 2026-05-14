@@ -54,6 +54,23 @@ const VIEWS = [
     const pinCount = await page.$$eval('.map-pin-new', els => els.length);
     console.log(v.name, 'pins:', pinCount);
 
+    const diag = await page.evaluate(() => {
+      const bleed = document.querySelector('.map-bleed');
+      const vp    = document.querySelector('#map-viewport');
+      const wrap  = document.querySelector('#map-world-wrap');
+      const svg   = wrap?.querySelector('svg');
+      return {
+        bleedRect: bleed?.getBoundingClientRect()?.toJSON?.() || bleed?.getBoundingClientRect(),
+        vpRect:    vp?.getBoundingClientRect()?.toJSON?.()   || vp?.getBoundingClientRect(),
+        wrapRect:  wrap?.getBoundingClientRect()?.toJSON?.() || wrap?.getBoundingClientRect(),
+        svgRect:   svg?.getBoundingClientRect()?.toJSON?.()  || svg?.getBoundingClientRect(),
+        wrapTransform: wrap?.style.transform,
+        svgWidth: svg?.getAttribute('width'),
+        svgHeight: svg?.getAttribute('height'),
+      };
+    });
+    console.log(v.name, 'diag:', JSON.stringify(diag, null, 2));
+
     // dump any console logs / errors
     if (consoleMsgs.length) {
       console.log('--- console for', v.name, '---');
