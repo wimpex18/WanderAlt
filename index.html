@@ -72,6 +72,23 @@
       </ol>
     </section>
 
+    <!-- Digest opt-in — for visitors without an account. -->
+    <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
+      <hr class="rule" />
+      <p id="digest-optin-label" class="eyebrow" style="margin-bottom:var(--s-2)">Weekly digest</p>
+      <p class="meta" style="margin-bottom:var(--s-3)">Saturday mornings &mdash; 5 picks, no tracking links.</p>
+      <form id="digest-optin-form" onsubmit="return false;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="email" class="auth-panel__input" id="digest-optin-email"
+                 placeholder="your@email.com" autocomplete="email" required
+                 style="flex:1;min-width:180px;" />
+          <button type="submit" class="auth-panel__submit" id="digest-optin-submit"
+                  style="white-space:nowrap;">Subscribe</button>
+        </div>
+      </form>
+      <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
+    </section>
+
     <footer class="colophon">
       <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
     </footer>

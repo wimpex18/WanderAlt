@@ -83,7 +83,7 @@
                  ${e.moodTags && e.moodTags.length
                    ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${
                        e.moodTags.map(t =>
-                         `<span style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);">${t}</span>`
+                         `<a href="search.html#mood=${encodeURIComponent(t)}" style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);text-decoration:none;">${t}</a>`
                        ).join('')}</p>`
                    : ''}
                </div>

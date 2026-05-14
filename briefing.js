@@ -283,6 +283,51 @@
     wireSurprise(catalog);
     renderColumn();  /* async — doesn't block the sync render above */
 
+    /* Digest opt-in for visitors without an account. */
+    const wireDigestOptin = () => {
+      const form   = document.getElementById('digest-optin-form');
+      const input  = document.getElementById('digest-optin-email');
+      const status = document.getElementById('digest-optin-status');
+      if (!form || !input || !status) return;
+
+      form.addEventListener('submit', async () => {
+        const email = input.value.trim();
+        if (!email) return;
+
+        const url  = window.WA && window.WA.BASE_URL;
+        const key  = window.WA && window.WA.ANON_KEY;
+        const city = (window.WA && window.WA.CITY) || 'tallinn';
+        if (!url || !key) { status.textContent = 'Not available offline.'; return; }
+
+        const btn = document.getElementById('digest-optin-submit');
+        if (btn) btn.disabled = true;
+
+        try {
+          const res = await fetch(`${url}/rest/v1/digest_opt_ins`, {
+            method:  'POST',
+            headers: {
+              apikey:         key,
+              Authorization:  `Bearer ${key}`,
+              'Content-Type': 'application/json',
+              Prefer:         'return=minimal',
+            },
+            body: JSON.stringify({ email, city }),
+          });
+          if (res.ok || res.status === 409 /* already subscribed */) {
+            status.textContent = 'You\'re on the list.';
+            form.hidden = true;
+          } else {
+            status.textContent = 'Something went wrong — try again.';
+            if (btn) btn.disabled = false;
+          }
+        } catch (_) {
+          status.textContent = 'Something went wrong — try again.';
+          if (btn) btn.disabled = false;
+        }
+      });
+    };
+    wireDigestOptin();
+
     /* Mood filter: re-renders This Week with only matching entries. */
     document.addEventListener('wa:mood-changed', (e) => {
       const activeTags = e.detail.tags;
