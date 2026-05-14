@@ -15,3 +15,6 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Local screenshots from the puppeteer smoke-test (keep shoot.js, drop PNGs)
+.screenshots/*.png

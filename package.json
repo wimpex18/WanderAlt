@@ -4,5 +4,8 @@
   "scripts": {
     "start": "npx http-server . -p 5173 -c-1 --cors",
     "admin": "npx http-server . -p 8080 -c-1 --cors"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.43.1"
   }
 }
