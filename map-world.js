@@ -64,7 +64,7 @@ const CAT = {
   vinyl:   { fg: 'oklch(0.96 0.02 290)', bg: 'oklch(0.44 0.130 295)', label: 'Vinyl & books' },
   market:  { fg: 'oklch(0.16 0.04 145)', bg: 'oklch(0.72 0.100 140)', label: 'Flea & market' },
   culture: { fg: 'oklch(0.96 0.01 230)', bg: 'oklch(0.40 0.100 235)', label: 'Cultural space' },
-  art:     { fg: 'oklch(0.98 0.005 0)',  bg: 'oklch(0.52 0.160 15)',  label: 'Street art' },
+  art:     { fg: 'oklch(0.96 0.015 340)', bg: 'oklch(0.50 0.130 340)', label: 'Street art' },
 };
 window.WA.MAP_CAT = CAT;
 
