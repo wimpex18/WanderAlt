@@ -2803,6 +2803,26 @@ a.handle:hover { color: var(--c-ink); }
 .map-search__clear:hover { color: var(--c-accent); }
 .map-search[data-active="1"] { border-color: var(--c-accent); }
 
+/* "Match me →" toggle inside the map search bar. Switches the input
+   into AI mode; Enter then calls match-pick and focuses the top hit. */
+.map-search__match {
+  border: none;
+  background: none;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.map-search__match:hover { color: var(--c-accent); }
+.map-search[data-mode="match"] .map-search__match { color: var(--c-accent); }
+.map-search[data-mode="match"] .map-search__input { font-style: italic; }
+.map-search[data-mode="match"] { border-color: var(--c-accent); }
+
 /* Two filter rows — stack above the viewport, below the search bar */
 .map-filter-row {
   position: absolute;
@@ -3135,6 +3155,23 @@ a.handle:hover { color: var(--c-ink); }
   margin-top: var(--s-4);
 }
 .map-detail__cta { flex: 1; text-align: center; padding: 10px 0; font-size: 13px; }
+
+/* Map → Search affordances under the pin detail. */
+.map-detail__more {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: var(--rule-w) solid var(--c-rule);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.map-detail__more-link {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+}
+.map-detail__more-link:hover { color: var(--c-accent); }
 
 /* ── Mobile sheet handle ────────────────────────────────────── */
 .map-sheet .map-sheet__handle {

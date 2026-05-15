@@ -547,6 +547,23 @@
       activeMoodTags = e.detail.tags;
       if (mode === 'search') runSearch();
     });
+
+    /* Seed the input from ?q= so deep links from the map / pin detail
+       (e.g. "More by @handle") land with the query already active.
+       Supports ?mode=match for AI search via a URL param. */
+    const urlParams = new URLSearchParams(window.location.search);
+    const seedQ     = urlParams.get('q') || '';
+    const seedMode  = urlParams.get('mode') === 'match' ? 'match' : 'search';
+    if (seedQ) {
+      input.value = seedQ;
+      if (seedMode === 'match') {
+        setMode('match');
+        runMatch(seedQ);
+      } else {
+        runSearch();
+      }
+      input.focus();
+    }
   };
 
   document.addEventListener('wa:catalog-ready', init);

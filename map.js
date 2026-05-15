@@ -15,6 +15,7 @@
   let timeFilter = 'all';        // all | tonight | thisweek | places
   let catFilters = new Set();    // set of category ids; empty = show all
   let textQuery = '';            // free-text filter; '' = no text filter
+  let searchMode = 'search';     // 'search' | 'match'  (AI mode is opt-in via toggle)
   let userLoc = null;            // { worldX, worldY } | null
   let locStatus = 'off';         // off | locating | on | error
   let userPuckEl = null;
@@ -191,16 +192,96 @@
     writeUrlState();
   }
 
+  // Call match-pick and focus the top hit on the map. Falls back to opening
+  // search.html for the prompt when the matched pick has no world_x/y.
+  async function runMapMatch(prompt) {
+    const countEl = document.getElementById('map-search-count');
+    const base    = window.WA && window.WA.BASE_URL;
+    const city    = (window.WA && window.WA.CITY) || 'tallinn';
+    if (!base) {
+      if (countEl) { countEl.textContent = 'AI offline'; countEl.hidden = false; }
+      return;
+    }
+    if (countEl) { countEl.textContent = 'matching…'; countEl.hidden = false; }
+    try {
+      const r = await fetch(`${base}/functions/v1/match-pick`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ city, prompt, mode: 'find_one' }),
+      });
+      const data = await r.json();
+      if (!data.ok || !data.pick) {
+        if (countEl) countEl.textContent = 'no match';
+        return;
+      }
+      const hit = data.pick;
+      const local = (window.WA?.catalog || []).find(e => e.id === hit.id);
+      if (local && local.world_x && local.world_y) {
+        focusPin(hit.id);
+        if (countEl) countEl.textContent = `→ ${hit.venue || hit.title}`;
+      } else {
+        // No coords on the map — open the venue page directly.
+        if (countEl) countEl.textContent = 'opening…';
+        window.location.href = `venue.html?id=${encodeURIComponent(hit.id)}`;
+      }
+    } catch (_) {
+      if (countEl) countEl.textContent = 'match failed';
+    }
+  }
+
+  function setSearchMode(mode) {
+    searchMode = mode;
+    const wrap   = document.querySelector('.map-search');
+    const input  = document.getElementById('map-search-input');
+    const toggle = document.getElementById('map-match-toggle');
+    if (wrap)   wrap.dataset.mode = mode;
+    if (input)  {
+      input.placeholder = mode === 'match'
+        ? 'Tell me what you want…'
+        : 'Filter pins by name, kind, curator…';
+      input.setAttribute('enterkeyhint', mode === 'match' ? 'go' : 'search');
+    }
+    if (toggle) toggle.textContent = mode === 'match' ? '← keyword' : 'match me →';
+  }
+
   function initMapSearch() {
-    const input = document.getElementById('map-search-input');
-    const clear = document.getElementById('map-search-clear');
+    const input  = document.getElementById('map-search-input');
+    const clear  = document.getElementById('map-search-clear');
+    const toggle = document.getElementById('map-match-toggle');
     if (!input) return;
 
-    input.addEventListener('input', () => setTextQuery(input.value));
+    input.addEventListener('input', () => {
+      /* In match mode, typing doesn't filter — it just waits for Enter. */
+      if (searchMode === 'match') return;
+      setTextQuery(input.value);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || searchMode !== 'match') return;
+      e.preventDefault();
+      const prompt = input.value.trim();
+      if (prompt) runMapMatch(prompt);
+    });
     if (clear) {
       clear.addEventListener('click', () => {
         input.value = '';
         setTextQuery('');
+        input.focus();
+      });
+    }
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        if (searchMode === 'match') {
+          setSearchMode('search');
+          /* Re-apply current input as text filter when switching back. */
+          setTextQuery(input.value);
+        } else {
+          setSearchMode('match');
+          /* Drop the text filter while in match mode (don't surprise-hide pins). */
+          textQuery = '';
+          renderPins();
+          updateSearchCount();
+          writeUrlState();
+        }
         input.focus();
       });
     }
@@ -394,6 +475,12 @@
     const q = entry.quote
       ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
       : '';
+    /* Map → Search affordances: jump from the pin into search.html with
+       the curator handle or the venue kind as the query. */
+    const moreLinks = `<nav class="map-detail__more" aria-label="Related searches">
+        <a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
+        ${entry.kind ? `<a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
+      </nav>`;
     return `<div class="map-detail__head">
         <span class="map-detail__eyebrow">${eyebrow}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
@@ -409,7 +496,8 @@
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>
           Save
         </label>
-      </div>`;
+      </div>
+      ${moreLinks}`;
   }
 
   function syncBookmarks(root) {
