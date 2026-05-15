@@ -127,7 +127,7 @@
       `city=eq.${currentCity}` +
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
-               'valid_until,quote,handle,context_md,image_url' +
+               'valid_until,quote,handle,context_md,image_url,world_x,world_y' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
     );
@@ -361,10 +361,93 @@
         : '';
     }
 
+    /* Pin position editor — seed and render. */
+    initPinMap(pick?.world_x ?? null, pick?.world_y ?? null);
+
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
     setTimeout(() => $('mf-title').focus(), 50);
   };
+
+  /* ──────────────────────────────────────────────────────────────
+     PIN POSITION EDITOR
+     Renders the illustrated world SVG into a small panel inside the
+     pick modal. Click anywhere → updates world_x/y and re-renders
+     the marker. Values are submitted with the rest of the form.
+     ────────────────────────────────────────────────────────────── */
+  const WORLD_W = 1800, WORLD_H = 1200;
+  let pinMapSvgRendered = false;
+
+  const renderPinMarker = () => {
+    const map  = $('mf-pin-map');
+    const wxEl = $('mf-world-x');
+    const wyEl = $('mf-world-y');
+    const txt  = $('mf-pin-coords');
+    if (!map || !wxEl || !wyEl) return;
+
+    let marker = map.querySelector('.admin-pin-map__marker');
+    if (!marker) {
+      marker = document.createElement('div');
+      marker.className = 'admin-pin-map__marker';
+      map.appendChild(marker);
+    }
+
+    const wx = parseFloat(wxEl.value);
+    const wy = parseFloat(wyEl.value);
+    if (!Number.isFinite(wx) || !Number.isFinite(wy)) {
+      marker.hidden = true;
+      if (txt) txt.textContent = 'not placed';
+      return;
+    }
+    marker.hidden = false;
+    marker.style.left = `${(wx / WORLD_W) * 100}%`;
+    marker.style.top  = `${(wy / WORLD_H) * 100}%`;
+    if (txt) txt.textContent = `world_x: ${Math.round(wx)}, world_y: ${Math.round(wy)}`;
+  };
+
+  const initPinMap = (world_x, world_y) => {
+    const map  = $('mf-pin-map');
+    const wxEl = $('mf-world-x');
+    const wyEl = $('mf-world-y');
+    if (!map || !wxEl || !wyEl) return;
+
+    wxEl.value = world_x ?? '';
+    wyEl.value = world_y ?? '';
+
+    /* Render the SVG once — re-use on every modal open. */
+    if (!pinMapSvgRendered) {
+      if (window.WA?.mapWorldSVG) {
+        map.innerHTML = WA.mapWorldSVG();
+        pinMapSvgRendered = true;
+      } else {
+        /* map-world.js failed to load — show a plain backdrop so clicks still work */
+        map.innerHTML =
+          `<svg viewBox="0 0 ${WORLD_W} ${WORLD_H}"><rect width="${WORLD_W}" height="${WORLD_H}" fill="#eee"/></svg>`;
+        pinMapSvgRendered = true;
+      }
+      map.addEventListener('click', (e) => {
+        const rect = map.getBoundingClientRect();
+        const wx = ((e.clientX - rect.left) / rect.width)  * WORLD_W;
+        const wy = ((e.clientY - rect.top)  / rect.height) * WORLD_H;
+        wxEl.value = Math.round(wx);
+        wyEl.value = Math.round(wy);
+        renderPinMarker();
+      });
+    }
+
+    renderPinMarker();
+  };
+
+  /* Clear button — null out coords so auto-pin takes over on save. */
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'mf-pin-clear') {
+      const wxEl = $('mf-world-x');
+      const wyEl = $('mf-world-y');
+      if (wxEl) wxEl.value = '';
+      if (wyEl) wyEl.value = '';
+      renderPinMarker();
+    }
+  });
 
   const closeModal = () => {
     const modal = $('admin-modal');
@@ -422,6 +505,16 @@
       tonight:      $('mf-tonight').checked,
       this_week:    $('mf-thisweek').checked,
     };
+
+    /* Pin position — editor overrides win; blanks revert to auto-pin trigger. */
+    const wxRaw = $('mf-world-x')?.value;
+    const wyRaw = $('mf-world-y')?.value;
+    const wx    = wxRaw === '' ? null : Number(wxRaw);
+    const wy    = wyRaw === '' ? null : Number(wyRaw);
+    if (wx !== null && Number.isFinite(wx)) data.world_x = Math.round(wx);
+    else if (wxRaw === '')                  data.world_x = null;
+    if (wy !== null && Number.isFinite(wy)) data.world_y = Math.round(wy);
+    else if (wyRaw === '')                  data.world_y = null;
 
     /* Image: upload takes priority; otherwise use URL field */
     const imageFile = $('mf-image').files?.[0];

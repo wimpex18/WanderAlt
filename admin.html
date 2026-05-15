@@ -103,6 +103,18 @@
     .tw-pager-btn:hover:not([disabled]) { background:var(--c-ink); color:var(--c-paper); }
     .tw-pager-btn[disabled]  { opacity:.35; cursor:default; }
 
+    /* Pin position mini-map inside the pick modal */
+    .admin-pin-map           { position:relative; width:100%; padding-top:66.66%;
+                               border:1px solid var(--c-rule-strong);
+                               background:var(--c-paper-deep); cursor:crosshair;
+                               overflow:hidden; }
+    .admin-pin-map svg       { position:absolute; inset:0; width:100%; height:100%; }
+    .admin-pin-map__marker   { position:absolute; width:14px; height:14px;
+                               background:var(--c-accent); border:2px solid var(--c-paper);
+                               transform:translate(-50%, -50%); pointer-events:none;
+                               box-shadow:0 0 0 1px var(--c-accent); }
+    .admin-pin-map__marker[hidden] { display:none; }
+
     /* Discovery review rows */
     .review-row              { padding:var(--s-4) 0; border-bottom:1px solid rgba(26,26,26,.1);
                                display:grid; grid-template-columns:64px 1fr auto; gap:var(--s-3);
@@ -240,6 +252,7 @@
   </style>
 
   <script src="./local-secrets.js"></script>
+  <script defer src="./map-world.js"></script>
   <script defer src="./admin.js"></script>
 </head>
 <body data-page="admin">
@@ -737,6 +750,23 @@
           <div class="admin-mfield admin-mfield--full admin-mfield--flags">
             <label><input type="checkbox" id="mf-tonight" /> Tonight</label>
             <label><input type="checkbox" id="mf-thisweek" /> This week</label>
+          </div>
+
+          <!-- Pin position — click on the mini-map to (re)place. Auto-pin
+               fills these on save when blank. Editor overrides win. -->
+          <div class="admin-mfield admin-mfield--full">
+            <label>Pin position
+              <span class="meta" style="margin-left:8px;opacity:.6">click to place &middot;
+                <button type="button" id="mf-pin-clear" class="admin-reset"
+                        style="font-size:10px">clear</button>
+              </span>
+            </label>
+            <div id="mf-pin-map" class="admin-pin-map" role="application" aria-label="Pin map"></div>
+            <p class="meta" id="mf-pin-coords" style="margin-top:var(--s-1);opacity:.6">
+              not placed
+            </p>
+            <input type="hidden" id="mf-world-x" />
+            <input type="hidden" id="mf-world-y" />
           </div>
 
         </div><!-- /.admin-modal-grid -->
