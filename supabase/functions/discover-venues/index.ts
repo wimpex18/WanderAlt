@@ -100,6 +100,7 @@ interface GooglePlace {
   id:              string;
   displayName?:    { text: string };
   formattedAddress?: string;
+  location?:       { latitude: number; longitude: number };
   primaryType?:    string;
   types?:          string[];
   businessStatus?: string;
@@ -122,6 +123,7 @@ async function searchGooglePlaces(prompt: string, city: string, limit: number): 
           'places.id',
           'places.displayName',
           'places.formattedAddress',
+          'places.location',
           'places.primaryType',
           'places.types',
           'places.businessStatus',
@@ -181,6 +183,29 @@ interface DiscoveryRow {
   place:    GooglePlace;
   kind:     string;
   knownAs?: string;  // curated venue name if already in DB
+}
+
+// Map (neighborhood, lat, lng) → (world_x, world_y) via the SQL helper that
+// knows the artistic Tallinn SVG layout. Returns null on RPC failure so the
+// pick still saves without coords rather than blocking the discovery flow.
+async function worldCoords(
+  neighborhood: string,
+  lat: number | null,
+  lng: number | null,
+  seed: string,
+): Promise<{ world_x: number; world_y: number } | null> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wa_pick_world_coords`, {
+      method:  'POST',
+      headers: sbHeaders(),
+      body:    JSON.stringify({ neighborhood, lat, lng, seed }),
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const row  = Array.isArray(rows) ? rows[0] : rows;
+    if (!row || typeof row.world_x !== 'number') return null;
+    return { world_x: row.world_x, world_y: row.world_y };
+  } catch { return null; }
 }
 
 function filterAndClassify(places: GooglePlace[]): DiscoveryRow[] {
@@ -281,6 +306,12 @@ Deno.serve(async (req: Request) => {
     const addressParts = (place.formattedAddress || '').split(',').map(s => s.trim()).filter(Boolean);
     const neighborhood = addressParts.length >= 2 ? addressParts[addressParts.length - 2] : 'other';
 
+    // Compute illustrated-map coordinates so the pick has a pin position the
+    // moment an editor approves it.
+    const lat = place.location?.latitude  ?? null;
+    const lng = place.location?.longitude ?? null;
+    const wc  = await worldCoords(neighborhood, lat, lng, id);
+
     const picksRow = {
       id,
       city,
@@ -305,6 +336,8 @@ Deno.serve(async (req: Request) => {
       discovery_query:   prompt,
       valid_until:       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),  // 30 days
       archived_at:       null,
+      world_x:           wc?.world_x ?? null,
+      world_y:           wc?.world_y ?? null,
     };
 
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/picks`, {
@@ -330,8 +363,8 @@ Deno.serve(async (req: Request) => {
           imageUrl,
           imageAttr:    'Google Places',
           pin:          null,
-          world_x:      null,
-          world_y:      null,
+          world_x:      wc?.world_x ?? null,
+          world_y:      wc?.world_y ?? null,
           tonight:      false,
           thisWeek:     false,
           pending:      true,
