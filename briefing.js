@@ -328,6 +328,18 @@
     };
     wireDigestOptin();
 
+    /* Hide the anonymous digest opt-in when a user is signed in — they use
+       the profile page toggle instead. */
+    const optinWrap = document.getElementById('digest-optin-wrap');
+    if (optinWrap) {
+      const syncOptinVisibility = () => {
+        optinWrap.hidden = !!(window.WA.Auth && window.WA.Auth.isSignedIn());
+      };
+      syncOptinVisibility();
+      document.addEventListener('wa:signed-in',  syncOptinVisibility);
+      document.addEventListener('wa:signed-out', syncOptinVisibility);
+    }
+
     /* Mood filter: re-renders This Week with only matching entries. */
     document.addEventListener('wa:mood-changed', (e) => {
       const activeTags = e.detail.tags;
