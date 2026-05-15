@@ -2964,6 +2964,14 @@ a.handle:hover { color: var(--c-ink); }
 .map-search[data-mode="match"] .map-search__input { font-style: italic; }
 .map-search[data-mode="match"] { border-color: var(--c-accent); }
 
+/* Collapse search bar + filter chips while the user pans the map */
+.map-search { transition: transform 0.18s ease, opacity 0.18s ease; }
+.map-panning .map-search {
+  transform: translateY(-130%);
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Two filter rows — stack above the viewport, below the search bar */
 .map-filter-row {
   position: absolute;
@@ -2980,6 +2988,8 @@ a.handle:hover { color: var(--c-ink); }
 }
 .map-filter-row > * { pointer-events: auto; }
 .map-filter-row::-webkit-scrollbar { display: none; }
+.map-filter-row { transition: opacity 0.18s ease; }
+.map-panning .map-filter-row { opacity: 0; pointer-events: none; }
 .map-filter-time { top: 56px; }
 .map-filter-cat  { top: 102px; }
 
@@ -3330,6 +3340,11 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink-mute);
 }
 .map-detail__more-link:hover { color: var(--c-accent); }
+.map-detail__more-link--list {
+  color: var(--c-ink);
+  font-weight: 500;
+  margin-bottom: var(--s-1);
+}
 
 /* ── Mobile sheet handle ────────────────────────────────────── */
 .map-sheet .map-sheet__handle {

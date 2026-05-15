@@ -77,12 +77,18 @@
     viewport.addEventListener('pointermove', (e) => {
       if (!drag) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!dragged && Math.hypot(dx, dy) > 5) dragged = true;
+      if (!dragged && Math.hypot(dx, dy) > 12) {
+        dragged = true;
+        document.body.classList.add('map-panning');
+      }
       tx = drag.tx + dx;
       ty = drag.ty + dy;
       applyTransform();
     });
-    viewport.addEventListener('pointerup', () => { drag = null; });
+    viewport.addEventListener('pointerup', () => {
+      drag = null;
+      document.body.classList.remove('map-panning');
+    });
 
     // touch pinch-zoom
     let tc = null;
@@ -155,12 +161,19 @@
   // Map ↔ Search coupling: ?q= seeds the text filter; ?id= focuses a pin.
   function readUrlState() {
     const sp = new URLSearchParams(window.location.search);
-    return { q: sp.get('q') || '', id: sp.get('id') || '' };
+    return {
+      q:    sp.get('q')    || '',
+      id:   sp.get('id')   || '',
+      day:  sp.get('day')  || '',
+      mood: sp.get('mood') || '',
+    };
   }
   function writeUrlState() {
-    const sp = new URLSearchParams(window.location.search);
-    if (textQuery) sp.set('q', textQuery); else sp.delete('q');
-    if (activeId)  sp.set('id', activeId); else sp.delete('id');
+    const sp = new URLSearchParams();
+    if (textQuery)                        sp.set('q',    textQuery);
+    if (activeId)                         sp.set('id',   activeId);
+    if (timeFilter && timeFilter !== 'all') sp.set('day',  timeFilter);
+    if (catFilters.size)                  sp.set('mood', [...catFilters].join(','));
     const qs = sp.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
     window.history.replaceState(null, '', url);
@@ -322,6 +335,7 @@
         timeFilter = btn.dataset.time;
         renderTimeChips();
         renderPins();
+        writeUrlState();
       });
     });
   }
@@ -344,6 +358,7 @@
         catFilters.has(id) ? catFilters.delete(id) : catFilters.add(id);
         renderCatChips();
         renderPins();
+        writeUrlState();
       });
     });
   }
@@ -486,9 +501,16 @@
     const q = entry.quote
       ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
       : '';
-    /* Map → Search affordances: jump from the pin into search.html with
-       the curator handle or the venue kind as the query. */
+    /* Map → Search affordances: jump from the pin into search.html. */
+    const listVisible = getVisibleEntries();
+    const listHref = textQuery
+      ? `search.html?q=${encodeURIComponent(textQuery)}`
+      : 'search.html';
+    const listLabel = textQuery
+      ? `View list (${listVisible.length}) &rarr;`
+      : 'View list &rarr;';
     const moreLinks = `<nav class="map-detail__more" aria-label="Related searches">
+        <a class="map-detail__more-link map-detail__more-link--list" href="${listHref}">${listLabel}</a>
         <a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
         ${entry.kind ? `<a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
       </nav>`;
@@ -599,6 +621,12 @@
       textQuery = urlState.q;
       const input = document.getElementById('map-search-input');
       if (input) input.value = urlState.q;
+    }
+    if (urlState.day && urlState.day !== 'all') {
+      timeFilter = urlState.day;
+    }
+    if (urlState.mood) {
+      urlState.mood.split(',').filter(Boolean).forEach(c => catFilters.add(c));
     }
 
     renderTimeChips();
