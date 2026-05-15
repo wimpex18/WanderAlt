@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// enrich-venues v9
+// enrich-venues v10
 // Enriches venue_details rows from Wikidata + Nominatim.
 // Mirrors found images into venue_images AND propagates to picks.image_url.
 // Sets is_closed=true and archives picks when Wikidata P576 is present.
@@ -193,7 +193,8 @@ async function fetchGooglePlaceData(name: string, lat: number, lng: number): Pro
         ].join(','),
       },
       body: JSON.stringify({
-        textQuery: name,
+        textQuery:    name,
+        languageCode: 'en',
         locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000.0 } },
         maxResultCount: 1,
       }),
