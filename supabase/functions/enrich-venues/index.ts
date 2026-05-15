@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// enrich-venues v8
+// enrich-venues v9
 // Enriches venue_details rows from Wikidata + Nominatim.
 // Mirrors found images into venue_images AND propagates to picks.image_url.
 // Sets is_closed=true and archives picks when Wikidata P576 is present.
@@ -158,52 +158,74 @@ async function nominatimLookup(venueName: string, city: string): Promise<{ addre
 }
 
 // ---------------------------------------------------------------------------
-// Image source 2: Google Places API (New)
-// Uses the Places API v1 (New) — the current recommended API for new projects.
-// Key is sent in the X-Goog-Api-Key header (not the URL), and the response
-// returns a photoUri directly — no redirect-following needed.
+// Google Places API (New) — fetch venue details + photo in two calls.
+// Call 1: places:searchText — returns id, photos, opening hours, business
+//         status, phone, website in one round-trip.
+// Call 2: photo media endpoint — resolves the photo reference to a photoUri.
 // Only runs when GOOGLE_PLACES_API_KEY is set.
 // ---------------------------------------------------------------------------
-async function fetchGooglePlacePhoto(name: string, lat: number, lng: number): Promise<string | null> {
+interface PlaceData {
+  placeId:        string   | null;
+  photoUri:       string   | null;
+  businessStatus: string   | null;   // OPERATIONAL | CLOSED_TEMPORARILY | CLOSED_PERMANENTLY
+  openingHours:   string[] | null;   // weekdayDescriptions array
+  phone:          string   | null;
+  websiteUri:     string   | null;
+}
+
+async function fetchGooglePlaceData(name: string, lat: number, lng: number): Promise<PlaceData | null> {
   const key = Deno.env.get('GOOGLE_PLACES_API_KEY');
   if (!key) return null;
   try {
-    const apiHeaders = {
-      'Content-Type':    'application/json',
-      'X-Goog-Api-Key':  key,
-      'X-Goog-FieldMask':'places.photos',
-    };
-
-    // Step 1: find the place by text query, biased to the city
+    // Call 1: search — all fields we need except the resolved photo URL
     const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
-      headers: apiHeaders,
+      headers: {
+        'Content-Type':    'application/json',
+        'X-Goog-Api-Key':  key,
+        'X-Goog-FieldMask': [
+          'places.id',
+          'places.photos',
+          'places.regularOpeningHours.weekdayDescriptions',
+          'places.businessStatus',
+          'places.nationalPhoneNumber',
+          'places.websiteUri',
+        ].join(','),
+      },
       body: JSON.stringify({
         textQuery: name,
-        locationBias: {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: 5000.0,
-          },
-        },
+        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000.0 } },
         maxResultCount: 1,
       }),
     });
     if (!searchRes.ok) return null;
-    const searchData = await searchRes.json();
+    const sd = await searchRes.json();
+    const place = sd.places?.[0];
+    if (!place) return null;
 
-    // photos[].name looks like "places/{place_id}/photos/{photo_ref}"
-    const photoName = searchData.places?.[0]?.photos?.[0]?.name;
-    if (!photoName) return null;
+    const out: PlaceData = {
+      placeId:        place.id                                        ?? null,
+      photoUri:       null,
+      businessStatus: place.businessStatus                            ?? null,
+      openingHours:   place.regularOpeningHours?.weekdayDescriptions  ?? null,
+      phone:          place.nationalPhoneNumber                       ?? null,
+      websiteUri:     place.websiteUri                                ?? null,
+    };
 
-    // Step 2: fetch photo media with skipHttpRedirect to get JSON with photoUri
-    const mediaRes = await fetch(
-      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true`,
-      { headers: { 'X-Goog-Api-Key': key } }
-    );
-    if (!mediaRes.ok) return null;
-    const mediaData = await mediaRes.json();
-    return mediaData.photoUri ?? null;
+    // Call 2: resolve photo to a stable CDN URI (only if photos exist)
+    const photoName = place.photos?.[0]?.name;
+    if (photoName) {
+      const mediaRes = await fetch(
+        `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true`,
+        { headers: { 'X-Goog-Api-Key': key } }
+      );
+      if (mediaRes.ok) {
+        const md = await mediaRes.json();
+        out.photoUri = md.photoUri ?? null;
+      }
+    }
+
+    return out;
   } catch { return null; }
 }
 
@@ -281,7 +303,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const [cityLat, cityLng] = CITY_COORDS[city] ?? [0, 0];
-  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string; image_source?: string }> = [];
+  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string; image_source?: string; business_status?: string }> = [];
 
   for (const venue of venues) {
     await sleep(300);
@@ -314,6 +336,16 @@ Deno.serve(async (req: Request) => {
       if (source !== 'wikidata') source = 'nominatim';
     }
 
+    // ── Google Places enrichment (one search call covers everything) ──
+    const placeData = await fetchGooglePlaceData(name, cityLat, cityLng);
+    if (placeData) await sleep(200);
+
+    // Merge closure: either Wikidata P576 or Google CLOSED_PERMANENTLY
+    const isClosed = claims.isClosed || placeData?.businessStatus === 'CLOSED_PERMANENTLY';
+
+    // Website: Wikidata P856 wins; Google Places is the fallback
+    const website = claims.website || placeData?.websiteUri || null;
+
     const row: Record<string, unknown> = {
       city,
       venue_key:    key,
@@ -321,17 +353,22 @@ Deno.serve(async (req: Request) => {
       source,
       enriched_at:  new Date().toISOString(),
     };
-    if (wikidataId)       row.wikidata_id  = wikidataId;
-    if (claims.website)   row.website      = claims.website;
-    if (claims.shortDesc) row.short_desc   = claims.shortDesc;
-    if (lat)              row.lat          = lat;
-    if (lng)              row.lng          = lng;
-    if (address)          row.address      = address;
-    if (claims.isClosed)  row.is_closed    = true;
+    if (wikidataId)              row.wikidata_id     = wikidataId;
+    if (website)                 row.website         = website;
+    if (claims.shortDesc)        row.short_desc      = claims.shortDesc;
+    if (lat)                     row.lat             = lat;
+    if (lng)                     row.lng             = lng;
+    if (address)                 row.address         = address;
+    if (isClosed)                row.is_closed       = true;
+    if (placeData?.placeId)      row.google_place_id = placeData.placeId;
+    if (placeData?.businessStatus) row.business_status = placeData.businessStatus;
+    if (placeData?.phone)        row.phone           = placeData.phone;
+    if (placeData?.openingHours) row.opening_hours   = JSON.stringify(placeData.openingHours);
 
     await dbUpsert('venue_details', row, 'city,venue_key');
 
-    if (claims.isClosed) {
+    // Archive all active picks for permanently closed venues
+    if (isClosed) {
       const archiveRes = await fetch(
         `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}&archived_at=is.null&venue=eq.${encodeURIComponent(name)}`,
         {
@@ -340,11 +377,11 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({ archived_at: new Date().toISOString() }),
         }
       );
-      if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key}`);
+      const closedSource = claims.isClosed ? 'wikidata' : 'google';
+      if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key} (source: ${closedSource})`);
     }
 
-    // ── Image enrichment ────────────────────────────────────────────
-    // Check whether this venue already has an image in venue_images.
+    // ── Image enrichment ─────────────────────────────────────────────
     const existingImg = await dbGet(
       `venue_images?city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(key)}&select=image_url&limit=1`
     );
@@ -357,53 +394,41 @@ Deno.serve(async (req: Request) => {
       // Source 1: Wikidata P18 → Wikimedia Commons thumbnail
       if (claims.imageFile) {
         imageUrl = wikimediaThumbUrl(claims.imageFile);
-        await dbUpsert('venue_images', {
-          city, venue_key: key, image_url: imageUrl, source: 'wikidata',
-        }, 'city,venue_key');
+        await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'wikidata' }, 'city,venue_key');
         imageSource = 'wikidata';
         await sleep(100);
       }
 
-      // Source 2: Google Places API (only if GOOGLE_PLACES_API_KEY is set)
-      if (!imageUrl) {
-        const placePhoto = await fetchGooglePlacePhoto(name, cityLat, cityLng);
-        if (placePhoto) {
-          imageUrl = placePhoto;
-          await dbUpsert('venue_images', {
-            city, venue_key: key, image_url: imageUrl, source: 'google_places',
-          }, 'city,venue_key');
-          imageSource = 'google_places';
-          await sleep(200);
-        }
+      // Source 2: Google Places photo (already fetched above — reuse placeData)
+      if (!imageUrl && placeData?.photoUri) {
+        imageUrl = placeData.photoUri;
+        await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'google_places' }, 'city,venue_key');
+        imageSource = 'google_places';
       }
 
-      // Source 3: Venue website og:image (scraped from Wikidata P856)
-      if (!imageUrl && claims.website) {
-        const ogImg = await fetchOgImage(claims.website);
+      // Source 3: Venue website og:image
+      if (!imageUrl && website) {
+        const ogImg = await fetchOgImage(website);
         if (ogImg) {
           imageUrl = ogImg;
-          await dbUpsert('venue_images', {
-            city, venue_key: key, image_url: imageUrl, source: 'og_image',
-          }, 'city,venue_key');
+          await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'og_image' }, 'city,venue_key');
           imageSource = 'og_image';
         }
       }
     }
 
-    // Propagate to picks.image_url for any pick at this venue still missing one
-    if (imageUrl) {
-      await updatePicksImageUrl(city, name, imageUrl);
-    }
+    if (imageUrl) await updatePicksImageUrl(city, name, imageUrl);
 
     results.push({
-      venue_key:    key,
-      status:       'ok',
-      closed:       claims.isClosed || undefined,
-      wikidata_id:  wikidataId ?? undefined,
+      venue_key:      key,
+      status:         'ok',
+      closed:         isClosed || undefined,
+      wikidata_id:    wikidataId ?? undefined,
       source,
-      image_source: imageSource ?? undefined,
+      image_source:   imageSource ?? undefined,
+      business_status: placeData?.businessStatus ?? undefined,
     });
-    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${claims.isClosed} image=${imageSource ?? 'none'}`);
+    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${isClosed} (${placeData?.businessStatus ?? 'no-google'}) image=${imageSource ?? 'none'}`);
   }
 
   return new Response(JSON.stringify({
