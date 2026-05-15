@@ -51,9 +51,13 @@
            <p class="list-row__meta">${e.date}</p>
          </li>`;
       }
+      /* Catalog rows get a "→ map" affordance when the pick has world coords. */
+      const mapLink = (e.world_x && e.world_y)
+        ? `<a class="list-row__map" href="map.html?id=${encodeURIComponent(e.id)}" aria-label="Show on map">on map &rarr;</a>`
+        : '';
       return `<li class="list-row">
          <p class="list-row__title">
-           <a href="venue.html?id=${e.id}">${e.title}</a>
+           <a href="venue.html?id=${e.id}">${e.title}</a>${mapLink}
          </p>
          <p class="list-row__meta">${buildMeta(e)}</p>
          <p class="list-row__quote">&#x2014; ${e.quote} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>
@@ -490,8 +494,15 @@
       const matches      = sortEntries(moodFiltered);
 
       if (resultsCount) {
-        resultsCount.textContent =
-          matches.length === 1 ? '1 result' : `${matches.length} results`;
+        const countLabel = matches.length === 1 ? '1 result' : `${matches.length} results`;
+        /* Show "on map →" when at least one match is pinned. */
+        const mappable = matches.some(e => !e._past && e.world_x && e.world_y);
+        if (mappable && term) {
+          resultsCount.innerHTML =
+            `${esc(countLabel)} &middot; <a class="results-map-link" href="map.html?q=${encodeURIComponent(term)}">on map &rarr;</a>`;
+        } else {
+          resultsCount.textContent = countLabel;
+        }
       }
       if (emptyState) {
         emptyState.textContent = term

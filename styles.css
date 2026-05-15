@@ -1271,6 +1271,28 @@ body[data-page="saved"] .colophon {
   text-wrap: balance;
 }
 .list-row__title:hover { color: var(--c-accent); }
+/* Small "on map →" affordance on a result row. Sits beside the title
+   on the same line — mono, muted, accent on hover. */
+.list-row__map {
+  margin-left: var(--s-3);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.list-row__map:hover { color: var(--c-accent); }
+
+/* "on map →" link inside the results count header. */
+.results-map-link {
+  color: var(--c-accent);
+  text-decoration: none;
+}
+.results-map-link:hover { text-decoration: underline; }
+
 .list-row__meta {
   margin-top: 4px;
   font-family: var(--ff-mono);
@@ -2728,7 +2750,60 @@ a.handle:hover { color: var(--c-ink); }
    for graceful fallback.
    ============================================================ */
 
-/* Two filter rows — stack above the viewport */
+/* Search bar above the filter chips — filters pins live by text query.
+   Backdrop is solid newsprint so the input reads against the map.
+   Positioned absolutely so it overlays the viewport (which fills the bleed). */
+.map-search {
+  position: absolute;
+  top: 10px;
+  left: var(--s-4);
+  right: var(--s-4);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-3);
+  height: 36px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule-strong);
+  z-index: 5;
+}
+.map-search__icon { color: var(--c-ink-mute); display: inline-flex; flex-shrink: 0; }
+.map-search__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink);
+  outline: none;
+  padding: 0;
+}
+.map-search__input::placeholder { color: var(--c-ink-mute); }
+.map-search__count {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.map-search__clear {
+  border: none;
+  background: none;
+  color: var(--c-ink-mute);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.map-search__clear:hover { color: var(--c-accent); }
+.map-search[data-active="1"] { border-color: var(--c-accent); }
+
+/* Two filter rows — stack above the viewport, below the search bar */
 .map-filter-row {
   position: absolute;
   left: 0;
@@ -2744,8 +2819,8 @@ a.handle:hover { color: var(--c-ink); }
 }
 .map-filter-row > * { pointer-events: auto; }
 .map-filter-row::-webkit-scrollbar { display: none; }
-.map-filter-time { top: 10px; }
-.map-filter-cat  { top: 56px; }
+.map-filter-time { top: 56px; }
+.map-filter-cat  { top: 102px; }
 
 /* Pannable viewport fills the bleed section.
    Background is intentionally NOT the sea colour — using cream lets the

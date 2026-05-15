@@ -14,6 +14,7 @@
   let activeId = null;
   let timeFilter = 'all';        // all | tonight | thisweek | places
   let catFilters = new Set();    // set of category ids; empty = show all
+  let textQuery = '';            // free-text filter; '' = no text filter
   let userLoc = null;            // { worldX, worldY } | null
   let locStatus = 'off';         // off | locating | on | error
   let userPuckEl = null;
@@ -130,15 +131,96 @@
   function normaliseKind(k) { return KIND_MAP[k] || k; }
 
   // ── Filters ───────────────────────────────────────────────────
+  function matchesText(e, q) {
+    if (!q) return true;
+    return [e.title, e.venue, e.neighborhood, e.kind, e.handle, e.quote]
+      .some(f => f && f.toLowerCase().includes(q));
+  }
+
   function getVisibleEntries() {
+    const q = textQuery.toLowerCase();
     return (window.WA?.catalog || []).filter(e => {
       if (!e.world_x || !e.world_y) return false;
       if (timeFilter === 'tonight'  && !e.tonight) return false;
       if (timeFilter === 'thisweek' && !e.thisWeek && !e.tonight) return false;
       if (timeFilter === 'places'   && e.day) return false;
       if (catFilters.size > 0 && !catFilters.has(normaliseKind(e.kind))) return false;
+      if (q && !matchesText(e, q)) return false;
       return true;
     });
+  }
+
+  // ── URL sync ──────────────────────────────────────────────────
+  // Map ↔ Search coupling: ?q= seeds the text filter; ?id= focuses a pin.
+  function readUrlState() {
+    const sp = new URLSearchParams(window.location.search);
+    return { q: sp.get('q') || '', id: sp.get('id') || '' };
+  }
+  function writeUrlState() {
+    const sp = new URLSearchParams(window.location.search);
+    if (textQuery) sp.set('q', textQuery); else sp.delete('q');
+    if (activeId)  sp.set('id', activeId); else sp.delete('id');
+    const qs = sp.toString();
+    const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
+    window.history.replaceState(null, '', url);
+  }
+
+  // ── Map search bar ────────────────────────────────────────────
+  function updateSearchCount() {
+    const countEl = document.getElementById('map-search-count');
+    const clearEl = document.getElementById('map-search-clear');
+    const wrap    = document.querySelector('.map-search');
+    if (!countEl) return;
+    if (!textQuery) {
+      countEl.hidden = true;
+      if (clearEl) clearEl.hidden = true;
+      if (wrap)    wrap.dataset.active = '0';
+      return;
+    }
+    const n = getVisibleEntries().length;
+    countEl.textContent = `${n} pin${n === 1 ? '' : 's'}`;
+    countEl.hidden = false;
+    if (clearEl) clearEl.hidden = false;
+    if (wrap)    wrap.dataset.active = '1';
+  }
+
+  function setTextQuery(q) {
+    textQuery = (q || '').trim();
+    renderPins();
+    updateSearchCount();
+    writeUrlState();
+  }
+
+  function initMapSearch() {
+    const input = document.getElementById('map-search-input');
+    const clear = document.getElementById('map-search-clear');
+    if (!input) return;
+
+    input.addEventListener('input', () => setTextQuery(input.value));
+    if (clear) {
+      clear.addEventListener('click', () => {
+        input.value = '';
+        setTextQuery('');
+        input.focus();
+      });
+    }
+  }
+
+  // Centre + zoom on a specific pin (called when ?id= is in the URL or from a deep link).
+  function focusPin(id) {
+    const entry = (window.WA?.catalog || []).find(e => e.id === id);
+    if (!entry || !entry.world_x || !entry.world_y) return false;
+    const rect = viewport.getBoundingClientRect();
+    const z = Math.max(zoom, 0.9);  // zoom in a bit so the pin reads
+    zoom = z;
+    tx = (rect.width  / 2) - entry.world_x * z;
+    ty = (rect.height / 2) - entry.world_y * z;
+    applyTransform();
+    activeId = id;
+    renderPins();
+    openDetail(entry);
+    writeUrlState();
+    return true;
   }
 
   function renderTimeChips() {
@@ -241,8 +323,10 @@
         } else {
           closeDetail();
         }
+        writeUrlState();
       });
     });
+    updateSearchCount();
   }
 
   // ── User location puck ────────────────────────────────────────
@@ -352,7 +436,7 @@
       initSheetDrag();
     }
     document.getElementById('detail-close')?.addEventListener('click', () => {
-      closeDetail(); activeId = null; renderPins();
+      closeDetail(); activeId = null; renderPins(); writeUrlState();
     });
     [sheetEl, detailEl].forEach(el => {
       el.addEventListener('change', e => {
@@ -403,16 +487,29 @@
     initPanZoom();
     initZoomControls();
     initLocate();
+    initMapSearch();
 
     document.addEventListener('wa:bookmarks-synced', () => {
       syncBookmarks(sheetEl); syncBookmarks(detailEl);
     });
+
+    // Seed state from URL params before rendering chips/pins. The pin focus
+    // happens after the catalog loads (?id= needs the entry to exist).
+    const urlState = readUrlState();
+    if (urlState.q) {
+      textQuery = urlState.q;
+      const input = document.getElementById('map-search-input');
+      if (input) input.value = urlState.q;
+    }
 
     renderTimeChips();
     renderCatChips();
 
     function onCatalogReady() {
       renderPins();
+      updateSearchCount();
+      // ?id= takes precedence over fitView so deep links land on the pin.
+      if (urlState.id && focusPin(urlState.id)) return;
       fitView();
     }
 
