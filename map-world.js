@@ -60,7 +60,7 @@ const M = {
 // ─── Category colours (desaturated ~30%) ────────────────────────────────────
 const CAT = {
   music:   { fg: 'oklch(0.96 0.02 25)',  bg: 'oklch(0.52 0.160 27)',  label: 'Music' },
-  drink:   { fg: 'oklch(0.18 0.02 60)',  bg: 'oklch(0.78 0.105 78)',  label: 'Craft beer' },
+  drink:   { fg: 'oklch(0.96 0.02 78)',  bg: 'oklch(0.54 0.125 78)',  label: 'Craft beer' },
   vinyl:   { fg: 'oklch(0.96 0.02 290)', bg: 'oklch(0.44 0.130 295)', label: 'Vinyl & books' },
   market:  { fg: 'oklch(0.16 0.04 145)', bg: 'oklch(0.72 0.100 140)', label: 'Flea & market' },
   culture: { fg: 'oklch(0.96 0.01 230)', bg: 'oklch(0.40 0.100 235)', label: 'Cultural space' },

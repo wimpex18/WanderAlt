@@ -119,6 +119,8 @@
   }
 
   // ── Kind normalisation ────────────────────────────────────────
+  // 'drink' and 'art' are intentionally absent — reserved for future pipeline
+  // kinds (craft bar, street art) that the Telegram ingest will produce.
   const KIND_MAP = {
     'gig': 'music', 'club': 'music', 'noise': 'music',
     'talk': 'culture', 'lecture': 'culture', 'exhibition': 'culture', 'gallery': 'culture',
