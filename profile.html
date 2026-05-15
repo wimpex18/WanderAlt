@@ -17,6 +17,7 @@
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
+  <script defer src="./taste.js"></script>
   <script defer src="./profile.js"></script>
 </head>
 <body data-page="profile">
@@ -92,6 +93,20 @@
         Sent Saturday mornings — 5 picks + a short editorial intro. No tracking links.
       </p>
       <p class="auth-panel__status" id="profile-digest-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Taste & recommendations — prefs summary + reset controls. -->
+    <section class="profile-section" id="taste-section" aria-labelledby="profile-taste-label">
+      <header class="section-head">
+        <h2 id="profile-taste-label" class="section-title">Taste &amp; recommendations</h2>
+        <p class="section-sub" id="taste-prefs-summary"></p>
+      </header>
+      <p class="meta profile-section__line" id="taste-feedback-count"></p>
+      <div class="profile-actions" style="margin-top:var(--s-4)">
+        <button class="auth-panel__close" id="taste-reset-prefs-btn" type="button">Reset preferences</button>
+        <button class="auth-panel__close" id="taste-clear-feedback-btn" type="button">Clear feedback</button>
+      </div>
+      <p class="auth-panel__status" id="taste-status" aria-live="polite"></p>
     </section>
 
     <!-- Session — sign out + delete account. -->

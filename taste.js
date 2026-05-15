@@ -37,6 +37,12 @@
     localStorage.removeItem(PREFS_KEY);
   };
 
+  const clearAllFeedback = () => {
+    localStorage.removeItem(FEEDBACK_KEY);
+    localStorage.removeItem(SEEN_KEY);
+    document.dispatchEvent(new CustomEvent('wa:taste-changed'));
+  };
+
   /* — Feedback — capped so request bodies stay small. */
   const FEEDBACK_CAP = 50;
   const getFeedback  = () => {
@@ -119,11 +125,76 @@
     return out;
   };
 
+  /* — DB sync: load from user_match_history when signed in. */
+  const loadFromDb = async (session) => {
+    const base = window.WA?.BASE_URL;
+    if (!base || !session?.access_token) return;
+    try {
+      const res = await fetch(
+        `${base}/rest/v1/user_match_history?select=pick_id,vote,seen_at&order=seen_at.desc&limit=200`,
+        { headers: { apikey: window.WA.ANON_KEY, Authorization: `Bearer ${session.access_token}` } }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!Array.isArray(rows) || !rows.length) return;
+
+      /* Merge DB rows into local state (DB wins for vote; seen always merged). */
+      const fb = getFeedback();
+      const seenFromDb = [];
+      for (const row of rows) {
+        const id = row.pick_id;
+        seenFromDb.push(id);
+        if (row.vote === 'like') {
+          fb.liked    = [id, ...((fb.liked    || []).filter(x => x !== id))];
+          fb.disliked = (fb.disliked || []).filter(x => x !== id);
+        } else if (row.vote === 'dislike') {
+          fb.disliked = [id, ...((fb.disliked || []).filter(x => x !== id))];
+          fb.liked    = (fb.liked    || []).filter(x => x !== id);
+        }
+      }
+      writeFeedback(fb);
+      recordSeen(seenFromDb);
+    } catch { /* gracefully absent */ }
+  };
+
+  /* Upsert a single feedback row to DB. Fire-and-forget; errors are silent. */
+  const upsertToDb = async (session, pick_id, vote) => {
+    const base = window.WA?.BASE_URL;
+    if (!base || !session?.access_token) return;
+    try {
+      await fetch(`${base}/rest/v1/user_match_history`, {
+        method:  'POST',
+        headers: {
+          apikey:         window.WA.ANON_KEY,
+          Authorization:  `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          Prefer:         'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({ pick_id, vote: vote || null }),
+      });
+    } catch { /* gracefully absent */ }
+  };
+
+  /* Wire auto-sync on sign-in and on each feedback event. */
+  document.addEventListener('wa:signed-in', (e) => {
+    const session = e.detail?.session || window.WA?.Auth?.session;
+    if (session) loadFromDb(session);
+  });
+
+  document.addEventListener('wa:taste-feedback', (e) => {
+    const session = window.WA?.Auth?.session;
+    if (!session) return;
+    const { id, vote } = e.detail || {};
+    if (id) upsertToDb(session, id, vote);
+  });
+
   window.WA = window.WA || {};
   window.WA.taste = {
     getPrefs, setPrefs, isOnboarded, setOnboarded, resetOnboarding,
+    clearAllFeedback,
     getFeedback, recordLike, recordDislike, clearVote, voteFor,
     getSeen, recordSeen,
     tasteScore, matchParams,
+    loadFromDb, upsertToDb,
   };
 })();

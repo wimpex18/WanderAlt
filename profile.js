@@ -183,6 +183,67 @@
     if (e.key === 'Enter') updatePassword();
   });
 
+  /* ── Taste section ──────────────────────────────────────── */
+
+  const AXIS_LABELS = { energy: 'energy', company: 'company', money: 'money' };
+
+  const renderTasteSection = () => {
+    const taste = window.WA?.taste;
+    if (!taste) return;
+
+    const summaryEl  = $('#taste-prefs-summary');
+    const feedbackEl = $('#taste-feedback-count');
+
+    if (summaryEl) {
+      const prefs = taste.getPrefs();
+      const keys  = Object.keys(prefs);
+      if (keys.length) {
+        summaryEl.textContent = keys.map(k => `${k}: ${prefs[k]}`).join(' · ');
+      } else {
+        summaryEl.textContent = taste.isOnboarded() ? 'No preferences set' : 'Not set up yet — visit Briefing';
+      }
+    }
+
+    if (feedbackEl) {
+      const fb      = taste.getFeedback();
+      const liked   = (fb.liked    || []).length;
+      const disliked = (fb.disliked || []).length;
+      const seen    = taste.getSeen().length;
+      if (liked || disliked || seen) {
+        feedbackEl.textContent =
+          `${liked} liked · ${disliked} disliked · ${seen} seen`;
+      } else {
+        feedbackEl.textContent = 'No feedback recorded yet';
+      }
+    }
+  };
+
+  renderTasteSection();
+
+  $('#taste-reset-prefs-btn')?.addEventListener('click', () => {
+    const taste = window.WA?.taste;
+    if (!taste) return;
+    taste.resetOnboarding();
+    renderTasteSection();
+    const el = $('#taste-status');
+    if (el) {
+      el.textContent = 'Preferences cleared — next Briefing visit will re-run setup.';
+      el.style.color = 'var(--c-ink-mute)';
+    }
+  });
+
+  $('#taste-clear-feedback-btn')?.addEventListener('click', () => {
+    const taste = window.WA?.taste;
+    if (!taste) return;
+    taste.clearAllFeedback();
+    renderTasteSection();
+    const el = $('#taste-status');
+    if (el) {
+      el.textContent = 'Feedback and seen history cleared.';
+      el.style.color = 'var(--c-ink-mute)';
+    }
+  });
+
   /* ── Sign out ────────────────────────────────────────────── */
 
   $('#profile-signout')?.addEventListener('click', () => {
