@@ -63,8 +63,19 @@ const json = (body: unknown, status = 200) =>
 const normalizePrompt = (p: string): string =>
   p.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[!?.;]+$/, '');
 
-async function queryHash(city: string, prompt: string, mode: string): Promise<string> {
-  const data = new TextEncoder().encode(`${city}|${mode}|${normalizePrompt(prompt)}`);
+// Normalize a taste object into a stable string so {energy:'loud',company:'solo'}
+// and {company:'solo',energy:'loud'} produce the same cache key.
+function normalizeTaste(t: Record<string, string> | undefined): string {
+  if (!t || typeof t !== 'object') return '';
+  return Object.keys(t).sort().map(k => `${k}:${t[k]}`).join(',');
+}
+
+async function queryHash(
+  city: string, prompt: string, mode: string,
+  taste: Record<string, string> | undefined, curatedOnly: boolean,
+): Promise<string> {
+  const key  = `${city}|${mode}|${normalizePrompt(prompt)}|${normalizeTaste(taste)}|${curatedOnly ? '1' : '0'}`;
+  const data = new TextEncoder().encode(key);
   const buf  = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -223,12 +234,17 @@ async function fetchPicks(ids: string[]): Promise<PickRow[]> {
 }
 
 // ----- SQL fast path --------------------------------------------------------
-async function sqlFastPath(intent: Extract<Intent, { kind: 'sql' }>, city: string): Promise<PickRow[]> {
+async function sqlFastPath(
+  intent: Extract<Intent, { kind: 'sql' }>, city: string, curatedOnly: boolean,
+): Promise<PickRow[]> {
   const filters = [
     `city=eq.${encodeURIComponent(city)}`,
     'archived_at=is.null',
     'pending_review=eq.false',
   ];
+  if (curatedOnly) {
+    filters.push(`handle=neq.${encodeURIComponent('@discovery')}`);
+  }
   if (intent.handle) {
     const cleaned = intent.handle.replace(/^@/, '');
     filters.push(`or=(handle.eq.@${encodeURIComponent(cleaned)},handle.eq.${encodeURIComponent(cleaned)})`);
@@ -251,7 +267,42 @@ async function sqlFastPath(intent: Extract<Intent, { kind: 'sql' }>, city: strin
 // ----- LLM rerank -----------------------------------------------------------
 interface RerankHit { id: string; why: string; }
 
-async function rerankGroq(prompt: string, candidates: PickRow[], topK: number, model: string): Promise<RerankHit[] | null> {
+interface UserContext {
+  taste?:        Record<string, string>;
+  liked_ids?:    string[];
+  disliked_ids?: string[];
+  seen_ids?:     string[];
+}
+
+// Build the "User context" preamble for the rerank prompt. Empty string when
+// the user has no taste profile and no feedback history.
+function userContextBlock(ctx: UserContext, candidates: PickRow[]): string {
+  const lines: string[] = [];
+  if (ctx.taste && Object.keys(ctx.taste).length) {
+    const labels = Object.entries(ctx.taste)
+      .map(([axis, choice]) => `${axis}=${choice}`)
+      .join(', ');
+    lines.push(`Taste profile: ${labels}.`);
+  }
+  // Surface liked / disliked titles from the candidate pool (if any are present)
+  const titleFor = new Map(candidates.map(p => [p.id, `${p.title} (${p.venue})`]));
+  const likedHere    = (ctx.liked_ids    || []).filter(id => titleFor.has(id));
+  const dislikedHere = (ctx.disliked_ids || []).filter(id => titleFor.has(id));
+  if (likedHere.length) {
+    lines.push(`User previously liked similar picks. Lean into what those share.`);
+  }
+  if (dislikedHere.length) {
+    lines.push(`Avoid recommending these picks (user dismissed them): ${dislikedHere.map(id => titleFor.get(id)).join('; ')}.`);
+  }
+  if ((ctx.seen_ids || []).length) {
+    lines.push(`Prefer fresh picks over ones the user has already seen recently.`);
+  }
+  return lines.length ? `\nUser context:\n${lines.join(' ')}\n` : '';
+}
+
+async function rerankGroq(
+  prompt: string, candidates: PickRow[], topK: number, model: string, ctx: UserContext,
+): Promise<RerankHit[] | null> {
   if (!GROQ_KEY) return null;
   const manifest = candidates.map((p, i) =>
     `${i + 1}. [${p.id}] ${p.title} · ${p.venue}, ${p.neighborhood} · ${p.kind}` +
@@ -270,8 +321,9 @@ async function rerankGroq(prompt: string, candidates: PickRow[], topK: number, m
     `If fewer than ${topK} truly fit, return fewer — never pad.`;
 
   const userPrompt =
-    `User wants: "${prompt}"\n\n` +
-    `Candidates:\n${manifest}\n\n` +
+    `User wants: "${prompt}"` +
+    userContextBlock(ctx, candidates) +
+    `\nCandidates:\n${manifest}\n\n` +
     `Return JSON: {"hits":[{"id":"exact-id-from-list","why":"one sentence"}]}\n` +
     `IDs must be copied verbatim. Order = best fit first.`;
 
@@ -310,9 +362,11 @@ async function rerankGroq(prompt: string, candidates: PickRow[], topK: number, m
   }
 }
 
-async function rerankWithFallback(prompt: string, candidates: PickRow[], topK: number): Promise<RerankHit[]> {
+async function rerankWithFallback(
+  prompt: string, candidates: PickRow[], topK: number, ctx: UserContext,
+): Promise<RerankHit[]> {
   for (const model of GROQ_MODELS) {
-    const r = await rerankGroq(prompt, candidates, topK, model);
+    const r = await rerankGroq(prompt, candidates, topK, model, ctx);
     if (r && r.length) return r;
   }
   return [];
@@ -361,24 +415,43 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
 
   const t0 = Date.now();
-  let body: { city?: string; prompt?: string; mode?: string; bypass_cache?: boolean } = {};
+  let body: {
+    city?: string; prompt?: string; mode?: string; bypass_cache?: boolean;
+    curated_only?: boolean;
+    taste?: Record<string, string>;
+    liked_ids?: string[]; disliked_ids?: string[]; seen_ids?: string[];
+  } = {};
   try { body = await req.json(); } catch { return json({ ok: false, error: 'invalid JSON' }, 400); }
 
-  const city   = body.city && ALLOWED_CITIES.has(body.city) ? body.city : 'tallinn';
-  const prompt = (body.prompt || '').trim().slice(0, 400);
-  const mode   = body.mode === 'find_one' ? 'find_one' : 'find_many';
-  const topK   = mode === 'find_one' ? 1 : 5;
+  const city         = body.city && ALLOWED_CITIES.has(body.city) ? body.city : 'tallinn';
+  const prompt       = (body.prompt || '').trim().slice(0, 400);
+  const mode         = body.mode === 'find_one' ? 'find_one' : 'find_many';
+  const topK         = mode === 'find_one' ? 1 : 5;
+  const curatedOnly  = body.curated_only === true;
+  const ctx: UserContext = {
+    taste:        body.taste,
+    liked_ids:    Array.isArray(body.liked_ids)    ? body.liked_ids.slice(0, 20)    : [],
+    disliked_ids: Array.isArray(body.disliked_ids) ? body.disliked_ids.slice(0, 20) : [],
+    seen_ids:     Array.isArray(body.seen_ids)     ? body.seen_ids.slice(0, 30)     : [],
+  };
 
   if (!prompt) return json({ ok: false, error: 'prompt required' }, 400);
 
   const normalized = normalizePrompt(prompt);
-  const hash       = await queryHash(city, prompt, mode);
+  const hash       = await queryHash(city, prompt, mode, ctx.taste, curatedOnly);
 
   // ---- 1. Cache check ----
   if (!body.bypass_cache) {
     const cached = await getCached(hash);
     if (cached && !cached.stale) {
-      const resp = cached.response as Record<string, unknown>;
+      let resp = cached.response as Record<string, unknown>;
+      // Respect disliked_ids even on a cache hit: filter them out of hits.
+      if (ctx.disliked_ids?.length && Array.isArray((resp as { hits?: unknown }).hits)) {
+        const dislike = new Set(ctx.disliked_ids);
+        const filtered = (resp.hits as Array<{ pick?: { id?: string } }>)
+          .filter(h => !(h.pick?.id && dislike.has(h.pick.id)));
+        resp = { ...resp, hits: filtered, pick: filtered[0]?.pick ?? null };
+      }
       return json({ ...resp, cached: true, latency_ms: Date.now() - t0 });
     }
   }
@@ -390,7 +463,7 @@ Deno.serve(async (req: Request) => {
   let classifier: 'sql'|'hybrid'|'bm25_only' = 'hybrid';
 
   if (intent.kind === 'sql') {
-    candidates = await sqlFastPath(intent, city);
+    candidates = await sqlFastPath(intent, city, curatedOnly);
     classifier = 'sql';
   } else {
     // ---- 3. Hybrid retrieval ----
@@ -401,15 +474,27 @@ Deno.serve(async (req: Request) => {
     } else {
       // Embedding failure — fall back to BM25-only via PostgREST wfts
       classifier = 'bm25_only';
+      const handleFilter = curatedOnly ? `&handle=neq.${encodeURIComponent('@discovery')}` : '';
       const r = await fetch(
         `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}` +
-        `&archived_at=is.null&pending_review=eq.false` +
+        `&archived_at=is.null&pending_review=eq.false${handleFilter}` +
         `&search_vector=wfts.${encodeURIComponent(prompt)}` +
         `&select=${PICK_COLS}&limit=20`,
         { headers: sbHeaders() }
       );
       if (r.ok) candidates = await r.json();
     }
+    // Post-filter for curated_only on the hybrid path (the RPC itself
+    // doesn't know about it, so we strip @discovery hits here).
+    if (curatedOnly) {
+      candidates = candidates.filter(c => c.handle !== '@discovery');
+    }
+  }
+
+  // Drop disliked picks before the rerank — saves tokens, respects the user.
+  if (ctx.disliked_ids?.length) {
+    const dislike = new Set(ctx.disliked_ids);
+    candidates = candidates.filter(c => !dislike.has(c.id));
   }
 
   // ---- 4. LLM rerank ----
@@ -432,7 +517,7 @@ Deno.serve(async (req: Request) => {
     // SQL fast path or very small result set — skip the LLM
     hits = candidates.slice(0, topK).map(p => ({ pick: toPick(p), why: '' }));
   } else {
-    const reranked = await rerankWithFallback(prompt, candidates, topK);
+    const reranked = await rerankWithFallback(prompt, candidates, topK, ctx);
     const byId     = new Map(candidates.map(c => [c.id, c]));
     hits = reranked
       .map(r => {
@@ -455,6 +540,7 @@ Deno.serve(async (req: Request) => {
     classifier,
     suggested_more: hits.length < 3,
     empty: hits.length === 0,
+    curated_only: curatedOnly,
   };
 
   await setCached(hash, normalized, city, response);
