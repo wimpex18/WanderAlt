@@ -203,11 +203,12 @@
       return;
     }
     if (countEl) { countEl.textContent = 'matching…'; countEl.hidden = false; }
+    const tasteParams = window.WA?.taste?.matchParams() || {};
     try {
       const r = await fetch(`${base}/functions/v1/match-pick`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ city, prompt, mode: 'find_one' }),
+        body:    JSON.stringify({ city, prompt, mode: 'find_one', ...tasteParams }),
       });
       const data = await r.json();
       if (!data.ok || !data.pick) {

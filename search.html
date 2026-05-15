@@ -17,6 +17,7 @@
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
+  <script defer src="./taste.js"></script>
   <script defer src="./mood-chips.js"></script>
   <script defer src="./search.js"></script>
 </head>
@@ -73,6 +74,13 @@
       <button class="match-toggle" id="match-toggle" type="button">
         Match me &rarr;
       </button>
+      <!-- Curator-vouched filter — when on, hides @discovery picks so
+           results reflect only what a human curator has explicitly
+           vouched for. Off by default. -->
+      <label class="curated-toggle">
+        <input type="checkbox" id="curated-only" />
+        <span>Curator-vouched only</span>
+      </label>
     </section>
 
     <!-- Mood chips — mood-chips.js renders chip buttons here.

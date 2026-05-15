@@ -17,6 +17,7 @@
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
+  <script defer src="./taste.js"></script>
   <script defer src="./mood-chips.js"></script>
   <script defer src="./briefing.js"></script>
 </head>
@@ -46,6 +47,42 @@
     <!-- Print masthead: hidden on screen, shown in @media print.
          city.js populates this with "WanderAlt · CITY · Date". -->
     <p class="print-head" aria-hidden="true"></p>
+
+    <!-- Taste-profile onboarding — 3 quick taps, biases the briefing.
+         Shown only when the user hasn't onboarded yet. -->
+    <section class="taste-onboarding" id="taste-onboarding"
+             aria-labelledby="taste-onboarding-label" hidden>
+      <p id="taste-onboarding-label" class="eyebrow">A quick taste check</p>
+      <p class="taste-onboarding__intro meta">
+        Three taps. We'll bias the briefing to what you like &mdash;
+        nothing is sent to a server. Change anytime in Profile.
+      </p>
+      <div class="taste-q">
+        <p class="taste-q__prompt">Tonight, do you want it&hellip;</p>
+        <div class="taste-q__choices">
+          <button type="button" class="taste-chip" data-axis="energy" data-choice="loud"  aria-pressed="false">loud</button>
+          <button type="button" class="taste-chip" data-axis="energy" data-choice="quiet" aria-pressed="false">quiet</button>
+        </div>
+      </div>
+      <div class="taste-q">
+        <p class="taste-q__prompt">Going&hellip;</p>
+        <div class="taste-q__choices">
+          <button type="button" class="taste-chip" data-axis="company" data-choice="solo"   aria-pressed="false">solo</button>
+          <button type="button" class="taste-chip" data-axis="company" data-choice="social" aria-pressed="false">with people</button>
+        </div>
+      </div>
+      <div class="taste-q">
+        <p class="taste-q__prompt">Budget&hellip;</p>
+        <div class="taste-q__choices">
+          <button type="button" class="taste-chip" data-axis="money" data-choice="free"     aria-pressed="false">free</button>
+          <button type="button" class="taste-chip" data-axis="money" data-choice="ticketed" aria-pressed="false">happy to pay</button>
+        </div>
+      </div>
+      <div class="taste-onboarding__foot">
+        <button type="button" class="taste-skip" id="taste-skip">Skip</button>
+        <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
+      </div>
+    </section>
 
     <!-- Tonight hero — populated by briefing.js from catalog.js -->
     <section id="tonight" class="tonight" aria-labelledby="tonight-label">
@@ -90,7 +127,7 @@
     </section>
 
     <footer class="colophon">
-      <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
+      <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
     </footer>
 
   </main>

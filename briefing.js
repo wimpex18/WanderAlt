@@ -9,6 +9,43 @@
      catalog.js → bookmark.js → briefing.js   (all defer)
    ============================================================ */
 (() => {
+  /* ── Taste-profile onboarding (3 questions, inline banner) ── */
+  const initTasteOnboarding = () => {
+    const taste = window.WA?.taste;
+    const wrap  = document.getElementById('taste-onboarding');
+    if (!taste || !wrap) return;
+    if (taste.isOnboarded()) return;
+
+    wrap.hidden = false;
+
+    const reflect = () => {
+      const prefs = taste.getPrefs();
+      wrap.querySelectorAll('.taste-chip').forEach(b => {
+        const on = prefs[b.dataset.axis] === b.dataset.choice;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.classList.toggle('taste-chip--on', on);
+      });
+      const done = document.getElementById('taste-done');
+      const allAnswered = ['energy', 'company', 'money'].every(a => prefs[a]);
+      if (done) done.hidden = !allAnswered;
+    };
+
+    wrap.addEventListener('click', (e) => {
+      const chip = e.target.closest('.taste-chip');
+      if (chip) {
+        taste.setPrefs({ [chip.dataset.axis]: chip.dataset.choice });
+        reflect();
+        return;
+      }
+      if (e.target.id === 'taste-skip' || e.target.id === 'taste-done') {
+        taste.setOnboarded();
+        wrap.hidden = true;
+      }
+    });
+
+    reflect();
+  };
+
   /* ── Template helpers ──────────────────────────────────── */
 
   /* Returns a <span class="meta__time"> wrapping the timing
@@ -265,14 +302,33 @@
     const allWeek   = catalog.filter(e => e.thisWeek);
     const fallback  = allWeek.length === 0;
     const weekSrc   = fallback ? catalog.slice(0, 8) : allWeek;
+
+    /* Apply taste re-ordering before slicing to 8: items aligned with the
+       user's onboarding answers (and previous 👍) bubble to the top. Falls
+       back to original order when there's no taste profile. */
+    const orderByTaste = (entries) => {
+      const taste = window.WA?.taste;
+      if (!taste) return entries;
+      const prefs = taste.getPrefs();
+      const fb    = taste.getFeedback();
+      if (!Object.keys(prefs).length && !(fb.liked?.length) && !(fb.disliked?.length)) {
+        return entries;  /* untouched corpus order */
+      }
+      /* Stable sort — bigger score first; ties keep original order via index. */
+      return entries
+        .map((e, i) => ({ e, i, s: taste.tasteScore(e) }))
+        .sort((a, b) => b.s - a.s || a.i - b.i)
+        .map(x => x.e);
+    };
+    const orderedWeek = orderByTaste(weekSrc);
     /* Cap the displayed list at 8; pass the real total for the sub-heading. */
-    const thisWeek  = weekSrc.slice(0, 8);
+    const thisWeek  = orderedWeek.slice(0, 8);
 
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
 
     /* Stash the full week source for mood re-filtering. */
-    const _allWeek     = weekSrc;
+    const _allWeek     = orderedWeek;
     const _isFallback  = fallback;
 
     renderTonight(tonight);
@@ -282,6 +338,18 @@
     wireBookmarks();
     wireSurprise(catalog);
     renderColumn();  /* async — doesn't block the sync render above */
+
+    /* Re-render This Week when the taste profile changes (after onboarding
+       or a Profile-page edit). */
+    document.addEventListener('wa:taste-changed', () => {
+      const reordered = orderByTaste(weekSrc);
+      renderThisWeek(reordered.slice(0, 8), fallback ? reordered.length : allWeek.length);
+      restoreBookmarks();
+    });
+
+    /* First-visit taste check — shows the 3-question banner above the
+       Tonight hero. Skips if the user already onboarded. */
+    initTasteOnboarding();
 
     /* Digest opt-in for visitors without an account. */
     const wireDigestOptin = () => {

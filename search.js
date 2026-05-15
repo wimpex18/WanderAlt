@@ -175,6 +175,18 @@
     return ` &middot; ${p.day} ${p.time}`;
   };
 
+  /* Returns the 👍/👎 vote toolbar for a matched pick. Reads from taste.js
+     so the active vote persists across renders + page refreshes. */
+  const renderVoteBar = (pick) => {
+    const vote = window.WA?.taste?.voteFor(pick.id) || null;
+    return `<div class="match-votes" data-id="${esc(pick.id)}" role="group" aria-label="Rate this match">
+        <button type="button" class="match-vote match-vote--up${vote === 'like' ? ' match-vote--on' : ''}"
+                data-vote="like" aria-pressed="${vote === 'like'}" aria-label="More like this">&#x2191;</button>
+        <button type="button" class="match-vote match-vote--down${vote === 'dislike' ? ' match-vote--on' : ''}"
+                data-vote="dislike" aria-pressed="${vote === 'dislike'}" aria-label="Not for me">&#x2193;</button>
+      </div>`;
+  };
+
   /* Hero card — the top-ranked match. Reuses tonight__venue layout so no
      new tokens are needed. Accepts the v6 toPick() shape (imageUrl etc). */
   const renderHeroCard = (pick, why) => {
@@ -209,6 +221,7 @@
            <span class="meta">${esc(pick.neighborhood || '')} &middot; ${esc(pick.kind || '')}${timeSpan(pick)}</span>
          </span>
        </a>
+       ${renderVoteBar(pick)}
      </div>`;
   };
 
@@ -225,6 +238,7 @@
        </p>
        <p class="list-row__meta">${esc(meta)}</p>
        <p class="list-row__quote">&#x2014; ${esc(why || pick.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a></p>
+       ${renderVoteBar(pick)}
      </li>`;
   };
 
@@ -259,6 +273,12 @@
 
     resultEl.innerHTML = hero + list + footnote + discover;
     if (data.suggested_more) wireDiscoverButton(prompt);
+
+    /* Remember every id surfaced so future match-pick calls can deprioritize
+       what the user has already seen. Capped & FIFO inside taste.js. */
+    if (window.WA?.taste) {
+      window.WA.taste.recordSeen(hits.map(h => h.pick?.id).filter(Boolean));
+    }
   };
 
   const renderMatchFootnote = (data) => {
@@ -307,11 +327,21 @@
       return;
     }
 
+    /* Spread the taste profile + previous votes/seen ids into the request.
+       match-pick v7 reads these to bias the rerank prompt. */
+    const tasteParams  = window.WA?.taste?.matchParams() || {};
+    const curatedOnly  = document.getElementById('curated-only')?.checked === true;
+
     try {
       const res = await fetch(`${base}/functions/v1/match-pick`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ city, prompt, mode: 'find_many', bypass_cache: !!opts.bypassCache }),
+        body:    JSON.stringify({
+          city, prompt, mode: 'find_many',
+          bypass_cache: !!opts.bypassCache,
+          curated_only: curatedOnly,
+          ...tasteParams,
+        }),
       });
       const data = await res.json();
 
@@ -550,6 +580,44 @@
     document.addEventListener('wa:mood-changed', (e) => {
       activeMoodTags = e.detail.tags;
       if (mode === 'search') runSearch();
+    });
+
+    /* Curator-vouched toggle → re-run an active match query so the change
+       takes effect immediately (rather than waiting for the next prompt). */
+    const curatedOnly = document.getElementById('curated-only');
+    if (curatedOnly) {
+      curatedOnly.addEventListener('change', () => {
+        if (mode !== 'match') return;
+        const prompt = input.value.trim();
+        if (prompt) runMatch(prompt, { bypassCache: true });
+      });
+    }
+
+    /* 👍 / 👎 votes on match cards — toggles via taste.js; clearVote when
+       the user taps an already-active vote (clears their stance). */
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.match-vote');
+      if (!btn) return;
+      const wrap = btn.closest('.match-votes');
+      const id   = wrap?.dataset.id;
+      const taste = window.WA?.taste;
+      if (!id || !taste) return;
+      e.preventDefault();
+      const current = taste.voteFor(id);
+      const next    = btn.dataset.vote;
+      if (current === next) {
+        taste.clearVote(id);
+      } else if (next === 'like') {
+        taste.recordLike(id);
+      } else {
+        taste.recordDislike(id);
+      }
+      /* Reflect the new state without a full re-render. */
+      wrap.querySelectorAll('.match-vote').forEach(b => {
+        const on = taste.voteFor(id) === b.dataset.vote;
+        b.classList.toggle('match-vote--on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
     });
 
     /* Seed the input from ?q= so deep links from the map / pin detail

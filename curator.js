@@ -133,7 +133,7 @@
       </article>
 
       <footer class="colophon">
-        <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; Curated by humans, not algorithms.</p>
+        <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
       </footer>
     `;
 

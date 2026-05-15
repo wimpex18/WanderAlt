@@ -1309,6 +1309,131 @@ body[data-page="saved"] .colophon {
 }
 .results-map-link:hover { text-decoration: underline; }
 
+/* ============================================================
+   TASTE-PROFILE ONBOARDING — three quick chips on first visit
+   ------------------------------------------------------------
+   Inline banner above the Tonight hero. Each axis (energy/
+   company/money) has two mutually-exclusive chip choices.
+   ============================================================ */
+.taste-onboarding {
+  padding: var(--s-5) 0 var(--s-5);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  margin-bottom: var(--s-5);
+}
+.taste-onboarding__intro {
+  margin: var(--s-1) 0 var(--s-4);
+  max-width: 56ch;
+}
+.taste-q {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+.taste-q__prompt {
+  margin: 0;
+  font-family: var(--ff-body);
+  font-size: 15px;
+  color: var(--c-ink);
+  min-width: 140px;
+}
+.taste-q__choices {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.taste-chip {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  padding: 4px 12px;
+  border: 1px solid var(--c-rule-strong);
+  background: var(--c-paper);
+  color: var(--c-ink);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.taste-chip:hover { border-color: var(--c-ink); }
+.taste-chip--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-ink);
+}
+.taste-onboarding__foot {
+  display: flex;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  align-items: center;
+}
+.taste-skip, .taste-done {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.taste-skip:hover { color: var(--c-accent); }
+.taste-done {
+  color: var(--c-accent);
+}
+.taste-done:hover { text-decoration: underline; }
+
+/* Curator-vouched toggle — small inline switch beside the Match-me link. */
+.curated-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0 var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  user-select: none;
+}
+.curated-toggle input { accent-color: var(--c-accent); }
+.curated-toggle:hover { color: var(--c-ink); }
+
+/* 👍 / 👎 vote bar on match results — light, inline, mono. */
+.match-votes {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: var(--s-3);
+}
+.match-vote {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-mono);
+  font-size: 14px;
+  line-height: 1;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule-strong);
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.match-vote:hover { color: var(--c-ink); border-color: var(--c-ink); }
+.match-vote--up.match-vote--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-ink);
+}
+.match-vote--down.match-vote--on {
+  background: var(--c-accent);
+  color: var(--c-paper);
+  border-color: var(--c-accent);
+}
+/* In list rows, put the vote bar on its own line to keep titles clean. */
+.list-row .match-votes { margin-top: var(--s-2); }
+
 .list-row__meta {
   margin-top: 4px;
   font-family: var(--ff-mono);
