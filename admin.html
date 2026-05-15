@@ -68,6 +68,15 @@
     .admin-reset             { border:none; background:none; color:var(--c-accent);
                                font-family:var(--ff-mono); font-size:var(--fs-meta);
                                cursor:pointer; text-decoration:underline; padding:0; }
+    .admin-reset.is-active   { text-decoration:none; font-weight:600; }
+
+    /* Stats strip */
+    .admin-stat-badge        { font-family:var(--ff-mono); font-size:var(--fs-meta);
+                               letter-spacing:.04em; padding:3px 10px;
+                               border:1px solid var(--c-rule-strong); color:var(--c-ink-mute); }
+    .admin-stat-badge--warn  { color:var(--c-ink-mute); }
+    .admin-stat-badge--accent { color:var(--c-accent); border-color:var(--c-accent); }
+    .admin-stat-badge--bad   { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
     .admin-search-row        { position:relative; margin-top:var(--s-4); }
     .admin-search-row input  { width:100%; box-sizing:border-box;
                                padding:var(--s-2) var(--s-3); border:1px solid var(--c-ink);
@@ -319,6 +328,16 @@
       </div>
     </section>
 
+    <!-- Stats strip — quick health indicators -->
+    <section id="admin-stats" class="admin-section" style="padding-top:var(--s-4)">
+      <div id="admin-stats-inner" style="display:flex;flex-wrap:wrap;gap:var(--s-3)">
+        <span class="admin-stat-badge" id="stat-picks">— picks</span>
+        <span class="admin-stat-badge admin-stat-badge--warn" id="stat-unpinned">— unpinned</span>
+        <span class="admin-stat-badge admin-stat-badge--warn" id="stat-noembeds">— no embedding</span>
+        <span class="admin-stat-badge admin-stat-badge--accent" id="stat-review">— pending review</span>
+      </div>
+    </section>
+
     <!-- Tonight -->
     <section id="admin-tonight" class="admin-section">
       <div class="admin-section-head">
@@ -366,7 +385,10 @@
     <section id="admin-picks" class="admin-section">
       <div class="admin-section-head">
         <p class="eyebrow">Picks</p>
-        <button type="button" id="picks-new-btn" class="admin-reset">New pick &rarr;</button>
+        <div style="display:flex;gap:var(--s-2)">
+          <button type="button" id="ap-unpinned-btn" class="admin-reset" title="Show only picks without map coordinates">Unpinned only</button>
+          <button type="button" id="picks-new-btn" class="admin-reset">New pick &rarr;</button>
+        </div>
       </div>
       <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
         Search any active pick to edit title, quote, description, image, flags, and more.
@@ -396,6 +418,68 @@
       <p class="meta" id="review-status" style="margin-bottom:var(--s-3);opacity:.65">Loading…</p>
       <ol id="review-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
     </section>
+
+    <!-- Curators — browse and edit curator profiles -->
+    <section id="admin-curators" class="admin-section">
+      <div class="admin-section-head">
+        <p class="eyebrow">Curators</p>
+        <button type="button" id="curator-new-btn" class="admin-reset">New curator &rarr;</button>
+      </div>
+      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+        Edit curator handle, name, bio, and tagline. Pick counts are updated by the ingest pipeline.
+      </p>
+      <p class="meta" id="curators-count" style="margin:var(--s-4) 0 var(--s-2);opacity:.65">Loading…</p>
+      <ol id="curators-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+    </section>
+
+    <!-- Curator edit modal -->
+    <div id="curator-modal" class="admin-modal-overlay" hidden
+         role="dialog" aria-modal="true" aria-labelledby="curator-modal-heading">
+      <div class="admin-modal">
+        <div class="admin-modal-head">
+          <h2 id="curator-modal-heading" style="font-family:var(--ff-mono);font-size:var(--fs-meta);font-weight:600;letter-spacing:.04em">Edit curator</h2>
+          <button type="button" id="curator-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="admin-modal-grid" style="grid-template-columns:1fr 1fr">
+          <div class="admin-mfield">
+            <label for="cf-handle">Handle</label>
+            <input id="cf-handle" type="text" autocomplete="off"
+                   placeholder="@handle or channel-name" />
+          </div>
+          <div class="admin-mfield">
+            <label for="cf-name">Display name</label>
+            <input id="cf-name" type="text" autocomplete="off"
+                   placeholder="Human-readable name" />
+          </div>
+          <div class="admin-mfield">
+            <label for="cf-city">City</label>
+            <input id="cf-city" type="text" autocomplete="off"
+                   placeholder="tallinn" />
+          </div>
+          <div class="admin-mfield">
+            <label for="cf-tagline">Tagline</label>
+            <input id="cf-tagline" type="text" autocomplete="off"
+                   placeholder="One-line description" />
+          </div>
+          <div class="admin-mfield admin-mfield--full">
+            <label for="cf-bio">Bio</label>
+            <textarea id="cf-bio" rows="4"
+                      placeholder="2–4 sentence bio shown on curator profile page"></textarea>
+          </div>
+          <div class="admin-mfield admin-mfield--full">
+            <label for="cf-source">Source channel</label>
+            <input id="cf-source" type="text" autocomplete="off"
+                   placeholder="Telegram channel URL or identifier" />
+          </div>
+        </div>
+        <div class="admin-modal-actions">
+          <button type="button" id="curator-save-btn" class="admin-modal-save">Save</button>
+          <button type="button" id="curator-modal-cancel" class="admin-modal-cancel">Cancel</button>
+          <button type="button" id="curator-delete-btn" class="admin-modal-archive">Delete&hellip;</button>
+        </div>
+        <p class="meta" id="curator-modal-status" style="margin-top:var(--s-3);min-height:1.4em" aria-live="polite"></p>
+      </div>
+    </div>
 
     <!-- Venues — browse, edit, create venue records -->
     <section id="admin-venues" class="admin-section">

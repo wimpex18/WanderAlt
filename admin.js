@@ -256,11 +256,12 @@
      ALL-PICKS BROWSER
      ══════════════════════════════════════════════════════════ */
   const AP_PAGE_SIZE = 20;
-  let apState = { kindFilter: '', sort: 'default', page: 0 };
+  let apState = { kindFilter: '', sort: 'default', page: 0, unpinnedOnly: false };
 
   const getApPicks = () => {
     let p = [...allPicks];
-    if (apState.kindFilter) p = p.filter(x => x.kind === apState.kindFilter);
+    if (apState.kindFilter)   p = p.filter(x => x.kind === apState.kindFilter);
+    if (apState.unpinnedOnly) p = p.filter(x => !x.world_x || !x.world_y);
     if (apState.sort === 'title') p.sort((a, b) => (a.title||'').localeCompare(b.title||''));
     if (apState.sort === 'venue') p.sort((a, b) => (a.venue||'').localeCompare(b.venue||''));
     if (apState.sort === 'kind')  p.sort((a, b) => (a.kind||'').localeCompare(b.kind||''));
@@ -280,9 +281,16 @@
 
     const countEl = $('all-picks-count');
     if (countEl) {
-      const suffix = apState.kindFilter ? ` of ${allPicks.length}` : '';
-      countEl.textContent = `${total}${suffix} picks`;
+      const active  = allPicks.length;
+      const unpinned = allPicks.filter(x => !x.world_x || !x.world_y).length;
+      const suffix  = (apState.kindFilter || apState.unpinnedOnly) ? ` of ${active}` : '';
+      countEl.textContent = `${total}${suffix} picks` +
+        (unpinned > 0 && !apState.unpinnedOnly ? ` · ${unpinned} unpinned` : '');
     }
+
+    /* Sync the "Unpinned only" button state */
+    const unpBtn = $('ap-unpinned-btn');
+    if (unpBtn) unpBtn.classList.toggle('is-active', apState.unpinnedOnly);
 
     if (ctrl) {
       const kinds = [...new Set(allPicks.map(p => p.kind).filter(Boolean))].sort();
@@ -315,8 +323,9 @@
       ? page.map(p => {
           const flags = [p.tonight && '◆ tonight', p.this_week && '● this week'].filter(Boolean).join(' · ');
           const meta  = [p.venue, p.kind, p.neighborhood, p.day].filter(Boolean).join(' · ');
+          const noPin = (!p.world_x || !p.world_y) ? ' <em style="opacity:.45">(unpinned)</em>' : '';
           return `<li class="admin-pick-row">
-            <span>${p.title}</span>
+            <span>${p.title}${noPin}</span>
             <span class="meta">${meta}${flags ? ` &nbsp;<em style="opacity:.55">${flags}</em>` : ''}</span>
             <button class="admin-btn--edit" data-id="${p.id}"
                     aria-label="Edit ${p.title}" title="Edit">&#9998;</button>
@@ -1084,6 +1093,165 @@
   };
 
   /* ══════════════════════════════════════════════════════════
+     STATS STRIP — quick health counts
+     ══════════════════════════════════════════════════════════ */
+  const loadStats = async () => {
+    const key     = hasKey() ? getKey() : ANON;
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    const city    = currentCity;
+    const countHeader = (res) => {
+      const m = (res?.headers?.get('Content-Range') || '').match(/\/(\d+)$/);
+      return m ? parseInt(m[1], 10) : null;
+    };
+    const el = (id) => document.getElementById(id);
+    try {
+      const [picksRes, unpinnedRes, reviewRes, embedsRes] = await Promise.all([
+        fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null&select=id`,
+              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
+        fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null` +
+              `&or=(world_x.is.null,world_y.is.null)&select=id`,
+              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
+        fetch(`${BASE}/rest/v1/picks?handle=eq.@discovery&archived_at=is.null&select=id`,
+              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
+        fetch(`${BASE}/rest/v1/pick_embeddings?select=pick_id`,
+              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
+      ]);
+
+      const total    = countHeader(picksRes);
+      const unpinned = countHeader(unpinnedRes);
+      const review   = countHeader(reviewRes);
+      const embeds   = countHeader(embedsRes);
+      const noEmbeds = (total != null && embeds != null) ? Math.max(0, total - embeds) : null;
+
+      if (el('stat-picks'))    el('stat-picks').textContent    = `${total ?? '?'} picks`;
+      if (el('stat-unpinned')) {
+        el('stat-unpinned').textContent = `${unpinned ?? '?'} unpinned`;
+        el('stat-unpinned').className   =
+          `admin-stat-badge${unpinned > 0 ? ' admin-stat-badge--warn' : ''}`;
+      }
+      if (el('stat-review')) {
+        el('stat-review').textContent = `${review ?? '?'} pending review`;
+        el('stat-review').className   =
+          `admin-stat-badge${review > 0 ? ' admin-stat-badge--accent' : ''}`;
+      }
+      if (el('stat-noembeds')) {
+        el('stat-noembeds').textContent = noEmbeds != null ? `${noEmbeds} no embedding` : '— no embedding';
+        el('stat-noembeds').className   =
+          `admin-stat-badge${noEmbeds > 0 ? ' admin-stat-badge--warn' : ''}`;
+      }
+    } catch { /* silently absent */ }
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     CURATORS MANAGEMENT
+     ══════════════════════════════════════════════════════════ */
+  let curatorsList = [];
+  let modalCurator = null; // curator being edited (null = new)
+
+  const loadCurators = async () => {
+    const countEl = document.getElementById('curators-count');
+    if (countEl) countEl.textContent = 'Loading…';
+    const key     = hasKey() ? getKey() : ANON;
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    try {
+      const res = await fetch(
+        `${BASE}/rest/v1/curators?city=eq.${currentCity}` +
+        `&select=handle,name,city,tagline,bio,source_channel,pick_count` +
+        `&order=pick_count.desc.nullslast,handle.asc&limit=100`,
+        { headers }
+      );
+      curatorsList = await res.json().catch(() => []);
+      renderCurators();
+    } catch (err) {
+      if (countEl) countEl.textContent = `Failed: ${err.message}`;
+    }
+  };
+
+  const renderCurators = () => {
+    const list    = document.getElementById('curators-list');
+    const countEl = document.getElementById('curators-count');
+    if (!list) return;
+    if (countEl) countEl.textContent = `${curatorsList.length} curator${curatorsList.length !== 1 ? 's' : ''}`;
+    list.innerHTML = curatorsList.length
+      ? curatorsList.map(c => `
+          <li class="admin-pick-row">
+            <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${c.handle}</span>
+            <span class="meta">${[c.name, c.tagline].filter(Boolean).join(' — ') || '—'}
+              ${c.pick_count != null ? `<em style="opacity:.55"> · ${c.pick_count} picks</em>` : ''}</span>
+            <button class="admin-btn--edit" data-curator-handle="${c.handle}"
+                    aria-label="Edit ${c.handle}" title="Edit">&#9998;</button>
+          </li>`
+        ).join('')
+      : `<li class="meta admin-empty" style="padding:var(--s-3) 0">No curators found for ${currentCity}.</li>`;
+  };
+
+  const openCuratorModal = (curator) => {
+    modalCurator = curator || null;
+    const modal = document.getElementById('curator-modal');
+    if (!modal) return;
+    const titleEl = document.getElementById('curator-modal-heading');
+    if (titleEl) titleEl.textContent = curator ? 'Edit curator' : 'New curator';
+    document.getElementById('curator-modal-status').textContent = '';
+    document.getElementById('cf-handle').value  = curator?.handle         || '';
+    document.getElementById('cf-name').value    = curator?.name           || '';
+    document.getElementById('cf-city').value    = curator?.city           || currentCity;
+    document.getElementById('cf-tagline').value = curator?.tagline        || '';
+    document.getElementById('cf-bio').value     = curator?.bio            || '';
+    document.getElementById('cf-source').value  = curator?.source_channel || '';
+    document.getElementById('cf-handle').readOnly = !!curator;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cf-handle').focus();
+  };
+
+  const closeCuratorModal = () => {
+    const modal = document.getElementById('curator-modal');
+    if (modal) modal.hidden = true;
+    document.body.style.overflow = '';
+    modalCurator = null;
+  };
+
+  const saveCuratorModal = async () => {
+    if (!hasKey()) { alert('Service key required to save curators.'); return; }
+    const status = document.getElementById('curator-modal-status');
+    const btn    = document.getElementById('curator-save-btn');
+    const handle   = document.getElementById('cf-handle').value.trim();
+    const city     = document.getElementById('cf-city').value.trim()   || currentCity;
+    const name     = document.getElementById('cf-name').value.trim()   || null;
+    const tagline  = document.getElementById('cf-tagline').value.trim() || null;
+    const bio      = document.getElementById('cf-bio').value.trim()    || null;
+    const source   = document.getElementById('cf-source').value.trim() || null;
+
+    if (!handle) { if (status) status.textContent = 'Handle is required.'; return; }
+
+    if (status) status.textContent = 'Saving…';
+    if (btn)    btn.disabled = true;
+
+    const key     = getKey();
+    const headers = { apikey: key, Authorization: `Bearer ${key}`,
+                      'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
+    try {
+      const res = await fetch(`${BASE}/rest/v1/curators`, {
+        method:  'POST',
+        headers,
+        body: JSON.stringify({ handle, city, name, tagline, bio, source_channel: source }),
+      });
+      if (res.ok || res.status === 204) {
+        if (status) status.textContent = 'Saved.';
+        await loadCurators();
+        setTimeout(closeCuratorModal, 700);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (status) status.textContent = data.message || `Error ${res.status}`;
+      }
+    } catch (err) {
+      if (status) status.textContent = `Network error: ${err.message}`;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  /* ══════════════════════════════════════════════════════════
      PIPELINE
      ══════════════════════════════════════════════════════════ */
   const loadPipeline = async () => {
@@ -1341,8 +1509,13 @@
         loadVenuesList(0);
         loadEnrichmentList(0);
         loadReviewQueue();
+        loadCurators();
+        loadStats();
       });
     }
+
+    /* ── Stats strip ── */
+    loadStats();
 
     /* ── Auth ── */
     renderAuthState();
@@ -1380,6 +1553,8 @@
     loadColumns();
     loadVenuesList(0);
     loadEnrichmentList(0);
+    loadReviewQueue();
+    loadCurators();
     wireColumns();
 
     /* ── Delegation: ✕ remove-flag buttons ── */
@@ -1488,6 +1663,11 @@
       if (pick) { openModal(pick); picksSearch.value = ''; picksResults.hidden = true; }
     });
     $('picks-new-btn')?.addEventListener('click', () => openModal(null));
+    $('ap-unpinned-btn')?.addEventListener('click', () => {
+      apState.unpinnedOnly = !apState.unpinnedOnly;
+      apState.page = 0;
+      renderAllPicks();
+    });
 
     /* ── Venue autocomplete inside pick modal ── */
     let modalVenueTimer = null;
@@ -1765,7 +1945,6 @@
     });
 
     /* ── Discovery review queue ── */
-    loadReviewQueue();
     $('review-refresh-btn')?.addEventListener('click', () => loadReviewQueue());
 
     /* Delegation for Approve / Edit / Reject on each review row. */
@@ -1827,9 +2006,36 @@
       if (r.ok) await loadEnrichmentList(vePage);
     });
 
+    /* ── Curators section ── */
+    $('curator-new-btn')?.addEventListener('click', () => openCuratorModal(null));
+    $('curator-save-btn')?.addEventListener('click', saveCuratorModal);
+    $('curator-modal-close')?.addEventListener('click',  closeCuratorModal);
+    $('curator-modal-cancel')?.addEventListener('click', closeCuratorModal);
+    $('curator-delete-btn')?.addEventListener('click', async () => {
+      if (!modalCurator) return;
+      if (!confirm(`Delete curator "${modalCurator.handle}"?\n\nThis does not delete their picks.`)) return;
+      if (!hasKey()) { alert('Service key required.'); return; }
+      const key = getKey();
+      const res = await fetch(
+        `${BASE}/rest/v1/curators?handle=eq.${encodeURIComponent(modalCurator.handle)}`,
+        { method: 'DELETE', headers: { apikey: key, Authorization: `Bearer ${key}` } }
+      );
+      if (res.ok) { closeCuratorModal(); await loadCurators(); }
+    });
+    $('curator-modal')?.addEventListener('click', (e) => {
+      if (e.target === $('curator-modal')) closeCuratorModal();
+    });
+    $('curators-list')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-curator-handle]');
+      if (!btn) return;
+      const curator = curatorsList.find(c => c.handle === btn.dataset.curatorHandle);
+      if (curator) openCuratorModal(curator);
+    });
+
     /* Escape closes whichever modal is open */
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
+      if (!document.getElementById('curator-modal')?.hidden) { closeCuratorModal(); return; }
       if (!$('admin-venue-modal')?.hidden) { closeVenueModal(); return; }
       if (!$('admin-modal')?.hidden)       { closeModal();      return; }
     });
