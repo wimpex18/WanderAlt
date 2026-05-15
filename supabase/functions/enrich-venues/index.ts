@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// enrich-venues v7
+// enrich-venues v8
 // Enriches venue_details rows from Wikidata + Nominatim.
 // Mirrors found images into venue_images AND propagates to picks.image_url.
 // Sets is_closed=true and archives picks when Wikidata P576 is present.
@@ -158,28 +158,52 @@ async function nominatimLookup(venueName: string, city: string): Promise<{ addre
 }
 
 // ---------------------------------------------------------------------------
-// Image source 2: Google Places API
-// Returns the final CDN URL after following the photo redirect.
+// Image source 2: Google Places API (New)
+// Uses the Places API v1 (New) — the current recommended API for new projects.
+// Key is sent in the X-Goog-Api-Key header (not the URL), and the response
+// returns a photoUri directly — no redirect-following needed.
 // Only runs when GOOGLE_PLACES_API_KEY is set.
 // ---------------------------------------------------------------------------
 async function fetchGooglePlacePhoto(name: string, lat: number, lng: number): Promise<string | null> {
   const key = Deno.env.get('GOOGLE_PLACES_API_KEY');
   if (!key) return null;
   try {
-    const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
-      `?input=${encodeURIComponent(name)}&inputtype=textquery` +
-      `&locationbias=circle:5000@${lat},${lng}` +
-      `&fields=photos&key=${key}`;
-    const findData = await (await fetch(findUrl)).json();
-    const ref = findData.candidates?.[0]?.photos?.[0]?.photo_reference;
-    if (!ref) return null;
+    const apiHeaders = {
+      'Content-Type':    'application/json',
+      'X-Goog-Api-Key':  key,
+      'X-Goog-FieldMask':'places.photos',
+    };
 
-    // Follow redirect to get the stable CDN URL (lh3.googleusercontent.com/places/...)
-    const photoRes = await fetch(
-      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${ref}&key=${key}`,
-      { redirect: 'follow' }
+    // Step 1: find the place by text query, biased to the city
+    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: apiHeaders,
+      body: JSON.stringify({
+        textQuery: name,
+        locationBias: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: 5000.0,
+          },
+        },
+        maxResultCount: 1,
+      }),
+    });
+    if (!searchRes.ok) return null;
+    const searchData = await searchRes.json();
+
+    // photos[].name looks like "places/{place_id}/photos/{photo_ref}"
+    const photoName = searchData.places?.[0]?.photos?.[0]?.name;
+    if (!photoName) return null;
+
+    // Step 2: fetch photo media with skipHttpRedirect to get JSON with photoUri
+    const mediaRes = await fetch(
+      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true`,
+      { headers: { 'X-Goog-Api-Key': key } }
     );
-    return photoRes.ok ? photoRes.url : null;
+    if (!mediaRes.ok) return null;
+    const mediaData = await mediaRes.json();
+    return mediaData.photoUri ?? null;
   } catch { return null; }
 }
 
