@@ -462,6 +462,9 @@
       setModalStatus('Saved.');
       setTimeout(closeModal, 700);
       render();
+      /* If the edited pick was on the review queue, refresh it so the
+         editor's title/quote changes show up before they click Approve. */
+      if (modalPick?.pending_review) loadReviewQueue();
     } else {
       setModalStatus('Failed — check console.', true);
     }
@@ -881,6 +884,110 @@
   };
 
   /* ══════════════════════════════════════════════════════════
+     DISCOVERY REVIEW QUEUE
+     Picks created by discover-venues live with pending_review=true
+     and handle='@discovery'. This list lets editors approve (publish
+     + re-embed) or reject (archive) each one.
+     ══════════════════════════════════════════════════════════ */
+  const escAttr = (s) => String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const stripPendingSuffix = (title) =>
+    String(title || '').replace(/\s*[—-]\s*pending review\s*$/i, '').trim();
+
+  const loadReviewQueue = async () => {
+    const list     = $('review-list');
+    const statusEl = $('review-status');
+    if (!list) return;
+
+    list.innerHTML = '';
+    if (statusEl) statusEl.textContent = 'Loading…';
+
+    try {
+      const r = await fetch(
+        `${BASE}/rest/v1/picks?city=eq.${encodeURIComponent(currentCity)}` +
+        `&pending_review=eq.true&archived_at=is.null` +
+        `&select=id,title,venue,neighborhood,kind,handle,image_url,discovery_source,discovery_query,thumb_initials,created_at` +
+        `&order=created_at.desc&limit=50`,
+        { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } }
+      );
+      const rows = await r.json();
+      if (!Array.isArray(rows) || !rows.length) {
+        if (statusEl) statusEl.textContent = 'No picks awaiting review.';
+        return;
+      }
+
+      if (statusEl) {
+        statusEl.textContent =
+          `${rows.length} pick${rows.length !== 1 ? 's' : ''} awaiting review`;
+      }
+
+      list.innerHTML = rows.map(row => {
+        const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
+        const initials   = row.thumb_initials
+          || (row.venue || cleanTitle).slice(0, 2).toUpperCase();
+        const thumbStyle = row.image_url
+          ? `background-image:url('${row.image_url.replace(/'/g, '%27')}')`
+          : '';
+        const thumbInner = row.image_url ? '' : escAttr(initials);
+        const metaBits = [row.neighborhood, row.kind].filter(Boolean).join(' · ');
+        const query    = row.discovery_query
+          ? `via "${escAttr(row.discovery_query)}"`
+          : (row.discovery_source || '');
+
+        return `<li class="review-row" data-id="${escAttr(row.id)}">
+          <div class="review-thumb" style="${thumbStyle}">${thumbInner}</div>
+          <div class="review-body">
+            <p class="review-title">${escAttr(cleanTitle)}</p>
+            <p class="review-meta">${escAttr(metaBits)}</p>
+            <p class="review-query">${escAttr(query)}</p>
+          </div>
+          <div class="review-actions">
+            <button type="button" class="admin-col-btn admin-col-btn--approve"
+                    data-review-action="approve">Approve</button>
+            <button type="button" class="admin-col-btn"
+                    data-review-action="edit">Edit</button>
+            <button type="button" class="admin-col-btn admin-col-btn--reject"
+                    data-review-action="reject">Reject</button>
+          </div>
+        </li>`;
+      }).join('');
+    } catch (err) {
+      if (statusEl) statusEl.textContent = `Error: ${err.message}`;
+    }
+  };
+
+  /* Approve: clear pending_review, strip placeholder suffix, refresh embedding. */
+  const approveReview = async (id, row) => {
+    const newTitle = stripPendingSuffix(row.title);
+    const patch    = { pending_review: false };
+    if (newTitle && newTitle !== row.title) patch.title = newTitle;
+
+    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`, patch);
+    if (!r?.ok) return false;
+
+    /* Re-embed so the now-published pick is searchable by vector + BM25.
+       Best-effort — failure doesn't block the approval. */
+    try {
+      await fetch(`${BASE}/functions/v1/embed-picks`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
+        body:    JSON.stringify({ city: currentCity, pick_id: id }),
+      });
+    } catch (_) { /* embedding refresh is opportunistic */ }
+
+    return true;
+  };
+
+  /* Reject: archive the pick so it disappears from queues + search. */
+  const rejectReview = async (id) => {
+    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`,
+                          { archived_at: new Date().toISOString() });
+    return r?.ok;
+  };
+
+  /* ══════════════════════════════════════════════════════════
      PIPELINE
      ══════════════════════════════════════════════════════════ */
   const loadPipeline = async () => {
@@ -1137,6 +1244,7 @@
         await Promise.all([loadAll(), loadColumns()]);
         loadVenuesList(0);
         loadEnrichmentList(0);
+        loadReviewQueue();
       });
     }
 
@@ -1528,6 +1636,49 @@
         if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
       } finally {
         if (btn) btn.disabled = false;
+      }
+    });
+
+    /* ── Discovery review queue ── */
+    loadReviewQueue();
+    $('review-refresh-btn')?.addEventListener('click', () => loadReviewQueue());
+
+    /* Delegation for Approve / Edit / Reject on each review row. */
+    $('review-list')?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-review-action]');
+      if (!btn) return;
+      if (!hasKey()) { alert('Service key required.'); return; }
+      const row = btn.closest('.review-row');
+      const id  = row?.dataset.id;
+      if (!id) return;
+
+      const action = btn.dataset.reviewAction;
+
+      /* Fetch the full pick row so Edit can populate the modal and
+         Approve can compute the cleaned title. */
+      const picks = await GET(`id=eq.${encodeURIComponent(id)}&limit=1`);
+      const pick  = Array.isArray(picks) ? picks[0] : null;
+      if (!pick) { alert('Pick not found.'); await loadReviewQueue(); return; }
+
+      if (action === 'edit') {
+        openModal(pick);
+        return;
+      }
+
+      if (action === 'approve') {
+        btn.disabled = true; btn.textContent = 'Approving…';
+        const ok = await approveReview(id, pick);
+        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
+        else { btn.disabled = false; btn.textContent = 'Approve'; }
+        return;
+      }
+
+      if (action === 'reject') {
+        if (!confirm(`Reject "${stripPendingSuffix(pick.title) || pick.id}"?\n\nArchived; will not appear anywhere.`)) return;
+        btn.disabled = true; btn.textContent = 'Rejecting…';
+        const ok = await rejectReview(id);
+        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
+        else { btn.disabled = false; btn.textContent = 'Reject'; }
       }
     });
 
