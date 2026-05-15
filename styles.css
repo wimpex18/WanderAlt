@@ -1443,6 +1443,53 @@ body[data-page="saved"] .colophon {
   line-height:  1.5;
   margin:       0;
 }
+.venue-details__status {
+  font-family:    var(--ff-mono);
+  font-size:      var(--fs-meta);
+  font-weight:    500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin:         0;
+}
+.venue-details__status--perm { color: var(--c-accent); }
+.venue-details__status--temp { color: oklch(0.54 0.125 78); }
+.venue-details__phone {
+  font-family:  var(--ff-mono);
+  font-size:    var(--fs-meta);
+  color:        var(--c-ink-mute);
+  text-decoration: none;
+}
+.venue-details__phone:hover { color: var(--c-ink); text-decoration: underline; }
+.venue-details__hours { margin: 0; }
+.venue-details__hours-today {
+  font-family:  var(--ff-mono);
+  font-size:    var(--fs-meta);
+  color:        var(--c-ink-soft);
+  font-weight:  500;
+  margin:       0;
+}
+.venue-details__hours-disclosure { margin-top: var(--s-1); }
+.venue-details__hours-summary {
+  font-family:    var(--ff-mono);
+  font-size:      11px;
+  color:          var(--c-ink-mute);
+  cursor:         pointer;
+  letter-spacing: .03em;
+  list-style:     none;
+}
+.venue-details__hours-summary::-webkit-details-marker { display: none; }
+.venue-details__hours-list {
+  list-style: none;
+  padding:    0;
+  margin:     var(--s-2) 0 0;
+}
+.venue-details__hours-row {
+  font-family: var(--ff-mono);
+  font-size:   12px;
+  color:       var(--c-ink-mute);
+  padding:     1px 0;
+}
+.venue-details__hours-row--today { color: var(--c-ink); font-weight: 500; }
 
 /* Make the map sheet title linkable. */
 .map-sheet__title a { color: inherit; }

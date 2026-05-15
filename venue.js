@@ -216,7 +216,7 @@
 
     fetchContext();
 
-    /* Async fetch enrichment data (website, address, short_desc) from venue_details. */
+    /* Async fetch enrichment data from venue_details (Wikidata + Google Places). */
     const fetchVenueDetails = async () => {
       const base = window.WA && window.WA.BASE_URL;
       const key  = window.WA && window.WA.ANON_KEY;
@@ -230,7 +230,7 @@
           `${base}/rest/v1/venue_details` +
           `?city=eq.${encodeURIComponent(city)}` +
           `&venue_key=eq.${encodeURIComponent(venueKey)}` +
-          `&select=website,address,short_desc,lat,lng&limit=1`,
+          `&select=website,address,short_desc,opening_hours,phone,business_status&limit=1`,
           { headers: { apikey: key, Authorization: `Bearer ${key}` } }
         );
         if (!r.ok) return;
@@ -242,6 +242,15 @@
         if (!el) return;
 
         const parts = [];
+
+        // Closure status — only render when not operational
+        if (vd.business_status === 'CLOSED_PERMANENTLY') {
+          parts.push(`<p class="venue-details__status venue-details__status--perm">Permanently closed</p>`);
+        } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
+          parts.push(`<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>`);
+        }
+
+        // Website
         if (vd.website) {
           let domain = vd.website;
           try { domain = new URL(vd.website).hostname.replace(/^www\./, ''); } catch (_) {}
@@ -250,6 +259,8 @@
             ` target="_blank" rel="noopener noreferrer">${domain} ↗</a>`
           );
         }
+
+        // Address → Google Maps deep link
         if (vd.address) {
           const mq = encodeURIComponent(vd.address + ', ' + city);
           parts.push(
@@ -257,11 +268,45 @@
             ` target="_blank" rel="noopener noreferrer">${vd.address} ↗</a>`
           );
         }
+
+        // Phone
+        if (vd.phone) {
+          parts.push(
+            `<a class="venue-details__phone" href="tel:${vd.phone.replace(/\s/g, '')}">${vd.phone}</a>`
+          );
+        }
+
+        // Opening hours — today's line prominent, full schedule under disclosure
+        if (vd.opening_hours) {
+          try {
+            const hrs = JSON.parse(vd.opening_hours);
+            if (Array.isArray(hrs) && hrs.length) {
+              // Google weekdayDescriptions: index 0 = Monday
+              // JS getDay(): 0 = Sunday → shift so Monday = 0
+              const todayIdx = (new Date().getDay() + 6) % 7;
+              const todayLine = hrs[todayIdx] || '';
+              const allRows = hrs.map((line, i) =>
+                `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${line}</li>`
+              ).join('');
+              parts.push(
+                `<div class="venue-details__hours">` +
+                  `<p class="venue-details__hours-today">${todayLine}</p>` +
+                  `<details class="venue-details__hours-disclosure">` +
+                    `<summary class="venue-details__hours-summary">All hours</summary>` +
+                    `<ol class="venue-details__hours-list">${allRows}</ol>` +
+                  `</details>` +
+                `</div>`
+              );
+            }
+          } catch (_) {}
+        }
+
+        // Short description (Wikidata)
         if (vd.short_desc) {
           parts.push(`<p class="venue-details__desc">${vd.short_desc}</p>`);
         }
-        if (!parts.length) return;
 
+        if (!parts.length) return;
         el.innerHTML = parts.join('\n');
         el.hidden = false;
       } catch (_) { /* gracefully absent */ }
