@@ -596,13 +596,16 @@
       VD_GET(
         `city=eq.${encodeURIComponent(vcity)}` +
         `&venue_key=eq.${encodeURIComponent(vkey)}` +
-        `&select=wikidata_id,short_desc,opening_hours,manual_lock&limit=1`
+        `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
       ).then(rows => {
         const vd = Array.isArray(rows) ? rows[0] : null;
         if (!vd) return;
-        $('vmf-wikidata').value      = vd.wikidata_id   || '';
-        $('vmf-short-desc').value    = vd.short_desc    || '';
-        $('vmf-opening-hours').value = vd.opening_hours || '';
+        $('vmf-wikidata').value        = vd.wikidata_id     || '';
+        $('vmf-short-desc').value      = vd.short_desc      || '';
+        $('vmf-opening-hours').value   = vd.opening_hours   || '';
+        $('vmf-phone').value           = vd.phone           || '';
+        const bsEl = $('vmf-business-status');
+        if (bsEl) bsEl.value = vd.business_status || '';
         if ($('vmf-manual-lock')) $('vmf-manual-lock').checked = !!vd.manual_lock;
       }).catch(() => {});
     }
@@ -675,11 +678,15 @@
       const wikidata  = $('vmf-wikidata')?.value.trim();
       const shortDesc = $('vmf-short-desc')?.value.trim();
       const ohours    = $('vmf-opening-hours')?.value.trim();
+      const phone     = $('vmf-phone')?.value.trim();
+      const bizStatus = $('vmf-business-status')?.value || null;
       const addrVal   = $('vmf-address').value.trim();
-      if (wikidata)   vdRow.wikidata_id   = wikidata;
-      if (shortDesc)  vdRow.short_desc    = shortDesc;
-      if (ohours)     vdRow.opening_hours = ohours;
-      if (addrVal)    vdRow.address       = addrVal;
+      if (wikidata)   vdRow.wikidata_id     = wikidata;
+      if (shortDesc)  vdRow.short_desc      = shortDesc;
+      if (ohours)     vdRow.opening_hours   = ohours;
+      if (phone)      vdRow.phone           = phone;
+      if (bizStatus)  vdRow.business_status = bizStatus;
+      if (addrVal)    vdRow.address         = addrVal;
       if (!isNaN(latVal2)) vdRow.lat = latVal2;
       if (!isNaN(lngVal2)) vdRow.lng = lngVal2;
       VD_UPSERT(vdRow).catch(() => {});
@@ -1471,13 +1478,16 @@
           /* Reload enrichment fields from venue_details */
           const vdRows = await VD_GET(
             `city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(name.toLowerCase())}` +
-            `&select=wikidata_id,short_desc,opening_hours,manual_lock&limit=1`
+            `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
           );
           const vd = Array.isArray(vdRows) ? vdRows[0] : null;
           if (vd) {
-            $('vmf-wikidata').value      = vd.wikidata_id   || '';
-            $('vmf-short-desc').value    = vd.short_desc    || '';
-            $('vmf-opening-hours').value = vd.opening_hours || '';
+            $('vmf-wikidata').value        = vd.wikidata_id     || '';
+            $('vmf-short-desc').value      = vd.short_desc      || '';
+            $('vmf-opening-hours').value   = vd.opening_hours   || '';
+            $('vmf-phone').value           = vd.phone           || '';
+            const bsEl = $('vmf-business-status');
+            if (bsEl) bsEl.value = vd.business_status || '';
             if ($('vmf-manual-lock')) $('vmf-manual-lock').checked = !!vd.manual_lock;
           }
         } else {
