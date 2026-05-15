@@ -913,8 +913,10 @@
         { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } }
       );
       const rows = await r.json();
+      const badge = $('review-badge');
       if (!Array.isArray(rows) || !rows.length) {
         if (statusEl) statusEl.textContent = 'No picks awaiting review.';
+        if (badge) badge.style.display = 'none';
         return;
       }
 
@@ -922,6 +924,7 @@
         statusEl.textContent =
           `${rows.length} pick${rows.length !== 1 ? 's' : ''} awaiting review`;
       }
+      if (badge) { badge.textContent = rows.length; badge.style.display = ''; }
 
       list.innerHTML = rows.map(row => {
         const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
@@ -1512,6 +1515,35 @@
           if (json.action === 'promoted') setTimeout(loadPipeline, 800);
         } else {
           statusEl.textContent = `Error: ${JSON.stringify(json)}`;
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    /* ── Backfill embeddings button ── */
+    $('pipeline-embed-btn')?.addEventListener('click', async () => {
+      if (!hasKey()) { alert('Service key required.'); return; }
+      const btn      = $('pipeline-embed-btn');
+      const statusEl = $('pipeline-embed-status');
+      if (btn) btn.disabled = true;
+      if (statusEl) { statusEl.style.display = ''; statusEl.textContent = 'Embedding missing picks — takes up to 1 min…'; }
+      try {
+        const r    = await fetch(`${BASE}/functions/v1/embed-picks`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
+          body:    JSON.stringify({ city: currentCity, limit: 200 }),
+        });
+        const json = await r.json().catch(() => ({}));
+        if (r.ok) {
+          if (statusEl) statusEl.textContent =
+            json.embedded === 0
+              ? 'All picks are already embedded.'
+              : `Embedded ${json.embedded} pick${json.embedded !== 1 ? 's' : ''} (model: ${json.model}).`;
+        } else {
+          if (statusEl) statusEl.textContent = `Error: ${JSON.stringify(json)}`;
         }
       } catch (err) {
         if (statusEl) statusEl.textContent = `Network error: ${err.message}`;

@@ -372,7 +372,7 @@
     <!-- Discovery review — picks surfaced by external search awaiting curation -->
     <section id="admin-review" class="admin-section">
       <div class="admin-section-head">
-        <p class="eyebrow">Discovery review</p>
+        <p class="eyebrow">Discovery review <span id="review-badge" style="display:none;margin-left:6px;padding:0 7px;font-family:var(--ff-mono);font-size:11px;letter-spacing:.06em;color:var(--c-accent);border:1px solid var(--c-accent);vertical-align:middle"></span></p>
         <button type="button" id="review-refresh-btn" class="admin-reset">Refresh &rarr;</button>
       </div>
       <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
@@ -455,7 +455,12 @@
                   class="admin-col-btn">
             Rotate tonight now &rarr;
           </button>
+          <button type="button" id="pipeline-embed-btn"
+                  class="admin-col-btn">
+            Backfill embeddings &rarr;
+          </button>
         </div>
+        <p class="meta" id="pipeline-embed-status" style="margin-bottom:var(--s-3);opacity:.7;display:none"></p>
         <table class="admin-pipeline-table" id="pipeline-log" aria-label="Recent ingest log">
           <thead>
             <tr>
