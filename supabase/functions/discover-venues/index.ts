@@ -208,6 +208,44 @@ async function worldCoords(
   } catch { return null; }
 }
 
+// Persist the Google Places enrichment to venue_details so future picks of
+// the same venue (Telegram, admin, etc.) can reuse the lat/lng — no second
+// Places API call needed. Idempotent via the (city, venue_key) unique index.
+async function upsertVenueDetails(
+  city: string,
+  name: string,
+  place: GooglePlace,
+): Promise<void> {
+  const lat = place.location?.latitude;
+  const lng = place.location?.longitude;
+  if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+  const body = {
+    city,
+    venue_key:       name.toLowerCase(),
+    display_name:    name,
+    google_place_id: place.id,
+    lat,
+    lng,
+    address:         place.formattedAddress || null,
+    website:         place.websiteUri || null,
+    business_status: place.businessStatus || null,
+    is_closed:       place.businessStatus === 'CLOSED_PERMANENTLY',
+    source:          'google_places',
+    enriched_at:     new Date().toISOString(),
+  };
+  try {
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/venue_details?on_conflict=city,venue_key`,
+      {
+        method:  'POST',
+        headers: sbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body:    JSON.stringify(body),
+      },
+    );
+  } catch (_) { /* best-effort */ }
+}
+
 function filterAndClassify(places: GooglePlace[]): DiscoveryRow[] {
   const out: DiscoveryRow[] = [];
   for (const place of places) {
@@ -311,6 +349,9 @@ Deno.serve(async (req: Request) => {
     const lat = place.location?.latitude  ?? null;
     const lng = place.location?.longitude ?? null;
     const wc  = await worldCoords(neighborhood, lat, lng, id);
+
+    // Persist Google's data to venue_details for future reuse.
+    await upsertVenueDetails(city, name, place);
 
     const picksRow = {
       id,
