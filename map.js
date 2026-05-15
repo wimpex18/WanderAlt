@@ -42,7 +42,7 @@
     // Desktop: fit the whole island in view.
     const isWide = rect.width >= 768;
     const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
-      isWide ? Math.min(fitW * 0.94, fitH * 1.05)
+      isWide ? Math.min(fitW * 1.15, fitH * 1.15)
              : Math.min(fitW * 1.55, fitH * 1.10)));
     zoom = z;
     // Centre on Old Town (~900, 580 in world units) — most interesting district.
@@ -304,7 +304,7 @@
     const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
     const img = entry.imageUrl
       ? `<img src="${entry.imageUrl}" alt="" class="map-detail__img" loading="lazy"/>`
-      : `<div class="map-detail__img-ph" style="--ph-bg:${c.bg}"></div>`;
+      : `<div class="map-detail__img-ph" style="--ph-bg:${c.bg}"><span class="map-detail__img-ph-init">${entry.thumbInitials || ''}</span></div>`;
     const q = entry.quote
       ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
       : '';

@@ -2635,7 +2635,7 @@ a.handle:hover { color: var(--c-ink); }
 .map-filter-row > * { pointer-events: auto; }
 .map-filter-row::-webkit-scrollbar { display: none; }
 .map-filter-time { top: 10px; }
-.map-filter-cat  { top: 50px; }
+.map-filter-cat  { top: 56px; }
 
 /* Pannable viewport fills the bleed section.
    Background is intentionally NOT the sea colour — using cream lets the
@@ -2821,7 +2821,7 @@ a.handle:hover { color: var(--c-ink); }
   background: var(--c-paper);
   border-top: 1px solid var(--c-rule);
   border-radius: 12px 12px 0 0;
-  padding: 0 var(--s-4) var(--s-5);
+  padding: 0 var(--s-4) calc(var(--s-5) + env(safe-area-inset-bottom, 0px));
   z-index: 20;
   max-height: 55vh;
   overflow-y: auto;
@@ -2902,8 +2902,27 @@ a.handle:hover { color: var(--c-ink); }
   width: 100%;
   height: 100px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.map-detail__img-ph::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: var(--ph-bg, #8a2a1a);
   opacity: 0.18;
+}
+.map-detail__img-ph-init {
+  font-family: var(--ff-mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--ph-bg, #8a2a1a);
+  opacity: 0.55;
+  position: relative;
 }
 .map-detail__quote {
   font-family: var(--ff-display);
