@@ -2307,6 +2307,69 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .match-card__why { font-size: 52px; }
 }
 
+/* Secondary hits below the hero card — same .list-row markup, but separated
+   from the hero by a single rule so it reads as one continuous result list. */
+.match-list {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+
+/* "pending review" badge — small uppercase mono tag, accent border. Used on
+   discovery picks that came from Google Places and haven't been curated yet. */
+.match-pending {
+  display: inline-block;
+  margin-left: var(--s-2);
+  padding: 0 6px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  vertical-align: middle;
+}
+
+/* Classifier + timing footnote (small print under the match results). */
+.match-foot {
+  margin-top: var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+}
+
+/* "Search external sources" affordance — surfaced when match-pick returns
+   suggested_more=true or no hits at all. */
+.match-discover {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+.match-discover__btn {
+  display: inline-block;
+  margin-top: var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+.match-discover__btn:hover { opacity: 0.7; }
+.match-discover__btn:disabled { color: var(--c-ink-mute); cursor: wait; }
+
+/* Discovery results section appended after the curator results. */
+.match-discover-section {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+
 /* ============================================================
    CURATOR'S COLUMN — weekly editorial above This Week
    ------------------------------------------------------------

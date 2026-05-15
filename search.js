@@ -161,53 +161,132 @@
 
   /* ── Match-me mode ─────────────────────────────────────── */
 
-  /* Renders a matched pick as a hero card inside #match-result. */
-  const renderMatchCard = (pick) => {
-    const el = document.getElementById('match-result');
-    if (!el) return;
+  const timeSpan = (p) => {
+    if (!p.time) return '';
+    if (!p.day || p.day === 'Tonight') return ` &middot; ${p.time}`;
+    return ` &middot; ${p.day} ${p.time}`;
+  };
 
-    const timeSpan = (p) => {
-      if (!p.time) return '';
-      if (!p.day || p.day === 'Tonight') return ` &middot; ${p.time}`;
-      return ` &middot; ${p.day} ${p.time}`;
-    };
-
-    /* Thumb: handle both raw DB shape (image_url) and toPick() shape (imageUrl). */
+  /* Hero card — the top-ranked match. Reuses tonight__venue layout so no
+     new tokens are needed. Accepts the v6 toPick() shape (imageUrl etc). */
+  const renderHeroCard = (pick, why) => {
     const imgUrl   = pick.imageUrl || pick.image_url || null;
     const initials = pick.thumbInitials || pick.thumb_initials
       || (pick.venue || pick.title || '??').slice(0, 2).toUpperCase();
-    const thumbCls  = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty  = imgUrl ? ` style="background-image:url('${imgUrl.replace(/'/g, '%27')}')"` : '';
+    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const thumbSty = imgUrl ? ` style="background-image:url('${imgUrl.replace(/'/g, '%27')}')"` : '';
     const thumbLabel = imgUrl ? esc(pick.venue || pick.title) : `${esc(pick.venue || pick.title)} placeholder`;
-    const thumbHtml = `<span class="${thumbCls}" role="img" aria-label="${thumbLabel}"${thumbSty}>`
+    const thumbHtml =
+      `<span class="${thumbCls}" role="img" aria-label="${thumbLabel}"${thumbSty}>`
       + `<span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>`
       + `</span>`;
 
-    el.innerHTML =
-      `<div class="match-card">
-         <p class="match-card__why">&ldquo;${esc(pick.why)}&rdquo;</p>
-         <p class="match-card__attr">
-           <span class="match-card__attr-line" aria-hidden="true"></span>
-           <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a>
-         </p>
-         <a class="tonight__venue" href="venue.html?id=${encodeURIComponent(pick.id)}">
-           ${thumbHtml}
-           <span class="tonight__venue-body">
-             <span class="tonight__venue-name">${esc(pick.title)}</span>
-             <span class="meta">${esc(pick.neighborhood)} &middot; ${esc(pick.kind)}${timeSpan(pick)}</span>
-           </span>
-         </a>
-       </div>`;
+    const pendingBadge = pick.pending
+      ? `<span class="match-pending" title="Surfaced by external search — not yet curated.">pending review</span>`
+      : '';
+
+    const whyText = why || pick.why || pick.quote || '';
+
+    return `<div class="match-card">
+       <p class="match-card__why">&ldquo;${esc(whyText)}&rdquo;</p>
+       <p class="match-card__attr">
+         <span class="match-card__attr-line" aria-hidden="true"></span>
+         <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a>
+         ${pendingBadge}
+       </p>
+       <a class="tonight__venue" href="venue.html?id=${encodeURIComponent(pick.id)}">
+         ${thumbHtml}
+         <span class="tonight__venue-body">
+           <span class="tonight__venue-name">${esc(pick.title)}</span>
+           <span class="meta">${esc(pick.neighborhood || '')} &middot; ${esc(pick.kind || '')}${timeSpan(pick)}</span>
+         </span>
+       </a>
+     </div>`;
   };
 
-  /* Calls the match-pick edge function; updates #match-result in place. */
-  const runMatch = async (prompt) => {
+  /* Secondary rows — same .list-row shape as keyword results. */
+  const renderSecondaryRow = (pick, why) => {
+    const pendingBadge = pick.pending
+      ? ` <span class="match-pending">pending</span>`
+      : '';
+    const meta = [pick.neighborhood, pick.kind, pick.day && pick.day !== 'Tonight' ? `${pick.day} ${pick.time || ''}`.trim() : pick.time]
+      .filter(Boolean).join(' · ');
+    return `<li class="list-row">
+       <p class="list-row__title">
+         <a href="venue.html?id=${encodeURIComponent(pick.id)}">${esc(pick.title)}</a>${pendingBadge}
+       </p>
+       <p class="list-row__meta">${esc(meta)}</p>
+       <p class="list-row__quote">&#x2014; ${esc(why || pick.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a></p>
+     </li>`;
+  };
+
+  /* Render the full match response — hero + list + meta footnote.
+     Also wires the "Search external sources" button when applicable. */
+  const renderMatchResults = (data, prompt) => {
+    const resultEl = document.getElementById('match-result');
+    if (!resultEl) return;
+
+    const hits = Array.isArray(data.hits) && data.hits.length
+      ? data.hits
+      : (data.pick ? [{ pick: data.pick, why: data.pick.why || '' }] : []);
+
+    if (!hits.length) {
+      resultEl.innerHTML =
+        `<p class="match-error">No curated picks match &ldquo;${esc(prompt)}&rdquo;.</p>`
+        + renderDiscoverPrompt(prompt, 'No curated picks yet — try external sources?');
+      wireDiscoverButton(prompt);
+      return;
+    }
+
+    const [first, ...rest] = hits;
+    const hero = renderHeroCard(first.pick, first.why);
+    const list = rest.length
+      ? `<ol class="match-list list-rows" role="list">${rest.map(h => renderSecondaryRow(h.pick, h.why)).join('')}</ol>`
+      : '';
+
+    const footnote = renderMatchFootnote(data);
+    const discover = data.suggested_more
+      ? renderDiscoverPrompt(prompt, 'Want picks beyond what curators have covered?')
+      : '';
+
+    resultEl.innerHTML = hero + list + footnote + discover;
+    if (data.suggested_more) wireDiscoverButton(prompt);
+  };
+
+  const renderMatchFootnote = (data) => {
+    const bits = [];
+    if (data.classifier === 'sql')        bits.push('curator filter');
+    else if (data.classifier === 'hybrid') bits.push('hybrid search');
+    else if (data.classifier === 'bm25_only') bits.push('keyword search');
+    else if (data.classifier === 'discovery') bits.push('external sources');
+    if (data.cached) bits.push('cached');
+    if (typeof data.latency_ms === 'number') bits.push(`${data.latency_ms} ms`);
+    if (!bits.length) return '';
+    return `<p class="match-foot">${bits.join(' · ')}</p>`;
+  };
+
+  const renderDiscoverPrompt = (_prompt, label) =>
+    `<div class="match-discover">
+       <p class="meta">${esc(label)}</p>
+       <button class="match-discover__btn" id="match-discover-btn" type="button">
+         Search external sources &rarr;
+       </button>
+     </div>`;
+
+  const wireDiscoverButton = (prompt) => {
+    const btn = document.getElementById('match-discover-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => runDiscover(prompt), { once: true });
+  };
+
+  /* Calls match-pick → renders hits + footnote + optional discover prompt.
+     opts.bypassCache=true forces a fresh LLM rerank (used by "Try again"). */
+  const runMatch = async (prompt, opts = {}) => {
     const matchWrap  = document.getElementById('match-wrap');
     const matchAgain = document.getElementById('match-again');
     const resultEl   = document.getElementById('match-result');
     if (!matchWrap || !resultEl) return;
 
-    /* Show loading state */
     matchWrap.hidden = false;
     if (matchAgain) matchAgain.hidden = true;
     resultEl.innerHTML = '<p class="match-loading">Matching&hellip;</p>';
@@ -224,22 +303,70 @@
       const res = await fetch(`${base}/functions/v1/match-pick`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ city, prompt }),
+        body:    JSON.stringify({ city, prompt, mode: 'find_many', bypass_cache: !!opts.bypassCache }),
       });
       const data = await res.json();
 
-      if (!data.ok || !data.pick) {
+      if (!data.ok) {
         resultEl.innerHTML =
-          `<p class="match-error">Couldn't find a match — try rephrasing, or use the search above.</p>`;
+          `<p class="match-error">Couldn't match right now — try rephrasing, or use the search above.</p>`;
         return;
       }
 
-      renderMatchCard(data.pick);
+      renderMatchResults(data, prompt);
       if (matchAgain) matchAgain.hidden = false;
 
     } catch (_) {
       resultEl.innerHTML =
         `<p class="match-error">Match-me is unreachable right now — try the search above.</p>`;
+    }
+  };
+
+  /* Calls discover-venues; appends results below the existing match output. */
+  const runDiscover = async (prompt) => {
+    const resultEl = document.getElementById('match-result');
+    const btn      = document.getElementById('match-discover-btn');
+    if (!resultEl) return;
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Searching external sources…'; }
+
+    const base = window.WA && window.WA.BASE_URL;
+    const city = (window.WA && window.WA.CITY) || 'tallinn';
+    if (!base) return;
+
+    let section = document.getElementById('match-discover-section');
+    if (!section) {
+      section = document.createElement('section');
+      section.id = 'match-discover-section';
+      section.className = 'match-discover-section';
+      resultEl.appendChild(section);
+    }
+    section.innerHTML = '<p class="match-loading">Looking up external sources&hellip;</p>';
+
+    try {
+      const res = await fetch(`${base}/functions/v1/discover-venues`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ city, prompt, limit: 5 }),
+      });
+      const data = await res.json();
+
+      if (!data.ok || !data.hits || !data.hits.length) {
+        section.innerHTML = `<p class="match-error">External search returned nothing new for &ldquo;${esc(prompt)}&rdquo;.</p>`;
+        return;
+      }
+
+      const rows = data.hits.map(h => renderSecondaryRow(h.pick, h.why)).join('');
+      section.innerHTML =
+        `<header class="search-section-head">
+           <p class="eyebrow">External sources</p>
+           <p class="meta">${data.hits.length} pending review</p>
+         </header>
+         <ol class="list-rows" role="list">${rows}</ol>
+         <p class="match-foot">via Google Places · awaiting curator review</p>`;
+
+    } catch (_) {
+      section.innerHTML = '<p class="match-error">External search is unreachable right now.</p>';
     }
   };
 
@@ -299,11 +426,13 @@
       });
     }
 
-    /* "Try again →" re-submits the current prompt */
+    /* "Try again →" re-submits the current prompt (bypasses cache so the
+       rerank actually runs again — otherwise we'd just re-serve the cached
+       response and the user sees no change). */
     if (matchAgain) {
       matchAgain.addEventListener('click', () => {
         const prompt = input.value.trim();
-        if (prompt) runMatch(prompt);
+        if (prompt) runMatch(prompt, { bypassCache: true });
       });
     }
 
