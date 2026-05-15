@@ -1271,6 +1271,22 @@ body[data-page="saved"] .colophon {
   text-wrap: balance;
 }
 .list-row__title:hover { color: var(--c-accent); }
+/* Closed-venue badge inside a result row. */
+.list-row__closed {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  vertical-align: middle;
+}
+.list-row--closed .list-row__title a { color: var(--c-ink-mute); }
+.list-row--closed .list-row__quote   { opacity: 0.7; }
 /* Small "on map →" affordance on a result row. Sits beside the title
    on the same line — mono, muted, accent on hover. */
 .list-row__map {
@@ -2906,6 +2922,15 @@ a.handle:hover { color: var(--c-ink); }
   transform: translate(-50%, -100%) scale(1.12);
   z-index: 2;
 }
+/* Closed venues — dim the pin and desaturate; still clickable so editors
+   can see what happened to it. */
+.map-pin-new--closed {
+  opacity: 0.38;
+  filter: grayscale(0.6) drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+}
+.map-pin-new--closed.map-pin-new--active {
+  opacity: 0.65;
+}
 .map-pin-new__tail {
   position: absolute;
   bottom: 0;
@@ -3068,6 +3093,14 @@ a.handle:hover { color: var(--c-ink); }
   text-transform: uppercase;
   color: var(--c-ink-mute);
   font-weight: 500;
+}
+.map-detail__closed {
+  display: inline-block;
+  padding: 0 6px;
+  margin-right: 6px;
+  border: 1px solid var(--c-accent);
+  color: var(--c-accent);
+  letter-spacing: 0.08em;
 }
 .map-detail__close {
   width: 26px;

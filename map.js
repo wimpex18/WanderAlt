@@ -362,10 +362,17 @@
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg: '#333', fg: '#fff' };
     const active = entry.id === activeId;
+    const closed = !!entry.isClosed;
     const num = entry.pin?.num ?? '';
-    return `<button class="map-pin-new${active ? ' map-pin-new--active' : ''}"
+    const cls = [
+      'map-pin-new',
+      active ? 'map-pin-new--active' : '',
+      closed ? 'map-pin-new--closed' : '',
+    ].filter(Boolean).join(' ');
+    const ariaLbl = closed ? `${entry.title} (closed)` : entry.title;
+    return `<button class="${cls}"
       data-id="${entry.id}" type="button"
-      aria-label="${entry.title}" aria-pressed="${active}"
+      aria-label="${ariaLbl}" aria-pressed="${active}"
       style="left:0;top:0;--pin-bg:${c.bg};--pin-fg:${c.fg}">
       <span class="map-pin-new__tail"></span>
       <span class="map-pin-new__circle">
@@ -467,7 +474,10 @@
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg:'#444', fg:'#fff', label: entry.kind };
-    const eyebrow = entry.pin?.eyebrow || c.label || '';
+    const baseEyebrow = entry.pin?.eyebrow || c.label || '';
+    const eyebrow = entry.isClosed
+      ? `<span class="map-detail__closed">closed</span> ${baseEyebrow}`
+      : baseEyebrow;
     const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
     const img = entry.imageUrl
       ? `<img src="${entry.imageUrl}" alt="" class="map-detail__img" loading="lazy"/>`

@@ -59,8 +59,10 @@
       top:     r.pin_top,
       eyebrow: r.pin_eyebrow
     } : null,
-    world_x: r.world_x ?? null,
-    world_y: r.world_y ?? null
+    world_x:   r.world_x ?? null,
+    world_y:   r.world_y ?? null,
+    /* isClosed is hydrated below by joining against venue_details. */
+    isClosed:  false,
   });
 
   const dispatch = () =>
@@ -71,9 +73,9 @@
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), 2000);
 
-    /* Run both requests in parallel; handle each independently so a
-       missing `past` table (optional feature) can't kill the picks load. */
-    const [picksResult, pastResult] = await Promise.allSettled([
+    /* Run all three in parallel; handle each independently so a missing
+       table (past, venue_details) can't kill the picks load. */
+    const [picksResult, pastResult, vdResult] = await Promise.allSettled([
       get(
         `picks`,
         `city=eq.${CITY}&archived_at=is.null` +
@@ -84,14 +86,36 @@
         abort.signal
       ),
       get(`past`, `city=eq.${CITY}&order=created_at.asc`, abort.signal),
+      get(
+        `venue_details`,
+        `city=eq.${CITY}&or=(is_closed.eq.true,business_status.in.("CLOSED_PERMANENTLY","CLOSED_TEMPORARILY"))` +
+        `&select=venue_key,is_closed,business_status`,
+        abort.signal
+      ),
     ]);
 
     clearTimeout(timer);
 
+    /* Build a closure map keyed on lower(venue_key) for the merge below. */
+    const closedSet = new Set();
+    if (vdResult.status === 'fulfilled' && Array.isArray(vdResult.value)) {
+      for (const v of vdResult.value) {
+        if (v.is_closed || v.business_status === 'CLOSED_PERMANENTLY' || v.business_status === 'CLOSED_TEMPORARILY') {
+          if (v.venue_key) closedSet.add(String(v.venue_key).toLowerCase().trim());
+        }
+      }
+    }
+
     window.WA = window.WA || {};
 
     if (picksResult.status === 'fulfilled') {
-      window.WA.catalog = picksResult.value.map(toPick);
+      window.WA.catalog = picksResult.value.map(r => {
+        const p = toPick(r);
+        if (r.venue && closedSet.has(String(r.venue).toLowerCase().trim())) {
+          p.isClosed = true;
+        }
+        return p;
+      });
     } else {
       /* Keep static catalog.js snapshot; log so devtools shows the reason. */
       console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);

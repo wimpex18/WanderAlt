@@ -55,9 +55,13 @@
       const mapLink = (e.world_x && e.world_y)
         ? `<a class="list-row__map" href="map.html?id=${encodeURIComponent(e.id)}" aria-label="Show on map">on map &rarr;</a>`
         : '';
-      return `<li class="list-row">
+      const closedBadge = e.isClosed
+        ? ` <span class="list-row__closed">closed</span>`
+        : '';
+      const rowCls = e.isClosed ? 'list-row list-row--closed' : 'list-row';
+      return `<li class="${rowCls}">
          <p class="list-row__title">
-           <a href="venue.html?id=${e.id}">${e.title}</a>${mapLink}
+           <a href="venue.html?id=${e.id}">${e.title}</a>${closedBadge}${mapLink}
          </p>
          <p class="list-row__meta">${buildMeta(e)}</p>
          <p class="list-row__quote">&#x2014; ${e.quote} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>
