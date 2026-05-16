@@ -48,14 +48,19 @@
          city.js populates this with "WanderAlt · CITY · Date". -->
     <p class="print-head" aria-hidden="true"></p>
 
-    <!-- Taste-profile onboarding — 3 quick taps, biases the briefing.
-         Shown only when the user hasn't onboarded yet. -->
+    <!-- Tonight hero — populated by briefing.js from catalog.js -->
+    <section id="tonight" class="tonight" aria-labelledby="tonight-label">
+      <p class="loading-line" aria-live="polite">Loading the briefing&hellip;</p>
+    </section>
+
+    <!-- Taste-profile onboarding — appears below Tonight so editorial voice
+         lands first. Shown only when the user hasn't onboarded yet. -->
     <section class="taste-onboarding" id="taste-onboarding"
              aria-labelledby="taste-onboarding-label" hidden>
       <p id="taste-onboarding-label" class="eyebrow">A quick taste check</p>
       <p class="taste-onboarding__intro meta">
-        Three taps. We'll bias the briefing to what you like &mdash;
-        nothing is sent to a server. Change anytime in Profile.
+        Three taps. We&rsquo;ll bias the briefing to what you like &mdash;
+        nothing is sent to a server.
       </p>
       <div class="taste-q">
         <p class="taste-q__prompt">Tonight, do you want it&hellip;</p>
@@ -81,12 +86,8 @@
       <div class="taste-onboarding__foot">
         <button type="button" class="taste-skip" id="taste-skip">Skip</button>
         <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
+        <button type="button" class="taste-reset" id="taste-reset" hidden>Reset</button>
       </div>
-    </section>
-
-    <!-- Tonight hero — populated by briefing.js from catalog.js -->
-    <section id="tonight" class="tonight" aria-labelledby="tonight-label">
-      <p class="loading-line" aria-live="polite">Loading the briefing&hellip;</p>
     </section>
 
     <!-- Surprise me: random pick from active catalog, fade-swaps Tonight. -->
@@ -102,6 +103,9 @@
         <h2 id="thisweek-label" class="section-title">This week</h2>
         <p class="section-sub">4 picks &middot; 4 curators</p>
       </header>
+      <p class="section-filter-hint">
+        <a href="search.html">Filter by date, place or type &rarr;</a>
+      </p>
 
       <!-- Picks populated by briefing.js from catalog.js -->
       <ol class="picks" role="list">

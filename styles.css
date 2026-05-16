@@ -393,21 +393,24 @@ img, svg { display: block; max-width: 100%; }
 }
 .tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
 
-/* ── Surprise me — mono link-button below Tonight hero ── */
+/* ── Surprise me — bordered button below Tonight hero ── */
 .surprise-btn {
   display: inline-block;
   margin: var(--s-4) 0 var(--s-2);
+  padding: 6px 14px;
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.06em;
-  color: var(--c-ink-mute);
+  color: var(--c-ink);
   background: none;
-  border: 0;
-  padding: 0;
+  border: 1px solid var(--c-rule-strong);
   cursor: pointer;
-  transition: color var(--t-fast);
+  transition: color var(--t-fast), border-color var(--t-fast);
 }
-.surprise-btn:hover { color: var(--c-accent); }
+.surprise-btn:hover {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+}
 .surprise-btn:focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
@@ -1367,7 +1370,7 @@ body[data-page="saved"] .colophon {
   margin-top: var(--s-4);
   align-items: center;
 }
-.taste-skip, .taste-done {
+.taste-skip, .taste-done, .taste-reset {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.06em;
@@ -1377,11 +1380,25 @@ body[data-page="saved"] .colophon {
   padding: 0;
   cursor: pointer;
 }
-.taste-skip:hover { color: var(--c-accent); }
+.taste-skip:hover  { color: var(--c-accent); }
+.taste-reset:hover { color: var(--c-accent); }
 .taste-done {
   color: var(--c-accent);
 }
 .taste-done:hover { text-decoration: underline; }
+
+/* "Filter or search →" hint below the This Week section header. */
+.section-filter-hint {
+  margin: var(--s-3) 0 var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+}
+.section-filter-hint a {
+  color: var(--c-ink-mute);
+  text-decoration: none;
+}
+.section-filter-hint a:hover { color: var(--c-accent); }
 
 /* Curator-vouched toggle — small inline switch beside the Match-me link. */
 .curated-toggle {
@@ -2635,6 +2652,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .skip-link,
   .mood-chips,
   .surprise-btn,
+  .taste-onboarding,
+  .section-filter-hint,
   .map-filters,
   .map-compass,
   .map-sheet,

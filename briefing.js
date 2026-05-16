@@ -14,9 +14,6 @@
     const taste = window.WA?.taste;
     const wrap  = document.getElementById('taste-onboarding');
     if (!taste || !wrap) return;
-    if (taste.isOnboarded()) return;
-
-    wrap.hidden = false;
 
     const reflect = () => {
       const prefs = taste.getPrefs();
@@ -25,9 +22,12 @@
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
         b.classList.toggle('taste-chip--on', on);
       });
-      const done = document.getElementById('taste-done');
+      const done  = document.getElementById('taste-done');
+      const reset = document.getElementById('taste-reset');
       const allAnswered = ['energy', 'company', 'money'].every(a => prefs[a]);
-      if (done) done.hidden = !allAnswered;
+      if (done)  done.hidden  = !allAnswered;
+      /* Show Reset when at least one pref is set. */
+      if (reset) reset.hidden = !Object.keys(prefs).length;
     };
 
     wrap.addEventListener('click', (e) => {
@@ -40,10 +40,20 @@
       if (e.target.id === 'taste-skip' || e.target.id === 'taste-done') {
         taste.setOnboarded();
         wrap.hidden = true;
+        return;
+      }
+      if (e.target.id === 'taste-reset') {
+        taste.resetOnboarding();
+        taste.clearAllFeedback();
+        reflect();
       }
     });
 
-    reflect();
+    /* Show if not yet onboarded; after onboarding it hides on Skip/Done. */
+    if (!taste.isOnboarded()) {
+      wrap.hidden = false;
+      reflect();
+    }
   };
 
   /* ── Template helpers ──────────────────────────────────── */
@@ -120,15 +130,15 @@
   };
 
   /* ── This Week list ────────────────────────────────────── */
-  /* total = real thisWeek count before the 8-pick display cap. */
-  const renderThisWeek = (entries, total = entries.length) => {
+  /* total = unfiltered count, used only when isFiltered=true to show "N of M". */
+  const renderThisWeek = (entries, total = entries.length, isFiltered = false) => {
     const list = document.querySelector('.picks');
     const sub  = document.querySelector('.section-sub');
     if (!list) return;
 
     const curatorCount = new Set(entries.map(e => e.handle)).size;
     if (sub) {
-      const countLabel = total > entries.length
+      const countLabel = isFiltered && total > entries.length
         ? `${entries.length} of ${total} picks`
         : `${entries.length} picks`;
       sub.textContent =
@@ -227,6 +237,8 @@
      if WA.BASE_URL / WA.ANON_KEY aren't set or no
      published column exists for this week.                     */
   const renderColumn = async () => {
+    /* Guard: if a column was already injected (e.g. init ran twice), skip. */
+    if (document.querySelector('.column')) return;
     const url  = window.WA && window.WA.BASE_URL;
     const key  = window.WA && window.WA.ANON_KEY;
     const city = (window.WA && window.WA.CITY) || 'tallinn';
@@ -321,8 +333,8 @@
         .map(x => x.e);
     };
     const orderedWeek = orderByTaste(weekSrc);
-    /* Cap the displayed list at 8; pass the real total for the sub-heading. */
-    const thisWeek  = orderedWeek.slice(0, 8);
+    /* Cap the displayed list at 20 — enough for a briefing, not a full catalog. */
+    const thisWeek  = orderedWeek.slice(0, 20);
 
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
@@ -332,8 +344,8 @@
     const _isFallback  = fallback;
 
     renderTonight(tonight);
-    /* In fallback mode the total is just what we show — no "N of M" confusion. */
-    renderThisWeek(thisWeek, fallback ? thisWeek.length : allWeek.length);
+    /* No isFiltered flag — counter shows just the count without "of total". */
+    renderThisWeek(thisWeek);
     restoreBookmarks();
     wireBookmarks();
     wireSurprise(catalog);
@@ -343,7 +355,7 @@
        or a Profile-page edit). */
     document.addEventListener('wa:taste-changed', () => {
       const reordered = orderByTaste(weekSrc);
-      renderThisWeek(reordered.slice(0, 8), fallback ? reordered.length : allWeek.length);
+      renderThisWeek(reordered.slice(0, 20));
       restoreBookmarks();
     });
 
@@ -413,11 +425,9 @@
     document.addEventListener('wa:mood-changed', (e) => {
       const activeTags = e.detail.tags;
       const filtered   = _allWeek.filter(entry => matchesMood(entry, activeTags));
-      /* Show filtered count vs. real total so the user knows filtering is active. */
-      renderThisWeek(
-        filtered.slice(0, 8),
-        _isFallback ? filtered.length : _allWeek.length
-      );
+      const isFiltered = activeTags.length > 0;
+      /* Show "N of M" only when a mood filter is actually active. */
+      renderThisWeek(filtered.slice(0, 20), _allWeek.length, isFiltered);
       restoreBookmarks();
     });
   };
