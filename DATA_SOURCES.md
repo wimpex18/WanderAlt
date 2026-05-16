@@ -43,6 +43,7 @@ Three layers of filter:
 | 14 | telegram | `udgstriga` (Underground Station Riga)      | riga    | @udgstriga      | **on**   |
 | 15 | fienta   | `paavli-kultuurivabrik`                     | tallinn | @paavli         | **on**   |
 | 16 | fienta   | `15` (Von Krahl Theatre)                    | tallinn | @vonkrahl       | **on**   |
+| 17 | web      | `telliskivi` (telliskivi.cc/en/events/)     | tallinn | @telliskivi     | **on**   |
 
 (Rows 2–5 hold placeholder slugs that match fictional curator handles. Disabled.)
 
@@ -137,10 +138,9 @@ We don't need this for public channels — the current HTML-scrape approach work
 - [x] Disable fictional placeholder sources (rows 2–5)
 - [x] Create `pipeline_config` table with venue whitelist + skip/keep keywords
 - [x] Add `@udgstriga` Telegram source for Riga (source id 14)
-- [ ] When `process-staging` is next redeployed, point it at `pipeline_config`
-      (the edge function is deployed but not in this repo — left for the next
-       hand-pulled redeploy. New behaviour kicks in automatically once the
-       function reads `pipeline_config` rows.)
+- [x] `process-staging` v31 deployed — reads `pipeline_config` on every run,
+      city-aware (Riga picks land as `city='riga'`), skip_keywords checked
+      before LLM call, venue_whitelist prepended to prompt
 
 ### Phase 2 — `ingest-fienta` edge function — **DONE & LIVE**
 
@@ -165,14 +165,14 @@ Riga organizers on Fienta: **none found**. `kanepes`, `klubsdepo`, `laska`,
 `splendidpalace`, `kinobize` all return 404. Riga venues will need either own-site
 scrapers (Phase 3) or rely on the `@notboring_riga` + `@udgstriga` Telegram feeds.
 
-### Phase 3 — Venue HTML scrapers — **PARTIAL**
+### Phase 3 — Venue HTML scrapers — **TALLINN DONE, RIGA FUTURE**
 
 Each venue with a working website gets a parser. Lower priority than Phase 2
 because Fienta covered the two highest-trust Tallinn venues with one fetch.
 
 | Venue                | URL                              | Strategy                | Status |
 |----------------------|----------------------------------|-------------------------|--------|
-| Telliskivi CC        | telliskivi.cc/en/events/         | Events load via JS (`.js-events`); no clean JSON-LD or WP REST endpoint. Needs reverse-engineering the internal AJAX call. | **deferred** |
+| Telliskivi CC        | telliskivi.cc/en/events/         | Server-side rendered HTML. Regex parser on `.card` elements inside `.js-events`. No AJAX needed. | **DONE** |
 | Kultuurivabrik (own) | kultuurivabrik.ee/programm       | Covered by Fienta — no need for separate scraper. | **covered** |
 | KKC Riga             | kanepes.lv                       | HTML scrape (TBD)       | **future** |
 | Kino Bize Riga       | kinobize.lv                      | HTML scrape (TBD)       | **future** |
