@@ -19,13 +19,15 @@
   };
 
   /* Filter the combined corpus. Past entries carry _past:true and are matched
-     on title only; null fields in catalog entries are safely skipped. */
+     on title only; null fields in catalog entries are safely skipped.
+     Multi-word terms require all words to match (AND logic across all fields). */
   const filter = (corpus, term) => {
-    const q = term.toLowerCase();
-    return corpus.filter(e =>
-      [e.title, e.venue, e.neighborhood, e.kind, e.handle, e.quote]
-        .some(f => f && f.toLowerCase().includes(q))
-    );
+    const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+    return corpus.filter(e => {
+      const hay = [e.title, e.venue, e.neighborhood, e.kind, e.handle, e.quote]
+        .filter(Boolean).join(' ').toLowerCase();
+      return words.every(w => hay.includes(w));
+    });
   };
 
   /* Secondary mood filter: all active tags must be present in entry.moodTags. */
