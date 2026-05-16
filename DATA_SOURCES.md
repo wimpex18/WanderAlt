@@ -40,11 +40,12 @@ Three layers of filter:
 | 8  | rss      | giadafromgamma (Substack)                   | tallinn | @raul.reads     | **on**   |
 | 9  | telegram | `notboring_riga`                            | riga    | @katestrelca    | **on**   |
 | 12 | telegram | `proEesti`                                  | tallinn | proEesti        | **on**   |
-| 14 | telegram | `udgstriga` (Underground Station Riga)      | riga    | @udgstriga      | **on**   |
+| 14 | telegram | `udgstriga` (Underground Station Riga)      | riga    | @udgstriga      | **off** — channel inactive |
 | 15 | fienta   | `paavli-kultuurivabrik`                     | tallinn | @paavli         | **on**   |
 | 16 | fienta   | `15` (Von Krahl Theatre)                    | tallinn | @vonkrahl       | **on**   |
 | 17 | web      | `telliskivi` (telliskivi.cc/en/events/)     | tallinn | @telliskivi     | **on**   |
 | 18 | web      | `kinobize` (kinobize.lv/en/repertoire)      | riga    | @kinobize       | **on**   |
+| 19 | web      | `splendidpalace` (splendidpalace.lv/lv/pasakumi) | riga | @splendidpalace | **on** |
 
 (Rows 2–5 hold placeholder slugs that match fictional curator handles. Disabled.)
 
@@ -177,7 +178,7 @@ because Fienta covered the two highest-trust Tallinn venues with one fetch.
 | Kultuurivabrik (own) | kultuurivabrik.ee/programm       | Covered by Fienta — no need for separate scraper. | **covered** |
 | Kino Bize Riga       | kinobize.lv/en/repertoire        | Server-side rendered HTML. Split by `<li>`, extract `/en/repertoire/<cat>/<slug>/<id>` links. | **DONE** |
 | KKC Riga             | kanepes.lv                       | JavaScript SPA — content not in initial HTML. Needs headless browser or API. Not feasible with current scraper approach. | **blocked** |
-| Splendid Palace      | splendidpalace.lv/lv/pasakumi    | Server-side rendered, Latvian-only. Event links `/lv/pasakumi/<slug>-<id>`, date format `DD.MM.YYYY`. Feasible but low priority — Telegram covers Riga. | **future** |
+| Splendid Palace      | splendidpalace.lv/lv/pasakumi    | Server-side rendered, Latvian-only. `<h3>` title inside anchor, date `DD.MM.YYYY`. | **DONE** |
 
 All push to `staging_messages` with `source_id` of a new source row per venue.
 
@@ -189,12 +190,14 @@ populates, and find the JSON endpoint the JS hits. Most likely
 
 ### Skipped permanently (not worth the maintenance burden)
 
-- **Facebook Events** — login walls, ToS issues
-- **Instagram (Depo, Laska)** — against ToS, breaks constantly
+- **Facebook Events / Depo / Laska** — login walls, ToS issues. Both venues are on the whitelist so Telegram picks mentioning them pass through anyway.
+- **Instagram** — against ToS, breaks constantly
 - **Songkick** — API deprecated for new developers
 - **Bandsintown** — Fienta covers same events
 - **Reddit** — too low-frequency; useful for one-off venue discovery only
 - **Artist popularity heuristics** (Spotify follower counts, ticket prices) — over-engineered, marginal gain
+- **Prose Readings Festival / Page Break Poetry** — annual events, ingest not worth it. Add picks manually during their seasons (December / April).
+- **KKC Riga (kanepes.lv)** — JavaScript SPA, content not in initial HTML. Needs headless browser. Depo is a better Riga underground anchor anyway.
 
 ---
 
