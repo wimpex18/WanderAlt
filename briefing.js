@@ -358,7 +358,8 @@
       const status = document.getElementById('digest-optin-status');
       if (!form || !input || !status) return;
 
-      form.addEventListener('submit', async () => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
         const email = input.value.trim();
         if (!email) return;
 
@@ -422,6 +423,8 @@
   };
 
   document.addEventListener('wa:catalog-ready',    init);
+  /* Fallback: catalog may already be ready (event fired before this listener). */
+  if (window.WA?.catalog?.length) init();
   /* After cloud sync, re-check bookmark state without full re-render. */
   document.addEventListener('wa:bookmarks-synced', restoreBookmarks);
 })();

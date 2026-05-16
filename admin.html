@@ -419,6 +419,28 @@
       <ol id="review-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
     </section>
 
+    <!-- Match analytics — top liked / disliked picks from user_match_history -->
+    <section id="admin-analytics" class="admin-section">
+      <div class="admin-section-head">
+        <p class="eyebrow">Match analytics</p>
+        <button type="button" id="analytics-refresh-btn" class="admin-reset">Refresh &rarr;</button>
+      </div>
+      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+        Aggregated 👍/👎 from signed-in users. Use to weed out picks that consistently underperform.
+      </p>
+      <p class="meta" id="analytics-status" style="margin:var(--s-4) 0 var(--s-2);opacity:.65">Loading…</p>
+      <div id="analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-5)" hidden>
+        <div>
+          <p class="eyebrow" style="margin-bottom:var(--s-2)">Top liked</p>
+          <ol id="analytics-likes" role="list" style="list-style:none;margin:0;padding:0"></ol>
+        </div>
+        <div>
+          <p class="eyebrow" style="margin-bottom:var(--s-2)">Top disliked</p>
+          <ol id="analytics-dislikes" role="list" style="list-style:none;margin:0;padding:0"></ol>
+        </div>
+      </div>
+    </section>
+
     <!-- Curators — browse and edit curator profiles -->
     <section id="admin-curators" class="admin-section">
       <div class="admin-section-head">

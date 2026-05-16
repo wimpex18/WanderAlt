@@ -1143,6 +1143,93 @@
   };
 
   /* ══════════════════════════════════════════════════════════
+     MATCH ANALYTICS — aggregate likes/dislikes from user_match_history
+     ══════════════════════════════════════════════════════════ */
+  const loadAnalytics = async () => {
+    const status = document.getElementById('analytics-status');
+    const grid   = document.getElementById('analytics-grid');
+    const likeEl = document.getElementById('analytics-likes');
+    const disEl  = document.getElementById('analytics-dislikes');
+    if (!status || !grid || !likeEl || !disEl) return;
+
+    /* user_match_history RLS is per-user; aggregation needs service role.
+       Without a key, show a hint and bail out gracefully. */
+    if (!hasKey()) {
+      status.textContent = 'Paste service-role key above to load aggregates.';
+      grid.hidden = true;
+      return;
+    }
+
+    status.textContent = 'Loading…';
+    const key     = getKey();
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+
+    try {
+      const res = await fetch(
+        `${BASE}/rest/v1/user_match_history?select=pick_id,vote`,
+        { headers }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+
+      if (!rows.length) {
+        status.textContent = 'No votes yet — table is empty.';
+        grid.hidden = true;
+        return;
+      }
+
+      /* Aggregate counts per pick. */
+      const tally = new Map();
+      for (const r of rows) {
+        if (!r.pick_id || !r.vote) continue;
+        const t = tally.get(r.pick_id) || { likes: 0, dislikes: 0 };
+        if (r.vote === 'like')    t.likes++;
+        if (r.vote === 'dislike') t.dislikes++;
+        tally.set(r.pick_id, t);
+      }
+
+      /* Resolve pick titles in one batch — limit to relevant ids. */
+      const ids = [...tally.keys()];
+      const idList = ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
+      const titlesRes = await fetch(
+        `${BASE}/rest/v1/picks?id=in.(${encodeURIComponent(idList)})&select=id,title,handle`,
+        { headers }
+      );
+      const titles = titlesRes.ok ? await titlesRes.json() : [];
+      const titleMap = Object.fromEntries(titles.map(p => [p.id, p]));
+
+      const render = (entries) => entries.slice(0, 10).map(([id, t]) => {
+        const p = titleMap[id] || {};
+        const name = p.title || id;
+        return `<li class="review-row" style="padding:var(--s-2) 0;border-bottom:1px solid var(--c-rule)">
+          <p style="margin:0;font-weight:500">${escAttr(name)}</p>
+          <p class="meta" style="margin:2px 0 0;opacity:.7">
+            ${escAttr(p.handle || '')} · 👍 ${t.likes} · 👎 ${t.dislikes}
+          </p>
+        </li>`;
+      }).join('') || '<li class="meta" style="opacity:.6">None.</li>';
+
+      const liked = [...tally.entries()]
+        .filter(([, t]) => t.likes > 0)
+        .sort((a, b) => b[1].likes - a[1].likes);
+      const disliked = [...tally.entries()]
+        .filter(([, t]) => t.dislikes > 0)
+        .sort((a, b) => b[1].dislikes - a[1].dislikes);
+
+      likeEl.innerHTML = render(liked);
+      disEl.innerHTML  = render(disliked);
+
+      const total = rows.length;
+      status.textContent =
+        `${total} vote${total !== 1 ? 's' : ''} across ${ids.length} pick${ids.length !== 1 ? 's' : ''}.`;
+      grid.hidden = false;
+    } catch (err) {
+      status.textContent = `Error: ${err.message}`;
+      grid.hidden = true;
+    }
+  };
+
+  /* ══════════════════════════════════════════════════════════
      CURATORS MANAGEMENT
      ══════════════════════════════════════════════════════════ */
   let curatorsList = [];
@@ -1511,11 +1598,14 @@
         loadReviewQueue();
         loadCurators();
         loadStats();
+        loadAnalytics();
       });
     }
 
-    /* ── Stats strip ── */
+    /* ── Stats strip + analytics ── */
     loadStats();
+    loadAnalytics();
+    $('analytics-refresh-btn')?.addEventListener('click', () => loadAnalytics());
 
     /* ── Auth ── */
     renderAuthState();

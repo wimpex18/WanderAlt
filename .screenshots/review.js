@@ -26,13 +26,25 @@ async function waitCatalog(page) {
 (async () => {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--ignore-certificate-errors',
+      '--allow-insecure-localhost',
+    ],
   });
 
   const page = await browser.newPage();
   page.on('pageerror', e => errors.push(`[PAGEERROR] ${e.message}`));
   page.on('console',   m => {
     if (m.type() === 'error') errors.push(`[CONSOLE ERR] ${m.text()}`);
+  });
+  page.on('requestfailed', r => {
+    errors.push(`[REQ FAIL] ${r.url()} — ${r.failure()?.errorText || '?'}`);
+  });
+  page.on('response', r => {
+    if (r.status() === 404) errors.push(`[404] ${r.url()}`);
   });
   await page.setViewport(MOBILE);
 
@@ -84,14 +96,14 @@ async function waitCatalog(page) {
   await page.keyboard.press('Enter');
   console.log('  AI match fired — waiting up to 20s…');
   const matchAppeared = await page.waitForFunction(
-    () => document.querySelector('.match-hero, .search-hero, .list-row') !== null
+    () => document.querySelector('.match-card, .list-row') !== null
        && !document.querySelector('.search-loading, .match-loading'),
     { timeout: 20000 }
   ).then(() => true).catch(() => false);
   await new Promise(r => setTimeout(r, 600));
   await shot(page, '05-search-match-result');
 
-  const heroCard = await page.$('.match-hero, .search-hero');
+  const heroCard = await page.$('.match-card');
   console.log('  AI hero card rendered:', !!heroCard);
 
   if (!matchAppeared) {

@@ -18,16 +18,30 @@
     return parts.join(' · ');
   };
 
-  /* Filter the combined corpus. Past entries carry _past:true and are matched
-     on title only; null fields in catalog entries are safely skipped.
-     Multi-word terms require all words to match (AND logic across all fields). */
+  /* Filter the combined corpus and sort by relevance.
+     Multi-word terms require all words to match (AND logic across all fields).
+     Field weights: title 4, venue 3, neighborhood 2, kind 2, handle 1, quote 1.
+     A title prefix match (term starts the title) gets a +5 bump so
+     "uus" surfaces "Uus Laine" before quote-mentions of it elsewhere. */
   const filter = (corpus, term) => {
-    const words = term.toLowerCase().split(/\s+/).filter(Boolean);
-    return corpus.filter(e => {
-      const hay = [e.title, e.venue, e.neighborhood, e.kind, e.handle, e.quote]
-        .filter(Boolean).join(' ').toLowerCase();
-      return words.every(w => hay.includes(w));
-    });
+    const t = term.toLowerCase();
+    const words = t.split(/\s+/).filter(Boolean);
+    const fields = (e) => [
+      [e.title, 4], [e.venue, 3], [e.neighborhood, 2],
+      [e.kind, 2],  [e.handle, 1], [e.quote, 1],
+    ];
+    const hits = [];
+    for (const e of corpus) {
+      const parts = fields(e).map(([v, w]) => [(v || '').toLowerCase(), w]);
+      const hay = parts.map(([v]) => v).join(' ');
+      if (!words.every(w => hay.includes(w))) continue;
+      let score = 0;
+      for (const [v, w] of parts) for (const word of words) if (v.includes(word)) score += w;
+      if ((parts[0][0] || '').startsWith(t)) score += 5;
+      hits.push([score, e]);
+    }
+    hits.sort((a, b) => b[0] - a[0]);
+    return hits.map(([, e]) => e);
   };
 
   /* Secondary mood filter: all active tags must be present in entry.moodTags. */
@@ -101,7 +115,8 @@
     };
 
     /* — Curators — */
-    const curators = topN(catalog, e => e.handle, 6);
+    const curatorCorpus = catalog.filter(e => e.handle !== '@discovery');
+    const curators = topN(curatorCorpus, e => e.handle, 6);
     const curatorSect = document.getElementById('curators-label')?.closest('section');
     if (curatorSect && curators.length) {
       const metaEl = curatorSect.querySelector('.meta');
@@ -641,4 +656,6 @@
   };
 
   document.addEventListener('wa:catalog-ready', init);
+  /* Fallback: catalog may already be ready (event fired before this listener). */
+  if (window.WA?.catalog?.length) init();
 })();

@@ -534,9 +534,10 @@
   }
 
   function syncBookmarks(root) {
-    if (!window.WA?.bookmarks?.isBookmarked) return;
+    if (!window.WA?.Bookmarks?.get) return;
+    const saved = WA.Bookmarks.get();
     root.querySelectorAll('.bookmark__check').forEach(cb => {
-      cb.checked = WA.bookmarks.isBookmarked(cb.dataset.id);
+      cb.checked = !!saved[cb.dataset.id];
     });
   }
 
@@ -562,8 +563,8 @@
     [sheetEl, detailEl].forEach(el => {
       el.addEventListener('change', e => {
         const cb = e.target.closest('.bookmark__check');
-        if (!cb || !window.WA?.bookmarks) return;
-        cb.checked ? WA.bookmarks.add(cb.dataset.id) : WA.bookmarks.remove(cb.dataset.id);
+        if (!cb || !window.WA?.Bookmarks) return;
+        WA.Bookmarks.set(cb.dataset.id, cb.checked);
       });
     });
   }
@@ -579,7 +580,11 @@
     const handle = sheetEl.querySelector('.map-sheet__handle');
     if (!handle) return;
     let startY = null;
-    handle.addEventListener('pointerdown', e => { startY = e.clientY; handle.setPointerCapture(e.pointerId); });
+    handle.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      startY = e.clientY;
+      handle.setPointerCapture(e.pointerId);
+    });
     handle.addEventListener('pointermove', e => {
       if (startY == null) return;
       const dy = e.clientY - startY;
