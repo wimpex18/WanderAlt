@@ -7,7 +7,6 @@ const path = require('path');
 
 const BASE = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
-const CITY = 'tallinn';
 const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
 async function get(table, qs) {
@@ -27,6 +26,7 @@ function pickEntry(r) {
   const thumb = r.thumb_initials || (r.venue ? r.venue.slice(0, 2).toUpperCase() : '??');
   const fields = [
     `id:            ${js(r.id)}`,
+    `city:          ${js(r.city)}`,
     `title:         ${js(r.title)}`,
     `venue:         ${js(r.venue)}`,
     `neighborhood:  ${js(r.neighborhood)}`,
@@ -51,6 +51,7 @@ function curatorEntry(c) {
   return '  {\n' +
     `    handle:  ${js(c.handle)},\n` +
     `    name:    ${js(c.name)},\n` +
+    `    city:    ${js(c.city)},\n` +
     `    tagline: ${js(c.tagline)},\n` +
     `    bio:     ${js(c.bio || '')}\n` +
     '  }';
@@ -63,14 +64,14 @@ function pastEntry(p) {
 (async () => {
   const [picks, curators, past] = await Promise.all([
     get('picks',
-      `city=eq.${CITY}&archived_at=is.null&handle=neq.@discovery` +
-      `&select=id,title,venue,neighborhood,kind,day,time,quote,handle,` +
+      `archived_at=is.null&handle=neq.@discovery` +
+      `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
               `thumb_initials,image_url,tonight,this_week,mood_tags,` +
-              `world_x,world_y&order=sort_order.asc,created_at.asc`),
+              `world_x,world_y&order=city.asc,sort_order.asc,created_at.asc`),
     get('curators',
-      `city=eq.${CITY}&select=handle,name,tagline,bio&order=handle.asc`),
+      `select=handle,name,city,tagline,bio&order=city.asc,handle.asc`),
     get('past',
-      `city=eq.${CITY}&select=id,title,date&order=created_at.asc`),
+      `select=id,title,date&order=created_at.asc`),
   ]);
 
   console.log(`picks: ${picks.length}, curators: ${curators.length}, past: ${past.length}`);
