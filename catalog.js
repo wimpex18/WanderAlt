@@ -10,7 +10,199 @@ window.WA = window.WA || {};
 
 window.WA.catalog = [
   {
+    id:            "aaniwalli-drone-night",
+    city:          "helsinki",
+    title:         "Drone Night at Ääniwalli",
+    venue:         "Ääniwalli",
+    neighborhood:  "Kallio",
+    kind:          "gig",
+    day:           "Fri",
+    time:          "21:00",
+    quote:         "Forty minutes of uninterrupted drone. No encore, no chat.",
+    handle:        "@jani.after",
+    thumbInitials: "ÄW",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "solo", "ticketed"],
+    world_x:       828,
+    world_y:       582,
+    pin:           null
+  },
+  {
+    id:            "baarikarpanen-late",
+    city:          "helsinki",
+    title:         "Baarikärpänen — late bar",
+    venue:         "Baarikärpänen",
+    neighborhood:  "Kallio",
+    kind:          "club",
+    day:           null,
+    time:          "open late",
+    quote:         "The bar that never asks why you are still here.",
+    handle:        "@jani.after",
+    thumbInitials: "BK",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks"],
+    world_x:       1024,
+    world_y:       698,
+    pin:           null
+  },
+  {
+    id:            "kiasma-koho",
+    city:          "helsinki",
+    title:         "Koho — group show, Kiasma",
+    venue:         "Kiasma",
+    neighborhood:  "Töölö",
+    kind:          "exhibition",
+    day:           null,
+    time:          "ongoing",
+    quote:         "Finnish contemporary at its least obvious. Worth three visits.",
+    handle:        "@jani.after",
+    thumbInitials: "KO",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "solo", "sober"],
+    world_x:       725,
+    world_y:       780,
+    pin:           null
+  },
+  {
+    id:            "kaapelitehdas-vinyl",
+    city:          "helsinki",
+    title:         "Helsinki Vinyl Market",
+    venue:         "Cable Factory",
+    neighborhood:  "Ruoholahti",
+    kind:          "market",
+    day:           "Sat",
+    time:          "10:00",
+    quote:         "More crates than you have time for.",
+    handle:        "@jani.after",
+    thumbInitials: "VM",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "solo", "sober"],
+    world_x:       1033,
+    world_y:       698,
+    pin:           null
+  },
+  {
+    id:            "cafe-mimosa-guest-chef",
+    city:          "riga",
+    title:         "Guest chef night at Café Mimosa",
+    venue:         "Café Mimosa",
+    neighborhood:  "Centrs",
+    kind:          "event",
+    day:           "Fri",
+    time:          "19:00",
+    quote:         "They treat this kitchen like a stage. The guest chef nights are where Riga actually surprises you.",
+    handle:        "@katestrelca",
+    thumbInitials: "CM",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "social", "drinks"],
+    world_x:       1017,
+    world_y:       882,
+    pin:           null
+  },
+  {
+    id:            "kkc-experimental-night",
+    city:          "riga",
+    title:         "Experimental music night at KKC",
+    venue:         "KKC",
+    neighborhood:  "Āgenskalns",
+    kind:          "gig",
+    day:           "Fri",
+    time:          "21:00",
+    quote:         "Across the river and worth every bridge. KKC is where the real stuff happens.",
+    handle:        "@katestrelca",
+    thumbInitials: "KK",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks"],
+    world_x:       892,
+    world_y:       746,
+    pin:           null
+  },
+  {
+    id:            "skapis-queer-night",
+    city:          "riga",
+    title:         "Skapis — queer club night",
+    venue:         "Skapis",
+    neighborhood:  "Centrs",
+    kind:          "club",
+    day:           "Sat",
+    time:          "23:00",
+    quote:         "Community-built, community-run. Not a trend, a fact.",
+    handle:        "@katestrelca",
+    thumbInitials: "SK",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks"],
+    world_x:       882,
+    world_y:       782,
+    pin:           null
+  },
+  {
+    id:            "hanzas-perons-chamber",
+    city:          "riga",
+    title:         "Chamber concert at Hanzas Perons",
+    venue:         "Hanzas Perons",
+    neighborhood:  "Avoti",
+    kind:          "gig",
+    day:           "Sat",
+    time:          "19:00",
+    quote:         "A train hall that became one of the best concert rooms in the city. The acoustics earned it.",
+    handle:        "@katestrelca",
+    thumbInitials: "HP",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "sober", "ticketed"],
+    imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Hanzas_perons_(2).jpg",
+    world_x:       993,
+    world_y:       828,
+    pin:           null
+  },
+  {
+    id:            "vieta-wine-bar",
+    city:          "riga",
+    title:         "Vieta — natural wine bar",
+    venue:         "Vieta",
+    neighborhood:  "Centrs",
+    kind:          "bar",
+    day:           null,
+    time:          null,
+    quote:         "Finally a space big enough for the wine culture they have always been trying to build here.",
+    handle:        "@katestrelca",
+    thumbInitials: "VI",
+    tonight:       false,
+    thisWeek:      false,
+    moodTags:      ["indoors", "social", "drinks", "walk-up"],
+    world_x:       1022,
+    world_y:       839,
+    pin:           null
+  },
+  {
+    id:            "kim-gallery-traces",
+    city:          "riga",
+    title:         "TRACES — Sabīne Skarule at Kim Gallery",
+    venue:         "Kim Gallery",
+    neighborhood:  "Centrs",
+    kind:          "exhibition",
+    day:           null,
+    time:          "ongoing",
+    quote:         "Design that asks questions instead of decorating walls.",
+    handle:        "@katestrelca",
+    thumbInitials: "KI",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "solo", "sober"],
+    world_x:       919,
+    world_y:       758,
+    pin:           null
+  },
+  {
     id:            "sigmundtells-2516",
+    city:          "tallinn",
     title:         "Film Club: Alcarràs Screening & Discussion",
     venue:         "Kino Artis",
     neighborhood:  "Vanalinn",
@@ -30,6 +222,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1773810091",
+    city:          "tallinn",
     title:         "English Performances at Kanuti Gildi SAAL",
     venue:         "Kanuti Gildi SAAL",
     neighborhood:  "Vanalinn",
@@ -49,6 +242,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1776052882-egs-exhibition",
+    city:          "tallinn",
     title:         "EGS Exhibition",
     venue:         "PoCo pop art museum",
     neighborhood:  "other",
@@ -68,6 +262,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2517-samsa",
+    city:          "tallinn",
     title:         "Samsa",
     venue:         "Samsa",
     neighborhood:  "Kalamaja",
@@ -87,6 +282,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2517-t-eburek",
+    city:          "tallinn",
     title:         "Tšeburek",
     venue:         "Tšeburek",
     neighborhood:  "other",
@@ -106,6 +302,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-light-talks-illuminating-with-",
+    city:          "tallinn",
     title:         "Light Talks: Illuminating with Purpose",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -125,6 +322,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-paavli-live-marcos-valle-br",
+    city:          "tallinn",
     title:         "Paavli.Live: Marcos Valle (BR)",
     venue:         "Paavli.Live",
     neighborhood:  "Pohja-Tallinn",
@@ -144,6 +342,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-kali-rising-ground-state",
+    city:          "tallinn",
     title:         "Kali Rising: Ground State",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -163,6 +362,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-macondo-brown-co",
+    city:          "tallinn",
     title:         "Macondo Brown (CO)",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -182,6 +382,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-machine-nation-f2f-special",
+    city:          "tallinn",
     title:         "Machine Nation F2F Special",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -201,6 +402,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-lebo-sibul-s-bizarre-cabaret",
+    city:          "tallinn",
     title:         "Lebo Sibul’s Bizarre Cabaret",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -220,6 +422,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-improkool-spring-shows",
+    city:          "tallinn",
     title:         "Improkool Spring Shows",
     venue:         "Improkool",
     neighborhood:  "other",
@@ -238,6 +441,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-fotografiska-opening-weekend",
+    city:          "tallinn",
     title:         "Fotografiska Opening Weekend",
     venue:         "Fotografiska",
     neighborhood:  "Telliskivi",
@@ -257,6 +461,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-city-center-mother-s-day-conce",
+    city:          "tallinn",
     title:         "City Center Mother’s Day Concert",
     venue:         "Various venues",
     neighborhood:  "Vanalinn",
@@ -276,6 +481,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-paint-pour-mother-s-day",
+    city:          "tallinn",
     title:         "Paint & Pour: Mother’s Day",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -295,6 +501,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778212908-ezma-mother-s-day-concert",
+    city:          "tallinn",
     title:         "Ezma Mother’s Day Concert",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -314,6 +521,7 @@ window.WA.catalog = [
   },
   {
     id:            "proeesti-4686",
+    city:          "tallinn",
     title:         "Vera Polozkova Poetry Concert",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -333,6 +541,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-kyrie-eleison-variations",
+    city:          "tallinn",
     title:         "Kyrie Eleison Variations",
     venue:         "Dominican Monastery",
     neighborhood:  "Vanalinn",
@@ -352,6 +561,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-short-tours-of-permanent-exhib",
+    city:          "tallinn",
     title:         "Short Tours of Permanent Exhibitions",
     venue:         "KUMU",
     neighborhood:  "Kadriorg",
@@ -371,6 +581,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-film-screening-at-former-lembi",
+    city:          "tallinn",
     title:         "Film Screening at Former Lembitu Cinema",
     venue:         "Kalamaja Museum",
     neighborhood:  "Kalamaja",
@@ -390,6 +601,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-night-tour-the-secret-life-of-",
+    city:          "tallinn",
     title:         "Night Tour: The Secret Life of Manholes",
     venue:         "Kalamaja Museum",
     neighborhood:  "Kalamaja",
@@ -409,6 +621,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-tours-of-contemporary-estonian",
+    city:          "tallinn",
     title:         "Tours of Contemporary Estonian Art Exhibition",
     venue:         "EKKM",
     neighborhood:  "Pohja-Tallinn",
@@ -428,6 +641,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-courtyard-concert",
+    city:          "tallinn",
     title:         "Courtyard Concert",
     venue:         "EKKM",
     neighborhood:  "Pohja-Tallinn",
@@ -447,6 +661,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-guitar-concert-garage-and-musi",
+    city:          "tallinn",
     title:         "Guitar Concert 'Garage and Music'",
     venue:         "Tallinn Museum of Peoples",
     neighborhood:  "other",
@@ -466,6 +681,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-lighthouse-stamp-exhibition",
+    city:          "tallinn",
     title:         "Lighthouse Stamp Exhibition",
     venue:         "Paks Margareeta",
     neighborhood:  "Vanalinn",
@@ -485,6 +701,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2550-organ-concerts",
+    city:          "tallinn",
     title:         "Organ Concerts",
     venue:         "Dome Church",
     neighborhood:  "Vanalinn",
@@ -504,6 +721,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-korfest-bemmiott-by-kaur-terep",
+    city:          "tallinn",
     title:         "Korfest: \"Bemmiott\" by Kaur Terep",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -523,6 +741,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-open-lecture-pankaj-tiwari",
+    city:          "tallinn",
     title:         "Open Lecture: Pankaj Tiwari",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -542,6 +761,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-alison-jackson-fake-news-camer",
+    city:          "tallinn",
     title:         "Alison Jackson: Fake News & Cameras",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -561,6 +781,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-ruum-concert-kadri-voorand",
+    city:          "tallinn",
     title:         "Ruum Concert: Kadri Voorand",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -580,6 +801,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-winesday-at-g-spot-bar",
+    city:          "tallinn",
     title:         "Winesday at G-Spot Bar",
     venue:         "G-Spot Bar",
     neighborhood:  "other",
@@ -599,6 +821,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-heldeke-burlesque-brooms-in-bl",
+    city:          "tallinn",
     title:         "Heldeke! Burlesque: Brooms in Blooms",
     venue:         "Heldeke!",
     neighborhood:  "Pohja-Tallinn",
@@ -618,6 +841,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-marry-me-joseph",
+    city:          "tallinn",
     title:         "Marry Me, Joseph",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -637,6 +861,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-andres-roots-50",
+    city:          "tallinn",
     title:         "Andres Roots – 50",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -656,6 +881,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-tribu-by-tumbaco-at-kai",
+    city:          "tallinn",
     title:         "Tribu by Tumbaco at Kai",
     venue:         "Kai Art Center",
     neighborhood:  "Pohja-Tallinn",
@@ -675,6 +901,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-museum-night-voices-in-the-nig",
+    city:          "tallinn",
     title:         "Museum Night: \"Voices in the Night\"",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -694,6 +921,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778472111-arvo-p-rt-sacral-minimalism",
+    city:          "tallinn",
     title:         "Arvo Pärt: Sacral Minimalism",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -713,6 +941,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-cairo-conspiracy-film-screenin",
+    city:          "tallinn",
     title:         "Cairo Conspiracy Film Screening",
     venue:         "Sõprus",
     neighborhood:  "Vanalinn",
@@ -732,6 +961,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-japanese-tales-performance",
+    city:          "tallinn",
     title:         "Japanese Tales Performance",
     venue:         "Teater PUNKT",
     neighborhood:  "Kalamaja",
@@ -751,6 +981,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-kino-symphonic-tribute",
+    city:          "tallinn",
     title:         "KINO Symphonic Tribute",
     venue:         "Mere Kultuurikeskus",
     neighborhood:  "other",
@@ -770,6 +1001,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-denis-chuzhoy-stand-up-comedy",
+    city:          "tallinn",
     title:         "Denis Chuzhoy Stand-up Comedy",
     venue:         "Heldeke!",
     neighborhood:  "Kalamaja",
@@ -789,6 +1021,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-sip-paint-sakura-evening",
+    city:          "tallinn",
     title:         "Sip & Paint: Sakura Evening",
     venue:         "Kartul",
     neighborhood:  "Telliskivi",
@@ -808,6 +1041,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-free-funk-n-soul-jam-session",
+    city:          "tallinn",
     title:         "Free Funk'n'Soul Jam Session",
     venue:         "Philly Joe's Tallinn",
     neighborhood:  "Telliskivi",
@@ -827,6 +1061,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-galym-kaliakbarov-stand-up-com",
+    city:          "tallinn",
     title:         "Galym Kaliakbarov Stand-up Comedy",
     venue:         "Lindakivi Kultuurikeskus",
     neighborhood:  "other",
@@ -846,6 +1081,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-rhetorical-poker-game-with-ele",
+    city:          "tallinn",
     title:         "Rhetorical Poker Game with Elena Solomina",
     venue:         "Style & Dine Studio Bar",
     neighborhood:  "other",
@@ -865,6 +1101,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-frozen-bro-at-sigmund-freud-ba",
+    city:          "tallinn",
     title:         "Frozen.Bro at Sigmund Freud Bar",
     venue:         "Sigmund Freud Bar",
     neighborhood:  "Vanalinn",
@@ -884,6 +1121,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-on-a-leash-performance",
+    city:          "tallinn",
     title:         "\"On a Leash\" Performance",
     venue:         "Südalinna Teater",
     neighborhood:  "other",
@@ -903,6 +1141,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-burlesque-show",
+    city:          "tallinn",
     title:         "Burlesque Show",
     venue:         "Heldeke!",
     neighborhood:  "Kalamaja",
@@ -922,6 +1161,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-teater-punkt-presents-the-coll",
+    city:          "tallinn",
     title:         "Teater PUNKT presents \"The Collector\"",
     venue:         "Südalinna Teater",
     neighborhood:  "other",
@@ -941,6 +1181,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-via-klyukva-solo-concert",
+    city:          "tallinn",
     title:         "VIA Klyukva Solo Concert",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -960,6 +1201,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-lecture-hayao-miyazaki-yuri-no",
+    city:          "tallinn",
     title:         "Lecture: Hayao Miyazaki, Yuri Norstein, Tomm Moore",
     venue:         "Sveta Kunst",
     neighborhood:  "Telliskivi",
@@ -979,6 +1221,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-free-concert-at-pirita-convent",
+    city:          "tallinn",
     title:         "Free Concert at Pirita Convent",
     venue:         "Pirita kloostri",
     neighborhood:  "other",
@@ -998,6 +1241,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-dj-bandit-set",
+    city:          "tallinn",
     title:         "DJ Bandit Set",
     venue:         "Terminal Records & Bar",
     neighborhood:  "Telliskivi",
@@ -1017,6 +1261,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-dnb-allstars-party",
+    city:          "tallinn",
     title:         "DNB AllStars Party",
     venue:         "Kultuurikatel",
     neighborhood:  "Pohja-Tallinn",
@@ -1036,6 +1281,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-dancepunk-d-party",
+    city:          "tallinn",
     title:         "Dancepunk'd Party",
     venue:         "MOD",
     neighborhood:  "Telliskivi",
@@ -1055,6 +1301,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-mystica-party",
+    city:          "tallinn",
     title:         "Mystica Party",
     venue:         "Manna La Roosa",
     neighborhood:  "Vanalinn",
@@ -1074,6 +1321,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-best-of-90-s-00-s-hiphop-r-n-b",
+    city:          "tallinn",
     title:         "Best of 90's & 00's HipHop R'n'B Party",
     venue:         "Privé",
     neighborhood:  "Vanalinn",
@@ -1093,6 +1341,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-linocut-workshop",
+    city:          "tallinn",
     title:         "Linocut Workshop",
     venue:         "Flash Art Gallery",
     neighborhood:  "other",
@@ -1112,6 +1361,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-no-brakes-party",
+    city:          "tallinn",
     title:         "\"No Brakes\" Party",
     venue:         "Desire",
     neighborhood:  "Vanalinn",
@@ -1131,6 +1381,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-russian-language-stand-up-come",
+    city:          "tallinn",
     title:         "Russian Language Stand-up Comedy",
     venue:         "Fort Bar",
     neighborhood:  "Vanalinn",
@@ -1150,6 +1401,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-market-at-p-hjala-tehas",
+    city:          "tallinn",
     title:         "Market at Põhjala Tehas",
     venue:         "Põhjala Tehas",
     neighborhood:  "Pohja-Tallinn",
@@ -1169,6 +1421,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-open-air-cinema-at-kumu-museum",
+    city:          "tallinn",
     title:         "Open-Air Cinema at Kumu Museum Courtyard",
     venue:         "Kumu Museum",
     neighborhood:  "Kadriorg",
@@ -1188,6 +1441,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2551-s-dalinna-teater-tour",
+    city:          "tallinn",
     title:         "Südalinna Teater Tour",
     venue:         "Südalinna Teater",
     neighborhood:  "other",
@@ -1207,6 +1461,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2552",
+    city:          "tallinn",
     title:         "Khinkali & Cocktail Evening",
     venue:         "Sigmund Freud Bar",
     neighborhood:  "Vanalinn",
@@ -1226,6 +1481,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2554",
+    city:          "tallinn",
     title:         "VIA \"Klyukva\" Cover Band Concert",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Põhja-Tallinn",
@@ -1245,6 +1501,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-ceramic-workshop-big-vase",
+    city:          "tallinn",
     title:         "Ceramic Workshop: Big Vase",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1264,6 +1521,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-femme-fatale-dj-behki",
+    city:          "tallinn",
     title:         "Femme Fatale: DJ Behki",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1283,6 +1541,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-klyukva-show-3",
+    city:          "tallinn",
     title:         "Klyukva Show 3",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1302,6 +1561,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-kp-s-soul-funk-80s-funk-tribut",
+    city:          "tallinn",
     title:         "KP's Soul/Funk: 80s Funk Tribute",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1321,6 +1581,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-linocut-printing-on-fabric-wor",
+    city:          "tallinn",
     title:         "Linocut Printing on Fabric Workshop",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1340,6 +1601,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-ana-falcon-1-mexican-stand-up",
+    city:          "tallinn",
     title:         "Ana Falcon: #1 Mexican Stand-up",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1359,6 +1621,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-toro-comedy-show",
+    city:          "tallinn",
     title:         "Toro Comedy Show",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1378,6 +1641,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778644890-paavli-live-ike-it",
+    city:          "tallinn",
     title:         "Paavli.Live: IKE (IT)",
     venue:         "Paavli.Live",
     neighborhood:  "Pohja-Tallinn",
@@ -1397,6 +1661,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2555-no-brakes-party",
+    city:          "tallinn",
     title:         "No Brakes Party",
     venue:         "Desire Bar",
     neighborhood:  "Vanalinn",
@@ -1416,6 +1681,7 @@ window.WA.catalog = [
   },
   {
     id:            "sigmundtells-2555-eurovision-viewing-party",
+    city:          "tallinn",
     title:         "Eurovision Viewing Party",
     venue:         "Beer and Barrel",
     neighborhood:  "Vanalinn",
@@ -1435,6 +1701,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-ceramic-workshop",
+    city:          "tallinn",
     title:         "Ceramic Workshop",
     venue:         "Gamma's",
     neighborhood:  "other",
@@ -1454,6 +1721,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-tribu-by-tumbaco",
+    city:          "tallinn",
     title:         "Tribu by Tumbaco",
     venue:         "Kai",
     neighborhood:  "Pohja-Tallinn",
@@ -1473,6 +1741,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-kp-s-soul-funk-80s-funk-tribut",
+    city:          "tallinn",
     title:         "KP’s Soul/Funk: 80s Funk Tribute",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1491,6 +1760,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-andres-roots-50",
+    city:          "tallinn",
     title:         "Andres Roots – 50",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1509,6 +1779,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-sunset-ebs-x-afro-chill",
+    city:          "tallinn",
     title:         "Sunset: EBS x Afro Chill",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1527,6 +1798,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-improv-theatre-jams",
+    city:          "tallinn",
     title:         "Improv Theatre Jams",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1545,6 +1817,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-friends-house-2",
+    city:          "tallinn",
     title:         "Friends House 2",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1563,6 +1836,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-museum-night",
+    city:          "tallinn",
     title:         "Museum Night",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1581,6 +1855,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-ana-falcon-1-mexican-stand-up",
+    city:          "tallinn",
     title:         "Ana Falcon: #1 Mexican Stand-up",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1599,6 +1874,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-hotbox",
+    city:          "tallinn",
     title:         "Hotbox",
     venue:         "Suhe",
     neighborhood:  "Telliskivi",
@@ -1618,6 +1894,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-linocut-printing-on-fabric-wor",
+    city:          "tallinn",
     title:         "Linocut Printing on Fabric Workshop",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1636,6 +1913,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-paavli-club-nikki-nair-us",
+    city:          "tallinn",
     title:         "Paavli.Club: Nikki Nair (US)",
     venue:         "Paavli.Club",
     neighborhood:  "Pohja-Tallinn",
@@ -1655,6 +1933,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-arvo-p-rt-sacral-minimalism",
+    city:          "tallinn",
     title:         "Arvo Pärt: Sacral Minimalism",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1673,6 +1952,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-toro-comedy-show",
+    city:          "tallinn",
     title:         "Toro Comedy Show",
     venue:         "Various venues",
     neighborhood:  "other",
@@ -1691,6 +1971,7 @@ window.WA.catalog = [
   },
   {
     id:            "giadafromgamma-1778817638-paavli-live-ike-it",
+    city:          "tallinn",
     title:         "Paavli.Live: IKE (IT)",
     venue:         "Paavli.Live",
     neighborhood:  "Pohja-Tallinn",
@@ -1710,6 +1991,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-170265",
+    city:          "tallinn",
     title:         "Nikki Nair (US)",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1728,6 +2010,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-180393",
+    city:          "tallinn",
     title:         "IKE (IT) | Garden Sessions",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1746,6 +2029,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-148814",
+    city:          "tallinn",
     title:         "Discharge (UK), Skoone (EE), Project Dekadenz (EE) Live",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1764,6 +2048,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-175067",
+    city:          "tallinn",
     title:         "ÖÖMAJA SELECTORS I JEREMY UNDERGROUND (FRA)",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1782,6 +2067,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-179574",
+    city:          "tallinn",
     title:         "Paavli Festival 2026",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1800,6 +2086,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-166091",
+    city:          "tallinn",
     title:         "EYEHATEGOD, Childbeater, HUKK Live",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1818,6 +2105,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-174895",
+    city:          "tallinn",
     title:         "Jungle Rot with KHNVM",
     venue:         "Tapper",
     neighborhood:  "other",
@@ -1836,6 +2124,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-177873",
+    city:          "tallinn",
     title:         "Drew McDowall (UK) & Robert Nikolajev",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1854,6 +2143,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-161120",
+    city:          "tallinn",
     title:         "Blood Incantation (US) with Nate Mercereau (US)",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1872,6 +2162,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-169457",
+    city:          "tallinn",
     title:         "Starbenders (US) Live",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1890,6 +2181,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-152443",
+    city:          "tallinn",
     title:         "The Exploited Open-Air Concert",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1908,6 +2200,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-177966",
+    city:          "tallinn",
     title:         "múm (IS) Live at Paavli Kultuurivabrik",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1926,6 +2219,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-176933",
+    city:          "tallinn",
     title:         "Brushy One String (JM)",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1944,6 +2238,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-182346",
+    city:          "tallinn",
     title:         "Gong (UK) Live at Paavli Kultuurivabrik",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1962,6 +2257,7 @@ window.WA.catalog = [
   },
   {
     id:            "paavli-kultuurivabrik-184159",
+    city:          "tallinn",
     title:         "Napalm Death, Master, The Brat, Goatburner",
     venue:         "Paavli Kultuurivabrik",
     neighborhood:  "Pohja-Tallinn",
@@ -1980,6 +2276,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172435",
+    city:          "tallinn",
     title:         "Feedback",
     venue:         "Von Krahli Teater",
     neighborhood:  "Vanalinn",
@@ -1998,6 +2295,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172438",
+    city:          "tallinn",
     title:         "Feedback: A Drama of Uprising",
     venue:         "Von Krahli Teater",
     neighborhood:  "Vanalinn",
@@ -2016,6 +2314,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-175394",
+    city:          "tallinn",
     title:         "Cabaret Techno: The End is Just the Beginning",
     venue:         "Von Krahli Teater",
     neighborhood:  "Vanalinn",
@@ -2034,6 +2333,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172439",
+    city:          "tallinn",
     title:         "Jussike's 7 Friends",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2052,6 +2352,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-171178",
+    city:          "tallinn",
     title:         "Jussike's 7 Friends",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2070,6 +2371,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-181983",
+    city:          "tallinn",
     title:         "Taavi-Peeter Liiv & band \"On a New Street\" Album Launch + Metropol",
     venue:         "Von Krahli kohvik",
     neighborhood:  "Vanalinn",
@@ -2088,6 +2390,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172430",
+    city:          "tallinn",
     title:         "Monolith Estonia: Liisa Saaremäel's New Production",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2106,6 +2409,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172431",
+    city:          "tallinn",
     title:         "Monoliit Estonia",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2124,6 +2428,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172432",
+    city:          "tallinn",
     title:         "Monoliit Estonia: New Production by Liisa Saaremäel",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2142,6 +2447,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-180122",
+    city:          "tallinn",
     title:         "KURATINO 50: Ordo Rosarius Equilibrio, Forgotten Sunrise & more",
     venue:         "Von Krahli kohvik",
     neighborhood:  "Vanalinn",
@@ -2160,6 +2466,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172427",
+    city:          "tallinn",
     title:         "MEEDIUM: Mart Kangro's Solo Performance",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2178,6 +2485,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172428",
+    city:          "tallinn",
     title:         "Meedium",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2196,6 +2504,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172429",
+    city:          "tallinn",
     title:         "Medium: A Solo Performance on Information Overload",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2214,6 +2523,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-177981",
+    city:          "tallinn",
     title:         "Ooper: A Musical Production on Ambition",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2232,6 +2542,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-170306",
+    city:          "tallinn",
     title:         "Fundamentalist",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2250,6 +2561,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-177982",
+    city:          "tallinn",
     title:         "Ooper (Opera)",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2268,6 +2580,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-170307",
+    city:          "tallinn",
     title:         "Fundamentalist",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2286,6 +2599,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-172426",
+    city:          "tallinn",
     title:         "Fundamentalist",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2304,6 +2618,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-178333",
+    city:          "tallinn",
     title:         "Tagasiside",
     venue:         "Von Krahli Teater",
     neighborhood:  "Vanalinn",
@@ -2322,6 +2637,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185026",
+    city:          "tallinn",
     title:         "Öömaaeg",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2340,6 +2656,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185029",
+    city:          "tallinn",
     title:         "Öömaaeg (Night Time)",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2358,6 +2675,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185030",
+    city:          "tallinn",
     title:         "Öömaaeg: Night Time Refuge",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2376,6 +2694,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185031",
+    city:          "tallinn",
     title:         "Öömaaeg: Night Sanctuary Dance",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2394,6 +2713,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185032",
+    city:          "tallinn",
     title:         "Öömaaeg",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2412,6 +2732,7 @@ window.WA.catalog = [
   },
   {
     id:            "15-185033",
+    city:          "tallinn",
     title:         "Öömaaeg",
     venue:         "Von Krahli teater",
     neighborhood:  "Vanalinn",
@@ -2430,6 +2751,7 @@ window.WA.catalog = [
   },
   {
     id:            "telliskivi-13706",
+    city:          "tallinn",
     title:         "Kalamaja Days Culture Party",
     venue:         "Telliskivi Creative City square",
     neighborhood:  "Telliskivi",
@@ -2448,6 +2770,7 @@ window.WA.catalog = [
   },
   {
     id:            "uus-laine",
+    city:          "tallinn",
     title:         "Uus Laine — late DJ bar, no lineup",
     venue:         "Uus Laine",
     neighborhood:  "Põhja-Tallinn",
@@ -2467,6 +2790,7 @@ window.WA.catalog = [
   },
   {
     id:            "turntable-tallinn",
+    city:          "tallinn",
     title:         "Turntable Tallinn",
     venue:         "Turntable Tallinn",
     neighborhood:  "Telliskivi",
@@ -2486,6 +2810,7 @@ window.WA.catalog = [
   },
   {
     id:            "vota-voi-jata",
+    city:          "tallinn",
     title:         "Võta või Jäta",
     venue:         "Võta või Jäta",
     neighborhood:  "Põhja-Tallinn",
@@ -2505,6 +2830,7 @@ window.WA.catalog = [
   },
   {
     id:            "koogi-galerii",
+    city:          "tallinn",
     title:         "Köögi Galerii",
     venue:         "Köögi Galerii",
     neighborhood:  "Kalamaja",
@@ -2524,6 +2850,7 @@ window.WA.catalog = [
   },
   {
     id:            "feminine-power",
+    city:          "tallinn",
     title:         "Feminine power — group show",
     venue:         "Kumu",
     neighborhood:  "Kadriorg",
@@ -2545,62 +2872,100 @@ window.WA.catalog = [
 
 window.WA.curators = [
   {
+    handle:  "@jani.after",
+    name:    "Jani",
+    city:    "helsinki",
+    tagline: "Late nights and loud rooms in Helsinki.",
+    bio:     "Catches the shows nobody writes about. Usually found somewhere in Kallio after midnight."
+  },
+  {
+    handle:  "@katestrelca",
+    name:    "Kate Strelca",
+    city:    "riga",
+    tagline: "Riga without the tourist trail.",
+    bio:     "Runs @notboring_riga — curated news, events and places since before it was fashionable to care about the city. Finds the good ones early."
+  },
+  {
+    handle:  "@notboring_riga",
+    name:    "Kate",
+    city:    "riga",
+    tagline: "curated news, events and places",
+    bio:     "Runs the not boring → Riga channel. Curates the best of Riga culture with a sharp eye for good design and authentic experiences."
+  },
+  {
+    handle:  "@udgstriga",
+    name:    "Underground Station",
+    city:    "riga",
+    tagline: "Forward-thinking electronic music in Riga.",
+    bio:     "Riga collective broadcasting parties, raves, and DIY electronic events from the city's underground."
+  },
+  {
     handle:  "@discovery",
     name:    "Discovery",
+    city:    "tallinn",
     tagline: "Surfaced by external search — not yet curated.",
     bio:     "Picks marked with @discovery come from external searches (Google Places). They are not vouched for by a curator and stay hidden from the main feed until an editor reviews them."
   },
   {
     handle:  "@hel.nocturnes",
     name:    "Hel",
+    city:    "tallinn",
     tagline: "After midnight the city reveals itself.",
     bio:     "DJ, occasionally and reluctantly described as underground. More importantly: knows where the good after-parties are. Moved from Helsinki to Tallinn in 2021 for reasons she summarises as cheaper and weirder. Has a strict policy of never listing anything that still has a queue at 23:30. Posts roughly once a week, always about things happening that same night. Does not respond to booking enquiries via Telegram."
   },
   {
     handle:  "@kaisa.writes",
     name:    "Kaisa",
+    city:    "tallinn",
     tagline: "Go to the opening. Skip the opening speech.",
     bio:     "Art critic turned occasional curator, based in Tallinn since 2018. Contributes to a couple of art magazines nobody outside the Baltics has heard of, which is how she likes it. Particular about what she calls institutional sincerity—the difference between a museum that shows difficult work because it believes in it and one that shows it for the press release. If she recommends an opening, the work is worth arriving early for."
   },
   {
     handle:  "@mattias.v",
     name:    "Mattias",
+    city:    "tallinn",
     tagline: "The best things in a city are not listed anywhere.",
     bio:     "Swedish-Estonian. Has lived in Tallinn long enough to have a considered opinion about every vinyl shop within walking distance of the Old Town. Works in graphic design, which he treats as a day job for supporting a record habit. Finds thrift stores professionally interesting and personally ruinous. Reads widely in architecture and photography. Has never recommended a place without visiting it at least twice first. Suspicious of novelty; enthusiastic about permanence."
   },
   {
     handle:  "@paavli",
     name:    "Paavli Kultuurivabrik",
+    city:    "tallinn",
     tagline: "Loud, weird, excellent.",
     bio:     "Former industrial space in Põhja-Tallinn turned into a venue for punk, metal, electronic, and experimental music. Programme via Fienta."
   },
   {
     handle:  "@raul.reads",
     name:    "Raul",
+    city:    "tallinn",
     tagline: "Reading keeps the city honest.",
     bio:     "Teaches cultural studies at Tallinn University, when not arguing about slow cinema in the back row of Sõprus. Has a particular fondness for lectures that end without conclusions. Reads two newspapers a day—one in Estonian, one in Russian—and considers this basic hygiene. His picks run toward talks, symposia, and evenings where the format is unclear but the thinking is rigorous. Believes the best event is one where you leave slightly less certain of your opinions."
   },
   {
     handle:  "@telliskivi",
     name:    "Telliskivi Creative City",
+    city:    "tallinn",
     tagline: "Where Tallinn gets creative.",
     bio:     "Tallinn's main creative hub: gigs, markets, exhibitions, dance, theatre, film clubs, flea markets. All under one roof in Põhja-Tallinn."
   },
   {
     handle:  "@vonkrahl",
     name:    "Von Krahl Theatre",
+    city:    "tallinn",
     tagline: "Experimental theatre, since 1992.",
     bio:     "Tallinn's longest-running independent theatre. Avant-garde productions, TMW events, alternative performances. Programme via Fienta."
   },
   {
     handle:  "proEesti",
     name:    "proEesti",
+    city:    "tallinn",
     tagline: "Estonian news & events feed",
     bio:     "Public Telegram channel covering events, culture, and news across Estonia."
   },
   {
     handle:  "sigmundtells",
     name:    "Sigmund",
+    city:    "tallinn",
     tagline: "The underground isn't a place. It's a posture.",
     bio:     "Grew up between Tartu and Riga. Spent three years running a noise collective out of a converted tram depot in Kalamaja before the building was turned into co-working. Writes a weekly Telegram channel about experimental music in the Baltics and occasionally ruins dinner parties with thoughts about the semiotics of feedback. Currently lives above a kebab shop near Balti jaam. Has seen Sveta Baar survive three ownership changes and remain stubbornly itself."
   }
