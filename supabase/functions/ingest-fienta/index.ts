@@ -132,7 +132,7 @@ async function upsertEvent(source: Source, e: FientaEvent): Promise<'inserted'|'
     text:       composeText(e),
     posted_at:  new Date(e.starts_at.replace(' ', 'T') + '+02:00').toISOString(),
     permalink:  e.url ?? `https://fienta.com/o/${source.channel}`,
-    status:     'pending',
+    status:     'new',
   };
   const res = await rest('staging_messages', {
     method: 'POST',
