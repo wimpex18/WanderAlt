@@ -44,6 +44,7 @@ Three layers of filter:
 | 15 | fienta   | `paavli-kultuurivabrik`                     | tallinn | @paavli         | **on**   |
 | 16 | fienta   | `15` (Von Krahl Theatre)                    | tallinn | @vonkrahl       | **on**   |
 | 17 | web      | `telliskivi` (telliskivi.cc/en/events/)     | tallinn | @telliskivi     | **on**   |
+| 18 | web      | `kinobize` (kinobize.lv/en/repertoire)      | riga    | @kinobize       | **on**   |
 
 (Rows 2–5 hold placeholder slugs that match fictional curator handles. Disabled.)
 
@@ -107,7 +108,7 @@ These bias Gemini toward keeping a pick when it's borderline:
 - `@proEesti` (Tallinn)
 
 **Mentioned in research, public-channel status unknown — try & enable if HTML fetch succeeds:**
-- `@udgstriga` (Underground Station Riga) — forward-thinking electronic music
+- `@udgstriga` (Underground Station Riga) — source row exists (id 14), but 0 staging messages after nightly ingest. Channel is likely private or inactive as a broadcast channel. Verify manually before investing further.
 - *Telegram channels for Nullpunkt, HALL, Depo, Laska, Sveta — only if a curator confirms they exist as public broadcast channels.*
 
 How to test a channel before adding:
@@ -174,9 +175,9 @@ because Fienta covered the two highest-trust Tallinn venues with one fetch.
 |----------------------|----------------------------------|-------------------------|--------|
 | Telliskivi CC        | telliskivi.cc/en/events/         | Server-side rendered HTML. Regex parser on `.card` elements inside `.js-events`. No AJAX needed. | **DONE** |
 | Kultuurivabrik (own) | kultuurivabrik.ee/programm       | Covered by Fienta — no need for separate scraper. | **covered** |
-| KKC Riga             | kanepes.lv                       | HTML scrape (TBD)       | **future** |
-| Kino Bize Riga       | kinobize.lv                      | HTML scrape (TBD)       | **future** |
-| Splendid Palace      | liveriga.com/.../splendid-palace | HTML scrape (TBD)       | **future** |
+| Kino Bize Riga       | kinobize.lv/en/repertoire        | Server-side rendered HTML. Split by `<li>`, extract `/en/repertoire/<cat>/<slug>/<id>` links. | **DONE** |
+| KKC Riga             | kanepes.lv                       | JavaScript SPA — content not in initial HTML. Needs headless browser or API. Not feasible with current scraper approach. | **blocked** |
+| Splendid Palace      | splendidpalace.lv/lv/pasakumi    | Server-side rendered, Latvian-only. Event links `/lv/pasakumi/<slug>-<id>`, date format `DD.MM.YYYY`. Feasible but low priority — Telegram covers Riga. | **future** |
 
 All push to `staging_messages` with `source_id` of a new source row per venue.
 
