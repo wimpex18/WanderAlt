@@ -717,6 +717,21 @@
       setMode('match');
     }
 
+    /* Browser back/forward: re-read the URL and re-render so filter state,
+       view, and active pin all match whatever the history entry says.      */
+    window.addEventListener('popstate', () => {
+      readUrlState();
+      input.value = state.q || (state.mode === 'match' ? state.ai : '');
+      if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
+      reflectPills();
+      reflectView();
+      renderAll();
+      if (state.id) {
+        const mv = window.WA?.MapView;
+        if (mv && mv.isReady()) mv.focusPin(state.id);
+      }
+    });
+
     /* Now render whatever catalog is currently in memory. */
     renderAll();
   };
