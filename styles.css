@@ -3484,3 +3484,261 @@ a.handle:hover { color: var(--c-ink); }
     bottom: calc(55vh + 4px);
   }
 }
+
+/* ============================================================
+   Discover page — list-first surface that replaces Search in
+   the medium term. Phase 1a layout: search bar, filter pill row,
+   bottom-sheet "All filters", AI match results, browse sections.
+   ============================================================ */
+
+/* ── Search bar (compact, with AI sub-link) ─────────────────── */
+.discover-search {
+  padding: var(--s-4) 0 var(--s-2);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.discover-search__box { width: 100%; }
+.discover-search__ai {
+  display: inline-block;
+  margin-top: var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.discover-search__ai:hover { text-decoration: underline; }
+.discover-search[data-mode="match"] .discover-search__ai { color: var(--c-ink-mute); }
+
+/* ── Filter pill row (horizontally scrollable) ─────────────── */
+.discover-pills {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--s-2);
+  overflow-x: auto;
+  padding: var(--s-3) 0 var(--s-2);
+  margin-bottom: var(--s-2);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.discover-pills::-webkit-scrollbar { display: none; }
+.discover-pill {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink);
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.discover-pill:hover { border-color: var(--c-ink); }
+.discover-pill--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-ink);
+}
+.discover-pill--more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.discover-pill__count {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 5px;
+  background: var(--c-accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* ── "Open map view →" link ─────────────────────────────────── */
+.discover-map-link {
+  margin: var(--s-2) 0 var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+}
+.discover-map-link a { color: var(--c-accent); }
+.discover-map-link a:hover { text-decoration: underline; }
+
+/* ── Free-entry badge in result rows ───────────────────────── */
+.list-row__free {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: oklch(0.60 0.140 140);
+  color: #fff;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+/* ── Filter bottom sheet ────────────────────────────────────── */
+.discover-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 70;
+}
+.discover-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 80vh;
+  background: var(--c-paper);
+  border-top: 1px solid var(--c-rule-strong);
+  display: flex;
+  flex-direction: column;
+  z-index: 71;
+  animation: discover-sheet-up 180ms ease-out;
+}
+@keyframes discover-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.discover-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-rule-strong);
+  margin: var(--s-2) auto var(--s-1);
+}
+.discover-sheet__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--s-2) var(--s-4) var(--s-3);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.discover-sheet__title {
+  font-family: var(--ff-body);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.discover-sheet__close {
+  font-size: 22px;
+  background: none;
+  border: 0;
+  color: var(--c-ink);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.discover-sheet__body {
+  overflow-y: auto;
+  padding: var(--s-4);
+  flex: 1 1 auto;
+}
+.discover-sheet__field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s-5);
+}
+.discover-sheet__field legend {
+  margin-bottom: var(--s-2);
+}
+.discover-sheet__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.sheet-chip {
+  padding: 5px 12px;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-ink);
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule-strong);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.sheet-chip:hover { border-color: var(--c-ink); }
+.sheet-chip--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+  border-color: var(--c-ink);
+}
+.discover-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.discover-sort select {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  padding: 6px 28px 6px 10px;
+  border: 1px solid var(--c-rule-strong);
+  background: var(--c-paper);
+  color: var(--c-ink);
+  appearance: none;
+}
+.discover-sort .search-sort__chev {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  pointer-events: none;
+}
+.discover-sheet__foot {
+  display: flex;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-top: var(--rule-w) solid var(--c-rule);
+}
+.discover-sheet__clear {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.discover-sheet__clear:hover { color: var(--c-accent); }
+.discover-sheet__apply { flex: 1; padding: 10px 0; }
+
+body.discover-sheet-open { overflow: hidden; }
+
+/* ── Desktop split presentation ─────────────────────────────── */
+@media (min-width: 1024px) {
+  .discover-sheet {
+    left: 0;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    max-height: none;
+    border-top: 0;
+    border-right: 1px solid var(--c-rule-strong);
+    animation: discover-sheet-slide-right 180ms ease-out;
+  }
+  @keyframes discover-sheet-slide-right {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+  .discover-sheet__handle { display: none; }
+}
+
+/* ── Print: hide all filter chrome ──────────────────────────── */
+@media print {
+  .discover-search,
+  .discover-pills,
+  .discover-map-link,
+  .discover-sheet,
+  .discover-sheet-backdrop { display: none !important; }
+}

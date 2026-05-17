@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WanderAlt — Discover · Tallinn</title>
+  <meta name="description" content="Browse, filter and search every curated pick in WanderAlt." />
+  <meta name="theme-color" content="#f6f3ec" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="./catalog.js"></script>
+  <script defer src="./city.js"></script>
+  <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+  <script defer src="./bookmark.js"></script>
+  <script defer src="./taste.js"></script>
+  <script defer src="./mood-chips.js"></script>
+  <script defer src="./map-venues.js"></script>
+  <script defer src="./discover.js"></script>
+</head>
+<body data-page="discover">
+
+  <a class="skip-link" href="#discover-main">Skip to results</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar__inner">
+      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
+        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
+        <span class="wordmark">WanderAlt</span>
+      </a>
+      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="city-dot" aria-hidden="true"></span>
+        <span class="city-selector__name">TALLINN</span>
+        <span class="city-selector__chev" aria-hidden="true">
+          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <main id="discover-main" class="page" role="main">
+
+    <p class="print-head" aria-hidden="true"></p>
+
+    <!-- Compact search bar. Icon expands the input on tap (mobile);
+         the AI "match me" toggle is a thin link below.                -->
+    <section class="discover-search" aria-labelledby="discover-search-label" data-mode="search">
+      <label id="discover-search-label" class="visually-hidden" for="discover-q">Search WanderAlt</label>
+      <form role="search" onsubmit="return false;">
+        <div class="search-box discover-search__box">
+          <span class="search-box__icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/>
+            </svg>
+          </span>
+          <input
+            id="discover-q"
+            class="search-input"
+            type="search"
+            name="q"
+            placeholder="Search anything&hellip;"
+            autocomplete="off"
+            spellcheck="false"
+            enterkeyhint="search" />
+        </div>
+      </form>
+      <button class="discover-search__ai" id="discover-match-toggle" type="button">
+        ask in plain English &rarr;
+      </button>
+    </section>
+
+    <!-- Time / Free / + Filters pill row. -->
+    <nav class="discover-pills" aria-label="Quick filters">
+      <button class="discover-pill" type="button" data-pill="tonight">Tonight</button>
+      <button class="discover-pill" type="button" data-pill="thisweek">This week</button>
+      <button class="discover-pill" type="button" data-pill="free">Free</button>
+      <button class="discover-pill discover-pill--more" type="button" id="discover-filters-btn">
+        + Filters
+        <span class="discover-pill__count" id="discover-filter-count" hidden>0</span>
+      </button>
+    </nav>
+
+    <!-- Mood chips — mood-chips.js renders chip buttons here. -->
+    <nav class="mood-chips" aria-label="Filter by mood"></nav>
+
+    <!-- View toggle / placeholder for map.
+         Phase 1a: link to the existing map page with shared filter state.
+         Phase 1b: this becomes a "Map" FAB that swaps panes in place.    -->
+    <p class="discover-map-link">
+      <a id="discover-map-link" href="map.html">Open map view &rarr;</a>
+    </p>
+
+    <!-- AI match results — populated by discover.js when AI mode is active. -->
+    <section class="match-wrap" id="discover-match-wrap" aria-label="AI match results" hidden>
+      <div class="match-result" id="discover-match-result" aria-live="polite"></div>
+      <button class="match-again" id="discover-match-again" type="button" hidden>
+        Try again &rarr;
+      </button>
+    </section>
+
+    <!-- Keyword / filter results — shown when input has a value or any filter is active. -->
+    <section id="discover-results-section" aria-label="Results" hidden>
+      <header class="search-section-head search-section-head--sort">
+        <div>
+          <p class="eyebrow">Results</p>
+          <p class="meta" id="discover-results-count" aria-live="polite"></p>
+        </div>
+      </header>
+      <ol class="list-rows" id="discover-results" role="list"></ol>
+      <p class="meta" id="discover-empty" style="padding:var(--s-4) 0" hidden></p>
+    </section>
+
+    <!-- Browse sections — hidden when filters are active. -->
+    <section class="discover-browse-section search-browse-section" aria-labelledby="curators-label">
+      <header class="search-section-head">
+        <p id="curators-label" class="eyebrow">Curators</p>
+        <p class="meta">&nbsp;</p>
+      </header>
+      <ul class="curator-rows" role="list"></ul>
+    </section>
+
+    <section class="discover-browse-section search-browse-section" aria-labelledby="neighborhoods-label">
+      <header class="search-section-head">
+        <p id="neighborhoods-label" class="eyebrow">Neighborhoods</p>
+        <p class="meta">&nbsp;</p>
+      </header>
+      <ul class="browse-rows" role="list"></ul>
+    </section>
+
+    <section class="discover-browse-section search-browse-section" aria-labelledby="kinds-label">
+      <header class="search-section-head">
+        <p id="kinds-label" class="eyebrow">By kind</p>
+        <p class="meta">&nbsp;</p>
+      </header>
+      <ul class="browse-rows" role="list"></ul>
+    </section>
+
+  </main>
+
+  <!-- Filter sheet (slides up from bottom on mobile, from left on desktop). -->
+  <div class="discover-sheet-backdrop" id="discover-sheet-backdrop" hidden></div>
+  <aside class="discover-sheet" id="discover-sheet" aria-label="All filters" hidden>
+    <div class="discover-sheet__handle" aria-hidden="true"></div>
+    <header class="discover-sheet__head">
+      <h2 class="discover-sheet__title">Filters</h2>
+      <button class="discover-sheet__close" id="discover-sheet-close" type="button" aria-label="Close">&times;</button>
+    </header>
+    <div class="discover-sheet__body">
+      <fieldset class="discover-sheet__field">
+        <legend class="eyebrow">Category</legend>
+        <div class="discover-sheet__chips" id="discover-cat-chips"></div>
+      </fieldset>
+      <fieldset class="discover-sheet__field">
+        <legend class="eyebrow">Neighborhood</legend>
+        <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
+      </fieldset>
+      <fieldset class="discover-sheet__field">
+        <legend class="eyebrow">Sort</legend>
+        <label class="discover-sort">
+          <select id="discover-sort">
+            <option value="relevance">Relevance</option>
+            <option value="newest">Newest first</option>
+            <option value="title">A &rarr; Z</option>
+            <option value="curator">By curator</option>
+          </select>
+          <span class="search-sort__chev" aria-hidden="true">
+            <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5"/></svg>
+          </span>
+        </label>
+      </fieldset>
+    </div>
+    <footer class="discover-sheet__foot">
+      <button class="discover-sheet__clear" id="discover-sheet-clear" type="button">Clear all</button>
+      <button class="btn-primary discover-sheet__apply" id="discover-sheet-apply" type="button">Apply</button>
+    </footer>
+  </aside>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__inner">
+      <a class="nav__item" data-nav="briefing" href="./index.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M5 3h11l3 3v15H5V3z"/><path d="M8 8h8M8 12h8M8 16h5"/>
+        </svg>
+        <span class="nav__label">Briefing</span>
+      </a>
+      <a class="nav__item" data-nav="map" href="./map.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/>
+        </svg>
+        <span class="nav__label">Map</span>
+      </a>
+      <a class="nav__item" data-nav="discover" href="./discover.html" aria-current="page">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>
+        </svg>
+        <span class="nav__label">Discover</span>
+      </a>
+      <a class="nav__item" data-nav="saved" href="./saved.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4-6 4V3z"/>
+        </svg>
+        <span class="nav__label">Saved</span>
+      </a>
+      <a class="nav__item" data-nav="profile" href="./profile.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3.1-7 7-7s7 3 7 7"/>
+        </svg>
+        <span class="nav__label">Profile</span>
+      </a>
+    </div>
+  </nav>
+
+</body>
+</html>
