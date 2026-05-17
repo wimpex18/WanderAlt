@@ -10,6 +10,7 @@ WA.MAP_CATEGORIES = [
   { id: 'market',  label: 'Flea & market' },
   { id: 'culture', label: 'Cultural space' },
   { id: 'art',     label: 'Street art' },
+  { id: 'free',    label: 'Free entry' },
 ];
 
 WA.MAP_DISTRICTS = [

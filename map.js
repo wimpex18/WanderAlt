@@ -30,10 +30,15 @@
   });
 
   // ── Pan/Zoom ──────────────────────────────────────────────────
+  let _reclusterTimer = null;
   function applyTransform() {
     worldWrap.style.transform = `translate(${tx}px,${ty}px) scale(${zoom})`;
     positionPins();
     if (userLoc) positionPuck();
+    /* Re-cluster 180 ms after pan/zoom settles so cluster bubbles update
+       without rebuilding the DOM on every animation frame.             */
+    clearTimeout(_reclusterTimer);
+    _reclusterTimer = setTimeout(renderPins, 180);
   }
 
   function fitView() {
@@ -146,12 +151,16 @@
 
   function getVisibleEntries() {
     const q = textQuery.toLowerCase();
+    /* 'free' is a moodTag filter, not a kind — handle separately. */
+    const kindFilters = new Set([...catFilters].filter(id => id !== 'free'));
+    const wantFree    = catFilters.has('free');
     return (window.WA?.catalog || []).filter(e => {
       if (!e.world_x || !e.world_y) return false;
       if (timeFilter === 'tonight'  && !e.tonight) return false;
       if (timeFilter === 'thisweek' && !e.thisWeek && !e.tonight) return false;
       if (timeFilter === 'places'   && e.day) return false;
-      if (catFilters.size > 0 && !catFilters.has(normaliseKind(e.kind))) return false;
+      if (kindFilters.size > 0 && !kindFilters.has(normaliseKind(e.kind))) return false;
+      if (wantFree && !(e.moodTags || []).includes('free')) return false;
       if (q && !matchesText(e, q)) return false;
       return true;
     });
@@ -408,12 +417,70 @@
       btn.style.left = `${s.x}px`;
       btn.style.top  = `${s.y}px`;
     });
+    /* Reposition cluster bubbles by their stored world centroid. */
+    pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
+      const s = worldToScreen(+btn.dataset.wx, +btn.dataset.wy);
+      btn.style.left = `${s.x}px`;
+      btn.style.top  = `${s.y}px`;
+    });
+  }
+
+  // ── Clustering ────────────────────────────────────────────
+  /* Greedy O(n²) screen-distance clustering — adequate for <300 pins.
+     Returns an array of { entries, wx, wy, single } objects.          */
+  const CLUSTER_PX = 50;
+  function computeClusters(entries) {
+    if (!entries.length) return [];
+    const pts = entries.map(e => ({
+      e,
+      x: e.world_x * zoom + tx,
+      y: e.world_y * zoom + ty,
+    }));
+    const used = new Set();
+    const clusters = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (used.has(i)) continue;
+      const members = [i];
+      used.add(i);
+      for (let j = i + 1; j < pts.length; j++) {
+        if (used.has(j)) continue;
+        if (Math.hypot(pts[j].x - pts[i].x, pts[j].y - pts[i].y) <= CLUSTER_PX) {
+          members.push(j);
+          used.add(j);
+        }
+      }
+      const wx = members.reduce((s, k) => s + pts[k].e.world_x, 0) / members.length;
+      const wy = members.reduce((s, k) => s + pts[k].e.world_y, 0) / members.length;
+      clusters.push({ entries: members.map(k => pts[k].e), wx, wy, single: members.length === 1 });
+    }
+    return clusters;
+  }
+
+  function clusterPinHTML(cl) {
+    const n = cl.entries.length;
+    /* Pick the dominant kind for cluster colour. */
+    const counts = {};
+    cl.entries.forEach(e => { const k = normaliseKind(e.kind); counts[k] = (counts[k] || 0) + 1; });
+    const topKind = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    const catC = window.WA?.MAP_CAT || {};
+    const c    = catC[topKind] || { bg: '#444' };
+    return `<button class="map-cluster" type="button"
+      data-wx="${cl.wx}" data-wy="${cl.wy}"
+      aria-label="${n} events here" style="left:0;top:0;--cluster-bg:${c.bg}">
+      <span class="map-cluster__count">${n}</span>
+    </button>`;
   }
 
   function renderPins() {
     if (!pinsEl) return;
-    pinsEl.innerHTML = getVisibleEntries().map(pinHTML).join('');
+    const visible  = getVisibleEntries();
+    const clusters = computeClusters(visible);
+
+    pinsEl.innerHTML = clusters.map(cl =>
+      cl.single ? pinHTML(cl.entries[0]) : clusterPinHTML(cl)
+    ).join('');
     positionPins();
+
     pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
       btn.addEventListener('click', () => {
@@ -430,6 +497,22 @@
         writeUrlState();
       });
     });
+
+    /* Cluster pins: clicking zooms in to the cluster centroid. */
+    pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
+      btn.addEventListener('pointerdown', e => e.stopPropagation());
+      btn.addEventListener('click', () => {
+        if (dragged) return;
+        const wx = +btn.dataset.wx, wy = +btn.dataset.wy;
+        const rect = viewport.getBoundingClientRect();
+        const newZoom = Math.min(MAX_ZOOM, zoom * 2.2);
+        zoom = newZoom;
+        tx = rect.width  / 2 - wx * newZoom;
+        ty = rect.height / 2 - wy * newZoom;
+        applyTransform();
+      });
+    });
+
     updateSearchCount();
   }
 
@@ -494,6 +577,12 @@
     const eyebrow = entry.isClosed
       ? `<span class="map-detail__closed">closed</span> ${baseEyebrow}`
       : baseEyebrow;
+
+    const isFree = (entry.moodTags || []).includes('free');
+    const priceBadge = isFree
+      ? `<span class="map-detail__price-badge">Free</span>`
+      : '';
+
     const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
     const img = entry.imageUrl
       ? `<img src="${entry.imageUrl}" alt="" class="map-detail__img" loading="lazy"/>`
@@ -501,6 +590,12 @@
     const q = entry.quote
       ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
       : '';
+
+    /* External event page link — shown when the pick has a source permalink. */
+    const extLink = entry.permalink
+      ? `<a class="map-detail__ext-link" href="${entry.permalink}" target="_blank" rel="noopener noreferrer">See event page &rarr;</a>`
+      : '';
+
     /* Map → Search affordances: jump from the pin into search.html. */
     const listVisible = getVisibleEntries();
     const listHref = textQuery
@@ -510,12 +605,13 @@
       ? `View list (${listVisible.length}) &rarr;`
       : 'View list &rarr;';
     const moreLinks = `<nav class="map-detail__more" aria-label="Related searches">
+        ${extLink ? `<span class="map-detail__more-link map-detail__more-link--ext">${extLink}</span>` : ''}
         <a class="map-detail__more-link map-detail__more-link--list" href="${listHref}">${listLabel}</a>
         <a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
         ${entry.kind ? `<a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
       </nav>`;
     return `<div class="map-detail__head">
-        <span class="map-detail__eyebrow">${eyebrow}</span>
+        <span class="map-detail__eyebrow">${eyebrow}${priceBadge}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
       <h2 class="map-detail__title"><a href="venue.html?id=${entry.id}">${entry.title}</a></h2>
@@ -567,6 +663,17 @@
         WA.Bookmarks.set(cb.dataset.id, cb.checked);
       });
     });
+
+    /* Close when the user clicks anywhere on the map outside the panel. */
+    const panel = isDesktop ? detailEl : sheetEl;
+    const handleOutside = (e) => {
+      if (panel.contains(e.target)) return;
+      if (e.target.closest('.map-pin-new, .map-cluster')) return;
+      viewport.removeEventListener('pointerdown', handleOutside);
+      closeDetail(); activeId = null; renderPins(); writeUrlState();
+    };
+    /* Delay one tick so the click that opened this panel doesn't also close it. */
+    setTimeout(() => viewport.addEventListener('pointerdown', handleOutside), 0);
   }
 
   function closeDetail() {

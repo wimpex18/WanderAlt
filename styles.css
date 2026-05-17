@@ -3365,6 +3365,57 @@ a.handle:hover { color: var(--c-ink); }
   margin-bottom: var(--s-1);
 }
 
+/* ── Cluster pins (group of nearby events at low zoom) ───────── */
+.map-cluster {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--cluster-bg, var(--c-ink));
+  color: #fff;
+  border: 2.5px solid var(--c-paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  z-index: 6;
+}
+.map-cluster:hover {
+  transform: translate(-50%, -50%) scale(1.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.36);
+}
+.map-cluster__count { line-height: 1; }
+
+/* ── Free-entry price badge in detail panel ─────────────────── */
+.map-detail__price-badge {
+  display: inline-block;
+  margin-left: var(--s-2);
+  padding: 1px 7px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: oklch(0.60 0.140 140);
+  color: #fff;
+  vertical-align: middle;
+}
+
+/* ── External event-page link ────────────────────────────────── */
+.map-detail__ext-link {
+  color: var(--c-accent);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+}
+.map-detail__ext-link:hover { text-decoration: underline; }
+.map-detail__more-link--ext { margin-bottom: var(--s-2); }
+
 /* ── Mobile sheet handle ────────────────────────────────────── */
 .map-sheet .map-sheet__handle {
   width: 36px;

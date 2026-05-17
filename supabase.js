@@ -59,8 +59,9 @@
       top:     r.pin_top,
       eyebrow: r.pin_eyebrow
     } : null,
-    world_x:   r.world_x ?? null,
-    world_y:   r.world_y ?? null,
+    world_x:   r.world_x   ?? null,
+    world_y:   r.world_y   ?? null,
+    permalink: r.permalink || null,
     /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });
@@ -81,7 +82,7 @@
         `city=eq.${CITY}&archived_at=is.null` +
         `&select=id,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
-                `pin_num,pin_left,pin_top,pin_eyebrow,world_x,world_y` +
+                `pin_num,pin_left,pin_top,pin_eyebrow,world_x,world_y,permalink` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),

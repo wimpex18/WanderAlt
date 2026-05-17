@@ -39,7 +39,8 @@ function pickEntry(r) {
     `tonight:       ${js(!!r.tonight)}`,
     `thisWeek:      ${js(!!r.this_week)}`,
     `moodTags:      ${js(r.mood_tags || [])}`,
-    r.image_url ? `imageUrl:      ${js(r.image_url)}` : null,
+    r.image_url  ? `imageUrl:      ${js(r.image_url)}`  : null,
+    r.permalink  ? `permalink:     ${js(r.permalink)}`  : null,
     `world_x:       ${js(r.world_x)}`,
     `world_y:       ${js(r.world_y)}`,
     `pin:           null`,
@@ -67,7 +68,7 @@ function pastEntry(p) {
       `archived_at=is.null&handle=neq.@discovery` +
       `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
               `thumb_initials,image_url,tonight,this_week,mood_tags,` +
-              `world_x,world_y&order=city.asc,sort_order.asc,created_at.asc`),
+              `world_x,world_y,permalink&order=city.asc,sort_order.asc,created_at.asc`),
     get('curators',
       `select=handle,name,city,tagline,bio&order=city.asc,handle.asc`),
     get('past',
