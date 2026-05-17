@@ -3560,15 +3560,102 @@ a.handle:hover { color: var(--c-ink); }
   text-align: center;
 }
 
-/* ── "Open map view →" link ─────────────────────────────────── */
-.discover-map-link {
-  margin: var(--s-2) 0 var(--s-4);
+/* ── Deprecation banner (shown on legacy map/search pages) ─── */
+.deprecation-banner {
+  margin: var(--s-3) 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule-strong);
+  border-left: 3px solid var(--c-accent);
+}
+.deprecation-banner p {
+  margin: 0;
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
+  color: var(--c-ink);
 }
-.discover-map-link a { color: var(--c-accent); }
-.discover-map-link a:hover { text-decoration: underline; }
+.deprecation-banner a {
+  color: var(--c-accent);
+  font-weight: 500;
+}
+.deprecation-banner a:hover { text-decoration: underline; }
+@media print { .deprecation-banner { display: none !important; } }
+
+/* ── View panes (list / map) ─────────────────────────────────── */
+.discover-panes {
+  position: relative;
+  margin-top: var(--s-2);
+}
+.discover-pane--list {
+  /* Default: visible. Hidden on mobile when view=map (see media query). */
+}
+.discover-pane--map {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 280px);  /* room for topbar + filter chrome + bottom nav */
+  min-height: 360px;
+  background: var(--c-paper);
+  overflow: hidden;
+}
+
+/* Mobile: one pane at a time, controlled by [data-view] on .discover-panes. */
+@media (max-width: 1023px) {
+  .discover-panes[data-view="list"] .discover-pane--map  { display: none; }
+  .discover-panes[data-view="map"]  .discover-pane--list { display: none; }
+  /* When map is the active pane, push it close to the bottom nav. */
+  .discover-panes[data-view="map"] .discover-pane--map {
+    height: calc(100vh - 240px);
+  }
+  /* In map view, hide the browse sections (already inside the list pane,
+     so they're hidden by the rule above — left here for clarity).      */
+}
+
+/* Desktop: split view, list left and map right. */
+@media (min-width: 1024px) {
+  .discover-panes {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    gap: var(--s-4);
+    align-items: start;
+  }
+  .discover-pane--list { min-width: 0; }
+  .discover-pane--map {
+    position: sticky;
+    top: var(--s-3);
+    height: calc(100vh - 160px);
+  }
+}
+
+/* Hide the view-toggle FAB on desktop (both panes are always visible). */
+@media (min-width: 1024px) {
+  .discover-view-fab { display: none; }
+}
+
+/* ── View-toggle FAB (mobile) ───────────────────────────────── */
+.discover-view-fab {
+  position: fixed;
+  right: var(--s-3);
+  bottom: calc(72px + var(--s-3));  /* clear of bottom nav */
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-paper);
+  background: var(--c-ink);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+  transition: background var(--t-fast);
+}
+.discover-view-fab:hover { background: var(--c-accent); }
+.discover-view-fab--map-active { background: var(--c-accent); }
+.discover-view-fab__label { line-height: 1; }
 
 /* ── Free-entry badge in result rows ───────────────────────── */
 .list-row__free {
@@ -3734,11 +3821,12 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-sheet__handle { display: none; }
 }
 
-/* ── Print: hide all filter chrome ──────────────────────────── */
+/* ── Print: hide all filter chrome and the map pane ────────── */
 @media print {
   .discover-search,
   .discover-pills,
-  .discover-map-link,
+  .discover-pane--map,
+  .discover-view-fab,
   .discover-sheet,
   .discover-sheet-backdrop { display: none !important; }
 }

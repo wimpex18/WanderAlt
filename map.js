@@ -758,4 +758,24 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+
+  /* Public API — Discover page drives the map via these helpers.
+     Phase 3 will move map rendering wholesale into discover-map.js and
+     delete this file; until then these wrappers let Discover treat the
+     map as a visualization layer over its own filter state.            */
+  window.WA = window.WA || {};
+  window.WA.MapView = {
+    /* Replace map.js's internal filter state. Caller invokes render()
+       afterwards to re-cluster. Accepts any subset of {q, time, cats}. */
+    setFilters({ q, time, cats } = {}) {
+      if (q    !== undefined) textQuery  = q;
+      if (time !== undefined) timeFilter = time;
+      if (cats !== undefined) catFilters = new Set(cats);
+    },
+    render:      () => renderPins(),
+    fitView:     () => fitView(),
+    focusPin:    (id) => focusPin(id),
+    closeDetail: () => { closeDetail(); activeId = null; renderPins(); },
+    isReady:     () => !!viewport,
+  };
 })();

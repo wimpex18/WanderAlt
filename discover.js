@@ -21,14 +21,15 @@
     sort:   'relevance', /* relevance | newest | title | curator */
     mode:   'search',    /* 'search' | 'match' */
     ai:     '',          /* the last AI prompt, persisted in URL */
+    view:   'list',      /* 'list' | 'map' — mobile only; desktop is split */
   };
 
   /* ── DOM refs ───────────────────────────────────────────── */
   let input, matchToggle, matchWrap, matchResult, matchAgain,
       resultsSection, resultsList, resultsCount, emptyState,
       sheet, sheetBackdrop, filtersBtn, filterCount,
-      catChipsEl, nhoodChipsEl, sortEl, mapLink,
-      browseSects;
+      catChipsEl, nhoodChipsEl, sortEl,
+      browseSects, panesEl, viewToggleBtn;
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
   const esc = s => String(s)
@@ -234,19 +235,10 @@
     if (state.sort && state.sort !== 'relevance') sp.set('sort', state.sort);
     if (state.ai)                    sp.set('ai', state.ai);
     if (state.mode === 'match')      sp.set('mode', 'match');
+    if (state.view === 'map')        sp.set('view', 'map');
     const qs = sp.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
     window.history.replaceState(null, '', url);
-    /* Update the Map link so it carries filter state across to map.html.
-       Phase 1b will inline the map; until then, this keeps continuity.   */
-    if (mapLink) {
-      const mapSp = new URLSearchParams();
-      if (state.q)                            mapSp.set('q', state.q);
-      if (state.time && state.time !== 'all') mapSp.set('day', state.time);
-      if (state.cats.size)                    mapSp.set('mood', [...state.cats].join(','));
-      const m = mapSp.toString();
-      mapLink.href = m ? `map.html?${m}` : 'map.html';
-    }
   };
 
   const readUrlState = () => {
@@ -258,6 +250,7 @@
     state.sort   = sp.get('sort')  || 'relevance';
     state.ai     = sp.get('ai')    || '';
     state.mode   = sp.get('mode') === 'match' ? 'match' : 'search';
+    state.view   = sp.get('view')  === 'map' ? 'map'   : 'list';
   };
 
   /* ── Pill row state reflection ──────────────────────── */
@@ -277,12 +270,35 @@
     }
   };
 
+  /* ── Map sync ───────────────────────────────────────── */
+  /* Pushes Discover's filter state into the embedded map view. The map
+     view (window.WA.MapView, defined in map.js) reuses our category set
+     verbatim because map.js's catFilters share the same id namespace
+     (music/drink/vinyl/market/culture/art/free). Mood + neighborhood
+     filters aren't represented in the map layer yet — we'd need to lift
+     more state into map.js. For Phase 1b that means the map shows a
+     SUPERSET of the list when mood/neighborhood filters are active;
+     acceptable since both panes target the same catalog source.       */
+  const syncMap = () => {
+    const mv = window.WA && window.WA.MapView;
+    if (!mv || !mv.isReady()) return;
+    mv.setFilters({
+      q:    state.q,
+      time: state.time,
+      cats: [...state.cats],
+    });
+    mv.render();
+  };
+
   /* ── Main run loop ──────────────────────────────────── */
   const isAnyFilterActive = () =>
     state.q || state.time !== 'all' || state.cats.size || state.nhoods.size || state.mood.length;
 
   const run = () => {
-    if (state.mode === 'match') return; /* AI mode handles its own rendering */
+    /* Keep the map in sync with every filter change, regardless of mode. */
+    syncMap();
+
+    if (state.mode === 'match') return; /* AI mode handles its own list rendering */
 
     const catalog = (window.WA && window.WA.catalog) || [];
     const filterActive = isAnyFilterActive();
@@ -312,6 +328,35 @@
         : 'No picks match the active filters.';
     }
     renderList(sorted);
+  };
+
+  /* ── View toggle (mobile) ───────────────────────────── */
+  const reflectView = () => {
+    if (panesEl) panesEl.dataset.view = state.view;
+    if (viewToggleBtn) {
+      const isMap = state.view === 'map';
+      const label = viewToggleBtn.querySelector('.discover-view-fab__label');
+      if (label) label.textContent = isMap ? 'List' : 'Map';
+      viewToggleBtn.setAttribute('aria-label', isMap ? 'Switch to list view' : 'Switch to map view');
+      viewToggleBtn.classList.toggle('discover-view-fab--map-active', isMap);
+    }
+    /* Tag body so CSS can hide chrome that doesn't belong over the map. */
+    document.body.classList.toggle('discover-map-view', state.view === 'map');
+  };
+
+  const setView = (newView) => {
+    state.view = newView === 'map' ? 'map' : 'list';
+    reflectView();
+    writeUrlState();
+    /* When switching to map, the viewport just became visible — its
+       getBoundingClientRect() now returns real dimensions, so fit. */
+    if (state.view === 'map') {
+      requestAnimationFrame(() => {
+        syncMap();
+        const mv = window.WA && window.WA.MapView;
+        if (mv && mv.isReady()) mv.fitView();
+      });
+    }
   };
 
   /* ── AI "match me" mode ─────────────────────────────── */
@@ -443,6 +488,14 @@
     } else {
       run();
     }
+    /* If we booted into map view (URL: ?view=map), refit once after the
+       map module has had a tick to inject its SVG world. */
+    if (state.view === 'map') {
+      requestAnimationFrame(() => {
+        const mv = window.WA && window.WA.MapView;
+        if (mv && mv.isReady()) mv.fitView();
+      });
+    }
   };
 
   let _bound = false;
@@ -465,7 +518,8 @@
     catChipsEl     = document.getElementById('discover-cat-chips');
     nhoodChipsEl   = document.getElementById('discover-nhood-chips');
     sortEl         = document.getElementById('discover-sort');
-    mapLink        = document.getElementById('discover-map-link');
+    panesEl        = document.getElementById('discover-panes');
+    viewToggleBtn  = document.getElementById('discover-view-toggle');
     browseSects    = Array.from(document.querySelectorAll('.discover-browse-section'));
 
     if (!input || !resultsSection) return;
@@ -477,6 +531,14 @@
     if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
 
     reflectPills();
+    reflectView();
+
+    /* View toggle FAB (mobile only — desktop always shows both panes). */
+    if (viewToggleBtn) {
+      viewToggleBtn.addEventListener('click', () => {
+        setView(state.view === 'map' ? 'list' : 'map');
+      });
+    }
 
     /* Pill clicks. */
     document.querySelectorAll('.discover-pill[data-pill]').forEach(btn => {
