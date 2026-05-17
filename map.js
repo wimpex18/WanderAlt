@@ -178,6 +178,9 @@
     };
   }
   function writeUrlState() {
+    /* When embedded inside Discover, the URL schema is owned by
+       discover.js (?time, ?cat). Skip to avoid clobbering it. */
+    if (document.body?.dataset?.page === 'discover') return;
     const sp = new URLSearchParams();
     if (textQuery)                        sp.set('q',    textQuery);
     if (activeId)                         sp.set('id',   activeId);

@@ -2,154 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt — Map · Tallinn</title>
-  <meta name="description" content="A curator's map of Tallinn. Every pin has a human who vouched for it." />
-  <meta name="theme-color" content="#f6f3ec" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="styles.css" />
-  <script defer src="./catalog.js"></script>
-  <script defer src="./city.js"></script>
-  <script defer src="./supabase.js"></script>
-  <script defer src="./auth.js"></script>
-  <script defer src="./bookmark.js"></script>
-  <script defer src="./taste.js"></script>
-  <script defer src="./map-venues.js"></script>
-  <script defer src="./map-world.js"></script>
-  <script defer src="./map.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WanderAlt — Map (redirecting…)</title>
+  <meta name="description" content="Map has moved into Discover." />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="discover.html" />
+  <script src="./discover-redirect.js"></script>
+  <noscript><meta http-equiv="refresh" content="0; url=discover.html?view=map"></noscript>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 40rem; margin: 0 auto; color: #1a1a1a; }
+    a { color: #8a2a1a; }
+  </style>
 </head>
-<body data-page="map">
-
-  <a class="skip-link" href="#map-viewport">Skip to map</a>
-
-  <header class="topbar" role="banner">
-    <div class="topbar__inner">
-      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
-        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
-        <span class="wordmark">WanderAlt</span>
-      </a>
-      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
-        <span class="city-dot" aria-hidden="true"></span>
-        <span class="city-selector__name">TALLINN</span>
-        <span class="city-selector__chev" aria-hidden="true">
-          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
-        </span>
-      </button>
-    </div>
-  </header>
-
-  <main class="page" role="main">
-    <p class="print-head" aria-hidden="true"></p>
-
-    <!-- Deprecation banner: directs users to the unified Discover surface. -->
-    <aside class="deprecation-banner" role="status">
-      <p>
-        We've combined Map and Search into one place.
-        <a href="discover.html">Try the new Discover &rarr;</a>
-      </p>
-    </aside>
-
-    <section class="map-bleed" aria-label="Curator's illustrated map of Tallinn">
-
-      <!-- Search bar — text query filters pins live; ?q= URL param syncs state -->
-      <div class="map-search" role="search">
-        <span class="map-search__icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/>
-          </svg>
-        </span>
-        <input
-          type="search" id="map-search-input"
-          class="map-search__input"
-          placeholder="Filter pins by name, kind, curator…"
-          autocomplete="off" spellcheck="false"
-          enterkeyhint="search" />
-        <span class="map-search__count" id="map-search-count" aria-live="polite" hidden></span>
-        <button type="button" id="map-search-clear"
-                class="map-search__clear" aria-label="Clear search" hidden>&times;</button>
-        <button type="button" id="map-match-toggle"
-                class="map-search__match" aria-label="AI match">match me &rarr;</button>
-      </div>
-
-      <!-- Filter row 1: time -->
-      <nav class="map-filter-row map-filter-time" aria-label="Time filters"></nav>
-      <!-- Filter row 2: category -->
-      <nav class="map-filter-row map-filter-cat" aria-label="Category filters"></nav>
-
-      <!-- Pannable viewport -->
-      <div class="map-viewport" id="map-viewport">
-        <!-- World wrap — only this element is CSS-transformed -->
-        <div id="map-world-wrap" class="map-world-wrap"></div>
-        <!-- Pin overlay — NOT transformed; pins use screen coords -->
-        <div id="map-pins" class="map-pins" aria-live="polite"></div>
-      </div>
-
-      <!-- Zoom controls (bottom-right) -->
-      <div class="map-zoom-ctrl" aria-label="Zoom controls">
-        <button class="map-zoom-btn" id="btn-zoom-in"  aria-label="Zoom in">+</button>
-        <button class="map-zoom-btn" id="btn-zoom-out" aria-label="Zoom out">&#8722;</button>
-        <button class="map-zoom-btn map-zoom-btn--fit" id="btn-zoom-fit" aria-label="Fit map">&#8859;</button>
-      </div>
-
-      <!-- Locate FAB (bottom-right, above zoom) -->
-      <button class="map-locate-fab" id="btn-locate" aria-label="Show my location">
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
-          <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/>
-          <line x1="10" y1="1.5" x2="10" y2="4"    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="10" y1="16"  x2="10" y2="18.5"  stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="1.5" y1="10" x2="4"   y2="10"   stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="16"  y1="10" x2="18.5" y2="10"  stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </button>
-
-      <!-- Mobile bottom sheet (hidden until pin selected) -->
-      <aside class="map-sheet" id="map-sheet" aria-label="Selected pin details" hidden></aside>
-
-      <!-- Desktop side panel (hidden on mobile, hidden until pin selected) -->
-      <aside class="map-detail" id="map-detail" aria-label="Pin details" hidden></aside>
-
-    </section>
-  </main>
-
-  <nav class="nav" aria-label="Primary">
-    <div class="nav__inner">
-      <a class="nav__item" data-nav="briefing" href="./index.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M5 3h11l3 3v15H5V3z"/><path d="M8 8h8M8 12h8M8 16h5"/>
-        </svg>
-        <span class="nav__label">Briefing</span>
-      </a>
-      <a class="nav__item" data-nav="map" href="./map.html" aria-current="page">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/>
-        </svg>
-        <span class="nav__label">Map</span>
-      </a>
-      <a class="nav__item" data-nav="search" href="./search.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>
-        </svg>
-        <span class="nav__label">Search</span>
-      </a>
-      <a class="nav__item" data-nav="saved" href="./saved.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M6 3h12v18l-6-4-6 4V3z"/>
-        </svg>
-        <span class="nav__label">Saved</span>
-      </a>
-      <a class="nav__item" data-nav="profile" href="./profile.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3.1-7 7-7s7 3 7 7"/>
-        </svg>
-        <span class="nav__label">Profile</span>
-      </a>
-    </div>
-  </nav>
-
+<body>
+  <p>Map has moved into <a href="discover.html?view=map">Discover</a>.</p>
+  <p>If you aren't redirected automatically, click the link above.</p>
 </body>
 </html>

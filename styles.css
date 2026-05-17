@@ -1387,18 +1387,6 @@ body[data-page="saved"] .colophon {
 }
 .taste-done:hover { text-decoration: underline; }
 
-/* "Filter or search →" hint below the This Week section header. */
-.section-filter-hint {
-  margin: var(--s-3) 0 var(--s-2);
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
-}
-.section-filter-hint a {
-  color: var(--c-ink-mute);
-  text-decoration: none;
-}
-.section-filter-hint a:hover { color: var(--c-accent); }
 
 /* Curator-vouched toggle — small inline switch beside the Match-me link. */
 .curated-toggle {
@@ -2653,7 +2641,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .mood-chips,
   .surprise-btn,
   .taste-onboarding,
-  .section-filter-hint,
   .map-filters,
   .map-compass,
   .map-sheet,
