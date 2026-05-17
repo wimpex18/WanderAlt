@@ -585,50 +585,12 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* ============================================================
-   MAP PAGE
+   MAP COMPONENTS
    ------------------------------------------------------------
-   Full-bleed map canvas between the topbar and the bottom nav.
-   Hand-drawn city plane (dashed neighborhood blobs, river, sea),
-   overlaid uppercase mono filter chips at the top, ↑ N compass
-   top-right, teardrop pins positioned by % coords, and a peek
-   bottom sheet with the selected pin's details.
-
-   Reference: project/src/map.jsx in the Claude Design handoff.
+   Teardrop pins, category chips, and peek bottom sheet.
+   Used by the Discover page map pane (discover.html).
    ============================================================ */
 
-/* Full-bleed wrapper — escapes .page's reading-column padding. */
-.map-bleed {
-  position: relative;
-  background: oklch(0.94 0.01 195);
-  /* Mobile: fills the viewport between topbar (~49px) and nav (60px).
-     Desktop breakpoint overrides to a fixed tall panel. */
-  height: calc(100vh - 49px - var(--nav-h) - env(safe-area-inset-bottom, 0px));
-  margin: 0 calc(-1 * var(--gutter));
-  overflow: hidden;
-}
-.map-plane {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* Overlaid filter chips on the map. Sharp corners, black outline,
-   uppercase mono — per the handoff. */
-.map-filters {
-  position: absolute;
-  top: var(--s-3);
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: var(--s-2);
-  padding: 0 var(--gutter);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  z-index: 2;
-}
-.map-filters::-webkit-scrollbar { display: none; }
 
 .m-chip {
   flex: 0 0 auto;
@@ -652,26 +614,6 @@ img, svg { display: block; max-width: 100%; }
   border-color: var(--c-ink);
 }
 .m-chip--on:hover { background: var(--c-ink); }
-
-/* Compass — top-right, above the map plane. */
-.map-compass {
-  position: absolute;
-  right: var(--gutter);
-  top: calc(var(--s-3) + 44px);     /* sits below the chip row */
-  font-family: var(--ff-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--c-ink-mute);
-  text-align: center;
-  line-height: 1.3;
-  z-index: 2;
-}
-.map-compass__arrow {
-  display: block;
-  font-size: 14px;
-  color: var(--c-ink);
-  margin-bottom: 2px;
-}
 
 /* Teardrop pin — numbered, positioned by inline style (left%/top%). */
 .map-pin {
@@ -859,10 +801,6 @@ img, svg { display: block; max-width: 100%; }
    Reference: project/src/search.jsx
    ============================================================ */
 
-.search-input-wrap {
-  padding: var(--s-4) 0 var(--s-4);
-}
-
 /* Bordered box container — sits around the bare input */
 .search-box {
   display: flex;
@@ -932,52 +870,6 @@ img, svg { display: block; max-width: 100%; }
    so the count stays inside its own block. */
 .search-section-head--sort { align-items: center; flex-wrap: wrap; }
 .search-section-head--sort .meta { margin-left: 0; }
-
-/* Sort dropdown — looks like a row label + chev, not a chunky form input. */
-.search-sort {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-.search-sort select {
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: 6px;
-  padding: 6px 28px 6px 10px;
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--c-ink-soft);
-  cursor: pointer;
-  line-height: 1.2;
-}
-.search-sort select:hover  { color: var(--c-ink); border-color: var(--c-rule-strong); }
-.search-sort select:disabled {
-  opacity: 0.35;
-  cursor: default;
-  pointer-events: none;
-}
-.search-sort select:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
-}
-.search-sort__chev {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px; height: 10px;
-  pointer-events: none;
-  color: var(--c-ink-mute);
-}
-.search-sort__chev svg {
-  width: 100%; height: 100%;
-  fill: none; stroke: currentColor;
-  stroke-width: 1.4; stroke-linecap: round;
-}
 
 .curator-rows {
   border-top: var(--rule-w) solid var(--c-rule);
@@ -1304,13 +1196,6 @@ body[data-page="saved"] .colophon {
   vertical-align: baseline;
 }
 .list-row__map:hover { color: var(--c-accent); }
-
-/* "on map →" link inside the results count header. */
-.results-map-link {
-  color: var(--c-accent);
-  text-decoration: none;
-}
-.results-map-link:hover { text-decoration: underline; }
 
 /* ============================================================
    TASTE-PROFILE ONBOARDING — three quick chips on first visit
@@ -2109,8 +1994,7 @@ a.auth-panel__submit { display: inline-block; }
 
 /* Active tab — filled pill background */
 body[data-page="briefing"] .nav__item[data-nav="briefing"],
-body[data-page="map"]      .nav__item[data-nav="map"],
-body[data-page="search"]   .nav__item[data-nav="search"],
+body[data-page="discover"] .nav__item[data-nav="discover"],
 body[data-page="saved"]    .nav__item[data-nav="saved"],
 body[data-page="profile"]  .nav__item[data-nav="profile"] {
   background: var(--c-ink);
@@ -2122,16 +2006,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 .nav__item .nav__label { display: none; }
 /* Show label only on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"] .nav__label,
-body[data-page="map"]      .nav__item[data-nav="map"]      .nav__label,
-body[data-page="search"]   .nav__item[data-nav="search"]   .nav__label,
+body[data-page="discover"] .nav__item[data-nav="discover"] .nav__label,
 body[data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
 body[data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
   display: block;
 }
 /* Show label inline next to icon on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"],
-body[data-page="map"]      .nav__item[data-nav="map"],
-body[data-page="search"]   .nav__item[data-nav="search"],
+body[data-page="discover"] .nav__item[data-nav="discover"],
 body[data-page="saved"]    .nav__item[data-nav="saved"],
 body[data-page="profile"]  .nav__item[data-nav="profile"] {
   flex-direction: row;
@@ -2187,17 +2069,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .section-head { padding: var(--s-5) 0 var(--s-3); }
   .pick { padding: var(--s-4) 0; }
 
-  /* Map page: full-bleed canvas. Use most of the viewport so the
-     plate is the page's center of gravity, not a small panel that
-     looks abandoned with empty space below it. */
-  .map-bleed {
-    height: calc(100vh - 200px);
-    min-height: 580px;
-    max-height: 820px;
-    margin: var(--s-4) calc(-1 * var(--gutter)) var(--s-6);
-    border-top: var(--rule-w) solid var(--c-rule);
-    border-bottom: var(--rule-w) solid var(--c-rule);
-  }
   /* On wider screens, give the peek sheet a defined max-width and
      center it so it doesn't span the whole 960px column edge-to-edge. */
   .map-sheet {
@@ -2215,7 +2086,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 
   /* Search input scales up on wider screens */
   .search-input { font-size: 28px; }
-  .search-input-wrap { padding: var(--s-7) 0 var(--s-5); }
 
   /* Bottom nav → top masthead bar */
   .nav {
@@ -2253,8 +2123,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   /* Show all labels on desktop */
   .nav__item .nav__label { display: block; }
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
-  body[data-page="map"]      .nav__item[data-nav="map"],
-  body[data-page="search"]   .nav__item[data-nav="search"],
+  body[data-page="discover"] .nav__item[data-nav="discover"],
   body[data-page="saved"]    .nav__item[data-nav="saved"],
   body[data-page="profile"]  .nav__item[data-nav="profile"] {
     flex-direction: row;
@@ -2306,11 +2175,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   padding: 0 var(--gutter) 2px;   /* 2px bottom prevents chip border clip */
 }
 .mood-chips::-webkit-scrollbar { display: none; }
-
-/* Second chip row for the map page (mood, positioned below the first row). */
-.map-filters--mood {
-  top: calc(var(--s-3) + 34px + var(--s-2));
-}
 
 /* ============================================================
    404 PAGE
@@ -2641,8 +2505,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .mood-chips,
   .surprise-btn,
   .taste-onboarding,
-  .map-filters,
-  .map-compass,
   .map-sheet,
   .city-selector__chev,
   .tonight-badge,
@@ -2891,113 +2753,9 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* ============================================================
-   ILLUSTRATED MAP — new pan/zoom components
-   Scoped to body[data-page="map"]. Overrides old .map-bleed
-   sizing where needed; old map-pin/map-sheet tokens preserved
-   for graceful fallback.
+   ILLUSTRATED MAP — pan/zoom viewport used by the Discover page
+   map pane (and previously the standalone map.html page).
    ============================================================ */
-
-/* Search bar above the filter chips — filters pins live by text query.
-   Backdrop is solid newsprint so the input reads against the map.
-   Positioned absolutely so it overlays the viewport (which fills the bleed). */
-.map-search {
-  position: absolute;
-  top: 10px;
-  left: var(--s-4);
-  right: var(--s-4);
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: 0 var(--s-3);
-  height: 36px;
-  background: var(--c-paper);
-  border: 1px solid var(--c-rule-strong);
-  z-index: 5;
-}
-.map-search__icon { color: var(--c-ink-mute); display: inline-flex; flex-shrink: 0; }
-.map-search__input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  border: none;
-  background: transparent;
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  color: var(--c-ink);
-  outline: none;
-  padding: 0;
-}
-.map-search__input::placeholder { color: var(--c-ink-mute); }
-.map-search__count {
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-ink-mute);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.map-search__clear {
-  border: none;
-  background: none;
-  color: var(--c-ink-mute);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 4px;
-  flex-shrink: 0;
-}
-.map-search__clear:hover { color: var(--c-accent); }
-.map-search[data-active="1"] { border-color: var(--c-accent); }
-
-/* "Match me →" toggle inside the map search bar. Switches the input
-   into AI mode; Enter then calls match-pick and focuses the top hit. */
-.map-search__match {
-  border: none;
-  background: none;
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-ink-mute);
-  cursor: pointer;
-  padding: 0 4px;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-.map-search__match:hover { color: var(--c-accent); }
-.map-search[data-mode="match"] .map-search__match { color: var(--c-accent); }
-.map-search[data-mode="match"] .map-search__input { font-style: italic; }
-.map-search[data-mode="match"] { border-color: var(--c-accent); }
-
-/* Collapse search bar + filter chips while the user pans the map */
-.map-search { transition: transform 0.18s ease, opacity 0.18s ease; }
-.map-panning .map-search {
-  transform: translateY(-130%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Two filter rows — stack above the viewport, below the search bar */
-.map-filter-row {
-  position: absolute;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: var(--s-2);
-  padding: 0 var(--s-4);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  z-index: 4;
-  pointer-events: none;
-}
-.map-filter-row > * { pointer-events: auto; }
-.map-filter-row::-webkit-scrollbar { display: none; }
-.map-filter-row { transition: opacity 0.18s ease; }
-.map-panning .map-filter-row { opacity: 0; pointer-events: none; }
-.map-filter-time { top: 56px; }
-.map-filter-cat  { top: 102px; }
 
 /* Pannable viewport fills the bleed section.
    Background is intentionally NOT the sea colour — using cream lets the
@@ -3454,10 +3212,6 @@ a.handle:hover { color: var(--c-ink); }
 @media (min-width: 768px) {
   .map-sheet { display: none; }
   .map-detail { display: block; }
-  .map-bleed {
-    height: calc(100vh - 56px);
-    margin: 0 calc(-1 * var(--gutter));
-  }
 }
 
 /* Mobile: when the detail sheet is open, the sheet (z-index 20, up to

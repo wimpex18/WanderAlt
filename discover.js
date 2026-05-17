@@ -22,6 +22,7 @@
     mode:   'search',    /* 'search' | 'match' */
     ai:     '',          /* the last AI prompt, persisted in URL */
     view:   'list',      /* 'list' | 'map' — mobile only; desktop is split */
+    id:     '',          /* active pin id — persisted in URL for deep linking */
   };
 
   /* ── DOM refs ───────────────────────────────────────────── */
@@ -241,6 +242,7 @@
     if (state.ai)                    sp.set('ai', state.ai);
     if (state.mode === 'match')      sp.set('mode', 'match');
     if (state.view === 'map')        sp.set('view', 'map');
+    if (state.id)                    sp.set('id', state.id);
     const qs = sp.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
     window.history.replaceState(null, '', url);
@@ -256,6 +258,7 @@
     state.ai     = sp.get('ai')    || '';
     state.mode   = sp.get('mode') === 'match' ? 'match' : 'search';
     state.view   = sp.get('view')  === 'map' ? 'map'   : 'list';
+    state.id     = sp.get('id')    || '';
   };
 
   /* ── Pill row state reflection ──────────────────────── */
@@ -691,9 +694,12 @@
       });
     }
 
-    /* Pin click in the embedded map → highlight + scroll the card.    */
+    /* Pin click in the embedded map → highlight + scroll card + update URL. */
     document.addEventListener('wa:map-pin-changed', (e) => {
-      const id = e.detail?.id;
+      const id = e.detail?.id || '';
+      /* Keep URL in sync so the open pin is deep-linkable / shareable. */
+      state.id = id;
+      writeUrlState();
       if (!resultsList) return;
       resultsList.querySelectorAll('.list-row--active').forEach(el =>
         el.classList.remove('list-row--active'));
