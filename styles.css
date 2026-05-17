@@ -3658,6 +3658,24 @@ a.handle:hover { color: var(--c-ink); }
   vertical-align: 1px;
 }
 
+/* ── Active card (pin↔card sync) ───────────────────────────── */
+.list-row {
+  position: relative;
+  transition: background var(--t-fast);
+}
+.list-row--active {
+  background: oklch(0.95 0.025 78);
+}
+.list-row--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c-accent);
+}
+
 /* ── Filter bottom sheet ────────────────────────────────────── */
 .discover-sheet-backdrop {
   position: fixed;

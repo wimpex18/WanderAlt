@@ -14,6 +14,8 @@
   let activeId = null;
   let timeFilter = 'all';        // all | tonight | thisweek | places
   let catFilters = new Set();    // set of category ids; empty = show all
+  let moodFilter = [];           // mood tags; empty = no mood filter (AND semantics)
+  let nhoodFilter = new Set();   // neighborhood names; empty = all neighborhoods
   let textQuery = '';            // free-text filter; '' = no text filter
   let searchMode = 'search';     // 'search' | 'match'  (AI mode is opt-in via toggle)
   let userLoc = null;            // { worldX, worldY } | null
@@ -161,6 +163,8 @@
       if (timeFilter === 'places'   && e.day) return false;
       if (kindFilters.size > 0 && !kindFilters.has(normaliseKind(e.kind))) return false;
       if (wantFree && !(e.moodTags || []).includes('free')) return false;
+      if (moodFilter.length > 0 && !moodFilter.every(t => (e.moodTags || []).includes(t))) return false;
+      if (nhoodFilter.size > 0 && !nhoodFilter.has(e.neighborhood)) return false;
       if (q && !matchesText(e, q)) return false;
       return true;
     });
@@ -327,6 +331,9 @@
     renderPins();
     openDetail(entry);
     writeUrlState();
+    document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
+      detail: { id },
+    }));
     return true;
   }
 
@@ -498,6 +505,11 @@
           closeDetail();
         }
         writeUrlState();
+        /* Notify the embedding page (Discover) so it can scroll the
+           matching card into view and highlight it.                     */
+        document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
+          detail: { id: activeId },
+        }));
       });
     });
 
@@ -769,11 +781,14 @@
   window.WA = window.WA || {};
   window.WA.MapView = {
     /* Replace map.js's internal filter state. Caller invokes render()
-       afterwards to re-cluster. Accepts any subset of {q, time, cats}. */
-    setFilters({ q, time, cats } = {}) {
-      if (q    !== undefined) textQuery  = q;
-      if (time !== undefined) timeFilter = time;
-      if (cats !== undefined) catFilters = new Set(cats);
+       afterwards to re-cluster. Accepts any subset of {q, time, cats,
+       mood, nhoods}. */
+    setFilters({ q, time, cats, mood, nhoods } = {}) {
+      if (q      !== undefined) textQuery   = q;
+      if (time   !== undefined) timeFilter  = time;
+      if (cats   !== undefined) catFilters  = new Set(cats);
+      if (mood   !== undefined) moodFilter  = Array.isArray(mood) ? [...mood] : [];
+      if (nhoods !== undefined) nhoodFilter = new Set(nhoods);
     },
     render:      () => renderPins(),
     fitView:     () => fitView(),

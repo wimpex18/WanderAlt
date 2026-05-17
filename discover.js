@@ -111,16 +111,21 @@
     return parts.filter(Boolean).join(' · ');
   };
 
-  /* Row rendering matches search.js's list-row markup. */
+  /* Row rendering matches search.js's list-row markup, plus data-id so
+     the pin↔card sync handler can find the matching card.              */
   const renderRow = (e) => {
-    const mapLinkA = (e.world_x && e.world_y)
-      ? `<a class="list-row__map" href="map.html?id=${encodeURIComponent(e.id)}" aria-label="Show on map">on map &rarr;</a>`
+    const hasCoords = !!(e.world_x && e.world_y);
+    /* "on map" is a JS-handled action on Discover (no navigation); the
+       href is a fallback for users with JS disabled. data-focus-pin tells
+       the click handler to call WA.MapView.focusPin instead.           */
+    const mapLinkA = hasCoords
+      ? `<a class="list-row__map" href="discover.html?id=${encodeURIComponent(e.id)}&view=map" data-focus-pin="${esc(e.id)}" aria-label="Show on map">on map &rarr;</a>`
       : '';
     const closedBadge = e.isClosed ? ` <span class="list-row__closed">closed</span>` : '';
     const isFree = (e.moodTags || []).includes('free');
     const freeBadge = isFree ? ` <span class="list-row__free">free</span>` : '';
     const rowCls = e.isClosed ? 'list-row list-row--closed' : 'list-row';
-    return `<li class="${rowCls}">
+    return `<li class="${rowCls}" data-id="${esc(e.id)}">
        <p class="list-row__title">
          <a href="venue.html?id=${e.id}">${esc(e.title)}</a>${closedBadge}${freeBadge}${mapLinkA}
        </p>
@@ -271,21 +276,19 @@
   };
 
   /* ── Map sync ───────────────────────────────────────── */
-  /* Pushes Discover's filter state into the embedded map view. The map
-     view (window.WA.MapView, defined in map.js) reuses our category set
-     verbatim because map.js's catFilters share the same id namespace
-     (music/drink/vinyl/market/culture/art/free). Mood + neighborhood
-     filters aren't represented in the map layer yet — we'd need to lift
-     more state into map.js. For Phase 1b that means the map shows a
-     SUPERSET of the list when mood/neighborhood filters are active;
-     acceptable since both panes target the same catalog source.       */
+  /* Pushes Discover's filter state into the embedded map view. All five
+     filter dimensions (q, time, cats, mood, nhoods) round-trip so the
+     list and map panes show the same set of picks. Mood/nhoods are
+     wired into map.js's getVisibleEntries via Phase 1b.5.                */
   const syncMap = () => {
     const mv = window.WA && window.WA.MapView;
     if (!mv || !mv.isReady()) return;
     mv.setFilters({
-      q:    state.q,
-      time: state.time,
-      cats: [...state.cats],
+      q:      state.q,
+      time:   state.time,
+      cats:   [...state.cats],
+      mood:   state.mood,
+      nhoods: [...state.nhoods],
     });
     mv.render();
   };
@@ -664,6 +667,42 @@
     document.addEventListener('wa:mood-changed', (e) => {
       state.mood = e.detail.tags;
       if (state.mode === 'search') run();
+    });
+
+    /* "on map →" link on a card → focus the pin instead of navigating.
+       Desktop split view shows both panes, so just focusPin.
+       Mobile (single pane): switch to map view first, then focusPin
+       once the map pane has laid out.                                   */
+    if (resultsList) {
+      resultsList.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-focus-pin]');
+        if (!trigger) return;
+        e.preventDefault();
+        const id = trigger.dataset.focusPin;
+        const mv = window.WA && window.WA.MapView;
+        if (!mv || !mv.isReady()) return;
+        const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+        if (isMobile) {
+          setView('map');
+          requestAnimationFrame(() => mv.focusPin(id));
+        } else {
+          mv.focusPin(id);
+        }
+      });
+    }
+
+    /* Pin click in the embedded map → highlight + scroll the card.    */
+    document.addEventListener('wa:map-pin-changed', (e) => {
+      const id = e.detail?.id;
+      if (!resultsList) return;
+      resultsList.querySelectorAll('.list-row--active').forEach(el =>
+        el.classList.remove('list-row--active'));
+      if (!id) return;
+      const card = resultsList.querySelector(`.list-row[data-id="${CSS.escape(id)}"]`);
+      if (card) {
+        card.classList.add('list-row--active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
 
     /* Seed mode from URL (input value already set above). */
