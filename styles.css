@@ -244,7 +244,10 @@ img, svg { display: block; max-width: 100%; }
 }
 .city-selector:hover { color: var(--c-accent); }
 
-/* City-switcher dropdown — anchored to .topbar__right */
+/* City-switcher dropdown — anchored to .topbar__right.
+   Richer "city panel" layout: illustrated thumbnail + name + status.
+   Tallinn's thumbnail is the existing illustrated SVG plate; unreleased
+   cities use a "Coming soon" placeholder.                              */
 .city-dropdown {
   position: absolute;
   top: 100%;
@@ -254,11 +257,60 @@ img, svg { display: block; max-width: 100%; }
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
-  min-width: 140px;
+  min-width: 240px;
   z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
+.city-dropdown__thumb {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--c-rule);
+  background: var(--c-paper-deep);
+  display: block;
+}
+.city-dropdown__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.city-dropdown__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.city-dropdown__name {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+.city-dropdown__status {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--c-ink-mute);
+}
+.city-dropdown__item--on .city-dropdown__name { color: var(--c-accent); }
+.city-dropdown__item--soon {
+  cursor: not-allowed;
+}
+.city-dropdown__item--soon .city-dropdown__thumb,
+.city-dropdown__item--soon .city-dropdown__name {
+  opacity: 0.55;
+}
+.city-dropdown__item--soon:hover,
+.city-dropdown__item--soon:focus { background: transparent; }
 .city-dropdown__item {
-  padding: var(--s-2) var(--s-4);
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-4);
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.08em;

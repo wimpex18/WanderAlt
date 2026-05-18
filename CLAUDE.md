@@ -128,6 +128,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
   - `process-staging` → Gemini 2.5 Flash + Groq fallback
   - `draft-column`, `generate-context`, `send-digest`, `enrich-venues` → Gemini 2.5 Flash
   - `match-pick` → Groq only (v8 — always `find_many`, topK=5; `find_one` mode removed)
+  - `geocode-picks` → Nominatim primary, Google Places fallback. Backfills `picks.lat/lng` for any active pick missing coords. Invoke ad-hoc: `POST /functions/v1/geocode-picks {"city":"tallinn","limit":50}`. Inherently location-less picks (`venue ILIKE '%various%'`) should be nulled manually after — they geocode to a meaningless point.
 
 ## Cloud-session notes
 

@@ -16,10 +16,13 @@
      catalog.js → city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
+  /* Each city has a static illustrated overview SVG in /assets/.
+     Tallinn is the real plate from map-world.js; Helsinki and Riga are
+     "Coming soon" placeholders until those cities ship. */
   const CITIES = [
-    { id: 'tallinn',  label: 'TALLINN'  },
-    { id: 'helsinki', label: 'HELSINKI' },
-    { id: 'riga',     label: 'RIGA'     },
+    { id: 'tallinn',  label: 'TALLINN',  status: 'live',    thumb: './assets/tallinn-overview.svg'  },
+    { id: 'helsinki', label: 'HELSINKI', status: 'soon',    thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'soon',    thumb: './assets/riga-overview.svg'     },
   ];
 
   const LS_KEY  = 'wa:city';
@@ -84,17 +87,35 @@
       dropdown.setAttribute('aria-label', 'Select city');
 
       CITIES.forEach(city => {
+        const selected = city.id === window.WA.CITY;
+        const disabled = city.status !== 'live';
         const li = document.createElement('li');
-        li.className  = 'city-dropdown__item';
-        li.textContent = city.label;
+        li.className = 'city-dropdown__item' +
+          (selected ? ' city-dropdown__item--on' : '') +
+          (disabled ? ' city-dropdown__item--soon' : '');
         li.setAttribute('role',          'option');
-        li.setAttribute('aria-selected', String(city.id === window.WA.CITY));
-        li.setAttribute('tabindex',      '0');
-        const choose = () => { closeDropdown(); setCity(city.id); };
-        li.addEventListener('click',   choose);
-        li.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); choose(); }
-        });
+        li.setAttribute('aria-selected', String(selected));
+        li.setAttribute('aria-disabled', String(disabled));
+        li.setAttribute('tabindex',      disabled ? '-1' : '0');
+
+        /* Illustrated thumbnail + name + status. The img tag is lazy so
+           the 100KB Tallinn SVG only loads when the dropdown opens.    */
+        li.innerHTML =
+          `<span class="city-dropdown__thumb">` +
+          `  <img src="${city.thumb}" alt="" loading="lazy" />` +
+          `</span>` +
+          `<span class="city-dropdown__body">` +
+          `  <span class="city-dropdown__name">${city.label}</span>` +
+          `  <span class="city-dropdown__status">${disabled ? 'Coming soon' : 'Live'}</span>` +
+          `</span>`;
+
+        if (!disabled) {
+          const choose = () => { closeDropdown(); setCity(city.id); };
+          li.addEventListener('click',   choose);
+          li.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); choose(); }
+          });
+        }
         dropdown.appendChild(li);
       });
 
@@ -104,8 +125,8 @@
       anchor.appendChild(dropdown);
       btn.setAttribute('aria-expanded', 'true');
 
-      /* Focus first item. */
-      dropdown.querySelector('.city-dropdown__item')?.focus();
+      /* Focus first enabled item. */
+      dropdown.querySelector('.city-dropdown__item:not(.city-dropdown__item--soon)')?.focus();
     });
 
     /* Close on outside click or Escape. */

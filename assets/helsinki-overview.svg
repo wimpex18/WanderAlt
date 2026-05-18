@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="1800" height="1200" fill="#f6f3ec"/>
+  <g stroke="#a8a297" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 200 760 L 350 600 L 500 720 L 650 540 L 820 660 L 1000 480 L 1180 620 L 1340 500 L 1500 640 L 1650 560 L 1800 700 L 1800 1200 L 0 1200 L 0 800 Z"/>
+    <path d="M 0 820 L 220 820 M 380 820 L 600 820 M 760 820 L 960 820 M 1100 820 L 1320 820 M 1460 820 L 1700 820" stroke-dasharray="6 10" stroke-width="1"/>
+  </g>
+  <g font-family="ui-monospace, 'JetBrains Mono', monospace" fill="#6b6b72" text-anchor="middle">
+    <text x="900" y="380" font-size="120" letter-spacing="12" font-weight="600" fill="#0a0a0c">HELSINKI</text>
+    <text x="900" y="460" font-size="40" letter-spacing="8" text-transform="uppercase">— COMING SOON —</text>
+  </g>
+</svg>

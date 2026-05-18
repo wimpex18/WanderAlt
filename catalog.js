@@ -284,6 +284,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFO15O_Z5-BC-aO4SRyD9_6CrRlZhA2o0IhuE2XdFdopEWeuyUZTLSLLZZ9IAOeWeuJcjD3EJFSLCIx5_4WO4JD1giTlPbLuS0=s4800-w800",
     world_x:       509,
     world_y:       578,
+    lat:           59.4412027,
+    lng:           24.7362879,
     pin:           null
   },
   {
@@ -304,6 +306,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZP5JfrJsX1cSzfxBL0F2tzhj-AOQyUSllkzR9iGEcMDPm0bZxSheFlSAiAPiNgvjz7rZv-DWsoJDSruBSBQVIoxIxIhThI2MxlKLchI43n8wwFDnkwos-3GwjmPzkEyMEv6_p0fKMzeFOyh5T1FSiPxxw=s4800-w800",
     world_x:       1059,
     world_y:       796,
+    lat:           59.4410913,
+    lng:           24.7363233,
     pin:           null
   },
   {
@@ -476,6 +480,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqH8lag0deFStUG1NYp1udFMUD65a6ALGqgVYQhiwWkHznY4GDlkqbVqiIb5dxZFycbnOBq-mBfoATjRiIhXjJj6f_pVUhMNDAM=s4800-w800",
     world_x:       1047,
     world_y:       596,
+    lat:           59.4389335,
+    lng:           24.7461296,
     pin:           null
   },
   {
@@ -496,6 +502,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGVoIky90sSmRTQVOf9x4IzNTz74UonUQ4t32vOJmD7G3nF48O_wCcyDkLRP3Q2t-FEj12ea_SJ7luZ-c6Ec8bFttA0Ck-qyrE=s4800-w800",
     world_x:       1090,
     world_y:       737,
+    lat:           59.4425483,
+    lng:           24.749558,
     pin:           null
   },
   {
@@ -516,6 +524,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOE93dJYq_THGvdRiYTS3Zp8tl58Nmm87lWOV8qcywKGdOaPK1OsZ-3O0QOb791_8WWU-rjSQDewaVJQ7F9Jv7Ldu_4s2fgDPJfmwjdsY9g4AWdaTL7OpTGv01ayc0WOwKB6nmODuxdQJTu5g=s4800-w800",
     world_x:       1109,
     world_y:       710,
+    lat:           59.4371295,
+    lng:           24.7391336,
     pin:           null
   },
   {
@@ -784,6 +794,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZM72ALdQ-fSM82Mi19_pld8qbkMqdKiIcGxnNb3ueu8jlCfxbDd6FVoB4DkD41rjYJ2tTfzLtWmMcxcVJ5d8NyGbAopU0umyQ2ResqjuJAh6PRXYoO71sjld-H2EDfkQ2UDQ96AX4ml_V4vgSA=s4800-w800",
     world_x:       502,
     world_y:       553,
+    lat:           59.4439114,
+    lng:           24.737628,
     pin:           null
   },
   {
@@ -804,6 +816,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZN9WyYgwm6yWoKgmHN2FHE-HP8fabr5ZXxqKE8fM1g_QLKyC8-fhFTpnbw7ZP5UNXhr5UOoc2XNdvHMl0DGbDm-qEzh6H-5SRCu5D-BivZXa3j6a_ogt6snJ5RnhJgmTZvCU2G0tttSVYzmmw=s4800-w800",
     world_x:       1091,
     world_y:       829,
+    lat:           59.4385239,
+    lng:           24.7533756,
     pin:           null
   },
   {
@@ -846,6 +860,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZPfYB-eab6splkQlm4X-fDqTO8ywpaZhJW53uOVHuLpOiyIsZuvkdJvNEQ6ucxBCa1JmPtTB5NW4tOzLWJQcTwN4MK6OMPPY_-UzzB1k3Q6_ihpGqwtKDhFBxb_JUg4cxfGBpNmuf-Lur0KxIp6E-k_RQ=s4800-w800",
     world_x:       735,
     world_y:       513,
+    lat:           59.4418266,
+    lng:           24.7332385,
     pin:           null
   },
   {
@@ -866,6 +882,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqG0MghNjU_S3auZEdKNrGQ2sJ-yVA5pEfp5z9qB_ulKko9FaYbq16Ndlx20IdKC1v6WGVFIxYX7c7XVHLGVYORlIPOVkiqq6GA=s4800-w800",
     world_x:       727,
     world_y:       502,
+    lat:           59.4343227,
+    lng:           24.7441594,
     pin:           null
   },
   {
@@ -908,6 +926,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZP5Ra94sLcZjAvfVWIctnYO8hCiUI_ucw5nOLTBw-CysW7Tou_eaoTXag4eP8rp96WikpTsbZdHxL5GwIhQJupbpFnMVjZWYWVhBjZTxJz6BHttF99w1uv6v_ASXAD0XnOJi7o6gC-_9GSBdYaTTMF7=s4800-w800",
     world_x:       822,
     world_y:       802,
+    lat:           59.4497116,
+    lng:           24.7237279,
     pin:           null
   },
   {
@@ -950,6 +970,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Vene_teater_-_S%C3%BCdalinna_teater.jpg?width=600",
     world_x:       806,
     world_y:       641,
+    lat:           59.4326556,
+    lng:           24.744721,
     pin:           null
   },
   {
@@ -992,6 +1014,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Vene_teater_-_S%C3%BCdalinna_teater.jpg?width=600",
     world_x:       819,
     world_y:       881,
+    lat:           59.4326556,
+    lng:           24.744721,
     pin:           null
   },
   {
@@ -1012,6 +1036,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       436,
     world_y:       424,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1032,6 +1058,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Tallinn_Sveta_Baar_(48521360232).jpg?width=600",
     world_x:       717,
     world_y:       475,
+    lat:           59.4398408,
+    lng:           24.7289874,
     pin:           null
   },
   {
@@ -1052,6 +1080,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOS9mB1hNo30hWLh08tVdQhQXRp03eNHP1aOMCX8j6ElWJHWNnSLkPx_IAZS_Ib5G0ZnBtCA_2zwAWISAR4eZIAe6wiqmfX9eMcbJunde4_fp6seBMfiTl0CI2bwKyYlnn4vB7PfagWmj3R4v4=s4800-w800",
     world_x:       1014,
     world_y:       607,
+    lat:           59.4665214,
+    lng:           24.8359935,
     pin:           null
   },
   {
@@ -1094,6 +1124,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Tallinn_Kultuurikatel.jpg?width=600",
     world_x:       432,
     world_y:       341,
+    lat:           59.4442823,
+    lng:           24.7512399,
     pin:           null
   },
   {
@@ -1114,6 +1146,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFQXmGxVutoYN1CNMR6RgavaAm2qU2i_qEaJes1-8Nw5B0ZTEfn1NTiXzLsKnnCKLmcZESO5wmsQpNCrTEGi4oOUSfulm_Hktk=s4800-w800",
     world_x:       731,
     world_y:       476,
+    lat:           59.4473505,
+    lng:           24.7050335,
     pin:           null
   },
   {
@@ -1134,6 +1168,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFXqkVa-3c1hGyKTNg3bnn1QnqDMx_2DKWViB-knbC59tEoDPKmWLb8v-ir8_ZdY3uEurBUuWyLyS0e6rkkpV6qz74A07qjuxI=s4800-w800",
     world_x:       1055,
     world_y:       737,
+    lat:           59.4359413,
+    lng:           24.7475803,
     pin:           null
   },
   {
@@ -1198,6 +1234,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFP1Z4YuvnAf30-gxTg9Pqd68RNX4ObE2PYTsO0biHnElefoj8tSn3catoxKISspQ-la8PL7k1QAHH_nhirLTGXJSZkfWJsKnE=s4800-w800",
     world_x:       1130,
     world_y:       665,
+    lat:           59.4362553,
+    lng:           24.7482396,
     pin:           null
   },
   {
@@ -1218,6 +1256,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZP8p-JBS0gsx2rrWMP0fxtSW0-zhPDMSt5Vadv42q69VodOVsvkEkDRu47fOA_1cf46nts0XkhqskgHjRVKDC8xIEEsu1XQuTLTQhmjv9khmKX-J8BxBeBQumaj96spbA6GR0vMvBjAjlFHFg=s4800-w800",
     world_x:       1152,
     world_y:       688,
+    lat:           59.4396967,
+    lng:           24.7467461,
     pin:           null
   },
   {
@@ -1238,6 +1278,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNwRjXn3F0yhP-EFaPpZQYNok-ICsO7nROK2IIIpPsLAEfFN9k6C6JgLe-K55Ch83EbL6v9yT8oTQV1-tx5-uN-MgV3Sx2V7eLkzFoFqZf22PodV6844uznsUIlENCpL9K_I-AI-JvX8_OG=s4800-w800",
     world_x:       400,
     world_y:       325,
+    lat:           59.4561929,
+    lng:           24.6747807,
     pin:           null
   },
   {
@@ -1258,6 +1300,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMrP1oSU-o_iYU93rKDJTzpqoxupdRKm0xJpHT3IXUBdAt9NE77RCvwaycugkxKugbjMNT3PBzO_un3ekZEJaraK5oQHB3gGgMF2hPlr6H77uo-OWJx64JMSE6LRLvD4ezKQb4UTjmfiY6x=s4800-w800",
     world_x:       1383,
     world_y:       691,
+    lat:           59.4363374,
+    lng:           24.7958299,
     pin:           null
   },
   {
@@ -1278,6 +1322,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Vene_teater_-_S%C3%BCdalinna_teater.jpg?width=600",
     world_x:       1036,
     world_y:       780,
+    lat:           59.4326556,
+    lng:           24.744721,
     pin:           null
   },
   {
@@ -1320,6 +1366,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       472,
     world_y:       398,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1480,6 +1528,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       484,
     world_y:       415,
+    lat:           59.4475874,
+    lng:           24.7049709,
     pin:           null
   },
   {
@@ -1500,6 +1550,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFP1Z4YuvnAf30-gxTg9Pqd68RNX4ObE2PYTsO0biHnElefoj8tSn3catoxKISspQ-la8PL7k1QAHH_nhirLTGXJSZkfWJsKnE=s4800-w800",
     world_x:       1140,
     world_y:       765,
+    lat:           59.4362553,
+    lng:           24.7482396,
     pin:           null
   },
   {
@@ -1542,6 +1594,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZPPHgED-7RjCOqqXguugNclv0EostAHJVJoQa_yys0fhOD4XU5WmgzsuNOEp37Q5IxKq5gBJ-W9YKI7z4U46fHzfdySVSdZQ_k2cy5ZMP08pDhjLR-toBcjEiqzbz71AivQJEVYGrKL7NFU=s4800-w800",
     world_x:       969,
     world_y:       882,
+    lat:           59.4385116,
+    lng:           24.753476,
     pin:           null
   },
   {
@@ -1717,6 +1771,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGIaHv-XJu0VeQYGHwnCwPYpK-lQE3aXmQk1t7NHGPNaHa8MdCMAz4QKuE1TdVU5FMxidGcxqWCjoFYyLQAtHu3IYqBM6gqey0=s4800-w800",
     world_x:       658,
     world_y:       489,
+    lat:           59.4503449,
+    lng:           24.7040811,
     pin:           null
   },
   {
@@ -1756,6 +1812,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       425,
     world_y:       431,
+    lat:           59.4475874,
+    lng:           24.7049709,
     pin:           null
   },
   {
@@ -1814,6 +1872,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       429,
     world_y:       421,
+    lat:           59.4475874,
+    lng:           24.7049709,
     pin:           null
   },
   {
@@ -1834,6 +1894,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       503,
     world_y:       345,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1854,6 +1916,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       479,
     world_y:       389,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1874,6 +1938,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       435,
     world_y:       386,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1894,6 +1960,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       444,
     world_y:       376,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1914,6 +1982,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       456,
     world_y:       389,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1934,6 +2004,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       397,
     world_y:       409,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1975,6 +2047,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       475,
     world_y:       415,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -1995,6 +2069,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       439,
     world_y:       387,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2015,6 +2091,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       409,
     world_y:       375,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2035,6 +2113,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       443,
     world_y:       428,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2055,6 +2135,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       475,
     world_y:       329,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2075,6 +2157,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       396,
     world_y:       399,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2095,6 +2179,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       474,
     world_y:       406,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2115,6 +2201,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       413,
     world_y:       368,
+    lat:           59.4475957,
+    lng:           24.704955,
     pin:           null
   },
   {
@@ -2659,6 +2747,8 @@ window.WA.catalog = [
     moodTags:      ["social", "outdoors", "drinks", "loud", "walk-up"],
     world_x:       702,
     world_y:       509,
+    lat:           59.4398408,
+    lng:           24.7289874,
     pin:           null
   },
   {
@@ -2679,6 +2769,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMPyCSbcpJECH1q7goV_QozS8vCv7vO2N5DUt6iDXxrLZ-j79HQBTXpPnbi9DDqjqW-fOcW-8raIqtjIj9gEIg26oJZijCTrafa621VRvmfZ-zR3L6wWTdVnkFvrSQgc0epHF8Lbd0XXRzz=s4800-w800",
     world_x:       726,
     world_y:       554,
+    lat:           59.4385116,
+    lng:           24.753476,
     pin:           null
   },
   {
@@ -2794,6 +2886,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqET31XZEbMEb7xFS2gmVs9AF9tQX_rBAkZ9EBrPeuSDSxRUbrkrVWRPEx8kZs-C0u6bvCdDD6LEEO6TQJ8ir-X5jyYhZXqzv0M=s4800-w800",
     world_x:       1008,
     world_y:       766,
+    lat:           59.4399868,
+    lng:           24.731328,
     pin:           null
   },
   {
@@ -2890,6 +2984,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqF3xSG1aBIQCXf3OS1cLIA2c4H1Tqud3wth8UDGcXuXBdhDCvOEskjw9XLLsQnowOkRWSiPYPsqJvZBsoKJnjoUF5N-busJEEU=s4800-w800",
     world_x:       1083,
     world_y:       832,
+    lat:           59.4420346,
+    lng:           24.766424,
     pin:           null
   },
   {
@@ -2910,6 +3006,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMBXerzECojU7pUf_SxsZGw3lmUtNJEqk8eLvZJEbpxX-fzEAooziBvrVURxEIliFTHPvts-iHvAIPXt5OXp0_BqMXAvEcUsFUxD09rNEdp-uGLRAS0Ie0NqCVZm21IITY7dADxyPN5Bn8fZELBrnwzLA=s4800-w800",
     world_x:       505,
     world_y:       365,
+    lat:           59.4414205,
+    lng:           24.7381887,
     pin:           null
   },
   {
@@ -2930,6 +3028,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOcfhMoJFjMHOkerSgkw5F0rviwrIbVa7QIwJOSLl5pe3ad31RmTYGKq7hBwe1HGy-at4PpSLekLr3Y3WcEg2DIPRMExLgt3L6ZATWOWXQTMXLOPtCqHefspY0TVeqOkwsmMkJJP73-XlgFZg=s4800-w800",
     world_x:       737,
     world_y:       422,
+    lat:           59.440257,
+    lng:           24.7335355,
     pin:           null
   },
   {
@@ -2950,6 +3050,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHNrqTi8puiI6u2_z03B3H2QJWbcnfGdAvz14CEo0x0wOKrFqwD5S_IKARcx-iQmaSqAxSRcH2LMByUbRkHdXl-G8h9dxq_LIE=s4800-w800",
     world_x:       433,
     world_y:       353,
+    lat:           59.4298591,
+    lng:           24.7592864,
     pin:           null
   },
   {
@@ -2970,6 +3072,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqERJ6ZZBqVXn_Qo2EOervVacYLHixyXbT47hJNDhzz1gfE1xeuemtTivQ0TVcWA6Q00Xm2x1ajJWYi1qiF89_u_5OyT1NUy6hs=s4800-w800",
     world_x:       404,
     world_y:       538,
+    lat:           59.4451815,
+    lng:           24.7285136,
     pin:           null
   },
   {
