@@ -218,6 +218,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMbL5MBz2HFphvgRRcQDBUB4RoFUOX0uUlGL3mQRpFpFL8mphrHno9oKV2FxDXQIAjppiLYhJaG3O8QjutgQBT7SAV5AFY38cflNXBs101XWGB5vn97nVYS7m3IUjuyxlAcQ_hjScP7d3e8=s4800-w800",
     world_x:       1065,
     world_y:       759,
+    lat:           59.4331327,
+    lng:           24.7520325,
     pin:           null
   },
   {
@@ -238,6 +240,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Kanuti_Gildi_Saal1.JPG?width=600",
     world_x:       1154,
     world_y:       676,
+    lat:           59.4385252,
+    lng:           24.7460931,
     pin:           null
   },
   {
@@ -258,6 +262,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMFYGro0CVIX4Jen9e9VftEWsv5cXQ7zcG8EJHdLWWDAr7ICWUI3fRSskp5LVm8BYrKmtghCpvy8tsc0dJwdEpOKjmBQLdeD0Su4snnYxkKYoKlwo6agtfSx1YV-DFHvOouHol0e8YHUpc6R4c=s4800-w800",
     world_x:       950,
     world_y:       802,
+    lat:           59.4387821,
+    lng:           24.7582234,
     pin:           null
   },
   {
@@ -301,225 +307,6 @@ window.WA.catalog = [
     pin:           null
   },
   {
-    id:            "giadafromgamma-1778212908-light-talks-illuminating-with-",
-    city:          "tallinn",
-    title:         "Light Talks: Illuminating with Purpose",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "talk",
-    day:           "Fri",
-    time:          "12:00",
-    quote:         "Shed light on new ideas with this purpose-driven talk, perfect for a midday intellectual boost.",
-    handle:        "@raul.reads",
-    thumbInitials: "LT",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "solo", "sober", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-paavli-live-marcos-valle-br",
-    city:          "tallinn",
-    title:         "Paavli.Live: Marcos Valle (BR)",
-    venue:         "Paavli.Live",
-    neighborhood:  "Pohja-Tallinn",
-    kind:          "gig",
-    day:           "Fri",
-    time:          "19:00",
-    quote:         "Experience the legendary Brazilian sounds of Marcos Valle at Paavli.Live, a must for jazz and bossa nova aficionados.",
-    handle:        "@raul.reads",
-    thumbInitials: "MV",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
-    world_x:       503,
-    world_y:       387,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-kali-rising-ground-state",
-    city:          "tallinn",
-    title:         "Kali Rising: Ground State",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "gig",
-    day:           "Fri",
-    time:          "20:00",
-    quote:         "Dive into the sonic depths with Kali Rising's 'Ground State' performance, an evening of captivating soundscapes.",
-    handle:        "@raul.reads",
-    thumbInitials: "KR",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-macondo-brown-co",
-    city:          "tallinn",
-    title:         "Macondo Brown (CO)",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "gig",
-    day:           "Fri",
-    time:          "22:00",
-    quote:         "Let Macondo Brown transport you with their Colombian rhythms and vibrant energy, a late-night treat for music lovers.",
-    handle:        "@raul.reads",
-    thumbInitials: "MB",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-machine-nation-f2f-special",
-    city:          "tallinn",
-    title:         "Machine Nation F2F Special",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "club",
-    day:           "Fri",
-    time:          "23:59",
-    quote:         "Join the Machine Nation for a special F2F party, promising a night of intense electronic beats and late-night revelry.",
-    handle:        "@raul.reads",
-    thumbInitials: "MN",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-lebo-sibul-s-bizarre-cabaret",
-    city:          "tallinn",
-    title:         "Lebo Sibul’s Bizarre Cabaret",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "theatre",
-    day:           "Sat",
-    time:          "19:00",
-    quote:         "Step into the whimsical world of Lebo Sibul's Bizarre Cabaret for an evening of unique live music and performance art.",
-    handle:        "@raul.reads",
-    thumbInitials: "LS",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-improkool-spring-shows",
-    city:          "tallinn",
-    title:         "Improkool Spring Shows",
-    venue:         "Improkool",
-    neighborhood:  "other",
-    kind:          "theatre",
-    day:           "Sat",
-    time:          "19:00",
-    quote:         "Laugh out loud at Improkool's Spring Shows, showcasing fresh talent and spontaneous comedy.",
-    handle:        "@raul.reads",
-    thumbInitials: "IS",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    world_x:       1030,
-    world_y:       558,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-fotografiska-opening-weekend",
-    city:          "tallinn",
-    title:         "Fotografiska Opening Weekend",
-    venue:         "Fotografiska",
-    neighborhood:  "Telliskivi",
-    kind:          "exhibition",
-    day:           "Sun",
-    time:          "14:00",
-    quote:         "Celebrate the opening weekend at Fotografiska, immersing yourself in world-class photography and visual storytelling.",
-    handle:        "@raul.reads",
-    thumbInitials: "FO",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "solo", "social", "sober", "ticketed"],
-    imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Fotografiska_tallinn_telliskivi_exterior1_-_2019.jpg?width=600",
-    world_x:       749,
-    world_y:       481,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-city-center-mother-s-day-conce",
-    city:          "tallinn",
-    title:         "City Center Mother’s Day Concert",
-    venue:         "Various venues",
-    neighborhood:  "Vanalinn",
-    kind:          "gig",
-    day:           "Sun",
-    time:          "14:00",
-    quote:         "Enjoy a heartwarming Mother's Day concert in the city center, a perfect Sunday afternoon for live music.",
-    handle:        "@raul.reads",
-    thumbInitials: "CC",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "outdoors", "social", "sober", "walk-up"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-paint-pour-mother-s-day",
-    city:          "tallinn",
-    title:         "Paint & Pour: Mother’s Day",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "arts centre",
-    day:           "Sun",
-    time:          "15:00",
-    quote:         "Unleash your inner artist at a special Mother's Day 'Paint & Pour' event, combining creativity with a relaxed atmosphere.",
-    handle:        "@raul.reads",
-    thumbInitials: "PP",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
-    id:            "giadafromgamma-1778212908-ezma-mother-s-day-concert",
-    city:          "tallinn",
-    title:         "Ezma Mother’s Day Concert",
-    venue:         "Various venues",
-    neighborhood:  "other",
-    kind:          "gig",
-    day:           "Sun",
-    time:          "19:00",
-    quote:         "Conclude your Mother's Day with the enchanting sounds of Ezma, a beautiful evening concert.",
-    handle:        "@raul.reads",
-    thumbInitials: "EC",
-    tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqECWTjamQx4tK9osn0Yslnktt1fT1hsGWCpESq8O44V1s93IZZboOavZazeZwKLm9q1CzwLEXuuemU1wZdil0O1H3LMT5_hvfM=s4800-w800",
-    world_x:       null,
-    world_y:       null,
-    pin:           null
-  },
-  {
     id:            "proeesti-4686",
     city:          "tallinn",
     title:         "Vera Polozkova Poetry Concert",
@@ -557,6 +344,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGVDZ0oi2N4FHbocPbdakyupz_NsjbLrisC--IDvj8A9uiGC5doK3x4VcQngBPdIipgMhh7tugMWdLHHRhW6YDApONOUzGZ7vA=s4800-w800",
     world_x:       1055,
     world_y:       704,
+    lat:           59.4379246,
+    lng:           24.749289,
     pin:           null
   },
   {
@@ -577,6 +366,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Le_KUMU%2C_mus%C3%A9e_dart_estonien_%28Tallinn%29_%287643108702%29.jpg?width=600",
     world_x:       1458,
     world_y:       595,
+    lat:           59.4363278,
+    lng:           24.796286,
     pin:           null
   },
   {
@@ -597,6 +388,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHCHHRmZm9EB-0MSUWGf_uSMJ9lyJX1cpOQFau0b6kkgzVfIPdZj1P3IZmVz2UuOD5LISoFJE55LZXVrYb6RKlwggthuEjy-bQ=s4800-w800",
     world_x:       413,
     world_y:       554,
+    lat:           59.4428345,
+    lng:           24.736878,
     pin:           null
   },
   {
@@ -617,6 +410,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHCHHRmZm9EB-0MSUWGf_uSMJ9lyJX1cpOQFau0b6kkgzVfIPdZj1P3IZmVz2UuOD5LISoFJE55LZXVrYb6RKlwggthuEjy-bQ=s4800-w800",
     world_x:       499,
     world_y:       510,
+    lat:           59.4428345,
+    lng:           24.736878,
     pin:           null
   },
   {
@@ -637,6 +432,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGHq20Wg4V8KrXfxtW7Mj2OguwWTXApA4suBbqonledtR7-fcK8go6T0yBGDnc35-QeIlYmOQeM5wixLSF_b9aKoyrc9srFhGs=s4800-w800",
     world_x:       456,
     world_y:       356,
+    lat:           59.4450426,
+    lng:           24.7512926,
     pin:           null
   },
   {
@@ -657,6 +454,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGHq20Wg4V8KrXfxtW7Mj2OguwWTXApA4suBbqonledtR7-fcK8go6T0yBGDnc35-QeIlYmOQeM5wixLSF_b9aKoyrc9srFhGs=s4800-w800",
     world_x:       472,
     world_y:       398,
+    lat:           59.4450426,
+    lng:           24.7512926,
     pin:           null
   },
   {
@@ -817,6 +616,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqG3kWjhfPnMUSJZqCVcgSrOzPgC6bcHMFgxGEOnCOGmA-IXzkGxCpbXPw8wk_BeScSSuNySgibQNm6xMf9TkCxcXn4loZAf_zY=s4800-w800",
     world_x:       1074,
     world_y:       731,
+    lat:           59.4394688,
+    lng:           24.732457,
     pin:           null
   },
   {
@@ -837,6 +638,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqEVyU_WPGlXYcC570Rof3OmneN9uC7tiCimdoRpLzsczsks0FhY6kiMRXktJMu1qmROzr-D-Zsb6_-XcoMFtyAQyz7CDpIBwIw=s4800-w800",
     world_x:       461,
     world_y:       406,
+    lat:           59.4451852,
+    lng:           24.7340175,
     pin:           null
   },
   {
@@ -897,6 +700,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Kai_art_center_noblessner_tallinn_exterior1_-_2019.jpg?width=600",
     world_x:       453,
     world_y:       370,
+    lat:           59.4523634,
+    lng:           24.7306649,
     pin:           null
   },
   {
@@ -957,6 +762,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/2024_Tallinn_Kino_S%C3%B5prus.jpg?width=600",
     world_x:       1114,
     world_y:       762,
+    lat:           59.4353036,
+    lng:           24.7452287,
     pin:           null
   },
   {
@@ -1017,6 +824,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqEVyU_WPGlXYcC570Rof3OmneN9uC7tiCimdoRpLzsczsks0FhY6kiMRXktJMu1qmROzr-D-Zsb6_-XcoMFtyAQyz7CDpIBwIw=s4800-w800",
     world_x:       500,
     world_y:       580,
+    lat:           59.4451852,
+    lng:           24.7340175,
     pin:           null
   },
   {
@@ -1077,6 +886,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/2019_December_Lindakivi_Cultural_Center%2C_New_year_concert.jpg?width=600",
     world_x:       1436,
     world_y:       617,
+    lat:           59.4406635,
+    lng:           24.8313365,
     pin:           null
   },
   {
@@ -1117,6 +928,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGOmx4igSH58QFe_SdPyIlk5c7ESgPHw7MUWfUjg7Y3uIi86b1bxlQ5o-uw6GiMgceyi22wvc4cPNs2ZJVizY_3toty6L3sntU=s4800-w800",
     world_x:       1075,
     world_y:       764,
+    lat:           59.4361267,
+    lng:           24.7481773,
     pin:           null
   },
   {
@@ -1157,6 +970,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqEVyU_WPGlXYcC570Rof3OmneN9uC7tiCimdoRpLzsczsks0FhY6kiMRXktJMu1qmROzr-D-Zsb6_-XcoMFtyAQyz7CDpIBwIw=s4800-w800",
     world_x:       430,
     world_y:       545,
+    lat:           59.4451852,
+    lng:           24.7340175,
     pin:           null
   },
   {
@@ -1257,6 +1072,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOu-Z-9TjGNFYyHVjjaGbdSanny7-7k5sG-K5h6-A_P7Vx2DeogwASmKiu1VROc9tzbkg3vM7qgYkIjT0LMrJ9n56zSIX7k-_NaaZOoQweOPQFxFTs46Rz6PRUyyytmzWVV9NKbOnQrN_nG=s4800-w800",
     world_x:       655,
     world_y:       497,
+    lat:           59.4401764,
+    lng:           24.7334706,
     pin:           null
   },
   {
@@ -1337,6 +1154,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOOjDmpZJ52BAI_cP7D6WscdZDQBSQOPqhs2erKR1I-ukFvYaF8uhSiLQ0Y5ZcdikpO6e_0uobJN2KAeLTGw9zUrUwe78j6IJigbdRmiQmD39aKzv2LHdpUbS7QPi0wEPp1HD3vXqa4MdYvWA=s4800-w800",
     world_x:       1102,
     world_y:       709,
+    lat:           59.4343916,
+    lng:           24.7434365,
     pin:           null
   },
   {
@@ -1357,6 +1176,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFXySnP_p9z98AxJ6OD1j58ts_bYSCXdFIarBw7q6gJ9zdsz97wOa7gYvvUlnxKyfikbxEqYiHvCUTdz0BBxXUBXeRDVvZiqg=s4800-w800",
     world_x:       936,
     world_y:       527,
+    lat:           59.4380404,
+    lng:           24.7675649,
     pin:           null
   },
   {
@@ -1477,6 +1298,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGOmx4igSH58QFe_SdPyIlk5c7ESgPHw7MUWfUjg7Y3uIi86b1bxlQ5o-uw6GiMgceyi22wvc4cPNs2ZJVizY_3toty6L3sntU=s4800-w800",
     world_x:       1100,
     world_y:       769,
+    lat:           59.4361267,
+    lng:           24.7481773,
     pin:           null
   },
   {
@@ -1697,6 +1520,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNNAlh5u5ZwVw8t6fWQ9R3Y-hHlHnkwErhHRkhr-YukPBDppzku5EH8ioH4q5MqTHeukPsicNV-sW78FR3269vNyuskiHth8FtpUhNDJWxlZP89_hQCtUJ7VyPIZ1eYlDyiv2hfMOx-YN0hMhkXjoho=s4800-w800",
     world_x:       1054,
     world_y:       664,
+    lat:           59.4361979,
+    lng:           24.7482811,
     pin:           null
   },
   {
@@ -1737,6 +1562,8 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOHI_R7irRpyOSMZD0V9-RFzDEK9W8TJptUZHk5507WNhY813-zBGpdI3WvgKnu1YIVwQUNDMpti2AB1IYmAhyzXA-cYQEy6Lf0-q5UAtVQdFStkdT8IJIcIYchqH4r4EOL513kYweiF4BUeYE=s4800-w800",
     world_x:       459,
     world_y:       328,
+    lat:           59.4523634,
+    lng:           24.7306649,
     pin:           null
   },
   {
@@ -1923,7 +1750,7 @@ window.WA.catalog = [
     quote:         "Experience the cutting-edge sounds of Nikki Nair from the US at Paavli.Club. Expect a night of intense electronic music.",
     handle:        "@raul.reads",
     thumbInitials: "PC",
-    tonight:       true,
+    tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
@@ -2004,6 +1831,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       503,
     world_y:       345,
     pin:           null
@@ -2023,6 +1851,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "outdoors", "social", "walk-up"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       479,
     world_y:       389,
     pin:           null
@@ -2042,6 +1871,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       435,
     world_y:       386,
     pin:           null
@@ -2061,6 +1891,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       444,
     world_y:       376,
     pin:           null
@@ -2080,6 +1911,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       456,
     world_y:       389,
     pin:           null
@@ -2099,6 +1931,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       397,
     world_y:       409,
     pin:           null
@@ -2120,6 +1953,8 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       784,
     world_y:       692,
+    lat:           59.408043,
+    lng:           24.7321996,
     pin:           null
   },
   {
@@ -2137,6 +1972,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       475,
     world_y:       415,
     pin:           null
@@ -2156,6 +1992,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       439,
     world_y:       387,
     pin:           null
@@ -2175,6 +2012,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       409,
     world_y:       375,
     pin:           null
@@ -2194,6 +2032,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "outdoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       443,
     world_y:       428,
     pin:           null
@@ -2213,6 +2052,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       475,
     world_y:       329,
     pin:           null
@@ -2232,6 +2072,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       396,
     world_y:       399,
     pin:           null
@@ -2251,6 +2092,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       474,
     world_y:       406,
     pin:           null
@@ -2270,6 +2112,7 @@ window.WA.catalog = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
     world_x:       413,
     world_y:       368,
     pin:           null
@@ -2291,6 +2134,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "loud"],
     world_x:       1086,
     world_y:       686,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2310,6 +2155,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "loud"],
     world_x:       1089,
     world_y:       703,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2329,6 +2176,8 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "ticketed"],
     world_x:       1155,
     world_y:       695,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2348,6 +2197,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "sober"],
     world_x:       1080,
     world_y:       693,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2367,6 +2218,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed"],
     world_x:       1143,
     world_y:       682,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2386,6 +2239,8 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       1156,
     world_y:       692,
+    lat:           59.4381936,
+    lng:           24.7286398,
     pin:           null
   },
   {
@@ -2405,6 +2260,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1048,
     world_y:       673,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2424,6 +2281,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed"],
     world_x:       1092,
     world_y:       746,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2443,6 +2302,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1065,
     world_y:       765,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2462,6 +2323,8 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       1046,
     world_y:       736,
+    lat:           59.4381936,
+    lng:           24.7286398,
     pin:           null
   },
   {
@@ -2481,6 +2344,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "solo", "social", "quiet", "ticketed"],
     world_x:       1154,
     world_y:       760,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2500,6 +2365,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "sober", "ticketed"],
     world_x:       1121,
     world_y:       730,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2519,6 +2386,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "solo", "quiet", "ticketed"],
     world_x:       1044,
     world_y:       719,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2538,6 +2407,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed"],
     world_x:       1068,
     world_y:       742,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2557,6 +2428,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1059,
     world_y:       757,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2576,6 +2449,8 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "ticketed"],
     world_x:       1070,
     world_y:       755,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2595,6 +2470,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1144,
     world_y:       707,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2614,6 +2491,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1099,
     world_y:       694,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2633,6 +2512,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "loud"],
     world_x:       1077,
     world_y:       723,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2652,6 +2533,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1113,
     world_y:       763,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2671,6 +2554,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed"],
     world_x:       1125,
     world_y:       739,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2690,6 +2575,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "loud", "ticketed"],
     world_x:       1111,
     world_y:       664,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2704,11 +2591,13 @@ window.WA.catalog = [
     quote:         "A primal journey into the night, where dance becomes an unarchivable force. Experience movements that transcend human creation.",
     handle:        "@vonkrahl",
     thumbInitials: "ÖÖ",
-    tonight:       false,
+    tonight:       true,
     thisWeek:      true,
     moodTags:      ["indoors", "social", "loud", "ticketed"],
     world_x:       1097,
     world_y:       743,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2728,6 +2617,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed", "quiet"],
     world_x:       1086,
     world_y:       713,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2747,6 +2638,8 @@ window.WA.catalog = [
     moodTags:      ["indoors", "social", "ticketed"],
     world_x:       1100,
     world_y:       753,
+    lat:           59.4371803,
+    lng:           24.7428101,
     pin:           null
   },
   {
@@ -2766,6 +2659,237 @@ window.WA.catalog = [
     moodTags:      ["social", "outdoors", "drinks", "loud", "walk-up"],
     world_x:       702,
     world_y:       509,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-ceramic-workshop",
+    city:          "tallinn",
+    title:         "Ceramic Workshop",
+    venue:         "Gamma's",
+    neighborhood:  "other",
+    kind:          "arts centre",
+    day:           "Sat",
+    time:          null,
+    quote:         "Get your hands dirty and unleash your inner artist at Gamma's ceramic workshop. A perfect blend of creativity and community, with wine to fuel your muse.",
+    handle:        "@raul.reads",
+    thumbInitials: "CW",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMPyCSbcpJECH1q7goV_QozS8vCv7vO2N5DUt6iDXxrLZ-j79HQBTXpPnbi9DDqjqW-fOcW-8raIqtjIj9gEIg26oJZijCTrafa621VRvmfZ-zR3L6wWTdVnkFvrSQgc0epHF8Lbd0XXRzz=s4800-w800",
+    world_x:       726,
+    world_y:       554,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-chris-turner-spontaneous-comed",
+    city:          "tallinn",
+    title:         "Chris Turner: Spontaneous Comedy",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "theatre",
+    day:           "Mon",
+    time:          "19:00",
+    quote:         "Dive into the unexpected with Chris Turner's spontaneous comedy. A night of quick wit and improv that promises genuine laughs.",
+    handle:        "@raul.reads",
+    thumbInitials: "CT",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "social", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-animal-farm-art-exhibition",
+    city:          "tallinn",
+    title:         "Animal Farm Art Exhibition",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "exhibition",
+    day:           "Mon",
+    time:          "19:30",
+    quote:         "Explore the artistic interpretation of 'Animal Farm'. A thought-provoking exhibition that promises to engage and challenge.",
+    handle:        "@raul.reads",
+    thumbInitials: "AF",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "solo", "walk-up"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-ana-falcon-mexican-stand-up",
+    city:          "tallinn",
+    title:         "Ana Falcon: Mexican Stand-up",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "theatre",
+    day:           "Tue",
+    time:          "19:00",
+    quote:         "Experience the vibrant energy of Mexican stand-up with Ana Falcon. A unique voice bringing fresh perspectives to the stage.",
+    handle:        "@raul.reads",
+    thumbInitials: "AF",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "social", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-d-dsrit-lamp-of-murmuur-concer",
+    city:          "tallinn",
+    title:         "Dödsrit & Lamp Of Murmuur Concert",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "gig",
+    day:           "Wed",
+    time:          "19:00",
+    quote:         "Prepare for a sonic assault as Dödsrit and Lamp Of Murmuur take the stage. Expect raw power and uncompromising sound.",
+    handle:        "@raul.reads",
+    thumbInitials: "DL",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-diff-festival-triin-tasuja-wor",
+    city:          "tallinn",
+    title:         "Diff. Festival: Triin Tasuja Workshop",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "arts centre",
+    day:           "Wed",
+    time:          "12:00",
+    quote:         "Engage your creative side at the Diff. Festival with Triin Tasuja's workshop. A chance to learn and explore new artistic horizons.",
+    handle:        "@raul.reads",
+    thumbInitials: "TT",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "solo", "sober", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-deidile-sinuga-party",
+    city:          "tallinn",
+    title:         "Deidile Sinuga Party",
+    venue:         "Gläm",
+    neighborhood:  "other",
+    kind:          "club",
+    day:           "Wed",
+    time:          "19:30",
+    quote:         "Step into the night at Gläm for the Deidile Sinuga party. Expect an evening of vibrant beats and good company.",
+    handle:        "@raul.reads",
+    thumbInitials: "DS",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqET31XZEbMEb7xFS2gmVs9AF9tQX_rBAkZ9EBrPeuSDSxRUbrkrVWRPEx8kZs-C0u6bvCdDD6LEEO6TQJ8ir-X5jyYhZXqzv0M=s4800-w800",
+    world_x:       1008,
+    world_y:       766,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-jenkins-stabat-mater-live-musi",
+    city:          "tallinn",
+    title:         "Jenkins: Stabat Mater Live Music",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "gig",
+    day:           "Thu",
+    time:          "19:00",
+    quote:         "Immerse yourself in the profound beauty of Jenkins' Stabat Mater. A live music experience that transcends the ordinary.",
+    handle:        "@raul.reads",
+    thumbInitials: "JS",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "solo", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-planet-groove-make-a-dance-uk",
+    city:          "tallinn",
+    title:         "Planet Groove: Make A Dance (UK)",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "gig",
+    day:           "Fri",
+    time:          "23:00",
+    quote:         "Get ready to move with Planet Groove featuring Make A Dance from the UK. This is where the underground beats truly come alive.",
+    handle:        "@raul.reads",
+    thumbInitials: "PG",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-erki-fashion-show",
+    city:          "tallinn",
+    title:         "Erki Fashion Show",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "exhibition",
+    day:           "Sat",
+    time:          "17:00",
+    quote:         "Witness the cutting edge of design at the Erki Fashion Show. More than just clothes, this is wearable art pushing boundaries.",
+    handle:        "@raul.reads",
+    thumbInitials: "EF",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["indoors", "social", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-jay-jay-johanson-show",
+    city:          "tallinn",
+    title:         "Jay-Jay Johanson Show",
+    venue:         "Various venues",
+    neighborhood:  "other",
+    kind:          "gig",
+    day:           "Sat",
+    time:          "19:00",
+    quote:         "Let the smooth, melancholic sounds of Jay-Jay Johanson transport you. A captivating performance from a true master of atmosphere.",
+    handle:        "@raul.reads",
+    thumbInitials: "JJ",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["quiet", "indoors", "social", "ticketed"],
+    world_x:       null,
+    world_y:       null,
+    pin:           null
+  },
+  {
+    id:            "giadafromgamma-1779076881-ketchup-live-show",
+    city:          "tallinn",
+    title:         "Ketchup Live Show",
+    venue:         "IMO Lounge",
+    neighborhood:  "other",
+    kind:          "gig",
+    day:           "Sun",
+    time:          "18:00",
+    quote:         "Catch the Ketchup Live Show at IMO Lounge. A vibrant performance to round off your weekend with some energetic tunes.",
+    handle:        "@raul.reads",
+    thumbInitials: "KL",
+    tonight:       false,
+    thisWeek:      true,
+    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
+    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqF3xSG1aBIQCXf3OS1cLIA2c4H1Tqud3wth8UDGcXuXBdhDCvOEskjw9XLLsQnowOkRWSiPYPsqJvZBsoKJnjoUF5N-busJEEU=s4800-w800",
+    world_x:       1083,
+    world_y:       832,
     pin:           null
   },
   {
@@ -2866,6 +2990,8 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Le_KUMU%2C_mus%C3%A9e_dart_estonien_%28Tallinn%29_%287643108702%29.jpg?width=600",
     world_x:       1423,
     world_y:       593,
+    lat:           59.4363278,
+    lng:           24.796286,
     pin:           null
   }
 ];
@@ -2886,11 +3012,25 @@ window.WA.curators = [
     bio:     "Runs @notboring_riga — curated news, events and places since before it was fashionable to care about the city. Finds the good ones early."
   },
   {
+    handle:  "@kinobize",
+    name:    "Kino Bize",
+    city:    "riga",
+    tagline: "Art-house in the heart of Riga.",
+    bio:     "Riga's leading art-house cinema. Baltic docs, Central European cinema, retrospectives, festival films, and the occasional midnight oddity."
+  },
+  {
     handle:  "@notboring_riga",
     name:    "Kate",
     city:    "riga",
     tagline: "curated news, events and places",
     bio:     "Runs the not boring → Riga channel. Curates the best of Riga culture with a sharp eye for good design and authentic experiences."
+  },
+  {
+    handle:  "@splendidpalace",
+    name:    "Splendid Palace",
+    city:    "riga",
+    tagline: "Riga's grand art-house, since 1923.",
+    bio:     "European Film Academy partner. Auteur cinema, festival favourites, Baltic premieres, and the occasional strange event in a very ornate room."
   },
   {
     handle:  "@udgstriga",

@@ -1,405 +1,99 @@
 /* ============================================================
-   WanderAlt — Map page
-   Illustrated Tallinn map with pan/zoom, pin overlay,
-   two-row filter chips (time + category), bottom sheet
-   (mobile) and side panel (desktop), locate FAB.
+   WanderAlt — Map pin overlay
+   ------------------------------------------------------------
+   Renders WanderAlt's curated picks as numbered teardrop pins on
+   top of the MapLibre basemap (see map-tiles.js).
+
+   This module owns:
+     • the pin overlay (pinHTML, clusterPinHTML, positioning)
+     • greedy screen-space clustering
+     • the bottom-sheet / side-panel pick detail
+     • all five filter dimensions (text, time, category, mood, nhood)
+     • the WA.MapView public API consumed by discover.js
+
+   It does NOT own pan/zoom — MapLibre handles that natively.
+   Pin positions are projected via WA.MapTiles.project(lng, lat).
    ============================================================ */
 (() => {
-  const WORLD_W = 1800, WORLD_H = 1200;
-  const MIN_ZOOM = 0.28, MAX_ZOOM = 2.4;
+  const CLUSTER_PX = 50;  /* pin-to-pin distance threshold for clustering */
 
   // ── State ─────────────────────────────────────────────────────
-  let zoom = 0.5, tx = 0, ty = 0;
-  let drag = null, dragged = false;
-  let activeId = null;
-  let timeFilter = 'all';        // all | tonight | thisweek | places
-  let catFilters = new Set();    // set of category ids; empty = show all
-  let moodFilter = [];           // mood tags; empty = no mood filter (AND semantics)
-  let nhoodFilter = new Set();   // neighborhood names; empty = all neighborhoods
-  let textQuery = '';            // free-text filter; '' = no text filter
-  let searchMode = 'search';     // 'search' | 'match'  (AI mode is opt-in via toggle)
-  let userLoc = null;            // { worldX, worldY } | null
-  let locStatus = 'off';         // off | locating | on | error
-  let userPuckEl = null;
+  let activeId   = null;
+  let timeFilter = 'all';       /* all | tonight | thisweek | places */
+  let catFilters = new Set();   /* set of category ids; empty = show all */
+  let moodFilter = [];          /* mood tags; empty = no mood filter */
+  let nhoodFilter = new Set();  /* neighborhood names; empty = all */
+  let textQuery  = '';          /* free-text filter */
 
-  // ── DOM refs (set in boot) ─────────────────────────────────────
-  let viewport, worldWrap, pinsEl, sheetEl, detailEl;
-
-  // ── Coordinate helpers ────────────────────────────────────────
-  const worldToScreen = (wx, wy) => ({
-    x: wx * zoom + tx,
-    y: wy * zoom + ty,
-  });
-
-  // ── Pan/Zoom ──────────────────────────────────────────────────
+  // ── DOM refs (set in boot) ────────────────────────────────────
+  let viewport, pinsEl, sheetEl, detailEl;
   let _reclusterTimer = null;
-  function applyTransform() {
-    worldWrap.style.transform = `translate(${tx}px,${ty}px) scale(${zoom})`;
-    positionPins();
-    if (userLoc) positionPuck();
-    /* Re-cluster 180 ms after pan/zoom settles so cluster bubbles update
-       without rebuilding the DOM on every animation frame.             */
-    clearTimeout(_reclusterTimer);
-    _reclusterTimer = setTimeout(renderPins, 180);
-  }
 
-  function fitView() {
-    const rect = viewport.getBoundingClientRect();
-    const fitW = rect.width  / WORLD_W;
-    const fitH = rect.height / WORLD_H;
-    // Mobile: zoom up so districts read at a usable scale (pan reveals the rest).
-    // Desktop: fit the whole island in view.
-    const isWide = rect.width >= 768;
-    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
-      isWide ? Math.min(fitW * 1.15, fitH * 1.15)
-             : Math.min(fitW * 1.55, fitH * 1.10)));
-    zoom = z;
-    // Centre on Old Town (~900, 580 in world units) — most interesting district.
-    tx = (rect.width  / 2) - 900 * z;
-    ty = (rect.height / 2) - 580 * z;
-    applyTransform();
-  }
-
-  function zoomAround(mx, my, nextZoom) {
-    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
-    tx = mx - (mx - tx) * (z / zoom);
-    ty = my - (my - ty) * (z / zoom);
-    zoom = z;
-    applyTransform();
-  }
-
-  function initPanZoom() {
-    viewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const rect = viewport.getBoundingClientRect();
-      zoomAround(e.clientX - rect.left, e.clientY - rect.top, zoom * Math.exp(-e.deltaY * 0.0014));
-    }, { passive: false });
-
-    viewport.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
-      drag = { x: e.clientX, y: e.clientY, tx, ty };
-      dragged = false;
-      viewport.setPointerCapture(e.pointerId);
-    });
-    viewport.addEventListener('pointermove', (e) => {
-      if (!drag) return;
-      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!dragged && Math.hypot(dx, dy) > 12) {
-        dragged = true;
-        document.body.classList.add('map-panning');
-      }
-      tx = drag.tx + dx;
-      ty = drag.ty + dy;
-      applyTransform();
-    });
-    viewport.addEventListener('pointerup', () => {
-      drag = null;
-      document.body.classList.remove('map-panning');
-    });
-
-    // touch pinch-zoom
-    let tc = null;
-    viewport.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        const r = viewport.getBoundingClientRect();
-        tc = {
-          dist: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY),
-          zoom,
-          mx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left,
-          my: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top,
-        };
-      }
-    }, { passive: true });
-    viewport.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2 && tc) {
-        e.preventDefault();
-        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        zoomAround(tc.mx, tc.my, tc.zoom * (d / tc.dist));
-      }
-    }, { passive: false });
-    viewport.addEventListener('touchend', () => { tc = null; });
-  }
-
-  // ── Zoom controls ─────────────────────────────────────────────
-  function initZoomControls() {
-    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
-      const r = viewport.getBoundingClientRect();
-      zoomAround(r.width / 2, r.height / 2, zoom * 1.35);
-    });
-    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
-      const r = viewport.getBoundingClientRect();
-      zoomAround(r.width / 2, r.height / 2, zoom / 1.35);
-    });
-    document.getElementById('btn-zoom-fit')?.addEventListener('click', fitView);
-  }
-
-  // ── Kind normalisation ────────────────────────────────────────
-  // 'drink' and 'art' are intentionally absent — reserved for future pipeline
-  // kinds (craft bar, street art) that the Telegram ingest will produce.
+  // ── Categories / icons ────────────────────────────────────────
   const KIND_MAP = {
     'gig': 'music', 'club': 'music', 'noise': 'music',
-    'talk': 'culture', 'lecture': 'culture', 'exhibition': 'culture', 'gallery': 'culture',
+    'talk': 'culture', 'lecture': 'culture',
+    'exhibition': 'culture', 'gallery': 'culture',
     'record store': 'vinyl', 'bookshop': 'vinyl',
     'thrift': 'market',
   };
   function normaliseKind(k) { return KIND_MAP[k] || k; }
 
-  // ── Filters ───────────────────────────────────────────────────
+  /* Inline SVG icons keyed by normalised kind. Same set as before. */
+  const PIN_ICONS = {
+    music:    '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M5 11.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm6-9v8.5a1.5 1.5 0 1 1-1-1.41V4.6l-5 1V11a1.5 1.5 0 1 1-1-1.41V3l7-1.5z" fill="currentColor"/></svg>',
+    culture:  '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 1.5L1.5 5l2 1V11l-1 .5v1h11v-1l-1-.5V6l2-1L8 1.5zm-3 5l3-1.5 3 1.5V11h-1V7H7v4H6V7H5v4H4V7l1-.5z" fill="currentColor"/></svg>',
+    drink:    '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M3 2h10l-1.5 7H4.5L3 2zm1.2 1l1 4h5.6l1-4H4.2zM6 11h4v1H6v-1zm-1 2h6v1H5v-1z" fill="currentColor"/></svg>',
+    food:     '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M3 1v6h2v8h1V7h2V1H7v4H6V1H5v4H4V1H3zm9 0c-1.5 0-3 1.5-3 4 0 1.5.5 2.5 1.5 3V15h1V8c1-.5 1.5-1.5 1.5-3 0-2.5-1-4-1-4z" fill="currentColor"/></svg>',
+    market:   '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 4l1-2h10l1 2v1H2V4zm0 2h12v8h-3v-4H5v4H2V6zm4 5h4v3H6v-3z" fill="currentColor"/></svg>',
+    film:     '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 3h12v10H2V3zm1 1v2h1V4H3zm9 0v2h1V4h-1zM3 7v2h1V7H3zm9 0v2h1V7h-1zM3 10v2h1v-2H3zm9 0v2h1v-2h-1zM5 4v8h6V4H5z" fill="currentColor"/></svg>',
+    festival: '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 1L2 5v9h12V5L8 1zm0 1.5L12 5H4l4-2.5zM3 6h10v6H3V6zm2 1v4h2V7H5zm4 0v4h2V7H9z" fill="currentColor"/></svg>',
+    vinyl:    '<svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>',
+    default:  '<svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>',
+  };
+
+  // ── Filter logic ──────────────────────────────────────────────
   function matchesText(e, q) {
     if (!q) return true;
-    return [e.title, e.venue, e.neighborhood, e.kind, e.handle, e.quote]
-      .some(f => f && f.toLowerCase().includes(q));
+    const hay = `${e.title} ${e.venue} ${e.neighborhood} ${e.kind} ${e.handle} ${e.quote || ''}`.toLowerCase();
+    return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
   }
 
   function getVisibleEntries() {
     const q = textQuery.toLowerCase();
-    /* 'free' is a moodTag filter, not a kind — handle separately. */
+    const catalog = window.WA?.catalog || [];
     const kindFilters = new Set([...catFilters].filter(id => id !== 'free'));
     const wantFree    = catFilters.has('free');
-    return (window.WA?.catalog || []).filter(e => {
-      if (!e.world_x || !e.world_y) return false;
+    return catalog.filter(e => {
+      /* Geocoded entries only — entries without lat/lng don't render. */
+      if (e.lat == null || e.lng == null) return false;
       if (timeFilter === 'tonight'  && !e.tonight) return false;
       if (timeFilter === 'thisweek' && !e.thisWeek && !e.tonight) return false;
       if (timeFilter === 'places'   && e.day) return false;
       if (kindFilters.size > 0 && !kindFilters.has(normaliseKind(e.kind))) return false;
       if (wantFree && !(e.moodTags || []).includes('free')) return false;
-      if (moodFilter.length > 0 && !moodFilter.every(t => (e.moodTags || []).includes(t))) return false;
       if (nhoodFilter.size > 0 && !nhoodFilter.has(e.neighborhood)) return false;
+      if (moodFilter.length > 0 && !moodFilter.every(t => (e.moodTags || []).includes(t))) return false;
       if (q && !matchesText(e, q)) return false;
       return true;
     });
   }
 
-  // ── URL sync ──────────────────────────────────────────────────
-  // Map ↔ Search coupling: ?q= seeds the text filter; ?id= focuses a pin.
-  function readUrlState() {
-    const sp = new URLSearchParams(window.location.search);
-    return {
-      q:    sp.get('q')    || '',
-      id:   sp.get('id')   || '',
-      day:  sp.get('day')  || '',
-      mood: sp.get('mood') || '',
-    };
-  }
+  // ── URL state (skipped on Discover — discover.js owns the URL) ─
   function writeUrlState() {
-    /* When embedded inside Discover, the URL schema is owned by
-       discover.js (?time, ?cat). Skip to avoid clobbering it. */
     if (document.body?.dataset?.page === 'discover') return;
-    const sp = new URLSearchParams();
-    if (textQuery)                        sp.set('q',    textQuery);
-    if (activeId)                         sp.set('id',   activeId);
-    if (timeFilter && timeFilter !== 'all') sp.set('day',  timeFilter);
-    if (catFilters.size)                  sp.set('mood', [...catFilters].join(','));
-    const qs = sp.toString();
-    const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
-    window.history.replaceState(null, '', url);
+    /* Standalone map.html no longer exists, but keep the no-op guard. */
   }
 
-  // ── Map search bar ────────────────────────────────────────────
-  function updateSearchCount() {
-    const countEl = document.getElementById('map-search-count');
-    const clearEl = document.getElementById('map-search-clear');
-    const wrap    = document.querySelector('.map-search');
-    if (!countEl) return;
-    if (!textQuery) {
-      countEl.hidden = true;
-      if (clearEl) clearEl.hidden = true;
-      if (wrap)    wrap.dataset.active = '0';
-      return;
-    }
-    const n = getVisibleEntries().length;
-    countEl.textContent = `${n} pin${n === 1 ? '' : 's'}`;
-    countEl.hidden = false;
-    if (clearEl) clearEl.hidden = false;
-    if (wrap)    wrap.dataset.active = '1';
-  }
-
-  function setTextQuery(q) {
-    textQuery = (q || '').trim();
-    renderPins();
-    updateSearchCount();
-    writeUrlState();
-  }
-
-  // Call match-pick and focus the top hit on the map. Falls back to opening
-  // search.html for the prompt when the matched pick has no world_x/y.
-  async function runMapMatch(prompt) {
-    const countEl = document.getElementById('map-search-count');
-    const base    = window.WA && window.WA.BASE_URL;
-    const city    = (window.WA && window.WA.CITY) || 'tallinn';
-    if (!base) {
-      if (countEl) { countEl.textContent = 'AI offline'; countEl.hidden = false; }
-      return;
-    }
-    if (countEl) { countEl.textContent = 'matching…'; countEl.hidden = false; }
-    const tasteParams = window.WA?.taste?.matchParams() || {};
-    try {
-      const r = await fetch(`${base}/functions/v1/match-pick`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ city, prompt, mode: 'find_one', ...tasteParams }),
-      });
-      const data = await r.json();
-      if (!data.ok || !data.pick) {
-        if (countEl) countEl.textContent = 'no match';
-        return;
-      }
-      const hit = data.pick;
-      const local = (window.WA?.catalog || []).find(e => e.id === hit.id);
-      if (local && local.world_x && local.world_y) {
-        focusPin(hit.id);
-        if (countEl) countEl.textContent = `→ ${hit.venue || hit.title}`;
-      } else {
-        // No coords on the map — open the venue page directly.
-        if (countEl) countEl.textContent = 'opening…';
-        window.location.href = `venue.html?id=${encodeURIComponent(hit.id)}`;
-      }
-    } catch (_) {
-      if (countEl) countEl.textContent = 'match failed';
-    }
-  }
-
-  function setSearchMode(mode) {
-    searchMode = mode;
-    const wrap   = document.querySelector('.map-search');
-    const input  = document.getElementById('map-search-input');
-    const toggle = document.getElementById('map-match-toggle');
-    if (wrap)   wrap.dataset.mode = mode;
-    if (input)  {
-      input.placeholder = mode === 'match'
-        ? 'Tell me what you want…'
-        : 'Filter pins by name, kind, curator…';
-      input.setAttribute('enterkeyhint', mode === 'match' ? 'go' : 'search');
-    }
-    if (toggle) toggle.textContent = mode === 'match' ? '← keyword' : 'match me →';
-  }
-
-  function initMapSearch() {
-    const input  = document.getElementById('map-search-input');
-    const clear  = document.getElementById('map-search-clear');
-    const toggle = document.getElementById('map-match-toggle');
-    if (!input) return;
-
-    input.addEventListener('input', () => {
-      /* In match mode, typing doesn't filter — it just waits for Enter. */
-      if (searchMode === 'match') return;
-      setTextQuery(input.value);
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' || searchMode !== 'match') return;
-      e.preventDefault();
-      const prompt = input.value.trim();
-      if (prompt) runMapMatch(prompt);
-    });
-    if (clear) {
-      clear.addEventListener('click', () => {
-        input.value = '';
-        setTextQuery('');
-        input.focus();
-      });
-    }
-    if (toggle) {
-      toggle.addEventListener('click', () => {
-        if (searchMode === 'match') {
-          setSearchMode('search');
-          /* Re-apply current input as text filter when switching back. */
-          setTextQuery(input.value);
-        } else {
-          setSearchMode('match');
-          /* Drop the text filter while in match mode (don't surprise-hide pins). */
-          textQuery = '';
-          renderPins();
-          updateSearchCount();
-          writeUrlState();
-        }
-        input.focus();
-      });
-    }
-  }
-
-  // Centre + zoom on a specific pin (called when ?id= is in the URL or from a deep link).
-  function focusPin(id) {
-    const entry = (window.WA?.catalog || []).find(e => e.id === id);
-    if (!entry || !entry.world_x || !entry.world_y) return false;
-    const rect = viewport.getBoundingClientRect();
-    const z = Math.max(zoom, 0.9);  // zoom in a bit so the pin reads
-    zoom = z;
-    tx = (rect.width  / 2) - entry.world_x * z;
-    ty = (rect.height / 2) - entry.world_y * z;
-    applyTransform();
-    activeId = id;
-    renderPins();
-    openDetail(entry);
-    writeUrlState();
-    document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
-      detail: { id },
-    }));
-    return true;
-  }
-
-  function renderTimeChips() {
-    const row = document.querySelector('.map-filter-time');
-    if (!row) return;
-    const chips = [
-      { id: 'all',      label: 'All' },
-      { id: 'tonight',  label: 'Tonight' },
-      { id: 'thisweek', label: 'This week' },
-      { id: 'places',   label: 'Places' },
-    ];
-    row.innerHTML = chips.map(c =>
-      `<button class="m-chip${timeFilter === c.id ? ' m-chip--on' : ''}" data-time="${c.id}" type="button">${c.label}</button>`
-    ).join('');
-    row.querySelectorAll('[data-time]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        timeFilter = btn.dataset.time;
-        renderTimeChips();
-        renderPins();
-        writeUrlState();
-      });
-    });
-  }
-
-  function renderCatChips() {
-    const row = document.querySelector('.map-filter-cat');
-    if (!row) return;
-    const cats = window.WA?.MAP_CATEGORIES || [];
-    const catC = window.WA?.MAP_CAT || {};
-    row.innerHTML = cats.map(cat => {
-      const on = catFilters.has(cat.id);
-      const c  = catC[cat.id];
-      return `<button class="m-chip map-cat-chip${on ? ' m-chip--cat-on' : ''}" data-cat="${cat.id}" type="button"
-        style="${on ? `background:${c?.bg||'#333'};color:#fff;border-color:${c?.bg||'#333'}` : ''}"
-      >${cat.label}</button>`;
-    }).join('');
-    row.querySelectorAll('[data-cat]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.cat;
-        catFilters.has(id) ? catFilters.delete(id) : catFilters.add(id);
-        renderCatChips();
-        renderPins();
-        writeUrlState();
-      });
-    });
-  }
-
-  // ── Pins ──────────────────────────────────────────────────────
-  const PIN_ICONS = {
-    music:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><line x1="4" y1="13" x2="4" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="14" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="14" x2="12" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="13" x2="16" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
-    drink:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><path d="M5 6h10l-1.4 9a2 2 0 01-2 1.6h-3.2a2 2 0 01-2-1.6L5 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.5 9h7" stroke="currentColor" stroke-width="1.2"/></svg>`,
-    vinyl:   `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="0.8" fill="currentColor"/></svg>`,
-    market:  `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><path d="M3 7h14l-1 2v6a1 1 0 01-1 1H5a1 1 0 01-1-1V9L3 7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M4 7l1.5-3h9L16 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
-    culture: `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><rect x="3" y="4" width="14" height="11" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="9" r="2" stroke="currentColor" stroke-width="1.3"/></svg>`,
-    art:     `<svg viewBox="0 0 20 20" width="13" height="13" fill="none"><rect x="6" y="3" width="8" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="8" x2="10" y2="11" stroke="currentColor" stroke-width="1.5"/><path d="M6 11h8l-1 6a1 1 0 01-1 1H8a1 1 0 01-1-1l-1-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
-  };
-
+  // ── Pin / cluster rendering ───────────────────────────────────
   function pinHTML(entry) {
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg: '#333', fg: '#fff' };
     const active = entry.id === activeId;
     const closed = !!entry.isClosed;
-    const num = entry.pin?.num ?? '';
-    const cls = [
+    const num    = entry.pin?.num ?? '';
+    const cls    = [
       'map-pin-new',
       active ? 'map-pin-new--active' : '',
       closed ? 'map-pin-new--closed' : '',
@@ -411,41 +105,38 @@
       style="left:0;top:0;--pin-bg:${c.bg};--pin-fg:${c.fg}">
       <span class="map-pin-new__tail"></span>
       <span class="map-pin-new__circle">
-        <span class="map-pin-new__icon">${PIN_ICONS[kind] || ''}</span>
+        <span class="map-pin-new__icon">${PIN_ICONS[kind] || PIN_ICONS.default}</span>
       </span>
       ${num !== '' ? `<span class="map-pin-new__badge">${num}</span>` : ''}
     </button>`;
   }
 
-  function positionPins() {
-    if (!pinsEl) return;
-    const catalog = window.WA?.catalog || [];
-    pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
-      const entry = catalog.find(e => e.id === btn.dataset.id);
-      if (!entry) return;
-      const s = worldToScreen(entry.world_x, entry.world_y);
-      btn.style.left = `${s.x}px`;
-      btn.style.top  = `${s.y}px`;
-    });
-    /* Reposition cluster bubbles by their stored world centroid. */
-    pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
-      const s = worldToScreen(+btn.dataset.wx, +btn.dataset.wy);
-      btn.style.left = `${s.x}px`;
-      btn.style.top  = `${s.y}px`;
-    });
+  function clusterPinHTML(cl) {
+    const n = cl.entries.length;
+    const counts = {};
+    cl.entries.forEach(e => { const k = normaliseKind(e.kind); counts[k] = (counts[k] || 0) + 1; });
+    const topKind = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    const catC = window.WA?.MAP_CAT || {};
+    const c    = catC[topKind] || { bg: '#444' };
+    /* Cluster centroid is stored as lat/lng so positionPins() can re-project
+       it whenever the map moves. */
+    return `<button class="map-cluster" type="button"
+      data-lat="${cl.lat}" data-lng="${cl.lng}"
+      aria-label="${n} events here" style="left:0;top:0;--cluster-bg:${c.bg}">
+      <span class="map-cluster__count">${n}</span>
+    </button>`;
   }
 
-  // ── Clustering ────────────────────────────────────────────
-  /* Greedy O(n²) screen-distance clustering — adequate for <300 pins.
-     Returns an array of { entries, wx, wy, single } objects.          */
-  const CLUSTER_PX = 50;
+  /* Greedy O(n²) screen-distance clustering, identical math to the old
+     SVG version — just using MapLibre projection instead of worldToScreen. */
   function computeClusters(entries) {
-    if (!entries.length) return [];
-    const pts = entries.map(e => ({
-      e,
-      x: e.world_x * zoom + tx,
-      y: e.world_y * zoom + ty,
-    }));
+    const T = window.WA?.MapTiles;
+    if (!entries.length || !T || !T.isReady()) return [];
+    const pts = entries.map(e => {
+      const p = T.project(e.lng, e.lat);
+      return p ? { e, x: p.x, y: p.y } : null;
+    }).filter(Boolean);
+
     const used = new Set();
     const clusters = [];
     for (let i = 0; i < pts.length; i++) {
@@ -459,26 +150,36 @@
           used.add(j);
         }
       }
-      const wx = members.reduce((s, k) => s + pts[k].e.world_x, 0) / members.length;
-      const wy = members.reduce((s, k) => s + pts[k].e.world_y, 0) / members.length;
-      clusters.push({ entries: members.map(k => pts[k].e), wx, wy, single: members.length === 1 });
+      const lat = members.reduce((s, k) => s + pts[k].e.lat, 0) / members.length;
+      const lng = members.reduce((s, k) => s + pts[k].e.lng, 0) / members.length;
+      clusters.push({
+        entries: members.map(k => pts[k].e),
+        lat, lng,
+        single: members.length === 1,
+      });
     }
     return clusters;
   }
 
-  function clusterPinHTML(cl) {
-    const n = cl.entries.length;
-    /* Pick the dominant kind for cluster colour. */
-    const counts = {};
-    cl.entries.forEach(e => { const k = normaliseKind(e.kind); counts[k] = (counts[k] || 0) + 1; });
-    const topKind = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-    const catC = window.WA?.MAP_CAT || {};
-    const c    = catC[topKind] || { bg: '#444' };
-    return `<button class="map-cluster" type="button"
-      data-wx="${cl.wx}" data-wy="${cl.wy}"
-      aria-label="${n} events here" style="left:0;top:0;--cluster-bg:${c.bg}">
-      <span class="map-cluster__count">${n}</span>
-    </button>`;
+  function positionPins() {
+    if (!pinsEl) return;
+    const T = window.WA?.MapTiles;
+    if (!T || !T.isReady()) return;
+    const catalog = window.WA?.catalog || [];
+    pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
+      const entry = catalog.find(e => e.id === btn.dataset.id);
+      if (!entry) return;
+      const p = T.project(entry.lng, entry.lat);
+      if (!p) return;
+      btn.style.left = `${p.x}px`;
+      btn.style.top  = `${p.y}px`;
+    });
+    pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
+      const p = T.project(+btn.dataset.lng, +btn.dataset.lat);
+      if (!p) return;
+      btn.style.left = `${p.x}px`;
+      btn.style.top  = `${p.y}px`;
+    });
   }
 
   function renderPins() {
@@ -494,7 +195,6 @@
     pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
       btn.addEventListener('click', () => {
-        if (dragged) return;
         const id = btn.dataset.id;
         activeId = (activeId === id) ? null : id;
         renderPins();
@@ -505,85 +205,44 @@
           closeDetail();
         }
         writeUrlState();
-        /* Notify the embedding page (Discover) so it can scroll the
-           matching card into view and highlight it.                     */
         document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
           detail: { id: activeId },
         }));
       });
     });
 
-    /* Cluster pins: clicking zooms in to the cluster centroid. */
+    /* Cluster pins: clicking zooms in via MapLibre. */
     pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
       btn.addEventListener('click', () => {
-        if (dragged) return;
-        const wx = +btn.dataset.wx, wy = +btn.dataset.wy;
-        const rect = viewport.getBoundingClientRect();
-        const newZoom = Math.min(MAX_ZOOM, zoom * 2.2);
-        zoom = newZoom;
-        tx = rect.width  / 2 - wx * newZoom;
-        ty = rect.height / 2 - wy * newZoom;
-        applyTransform();
+        const T = window.WA?.MapTiles;
+        if (!T) return;
+        const lat = +btn.dataset.lat;
+        const lng = +btn.dataset.lng;
+        const m   = T.getMap();
+        const nextZoom = Math.min(18, (m?.getZoom() || 12) + 1.6);
+        T.flyTo(lng, lat, nextZoom);
       });
     });
-
-    updateSearchCount();
   }
 
-  // ── User location puck ────────────────────────────────────────
-  function positionPuck() {
-    if (!userPuckEl || !userLoc) return;
-    const s = worldToScreen(userLoc.worldX, userLoc.worldY);
-    userPuckEl.style.left = `${s.x}px`;
-    userPuckEl.style.top  = `${s.y}px`;
-  }
-
-  function showPuck() {
-    if (!userPuckEl) {
-      userPuckEl = document.createElement('div');
-      userPuckEl.className = 'map-user-puck';
-      userPuckEl.innerHTML = `<span class="map-user-puck__pulse"></span><span class="map-user-puck__halo"></span><span class="map-user-puck__dot"></span>`;
-      pinsEl.appendChild(userPuckEl);
+  function focusPin(id) {
+    const entry = (window.WA?.catalog || []).find(e => e.id === id);
+    if (!entry || entry.lat == null || entry.lng == null) return false;
+    activeId = id;
+    const T = window.WA?.MapTiles;
+    if (T && T.isReady()) {
+      T.flyTo(entry.lng, entry.lat, 15);
     }
-    userPuckEl.hidden = false;
-    positionPuck();
+    renderPins();
+    openDetail(entry);
+    document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
+      detail: { id: activeId },
+    }));
+    return true;
   }
 
-  // ── Locate FAB ────────────────────────────────────────────────
-  function initLocate() {
-    const btn = document.getElementById('btn-locate');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      if (locStatus === 'on') {
-        locStatus = 'off'; userLoc = null;
-        if (userPuckEl) userPuckEl.hidden = true;
-        btn.classList.remove('map-locate-fab--on', 'map-locate-fab--locating');
-        return;
-      }
-      if (!navigator.geolocation) return;
-      locStatus = 'locating';
-      btn.classList.add('map-locate-fab--locating');
-      navigator.geolocation.getCurrentPosition(pos => {
-        const w = (window.WA?.geoToWorld || (() => ({ x: 1030, y: 580 })))(pos.coords.latitude, pos.coords.longitude);
-        userLoc = { worldX: Math.max(20, Math.min(WORLD_W-20, w.x)), worldY: Math.max(20, Math.min(WORLD_H-20, w.y)) };
-        locStatus = 'on';
-        btn.classList.remove('map-locate-fab--locating');
-        btn.classList.add('map-locate-fab--on');
-        showPuck();
-        const rect = viewport.getBoundingClientRect();
-        const s = worldToScreen(userLoc.worldX, userLoc.worldY);
-        tx += rect.width / 2 - s.x;
-        ty += rect.height / 2 - s.y;
-        applyTransform();
-      }, () => {
-        locStatus = 'error';
-        btn.classList.remove('map-locate-fab--locating');
-      }, { enableHighAccuracy: true, timeout: 8000 });
-    });
-  }
-
-  // ── Detail sheet / panel ──────────────────────────────────────
+  // ── Detail sheet / panel (unchanged from before) ─────────────
   function detailHTML(entry) {
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
@@ -594,9 +253,7 @@
       : baseEyebrow;
 
     const isFree = (entry.moodTags || []).includes('free');
-    const priceBadge = isFree
-      ? `<span class="map-detail__price-badge">Free</span>`
-      : '';
+    const priceBadge = isFree ? `<span class="map-detail__price-badge">Free</span>` : '';
 
     const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
     const img = entry.imageUrl
@@ -605,15 +262,10 @@
     const q = entry.quote
       ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
       : '';
-
-    /* External event page link — shown when the pick has a source permalink. */
     const extLink = entry.permalink
       ? `<a class="map-detail__ext-link" href="${entry.permalink}" target="_blank" rel="noopener noreferrer">See event page &rarr;</a>`
       : '';
 
-    /* Map detail → Discover affordances: jump from the pin into Discover
-       with the right filter pre-applied. (When map.js is embedded in
-       Discover these still work — they reload the page with new params.) */
     const listVisible = getVisibleEntries();
     const listHref = textQuery
       ? `discover.html?q=${encodeURIComponent(textQuery)}`
@@ -647,7 +299,7 @@
   }
 
   function syncBookmarks(root) {
-    if (!window.WA?.Bookmarks?.get) return;
+    if (!root || !window.WA?.Bookmarks?.get) return;
     const saved = WA.Bookmarks.get();
     root.querySelectorAll('.bookmark__check').forEach(cb => {
       cb.checked = !!saved[cb.dataset.id];
@@ -672,6 +324,7 @@
     }
     document.getElementById('detail-close')?.addEventListener('click', () => {
       closeDetail(); activeId = null; renderPins(); writeUrlState();
+      document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));
     });
     [sheetEl, detailEl].forEach(el => {
       el.addEventListener('change', e => {
@@ -681,22 +334,21 @@
       });
     });
 
-    /* Close when the user clicks anywhere on the map outside the panel. */
+    /* Close when the user clicks the basemap outside the panel + pins. */
     const panel = isDesktop ? detailEl : sheetEl;
     const handleOutside = (e) => {
       if (panel.contains(e.target)) return;
       if (e.target.closest('.map-pin-new, .map-cluster')) return;
       viewport.removeEventListener('pointerdown', handleOutside);
       closeDetail(); activeId = null; renderPins(); writeUrlState();
+      document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));
     };
-    /* Delay one tick so the click that opened this panel doesn't also close it. */
     setTimeout(() => viewport.addEventListener('pointerdown', handleOutside), 0);
   }
 
   function closeDetail() {
-    sheetEl.hidden = true;
-    detailEl.hidden = true;
-    sheetEl.style.transform = '';
+    if (sheetEl)  { sheetEl.hidden  = true; sheetEl.style.transform = ''; }
+    if (detailEl) { detailEl.hidden = true; }
     document.body.classList.remove('map-detail-open');
   }
 
@@ -724,49 +376,61 @@
 
   // ── Boot ──────────────────────────────────────────────────────
   function boot() {
-    viewport  = document.getElementById('map-viewport');
-    worldWrap = document.getElementById('map-world-wrap');
-    pinsEl    = document.getElementById('map-pins');
-    sheetEl   = document.getElementById('map-sheet');
-    detailEl  = document.getElementById('map-detail');
-    if (!viewport || !worldWrap || !pinsEl) return;
+    viewport = document.getElementById('map-viewport');
+    pinsEl   = document.getElementById('map-pins');
+    sheetEl  = document.getElementById('map-sheet');
+    detailEl = document.getElementById('map-detail');
+    if (!viewport || !pinsEl) return;
 
-    // Inject illustrated SVG world
-    if (window.WA?.mapWorldSVG) worldWrap.innerHTML = WA.mapWorldSVG();
+    const T = window.WA?.MapTiles;
+    if (!T) {
+      console.warn('[map.js] WA.MapTiles not loaded — basemap missing.');
+      return;
+    }
+    T.init('map-canvas', { city: (window.WA && window.WA.CITY) || 'tallinn' });
 
-    initPanZoom();
-    initZoomControls();
-    initLocate();
-    initMapSearch();
+    /* Reposition pins on every camera move; debounced re-cluster on settle. */
+    T.on('move', positionPins);
+    T.on('moveend', () => {
+      clearTimeout(_reclusterTimer);
+      _reclusterTimer = setTimeout(renderPins, 120);
+    });
+    T.on('zoom',  positionPins);
+    T.on('zoomend', () => {
+      clearTimeout(_reclusterTimer);
+      _reclusterTimer = setTimeout(renderPins, 120);
+    });
+
+    /* Zoom controls — wire existing buttons to MapLibre. */
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => T.getMap()?.zoomIn());
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => T.getMap()?.zoomOut());
+    document.getElementById('btn-zoom-fit')?.addEventListener('click', () => T.fitToPicks(getVisibleEntries()));
+
+    /* Locate FAB — use the browser API; MapLibre doesn't add a control. */
+    document.getElementById('btn-locate')?.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        pos => T.flyTo(pos.coords.longitude, pos.coords.latitude, 15),
+        () => console.warn('[map.js] geolocation denied or unavailable'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
 
     document.addEventListener('wa:bookmarks-synced', () => {
       syncBookmarks(sheetEl); syncBookmarks(detailEl);
     });
 
-    // Seed state from URL params before rendering chips/pins. The pin focus
-    // happens after the catalog loads (?id= needs the entry to exist).
-    const urlState = readUrlState();
-    if (urlState.q) {
-      textQuery = urlState.q;
-      const input = document.getElementById('map-search-input');
-      if (input) input.value = urlState.q;
-    }
-    if (urlState.day && urlState.day !== 'all') {
-      timeFilter = urlState.day;
-    }
-    if (urlState.mood) {
-      urlState.mood.split(',').filter(Boolean).forEach(c => catFilters.add(c));
-    }
-
-    renderTimeChips();
-    renderCatChips();
-
     function onCatalogReady() {
-      renderPins();
-      updateSearchCount();
-      // ?id= takes precedence over fitView so deep links land on the pin.
-      if (urlState.id && focusPin(urlState.id)) return;
-      fitView();
+      T.onReady(() => {
+        renderPins();
+        /* Fit to visible pins once on first load — subsequent fits are
+           triggered by Discover when the user explicitly hits "Fit". */
+        T.fitToPicks(getVisibleEntries(), { duration: 0 });
+        /* If discover.js stashed an ?id= in the URL, focus that pin. */
+        const sp = new URLSearchParams(window.location.search);
+        const id = sp.get('id');
+        if (id) focusPin(id);
+      });
     }
 
     if (window.WA?.catalog?.length) onCatalogReady();
@@ -776,15 +440,9 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  /* Public API — Discover page drives the map via these helpers.
-     Phase 3 will move map rendering wholesale into discover-map.js and
-     delete this file; until then these wrappers let Discover treat the
-     map as a visualization layer over its own filter state.            */
+  // ── Public API ────────────────────────────────────────────────
   window.WA = window.WA || {};
   window.WA.MapView = {
-    /* Replace map.js's internal filter state. Caller invokes render()
-       afterwards to re-cluster. Accepts any subset of {q, time, cats,
-       mood, nhoods}. */
     setFilters({ q, time, cats, mood, nhoods } = {}) {
       if (q      !== undefined) textQuery   = q;
       if (time   !== undefined) timeFilter  = time;
@@ -793,9 +451,15 @@
       if (nhoods !== undefined) nhoodFilter = new Set(nhoods);
     },
     render:      () => renderPins(),
-    fitView:     () => fitView(),
-    focusPin:    (id) => focusPin(id),
-    closeDetail: () => { closeDetail(); activeId = null; renderPins(); },
-    isReady:     () => !!viewport,
+    fitView:     () => {
+      const T = window.WA?.MapTiles;
+      if (T) T.fitToPicks(getVisibleEntries());
+    },
+    focusPin,
+    closeDetail: () => {
+      closeDetail(); activeId = null; renderPins();
+      document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));
+    },
+    isReady:     () => !!viewport && !!window.WA?.MapTiles?.isReady(),
   };
 })();

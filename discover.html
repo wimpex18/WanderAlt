@@ -11,7 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
+  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script defer src="./catalog.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
@@ -20,7 +22,7 @@
   <script defer src="./taste.js"></script>
   <script defer src="./mood-chips.js"></script>
   <script defer src="./map-venues.js"></script>
-  <script defer src="./map-world.js"></script>
+  <script defer src="./map-tiles.js"></script>
   <script defer src="./map.js"></script>
   <script defer src="./discover.js"></script>
 </head>
@@ -148,7 +150,7 @@
            Discover drives the filter state via window.WA.MapView.       -->
       <div class="discover-pane discover-pane--map" data-pane="map">
         <div class="map-viewport" id="map-viewport">
-          <div id="map-world-wrap" class="map-world-wrap"></div>
+          <div id="map-canvas" class="map-canvas"></div>
           <div id="map-pins" class="map-pins" aria-live="polite"></div>
         </div>
 

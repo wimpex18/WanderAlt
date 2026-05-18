@@ -2757,40 +2757,29 @@ a.handle:hover { color: var(--c-ink); }
    map pane (and previously the standalone map.html page).
    ============================================================ */
 
-/* Pannable viewport fills the bleed section.
-   Background is intentionally NOT the sea colour — using cream lets the
-   SVG island shape read as an island on a page, not blend into the
-   surround. */
+/* Map viewport — fills the Discover map pane. MapLibre canvas mounts
+   into #map-canvas inside this box; MapLibre handles pan/zoom/cursor. */
 .map-viewport {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  background: var(--c-paper-deep);
+  background: var(--c-paper);
 }
-.map-viewport:active { cursor: grabbing; }
-
-/* World wrap — only element that receives CSS transform.
-   Globally we cap svg { max-width: 100% }; the world SVG must render
-   at its intrinsic 1800x1200 so the scale transform lands correctly. */
-.map-world-wrap {
+/* MapLibre canvas — fills the viewport. MapLibre owns its own grab/zoom
+   cursor states so the parent .map-viewport doesn't need them. */
+.map-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 1800px;
-  height: 1200px;
-  transform-origin: 0 0;
-  will-change: transform;
-  pointer-events: none;
+  inset: 0;
 }
-.map-world-wrap svg {
-  display: block;
-  max-width: none;
-  max-height: none;
-  width: 1800px;
-  height: 1200px;
+/* MapLibre attribution control — quieter than default, matches paper bg */
+.maplibregl-ctrl-attrib {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  background: rgba(246, 243, 236, 0.85);
 }
+.maplibregl-ctrl-attrib a { color: var(--c-ink-mute); }
+/* Hide MapLibre's default logo (we'll keep attribution but remove the badge) */
+.maplibregl-ctrl-logo { display: none; }
 
 /* Pin overlay — screen-space, not transformed */
 .map-pins {

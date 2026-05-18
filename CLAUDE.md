@@ -32,9 +32,11 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `index.html` / `briefing.js` | Briefing — editorial landing (Tonight hero + This Week list). Pure read; no filter UI. |
 | `discover.html` / `discover.js` | **Discover** — unified search/filter/map surface. Replaces the old Search + Map pages. |
 | `discover-redirect.js` | Loaded by the `map.html` and `search.html` redirect stubs; maps legacy params → Discover URL. |
-| `map.js` | Pan/zoom map engine. Exposes `window.WA.MapView` API; embedded inside Discover's map pane. |
+| `map.js` | Pin overlay + clustering + detail panel. Exposes `window.WA.MapView` API; embedded inside Discover's map pane. Pin positions projected via `WA.MapTiles.project(lng, lat)`. |
+| `map-tiles.js` | MapLibre GL basemap. OpenFreeMap vector tiles, custom editorial style (see `map-style.json`). Exposes `window.WA.MapTiles` API used by `map.js`. |
+| `map-style.json` | Custom MapLibre style file — newsprint cream, muted petrol water, oxblood roads, JetBrains-style labels. |
 | `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
-| `map-world.js` | SVG city-plane renderer and category colour palette. |
+| `map-world.js` | Legacy illustrated Tallinn SVG. Still used by `admin.html` pin-placement tool; not loaded on Discover. |
 | `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
 | `search.html` | 5-line redirect stub → `discover.html` (preserves `?q`, `?mode=match` legacy params). |
 | `saved.html` / `saved.js` | Going / Reading / Past segments |
@@ -102,9 +104,14 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 - **URL schema:** `?q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&mood=&sort=relevance|newest|title|curator&id=<pick-id>&ai=<prompt>&mode=match`
   - `?id=` is the active pin — written on pin tap, restored on load, persists across filter changes.
   - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify.
+- **Basemap:** MapLibre GL JS + OpenFreeMap (free, no API key, OSM vector tiles). Custom editorial style at `map-style.json`. Pins are positioned by projecting `picks.lat/lng` to container pixels via `WA.MapTiles.project(lng, lat)`. Picks without lat/lng (≈ 65% of catalog at time of writing) don't render on the map; they still appear in the list pane. Backfill more by linking `picks.venue_id → venues.id` (already populated by `enrich-venues`).
 - **WA.MapView API** (exposed by `map.js`):
   - `setFilters({ q, time, cats, mood, nhoods })` — syncs all 5 filter dimensions into the map engine.
   - `render()`, `fitView()`, `focusPin(id)`, `closeDetail()`, `isReady()`.
+- **WA.MapTiles API** (exposed by `map-tiles.js`):
+  - `init(containerId, opts)`, `project(lng, lat) → {x,y}`, `unproject(x, y) → {lng,lat}`.
+  - `fitToPicks(entries)`, `flyTo(lng, lat, zoom)`.
+  - `on(event, cb)`, `onReady(cb)`, `resize()`, `isReady()`, `getMap()`.
 - **Custom events:**
   - `wa:map-pin-changed` — fired by `map.js` when a pin is tapped or focused; `detail.id` is the pick id (empty string on deselect). `discover.js` listens to scroll+highlight the card and update `?id=`.
   - `wa:mood-changed` — fired by `mood-chips.js` when mood selection changes.

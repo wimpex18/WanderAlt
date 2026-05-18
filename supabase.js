@@ -61,7 +61,9 @@
     } : null,
     world_x:   r.world_x   ?? null,
     world_y:   r.world_y   ?? null,
-    permalink: r.permalink || null,
+    lat:       r.lat       ?? null,
+    lng:       r.lng       ?? null,
+    permalink: null,            /* sourced from staging_messages via separate join — TODO */
     /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });
@@ -82,7 +84,7 @@
         `city=eq.${CITY}&archived_at=is.null` +
         `&select=id,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
-                `pin_num,pin_left,pin_top,pin_eyebrow,world_x,world_y,permalink` +
+                `pin_num,pin_left,pin_top,pin_eyebrow,world_x,world_y,lat,lng` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),
