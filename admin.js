@@ -399,24 +399,20 @@
   const fmtCoords = (lat, lng) =>
     `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-  /* Reverse-geocode via Nominatim — best-effort, used only to show the
-     resolved postal address in the admin UI so the editor can sanity-
-     check their drag. */
+  /* Reverse-geocode via our edge function. Proxies to Nominatim with a
+     single User-Agent identity (respects the OSM usage policy) and keeps
+     editor IPs hidden. Best-effort — only used to show the resolved
+     postal address in the admin UI as a sanity check. */
   const reverseGeocode = async (lat, lng) => {
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
+      const r = await fetch(`${BASE}/functions/v1/geocode-picks`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'reverse', lat, lng }),
+      });
       if (!r.ok) return null;
       const d = await r.json();
-      const a = d.address || {};
-      const parts = [
-        [a.road, a.house_number].filter(Boolean).join(' '),
-        a.postcode, a.city,
-      ].filter(Boolean);
-      return parts.length ? parts.join(', ')
-                          : (d.display_name?.split(',').slice(0,3).join(',') || null);
+      return d?.address || null;
     } catch { return null; }
   };
 
@@ -477,7 +473,10 @@
         style:     './map-style.json',
         center:    PIN_DEFAULT_CENTER,
         zoom:      12,
-        attributionControl: { compact: true },
+        /* The modal is narrow; the stock attribution control crowds the
+           corner even in "compact" mode. Disable it here and surface the
+           OSM credit once below the map (see .admin-pin-map__attr). */
+        attributionControl: false,
         dragRotate: false,
       });
       pinMap.touchZoomRotate.disableRotation();

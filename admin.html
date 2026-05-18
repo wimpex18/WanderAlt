@@ -117,7 +117,13 @@
     .admin-pin-map           { position:relative; width:100%; height:280px;
                                border:1px solid var(--c-rule-strong);
                                background:var(--c-paper-deep); overflow:hidden; }
-    .admin-pin-map .maplibregl-ctrl-attrib { font-family:var(--ff-mono); font-size:9px; }
+    /* MapLibre's default logo would crowd the small panel; hide it. */
+    .admin-pin-map .maplibregl-ctrl-logo { display:none; }
+    /* Manual attribution line — quieter than MapLibre's bubbled control. */
+    .admin-pin-map__attr     { margin:4px 0 0; font-family:var(--ff-mono);
+                               font-size:9px; letter-spacing:0.04em;
+                               color:var(--c-ink-mute); }
+    .admin-pin-map__attr a   { color:inherit; text-decoration:underline; }
 
     /* Discovery review rows */
     .review-row              { padding:var(--s-4) 0; border-bottom:1px solid rgba(26,26,26,.1);
@@ -865,6 +871,12 @@
               </span>
             </label>
             <div id="mf-pin-map" class="admin-pin-map" role="application" aria-label="Pin map"></div>
+            <p class="admin-pin-map__attr">
+              Map data &copy;
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+              contributors &middot; tiles from
+              <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>
+            </p>
             <div style="display:flex;gap:var(--s-3);align-items:baseline;margin-top:var(--s-2);flex-wrap:wrap">
               <span class="meta" id="mf-pin-coords" style="opacity:.7;font-family:var(--ff-mono);font-size:11px">not placed</span>
               <span class="meta" id="mf-pin-address" style="opacity:.7;font-family:var(--ff-mono);font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
