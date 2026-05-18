@@ -611,19 +611,21 @@
       ? `<a class="map-detail__ext-link" href="${entry.permalink}" target="_blank" rel="noopener noreferrer">See event page &rarr;</a>`
       : '';
 
-    /* Map → Search affordances: jump from the pin into search.html. */
+    /* Map detail → Discover affordances: jump from the pin into Discover
+       with the right filter pre-applied. (When map.js is embedded in
+       Discover these still work — they reload the page with new params.) */
     const listVisible = getVisibleEntries();
     const listHref = textQuery
-      ? `search.html?q=${encodeURIComponent(textQuery)}`
-      : 'search.html';
+      ? `discover.html?q=${encodeURIComponent(textQuery)}`
+      : 'discover.html';
     const listLabel = textQuery
       ? `View list (${listVisible.length}) &rarr;`
       : 'View list &rarr;';
     const moreLinks = `<nav class="map-detail__more" aria-label="Related searches">
         ${extLink ? `<span class="map-detail__more-link map-detail__more-link--ext">${extLink}</span>` : ''}
         <a class="map-detail__more-link map-detail__more-link--list" href="${listHref}">${listLabel}</a>
-        <a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
-        ${entry.kind ? `<a class="map-detail__more-link" href="search.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
+        <a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
+        ${entry.kind ? `<a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
       </nav>`;
     return `<div class="map-detail__head">
         <span class="map-detail__eyebrow">${eyebrow}${priceBadge}</span>

@@ -33,13 +33,15 @@
        <path d="M6 3h12v18l-6-4-6 4V3z" />
      </svg>`;
 
-  /* Infer a labelled back link from the previous page. */
+  /* Infer a labelled back link from the previous page.
+     For Discover and venue/curator referrers we preserve the full referrer
+     URL so filter and pick state survive the round-trip.                  */
   const backLink = () => {
     try {
-      const ref = new URL(document.referrer).pathname;
-      if (ref.endsWith('venue.html'))   return { href: document.referrer, label: '&larr; Pick' };
-      if (ref.endsWith('search.html'))  return { href: './search.html',   label: '&larr; Search' };
-      if (ref.endsWith('map.html'))     return { href: './map.html',      label: '&larr; Map' };
+      const ref = new URL(document.referrer);
+      const p   = ref.pathname;
+      if (p.endsWith('venue.html'))    return { href: document.referrer, label: '&larr; Pick' };
+      if (p.endsWith('discover.html')) return { href: document.referrer, label: '&larr; Discover' };
     } catch (_) { /* cross-origin or empty referrer */ }
     return { href: './index.html', label: '&larr; Briefing' };
   };
@@ -83,7 +85,7 @@
                  ${e.moodTags && e.moodTags.length
                    ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${
                        e.moodTags.map(t =>
-                         `<a href="search.html#mood=${encodeURIComponent(t)}" style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);text-decoration:none;">${t}</a>`
+                         `<a href="discover.html#mood=${encodeURIComponent(t)}" style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);text-decoration:none;">${t}</a>`
                        ).join('')}</p>`
                    : ''}
                </div>

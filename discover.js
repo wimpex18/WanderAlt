@@ -1,14 +1,15 @@
 /* ============================================================
    WanderAlt — Discover page
    ------------------------------------------------------------
-   Phase 1a: list view + filter pill row + bottom filter sheet
-   + AI "match me" mode. Map view is reached via the existing
-   map.html link; Phase 1b will embed it inline.
+   Unified search/filter/map surface. Replaced the old standalone
+   map.html and search.html pages (both now redirect stubs).
 
-   This module is intentionally self-contained — it duplicates
-   small bits of search.js (filter, render, runMatch) so the
-   existing Search page keeps working unchanged. Phase 3 deletes
-   search.js and this duplication along with it.
+   Layout: mobile shows one pane at a time (FAB toggles list↔map);
+   desktop ≥1024px splits the panes side-by-side.
+
+   This module orchestrates the URL state, filter pipeline, list
+   rendering and AI "match me" mode. The embedded map pane is
+   driven via window.WA.MapView (exposed by map.js).
    ============================================================ */
 (() => {
   /* ── State ──────────────────────────────────────────────── */
