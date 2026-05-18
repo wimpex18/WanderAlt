@@ -110,13 +110,15 @@ Used by `.map-bleed` and `.seg-tabs`. Set `width: calc(100% + 2 * var(--gutter))
 | Primary button | `.btn-primary` | (685) | — | dark bg on hover |
 | Secondary button | `.btn-secondary` | (693) | — | outlined; fills on hover |
 | Bottom/top nav | `.nav` + `.nav__inner` | 1833 | — | fixed bottom mobile; sticky top desktop |
-| Search box | `.search-box` | (870) | — | bordered `--radius-card` container |
-| Search sort | `.search-sort` | 934 | — | `:disabled` → opacity 0.35 |
+| Search box | `.search-box` | (870) | — | bordered `--radius-card` container; used in Discover |
+| Discover pill | `.discover-pill` | — | `.discover-pill--on`, `.discover-pill--more` | filter shortcuts above results |
+| Sheet chip | `.sheet-chip` | — | `.sheet-chip--on` | category / nhood chips inside filter sheet |
 | Curator row | `.curator-row` | 974 | — | 3-col grid; hover → handle accent |
 | Browse row | `.browse-row` | (1000) | — | 2-col grid; hover → label accent |
 | Seg tabs | `.seg-tabs` + `.seg-tab` | 1112 | — | CSS-only via radio siblings; active → white + lime count |
-| List row | `.list-row` | (1169) | `--going`, `--reading`, `--past`, `--bookmarkable` | see Saved spec |
-| Map sheet | `.map-sheet` | 701 | — | peek height; drag-expand to 60 vh |
+| List row | `.list-row` | (1169) | `--going`, `--reading`, `--past`, `--bookmarkable`, `--active` | `--active` → oxblood left bar + tinted bg |
+| Map sheet | `.map-sheet` | — | — | mobile peek detail; hidden ≥768px (replaced by `.map-detail`) |
+| Map detail | `.map-detail` | — | — | desktop side-panel detail; hidden <768px |
 | Auth panel | `.auth-panel` | (1220) | — | modal overlay |
 | Colophon | `.colophon` | (1360) | — | mono, muted, bottom of page |
 
@@ -126,16 +128,18 @@ Used by `.map-bleed` and `.seg-tabs`. Set `width: calc(100% + 2 * var(--gutter))
 
 The active bottom-nav item is driven entirely in CSS — no per-page JS.
 
+**Four-item nav** (as of Phase 2): Briefing · Discover · Saved · Profile.
+
 **Three-part contract:**
 
-1. `<body data-page="search">` — on the `<body>` in each HTML file. Values: `briefing`, `map`, `search`, `saved`, `profile`.
-2. `<a class="nav__item" data-nav="search">` — `data-nav` on each item; value matches the `data-page` it corresponds to.
+1. `<body data-page="discover">` — on the `<body>` in each HTML file. Values: `briefing`, `discover`, `saved`, `profile`. (Venue and curator pages use `data-page="venue"` / `data-page="curator"` — they don't highlight any nav item.)
+2. `<a class="nav__item" data-nav="discover">` — `data-nav` on each item; value matches the `data-page` it corresponds to.
 3. `aria-current="page"` — set on the matching nav item for accessibility. The visual active state comes from CSS selectors, not this attribute.
 
 **CSS selector chain** (nav section of `styles.css`):
 
 ```css
-body[data-page="search"] .nav__item[data-nav="search"] {
+body[data-page="discover"] .nav__item[data-nav="discover"] {
   background: var(--c-ink);
   color: var(--c-paper);
   flex: 0 0 auto;
@@ -143,14 +147,14 @@ body[data-page="search"] .nav__item[data-nav="search"] {
   flex-direction: row;
   gap: 6px;
 }
-body[data-page="search"] .nav__item[data-nav="search"] .nav__label {
+body[data-page="discover"] .nav__item[data-nav="discover"] .nav__label {
   display: block;
 }
 ```
 
-Active item expands to show its text label; all inactive items hide the label (`display: none` on `.nav__label` by default). One such block exists for each of the five pages.
+Active item expands to show its text label; all inactive items hide the label (`display: none` on `.nav__label` by default). One such block exists for each of the four nav pages.
 
-**Adding a new page:** create the HTML file with `<body data-page="newpage">`, add a nav item with `data-nav="newpage"` to every existing HTML file's `<nav>`, add the two CSS blocks above for `newpage`.
+**Adding a new nav page:** create the HTML file with `<body data-page="newpage">`, add a nav item with `data-nav="newpage"` to every existing HTML file's `<nav>`, add the two CSS blocks above for `newpage`.
 
 ---
 
@@ -186,71 +190,56 @@ Quote font is scoped: `.tonight-card .tonight__quote p` overrides `--fs-quote` (
 
 **Surprise me** (`#surprise-btn`): cycles Tonight through catalog; respects `prefers-reduced-motion`.
 
-### Map (`map.html`)
+### Discover (`discover.html`)
 
-Full-bleed canvas via `.map-bleed` (full-bleed escape applied). Static SVG city plane illustration — no tile map.
+Unified search + filter + map surface. Replaced the old `map.html` and `search.html` pages. Those files are now 5-line redirect stubs that forward legacy URLs via `discover-redirect.js`.
 
-**Pins**: rendered dynamically by `map.js:renderPins()` from the live catalog. Static pin buttons in `map.html` are removed on init and replaced with catalog-sourced buttons. Each pin button gets `style="left:XX%;top:YY%"` from `entry.pin.left` / `entry.pin.top`.
+**URL schema:** `?q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&sort=relevance|newest|title|curator&id=<pick-id>&ai=<prompt>&mode=match`
+- `?id=` is the active pin — written on pin tap, persists across filter changes, restored on popstate.
+- `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify with search params.
 
-**Pin coordinate table** (current Tallinn catalog):
+**Layout — mobile (< 1024px):** one pane at a time. Default: list. A floating "Map" FAB (`.discover-view-fab`) bottom-right toggles `data-view` on `#discover-panes` between `list` and `map`.
 
-| Pin | Venue | left% | top% |
-|---|---|---|---|
-| 1 | Sveta Baar | 34% | 38% |
-| 2 | Fotografiska | 58% | 30% |
-| 3 | Paavli Kultuurivabrik | 22% | 58% |
-| 4 | Kai Art Center | 72% | 52% |
-| 5 | Turntable Tallinn | 46% | 70% |
-| 6 | Võta või Jäta | 64% | 76% |
-| 7 | Köögi Galerii | 28% | 22% |
+**Layout — desktop (≥ 1024px):** CSS grid split view always on. List ~480px left, map fills right. FAB is hidden. `?view=` param is ignored.
 
-**Adding a pin**: add `pin: { num: N, left: 'XX%', top: 'YY%', eyebrow: 'NEIGHBORHOOD' }` to the catalog entry. No HTML change needed.
+**Filter pill row** (`.discover-pills`): Tonight · This week · Free · + Filters. Pills toggle `state.time` or `state.cats`. "+ Filters" opens the bottom sheet.
 
-**Pin SVG**: teardrop path, `stroke-width: 1.2`. CSS drives selected fill: `.map-pin[aria-pressed="true"]` → `--c-accent` on the path. Number is a `<text>` inside the SVG.
+**Filter sheet** (`.discover-sheet`): slides up from bottom on mobile, from left on desktop. Contains category chips, neighborhood chips, sort select. "Apply" commits; "Clear" resets all.
 
-**Bottom sheet** (`.map-sheet`):
-
-```
-.map-sheet                          ← position: absolute; bottom: 0
-  .map-sheet__handle                ← drag target, grab cursor
-  .map-sheet__head
-    .map-sheet__num                 ← lime 32×32px badge
-    .map-sheet__body
-      flex row: .map-sheet__tonight + .map-sheet__pos ("01 / 07")
-      .map-sheet__title <a>
-      .meta
-    .map-sheet__close
-  .map-sheet__quote
-  .map-sheet__foot (.btn-primary + label.btn-secondary.bookmark)
-```
-
-`.map-sheet__pos` is `position: static` inside a flex row — not absolutely positioned.
-
-**Drag-expand** (`map.js:207–306`): `pointerdown` on `.map-sheet__handle` captures pointerId; `pointermove` sets `sheet.style.height` live. On `pointerup`, snaps to peek (clear inline height) or `60vh` based on drag delta vs. `SNAP_DELTA = 48px`. Tap with no drag toggles. Desktop: sheet is `max-width: 720px` centered via `transform: translateX(-50%)`.
-
-**Filter chips** (`.map-filters`): `All / Tonight / This week / Places`. Predicates in `map.js:CHIP_PREDICATES`. Mood chips compose with AND semantics; both call `applyVisibility()`.
-
-**SVG neighborhood labels**: Tallinn-specific; hidden by `map.js` when `WA.CITY !== 'tallinn'`.
-
-### Search (`search.html`)
-
-Browse state (empty input): Curators (`.curator-rows`) + Neighborhoods + By Kind (`.browse-rows`). Browse rows are rebuilt from the live catalog by `search.js:populateBrowse()`. Any `[data-search]` row fills the input on click, triggering keyword search.
-
-**Two modes** (`data-mode` on `.search-input-wrap`):
-- `search` (default): filters `title, venue, neighborhood, kind, handle, quote` on every keystroke
-- `match`: natural-language prompt sent to `match-pick` edge function (Groq) on Enter; shows `.match-card` result
-
-**Sort control** (`#search-sort`): relevance (default) / newest / A→Z / by curator. Applied after text + mood filters. `disabled` when result count is 0 (opacity 0.35). Resets to `relevance` when query clears.
-
-**States:**
+**List pane states:**
 
 | Condition | What's shown |
 |---|---|
-| Empty input, no mood | Browse sections; results hidden; sort enabled (reset to relevance) |
-| Input has value or mood active | Browse hidden; `#search-results-section` with count |
-| No results | `#search-empty` with copy; sort `disabled` |
-| Match mode loading | `.match-loading` in `#match-result` |
-| Match mode result | `.match-card` with why-text, curator handle, venue block |
+| No filters, no query | Browse sections (Curators / Neighborhoods / By kind) |
+| Any filter or query active | `#discover-results-section` with count + `.list-rows` |
+| No results | `#discover-empty` with contextual copy |
+| AI mode loading | `.match-loading` in `#discover-match-result` |
+| AI mode result | Hero `.match-card` + secondary `.list-rows` |
+
+**Map pane** (`.discover-pane--map`): same DOM structure as the old `map.html` (`#map-viewport`, `#map-world-wrap`, `#map-pins`, `#map-sheet`, `#map-detail`). `map.js` boots identically; `discover.js` drives it via `window.WA.MapView`.
+
+**WA.MapView API** (exposed at end of `map.js` IIFE):
+
+| Method | Description |
+|---|---|
+| `setFilters({ q, time, cats, mood, nhoods })` | Push all 5 filter dimensions into the map engine |
+| `render()` | Re-render pins with current filter state |
+| `fitView()` | Fit/zoom the viewport to show all visible pins |
+| `focusPin(id)` | Select a pin by pick id, open detail panel, dispatch `wa:map-pin-changed` |
+| `closeDetail()` | Close the detail panel, clear active pin |
+| `isReady()` | Returns true once the SVG world has been injected |
+
+**Custom events:**
+
+| Event | Fired by | Payload | Consumed by |
+|---|---|---|---|
+| `wa:map-pin-changed` | `map.js` on pin tap/focus/deselect | `{ id }` (empty string on deselect) | `discover.js` — highlights card, writes `?id=` to URL |
+| `wa:mood-changed` | `mood-chips.js` | `{ tags: string[] }` | `discover.js`, `briefing.js` |
+| `wa:catalog-ready` | `supabase.js` | — | all pages |
+
+**Pin clustering:** greedy O(n²) screen-distance algorithm (50px radius), debounced re-render 180ms on pan/zoom. Cluster button shows count badge; click zooms in. Implemented in `map.js`.
+
+**Adding a map pin:** set `world_x` and `world_y` (0–1 fractions of the 1800×1200 SVG world) on the `picks` row. `map.js:renderPins()` handles placement automatically — no HTML change needed.
 
 ### Saved (`saved.html`)
 
@@ -297,7 +286,7 @@ Mobile-first. Two breakpoints.
 - Body switches to `display: flex; flex-direction: column; min-height: 100vh`; bottom padding removed
 - `.topbar`: `position: sticky` → `static`, `order: 1`
 - `.nav`: fixed bottom → `position: sticky; top: 0; order: 2` (masthead below wordmark, above main)
-- `.map-bleed`: `calc(100vh - 200px)`, clamped 580–820px; `.map-sheet` centered with `max-width: 720px`
+- Discover split view activates at ≥1024px: CSS grid `480px 1fr`; `.discover-pane--map` fills remaining width
 - `.thumb--lg`: 72px → 88px; `.thumb`: 48px → 64px
 - `.tonight-card .tonight__quote p`: 22px → 26px
 - `.tonight-card__title`: 22px → 26px
@@ -377,17 +366,15 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 ### Adding a new map pin
 
-1. Add a `pin` object to the catalog entry (or the Supabase `picks` row): `{ num: 8, left: '55%', top: '45%', eyebrow: 'KALAMAJA' }`.
-2. `map.js:renderPins()` inserts the button automatically — no HTML change needed.
-3. The pos counter (`01 / 07`) updates to reflect the new total automatically via `visibleTotal`.
+Set `world_x` and `world_y` on the `picks` row in Supabase (0–1 fractions of the 1800×1200 SVG world). `map.js:renderPins()` places the pin automatically — no HTML change needed. The Discover list also gains an "on map →" link for that pick automatically.
 
 ### Adding a new neighborhood
 
-Two places: (1) the SVG city-plane illustration (baked-in text label); (2) a `<li class="browse-row" data-search="Name">` in the Neighborhoods section of `search.html`.
+One place: the SVG city-plane illustration (baked-in text label in `map-world.js`). The Neighborhoods browse section in Discover is populated dynamically from the live catalog — no manual entry needed.
 
 ### Adding a new kind/type
 
-One place: By Kind browse rows in `search.html`. `search.js` filters on `entry.kind` matching `data-search`.
+No manual entry needed. The "By kind" browse section in Discover is built dynamically from the live catalog by `discover.js:populateBrowse()`. To add it to the category filter chips, add an entry to `WA.MAP_CATEGORIES` in `map-venues.js`.
 
 ### Changing the accent color
 

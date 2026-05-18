@@ -487,6 +487,19 @@
   /* ── Init ───────────────────────────────────────────── */
   /* Two-phase: bindOnce() wires DOM handlers exactly once; renderAll()
      can re-run on every catalog refresh (static → live).               */
+
+  /* Highlight the card matching state.id (if any). Called after every
+     renderList() so the active card tracks the open pin even on first
+     load — map.js fires wa:map-pin-changed before discover.js binds
+     its listener, so we can't rely on the event for the initial paint. */
+  const highlightActiveCard = () => {
+    if (!resultsList || !state.id) return;
+    resultsList.querySelectorAll('.list-row--active').forEach(el =>
+      el.classList.remove('list-row--active'));
+    const card = resultsList.querySelector(`.list-row[data-id="${CSS.escape(state.id)}"]`);
+    if (card) card.classList.add('list-row--active');
+  };
+
   const renderAll = () => {
     populateBrowse((window.WA && window.WA.catalog) || []);
     if (state.mode === 'match' && state.ai) {
@@ -494,6 +507,7 @@
     } else {
       run();
     }
+    highlightActiveCard();
     /* If we booted into map view (URL: ?view=map), refit once after the
        map module has had a tick to inject its SVG world. */
     if (state.view === 'map') {

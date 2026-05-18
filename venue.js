@@ -44,13 +44,14 @@
   };
 
   /* Infer a labelled back link from the previous page.
-     For Discover we preserve the full referrer URL (including all active
-     filter params) so the user lands back in exactly the state they left. */
+     For Discover and curator pages we preserve the full referrer URL so
+     the user lands back in exactly the state they left.                 */
   const backLink = () => {
     try {
       const ref = new URL(document.referrer);
       const p   = ref.pathname;
       if (p.endsWith('discover.html')) return { href: document.referrer, label: '&larr; Discover' };
+      if (p.endsWith('curator.html'))  return { href: document.referrer, label: '&larr; Curator' };
       if (p.endsWith('saved.html'))    return { href: './saved.html',     label: '&larr; Saved' };
     } catch (_) { /* cross-origin or empty referrer */ }
     return { href: './index.html', label: '&larr; Briefing' };
