@@ -29,19 +29,25 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 
 | File | Role |
 |---|---|
-| `index.html` / `briefing.js` | Briefing — landing page (Tonight + This Week) |
-| `map.html` / `map.js` | Map screen with 7 dynamic pins + drag-expand sheet |
-| `search.html` / `search.js` | Live keyword search + AI "match me" mode |
+| `index.html` / `briefing.js` | Briefing — editorial landing (Tonight hero + This Week list). Pure read; no filter UI. |
+| `discover.html` / `discover.js` | **Discover** — unified search/filter/map surface. Replaces the old Search + Map pages. |
+| `discover-redirect.js` | Loaded by the `map.html` and `search.html` redirect stubs; maps legacy params → Discover URL. |
+| `map.js` | Pan/zoom map engine. Exposes `window.WA.MapView` API; embedded inside Discover's map pane. |
+| `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
+| `map-world.js` | SVG city-plane renderer and category colour palette. |
+| `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
+| `search.html` | 5-line redirect stub → `discover.html` (preserves `?q`, `?mode=match` legacy params). |
 | `saved.html` / `saved.js` | Going / Reading / Past segments |
-| `venue.html` / `venue.js` | Pick detail page — quote, venue, context, more from curator |
+| `venue.html` / `venue.js` | Pick detail page — quote, venue, context, more from curator. Back-link returns to full Discover URL (filters preserved). |
 | `curator.html` / `curator.js` | Curator profile — bio + all picks |
 | `profile.html` / `profile.js` | Account — bookmarks, digest, export, delete |
 | `admin.html` / `admin.js` | Admin panel — pick/venue CRUD, pipeline, column approval, enrichment |
-| `catalog.js` | Static fallback catalog (used if Supabase fetch fails). Exposes `WA.catalog`, `WA.past`, `WA.curators` |
+| `catalog.js` | Static fallback catalog. Exposes `WA.catalog`, `WA.past`, `WA.curators` |
 | `supabase.js` | Live data fetcher; exposes `WA.BASE_URL` + `WA.ANON_KEY`; fires `wa:catalog-ready` |
 | `auth.js` | Email/password + Google OAuth, password reset; dispatches `wa:signed-in` / `wa:signed-out` |
 | `bookmark.js` | localStorage primary store + Supabase cloud sync; fires `wa:bookmarks-synced` |
-| `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter) |
+| `taste.js` | Taste-profile onboarding (energy/company/money axes); exposes `WA.taste.matchParams()` |
+| `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter via `#mood=…` hash) |
 | `styles.css` | All styles. Every design decision lives as a `:root` CSS variable. |
 
 ## Visual conventions (Claude cannot infer these)
@@ -88,15 +94,33 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 - **Crons own the schedule.** `process-staging` runs every 30 min; `ingest-telegram` nightly at 02:15 UTC; `generate-context` at 02:30; `enrich-venues` at 03:30; `send-digest` Saturday 09:00 UTC. Only touch a schedule if the user asks.
 - **Edge function versions:** deploy via Supabase MCP, confirm the returned version number, then stop. Do not test-fire manually in a loop.
 
+## Discover page — architecture notes
+
+`discover.html` is the canonical discovery surface. It replaced `search.html` and the standalone `map.html`. Key facts for any future work:
+
+- **Bottom nav:** 4 items — Briefing · Discover · Saved · Profile. All five HTML pages share this nav.
+- **URL schema:** `?q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&mood=&sort=relevance|newest|title|curator&id=<pick-id>&ai=<prompt>&mode=match`
+  - `?id=` is the active pin — written on pin tap, restored on load, persists across filter changes.
+  - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify.
+- **WA.MapView API** (exposed by `map.js`):
+  - `setFilters({ q, time, cats, mood, nhoods })` — syncs all 5 filter dimensions into the map engine.
+  - `render()`, `fitView()`, `focusPin(id)`, `closeDetail()`, `isReady()`.
+- **Custom events:**
+  - `wa:map-pin-changed` — fired by `map.js` when a pin is tapped or focused; `detail.id` is the pick id (empty string on deselect). `discover.js` listens to scroll+highlight the card and update `?id=`.
+  - `wa:mood-changed` — fired by `mood-chips.js` when mood selection changes.
+- **Desktop split view:** ≥1024px CSS grid, list ~480px left / map fills right. `view` param ignored on desktop.
+- **Mobile:** list or map, toggled by FAB. `view=map` in URL shows map pane.
+- **popstate:** `discover.js` has a `popstate` listener — browser back/forward fully restores state without a page reload.
+
 ## LLM model policy (do not deviate)
 
-- **Gemini:** `gemini-2.5-flash` everywhere. `-pro` and `gemini-2.0-flash` return 404 "no longer available to new users" — never use them.
+- **Gemini:** `gemini-2.5-flash` everywhere. `-pro` and `gemini-2.0-flash` return 404 — never use them.
   - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
-- **Groq:** `llama-3.3-70b-versatile` for real-time `match-pick`; also fallback in `process-staging`.
+- **Groq:** primary `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`. Used in `match-pick` and as fallback in `process-staging`.
 - Current per-function status:
   - `process-staging` → Gemini 2.5 Flash + Groq fallback
   - `draft-column`, `generate-context`, `send-digest`, `enrich-venues` → Gemini 2.5 Flash
-  - `match-pick` → Groq only
+  - `match-pick` → Groq only (v8 — always `find_many`, topK=5; `find_one` mode removed)
 
 ## Cloud-session notes
 

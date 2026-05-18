@@ -10,34 +10,39 @@ First city: **Tallinn**. First screen: **Briefing** (the default landing).
 
 ```
 .
-├── index.html       # Briefing screen — landing page
-├── map.html         # Map screen — full-bleed city plane with 7 pins
-├── search.html      # Search screen — input + curators / neighborhoods / by kind
-├── saved.html       # Saved screen — Going / Reading / Past segments
-├── venue.html       # Venue detail screen — full pick detail, curator quote, "more from" section
-├── curator.html     # Curator profile screen — handle, tagline, bio, all picks
-├── profile.html     # User account screen — bookmarks, digest, export, delete account
-├── admin.html       # Admin panel — pick/venue CRUD, pipeline monitor, column approval
-├── 404.html         # 404 page — matches site aesthetic
-├── styles.css       # All styles, CSS variables in :root for easy tuning
-├── catalog.js       # Static fallback catalog — used when Supabase is unreachable
-├── supabase.js      # Live data layer — fetches from Supabase, exposes WA.BASE_URL + WA.ANON_KEY
-├── auth.js          # Email/password + Google OAuth + password reset; session in localStorage
-├── bookmark.js      # Bookmark store — localStorage primary + Supabase cloud sync when signed in
-├── briefing.js      # Briefing renderer — Tonight hero + This Week; bookmark wiring
-├── map.js           # Pin → sheet wiring; filter chips; drag-expand on sheet handle
-├── search.js        # Search filtering — live input + AI match-me mode
-├── saved.js         # Reading list renderer — injects bookmarked rows from catalog
-├── venue.js         # Venue detail — quote, venue, context, enrichment, more from curator
-├── curator.js       # Curator profile renderer — reads ?handle=, renders bio + picks list
-├── profile.js       # Profile renderer — stats, export, digest, delete account
-├── admin.js         # Admin panel logic — pick/venue CRUD, pipeline, columns, enrichment
-├── city.js          # City switcher (multi-city scaffold)
-├── mood-chips.js    # Mood-tag filter chips on Briefing
-├── assets/          # SVG icons / static assets
-├── docs/archive/    # Wireframes + market research (gitignored, local only)
-├── CLAUDE.md        # Claude Code instructions
-├── HANDOFF.md       # Engineering reference — tokens, components, state matrices
+├── index.html            # Briefing — editorial landing page (Tonight + This Week). No filter UI.
+├── discover.html         # Discover — unified search + filter + map surface (replaces map + search)
+├── map.html              # Redirect stub → discover.html?view=map (preserves legacy ?id, ?day params)
+├── search.html           # Redirect stub → discover.html (preserves legacy ?q, ?mode=match params)
+├── saved.html            # Saved — Going / Reading / Past segments
+├── venue.html            # Venue detail — curator quote hero, venue block, context, more from curator
+├── curator.html          # Curator profile — handle, tagline, bio, all picks
+├── profile.html          # User account — bookmarks, digest, export, delete account
+├── admin.html            # Admin panel — pick/venue CRUD, pipeline monitor, column approval
+├── 404.html              # 404 page — matches site aesthetic
+├── styles.css            # All styles, CSS variables in :root for easy tuning
+├── catalog.js            # Static fallback catalog — used when Supabase is unreachable
+├── supabase.js           # Live data layer — fetches from Supabase, fires wa:catalog-ready
+├── auth.js               # Email/password + Google OAuth + password reset
+├── bookmark.js           # Bookmark store — localStorage primary + Supabase cloud sync
+├── briefing.js           # Briefing renderer — Tonight hero + This Week list
+├── discover.js           # Discover orchestrator — URL state, filters, list render, AI mode, popstate
+├── discover-redirect.js  # Legacy URL mapper — loaded by the map/search redirect stubs
+├── map.js                # Pan/zoom map engine — exposes window.WA.MapView API; embedded in Discover
+├── map-venues.js         # Category definitions (WA.MAP_CATEGORIES) shared by map + discover
+├── map-world.js          # SVG city-plane renderer and category colour palette
+├── saved.js              # Saved renderer — injects bookmarked rows from catalog
+├── venue.js              # Venue detail renderer — back-link returns to full Discover URL
+├── curator.js            # Curator profile renderer — reads ?handle=
+├── profile.js            # Profile renderer — stats, export, digest, delete account
+├── admin.js              # Admin panel logic
+├── taste.js              # Taste-profile onboarding (energy/company/money axes)
+├── city.js               # City switcher (multi-city scaffold)
+├── mood-chips.js         # Mood-tag filter chips; writes to #mood= hash
+├── assets/               # SVG icons / static assets
+├── docs/archive/         # Wireframes + market research (gitignored, local only)
+├── CLAUDE.md             # Claude Code instructions (file map, conventions, API keys, LLM policy)
+├── HANDOFF.md            # Engineering reference — tokens, components, state matrices
 └── README.md
 ```
 
@@ -149,12 +154,12 @@ Or Git-connected:
 - **Cloud bookmarks** (`bookmark.js`) — localStorage primary store with Supabase `bookmarks` table sync on sign-in. `wa:bookmarks-synced` event triggers Briefing and Saved re-render.
 - **Briefing** — Tonight hero + This Week list rendered from catalog; bookmark toggles persist via `localStorage`; curator handles link to profile pages. Thumbnails show real `image_url` photos when available, CSS halftone placeholder otherwise.
 - **Map** — full-bleed hand-drawn plane, dynamic pins from live catalog (`pin_num/left/top`), peek bottom sheet with **drag-expand** (pointer events, snap to peek/60 vh). **Filter chips** (Tonight / This week / Places) show and hide pins; `01/07` pos counter tracks the filtered set.
-- **Search** — live filtering across the full catalog + past corpus on every keystroke. Browse rows (curators, neighborhoods, by kind) act as one-tap search shortcuts. Past entries surface as compact archive rows.
+- **Discover** (`discover.html`) — unified search + filter + map surface. Replaces the old standalone Search and Map pages. Mobile-first (list default, Map FAB to toggle). Desktop ≥1024px splits list left / map right. Shared filter state across both panes (q, time, category, neighborhood, mood). Filter pill row + bottom-sheet ("All filters") for categories, neighborhoods, sort. AI "ask in plain English" mode (`match-pick`, always `find_many`). `?id=` deep-links to an open pin — survives filter changes and browser back/forward. Legacy `map.html?…` and `search.html?…` URLs redirect to Discover via `discover-redirect.js`.
 - **Saved** — Going / Reading / Past segments with CSS-only tab switching. Going and Reading rows link to venue detail; re-renders on `wa:bookmarks-synced`.
 - **Venue detail** (`venue.html`) — full pick detail: curator quote hero, venue block + bookmark, "More from @handle" section, expandable "Why this matters" context (auto-generated by `generate-context`, hidden until content exists). Linked from every result surface.
 - **Curator profiles** (`curator.html`) — handle, tagline, bio, and all picks by that curator. Linked from every handle across the site.
 - **404 page** (`404.html`) — matches site aesthetic; static, no JS.
-- **AI search: Match me** (`search.html`) — natural-language pick finder powered by `match-pick` (Groq Llama-3.3-70b). Toggle between keyword and AI mode on the search page.
+- **AI search: Match me** — natural-language pick finder powered by `match-pick` v8 (Groq, primary model `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`). Always returns up to 5 ranked hits (`find_many`). Accessible via the "ask in plain English →" link on Discover.
 - **OG images** (`og-image` edge function) — 1200×630 PNG cards for picks and curator pages via Satori + @resvg/resvg-wasm. Cached 24 h.
 - **Curator's column** — weekly editorial draft auto-generated by `draft-column` (Gemini 2.5 Flash, Mondays 08:00 UTC), approved in admin panel, rendered on Briefing page.
 - **Autonomous content pipeline** (Supabase Edge Functions + pg_cron) — Deno functions on cron schedules, no manual entry:
