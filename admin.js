@@ -127,7 +127,8 @@
       `city=eq.${currentCity}` +
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
-               'valid_until,quote,handle,context_md,image_url,world_x,world_y' +
+               'valid_until,quote,handle,context_md,image_url,world_x,world_y,' +
+               'lat,lng,address,coords_source,coords_locked' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
     );
@@ -371,7 +372,12 @@
     }
 
     /* Pin position editor — seed and render. */
-    initPinMap(pick?.world_x ?? null, pick?.world_y ?? null);
+    initPinMap(
+      pick?.lat ?? null,
+      pick?.lng ?? null,
+      pick?.address ?? '',
+      !!pick?.coords_locked,
+    );
 
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -379,82 +385,140 @@
   };
 
   /* ──────────────────────────────────────────────────────────────
-     PIN POSITION EDITOR
-     Renders the illustrated world SVG into a small panel inside the
-     pick modal. Click anywhere → updates world_x/y and re-renders
-     the marker. Values are submitted with the rest of the form.
+     PIN POSITION EDITOR (MapLibre)
+     A draggable marker on a small basemap inside the pick modal.
+     dragend → hidden #mf-lat / #mf-lng + reverse-geocode address.
+     "Lock coords" checkbox sets picks.coords_locked = true so the
+     nightly geocode-picks cron won't overwrite manual placements.
      ────────────────────────────────────────────────────────────── */
-  const WORLD_W = 1800, WORLD_H = 1200;
-  let pinMapSvgRendered = false;
+  const PIN_DEFAULT_CENTER = [24.7536, 59.4370]; /* Tallinn */
+  let pinMap = null;        /* maplibregl.Map */
+  let pinMarker = null;     /* maplibregl.Marker */
+  let pinManualMove = false; /* set true once the user drags the marker */
 
-  const renderPinMarker = () => {
-    const map  = $('mf-pin-map');
-    const wxEl = $('mf-world-x');
-    const wyEl = $('mf-world-y');
-    const txt  = $('mf-pin-coords');
-    if (!map || !wxEl || !wyEl) return;
+  const fmtCoords = (lat, lng) =>
+    `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-    let marker = map.querySelector('.admin-pin-map__marker');
-    if (!marker) {
-      marker = document.createElement('div');
-      marker.className = 'admin-pin-map__marker';
-      map.appendChild(marker);
-    }
-
-    const wx = parseFloat(wxEl.value);
-    const wy = parseFloat(wyEl.value);
-    if (!Number.isFinite(wx) || !Number.isFinite(wy)) {
-      marker.hidden = true;
-      if (txt) txt.textContent = 'not placed';
-      return;
-    }
-    marker.hidden = false;
-    marker.style.left = `${(wx / WORLD_W) * 100}%`;
-    marker.style.top  = `${(wy / WORLD_H) * 100}%`;
-    if (txt) txt.textContent = `world_x: ${Math.round(wx)}, world_y: ${Math.round(wy)}`;
+  /* Reverse-geocode via Nominatim — best-effort, used only to show the
+     resolved postal address in the admin UI so the editor can sanity-
+     check their drag. */
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      if (!r.ok) return null;
+      const d = await r.json();
+      const a = d.address || {};
+      const parts = [
+        [a.road, a.house_number].filter(Boolean).join(' '),
+        a.postcode, a.city,
+      ].filter(Boolean);
+      return parts.length ? parts.join(', ')
+                          : (d.display_name?.split(',').slice(0,3).join(',') || null);
+    } catch { return null; }
   };
 
-  const initPinMap = (world_x, world_y) => {
-    const map  = $('mf-pin-map');
-    const wxEl = $('mf-world-x');
-    const wyEl = $('mf-world-y');
-    if (!map || !wxEl || !wyEl) return;
+  const setPinCoords = (lat, lng, address) => {
+    const latEl  = $('mf-lat');
+    const lngEl  = $('mf-lng');
+    const txtEl  = $('mf-pin-coords');
+    const addrEl = $('mf-pin-address');
+    if (!latEl || !lngEl) return;
+    if (lat == null || lng == null) {
+      latEl.value = ''; lngEl.value = '';
+      if (txtEl)  txtEl.textContent  = 'not placed';
+      if (addrEl) addrEl.textContent = '';
+      if (pinMarker) pinMarker.remove();
+      pinMarker = null;
+      return;
+    }
+    latEl.value = String(lat);
+    lngEl.value = String(lng);
+    if (txtEl)  txtEl.textContent  = fmtCoords(lat, lng);
+    if (addrEl) addrEl.textContent = address || '';
+  };
 
-    wxEl.value = world_x ?? '';
-    wyEl.value = world_y ?? '';
+  const placeMarker = (lat, lng) => {
+    if (!pinMap) return;
+    if (pinMarker) pinMarker.setLngLat([lng, lat]);
+    else {
+      pinMarker = new maplibregl.Marker({ draggable: true, color: '#8a2a1a' })
+        .setLngLat([lng, lat])
+        .addTo(pinMap);
+      pinMarker.on('dragend', async () => {
+        const ll = pinMarker.getLngLat();
+        pinManualMove = true;
+        setPinCoords(ll.lat, ll.lng, '…resolving…');
+        const addr = await reverseGeocode(ll.lat, ll.lng);
+        if (addr) {
+          const addrEl = $('mf-pin-address');
+          if (addrEl) addrEl.textContent = addr;
+        }
+      });
+    }
+  };
 
-    /* Render the SVG once — re-use on every modal open. */
-    if (!pinMapSvgRendered) {
-      if (window.WA?.mapWorldSVG) {
-        map.innerHTML = WA.mapWorldSVG();
-        pinMapSvgRendered = true;
-      } else {
-        /* map-world.js failed to load — show a plain backdrop so clicks still work */
-        map.innerHTML =
-          `<svg viewBox="0 0 ${WORLD_W} ${WORLD_H}"><rect width="${WORLD_W}" height="${WORLD_H}" fill="#eee"/></svg>`;
-        pinMapSvgRendered = true;
+  const initPinMap = (lat, lng, address, locked) => {
+    pinManualMove = false;
+    const lockedEl = $('mf-coords-locked');
+    if (lockedEl) lockedEl.checked = !!locked;
+    setPinCoords(lat ?? null, lng ?? null, address ?? '');
+
+    if (!pinMap) {
+      if (typeof maplibregl === 'undefined') {
+        const el = $('mf-pin-map');
+        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre failed to load — coords editable via lat/lng above.</div>';
+        return;
       }
-      map.addEventListener('click', (e) => {
-        const rect = map.getBoundingClientRect();
-        const wx = ((e.clientX - rect.left) / rect.width)  * WORLD_W;
-        const wy = ((e.clientY - rect.top)  / rect.height) * WORLD_H;
-        wxEl.value = Math.round(wx);
-        wyEl.value = Math.round(wy);
-        renderPinMarker();
+      pinMap = new maplibregl.Map({
+        container: 'mf-pin-map',
+        style:     './map-style.json',
+        center:    PIN_DEFAULT_CENTER,
+        zoom:      12,
+        attributionControl: { compact: true },
+        dragRotate: false,
+      });
+      pinMap.touchZoomRotate.disableRotation();
+      pinMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+      /* Click anywhere → drop the marker there (places-without-coords flow). */
+      pinMap.on('click', async (e) => {
+        const { lat, lng } = e.lngLat;
+        placeMarker(lat, lng);
+        pinManualMove = true;
+        setPinCoords(lat, lng, '…resolving…');
+        const addr = await reverseGeocode(lat, lng);
+        if (addr) {
+          const addrEl = $('mf-pin-address');
+          if (addrEl) addrEl.textContent = addr;
+        }
       });
     }
 
-    renderPinMarker();
+    if (lat != null && lng != null) {
+      placeMarker(lat, lng);
+      /* Defer slightly so the modal layout settles before MapLibre measures.
+         Without this the map can boot at 0×0 inside the hidden modal. */
+      requestAnimationFrame(() => {
+        pinMap.resize();
+        pinMap.easeTo({ center: [lng, lat], zoom: 15, duration: 0 });
+      });
+    } else if (pinMarker) {
+      pinMarker.remove(); pinMarker = null;
+      requestAnimationFrame(() => pinMap && pinMap.resize());
+    } else {
+      requestAnimationFrame(() => pinMap && pinMap.resize());
+    }
   };
 
-  /* Clear button — null out coords so auto-pin takes over on save. */
+  /* Reset button — clear coords so geocode-picks cron will re-fill them. */
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'mf-pin-clear') {
-      const wxEl = $('mf-world-x');
-      const wyEl = $('mf-world-y');
-      if (wxEl) wxEl.value = '';
-      if (wyEl) wyEl.value = '';
-      renderPinMarker();
+      setPinCoords(null, null);
+      const lockedEl = $('mf-coords-locked');
+      if (lockedEl) lockedEl.checked = false;
+      pinManualMove = true;
     }
   });
 
@@ -515,15 +579,26 @@
       this_week:    $('mf-thisweek').checked,
     };
 
-    /* Pin position — editor overrides win; blanks revert to auto-pin trigger. */
-    const wxRaw = $('mf-world-x')?.value;
-    const wyRaw = $('mf-world-y')?.value;
-    const wx    = wxRaw === '' ? null : Number(wxRaw);
-    const wy    = wyRaw === '' ? null : Number(wyRaw);
-    if (wx !== null && Number.isFinite(wx)) data.world_x = Math.round(wx);
-    else if (wxRaw === '')                  data.world_x = null;
-    if (wy !== null && Number.isFinite(wy)) data.world_y = Math.round(wy);
-    else if (wyRaw === '')                  data.world_y = null;
+    /* Pin position — real lat/lng from the MapLibre editor. Empty inputs
+       reset the row so the nightly geocode-picks cron will re-geocode.
+       A user drag (pinManualMove) implies the placement is authoritative,
+       so we also tag the source as 'manual'. coords_locked is the editor's
+       explicit "don't touch this" switch. */
+    const latRaw = $('mf-lat')?.value;
+    const lngRaw = $('mf-lng')?.value;
+    const lat    = latRaw === '' ? null : Number(latRaw);
+    const lng    = lngRaw === '' ? null : Number(lngRaw);
+    if (lat !== null && Number.isFinite(lat) && lng !== null && Number.isFinite(lng)) {
+      data.lat = lat;
+      data.lng = lng;
+      if (pinManualMove) data.coords_source = 'manual';
+    } else if (latRaw === '' && lngRaw === '') {
+      data.lat = null;
+      data.lng = null;
+      data.address = null;
+      data.coords_source = null;
+    }
+    data.coords_locked = !!$('mf-coords-locked')?.checked;
 
     /* Image: upload takes priority; otherwise use URL field */
     const imageFile = $('mf-image').files?.[0];

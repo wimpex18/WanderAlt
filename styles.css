@@ -2823,6 +2823,53 @@ a.handle:hover { color: var(--c-ink); }
   position: absolute;
   inset: 0;
 }
+
+/* Empty-state hint shown over the map when no filters are active.
+   Editorial panel — newsprint card centered over the map, not a modal.
+   Pointer-events disabled so map pan still works through it; the inner
+   panel re-enables them so its links could be tapped if we add any. */
+.map-empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  pointer-events: none;
+  max-width: 320px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-ink);
+  padding: var(--s-5) var(--s-5);
+  text-align: center;
+}
+.map-empty-hint__title {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-3);
+}
+.map-empty-hint__body {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-ink-soft);
+  margin: 0;
+}
+.map-empty-hint__body strong {
+  font-weight: 500;
+  color: var(--c-ink);
+}
+
+/* Postal address line in the pick detail panel — sits below the meta
+   string in muted mono so it reads as supplementary, not primary. */
+.map-detail__address {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  margin: 2px 0 var(--s-3);
+}
 /* MapLibre attribution control — quieter than default, matches paper bg */
 .maplibregl-ctrl-attrib {
   font-family: var(--ff-mono);

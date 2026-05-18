@@ -59,7 +59,20 @@
     return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
   }
 
+  /* True when any filter dimension is active. The map renders no pins
+     until the user filters — showing 100+ pins by default is cluttered
+     and unscanable. The hint overlay in #map-empty-hint communicates
+     this state. */
+  function isAnyFilterActive() {
+    return !!textQuery
+        || timeFilter !== 'all'
+        || catFilters.size > 0
+        || moodFilter.length > 0
+        || nhoodFilter.size > 0;
+  }
+
   function getVisibleEntries() {
+    if (!isAnyFilterActive()) return [];
     const q = textQuery.toLowerCase();
     const catalog = window.WA?.catalog || [];
     const kindFilters = new Set([...catFilters].filter(id => id !== 'free'));
@@ -187,6 +200,11 @@
     const visible  = getVisibleEntries();
     const clusters = computeClusters(visible);
 
+    /* Toggle the empty-state hint: shown when no filters are active so
+       users understand why the map is bare. */
+    const hint = document.getElementById('map-empty-hint');
+    if (hint) hint.hidden = isAnyFilterActive();
+
     pinsEl.innerHTML = clusters.map(cl =>
       cl.single ? pinHTML(cl.entries[0]) : clusterPinHTML(cl)
     ).join('');
@@ -279,12 +297,17 @@
         <a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
         ${entry.kind ? `<a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
       </nav>`;
+    const addressLine = entry.address
+      ? `<p class="map-detail__address">${entry.address}</p>`
+      : '';
+
     return `<div class="map-detail__head">
         <span class="map-detail__eyebrow">${eyebrow}${priceBadge}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
       <h2 class="map-detail__title"><a href="venue.html?id=${entry.id}">${entry.title}</a></h2>
       <p class="meta">${meta}</p>
+      ${addressLine}
       <div class="map-detail__media">${img}</div>
       ${q}
       <div class="map-detail__foot">

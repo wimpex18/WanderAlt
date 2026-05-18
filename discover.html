@@ -152,6 +152,16 @@
         <div class="map-viewport" id="map-viewport">
           <div id="map-canvas" class="map-canvas"></div>
           <div id="map-pins" class="map-pins" aria-live="polite"></div>
+          <!-- Empty-state hint — visible when no filters are active. The
+               default map view shows no pins to avoid clutter; pick a
+               filter and the matching set appears. -->
+          <div id="map-empty-hint" class="map-empty-hint" aria-live="polite">
+            <p class="map-empty-hint__title">Pick a filter to see places</p>
+            <p class="map-empty-hint__body">
+              Tap <strong>Tonight</strong>, <strong>This week</strong>, <strong>Free</strong>,
+              or open <strong>Filters</strong> for category or neighborhood.
+            </p>
+          </div>
         </div>
 
         <div class="map-zoom-ctrl" aria-label="Zoom controls">

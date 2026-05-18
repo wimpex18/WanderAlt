@@ -218,8 +218,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMbL5MBz2HFphvgRRcQDBUB4RoFUOX0uUlGL3mQRpFpFL8mphrHno9oKV2FxDXQIAjppiLYhJaG3O8QjutgQBT7SAV5AFY38cflNXBs101XWGB5vn97nVYS7m3IUjuyxlAcQ_hjScP7d3e8=s4800-w800",
     world_x:       1065,
     world_y:       759,
-    lat:           59.4331327,
-    lng:           24.7520325,
+    lat:           59.4331739,
+    lng:           24.7516185,
+    address:       "Estonia pst 9, 10143 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -242,6 +243,7 @@ window.WA.catalog = [
     world_y:       676,
     lat:           59.4385252,
     lng:           24.7460931,
+    address:       "Pikk 20, 15059, Tallinn",
     pin:           null
   },
   {
@@ -262,8 +264,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMFYGro0CVIX4Jen9e9VftEWsv5cXQ7zcG8EJHdLWWDAr7ICWUI3fRSskp5LVm8BYrKmtghCpvy8tsc0dJwdEpOKjmBQLdeD0Su4snnYxkKYoKlwo6agtfSx1YV-DFHvOouHol0e8YHUpc6R4c=s4800-w800",
     world_x:       950,
     world_y:       802,
-    lat:           59.4387821,
-    lng:           24.7582234,
+    lat:           59.4387603,
+    lng:           24.7581548,
+    address:       "Rotermanni tn 2, 10111 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -286,6 +289,7 @@ window.WA.catalog = [
     world_y:       578,
     lat:           59.4412027,
     lng:           24.7362879,
+    address:       "Kopli 1, 10412, Tallinn",
     pin:           null
   },
   {
@@ -308,6 +312,7 @@ window.WA.catalog = [
     world_y:       796,
     lat:           59.4410913,
     lng:           24.7363233,
+    address:       "Toompuiestee 37A, Kopli tn 1, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -350,6 +355,7 @@ window.WA.catalog = [
     world_y:       704,
     lat:           59.4379246,
     lng:           24.749289,
+    address:       "Müürivahe, 10140, Tallinn",
     pin:           null
   },
   {
@@ -370,8 +376,9 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Le_KUMU%2C_mus%C3%A9e_dart_estonien_%28Tallinn%29_%287643108702%29.jpg?width=600",
     world_x:       1458,
     world_y:       595,
-    lat:           59.4363278,
-    lng:           24.796286,
+    lat:           59.4353156,
+    lng:           24.7981512,
+    address:       "Laagna tee, 11413, Tallinn",
     pin:           null
   },
   {
@@ -392,8 +399,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHCHHRmZm9EB-0MSUWGf_uSMJ9lyJX1cpOQFau0b6kkgzVfIPdZj1P3IZmVz2UuOD5LISoFJE55LZXVrYb6RKlwggthuEjy-bQ=s4800-w800",
     world_x:       413,
     world_y:       554,
-    lat:           59.4428345,
-    lng:           24.736878,
+    lat:           59.442855,
+    lng:           24.7368759,
+    address:       "Kotzebue 16, 10411, Tallinn",
     pin:           null
   },
   {
@@ -414,8 +422,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHCHHRmZm9EB-0MSUWGf_uSMJ9lyJX1cpOQFau0b6kkgzVfIPdZj1P3IZmVz2UuOD5LISoFJE55LZXVrYb6RKlwggthuEjy-bQ=s4800-w800",
     world_x:       499,
     world_y:       510,
-    lat:           59.4428345,
-    lng:           24.736878,
+    lat:           59.442855,
+    lng:           24.7368759,
+    address:       "Kotzebue 16, 10411, Tallinn",
     pin:           null
   },
   {
@@ -438,6 +447,7 @@ window.WA.catalog = [
     world_y:       356,
     lat:           59.4450426,
     lng:           24.7512926,
+    address:       "Põhja pst 35, 15065, Tallinn",
     pin:           null
   },
   {
@@ -460,6 +470,7 @@ window.WA.catalog = [
     world_y:       398,
     lat:           59.4450426,
     lng:           24.7512926,
+    address:       "Põhja pst 35, 15065, Tallinn",
     pin:           null
   },
   {
@@ -482,6 +493,7 @@ window.WA.catalog = [
     world_y:       596,
     lat:           59.4389335,
     lng:           24.7461296,
+    address:       "Pikk tn 29A, 10133 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -504,6 +516,7 @@ window.WA.catalog = [
     world_y:       737,
     lat:           59.4425483,
     lng:           24.749558,
+    address:       "Pikk 70, 10133, Tallinn",
     pin:           null
   },
   {
@@ -526,6 +539,7 @@ window.WA.catalog = [
     world_y:       710,
     lat:           59.4371295,
     lng:           24.7391336,
+    address:       "Toom-Kooli tn 6, 10130 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -626,8 +640,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqG3kWjhfPnMUSJZqCVcgSrOzPgC6bcHMFgxGEOnCOGmA-IXzkGxCpbXPw8wk_BeScSSuNySgibQNm6xMf9TkCxcXn4loZAf_zY=s4800-w800",
     world_x:       1074,
     world_y:       731,
-    lat:           59.4394688,
-    lng:           24.732457,
+    lat:           59.4394635,
+    lng:           24.7325395,
+    address:       "Telliskivi tn 60-2, 15073 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -650,6 +665,7 @@ window.WA.catalog = [
     world_y:       406,
     lat:           59.4451852,
     lng:           24.7340175,
+    address:       "Tööstuse 13, 10413, Tallinn",
     pin:           null
   },
   {
@@ -712,6 +728,7 @@ window.WA.catalog = [
     world_y:       370,
     lat:           59.4523634,
     lng:           24.7306649,
+    address:       "Peetri 12, 10415, Tallinn",
     pin:           null
   },
   {
@@ -774,6 +791,7 @@ window.WA.catalog = [
     world_y:       762,
     lat:           59.4353036,
     lng:           24.7452287,
+    address:       "Vana-Posti 8, 10146, Tallinn",
     pin:           null
   },
   {
@@ -796,6 +814,7 @@ window.WA.catalog = [
     world_y:       553,
     lat:           59.4439114,
     lng:           24.737628,
+    address:       "10414 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -818,6 +837,7 @@ window.WA.catalog = [
     world_y:       829,
     lat:           59.4385239,
     lng:           24.7533756,
+    address:       "Mere pst 5, 10111 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -840,6 +860,7 @@ window.WA.catalog = [
     world_y:       580,
     lat:           59.4451852,
     lng:           24.7340175,
+    address:       "Tööstuse 13, 10413, Tallinn",
     pin:           null
   },
   {
@@ -862,6 +883,7 @@ window.WA.catalog = [
     world_y:       513,
     lat:           59.4418266,
     lng:           24.7332385,
+    address:       "Kopli tn 16, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -884,6 +906,7 @@ window.WA.catalog = [
     world_y:       502,
     lat:           59.4343227,
     lng:           24.7441594,
+    address:       "Vabaduse väljak 10, 10146 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -906,6 +929,7 @@ window.WA.catalog = [
     world_y:       617,
     lat:           59.4406635,
     lng:           24.8313365,
+    address:       "Jaan Koorti 22, 13623, Tallinn",
     pin:           null
   },
   {
@@ -928,6 +952,7 @@ window.WA.catalog = [
     world_y:       802,
     lat:           59.4497116,
     lng:           24.7237279,
+    address:       "Tööstuse tn 47d, 10416 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -950,6 +975,7 @@ window.WA.catalog = [
     world_y:       764,
     lat:           59.4361267,
     lng:           24.7481773,
+    address:       "Sauna 8, 10140, Tallinn",
     pin:           null
   },
   {
@@ -972,6 +998,7 @@ window.WA.catalog = [
     world_y:       641,
     lat:           59.4326556,
     lng:           24.744721,
+    address:       "Vabaduse väljak 5, 10141 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -994,6 +1021,7 @@ window.WA.catalog = [
     world_y:       545,
     lat:           59.4451852,
     lng:           24.7340175,
+    address:       "Tööstuse 13, 10413, Tallinn",
     pin:           null
   },
   {
@@ -1016,6 +1044,7 @@ window.WA.catalog = [
     world_y:       881,
     lat:           59.4326556,
     lng:           24.744721,
+    address:       "Vabaduse väljak 5, 10141 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1038,6 +1067,7 @@ window.WA.catalog = [
     world_y:       424,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1060,6 +1090,7 @@ window.WA.catalog = [
     world_y:       475,
     lat:           59.4398408,
     lng:           24.7289874,
+    address:       "Telliskivi tn 60a, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1082,6 +1113,7 @@ window.WA.catalog = [
     world_y:       607,
     lat:           59.4665214,
     lng:           24.8359935,
+    address:       "Merivälja tee 18, 11911 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1102,8 +1134,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOu-Z-9TjGNFYyHVjjaGbdSanny7-7k5sG-K5h6-A_P7Vx2DeogwASmKiu1VROc9tzbkg3vM7qgYkIjT0LMrJ9n56zSIX7k-_NaaZOoQweOPQFxFTs46Rz6PRUyyytmzWVV9NKbOnQrN_nG=s4800-w800",
     world_x:       655,
     world_y:       497,
-    lat:           59.4401764,
-    lng:           24.7334706,
+    lat:           59.440257,
+    lng:           24.7335355,
+    address:       "Telliskivi tn 60/2, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1126,6 +1159,7 @@ window.WA.catalog = [
     world_y:       341,
     lat:           59.4442823,
     lng:           24.7512399,
+    address:       "Põhja pst 27a, 15065, Tallinn",
     pin:           null
   },
   {
@@ -1148,6 +1182,7 @@ window.WA.catalog = [
     world_y:       476,
     lat:           59.4473505,
     lng:           24.7050335,
+    address:       "Paavli tn 9, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1170,6 +1205,7 @@ window.WA.catalog = [
     world_y:       737,
     lat:           59.4359413,
     lng:           24.7475803,
+    address:       "Sauna 1, 10140, Tallinn",
     pin:           null
   },
   {
@@ -1192,6 +1228,7 @@ window.WA.catalog = [
     world_y:       709,
     lat:           59.4343916,
     lng:           24.7434365,
+    address:       "Harju 6, 10146, Tallinn",
     pin:           null
   },
   {
@@ -1212,8 +1249,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFXySnP_p9z98AxJ6OD1j58ts_bYSCXdFIarBw7q6gJ9zdsz97wOa7gYvvUlnxKyfikbxEqYiHvCUTdz0BBxXUBXeRDVvZiqg=s4800-w800",
     world_x:       936,
     world_y:       527,
-    lat:           59.4380404,
-    lng:           24.7675649,
+    lat:           59.4470275,
+    lng:           24.7465557,
+    address:       "Kalaranna tn 8-3, 10415 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1236,6 +1274,7 @@ window.WA.catalog = [
     world_y:       665,
     lat:           59.4362553,
     lng:           24.7482396,
+    address:       "Sauna tn 10, 10140 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1258,6 +1297,7 @@ window.WA.catalog = [
     world_y:       688,
     lat:           59.4396967,
     lng:           24.7467461,
+    address:       "Pikk tn 43, 10133 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1280,6 +1320,7 @@ window.WA.catalog = [
     world_y:       325,
     lat:           59.4561929,
     lng:           24.6747807,
+    address:       "Marati tn 5, 10151 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1302,6 +1343,7 @@ window.WA.catalog = [
     world_y:       691,
     lat:           59.4363374,
     lng:           24.7958299,
+    address:       "August Weizenbergi 34, 15050, Tallinn",
     pin:           null
   },
   {
@@ -1324,6 +1366,7 @@ window.WA.catalog = [
     world_y:       780,
     lat:           59.4326556,
     lng:           24.744721,
+    address:       "Vabaduse väljak 5, 10141 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1346,6 +1389,7 @@ window.WA.catalog = [
     world_y:       769,
     lat:           59.4361267,
     lng:           24.7481773,
+    address:       "Sauna 8, 10140, Tallinn",
     pin:           null
   },
   {
@@ -1368,6 +1412,7 @@ window.WA.catalog = [
     world_y:       398,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1530,6 +1575,7 @@ window.WA.catalog = [
     world_y:       415,
     lat:           59.4475874,
     lng:           24.7049709,
+    address:       "Paavli tn 7, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1552,6 +1598,7 @@ window.WA.catalog = [
     world_y:       765,
     lat:           59.4362553,
     lng:           24.7482396,
+    address:       "Sauna tn 10, 10140 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1574,6 +1621,7 @@ window.WA.catalog = [
     world_y:       664,
     lat:           59.4361979,
     lng:           24.7482811,
+    address:       "Sauna 10, 10140, Tallinn",
     pin:           null
   },
   {
@@ -1596,6 +1644,7 @@ window.WA.catalog = [
     world_y:       882,
     lat:           59.4385116,
     lng:           24.753476,
+    address:       "Mere pst 5, 10111 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1616,8 +1665,9 @@ window.WA.catalog = [
     imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOHI_R7irRpyOSMZD0V9-RFzDEK9W8TJptUZHk5507WNhY813-zBGpdI3WvgKnu1YIVwQUNDMpti2AB1IYmAhyzXA-cYQEy6Lf0-q5UAtVQdFStkdT8IJIcIYchqH4r4EOL513kYweiF4BUeYE=s4800-w800",
     world_x:       459,
     world_y:       328,
-    lat:           59.4523634,
-    lng:           24.7306649,
+    lat:           59.4481602,
+    lng:           24.7533025,
+    address:       "Mere pst 20c, 10111 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1773,6 +1823,7 @@ window.WA.catalog = [
     world_y:       489,
     lat:           59.4503449,
     lng:           24.7040811,
+    address:       "Manufaktuuri 5, 10323, Tallinn",
     pin:           null
   },
   {
@@ -1814,6 +1865,7 @@ window.WA.catalog = [
     world_y:       431,
     lat:           59.4475874,
     lng:           24.7049709,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1874,6 +1926,7 @@ window.WA.catalog = [
     world_y:       421,
     lat:           59.4475874,
     lng:           24.7049709,
+    address:       "Paavli tn 7, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -1896,6 +1949,7 @@ window.WA.catalog = [
     world_y:       345,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1918,6 +1972,7 @@ window.WA.catalog = [
     world_y:       389,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1940,6 +1995,7 @@ window.WA.catalog = [
     world_y:       386,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1962,6 +2018,7 @@ window.WA.catalog = [
     world_y:       376,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -1984,6 +2041,7 @@ window.WA.catalog = [
     world_y:       389,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2006,6 +2064,7 @@ window.WA.catalog = [
     world_y:       409,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2025,8 +2084,9 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       784,
     world_y:       692,
-    lat:           59.408043,
-    lng:           24.7321996,
+    lat:           59.4079622,
+    lng:           24.7322989,
+    address:       "Vaari 2, 11318 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2049,6 +2109,7 @@ window.WA.catalog = [
     world_y:       415,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2071,6 +2132,7 @@ window.WA.catalog = [
     world_y:       387,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2093,6 +2155,7 @@ window.WA.catalog = [
     world_y:       375,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2115,6 +2178,7 @@ window.WA.catalog = [
     world_y:       428,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2137,6 +2201,7 @@ window.WA.catalog = [
     world_y:       329,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2159,6 +2224,7 @@ window.WA.catalog = [
     world_y:       399,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2181,6 +2247,7 @@ window.WA.catalog = [
     world_y:       406,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2203,6 +2270,7 @@ window.WA.catalog = [
     world_y:       368,
     lat:           59.4475957,
     lng:           24.704955,
+    address:       "Paavli 7, 10412, Tallinn",
     pin:           null
   },
   {
@@ -2224,6 +2292,7 @@ window.WA.catalog = [
     world_y:       686,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2245,6 +2314,7 @@ window.WA.catalog = [
     world_y:       703,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2266,6 +2336,7 @@ window.WA.catalog = [
     world_y:       695,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2287,6 +2358,7 @@ window.WA.catalog = [
     world_y:       693,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2308,6 +2380,7 @@ window.WA.catalog = [
     world_y:       682,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2327,8 +2400,9 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       1156,
     world_y:       692,
-    lat:           59.4381936,
-    lng:           24.7286398,
+    lat:           59.4381926,
+    lng:           24.7286015,
+    address:       "Telliskivi tn 60a, 10142 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2350,6 +2424,7 @@ window.WA.catalog = [
     world_y:       673,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2371,6 +2446,7 @@ window.WA.catalog = [
     world_y:       746,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2392,6 +2468,7 @@ window.WA.catalog = [
     world_y:       765,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2411,8 +2488,9 @@ window.WA.catalog = [
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     world_x:       1046,
     world_y:       736,
-    lat:           59.4381936,
-    lng:           24.7286398,
+    lat:           59.4381926,
+    lng:           24.7286015,
+    address:       "Telliskivi tn 60a, 10142 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2434,6 +2512,7 @@ window.WA.catalog = [
     world_y:       760,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2455,6 +2534,7 @@ window.WA.catalog = [
     world_y:       730,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2476,6 +2556,7 @@ window.WA.catalog = [
     world_y:       719,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2497,6 +2578,7 @@ window.WA.catalog = [
     world_y:       742,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2518,6 +2600,7 @@ window.WA.catalog = [
     world_y:       757,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2539,6 +2622,7 @@ window.WA.catalog = [
     world_y:       755,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2560,6 +2644,7 @@ window.WA.catalog = [
     world_y:       707,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2581,6 +2666,7 @@ window.WA.catalog = [
     world_y:       694,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2602,6 +2688,7 @@ window.WA.catalog = [
     world_y:       723,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2623,6 +2710,7 @@ window.WA.catalog = [
     world_y:       763,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2644,6 +2732,7 @@ window.WA.catalog = [
     world_y:       739,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2665,6 +2754,7 @@ window.WA.catalog = [
     world_y:       664,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2686,6 +2776,7 @@ window.WA.catalog = [
     world_y:       743,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2707,6 +2798,7 @@ window.WA.catalog = [
     world_y:       713,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2728,6 +2820,7 @@ window.WA.catalog = [
     world_y:       753,
     lat:           59.4371803,
     lng:           24.7428101,
+    address:       "Rataskaevu 10, 10123, Tallinn",
     pin:           null
   },
   {
@@ -2749,6 +2842,7 @@ window.WA.catalog = [
     world_y:       509,
     lat:           59.4398408,
     lng:           24.7289874,
+    address:       "Telliskivi tn 60a, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2771,6 +2865,7 @@ window.WA.catalog = [
     world_y:       554,
     lat:           59.4385116,
     lng:           24.753476,
+    address:       "Mere pst 5, 10111 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2888,6 +2983,7 @@ window.WA.catalog = [
     world_y:       766,
     lat:           59.4399868,
     lng:           24.731328,
+    address:       "Telliskivi tn 60-4, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -2986,6 +3082,7 @@ window.WA.catalog = [
     world_y:       832,
     lat:           59.4420346,
     lng:           24.766424,
+    address:       "Lootsi tn 8, 10151 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -3008,6 +3105,7 @@ window.WA.catalog = [
     world_y:       365,
     lat:           59.4414205,
     lng:           24.7381887,
+    address:       "Kopli 4, 10412, Tallinn",
     pin:           null
   },
   {
@@ -3030,6 +3128,7 @@ window.WA.catalog = [
     world_y:       422,
     lat:           59.440257,
     lng:           24.7335355,
+    address:       "Telliskivi tn 60/2, 10412 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -3052,6 +3151,7 @@ window.WA.catalog = [
     world_y:       353,
     lat:           59.4298591,
     lng:           24.7592864,
+    address:       "Liivalaia tn 36, 10132 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -3074,6 +3174,7 @@ window.WA.catalog = [
     world_y:       538,
     lat:           59.4451815,
     lng:           24.7285136,
+    address:       "Salme tn 19, 10413 Tallinn, Estonia",
     pin:           null
   },
   {
@@ -3094,8 +3195,9 @@ window.WA.catalog = [
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Le_KUMU%2C_mus%C3%A9e_dart_estonien_%28Tallinn%29_%287643108702%29.jpg?width=600",
     world_x:       1423,
     world_y:       593,
-    lat:           59.4363278,
-    lng:           24.796286,
+    lat:           59.4353156,
+    lng:           24.7981512,
+    address:       "Laagna tee, 11413, Tallinn",
     pin:           null
   }
 ];
