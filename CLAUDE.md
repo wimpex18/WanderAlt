@@ -68,7 +68,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 ## Content conventions
 
 - **Real Tallinn places only:** Sveta Baar, Fotografiska, Paavli Kultuurivabrik, Kai Art Center, Uus Laine, Kelm, EKKM, Lugemik, Telliskivi, etc. No fake venues, no marketing-voice copy.
-- **Curator handles** follow Telegram convention: `@handle` or `sigmundtells` (no `@` for channel-name style).
+- **Curator handles** always start with `@` and match the Telegram channel slug exactly: `@sigmundtells` (URL `t.me/sigmundtells`), `@notboring_riga` (URL `t.me/notboring_riga`), `@katestrelca`, etc. The May 2026 normalisation migration retired the legacy bare-handle exception; `curator.js` keeps back-compat for old `?handle=sigmundtells` URLs by auto-prefixing `@` on lookup miss.
 - **Metadata format:** `Neighborhood · type · day + time`.
 - **Editorial voice:** no em-dashes in headlines, no exclamation marks, no "discover", no marketing voice. Reads like the back page of a newsletter.
 
@@ -138,6 +138,37 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 - **Desktop split view:** ≥1024px CSS grid, list ~480px left / map fills right. `view` param ignored on desktop.
 - **Mobile:** list or map, toggled by FAB. `view=map` in URL shows map pane.
 - **popstate:** `discover.js` has a `popstate` listener — browser back/forward fully restores state without a page reload.
+
+## Live data sources & ingest pipeline (May 2026)
+
+Sources live in the `public.sources` table; each row has `kind`, `channel`, `city`, `curator_handle`, `enabled`, `feed_url`. **Crons own the schedule** (see `cron.job`) — read-only here, only touch if asked.
+
+**Active source matrix (15 rows · 11 enabled · 4 intentionally disabled):**
+
+| Kind | City | Channel | Curator | Cron | Status |
+|---|---|---|---|---|---|
+| telegram | tallinn | sigmundtells | `@sigmundtells` | `wa-ingest-telegram` (02:15 UTC daily) | ✅ live |
+| telegram | tallinn | proEesti | `@proeesti` | same | ✅ live |
+| telegram | tallinn | hel_nocturnes | `@hel.nocturnes` | — | ❌ no real channel yet |
+| telegram | tallinn | kaisa_writes | `@kaisa.writes` | — | ❌ no real channel yet |
+| telegram | tallinn | mattias_v | `@mattias.v` | — | ❌ no real channel yet |
+| telegram | tallinn | raul_reads | `@raul.reads` | — | ❌ disabled — RSS feed below covers it |
+| rss | tallinn | giadafromgamma | `@raul.reads` | `wa-ingest-rss-{morning,evening}` (09 + 17 UTC) | ✅ live |
+| fienta | tallinn | paavli-kultuurivabrik | `@paavli` | `wa-ingest-fienta` (04:00 UTC) | ✅ live |
+| fienta | tallinn | 15 (Von Krahl org id) | `@vonkrahl` | same | ✅ live |
+| web | tallinn | telliskivi | `@telliskivi` | `wa-ingest-telliskivi` (03:45 UTC) | ✅ live |
+| telegram | riga | notboring_riga | `@notboring_riga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live |
+| telegram | riga | udgstriga | `@udgstriga` | — | ❌ no real channel yet |
+| web | riga | kinobize | `@kinobize` | `wa-ingest-kinobize` (03:30 UTC) | ✅ live |
+| web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
+| (osm) | tallinn + riga + helsinki | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 |
+
+**Pipeline flow:**
+`ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
+
+**`ingest-osm` v8 (May 2026):** previously hard-coded to Tallinn. Now loops over a `CITIES` map (Tallinn, Riga, Helsinki) and ingests venues from each Overpass bounding box in one cron tick. Accepts `{city: "..."}` body for ad-hoc backfills; with no body it runs all three cities. To add a new city, extend the `CITIES` map and update the corresponding `cron.job` row if you want a different schedule.
+
+**Adding a new source:** insert a row into `sources` (set `enabled=true`, fill `feed_url`/`channel`/`curator_handle`). The cron picks it up on the next tick. No code change required for telegram/rss/fienta — each ingest function reads the `sources` table on every run.
 
 ## LLM model policy (do not deviate)
 

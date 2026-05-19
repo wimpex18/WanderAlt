@@ -200,7 +200,15 @@
     const catalog  = (window.WA && window.WA.catalog)  || [];
 
     const raw    = new URLSearchParams(window.location.search).get('handle') || '';
-    const handle = decodeURIComponent(raw);
+    /* Back-compat: a few rows historically used bare handles ("sigmundtells").
+       After the May 2026 normalisation all handles start with '@'. Old
+       bookmarked URLs like /curator.html?handle=sigmundtells should still
+       resolve, so we look up both forms and use whichever matches.       */
+    const requested = decodeURIComponent(raw);
+    const prefixed  = requested.startsWith('@') ? requested : '@' + requested;
+    const handle = curators.some(c => c.handle === requested) ? requested
+                 : curators.some(c => c.handle === prefixed)  ? prefixed
+                 : requested;
     const picks  = catalog.filter(e => e.handle === handle);
 
     /* Prefer the static curators table (which has bios + taglines).
