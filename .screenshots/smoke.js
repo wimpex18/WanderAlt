@@ -59,7 +59,7 @@ const PAGES = [
       const pill = await page.$('[data-pill="tonight"]');
       if (pill) { await pill.click(); await new Promise(r => setTimeout(r, 800)); }
     } },
-  { name: 'saved',            url: '/saved.html',                  waitMs: 1200 },
+  { name: 'saved',            url: '/saved.html',                  waitMs: 1200, signedIn: true },
   { name: 'profile',          url: '/profile.html',                waitMs: 1500, signedIn: true },
 
   /* The curator page is most-likely-to-break after the May 2026 handle
