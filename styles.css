@@ -52,14 +52,15 @@
 
   /* ---------- Layout ---------- */
   --gutter:         20px;
-  /* Editorial reading column. 760 sits at the upper end of the 50–75
-     characters-per-line rule for our body type and reads tighter than
-     the previous 680 without sprawling on wide monitors. */
-  --reading-max:    760px;
-  /* Wide cap for data-dense surfaces (Discover split view). At 1280 a
-     1440 monitor still leaves comfortable margins; on a 1920 the page
-     no longer feels marooned in the middle of the screen. */
-  --reading-max-wide: 1280px;
+  /* One unified width across every page so navigating between
+     Briefing / Discover / Saved / Profile / Venue / Curator / Admin
+     feels visually continuous — content edges align across pages.
+     1024 sits comfortably above editorial readability (lines wrap
+     ~80 chars at our body type) and gives Discover's desktop split
+     enough room for list (~460) + gap + map (~520). On a 1920
+     monitor it leaves ~450 px margins each side: noticeably wider
+     than the old 680 cap, but not the full-bleed feel of 1280. */
+  --reading-max:    1024px;
   --radius:         8px;
   --radius-card:    12px;
   --radius-thumb:   8px;
@@ -341,19 +342,6 @@ img, svg { display: block; max-width: 100%; }
   max-width: var(--reading-max);
   margin: 0 auto;
   padding: 0 var(--gutter);
-}
-
-/* Discover is the only data-dense surface with a desktop split view;
-   give it the wider cap so the list+map have room to breathe on big
-   monitors. Both the topbar and the main page widen together so the
-   brand mark stays aligned with the search bar / filter row. The
-   admin tool also gets the wide cap — its tables / search rows want
-   the room.                                                          */
-body[data-page="discover"] .topbar__inner,
-body[data-page="discover"] .page,
-body[data-page="admin"]    .topbar__inner,
-body[data-page="admin"]    .page {
-  max-width: var(--reading-max-wide);
 }
 
 /* Discover-page brand accents — push petrol into the section labels
@@ -3575,14 +3563,16 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* Desktop: split view, list left and map right.
-   The grid is fluid: the list flexes 420–520 px so on a 1280 viewport
-   the map gets ~720 px and on a 1920 it gets ~1380 px (Baymard's
-   recommendation is a generous map pane in split view — list informs,
-   map orients). */
+   Page is capped at 1024 (see --reading-max). Inside that, the list
+   takes ~46% and the map takes the rest with a comfortable gap.
+   Baymard's split-view study (which justified the Map+Search merger
+   in the first place) calls for "list informs, map orients" with
+   the map getting the larger share — minmax(0, 1.15fr) gives the
+   map a slight visual edge over the list. */
 @media (min-width: 1024px) {
   .discover-panes {
     display: grid;
-    grid-template-columns: minmax(420px, 520px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
     gap: var(--s-5);
     align-items: start;
   }
@@ -3590,10 +3580,8 @@ a.handle:hover { color: var(--c-ink); }
   .discover-pane--map {
     position: sticky;
     top: var(--s-3);
-    /* Slightly taller map now that the page is wider — the empty space
-       below the "Pick a filter" hint at 720 px height felt too much. */
     height: calc(100vh - 140px);
-    min-height: 560px;
+    min-height: 520px;
   }
 }
 
