@@ -12,7 +12,7 @@ For deeper context, read these on demand (do NOT auto-import — they bloat cont
 - **Backend:** Supabase (REST + Edge Functions + pg_cron). Project ID `aqnsmmbrspkbfcvougeh`, region `eu-central-1`.
 - **Anon key:** in `supabase.js` (public on purpose — RLS is SELECT-only for tables, INSERT only for `bookmarks` and `digest_opt_ins`).
 - **Service role key:** never commit. Set as env var `SUPABASE_SERVICE_ROLE_KEY` in cloud env, or paste into admin panel localStorage locally.
-- **Canonical mobile viewport:** 390×844. Desktop breakpoint: **768px** (bottom nav → top masthead; content caps at 680px). Quote scales again at 1100px.
+- **Canonical mobile viewport:** 390×844. Desktop breakpoint: **768px** (bottom nav → top masthead; content caps at **1024px** uniformly on every page so edges line up across navigation). Quote scales again at 1100px.
 
 ## Key commands
 
@@ -36,7 +36,6 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `map-tiles.js` | MapLibre GL basemap. OpenFreeMap vector tiles, custom editorial style (see `map-style.json`). Exposes `window.WA.MapTiles` API used by `map.js`. |
 | `map-style.json` | Custom MapLibre style file — newsprint cream land, muted petrol water, off-white roads, JetBrains-style labels. |
 | `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
-| `map-world.js` | Legacy illustrated Tallinn SVG generator. **Not loaded by any HTML page** since the May 2026 admin migration to MapLibre — kept on disk solely as the source for `.scripts/regen-overview-svgs.js`, which produces `assets/tallinn-overview.svg` for the city-selector dropdown. Safe to delete once that overview SVG is captured as a static asset. |
 | `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
 | `search.html` | 5-line redirect stub → `discover.html` (preserves `?q`, `?mode=match` legacy params). |
 | `saved.html` / `saved.js` | Going / Reading / Past segments |
@@ -60,7 +59,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - Strictly left-aligned. **No centered blocks.**
 - No gradients, no box-shadows, max corner radius 4px.
 - Section dividers are **1px horizontal rules**, never background changes or large gaps.
-- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile, map detail quote bar, locate-fab "on" state, admin pin marker. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). The older oxblood `#8a2a1a` accent has been fully retired from app code — any remaining mentions are in `map-world.js` (legacy illustrated SVG, only used by admin pin-placement tool) and doc comments.
+- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile, map detail quote bar, locate-fab "on" state, admin pin marker. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). The older oxblood `#8a2a1a` accent has been fully retired from app code (May 2026 sweep — the legacy `map-world.js` that held the last references is deleted).
 - Background: warm newsprint `#f6f3ec`, never pure white.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.

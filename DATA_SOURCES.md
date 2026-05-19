@@ -1,6 +1,6 @@
 # WanderAlt — Data sources strategy
 
-This file is the single source of truth for **where picks come from** and **how the filter pipeline works**. Updated each time we add/remove a source.
+This file documents **how the ingest pipeline works** + the curation rules. The **live source matrix** (which channels are enabled / disabled, with cron + status) lives in `CLAUDE.md` → "Live data sources & ingest pipeline" since it's read more often by Claude than by humans and the two views drifted apart. The table here is kept as a snapshot for narrative context; for canonical state, check `CLAUDE.md` or query `public.sources` directly.
 
 For deeper architecture context read `README.md` (what's built) and `HANDOFF.md` (component reference). For pipeline rules read `CLAUDE.md`.
 
@@ -36,10 +36,10 @@ Three layers of filter:
 
 | ID | Kind     | Channel/URL                                 | City    | Curator handle  | Status   |
 |----|----------|---------------------------------------------|---------|-----------------|----------|
-| 1  | telegram | `sigmundtells`                              | tallinn | sigmundtells    | **on**   |
+| 1  | telegram | `sigmundtells`                              | tallinn | @sigmundtells   | **on**   |
 | 8  | rss      | giadafromgamma (Substack)                   | tallinn | @raul.reads     | **on**   |
-| 9  | telegram | `notboring_riga`                            | riga    | @katestrelca    | **on**   |
-| 12 | telegram | `proEesti`                                  | tallinn | proEesti        | **on**   |
+| 9  | telegram | `notboring_riga`                            | riga    | @notboring_riga | **on**   |
+| 12 | telegram | `proEesti`                                  | tallinn | @proeesti       | **on**   |
 | 14 | telegram | `udgstriga` (Underground Station Riga)      | riga    | @udgstriga      | **off** — channel inactive |
 | 15 | fienta   | `paavli-kultuurivabrik`                     | tallinn | @paavli         | **on**   |
 | 16 | fienta   | `15` (Von Krahl Theatre)                    | tallinn | @vonkrahl       | **on**   |
@@ -106,7 +106,7 @@ These bias Gemini toward keeping a pick when it's borderline:
 **Active (in DB):**
 - `@sigmundtells` (Tallinn)
 - `@notboring_riga` (Riga)
-- `@proEesti` (Tallinn)
+- `@proeesti` (Tallinn)
 
 **Mentioned in research, public-channel status unknown — try & enable if HTML fetch succeeds:**
 - `@udgstriga` (Underground Station Riga) — source row exists (id 14), but 0 staging messages after nightly ingest. Channel is likely private or inactive as a broadcast channel. Verify manually before investing further.

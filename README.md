@@ -30,7 +30,8 @@ First city: **Tallinn**. First screen: **Briefing** (the default landing).
 ├── discover-redirect.js  # Legacy URL mapper — loaded by the map/search redirect stubs
 ├── map.js                # Pan/zoom map engine — exposes window.WA.MapView API; embedded in Discover
 ├── map-venues.js         # Category definitions (WA.MAP_CATEGORIES) shared by map + discover
-├── map-world.js          # SVG city-plane renderer and category colour palette
+├── map-tiles.js          # MapLibre GL basemap (WA.MapTiles API) — OpenFreeMap tiles + custom style
+├── map-style.json        # Custom MapLibre style — newsprint land, muted petrol water, off-white roads
 ├── saved.js              # Saved renderer — injects bookmarked rows from catalog
 ├── venue.js              # Venue detail renderer — back-link returns to full Discover URL
 ├── curator.js            # Curator profile renderer — reads ?handle=
@@ -51,7 +52,7 @@ First city: **Tallinn**. First screen: **Briefing** (the default landing).
 
 No build step. **Open `index.html` directly in a browser** to view, or run `npm start` for a local dev server at `http://localhost:5173`.
 
-Canonical mobile design width: **390px**. Responsive up to desktop with a constrained **680px reading column** (editorial feel — prevents the content from sprawling on large screens).
+Canonical mobile design width: **390px**. Responsive up to desktop with a constrained **1024px reading column** applied uniformly to every page so edges line up across navigation (briefing, discover, saved, profile, venue, curator, admin all share the same max-width).
 
 ---
 
@@ -100,7 +101,7 @@ Change the accent, the paper tone, or the quote size in one place and the whole 
 ## Responsive behavior
 
 - **< 768px (mobile, canonical 390px):** single column at full width with 20px gutter, bottom nav fixed at the viewport bottom with safe-area padding.
-- **≥ 768px (tablet / desktop):** content column caps at 680px and centers. Hero quote grows (`--fs-quote` goes from 32px → 44px → 52px at ≥1100px). **Bottom nav becomes a sticky top nav bar** under the wordmark — a thin row of masthead-style links. Rationale: a side rail would compete with the single-column editorial read; a persistent bottom bar on desktop feels too app-y; a masthead nav reinforces the "cultural weekly" metaphor.
+- **≥ 768px (tablet / desktop):** content column caps at 1024px and centers (same value on every page so navigation feels continuous). Hero quote grows (`--fs-quote` goes from 32px → 44px → 52px at ≥1100px). **Bottom nav becomes a sticky top nav bar** under the wordmark — a thin row of masthead-style links. Rationale: a side rail would compete with the single-column editorial read; a persistent bottom bar on desktop feels too app-y; a masthead nav reinforces the "cultural weekly" metaphor.
 - **`prefers-reduced-motion`** respected.
 - **Safe-area insets** handled on iOS (bottom nav, body padding).
 

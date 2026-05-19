@@ -61,7 +61,7 @@ Leading tokens: `--lh-tight: 1.04` / `--lh-snug: 1.22` / `--lh-body: 1.5`
 | Token | Value | Purpose |
 |---|---|---|
 | `--gutter` | `20px` | Left/right page padding |
-| `--reading-max` | `680px` | Max content column width (editorial constraint) |
+| `--reading-max` | `1024px` | Max content column width — applied uniformly to every page so edges align across navigation (May 2026, was 680) |
 | `--radius` | `8px` | Default border-radius (inputs, focus rings) |
 | `--radius-card` | `12px` | Cards (search box, tonight card) |
 | `--radius-thumb` | `8px` | Thumbnail images |
@@ -76,7 +76,7 @@ Leading tokens: `--lh-tight: 1.04` / `--lh-snug: 1.22` / `--lh-body: 1.5`
 
 ## Layout system
 
-`.page` (on `<main>`) sets `max-width: var(--reading-max); margin: 0 auto; padding: 0 var(--gutter)`. This is the editorial column — everything inside it is constrained to 680px on large screens.
+`.page` (on `<main>`) sets `max-width: var(--reading-max); margin: 0 auto; padding: 0 var(--gutter)`. This is the editorial column — everything inside it is constrained to 1024px on large screens. The `.topbar__inner` shares the same cap so the brand mark + nav stay aligned with content edges. The same value applies on every page, so jumping between Briefing / Discover / Saved / Profile feels visually continuous.
 
 **Full-bleed escape.** When an element must break out of the column (map canvas, full-width tab strip), use:
 
@@ -216,7 +216,7 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 | AI mode loading | `.match-loading` in `#discover-match-result` |
 | AI mode result | Hero `.match-card` + secondary `.list-rows` |
 
-**Map pane** (`.discover-pane--map`): same DOM structure as the old `map.html` (`#map-viewport`, `#map-world-wrap`, `#map-pins`, `#map-sheet`, `#map-detail`). `map.js` boots identically; `discover.js` drives it via `window.WA.MapView`.
+**Map pane** (`.discover-pane--map`): MapLibre GL basemap (`#map-canvas`) overlaid with absolute-positioned `#map-pins`, `#map-empty-hint`, and `#map-detail`. `map-tiles.js` owns the basemap (`window.WA.MapTiles`); `map.js` owns the pin layer (`window.WA.MapView`); `discover.js` drives both via filter state. Pin positions come from `picks.lat/lng` projected through `WA.MapTiles.project(lng, lat)`.
 
 **WA.MapView API** (exposed at end of `map.js` IIFE):
 
@@ -239,7 +239,7 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 **Pin clustering:** greedy O(n²) screen-distance algorithm (50px radius), debounced re-render 180ms on pan/zoom. Cluster button shows count badge; click zooms in. Implemented in `map.js`.
 
-**Adding a map pin:** set `world_x` and `world_y` (0–1 fractions of the 1800×1200 SVG world) on the `picks` row. `map.js:renderPins()` handles placement automatically — no HTML change needed.
+**Adding a map pin:** set `picks.lat` and `picks.lng` (real WGS84 coordinates) on the row. The `geocode-picks` cron does this automatically nightly (Nominatim primary, Google Places fallback); admins can also drag the marker in the pick modal's MapLibre mini-map. `map.js:renderPins()` projects coords via `WA.MapTiles.project()` — no HTML change needed.
 
 ### Saved (`saved.html`)
 
@@ -281,7 +281,7 @@ Global focus-visible rule (`styles.css:112`): `outline: 2px solid var(--c-accent
 Mobile-first. Two breakpoints.
 
 **≥ 768px** (`styles.css:1905`)
-- `--gutter`: 20px → 32px; `--reading-max`: 680px → 840px
+- `--gutter`: 20px → 32px (`--reading-max` is now a single 1024 across all viewports — no breakpoint override)
 - `--fs-quote`: 32px → 44px; `--fs-pick`: 18px → 20px; `--fs-venue`: 17px → 18px
 - Body switches to `display: flex; flex-direction: column; min-height: 100vh`; bottom padding removed
 - `.topbar`: `position: sticky` → `static`, `order: 1`
@@ -318,7 +318,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 ## Edge cases & content rules
 
-**Handles.** Two formats: `@kaisa.writes` (Telegram-style) and `sigmundtells` (channel-name, no @). Both styled identically via `.handle`.
+**Handles.** All curator handles start with `@` and match the Telegram channel slug exactly: `@sigmundtells` (`t.me/sigmundtells`), `@notboring_riga`, `@kaisa.writes`, etc. The May 2026 normalisation migration retired the bare-handle exception; `curator.js` keeps back-compat for old `?handle=sigmundtells` URLs by auto-prefixing `@` on lookup miss. Styled via `.handle`.
 
 **Meta string format.** `Neighborhood · type · day time`. Day omitted for tonight picks. Use `.meta__time` span around ` · TIME` to prevent wrapping mid-separator.
 
@@ -366,11 +366,11 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 ### Adding a new map pin
 
-Set `world_x` and `world_y` on the `picks` row in Supabase (0–1 fractions of the 1800×1200 SVG world). `map.js:renderPins()` places the pin automatically — no HTML change needed. The Discover list also gains an "on map →" link for that pick automatically.
+Set `picks.lat` and `picks.lng` (real WGS84 coords) on the row. Easiest path: the `geocode-picks` cron resolves them from `picks.venue` nightly — set `coords_locked = true` if you've hand-placed and want to skip auto-overwrites. Admins can also drag the marker in the pick modal's MapLibre mini-map (writes lat/lng + `coords_source = 'manual'`). `map.js:renderPins()` projects through `WA.MapTiles.project()` automatically.
 
 ### Adding a new neighborhood
 
-One place: the SVG city-plane illustration (baked-in text label in `map-world.js`). The Neighborhoods browse section in Discover is populated dynamically from the live catalog — no manual entry needed.
+Populated dynamically from the live catalog (Discover's Neighborhoods browse section reads distinct `picks.neighborhood` values) — no manual entry needed.
 
 ### Adding a new kind/type
 
