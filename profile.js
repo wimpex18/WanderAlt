@@ -216,7 +216,16 @@
 
   /* ── Taste section ──────────────────────────────────────── */
 
-  const AXIS_LABELS = { energy: 'energy', company: 'company', money: 'money' };
+  /* Map raw axis values to display-friendly labels. The capitalised
+     short form reads cleanly when joined by middots — e.g. "Loud · Solo · Free". */
+  const TASTE_LABELS = {
+    loud: 'Loud', quiet: 'Quiet',
+    solo: 'Solo', social: 'Social',
+    free: 'Free', ticketed: 'Ticketed',
+  };
+  /* Stable axis order so the summary doesn't reshuffle when prefs are set
+     in different sequences (Object.keys order = insertion order). */
+  const AXIS_ORDER = ['energy', 'company', 'money'];
 
   const renderTasteSection = () => {
     const taste = window.WA?.taste;
@@ -227,9 +236,11 @@
 
     if (summaryEl) {
       const prefs = taste.getPrefs();
-      const keys  = Object.keys(prefs);
-      if (keys.length) {
-        summaryEl.textContent = keys.map(k => `${k}: ${prefs[k]}`).join(' · ');
+      const parts = AXIS_ORDER
+        .filter(axis => prefs[axis])
+        .map(axis => TASTE_LABELS[prefs[axis]] || prefs[axis]);
+      if (parts.length) {
+        summaryEl.textContent = parts.join(' · ');
       } else {
         summaryEl.textContent = taste.isOnboarded() ? 'No preferences set' : 'Not set up yet — visit Briefing';
       }

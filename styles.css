@@ -1989,6 +1989,7 @@ a.auth-panel__submit { display: inline-block; }
   gap: var(--s-5);
   margin-top: var(--s-5);
 }
+.profile-actions--tight { margin-top: var(--s-4); }
 
 /* Digest description muted meta */
 #profile-digest-desc { margin-top: var(--s-2); }
@@ -2353,6 +2354,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   color: var(--c-ink-mute);
   padding: var(--s-5) 0;
 }
+.loading-line--page { padding-top: var(--s-7); }
 
 /* ============================================================
    MATCH ME — single AI pick discovery on Search page
