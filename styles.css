@@ -1904,7 +1904,8 @@ a.auth-panel__submit { display: inline-block; }
 .profile-head {
   padding: var(--s-5) 0 var(--s-4);
 }
-.profile-head .eyebrow { margin-bottom: var(--s-2); }
+.profile-head .eyebrow { margin-bottom: var(--s-3); }
+.profile-head__info { flex: 1; min-width: 0; }
 .profile-head__email {
   font-family: var(--ff-body);
   font-size: 28px;
@@ -1923,13 +1924,32 @@ a.auth-panel__submit { display: inline-block; }
   margin: 0;
 }
 
-/* Profile avatar circle */
+/* Profile head row — avatar + email/meta */
+.profile-head__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Profile avatar circle with centered initial */
 .profile-avatar {
   width: 56px; height: 56px;
   border-radius: 50%;
   background: linear-gradient(135deg, oklch(0.82 0.03 195), oklch(0.48 0.08 195));
   border: 1px solid var(--c-rule);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-avatar__initial {
+  font-family: var(--ff-body);
+  font-size: 22px;
+  font-weight: 700;
+  color: oklch(0.22 0.04 195);
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .profile-section {
@@ -1948,6 +1968,20 @@ a.auth-panel__submit { display: inline-block; }
   color: var(--c-ink-soft);
   padding: var(--s-4) 0 0;
 }
+.profile-section__line--danger { padding-top: var(--s-6); }
+
+/* Empty state for bookmarks section */
+.profile-bookmark-cta {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  color: var(--c-ink-mute);
+  margin: var(--s-3) 0 0;
+}
+.profile-bookmark-cta a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 
 .profile-actions {
   display: flex;
@@ -1955,6 +1989,9 @@ a.auth-panel__submit { display: inline-block; }
   gap: var(--s-5);
   margin-top: var(--s-5);
 }
+
+/* Digest description muted meta */
+#profile-digest-desc { margin-top: var(--s-2); }
 
 /* Digest opt-in toggle */
 .profile-toggle {
@@ -2011,6 +2048,19 @@ a.auth-panel__submit { display: inline-block; }
   .profile-head { padding: var(--s-6) 0 var(--s-4); }
   .profile-head__email { font-size: 36px; }
 }
+
+/* ============================================================
+   Digest opt-in (briefing page footer section)
+   ============================================================ */
+.digest-optin__label { margin-bottom: var(--s-2); }
+.digest-optin__desc  { margin-bottom: var(--s-3); }
+.digest-optin__row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.digest-optin__email  { flex: 1; min-width: 180px; }
+.digest-optin__submit { white-space: nowrap; }
 
 /* ============================================================
    Colophon
@@ -3447,6 +3497,8 @@ a.handle:hover { color: var(--c-ink); }
 @media print { .deprecation-banner { display: none !important; } }
 
 /* ── View panes (list / map) ─────────────────────────────────── */
+#discover-empty { padding: var(--s-4) 0; }
+
 .discover-panes {
   position: relative;
   margin-top: var(--s-2);

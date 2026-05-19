@@ -116,7 +116,7 @@
   /* Row rendering matches search.js's list-row markup, plus data-id so
      the pin↔card sync handler can find the matching card.              */
   const renderRow = (e) => {
-    const hasCoords = !!(e.world_x && e.world_y);
+    const hasCoords = !!(e.lat && e.lng);
     /* "on map" is a JS-handled action on Discover (no navigation); the
        href is a fallback for users with JS disabled. data-focus-pin tells
        the click handler to call WA.MapView.focusPin instead.           */

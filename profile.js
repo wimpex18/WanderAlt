@@ -16,11 +16,18 @@
 
   const $ = (sel) => document.querySelector(sel);
 
+  const _statusTimers = {};
   const setStatus = (id, msg, isError = false) => {
     const el = $(`#${id}`);
     if (!el) return;
     el.textContent = msg;
     el.style.color = isError ? 'var(--c-accent)' : 'var(--c-ink-mute)';
+    if (msg && !isError) {
+      clearTimeout(_statusTimers[id]);
+      _statusTimers[id] = setTimeout(() => {
+        if (el.textContent === msg) el.textContent = '';
+      }, 4000);
+    }
   };
 
   /* ── Auth gate ───────────────────────────────────────────── */
@@ -37,14 +44,35 @@
   const emailEl = $('#profile-email');
   if (emailEl) emailEl.textContent = session.email || 'Account';
 
+  /* Avatar initial — first non-symbol character of the local part */
+  const initialEl = $('#profile-avatar-initial');
+  if (initialEl && session.email) {
+    initialEl.textContent = session.email.charAt(0);
+  }
+
+  /* Member-since — decode iat from JWT payload */
+  const metaEl = $('#profile-meta');
+  const _decodeJWT = (token) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    } catch { return null; }
+  };
+  const payload = session.access_token ? _decodeJWT(session.access_token) : null;
+  if (metaEl && payload?.iat) {
+    const joined = new Date(payload.iat * 1000).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+    /* metaEl is also updated by renderStats; pre-fill until bookmarks load */
+    metaEl.dataset.joinedSuffix = `· joined ${joined}`;
+  }
+
   /* ── Stats strip (bookmark count + city) ─────────────────── */
 
   const renderStats = () => {
     const el    = $('#profile-meta');
     if (!el) return;
-    const total = (window.WA.Bookmarks?.ids() || []).length;
-    const city  = (window.WA.CITY || 'tallinn').replace(/^\w/, c => c.toUpperCase());
-    el.textContent = `${total} saved · ${city}`;
+    const total  = (window.WA.Bookmarks?.ids() || []).length;
+    const city   = (window.WA.CITY || 'tallinn').replace(/^\w/, c => c.toUpperCase());
+    const suffix = el.dataset.joinedSuffix || '';
+    el.textContent = `${total} saved · ${city}${suffix ? ' ' + suffix : ''}`;
   };
   renderStats();
   document.addEventListener('wa:bookmarks-synced', renderStats);
@@ -52,10 +80,13 @@
   /* ── Bookmark count (section sub-heading) ────────────────── */
 
   const renderBookmarkCount = () => {
-    const el = $('#profile-bookmark-count');
-    if (!el) return;
-    const total = (window.WA.Bookmarks?.ids() || []).length;
-    el.textContent = `${total} pick${total !== 1 ? 's' : ''}`;
+    const countEl  = $('#profile-bookmark-count');
+    const exportBtn = $('#profile-export-btn');
+    const ctaEl    = $('#profile-bookmark-cta');
+    const total    = (window.WA.Bookmarks?.ids() || []).length;
+    if (countEl) countEl.textContent = `${total} pick${total !== 1 ? 's' : ''}`;
+    if (exportBtn) exportBtn.disabled = total === 0;
+    if (ctaEl) ctaEl.hidden = total > 0;
   };
   renderBookmarkCount();
   document.addEventListener('wa:bookmarks-synced', renderBookmarkCount);
@@ -219,6 +250,7 @@
   };
 
   renderTasteSection();
+  document.addEventListener('wa:taste-changed', renderTasteSection);
 
   $('#taste-reset-prefs-btn')?.addEventListener('click', () => {
     const taste = window.WA?.taste;

@@ -44,10 +44,12 @@
 
     <!-- Profile head — avatar + email + stats strip. -->
     <header class="profile-head">
-      <p class="eyebrow" style="margin-bottom:var(--s-3)">Account</p>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div class="profile-avatar" aria-hidden="true"></div>
-        <div style="flex:1;min-width:0;">
+      <p class="eyebrow">Account</p>
+      <div class="profile-head__row">
+        <div class="profile-avatar" aria-hidden="true">
+          <span class="profile-avatar__initial" id="profile-avatar-initial"></span>
+        </div>
+        <div class="profile-head__info">
           <h1 class="profile-head__email" id="profile-email">&hellip;</h1>
           <p class="profile-head__meta" id="profile-meta"></p>
         </div>
@@ -60,6 +62,9 @@
         <h2 id="profile-bookmarks-label" class="section-title">Saved picks</h2>
         <p class="section-sub" id="profile-bookmark-count">&hellip;</p>
       </header>
+      <p class="profile-bookmark-cta" id="profile-bookmark-cta" hidden>
+        Nothing saved yet. <a href="./discover.html">Browse Discover</a> to find picks worth keeping.
+      </p>
       <div class="profile-actions">
         <a class="auth-panel__submit" href="./saved.html">View reading list &rarr;</a>
         <button class="auth-panel__close" id="profile-export-btn" type="button">Export JSON</button>
@@ -89,7 +94,7 @@
                aria-describedby="profile-digest-desc" />
         <span class="profile-toggle__label">Email me a weekly briefing</span>
       </label>
-      <p class="meta profile-section__line" id="profile-digest-desc" style="margin-top:var(--s-2)">
+      <p class="meta profile-section__line" id="profile-digest-desc">
         Sent Saturday mornings — 5 picks + a short editorial intro. No tracking links.
       </p>
       <p class="auth-panel__status" id="profile-digest-status" aria-live="polite"></p>
@@ -117,7 +122,7 @@
       <div class="profile-actions">
         <button class="auth-panel__close" id="profile-signout" type="button">Sign out</button>
       </div>
-      <p class="profile-section__line" style="margin-top:var(--s-6)">
+      <p class="profile-section__line profile-section__line--danger">
         <button class="profile-danger-btn" id="profile-delete-btn" type="button">Delete account&hellip;</button>
       </p>
       <div class="profile-delete-confirm" id="profile-delete-confirm" hidden>
