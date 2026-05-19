@@ -36,7 +36,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `map-tiles.js` | MapLibre GL basemap. OpenFreeMap vector tiles, custom editorial style (see `map-style.json`). Exposes `window.WA.MapTiles` API used by `map.js`. |
 | `map-style.json` | Custom MapLibre style file — newsprint cream land, muted petrol water, off-white roads, JetBrains-style labels. |
 | `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
-| `map-world.js` | Legacy illustrated Tallinn SVG. Still used by `admin.html` pin-placement tool; not loaded on Discover. |
+| `map-world.js` | Legacy illustrated Tallinn SVG generator. **Not loaded by any HTML page** since the May 2026 admin migration to MapLibre — kept on disk solely as the source for `.scripts/regen-overview-svgs.js`, which produces `assets/tallinn-overview.svg` for the city-selector dropdown. Safe to delete once that overview SVG is captured as a static asset. |
 | `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
 | `search.html` | 5-line redirect stub → `discover.html` (preserves `?q`, `?mode=match` legacy params). |
 | `saved.html` / `saved.js` | Going / Reading / Past segments |

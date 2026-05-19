@@ -116,7 +116,7 @@ Used by `.map-bleed` and `.seg-tabs`. Set `width: calc(100% + 2 * var(--gutter))
 | Curator row | `.curator-row` | 974 | — | 3-col grid; hover → handle accent |
 | Browse row | `.browse-row` | (1000) | — | 2-col grid; hover → label accent |
 | Seg tabs | `.seg-tabs` + `.seg-tab` | 1112 | — | CSS-only via radio siblings; active → white + lime count |
-| List row | `.list-row` | (1169) | `--going`, `--reading`, `--past`, `--bookmarkable`, `--active` | `--active` → oxblood left bar + tinted bg |
+| List row | `.list-row` | (1169) | `--going`, `--reading`, `--past`, `--bookmarkable`, `--active` | `--active` → petrol left bar + tinted bg |
 | Map sheet | `.map-sheet` | — | — | mobile peek detail; hidden ≥768px (replaced by `.map-detail`) |
 | Map detail | `.map-detail` | — | — | desktop side-panel detail; hidden <768px |
 | Auth panel | `.auth-panel` | (1220) | — | modal overlay |
