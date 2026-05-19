@@ -59,8 +59,6 @@
       top:     r.pin_top,
       eyebrow: r.pin_eyebrow
     } : null,
-    world_x:   r.world_x   ?? null,
-    world_y:   r.world_y   ?? null,
     lat:       r.lat       ?? null,
     lng:       r.lng       ?? null,
     address:   r.address   ?? null,
@@ -87,7 +85,7 @@
         `city=eq.${CITY}&archived_at=is.null` +
         `&select=id,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
-                `pin_num,pin_left,pin_top,pin_eyebrow,world_x,world_y,lat,lng,address,coords_source,coords_locked` +
+                `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),

@@ -59,6 +59,8 @@
     .admin-pick-row > span:first-child { flex:1; font-family:var(--ff-body); font-size:var(--fs-pick); }
     .admin-pick-row > .meta  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                                max-width:38%; flex-shrink:0; }
+    .admin-pick-row__noPin   { opacity:.45; }
+    .admin-pick-row__flags   { opacity:.55; }
     .admin-btn--rm           { border:none; background:none; color:var(--c-accent);
                                font-size:1.25rem; line-height:1; cursor:pointer;
                                padding:0 var(--s-1); flex-shrink:0; }
@@ -124,6 +126,51 @@
                                font-size:9px; letter-spacing:0.04em;
                                color:var(--c-ink-mute); }
     .admin-pin-map__attr a   { color:inherit; text-decoration:underline; }
+
+    /* Admin utility classes — replace common inline style patterns. */
+    .a-hint                  { margin-bottom:var(--s-3); opacity:.7; }
+    .a-status                { margin:var(--s-4) 0 var(--s-2); opacity:.65; }
+    .a-list                  { list-style:none; margin:0; padding:0; }
+    .a-row                   { display:flex; gap:var(--s-2); flex-wrap:wrap; }
+    .a-mb-0                  { margin-bottom:0; }
+    .a-mb-2                  { margin-bottom:var(--s-2); }
+    .a-mb-3                  { margin-bottom:var(--s-3); }
+    .a-mt-1                  { margin-top:var(--s-1); }
+    .a-mt-2                  { margin-top:var(--s-2); }
+    .a-mt-3                  { margin-top:var(--s-3); }
+    .a-mute                  { opacity:.65; }
+    .a-w-full                { width:100%; }
+    .a-accent                { color:var(--c-accent); }
+    .a-stats-grid            { display:flex; flex-wrap:wrap; gap:var(--s-3); }
+    .a-pt-4                  { padding-top:var(--s-4); }
+    .a-analytics-grid        { display:grid; grid-template-columns:1fr 1fr; gap:var(--s-5); }
+    .a-review-badge          { display:none; margin-left:6px; padding:0 7px;
+                               font-family:var(--ff-mono); font-size:11px;
+                               letter-spacing:.06em; color:var(--c-accent);
+                               border:1px solid var(--c-accent); vertical-align:middle; }
+    .a-review-badge[data-visible="1"] { display:inline-block; }
+    .a-modal-heading         { font-family:var(--ff-mono); font-size:var(--fs-meta);
+                               font-weight:600; letter-spacing:.04em; }
+    .a-modal-status-inline   { margin-top:var(--s-3); min-height:1.4em; }
+    .a-modal-status-right    { margin-left:auto; }
+    .a-enrich-section        { margin-top:var(--s-3); padding-top:var(--s-3);
+                               border-top:1px solid rgba(26,26,26,.1); }
+    .admin-mfield--rel       { position:relative; }
+    .a-pin-coords-row        { display:flex; gap:var(--s-3); align-items:baseline;
+                               margin-top:var(--s-2); flex-wrap:wrap; }
+    .a-pin-coords-text       { opacity:.7; font-family:var(--ff-mono); font-size:11px; }
+    .a-pin-address-text      { opacity:.7; font-family:var(--ff-mono); font-size:11px;
+                               flex:1; min-width:0; overflow:hidden;
+                               text-overflow:ellipsis; white-space:nowrap; }
+    .a-pin-lock-label        { font-family:var(--ff-mono); font-size:11px;
+                               display:inline-flex; align-items:center; gap:6px; }
+    .a-pin-reset-btn         { font-size:10px; }
+    .a-pin-edit-hint         { margin-left:8px; opacity:.6; }
+    .a-pin-coords-help       { margin-top:var(--s-1); opacity:.6; }
+    .a-enrichment-buttons    { display:flex; flex-wrap:wrap; gap:var(--s-2);
+                               margin-bottom:var(--s-4); }
+    .a-pipeline-actions      { margin:var(--s-2) 0 var(--s-4); display:flex;
+                               flex-wrap:wrap; gap:var(--s-2); }
 
     /* Discovery review rows */
     .review-row              { padding:var(--s-4) 0; border-bottom:1px solid rgba(26,26,26,.1);
@@ -289,22 +336,18 @@
           <button type="button" id="admin-auth-btn" class="admin-auth-btn">Sign in</button>
           <div id="admin-auth-panel" class="admin-auth-panel" hidden>
             <div id="admin-auth-out">
-              <p class="eyebrow" style="margin-bottom:var(--s-3)">Admin sign in</p>
+              <p class="eyebrow a-mb-3">Admin sign in</p>
               <input type="email" id="auth-email" class="admin-auth-input"
                      placeholder="Email" autocomplete="username" />
-              <input type="password" id="auth-password" class="admin-auth-input"
-                     placeholder="Password" autocomplete="current-password"
-                     style="margin-top:var(--s-2)" />
+              <input type="password" id="auth-password" class="admin-auth-input a-mt-2"
+                     placeholder="Password" autocomplete="current-password" />
               <button type="button" id="auth-submit"
-                      class="admin-col-btn admin-col-btn--approve"
-                      style="margin-top:var(--s-3);width:100%">Sign in &rarr;</button>
-              <p id="auth-error" class="meta"
-                 style="color:var(--c-accent);margin-top:var(--s-2)"></p>
+                      class="admin-col-btn admin-col-btn--approve a-mt-3 a-w-full">Sign in &rarr;</button>
+              <p id="auth-error" class="meta a-accent a-mt-2"></p>
             </div>
             <div id="admin-auth-in" hidden>
-              <p class="eyebrow" style="margin-bottom:var(--s-2)">Signed in as</p>
-              <p id="auth-user-label" class="meta"
-                 style="margin-bottom:var(--s-3)"></p>
+              <p class="eyebrow a-mb-2">Signed in as</p>
+              <p id="auth-user-label" class="meta a-mb-3"></p>
               <button type="button" id="auth-signout"
                       class="admin-reset">Sign out</button>
             </div>
@@ -319,7 +362,7 @@
     <!-- Service key — localStorage, persists across sessions -->
     <section id="admin-auth">
       <p class="eyebrow">Service key</p>
-      <p class="meta" style="margin-top:var(--s-1)">
+      <p class="meta a-mt-1">
         Required for write operations. Saved in your browser (localhost only).
       </p>
       <div class="admin-key-row">
@@ -331,8 +374,8 @@
     </section>
 
     <!-- Stats strip — quick health indicators -->
-    <section id="admin-stats" class="admin-section" style="padding-top:var(--s-4)">
-      <div id="admin-stats-inner" style="display:flex;flex-wrap:wrap;gap:var(--s-3)">
+    <section id="admin-stats" class="admin-section a-pt-4">
+      <div id="admin-stats-inner" class="a-stats-grid">
         <span class="admin-stat-badge" id="stat-picks">— picks</span>
         <span class="admin-stat-badge admin-stat-badge--warn" id="stat-unpinned">— unpinned</span>
         <span class="admin-stat-badge admin-stat-badge--warn" id="stat-noembeds">— no embedding</span>
@@ -362,7 +405,7 @@
         <button type="button" class="admin-reset" id="columns-draft-btn"
                 title="Trigger a new draft now">Draft now &rarr;</button>
       </div>
-      <p class="meta" id="columns-status" style="margin-bottom:var(--s-3)">Loading&hellip;</p>
+      <p class="meta a-mb-3" id="columns-status">Loading&hellip;</p>
       <div id="columns-list"></div>
     </section>
 
@@ -372,9 +415,9 @@
         <p class="eyebrow">This Week</p>
         <button type="button" class="admin-reset" id="thisweek-clear-all">Reset all</button>
       </div>
-      <p class="meta" id="thisweek-count" style="margin-bottom:var(--s-2)"></p>
+      <p class="meta a-mb-2" id="thisweek-count"></p>
       <div id="thisweek-controls"></div>
-      <ol id="thisweek-picks" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <ol id="thisweek-picks" class="a-list" role="list"></ol>
       <div class="admin-search-row">
         <input type="search" id="thisweek-search"
                placeholder="Search to add a pick to this week&hellip;"
@@ -387,12 +430,12 @@
     <section id="admin-picks" class="admin-section">
       <div class="admin-section-head">
         <p class="eyebrow">Picks</p>
-        <div style="display:flex;gap:var(--s-2)">
+        <div class="a-row">
           <button type="button" id="ap-unpinned-btn" class="admin-reset" title="Show only picks without map coordinates">Unpinned only</button>
           <button type="button" id="picks-new-btn" class="admin-reset">New pick &rarr;</button>
         </div>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Search any active pick to edit title, quote, description, image, flags, and more.
       </p>
       <div class="admin-search-row">
@@ -401,24 +444,24 @@
                autocomplete="off" />
         <ul id="picks-results" class="admin-results" role="listbox" hidden></ul>
       </div>
-      <p class="meta" id="all-picks-count" style="margin:var(--s-4) 0 var(--s-2);opacity:.65"></p>
+      <p class="meta a-status" id="all-picks-count"></p>
       <div id="all-picks-controls"></div>
-      <ol id="all-picks-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <ol id="all-picks-list" class="a-list" role="list"></ol>
     </section>
 
     <!-- Discovery review — picks surfaced by external search awaiting curation -->
     <section id="admin-review" class="admin-section">
       <div class="admin-section-head">
-        <p class="eyebrow">Discovery review <span id="review-badge" style="display:none;margin-left:6px;padding:0 7px;font-family:var(--ff-mono);font-size:11px;letter-spacing:.06em;color:var(--c-accent);border:1px solid var(--c-accent);vertical-align:middle"></span></p>
+        <p class="eyebrow">Discovery review <span id="review-badge" class="a-review-badge"></span></p>
         <button type="button" id="review-refresh-btn" class="admin-reset">Refresh &rarr;</button>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Picks surfaced by external search (Google Places) and tagged
         <strong>@discovery</strong>. Edit to add a curator handle, real title and
         quote — then approve to publish. Reject to archive.
       </p>
-      <p class="meta" id="review-status" style="margin-bottom:var(--s-3);opacity:.65">Loading…</p>
-      <ol id="review-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <p class="meta a-mb-3 a-mute" id="review-status">Loading…</p>
+      <ol id="review-list" class="a-list" role="list"></ol>
     </section>
 
     <!-- Match analytics — top liked / disliked picks from user_match_history -->
@@ -427,18 +470,18 @@
         <p class="eyebrow">Match analytics</p>
         <button type="button" id="analytics-refresh-btn" class="admin-reset">Refresh &rarr;</button>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Aggregated 👍/👎 from signed-in users. Use to weed out picks that consistently underperform.
       </p>
-      <p class="meta" id="analytics-status" style="margin:var(--s-4) 0 var(--s-2);opacity:.65">Loading…</p>
-      <div id="analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-5)" hidden>
+      <p class="meta a-status" id="analytics-status">Loading…</p>
+      <div id="analytics-grid" class="a-analytics-grid" hidden>
         <div>
-          <p class="eyebrow" style="margin-bottom:var(--s-2)">Top liked</p>
-          <ol id="analytics-likes" role="list" style="list-style:none;margin:0;padding:0"></ol>
+          <p class="eyebrow a-mb-2">Top liked</p>
+          <ol id="analytics-likes" class="a-list" role="list"></ol>
         </div>
         <div>
-          <p class="eyebrow" style="margin-bottom:var(--s-2)">Top disliked</p>
-          <ol id="analytics-dislikes" role="list" style="list-style:none;margin:0;padding:0"></ol>
+          <p class="eyebrow a-mb-2">Top disliked</p>
+          <ol id="analytics-dislikes" class="a-list" role="list"></ol>
         </div>
       </div>
     </section>
@@ -449,11 +492,11 @@
         <p class="eyebrow">Curators</p>
         <button type="button" id="curator-new-btn" class="admin-reset">New curator &rarr;</button>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Edit curator handle, name, bio, and tagline. Pick counts are updated by the ingest pipeline.
       </p>
-      <p class="meta" id="curators-count" style="margin:var(--s-4) 0 var(--s-2);opacity:.65">Loading…</p>
-      <ol id="curators-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <p class="meta a-status" id="curators-count">Loading…</p>
+      <ol id="curators-list" class="a-list" role="list"></ol>
     </section>
 
     <!-- Curator edit modal -->
@@ -461,10 +504,10 @@
          role="dialog" aria-modal="true" aria-labelledby="curator-modal-heading">
       <div class="admin-modal">
         <div class="admin-modal-head">
-          <h2 id="curator-modal-heading" style="font-family:var(--ff-mono);font-size:var(--fs-meta);font-weight:600;letter-spacing:.04em">Edit curator</h2>
+          <h2 id="curator-modal-heading" class="a-modal-heading">Edit curator</h2>
           <button type="button" id="curator-modal-close" aria-label="Close">&times;</button>
         </div>
-        <div class="admin-modal-grid" style="grid-template-columns:1fr 1fr">
+        <div class="admin-modal-grid">
           <div class="admin-mfield">
             <label for="cf-handle">Handle</label>
             <input id="cf-handle" type="text" autocomplete="off"
@@ -501,7 +544,7 @@
           <button type="button" id="curator-modal-cancel" class="admin-modal-cancel">Cancel</button>
           <button type="button" id="curator-delete-btn" class="admin-modal-archive">Delete&hellip;</button>
         </div>
-        <p class="meta" id="curator-modal-status" style="margin-top:var(--s-3);min-height:1.4em" aria-live="polite"></p>
+        <p class="meta a-modal-status-inline" id="curator-modal-status" aria-live="polite"></p>
       </div>
     </div>
 
@@ -511,7 +554,7 @@
         <p class="eyebrow">Venues</p>
         <button type="button" id="venues-new-btn" class="admin-reset">New venue &rarr;</button>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Search the venue database to edit location, kind, image, and status. Create manual
         venues that aren&rsquo;t in the OSM dataset.
       </p>
@@ -521,9 +564,9 @@
                autocomplete="off" />
         <ul id="venues-results" class="admin-results" role="listbox" hidden></ul>
       </div>
-      <p class="meta" id="venues-count" style="margin:var(--s-4) 0 var(--s-2);opacity:.65">Loading…</p>
+      <p class="meta a-status" id="venues-count">Loading…</p>
       <div id="venues-pager" hidden></div>
-      <ol id="venues-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <ol id="venues-list" class="a-list" role="list"></ol>
     </section>
 
     <!-- Venue Enrichment — venue_details table browser + bulk trigger -->
@@ -532,19 +575,19 @@
         <p class="eyebrow">Venue Enrichment</p>
         <button type="button" id="enrichment-refresh-btn" class="admin-reset">Refresh &rarr;</button>
       </div>
-      <p class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p class="meta a-hint">
         Auto-enriches venues with website, address, coordinates, and short description from Wikidata
         and Nominatim. Runs on a schedule; trigger manually here. Set
         <strong>Lock</strong> on a venue to protect manual edits.
       </p>
-      <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-4)">
+      <div class="a-enrichment-buttons">
         <button type="button" id="enrichment-run-btn" class="admin-col-btn admin-col-btn--approve">
           Run bulk enrichment &rarr;
         </button>
       </div>
-      <p class="meta" id="enrichment-status" style="margin-bottom:var(--s-3);opacity:.7"></p>
-      <p class="meta" id="enrichment-count"  style="margin-bottom:var(--s-2);opacity:.65">Loading&hellip;</p>
-      <ol id="enrichment-list" role="list" style="list-style:none;margin:0;padding:0"></ol>
+      <p class="meta a-hint" id="enrichment-status"></p>
+      <p class="meta a-mb-2 a-mute" id="enrichment-count">Loading&hellip;</p>
+      <ol id="enrichment-list" class="a-list" role="list"></ol>
       <div id="enrichment-pager" hidden></div>
     </section>
 
@@ -554,12 +597,12 @@
         <p class="eyebrow">Pipeline</p>
         <button type="button" id="pipeline-refresh-btn" class="admin-reset">Refresh &rarr;</button>
       </div>
-      <p id="pipeline-status" class="meta" style="margin-bottom:var(--s-3);opacity:.7">
+      <p id="pipeline-status" class="meta a-hint">
         Requires service key.
       </p>
       <div id="pipeline-content" hidden>
         <div id="pipeline-queue" class="admin-pipeline-badges"></div>
-        <div style="margin:var(--s-2) 0 var(--s-4);display:flex;flex-wrap:wrap;gap:var(--s-2)">
+        <div class="a-pipeline-actions">
           <button type="button" id="pipeline-process-btn"
                   class="admin-col-btn admin-col-btn--approve">
             Process staging now &rarr;
@@ -581,7 +624,7 @@
             Backfill embeddings &rarr;
           </button>
         </div>
-        <p class="meta" id="pipeline-embed-status" style="margin-bottom:var(--s-3);opacity:.7;display:none"></p>
+        <p class="meta a-hint" id="pipeline-embed-status" hidden></p>
         <table class="admin-pipeline-table" id="pipeline-log" aria-label="Recent ingest log">
           <thead>
             <tr>
@@ -687,8 +730,8 @@
           </div>
 
           <!-- ── Enrichment fields (stored in venue_details) ── -->
-          <div class="admin-mfield admin-mfield--full" style="margin-top:var(--s-3);padding-top:var(--s-3);border-top:1px solid rgba(26,26,26,.1)">
-            <p class="eyebrow" style="margin-bottom:0">Enrichment data</p>
+          <div class="admin-mfield admin-mfield--full a-enrich-section">
+            <p class="eyebrow a-mb-0">Enrichment data</p>
           </div>
 
           <div class="admin-mfield">
@@ -741,7 +784,7 @@
                   title="Run Wikidata + Nominatim enrichment for this venue now">
             Enrich now &rarr;
           </button>
-          <span id="vmodal-status" class="meta" style="margin-left:auto"></span>
+          <span id="vmodal-status" class="meta a-modal-status-right"></span>
         </div>
       </form>
 
@@ -767,7 +810,7 @@
                    placeholder="e.g. Noise Night at Sveta Baar" />
           </div>
 
-          <div class="admin-mfield" style="position:relative">
+          <div class="admin-mfield admin-mfield--rel">
             <label for="mf-venue">Venue *</label>
             <input type="text" id="mf-venue" required
                    placeholder="e.g. Sveta Baar" autocomplete="off" />
@@ -848,7 +891,7 @@
             <div id="mf-image-preview" class="admin-image-preview"></div>
             <input type="file" id="mf-image"
                    accept="image/jpeg,image/png,image/webp" />
-            <p class="meta" style="margin-top:var(--s-1);opacity:.6">
+            <p class="meta a-pin-coords-help">
               JPEG / PNG / WebP, max 2 MB. Requires a <strong>picks</strong> bucket in
               Supabase Storage (Dashboard &rarr; Storage &rarr; New bucket, name:
               <code>picks</code>, Public: on).
@@ -865,9 +908,8 @@
                cron from overwriting manual placements. -->
           <div class="admin-mfield admin-mfield--full">
             <label>Pin position
-              <span class="meta" style="margin-left:8px;opacity:.6">drag the marker &middot;
-                <button type="button" id="mf-pin-clear" class="admin-reset"
-                        style="font-size:10px">reset</button>
+              <span class="meta a-pin-edit-hint">drag the marker &middot;
+                <button type="button" id="mf-pin-clear" class="admin-reset a-pin-reset-btn">reset</button>
               </span>
             </label>
             <div id="mf-pin-map" class="admin-pin-map" role="application" aria-label="Pin map"></div>
@@ -877,10 +919,10 @@
               contributors &middot; tiles from
               <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>
             </p>
-            <div style="display:flex;gap:var(--s-3);align-items:baseline;margin-top:var(--s-2);flex-wrap:wrap">
-              <span class="meta" id="mf-pin-coords" style="opacity:.7;font-family:var(--ff-mono);font-size:11px">not placed</span>
-              <span class="meta" id="mf-pin-address" style="opacity:.7;font-family:var(--ff-mono);font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-              <label style="font-family:var(--ff-mono);font-size:11px;display:inline-flex;align-items:center;gap:6px">
+            <div class="a-pin-coords-row">
+              <span class="meta a-pin-coords-text" id="mf-pin-coords">not placed</span>
+              <span class="meta a-pin-address-text" id="mf-pin-address"></span>
+              <label class="a-pin-lock-label">
                 <input type="checkbox" id="mf-coords-locked" />
                 Lock coords (skip auto-geocode)
               </label>
@@ -901,7 +943,7 @@
           <button type="button" id="modal-archive" class="admin-modal-archive" hidden>
             Archive pick
           </button>
-          <span id="modal-status" class="meta" style="margin-left:auto"></span>
+          <span id="modal-status" class="meta a-modal-status-right"></span>
         </div>
       </form>
 

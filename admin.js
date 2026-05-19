@@ -127,7 +127,7 @@
       `city=eq.${currentCity}` +
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
-               'valid_until,quote,handle,context_md,image_url,world_x,world_y,' +
+               'valid_until,quote,handle,context_md,image_url,' +
                'lat,lng,address,coords_source,coords_locked' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
@@ -262,7 +262,7 @@
   const getApPicks = () => {
     let p = [...allPicks];
     if (apState.kindFilter)   p = p.filter(x => x.kind === apState.kindFilter);
-    if (apState.unpinnedOnly) p = p.filter(x => !x.world_x || !x.world_y);
+    if (apState.unpinnedOnly) p = p.filter(x => x.lat == null || x.lng == null);
     if (apState.sort === 'title') p.sort((a, b) => (a.title||'').localeCompare(b.title||''));
     if (apState.sort === 'venue') p.sort((a, b) => (a.venue||'').localeCompare(b.venue||''));
     if (apState.sort === 'kind')  p.sort((a, b) => (a.kind||'').localeCompare(b.kind||''));
@@ -283,7 +283,7 @@
     const countEl = $('all-picks-count');
     if (countEl) {
       const active  = allPicks.length;
-      const unpinned = allPicks.filter(x => !x.world_x || !x.world_y).length;
+      const unpinned = allPicks.filter(x => x.lat == null || x.lng == null).length;
       const suffix  = (apState.kindFilter || apState.unpinnedOnly) ? ` of ${active}` : '';
       countEl.textContent = `${total}${suffix} picks` +
         (unpinned > 0 && !apState.unpinnedOnly ? ` · ${unpinned} unpinned` : '');
@@ -324,10 +324,10 @@
       ? page.map(p => {
           const flags = [p.tonight && '◆ tonight', p.this_week && '● this week'].filter(Boolean).join(' · ');
           const meta  = [p.venue, p.kind, p.neighborhood, p.day].filter(Boolean).join(' · ');
-          const noPin = (!p.world_x || !p.world_y) ? ' <em style="opacity:.45">(unpinned)</em>' : '';
+          const noPin = (p.lat == null || p.lng == null) ? ' <em class="admin-pick-row__noPin">(unpinned)</em>' : '';
           return `<li class="admin-pick-row">
             <span>${p.title}${noPin}</span>
-            <span class="meta">${meta}${flags ? ` &nbsp;<em style="opacity:.55">${flags}</em>` : ''}</span>
+            <span class="meta">${meta}${flags ? ` &nbsp;<em class="admin-pick-row__flags">${flags}</em>` : ''}</span>
             <button class="admin-btn--edit" data-id="${p.id}"
                     aria-label="Edit ${p.title}" title="Edit">&#9998;</button>
           </li>`;
@@ -1092,7 +1092,7 @@
       const badge = $('review-badge');
       if (!Array.isArray(rows) || !rows.length) {
         if (statusEl) statusEl.textContent = 'No picks awaiting review.';
-        if (badge) badge.style.display = 'none';
+        if (badge) badge.dataset.visible = '0';
         return;
       }
 
@@ -1100,7 +1100,7 @@
         statusEl.textContent =
           `${rows.length} pick${rows.length !== 1 ? 's' : ''} awaiting review`;
       }
-      if (badge) { badge.textContent = rows.length; badge.style.display = ''; }
+      if (badge) { badge.textContent = rows.length; badge.dataset.visible = '1'; }
 
       list.innerHTML = rows.map(row => {
         const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
@@ -1183,7 +1183,7 @@
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null` +
-              `&or=(world_x.is.null,world_y.is.null)&select=id`,
+              `&or=(lat.is.null,lng.is.null)&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/picks?handle=eq.@discovery&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
@@ -1966,7 +1966,7 @@
       const btn      = $('pipeline-embed-btn');
       const statusEl = $('pipeline-embed-status');
       if (btn) btn.disabled = true;
-      if (statusEl) { statusEl.style.display = ''; statusEl.textContent = 'Embedding missing picks — takes up to 1 min…'; }
+      if (statusEl) { statusEl.hidden = false; statusEl.textContent = 'Embedding missing picks — takes up to 1 min…'; }
       try {
         const r    = await fetch(`${BASE}/functions/v1/embed-picks`, {
           method:  'POST',
