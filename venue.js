@@ -348,12 +348,31 @@
   };
 
   const init = () => {
-    const catalog = (window.WA && window.WA.catalog) || [];
-    const id      = new URLSearchParams(window.location.search).get('id');
-    const entry   = id ? catalog.find(e => e.id === id) : null;
+    const catalog    = (window.WA && window.WA.catalog)    || [];
+    const catalogAll = (window.WA && window.WA._catalogAll) || catalog;
+    const id         = new URLSearchParams(window.location.search).get('id');
+    /* Look in the city-filtered slice first (most common case), then
+       fall back to the all-cities snapshot so a Tallinn user clicking
+       a bookmarked Riga venue still resolves. When we resolve via the
+       fallback, reflect the pick's own city on body[data-city] so the
+       banner ribbon swaps to match the content (without persisting the
+       change to localStorage — the user's chosen city stays intact).  */
+    const entry = id
+      ? (catalog.find(e => e.id === id) || catalogAll.find(e => e.id === id))
+      : null;
 
-    if (entry) render(entry, catalog);
-    else       renderNotFound();
+    if (entry) {
+      if (entry.city && entry.city !== window.WA?.CITY) {
+        document.body.dataset.city = entry.city;
+      }
+      /* Render against the all-cities catalog so the "more from this
+         curator" footer can include picks across cities — a curator
+         like @katestrelca with picks in multiple cities now shows
+         them all. */
+      render(entry, catalogAll);
+    } else {
+      renderNotFound();
+    }
   };
 
   document.addEventListener('wa:catalog-ready', init);

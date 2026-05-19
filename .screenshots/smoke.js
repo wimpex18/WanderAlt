@@ -117,19 +117,22 @@ const PAGES = [
       page.on('console',   msg => consoleMsgs.push(`[${msg.type()}] ${msg.text()}`));
       page.on('pageerror', err => consoleMsgs.push(`[PAGEERROR] ${err.message}`));
 
-      /* If we need any localStorage state (session, city), the writes must
-         happen on the same origin we'll navigate to next. Hit a cheap page
-         first to set up storage, then go to the target. */
-      const needsLS = p.signedIn || p.city;
-      if (needsLS) {
-        await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        if (p.signedIn) {
-          await page.evaluate(s => localStorage.setItem('wanderalt:session:v1', s), sessionJson);
-        }
-        if (p.city) {
-          await page.evaluate(c => localStorage.setItem('wa:city', c), p.city);
-        }
-      }
+      /* puppeteer's browser.newPage() shares localStorage across tabs
+         in the same browser context. Without resetting between tests
+         a previous step's wa:city / session leaks into the next one
+         (e.g. a Riga step poisons a downstream Tallinn-default step).
+         Always hit / once to establish origin, then explicitly write
+         every storage key this test needs — including a default
+         wa:city=tallinn when the test doesn't specify a city. */
+      await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.evaluate(
+        ({ session, city }) => {
+          localStorage.setItem('wa:city', city);
+          if (session) localStorage.setItem('wanderalt:session:v1', session);
+          else         localStorage.removeItem('wanderalt:session:v1');
+        },
+        { session: p.signedIn ? sessionJson : null, city: p.city || 'tallinn' },
+      );
 
       await page.goto(`${BASE}${p.url}`, { waitUntil: 'networkidle0', timeout: 15000 });
       await new Promise(r => setTimeout(r, p.waitMs));

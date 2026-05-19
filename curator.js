@@ -196,8 +196,13 @@
   };
 
   const init = () => {
-    const curators = (window.WA && window.WA.curators) || [];
-    const catalog  = (window.WA && window.WA.catalog)  || [];
+    /* Always look in the all-cities snapshots so cross-city curator
+       URLs resolve. A Tallinn user clicking a bookmarked @katestrelca
+       (Riga) link should land on the curator's profile — not a 404. */
+    const curators = (window.WA?._curatorsAll)
+                  || (window.WA?.curators) || [];
+    const catalog  = (window.WA?._catalogAll)
+                  || (window.WA?.catalog)  || [];
 
     const raw    = new URLSearchParams(window.location.search).get('handle') || '';
     /* Back-compat: a few rows historically used bare handles ("sigmundtells").
@@ -218,6 +223,14 @@
                  || (picks.length ? { handle, tagline: '', bio: '' } : null);
 
     if (!curator) { renderNotFound(); return; }
+
+    /* Reflect the curator's home city on body[data-city] so the banner
+       ribbon swaps to match when the visitor's CITY differs (e.g.
+       browsing Tallinn but viewing a Riga curator). Doesn't persist
+       to localStorage — the user's chosen city stays the same. */
+    if (curator.city && curator.city !== window.WA?.CITY) {
+      document.body.dataset.city = curator.city;
+    }
 
     render(curator, picks);
   };

@@ -39,6 +39,7 @@
   /* Convert a Postgres picks row → catalog entry shape */
   const toPick = (r) => ({
     id:            r.id,
+    city:          r.city,
     title:         r.title,
     venue:         r.venue,
     neighborhood:  r.neighborhood,
@@ -77,22 +78,28 @@
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), 2000);
 
-    /* Run all three in parallel; handle each independently so a missing
-       table (past, venue_details) can't kill the picks load. */
+    /* Fetch ALL active picks across every city (not just the current
+       one). Roughly ~200 rows total — well under any per-request size
+       cap and the same order of magnitude as the static catalog. The
+       all-cities catalog is exposed as WA._catalogAll so cross-city
+       venue/curator URLs resolve (e.g. a Tallinn user clicking a
+       bookmarked Riga pick), and the city-filtered slice is exposed
+       as WA.catalog (the listing pages keep showing only the active
+       city). past + venue_details follow the same all-cities pattern. */
     const [picksResult, pastResult, vdResult] = await Promise.allSettled([
       get(
         `picks`,
-        `city=eq.${CITY}&archived_at=is.null` +
-        `&select=id,title,venue,neighborhood,kind,day,time,quote,handle,` +
+        `archived_at=is.null` +
+        `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
                 `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),
-      get(`past`, `city=eq.${CITY}&order=created_at.asc`, abort.signal),
+      get(`past`, `order=created_at.asc`, abort.signal),
       get(
         `venue_details`,
-        `city=eq.${CITY}&or=(is_closed.eq.true,business_status.in.("CLOSED_PERMANENTLY","CLOSED_TEMPORARILY"))` +
+        `or=(is_closed.eq.true,business_status.in.("CLOSED_PERMANENTLY","CLOSED_TEMPORARILY"))` +
         `&select=venue_key,is_closed,business_status`,
         abort.signal
       ),
@@ -113,21 +120,31 @@
     window.WA = window.WA || {};
 
     if (picksResult.status === 'fulfilled') {
-      window.WA.catalog = picksResult.value.map(r => {
+      const all = picksResult.value.map(r => {
         const p = toPick(r);
         if (r.venue && closedSet.has(String(r.venue).toLowerCase().trim())) {
           p.isClosed = true;
         }
         return p;
       });
+      /* All-cities snapshot for cross-city lookups (venue.html?id=… of
+         a pick from another city, curator profile for a Riga curator
+         while CITY=tallinn, etc.). The listing pages keep using the
+         city-filtered slice. */
+      window.WA._catalogAll = all;
+      window.WA.catalog     = all.filter(e => e.city === CITY);
     } else {
       /* Keep static catalog.js snapshot; log so devtools shows the reason. */
       console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);
     }
 
-    window.WA.past = pastResult.status === 'fulfilled'
-      ? pastResult.value.map(r => ({ id: r.id, title: r.title, date: r.date }))
-      : [];  /* past table is optional — silently empty if absent */
+    if (pastResult.status === 'fulfilled') {
+      const allPast = pastResult.value.map(r => ({ id: r.id, title: r.title, date: r.date, city: r.city }));
+      window.WA._pastAll = allPast;
+      window.WA.past     = allPast.filter(e => !e.city || e.city === CITY);
+    } else {
+      window.WA.past = [];  /* past table is optional — silently empty if absent */
+    }
 
     dispatch();
   };
