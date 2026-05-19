@@ -51,13 +51,15 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `taste.js` | Taste-profile onboarding (energy/company/money axes); exposes `WA.taste.matchParams()` |
 | `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter via `#mood=…` hash) |
 | `styles.css` | All styles. Every design decision lives as a `:root` CSS variable. |
+| `brand/` | **Canonical brand kit** — SVG masters for tile/wordmark + favicon ladder + PWA/iOS/Android icons + social cards. Start at `brand/BRAND.md` for palette/type/lockup rules; `brand/IMPLEMENTATION.md` for integration notes. Do NOT inline brand colors; use the `--c-accent` (petrol) / `--c-lime` tokens which match the canonical OKLCH literals 1:1. |
+| `manifest.webmanifest` | PWA web manifest. References `brand/pwa/*.svg`. Theme color `#055959` (petrol). |
 
 ## Visual conventions (Claude cannot infer these)
 
 - Strictly left-aligned. **No centered blocks.**
 - No gradients, no box-shadows, max corner radius 4px.
 - Section dividers are **1px horizontal rules**, never background changes or large gaps.
-- Single accent: oxblood `#8a2a1a` — only for curator handles, arrows, hover, active state.
+- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). Older oxblood `#8a2a1a` remains in a handful of map/admin spots (pin markers, active row bar) and is being phased out as those touch points are revisited.
 - Background: warm newsprint `#f6f3ec`, never pure white.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
@@ -69,6 +71,18 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - **Curator handles** follow Telegram convention: `@handle` or `sigmundtells` (no `@` for channel-name style).
 - **Metadata format:** `Neighborhood · type · day + time`.
 - **Editorial voice:** no em-dashes in headlines, no exclamation marks, no "discover", no marketing voice. Reads like the back page of a newsletter.
+
+## Brand identity (Beacon · v2 · May 2026)
+
+The mark is a **petrol squircle tile with a centered lime diamond**. One mark, no system. Full spec in `brand/BRAND.md` — read it before touching anything that renders the logo.
+
+- **Canonical colors:** petrol `oklch(0.42 0.07 195)` / `#055959`, lime `oklch(0.86 0.16 113)` / `#d2dc50`. Already live as `--c-accent` / `--c-lime` in `styles.css`.
+- **Canonical proportions:** tile `rx = 0.18 × side` (iOS squircle), diamond side = `0.20 × tile side`, diamond `rx = 0.12 × diamond side`. The CSS `.logo-mark` in `styles.css:163` is hand-tuned to these ratios at 26 px — do NOT change the 26/5/5/1 px figures without re-deriving from spec.
+- **Two wordmark variants:** primary (`brand/masters/wordmark.svg` — Geist 600 lockup) for product chrome; editorial (`wordmark-editorial.svg` — italic "Alt.") for marketing only. Never use editorial in nav.
+- **Theme color:** all HTML files declare `<meta name="theme-color" content="#055959" />`. Mobile browser chrome tints petrol.
+- **Favicons / app icons:** referenced from `brand/favicon/` and `brand/pwa/` via `<link>` tags + `manifest.webmanifest`. SVG-only currently (universal support in 2026). PNG/ICO rasterizations are a follow-up if older browsers need them — pipeline TBD.
+- **OG / Twitter cards:** `brand/social/og-default.svg` (1200×630) and `twitter-default.svg` (1200×675). Wired into `index.html` and `venue.html`.
+- **Do not introduce a third color.** Two-tone for a reason. Oxblood `#8a2a1a` mentioned in older HANDOFF passages was retired — `--c-accent` (petrol) is the only accent now.
 
 ## Working rules
 

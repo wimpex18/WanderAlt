@@ -40,6 +40,9 @@ First city: **Tallinn**. First screen: **Briefing** (the default landing).
 ├── city.js               # City switcher (multi-city scaffold)
 ├── mood-chips.js         # Mood-tag filter chips; writes to #mood= hash
 ├── assets/               # SVG icons / static assets
+├── brand/                # Beacon brand kit — tile + wordmark masters, favicons, PWA/iOS/Android icons,
+│                         #   social cards, BRAND.md (palette/type/lockup spec), IMPLEMENTATION.md
+├── manifest.webmanifest  # PWA web manifest — references brand/pwa/*.svg, theme color #055959
 ├── docs/archive/         # Wireframes + market research (gitignored, local only)
 ├── CLAUDE.md             # Claude Code instructions (file map, conventions, API keys, LLM policy)
 ├── HANDOFF.md            # Engineering reference — tokens, components, state matrices
@@ -83,7 +86,7 @@ Weights actually loaded: Source Serif 4 400/500/600 (+ italic 400), Instrument S
 
 All design decisions live in `:root` in [`styles.css`](styles.css). The main groups:
 
-- `--c-*` — color palette (warm off-white paper, deep ink, restrained single accent `#8a2a1a`)
+- `--c-*` — color palette (paper white, deep ink, **Beacon** brand: petrol `#055959` accent + signal lime `#d2dc50`)
 - `--ff-*` — font families
 - `--fs-*` — type scale
 - `--lh-*` — leading

@@ -160,10 +160,16 @@ img, svg { display: block; max-width: 100%; }
   border-bottom: var(--rule-w) solid var(--c-rule);
 }
 
-/* Logo mark — petrol square + lime diamond */
+/* Logo mark — Beacon. Petrol squircle tile + lime diamond.
+   Proportions are canonical (see brand/BRAND.md §1):
+     · tile rx       = 0.18 × side (iOS squircle ratio)
+     · diamond side  = 0.20 × tile side
+     · diamond rx    = 0.12 × diamond side
+   At 26 px tile this rounds to: rx 5, diamond 5×5, diamond rx 1.
+   Master SVG lives at brand/masters/tile.svg.                          */
 .logo-mark {
   width: 26px; height: 26px;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--c-accent);
   display: inline-flex;
   align-items: center;
@@ -171,8 +177,8 @@ img, svg { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 .logo-mark__diamond {
-  width: 8px; height: 8px;
-  border-radius: 2px;
+  width: 5px; height: 5px;
+  border-radius: 1px;
   background: var(--c-lime);
   transform: rotate(45deg);
 }

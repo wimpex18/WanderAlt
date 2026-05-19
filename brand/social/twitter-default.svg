@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+
+  <rect x="0" y="0" width="1200" height="675" fill="#ffffff"></rect>
+  <circle cx="1100" cy="100" r="180" fill="#d2dc50" opacity="0.5"></circle>
+  <g transform="translate(72 260)">
+    <rect x="0" y="0" width="140" height="140" rx="25.20" fill="#055959"></rect>
+  <rect x="56.00" y="56.00" width="28.00" height="28.00" rx="3.36" fill="#d2dc50" transform="rotate(45 70 70)"></rect>
+  </g>
+  <text x="236" y="366" fill="#0a0a0c" font-family="Geist, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-weight="600" font-size="108" letter-spacing="-3.5">WanderAlt</text>
+  <text x="72" y="100" fill="#71717a" font-family="Geist Mono, ui-monospace, monospace" font-size="18" letter-spacing="4">A FIELD GUIDE TO THE OTHER CITY</text>
+  <line x1="72" y1="540" x2="780" y2="540" stroke="#e7e5e4" stroke-width="1"></line>
+  <text x="72" y="590" fill="#1f1f23" font-family="Geist, -apple-system, system-ui, sans-serif" font-weight="500" font-size="24" letter-spacing="-0.5">Vinyl · live · second-hand · readings — Tallinn, Berlin, Lisbon, Athens.</text>
+</svg>

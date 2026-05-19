@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="200" viewBox="0 0 760 200">
+
+  <g transform="translate(0 30)">
+    <rect x="0" y="0" width="140" height="140" rx="25.20" fill="#055959"></rect>
+  <rect x="56.00" y="56.00" width="28.00" height="28.00" rx="3.36" fill="#d2dc50" transform="rotate(45 70 70)"></rect>
+  </g>
+  <text x="164" y="136" fill="#0a0a0c" font-family="Geist, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" font-weight="600" font-size="108" letter-spacing="-3.5">WanderAlt</text>
+</svg>
