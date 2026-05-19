@@ -16,13 +16,14 @@
      catalog.js → city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
-  /* Each city has a static illustrated overview SVG in /assets/.
-     Tallinn is the real plate from map-world.js; Helsinki and Riga are
-     "Coming soon" placeholders until those cities ship. */
+  /* Each city has a static illustrated overview plate at /assets/
+     <city>-overview.svg. The three plates (Tallinn, Helsinki, Riga)
+     ship under the city-plates-v2 brand bundle — see
+     brand/BRAND.md § 5 for the canonical two-mark rule. */
   const CITIES = [
-    { id: 'tallinn',  label: 'TALLINN',  status: 'live',    thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'soon',    thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'soon',    thumb: './assets/riga-overview.svg'     },
+    { id: 'tallinn',  label: 'TALLINN',  status: 'live', thumb: './assets/tallinn-overview.svg'  },
+    { id: 'helsinki', label: 'HELSINKI', status: 'soon', thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'soon', thumb: './assets/riga-overview.svg'     },
   ];
 
   const LS_KEY  = 'wa:city';
@@ -47,6 +48,32 @@
     /* Update button label to reflect the stored city. */
     const current = CITIES.find(c => c.id === window.WA.CITY) || CITIES[0];
     if (nameEl) nameEl.textContent = current.label;
+
+    /* Stamp the active city on <body> so CSS can hook off it. The
+       .city-banner background-image is set per-city via body[data-city]
+       selectors in styles.css. */
+    document.body.dataset.city = current.id;
+
+    /* Inject the city banner — a thin (64 px) decorative ribbon below
+       the topbar that center-crops the current city's illustrated
+       plate. Visible on every content page (skipped on admin to keep
+       the internal tool dense). Doing this from JS means we don't
+       have to edit every HTML file's body; the city.js dependency
+       already exists on every page that needs it. */
+    const onAdminPage = document.body.dataset.page === 'admin';
+    if (!onAdminPage && !document.querySelector('.city-banner')) {
+      const topbar = document.querySelector('.topbar');
+      if (topbar) {
+        const banner = document.createElement('div');
+        banner.className = 'city-banner';
+        banner.setAttribute('aria-hidden', 'true');
+        /* Clicking the banner opens the city dropdown — quick affordance
+           for "I want a different city" without scrolling back to the
+           topbar selector. */
+        banner.addEventListener('click', () => btn.click());
+        topbar.insertAdjacentElement('afterend', banner);
+      }
+    }
 
     /* Update page <title>: replace any city name with the current one. */
     CITIES.forEach(c => {

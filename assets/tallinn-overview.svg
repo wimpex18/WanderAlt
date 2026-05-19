@@ -1,904 +1,354 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" width="1800" height="1200" style="display:block;shape-rendering:geometricPrecision">
-  <defs>
-    <pattern id="wa-waves" x="0" y="0" width="56" height="22" patternUnits="userSpaceOnUse">
-      <path d="M 0 14 Q 14 6 28 14 T 56 14" fill="none" stroke="oklch(0.55 0.04  210)" stroke-opacity="0.18" stroke-width="1.2"/>
-    </pattern>
-    <pattern id="wa-waves2" x="0" y="11" width="56" height="22" patternUnits="userSpaceOnUse">
-      <path d="M 0 14 Q 14 6 28 14 T 56 14" fill="none" stroke="oklch(0.55 0.04  210)" stroke-opacity="0.10" stroke-width="0.9"/>
-    </pattern>
-    <pattern id="wa-parkdots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.1" fill="oklch(0.72 0.08  140)" opacity="0.35"/>
-      <circle cx="9" cy="8" r="0.9" fill="oklch(0.72 0.08  140)" opacity="0.25"/>
-    </pattern>
-    <pattern id="wa-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="1"/>
-    </pattern>
-    <pattern id="wa-sand" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-      <rect width="14" height="14" fill="oklch(0.955 0.028 82)"/>
-      <circle cx="3" cy="3" r="0.6" fill="oklch(0.74 0.06 70)" opacity="0.6"/>
-      <circle cx="9" cy="9" r="0.6" fill="oklch(0.74 0.06 70)" opacity="0.6"/>
-    </pattern>
-    <pattern id="wa-apron" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-      <rect width="18" height="18" fill="oklch(0.84 0.006 250)"/>
-      <line x1="0" y1="9" x2="18" y2="9" stroke="oklch(0.72 0.008 250)" stroke-width="0.6" stroke-dasharray="6 4"/>
-    </pattern>
-  </defs>
+<?xml version="1.0"?>
 
-  <!-- SEA -->
-  <rect x="0" y="0" width="1800" height="1200" fill="oklch(0.88 0.018 210)"/>
-  <rect x="0" y="0" width="1800" height="1200" fill="url(#wa-waves)"/>
-  <rect x="0" y="0" width="1800" height="1200" fill="url(#wa-waves2)"/>
-
-  <!-- LAND -->
-  <path d="M -50 1250 L -50 380
-    C 100 370 220 340 320 320 C 400 308 500 280 560 240
-    C 600 215 640 200 680 215 C 720 230 720 260 700 290
-    C 685 320 660 350 640 360 C 670 360 720 350 780 360
-    C 840 372 880 386 940 396 C 1000 405 1060 395 1120 380
-    C 1200 360 1260 330 1320 320 C 1360 314 1390 320 1420 348
-    C 1450 376 1490 378 1530 372 C 1570 366 1610 374 1660 380
-    C 1710 388 1750 410 1850 420 L 1850 1250 Z" fill="oklch(0.975 0.014 78)"/>
-  <path d="M -50 380
-    C 100 370 220 340 320 320 C 400 308 500 280 560 240
-    C 600 215 640 200 680 215 C 720 230 720 260 700 290
-    C 685 320 660 350 640 360 C 670 360 720 350 780 360
-    C 840 372 880 386 940 396 C 1000 405 1060 395 1120 380
-    C 1200 360 1260 330 1320 320 C 1360 314 1390 320 1420 348
-    C 1450 376 1490 378 1530 372 C 1570 366 1610 374 1660 380
-    C 1710 388 1750 410 1850 420"
-    fill="none" stroke="#2a2a2e" stroke-width="2.2" stroke-linejoin="round"/>
-
-  <!-- sand strip -->
-  <path d="M -50 392 C 100 382 220 352 320 332 C 400 320 500 292 560 252
-    C 600 227 640 212 680 227 C 720 242 720 272 700 302
-    C 685 332 660 362 640 372 C 670 372 720 362 780 372
-    C 840 384 880 398 940 408 C 1000 417 1060 407 1120 392
-    C 1200 372 1260 342 1320 332 C 1360 326 1390 332 1420 360
-    C 1450 388 1490 390 1530 384 C 1570 378 1610 386 1660 392
-    C 1710 400 1750 422 1850 432
-    L 1850 446 C 1750 436 1710 414 1660 406
-    C 1610 400 1570 392 1530 398 C 1490 404 1450 402 1420 374
-    C 1390 346 1360 340 1320 346 C 1260 356 1200 386 1120 406
-    C 1060 421 1000 431 940 422 C 880 412 840 398 780 386
-    C 720 376 670 386 640 386 C 660 376 685 346 700 316
-    C 720 286 720 256 680 241 C 640 226 600 241 560 266
-    C 500 306 400 334 320 346 C 220 366 100 396 -50 406 Z" fill="oklch(0.955 0.028 82)"/>
-
-  <!-- Kalarand beach -->
-  <path d="M 940 388 L 1010 388 L 1015 408 L 950 410 Z" fill="url(#wa-sand)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-
-  <rect x="0" y="0" width="1800" height="1200" fill="url(#wa-grid)"/>
-
-  <!-- DISTRICTS -->
-  <path d="M 60 400 C 50 480 80 560 60 660 L 360 640 C 370 540 360 460 400 400 C 280 400 170 400 60 400 Z" fill="oklch(0.962 0.010 55)" opacity="0.85"/>
-  <path d="M 465 365 C 465 320 485 285 525 270 C 590 252 660 252 695 275 C 715 295 720 345 695 365 C 650 378 540 378 465 365 Z" fill="oklch(0.958 0.016 295)" opacity="0.92"/>
-  <path d="M 400 380 C 470 390 560 390 640 380 C 720 380 770 420 770 500 C 770 580 720 640 640 650 C 540 660 460 640 420 580 C 380 520 380 440 400 380 Z" fill="oklch(0.962 0.018 25)" opacity="0.92"/>
-  <path d="M 580 660 C 660 650 740 660 810 700 C 850 740 840 800 790 840 C 730 870 630 870 580 840 C 530 800 530 720 580 660 Z" fill="oklch(0.962 0.012 255)" opacity="0.92"/>
-  <path d="M 910 430 C 1000 410 1110 420 1180 460 C 1230 500 1240 590 1210 650 C 1170 710 1080 730 1000 720 C 920 710 870 650 870 560 C 870 490 880 450 910 430 Z" fill="oklch(0.962 0.018 72)" opacity="0.95"/>
-  <path d="M 880 470 C 900 450 940 450 950 480 C 960 520 940 580 900 590 C 870 590 860 530 880 470 Z" fill="oklch(0.90 0.048 140)" opacity="0.55"/>
-  <path d="M 1180 540 C 1260 520 1320 540 1340 600 C 1350 680 1330 780 1280 850 C 1200 920 1100 920 1080 850 C 1060 780 1080 680 1110 600 C 1130 565 1150 545 1180 540 Z" fill="oklch(0.962 0.010 220)" opacity="0.92"/>
-  <path d="M 1360 460 C 1440 450 1520 480 1560 530 C 1590 580 1580 670 1530 750 C 1460 810 1380 800 1330 750 C 1300 700 1300 600 1320 530 C 1330 495 1345 470 1360 460 Z" fill="oklch(0.955 0.024 140)" opacity="0.92"/>
-  <path d="M 1600 460 C 1680 450 1760 470 1790 510 L 1820 720 C 1780 760 1700 760 1660 720 C 1620 680 1600 590 1600 460 Z" fill="oklch(0.958 0.020 160)" opacity="0.92"/>
-  <path d="M 540 880 C 660 870 800 880 920 900 C 1000 910 1080 920 1080 970 C 1080 1010 1000 1020 900 1020 C 800 1020 680 1010 580 1000 C 520 990 500 940 540 880 Z" fill="oklch(0.960 0.014 100)" opacity="0.92"/>
-
-  <!-- PARKS -->
-  <path d="M 820 540 C 840 510 870 510 880 540 C 880 580 860 610 830 610 C 800 600 800 570 820 540 Z" fill="oklch(0.86 0.055 140)" stroke="oklch(0.72 0.08  140)" stroke-width="1"/>
-  <g>
-    <polygon points="825.2005744170096,580.4253343621399 818.3503795867628,605.335133744856 832.0507692472565,605.335133744856" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="823.7005744170096" y="605.335133744856" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="856.0749314128943,522.4084104938272 846.3616173696845,557.7295524691358 865.7882454561042,557.7295524691358" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="854.5749314128943" y="557.7295524691358" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="840.1205847050754,539.6600051440329 832.780609782236,566.3508230452675 847.4605596279149,566.3508230452675" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="838.6205847050754" y="566.3508230452675" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="876.5042009602195,565.8467849794239 869.7615234910836,590.3656121399177 883.2468784293553,590.3656121399177" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="875.0042009602195" y="590.3656121399177" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <path d="M 1360 510 C 1440 490 1520 525 1550 580 C 1565 640 1535 715 1470 745 C 1400 760 1340 720 1330 670 C 1320 615 1335 555 1360 510 Z" fill="oklch(0.86 0.055 140)" stroke="oklch(0.72 0.08  140)" stroke-width="1.1"/>
-  <rect x="1340" y="500" width="220" height="260" fill="url(#wa-parkdots)" opacity="0.35" pointer-events="none"/>
-  <g>
-    <polygon points="1530.8856310013716,559.6447959533607 1525.4204516032235,579.5181755829904 1536.3508103995198,579.5181755829904" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1529.3856310013716" y="579.5181755829904" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1395.6412894375858,650.3903463648834 1389.7268797153636,671.8972908093278 1401.555699159808,671.8972908093278" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1394.1412894375858" y="671.8972908093278" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1415.4895404663923,656.3812671467764 1408.8623587534294,680.480109739369 1422.1167221793553,680.480109739369" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1413.9895404663923" y="680.480109739369" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1473.7637174211247,653.4508916323731 1464.0977220507543,688.5999657064472 1483.4297127914951,688.5999657064472" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1472.2637174211247" y="688.5999657064472" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1453.7971536351165,553.4325531550069 1446.603802940672,579.5901920438957 1460.990504329561,579.5901920438957" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1452.2971536351165" y="579.5901920438957" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1438.9231824417009,614.159585048011 1432.7014347565157,636.784122085048 1445.144930126886,636.784122085048" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1437.4231824417009" y="636.784122085048" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1512.4751371742113,511.4653206447188 1503.6614508316188,543.5150891632373 1521.2888235168039,543.5150891632373" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1510.9751371742113" y="543.5150891632373" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1357.7863511659807,557.1830932784637 1350.654684499314,583.116426611797 1364.9180178326474,583.116426611797" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1356.2863511659807" y="583.116426611797" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1458.190157750343,609.1462362825789 1450.0019690929355,638.9214677640604 1466.3783464077503,638.9214677640604" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1456.690157750343" y="638.9214677640604" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1497.019890260631,561.1880829903978 1487.9241379458163,594.2635459533608 1506.1156425754457,594.2635459533608" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1495.519890260631" y="594.2635459533608" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1357.6088820301784,507.14196673525373 1350.6420243912894,532.4759945130315 1364.5757396690674,532.4759945130315" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1356.1088820301784" y="532.4759945130315" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <path d="M 520 410 C 570 400 610 410 630 440 C 640 470 620 500 580 500 C 540 500 510 480 520 410 Z" fill="oklch(0.90 0.048 140)" stroke="oklch(0.72 0.08  140)" stroke-width="0.9"/>
-  <g>
-    <polygon points="618.8970336076818,424.05849622770916 609.9180926354596,456.7091906721536 627.875974579904,456.7091906721536" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="617.3970336076818" y="456.7091906721536" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="585.0711591220851,428.22058470507545 580.0200711591222,446.58817729766804 590.122247085048,446.58817729766804" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="583.5711591220851" y="446.58817729766804" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="545.4582475994513,462.7623028120713 538.2964709790809,488.8051268861454 552.6200242198216,488.8051268861454" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="543.9582475994513" y="488.8051268861454" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="541.7249657064472,445.35031721536353 534.2514587620027,472.5267061042524 549.1984726508916,472.5267061042524" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="540.2249657064472" y="472.5267061042524" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="615.5379801097394,397.65129458161863 607.4892011745542,426.9195816186557 623.5867590449245,426.9195816186557" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="614.0379801097394" y="426.9195816186557" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <path d="M 120 700 C 200 680 280 690 320 720 C 320 760 280 780 220 780 C 160 780 120 750 120 700 Z" fill="oklch(0.86 0.055 140)" stroke="oklch(0.72 0.08  140)" stroke-width="1"/>
-  <g>
-    <polygon points="174.19568758573388,726.3901491769548 165.90925432956104,756.522633744856 182.48212084190672,756.522633744856" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="172.69568758573388" y="756.522633744856" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="193.78455075445817,730.174279835391 188.15791495198903,750.6347736625514 199.4111865569273,750.6347736625514" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="192.28455075445817" y="750.6347736625514" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="244.6002657750343,690.9260030864198 237.7948857596022,715.6728395061729 251.4056457904664,715.6728395061729" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="243.1002657750343" y="715.6728395061729" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="215.80949931412894,732.4786522633746 206.87433341906723,764.9701646090535 224.74466520919066,764.9701646090535" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="214.30949931412894" y="764.9701646090535" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="186.57891803840877,738.6655606995885 177.45042459705076,771.8600823045267 195.7074114797668,771.8600823045267" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="185.07891803840877" y="771.8600823045267" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="236.07518861454048,735.320061728395 226.62732596021948,769.6759259259259 245.52305126886148,769.6759259259259" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="234.57518861454048" y="769.6759259259259" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="253.4649777091907,686.2754886831276 246.45920417524007,711.7510288065844 260.4707512431413,711.7510288065844" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="251.9649777091907" y="711.7510288065844" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="317.91495198902606,679.3651748971193 309.1002259087791,711.4187242798354 326.729678069273,711.4187242798354" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="316.41495198902606" y="711.4187242798354" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <g>
-    <ellipse cx="1170" cy="780" rx="35" ry="20" fill="oklch(0.86 0.055 140)" stroke="oklch(0.72 0.08  140)" stroke-width="1.1"/>
-    <g>
-    <polygon points="1196.0329303840879,741.1684070644719 1189.1315125600138,766.2644718792867 1202.934348208162,766.2644718792867" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1194.5329303840879" y="766.2644718792867" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1195.1534807956104,743.8062414266118 1188.375749314129,768.4525377229081 1201.9312122770918,768.4525377229081" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1193.6534807956104" y="768.4525377229081" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1170.0194015775035,761.7450017146776 1163.9268147719479,783.8998628257888 1176.111988383059,783.8998628257888" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1168.5194015775035" y="783.8998628257888" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  </g>
-  <path d="M 1620 540 C 1700 530 1770 545 1800 580 C 1800 660 1740 690 1680 690 C 1620 690 1600 620 1620 540 Z" fill="oklch(0.86 0.055 140)" stroke="oklch(0.72 0.08  140)" stroke-width="1.1"/>
-  <g>
-    <polygon points="1664.7991683813443,560.2966306584362 1658.5902582733197,582.8744855967078 1671.008078489369,582.8744855967078" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1663.2991683813443" y="582.8744855967078" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1737.4186385459534,574.252700617284 1730.0653592249657,600.9918981481482 1744.771917866941,600.9918981481482" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1735.9186385459534" y="600.9918981481482" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1781.3112568587105,637.6717335390947 1775.5750666580932,658.5306069958848 1787.0474470593279,658.5306069958848" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1779.8112568587105" y="658.5306069958848" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1697.3103566529492,649.220396090535 1688.9402139060355,679.6572788065844 1705.6804993998628,679.6572788065844" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1695.8103566529492" y="679.6572788065844" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1726.2492712620028,561.5653549382716 1718.8316343021263,588.5385802469136 1733.6669082218793,588.5385802469136" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1724.7492712620028" y="588.5385802469136" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1768.9613340192045,533.3732767489712 1759.0701611796983,569.3411779835391 1778.8525068587107,569.3411779835391" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1767.4613340192045" y="569.3411779835391" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1726.2798782578875,647.3108281893004 1718.326627872085,676.2317386831276 1734.23312864369,676.2317386831276" fill="oklch(0.86 0.055 140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1724.7798782578875" y="676.2317386831276" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1669.0382373113855,542.044675925926 1660.42186771262,573.3769290123457 1677.654606910151,573.3769290123457" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1667.5382373113855" y="573.3769290123457" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g><g>
-    <polygon points="1668.0697445130315,542.2414866255144 1659.0767140346366,574.9434156378601 1677.0627749914265,574.9434156378601" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="1666.5697445130315" y="574.9434156378601" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-
-  <!-- WATER — ponds / lakes -->
-  <ellipse cx="820" cy="660" rx="32" ry="12" fill="oklch(0.88 0.018 210)" stroke="oklch(0.55 0.04  210)" stroke-width="1" opacity="0.85"/>
-  <path d="M 1360 990 C 1410 970 1500 965 1580 985 C 1660 1005 1700 1040 1680 1080 C 1630 1115 1540 1120 1460 1105 C 1380 1090 1330 1040 1360 990 Z" fill="oklch(0.88 0.018 210)" stroke="oklch(0.55 0.04  210)" stroke-width="1.4" opacity="0.85"/>
-  <path d="M 1360 990 C 1410 970 1500 965 1580 985 C 1660 1005 1700 1040 1680 1080 C 1630 1115 1540 1120 1460 1105 C 1380 1090 1330 1040 1360 990 Z" fill="url(#wa-waves)" opacity="0.6"/>
-
-  <!-- RAILWAY -->
-  <g stroke="oklch(0.38  0.028 280)" stroke-width="2" fill="none">
-    <path d="M 855 420 C 850 500 820 620 805 760 C 800 860 820 960 850 1100"/>
-    <path d="M 868 420 C 863 500 833 620 818 760 C 813 860 833 960 863 1100"/>
-  </g>
-  <line x1="859" y1="420" x2="877" y2="420" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="855.9208312504959" y1="448.3333333333333" x2="873.9208312504959" y2="448.3333333333333" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="852.8666000634569" y1="476.6666666666667" x2="870.8666000634569" y2="476.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="849.8619948334665" y1="505" x2="867.8619948334665" y2="505" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="846.9312081089504" y1="533.3333333333334" x2="864.9312081089504" y2="533.3333333333334" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="844.0976948682282" y1="561.6666666666667" x2="862.0976948682282" y2="561.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="841.3839381651242" y1="590" x2="859.3839381651242" y2="590" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="838.8112244857243" y1="618.3333333333334" x2="856.8112244857243" y2="618.3333333333334" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="836.3994310608454" y1="646.6666666666666" x2="854.3994310608454" y2="646.6666666666666" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="834.1668272593129" y1="675" x2="852.1668272593129" y2="675" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="832.1298920464692" y1="703.3333333333334" x2="850.1298920464692" y2="703.3333333333334" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="830.3031493317975" y1="731.6666666666666" x2="848.3031493317975" y2="731.6666666666666" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="828.6990228508193" y1="760" x2="846.6990228508193" y2="760" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="827.3277120312368" y1="788.3333333333333" x2="845.3277120312368" y2="788.3333333333333" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="826.1970900836219" y1="816.6666666666667" x2="844.1970900836219" y2="816.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="825.3126253348986" y1="845" x2="843.3126253348986" y2="845" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="824.677326590629" y1="873.3333333333333" x2="842.677326590629" y2="873.3333333333333" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="824.2917130720217" y1="901.6666666666667" x2="842.2917130720217" y2="901.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="824.1538092280451" y1="930" x2="842.1538092280451" y2="930" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="824.2591644744813" y1="958.3333333333333" x2="842.2591644744813" y2="958.3333333333333" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="824.6008976626913" y1="986.6666666666667" x2="842.6008976626913" y2="986.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="825.1697658337781" y1="1015" x2="843.1697658337781" y2="1015" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="825.9542565711769" y1="1043.3333333333333" x2="843.9542565711769" y2="1043.3333333333333" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/><line x1="826.9407030289153" y1="1071.6666666666667" x2="844.9407030289153" y2="1071.6666666666667" stroke="oklch(0.38  0.028 280)" stroke-width="1.4" opacity="0.7"/>
-
-  <!-- MAJOR ROADS -->
-  <g stroke="oklch(0.88  0.010 80)" stroke-width="6" fill="none">
-    <path d="M 200 740 C 380 720 580 720 720 720 C 860 720 1000 700 1200 700 C 1340 700 1500 720 1680 760"/>
-    <path d="M 950 460 C 980 580 990 700 970 820 C 960 940 940 1020 930 1180"/>
-    <path d="M 60 540 C 200 530 360 530 540 540 C 700 550 860 560 1010 560"/>
-  </g>
-  <g stroke="oklch(0.985 0.003 80)" stroke-width="3" fill="none">
-    <path d="M 200 740 C 380 720 580 720 720 720 C 860 720 1000 700 1200 700 C 1340 700 1500 720 1680 760"/>
-    <path d="M 950 460 C 980 580 990 700 970 820 C 960 940 940 1020 930 1180"/>
-    <path d="M 60 540 C 200 530 360 530 540 540 C 700 550 860 560 1010 560"/>
-  </g>
-  <!-- Reidi tee -->
-  <g stroke="oklch(0.88  0.010 80)" stroke-width="6" fill="none">
-    <path d="M 1020 405 C 1100 420 1200 420 1300 430 C 1400 440 1500 450 1600 460 C 1700 470 1780 490 1820 510"/>
-  </g>
-  <g stroke="oklch(0.985 0.003 80)" stroke-width="3" fill="none">
-    <path d="M 1020 405 C 1100 420 1200 420 1300 430 C 1400 440 1500 450 1600 460 C 1700 470 1780 490 1820 510"/>
-  </g>
-
-  <!-- TRAM NETWORK -->
-  <g>
-    <path d="M 100 540 C 220 530 340 530 460 540 C 540 545 600 590 660 650 C 720 720 780 720 830 720 C 880 720 920 760 950 820 C 990 880 1050 920 1120 950 C 1200 980 1280 970 1340 950 C 1400 935 1470 935 1530 960" stroke="oklch(0.50 0.12 28)" stroke-width="5.6" fill="none" opacity="0.18" stroke-linecap="round"/>
-    <path d="M 100 540 C 220 530 340 530 460 540 C 540 545 600 590 660 650 C 720 720 780 720 830 720 C 880 720 920 760 950 820 C 990 880 1050 920 1120 950 C 1200 980 1280 970 1340 950 C 1400 935 1470 935 1530 960" stroke="oklch(0.50 0.12 28)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-    <path d="M 100 540 C 220 530 340 530 460 540 C 540 545 600 590 660 650 C 720 720 780 720 830 720 C 880 720 920 760 950 820 C 990 880 1050 920 1120 950 C 1200 980 1280 970 1340 950 C 1400 935 1470 935 1530 960" stroke="oklch(0.50 0.12 28)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.6"/>
-  </g>
-  <g>
-    <path d="M 950 820 C 1000 760 1060 700 1100 660" stroke="oklch(0.54 0.12 60)" stroke-width="5.6" fill="none" opacity="0.18" stroke-linecap="round"/>
-    <path d="M 950 820 C 1000 760 1060 700 1100 660" stroke="oklch(0.54 0.12 60)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-    <path d="M 950 820 C 1000 760 1060 700 1100 660" stroke="oklch(0.54 0.12 60)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.6"/>
-  </g>
-  <g>
-    <path d="M 1180 700 C 1280 660 1360 620 1440 600" stroke="oklch(0.44 0.10 200)" stroke-width="5.6" fill="none" opacity="0.18" stroke-linecap="round"/>
-    <path d="M 1180 700 C 1280 660 1360 620 1440 600" stroke="oklch(0.44 0.10 200)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-    <path d="M 1180 700 C 1280 660 1360 620 1440 600" stroke="oklch(0.44 0.10 200)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.6"/>
-  </g>
-
-  <!-- OLD TOWN WALL -->
-  <path d="M 905 430 C 1000 410 1115 422 1185 462 C 1245 504 1247 596 1205 660 C 1155 716 1065 730 985 718 C 910 706 858 640 868 562 C 874 504 880 452 905 430 Z" fill="none" stroke="oklch(0.48  0.120 35)" stroke-width="3.5"/>
-  <circle cx="1220" cy="575" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1202.6695518829233" cy="631.4048860852826" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1154.1107153252783" cy="676.6380927208438" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1083.941163442355" cy="701.7406285836371" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1006.058836557645" cy="701.7406285836371" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="935.8892846747217" cy="676.6380927208439" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="887.3304481170767" cy="631.4048860852826" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="870" cy="575" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="887.3304481170767" cy="518.5951139147174" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="935.8892846747216" cy="473.3619072791561" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1006.0588365576449" cy="448.2593714163629" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1083.941163442355" cy="448.2593714163629" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1154.1107153252783" cy="473.3619072791561" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/><circle cx="1202.6695518829233" cy="518.5951139147174" r="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/>
-
-  <!-- OLD TOWN LANDMARKS -->
-  <g transform="translate(910,540) scale(0.92)">
-    <rect x="-38" y="-30" width="50" height="36" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/><rect x="-32.1" y="-19" width="8.799999999999999" height="14" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8800000000000001"/><rect x="-17.400000000000002" y="-19" width="8.799999999999999" height="14" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8800000000000001"/><rect x="-2.700000000000003" y="-19" width="8.799999999999999" height="14" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8800000000000001"/>
-    <rect x="-30" y="-34" width="6" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/><rect x="-18" y="-34" width="6" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/><rect x="-6" y="-34" width="6" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/><rect x="6" y="-34" width="6" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/>
-    <g>
-    <rect x="17" y="-64" width="22" height="70" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="17" y="-68" width="4.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="22.5" y="-68" width="4.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="28" y="-68" width="4.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="33.5" y="-68" width="4.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="16,-68 28,-90.44 40,-68" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="26.5" y="-29" width="3" height="12.6" fill="oklch(0.30  0.024 60)"/>
-    
-    <line x1="28" y1="-90.44" x2="28" y2="-112.44" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="28,-112.44 42,-108.44 42,-101.44 28,-97.44" fill="#8a2a1a" stroke="#111114" stroke-width="1.2800000000000002"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" preserveAspectRatio="xMidYMid slice">
   
+  <rect width="1800" height="1200" fill="#f6f3ec"></rect>
+
+  
+  <path d="M 0 0 L 1180 0 C 1020 90 880 180 720 250 C 540 330 320 380 0 460 Z" fill="#d9e2e3"></path>
+  
+  <path d="M 1800 0 L 1800 120 C 1700 140 1620 180 1560 230 C 1520 200 1500 150 1490 80 L 1490 0 Z" fill="#d9e2e3"></path>
+
+  
+  <g fill="none" stroke="#6e8a90" stroke-width="2" stroke-linecap="round" opacity="0.55">
+    <path d="M 120 200 q 40 -14 80 0 t 80 0 t 80 0" stroke-dasharray="0 0"></path>
+    <path d="M 80 320 q 50 -14 100 0 t 100 0"></path>
+    <path d="M 460 140 q 36 -12 72 0 t 72 0"></path>
+    <path d="M 760 80 q 30 -10 60 0 t 60 0"></path>
   </g>
+
+  
+  <path d="M 0 460 C 320 380 540 330 720 250 C 880 180 1020 90 1180 0" fill="none" stroke="#0a0a0c" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
+  <path d="M 1490 0 C 1500 90 1520 170 1560 230" fill="none" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></path>
+
+  
+  
+  <path d="M 700 900 C 660 870 660 830 700 810 C 760 800 810 810 840 850 C 850 890 820 920 770 925 C 730 928 710 920 700 900 Z" fill="#c5dec2" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></path>
+  
+  <path d="M 1300 970 C 1240 940 1240 880 1300 855 C 1380 830 1480 845 1520 890 C 1545 935 1505 985 1430 1000 C 1370 1010 1325 1000 1300 970 Z" fill="#c5dec2" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></path>
+  
+  <g fill="#99c298" stroke="#0a0a0c" stroke-width="1.4">
+    <circle cx="760" cy="870" r="14"></circle>
+    <circle cx="790" cy="855" r="11"></circle>
+    <circle cx="1340" cy="920" r="16"></circle>
+    <circle cx="1390" cy="900" r="14"></circle>
+    <circle cx="1440" cy="935" r="18"></circle>
+    <circle cx="1480" cy="915" r="13"></circle>
   </g>
-  <g transform="translate(970,540) scale(0.9)">
-    <rect x="-46" y="-36" width="92" height="48" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-46" y="-30" width="92" height="4" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="-35" y="-18" width="10" height="20" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1" rx="4"/><rect x="-15" y="-18" width="10" height="20" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1" rx="4"/><rect x="5" y="-18" width="10" height="20" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1" rx="4"/><rect x="25" y="-18" width="10" height="20" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1" rx="4"/>
-    <g>
-    <rect x="-7.2" y="-62.400000000000006" width="14.4" height="26.400000000000002" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -16,-62.400000000000006 Q -16.8,-81.60000000000001 -4.8,-88.80000000000001 Q 0,-98.4 4.8,-88.80000000000001 Q 16.8,-81.60000000000001 16,-62.400000000000006 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="0" y1="-98.4" x2="0" y2="-106.56" stroke="#111114" stroke-width="1.7600000000000002" stroke-linecap="round"/>
-    <line x1="-3" y1="-102.72" x2="3" y2="-102.72" stroke="#111114" stroke-width="1.4400000000000002" stroke-linecap="round"/>
-  </g><g>
-    <rect x="-34.5" y="-52.5" width="9" height="16.5" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -40,-52.5 Q -40.5,-64.5 -33,-69 Q -30,-75 -27,-69 Q -19.5,-64.5 -20,-52.5 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="-30" y1="-75" x2="-30" y2="-80.1" stroke="#111114" stroke-width="1.7600000000000002" stroke-linecap="round"/>
-    <line x1="-33" y1="-77.7" x2="-27" y2="-77.7" stroke="#111114" stroke-width="1.4400000000000002" stroke-linecap="round"/>
-  </g><g>
-    <rect x="25.5" y="-52.5" width="9" height="16.5" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M 20,-52.5 Q 19.5,-64.5 27,-69 Q 30,-75 33,-69 Q 40.5,-64.5 40,-52.5 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="30" y1="-75" x2="30" y2="-80.1" stroke="#111114" stroke-width="1.7600000000000002" stroke-linecap="round"/>
-    <line x1="27" y1="-77.7" x2="33" y2="-77.7" stroke="#111114" stroke-width="1.4400000000000002" stroke-linecap="round"/>
-  </g><g>
-    <rect x="-49.15" y="-48.1" width="6.3" height="12.100000000000001" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -53,-48.1 Q -53.35,-56.900000000000006 -48.1,-60.2 Q -46,-64.6 -43.9,-60.2 Q -38.65,-56.900000000000006 -39,-48.1 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="-46" y1="-64.6" x2="-46" y2="-68.34" stroke="#111114" stroke-width="1.7600000000000002" stroke-linecap="round"/>
+
+  
+  <path d="M 0 1010 C 240 990 460 1000 720 985 C 980 970 1240 990 1480 980 C 1620 975 1720 985 1800 980" fill="none" stroke="#0a0a0c" stroke-width="1.4" opacity="0.18"></path>
+
+  
+  <g>
     
-  </g><g>
-    <rect x="42.85" y="-48.1" width="6.3" height="12.100000000000001" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M 39,-48.1 Q 38.65,-56.900000000000006 43.9,-60.2 Q 46,-64.6 48.1,-60.2 Q 53.35,-56.900000000000006 53,-48.1 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="46" y1="-64.6" x2="46" y2="-68.34" stroke="#111114" stroke-width="1.7600000000000002" stroke-linecap="round"/>
+    <rect x="100" y="990" width="380" height="14" fill="#0a0a0c" opacity="0.08"></rect>
     
-  </g>
-  </g>
-  <g transform="translate(1150,490) scale(0.78)">
-    <g>
-    <rect x="-14" y="-49.5" width="28" height="49.5" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-2" y="-37.125" width="4" height="6" fill="oklch(0.30  0.024 60)"/>
-    <rect x="-2" y="-24.75" width="4" height="6" fill="oklch(0.30  0.024 60)"/>
-    <polygon points="-15,-49.5 0,-61.6 15,-49.5" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-7,-60.39 0,-110 7,-60.39" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <line x1="0" y1="-110" x2="0" y2="-116" stroke="#111114" stroke-width="1.6" stroke-linecap="round"/>
-  </g>
-    <rect x="-26" y="-30" width="14" height="30" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/>
-  </g>
-  <g transform="translate(1015,640) scale(0.78)">
-    <rect x="-44" y="-28" width="78" height="34" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -36 6 L -36 -2 Q -31 -8 -26 -2 L -26 6 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1"/><path d="M -22 6 L -22 -2 Q -17 -8 -12 -2 L -12 6 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1"/><path d="M -8 6 L -8 -2 Q -3 -8 2 -2 L 2 6 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1"/><path d="M 6 6 L 6 -2 Q 11 -8 16 -2 L 16 6 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1"/><path d="M 20 6 L 20 -2 Q 25 -8 30 -2 L 30 6 Z" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1"/>
-    <rect x="-32" y="-22" width="6" height="10" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="-18" y="-22" width="6" height="10" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="-4" y="-22" width="6" height="10" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="10" y="-22" width="6" height="10" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="24" y="-22" width="6" height="10" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="36" y="-46" width="16" height="52" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6"/>
-    <circle cx="44" cy="-34" r="5" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/>
-    <line x1="44" y1="-34" x2="44" y2="-37" stroke="#111114" stroke-width="1.2" stroke-linecap="round"/>
-    <line x1="44" y1="-34" x2="46" y2="-34" stroke="#111114" stroke-width="1.2" stroke-linecap="round"/>
-    <polygon points="36,-46 44,-74 52,-46" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="40,-74 44,-90 48,-74" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <line x1="44" y1="-90" x2="44" y2="-96" stroke="#111114" stroke-width="1.4" stroke-linecap="round"/>
-    <circle cx="44" cy="-98" r="2" fill="#8a2a1a" stroke="#111114" stroke-width="1"/>
-  </g>
-  <g transform="translate(1080,660)">
-    <rect x="-11" y="-40" width="22" height="40" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.4"/>
-    <polygon points="-12,-40 -12,-46 -5.5,-46 -5.5,-52 0,-52 0,-58 5.5,-52 5.5,-46 12,-46 12,-40" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-7.04" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-7.04" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-3" y="-9.6" width="6" height="9.6" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-  </g><g transform="translate(1110,660)">
-    <rect x="-11" y="-40" width="22" height="40" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.4"/>
-    <polygon points="-12,-40 -12,-46 -5.5,-46 -5.5,-52 0,-52 0,-58 5.5,-52 5.5,-46 12,-46 12,-40" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-7.04" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-7.04" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-3" y="-9.6" width="6" height="9.6" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-  </g><g transform="translate(1140,660)">
-    <rect x="-11" y="-40" width="22" height="40" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.4"/>
-    <polygon points="-12,-40 -12,-46 -5.5,-46 -5.5,-52 0,-52 0,-58 5.5,-52 5.5,-46 12,-46 12,-40" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-7.04" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-7.04" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-3" y="-9.6" width="6" height="9.6" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-  </g><g transform="translate(965,700)">
-    <rect x="-11" y="-40" width="22" height="40" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.4"/>
-    <polygon points="-12,-40 -12,-46 -5.5,-46 -5.5,-52 0,-52 0,-58 5.5,-52 5.5,-46 12,-46 12,-40" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-7.04" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-7.04" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-3" y="-9.6" width="6" height="9.6" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-  </g><g transform="translate(995,700)">
-    <rect x="-11" y="-40" width="22" height="40" fill="oklch(0.88  0.036 295)" stroke="#111114" stroke-width="1.4"/>
-    <polygon points="-12,-40 -12,-46 -5.5,-46 -5.5,-52 0,-52 0,-58 5.5,-52 5.5,-46 12,-46 12,-40" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-7.04" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-31.200000000000003" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-7.04" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="2.2" y="-20" width="4.84" height="6.4" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-3" y="-9.6" width="6" height="9.6" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-  </g>
-  <g transform="translate(895,700) scale(0.85)"><g>
-    <rect x="-16" y="-48" width="32" height="48" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-16" y="-52" width="6.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="-8" y="-52" width="6.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="0" y="-52" width="6.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/><rect x="8" y="-52" width="6.4" height="4" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="-17,-52 0,-81.92 17,-52" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-1.5" y="-24" width="3" height="8.64" fill="oklch(0.30  0.024 60)"/>
+    <rect x="120" y="820" width="340" height="170" fill="#b54a32" stroke="#0a0a0c" stroke-width="3"></rect>
     
-  </g></g>
-
-  <!-- NOBLESSNER -->
-  <g>
-    <rect x="486" y="290" width="48" height="20" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="486,290 496,282 506,290 516,282 526,290 536,282 546,290" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="492" y="299" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="506" y="299" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="520" y="299" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="534" y="299" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="536" y="276" width="6" height="34" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="535" y="273" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <text x="510" y="268" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Põhjala</text>
-  </g>
-  <rect x="490" y="335" width="20" height="8" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-  <g transform="translate(680,310) scale(0.85)">
-    <g>
-    <path d="M -70,6 A 26 22 0 0 1 -18,6 Z" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -70,6 A 26 22 0 0 1 -18,6" fill="none" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -58,-12 Q -44 -22 -30,-12" fill="none" stroke="#111114" stroke-width="0.8" opacity="0.55"/>
-  </g><g>
-    <path d="M -26,6 A 26 22 0 0 1 26,6 Z" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -26,6 A 26 22 0 0 1 26,6" fill="none" stroke="#111114" stroke-width="1.6"/>
-    <path d="M -14,-12 Q 0 -22 14,-12" fill="none" stroke="#111114" stroke-width="0.8" opacity="0.55"/>
-  </g><g>
-    <path d="M 18,6 A 26 22 0 0 1 70,6 Z" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.6"/>
-    <path d="M 18,6 A 26 22 0 0 1 70,6" fill="none" stroke="#111114" stroke-width="1.6"/>
-    <path d="M 30,-12 Q 44 -22 58,-12" fill="none" stroke="#111114" stroke-width="0.8" opacity="0.55"/>
-  </g>
-    <rect x="-72" y="6" width="144" height="6" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-  </g>
-  <g>
-    <path d="M 739 325 A 6 5.1 0 0 1 751 325 Z" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.3"/>
-    <rect x="743" y="321" width="4" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-    <path d="M 741.4 322 A 3.5999999999999996 2.4000000000000004 0 0 1 748.6 322" fill="none" stroke="#111114" stroke-width="0.6" opacity="0.6"/>
-  </g>
-  <g>
-    <path d="M 752 328 A 6 5.1 0 0 1 764 328 Z" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.3"/>
-    <rect x="756" y="324" width="4" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-    <path d="M 754.4 325 A 3.5999999999999996 2.4000000000000004 0 0 1 761.6 325" fill="none" stroke="#111114" stroke-width="0.6" opacity="0.6"/>
-  </g>
-  <g>
-    <path d="M 764 325 A 6 5.1 0 0 1 776 325 Z" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.3"/>
-    <rect x="768" y="321" width="4" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-    <path d="M 766.4 322 A 3.5999999999999996 2.4000000000000004 0 0 1 773.6 322" fill="none" stroke="#111114" stroke-width="0.6" opacity="0.6"/>
-  </g>
-  <g transform="translate(500,345) scale(0.55)">
-    <rect x="-72" y="-22" width="144" height="26" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-72" y="-26" width="144" height="5" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="-66" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-58" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-50" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-42" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-34" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-26" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-18" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-10" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="-2" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="6" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="14" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="22" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="30" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="38" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="46" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="54" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="62" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/><rect x="70" y="-16" width="4" height="6" fill="oklch(0.30  0.024 60)"/>
-    <rect x="-2" y="-10" width="6" height="14" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g>
-  <line x1="720" y1="290" x2="720" y2="250" stroke="#111114" stroke-width="1.4"/>
-  <line x1="720" y1="250" x2="735" y2="250" stroke="#111114" stroke-width="1.4"/>
-  <line x1="735" y1="250" x2="735" y2="262" stroke="#111114" stroke-width="1.4"/>
-
-  <!-- LINNAHALL + KULTUURIKATEL -->
-  <g transform="translate(900,388) scale(0.7)">
-    <polygon points="-80,0 80,0 64,-12 -64,-12" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="-64,-12 64,-12 48,-22 -48,-22" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="-48,-22 48,-22 32,-30 -32,-30" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <line x1="-26" y1="-30" x2="-26" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/><line x1="-15" y1="-30" x2="-15" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/><line x1="-4" y1="-30" x2="-4" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/><line x1="7" y1="-30" x2="7" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/><line x1="18" y1="-30" x2="18" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/><line x1="29" y1="-30" x2="29" y2="-34" stroke="oklch(0.72 0.08  140)" stroke-width="1.4" stroke-linecap="round"/>
-  </g>
-  <g>
-    <rect x="824" y="382" width="32" height="18" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="823" y="379" width="34" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="838" y="390.1" width="4" height="5" fill="oklch(0.30  0.024 60)"/>
-    <text x="840" y="412" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Kultuurikatel</text>
-  </g>
-
-  <!-- KOPLI -->
-  <g transform="translate(120,470) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(165,475) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(210,472) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(120,515) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.84  0.042 110)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(165,520) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(210,517) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.036 295)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(80,575) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(125,580) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(170,577) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(215,580) scale(0.85)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g>
-  <g>
-    <rect x="152" y="628" width="56" height="22" fill="oklch(0.84  0.042 110)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="152,628 162,620 172,628 182,620 192,628 202,620 212,628" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="158" y="637.9" width="9" height="7.699999999999999" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="172" y="637.9" width="9" height="7.699999999999999" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="186" y="637.9" width="9" height="7.699999999999999" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="200" y="637.9" width="9" height="7.699999999999999" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="210" y="614" width="6" height="36" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="209" y="611" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <text x="180" y="606" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Põhjala Tehas</text>
-  </g>
-
-  <!-- KALAMAJA -->
-  <path d="M 470 460 C 520 480 580 490 640 510" stroke="oklch(0.94 0.020 78)" stroke-width="10" fill="none" stroke-linecap="round"/>
-  <path d="M 470 460 C 520 480 580 490 640 510" stroke="oklch(0.88  0.010 80)" stroke-width="11" fill="none" stroke-linecap="round" opacity="0.5"/>
-  <path d="M 470 460 C 520 480 580 490 640 510" stroke="#111114" stroke-width="1" fill="none" stroke-dasharray="1 5" opacity="0.35" stroke-linecap="round"/>
-  <g transform="translate(500,460) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(540,465) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(580,462) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(620,465) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.036 295)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(490,540) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(530,545) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(570,542) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g><g transform="translate(610,545) scale(1)">
-    <g>
-    <rect x="-18" y="-22" width="36" height="22" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="-20,-22 0,-37.4 20,-22" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="-11.52" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="3.599999999999998" y="-15.4" width="7.92" height="6.16" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-    <rect x="-2" y="-12" width="4" height="12" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g>
-  <g>
-    <rect x="600" y="581" width="40" height="24" fill="#ffffff" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="599,581 620,569 641,581" fill="#ffffff" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="607.2" y="590.12" width="7.199999999999999" height="6.720000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="616.8" y="590.12" width="7.199999999999999" height="6.720000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="626.4" y="590.12" width="7.199999999999999" height="6.720000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="617" y="595" width="6" height="10" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.8"/>
-  </g>
-
-  <!-- BALTI JAAM -->
-  <g transform="translate(770,530) scale(0.85)">
-    <rect x="-40" y="-20" width="80" height="24" fill="oklch(0.94  0.030 82)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-40" y="-24" width="80" height="5" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="0" cy="-10" r="5" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.2"/>
-    <line x1="0" y1="-10" x2="0" y2="-13" stroke="#111114" stroke-width="1.1" stroke-linecap="round"/>
-    <line x1="0" y1="-10" x2="2.5" y2="-10" stroke="#111114" stroke-width="1.1" stroke-linecap="round"/>
-    <rect x="-40" y="4" width="80" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-
-  <!-- TELLISKIVI -->
-  <g transform="translate(700,720) scale(0.95)">
-    <rect x="-66" y="-18" width="132" height="22" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="-66,-18 -54,-30 -42,-18 -30,-30 -18,-18 -6,-30 6,-18 18,-30 30,-18 42,-30 54,-18 66,-18" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-58" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="-38" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="-18" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="2" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="22" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="42" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/>
-  </g>
-  <g transform="translate(700,780) scale(0.7)">
-    <rect x="-66" y="-18" width="132" height="22" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="-66,-18 -54,-30 -42,-18 -30,-30 -18,-18 -6,-30 6,-18 18,-30 30,-18 42,-30 54,-18 66,-18" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-58" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="-38" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="-18" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="2" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="22" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/><rect x="42" y="-12" width="14" height="12" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1"/>
-  </g>
-  <rect x="798" y="682" width="10" height="50" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4"/>
-  <rect x="795" y="678" width="16" height="6" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4"/>
-
-  <!-- KESKLINN -->
-  <g transform="translate(1240,690) scale(0.9)">
-    <rect x="-14" y="-66" width="28" height="66" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.6"/>
-    <line x1="-14" y1="-62" x2="14" y2="-62" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-56" x2="14" y2="-56" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-50" x2="14" y2="-50" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-44" x2="14" y2="-44" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-38" x2="14" y2="-38" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-32" x2="14" y2="-32" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-26" x2="14" y2="-26" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-20" x2="14" y2="-20" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-14" x2="14" y2="-14" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-8" x2="14" y2="-8" stroke="#111114" stroke-width="0.6" opacity="0.55"/><line x1="-14" y1="-2" x2="14" y2="-2" stroke="#111114" stroke-width="0.6" opacity="0.55"/>
-    <line x1="-9" y1="-66" x2="-9" y2="0" stroke="#111114" stroke-width="0.5" opacity="0.45"/><line x1="-3" y1="-66" x2="-3" y2="0" stroke="#111114" stroke-width="0.5" opacity="0.45"/><line x1="3" y1="-66" x2="3" y2="0" stroke="#111114" stroke-width="0.5" opacity="0.45"/><line x1="9" y1="-66" x2="9" y2="0" stroke="#111114" stroke-width="0.5" opacity="0.45"/>
-    <rect x="-10" y="-72" width="20" height="5" fill="#8a2a1a" stroke="#111114" stroke-width="1.1"/>
-  </g>
-  <g>
-    <rect x="1188" y="664" width="20" height="36" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="1189" y1="667" x2="1207" y2="667" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1189" y1="673" x2="1207" y2="673" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1189" y1="679" x2="1207" y2="679" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1189" y1="685" x2="1207" y2="685" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1189" y1="691" x2="1207" y2="691" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1189" y1="697" x2="1207" y2="697" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/>
-    <line x1="1193" y1="664" x2="1193" y2="700" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <line x1="1203" y1="664" x2="1203" y2="700" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <rect x="1188" y="662" width="20" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-  <g>
-    <rect x="1266" y="658" width="18" height="32" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="1267" y1="661" x2="1283" y2="661" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1267" y1="667" x2="1283" y2="667" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1267" y1="673" x2="1283" y2="673" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1267" y1="679" x2="1283" y2="679" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1267" y1="685" x2="1283" y2="685" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/>
-    <line x1="1270.5" y1="658" x2="1270.5" y2="690" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <line x1="1279.5" y1="658" x2="1279.5" y2="690" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <rect x="1266" y="656" width="18" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-  <g>
-    <rect x="1175" y="752" width="50" height="18" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="1175,752 1185,744 1195,752 1205,744 1215,752 1225,744 1235,752" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="1181" y="760.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1195" y="760.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1209" y="760.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1223" y="760.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1227" y="738" width="6" height="32" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="1226" y="735" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <text x="1200" y="730" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Rotermanni</text>
-  </g>
-  <g>
-    <rect x="1249" y="764" width="42" height="16" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="1249,764 1259,756 1269,764 1279,756 1289,764 1299,756 1309,764" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="1255" y="771.2" width="9" height="5.6" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1269" y="771.2" width="9" height="5.6" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1283" y="771.2" width="9" height="5.6" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1297" y="771.2" width="9" height="5.6" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1293" y="750" width="6" height="30" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="1292" y="747" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
+    <path d="M 120 820 L 160 770 L 200 820 L 240 770 L 280 820 L 320 770 L 360 820 L 400 770 L 440 820 L 460 800 L 460 820 Z" fill="#a4452a" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></path>
     
-  </g>
-  <g>
-    <rect x="1097" y="844" width="66" height="26" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="1095" y="840" width="70" height="6" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="1103" y="854.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1117" y="854.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1131" y="854.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1145" y="854.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1124" y="860" width="12" height="10" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-    <text x="1130" y="836" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Stockmann</text>
-  </g>
-  <rect x="1075" y="680" width="48" height="36" fill="oklch(0.96 0.010 78)" stroke="#111114" stroke-width="1.4" opacity="0.95"/>
-  <g transform="translate(1100,715) scale(0.7)">
-    <rect x="-30" y="-2" width="60" height="5" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="-3" y="-50" width="6" height="48" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="-8" y="-60" width="16" height="18" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4" opacity="0.85"/>
-    <polygon points="-3,-60 -3,-72 3,-72 3,-60" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="-3,-48 -3,-60 3,-60 3,-48" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="-12,-58 -8,-58 -8,-50 -12,-50" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <polygon points="8,-58 12,-58 12,-50 8,-50" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-  </g>
-  <text x="1100" y="730" text-anchor="middle" font-family="Geist Mono,monospace" font-size="9" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Vabaduse väljak</text>
-
-  <!-- KADRIORG -->
-  <g transform="translate(1390,620) scale(0.95)">
-    <rect x="-58" y="-22" width="116" height="30" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-58" y="-26" width="116" height="5" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="-22" y="-38" width="44" height="20" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="-26,-38 0,-50 26,-38" fill="oklch(0.58  0.120 45)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="-6" y="-34" width="12" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="-51" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="-41" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="-31" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="25" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="35" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="45" y="-16" width="6" height="14" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-  </g>
-  <g transform="translate(1500,700) scale(0.85)">
-    <polygon points="-44,4 -44,-24 26,-30 26,-4 26,4" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="26" y="-32" width="24" height="36" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="-40" y1="-24" x2="-40" y2="4" stroke="#111114" stroke-width="0.6" opacity="0.5"/><line x1="-27" y1="-22.8" x2="-27" y2="4" stroke="#111114" stroke-width="0.6" opacity="0.5"/><line x1="-14" y1="-21.6" x2="-14" y2="4" stroke="#111114" stroke-width="0.6" opacity="0.5"/><line x1="-1" y1="-20.4" x2="-1" y2="4" stroke="#111114" stroke-width="0.6" opacity="0.5"/><line x1="12" y1="-19.2" x2="12" y2="4" stroke="#111114" stroke-width="0.6" opacity="0.5"/>
-  </g>
-
-  <!-- PIRITA -->
-  <g transform="translate(1680,620) scale(1)">
-    <rect x="-14" y="-6" width="28" height="10" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="-3" y="-110" width="6" height="104" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <ellipse cx="0" cy="-110" rx="14" ry="6" fill="oklch(0.87  0.022 70)" stroke="#111114" stroke-width="1.4"/>
-    <ellipse cx="0" cy="-114" rx="11" ry="4" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.2"/>
-    <line x1="0" y1="-117" x2="0" y2="-150" stroke="#111114" stroke-width="1.6" stroke-linecap="round"/>
-    <line x1="0" y1="-150" x2="0" y2="-160" stroke="#8a2a1a" stroke-width="2.2" stroke-linecap="round"/>
-    <circle cx="0" cy="-160" r="2" fill="oklch(0.50  0.140 30)" stroke="#111114" stroke-width="1"/>
-  </g>
-  <rect x="1700" y="420" width="36" height="5" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-  <polygon points="1715,418 1721,408 1727,418" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-  <polygon points="1730,418 1736,406 1742,418" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-  <g>
-    <rect x="1660" y="730" width="28" height="18" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="1658,730 1674,720.1 1690,730" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="1665.04" y="735.4" width="6.16" height="5.040000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="1676.8" y="735.4" width="6.16" height="5.040000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-  <g>
-    <rect x="1720" y="735" width="26" height="18" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="1718,735 1733,725.1 1748,735" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="1724.68" y="740.4" width="5.72" height="5.040000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="1735.6" y="740.4" width="5.72" height="5.040000000000001" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-
-  <!-- KRISTIINE -->
-  <g>
-    <rect x="540" y="894" width="80" height="26" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="538" y="890" width="84" height="6" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="546" y="904.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="560" y="904.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="574" y="904.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="588" y="904.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="602" y="904.4" width="9" height="9.1" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="574" y="910" width="12" height="10" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-    <text x="580" y="886" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Kristiine Keskus</text>
-  </g>
-  <g>
-    <rect x="745" y="930" width="50" height="20" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="745,930 755,922 765,930 775,922 785,930 795,922 805,930" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="751" y="939" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="765" y="939" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="779" y="939" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="793" y="939" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="797" y="916" width="6" height="34" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="796" y="913" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
+    <g stroke="#0a0a0c" stroke-width="1.4" fill="#aac9d4">
+      <path d="M 162 770 L 162 818 L 198 818 Z"></path>
+      <path d="M 242 770 L 242 818 L 278 818 Z"></path>
+      <path d="M 322 770 L 322 818 L 358 818 Z"></path>
+      <path d="M 402 770 L 402 818 L 438 818 Z"></path>
+    </g>
     
-  </g>
-  <g>
-    <rect x="849" y="942" width="42" height="18" fill="oklch(0.84  0.042 110)" stroke="#111114" stroke-width="1.6"/>
-    <polygon points="849,942 859,934 869,942 879,934 889,942 899,934 909,942" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="855" y="950.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="869" y="950.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="883" y="950.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="897" y="950.1" width="9" height="6.3" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="893" y="928" width="6" height="32" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
-    <rect x="892" y="925" width="8" height="4" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.2"/>
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4">
+      <rect x="148" y="858" width="44" height="64"></rect>
+      <rect x="212" y="858" width="44" height="64"></rect>
+      <rect x="276" y="858" width="44" height="64"></rect>
+      <rect x="340" y="858" width="44" height="64"></rect>
+      <rect x="404" y="858" width="44" height="64"></rect>
+    </g>
     
-  </g>
-  <g>
-    <rect x="1010" y="945" width="32" height="20" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <polygon points="1008,945 1026,934 1044,945" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="1015.76" y="951" width="7.04" height="5.6000000000000005" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-       <rect x="1029.2" y="951" width="7.04" height="5.6000000000000005" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8800000000000001"/>
-  </g>
-
-  <!-- AIRPORT + ÜLEMISTE -->
-  <rect x="1450" y="950" width="160" height="26" fill="url(#wa-apron)" stroke="#111114" stroke-width="1.4"/>
-  <rect x="1527" y="962" width="46" height="18" rx="3" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-  <text x="1550" y="990" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Lennart Meri</text>
-  <g>
-    <rect x="1300" y="900" width="20" height="40" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="1301" y1="903" x2="1319" y2="903" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1301" y1="909" x2="1319" y2="909" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1301" y1="915" x2="1319" y2="915" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1301" y1="921" x2="1319" y2="921" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1301" y1="927" x2="1319" y2="927" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1301" y1="933" x2="1319" y2="933" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/>
-    <line x1="1305" y1="900" x2="1305" y2="940" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <line x1="1315" y1="900" x2="1315" y2="940" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <rect x="1300" y="898" width="20" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-  <g>
-    <rect x="1333" y="913" width="18" height="32" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="1334" y1="916" x2="1350" y2="916" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1334" y1="922" x2="1350" y2="922" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1334" y1="928" x2="1350" y2="928" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1334" y1="934" x2="1350" y2="934" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1334" y1="940" x2="1350" y2="940" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/>
-    <line x1="1337.5" y1="913" x2="1337.5" y2="945" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <line x1="1346.5" y1="913" x2="1346.5" y2="945" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <rect x="1333" y="911" width="18" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-  <g>
-    <rect x="1359" y="889" width="22" height="46" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <line x1="1360" y1="892" x2="1380" y2="892" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="898" x2="1380" y2="898" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="904" x2="1380" y2="904" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="910" x2="1380" y2="910" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="916" x2="1380" y2="916" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="922" x2="1380" y2="922" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/><line x1="1360" y1="928" x2="1380" y2="928" stroke="oklch(0.88  0.042 235)" stroke-width="1.4" opacity="0.55"/>
-    <line x1="1364.5" y1="889" x2="1364.5" y2="935" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <line x1="1375.5" y1="889" x2="1375.5" y2="935" stroke="#111114" stroke-width="0.6" opacity="0.4"/>
-    <rect x="1359" y="887" width="22" height="3" fill="oklch(0.30  0.024 60)"/>
-  </g>
-  <g>
-    <rect x="1265" y="990" width="70" height="20" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.6"/>
-    <rect x="1263" y="986" width="74" height="6" fill="oklch(0.48  0.120 35)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="1271" y="998" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1285" y="998" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1299" y="998" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1313" y="998" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/><rect x="1327" y="998" width="9" height="7" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1294" y="1000" width="12" height="10" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.9"/>
-    <text x="1300" y="982" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Ülemiste Centre</text>
-  </g>
-  <g transform="translate(1240,950) scale(1)">
-    <line x1="-18.2" y1="34" x2="0" y2="0" stroke="#111114" stroke-width="1.6"/>
-    <line x1="18.2" y1="34" x2="0" y2="0" stroke="#111114" stroke-width="1.6"/>
-    <rect x="-26" y="34" width="52" height="5" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <circle cx="0" cy="0" r="26" fill="none" stroke="#111114" stroke-width="1.8"/>
-    <line x1="0" y1="0" x2="26" y2="0" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="18.38477631085024" y2="18.384776310850235" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="1.592040838891559e-15" y2="26" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="-18.384776310850235" y2="18.38477631085024" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="-26" y2="3.184081677783118e-15" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="-18.38477631085024" y2="-18.384776310850235" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="-4.776122516674677e-15" y2="-26" stroke="#111114" stroke-width="0.9" opacity="0.7"/><line x1="0" y1="0" x2="18.38477631085023" y2="-18.38477631085024" stroke="#111114" stroke-width="0.9" opacity="0.7"/>
-    <rect x="23" y="-2" width="6" height="5" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1" rx="1"/><rect x="15.384776310850238" y="16.384776310850235" width="6" height="5" fill="oklch(0.90  0.042 165)" stroke="#111114" stroke-width="1" rx="1"/><rect x="-2.9999999999999982" y="24" width="6" height="5" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1" rx="1"/><rect x="-21.384776310850235" y="16.38477631085024" width="6" height="5" fill="oklch(0.88  0.036 295)" stroke="#111114" stroke-width="1" rx="1"/><rect x="-29" y="-1.999999999999997" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="1" rx="1"/><rect x="-21.38477631085024" y="-20.384776310850235" width="6" height="5" fill="oklch(0.86  0.060 18)" stroke="#111114" stroke-width="1" rx="1"/><rect x="-3.000000000000005" y="-28" width="6" height="5" fill="oklch(0.84  0.042 110)" stroke="#111114" stroke-width="1" rx="1"/><rect x="15.384776310850231" y="-20.38477631085024" width="6" height="5" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1" rx="1"/>
-    <circle cx="0" cy="0" r="3" fill="#8a2a1a" stroke="#111114" stroke-width="1.2"/>
-  </g>
-  <text x="1240" y="998" text-anchor="middle" font-family="Geist Mono,monospace" font-size="10" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">SkyWheel</text>
-
-  <!-- FERRY + BUS -->
-  <g>
-    <rect x="1022" y="381" width="56" height="6" fill="oklch(0.82  0.010 250)" stroke="#111114" stroke-width="1.4"/>
-    <path d="M 1028 371 L 1072 371 L 1066 381 L 1034 381 Z" fill="oklch(0.90  0.050 22)" stroke="#111114" stroke-width="1.4" stroke-linejoin="round"/>
-    <rect x="1036" y="363" width="28" height="8" fill="oklch(0.94  0.030 82)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="1056" y="353" width="6" height="10" fill="oklch(0.50  0.140 30)" stroke="#111114" stroke-width="1.4"/>
-    <text x="1050" y="401" text-anchor="middle" font-family="Geist Mono,monospace" font-size="11" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Ferry Terminal</text>
-  </g>
-  <g>
-    <rect x="1222" y="828" width="36" height="20" rx="3" fill="oklch(0.88  0.072 85)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="1226" y="831" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1234" y="831" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <rect x="1242" y="831" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.9"/>
-    <circle cx="1229" cy="848" r="3" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.1"/>
-    <circle cx="1251" cy="848" r="3" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="1.1"/>
-    <text x="1240" y="864" text-anchor="middle" font-family="Geist Mono,monospace" font-size="11" font-weight="600" fill="#111114" stroke="white" stroke-width="3" paint-order="stroke">Bus Station</text>
+    <g stroke="#f6f3ec" stroke-width="1.6">
+      <line x1="170" y1="858" x2="170" y2="922"></line>
+      <line x1="148" y1="890" x2="192" y2="890"></line>
+      <line x1="234" y1="858" x2="234" y2="922"></line>
+      <line x1="212" y1="890" x2="256" y2="890"></line>
+      <line x1="298" y1="858" x2="298" y2="922"></line>
+      <line x1="276" y1="890" x2="320" y2="890"></line>
+      <line x1="362" y1="858" x2="362" y2="922"></line>
+      <line x1="340" y1="890" x2="384" y2="890"></line>
+      <line x1="426" y1="858" x2="426" y2="922"></line>
+      <line x1="404" y1="890" x2="448" y2="890"></line>
+    </g>
+    
+    <rect x="200" y="940" width="80" height="50" fill="#3a2e22" stroke="#0a0a0c" stroke-width="2"></rect>
+    <g stroke="#a4452a" stroke-width="1.4">
+      <line x1="200" y1="958" x2="280" y2="958"></line>
+      <line x1="200" y1="974" x2="280" y2="974"></line>
+    </g>
+    <path d="M 184 920 L 296 920 L 286 940 L 194 940 Z" fill="#d2dc50" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"></path>
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.5">
+      <line x1="206" y1="928" x2="206" y2="940"></line>
+      <line x1="228" y1="928" x2="228" y2="940"></line>
+      <line x1="250" y1="928" x2="250" y2="940"></line>
+      <line x1="272" y1="928" x2="272" y2="940"></line>
+    </g>
+    
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.22">
+      <line x1="120" y1="940" x2="200" y2="940"></line>
+      <line x1="280" y1="940" x2="460" y2="940"></line>
+      <line x1="120" y1="960" x2="460" y2="960"></line>
+      <line x1="120" y1="978" x2="460" y2="978"></line>
+    </g>
+    
+    <rect x="408" y="700" width="22" height="170" fill="#a4452a" stroke="#0a0a0c" stroke-width="2.2"></rect>
+    <rect x="404" y="696" width="30" height="14" fill="#3a2e22" stroke="#0a0a0c" stroke-width="2"></rect>
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.3">
+      <line x1="408" y1="740" x2="430" y2="740"></line>
+      <line x1="408" y1="780" x2="430" y2="780"></line>
+      <line x1="408" y1="820" x2="430" y2="820"></line>
+    </g>
   </g>
 
-  <!-- TRAM CARS -->
-  <g transform="translate(550,538) scale(1) ">
-    <rect x="-18" y="-8" width="36" height="14" rx="3" fill="oklch(0.50 0.12 28)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="-16" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="-7" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="0" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="7" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <line x1="-12" y1="7" x2="12" y2="7" stroke="#111114" stroke-width="1.4"/>
-  </g>
-  <g transform="translate(880,720) scale(1) ">
-    <rect x="-18" y="-8" width="36" height="14" rx="3" fill="oklch(0.50 0.12 28)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="-16" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="-7" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="0" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="7" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <line x1="-12" y1="7" x2="12" y2="7" stroke="#111114" stroke-width="1.4"/>
-  </g>
-  <g transform="translate(1380,596) scale(1) ">
-    <rect x="-18" y="-8" width="36" height="14" rx="3" fill="oklch(0.44 0.10 200)" stroke="#111114" stroke-width="1.4"/>
-    <rect x="-16" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="-7" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="0" y="-6" width="6" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <rect x="7" y="-6" width="8" height="5" fill="oklch(0.88  0.042 235)" stroke="#111114" stroke-width="0.8"/>
-    <line x1="-12" y1="7" x2="12" y2="7" stroke="#111114" stroke-width="1.4"/>
+  
+  <g>
+    
+    <path d="M 420 880 L 720 870 L 740 905 L 760 940 L 440 945 Z" fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></path>
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.35">
+      <line x1="460" y1="905" x2="710" y2="900"></line>
+      <line x1="470" y1="922" x2="730" y2="920"></line>
+    </g>
+    
+    <rect x="490" y="740" width="220" height="140" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.6"></rect>
+    
+    <g fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.2">
+      <rect x="490" y="722" width="16" height="20"></rect>
+      <rect x="514" y="722" width="16" height="20"></rect>
+      <rect x="538" y="722" width="16" height="20"></rect>
+      <rect x="562" y="722" width="16" height="20"></rect>
+      <rect x="586" y="722" width="16" height="20"></rect>
+      <rect x="610" y="722" width="16" height="20"></rect>
+      <rect x="634" y="722" width="16" height="20"></rect>
+    </g>
+    
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4">
+      <rect x="510" y="780" width="14" height="22"></rect>
+      <rect x="544" y="780" width="14" height="22"></rect>
+      <rect x="578" y="780" width="14" height="22"></rect>
+      <rect x="612" y="780" width="14" height="22"></rect>
+      <rect x="646" y="780" width="14" height="22"></rect>
+    </g>
+    
+    <path d="M 562 880 L 562 838 Q 580 818 598 838 L 598 880 Z" fill="#3a2e22" stroke="#0a0a0c" stroke-width="2"></path>
+
+    
+    <rect x="676" y="540" width="64" height="340" fill="#efe1c4" stroke="#0a0a0c" stroke-width="3"></rect>
+    
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.4">
+      <line x1="676" y1="600" x2="740" y2="600"></line>
+      <line x1="676" y1="660" x2="740" y2="660"></line>
+      <line x1="676" y1="720" x2="740" y2="720"></line>
+      <line x1="676" y1="780" x2="740" y2="780"></line>
+      <line x1="676" y1="840" x2="740" y2="840"></line>
+    </g>
+    
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+      <rect x="702" y="620" width="12" height="20"></rect>
+      <rect x="702" y="680" width="12" height="20"></rect>
+      <rect x="702" y="740" width="12" height="20"></rect>
+      <rect x="702" y="800" width="12" height="20"></rect>
+    </g>
+    
+    <g fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.2">
+      <rect x="672" y="520" width="14" height="22"></rect>
+      <rect x="692" y="520" width="14" height="22"></rect>
+      <rect x="712" y="520" width="14" height="22"></rect>
+      <rect x="732" y="520" width="14" height="22"></rect>
+    </g>
+    
+    <polygon points="668,524 686,490 686,520" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6" stroke-linejoin="round"></polygon>
+    <polygon points="732,520 752,520 752,490" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6" stroke-linejoin="round"></polygon>
+    
+    <line x1="708" y1="510" x2="708" y2="380" stroke="#0a0a0c" stroke-width="3" stroke-linecap="round"></line>
+    
+    <path d="M 708 388 L 838 384 L 836 414 L 708 414 Z" fill="#0072CE" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></path>
+    <path d="M 708 414 L 836 414 L 834 440 L 708 440 Z" fill="#0a0a0c" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></path>
+    <path d="M 708 440 L 834 440 L 832 466 L 708 466 Z" fill="#ffffff" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></path>
+    <circle cx="708" cy="380" r="5" fill="#0a0a0c"></circle>
   </g>
 
-  <!-- TREES -->
+  
   <g>
-    <polygon points="350,374 343,400 357,400" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="348.5" y="400" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <g>
-    <polygon points="300,418 294,440 306,440" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="298.5" y="440" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <g>
-    <polygon points="870,736 864,760 876,760" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <rect x="868.5" y="760" width="3" height="4" fill="oklch(0.30  0.024 60)" stroke="#111114" stroke-width="0.72"/>
-  </g>
-  <g>
-    <line x1="930" y1="587.2" x2="930" y2="594.4" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="925.95" cy="580" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="934.05" cy="580" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="930" cy="575.95" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
-  </g>
-  <g>
-    <line x1="1170" y1="527.2" x2="1170" y2="534.4" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="1165.95" cy="520" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="1174.05" cy="520" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
-    <circle cx="1170" cy="515.95" r="6.3" fill="oklch(0.72 0.08  140)" stroke="#111114" stroke-width="1.2"/>
+    
+    <rect x="820" y="770" width="200" height="130" fill="#e5b966" stroke="#0a0a0c" stroke-width="2.8"></rect>
+    <polygon points="820,770 920,720 1020,770" fill="#a4452a" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4">
+      <path d="M 838 900 L 838 868 Q 854 850 870 868 L 870 900 Z"></path>
+      <path d="M 884 900 L 884 868 Q 900 850 916 868 L 916 900 Z"></path>
+      <path d="M 930 900 L 930 868 Q 946 850 962 868 L 962 900 Z"></path>
+      <path d="M 976 900 L 976 868 Q 992 850 1008 868 L 1008 900 Z"></path>
+    </g>
+    
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+      <rect x="844" y="788" width="14" height="22"></rect>
+      <rect x="878" y="788" width="14" height="22"></rect>
+      <rect x="912" y="788" width="14" height="22"></rect>
+      <rect x="946" y="788" width="14" height="22"></rect>
+      <rect x="980" y="788" width="14" height="22"></rect>
+      <rect x="844" y="824" width="14" height="22"></rect>
+      <rect x="878" y="824" width="14" height="22"></rect>
+      <rect x="912" y="824" width="14" height="22"></rect>
+      <rect x="946" y="824" width="14" height="22"></rect>
+      <rect x="980" y="824" width="14" height="22"></rect>
+    </g>
+    
+    <rect x="1010" y="640" width="40" height="260" fill="#e5b966" stroke="#0a0a0c" stroke-width="2.6"></rect>
+    <rect x="1006" y="630" width="48" height="14" fill="#a4452a" stroke="#0a0a0c" stroke-width="2"></rect>
+    
+    <polygon points="1010,630 1050,630 1042,592 1018,592" fill="#a4452a" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"></polygon>
+    
+    <rect x="1018" y="558" width="24" height="36" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2"></rect>
+    <polygon points="1018,558 1042,558 1052,544 1008,544" fill="#a4452a" stroke="#0a0a0c" stroke-width="2"></polygon>
+    
+    <polygon points="1014,544 1046,544 1030,420" fill="#a4452a" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></polygon>
+    
+    <line x1="1030" y1="420" x2="1030" y2="394" stroke="#0a0a0c" stroke-width="2.4" stroke-linecap="round"></line>
+    <circle cx="1030" cy="392" r="5" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4"></circle>
+    <polygon points="1030,386 1042,392 1030,398" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4"></polygon>
+
+    
+    <polygon points="740,820 740,760 770,740 800,760 800,820" fill="#ecc4bd" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    <rect x="740" y="820" width="60" height="80" fill="#ecc4bd" stroke="#0a0a0c" stroke-width="2.4"></rect>
+    <rect x="754" y="838" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="774" y="838" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="762" y="870" width="12" height="30" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+
+    
+    <rect x="800" y="800" width="22" height="100" fill="#c8e2cb" stroke="#0a0a0c" stroke-width="2.2"></rect>
+    <polygon points="800,800 800,778 822,778 822,800" fill="#c8e2cb" stroke="#0a0a0c" stroke-width="2.2"></polygon>
+    <polygon points="800,778 800,758 822,758 822,778" fill="#c8e2cb" stroke="#0a0a0c" stroke-width="2.2"></polygon>
+    <polygon points="800,758 800,742 822,742 822,758" fill="#c8e2cb" stroke="#0a0a0c" stroke-width="2.2"></polygon>
+
+    
+    <polygon points="1050,770 1050,710 1080,690 1110,710 1110,770" fill="#d6a098" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    <rect x="1050" y="770" width="60" height="130" fill="#d6a098" stroke="#0a0a0c" stroke-width="2.4"></rect>
+    <rect x="1064" y="788" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="1084" y="788" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="1064" y="822" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="1084" y="822" width="12" height="20" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="1074" y="858" width="14" height="42" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+
+    <polygon points="1110,790 1110,748 1126,732 1142,748 1142,790" fill="#aac9d4" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></polygon>
+    <rect x="1110" y="790" width="32" height="110" fill="#aac9d4" stroke="#0a0a0c" stroke-width="2.2"></rect>
+    <rect x="1120" y="808" width="12" height="18" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
+    <rect x="1120" y="838" width="12" height="18" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2"></rect>
   </g>
 
-  <!-- LABELS -->
-  <g style="pointer-events:none">
-    <text x="180" y="400" text-anchor="middle" font-family="Geist Mono,monospace" font-size="26" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">KOPLI</text><text x="580" y="195" text-anchor="middle" font-family="Geist Mono,monospace" font-size="20" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">NOBLESSNER</text><text x="560" y="420" text-anchor="middle" font-family="Geist Mono,monospace" font-size="26" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">KALAMAJA</text><text x="690" y="830" text-anchor="middle" font-family="Geist Mono,monospace" font-size="26" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">TELLISKIVI</text><text x="1030" y="448" text-anchor="middle" font-family="Geist Mono,monospace" font-size="28" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">VANALINN</text><text x="1190" y="580" text-anchor="middle" font-family="Geist Mono,monospace" font-size="22" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">KESKLINN</text><text x="1430" y="555" text-anchor="middle" font-family="Geist Mono,monospace" font-size="26" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">KADRIORG</text><text x="1710" y="510" text-anchor="middle" font-family="Geist Mono,monospace" font-size="24" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">PIRITA</text><text x="800" y="960" text-anchor="middle" font-family="Geist Mono,monospace" font-size="24" letter-spacing="4" font-weight="600" fill="#111114" stroke="white" stroke-width="4" paint-order="stroke" opacity="0.55">KRISTIINE</text>
-    <text x="910" y="630" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Toompea</text><text x="970" y="620" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Alexander Nevsky</text><text x="1150" y="388" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">St Olaf's</text><text x="1015" y="668" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Town Hall</text><text x="895" y="730" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Kiek in de Kök</text><text x="680" y="262" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Lennusadam</text><text x="500" y="326" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Patarei</text><text x="900" y="344" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">Linnahall</text><text x="1500" y="660" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">KUMU</text><text x="1680" y="448" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="15" fill="#111114" opacity="1" stroke="white" stroke-width="3.6" paint-order="stroke">TV Tower</text><text x="770" y="500" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="14" fill="#6b6b72" opacity="0.75" stroke="white" stroke-width="3.6" paint-order="stroke">Balti Jaam · Train + Market</text><text x="1240" y="628" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="14" fill="#6b6b72" opacity="0.75" stroke="white" stroke-width="3.6" paint-order="stroke">Viru Hotel</text>
-    <text x="1100" y="150" text-anchor="middle" font-family="Geist Mono,monospace" font-size="16" letter-spacing="3" fill="oklch(0.55 0.04  210)" opacity="0.55" stroke="white" stroke-width="3" paint-order="stroke">BALTIC  SEA</text><text x="1260" y="417" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="13" fill="#6b6b72" stroke="white" stroke-width="3" paint-order="stroke">Reidi tee</text><text x="1430" y="650" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="18" fill="oklch(0.72 0.08  140)" stroke="white" stroke-width="3.6" paint-order="stroke">Kadriorg Park</text><text x="1710" y="620" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="14" fill="oklch(0.72 0.08  140)" stroke="white" stroke-width="3" paint-order="stroke">Pirita rand</text><text x="1170" y="798" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="13" fill="oklch(0.72 0.08  140)" stroke="white" stroke-width="3" paint-order="stroke">Tammsaare park</text><text x="555" y="500" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="12" fill="#6b6b72" stroke="white" stroke-width="3" paint-order="stroke">Vana-Kalamaja</text><text x="1520" y="1055" text-anchor="middle" font-family="DM Serif Display,Georgia,serif" font-style="italic" font-size="18" fill="oklch(0.55 0.04  210)" stroke="white" stroke-width="3" paint-order="stroke">Ülemiste järv</text>
+  
+  <g>
+    
+    <rect x="1180" y="760" width="120" height="140" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.6"></rect>
+    
+    <polygon points="1180,760 1240,720 1300,760" fill="#a4452a" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+      <path d="M 1198 870 L 1198 810 Q 1208 798 1218 810 L 1218 870 Z"></path>
+      <path d="M 1232 870 L 1232 810 Q 1242 798 1252 810 L 1252 870 Z"></path>
+      <path d="M 1266 870 L 1266 810 Q 1276 798 1286 810 L 1286 870 Z"></path>
+    </g>
+    
+    <rect x="1300" y="640" width="76" height="260" fill="#efe1c4" stroke="#0a0a0c" stroke-width="3"></rect>
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+      <rect x="1320" y="680" width="14" height="26"></rect>
+      <rect x="1342" y="680" width="14" height="26"></rect>
+      <rect x="1320" y="740" width="14" height="26"></rect>
+      <rect x="1342" y="740" width="14" height="26"></rect>
+      <rect x="1320" y="800" width="14" height="26"></rect>
+      <rect x="1342" y="800" width="14" height="26"></rect>
+    </g>
+    
+    <rect x="1294" y="610" width="88" height="36" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.4"></rect>
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+      <path d="M 1308 642 L 1308 622 Q 1316 614 1324 622 L 1324 642 Z"></path>
+      <path d="M 1334 642 L 1334 622 Q 1342 614 1350 622 L 1350 642 Z"></path>
+      <path d="M 1360 642 L 1360 622 Q 1368 614 1376 622 L 1376 642 Z"></path>
+    </g>
+    
+    <polygon points="1294,610 1382,610 1372,580 1304,580" fill="#055959" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    
+    <polygon points="1304,580 1372,580 1356,520 1320,520" fill="#055959" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    <polygon points="1320,520 1356,520 1346,470 1330,470" fill="#055959" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"></polygon>
+    <polygon points="1330,470 1346,470 1338,200" fill="#055959" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    
+    <line x1="1338" y1="220" x2="1338" y2="470" stroke="#0a0a0c" stroke-width="1" opacity="0.4"></line>
+    <line x1="1330" y1="500" x2="1346" y2="500" stroke="#0a0a0c" stroke-width="1" opacity="0.4"></line>
+    <line x1="1322" y1="550" x2="1354" y2="550" stroke="#0a0a0c" stroke-width="1" opacity="0.4"></line>
+    
+    <line x1="1338" y1="200" x2="1338" y2="160" stroke="#0a0a0c" stroke-width="2.4" stroke-linecap="round"></line>
+    <line x1="1326" y1="178" x2="1350" y2="178" stroke="#0a0a0c" stroke-width="2.4" stroke-linecap="round"></line>
+    <circle cx="1338" cy="158" r="3" fill="#0a0a0c"></circle>
   </g>
 
-  <!-- COMPASS ROSE -->
-  <g transform="translate(1700,90)">
-    <circle r="34" fill="rgba(255,255,255,0.7)" stroke="#111114" stroke-width="1.5"/>
-    <polygon points="0,-22 8,8 0,2 -8,8" fill="#8a2a1a" stroke="#111114" stroke-width="1.2" stroke-linejoin="round"/>
-    <text x="0" y="-6" text-anchor="middle" font-family="Geist Mono,monospace" font-size="11" font-weight="600" fill="#111114">N</text>
+  
+  <g>
+    
+    <polygon points="1500,910 1620,910 1610,870 1510,870" fill="#b5b9be" stroke="#0a0a0c" stroke-width="2.4" stroke-linejoin="round"></polygon>
+    <rect x="1500" y="900" width="120" height="40" fill="#b5b9be" stroke="#0a0a0c" stroke-width="2.4"></rect>
+    <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1">
+      <rect x="1514" y="908" width="10" height="22"></rect>
+      <rect x="1532" y="908" width="10" height="22"></rect>
+      <rect x="1550" y="908" width="10" height="22"></rect>
+      <rect x="1568" y="908" width="10" height="22"></rect>
+      <rect x="1586" y="908" width="10" height="22"></rect>
+      <rect x="1604" y="908" width="10" height="22"></rect>
+    </g>
+    
+    <polygon points="1548,870 1572,870 1568,420 1552,420" fill="#b5b9be" stroke="#0a0a0c" stroke-width="2.6" stroke-linejoin="round"></polygon>
+    <line x1="1560" y1="450" x2="1560" y2="860" stroke="#0a0a0c" stroke-width="1" opacity="0.35"></line>
+    
+    <ellipse cx="1560" cy="410" rx="44" ry="14" fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.4"></ellipse>
+    <rect x="1518" y="384" width="84" height="26" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.2"></rect>
+    <g stroke="#0a0a0c" stroke-width="1" opacity="0.6">
+      <line x1="1530" y1="384" x2="1530" y2="410"></line>
+      <line x1="1542" y1="384" x2="1542" y2="410"></line>
+      <line x1="1554" y1="384" x2="1554" y2="410"></line>
+      <line x1="1566" y1="384" x2="1566" y2="410"></line>
+      <line x1="1578" y1="384" x2="1578" y2="410"></line>
+      <line x1="1590" y1="384" x2="1590" y2="410"></line>
+    </g>
+    <ellipse cx="1560" cy="384" rx="34" ry="10" fill="#b5b9be" stroke="#0a0a0c" stroke-width="2.2"></ellipse>
+    
+    <line x1="1560" y1="374" x2="1560" y2="220" stroke="#0a0a0c" stroke-width="3" stroke-linecap="round"></line>
+    <line x1="1560" y1="240" x2="1560" y2="160" stroke="#0a0a0c" stroke-width="1.6" stroke-linecap="round"></line>
+    <circle cx="1560" cy="158" r="3" fill="#0a0a0c"></circle>
+    
+    <circle cx="1560" cy="300" r="5" fill="#b54a32" stroke="#0a0a0c" stroke-width="1"></circle>
+    <circle cx="1560" cy="340" r="5" fill="#b54a32" stroke="#0a0a0c" stroke-width="1"></circle>
+  </g>
+
+  
+  <g fill="#99c298" stroke="#0a0a0c" stroke-width="1.4">
+    <circle cx="540" cy="980" r="10"></circle>
+    <circle cx="510" cy="970" r="8"></circle>
+    <circle cx="850" cy="945" r="10"></circle>
+    <circle cx="1170" cy="950" r="11"></circle>
+    <circle cx="1460" cy="970" r="12"></circle>
+    <circle cx="1610" cy="970" r="10"></circle>
+  </g>
+
+  
+  <g fill="#0a0a0c" opacity="0.18">
+    <circle cx="260" cy="1080" r="2"></circle>
+    <circle cx="430" cy="1110" r="2"></circle>
+    <circle cx="600" cy="1080" r="2"></circle>
+    <circle cx="780" cy="1120" r="2"></circle>
+    <circle cx="960" cy="1080" r="2"></circle>
+    <circle cx="1120" cy="1110" r="2"></circle>
+    <circle cx="1300" cy="1080" r="2"></circle>
+    <circle cx="1470" cy="1120" r="2"></circle>
+    <circle cx="1640" cy="1080" r="2"></circle>
+    <circle cx="180" cy="1140" r="2"></circle>
+    <circle cx="380" cy="1060" r="2"></circle>
+    <circle cx="700" cy="1050" r="2"></circle>
+    <circle cx="900" cy="1150" r="2"></circle>
+    <circle cx="1240" cy="1050" r="2"></circle>
+    <circle cx="1500" cy="1050" r="2"></circle>
+    <circle cx="1720" cy="1140" r="2"></circle>
   </g>
 </svg>

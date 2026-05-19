@@ -85,6 +85,22 @@ For pre-Android 8 fallback mipmaps, rasterize `play-store-512.svg` to PNG at 48 
 
 ---
 
+## City plates · `/assets/` (outside `/brand/`)
+
+Editorial city illustrations used as previews in the city-selector dropdown and as the source for any future per-city OG card, marketing hero, or splash. They live in `/assets/` rather than `/brand/` because they are product imagery, not identity assets — but they follow the brand system. See `BRAND.md` § 5 for the two-mark rule (one national flag + one lime accent per plate).
+
+| File | viewBox | Country | Status |
+|---|---|---|---|
+| `assets/tallinn-overview.svg` | 1800 × 1200 | EE | Live (default city) |
+| `assets/helsinki-overview.svg` | 1800 × 1200 | FI | Plate ready · "Coming soon" badge in selector |
+| `assets/riga-overview.svg` | 1800 × 1200 | LV | Plate ready · "Coming soon" badge in selector |
+
+All three are path-based SVGs with `xmlns="http://www.w3.org/2000/svg"`, `preserveAspectRatio="xMidYMid slice"`, flat hex fills, no embedded raster, no external font references. Each weighs ≤ 22 KB. The silhouettes are designed to survive at 64 px thumbnail width and scale cleanly to OG-card resolutions.
+
+The catalogue is intentionally short. When new cities ship, add an `assets/<city>-overview.svg` following the same rules (3–5 hero landmarks, one national flag, one lime accent, no text labels, no streets, no neighborhood polygons).
+
+---
+
 ## At a glance — total files
 
 - **7** masters
@@ -93,8 +109,9 @@ For pre-Android 8 fallback mipmaps, rasterize `play-store-512.svg` to PNG at 48 
 - **3** iOS masters
 - **4** Android assets
 - **5** social cards / avatars
+- **3** city plates (`/assets/`)
 - **3** Markdown docs (`BRAND.md`, `IMPLEMENTATION.md`, `ASSETS.md`)
 
-= **32 files**, all in `/brand/`.
+= **35 files**, of which **32** are in `/brand/` and **3** are in `/assets/`.
 
 — `/brand/`, May 2026

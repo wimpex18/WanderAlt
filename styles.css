@@ -168,6 +168,41 @@ img, svg { display: block; max-width: 100%; }
   border-bottom: var(--rule-w) solid var(--c-rule);
 }
 
+/* ── City banner ─────────────────────────────────────────────
+   Thin (64 px) decorative ribbon sat below the sticky topbar on
+   every content page. Shows the active city's illustrated plate
+   (brand/BRAND.md § 5), center-cropped via background-size:cover.
+   Acts as a subtle "you are here" cue and ties the brand chrome
+   to the current city without taking editorial weight away from
+   the content below. Injected by city.js into the DOM; per-city
+   image is keyed off body[data-city]. Clickable as a shortcut to
+   open the city-selector dropdown.
+   ============================================================ */
+.city-banner {
+  height: 64px;
+  background: var(--c-paper-deep) center / cover no-repeat;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  cursor: pointer;
+  position: relative;
+  transition: opacity var(--t-fast);
+}
+.city-banner:hover { opacity: 0.92; }
+.city-banner:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+/* Per-city background — keyed off body[data-city] which city.js sets.
+   Default fallback (no city stamped yet) uses Tallinn. */
+.city-banner                       { background-image: url('./assets/tallinn-overview.svg'); }
+body[data-city="tallinn"]  .city-banner { background-image: url('./assets/tallinn-overview.svg'); }
+body[data-city="helsinki"] .city-banner { background-image: url('./assets/helsinki-overview.svg'); }
+body[data-city="riga"]     .city-banner { background-image: url('./assets/riga-overview.svg'); }
+/* Tiny screens: shrink so the ribbon doesn't eat too much vertical
+   real-estate on a 390 × 844 viewport (briefing is voice-first). */
+@media (max-width: 480px) {
+  .city-banner { height: 48px; }
+}
+
 /* Logo mark — Beacon. Petrol squircle tile + lime diamond.
    Proportions are canonical (see brand/BRAND.md §1):
      · tile rx       = 0.18 × side (iOS squircle ratio)
@@ -2253,10 +2288,16 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   /* Search input scales up on wider screens */
   .search-input { font-size: 28px; }
 
+  /* City banner sits between the topbar (order 1) and the masthead
+     nav (order 3). Default order is 0 — without this rule the banner
+     would float above the entire layout on desktop because of the
+     body-level flex column. */
+  .city-banner { order: 2; }
+
   /* Bottom nav → top masthead bar */
   .nav {
     position: static;
-    order: 2;
+    order: 3;
     border-top: 0;
     border-bottom: var(--rule-w) solid var(--c-rule);
     padding: 0 var(--gutter);
@@ -2272,7 +2313,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     gap: var(--s-6);
     justify-content: flex-start;
   }
-  .page { order: 3; width: 100%; padding-bottom: var(--s-8); }
+  .page { order: 4; width: 100%; padding-bottom: var(--s-8); }
 
   .nav__item {
     flex-direction: row;

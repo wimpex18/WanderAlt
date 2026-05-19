@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>City Plates — WanderAlt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --petrol: #055959;
+    --lime:   #d2dc50;
+    --ink:    #0a0a0c;
+    --body:   #1f1f23;
+    --paper:  #ffffff;
+    --surface:#fafaf9;
+    --hairline:#e7e5e4;
+    --muted:  #71717a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--body); font-family: "Geist", system-ui, sans-serif; }
+  body { padding: 64px 56px 96px; }
+
+  /* — eyebrow header — */
+  .doc-head {
+    max-width: 1240px; margin: 0 auto 48px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 48px; padding-bottom: 20px; border-bottom: 1px solid var(--hairline);
+  }
+  .doc-eyebrow {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .doc-title {
+    font-size: 32px; font-weight: 600; letter-spacing: -0.022em; margin: 6px 0 0;
+  }
+  .doc-meta {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; color: var(--muted);
+    display: flex; gap: 18px;
+  }
+  .doc-meta b { color: var(--ink); font-weight: 500; }
+
+  /* — section labels — */
+  .section { max-width: 1240px; margin: 0 auto; }
+  .section + .section { margin-top: 72px; }
+  .section-label {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .section-label::after {
+    content: ""; flex: 1; height: 1px; background: var(--hairline);
+  }
+
+  /* — city-selector dropdown mock — */
+  .selector-frame {
+    background: var(--paper);
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    padding: 8px;
+    width: 420px;
+    box-shadow: 0 24px 60px -28px rgba(10,10,12,0.18), 0 2px 4px rgba(10,10,12,0.04);
+  }
+  .selector-row {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 8px 10px 8px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  .selector-row + .selector-row { margin-top: 2px; }
+  .selector-row:hover { background: var(--surface); }
+  .selector-row[aria-selected="true"] { background: var(--surface); }
+  .selector-row[aria-selected="true"]::before {
+    content: ""; position: absolute;
+  }
+
+  .thumb {
+    width: 80px; height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    background: #f6f3ec;
+    display: block;
+  }
+  .thumb svg, .thumb img { display: block; width: 100%; height: 100%; }
+
+  .city-name {
+    font-family: "Geist Mono", monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .city-sub {
+    font-family: "Geist Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .badge {
+    font-family: "Geist Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 999px;
+    line-height: 1;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    background: var(--paper);
+    white-space: nowrap;
+  }
+  .badge.live {
+    background: var(--petrol);
+    color: var(--paper);
+    border-color: var(--petrol);
+    position: relative;
+    padding-left: 18px;
+  }
+  .badge.live::before {
+    content: "";
+    position: absolute;
+    left: 8px; top: 50%;
+    width: 6px; height: 6px;
+    background: var(--lime);
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  /* — thumbnail ladder (preview at 3 sizes) — */
+  .thumb-ladder {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 56px;
+    align-items: end;
+    justify-content: start;
+  }
+  .ladder-item { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .ladder-item .thumb-lg { width: 200px; height: 150px; border-radius: 12px; }
+  .ladder-item .thumb-md { width: 120px; height: 90px;  border-radius: 10px; }
+  .ladder-item .thumb-sm { width: 64px;  height: 48px;  border-radius: 6px;  }
+  .ladder-label {
+    font-family: "Geist Mono", monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  }
+
+  /* — full plate gallery — */
+  .plate-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .plate {
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    overflow: hidden;
+    background: #f6f3ec;
+    position: relative;
+  }
+  .plate-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--paper);
+  }
+  .plate-head h2 {
+    font-family: "Geist Mono", monospace;
+    font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
+    margin: 0; color: var(--ink); font-weight: 600;
+  }
+  .plate-head .meta {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; color: var(--muted); display: flex; gap: 18px;
+  }
+  .plate-art {
+    aspect-ratio: 3 / 2;
+    display: block;
+    width: 100%;
+  }
+  .plate-art img, .plate-art svg { display: block; width: 100%; height: 100%; }
+
+  .legend {
+    position: absolute; left: 24px; bottom: 24px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 10px 14px;
+    backdrop-filter: blur(4px);
+    font-family: "Geist Mono", monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .legend b { color: var(--muted); font-weight: 500; display: block; margin-bottom: 4px; }
+
+  /* — footnote — */
+  .foot {
+    max-width: 1240px; margin: 80px auto 0;
+    padding-top: 24px;
+    border-top: 1px solid var(--hairline);
+    font-family: "Geist Mono", monospace;
+    font-size: 11px; letter-spacing: 0.06em;
+    color: var(--muted);
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .foot b { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <div>
+    <div class="doc-eyebrow">/ brand · illustration / city plates v2</div>
+    <h1 class="doc-title">City overview plates</h1>
+  </div>
+  <div class="doc-meta">
+    <span><b>3</b> plates</span>
+    <span><b>1800 × 1200</b> viewBox</span>
+    <span><b>SVG</b> · flat fills</span>
+    <span><b>May 2026</b></span>
+  </div>
+</header>
+
+<!-- ═══ SECTION 1 · CITY-SELECTOR MOCK ═══ -->
+<section class="section">
+  <div class="section-label">01 · city-selector dropdown</div>
+
+  <div style="display:flex; gap:48px; flex-wrap:wrap; align-items:flex-start;">
+    <div class="selector-frame">
+      <div class="selector-row" aria-selected="true">
+        <div class="thumb"><img src="assets/tallinn-overview.svg" alt=""></div>
+        <div>
+          <div class="city-name">Tallinn</div>
+          <div class="city-sub">EE · 247 places</div>
+        </div>
+        <div class="badge live">Live</div>
+      </div>
+      <div class="selector-row">
+        <div class="thumb"><img src="assets/helsinki-overview.svg" alt=""></div>
+        <div>
+          <div class="city-name">Helsinki</div>
+          <div class="city-sub">FI · 12 curators waiting</div>
+        </div>
+        <div class="badge">Coming soon</div>
+      </div>
+      <div class="selector-row">
+        <div class="thumb"><img src="assets/riga-overview.svg" alt=""></div>
+        <div>
+          <div class="city-name">Riga</div>
+          <div class="city-sub">LV · 8 curators waiting</div>
+        </div>
+        <div class="badge">Coming soon</div>
+      </div>
+    </div>
+
+    <div style="max-width: 420px; font-size: 14px; line-height: 1.6; color: var(--body);">
+      <div class="section-label" style="margin: 0 0 14px;">notes</div>
+      <p style="margin: 0 0 12px;">Each thumbnail is 80×60 in the live selector — the plates are designed so the silhouette still reads at that size: <b>St Olaf's spire</b>, the <b>cathedral dome</b>, the <b>Doms cupola</b>.</p>
+      <p style="margin: 0 0 12px;">A <b>national flag</b> flies once per plate as the cultural signal: Estonia on Pikk Hermann's pole, Finland on a Senate Square embankment mast (deliberately off-church), Latvia on a riverside flagpole between Doms and Centrāltirgus.</p>
+      <p style="margin: 0;">Lime stays one element per plate as the brand signal — the Telliskivi door awning (WanderAlt's natural habitat), Helsinki's cross gleam, the Doms weathercock. Petrol is the signature mass: copper spire, copper dome, bridge cables.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 2 · THUMBNAIL LADDER ═══ -->
+<section class="section">
+  <div class="section-label">02 · thumbnail ladder — does the silhouette survive?</div>
+
+  <div class="thumb-ladder">
+    <div class="ladder-item">
+      <span class="ladder-label">Tallinn · 200 / 120 / 64</span>
+      <div style="display:flex; gap: 14px; align-items: flex-end;">
+        <div class="thumb thumb-lg"><img src="assets/tallinn-overview.svg" alt=""></div>
+        <div class="thumb thumb-md"><img src="assets/tallinn-overview.svg" alt=""></div>
+        <div class="thumb thumb-sm"><img src="assets/tallinn-overview.svg" alt=""></div>
+      </div>
+    </div>
+    <div class="ladder-item">
+      <span class="ladder-label">Helsinki · 200 / 120 / 64</span>
+      <div style="display:flex; gap: 14px; align-items: flex-end;">
+        <div class="thumb thumb-lg"><img src="assets/helsinki-overview.svg" alt=""></div>
+        <div class="thumb thumb-md"><img src="assets/helsinki-overview.svg" alt=""></div>
+        <div class="thumb thumb-sm"><img src="assets/helsinki-overview.svg" alt=""></div>
+      </div>
+    </div>
+    <div class="ladder-item">
+      <span class="ladder-label">Riga · 200 / 120 / 64</span>
+      <div style="display:flex; gap: 14px; align-items: flex-end;">
+        <div class="thumb thumb-lg"><img src="assets/riga-overview.svg" alt=""></div>
+        <div class="thumb thumb-md"><img src="assets/riga-overview.svg" alt=""></div>
+        <div class="thumb thumb-sm"><img src="assets/riga-overview.svg" alt=""></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 3 · FULL-SIZE PLATES ═══ -->
+<section class="section">
+  <div class="section-label">03 · plates, full bleed</div>
+
+  <div class="plate-grid">
+    <article class="plate">
+      <header class="plate-head">
+        <h2>Tallinn · tallinn-overview.svg</h2>
+        <div class="meta">
+          <span>EE</span>
+          <span>~20 KB</span>
+          <span>5 heroes</span>
+        </div>
+      </header>
+      <div class="plate-art"><img src="assets/tallinn-overview.svg" alt="Tallinn city plate"></div>
+      <div class="legend">
+        <b>heroes</b>
+        Telliskivi · Toompea / Pikk Hermann · Old Town · St Olaf's · TV Tower
+      </div>
+    </article>
+
+    <article class="plate">
+      <header class="plate-head">
+        <h2>Helsinki · helsinki-overview.svg</h2>
+        <div class="meta">
+          <span>FI</span>
+          <span>~22 KB</span>
+          <span>5 heroes</span>
+        </div>
+      </header>
+      <div class="plate-art"><img src="assets/helsinki-overview.svg" alt="Helsinki city plate"></div>
+      <div class="legend">
+        <b>heroes</b>
+        Töölö Bay · Kallio block · Helsinki Cathedral · Uspenski · Suomenlinna
+      </div>
+    </article>
+
+    <article class="plate">
+      <header class="plate-head">
+        <h2>Riga · riga-overview.svg</h2>
+        <div class="meta">
+          <span>LV</span>
+          <span>~20 KB</span>
+          <span>5 heroes</span>
+        </div>
+      </header>
+      <div class="plate-art"><img src="assets/riga-overview.svg" alt="Riga city plate"></div>
+      <div class="legend">
+        <b>heroes</b>
+        Three Brothers · Blackheads · Riga Cathedral · Centrāltirgus · Vanšu Bridge
+      </div>
+    </article>
+  </div>
+</section>
+
+<footer class="foot">
+  <span><b>palette</b> petrol #055959 · lime #d2dc50 · ink #0a0a0c · cream #f6f3ec · sea #d9e2e3 · park #c5dec2</span>
+  <span><b>strokes</b> 3 px main · 1.4 px detail</span>
+  <span><b>output</b> assets/&lt;city&gt;-overview.svg</span>
+</footer>
+
+</body>
+</html>

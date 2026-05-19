@@ -196,6 +196,59 @@ The avatar SVGs (`avatar-1080.svg` and variants) are 1080 × 1080 squares. Every
 
 ---
 
+## City plates (`/assets/<city>-overview.svg`)
+
+Three editorial city plates ship outside `/brand/`, under `/assets/`:
+
+- `assets/tallinn-overview.svg`
+- `assets/helsinki-overview.svg`
+- `assets/riga-overview.svg`
+
+They are the source for the city-selector dropdown thumbnails (rendered at 80 × 60) and for any per-city splash / OG card / marketing surface that needs to depict a city. See `BRAND.md` § 5 and `ASSETS.md` § City plates for the canonical rules.
+
+### Where to use them
+
+- **City-selector dropdown**: render as `<img src="/assets/<city>-overview.svg">` inside an 80 × 60 (or 60 × 45, or 200 × 150) container with `border-radius: 8px` and `overflow: hidden`. The SVG's `preserveAspectRatio="xMidYMid slice"` will center-crop to fit. Pair with a mono-caps city name and a `Live` / `Coming soon` pill — see `City Plates.html` in the project root for the canonical selector mock.
+- **Empty-state splashes**: scale up to 600–800 px on the city's empty list state ("No curated places yet in Helsinki — but the plate's ready").
+- **Per-city OG cards**: import the SVG into a 1200 × 630 OG template, place it as a centred 800 × 533 plate with the wordmark below. Rasterize to PNG; outline any text first (the plate itself has none).
+- **Native app splash** (Helsinki / Riga launch): rasterize to 1242 × 2688 with the plate covering the top 60% and the editorial wordmark below.
+
+### How to ship them
+
+The plates have no font references and no external assets, so you can load them as plain `<img>` tags from anywhere. For React, the simplest pattern is:
+
+```jsx
+import tallinn  from '/assets/tallinn-overview.svg';
+import helsinki from '/assets/helsinki-overview.svg';
+import riga     from '/assets/riga-overview.svg';
+
+const PLATES = {
+  tallinn:  { src: tallinn,  status: 'live' },
+  helsinki: { src: helsinki, status: 'coming-soon' },
+  riga:     { src: riga,     status: 'coming-soon' },
+};
+
+function CityPlate({ city, size = 80 }) {
+  const p = PLATES[city];
+  return <img src={p.src} alt="" width={size} height={size * 0.75} loading="lazy" />;
+}
+```
+
+Use `loading="lazy"` for plates below the fold (most city-selector rows after the first 2). Cache-bust on filename change, not on a query string — the plate's silhouette is what users associate with a city, so any change should be a deliberate version bump tracked in `BRAND.md`.
+
+### Adding a new city
+
+When the next plate is commissioned (Vilnius, Stockholm, etc.):
+
+1. Copy one of the existing plates as a starting template and follow the canonical rules (1800 × 1200, 3–5 heroes, one national flag, one lime accent, no labels). See `BRAND.md` § 5 for the full spec.
+2. File the SVG at `assets/<city>-overview.svg`.
+3. Add a row to the table in `ASSETS.md` § City plates.
+4. Wire the new city into the selector data source; the `<CityPlate />` component should pick it up with no further changes.
+
+Do **not** introduce a fourth colour to make a plate "more distinctive" — distinctiveness comes from silhouette and from the country's own flag, not from inventing a new accent. The two-mark rule (one national flag + one lime accent) is the system.
+
+---
+
 ## Rendering text safely
 
 `masters/wordmark.svg`, `social/og-default.svg`, and `social/twitter-default.svg` reference the **Geist** and **DM Serif Display** font families by name in `<text>` nodes. This works in the browser (the app already loads these via Google Fonts) but **will fail in headless rasterizers** that don't have the fonts installed.

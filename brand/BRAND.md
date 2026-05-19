@@ -96,7 +96,56 @@ Already loaded by the app via Google Fonts. No new families.
 
 ---
 
-## 5 · Why this mark
+## 5 · City plates
+
+A small set of editorial city illustrations lives in `/assets/`, not `/brand/`, but it follows the brand system and deserves to be documented here.
+
+| File | City | Status |
+|---|---|---|
+| `assets/tallinn-overview.svg` | Tallinn (EE) | Live |
+| `assets/helsinki-overview.svg` | Helsinki (FI) | Plate ready · curators in flight |
+| `assets/riga-overview.svg` | Riga (LV) | Plate ready · curators in flight |
+
+Each plate is a 1800 × 1200 SVG (`xMidYMid slice`, hex fills, no embedded fonts) drawn as a tourism-poster illustration of 3–5 hero landmarks on a warm cream land + muted petrol sea + soft green park ground. They are used as 80 × 60 thumbnails in the city-selector dropdown, but the silhouettes are designed to survive down to 48 px and scale up cleanly to OG-card sizes.
+
+### The two-mark rule
+
+Every plate carries **exactly one national flag** and **exactly one lime accent**, and they are never the same element:
+
+| City | National flag (cultural signal) | Lime accent (brand signal) |
+|---|---|---|
+| Tallinn | Estonian tricolor on Pikk Hermann | Telliskivi door awning |
+| Helsinki | Finnish cross on Senate Square mast (off-church) | Helsinki Cathedral cross-gleam |
+| Riga | Latvian carmine on Daugava embankment | Doms weathercock |
+
+This is the only place national flags appear in the WanderAlt visual system. They earn their place in the plates because the plates are the one moment in the product where we are *picking a country*; everywhere else, the two-tone brand carries the signal alone. Do not introduce flags to any other surface (nav, app icons, share cards, mobile chrome).
+
+### Plate palette (extends the brand palette)
+
+| Token | Hex | Use |
+|---|---|---|
+| land | `#f6f3ec` | Cream ground |
+| sea | `#d9e2e3` | Muted petrol water |
+| park | `#c5dec2` | Soft green park polys |
+| ink | `#0a0a0c` | Outline (2 / 1.2 px) |
+| petrol | `#055959` | Signature mass per plate (one large) |
+| lime | `#d2dc50` | Brand signal (one small) |
+
+Roof / wall harmonics — cream `#efe1c4`, mustard `#e5b966`, pink `#ecc4bd`, rose `#d6a098`, mint `#c8e2cb`, sky `#aac9d4`, stone `#d8c8a4`, concrete `#b5b9be`, brick `#b54a32`, rust `#a4452a`, gold `#c89548`, dark `#3a2e22`. These are the OKLCH building tones from `src/illustrated-map.jsx`, embedded as hex for portability.
+
+### National flag specs (canonical)
+
+| Flag | Stripes / construction | Colours |
+|---|---|---|
+| Estonia | 3 equal horizontal: blue, black, white | `#0072CE` · `#0a0a0c` · `#ffffff` |
+| Finland | White field with off-centre blue Nordic cross (5:3:10 horizontal, 4:3:4 vertical) | `#003580` cross on `#ffffff` |
+| Latvia | 3 horizontal 2:1:2: carmine, white, carmine | `#9e3039` · `#ffffff` · `#9e3039` |
+
+All flags are drawn at ~130 px wide in the 1800 × 1200 plate viewBox, with a slight hand-drawn uplift at the fly end. At 80 × 60 thumbnail size each flag renders as a ~6 × 3 px coloured chip — small enough to feel natural, dominant enough that the country reads at a glance.
+
+---
+
+## 6 · Why this mark
 
 A short note for anyone who inherits this file later:
 
