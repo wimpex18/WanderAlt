@@ -5,10 +5,22 @@
      node .scripts/regen-catalog.js
    This is loaded first; supabase.js then replaces it with live
    data when the network is reachable.
+
+   The raw multi-city list is exposed as `window.WA._catalogAll`;
+   `window.WA.catalog` is the slice for the currently selected
+   city (read from localStorage 'wa:city' since city.js loads
+   after this file). Same for curators. Without this filter, an
+   offline visitor on the Riga or Helsinki city setting would
+   see Tallinn picks bleed through.
    ============================================================ */
 window.WA = window.WA || {};
 
-window.WA.catalog = [
+const _waCity = (() => {
+  try { return localStorage.getItem('wa:city') || 'tallinn'; }
+  catch { return 'tallinn'; }
+})();
+
+window.WA._catalogAll = [
   {
     id:            "aaniwalli-drone-night",
     city:          "helsinki",
@@ -3385,7 +3397,12 @@ window.WA.catalog = [
   }
 ];
 
-window.WA.curators = [
+/* Filter the all-cities list to the active city. supabase.js will
+   replace this with live data once the network responds, but the
+   filter ensures the offline fallback respects the city setting. */
+window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
+
+window.WA._curatorsAll = [
   {
     handle:  "@jani.after",
     name:    "Jani",
@@ -3499,6 +3516,8 @@ window.WA.curators = [
     bio:     "Grew up between Tartu and Riga. Spent three years running a noise collective out of a converted tram depot in Kalamaja before the building was turned into co-working. Writes a weekly Telegram channel about experimental music in the Baltics and occasionally ruins dinner parties with thoughts about the semiotics of feedback. Currently lives above a kebab shop near Balti jaam. Has seen Sveta Baar survive three ownership changes and remain stubbornly itself."
   }
 ];
+
+window.WA.curators = window.WA._curatorsAll.filter(c => c.city === _waCity);
 
 window.WA.past = [
   { id: "skweee-sveta-baar", title: "Skweee night at Sveta Baar", date: "Apr 11" },

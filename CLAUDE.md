@@ -44,7 +44,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `curator.html` / `curator.js` | Curator profile — bio + all picks |
 | `profile.html` / `profile.js` | Account — bookmarks, digest, export, delete |
 | `admin.html` / `admin.js` | Admin panel — pick/venue CRUD, pipeline, column approval, enrichment |
-| `catalog.js` | Static fallback catalog. Exposes `WA.catalog`, `WA.past`, `WA.curators` |
+| `catalog.js` | Static fallback catalog. Exposes the raw multi-city list as `WA._catalogAll` / `WA._curatorsAll` and the city-filtered slice as `WA.catalog` / `WA.curators` (read from localStorage `wa:city` since city.js loads after this file). `WA.past` too. supabase.js replaces these with live data when the network responds. |
 | `supabase.js` | Live data fetcher; exposes `WA.BASE_URL` + `WA.ANON_KEY`; fires `wa:catalog-ready` |
 | `auth.js` | Email/password + Google OAuth, password reset; dispatches `wa:signed-in` / `wa:signed-out` |
 | `bookmark.js` | localStorage primary store + Supabase cloud sync; fires `wa:bookmarks-synced` |
