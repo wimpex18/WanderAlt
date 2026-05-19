@@ -27,11 +27,19 @@ Object.defineProperty(sandbox, 'WA', {
 });
 vm.createContext(sandbox);
 vm.runInContext(source, sandbox);
-const tallinnSvg = sandbox.window.WA && sandbox.window.WA.mapWorldSVG && sandbox.window.WA.mapWorldSVG();
-if (!tallinnSvg) {
+const tallinnSvgRaw = sandbox.window.WA && sandbox.window.WA.mapWorldSVG && sandbox.window.WA.mapWorldSVG();
+if (!tallinnSvgRaw) {
   console.error('failed to call WA.mapWorldSVG()');
   process.exit(1);
 }
+/* map-world.js writes SVG to innerHTML in the browser, where the xmlns is
+   implicit. When stored as a standalone .svg file and loaded via <img src>,
+   the file MUST declare xmlns="http://www.w3.org/2000/svg" or the browser
+   rejects it as a broken image. Inject the namespace if it's missing. */
+const tallinnSvg = /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(tallinnSvgRaw)
+  ? tallinnSvgRaw
+  : tallinnSvgRaw.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+
 fs.writeFileSync(path.join(OUT_DIR, 'tallinn-overview.svg'), tallinnSvg);
 console.log('wrote assets/tallinn-overview.svg', tallinnSvg.length, 'bytes');
 

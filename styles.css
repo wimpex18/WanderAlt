@@ -547,6 +547,37 @@ img, svg { display: block; max-width: 100%; }
 
 .picks { display: flex; flex-direction: column; }
 
+/* "Show more" footer beneath the picks list. Editorial pagination —
+   left-aligned mono button, no shadow, no fill. Mirrors the briefing's
+   "back-page of a newsletter" voice. */
+.picks-footer {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  padding: var(--s-4) 0 var(--s-2);
+  border-top: var(--rule-w) solid var(--c-rule);
+  margin-top: var(--s-3);
+}
+.picks-footer__btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+  cursor: pointer;
+  text-align: left;
+}
+.picks-footer__btn:hover { color: var(--c-ink); }
+.picks-footer__meta {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--c-ink-mute);
+  margin: 0;
+  margin-left: auto;
+}
+
 .pick {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -2036,10 +2067,10 @@ a.auth-panel__submit { display: inline-block; }
   border-radius: 999px;
   transition: color var(--t-fast), background var(--t-fast);
 }
-.nav__icon { display: block; }
+.nav__icon { display: block; width: 24px; height: 24px; }
 .nav__label {
   font-family: var(--ff-body);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -2183,8 +2214,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     color: var(--c-ink);
     border-bottom-color: var(--c-accent);
   }
-  .nav__icon { width: 16px; height: 16px; }
-  .nav__label { font-size: 11px; font-weight: 500; }
+  .nav__icon  { width: 20px; height: 20px; }
+  .nav__label { font-size: 14px; font-weight: 500; }
+  /* Slightly looser spacing on desktop so the masthead feels like a
+     proper newspaper section row, not a cramped iOS tab bar. */
+  .nav__inner { gap: var(--s-7); }
+  .nav__item  { padding: var(--s-4) 0; gap: var(--s-3); }
 }
 
 /* ============================================================

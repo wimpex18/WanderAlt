@@ -130,17 +130,42 @@
   };
 
   /* ── This Week list ────────────────────────────────────── */
+  /* Pagination: the briefing is meant to feel like a printed weekly,
+     not a search result page. Render the first PAGE_SIZE picks; if
+     there are more, append a "Show more" button below that reveals
+     the next PAGE_SIZE on each tap. Cleaner than infinite scroll at
+     this scale and respects the editorial-not-feed positioning.   */
+  const PAGE_SIZE = 20;
+  let _weekFullSet  = [];     /* full ordered list (may be filtered by mood) */
+  let _weekShown    = PAGE_SIZE;
+  let _weekIsFiltered = false;
+  let _weekTotalAll = 0;      /* unfiltered week count, for the "N of M" label */
+
   /* total = unfiltered count, used only when isFiltered=true to show "N of M". */
   const renderThisWeek = (entries, total = entries.length, isFiltered = false) => {
+    _weekFullSet    = entries;
+    _weekTotalAll   = total;
+    _weekIsFiltered = isFiltered;
+    _weekShown      = Math.min(PAGE_SIZE, entries.length);
+    renderWeekPage();
+  };
+
+  const renderWeekPage = () => {
     const list = document.querySelector('.picks');
     const sub  = document.querySelector('.section-sub');
     if (!list) return;
+    const entries = _weekFullSet.slice(0, _weekShown);
 
-    const curatorCount = new Set(entries.map(e => e.handle)).size;
+    const curatorCount = new Set(_weekFullSet.map(e => e.handle)).size;
     if (sub) {
-      const countLabel = isFiltered && total > entries.length
-        ? `${entries.length} of ${total} picks`
-        : `${entries.length} picks`;
+      /* Counter reflects what's CURRENTLY shown vs the total available
+         in the active set. "20 of 47 picks · 12 curators".               */
+      const filteredHasMore = _weekIsFiltered && _weekTotalAll > _weekFullSet.length;
+      const showCount  = entries.length;
+      const totalCount = filteredHasMore ? _weekTotalAll : _weekFullSet.length;
+      const countLabel = showCount < totalCount
+        ? `${showCount} of ${totalCount} picks`
+        : `${showCount} picks`;
       sub.textContent =
         `${countLabel} · ${curatorCount} curator${curatorCount !== 1 ? 's' : ''}`;
     }
@@ -172,6 +197,30 @@
          </label>
        </li>`
     ).join('');
+
+    /* "Show more" button — appears after the list when more picks are
+       available in the current set. Tap reveals the next page. */
+    let footer = document.getElementById('picks-footer');
+    if (footer) footer.remove();
+    const remaining = _weekFullSet.length - entries.length;
+    if (remaining > 0) {
+      const showNext = Math.min(PAGE_SIZE, remaining);
+      footer = document.createElement('div');
+      footer.id = 'picks-footer';
+      footer.className = 'picks-footer';
+      footer.innerHTML = `
+        <button type="button" class="picks-footer__btn" id="picks-show-more">
+          Show ${showNext} more &rarr;
+        </button>
+        <p class="picks-footer__meta">${remaining} more in This week</p>
+      `;
+      list.parentNode.insertBefore(footer, list.nextSibling);
+      footer.querySelector('#picks-show-more').addEventListener('click', () => {
+        _weekShown += PAGE_SIZE;
+        renderWeekPage();
+        restoreBookmarks();
+      });
+    }
   };
 
   /* ── Bookmark wiring ───────────────────────────────────── */
@@ -333,8 +382,6 @@
         .map(x => x.e);
     };
     const orderedWeek = orderByTaste(weekSrc);
-    /* Cap the displayed list at 20 — enough for a briefing, not a full catalog. */
-    const thisWeek  = orderedWeek.slice(0, 20);
 
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
@@ -344,8 +391,8 @@
     const _isFallback  = fallback;
 
     renderTonight(tonight);
-    /* No isFiltered flag — counter shows just the count without "of total". */
-    renderThisWeek(thisWeek);
+    /* Pass the full ordered set — renderThisWeek paginates internally. */
+    renderThisWeek(orderedWeek);
     restoreBookmarks();
     wireBookmarks();
     wireSurprise(catalog);
@@ -355,7 +402,7 @@
        or a Profile-page edit). */
     document.addEventListener('wa:taste-changed', () => {
       const reordered = orderByTaste(weekSrc);
-      renderThisWeek(reordered.slice(0, 20));
+      renderThisWeek(reordered);
       restoreBookmarks();
     });
 
@@ -427,7 +474,7 @@
       const filtered   = _allWeek.filter(entry => matchesMood(entry, activeTags));
       const isFiltered = activeTags.length > 0;
       /* Show "N of M" only when a mood filter is actually active. */
-      renderThisWeek(filtered.slice(0, 20), _allWeek.length, isFiltered);
+      renderThisWeek(filtered, _allWeek.length, isFiltered);
       restoreBookmarks();
     });
   };
