@@ -95,7 +95,9 @@
 
   $('#profile-export-btn')?.addEventListener('click', () => {
     const store   = window.WA.Bookmarks?.get() || {};
-    const catalog = window.WA.catalog || [];
+    /* Export every bookmarked pick regardless of the user's active city
+       setting — bookmarks are a global state, not a per-city slice. */
+    const catalog = window.WA._catalogAll || window.WA.catalog || [];
     const city    = window.WA.CITY || 'tallinn';
 
     const picks = Object.keys(store)

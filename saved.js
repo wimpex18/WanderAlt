@@ -103,7 +103,12 @@
   /* ── Render ──────────────────────────────────────────────── */
 
   const renderLists = () => {
-    const catalog       = (window.WA && window.WA.catalog) || [];
+    /* Use the all-cities snapshot so a user who bookmarked a Riga pick
+       while on Tallinn (or vice versa) still sees it in their reading
+       list. The user's saved list is a global state — it shouldn't
+       silently filter by the active city setting. */
+    const catalog       = (window.WA?._catalogAll)
+                       || (window.WA?.catalog) || [];
     const bookmarkedIds = window.WA.Bookmarks ? window.WA.Bookmarks.ids() : [];
 
     const bookmarked    = catalog.filter(e => bookmarkedIds.includes(e.id));
