@@ -156,6 +156,37 @@
     if (!list) return;
     const entries = _weekFullSet.slice(0, _weekShown);
 
+    /* Empty state — a graceful card with the active city's plate
+       instead of a stark empty list. Hits any time This Week resolves
+       to zero picks (typical for thinner cities like Helsinki / Riga,
+       or for any mood-filter combo that returns nothing).            */
+    let emptyCard = document.getElementById('picks-empty');
+    if (_weekFullSet.length === 0) {
+      list.innerHTML = '';
+      const cityId    = window.WA?.CITY || 'tallinn';
+      const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
+      const reason = _weekIsFiltered
+        ? 'No picks match the active filter.'
+        : `No picks this week in ${cityLabel} yet — curators are warming up.`;
+      if (!emptyCard) {
+        emptyCard = document.createElement('div');
+        emptyCard.id = 'picks-empty';
+        emptyCard.className = 'picks-empty';
+        list.parentNode.insertBefore(emptyCard, list.nextSibling);
+      }
+      emptyCard.innerHTML =
+        `<div class="picks-empty__plate" style="background-image:url('./assets/${cityId}-overview.svg')" aria-hidden="true"></div>` +
+        `<div class="picks-empty__body">` +
+        `  <p class="picks-empty__title">${reason}</p>` +
+        `  <p class="picks-empty__sub"><a href="./discover.html">Browse Discover &rarr;</a></p>` +
+        `</div>`;
+      if (sub) sub.textContent = '0 picks';
+      const footer = document.getElementById('picks-footer');
+      if (footer) footer.remove();
+      return;
+    }
+    if (emptyCard) emptyCard.remove();
+
     const curatorCount = new Set(_weekFullSet.map(e => e.handle)).size;
     if (sub) {
       /* Counter reflects what's CURRENTLY shown vs the total available

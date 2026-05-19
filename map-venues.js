@@ -1,6 +1,7 @@
-/* map-venues.js — categories, districts, geo helpers for the illustrated map.
+/* map-venues.js — categories, districts, geo helpers used by map.js.
    Exposes WA.MAP_CATEGORIES, WA.MAP_DISTRICTS, WA.geoToWorld, WA.worldToGeo.
-   Loaded before map-world.js and map.js.                                      */
+   Loaded before map.js (and historically before map-world.js, retired
+   May 2026 after the v2 city plates superseded it).                          */
 window.WA = window.WA || {};
 
 WA.MAP_CATEGORIES = [

@@ -39,6 +39,7 @@ const sessionJson = JSON.stringify({
 const VIEWS = [
   { tag: 'mobile',  width: 390,  height: 844,  isMobile: true,  dsf: 2 },
   { tag: 'desktop', width: 1280, height: 900,  isMobile: false, dsf: 1 },
+  { tag: 'wide',    width: 1440, height: 900,  isMobile: false, dsf: 1 },
 ];
 
 /* Each page:
@@ -74,12 +75,31 @@ const PAGES = [
   /* Riga city switch — confirms ingest output and multi-city catalog. */
   { name: 'riga-briefing',    url: '/index.html',     waitMs: 1800, city: 'riga' },
   { name: 'riga-discover',    url: '/discover.html',  waitMs: 2200, city: 'riga' },
+
+  /* Banner click — clicking .city-banner should open the city
+     dropdown (city.js wires the banner click to btn.click()). The
+     screenshot captures the dropdown open over the briefing. */
+  { name: 'banner-dropdown',  url: '/index.html',     waitMs: 1500,
+    setup: async (page) => {
+      const banner = await page.$('.city-banner');
+      if (banner) { await banner.click(); await new Promise(r => setTimeout(r, 400)); }
+      /* Sanity check: assert the dropdown is now in the DOM. */
+      const ok = await page.$('.city-dropdown');
+      if (!ok) throw new Error('banner click did NOT open the dropdown');
+    } },
 ];
 
 (async () => {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    /* --ignore-certificate-errors lets MapLibre tile.openfreemap.org +
+       fonts.googleapis.com etc. load through the sandbox's broken
+       cert chain, so the smoke screenshots show actual map content
+       instead of an empty grey canvas. The flag only affects this
+       headless run, never the user's real browser. */
+    args: ['--no-sandbox', '--disable-setuid-sandbox',
+           '--disable-dev-shm-usage', '--ignore-certificate-errors'],
+    ignoreHTTPSErrors: true,
   });
 
   let totalErrors = 0;
@@ -118,11 +138,14 @@ const PAGES = [
       const file = path.join(OUT, `smoke-${v.tag}-${p.name}.png`);
       await page.screenshot({ path: file, fullPage: false });
 
-      /* Ignore the sandbox-only cert errors that come from blocked
-         Supabase / Google Fonts HTTPS calls — they're not real bugs. */
+      /* Filter known noise:
+         - sandbox cert blocks (browser refuses Supabase / Google Fonts)
+         - 401s from the dummy JWT we inject on signed-in pages
+           (real Supabase auth rightly rejects it; not a regression).  */
       const errs = consoleMsgs.filter(m =>
         (m.startsWith('[error]') || m.startsWith('[PAGEERROR]')) &&
-        !m.includes('ERR_CERT_AUTHORITY_INVALID'),
+        !m.includes('ERR_CERT_AUTHORITY_INVALID') &&
+        !/status of (401|403)/.test(m),
       );
       totalErrors += errs.length;
       console.log(`${v.tag}/${p.name} → ${path.relative(process.cwd(), file)}` +

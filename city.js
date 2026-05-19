@@ -69,8 +69,12 @@
         banner.setAttribute('aria-hidden', 'true');
         /* Clicking the banner opens the city dropdown — quick affordance
            for "I want a different city" without scrolling back to the
-           topbar selector. */
-        banner.addEventListener('click', () => btn.click());
+           topbar selector. stopPropagation prevents the same click
+           bubbling to the document-level close-on-outside handler. */
+        banner.addEventListener('click', (e) => {
+          e.stopPropagation();
+          btn.click();
+        });
         topbar.insertAdjacentElement('afterend', banner);
       }
     }

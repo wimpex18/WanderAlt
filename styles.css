@@ -638,6 +638,56 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   margin-left: auto;
 }
 
+/* ── Empty state for This Week ───────────────────────────────
+   Shown by briefing.js when _weekFullSet has zero entries. Uses
+   the active city's plate as a 200×150 hero on the left, with
+   the reason + a "Browse Discover" CTA on the right. Frames the
+   "thin catalog" state as intentional rather than broken — the
+   plate ties it visually to the city banner above.
+   ============================================================ */
+.picks-empty {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--s-5);
+  align-items: center;
+  padding: var(--s-5) var(--s-4);
+  margin: var(--s-4) 0;
+  border: var(--rule-w) solid var(--c-rule);
+  background: var(--c-paper-deep);
+  border-radius: var(--radius-card);
+}
+.picks-empty__plate {
+  width: 200px;
+  height: 150px;
+  background: var(--c-paper) center / cover no-repeat;
+  border-radius: var(--radius);
+  border: var(--rule-w) solid var(--c-rule);
+}
+.picks-empty__body { min-width: 0; }
+.picks-empty__title {
+  font-family: var(--ff-body);
+  font-size: var(--fs-pick);
+  font-weight: 500;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-2);
+  line-height: 1.35;
+}
+.picks-empty__sub {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  margin: 0;
+}
+.picks-empty__sub a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+@media (max-width: 560px) {
+  .picks-empty { grid-template-columns: 1fr; }
+  .picks-empty__plate { width: 100%; height: 110px; }
+}
+
 .pick {
   display: grid;
   grid-template-columns: 1fr auto;
