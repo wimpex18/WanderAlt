@@ -440,7 +440,7 @@
     if (!pinMap) return;
     if (pinMarker) pinMarker.setLngLat([lng, lat]);
     else {
-      pinMarker = new maplibregl.Marker({ draggable: true, color: '#8a2a1a' })
+      pinMarker = new maplibregl.Marker({ draggable: true, color: '#055959' })
         .setLngLat([lng, lat])
         .addTo(pinMap);
       pinMarker.on('dragend', async () => {

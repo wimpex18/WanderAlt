@@ -1914,13 +1914,20 @@ a.auth-panel__submit { display: inline-block; }
 .profile-head__info { flex: 1; min-width: 0; }
 .profile-head__email {
   font-family: var(--ff-body);
-  font-size: 28px;
+  /* Mobile: clamp so typical "user@domain.tld" addresses fit on one
+     line even on a 390 px viewport. Desktop overrides this to 36 px in
+     the min-width:768px block below. */
+  font-size: clamp(18px, 5.6vw, 24px);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.5px;
   color: var(--c-ink);
   margin: 0 0 var(--s-2);
-  word-break: break-all;
+  /* When an email genuinely doesn't fit (long domain or display name),
+     allow break-anywhere as a last resort. overflow-wrap respects word
+     boundaries first; break-all would split mid-word eagerly. */
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 .profile-head__meta {
   font-family: var(--ff-mono);
@@ -3119,7 +3126,7 @@ a.handle:hover { color: var(--c-ink); }
   box-shadow: 0 4px 12px rgba(0,0,0,0.07);
   transition: color var(--t-fast), border-color var(--t-fast);
 }
-.map-locate-fab--on    { color: #8a2a1a; border-color: #8a2a1a; }
+.map-locate-fab--on    { color: var(--c-accent); border-color: var(--c-accent); }
 .map-locate-fab--locating { color: var(--c-ink-mute); animation: wa-pulse 1s ease infinite; }
 
 /* ── Mobile bottom sheet (detail) ──────────────────────────── */
@@ -3207,7 +3214,7 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink);
 }
 .map-detail__title a { color: inherit; }
-.map-detail__title a:hover { color: #8a2a1a; }
+.map-detail__title a:hover { color: var(--c-accent); }
 .map-detail__media { margin: var(--s-3) 0; }
 .map-detail__img {
   width: 100%;
@@ -3230,7 +3237,7 @@ a.handle:hover { color: var(--c-ink); }
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--ph-bg, #8a2a1a);
+  background: var(--ph-bg, var(--c-accent));
   opacity: 0.18;
 }
 .map-detail__img-ph-init {
@@ -3238,7 +3245,7 @@ a.handle:hover { color: var(--c-ink); }
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 3px;
-  color: var(--ph-bg, #8a2a1a);
+  color: var(--ph-bg, var(--c-accent));
   opacity: 0.55;
   position: relative;
 }
@@ -3250,7 +3257,7 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink-soft);
   margin: var(--s-3) 0;
   padding-left: var(--s-3);
-  border-left: 3px solid #8a2a1a;
+  border-left: 3px solid var(--c-accent);
 }
 .map-detail__quote cite {
   display: block;
@@ -3259,7 +3266,7 @@ a.handle:hover { color: var(--c-ink); }
   font-size: 10px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: #8a2a1a;
+  color: var(--c-accent);
   margin-top: var(--s-2);
 }
 .map-detail__foot {

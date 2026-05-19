@@ -34,7 +34,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `discover-redirect.js` | Loaded by the `map.html` and `search.html` redirect stubs; maps legacy params → Discover URL. |
 | `map.js` | Pin overlay + clustering + detail panel. Exposes `window.WA.MapView` API; embedded inside Discover's map pane. Pin positions projected via `WA.MapTiles.project(lng, lat)`. |
 | `map-tiles.js` | MapLibre GL basemap. OpenFreeMap vector tiles, custom editorial style (see `map-style.json`). Exposes `window.WA.MapTiles` API used by `map.js`. |
-| `map-style.json` | Custom MapLibre style file — newsprint cream, muted petrol water, oxblood roads, JetBrains-style labels. |
+| `map-style.json` | Custom MapLibre style file — newsprint cream land, muted petrol water, off-white roads, JetBrains-style labels. |
 | `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
 | `map-world.js` | Legacy illustrated Tallinn SVG. Still used by `admin.html` pin-placement tool; not loaded on Discover. |
 | `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
@@ -59,7 +59,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - Strictly left-aligned. **No centered blocks.**
 - No gradients, no box-shadows, max corner radius 4px.
 - Section dividers are **1px horizontal rules**, never background changes or large gaps.
-- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). Older oxblood `#8a2a1a` remains in a handful of map/admin spots (pin markers, active row bar) and is being phased out as those touch points are revisited.
+- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile, map detail quote bar, locate-fab "on" state, admin pin marker. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). The older oxblood `#8a2a1a` accent has been fully retired from app code — any remaining mentions are in `map-world.js` (legacy illustrated SVG, only used by admin pin-placement tool) and doc comments.
 - Background: warm newsprint `#f6f3ec`, never pure white.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
@@ -82,7 +82,7 @@ The mark is a **petrol squircle tile with a centered lime diamond**. One mark, n
 - **Theme color:** all HTML files declare `<meta name="theme-color" content="#055959" />`. Mobile browser chrome tints petrol.
 - **Favicons / app icons:** referenced from `brand/favicon/` and `brand/pwa/` via `<link>` tags + `manifest.webmanifest`. SVG-only currently (universal support in 2026). PNG/ICO rasterizations are a follow-up if older browsers need them — pipeline TBD.
 - **OG / Twitter cards:** `brand/social/og-default.svg` (1200×630) and `twitter-default.svg` (1200×675). Wired into `index.html` and `venue.html`.
-- **Do not introduce a third color.** Two-tone for a reason. Oxblood `#8a2a1a` mentioned in older HANDOFF passages was retired — `--c-accent` (petrol) is the only accent now.
+- **Do not introduce a third color.** Two-tone for a reason. `--c-accent` (petrol) is the only accent; `--c-lime` is signal-only.
 
 ## Working rules
 
@@ -124,7 +124,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 - **`geocode-picks` cron** (`wa-geocode-picks`, hourly at :20): calls the `geocode-picks` edge function. It selects picks with NULL lat/lng OR NULL address and either forward-geocodes (Nominatim → Google Places fallback) or reverse-geocodes coords-only rows. Skips locked rows. Filters out non-spatial venue names (`%various%`, `%multiple%`, `%online%`, `%popup%`).
 - **`geocode-picks` reverse action** (v4+): `POST {action: 'reverse', lat, lng}` returns the resolved postal address. Admin pin editor calls this so the browser never hits Nominatim directly — single User-Agent identity, OSM usage policy respected, editor IPs hidden.
 - **`enrich-pick-images` cron** (`wa-enrich-pick-images`, hourly at :40): for each active pick with NULL `image_url`, calls Google Places API Text Search to find the venue, then fetches a CDN photo URL via the Places media endpoint. ~$0.039 per unique venue. Skips "Various venues" / "Multiple" / "Online" / "Popup" entries (no fixed location → no representative photo).
-- **Admin pin editor** (`admin.html` pick modal): MapLibre mini-map with a draggable oxblood marker. Dragend writes lat/lng to the form; reverse-geocoded address is displayed for sanity checking. "Lock coords" checkbox sets `coords_locked = true` so cron doesn't undo manual placements.
+- **Admin pin editor** (`admin.html` pick modal): MapLibre mini-map with a draggable petrol marker. Dragend writes lat/lng to the form; reverse-geocoded address is displayed for sanity checking. "Lock coords" checkbox sets `coords_locked = true` so cron doesn't undo manual placements.
 - **WA.MapView API** (exposed by `map.js`):
   - `setFilters({ q, time, cats, mood, nhoods })` — syncs all 5 filter dimensions into the map engine.
   - `render()`, `fitView()`, `focusPin(id)`, `closeDetail()`, `isReady()`.

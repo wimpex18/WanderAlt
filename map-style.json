@@ -2,7 +2,7 @@
   "version": 8,
   "name": "WanderAlt editorial",
   "metadata": {
-    "wanderalt:notes": "Custom MapLibre style. Newsprint cream land, muted petrol water, oxblood roads, JetBrains-style mono labels. Tile source: OpenFreeMap (free, OSM, no API key)."
+    "wanderalt:notes": "Custom MapLibre style. Newsprint cream land, muted petrol water, off-white roads on muted casing, JetBrains-style mono labels. Tile source: OpenFreeMap (free, OSM, no API key)."
   },
   "sources": {
     "openfreemap": {

@@ -108,7 +108,7 @@
 
   const buildMeta = (e) => {
     const parts = [e.neighborhood, e.kind];
-    if (e.day && e.day !== 'Tonight') parts.push(`${e.day} ${e.time}`);
+    if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
     else if (e.time)                  parts.push(e.time);
     return parts.filter(Boolean).join(' · ');
   };
