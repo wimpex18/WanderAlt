@@ -166,7 +166,7 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 **Pipeline flow:**
 `ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
 
-**`ingest-osm` v8 (May 2026):** previously hard-coded to Tallinn. Now loops over a `CITIES` map (Tallinn, Riga, Helsinki) and ingests venues from each Overpass bounding box in one cron tick. Accepts `{city: "..."}` body for ad-hoc backfills; with no body it runs all three cities. To add a new city, extend the `CITIES` map and update the corresponding `cron.job` row if you want a different schedule.
+**`ingest-osm` v9 (May 2026):** previously hard-coded to Tallinn. Now loops over a `CITIES` map (Tallinn, Riga, Helsinki) and ingests venues from each Overpass bounding box in one cron tick. Per-city try/catch so a 504 on one city doesn't abort the others — each city's outcome is reported separately in `ingest_log.detail.cities`. Accepts `{city: "..."}` body for ad-hoc backfills; with no body it runs all three. Overpass is rate-limited; the cron already handles transient failures by retrying next tick.
 
 **Adding a new source:** insert a row into `sources` (set `enabled=true`, fill `feed_url`/`channel`/`curator_handle`). The cron picks it up on the next tick. No code change required for telegram/rss/fienta — each ingest function reads the `sources` table on every run.
 
