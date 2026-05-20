@@ -508,6 +508,23 @@
       renderThisWeek(filtered, _allWeek.length, isFiltered);
       restoreBookmarks();
     });
+
+    /* Race-condition recovery: mood-chips.js runs on the same
+       wa:catalog-ready event we just handled, and if its listener was
+       registered first it has already fired wa:mood-changed for the
+       initial hash *before* we subscribed above. Re-read the hash
+       once now to catch that case. Hash format matches mood-chips.js:
+       #mood=loud,solo                                                 */
+    const hash = window.location.hash.match(/[#&]mood=([^&]+)/);
+    if (hash) {
+      const initialTags = decodeURIComponent(hash[1])
+        .split(',').map(s => s.trim()).filter(Boolean);
+      if (initialTags.length) {
+        const filtered = _allWeek.filter(entry => matchesMood(entry, initialTags));
+        renderThisWeek(filtered, _allWeek.length, true);
+        restoreBookmarks();
+      }
+    }
   };
 
   document.addEventListener('wa:catalog-ready',    init);

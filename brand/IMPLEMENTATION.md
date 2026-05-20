@@ -206,12 +206,13 @@ Three editorial city plates ship outside `/brand/`, under `/assets/`:
 
 They are the source for the city-selector dropdown thumbnails (rendered at 80 × 60) and for any per-city splash / OG card / marketing surface that needs to depict a city. See `BRAND.md` § 5 and `ASSETS.md` § City plates for the canonical rules.
 
-### Where to use them
+### Where to use them — and what's shipped
 
-- **City-selector dropdown**: render as `<img src="/assets/<city>-overview.svg">` inside an 80 × 60 (or 60 × 45, or 200 × 150) container with `border-radius: 8px` and `overflow: hidden`. The SVG's `preserveAspectRatio="xMidYMid slice"` will center-crop to fit. Pair with a mono-caps city name and a `Live` / `Coming soon` pill — see `City Plates.html` in the project root for the canonical selector mock.
-- **Empty-state splashes**: scale up to 600–800 px on the city's empty list state ("No curated places yet in Helsinki — but the plate's ready").
-- **Per-city OG cards**: import the SVG into a 1200 × 630 OG template, place it as a centred 800 × 533 plate with the wordmark below. Rasterize to PNG; outline any text first (the plate itself has none).
-- **Native app splash** (Helsinki / Riga launch): rasterize to 1242 × 2688 with the plate covering the top 60% and the editorial wordmark below.
+- **City-selector dropdown** — `city.js` renders each row as an 80 × 60 thumbnail. ✅ shipped May 2026.
+- **City banner ribbon** (not in original spec, added during implementation) — `city.js` injects a 64 px (48 px on ≤480 px viewports) ribbon below the topbar on every content page, center-cropped via the SVG's own `preserveAspectRatio="xMidYMid slice"`. Per-city image keyed off `body[data-city]` so the ribbon swaps when the user changes city. ✅ shipped.
+- **Empty-state splashes** — when `briefing.js renderThisWeek()` resolves to 0 picks (typical for Helsinki / Riga's thinner catalogs, or any too-narrow mood combo), it renders a `.picks-empty` card with the active city's plate at 480 px max-width (3:2 aspect) above the editorial message + Discover CTA. ✅ shipped.
+- **Per-city OG cards** — three 1200 × 630 SVGs at `brand/social/og-{tallinn,helsinki,riga}.svg`, rasterised by `npm run build:icons` to matching PNGs. Each embeds the city plate at 800 × 533 with the brand wordmark above and a `CITY — LIVE` / `— SOON` mono-cap on the right. ✅ shipped as marketing assets. **Note:** the live `<meta property="og:image">` tags still point at the shared `og-default.png` because Facebook / X / LinkedIn scrapers don't run JavaScript, so a single static URL has to serve every page. The per-city PNGs are for manual social posts (city-launch tweets, IG announcements) until SSR-rendered per-page OG arrives.
+- **Native app splash** (Helsinki / Riga native launch) — rasterise to 1242 × 2688 with the plate covering the top 60% and the editorial wordmark below. Not yet built; deferred until the native app ships.
 
 ### How to ship them
 

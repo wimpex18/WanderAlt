@@ -87,6 +87,12 @@ const PAGES = [
       const ok = await page.$('.city-dropdown');
       if (!ok) throw new Error('banner click did NOT open the dropdown');
     } },
+
+  /* Briefing empty state — pick a mood combo that nothing matches so
+     briefing.js renders the .picks-empty card with the city plate as
+     a hero. Verifies the spec's "Empty-state splash 600–800 px" path.
+     fullPage so we capture the empty card which sits below Tonight.   */
+  { name: 'briefing-empty',   url: '/index.html#mood=loud,quiet', waitMs: 2000, fullPage: true },
 ];
 
 (async () => {
@@ -139,7 +145,7 @@ const PAGES = [
       if (p.setup) await p.setup(page);
 
       const file = path.join(OUT, `smoke-${v.tag}-${p.name}.png`);
-      await page.screenshot({ path: file, fullPage: false });
+      await page.screenshot({ path: file, fullPage: !!p.fullPage });
 
       /* Filter known noise:
          - sandbox cert blocks (browser refuses Supabase / Google Fonts)

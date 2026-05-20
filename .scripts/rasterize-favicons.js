@@ -31,9 +31,16 @@ const PNG_JOBS = [
   ['pwa/icon-mono.svg',              'pwa/icon-mono.png',              512],
 
   /* Social cards — Facebook / X scrapers usually accept SVG, but the
-     1.2 MB-cap rule and historic compatibility says rasterize. */
+     1.2 MB-cap rule and historic compatibility says rasterize.
+     Per-city OG cards (og-tallinn, og-helsinki, og-riga) are marketing
+     assets — meta tags still point at og-default since OG image is a
+     static meta attribute and social scrapers don't run JS. Use the
+     per-city PNGs for manual social-share posts when launching a city. */
   ['social/og-default.svg',          'social/og-default.png',          1200],
   ['social/twitter-default.svg',     'social/twitter-default.png',     1200],
+  ['social/og-tallinn.svg',          'social/og-tallinn.png',          1200],
+  ['social/og-helsinki.svg',         'social/og-helsinki.png',         1200],
+  ['social/og-riga.svg',             'social/og-riga.png',             1200],
 ];
 
 (async () => {
