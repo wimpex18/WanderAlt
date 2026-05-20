@@ -15,7 +15,14 @@
    Pin positions are projected via WA.MapTiles.project(lng, lat).
    ============================================================ */
 (() => {
-  const CLUSTER_PX = 50;  /* pin-to-pin distance threshold for clustering */
+  const CLUSTER_PX       = 50;  /* pin-to-pin distance threshold for clustering */
+  const CLUSTER_LIST_MAX = 5;   /* clusters at-or-below this size open a list
+                                   popup on click (instead of zooming in) so
+                                   picks at the same building never become
+                                   un-discoverable. */
+  /* Built fresh each renderPins() pass — `${lat},${lng}` → cluster. The
+     cluster-click handler looks the cluster up by its centroid here. */
+  const clustersByKey = new Map();
 
   // ── State ─────────────────────────────────────────────────────
   let activeId   = null;
@@ -200,6 +207,13 @@
     const visible  = getVisibleEntries();
     const clusters = computeClusters(visible);
 
+    /* Re-index by centroid so the cluster-click handler can recover
+       the underlying entries (DOM only carries lat/lng on data-*). */
+    clustersByKey.clear();
+    for (const cl of clusters) {
+      if (!cl.single) clustersByKey.set(`${cl.lat},${cl.lng}`, cl);
+    }
+
     /* Toggle the empty-state hint: shown when no filters are active so
        users understand why the map is bare. */
     const hint = document.getElementById('map-empty-hint');
@@ -229,7 +243,13 @@
       });
     });
 
-    /* Cluster pins: clicking zooms in via MapLibre. */
+    /* Cluster pins.
+       - Small cluster (≤ CLUSTER_LIST_MAX, typically 2–5 picks at the
+         same building) → opens a list popup so the user can pick any of
+         them without zooming in repeatedly. Necessary because picks
+         sharing identical lat/lng never separate, no matter the zoom.
+       - Larger cluster → zooms in by 1.6 levels (MapLibre handles the
+         re-cluster naturally as pins spread apart).                       */
     pinsEl.querySelectorAll('.map-cluster').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
       btn.addEventListener('click', () => {
@@ -237,7 +257,12 @@
         if (!T) return;
         const lat = +btn.dataset.lat;
         const lng = +btn.dataset.lng;
-        const m   = T.getMap();
+        const cl  = clustersByKey.get(`${lat},${lng}`);
+        if (cl && cl.entries.length <= CLUSTER_LIST_MAX) {
+          openClusterList(cl);
+          return;
+        }
+        const m = T.getMap();
         const nextZoom = Math.min(18, (m?.getZoom() || 12) + 1.6);
         T.flyTo(lng, lat, nextZoom);
       });
@@ -373,6 +398,71 @@
     if (sheetEl)  { sheetEl.hidden  = true; sheetEl.style.transform = ''; }
     if (detailEl) { detailEl.hidden = true; }
     document.body.classList.remove('map-detail-open');
+  }
+
+  /* Small-cluster list popup. When ≤ CLUSTER_LIST_MAX picks share
+     the same building (identical lat/lng — the cluster can't be
+     un-stacked by zooming), clicking the cluster opens this list
+     so each pick is reachable. Tapping a row in the list focuses
+     that pick's detail. Re-uses the detail sheet / panel chrome. */
+  function clusterListHTML(cl) {
+    const rows = cl.entries.map(e => {
+      const kind  = normaliseKind(e.kind);
+      const catC  = window.WA?.MAP_CAT || {};
+      const c     = catC[kind] || { bg: '#444' };
+      const meta  = [e.neighborhood, e.kind, e.time].filter(Boolean).join(' · ');
+      return `<li>
+        <button class="map-cluster-list__row" type="button" data-id="${e.id}">
+          <span class="map-cluster-list__dot" style="background:${c.bg}" aria-hidden="true"></span>
+          <span class="map-cluster-list__body">
+            <span class="map-cluster-list__title">${e.title}</span>
+            <span class="map-cluster-list__meta">${meta}</span>
+          </span>
+        </button>
+      </li>`;
+    }).join('');
+    return `<div class="map-detail map-cluster-list">
+      <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
+      <p class="eyebrow">${cl.entries.length} picks here</p>
+      <ol class="map-cluster-list__items">${rows}</ol>
+    </div>`;
+  }
+
+  function openClusterList(cl) {
+    const html = clusterListHTML(cl);
+    const isDesktop = window.matchMedia('(min-width:768px)').matches;
+    document.body.classList.add('map-detail-open');
+    if (isDesktop) {
+      detailEl.innerHTML = html;
+      detailEl.hidden = false;
+      sheetEl.hidden  = true;
+    } else {
+      sheetEl.innerHTML = `<div class="map-sheet__handle" aria-hidden="true"></div>${html}`;
+      sheetEl.hidden  = false;
+      detailEl.hidden = true;
+      initSheetDrag();
+    }
+    document.getElementById('detail-close')?.addEventListener('click', () => {
+      closeDetail();
+    });
+    /* Row tap → focus that pick (the focus call opens the standard
+       detail panel for it; the cluster list is replaced).            */
+    const panel = isDesktop ? detailEl : sheetEl;
+    panel.querySelectorAll('.map-cluster-list__row').forEach(row => {
+      row.addEventListener('click', () => {
+        const id = row.dataset.id;
+        closeDetail();
+        focusPin(id);
+      });
+    });
+    /* Same dismiss-on-outside-tap behaviour as openDetail. */
+    const handleOutside = (e) => {
+      if (panel.contains(e.target)) return;
+      if (e.target.closest('.map-pin-new, .map-cluster')) return;
+      viewport.removeEventListener('pointerdown', handleOutside);
+      closeDetail();
+    };
+    setTimeout(() => viewport.addEventListener('pointerdown', handleOutside), 0);
   }
 
   function initSheetDrag() {

@@ -36,6 +36,23 @@
         return r.json();
       });
 
+  /* Editorial filter for the public catalog.
+     WanderAlt is alternative culture + events, not a restaurant guide.
+     Hide rows where:
+     - handle is @discovery (admin review queue, never user-facing)
+     - kind is a "pure venue to eat / hang" (bar/cafe/restaurant/food/
+       eatery/place) AND there's no day attached, i.e. it's a place
+       not an event. Events AT these venues (a cocktail night, a
+       Eurovision viewing party) keep `day` so they pass through.
+     admin.js fetches `picks` directly and bypasses this filter so the
+     review queue still sees everything. */
+  const FOOD_PLACE_KINDS = new Set([
+    'bar', 'cafe', 'restaurant', 'food', 'eatery', 'place'
+  ]);
+  const isPublicPick = (r) =>
+    r.handle !== '@discovery' &&
+    !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
+
   /* Convert a Postgres picks row → catalog entry shape */
   const toPick = (r) => ({
     id:            r.id,
@@ -120,7 +137,7 @@
     window.WA = window.WA || {};
 
     if (picksResult.status === 'fulfilled') {
-      const all = picksResult.value.map(r => {
+      const all = picksResult.value.filter(isPublicPick).map(r => {
         const p = toPick(r);
         if (r.venue && closedSet.has(String(r.venue).toLowerCase().trim())) {
           p.isClosed = true;

@@ -22,7 +22,7 @@
 (() => {
   const buildMeta = (entry) => {
     const parts = [entry.neighborhood, entry.kind];
-    if (entry.day && entry.day !== 'Tonight') parts.push(`${entry.day} ${entry.time}`);
+    if (entry.day && entry.day !== 'Tonight') parts.push(entry.time ? `${entry.day} ${entry.time}` : entry.day);
     else if (entry.time)                      parts.push(entry.time);
     return parts.filter(Boolean).join(' · ');
   };
