@@ -2830,7 +2830,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
    ============================================================ */
 
 @media print {
-  /* ── Show masthead ── */
+  /* ── Show masthead ──
+     The .print-head <p> on every page is invisible on screen and
+     populated by city.js with "WanderAlt · CITY · 19 May 2026" on
+     DOMContentLoaded. Print picks that text up via this rule; we no
+     longer use a ::before content rule (it doubled the masthead
+     because city.js's textContent already includes the brand). */
   .print-head {
     display: block;
     font-family: var(--ff-mono);
@@ -2841,11 +2846,15 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     margin-bottom: 14pt;
     border-bottom: 1pt solid #000;
   }
-  .print-head::before { content: "WanderAlt · Tallinn"; }
 
-  /* ── Hide all chrome ── */
+  /* ── Hide all chrome ──
+     Everything in this list is interactive / navigational and has
+     no value on paper. The city-banner ribbon, discover map pane,
+     and search box were added after the original print stylesheet —
+     extend the hide list as new chrome ships.                       */
   .topbar,
   .nav,
+  .city-banner,
   .bookmark,
   .auth-overlay,
   .auth-trigger,
@@ -2854,6 +2863,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .surprise-btn,
   .taste-onboarding,
   .map-sheet,
+  .map-detail,
+  .discover-pane--map,
+  .discover-search,
+  .discover-pills,
+  .discover-view-fab,
+  .digest-optin,
+  .deprecation-banner,
+  .city-selector,
   .city-selector__chev,
   .tonight-badge,
   .tonight-actions,

@@ -44,22 +44,10 @@ Features already live. See `README.md` for implementation detail.
 
 ## Tier 1 — Outstanding moves (build these)
 
-### 1. Print stylesheet
-
-**Why** — An editorial app should print like one. The cost is negligible, the brand statement is loud. Anyone who prints (or saves to PDF) the Briefing gets a 1-page newsletter.
-
-**What** — `@media print` rules in `styles.css`:
-- Hide topbar, bottom nav, all bookmark/auth chrome.
-- Constrain to a single column matching `--reading-max`.
-- Type up by ~10%; tighten leading.
-- Add a 1-line print masthead: `WanderAlt · {city} · {issue date}` with a hairline rule below.
-- Add page numbers via `@page { @bottom-right { content: counter(page); } }`.
-
-**How** — Pure CSS, single block appended to `styles.css`.
-
-**AI** — None.
-
-**Effort** — XS (1–2 hours).
+*(Print stylesheet was here — shipped May 2026, see "Shipped"
+above. The `@media print` block in `styles.css:2832` hides chrome,
+keeps the editorial column intact, prints the website URL next to
+venue links, and prints page numbers via `@page @bottom-right`.)*
 
 ---
 
@@ -113,9 +101,9 @@ These would dilute the brand. Listed so the next person knows the answer is no w
 Each "sprint" assumes ~1 calendar week of evening sessions, not full-time work.
 
 **Sprint 1 — Quick wins** *(low-risk, high visual pay-off)*
-- Print stylesheet (1–2h)
-- "Surprise me" button (2h)
-- Loading skeletons (2h)
+- ~~Print stylesheet~~ ✓ shipped May 2026
+- ~~"Surprise me" button~~ ✓ shipped (the `#surprise-btn` on Briefing)
+- Loading skeletons (2h) — only remaining quick win in this sprint
 
 **Sprint 2 — Map depth**
 - Wire map pins to `venue_details` geocoords (half-day)

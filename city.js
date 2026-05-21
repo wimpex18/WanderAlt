@@ -165,6 +165,15 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDropdown();
     });
+
+    /* Forms marked [data-no-submit] are client-side-only (e.g. the
+       digest opt-in + Discover's search box, both of which are JS-
+       driven). Wire submit → preventDefault here so the markup stays
+       free of inline onsubmit handlers — required for a tight CSP
+       (no 'unsafe-inline' on script-src). */
+    document.querySelectorAll('form[data-no-submit]').forEach(f => {
+      f.addEventListener('submit', e => e.preventDefault());
+    });
   };
 
   if (document.readyState === 'loading') {

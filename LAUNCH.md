@@ -9,6 +9,25 @@ Registrar: spaceship.com
 
 ---
 
+## 0 · Note on the Cloudflare Developer Platform MCP
+
+This repo is connected to the Cloudflare Developer Platform MCP, but
+that connector exposes **Workers / D1 / KV / R2 / Hyperdrive** — the
+compute and storage primitives. WanderAlt is a static site + Supabase,
+so none of those are needed. The four operations below (DNS attach,
+Pages project, Email Routing, Web Analytics) are **dashboard-only
+flows** even with full API access — they're tied to OAuth-driven
+account setup, not the API surface — so do them by hand in the
+Cloudflare dashboard.
+
+The MCP IS useful later if we want to:
+- Add a Worker for SSR-rendered per-page OG images (currently
+  documented as a follow-up in `brand/IMPLEMENTATION.md`)
+- Add a KV namespace for ratelimiting the digest opt-in form
+- Add R2 if we ever need to serve user-uploaded venue photos
+
+None of those are blocking launch.
+
 ## 1 · DNS (do first, propagation takes hours)
 
 **Cloudflare** as the DNS provider for both domains. Spaceship doesn't

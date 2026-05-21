@@ -1,0 +1,13 @@
+/* Shared style for the legacy map.html + search.html redirect stubs.
+   These pages run discover-redirect.js immediately on load; the visible
+   content is a no-JS fallback message that should never show up in
+   normal use. Petrol accent matches the rest of the brand
+   (the old oxblood was a stale carryover). */
+body {
+  font-family: system-ui, sans-serif;
+  padding: 2rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  color: #1a1a1a;
+}
+a { color: #055959; }
