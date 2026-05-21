@@ -46,14 +46,48 @@
   <main id="about-main" class="page about" role="main">
 
     <header class="about-head">
-      <p class="eyebrow">About</p>
-      <h1 class="about-head__title">A curated guide to the other city.</h1>
+      <div class="about-head__row">
+        <div class="about-head__copy">
+          <p class="eyebrow">About</p>
+          <h1 class="about-head__title">A curated guide to the other city.</h1>
+        </div>
+        <div class="about-head__mark" aria-hidden="true">
+          <span class="logo-mark logo-mark--xl">
+            <span class="logo-mark__diamond"></span>
+          </span>
+        </div>
+      </div>
       <p class="about-head__lede">
         WanderAlt is alternative culture in European cities, vouched for by human curators.
         Underground rooms, second-hand pages, late-night cinemas, noise gigs &mdash;
         the things that don&rsquo;t make the visitor guide.
       </p>
     </header>
+
+    <!-- City plates strip — three live cities, same illustrated SVGs
+         the city-selector dropdown uses. Status pill mirrors the
+         "Live" / "Coming soon" badge in the selector. -->
+    <section class="about-cities" aria-label="Cities">
+      <ul class="about-cities__list">
+        <li class="about-cities__item">
+          <img src="./assets/tallinn-overview.svg" alt="" loading="lazy" width="320" height="240" />
+          <p class="about-cities__name">Tallinn</p>
+          <p class="about-cities__status about-cities__status--live">
+            <span class="about-cities__dot" aria-hidden="true"></span>Live
+          </p>
+        </li>
+        <li class="about-cities__item">
+          <img src="./assets/helsinki-overview.svg" alt="" loading="lazy" width="320" height="240" />
+          <p class="about-cities__name">Helsinki</p>
+          <p class="about-cities__status">Coming soon</p>
+        </li>
+        <li class="about-cities__item">
+          <img src="./assets/riga-overview.svg" alt="" loading="lazy" width="320" height="240" />
+          <p class="about-cities__name">Riga</p>
+          <p class="about-cities__status">Coming soon</p>
+        </li>
+      </ul>
+    </section>
 
     <section class="about-section" aria-labelledby="about-what">
       <header class="section-head">
@@ -70,6 +104,59 @@
         on a weekly cadence &mdash; this is meant to read like a cultural weekly,
         not a feed.
       </p>
+
+      <!-- How-it-works: three editorial steps. Inline SVG icons stay in
+           the brand palette (petrol stroke, lime accent dot). -->
+      <ol class="about-steps" aria-label="How it works">
+        <li class="about-steps__item">
+          <span class="about-steps__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none"
+                 stroke="#055959" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="16" cy="11" r="5"/>
+              <path d="M5 28 c0-5 5-9 11-9 s11 4 11 9"/>
+              <circle cx="23" cy="6.5" r="2.5" fill="#d2dc50" stroke="none"/>
+            </svg>
+          </span>
+          <p class="about-steps__num">01</p>
+          <p class="about-steps__title">A curator picks.</p>
+          <p class="about-steps__body">
+            A human who lives in the city chooses a venue, a night, or a reading.
+            Writes a one-line quote in their own voice.
+          </p>
+        </li>
+        <li class="about-steps__item">
+          <span class="about-steps__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none"
+                 stroke="#055959" stroke-width="1.6" stroke-linecap="round">
+              <rect x="6" y="8" width="20" height="16" rx="2"/>
+              <path d="M10 13h12 M10 17h12 M10 21h7"/>
+              <rect x="2.5" y="13.5" width="3" height="3" fill="#d2dc50" stroke="none"/>
+            </svg>
+          </span>
+          <p class="about-steps__num">02</p>
+          <p class="about-steps__title">AI cleans the index.</p>
+          <p class="about-steps__body">
+            We use AI to deduplicate, geocode, classify and tag &mdash;
+            everything that scales badly when humans do it. Never to write copy.
+          </p>
+        </li>
+        <li class="about-steps__item">
+          <span class="about-steps__icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none"
+                 stroke="#055959" stroke-width="1.6" stroke-linecap="round">
+              <rect x="5" y="4" width="22" height="24" rx="2"/>
+              <path d="M9 10h14 M9 14h14 M9 18h10"/>
+              <path d="M22 22 l3 3 l5-5" stroke="#d2dc50" stroke-width="2.2"/>
+            </svg>
+          </span>
+          <p class="about-steps__num">03</p>
+          <p class="about-steps__title">You read the weekly.</p>
+          <p class="about-steps__body">
+            One Tonight pick, a handful for the week, an editorial column &mdash;
+            published on a cadence, not a feed.
+          </p>
+        </li>
+      </ol>
     </section>
 
     <section class="about-section" aria-labelledby="about-curators">

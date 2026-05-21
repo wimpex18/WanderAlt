@@ -2225,6 +2225,13 @@ a.auth-panel__submit { display: inline-block; }
 .about-head {
   padding: var(--s-6) 0 var(--s-5);
 }
+.about-head__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  justify-content: space-between;
+}
+.about-head__copy { flex: 1; min-width: 0; }
 .about-head .eyebrow { margin-bottom: var(--s-3); }
 .about-head__title {
   font-family: var(--ff-display);
@@ -2243,6 +2250,138 @@ a.auth-panel__submit { display: inline-block; }
   color: var(--c-ink-soft);
   margin: 0;
   max-width: 56ch;
+}
+/* Oversized Beacon mark sitting beside the lede — soft brand cue, not
+   a logo wordmark. Uses the same .logo-mark proportions (rx 18% / dia
+   20%) as the topbar mark, just scaled up. Hidden on mobile to keep
+   the lede column wide. */
+.about-head__mark { flex-shrink: 0; }
+.logo-mark--xl {
+  width: 88px; height: 88px;
+  border-radius: 16px;
+}
+.logo-mark--xl .logo-mark__diamond {
+  width: 18px; height: 18px;
+  border-radius: 2px;
+}
+@media (max-width: 600px) {
+  .about-head__mark { display: none; }
+}
+
+/* City plates strip — three illustrated previews matching the
+   city-selector dropdown. Hovering / focusing one is non-interactive
+   on this page (decorative) but the live/soon status pill mirrors
+   the dropdown so the brand language is consistent. */
+.about-cities {
+  padding: var(--s-3) 0 var(--s-6);
+}
+.about-cities__list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.about-cities__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.about-cities__item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  border: var(--rule-w) solid var(--c-rule);
+  background: var(--c-paper-deep);
+}
+.about-cities__name {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+  margin: 4px 0 0;
+}
+.about-cities__status {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.about-cities__status--live {
+  color: var(--c-accent);
+}
+.about-cities__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-lime);
+  border: 1px solid var(--c-accent);
+  display: inline-block;
+}
+@media (max-width: 600px) {
+  .about-cities__list { grid-template-columns: 1fr; }
+  .about-cities__item img { aspect-ratio: 16 / 9; }
+}
+
+/* How-it-works steps — three columns on desktop, one on mobile.
+   Petrol icon stroke + lime accent matches the brand two-mark rule.
+   Sits inside .about-section so section dividers / spacing flow. */
+.about-steps {
+  list-style: none;
+  margin: var(--s-5) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-5);
+}
+.about-steps__item {
+  padding: var(--s-4);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.about-steps__icon {
+  width: 32px; height: 32px;
+  margin-bottom: var(--s-2);
+}
+.about-steps__num {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--c-accent);
+  margin: 0;
+}
+.about-steps__title {
+  font-family: var(--ff-body);
+  font-size: var(--fs-pick);
+  font-weight: 600;
+  color: var(--c-ink);
+  margin: 0;
+  max-width: none;
+}
+.about-steps__body {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-ink-soft);
+  margin: 0;
+  max-width: none;
+}
+@media (max-width: 700px) {
+  .about-steps { grid-template-columns: 1fr; }
 }
 .about-section {
   padding-bottom: var(--s-5);
@@ -2670,10 +2809,36 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   position: relative;
   overflow: hidden;
 }
+/* Discover browse-list skeleton rows — three lines per curator-row,
+   two for neighborhood/kind. Sized to match the real .curator-row /
+   .browse-row layouts so swap-in is layout-stable.                   */
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  list-style: none;
+}
+.skeleton-row--simple { grid-template-columns: 1fr auto; }
+.skeleton-row:last-child { border-bottom: 0; }
+.skeleton-row__line {
+  height: 13px;
+  border-radius: 3px;
+  background: var(--c-paper-deep);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-row__line--label   { width: 60%; }
+.skeleton-row__line--tagline { width: 80%; }
+.skeleton-row__line--count   { width: 28px; justify-self: end; }
+
 .skeleton-tonight__thumb::after,
 .skeleton-tonight__line::after,
 .skeleton-tonight__actions::after,
 .skeleton-tonight__badge::after,
+.skeleton-row__line::after,
 /* Subtle shimmer sweep, again respecting reduced-motion. */
 .skeleton-pick__thumb::after,
 .skeleton-pick__line::after {

@@ -36,6 +36,22 @@
         return r.json();
       });
 
+  /* Route Wikimedia thumbnail URLs through our edge proxy so Wikipedia
+     doesn't set a third-party cookie on every visitor (Lighthouse
+     Best-Practice failure + a direct contradiction of the About page's
+     "no third-party scripts/cookies" promise). The /img/wm/* path is
+     handled by the wikimedia-proxy Worker (see workers/wikimedia-proxy/).
+     On localhost the rewrite is a no-op — the Worker isn't wired in
+     dev, and Wikipedia loads fine for local testing. */
+  const proxifyImage = (url) => {
+    if (!url || typeof url !== 'string') return url;
+    if (!/wikimedia\.org|wikipedia\.org/i.test(url))    return url;
+    if (location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1' ||
+        location.hostname === '')                       return url;
+    return '/img/wm/' + encodeURIComponent(url);
+  };
+
   /* Editorial filter for the public catalog.
      WanderAlt is alternative culture + events, not a restaurant guide.
      Hide rows where:
@@ -66,7 +82,7 @@
     quote:         r.quote,
     handle:        r.handle,
     thumbInitials: r.thumb_initials || (r.venue ? r.venue.slice(0, 2).toUpperCase() : '??'),
-    imageUrl:      r.image_url     || null,
+    imageUrl:      proxifyImage(r.image_url) || null,
     imageAttr:     r.image_attr    || null,
     tonight:       r.tonight,
     thisWeek:      r.this_week,

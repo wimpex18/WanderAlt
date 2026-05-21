@@ -124,13 +124,33 @@
           <p class="meta" id="discover-empty" hidden></p>
         </section>
 
-        <!-- Browse sections — hidden when filters are active. -->
+        <!-- Browse sections — hidden when filters are active.
+             Each <ul> ships with skeleton rows so the layout settles
+             on first paint instead of jolting in once discover.js
+             finishes populateBrowse(). populateBrowse() replaces the
+             skeletons via innerHTML when the catalog is ready.       -->
         <section class="discover-browse-section search-browse-section" aria-labelledby="curators-label">
           <header class="search-section-head">
             <p id="curators-label" class="eyebrow">Curators</p>
             <p class="meta">&nbsp;</p>
           </header>
-          <ul class="curator-rows"></ul>
+          <ul class="curator-rows" aria-busy="true">
+            <li class="skeleton-row" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+          </ul>
         </section>
 
         <section class="discover-browse-section search-browse-section" aria-labelledby="neighborhoods-label">
@@ -138,7 +158,20 @@
             <p id="neighborhoods-label" class="eyebrow">Neighborhoods</p>
             <p class="meta">&nbsp;</p>
           </header>
-          <ul class="browse-rows"></ul>
+          <ul class="browse-rows" aria-busy="true">
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+          </ul>
         </section>
 
         <section class="discover-browse-section search-browse-section" aria-labelledby="kinds-label">
@@ -146,7 +179,20 @@
             <p id="kinds-label" class="eyebrow">By kind</p>
             <p class="meta">&nbsp;</p>
           </header>
-          <ul class="browse-rows"></ul>
+          <ul class="browse-rows" aria-busy="true">
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
+              <span class="skeleton-row__line skeleton-row__line--label"></span>
+              <span class="skeleton-row__line skeleton-row__line--count"></span>
+            </li>
+          </ul>
         </section>
       </div>
 

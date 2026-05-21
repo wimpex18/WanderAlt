@@ -1,0 +1,30 @@
+# WanderAlt — wikimedia-proxy Worker (wrangler v3+ config)
+#
+# Deploy:  cd workers/wikimedia-proxy && npx wrangler@latest deploy
+# Tail:    cd workers/wikimedia-proxy && npx wrangler@latest tail
+#
+# Bind to wanderalt.app/img/wm/* via a route after first deploy:
+#   Cloudflare dashboard → Workers & Pages → wikimedia-proxy →
+#   Settings → Triggers → Add route → wanderalt.app/img/wm/*
+
+name = "wikimedia-proxy"
+main = "src/index.js"
+compatibility_date = "2026-05-19"
+
+# Account context — set CLOUDFLARE_ACCOUNT_ID env var to override,
+# otherwise wrangler will prompt and use whichever account you log
+# into with `wrangler login`. The MCP-verified account is documented
+# in LAUNCH.md §0.
+
+# Observability — capture logs without paid Logpush.
+[observability]
+enabled = true
+
+# Optional: pin to a specific route at deploy time.
+# Uncomment AFTER wanderalt.app DNS is on Cloudflare (otherwise the
+# zone lookup will fail). The dashboard route described above is
+# equivalent and easier to manage interactively.
+#
+# [[routes]]
+# pattern = "wanderalt.app/img/wm/*"
+# zone_name = "wanderalt.app"

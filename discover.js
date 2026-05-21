@@ -170,14 +170,14 @@
       const metaEl = curSect.querySelector('.meta');
       const listEl = curSect.querySelector('.curator-rows');
       if (metaEl) metaEl.textContent = `${curators.length} writer${curators.length !== 1 ? 's' : ''}`;
-      if (listEl) listEl.innerHTML = curators.map(([handle, n]) => {
+      if (listEl) { listEl.removeAttribute('aria-busy'); listEl.innerHTML = curators.map(([handle, n]) => {
         const bio = BIOS[handle];
         return `<li class="curator-row" role="button" tabindex="0" data-search="${esc(handle)}">
           <span class="curator-row__handle">${esc(handle)}</span>
           ${bio ? `<span class="curator-row__quote">&mdash; ${esc(bio)}</span>` : ''}
           <span class="curator-row__count">${n}</span>
         </li>`;
-      }).join('');
+      }).join(''); }
     }
 
     /* Neighborhoods */
@@ -187,6 +187,7 @@
       const metaEl = nhSect.querySelector('.meta');
       const listEl = nhSect.querySelector('.browse-rows');
       if (metaEl) metaEl.textContent = `${nhoods.length} area${nhoods.length !== 1 ? 's' : ''}`;
+      if (listEl) listEl.removeAttribute('aria-busy');
       if (listEl) listEl.innerHTML = nhoods.map(([name, n]) =>
         `<li class="browse-row" role="button" tabindex="0" data-nhood="${esc(name)}">
           <span class="browse-row__label">${esc(name)}</span>
@@ -202,6 +203,7 @@
       const metaEl = kindSect.querySelector('.meta');
       const listEl = kindSect.querySelector('.browse-rows');
       if (metaEl) metaEl.textContent = `${kinds.length} type${kinds.length !== 1 ? 's' : ''}`;
+      if (listEl) listEl.removeAttribute('aria-busy');
       if (listEl) listEl.innerHTML = kinds.map(([kind, n]) => {
         const label = KIND_LABELS[kind] || (kind.charAt(0).toUpperCase() + kind.slice(1));
         return `<li class="browse-row" role="button" tabindex="0" data-search="${esc(kind)}">

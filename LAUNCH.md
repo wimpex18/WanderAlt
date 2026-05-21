@@ -90,6 +90,29 @@ for our shape of site).
 - [ ] Confirm `_headers` and `_redirects` are picked up (visit any
   page, view response headers, look for `Strict-Transport-Security`).
 
+### 2b · Deploy the wikimedia-proxy Worker
+
+Solves the "Wikipedia sets a third-party cookie on every visitor"
+issue documented under Known Issues below. Lives at
+`workers/wikimedia-proxy/`.
+
+- [ ] In the same Cloudflare account, `cd workers/wikimedia-proxy`
+  on your machine and run `npx wrangler@latest login` (one-time
+  OAuth), then `npx wrangler@latest deploy`. Wrangler reads
+  `wrangler.toml` and uploads the Worker.
+- [ ] After first deploy: Cloudflare dashboard → Workers & Pages →
+  **wikimedia-proxy** → Settings → Triggers → Routes → Add route
+  → `wanderalt.app/img/wm/*` → Save. (Or uncomment the `[[routes]]`
+  block in `wrangler.toml` and re-deploy.)
+- [ ] Verify: in a browser, hit
+  `wanderalt.app/img/wm/https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2F5%2F53%2F2019_December_Lindakivi_Cultural_Center%252C_New_year_concert.jpg%2F960px-2019_December_Lindakivi_Cultural_Center%252C_New_year_concert.jpg`
+  — you should get the image back with no `Set-Cookie` header.
+
+The client-side rewrite (`supabase.js` → `proxifyImage()`) detects
+`location.hostname` and only routes through `/img/wm/*` in production.
+On localhost the rewrite is a no-op so dev keeps working without
+needing the Worker.
+
 ## 3 · Email (Cloudflare Email Routing — free)
 
 - [ ] Cloudflare → wanderalt.app → Email → Email Routing → Enable.
@@ -250,18 +273,12 @@ These came out of the Lighthouse pre-flight audit (reports at
 `docs/lighthouse/*.json`). Tracked here, not in ROADMAP because they
 specifically block "go live."
 
-1. **Wikimedia image cookies.** Some venue thumbnails are
-   `commons.wikimedia.org` URLs (sourced by `enrich-venues` cron from
-   Wikidata). Wikimedia sets a `WMF-Uniq` cookie on the response,
-   which Lighthouse flags under Best Practices and which contradicts
-   our "no third-party scripts" privacy promise.
-   - **Fix:** add a Cloudflare Worker that proxies Wikimedia thumbnail
-     URLs through `wanderalt.app/img/*`, stripping cookies and caching
-     at the edge. ~30 lines of Worker code. The Cloudflare MCP can
-     deploy this once the user wants to.
-   - **Or:** prefer Google Places photos in `enrich-venues` over
-     Wikimedia when both are available — Google Places photos don't
-     set cookies.
+1. **Wikimedia image cookies.** ✅ **Code shipped, deploy pending.**
+   The Worker at `workers/wikimedia-proxy/` strips `Set-Cookie` from
+   Wikimedia thumbnail responses and serves them through the CF
+   edge cache. `supabase.js`'s `proxifyImage()` rewrites the URLs
+   client-side in production (no-op on localhost). Two deploy steps
+   in §2b above (wrangler deploy + add the route).
 
 2. **Lighthouse Performance in dev vs prod.** The smoke + audit in
    this sandbox runs with `--ignore-certificate-errors` on puppeteer,
