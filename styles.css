@@ -2208,6 +2208,78 @@ a.auth-panel__submit { display: inline-block; }
   color: var(--c-ink-mute);
   letter-spacing: 0.04em;
 }
+.colophon__line a {
+  color: var(--c-ink-mute);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--t-fast);
+}
+.colophon__line a:hover { color: var(--c-accent); }
+
+/* ============================================================
+   About page — editorial layout, no chrome of its own. Reuses
+   .page width cap, .section-head dividers, and body type. Hero
+   block sits below the city banner; sections fall in a single
+   column at the standard reading column width.
+   ============================================================ */
+.about-head {
+  padding: var(--s-6) 0 var(--s-5);
+}
+.about-head .eyebrow { margin-bottom: var(--s-3); }
+.about-head__title {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-4);
+  letter-spacing: -0.5px;
+}
+.about-head__lede {
+  font-family: var(--ff-body);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--c-ink-soft);
+  margin: 0;
+  max-width: 56ch;
+}
+.about-section {
+  padding-bottom: var(--s-5);
+}
+.about-section .section-head {
+  border-top: var(--rule-w) solid var(--c-rule);
+  border-bottom: 0;
+  padding: var(--s-5) 0 var(--s-3);
+}
+.about-section p {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--c-ink-soft);
+  max-width: 64ch;
+  margin: 0 0 var(--s-3);
+}
+.about-section p:last-child { margin-bottom: 0; }
+.about-section p strong { color: var(--c-ink); font-weight: 600; }
+.about-list {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--c-ink-soft);
+  max-width: 64ch;
+  margin: 0 0 var(--s-3);
+  padding-left: var(--s-5);
+}
+.about-list li { margin-bottom: var(--s-2); }
+.about-contact {
+  font-family: var(--ff-mono);
+  font-size: 18px;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-2) !important;
+  letter-spacing: 0.02em;
+}
+.about-contact .handle { font-size: 18px; }
 
 /* ============================================================
    Nav — bottom tab bar on mobile

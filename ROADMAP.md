@@ -38,6 +38,7 @@ Features already live. See `README.md` for implementation detail.
 - **OG images** — `og-image` edge function (Satori + @resvg/resvg-wasm), wired on Venue + Curator pages.
 - **Venue enrichment** — `enrich-venues` (nightly 03:30 UTC): Wikidata + Nominatim → `venue_details` table (website, address, lat/lng, short_desc, image). Admin panel exposes per-venue lock and bulk-run. Venue detail page shows enrichment inline.
 - **404 page** — `404.html`, matches site aesthetic.
+- **About / Privacy / Contact** — `about.html`, one editorial page with five sections (About / Curators / Venues / Privacy / Contact). Linked from every page's colophon. No separate Terms / Cookie banner — see CLAUDE.md "Domain + page architecture" for the single-domain, no-tracking stance.
 
 ---
 

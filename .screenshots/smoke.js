@@ -93,6 +93,10 @@ const PAGES = [
      a hero. Verifies the spec's "Empty-state splash 600–800 px" path.
      fullPage so we capture the empty card which sits below Tonight.   */
   { name: 'briefing-empty',   url: '/index.html#mood=loud,quiet', waitMs: 2000, fullPage: true },
+
+  /* About page — single editorial page with About / Curators / Venues /
+     Privacy / Contact sections. fullPage so all five sections render. */
+  { name: 'about',            url: '/about.html',                  waitMs: 1500, fullPage: true },
 ];
 
 (async () => {

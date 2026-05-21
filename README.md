@@ -19,6 +19,7 @@ First city: **Tallinn**. First screen: **Briefing** (the default landing).
 ├── curator.html          # Curator profile — handle, tagline, bio, all picks
 ├── profile.html          # User account — bookmarks, digest, export, delete account
 ├── admin.html            # Admin panel — pick/venue CRUD, pipeline monitor, column approval
+├── about.html            # About / Curators / Venues / Privacy / Contact — one editorial page
 ├── 404.html              # 404 page — matches site aesthetic
 ├── styles.css            # All styles, CSS variables in :root for easy tuning
 ├── catalog.js            # Static fallback catalog — used when Supabase is unreachable
@@ -119,6 +120,23 @@ Change the accent, the paper tone, or the quote size in one place and the whole 
 Not yet: real image `alt` text (placeholders only this pass).
 
 ---
+
+## Domain
+
+WanderAlt is a single-domain product. The whole site — Briefing,
+Discover, About, account, legal — lives at **`wanderalt.app`**.
+
+The split-domain pattern (marketing-site + app-subdomain à la
+Stripe / Supabase) peaked around 2018–2022 and has reversed across
+the industry by 2024; single-domain wins on SEO consolidation,
+share-link continuity, and auth simplicity. WanderAlt is editorial
+in nature — the Briefing page itself is the marketing — so the
+classic argument for splitting (separate IA for buyers vs users)
+doesn't apply.
+
+`wanderalt.com` is also registered, as brand-defense. It 301-redirects
+to `wanderalt.app` at the registrar level (no code in this repo
+handles that — set up in your DNS provider).
 
 ## Deploying for free
 

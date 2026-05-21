@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WanderAlt — About</title>
+  <meta name="description" content="What WanderAlt is, who curates it, how to get in touch, and what we do with your data." />
+  <meta name="theme-color" content="#055959" />
+  <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
+  <link rel="mask-icon" href="./brand/favicon/safari-pinned-tab.svg" color="#055959" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="./catalog.js"></script>
+  <script defer src="./city.js"></script>
+  <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+</head>
+<body data-page="about">
+
+  <a class="skip-link" href="#about-main">Skip to about</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar__inner">
+      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
+        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
+        <span class="wordmark">WanderAlt</span>
+      </a>
+      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="city-dot" aria-hidden="true"></span>
+        <span class="city-selector__name">TALLINN</span>
+        <span class="city-selector__chev" aria-hidden="true">
+          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <main id="about-main" class="page about" role="main">
+
+    <header class="about-head">
+      <p class="eyebrow">About</p>
+      <h1 class="about-head__title">A curated guide to the other city.</h1>
+      <p class="about-head__lede">
+        WanderAlt is alternative culture in European cities, vouched for by human curators.
+        Underground rooms, second-hand pages, late-night cinemas, noise gigs &mdash;
+        the things that don&rsquo;t make the visitor guide.
+      </p>
+    </header>
+
+    <section class="about-section" aria-labelledby="about-what">
+      <header class="section-head">
+        <h2 id="about-what" class="section-title">What this is</h2>
+      </header>
+      <p>
+        Every WanderAlt pick is chosen by a human curator who lives in the city
+        and cares about its underground. The largest thing on every screen is
+        the curator&rsquo;s quote &mdash; voice is the product. AI is the index that
+        keeps the catalog clean; it never writes the editorial.
+      </p>
+      <p>
+        We&rsquo;re live in Tallinn, with Helsinki and Riga in flight. Picks refresh
+        on a weekly cadence &mdash; this is meant to read like a cultural weekly,
+        not a feed.
+      </p>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-curators">
+      <header class="section-head">
+        <h2 id="about-curators" class="section-title">The curators</h2>
+      </header>
+      <p>
+        Each curator has a public profile and a small handful of picks per week.
+        We don&rsquo;t pay them &mdash; the deal is editorial control over their own
+        section, a permanent home for their voice, and an audience that reads
+        rather than scrolls.
+      </p>
+      <p>
+        If you write about your city the way our existing curators do
+        (<a class="handle" href="curator.html?handle=%40sigmundtells">@sigmundtells</a>,
+        <a class="handle" href="curator.html?handle=%40notboring_riga">@notboring_riga</a>,
+        <a class="handle" href="curator.html?handle=%40katestrelca">@katestrelca</a>)
+        get in touch &mdash; we&rsquo;re always adding city by city.
+      </p>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-venues">
+      <header class="section-head">
+        <h2 id="about-venues" class="section-title">For venues &amp; promoters</h2>
+      </header>
+      <p>
+        We don&rsquo;t list restaurants. We don&rsquo;t take payment for placement.
+        We don&rsquo;t do advertorials. If your venue runs the kind of evenings our
+        curators write about &mdash; experimental music, exhibitions with a point of
+        view, late cinemas, readings, dance parties that aren&rsquo;t for everyone
+        &mdash; reach out and we&rsquo;ll point a curator your way.
+      </p>
+      <p>
+        Need a pick removed or corrected? Email below. We aim to action genuine
+        requests within 48 hours.
+      </p>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-privacy">
+      <header class="section-head">
+        <h2 id="about-privacy" class="section-title">Privacy &amp; data</h2>
+      </header>
+      <p>
+        <strong>We don&rsquo;t track you.</strong> No analytics, no ad networks, no
+        third-party scripts. The only data we store is what you give us:
+      </p>
+      <ul class="about-list">
+        <li>
+          Your email, if you subscribe to the weekly digest or create an account.
+          Used to send the digest and authenticate you. Never shared.
+        </li>
+        <li>
+          Your bookmarks and taste preferences, in your browser&rsquo;s localStorage
+          (and synced to your account if signed in) so the app remembers what
+          you saved.
+        </li>
+        <li>
+          Anonymous match-pick feedback (the 👍 / 👎 on AI suggestions) to bias
+          future ranks for you.
+        </li>
+      </ul>
+      <p>
+        That&rsquo;s the entire list. We don&rsquo;t need a cookie banner because we
+        don&rsquo;t use any cookies that aren&rsquo;t strictly necessary for the
+        app to function. To delete everything, sign in and use the
+        <a href="./profile.html">Delete account</a> button on your profile, or
+        email us and we&rsquo;ll handle it manually.
+      </p>
+      <p class="meta">
+        Hosting: Supabase (Frankfurt, EU). No data leaves the EU.
+      </p>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-contact">
+      <header class="section-head">
+        <h2 id="about-contact" class="section-title">Contact</h2>
+      </header>
+      <p class="about-contact">
+        <a class="handle" href="mailto:hello@wanderalt.app">hello@wanderalt.app</a>
+        &nbsp;&middot;&nbsp; replies in a few days, usually
+      </p>
+      <p class="meta">
+        For curator inquiries, venue listings, takedowns, press, or just to say hi.
+      </p>
+    </section>
+
+    <footer class="colophon">
+      <p class="colophon__line">WanderAlt &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
+    </footer>
+
+  </main>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__inner">      <a class="nav__item" data-nav="briefing" href="./index.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M5 3h11l3 3v15H5V3z" />
+          <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+        <span class="nav__label">Briefing</span>
+      </a>
+      <a class="nav__item" data-nav="discover" href="./discover.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="11" cy="11" r="6" />
+          <path d="M20 20l-4.5-4.5" />
+        </svg>
+        <span class="nav__label">Discover</span>
+      </a>
+      <a class="nav__item" data-nav="saved" href="./saved.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4-6 4V3z" />
+        </svg>
+        <span class="nav__label">Saved</span>
+      </a>
+      <a class="nav__item" data-nav="profile" href="./profile.html">
+        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20c0-4 3.1-7 7-7s7 3 7 7" />
+        </svg>
+        <span class="nav__label">Profile</span>
+      </a>    </div>
+  </nav>
+
+</body>
+</html>

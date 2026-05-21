@@ -42,6 +42,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `venue.html` / `venue.js` | Pick detail page — quote, venue, context, more from curator. Back-link returns to full Discover URL (filters preserved). |
 | `curator.html` / `curator.js` | Curator profile — bio + all picks |
 | `profile.html` / `profile.js` | Account — bookmarks, digest, export, delete |
+| `about.html` | Static editorial page — About / Curators / Venues / Privacy / Contact in one scroll. No JS beyond catalog.js + city.js + auth.js for the banner + topbar chrome. Linked from every page's colophon. |
 | `admin.html` / `admin.js` | Admin panel — pick/venue CRUD, pipeline, column approval, enrichment |
 | `catalog.js` | Static fallback catalog. Exposes the raw multi-city list as `WA._catalogAll` / `WA._curatorsAll` and the city-filtered slice as `WA.catalog` / `WA.curators` (read from localStorage `wa:city` since city.js loads after this file). `WA.past` too. supabase.js replaces these with live data when the network responds. |
 | `supabase.js` | Live data fetcher; exposes `WA.BASE_URL` + `WA.ANON_KEY`; fires `wa:catalog-ready` |
@@ -83,6 +84,26 @@ The mark is a **petrol squircle tile with a centered lime diamond**. One mark, n
 - **Favicons / app icons:** referenced from `brand/favicon/` and `brand/pwa/` via `<link>` tags + `manifest.webmanifest`. SVG-only currently (universal support in 2026). PNG/ICO rasterizations are a follow-up if older browsers need them — pipeline TBD.
 - **OG / Twitter cards:** `brand/social/og-default.svg` (1200×630) and `twitter-default.svg` (1200×675). Wired into `index.html` and `venue.html`.
 - **Do not introduce a third color.** Two-tone for a reason. `--c-accent` (petrol) is the only accent; `--c-lime` is signal-only.
+
+## Domain + page architecture (May 2026)
+
+- **Single domain.** `wanderalt.app` is the primary. `wanderalt.com`
+  is registered as brand-defense and is meant to 301-redirect to the
+  app domain at the registrar level (no code in this repo handles it).
+- **Everything lives at `/`.** Marketing, app, account, legal —
+  all on the same domain. The split-domain pattern (Stripe-style
+  marketing.com + dashboard.com) was unwound across the industry by
+  ~2024; single-domain wins on SEO, share-link continuity, and
+  auth complexity.
+- **No separate Terms / Privacy / Support pages.** The single
+  `about.html` carries the editorial mission, curator pitch, venue
+  contact, privacy notice (we don't track), and email — five sections,
+  one scroll. Anything more legalistic would clash with the
+  back-page-of-a-newsletter voice.
+- **No cookie banner.** We use only strictly-necessary localStorage
+  (auth session, bookmarks, preferences). No analytics, no ads, no
+  third-party scripts. Document this clearly in `about.html` and
+  don't add tracking without adding consent UI first.
 
 ## Working rules
 
