@@ -134,9 +134,18 @@ in nature — the Briefing page itself is the marketing — so the
 classic argument for splitting (separate IA for buyers vs users)
 doesn't apply.
 
-`wanderalt.com` is also registered, as brand-defense. It 301-redirects
-to `wanderalt.app` at the registrar level (no code in this repo
-handles that — set up in your DNS provider).
+`wanderalt.com` is also registered as brand-defense. The 301 redirect
+to `wanderalt.app` is configured in `_redirects` (the Cloudflare Pages
+config file at repo root) — when both domains are attached to the same
+Pages project, the rule fires automatically.
+
+**Hosting target: Cloudflare Pages**, not Vercel. Cloudflare Pages was
+chosen over Vercel for this site because (a) bandwidth is unlimited on
+the free tier vs Vercel Hobby's 100 GB/mo cap, (b) the edge network is
+3-4× denser, which matters for our EU audience, and (c) using
+Cloudflare for hosting + DNS + email routing keeps the operational
+surface to one dashboard. See `LAUNCH.md` for the step-by-step setup
+when you're ready to flip the domain live.
 
 ## Deploying for free
 

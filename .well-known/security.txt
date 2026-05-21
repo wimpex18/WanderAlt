@@ -1,0 +1,7 @@
+# RFC 9116 security.txt — how to report a vulnerability.
+# Updated annually; bump Expires before it lapses or scanners will warn.
+
+Contact: mailto:hello@wanderalt.app
+Expires: 2027-05-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://wanderalt.app/.well-known/security.txt

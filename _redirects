@@ -1,0 +1,27 @@
+# Cloudflare Pages redirects config.
+# Docs: https://developers.cloudflare.com/pages/configuration/redirects/
+
+# wanderalt.com → wanderalt.app (apex redirect). Cloudflare Pages
+# attaches both domains to the same project; this rule fires when the
+# host header is the .com. 301 (permanent) so search engines fold the
+# domain authority. The :splat catches any path, query, or fragment.
+https://wanderalt.com/*    https://wanderalt.app/:splat    301
+https://www.wanderalt.com/* https://wanderalt.app/:splat   301
+
+# Force www → apex on the primary domain.
+https://www.wanderalt.app/* https://wanderalt.app/:splat   301
+
+# Legacy URL aliases — the old /map and /search lived as standalone
+# pages before the May 2026 Discover consolidation. Their HTML stubs
+# still ship with redirect-on-load JS, but a server-side redirect is
+# instant, doesn't leak the old URL into history, and is what we tell
+# search engines via canonical. The JS stubs stay as a fallback for
+# anyone who somehow hits the HTML directly.
+/map     /discover.html?view=map    301
+/search  /discover.html             301
+
+# Pretty URLs — let visitors type wanderalt.app/about without the .html.
+/about      /about.html      301
+/discover   /discover.html   301
+/saved      /saved.html      301
+/profile    /profile.html    301

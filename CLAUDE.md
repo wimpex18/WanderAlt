@@ -54,6 +54,9 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `brand/` | **Canonical brand kit** — SVG masters for tile/wordmark + favicon ladder + PWA/iOS/Android icons + social cards + city-plates v2 docs. Start at `brand/BRAND.md` for palette/type/lockup rules + § 5 city-plates two-mark rule; `brand/IMPLEMENTATION.md` for integration notes; `brand/city-plates.html` for the design preview. Do NOT inline brand colors; use the `--c-accent` (petrol) / `--c-lime` tokens which match the canonical OKLCH literals 1:1. |
 | `assets/<city>-overview.svg` | **City plates** (Tallinn, Helsinki, Riga). 1800×1200 illustrated SVGs used as 80×60 thumbnails in the city-selector dropdown AND as a 64 px decorative ribbon (`.city-banner`) injected by `city.js` below the topbar on every content page. The active city is stamped on `body[data-city]` so the banner background swaps when the user switches city. Spec: `brand/BRAND.md` § 5 (two-mark rule — one national flag + one lime accent, never the same element). |
 | `manifest.webmanifest` | PWA web manifest. References `brand/pwa/*.svg`. Theme color `#055959` (petrol). |
+| `_headers` / `_redirects` | Cloudflare Pages config. `_headers` sets HSTS / CSP / cache rules; `_redirects` handles wanderalt.com → wanderalt.app 301, www → apex, and pretty-URL aliases (`/about` → `/about.html`). |
+| `robots.txt` / `sitemap.xml` / `.well-known/security.txt` | SEO + security-contact files. robots.txt blocks GPTBot / ClaudeBot / PerplexityBot etc — curator credit matters more than AI training data. |
+| `LAUNCH.md` | Launch-day checklist — DNS, Pages, email, Search Console, OG verification, social handles. Read top-to-bottom on the actual launch day. |
 
 ## Visual conventions (Claude cannot infer these)
 
@@ -88,8 +91,13 @@ The mark is a **petrol squircle tile with a centered lime diamond**. One mark, n
 ## Domain + page architecture (May 2026)
 
 - **Single domain.** `wanderalt.app` is the primary. `wanderalt.com`
-  is registered as brand-defense and is meant to 301-redirect to the
-  app domain at the registrar level (no code in this repo handles it).
+  is registered as brand-defense and 301-redirects via the rules in
+  `_redirects` (Cloudflare Pages handles it; no DNS code in this
+  repo). Both domains are registered at spaceship.com; nameservers
+  point to Cloudflare for DNS + Email Routing + Pages.
+- **Hosting target: Cloudflare Pages**, NOT Vercel. Reasons in
+  `README.md` § Domain. Pages config lives in `_headers` (security
+  + cache) and `_redirects` (apex/www + legacy URL aliases).
 - **Everything lives at `/`.** Marketing, app, account, legal —
   all on the same domain. The split-domain pattern (Stripe-style
   marketing.com + dashboard.com) was unwound across the industry by

@@ -1,0 +1,49 @@
+# Cloudflare Pages headers config — applied to every response.
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
+# Order matters: more specific paths override less specific.
+
+/*
+  # ── Security ────────────────────────────────────────────────
+  # HSTS — force HTTPS for a year, preload-ready (submit at hstspreload.org
+  # only AFTER the site has been live on HTTPS for 30+ days).
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  # Block MIME sniffing — file extensions are authoritative.
+  X-Content-Type-Options: nosniff
+  # Clickjacking defense — only same-origin can frame.
+  X-Frame-Options: SAMEORIGIN
+  # Referer leaks only the origin, never the path, to cross-origin requests.
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Permissions-Policy — explicitly deny the powerful features we don't use.
+  # Geolocation IS used (locate-fab on map) so we allow self.
+  Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=(self)
+  # CSP — strict-ish. unsafe-inline on style/script is required for the
+  # current inline <style> in admin.html and the inline event handlers in
+  # the dropdown. Tighten further once those are extracted. Connect-src
+  # covers Supabase REST + Edge Functions + Google Places image CDN +
+  # MapLibre tile.openfreemap.org.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://tiles.openfreemap.org https://overpass-api.de https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'
+
+# ── Caching ─────────────────────────────────────────────────
+# HTML: never cache aggressively — content rotates with the weekly catalog
+# and bug fixes need to propagate fast. Cloudflare's edge cache picks
+# the latest on each request; browsers get a short max-age.
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Hashed/versioned assets: long cache. styles.css doesn't have a hash so
+# stays on the conservative 5-minute cache via the /* rule above; static
+# brand assets are immutable by design (they only change with a version
+# bump that triggers a filename change per brand/IMPLEMENTATION.md).
+/brand/*
+  Cache-Control: public, max-age=2592000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=2592000, immutable
+
+# Favicons / manifest: 1 day — these rotate rarely but not "never".
+/favicon.ico
+  Cache-Control: public, max-age=86400
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400

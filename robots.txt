@@ -1,0 +1,30 @@
+# WanderAlt — robots.txt
+# Allow all well-behaved crawlers. The admin tool is the only
+# noindex surface; the redirect stubs (map.html, search.html) carry
+# their own canonical via JS so they don't need a Disallow.
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin/
+
+# Block known AI scrapers that don't respect robots.txt-honouring
+# attribution. WanderAlt's catalog is curator-written and we want
+# the actual curators credited. As of May 2026 these are the AI
+# bots that show up most often and respect a Disallow.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+Sitemap: https://wanderalt.app/sitemap.xml
