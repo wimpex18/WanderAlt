@@ -1,0 +1,23 @@
+{
+  "generated": "2026-05-21T15:18:12.279Z",
+  "pages": {
+    "briefing": {
+      "performance": 71,
+      "accessibility": 100,
+      "best-practices": 96,
+      "seo": 100
+    },
+    "discover": {
+      "performance": 37,
+      "accessibility": 92,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "about": {
+      "performance": 99,
+      "accessibility": 96,
+      "best-practices": 100,
+      "seo": 100
+    }
+  }
+}

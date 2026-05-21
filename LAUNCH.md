@@ -33,14 +33,42 @@ None of those are blocking launch.
 **Cloudflare** as the DNS provider for both domains. Spaceship doesn't
 do edge hosting or email routing, so all records move to Cloudflare.
 
-- [ ] Sign up at cloudflare.com (free plan is enough).
-- [ ] **Add `wanderalt.app`** — copy the two nameservers Cloudflare
-  assigns. In Spaceship → Domains → wanderalt.app → Nameservers,
-  paste them. **Repeat for `wanderalt.com`**.
-- [ ] Wait for Cloudflare to confirm both zones are active (typically
-  15–60 min, can be 24 h).
-- [ ] Enable "Always Use HTTPS" and "Automatic HTTPS Rewrites" on
-  both zones (Cloudflare → SSL/TLS → Edge Certificates).
+### On Cloudflare
+
+- [ ] Sign up at cloudflare.com (free plan is enough). Account
+  `c702586f2a839266ee0773fda0e7d1b9` (pm.zinin@gmail.com) is the one
+  the MCP connector verified — use it.
+- [ ] Dashboard → **Add a site** → enter `wanderalt.app` → Free plan
+  → **Continue**. Cloudflare scans existing DNS (Spaceship default
+  parking records) and shows the two nameservers it assigns
+  (something like `xx.ns.cloudflare.com` / `yy.ns.cloudflare.com`).
+  Copy them — you'll need them in Spaceship next.
+- [ ] **Repeat for `wanderalt.com`** so the 301 rule in `_redirects`
+  has a zone to fire from.
+
+### On Spaceship
+
+- [ ] spaceship.com → **Domains** → `wanderalt.app` → **Nameservers**.
+  Switch from "Spaceship default" to **"Custom DNS"** and paste the
+  two Cloudflare nameservers. Save. Spaceship will warn you about
+  email and existing records — that's fine, all email/DNS lives in
+  Cloudflare now.
+- [ ] **Repeat for `wanderalt.com`** in Spaceship with the **same**
+  two Cloudflare nameservers (Cloudflare assigns the same pair
+  per-account regardless of which zone you're adding).
+- [ ] Cloudflare emails you when each zone is verified (usually
+  15–60 min, occasionally 24 h). The zone status in the dashboard
+  changes from "Pending Nameserver Update" → "Active".
+
+### Cloudflare SSL settings (after both zones are Active)
+
+- [ ] Per zone → SSL/TLS → Overview → **Encryption Mode: Full
+  (Strict)** (the strictest setting that still works with Pages).
+- [ ] SSL/TLS → Edge Certificates → enable **"Always Use HTTPS"**
+  and **"Automatic HTTPS Rewrites"**.
+- [ ] SSL/TLS → Edge Certificates → **"Minimum TLS Version: 1.2"**
+  (1.3 if your audience runs modern browsers, which it does —
+  TLS 1.2 catches the long tail).
 
 ## 2 · Hosting (Cloudflare Pages)
 
@@ -96,17 +124,37 @@ on Pages; they live only in the Supabase Edge Function environment.
   `GEMINI_KEY`, `GROQ_KEY`, `GOOGLE_PLACES_KEY` are still set in the
   function environment.
 
-## 5 · Analytics (Cloudflare Web Analytics)
+## 5 · Analytics — read this carefully
 
-Honours the About page's "we don't track you" promise — server-side,
-no JS tracker, no cookies, GDPR-clean.
+A correction to the previous version of this doc: **Cloudflare Web
+Analytics injects a JS beacon snippet** (`beacon.min.js`), even on
+Pages where the injection is "automatic". That contradicts the About
+page promise of "no third-party scripts."
 
-- [ ] Cloudflare → Analytics & Logs → Web Analytics → Enable for
-  `wanderalt.app`. **Pick the "Site" mode (server-side), not the
-  JS-snippet mode.** This gives traffic stats without injecting any
-  script into the site.
-- [ ] (Optional) Add GoatCounter as a second source if you want
-  page-level conversion data later. Skip for v1.
+There are TWO Cloudflare analytics products with similar names:
+
+1. **Cloudflare Web Analytics** — the JS beacon. *Skip this.*
+2. **Edge / Zone Analytics** — passive, server-side, derived from
+   the request logs flowing through the proxy. No JS. *Use this.*
+
+Edge Analytics is automatic the moment the zone is proxied through
+Cloudflare (the orange-cloud DNS state, which is on by default). You
+view it at:
+
+- [ ] Cloudflare → wanderalt.app zone → **Analytics & Logs** → tab
+  **Traffic** for visitor / request totals; **Web Analytics** tab
+  stays **off** (do not click "Enable Web Analytics" — it'll inject
+  the beacon).
+
+That gives you: requests/day, bandwidth, top paths, top countries,
+top user agents, status code distribution. No PII. No cookies.
+
+- [ ] (Optional) Add **GoatCounter** (goatcounter.com — open source,
+  no cookies, EU-hosted) as a second source if you want path-level
+  conversion data Cloudflare doesn't surface (e.g. how many people
+  who land on About click into Discover). You'd need to add the
+  GoatCounter snippet to the HTML AND update the About page's
+  "we don't track you" paragraph to mention it. Skip until needed.
 
 ## 6 · Google Search Console
 
@@ -193,6 +241,44 @@ The smoke harness covers code, but human eyes catch what scripts can't.
   self-hosted Buffer alternative) if you want full control.
 - ❌ **Vercel Analytics.** Conflicts with our brand promise of no
   tracking. Cloudflare Web Analytics (server-side) is the match.
+
+---
+
+## Known issues to resolve before flipping wanderalt.app live
+
+These came out of the Lighthouse pre-flight audit (reports at
+`docs/lighthouse/*.json`). Tracked here, not in ROADMAP because they
+specifically block "go live."
+
+1. **Wikimedia image cookies.** Some venue thumbnails are
+   `commons.wikimedia.org` URLs (sourced by `enrich-venues` cron from
+   Wikidata). Wikimedia sets a `WMF-Uniq` cookie on the response,
+   which Lighthouse flags under Best Practices and which contradicts
+   our "no third-party scripts" privacy promise.
+   - **Fix:** add a Cloudflare Worker that proxies Wikimedia thumbnail
+     URLs through `wanderalt.app/img/*`, stripping cookies and caching
+     at the edge. ~30 lines of Worker code. The Cloudflare MCP can
+     deploy this once the user wants to.
+   - **Or:** prefer Google Places photos in `enrich-venues` over
+     Wikimedia when both are available — Google Places photos don't
+     set cookies.
+
+2. **Lighthouse Performance in dev vs prod.** The smoke + audit in
+   this sandbox runs with `--ignore-certificate-errors` on puppeteer,
+   which forces every external fetch (MapLibre tiles, image CDNs,
+   fonts) to bypass the cache and re-handshake every request. The
+   Performance scores will be substantially higher on real Cloudflare
+   Pages hosting once tiles and images cache at the CF edge. Don't
+   chase the dev-sandbox numbers; re-audit from a clean browser after
+   the first production deploy and use those as the baseline.
+
+3. **CLS on Briefing first paint.** Currently ~0.198 (down from 0.668
+   before the Tonight skeleton landed). Target is < 0.1. The
+   remaining shift is the city banner image SVG settling. Could be
+   fully eliminated by pre-decoding the SVG (`<img
+   fetchpriority="high" decoding="async">`) once the banner becomes
+   an `<img>` instead of a CSS background. Cosmetic; safe to launch
+   at 0.198.
 
 ---
 

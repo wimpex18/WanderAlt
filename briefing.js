@@ -154,6 +154,9 @@
     const list = document.querySelector('.picks');
     const sub  = document.querySelector('.section-sub');
     if (!list) return;
+    /* Hydration done — drop the loading attribute that the skeleton
+       placeholders sit under. The next innerHTML write replaces them. */
+    if (list.hasAttribute('aria-busy')) list.removeAttribute('aria-busy');
     const entries = _weekFullSet.slice(0, _weekShown);
 
     /* Empty state — a graceful card with the active city's plate

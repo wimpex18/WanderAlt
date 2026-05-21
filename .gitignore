@@ -16,5 +16,11 @@ node_modules/
 # macOS
 .DS_Store
 
-# Local screenshots from the puppeteer smoke-test (keep shoot.js, drop PNGs)
+# Local screenshots from the puppeteer smoke-test (keep shoot.js, drop PNGs).
+# Curated baseline lives at docs/screenshots/baseline/ (versioned).
 .screenshots/*.png
+
+# Full Lighthouse reports (regenerated via `npm run lighthouse`). Keep
+# only the lightweight summary.json which captures the four scores per page.
+docs/lighthouse/*.json
+!docs/lighthouse/summary.json

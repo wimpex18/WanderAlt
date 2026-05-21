@@ -2556,14 +2556,145 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
    A single muted mono line. No shimmer, no spinner.
    ============================================================ */
 
+/* The .loading-line itself is just a mono caption (when used as a
+   container's only loading marker). On top of that, .loading-line
+   gets a left "pulse" indicator that respects prefers-reduced-motion. */
 .loading-line {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.06em;
   color: var(--c-ink-mute);
   padding: var(--s-5) 0;
+  position: relative;
+}
+.loading-line::before {
+  content: "";
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 10px;
+  background: var(--c-ink-mute);
+  vertical-align: 1px;
+  animation: wa-pulse 1.4s ease-in-out infinite;
+}
+@keyframes wa-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50%      { opacity: 0.85; transform: scale(1.0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-line::before { animation: none; opacity: 0.55; }
 }
 .loading-line--page { padding-top: var(--s-7); }
+
+/* Pick-row skeleton — used in place of the bare <li class="loading-line">
+   inside <ol class="picks"> while briefing.js waits for catalog-ready.
+   Built from three blocks (thumb / title / meta) sized to match the
+   real pick row so the swap to live data is layout-stable.            */
+.skeleton-pick {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  list-style: none;
+}
+.skeleton-pick:last-child { border-bottom: 0; }
+.skeleton-pick__thumb {
+  width: 64px; height: 64px;
+  border-radius: var(--radius-thumb);
+  background: var(--c-paper-deep);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-pick__lines { min-width: 0; }
+.skeleton-pick__line {
+  height: 12px;
+  border-radius: 3px;
+  background: var(--c-paper-deep);
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-pick__line:last-child { margin-bottom: 0; }
+.skeleton-pick__line--title { width: 70%; height: 14px; }
+.skeleton-pick__line--meta  { width: 50%; }
+.skeleton-pick__bookmark {
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  background: var(--c-paper-deep);
+}
+/* Tonight skeleton — full hero placeholder. Sized to match the real
+   .tonight-card layout so swap-in is layout-stable (CLS friendly).
+   Used by index.html until briefing.js's renderTonight() fires. */
+.skeleton-tonight {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+  margin: var(--s-4) 0 0;
+  padding: var(--s-4);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+}
+.skeleton-tonight__badge {
+  width: 88px; height: 22px;
+  border-radius: 999px;
+  background: var(--c-paper);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-tonight__thumb {
+  width: 64px; height: 64px;
+  border-radius: var(--radius-thumb);
+  background: var(--c-paper);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-tonight__line {
+  height: 14px;
+  border-radius: 3px;
+  background: var(--c-paper);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-tonight__line--title  { height: 28px; width: 70%; margin-top: var(--s-3); }
+.skeleton-tonight__line--quote  { height: 22px; width: 95%; margin-top: var(--s-4); }
+.skeleton-tonight__line--quote2 { height: 22px; width: 85%; }
+.skeleton-tonight__line--attr   { height: 12px; width: 35%; margin-top: var(--s-3); }
+.skeleton-tonight__actions {
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--c-paper);
+  margin-top: var(--s-4);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-tonight__thumb::after,
+.skeleton-tonight__line::after,
+.skeleton-tonight__actions::after,
+.skeleton-tonight__badge::after,
+/* Subtle shimmer sweep, again respecting reduced-motion. */
+.skeleton-pick__thumb::after,
+.skeleton-pick__line::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255,255,255,0.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: wa-shimmer 1.8s ease-in-out infinite;
+}
+@keyframes wa-shimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-pick__thumb::after,
+  .skeleton-pick__line::after { animation: none; display: none; }
+}
 
 /* ============================================================
    MATCH ME — single AI pick discovery on Search page
@@ -3337,7 +3468,11 @@ a.handle:hover { color: var(--c-ink); }
 .map-locate-fab {
   position: absolute;
   right: var(--s-4);
-  bottom: var(--s-7);
+  /* Pushed up from --s-7 (32 px) so the locate button doesn't sit
+     directly above MapLibre's 24 px attribution button — Lighthouse
+     flagged the partial overlap as a target-size hit. 56 px keeps a
+     6 px gap above the attribution. */
+  bottom: 56px;
   width: 36px;
   height: 36px;
   border-radius: 8px;

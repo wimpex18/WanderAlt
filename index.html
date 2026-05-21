@@ -24,6 +24,33 @@
   <meta name="twitter:card"       content="summary_large_image" />
   <meta name="twitter:image"      content="./brand/social/twitter-default.png" />
 
+  <!-- JSON-LD Organization for Google's Knowledge Graph + AI overviews.
+       Stays minimal: name, URL, logo, founding location. Curator
+       handles aren't listed here because they shift weekly — they're
+       linked from /about.html instead.                                  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "WanderAlt",
+    "alternateName": "WanderAlt — a curated guide to the other city",
+    "url": "https://wanderalt.app",
+    "logo": "https://wanderalt.app/brand/favicon/favicon.svg",
+    "description": "Alternative culture in European cities, vouched for by human curators.",
+    "foundingLocation": { "@type": "City", "name": "Tallinn" },
+    "areaServed": [
+      { "@type": "City", "name": "Tallinn", "containedInPlace": { "@type": "Country", "name": "Estonia" } },
+      { "@type": "City", "name": "Helsinki", "containedInPlace": { "@type": "Country", "name": "Finland" } },
+      { "@type": "City", "name": "Riga", "containedInPlace": { "@type": "Country", "name": "Latvia" } }
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "hello@wanderalt.app",
+      "contactType": "customer support"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -65,9 +92,19 @@
          city.js populates this with "WanderAlt · CITY · Date". -->
     <p class="print-head" aria-hidden="true"></p>
 
-    <!-- Tonight hero — populated by briefing.js from catalog.js -->
-    <section id="tonight" class="tonight" aria-labelledby="tonight-label">
-      <p class="loading-line" aria-live="polite">Loading the briefing&hellip;</p>
+    <!-- Tonight hero — populated by briefing.js from catalog.js.
+         The skeleton card reserves the layout space so the real
+         Tonight card slots in without a big CLS jolt on first paint. -->
+    <section id="tonight" class="tonight" aria-labelledby="tonight-label" aria-busy="true">
+      <div class="skeleton-tonight" aria-hidden="true">
+        <span class="skeleton-tonight__badge"></span>
+        <span class="skeleton-tonight__thumb"></span>
+        <span class="skeleton-tonight__line skeleton-tonight__line--title"></span>
+        <span class="skeleton-tonight__line skeleton-tonight__line--quote"></span>
+        <span class="skeleton-tonight__line skeleton-tonight__line--quote2"></span>
+        <span class="skeleton-tonight__line skeleton-tonight__line--attr"></span>
+        <span class="skeleton-tonight__actions"></span>
+      </div>
     </section>
 
     <!-- Taste-profile onboarding — appears below Tonight so editorial voice
@@ -120,9 +157,34 @@
         <h2 id="thisweek-label" class="section-title">This week</h2>
         <p class="section-sub">4 picks &middot; 4 curators</p>
       </header>
-      <!-- Picks populated by briefing.js from catalog.js -->
-      <ol class="picks" role="list">
-        <li class="loading-line" aria-live="polite">&nbsp;</li>
+      <!-- Picks populated by briefing.js from catalog.js. Skeleton rows
+           sit in place until wa:catalog-ready fires so the layout is
+           stable across hydration. -->
+      <ol class="picks" role="list" aria-busy="true" aria-live="polite">
+        <li class="skeleton-pick" aria-hidden="true">
+          <span class="skeleton-pick__thumb"></span>
+          <span class="skeleton-pick__lines">
+            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
+            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
+          </span>
+          <span class="skeleton-pick__bookmark"></span>
+        </li>
+        <li class="skeleton-pick" aria-hidden="true">
+          <span class="skeleton-pick__thumb"></span>
+          <span class="skeleton-pick__lines">
+            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
+            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
+          </span>
+          <span class="skeleton-pick__bookmark"></span>
+        </li>
+        <li class="skeleton-pick" aria-hidden="true">
+          <span class="skeleton-pick__thumb"></span>
+          <span class="skeleton-pick__lines">
+            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
+            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
+          </span>
+          <span class="skeleton-pick__bookmark"></span>
+        </li>
       </ol>
     </section>
 
