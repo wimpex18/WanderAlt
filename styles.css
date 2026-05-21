@@ -180,10 +180,11 @@ img, svg { display: block; max-width: 100%; }
    ============================================================ */
 .city-banner {
   height: 64px;
-  background: var(--c-paper-deep) center / cover no-repeat;
+  background: var(--c-paper-deep);
   border-bottom: var(--rule-w) solid var(--c-rule);
   cursor: pointer;
   position: relative;
+  overflow: hidden;
   transition: opacity var(--t-fast);
 }
 .city-banner:hover { opacity: 0.92; }
@@ -191,12 +192,19 @@ img, svg { display: block; max-width: 100%; }
   outline: 2px solid var(--c-accent);
   outline-offset: -2px;
 }
-/* Per-city background — keyed off body[data-city] which city.js sets.
-   Default fallback (no city stamped yet) uses Tallinn. */
-.city-banner                       { background-image: url('./assets/tallinn-overview.svg'); }
-body[data-city="tallinn"]  .city-banner { background-image: url('./assets/tallinn-overview.svg'); }
-body[data-city="helsinki"] .city-banner { background-image: url('./assets/helsinki-overview.svg'); }
-body[data-city="riga"]     .city-banner { background-image: url('./assets/riga-overview.svg'); }
+/* The plate image fills the ribbon and is center-cropped. width/height
+   attrs on the <img> tag (set in city.js) give the browser the
+   intrinsic 3:2 aspect so layout is reserved before bytes arrive —
+   the previous CSS background-image approach was the main CLS source. */
+.city-banner__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
 /* Tiny screens: shrink so the ribbon doesn't eat too much vertical
    real-estate on a 390 × 844 viewport (briefing is voice-first). */
 @media (max-width: 480px) {
@@ -2419,6 +2427,58 @@ a.auth-panel__submit { display: inline-block; }
   letter-spacing: 0.02em;
 }
 .about-contact .handle { font-size: 18px; }
+
+/* "Built in the open" link cards — same visual language as
+   .about-steps but with a leading icon + label + sub-caption row.
+   Single column on every viewport for vertical scanning. */
+.about-links {
+  list-style: none;
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.about-links__a {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: var(--s-3);
+  align-items: baseline;
+  padding: var(--s-4);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: var(--c-ink);
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.about-links__a:hover {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+.about-links__icon {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--c-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.about-links__label {
+  font-family: var(--ff-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.about-links__sub {
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--c-ink-mute);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.about-links__a:hover .about-links__sub { color: var(--c-ink-mute); }
 
 /* ============================================================
    Nav — bottom tab bar on mobile
