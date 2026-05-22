@@ -73,7 +73,7 @@
                enough that it reads as intentional, not bouncy enough to
                clash with the editorial voice (out cubic, no overshoot).    */
   --t-fast: 120ms ease;
-  --t-mid:  220ms cubic-bezier(.2, .8, .2, 1);
+  --t-mid:  280ms cubic-bezier(.2, .8, .2, 1);
 }
 
 /* ============================================================
@@ -2729,13 +2729,33 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
      barely visible, but the eye registers it.
    ============================================================ */
 
+/* Entrance fade-up — applies to every primary surface across the
+   seven pages so motion is consistent regardless of which tab the
+   user lands on:
+     .pick           Briefing list, Discover list, Saved segments,
+                     curator picks, venue "more from" rail.
+     .tonight        Briefing Tonight hero.
+     .match-card     Discover AI mode result card.
+     .profile-section Profile sections (bookmarks, digest, account).
+     .about-section   About page sections (one per editorial block).
+   Same easing token + transition-behavior so any JS-appended copy
+   (catalog-ready re-render, mood-chip filter swap, segment switch
+   on Saved) gets the same entrance as the initial paint. */
 @supports (transition-behavior: allow-discrete) {
-  .pick {
+  .pick,
+  .tonight,
+  .match-card,
+  .profile-section,
+  .about-section {
     transition: opacity var(--t-mid), transform var(--t-mid);
     transition-behavior: allow-discrete;
   }
   @starting-style {
-    .pick { opacity: 0; transform: translateY(8px); }
+    .pick,
+    .tonight,
+    .match-card,
+    .profile-section,
+    .about-section { opacity: 0; transform: translateY(8px); }
   }
 }
 
@@ -2770,7 +2790,11 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   /* Belt-and-braces: cancel View Transitions and entrance offsets
      so reduced-motion users never see the fade-up flash.          */
   @starting-style {
-    .pick { opacity: 1; transform: none; }
+    .pick,
+    .tonight,
+    .match-card,
+    .profile-section,
+    .about-section { opacity: 1; transform: none; }
   }
   ::view-transition-group(*),
   ::view-transition-old(*),
