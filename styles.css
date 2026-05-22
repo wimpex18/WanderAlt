@@ -67,9 +67,27 @@
   --rule-w:         1px;
   --nav-h:          68px;
 
-  /* ---------- Motion ---------- */
+  /* ---------- Motion ----------
+     --t-fast  is the legacy color/border swap (already used in 30+ rules).
+     --t-mid   is the May-2026 entrance / hover / state-change easing — slow
+               enough that it reads as intentional, not bouncy enough to
+               clash with the editorial voice (out cubic, no overshoot).    */
   --t-fast: 120ms ease;
+  --t-mid:  220ms cubic-bezier(.2, .8, .2, 1);
 }
+
+/* ============================================================
+   Cross-document View Transitions (Chromium 126+, Safari TP).
+   Browsers without support fall back to instant navigation.
+   The topbar and primary nav get persistent names so they
+   morph instead of cross-fading — chrome shouldn't flicker
+   between pages. The city-banner is short enough that fading
+   it with the page body looks fine, no name needed.
+   ============================================================ */
+@view-transition { navigation: auto; }
+
+.topbar { view-transition-name: wa-topbar; }
+.nav    { view-transition-name: wa-nav; }
 
 /* ============================================================
    Reset / base
@@ -2691,12 +2709,72 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 
 /* ============================================================
+   Motion — entrances + micro-interactions (May 2026)
+   ------------------------------------------------------------
+   Restrained on purpose: editorial voice, not product flash.
+   No bounce, no parallax, no scroll-driven choreography. Just
+   smooth state changes. Everything below respects the reduced-
+   motion block that follows.
+
+   - Pick rows enter via @starting-style fade-up. Works for both
+     server-rendered LIs (Tonight hero, About) and JS-appended
+     ones (Briefing list, Discover list, Saved segments) since
+     @starting-style fires on first style resolution either way.
+     transition-behavior: allow-discrete keeps the entrance
+     visible past the discrete-property hop.
+   - Card hover micro-lift is desktop-only (hover-capable
+     pointer). Mobile gets no involuntary motion on scroll.
+   - Bookmark fill transition makes the save action feel like
+     a state change instead of a snap. The hover scale is 1.06 —
+     barely visible, but the eye registers it.
+   ============================================================ */
+
+@supports (transition-behavior: allow-discrete) {
+  .pick {
+    transition: opacity var(--t-mid), transform var(--t-mid);
+    transition-behavior: allow-discrete;
+  }
+  @starting-style {
+    .pick { opacity: 0; transform: translateY(8px); }
+  }
+}
+
+@media (hover: hover) {
+  .pick__link {
+    transition: transform var(--t-mid);
+  }
+  .pick:hover .pick__link {
+    transform: translateY(-1px);
+  }
+}
+
+.bookmark {
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+@media (hover: hover) {
+  .bookmark:hover { transform: scale(1.06); }
+}
+.bookmark__check ~ svg path {
+  transition: fill var(--t-mid), stroke var(--t-mid);
+}
+
+/* ============================================================
    Motion preferences
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition: none !important;
+    animation: none !important;
+  }
+  /* Belt-and-braces: cancel View Transitions and entrance offsets
+     so reduced-motion users never see the fade-up flash.          */
+  @starting-style {
+    .pick { opacity: 1; transform: none; }
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation: none !important;
   }
 }
