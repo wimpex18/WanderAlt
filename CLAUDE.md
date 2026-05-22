@@ -172,7 +172,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 
 Sources live in the `public.sources` table; each row has `kind`, `channel`, `city`, `curator_handle`, `enabled`, `feed_url`. **Crons own the schedule** (see `cron.job`) — read-only here, only touch if asked.
 
-**Active source matrix (15 rows · 11 enabled · 4 intentionally disabled):**
+**Active source matrix (19 rows · 15 enabled · 4 intentionally disabled):**
 
 | Kind | City | Channel | Curator | Cron | Status |
 |---|---|---|---|---|---|
@@ -186,6 +186,10 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | fienta | tallinn | paavli-kultuurivabrik | `@paavli` | `wa-ingest-fienta` (04:00 UTC) | ✅ live |
 | fienta | tallinn | 15 (Von Krahl org id) | `@vonkrahl` | same | ✅ live |
 | web | tallinn | telliskivi | `@telliskivi` | `wa-ingest-telliskivi` (03:45 UTC) | ✅ live |
+| telegram | helsinki | helsinkievents | `@helsinkievents` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) |
+| telegram | helsinki | otaniemievents | `@otaniemievents` | same | ✅ live (May 2026) |
+| telegram | helsinki | ayyevents | `@ayyevents` | same | ✅ live (May 2026) |
+| web | helsinki | hel-linkedevents | `@hel_today` | `wa-ingest-hel-linkedevents` (03:50 UTC) | ✅ live (May 2026) |
 | telegram | riga | notboring_riga | `@notboring_riga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live |
 | telegram | riga | udgstriga | `@udgstriga` | — | ❌ no real channel yet |
 | web | riga | kinobize | `@kinobize` | `wa-ingest-kinobize` (03:30 UTC) | ✅ live |
@@ -196,6 +200,8 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 `ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
 
 **`ingest-osm` v9 (May 2026):** previously hard-coded to Tallinn. Now loops over a `CITIES` map (Tallinn, Riga, Helsinki) and ingests venues from each Overpass bounding box in one cron tick. Per-city try/catch so a 504 on one city doesn't abort the others — each city's outcome is reported separately in `ingest_log.detail.cities`. Accepts `{city: "..."}` body for ad-hoc backfills; with no body it runs all three. Overpass is rate-limited; the cron already handles transient failures by retrying next tick.
+
+**`ingest-hel-linkedevents` v2 (May 2026):** wraps the official **Helsinki Linked Events API** at `api.hel.fi/linkedevents/v1/event/`. Same data source as `tapahtumat.hel.fi`, `myhelsinki.fi/helsinki-event-calendar`, and `helsinki.today` — going to the API directly is more reliable than scraping any of those JS-driven frontends, and the schema is rich (multilingual name + description + location + keywords). Pre-filters at fetch time: `type_id='General'`, `event_status` ∈ {`EventScheduled`,`EventRescheduled`}, next 30 days, English/Finnish name present, blacklist for children/library/government-bureaucracy patterns (`lapsille`, `perheelle`, `koululaisille`, `satutuokio`, `kaupunginvaltuusto`, …). v2 dropped the bare `lapsi` pattern after it false-positived on Finnish compounds. Anything passing lands in `staging_messages` tagged `@hel_today` and goes through the standard `process-staging` Gemini filter. `ingest_log.detail.reasons` carries per-pattern rejection tallies for tuning.
 
 **Adding a new source:** insert a row into `sources` (set `enabled=true`, fill `feed_url`/`channel`/`curator_handle`). The cron picks it up on the next tick. No code change required for telegram/rss/fienta — each ingest function reads the `sources` table on every run.
 
