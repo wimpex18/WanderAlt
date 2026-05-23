@@ -22,8 +22,8 @@
      brand/BRAND.md § 5 for the canonical two-mark rule. */
   const CITIES = [
     { id: 'tallinn',  label: 'TALLINN',  status: 'live', thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'soon', thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'soon', thumb: './assets/riga-overview.svg'     },
+    { id: 'helsinki', label: 'HELSINKI', status: 'live', thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'live', thumb: './assets/riga-overview.svg'     },
   ];
 
   const LS_KEY  = 'wa:city';
