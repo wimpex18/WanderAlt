@@ -244,7 +244,7 @@
       if (parts.length) {
         summaryEl.textContent = parts.join(' · ');
       } else {
-        summaryEl.textContent = taste.isOnboarded() ? 'No preferences set' : 'Not set up yet — visit Briefing';
+        summaryEl.textContent = taste.isOnboarded() ? 'No preferences set' : 'Not set up yet — visit Today';
       }
     }
 
@@ -272,7 +272,7 @@
     renderTasteSection();
     const el = $('#taste-status');
     if (el) {
-      el.textContent = 'Preferences cleared — next Briefing visit will re-run setup.';
+      el.textContent = 'Preferences cleared — next Today visit will re-run setup.';
       el.style.color = 'var(--c-ink-mute)';
     }
   });

@@ -52,7 +52,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter via `#mood=…` hash) |
 | `styles.css` | All styles. Every design decision lives as a `:root` CSS variable. |
 | `brand/` | **Canonical brand kit** — SVG masters for tile/wordmark + favicon ladder + PWA/iOS/Android icons + social cards + city-plates v2 docs. Start at `brand/BRAND.md` for palette/type/lockup rules + § 5 city-plates two-mark rule; `brand/IMPLEMENTATION.md` for integration notes; `brand/city-plates.html` for the design preview. Do NOT inline brand colors; use the `--c-accent` (petrol) / `--c-lime` tokens which match the canonical OKLCH literals 1:1. |
-| `assets/<city>-overview.svg` | **City plates** (Tallinn, Helsinki, Riga). 1800×1200 illustrated SVGs used as 80×60 thumbnails in the city-selector dropdown AND as a 64 px decorative ribbon (`.city-banner`) injected by `city.js` below the topbar on every content page. The active city is stamped on `body[data-city]` so the banner background swaps when the user switches city. Spec: `brand/BRAND.md` § 5 (two-mark rule — one national flag + one lime accent, never the same element). |
+| `assets/<city>-overview.svg` | **City plates** (Tallinn, Helsinki, Riga). 1800×1200 illustrated SVGs used as 80×60 thumbnails in the city-selector dropdown AND as a cityscape ribbon (`.city-banner`, 96px mobile / 120px desktop, cropped to the skyline via `object-position: center 74%`) injected by `city.js` below the topbar on every content page. The active city is stamped on `body[data-city]` so the banner background swaps when the user switches city. Spec: `brand/BRAND.md` § 5 (two-mark rule — one national flag + one lime accent, never the same element). |
 | `manifest.webmanifest` | PWA web manifest. References `brand/pwa/*.svg`. Theme color `#055959` (petrol). |
 | `_headers` / `_redirects` | Cloudflare Pages config. `_headers` sets HSTS / CSP / cache rules; `_redirects` handles wanderalt.com → wanderalt.app 301, www → apex, and pretty-URL aliases (`/about` → `/about.html`). |
 | `robots.txt` / `sitemap.xml` / `.well-known/security.txt` | SEO + security-contact files. robots.txt blocks GPTBot / ClaudeBot / PerplexityBot etc — curator credit matters more than AI training data. |
@@ -68,6 +68,23 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
 - Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow.
+
+## Motion conventions (May 2026)
+
+Restrained on purpose — editorial voice, not product flash. Two tokens, no bounce, no parallax, no scroll-driven choreography:
+
+- `--t-fast: 120ms ease` — color / border / background swaps (hover, focus, mood-chip on-state). Used in ~30+ rules across the file.
+- `--t-mid: 280ms cubic-bezier(.2,.8,.2,1)` — entrances, state changes, hover micro-lifts. Out-cubic, no overshoot.
+
+Five entrance surfaces share one `@starting-style` rule so motion is consistent across every tab and every paint path (server-rendered + JS-appended): `.pick`, `.tonight`, `.match-card`, `.profile-section`, `.about-section`. Each rises 8px and fades in over `--t-mid`. `transition-behavior: allow-discrete` keeps the entrance visible past the discrete-property hop.
+
+Cross-document View Transitions are enabled globally (`@view-transition { navigation: auto }`). The `.topbar` and `.nav` carry `view-transition-name` so chrome morphs instead of cross-fading — pages without VT support fall back to instant nav.
+
+Bookmark click is a smooth fill transition (no scale pop), bookmark hover is `scale(1.06)`. Desktop `.pick:hover` lifts 1px (hover-capable pointers only).
+
+`@media (prefers-reduced-motion: reduce)` cancels all of the above with `transition: none !important` + an explicit `@starting-style` override that zeros the entrance offset + `::view-transition-*` `animation: none`.
+
+**Do not add new keyframes, parallax, or bouncy easings.** If you need new motion, pick `--t-fast` or `--t-mid` and reuse the existing entrance selector list.
 
 ## Content conventions
 
@@ -143,10 +160,14 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 
 `discover.html` is the canonical discovery surface. It replaced `search.html` and the standalone `map.html`. Key facts for any future work:
 
-- **Bottom nav:** 4 items — Briefing · Discover · Saved · Profile. All five HTML pages share this nav.
-- **URL schema:** `?q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&mood=&sort=relevance|newest|title|curator&id=<pick-id>&ai=<prompt>&mode=match`
+- **Bottom nav:** 4 items — Today · Discover · Saved · Profile. All five HTML pages share this nav. (The home tab's visible label is "Today"; its internal id stays `data-page="briefing"` / `briefing.js`.)
+- **Events vs Places scope switch:** a segmented control at the top of Discover toggles `state.type` between `events` (picks) and `places` (venues). Mode-first, then filters narrow within it (a category means event-categories in Events, venue-kinds in Places). The permanent thing (venue) and the dated thing (event) are different objects — this is a scoped toggle, not a facet (RA / Google Maps pattern). Places is **list-led**: it shows all alt-culture venues by default (no "empty until filtered" gate), hides the mood strip + AI link + map (the map module is pick-coupled; venue pins are a follow-up), and on desktop the split collapses to a full-width list. Events mode is unchanged (list + map split).
+- **Places data:** `WA.venues` / `WA._venuesAll` (supabase.js fetches the `venues` table, filtered client-side to `WA.VENUE_KINDS` = record store, bookshop, gallery, club, thrift, arts centre, cinema, community — generic bars/museums/libraries excluded to protect the curated identity). Static seed in `catalog.js` is the offline fallback. Venue cards carry no curator quote (places aren't picks) — name + kind + neighborhood + website link.
+- **URL schema:** `?type=events|places&q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&sort=…&id=<pick-id>&ai=<prompt>&mode=match`
+  - `?type=places` scopes to venues; absent/`events` is the default.
+  - **Sort** is mode-aware and trimmed: Events → `relevance` (default) / `newest` (labelled "Soonest"); Places → `featured` (default) / `nearest` (geolocation). A→Z and by-curator were dropped (curator is a browse section).
   - `?id=` is the active pin — written on pin tap, restored on load, persists across filter changes.
-  - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify.
+  - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify. Mood only applies in Events mode.
 - **Basemap:** MapLibre GL JS + OpenFreeMap (free, no API key, OSM vector tiles). Custom editorial style at `map-style.json`. Pins are positioned by projecting `picks.lat/lng` to container pixels via `WA.MapTiles.project(lng, lat)`. Picks without lat/lng don't render on the map but still appear in the list pane.
 - **Empty by default:** the map renders NO pins when no filter is active. UX decision — at city zoom 100+ pins is unscannable. Picking Tonight / This week / Free / a category / a mood / a search term immediately populates pins. The `#map-empty-hint` overlay communicates the empty state.
 - **Pick coords:** stored on `picks.lat` / `picks.lng`. `picks.address` is the postal address (used as a secondary check + shown in the detail panel). `picks.coords_source` ∈ {`nominatim`, `google_places`, `venue_join`, `manual`}. `picks.coords_locked = true` means admin overrode the coords; the nightly cron skips locked rows.

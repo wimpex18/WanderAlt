@@ -22,8 +22,8 @@
      brand/BRAND.md § 5 for the canonical two-mark rule. */
   const CITIES = [
     { id: 'tallinn',  label: 'TALLINN',  status: 'live', thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'soon', thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'soon', thumb: './assets/riga-overview.svg'     },
+    { id: 'helsinki', label: 'HELSINKI', status: 'live', thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'live', thumb: './assets/riga-overview.svg'     },
   ];
 
   const LS_KEY  = 'wa:city';
@@ -52,7 +52,8 @@
     /* Stamp the active city on <body> so CSS can hook off it. */
     document.body.dataset.city = current.id;
 
-    /* Inject the city banner — a thin (64 px) decorative ribbon below
+    /* Inject the city banner — a cityscape ribbon (96px mobile / 120px
+       desktop, cropped to the skyline via object-position) below
        the topbar that shows the current city's illustrated plate.
        Visible on every content page (skipped on admin to keep the
        internal tool dense). Doing this from JS means we don't have
@@ -111,6 +112,14 @@
     });
     document.querySelectorAll('.print-head').forEach(el => {
       el.textContent = `WanderAlt · ${current.label} · ${printDate}`;
+    });
+
+    /* Home-page standfirst: swap "your city" for the active city in
+       title case (e.g. "Tallinn"). Works for any city in CITIES, so
+       new cities need no copy change. */
+    const cityCap = current.id.charAt(0).toUpperCase() + current.id.slice(1);
+    document.querySelectorAll('.standfirst__city').forEach(el => {
+      el.textContent = cityCap;
     });
 
     /* Build dropdown on click; toggle on repeated click. */

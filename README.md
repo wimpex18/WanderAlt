@@ -103,7 +103,7 @@ Change the accent, the paper tone, or the quote size in one place and the whole 
 
 - **< 768px (mobile, canonical 390px):** single column at full width with 20px gutter, bottom nav fixed at the viewport bottom with safe-area padding.
 - **≥ 768px (tablet / desktop):** content column caps at 1024px and centers (same value on every page so navigation feels continuous). Hero quote grows (`--fs-quote` goes from 32px → 44px → 52px at ≥1100px). **Bottom nav becomes a sticky top nav bar** under the wordmark — a thin row of masthead-style links. Rationale: a side rail would compete with the single-column editorial read; a persistent bottom bar on desktop feels too app-y; a masthead nav reinforces the "cultural weekly" metaphor.
-- **`prefers-reduced-motion`** respected.
+- **`prefers-reduced-motion`** respected. Cross-document View Transitions fade the body between pages; `.topbar` and `.nav` carry `view-transition-name` so chrome doesn't flicker. Primary surfaces (`.pick`, `.tonight`, `.match-card`, `.profile-section`, `.about-section`) enter via `@starting-style` fade-up over `--t-mid` (280ms). See CLAUDE.md § Motion conventions.
 - **Safe-area insets** handled on iOS (bottom nav, body padding).
 
 ---

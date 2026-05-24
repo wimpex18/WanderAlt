@@ -14,17 +14,26 @@
 (() => {
   /* ── State ──────────────────────────────────────────────── */
   const state = {
+    type:   'events',    /* 'events' (picks) | 'places' (venues) — scope switch */
     q:      '',          /* keyword query */
     time:   'all',       /* all | tonight | thisweek | places */
-    cats:   new Set(),   /* category ids from WA.MAP_CATEGORIES (kinds + 'free') */
+    cats:   new Set(),   /* Events: WA.MAP_CATEGORIES ids (+ 'free'). Places: venue kinds. */
     nhoods: new Set(),   /* neighborhood names */
     mood:   [],          /* mood tag ids from mood-chips */
-    sort:   'relevance', /* relevance | newest | title | curator */
+    sort:   'relevance', /* events: relevance|newest · places: featured|nearest */
     mode:   'search',    /* 'search' | 'match' */
     ai:     '',          /* the last AI prompt, persisted in URL */
     view:   'list',      /* 'list' | 'map' — mobile only; desktop is split */
     id:     '',          /* active pin id — persisted in URL for deep linking */
   };
+
+  /* Sort options per scope. A->Z and by-curator were dropped (curator is
+     already a browse section); we keep only the intent-based sorts. */
+  const SORT_OPTS = {
+    events: [['relevance', 'Relevance'], ['newest', 'Soonest']],
+    places: [['featured', 'Featured'],  ['nearest', 'Nearest']],
+  };
+  const DEFAULT_SORT = { events: 'relevance', places: 'featured' };
 
   /* ── DOM refs ───────────────────────────────────────────── */
   let input, matchToggle, matchWrap, matchResult, matchAgain,
@@ -147,6 +156,81 @@
     resultsList.innerHTML = entries.map(renderRow).join('');
   };
 
+  /* ── Places (venues) ─────────────────────────────────── */
+  const VENUE_KIND_LABELS = {
+    'record store': 'Record store', 'bookshop': 'Bookshop', 'gallery': 'Gallery',
+    'club': 'Club', 'thrift': 'Flea & thrift', 'arts centre': 'Arts centre',
+    'cinema': 'Cinema', 'community': 'Community space',
+  };
+  const venueKindLabel = (k) => VENUE_KIND_LABELS[k] || (k ? k[0].toUpperCase() + k.slice(1) : '');
+
+  /* A place is a permanent venue, not a dated pick — no curator quote.
+     Card shows name, kind + neighborhood, and a website link (the
+     primary action until venue detail pages land). */
+  const renderVenueRow = (v) => {
+    const meta = [v.neighborhood, venueKindLabel(v.kind)].filter(Boolean).join(' · ');
+    const site = v.website
+      ? `<a class="list-row__map" href="${esc(v.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(v.name)} website">website &rarr;</a>`
+      : '';
+    return `<li class="list-row list-row--venue" data-id="${esc(v.id)}">
+       <p class="list-row__title"><span>${esc(v.name)}</span>${site}</p>
+       <p class="list-row__meta">${esc(meta)}</p>
+     </li>`;
+  };
+
+  const renderVenueList = (venues) => {
+    if (!resultsList || !emptyState) return;
+    if (!venues.length) { resultsList.innerHTML = ''; emptyState.hidden = false; return; }
+    emptyState.hidden = true;
+    resultsList.innerHTML = venues.map(renderVenueRow).join('');
+  };
+
+  /* Nearest needs the visitor's location; request it lazily and cache. */
+  let _userLoc = null;
+  const ensureLocation = (cb) => {
+    if (_userLoc || !navigator.geolocation) { cb(); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { _userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; cb(); },
+      ()  => { cb(); },                       /* denied → fall back to Featured */
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+    );
+  };
+  const sortVenues = (list) => {
+    const arr = list.slice();
+    if (state.sort === 'nearest' && _userLoc) {
+      const d = (v) => (v.lat == null || v.lng == null) ? Infinity
+        : (v.lat - _userLoc.lat) ** 2 + (v.lng - _userLoc.lng) ** 2;
+      return arr.sort((a, b) => d(a) - d(b));
+    }
+    /* Featured = a stable, scannable alphabetical order. */
+    return arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  };
+
+  const runPlaces = () => {
+    const venues = (window.WA && window.WA.venues) || [];
+    let list = venues.slice();
+    if (state.cats.size)   list = list.filter(v => state.cats.has(v.kind));
+    if (state.nhoods.size) list = list.filter(v => state.nhoods.has(v.neighborhood));
+    if (state.q) {
+      const t = state.q.toLowerCase();
+      list = list.filter(v => `${v.name} ${v.neighborhood} ${venueKindLabel(v.kind)}`.toLowerCase().includes(t));
+    }
+    list = sortVenues(list);
+
+    /* Places always shows its list (browsing places is the job) — no
+       "empty until filtered" gate like Events has. */
+    browseSects.forEach(s => { s.hidden = true; });
+    resultsSection.hidden = false;
+    if (resultsCount) resultsCount.textContent = list.length === 1 ? '1 place' : `${list.length} places`;
+    if (emptyState) {
+      emptyState.textContent = state.q
+        ? `No places found for "${state.q}"`
+        : 'No places match the active filters.';
+    }
+    renderVenueList(list);
+    renderApplied();
+  };
+
   /* ── Browse sections (populated from live catalog) ───── */
   const KIND_LABELS = {
     gig: 'Gigs & noise', talk: 'Lectures & talks', exhibition: 'Exhibitions',
@@ -215,12 +299,17 @@
   };
 
   /* ── Filter sheet rendering ─────────────────────────── */
+  /* Category chips are mode-aware: Events uses WA.MAP_CATEGORIES; Places
+     uses the alt-culture venue kinds (WA.VENUE_KINDS). Same data-cat
+     mechanism — the meaning of a "category" just depends on scope. */
   const renderCatChips = () => {
     if (!catChipsEl) return;
-    const cats = (window.WA && window.WA.MAP_CATEGORIES) || [];
-    catChipsEl.innerHTML = cats.map(c => {
-      const on = state.cats.has(c.id);
-      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${c.id}" aria-pressed="${on}">${esc(c.label)}</button>`;
+    const pairs = state.type === 'places'
+      ? ((window.WA && window.WA.VENUE_KINDS) || []).map(k => [k, venueKindLabel(k)])
+      : ((window.WA && window.WA.MAP_CATEGORIES) || []).map(c => [c.id, c.label]);
+    catChipsEl.innerHTML = pairs.map(([id, label]) => {
+      const on = state.cats.has(id);
+      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${esc(id)}" aria-pressed="${on}">${esc(label)}</button>`;
     }).join('');
   };
 
@@ -237,11 +326,12 @@
   /* ── URL read/write ─────────────────────────────────── */
   const writeUrlState = () => {
     const sp = new URLSearchParams();
+    if (state.type === 'places')     sp.set('type', 'places');
     if (state.q)                     sp.set('q', state.q);
     if (state.time && state.time !== 'all') sp.set('time', state.time);
     if (state.cats.size)             sp.set('cat', [...state.cats].join(','));
     if (state.nhoods.size)           sp.set('nhood', [...state.nhoods].join(','));
-    if (state.sort && state.sort !== 'relevance') sp.set('sort', state.sort);
+    if (state.sort && state.sort !== DEFAULT_SORT[state.type]) sp.set('sort', state.sort);
     if (state.ai)                    sp.set('ai', state.ai);
     if (state.mode === 'match')      sp.set('mode', 'match');
     if (state.view === 'map')        sp.set('view', 'map');
@@ -253,11 +343,12 @@
 
   const readUrlState = () => {
     const sp = new URLSearchParams(window.location.search);
+    state.type   = sp.get('type') === 'places' ? 'places' : 'events';
     state.q      = sp.get('q')     || '';
     state.time   = sp.get('time')  || 'all';
     state.cats   = new Set((sp.get('cat')   || '').split(',').filter(Boolean));
     state.nhoods = new Set((sp.get('nhood') || '').split(',').filter(Boolean));
-    state.sort   = sp.get('sort')  || 'relevance';
+    state.sort   = sp.get('sort')  || DEFAULT_SORT[state.type];
     state.ai     = sp.get('ai')    || '';
     state.mode   = sp.get('mode') === 'match' ? 'match' : 'search';
     state.view   = sp.get('view')  === 'map' ? 'map'   : 'list';
@@ -270,15 +361,49 @@
       const pill = btn.dataset.pill;
       let on = false;
       if (pill === 'tonight' || pill === 'thisweek') on = state.time === pill;
-      if (pill === 'free') on = state.cats.has('free');
+      else if (pill === 'free') on = state.cats.has('free');
+      else if (pill.startsWith('kind:')) on = state.cats.has(pill.slice(5));
       btn.classList.toggle('discover-pill--on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     if (filterCount && filtersBtn) {
-      const n = state.cats.size + state.nhoods.size + (state.sort !== 'relevance' ? 1 : 0);
+      const n = state.cats.size + state.nhoods.size + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
       if (n > 0) { filterCount.hidden = false; filterCount.textContent = String(n); }
       else       { filterCount.hidden = true; }
     }
+  };
+
+  /* Reflect the active scope (events | places) across the chrome:
+     scope buttons, which pills are visible, sort options, the search
+     placeholder, and the map (events-only for now — Places is list-led;
+     venue pins on the map are the next step). */
+  const reflectType = () => {
+    const places = state.type === 'places';
+    document.querySelectorAll('.discover-scope__btn').forEach(b => {
+      const on = b.dataset.type === state.type;
+      b.classList.toggle('discover-scope__btn--on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.discover-pill[data-mode]').forEach(b => {
+      b.hidden = b.dataset.mode !== state.type;
+    });
+    if (input) {
+      input.placeholder = places ? 'Search places…' : 'Search anything…';
+    }
+    /* Mobile map FAB + desktop map pane are events-only for v1. */
+    document.body.classList.toggle('discover-places', places);
+    if (places && state.view === 'map') { state.view = 'list'; reflectView(); }
+    buildSortOptions();
+  };
+
+  /* (Re)build the sort <select> for the active scope. */
+  const buildSortOptions = () => {
+    if (!sortEl) return;
+    const opts = SORT_OPTS[state.type] || SORT_OPTS.events;
+    if (!opts.some(([v]) => v === state.sort)) state.sort = DEFAULT_SORT[state.type];
+    sortEl.innerHTML = opts
+      .map(([v, label]) => `<option value="${v}"${v === state.sort ? ' selected' : ''}>${label}</option>`)
+      .join('');
   };
 
   /* ── Map sync ───────────────────────────────────────── */
@@ -304,6 +429,10 @@
     state.q || state.time !== 'all' || state.cats.size || state.nhoods.size || state.mood.length;
 
   const run = () => {
+    /* Places is a separate, list-led pipeline (venues, no map sync —
+       the map is events-only for now). */
+    if (state.type === 'places') { runPlaces(); return; }
+
     /* Keep the map in sync with every filter change, regardless of mode. */
     syncMap();
 
@@ -316,6 +445,7 @@
       /* No filters → show browse sections, hide results. */
       resultsSection.hidden = true;
       browseSects.forEach(s => { s.hidden = false; });
+      renderApplied();   /* clears the applied-filters row when emptied */
       return;
     }
 
@@ -337,6 +467,64 @@
         : 'No picks match the active filters.';
     }
     renderList(sorted);
+    renderApplied();
+  };
+
+  /* Applied-filters overview — removable chips for the sheet-set
+     category + neighborhood filters (the ones that are otherwise
+     invisible once the sheet closes). "free" is omitted because the
+     Free pill already shows it. Hidden when nothing's active. */
+  const catLabel = (id) => {
+    if (state.type === 'places') return venueKindLabel(id);
+    const cats = (window.WA && window.WA.MAP_CATEGORIES) || [];
+    return (cats.find(c => c.id === id) || {}).label || id;
+  };
+  const renderApplied = () => {
+    const el = document.getElementById('discover-applied');
+    if (!el) return;
+    const chips = [];
+    state.cats.forEach(id => {
+      if (id === 'free') return;
+      chips.push({ type: 'cat', val: id, label: catLabel(id) });
+    });
+    state.nhoods.forEach(name => chips.push({ type: 'nhood', val: name, label: name }));
+    if (!chips.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = chips.map(c =>
+      `<button type="button" class="discover-applied__chip"` +
+      ` data-applied-type="${c.type}" data-applied-val="${esc(c.val)}"` +
+      ` aria-label="Remove filter: ${esc(c.label)}">${esc(c.label)}` +
+      ` <span class="discover-applied__x" aria-hidden="true">&times;</span></button>`
+    ).join('');
+  };
+
+  /* Count of picks the current (pending) filter state would yield.
+     Drives the sheet's live "Show N picks" Apply label — Baymard's
+     product-list benchmark recommends an explicit apply button with a
+     live result count rather than refreshing the list mid-selection.
+     Sort doesn't change the count, so it's left out. */
+  const pendingCount = () => {
+    if (state.type === 'places') {
+      let list = (window.WA && window.WA.venues) || [];
+      if (state.cats.size)   list = list.filter(v => state.cats.has(v.kind));
+      if (state.nhoods.size) list = list.filter(v => state.nhoods.has(v.neighborhood));
+      if (state.q) {
+        const t = state.q.toLowerCase();
+        list = list.filter(v => `${v.name} ${v.neighborhood} ${venueKindLabel(v.kind)}`.toLowerCase().includes(t));
+      }
+      return list.length;
+    }
+    const catalog    = (window.WA && window.WA.catalog) || [];
+    const structured = applyStructuredFilters(catalog);
+    const textHit    = state.q ? keywordFilter(structured, state.q) : structured;
+    return textHit.length;
+  };
+  const updateApplyCount = () => {
+    const btn = document.getElementById('discover-sheet-apply');
+    if (!btn) return;
+    const n = pendingCount();
+    const noun = state.type === 'places' ? 'place' : 'pick';
+    btn.textContent = `Show ${n} ${noun}${n === 1 ? '' : 's'}`;
   };
 
   /* ── View toggle (mobile) ───────────────────────────── */
@@ -476,7 +664,8 @@
   const openSheet = () => {
     renderCatChips();
     renderNhoodChips();
-    if (sortEl) sortEl.value = state.sort;
+    buildSortOptions();          /* mode-aware options + current selection */
+    updateApplyCount();
     sheet.hidden = false;
     sheetBackdrop.hidden = false;
     document.body.classList.add('discover-sheet-open');
@@ -553,8 +742,29 @@
     if (state.q) input.value = state.q;
     if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
 
+    reflectType();
     reflectPills();
     reflectView();
+
+    /* Events | Places scope switch. Switching clears the controls that
+       don't translate across scopes (category means different things;
+       time/AI are events-only) but keeps neighborhood + query. */
+    document.querySelectorAll('.discover-scope__btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = btn.dataset.type;
+        if (t === state.type) return;
+        state.type = t;
+        state.cats.clear();
+        state.time = 'all';
+        state.mode = 'search';
+        state.ai   = '';
+        state.sort = DEFAULT_SORT[t];
+        reflectType();
+        reflectPills();
+        writeUrlState();
+        run();
+      });
+    });
 
     /* View toggle FAB (mobile only — desktop always shows both panes). */
     if (viewToggleBtn) {
@@ -572,11 +782,26 @@
         } else if (pill === 'free') {
           if (state.cats.has('free')) state.cats.delete('free');
           else                        state.cats.add('free');
+        } else if (pill.startsWith('kind:')) {
+          const k = pill.slice(5);
+          if (state.cats.has(k)) state.cats.delete(k);
+          else                   state.cats.add(k);
         }
         reflectPills();
         writeUrlState();
         run();
       });
+    });
+
+    /* Applied-filters overview: tap a chip's × to drop that one filter. */
+    document.getElementById('discover-applied')?.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-applied-type]');
+      if (!chip) return;
+      if (chip.dataset.appliedType === 'cat')  state.cats.delete(chip.dataset.appliedVal);
+      if (chip.dataset.appliedType === 'nhood') state.nhoods.delete(chip.dataset.appliedVal);
+      reflectPills();
+      writeUrlState();
+      run();
     });
 
     /* Filter sheet trigger. */
@@ -592,6 +817,7 @@
       if (state.cats.has(id)) state.cats.delete(id);
       else                    state.cats.add(id);
       renderCatChips();
+      updateApplyCount();
     });
     nhoodChipsEl?.addEventListener('click', (e) => {
       const chip = e.target.closest('[data-nhood]');
@@ -600,26 +826,30 @@
       if (state.nhoods.has(name)) state.nhoods.delete(name);
       else                        state.nhoods.add(name);
       renderNhoodChips();
+      updateApplyCount();
     });
 
-    /* Sheet footer. */
+    /* Sheet footer. Places + "Nearest" needs the visitor's location, so
+       request it lazily before running (falls back to Featured if denied). */
     document.getElementById('discover-sheet-apply')?.addEventListener('click', () => {
       if (sortEl) state.sort = sortEl.value;
       reflectPills();
       writeUrlState();
-      run();
       closeSheet();
+      if (state.type === 'places' && state.sort === 'nearest') ensureLocation(run);
+      else run();
     });
     document.getElementById('discover-sheet-clear')?.addEventListener('click', () => {
       state.cats.clear();
       state.nhoods.clear();
-      state.sort = 'relevance';
+      state.sort = DEFAULT_SORT[state.type];
       renderCatChips();
       renderNhoodChips();
-      if (sortEl) sortEl.value = 'relevance';
+      buildSortOptions();
       reflectPills();
       writeUrlState();
       run();
+      updateApplyCount();
     });
 
     /* Keyword input. */

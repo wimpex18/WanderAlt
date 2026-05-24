@@ -54,7 +54,7 @@
       if (p.endsWith('curator.html'))  return { href: document.referrer, label: '&larr; Curator' };
       if (p.endsWith('saved.html'))    return { href: './saved.html',     label: '&larr; Saved' };
     } catch (_) { /* cross-origin or empty referrer */ }
-    return { href: './index.html', label: '&larr; Briefing' };
+    return { href: './index.html', label: '&larr; Today' };
   };
 
   const render = (entry, catalog) => {

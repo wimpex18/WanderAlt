@@ -405,6 +405,18 @@
     updateBtn();
     right.prepend(btn);
 
+    /* About link — first item in the right group so signed-out
+       first-time visitors have an obvious "what is this" entry that
+       doesn't depend on the colophon. Stays visible when signed in
+       (unlike the auth button). Skipped on the About page itself. */
+    if (document.body.dataset.page !== 'about') {
+      const about = document.createElement('a');
+      about.className = 'topbar__about';
+      about.href = './about.html';
+      about.textContent = 'About';
+      right.prepend(about);
+    }
+
     btn.addEventListener('click', () => {
       if (window.WA.Auth.isSignedIn()) {
         window.location.href = './profile.html';

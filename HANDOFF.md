@@ -70,7 +70,12 @@ Leading tokens: `--lh-tight: 1.04` / `--lh-snug: 1.22` / `--lh-body: 1.5`
 
 ### Motion
 
-`--t-fast: 120ms ease` — used on all `transition` properties for hover/active states.
+| Token | Value | Used for |
+|---|---|---|
+| `--t-fast` | `120ms ease` | Color / border / background swaps (hover, focus, chip on-state). ~30+ rules. |
+| `--t-mid` | `280ms cubic-bezier(.2,.8,.2,1)` | Entrances, state changes, hover micro-lifts. Out-cubic, no overshoot. |
+
+Five surfaces share one `@starting-style` entrance (fade-up 8px) via the `--t-mid` token: `.pick`, `.tonight`, `.match-card`, `.profile-section`, `.about-section`. Works for both server-rendered and JS-appended elements. Cross-document View Transitions enabled globally; `.topbar` and `.nav` carry `view-transition-name` so chrome morphs rather than cross-fading. Full spec in `CLAUDE.md § Motion conventions`.
 
 ---
 
@@ -297,7 +302,7 @@ Mobile-first. Two breakpoints.
 
 Safe-area insets: `body` bottom padding and `.nav` use `env(safe-area-inset-bottom, 0px)`.
 
-`prefers-reduced-motion`: Surprise me fade skipped; drag-expand transition suppressed. `wa-pulse` animation not yet gated — see Known limitations.
+`prefers-reduced-motion`: Surprise me fade skipped; drag-expand transition suppressed. Global `animation: none !important` in the reduced-motion block covers `wa-pulse` and all other animations including `::before`/`::after` pseudo-elements.
 
 ---
 
@@ -326,7 +331,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 **Tonight fallback.** `briefing.js` uses `catalog.find(e => e.tonight) || catalog[0]`. If no entry has the `tonight` flag, the first catalog entry becomes the hero. This prevents a blank Briefing page after a fresh DB import.
 
-**Tallinn only.** All venue names, neighborhoods, and pin coordinates are Tallinn-specific. City selector UI is a placeholder.
+**Multi-city (May 2026).** Three cities live: Tallinn (primary, 100+ picks), Helsinki (4 picks, growing), Riga (6 picks, growing). City selector is fully implemented — keyboard-accessible listbox in `city.js`. Switching city saves to `localStorage ('wa:city')` and reloads. Supabase data layer and all ingest pipelines are city-aware.
 
 ---
 
@@ -339,7 +344,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 - **Bookmark inputs:** `aria-label="Save this pick"` or `aria-label="Bookmark: {title}"` on every checkbox.
 - **Active nav:** `aria-current="page"` on the matching item. Visual active state is not color-only — also changes shape and adds a label.
 - **Map pins:** `aria-label="Pin N: {title}"` and `aria-pressed="true/false"` on each button.
-- **Reduced motion:** Surprise me transition gated. `wa-pulse` animation not yet gated — follow-up.
+- **Reduced motion:** Surprise me transition gated. `wa-pulse` covered by global `animation: none !important` in reduced-motion block (May 2026).
 - **Touch targets:** nav pill items 52px tall. Bookmark checkboxes use `<label>` wrapper for larger hit area.
 
 ---
@@ -347,8 +352,8 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 ## Known limitations
 
 - **Map sheet drag — momentum/fast-swipe**: basic snap to peek/60vh works; momentum-scroll and very fast flicks are not handled.
-- **wa-pulse + reduced-motion**: `@keyframes wa-pulse` on the Tonight dot is not gated behind `prefers-reduced-motion`. Low priority.
-- **City selector**: button has `aria-haspopup="listbox"` but no dropdown is implemented. Clicking does nothing.
+- **wa-pulse + reduced-motion**: ~~not gated~~ Fixed May 2026 — global `animation: none !important` in reduced-motion block.
+- **City selector**: ~~no dropdown~~ Implemented in `city.js` — full keyboard-accessible listbox with thumbnails and status labels. Helsinki and Riga are live as of May 2026.
 - **Venue/curator pages**: rendered client-side from `catalog.js` via URL params. Deep links require JS to be enabled.
 - **No `alt` on real images**: `image_url` thumbnails apply as CSS `background-image`; `aria-label` on the wrapper `.thumb` span is the accessible substitute. Worth revisiting if the approach moves to `<img>` elements.
 - **Pin/label collisions**: at certain aspect ratios, pin teardrops can visually overlap the SVG neighborhood labels. Cosmetic only; labels are `aria-hidden`.

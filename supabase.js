@@ -103,6 +103,35 @@
     isClosed:  false,
   });
 
+  /* ── Venues (Places) ──────────────────────────────────────────
+     The venues table is ~1000 OSM-ingested rows, mostly mainstream
+     (bars, museums, libraries). WanderAlt is alternative culture, so
+     Places mode surfaces only the underground-leaning kinds — record
+     stores, indie bookshops, galleries, clubs, flea markets, arts
+     centres, independent cinemas, community/experimental spaces.
+     Generic bars / museums / libraries are intentionally excluded
+     (they'd dilute the curated identity; craft bars still surface as
+     event venues on picks). Keep this set in sync with the Places
+     category chips in discover.js (WA.VENUE_KINDS). */
+  const VENUE_KINDS = new Set([
+    'record store', 'bookshop', 'gallery', 'club',
+    'thrift', 'arts centre', 'cinema', 'community',
+  ]);
+  window.WA.VENUE_KINDS = [...VENUE_KINDS];
+
+  const toVenue = (r) => ({
+    id:           r.id,
+    city:         r.city,
+    name:         r.name,
+    neighborhood: r.neighborhood || '',
+    kind:         r.kind,
+    lat:          r.lat ?? null,
+    lng:          r.lng ?? null,
+    imageUrl:     proxifyImage(r.image_url) || null,
+    imageAttr:    r.image_attr || null,
+    website:      r.website || null,
+  });
+
   const dispatch = () =>
     document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
 
@@ -119,7 +148,7 @@
        bookmarked Riga pick), and the city-filtered slice is exposed
        as WA.catalog (the listing pages keep showing only the active
        city). past + venue_details follow the same all-cities pattern. */
-    const [picksResult, pastResult, vdResult] = await Promise.allSettled([
+    const [picksResult, pastResult, vdResult, venuesResult] = await Promise.allSettled([
       get(
         `picks`,
         `archived_at=is.null` +
@@ -134,6 +163,15 @@
         `venue_details`,
         `or=(is_closed.eq.true,business_status.in.("CLOSED_PERMANENTLY","CLOSED_TEMPORARILY"))` +
         `&select=venue_key,is_closed,business_status`,
+        abort.signal
+      ),
+      /* Places: active alt-culture venues with coordinates. Filtered to
+         the whitelist client-side so the kind set lives in one place. */
+      get(
+        `venues`,
+        `status=eq.active` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website` +
+        `&order=name.asc`,
         abort.signal
       ),
     ]);
@@ -177,6 +215,17 @@
       window.WA.past     = allPast.filter(e => !e.city || e.city === CITY);
     } else {
       window.WA.past = [];  /* past table is optional — silently empty if absent */
+    }
+
+    if (venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value)) {
+      const allVenues = venuesResult.value
+        .filter(r => VENUE_KINDS.has(r.kind))
+        .map(toVenue);
+      window.WA._venuesAll = allVenues;
+      window.WA.venues     = allVenues.filter(v => v.city === CITY);
+    } else {
+      /* Keep the static catalog.js venue seed as a fallback. */
+      console.warn('[WanderAlt] venues fetch failed — using static venue seed.', venuesResult.reason?.message);
     }
 
     dispatch();
