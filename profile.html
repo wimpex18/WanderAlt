@@ -120,6 +120,22 @@
       <p class="auth-panel__status" id="taste-status" aria-live="polite"></p>
     </section>
 
+    <!-- About & info — surfaces the About page from inside Profile, the
+         research-backed home for low-frequency info/legal content. The
+         topbar About link covers signed-out visitors; this covers the
+         signed-in account view. -->
+    <section class="profile-section" aria-labelledby="profile-about-label">
+      <header class="section-head">
+        <h2 id="profile-about-label" class="section-title">About &amp; info</h2>
+      </header>
+      <p class="meta profile-section__line">
+        What WanderAlt is, who curates it, how to get in touch, and what we do with your data.
+      </p>
+      <div class="profile-actions">
+        <a class="auth-panel__submit" href="./about.html">About WanderAlt &rarr;</a>
+      </div>
+    </section>
+
     <!-- Session — sign out + delete account. -->
     <section class="profile-section" aria-labelledby="profile-signout-label">
       <header class="section-head">
@@ -155,7 +171,7 @@
           <path d="M5 3h11l3 3v15H5V3z" />
           <path d="M8 8h8M8 12h8M8 16h5" />
         </svg>
-        <span class="nav__label">Briefing</span>
+        <span class="nav__label">Today</span>
       </a>
       <a class="nav__item" data-nav="discover" href="./discover.html">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">

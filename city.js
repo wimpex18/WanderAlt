@@ -52,7 +52,8 @@
     /* Stamp the active city on <body> so CSS can hook off it. */
     document.body.dataset.city = current.id;
 
-    /* Inject the city banner — a thin (64 px) decorative ribbon below
+    /* Inject the city banner — a cityscape ribbon (96px mobile / 120px
+       desktop, cropped to the skyline via object-position) below
        the topbar that shows the current city's illustrated plate.
        Visible on every content page (skipped on admin to keep the
        internal tool dense). Doing this from JS means we don't have
