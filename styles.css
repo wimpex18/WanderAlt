@@ -4288,6 +4288,39 @@ a.handle:hover { color: var(--c-ink); }
   text-align: center;
 }
 
+/* Applied-filters overview — removable chips below the pill row for
+   the sheet-set category/neighborhood filters. Petrol-tinted so they
+   read as "active", with an × affordance. */
+.discover-applied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-3);
+}
+.discover-applied__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  border: var(--rule-w) solid var(--c-accent);
+  border-radius: 999px;
+  font-family: var(--ff-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.discover-applied__chip:hover {
+  background: var(--c-accent);
+  color: var(--c-paper);
+}
+.discover-applied__x {
+  font-size: 14px;
+  line-height: 1;
+}
+
 /* ── Deprecation banner (shown on legacy map/search pages) ─── */
 .deprecation-banner {
   margin: var(--s-3) 0 var(--s-4);

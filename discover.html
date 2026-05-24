@@ -97,6 +97,13 @@
     <!-- Mood chips — mood-chips.js renders chip buttons here. -->
     <nav class="mood-chips" aria-label="Filter by mood"></nav>
 
+    <!-- Applied-filters overview — removable chips for the category /
+         neighborhood filters hidden inside the sheet, so users can see
+         and clear them without reopening it (Baymard: cheapest
+         orientation win). Hidden when no sheet filters are active;
+         discover.js renders it. -->
+    <div class="discover-applied" id="discover-applied" aria-label="Active filters" hidden></div>
+
     <!-- View panes: list (default) and map. Mobile shows one at a time
          via the view-toggle FAB; desktop ≥1024px shows both side-by-side. -->
     <div class="discover-panes" id="discover-panes" data-view="list">

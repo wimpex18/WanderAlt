@@ -130,16 +130,17 @@
   };
 
   /* ── This Week list ────────────────────────────────────── */
-  /* Pagination: the briefing is meant to feel like a printed weekly,
-     not a search result page. Render the first PAGE_SIZE picks; if
-     there are more, append a "Show more" button below that reveals
-     the next PAGE_SIZE on each tap. Cleaner than infinite scroll at
-     this scale and respects the editorial-not-feed positioning.   */
-  const PAGE_SIZE = 20;
-  let _weekFullSet  = [];     /* full ordered list (may be filtered by mood) */
+  /* The home page is a curated weekly, not a search result page.
+     Choice-overload research (Iyengar; Baymard list benchmarks) says a
+     curated list should stay in single digits — so we cap This Week at
+     PAGE_SIZE and hand the long tail to Discover via a single "Browse
+     all this week →" bridge link. No on-home pagination, no filtering:
+     retrieval lives on Discover, curation lives here. */
+  const PAGE_SIZE = 8;
+  let _weekFullSet  = [];     /* full ordered list for the active city */
   let _weekShown    = PAGE_SIZE;
   let _weekIsFiltered = false;
-  let _weekTotalAll = 0;      /* unfiltered week count, for the "N of M" label */
+  let _weekTotalAll = 0;      /* full week count, for the "N of M" label */
 
   /* total = unfiltered count, used only when isFiltered=true to show "N of M". */
   const renderThisWeek = (entries, total = entries.length, isFiltered = false) => {
@@ -232,28 +233,25 @@
        </li>`
     ).join('');
 
-    /* "Show more" button — appears after the list when more picks are
-       available in the current set. Tap reveals the next page. */
+    /* Bridge to Discover — the one sanctioned Today→Discover link. When
+       the week has more picks than we show here, send the long tail to
+       Discover (pre-filtered to this week) instead of paginating on the
+       home page. This teaches the mental model (Today = curated now,
+       Discover = browse everything) rather than duplicating the browse. */
     let footer = document.getElementById('picks-footer');
     if (footer) footer.remove();
     const remaining = _weekFullSet.length - entries.length;
     if (remaining > 0) {
-      const showNext = Math.min(PAGE_SIZE, remaining);
       footer = document.createElement('div');
       footer.id = 'picks-footer';
       footer.className = 'picks-footer';
       footer.innerHTML = `
-        <button type="button" class="picks-footer__btn" id="picks-show-more">
-          Show ${showNext} more &rarr;
-        </button>
-        <p class="picks-footer__meta">${remaining} more in This week</p>
+        <a class="picks-footer__btn" href="./discover.html?time=thisweek">
+          Browse all this week &rarr;
+        </a>
+        <p class="picks-footer__meta">${remaining} more in Discover</p>
       `;
       list.parentNode.insertBefore(footer, list.nextSibling);
-      footer.querySelector('#picks-show-more').addEventListener('click', () => {
-        _weekShown += PAGE_SIZE;
-        renderWeekPage();
-        restoreBookmarks();
-      });
     }
   };
 
@@ -271,12 +269,6 @@
       if (!cb) return;
       window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
     });
-  };
-
-  /* ── Mood filtering ───────────────────────────────────────── */
-  const matchesMood = (entry, activeTags) => {
-    if (!activeTags.length) return true;
-    return activeTags.every(tag => entry.moodTags && entry.moodTags.includes(tag));
   };
 
   /* ── Surprise me ───────────────────────────────────────────── */
@@ -420,10 +412,6 @@
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
 
-    /* Stash the full week source for mood re-filtering. */
-    const _allWeek     = orderedWeek;
-    const _isFallback  = fallback;
-
     renderTonight(tonight);
     /* Pass the full ordered set — renderThisWeek paginates internally. */
     renderThisWeek(orderedWeek);
@@ -500,33 +488,6 @@
       syncOptinVisibility();
       document.addEventListener('wa:signed-in',  syncOptinVisibility);
       document.addEventListener('wa:signed-out', syncOptinVisibility);
-    }
-
-    /* Mood filter: re-renders This Week with only matching entries. */
-    document.addEventListener('wa:mood-changed', (e) => {
-      const activeTags = e.detail.tags;
-      const filtered   = _allWeek.filter(entry => matchesMood(entry, activeTags));
-      const isFiltered = activeTags.length > 0;
-      /* Show "N of M" only when a mood filter is actually active. */
-      renderThisWeek(filtered, _allWeek.length, isFiltered);
-      restoreBookmarks();
-    });
-
-    /* Race-condition recovery: mood-chips.js runs on the same
-       wa:catalog-ready event we just handled, and if its listener was
-       registered first it has already fired wa:mood-changed for the
-       initial hash *before* we subscribed above. Re-read the hash
-       once now to catch that case. Hash format matches mood-chips.js:
-       #mood=loud,solo                                                 */
-    const hash = window.location.hash.match(/[#&]mood=([^&]+)/);
-    if (hash) {
-      const initialTags = decodeURIComponent(hash[1])
-        .split(',').map(s => s.trim()).filter(Boolean);
-      if (initialTags.length) {
-        const filtered = _allWeek.filter(entry => matchesMood(entry, initialTags));
-        renderThisWeek(filtered, _allWeek.length, true);
-        restoreBookmarks();
-      }
     }
   };
 

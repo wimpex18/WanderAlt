@@ -316,6 +316,7 @@
       /* No filters → show browse sections, hide results. */
       resultsSection.hidden = true;
       browseSects.forEach(s => { s.hidden = false; });
+      renderApplied();   /* clears the applied-filters row when emptied */
       return;
     }
 
@@ -337,6 +338,52 @@
         : 'No picks match the active filters.';
     }
     renderList(sorted);
+    renderApplied();
+  };
+
+  /* Applied-filters overview — removable chips for the sheet-set
+     category + neighborhood filters (the ones that are otherwise
+     invisible once the sheet closes). "free" is omitted because the
+     Free pill already shows it. Hidden when nothing's active. */
+  const catLabel = (id) => {
+    const cats = (window.WA && window.WA.MAP_CATEGORIES) || [];
+    return (cats.find(c => c.id === id) || {}).label || id;
+  };
+  const renderApplied = () => {
+    const el = document.getElementById('discover-applied');
+    if (!el) return;
+    const chips = [];
+    state.cats.forEach(id => {
+      if (id === 'free') return;
+      chips.push({ type: 'cat', val: id, label: catLabel(id) });
+    });
+    state.nhoods.forEach(name => chips.push({ type: 'nhood', val: name, label: name }));
+    if (!chips.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = chips.map(c =>
+      `<button type="button" class="discover-applied__chip"` +
+      ` data-applied-type="${c.type}" data-applied-val="${esc(c.val)}"` +
+      ` aria-label="Remove filter: ${esc(c.label)}">${esc(c.label)}` +
+      ` <span class="discover-applied__x" aria-hidden="true">&times;</span></button>`
+    ).join('');
+  };
+
+  /* Count of picks the current (pending) filter state would yield.
+     Drives the sheet's live "Show N picks" Apply label — Baymard's
+     product-list benchmark recommends an explicit apply button with a
+     live result count rather than refreshing the list mid-selection.
+     Sort doesn't change the count, so it's left out. */
+  const pendingCount = () => {
+    const catalog    = (window.WA && window.WA.catalog) || [];
+    const structured = applyStructuredFilters(catalog);
+    const textHit    = state.q ? keywordFilter(structured, state.q) : structured;
+    return textHit.length;
+  };
+  const updateApplyCount = () => {
+    const btn = document.getElementById('discover-sheet-apply');
+    if (!btn) return;
+    const n = pendingCount();
+    btn.textContent = n === 1 ? 'Show 1 pick' : `Show ${n} picks`;
   };
 
   /* ── View toggle (mobile) ───────────────────────────── */
@@ -477,6 +524,7 @@
     renderCatChips();
     renderNhoodChips();
     if (sortEl) sortEl.value = state.sort;
+    updateApplyCount();
     sheet.hidden = false;
     sheetBackdrop.hidden = false;
     document.body.classList.add('discover-sheet-open');
@@ -579,6 +627,17 @@
       });
     });
 
+    /* Applied-filters overview: tap a chip's × to drop that one filter. */
+    document.getElementById('discover-applied')?.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-applied-type]');
+      if (!chip) return;
+      if (chip.dataset.appliedType === 'cat')  state.cats.delete(chip.dataset.appliedVal);
+      if (chip.dataset.appliedType === 'nhood') state.nhoods.delete(chip.dataset.appliedVal);
+      reflectPills();
+      writeUrlState();
+      run();
+    });
+
     /* Filter sheet trigger. */
     if (filtersBtn) filtersBtn.addEventListener('click', openSheet);
     document.getElementById('discover-sheet-close')?.addEventListener('click', closeSheet);
@@ -592,6 +651,7 @@
       if (state.cats.has(id)) state.cats.delete(id);
       else                    state.cats.add(id);
       renderCatChips();
+      updateApplyCount();
     });
     nhoodChipsEl?.addEventListener('click', (e) => {
       const chip = e.target.closest('[data-nhood]');
@@ -600,6 +660,7 @@
       if (state.nhoods.has(name)) state.nhoods.delete(name);
       else                        state.nhoods.add(name);
       renderNhoodChips();
+      updateApplyCount();
     });
 
     /* Sheet footer. */
@@ -620,6 +681,7 @@
       reflectPills();
       writeUrlState();
       run();
+      updateApplyCount();
     });
 
     /* Keyword input. */
