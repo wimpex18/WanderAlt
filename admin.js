@@ -1595,7 +1595,7 @@
         return;
       }
       if (action === 'approve') {
-        if (!confirm(`Publish this column by ${col.curator_handle}?\n\nWill appear on the Briefing page.`)) return;
+        if (!confirm(`Publish this column by ${col.curator_handle}?\n\nWill appear on the Today (home) page.`)) return;
         const ta   = list.querySelector(`textarea[data-col-id="${colId}"]`);
         const body = { status: 'published', approved_at: new Date().toISOString() };
         if (ta?.classList.contains('is-open')) body.body_md = ta.value;

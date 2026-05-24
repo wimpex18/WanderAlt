@@ -1907,6 +1907,12 @@ a.handle:hover {
   white-space: nowrap;
 }
 .topbar__about:hover { color: var(--c-accent); }
+/* On very narrow phones the right group (About · Sign in · City) can
+   crowd the wordmark. Below 360px drop the About label — the home
+   standfirst and the Profile "About & info" section still surface it. */
+@media (max-width: 360px) {
+  .topbar__about { display: none; }
+}
 
 /* ============================================================
    AUTH OVERLAY + PANEL

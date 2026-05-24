@@ -95,8 +95,10 @@
     <!-- Standfirst — one-line value statement so a first-time visitor
          immediately understands what WanderAlt is. Editorial deck voice,
          not marketing. Sits above the Tonight hero with a 1px rule under
-         it, like a cultural weekly's masthead line. -->
-    <p class="standfirst">The alternative-culture briefing for your city.</p>
+         it, like a cultural weekly's masthead line. city.js swaps the
+         .standfirst__city span to the active city ("your city" is the
+         no-JS fallback). -->
+    <p class="standfirst">The alternative-culture briefing for <span class="standfirst__city">your city</span>.</p>
 
     <!-- Tonight hero — populated by briefing.js from catalog.js.
          The skeleton card reserves the layout space so the real

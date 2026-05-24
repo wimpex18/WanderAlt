@@ -43,7 +43,7 @@
       if (p.endsWith('venue.html'))    return { href: document.referrer, label: '&larr; Pick' };
       if (p.endsWith('discover.html')) return { href: document.referrer, label: '&larr; Discover' };
     } catch (_) { /* cross-origin or empty referrer */ }
-    return { href: './index.html', label: '&larr; Briefing' };
+    return { href: './index.html', label: '&larr; Today' };
   };
 
   const render = (curator, picks) => {
