@@ -9,6 +9,15 @@
      catalog.js → bookmark.js → briefing.js   (all defer)
    ============================================================ */
 (() => {
+  /* Legacy mood deep-links: mood chips used to live on this page and
+     wrote a #mood= hash. They moved to Discover, so forward any old
+     bookmark (index.html#mood=loud,solo) there before we render. */
+  const moodHash = window.location.hash.match(/[#&]mood=([^&]+)/);
+  if (moodHash) {
+    window.location.replace('./discover.html#mood=' + moodHash[1]);
+    return;
+  }
+
   /* ── Taste-profile onboarding (3 questions, inline banner) ── */
   const initTasteOnboarding = () => {
     const taste = window.WA?.taste;
