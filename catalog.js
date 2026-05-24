@@ -3524,3 +3524,27 @@ window.WA.past = [
   { id: "algirdas-seskus", title: "Algirdas Šeškus — retrospective", date: "Mar 22" },
   { id: "late-winter-readings", title: "Late winter readings, Lugemik", date: "Mar 8" }
 ];
+
+/* Static Places (venues) seed — alt-culture spots used as the offline
+   fallback when supabase.js can't reach the venues table. Live data
+   (window.WA.venues, filtered to WA.VENUE_KINDS) replaces this on a
+   successful fetch. Real venues only. */
+window.WA._venuesAll = [
+  /* Tallinn */
+  { id:"v-biitme",    city:"tallinn",  name:"Biit Me Record Store",         neighborhood:"Kesklinn",      kind:"record store", lat:59.4338, lng:24.7536, imageUrl:null, imageAttr:null, website:"https://biitme.ee" },
+  { id:"v-lugemik",   city:"tallinn",  name:"Lugemik",                      neighborhood:"Kalamaja",      kind:"bookshop",     lat:59.4427, lng:24.7384, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-ekkm",      city:"tallinn",  name:"EKKM",                         neighborhood:"Põhja-Tallinn", kind:"arts centre",  lat:59.4486, lng:24.7472, imageUrl:null, imageAttr:null, website:"https://ekkm.ee" },
+  { id:"v-kaiart",    city:"tallinn",  name:"Kai Art Center",               neighborhood:"Noblessner",    kind:"gallery",      lat:59.4515, lng:24.7727, imageUrl:null, imageAttr:null, website:"https://kai.center" },
+  { id:"v-sveta",     city:"tallinn",  name:"Sveta Baar",                   neighborhood:"Telliskivi",    kind:"club",         lat:59.4366, lng:24.7320, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-fotografiska",city:"tallinn",name:"Fotografiska",                 neighborhood:"Telliskivi",    kind:"gallery",      lat:59.4372, lng:24.7338, imageUrl:null, imageAttr:null, website:"https://fotografiska.com/tallinn" },
+  /* Helsinki */
+  { id:"v-stupido",   city:"helsinki", name:"Stupido Records",              neighborhood:"Kallio",        kind:"record store", lat:60.1841, lng:24.9501, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-nide",      city:"helsinki", name:"Nide",                         neighborhood:"Punavuori",     kind:"bookshop",     lat:60.1626, lng:24.9402, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-aaniwalli", city:"helsinki", name:"Ääniwalli",                    neighborhood:"Vallila",       kind:"club",         lat:60.1959, lng:24.9540, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-kiasma",    city:"helsinki", name:"Kiasma",                       neighborhood:"Töölö",         kind:"gallery",      lat:60.1719, lng:24.9362, imageUrl:null, imageAttr:null, website:null },
+  /* Riga */
+  { id:"v-kkc",       city:"riga",     name:"Kaņepes Kultūras centrs",      neighborhood:"Centrs",        kind:"community",    lat:56.9512, lng:24.1146, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-kim",       city:"riga",     name:"Kim? Contemporary Art Centre", neighborhood:"Centrs",        kind:"gallery",      lat:56.9430, lng:24.1010, imageUrl:null, imageAttr:null, website:null },
+  { id:"v-roberts",   city:"riga",     name:"Robert's Books",               neighborhood:"Centrs",        kind:"bookshop",     lat:56.9489, lng:24.1180, imageUrl:null, imageAttr:null, website:null }
+];
+window.WA.venues = window.WA._venuesAll.filter(v => v.city === _waCity);

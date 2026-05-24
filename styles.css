@@ -4219,6 +4219,39 @@ a.handle:hover { color: var(--c-ink); }
    ============================================================ */
 
 /* ── Search bar (compact, with AI sub-link) ─────────────────── */
+/* Events | Places scope switch — a segmented control at the top of
+   Discover. Two equal segments, ink fill on the active one. Reads as a
+   primary mode selector, distinct from the pill row's filter chips. */
+.discover-scope {
+  display: flex;
+  gap: 2px;
+  margin: var(--s-4) 0 0;
+  padding: 3px;
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+}
+.discover-scope__btn {
+  flex: 1 1 50%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.discover-scope__btn:hover { color: var(--c-ink); }
+.discover-scope__btn--on {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+.discover-scope__btn--on:hover { color: var(--c-paper); }
+
 .discover-search {
   padding: var(--s-4) 0 var(--s-2);
   border-bottom: var(--rule-w) solid var(--c-rule);
@@ -4401,6 +4434,24 @@ a.handle:hover { color: var(--c-ink); }
 @media (min-width: 1024px) {
   .discover-view-fab { display: none; }
 }
+
+/* Places mode is list-led for now (the map module is events/pick-coupled;
+   venue pins on the map are the next step). So in Places:
+   - hide the AI "ask in plain English" link (it matches picks only)
+   - hide the mobile map FAB
+   - on desktop, collapse the split so the venue list fills the column. */
+body.discover-places .discover-search__ai { display: none; }
+body.discover-places .discover-view-fab   { display: none; }
+body.discover-places .discover-pane--map   { display: none; }
+/* Mood tags live on picks, not venues — hide the mood strip in Places. */
+body.discover-places .mood-chips           { display: none; }
+@media (min-width: 1024px) {
+  body.discover-places .discover-panes { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Venue (Places) list row — same rhythm as event rows but no curator
+   quote line, so tighten the vertical spacing a touch. */
+.list-row--venue .list-row__title span { color: var(--c-ink); }
 
 /* ── View-toggle FAB (mobile) ───────────────────────────────── */
 .discover-view-fab {
