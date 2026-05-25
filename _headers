@@ -19,13 +19,16 @@
   # CSP — strict. May 2026 sweep extracted admin.html's inline <style>
   # to admin.css, the redirect stubs to redirect-stub.css, and moved
   # the two onsubmit="return false;" forms to a [data-no-submit]
-  # JS handler in city.js. There are now ZERO inline scripts and
-  # ZERO inline <style> tags, so script-src drops 'unsafe-inline'.
+  # JS handler in city.js. All scripts are external same-origin (the
+  # pre-paint taste flag is taste-flag.js), so script-src stays 'self'
+  # with no 'unsafe-inline'. Fonts are now self-hosted, so the Google
+  # Fonts origins were dropped — style-src no longer needs
+  # fonts.googleapis.com and font-src is 'self' only.
   # 'unsafe-inline' on style-src is retained ONLY because MapLibre
   # injects inline width/height on the canvas elements it manages;
   # removing it breaks the map. img-src https: keeps Google Places /
   # Supabase Storage CDNs working without each being whitelisted.
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://tiles.openfreemap.org https://overpass-api.de https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://tiles.openfreemap.org https://overpass-api.de https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 # ── Caching ─────────────────────────────────────────────────
 # HTML: never cache aggressively — content rotates with the weekly catalog
