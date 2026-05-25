@@ -5,6 +5,21 @@
    All tokens live in :root so the aesthetic is tuneable in one place.
    ============================================================ */
 
+/* ── Self-hosted fonts (Latin subset, woff2) ─────────────────
+   Was Google Fonts via <link>. Self-hosting removes a third-party
+   origin (fonts.gstatic.com) — honouring the "no third-party" promise
+   in about.html and dropping a render-blocking connection — and ends
+   the dependency on Google's CDN. font-display: swap matches the
+   previous &display=swap behaviour. Files in /fonts (see fonts/). */
+@font-face { font-family: 'Geist'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/geist-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/geist-500.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/geist-600.woff2') format('woff2'); }
+@font-face { font-family: 'Geist'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/geist-700.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/geist-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/geist-mono-500.woff2') format('woff2'); }
+@font-face { font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/dm-serif-display-400.woff2') format('woff2'); }
+@font-face { font-family: 'DM Serif Display'; font-style: italic; font-weight: 400; font-display: swap; src: url('fonts/dm-serif-display-400-italic.woff2') format('woff2'); }
+
 :root {
   /* ---------- Color — Compass palette ---------- */
   --c-paper:        #ffffff;
@@ -605,6 +620,20 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   background-position: center;
 }
 .thumb--has-img .thumb__fallback { display: none; }
+/* Petrol duotone: a color-blend overlay maps the photo's luminance onto
+   the brand petrol, so disparate venue/event photos read as one
+   intentional editorial treatment (no second hue introduced — the
+   duotone IS petrol on newsprint). mix-blend-mode: color keeps form via
+   luminance; opacity tunes how monochrome it goes. */
+.thumb--has-img::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--c-accent);
+  mix-blend-mode: color;
+  opacity: 0.62;
+  pointer-events: none;
+}
 .photo-credit {
   font-family: var(--ff-mono);
   font-size: 9px;
@@ -1401,6 +1430,11 @@ body[data-page="saved"] .colophon {
 .list-row {
   padding: var(--s-4) 0;
   border-bottom: var(--rule-w) solid var(--c-rule);
+  /* Skip rendering/layout for off-screen rows (Discover/Saved can hold
+     100+). contain-intrinsic-size reserves an estimate so the scrollbar
+     stays stable; the browser remembers real heights once measured. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 92px;
 }
 .list-row:last-child { border-bottom: 0; }
 

@@ -67,7 +67,8 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - Background: warm newsprint `#f6f3ec`, never pure white.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
-- Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow.
+- Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow. Real photos (`.thumb--has-img`) get a **petrol duotone** (a `mix-blend-mode: color` overlay at 0.62) so disparate venue/event photos read as one editorial treatment — no second hue (the duotone IS petrol on newsprint). Tunable via that opacity.
+- Perf: long lists (`.list-row` on Discover/Saved/venue) use `content-visibility: auto` + `contain-intrinsic-size` to skip off-screen render. Fonts self-hosted (see HANDOFF). Both no-build.
 
 ## Motion conventions (May 2026)
 
@@ -103,7 +104,7 @@ The mark is a **petrol squircle tile with a centered lime diamond**. One mark, n
 - **Theme color:** all HTML files declare `<meta name="theme-color" content="#055959" />`. Mobile browser chrome tints petrol.
 - **Favicons / app icons:** referenced from `brand/favicon/` and `brand/pwa/` via `<link>` tags + `manifest.webmanifest`. SVG-only currently (universal support in 2026). PNG/ICO rasterizations are a follow-up if older browsers need them — pipeline TBD.
 - **OG / Twitter cards:** `brand/social/og-default.svg` (1200×630) and `twitter-default.svg` (1200×675). Wired into `index.html` and `venue.html`.
-- **Do not introduce a third color.** Two-tone for a reason. `--c-accent` (petrol) is the only accent; `--c-lime` is signal-only. **One sanctioned exception:** map-pin category colours (`WA.MAP_CAT` in `map-venues.js`) — a muted, desaturated "print-ink" palette used ONLY on map pins/clusters (never page chrome) to color-code categories. Owner-approved (June 2026) as a deliberate evolution; keep it low-chroma + mid-dark (risograph family), music = petrol anchor, lime still reserved for the live/active pin state. Page chrome stays strictly petrol + lime + ink.
+- **Do not introduce a third color.** Two-tone for a reason. `--c-accent` (petrol) is the only accent; `--c-lime` is signal-only (live/active). Map pins are uniform petrol (`WA.MAP_CAT` in `map-venues.js`) — category is differentiated by the per-kind **glyph**, not hue (The-Economist discipline: a muted multi-hue pin palette was trialled June 2026 and reverted as too "app" for a two-tone editorial brand). Lime marks the active/live pin state only.
 
 ## Domain + page architecture (May 2026)
 
