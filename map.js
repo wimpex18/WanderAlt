@@ -73,6 +73,25 @@
     default:  '<svg viewBox="0 0 16 16" width="14" height="14"><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>',
   };
 
+  /* Per-venue-kind glyphs for Places pins (Lucide line icons, 24×24,
+     1.8px stroke). Icons belong on map pins, not filter chips, for a
+     text-forward brand — and a distinct glyph per kind makes a venue
+     scannable at city zoom (record store vs bookshop vs gallery…). */
+  const VENUE_PIN_ICONS = (() => {
+    const wrap = (body) =>
+      `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+    return {
+      'record store': wrap('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/>'),
+      'bookshop':     wrap('<path d="M12 7v13"/><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H12v16h6.5a1.5 1.5 0 0 0 1.5-1.5z"/>'),
+      'gallery':      wrap('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 16-4.5-4.5L7 21"/>'),
+      'club':         wrap('<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'),
+      'thrift':       wrap('<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/>'),
+      'arts centre':  wrap('<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2.5C6.7 2.5 2.5 6.7 2.5 12s4.2 9.5 9.5 9.5c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.6h1.9c2.9 0 5.3-2.4 5.3-5.3C21.5 6.3 17.3 2.5 12 2.5z"/>'),
+      'cinema':       wrap('<rect x="2.5" y="2.5" width="19" height="19" rx="2"/><path d="M7 2.5v19M17 2.5v19M2.5 12h19M2.5 7.2h4.5M2.5 16.8h4.5M17 16.8h4.5M17 7.2h4.5"/>'),
+      'community':    wrap('<path d="M16 21v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 19.5V21"/><circle cx="10" cy="7.5" r="3.5"/><path d="M20 21v-1.5a3.5 3.5 0 0 0-2.6-3.4"/><path d="M15.5 4.2a3.5 3.5 0 0 1 0 6.6"/>'),
+    };
+  })();
+
   // ── Filter logic ──────────────────────────────────────────────
   function matchesText(e, q) {
     if (!q) return true;
@@ -137,13 +156,17 @@
       closed ? 'map-pin-new--closed' : '',
     ].filter(Boolean).join(' ');
     const ariaLbl = closed ? `${entry.title} (closed)` : entry.title;
+    /* Places pins use a distinct glyph per venue kind; event pins use the
+       category-bucket glyph. */
+    const icon = (entry.isVenue && VENUE_PIN_ICONS[entry.kind])
+      || PIN_ICONS[kind] || PIN_ICONS.default;
     return `<button class="${cls}"
       data-id="${entry.id}" type="button"
       aria-label="${ariaLbl}" aria-pressed="${active}"
       style="left:0;top:0;--pin-bg:${c.bg};--pin-fg:${c.fg}">
       <span class="map-pin-new__tail"></span>
       <span class="map-pin-new__circle">
-        <span class="map-pin-new__icon">${PIN_ICONS[kind] || PIN_ICONS.default}</span>
+        <span class="map-pin-new__icon">${icon}</span>
       </span>
       ${num !== '' ? `<span class="map-pin-new__badge">${num}</span>` : ''}
     </button>`;

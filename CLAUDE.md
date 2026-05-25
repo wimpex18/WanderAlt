@@ -187,7 +187,9 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 - **Custom events:**
   - `wa:map-pin-changed` — fired by `map.js` when a pin is tapped or focused; `detail.id` is the pick id (empty string on deselect). `discover.js` listens to scroll+highlight the card and update `?id=`.
   - `wa:mood-changed` — fired by `mood-chips.js` when mood selection changes.
-- **Desktop split view:** ≥1024px CSS grid, list ~480px left / map fills right. `view` param ignored on desktop.
+- **Desktop split view:** ≥1024px CSS grid, list left / map fills right. `view` param ignored on desktop.
+- **Filters:** the `#discover-sheet` lives inside the list pane. Mobile = fixed bottom sheet opened by "+ Filters" (Apply commits; `openSheet` flips map→list first so the fixed sheet isn't trapped in a `display:none` pane). Desktop ≥1024px = persistent left-rail atop the list column, always visible, "+ Filters"/Apply hidden, changes apply live (`liveApply()`). Active pills/chips carry a leading "✓" (WCAG 1.4.1); sort is a radio list, not a `<select>`.
+- **Category icons:** filter chips are text-only (text-forward brand); category glyphs live on **map pins** — event pins use category-bucket glyphs, Places pins use per-venue-kind Lucide glyphs (`VENUE_PIN_ICONS` in `map.js`).
 - **Mobile:** list or map, toggled by FAB. `view=map` in URL shows map pane.
 - **popstate:** `discover.js` has a `popstate` listener — browser back/forward fully restores state without a page reload.
 

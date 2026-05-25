@@ -420,7 +420,21 @@
       input.placeholder = places ? 'Search places…' : 'Search anything…';
     }
     document.body.classList.toggle('discover-places', places);
+    /* Render the filter controls now (not just on sheet-open) so the
+       desktop persistent rail is populated and refreshes on mode switch. */
+    renderCatChips();
+    renderNhoodChips();
     buildSortOptions();
+  };
+
+  const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+  /* On desktop the filter rail is always visible → apply changes live. */
+  const liveApply = () => {
+    if (!isDesktop()) return;
+    reflectPills();
+    writeUrlState();
+    if (state.type === 'places' && state.sort === 'nearest') ensureLocation(run);
+    else run();
   };
 
   /* (Re)build the sort <select> for the active scope. */
@@ -694,8 +708,12 @@
     writeUrlState();
   };
 
-  /* ── Sheet open/close ───────────────────────────────── */
+  /* ── Sheet open/close (mobile only; desktop rail is always visible) ── */
   const openSheet = () => {
+    /* The sheet lives in the list pane (so it can be the desktop rail).
+       In mobile map view that pane is display:none, which would hide the
+       fixed sheet too — switch to list view first. */
+    if (state.view === 'map' && !isDesktop()) setView('list');
     renderCatChips();
     renderNhoodChips();
     buildSortOptions();          /* mode-aware options + current selection */
@@ -852,6 +870,7 @@
       else                    state.cats.add(id);
       renderCatChips();
       updateApplyCount();
+      liveApply();           /* desktop rail applies immediately */
     });
     nhoodChipsEl?.addEventListener('click', (e) => {
       const chip = e.target.closest('[data-nhood]');
@@ -861,6 +880,12 @@
       else                        state.nhoods.add(name);
       renderNhoodChips();
       updateApplyCount();
+      liveApply();
+    });
+    /* Sort radio change — applies live on the desktop rail. */
+    sortEl?.addEventListener('change', () => {
+      state.sort = selectedSort();
+      liveApply();
     });
 
     /* Sheet footer. Places + "Nearest" needs the visitor's location, so
