@@ -631,7 +631,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   inset: 0;
   background: var(--c-accent);
   mix-blend-mode: color;
-  opacity: 0.62;
+  opacity: 0.5;          /* tinted-but-legible; raise toward 0.8 for more monochrome */
   pointer-events: none;
 }
 .photo-credit {
