@@ -357,6 +357,17 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 - **Venue/curator pages**: rendered client-side from `catalog.js` via URL params. Deep links require JS to be enabled.
 - **No `alt` on real images**: `image_url` thumbnails apply as CSS `background-image`; `aria-label` on the wrapper `.thumb` span is the accessible substitute. Worth revisiting if the approach moves to `<img>` elements.
 - **Pin/label collisions**: at certain aspect ratios, pin teardrops can visually overlap the SVG neighborhood labels. Cosmetic only; labels are `aria-hidden`.
+- **Standalone venue page**: a venue's info now lives in the Discover map detail panel (`venueDetailHTML` — name/kind/neighborhood/social). There is no dedicated venue page with "events here" nested (the RA/Maps pattern) yet — a follow-up.
+- **Venue social coverage is sparse**: `website` ~57% of alt venues, `facebook`/`instagram` only where OSM tagged them (~20/~12 live). Icons degrade gracefully. Grows on the weekly `ingest-osm` cron.
+
+## Tooling (local audits)
+
+Installed in `/tmp` for this sandbox (not committed): **Lighthouse** + **pa11y** (axe runner), driven against `localhost:5173` via the Playwright Chromium at `/opt/pw-browsers/chromium-1223/chrome-linux64/chrome` (set `CHROME_PATH`). Baseline (May 2026): index.html Perf 68 / A11y 96 / Best-practices 96 / SEO 100.
+
+**Open audit findings (not yet fixed):**
+- **CLS ~0.5 on index** — largely sandbox-inflated (the 2s Supabase timeout makes the Tonight/This-week skeleton→content swap land late). Verify with real network timing before fixing; if real, match skeleton heights to rendered content.
+- **pa11y/Discover**: 8× color-contrast (the muted-mono editorial palette — a deliberate tradeoff to weigh), 3× `list` (browse-row `<li role="button">` breaks `ul`→`li` semantics; needs `<ul role="list"><li><button>` refactor in `discover.js` browse rendering). The map zoom-control `aria-prohibited-attr` was fixed (added `role="group"`).
+- **Perf**: minify JS/CSS + unused CSS — build-step concerns; Cloudflare Pages auto-minify covers most given the no-build philosophy.
 
 ---
 
