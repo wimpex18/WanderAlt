@@ -32,6 +32,18 @@
   let nhoodFilter = new Set();  /* neighborhood names; empty = all */
   let textQuery  = '';          /* free-text filter */
 
+  /* Places mode — when on, the map renders an injected set of venues
+     (already filtered by discover.js) instead of filtered picks. Set via
+     MapView.setPlaces(); cleared whenever setFilters() runs (events). */
+  let placesMode  = false;
+  let placeEntries = [];
+
+  /* Resolve an entry by id from whichever layer is active. */
+  function findEntry(id) {
+    const src = placesMode ? placeEntries : (window.WA?.catalog || []);
+    return src.find(e => e.id === id);
+  }
+
   // ── DOM refs (set in boot) ────────────────────────────────────
   let viewport, pinsEl, sheetEl, detailEl;
   let _reclusterTimer = null;
@@ -43,6 +55,8 @@
     'exhibition': 'culture', 'gallery': 'culture',
     'record store': 'vinyl', 'bookshop': 'vinyl',
     'thrift': 'market',
+    /* venue-only kinds (Places mode) */
+    'cinema': 'film', 'arts centre': 'culture', 'community': 'culture',
   };
   function normaliseKind(k) { return KIND_MAP[k] || k; }
 
@@ -79,6 +93,10 @@
   }
 
   function getVisibleEntries() {
+    /* Places mode: discover.js already filtered the venues; show all of
+       them that have coordinates. No "empty until filtered" gate — a
+       finite venue set is scannable, unlike 100+ event pins. */
+    if (placesMode) return placeEntries.filter(e => e.lat != null && e.lng != null);
     if (!isAnyFilterActive()) return [];
     const q = textQuery.toLowerCase();
     const catalog = window.WA?.catalog || [];
@@ -217,7 +235,7 @@
     /* Toggle the empty-state hint: shown when no filters are active so
        users understand why the map is bare. */
     const hint = document.getElementById('map-empty-hint');
-    if (hint) hint.hidden = isAnyFilterActive();
+    if (hint) hint.hidden = placesMode || isAnyFilterActive();
 
     pinsEl.innerHTML = clusters.map(cl =>
       cl.single ? pinHTML(cl.entries[0]) : clusterPinHTML(cl)
@@ -231,7 +249,7 @@
         activeId = (activeId === id) ? null : id;
         renderPins();
         if (activeId) {
-          const entry = (window.WA?.catalog || []).find(e => e.id === activeId);
+          const entry = findEntry(activeId);
           if (entry) openDetail(entry);
         } else {
           closeDetail();
@@ -270,7 +288,7 @@
   }
 
   function focusPin(id) {
-    const entry = (window.WA?.catalog || []).find(e => e.id === id);
+    const entry = findEntry(id);
     if (!entry || entry.lat == null || entry.lng == null) return false;
     activeId = id;
     const T = window.WA?.MapTiles;
@@ -285,8 +303,43 @@
     return true;
   }
 
-  // ── Detail sheet / panel (unchanged from before) ─────────────
+  // ── Detail sheet / panel ─────────────────────────────────────
+  /* Minimalist social glyphs (mirror discover.js's set) for the venue
+     detail panel — website / Facebook / Instagram, currentColor. */
+  const DETAIL_SOCIAL = {
+    website:   '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7.25"/><path d="M2.75 10h14.5M10 2.75c2 2.2 2 12.3 0 14.5M10 2.75c-2 2.2-2 12.3 0 14.5"/></svg>',
+    facebook:  '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12.4 6.6h1.85M11 17V10.4m0 0V8.2c0-1 .7-1.6 1.6-1.6m-1.6 3.8H8.9m2.1 0h1.9"/></svg>',
+    instagram: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3.25" y="3.25" width="13.5" height="13.5" rx="4"/><circle cx="10" cy="10" r="3.1"/><circle cx="14" cy="6" r=".5" fill="currentColor" stroke="none"/></svg>',
+  };
+
+  /* Venue (Places) detail — a permanent place, not a dated pick: no
+     curator quote, no "I'm going", no bookmark. Name + kind + hood +
+     social links. */
+  function venueDetailHTML(entry) {
+    const kind = normaliseKind(entry.kind);
+    const catC = window.WA?.MAP_CAT || {};
+    const c = catC[kind] || { bg:'#444', label: entry.kind };
+    const meta = [entry.neighborhood, entry.kind].filter(Boolean).join(' · ');
+    const social = (k, url) => url
+      ? `<a class="venue-social__link" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${entry.title} on ${k}">${DETAIL_SOCIAL[k]}</a>`
+      : '';
+    const links = [
+      social('website', entry.website), social('facebook', entry.facebook), social('instagram', entry.instagram),
+    ].filter(Boolean).join('');
+    return `<div class="map-detail__head">
+        <span class="map-detail__eyebrow">${c.label || entry.kind}</span>
+        <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
+      </div>
+      <h2 class="map-detail__title"><a href="place.html?id=${encodeURIComponent(entry.id)}">${entry.title}</a></h2>
+      <p class="meta">${meta}</p>
+      ${links ? `<p class="venue-social venue-social--detail">${links}</p>` : ''}
+      <nav class="map-detail__more" aria-label="Place">
+        <a class="map-detail__more-link map-detail__more-link--list" href="place.html?id=${encodeURIComponent(entry.id)}">View place &rarr;</a>
+      </nav>`;
+  }
+
   function detailHTML(entry) {
+    if (entry.isVenue) return venueDetailHTML(entry);
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg:'#444', fg:'#fff', label: entry.kind };
@@ -557,11 +610,22 @@
   window.WA = window.WA || {};
   window.WA.MapView = {
     setFilters({ q, time, cats, mood, nhoods } = {}) {
+      placesMode = false;          /* back to the events layer */
       if (q      !== undefined) textQuery   = q;
       if (time   !== undefined) timeFilter  = time;
       if (cats   !== undefined) catFilters  = new Set(cats);
       if (mood   !== undefined) moodFilter  = Array.isArray(mood) ? [...mood] : [];
       if (nhoods !== undefined) nhoodFilter = new Set(nhoods);
+    },
+    /* Places layer: render an already-filtered venue set as pins. */
+    setPlaces(venues = []) {
+      placesMode  = true;
+      placeEntries = venues.map(v => ({
+        id: v.id, title: v.name, kind: v.kind,
+        lat: v.lat, lng: v.lng, neighborhood: v.neighborhood,
+        website: v.website, facebook: v.facebook, instagram: v.instagram,
+        isVenue: true,
+      }));
     },
     render:      () => renderPins(),
     fitView:     () => {

@@ -1130,15 +1130,25 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .curator-rows {
   border-top: var(--rule-w) solid var(--c-rule);
 }
+/* .curator-row / .browse-row are <button>s inside <li> (real button
+   semantics + keyboard activation, and the <ul> keeps proper list
+   structure). Reset the button chrome back to a plain editorial row. */
 .curator-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: var(--s-4);
   align-items: baseline;
-  padding: var(--s-4) 0;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
   border-bottom: var(--rule-w) solid var(--c-rule);
+  padding: var(--s-4) 0;
+  font: inherit;
+  color: inherit;
 }
-.curator-row:last-child { border-bottom: 0; }
+.curator-rows li:last-child .curator-row { border-bottom: 0; }
+.curator-row:focus-visible { outline: 2px solid var(--c-accent); outline-offset: -2px; }
 .curator-row__handle {
   font-family: var(--ff-mono);
   font-size: 13px;
@@ -1179,11 +1189,18 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   grid-template-columns: 1fr auto;
   gap: var(--s-4);
   align-items: baseline;
-  padding: var(--s-3) 0;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
   border-bottom: var(--rule-w) solid var(--c-rule);
+  padding: var(--s-3) 0;
+  font: inherit;
+  color: inherit;
   cursor: pointer;
 }
-.browse-row:last-child { border-bottom: 0; }
+.browse-rows li:last-child .browse-row { border-bottom: 0; }
+.browse-row:focus-visible { outline: 2px solid var(--c-accent); outline-offset: -2px; }
 .browse-row__label {
   font-family: var(--ff-body);
   font-size: 15px;
@@ -1464,6 +1481,9 @@ body[data-page="saved"] .colophon {
   border-bottom: var(--rule-w) solid var(--c-rule);
   margin-bottom: var(--s-5);
 }
+/* Onboarded users: hide the banner before first paint (class set by the
+   inline <head> script) so it never reserves space — no layout shift. */
+html.wa-taste-done .taste-onboarding { display: none; }
 .taste-onboarding__intro {
   margin: var(--s-1) 0 var(--s-4);
   max-width: 56ch;
@@ -2985,6 +3005,13 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   background: var(--c-paper-deep);
   border: var(--rule-w) solid var(--c-rule);
   border-radius: var(--radius-card);
+  /* Reserve ~the rendered Tonight card height so the skeleton→card swap
+     doesn't shift the page below it (the main remaining CLS source).
+     A typical card runs ~500px mobile / ~560px desktop. */
+  min-height: 502px;
+}
+@media (min-width: 768px) {
+  .skeleton-tonight { min-height: 560px; }
 }
 .skeleton-tonight__badge {
   width: 88px; height: 22px;
@@ -4435,23 +4462,59 @@ a.handle:hover { color: var(--c-ink); }
   .discover-view-fab { display: none; }
 }
 
-/* Places mode is list-led for now (the map module is events/pick-coupled;
-   venue pins on the map are the next step). So in Places:
-   - hide the AI "ask in plain English" link (it matches picks only)
-   - hide the mobile map FAB
-   - on desktop, collapse the split so the venue list fills the column. */
+/* Places reuses the list + map (venue pins via MapView.setPlaces), but
+   two Events-only affordances don't apply:
+   - the AI "ask in plain English" link matches picks only
+   - mood tags live on picks, not venues — hide the mood strip. */
 body.discover-places .discover-search__ai { display: none; }
-body.discover-places .discover-view-fab   { display: none; }
-body.discover-places .discover-pane--map   { display: none; }
-/* Mood tags live on picks, not venues — hide the mood strip in Places. */
-body.discover-places .mood-chips           { display: none; }
-@media (min-width: 1024px) {
-  body.discover-places .discover-panes { grid-template-columns: minmax(0, 1fr); }
-}
+body.discover-places .mood-chips          { display: none; }
 
 /* Venue (Places) list row — same rhythm as event rows but no curator
    quote line, so tighten the vertical spacing a touch. */
 .list-row--venue .list-row__title span { color: var(--c-ink); }
+
+/* Social glyph row on venue cards — quiet by default, petrol on hover.
+   Icons are inline SVG with currentColor so they inherit the link tint. */
+.venue-social {
+  display: flex;
+  gap: var(--s-3);
+  margin: 6px 0 0;
+}
+.venue-social__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-ink-mute);
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.venue-social__link:hover { color: var(--c-accent); }
+@media (hover: hover) {
+  .venue-social__link:hover { transform: translateY(-1px); }
+}
+.venue-social__link:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+/* Slightly more breathing room when the social row sits in a detail
+   panel or on the standalone place page. */
+.venue-social--detail { gap: var(--s-4); margin-top: var(--s-3); }
+
+/* Place page — map affordance links + empty-events note. */
+.place-maplinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  margin: var(--s-3) 0 0;
+}
+.place-maplink {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+}
+.place-maplink:hover { color: var(--c-ink); }
+.place-no-events { margin-top: var(--s-4); color: var(--c-ink-mute); }
 
 /* ── View-toggle FAB (mobile) ───────────────────────────────── */
 .discover-view-fab {

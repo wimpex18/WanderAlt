@@ -56,6 +56,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
+  <!-- Anti-CLS: decide the taste-banner's visibility BEFORE first paint.
+       The banner ships visible (the common first-visit, not-onboarded
+       case), so non-onboarded users see no pop-in. Onboarded users get
+       it hidden here synchronously, so it never reserves space and there
+       is no layout shift either way. Mirrors taste.js isOnboarded(). -->
+  <script>try{if(localStorage.getItem('wa-taste-onboarded')==='1')document.documentElement.classList.add('wa-taste-done');}catch(e){}</script>
   <script defer src="./catalog.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
@@ -117,7 +123,7 @@
     <!-- Taste-profile onboarding — appears below Tonight so editorial voice
          lands first. Shown only when the user hasn't onboarded yet. -->
     <section class="taste-onboarding" id="taste-onboarding"
-             aria-labelledby="taste-onboarding-label" hidden>
+             aria-labelledby="taste-onboarding-label">
       <p id="taste-onboarding-label" class="eyebrow">A quick taste check</p>
       <p class="taste-onboarding__intro meta">
         Three taps. We&rsquo;ll bias the briefing to what you like &mdash;

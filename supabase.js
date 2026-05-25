@@ -130,6 +130,8 @@
     imageUrl:     proxifyImage(r.image_url) || null,
     imageAttr:    r.image_attr || null,
     website:      r.website || null,
+    facebook:     r.facebook || null,
+    instagram:    r.instagram || null,
   });
 
   const dispatch = () =>
@@ -170,7 +172,7 @@
       get(
         `venues`,
         `status=eq.active` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram` +
         `&order=name.asc`,
         abort.signal
       ),

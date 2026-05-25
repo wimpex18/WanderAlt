@@ -164,17 +164,36 @@
   };
   const venueKindLabel = (k) => VENUE_KIND_LABELS[k] || (k ? k[0].toUpperCase() + k.slice(1) : '');
 
+  /* Minimalist, single-path social glyphs (currentColor, no fills) so
+     they sit quietly in the editorial palette and tint petrol on hover.
+     globe = website, f = Facebook, camera = Instagram. */
+  const SOCIAL_SVG = {
+    website: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10" cy="10" r="7.25"/><path d="M2.75 10h14.5M10 2.75c2 2.2 2 12.3 0 14.5M10 2.75c-2 2.2-2 12.3 0 14.5"/></svg>',
+    facebook: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12.4 6.6h1.85M11 17V10.4m0 0V8.2c0-1 .7-1.6 1.6-1.6m-1.6 3.8H8.9m2.1 0h1.9"/></svg>',
+    instagram: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.25" y="3.25" width="13.5" height="13.5" rx="4"/><circle cx="10" cy="10" r="3.1"/><circle cx="14" cy="6" r=".5" fill="currentColor" stroke="none"/></svg>',
+  };
+  const socialLink = (kind, url, name) => url
+    ? `<a class="venue-social__link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(name)} on ${kind}">${SOCIAL_SVG[kind]}</a>`
+    : '';
+
   /* A place is a permanent venue, not a dated pick — no curator quote.
-     Card shows name, kind + neighborhood, and a website link (the
-     primary action until venue detail pages land). */
+     Card shows name, kind + neighborhood, and a small row of social
+     glyphs (website / Facebook / Instagram) when present. */
   const renderVenueRow = (v) => {
     const meta = [v.neighborhood, venueKindLabel(v.kind)].filter(Boolean).join(' · ');
-    const site = v.website
-      ? `<a class="list-row__map" href="${esc(v.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(v.name)} website">website &rarr;</a>`
+    const links = [
+      socialLink('website',   v.website,   v.name),
+      socialLink('facebook',  v.facebook,  v.name),
+      socialLink('instagram', v.instagram, v.name),
+    ].filter(Boolean).join('');
+    const social = links ? `<p class="venue-social">${links}</p>` : '';
+    const onMap = (v.lat != null && v.lng != null)
+      ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map &rarr;</a>`
       : '';
     return `<li class="list-row list-row--venue" data-id="${esc(v.id)}">
-       <p class="list-row__title"><span>${esc(v.name)}</span>${site}</p>
+       <p class="list-row__title"><a href="place.html?id=${encodeURIComponent(v.id)}">${esc(v.name)}</a>${onMap}</p>
        <p class="list-row__meta">${esc(meta)}</p>
+       ${social}
      </li>`;
   };
 
@@ -229,6 +248,16 @@
     }
     renderVenueList(list);
     renderApplied();
+
+    /* Drive the map's Places layer with the same filtered set (pins on
+       load — a finite venue set is scannable). setPlaces stashes the
+       state the map reads on its own boot, so call it even before the
+       map is ready; only render/fit once it is. */
+    const mv = window.WA && window.WA.MapView;
+    if (mv && mv.setPlaces) {
+      mv.setPlaces(list);
+      if (mv.isReady()) { mv.render(); mv.fitView(); }
+    }
   };
 
   /* ── Browse sections (populated from live catalog) ───── */
@@ -256,11 +285,11 @@
       if (metaEl) metaEl.textContent = `${curators.length} writer${curators.length !== 1 ? 's' : ''}`;
       if (listEl) { listEl.removeAttribute('aria-busy'); listEl.innerHTML = curators.map(([handle, n]) => {
         const bio = BIOS[handle];
-        return `<li class="curator-row" role="button" tabindex="0" data-search="${esc(handle)}">
+        return `<li><button type="button" class="curator-row" data-search="${esc(handle)}">
           <span class="curator-row__handle">${esc(handle)}</span>
           ${bio ? `<span class="curator-row__quote">&mdash; ${esc(bio)}</span>` : ''}
           <span class="curator-row__count">${n}</span>
-        </li>`;
+        </button></li>`;
       }).join(''); }
     }
 
@@ -273,10 +302,10 @@
       if (metaEl) metaEl.textContent = `${nhoods.length} area${nhoods.length !== 1 ? 's' : ''}`;
       if (listEl) listEl.removeAttribute('aria-busy');
       if (listEl) listEl.innerHTML = nhoods.map(([name, n]) =>
-        `<li class="browse-row" role="button" tabindex="0" data-nhood="${esc(name)}">
+        `<li><button type="button" class="browse-row" data-nhood="${esc(name)}">
           <span class="browse-row__label">${esc(name)}</span>
           <span class="browse-row__count">${n} picks</span>
-        </li>`
+        </button></li>`
       ).join('');
     }
 
@@ -290,10 +319,10 @@
       if (listEl) listEl.removeAttribute('aria-busy');
       if (listEl) listEl.innerHTML = kinds.map(([kind, n]) => {
         const label = KIND_LABELS[kind] || (kind.charAt(0).toUpperCase() + kind.slice(1));
-        return `<li class="browse-row" role="button" tabindex="0" data-search="${esc(kind)}">
+        return `<li><button type="button" class="browse-row" data-search="${esc(kind)}">
           <span class="browse-row__label">${esc(label)}</span>
           <span class="browse-row__count">${n}</span>
-        </li>`;
+        </button></li>`;
       }).join('');
     }
   };
@@ -390,9 +419,7 @@
     if (input) {
       input.placeholder = places ? 'Search places…' : 'Search anything…';
     }
-    /* Mobile map FAB + desktop map pane are events-only for v1. */
     document.body.classList.toggle('discover-places', places);
-    if (places && state.view === 'map') { state.view = 'list'; reflectView(); }
     buildSortOptions();
   };
 

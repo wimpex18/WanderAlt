@@ -357,6 +357,24 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 - **Venue/curator pages**: rendered client-side from `catalog.js` via URL params. Deep links require JS to be enabled.
 - **No `alt` on real images**: `image_url` thumbnails apply as CSS `background-image`; `aria-label` on the wrapper `.thumb` span is the accessible substitute. Worth revisiting if the approach moves to `<img>` elements.
 - **Pin/label collisions**: at certain aspect ratios, pin teardrops can visually overlap the SVG neighborhood labels. Cosmetic only; labels are `aria-hidden`.
+- **Standalone venue page**: a venue's info now lives in the Discover map detail panel (`venueDetailHTML` — name/kind/neighborhood/social). There is no dedicated venue page with "events here" nested (the RA/Maps pattern) yet — a follow-up.
+- **Venue social coverage is sparse**: `website` ~57% of alt venues, `facebook`/`instagram` only where OSM tagged them (~20/~12 live). Icons degrade gracefully. Grows on the weekly `ingest-osm` cron.
+
+## Tooling (local audits)
+
+Installed in `/tmp` for this sandbox (not committed): **Lighthouse** + **pa11y** (axe runner), driven against `localhost:5173` via the Playwright Chromium at `/opt/pw-browsers/chromium-1223/chrome-linux64/chrome` (set `CHROME_PATH`). MapLibre can be made to work offline by route-intercepting the unpkg JS/CSS and stubbing `tiles.openfreemap.org` (sprites→empty, planet→empty vector source) — that's how the Places venue-pin layer was verified without network.
+
+Index.html after the May-2026 pass: **Perf 81 / A11y 96 / Best-practices 96 / SEO 100 / CLS 0.109** (was Perf 68 / CLS 0.503).
+
+**Fixed this pass:**
+- **CLS 0.503 → 0.109.** Root cause was NOT the Supabase timeout (briefing.js renders from the static catalog synchronously). It was two post-first-paint DOM mutations: (1) the taste-onboarding banner revealed by JS (+253px) and (2) the Tonight skeleton (424px) → card (501px) swap. Fixes: the banner now ships **visible** and an inline `<head>` script hides it pre-paint for onboarded users (`html.wa-taste-done`), eliminating the reveal shift for both cohorts; and `.skeleton-tonight` got a `min-height` (~502px mobile / ~560px desktop) matching a typical card. New visitors on a fast connection now measure CLS 0.
+- **Browse-row `list` (3×)** — fixed: curator/browse rows are now `<li><button class="curator-row|browse-row">` (real button semantics + native keyboard activation; the `<ul>` keeps proper list structure). Button chrome reset in CSS.
+- **Map zoom-control `aria-prohibited-attr`** — fixed (`role="group"`).
+
+**Still open:**
+- **pa11y/Discover: 8× color-contrast** — the muted-mono editorial palette (`--c-ink-mute` on newsprint at small sizes). A deliberate aesthetic tradeoff; revisit only if WCAG AA on body-meta text becomes a requirement.
+- **CLS 0.109** — borderline "good"; the residue is sub-pixel/font reflow. Deterministic card height (e.g., clamping the Tonight quote) would close it.
+- **Perf**: minify JS/CSS + unused CSS — build-step concerns; Cloudflare Pages auto-minify covers most given the no-build philosophy.
 
 ---
 
