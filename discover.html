@@ -128,6 +128,38 @@
       <!-- List pane ------------------------------------------------- -->
       <div class="discover-pane discover-pane--list" data-pane="list">
 
+        <!-- Filters. Mobile: a bottom sheet opened by "+ Filters" (position
+             fixed, so its place in the list pane is irrelevant there).
+             Desktop ≥1024px: a persistent left-rail atop the list column
+             (static, always visible, live-apply, "+ Filters"/Apply hidden). -->
+        <aside class="discover-sheet" id="discover-sheet" aria-label="Filters" hidden>
+          <div class="discover-sheet__handle" aria-hidden="true"></div>
+          <header class="discover-sheet__head">
+            <h2 class="discover-sheet__title">Filters</h2>
+            <button class="discover-sheet__close" id="discover-sheet-close" type="button" aria-label="Close">&times;</button>
+          </header>
+          <div class="discover-sheet__body">
+            <fieldset class="discover-sheet__field">
+              <legend class="eyebrow">Category</legend>
+              <div class="discover-sheet__chips" id="discover-cat-chips"></div>
+            </fieldset>
+            <fieldset class="discover-sheet__field">
+              <legend class="eyebrow">Neighborhood</legend>
+              <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
+            </fieldset>
+            <fieldset class="discover-sheet__field">
+              <legend class="eyebrow">Sort</legend>
+              <!-- Radio list, not a <select> (Baymard: visible options beat a
+                   dropdown under ~5 choices). Options populated per mode. -->
+              <div class="discover-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
+            </fieldset>
+          </div>
+          <footer class="discover-sheet__foot">
+            <button class="discover-sheet__clear" id="discover-sheet-clear" type="button">Clear all</button>
+            <button class="btn-primary discover-sheet__apply" id="discover-sheet-apply" type="button">Apply</button>
+          </footer>
+        </aside>
+
         <!-- AI match results — populated by discover.js when AI mode is active. -->
         <section class="match-wrap" id="discover-match-wrap" aria-label="AI match results" hidden>
           <div class="match-result" id="discover-match-result" aria-live="polite"></div>
@@ -274,37 +306,9 @@
 
   </main>
 
-  <!-- Filter sheet (slides up from bottom on mobile, from left on desktop). -->
+  <!-- Mobile filter sheet backdrop (the sheet itself lives inside the
+       list pane so it can become a persistent left-rail on desktop). -->
   <div class="discover-sheet-backdrop" id="discover-sheet-backdrop" hidden></div>
-  <aside class="discover-sheet" id="discover-sheet" aria-label="All filters" hidden>
-    <div class="discover-sheet__handle" aria-hidden="true"></div>
-    <header class="discover-sheet__head">
-      <h2 class="discover-sheet__title">Filters</h2>
-      <button class="discover-sheet__close" id="discover-sheet-close" type="button" aria-label="Close">&times;</button>
-    </header>
-    <div class="discover-sheet__body">
-      <fieldset class="discover-sheet__field">
-        <legend class="eyebrow">Category</legend>
-        <div class="discover-sheet__chips" id="discover-cat-chips"></div>
-      </fieldset>
-      <fieldset class="discover-sheet__field">
-        <legend class="eyebrow">Neighborhood</legend>
-        <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
-      </fieldset>
-      <fieldset class="discover-sheet__field">
-        <legend class="eyebrow">Sort</legend>
-        <!-- A radio list, not a <select>: Baymard recommends visible
-             options over a dropdown when there are <~5 choices. Options
-             are populated per mode by discover.js (Events → Relevance /
-             Soonest; Places → Featured / Nearest). -->
-        <div class="discover-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
-      </fieldset>
-    </div>
-    <footer class="discover-sheet__foot">
-      <button class="discover-sheet__clear" id="discover-sheet-clear" type="button">Clear all</button>
-      <button class="btn-primary discover-sheet__apply" id="discover-sheet-apply" type="button">Apply</button>
-    </footer>
-  </aside>
 
   <nav class="nav" aria-label="Primary">
     <div class="nav__inner">

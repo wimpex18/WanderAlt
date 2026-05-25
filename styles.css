@@ -4739,22 +4739,30 @@ body.discover-sheet-open { overflow: hidden; }
 
 /* ── Desktop split presentation ─────────────────────────────── */
 @media (min-width: 1024px) {
+  /* Persistent filter rail at the top of the list column — no sheet, no
+     "+ Filters" trigger, no Apply (changes apply live). A wide split-view
+     has room to keep filters visible (Baymard desktop guidance). */
   .discover-sheet {
-    left: 0;
-    right: auto;
-    top: 0;
-    bottom: 0;
-    width: 360px;
+    position: static;
+    width: auto;
     max-height: none;
-    border-top: 0;
-    border-right: 1px solid var(--c-rule-strong);
-    animation: discover-sheet-slide-right 180ms ease-out;
+    border: 0;
+    border-bottom: var(--rule-w) solid var(--c-rule);
+    border-radius: 0;
+    margin: 0 0 var(--s-4);
+    animation: none;
+    z-index: auto;
   }
-  @keyframes discover-sheet-slide-right {
-    from { transform: translateX(-100%); }
-    to   { transform: translateX(0); }
-  }
-  .discover-sheet__handle { display: none; }
+  .discover-sheet[hidden] { display: flex !important; }   /* always visible */
+  .discover-sheet__body  { overflow: visible; padding: var(--s-4) 0 0; }
+  .discover-sheet__head  { padding: 0 0 var(--s-2); border-bottom: 0; }
+  .discover-sheet__handle,
+  .discover-sheet__close,
+  .discover-sheet__foot,
+  .discover-pill--more,
+  .discover-sheet-backdrop { display: none !important; }
+  /* Desktop never locks body scroll for the (now inline) filters. */
+  body.discover-sheet-open { overflow: auto; }
 }
 
 /* ── Print: hide all filter chrome and the map pane ────────── */
