@@ -4761,9 +4761,24 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-sheet__foot,
   .discover-pill--more,
   .discover-sheet-backdrop { display: none !important; }
+  /* Rail reset, shown only when a filter is active (calm at rest). */
+  .discover-sheet__clear-top:not([hidden]) { display: inline-block; }
   /* Desktop never locks body scroll for the (now inline) filters. */
   body.discover-sheet-open { overflow: auto; }
 }
+/* Mobile never shows the header clear (the sheet footer has "Clear all"). */
+.discover-sheet__clear-top {
+  display: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+}
+.discover-sheet__clear-top:hover { color: var(--c-accent); }
 
 /* ── Print: hide all filter chrome and the map pane ────────── */
 @media print {

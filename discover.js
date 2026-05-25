@@ -395,11 +395,14 @@
       btn.classList.toggle('discover-pill--on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    const n = state.cats.size + state.nhoods.size + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
     if (filterCount && filtersBtn) {
-      const n = state.cats.size + state.nhoods.size + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
       if (n > 0) { filterCount.hidden = false; filterCount.textContent = String(n); }
       else       { filterCount.hidden = true; }
     }
+    /* Desktop rail's "Clear" appears only when something is active. */
+    const railClear = document.getElementById('discover-rail-clear');
+    if (railClear) railClear.hidden = n === 0;
   };
 
   /* Reflect the active scope (events | places) across the chrome:
@@ -898,7 +901,7 @@
       if (state.type === 'places' && state.sort === 'nearest') ensureLocation(run);
       else run();
     });
-    document.getElementById('discover-sheet-clear')?.addEventListener('click', () => {
+    const clearFilters = () => {
       state.cats.clear();
       state.nhoods.clear();
       state.sort = DEFAULT_SORT[state.type];
@@ -909,7 +912,9 @@
       writeUrlState();
       run();
       updateApplyCount();
-    });
+    };
+    document.getElementById('discover-sheet-clear')?.addEventListener('click', clearFilters);  /* mobile footer */
+    document.getElementById('discover-rail-clear')?.addEventListener('click', clearFilters);   /* desktop rail header */
 
     /* Keyword input. */
     input.addEventListener('input', () => {
