@@ -4453,6 +4453,30 @@ body.discover-places .mood-chips           { display: none; }
    quote line, so tighten the vertical spacing a touch. */
 .list-row--venue .list-row__title span { color: var(--c-ink); }
 
+/* Social glyph row on venue cards — quiet by default, petrol on hover.
+   Icons are inline SVG with currentColor so they inherit the link tint. */
+.venue-social {
+  display: flex;
+  gap: var(--s-3);
+  margin: 6px 0 0;
+}
+.venue-social__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-ink-mute);
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.venue-social__link:hover { color: var(--c-accent); }
+@media (hover: hover) {
+  .venue-social__link:hover { transform: translateY(-1px); }
+}
+.venue-social__link:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 /* ── View-toggle FAB (mobile) ───────────────────────────────── */
 .discover-view-fab {
   position: fixed;
