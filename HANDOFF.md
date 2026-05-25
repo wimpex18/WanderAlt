@@ -372,8 +372,9 @@ Index.html after the May-2026 pass: **Perf 81 / A11y 96 / Best-practices 96 / SE
 - **Map zoom-control `aria-prohibited-attr`** — fixed (`role="group"`).
 
 **Still open:**
-- **pa11y/Discover: 8× color-contrast** — the muted-mono editorial palette (`--c-ink-mute` on newsprint at small sizes). A deliberate aesthetic tradeoff; revisit only if WCAG AA on body-meta text becomes a requirement.
-- **CLS 0.109** — borderline "good"; the residue is sub-pixel/font reflow. Deterministic card height (e.g., clamping the Tonight quote) would close it.
+- **pa11y/Discover: 8× color-contrast — axe false-positives.** The flagged nodes are `#map-empty-hint` text + the zoom buttons, which are `--c-ink`/`--c-ink-soft` (near-black, >15:1 on cream). They sit over the map canvas, so axe can't resolve the background and flags conservatively. Not real failures. (Separately, `--c-ink-mute` was darkened #71717a→#5c5c66 to clear a genuine 4.36:1 AA fail on real meta text.)
+- **CLS 0.109** — borderline "good". Diagnosed as small, timing-sensitive skeleton-swap noise under throttling, NOT the Tonight quote (the card height is consistent). Deliberately did NOT clamp the curator quote — voice is the product, and clamping wouldn't fix the residual anyway.
+- **Filter/sort micro-design (done May 2026):** active pills + sheet chips now carry a leading "✓" (WCAG 1.4.1 — selection no longer color-only); pills got a 44px invisible tap-target inset; the sort `<select>` became a visible 2-row radio list (Baymard: no dropdowns under ~5 options). **Remaining from the research:** (1) on desktop ≥1024px promote the filter sheet to a persistent left rail (a sheet is a mobile pattern on a wide canvas) and drop the "+ Filters" trigger there; (2) keep filter chips text-only, but the **map pins** could use distinct per-venue-kind Lucide glyphs (currently coarse via `KIND_MAP`) — icons belong on pins, not chips, for this text-forward brand.
 - **Perf**: minify JS/CSS + unused CSS — build-step concerns; Cloudflare Pages auto-minify covers most given the no-build philosophy.
 
 ---

@@ -11,7 +11,10 @@
   --c-paper-deep:   #fafaf9;
   --c-ink:          #0a0a0c;
   --c-ink-soft:     #1f1f23;
-  --c-ink-mute:     #71717a;
+  /* Muted ink for meta/eyebrows. Darkened from #71717a (4.36:1, failed
+     WCAG AA on newsprint) to #5c5c66 — 5.96:1 on #f6f3ec, 6.6:1 on
+     white — so 12-13px meta text passes AA while staying clearly muted. */
+  --c-ink-mute:     #5c5c66;
   --c-rule:         #e7e5e4;
   --c-rule-strong:  #d4d4d4;
   --c-accent:       oklch(0.42 0.07 195);   /* deep petrol */
@@ -4312,8 +4315,11 @@ a.handle:hover { color: var(--c-ink); }
 }
 .discover-pills::-webkit-scrollbar { display: none; }
 .discover-pill {
+  position: relative;       /* anchor the invisible hit-area expander */
   flex: 0 0 auto;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
@@ -4324,6 +4330,13 @@ a.handle:hover { color: var(--c-ink); }
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
+/* Expand the tap target to ~44px tall without inflating the visual pill
+   (Material 3 / Apple HIG min touch target). */
+.discover-pill::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
+}
 .discover-pill:hover { border-color: var(--c-accent); color: var(--c-accent); }
 .discover-pill--on {
   background: var(--c-accent);
@@ -4331,6 +4344,16 @@ a.handle:hover { color: var(--c-ink); }
   border-color: var(--c-accent);
 }
 .discover-pill--on:hover { color: var(--c-paper); }
+/* Active state must not rely on color alone (WCAG 1.4.1). A leading
+   checkmark marks selection in grayscale / for color-blind users. */
+.discover-pill--on::before {
+  content: "✓";
+  margin-right: 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+/* The "+ Filters" pill is a disclosure, not a selectable filter — no check. */
+.discover-pill--more::before { content: none; }
 .discover-pill--more {
   display: inline-flex;
   align-items: center;
@@ -4644,7 +4667,10 @@ body.discover-places .mood-chips          { display: none; }
   gap: var(--s-2);
 }
 .sheet-chip {
-  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;                 /* roomier tap target in the sheet */
+  padding: 6px 12px;
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
@@ -4660,29 +4686,37 @@ body.discover-places .mood-chips          { display: none; }
   color: var(--c-paper);
   border-color: var(--c-ink);
 }
+/* Non-color selection cue (WCAG 1.4.1) — matches the quick-pill check. */
+.sheet-chip--on::before {
+  content: "✓";
+  margin-right: 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+/* Sort is a radio list (visible options, one tap) rather than a select. */
 .discover-sort {
-  position: relative;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.discover-sort__opt {
+  display: flex;
   align-items: center;
-}
-.discover-sort select {
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
-  padding: 6px 28px 6px 10px;
-  border: 1px solid var(--c-rule-strong);
-  background: var(--c-paper);
+  gap: var(--s-3);
+  min-height: 40px;
+  padding: 0 4px;
+  cursor: pointer;
+  font-family: var(--ff-body);
+  font-size: 15px;
   color: var(--c-ink);
-  appearance: none;
 }
-.discover-sort .search-sort__chev {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  pointer-events: none;
+.discover-sort__opt input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-accent);
+  cursor: pointer;
 }
+.discover-sort__opt:hover .discover-sort__label { color: var(--c-accent); }
 .discover-sheet__foot {
   display: flex;
   gap: var(--s-2);
