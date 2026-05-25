@@ -187,8 +187,11 @@
       socialLink('instagram', v.instagram, v.name),
     ].filter(Boolean).join('');
     const social = links ? `<p class="venue-social">${links}</p>` : '';
+    const onMap = (v.lat != null && v.lng != null)
+      ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map &rarr;</a>`
+      : '';
     return `<li class="list-row list-row--venue" data-id="${esc(v.id)}">
-       <p class="list-row__title"><span>${esc(v.name)}</span></p>
+       <p class="list-row__title"><a href="place.html?id=${encodeURIComponent(v.id)}">${esc(v.name)}</a>${onMap}</p>
        <p class="list-row__meta">${esc(meta)}</p>
        ${social}
      </li>`;

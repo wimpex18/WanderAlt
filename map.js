@@ -330,9 +330,12 @@
         <span class="map-detail__eyebrow">${c.label || entry.kind}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
-      <h2 class="map-detail__title">${entry.title}</h2>
+      <h2 class="map-detail__title"><a href="place.html?id=${encodeURIComponent(entry.id)}">${entry.title}</a></h2>
       <p class="meta">${meta}</p>
-      ${links ? `<p class="venue-social venue-social--detail">${links}</p>` : ''}`;
+      ${links ? `<p class="venue-social venue-social--detail">${links}</p>` : ''}
+      <nav class="map-detail__more" aria-label="Place">
+        <a class="map-detail__more-link map-detail__more-link--list" href="place.html?id=${encodeURIComponent(entry.id)}">View place &rarr;</a>
+      </nav>`;
   }
 
   function detailHTML(entry) {

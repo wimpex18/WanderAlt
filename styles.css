@@ -4469,6 +4469,25 @@ body.discover-places .mood-chips          { display: none; }
   outline-offset: 2px;
   border-radius: 3px;
 }
+/* Slightly more breathing room when the social row sits in a detail
+   panel or on the standalone place page. */
+.venue-social--detail { gap: var(--s-4); margin-top: var(--s-3); }
+
+/* Place page — map affordance links + empty-events note. */
+.place-maplinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  margin: var(--s-3) 0 0;
+}
+.place-maplink {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+}
+.place-maplink:hover { color: var(--c-ink); }
+.place-no-events { margin-top: var(--s-4); color: var(--c-ink-mute); }
 
 /* ── View-toggle FAB (mobile) ───────────────────────────────── */
 .discover-view-fab {
