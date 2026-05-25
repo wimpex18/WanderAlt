@@ -293,16 +293,11 @@
       </fieldset>
       <fieldset class="discover-sheet__field">
         <legend class="eyebrow">Sort</legend>
-        <label class="discover-sort">
-          <!-- Options are populated per mode by discover.js:
-               Events → Relevance / Soonest; Places → Featured / Nearest.
-               A->Z and By-curator were dropped (over-engineered for a
-               curated set; curator already exists as a browse section). -->
-          <select id="discover-sort"></select>
-          <span class="search-sort__chev" aria-hidden="true">
-            <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5"/></svg>
-          </span>
-        </label>
+        <!-- A radio list, not a <select>: Baymard recommends visible
+             options over a dropdown when there are <~5 choices. Options
+             are populated per mode by discover.js (Events → Relevance /
+             Soonest; Places → Featured / Nearest). -->
+        <div class="discover-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
       </fieldset>
     </div>
     <footer class="discover-sheet__foot">

@@ -428,9 +428,16 @@
     if (!sortEl) return;
     const opts = SORT_OPTS[state.type] || SORT_OPTS.events;
     if (!opts.some(([v]) => v === state.sort)) state.sort = DEFAULT_SORT[state.type];
-    sortEl.innerHTML = opts
-      .map(([v, label]) => `<option value="${v}"${v === state.sort ? ' selected' : ''}>${label}</option>`)
-      .join('');
+    /* Radio list (not a <select>): all options visible, one tap. */
+    sortEl.innerHTML = opts.map(([v, label]) =>
+      `<label class="discover-sort__opt">
+         <input type="radio" name="discover-sort-radio" value="${v}"${v === state.sort ? ' checked' : ''}>
+         <span class="discover-sort__label">${esc(label)}</span>
+       </label>`).join('');
+  };
+  const selectedSort = () => {
+    const sel = sortEl && sortEl.querySelector('input[name="discover-sort-radio"]:checked');
+    return sel ? sel.value : DEFAULT_SORT[state.type];
   };
 
   /* ── Map sync ───────────────────────────────────────── */
@@ -859,7 +866,7 @@
     /* Sheet footer. Places + "Nearest" needs the visitor's location, so
        request it lazily before running (falls back to Featured if denied). */
     document.getElementById('discover-sheet-apply')?.addEventListener('click', () => {
-      if (sortEl) state.sort = sortEl.value;
+      state.sort = selectedSort();
       reflectPills();
       writeUrlState();
       closeSheet();
