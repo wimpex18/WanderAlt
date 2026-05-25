@@ -4435,19 +4435,12 @@ a.handle:hover { color: var(--c-ink); }
   .discover-view-fab { display: none; }
 }
 
-/* Places mode is list-led for now (the map module is events/pick-coupled;
-   venue pins on the map are the next step). So in Places:
-   - hide the AI "ask in plain English" link (it matches picks only)
-   - hide the mobile map FAB
-   - on desktop, collapse the split so the venue list fills the column. */
+/* Places reuses the list + map (venue pins via MapView.setPlaces), but
+   two Events-only affordances don't apply:
+   - the AI "ask in plain English" link matches picks only
+   - mood tags live on picks, not venues — hide the mood strip. */
 body.discover-places .discover-search__ai { display: none; }
-body.discover-places .discover-view-fab   { display: none; }
-body.discover-places .discover-pane--map   { display: none; }
-/* Mood tags live on picks, not venues — hide the mood strip in Places. */
-body.discover-places .mood-chips           { display: none; }
-@media (min-width: 1024px) {
-  body.discover-places .discover-panes { grid-template-columns: minmax(0, 1fr); }
-}
+body.discover-places .mood-chips          { display: none; }
 
 /* Venue (Places) list row — same rhythm as event rows but no curator
    quote line, so tighten the vertical spacing a touch. */

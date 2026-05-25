@@ -245,6 +245,16 @@
     }
     renderVenueList(list);
     renderApplied();
+
+    /* Drive the map's Places layer with the same filtered set (pins on
+       load — a finite venue set is scannable). setPlaces stashes the
+       state the map reads on its own boot, so call it even before the
+       map is ready; only render/fit once it is. */
+    const mv = window.WA && window.WA.MapView;
+    if (mv && mv.setPlaces) {
+      mv.setPlaces(list);
+      if (mv.isReady()) { mv.render(); mv.fitView(); }
+    }
   };
 
   /* ── Browse sections (populated from live catalog) ───── */
@@ -406,9 +416,7 @@
     if (input) {
       input.placeholder = places ? 'Search places…' : 'Search anything…';
     }
-    /* Mobile map FAB + desktop map pane are events-only for v1. */
     document.body.classList.toggle('discover-places', places);
-    if (places && state.view === 'map') { state.view = 'list'; reflectView(); }
     buildSortOptions();
   };
 
