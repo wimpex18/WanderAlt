@@ -362,11 +362,18 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 ## Tooling (local audits)
 
-Installed in `/tmp` for this sandbox (not committed): **Lighthouse** + **pa11y** (axe runner), driven against `localhost:5173` via the Playwright Chromium at `/opt/pw-browsers/chromium-1223/chrome-linux64/chrome` (set `CHROME_PATH`). Baseline (May 2026): index.html Perf 68 / A11y 96 / Best-practices 96 / SEO 100.
+Installed in `/tmp` for this sandbox (not committed): **Lighthouse** + **pa11y** (axe runner), driven against `localhost:5173` via the Playwright Chromium at `/opt/pw-browsers/chromium-1223/chrome-linux64/chrome` (set `CHROME_PATH`). MapLibre can be made to work offline by route-intercepting the unpkg JS/CSS and stubbing `tiles.openfreemap.org` (sprites→empty, planet→empty vector source) — that's how the Places venue-pin layer was verified without network.
 
-**Open audit findings (not yet fixed):**
-- **CLS ~0.5 on index** — largely sandbox-inflated (the 2s Supabase timeout makes the Tonight/This-week skeleton→content swap land late). Verify with real network timing before fixing; if real, match skeleton heights to rendered content.
-- **pa11y/Discover**: 8× color-contrast (the muted-mono editorial palette — a deliberate tradeoff to weigh), 3× `list` (browse-row `<li role="button">` breaks `ul`→`li` semantics; needs `<ul role="list"><li><button>` refactor in `discover.js` browse rendering). The map zoom-control `aria-prohibited-attr` was fixed (added `role="group"`).
+Index.html after the May-2026 pass: **Perf 81 / A11y 96 / Best-practices 96 / SEO 100 / CLS 0.109** (was Perf 68 / CLS 0.503).
+
+**Fixed this pass:**
+- **CLS 0.503 → 0.109.** Root cause was NOT the Supabase timeout (briefing.js renders from the static catalog synchronously). It was two post-first-paint DOM mutations: (1) the taste-onboarding banner revealed by JS (+253px) and (2) the Tonight skeleton (424px) → card (501px) swap. Fixes: the banner now ships **visible** and an inline `<head>` script hides it pre-paint for onboarded users (`html.wa-taste-done`), eliminating the reveal shift for both cohorts; and `.skeleton-tonight` got a `min-height` (~502px mobile / ~560px desktop) matching a typical card. New visitors on a fast connection now measure CLS 0.
+- **Browse-row `list` (3×)** — fixed: curator/browse rows are now `<li><button class="curator-row|browse-row">` (real button semantics + native keyboard activation; the `<ul>` keeps proper list structure). Button chrome reset in CSS.
+- **Map zoom-control `aria-prohibited-attr`** — fixed (`role="group"`).
+
+**Still open:**
+- **pa11y/Discover: 8× color-contrast** — the muted-mono editorial palette (`--c-ink-mute` on newsprint at small sizes). A deliberate aesthetic tradeoff; revisit only if WCAG AA on body-meta text becomes a requirement.
+- **CLS 0.109** — borderline "good"; the residue is sub-pixel/font reflow. Deterministic card height (e.g., clamping the Tonight quote) would close it.
 - **Perf**: minify JS/CSS + unused CSS — build-step concerns; Cloudflare Pages auto-minify covers most given the no-build philosophy.
 
 ---
