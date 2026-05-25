@@ -36,7 +36,7 @@ All custom properties live in `:root` in `styles.css` lines 8–64. Changing a v
 | `--ff-body` | `'Geist', -apple-system, system-ui, sans-serif` | All running text, headings, nav labels |
 | `--ff-mono` | `'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace` | Eyebrows, meta strings, handles, counts |
 
-Google Fonts load string: `family=DM+Serif+Display:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500`
+Fonts are **self-hosted** (woff2, Latin subset) in `/fonts`, declared via `@font-face` at the top of `styles.css` (`font-display: swap`). Was Google Fonts via `<link>` — self-hosting removed the `fonts.gstatic.com` third-party origin (honours the about.html "no third-party" promise + drops a render-blocking connection). Weights: Geist 400/500/600/700, Geist Mono 400/500, DM Serif Display 400 normal+italic. To add a weight: download the Latin woff2, add a `@font-face`.
 
 ### Type scale
 

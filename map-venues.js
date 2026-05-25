@@ -14,28 +14,27 @@ WA.MAP_CATEGORIES = [
   { id: 'free',    label: 'Free entry' },
 ];
 
-/* Map-pin colours keyed by normalised category bucket (see normaliseKind
-   in map.js). Read by pinHTML / clusterPinHTML / detailHTML as
-   window.WA.MAP_CAT — {bg, fg, label}; white glyph on a mid-dark fill.
+/* Map-pin colours keyed by normalised category bucket. Read by pinHTML /
+   clusterPinHTML / detailHTML as window.WA.MAP_CAT — {bg, fg, label}.
 
-   BRAND NOTE: this is a deliberate, owner-approved evolution beyond the
-   strict two-tone rule (CLAUDE.md). It is a MUTED, desaturated "print-ink"
-   palette — faded editorial tones, NOT bright app colours — used ONLY on
-   map pins (never in page chrome, which stays petrol + lime + ink). Music
-   keeps the brand petrol as its anchor; lime stays reserved for the
-   live/active pin state. Keep these low-chroma + mid-dark so they read as
-   a cohesive risograph family and white glyphs stay legible. */
+   Per the 2026 research (and the two-tone brand rule), category color
+   reads "app, not weekly" — so pins stay the single brand petrol and the
+   per-kind GLYPH carries category differentiation (The-Economist
+   discipline: differentiate by form, not hue). Lime is reserved for the
+   live/active pin state (CSS), never the resting fill. The labels here
+   still feed the detail-panel eyebrow. */
+const PIN_BG = '#055959', PIN_FG = '#ffffff';
 WA.MAP_CAT = {
-  music:    { bg: '#055959', fg: '#ffffff', label: 'Music' },          /* brand petrol */
-  culture:  { bg: '#5b4a63', fg: '#ffffff', label: 'Cultural space' }, /* muted aubergine */
-  vinyl:    { bg: '#7a5a3c', fg: '#ffffff', label: 'Vinyl & books' },  /* muted tobacco */
-  market:   { bg: '#586b46', fg: '#ffffff', label: 'Flea & market' },  /* muted moss */
-  film:     { bg: '#44506b', fg: '#ffffff', label: 'Cinema' },         /* muted slate */
-  drink:    { bg: '#7a5540', fg: '#ffffff', label: 'Craft beer' },     /* muted coffee */
-  food:     { bg: '#6b6256', fg: '#ffffff', label: 'Food' },           /* muted taupe */
-  festival: { bg: '#884f5b', fg: '#ffffff', label: 'Festival' },       /* muted rose-brown */
-  art:      { bg: '#3f6b62', fg: '#ffffff', label: 'Street art' },     /* muted teal */
-  default:  { bg: '#44454d', fg: '#ffffff', label: '' },               /* neutral graphite */
+  music:    { bg: PIN_BG, fg: PIN_FG, label: 'Music' },
+  culture:  { bg: PIN_BG, fg: PIN_FG, label: 'Cultural space' },
+  vinyl:    { bg: PIN_BG, fg: PIN_FG, label: 'Vinyl & books' },
+  market:   { bg: PIN_BG, fg: PIN_FG, label: 'Flea & market' },
+  film:     { bg: PIN_BG, fg: PIN_FG, label: 'Cinema' },
+  drink:    { bg: PIN_BG, fg: PIN_FG, label: 'Craft beer' },
+  food:     { bg: PIN_BG, fg: PIN_FG, label: 'Food' },
+  festival: { bg: PIN_BG, fg: PIN_FG, label: 'Festival' },
+  art:      { bg: PIN_BG, fg: PIN_FG, label: 'Street art' },
+  default:  { bg: PIN_BG, fg: PIN_FG, label: '' },
 };
 
 WA.MAP_DISTRICTS = [
