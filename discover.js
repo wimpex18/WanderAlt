@@ -36,7 +36,7 @@
   const DEFAULT_SORT = { events: 'relevance', places: 'featured' };
 
   /* ── DOM refs ───────────────────────────────────────────── */
-  let input, matchToggle, matchWrap, matchResult, matchAgain,
+  let input, matchToggle, matchWrap, matchResult, matchAgain, copyLinkBtn,
       resultsSection, resultsList, resultsCount, emptyState,
       sheet, sheetBackdrop, filtersBtn, filterCount,
       catChipsEl, nhoodChipsEl, sortEl,
@@ -608,6 +608,31 @@
   };
 
   /* ── AI "match me" mode ─────────────────────────────── */
+
+  /* Sync all mode-specific DOM state from the current state object.
+     Called by setMode() and also directly from popstate so the DOM
+     always reflects the restored URL without running side-effects. */
+  const reflectModeDOM = () => {
+    const isMatch = state.mode === 'match';
+    const wrap = document.querySelector('.discover-search');
+    if (wrap) wrap.dataset.mode = state.mode;
+    if (matchToggle) matchToggle.setAttribute('aria-pressed', isMatch ? 'true' : 'false');
+    /* Body class hides pills + mood strip in AI mode (they do nothing there). */
+    document.body.classList.toggle('discover-ai-mode', isMatch);
+    if (input) {
+      input.placeholder = isMatch ? 'Describe your night…'
+        : (state.type === 'places' ? 'Search places…' : 'Search anything…');
+      input.setAttribute('enterkeyhint', isMatch ? 'go' : 'search');
+    }
+  };
+
+  /* Show the example-prompt row only when AI mode is active AND the field
+     is empty — so it doesn't compete with the user's own text. */
+  const reflectAiExamples = () => {
+    const el = document.getElementById('discover-ai-examples');
+    if (el) el.hidden = !(state.mode === 'match' && !input.value);
+  };
+
   const renderMatchHero = (pick, why) => {
     const imgUrl   = pick.imageUrl || pick.image_url || null;
     const initials = pick.thumbInitials || pick.thumb_initials
@@ -647,8 +672,22 @@
   const runMatch = async (prompt) => {
     if (!matchWrap || !matchResult) return;
     matchWrap.hidden = false;
-    if (matchAgain) matchAgain.hidden = true;
-    matchResult.innerHTML = '<p class="match-loading">Matching&hellip;</p>';
+    if (matchAgain)   matchAgain.hidden   = true;
+    if (copyLinkBtn)  copyLinkBtn.hidden  = true;
+    /* Skeleton mirrors the hero card layout so the page doesn't shift
+       when the result arrives. Static — no animation per brand brief. */
+    matchResult.innerHTML = `
+      <div class="match-skeleton" role="status" aria-label="Matching…">
+        <div class="match-skeleton__quote"></div>
+        <div class="match-skeleton__attr"></div>
+        <div class="match-skeleton__venue">
+          <div class="match-skeleton__thumb-sq"></div>
+          <div class="match-skeleton__venue-text">
+            <div class="match-skeleton__name"></div>
+            <div class="match-skeleton__sub"></div>
+          </div>
+        </div>
+      </div>`;
 
     const base = window.WA && window.WA.BASE_URL;
     const city = (window.WA && window.WA.CITY) || 'tallinn';
@@ -672,7 +711,13 @@
         ? data.hits
         : (data.pick ? [{ pick: data.pick, why: data.pick.why || '' }] : []);
       if (!hits.length) {
-        matchResult.innerHTML = `<p class="match-error">No curated picks match &ldquo;${esc(prompt)}&rdquo;.</p>`;
+        matchResult.innerHTML = `
+          <p class="match-error">No curated picks match &ldquo;${esc(prompt)}&rdquo;.</p>
+          <p class="match-error-hint">Try:
+            <button type="button" class="discover-ai-example discover-ai-example--inline" data-prompt="quiet wine bar tonight">quiet wine bar tonight</button> &middot;
+            <button type="button" class="discover-ai-example discover-ai-example--inline" data-prompt="vinyl and late night dancing">vinyl &amp; dancing</button> &middot;
+            <button type="button" class="discover-ai-example discover-ai-example--inline" data-prompt="something free this week">something free</button>
+          </p>`;
         return;
       }
       const [first, ...rest] = hits;
@@ -681,7 +726,8 @@
         ? `<ol class="match-list list-rows" role="list">${rest.map(h => renderMatchSecondary(h.pick, h.why)).join('')}</ol>`
         : '';
       matchResult.innerHTML = hero + list;
-      if (matchAgain) matchAgain.hidden = false;
+      if (matchAgain)  matchAgain.hidden  = false;
+      if (copyLinkBtn) copyLinkBtn.hidden = false;
       if (window.WA?.taste) {
         window.WA.taste.recordSeen(hits.map(h => h.pick?.id).filter(Boolean));
       }
@@ -692,22 +738,17 @@
 
   const setMode = (newMode) => {
     state.mode = newMode;
-    const wrap = document.querySelector('.discover-search');
-    if (wrap) wrap.dataset.mode = newMode;
+    reflectModeDOM();
     if (newMode === 'match') {
-      input.placeholder = 'Tell me what you want…';
-      input.setAttribute('enterkeyhint', 'go');
-      if (matchToggle) matchToggle.textContent = '← back to keyword';
       resultsSection.hidden = true;
       browseSects.forEach(s => { s.hidden = true; });
     } else {
-      input.placeholder = 'Search anything…';
-      input.setAttribute('enterkeyhint', 'search');
-      if (matchToggle) matchToggle.textContent = 'ask in plain English →';
-      if (matchWrap) matchWrap.hidden = true;
+      if (matchWrap)  matchWrap.hidden  = true;
       if (matchAgain) matchAgain.hidden = true;
+      if (copyLinkBtn) copyLinkBtn.hidden = true;
       run();
     }
+    reflectAiExamples();
     writeUrlState();
   };
 
@@ -774,6 +815,7 @@
     matchWrap      = document.getElementById('discover-match-wrap');
     matchResult    = document.getElementById('discover-match-result');
     matchAgain     = document.getElementById('discover-match-again');
+    copyLinkBtn    = document.getElementById('discover-match-copy-link');
     resultsSection = document.getElementById('discover-results-section');
     resultsList    = document.getElementById('discover-results');
     resultsCount   = document.getElementById('discover-results-count');
@@ -815,7 +857,9 @@
         state.ai   = '';
         state.sort = DEFAULT_SORT[t];
         reflectType();
+        reflectModeDOM();
         reflectPills();
+        reflectAiExamples();
         writeUrlState();
         run();
       });
@@ -922,10 +966,12 @@
     clearBtn?.addEventListener('click', () => {
       input.value = '';
       reflectClear();
+      reflectAiExamples();
       if (state.mode === 'match') {
         state.ai = '';
-        if (matchWrap) matchWrap.hidden = true;
-        if (matchAgain) matchAgain.hidden = true;
+        if (matchWrap)   matchWrap.hidden   = true;
+        if (matchAgain)  matchAgain.hidden  = true;
+        if (copyLinkBtn) copyLinkBtn.hidden = true;
       } else {
         state.q = '';
       }
@@ -937,6 +983,7 @@
     /* Keyword input. */
     input.addEventListener('input', () => {
       reflectClear();
+      reflectAiExamples();
       if (state.mode === 'match') return;
       state.q = input.value.trim();
       writeUrlState();
@@ -965,6 +1012,40 @@
         if (prompt) runMatch(prompt);
       });
     }
+
+    /* Copy-link button — copies the current URL (which already has ?mode=match&ai=…)
+       to the clipboard. Shows a brief "✓ Copied" label then reverts. */
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText(window.location.href).then(() => {
+          copyLinkBtn.classList.add('match-copy-link--copied');
+          const label = copyLinkBtn.childNodes[copyLinkBtn.childNodes.length - 1]; /* text node */
+          const orig = label.textContent;
+          label.textContent = ' ✓ Copied';
+          setTimeout(() => {
+            label.textContent = orig;
+            copyLinkBtn.classList.remove('match-copy-link--copied');
+          }, 2000);
+        });
+      });
+    }
+
+    /* Example prompt clicks — appear in the empty-state bar and in the
+       match-error hint copy. Tap to pre-fill the field and run AI match. */
+    document.addEventListener('click', (e) => {
+      const ex = e.target.closest('.discover-ai-example[data-prompt]');
+      if (ex) {
+        const prompt = ex.dataset.prompt;
+        input.value = prompt;
+        if (state.mode !== 'match') setMode('match'); /* setMode calls reflectModeDOM + reflectAiExamples */
+        state.ai = prompt;
+        writeUrlState();
+        runMatch(prompt);
+        reflectClear();
+        reflectAiExamples();
+        return;
+      }
+    });
 
     /* Browse-row clicks: curators set ?q=, neighborhoods toggle the nhood filter,
        kinds set ?q= so multi-word kinds resolve via keyword search.            */
@@ -1044,9 +1125,12 @@
     /* Seed mode from URL (input value already set above). */
     if (state.mode === 'match' && state.ai) {
       input.value = state.ai;
-      setMode('match');
+      setMode('match');   /* calls reflectModeDOM + reflectAiExamples */
+    } else {
+      reflectModeDOM();   /* ensure DOM matches URL-seeded search mode */
     }
-    reflectClear();   /* reflect any URL-seeded ?q= / ?ai= value */
+    reflectClear();       /* reflect any URL-seeded ?q= / ?ai= value */
+    reflectAiExamples();  /* hide examples unless AI mode + empty field */
 
     /* Browser back/forward: re-read the URL and re-render so filter state,
        view, and active pin all match whatever the history entry says.      */
@@ -1054,6 +1138,8 @@
       readUrlState();
       input.value = state.q || (state.mode === 'match' ? state.ai : '');
       reflectClear();
+      reflectModeDOM();
+      reflectAiExamples();
       if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
       reflectPills();
       reflectView();

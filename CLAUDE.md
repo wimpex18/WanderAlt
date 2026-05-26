@@ -233,13 +233,15 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 
 ## LLM model policy (do not deviate)
 
-- **Gemini:** `gemini-2.5-flash` everywhere. `-pro` and `gemini-2.0-flash` return 404 — never use them.
-  - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
+- **Gemini:** `gemini-3.5-flash` (GA May 19 2026) is the current text model. `gemini-2.5-flash` still works as a fallback; `-pro` and `gemini-2.0-flash` return 404 — never use them. Embeddings stay on `gemini-embedding-001` (do not "upgrade" embeddings to a flash model).
+  - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_KEY}`
 - **Groq:** primary `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`. Used in `match-pick` and as fallback in `process-staging`.
 - Current per-function status:
-  - `process-staging` → Gemini 2.5 Flash + Groq fallback
-  - `draft-column`, `generate-context`, `send-digest`, `enrich-venues` → Gemini 2.5 Flash
-  - `match-pick` → Groq only (v8 — always `find_many`, topK=5; `find_one` mode removed)
+  - `process-staging` → Gemini 3.5 Flash (v33, no thinkingConfig — 3.5 classifies accurately without it) + Groq fallback. JSON output via `responseMimeType`.
+  - `draft-column` (v12) and `generate-context` (v9) → Gemini 3.5 Flash **+ Search grounding** (`tools: [{ googleSearch: {} }]`), so weekly columns and per-pick "why this matters" reference real current context. `generate-context` only grounds picks with `context_md IS NULL`, so cost tracks daily ingest volume, not the whole catalogue.
+  - `send-digest` (v9) → Gemini 3.5 Flash (weekly email intro, no grounding)
+  - `enrich-venues` → **no LLM** — Wikidata + Nominatim + Google Places (venue facts/photos/closure), not a Gemini function
+  - `embed-picks` / `match-pick` → embeddings on `gemini-embedding-001`; `match-pick` does ranking on Groq only (v8 — always `find_many`, topK=5; `find_one` mode removed)
   - `geocode-picks` → Nominatim primary, Google Places fallback. Backfills `picks.lat/lng` for any active pick missing coords. Invoke ad-hoc: `POST /functions/v1/geocode-picks {"city":"tallinn","limit":50}`. Inherently location-less picks (`venue ILIKE '%various%'`) should be nulled manually after — they geocode to a meaningless point.
 
 ## Cloud-session notes

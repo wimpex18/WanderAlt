@@ -1109,12 +1109,27 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   flex-shrink: 0;
   display: flex;
 }
-/* AI-mode affordance: the leading glyph swaps from magnifier to a
-   sparkle when "ask in plain English" is active, so the mode is obvious
-   at a glance — not only via the placeholder/toggle text. */
-.search-box__icon--ai { display: none; }
-.discover-search[data-mode="match"] .search-box__icon--search { display: none; }
-.discover-search[data-mode="match"] .search-box__icon--ai { display: flex; }
+/* AI toggle button — always-visible right side of the search box.
+   Muted in keyword mode; petrol + border tint signals AI mode is on.
+   Tapping toggles between modes (no separate text link below the field,
+   2026 pattern: field-embedded icon is the sole mode affordance). */
+.search-box__ai-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px 0 -4px 2px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.search-box__ai-btn:hover { color: var(--c-accent); }
+.discover-search[data-mode="match"] .search-box__ai-btn { color: var(--c-accent); }
 .discover-search[data-mode="match"] .search-box { border-color: var(--c-accent); }
 
 /* Clear (×) button — appears once the field has text (JS toggles
@@ -3215,6 +3230,31 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 
 /* Loading state */
+/* Match skeleton — static layout placeholder rendered during the AI fetch.
+   Mirrors the hero card structure (quote line + attr line + thumb + body)
+   so layout doesn't shift when the result arrives. No animation per the
+   restrained-motion brief (the fetch is fast enough; shimmer adds noise). */
+.match-skeleton { padding: var(--s-4) 0; }
+.match-skeleton__quote,
+.match-skeleton__attr,
+.match-skeleton__thumb-sq,
+.match-skeleton__name,
+.match-skeleton__sub {
+  background: var(--c-rule-strong);
+  border-radius: 2px;
+}
+.match-skeleton__quote { height: 22px; width: 75%; margin-bottom: var(--s-3); }
+.match-skeleton__attr  { height: 13px; width: 36%; margin-bottom: var(--s-4); }
+.match-skeleton__venue {
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+}
+.match-skeleton__thumb-sq { width: 56px; height: 56px; flex-shrink: 0; border-radius: 0; }
+.match-skeleton__venue-text { flex: 1; min-width: 0; }
+.match-skeleton__name { height: 16px; width: 58%; margin-bottom: var(--s-2); }
+.match-skeleton__sub  { height: 13px; width: 44%; }
+
 .match-loading {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
@@ -3285,6 +3325,27 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   transition: color var(--t-fast);
 }
 .match-again:hover { color: var(--c-accent); }
+
+/* Copy-link button — sits inline after "Try again", same visual weight.
+   Shows briefly as "✓ Copied" on success (JS swaps the label + class). */
+.match-copy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--s-4);
+  margin-left: var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.match-copy-link:hover { color: var(--c-accent); }
+.match-copy-link--copied { color: var(--c-accent); }
 
 @media (min-width: 768px) {
   .match-card__why { font-size: 44px; }
@@ -4357,20 +4418,53 @@ a.handle:hover { color: var(--c-ink); }
   border-bottom: var(--rule-w) solid var(--c-rule);
 }
 .discover-search__box { width: 100%; }
-.discover-search__ai {
-  display: inline-block;
-  margin-top: var(--s-2);
+/* Hide quick-filter pills + mood strip in AI mode — they have no effect
+   on match-pick results and would mislead the user into thinking they do. */
+.discover-ai-mode .discover-pills { display: none; }
+.discover-ai-mode .mood-chips     { display: none; }
+
+/* Example prompts — tappable query starters shown below the search box
+   when AI mode is active and the field is empty. Teach the natural-
+   language capability without blocking the interface. */
+.discover-ai-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  padding: var(--s-2) 0 var(--s-1);
+}
+.discover-ai-example {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
   color: var(--c-accent);
   background: none;
-  border: 0;
-  padding: 0;
+  border: 1px solid var(--c-rule-strong);
+  border-radius: 2px;
+  padding: 5px 10px;
   cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
-.discover-search__ai:hover { text-decoration: underline; }
-.discover-search[data-mode="match"] .discover-search__ai { color: var(--c-ink-mute); }
+.discover-ai-example:hover {
+  border-color: var(--c-accent);
+  background: var(--c-accent);
+  color: var(--c-paper);
+}
+/* Inline variant used in match-error copy. */
+.discover-ai-example--inline {
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+}
+.discover-ai-example--inline:hover { background: none; color: var(--c-ink); }
+
+/* Hint shown below the no-results error copy in AI mode. */
+.match-error-hint {
+  font-size: var(--fs-meta);
+  color: var(--c-ink-mute);
+  margin-top: var(--s-2);
+}
 
 /* ── Filter pill row (horizontally scrollable) ─────────────── */
 .discover-pills {
@@ -4559,8 +4653,7 @@ a.handle:hover { color: var(--c-ink); }
    two Events-only affordances don't apply:
    - the AI "ask in plain English" link matches picks only
    - mood tags live on picks, not venues — hide the mood strip. */
-body.discover-places .discover-search__ai { display: none; }
-body.discover-places .mood-chips          { display: none; }
+body.discover-places .mood-chips { display: none; }
 
 /* Venue (Places) list row — same rhythm as event rows but no curator
    quote line, so tighten the vertical spacing a touch. */
