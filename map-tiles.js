@@ -11,7 +11,7 @@
    pixels and positions absolute-pinned DOM nodes on top.
 
    Style: a custom editorial style file matching WanderAlt tokens
-   (cream paper, muted sea, oxblood roads, mono labels).
+   (cream paper, muted petrol sea, off-white roads, mono labels).
    ============================================================ */
 (function () {
   'use strict';
