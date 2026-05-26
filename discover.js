@@ -916,8 +916,27 @@
     document.getElementById('discover-sheet-clear')?.addEventListener('click', clearFilters);  /* mobile footer */
     document.getElementById('discover-rail-clear')?.addEventListener('click', clearFilters);   /* desktop rail header */
 
+    /* Clear (×) button: visible only when the field has text. */
+    const clearBtn = document.getElementById('discover-clear');
+    const reflectClear = () => { if (clearBtn) clearBtn.hidden = !input.value; };
+    clearBtn?.addEventListener('click', () => {
+      input.value = '';
+      reflectClear();
+      if (state.mode === 'match') {
+        state.ai = '';
+        if (matchWrap) matchWrap.hidden = true;
+        if (matchAgain) matchAgain.hidden = true;
+      } else {
+        state.q = '';
+      }
+      writeUrlState();
+      run();
+      input.focus();
+    });
+
     /* Keyword input. */
     input.addEventListener('input', () => {
+      reflectClear();
       if (state.mode === 'match') return;
       state.q = input.value.trim();
       writeUrlState();
@@ -1027,12 +1046,14 @@
       input.value = state.ai;
       setMode('match');
     }
+    reflectClear();   /* reflect any URL-seeded ?q= / ?ai= value */
 
     /* Browser back/forward: re-read the URL and re-render so filter state,
        view, and active pin all match whatever the history entry says.      */
     window.addEventListener('popstate', () => {
       readUrlState();
       input.value = state.q || (state.mode === 'match' ? state.ai : '');
+      reflectClear();
       if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
       reflectPills();
       reflectView();

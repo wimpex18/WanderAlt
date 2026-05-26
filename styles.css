@@ -1109,6 +1109,33 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   flex-shrink: 0;
   display: flex;
 }
+/* AI-mode affordance: the leading glyph swaps from magnifier to a
+   sparkle when "ask in plain English" is active, so the mode is obvious
+   at a glance — not only via the placeholder/toggle text. */
+.search-box__icon--ai { display: none; }
+.discover-search[data-mode="match"] .search-box__icon--search { display: none; }
+.discover-search[data-mode="match"] .search-box__icon--ai { display: flex; }
+.discover-search[data-mode="match"] .search-box { border-color: var(--c-accent); }
+
+/* Clear (×) button — appears once the field has text (JS toggles
+   [hidden]). Custom because appearance:none strips the native one. */
+.search-box__clear {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px -4px -4px 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-ink-mute);
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.search-box__clear:hover { color: var(--c-ink); background: var(--c-rule); }
+.search-box__clear[hidden] { display: none; }
 .search-box__kbd {
   font-family: var(--ff-mono);
   font-size: 10px;
@@ -1143,6 +1170,10 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   opacity: 1;
 }
 .search-input:focus-visible { outline: none; }
+/* Hide the native type=search clear (×) — we render our own
+   .search-box__clear, so the native one would double up. */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
 
 .search-section-head {
   display: flex;
