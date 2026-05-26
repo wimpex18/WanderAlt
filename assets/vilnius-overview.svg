@@ -1,0 +1,272 @@
+<?xml version="1.0"?>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" preserveAspectRatio="xMidYMid slice">
+
+  <!-- Background: warm newsprint (same as Tallinn/Helsinki/Riga) -->
+  <rect width="1800" height="1200" fill="#f6f3ec"/>
+
+  <!-- Sky corner fills — upper-left (Baltic air mass) -->
+  <path d="M 0 0 L 520 0 C 440 90 340 200 220 300 C 140 360 60 400 0 420 Z" fill="#d9e2e3"/>
+  <!-- Upper-right -->
+  <path d="M 1800 0 L 1800 160 C 1720 130 1660 90 1600 50 L 1600 0 Z" fill="#d9e2e3"/>
+
+  <!-- Wind-ripple marks in sky -->
+  <g fill="none" stroke="#6e8a90" stroke-width="2" stroke-linecap="round" opacity="0.55">
+    <path d="M 80 150 q 40 -14 80 0 t 80 0"/>
+    <path d="M 60 260 q 40 -14 80 0 t 80 0"/>
+    <path d="M 320 100 q 30 -10 60 0 t 60 0"/>
+    <path d="M 1520 60 q 30 -10 60 0 t 60 0"/>
+    <path d="M 1640 110 q 30 -10 60 0 t 60 0"/>
+    <path d="M 220 500 q 40 -12 80 0 t 80 0"/>
+    <path d="M 900 1050 q 60 -14 120 0 t 120 0 t 120 0"/>
+    <path d="M 400 1110 q 50 -12 100 0 t 100 0"/>
+    <path d="M 1400 1060 q 50 -14 100 0 t 100 0"/>
+  </g>
+
+  <!-- Horizon line (sky/land boundary, upper-left) -->
+  <path d="M 0 420 C 60 400 140 360 220 300 C 340 200 440 90 520 0" fill="none" stroke="#0a0a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Neris River (wide, flowing left-to-right across lower section) -->
+  <path d="M 0 870 C 300 850 600 862 900 868 C 1200 874 1500 858 1800 866 L 1800 950 C 1500 942 1200 958 900 952 C 600 946 300 962 0 944 Z" fill="#d9e2e3"/>
+  <!-- River surface ripples -->
+  <g fill="none" stroke="#6e8a90" stroke-width="1.6" stroke-linecap="round" opacity="0.45">
+    <path d="M 100 896 q 90 -8 180 0 t 180 0 t 180 0 t 180 0 t 180 0 t 180 0"/>
+    <path d="M 60 918 q 80 -7 160 0 t 160 0 t 160 0 t 160 0 t 160 0"/>
+  </g>
+  <!-- River banks -->
+  <path d="M 0 870 C 300 850 600 862 900 868 C 1200 874 1500 858 1800 866" fill="none" stroke="#0a0a0c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 0 944 C 300 962 600 946 900 952 C 1200 958 1500 942 1800 950" fill="none" stroke="#0a0a0c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Castle Hill (Gediminas Hill) — dominant hill left-of-center -->
+  <path d="M 0 780 C 80 740 160 690 260 640 C 340 600 420 568 500 556 C 560 548 600 558 620 580 C 640 604 630 650 610 710 C 590 770 560 820 520 860 C 420 870 200 880 0 880 Z" fill="#c5dec2" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Trees on Castle Hill -->
+  <g fill="#99c298" stroke="#0a0a0c" stroke-width="1.4">
+    <circle cx="90"  cy="748" r="18"/>
+    <circle cx="136" cy="724" r="15"/>
+    <circle cx="188" cy="706" r="17"/>
+    <circle cx="250" cy="680" r="14"/>
+    <circle cx="310" cy="656" r="16"/>
+    <circle cx="420" cy="612" r="13"/>
+    <circle cx="462" cy="600" r="16"/>
+    <circle cx="504" cy="592" r="12"/>
+    <circle cx="560" cy="602" r="11"/>
+  </g>
+
+  <!-- Three Crosses Hill — far right, lower and gentler -->
+  <path d="M 1360 840 C 1420 800 1480 748 1540 700 C 1580 668 1628 642 1676 630 C 1720 620 1764 628 1800 642 L 1800 880 C 1600 880 1400 880 1360 880 Z" fill="#c5dec2" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Trees on Three Crosses Hill -->
+  <g fill="#99c298" stroke="#0a0a0c" stroke-width="1.4">
+    <circle cx="1390" cy="820" r="14"/>
+    <circle cx="1434" cy="796" r="16"/>
+    <circle cx="1488" cy="764" r="18"/>
+    <circle cx="1538" cy="730" r="14"/>
+    <circle cx="1580" cy="700" r="13"/>
+    <circle cx="1628" cy="676" r="15"/>
+    <circle cx="1680" cy="660" r="13"/>
+    <circle cx="1730" cy="660" r="14"/>
+    <circle cx="1774" cy="668" r="12"/>
+  </g>
+
+  <!-- Three Crosses monument (white, silhouette) -->
+  <!-- Center cross (tallest) -->
+  <rect x="1658" y="478" width="10" height="95" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="2.4"/>
+  <rect x="1640" y="508" width="46" height="10" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="2"/>
+  <!-- Left cross -->
+  <rect x="1621" y="492" width="8" height="78" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="2"/>
+  <rect x="1607" y="516" width="36" height="8" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="1.8"/>
+  <!-- Right cross -->
+  <rect x="1697" y="492" width="8" height="78" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="2"/>
+  <rect x="1683" y="516" width="36" height="8" fill="#f6f3ec" stroke="#0a0a0c" stroke-width="1.8"/>
+
+  <!-- ===================== BUILDINGS ===================== -->
+
+  <!-- 1. Gediminas Tower (medieval fortification on hilltop) -->
+  <!-- Shadow/base -->
+  <rect x="226" y="534" width="80" height="6" fill="#0a0a0c" opacity="0.08"/>
+  <!-- Tower body — warm sandstone -->
+  <rect x="228" y="404" width="76" height="132" fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.8"/>
+  <!-- Crenellations (merlons) — 4 merlons, 3 gaps -->
+  <g fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.2">
+    <rect x="228" y="380" width="14" height="26"/>
+    <rect x="252" y="380" width="14" height="26"/>
+    <rect x="276" y="380" width="14" height="26"/>
+    <rect x="300" y="380" width="14" height="26"/>
+    <rect x="324" y="380" width="14" height="26"/>
+  </g>
+  <!-- Arrow slits -->
+  <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+    <rect x="244" y="434" width="8" height="22"/>
+    <rect x="278" y="434" width="8" height="22"/>
+    <rect x="312" y="434" width="8" height="22"/>
+    <rect x="244" y="476" width="8" height="22"/>
+    <rect x="278" y="476" width="8" height="22"/>
+    <rect x="312" y="476" width="8" height="22"/>
+  </g>
+  <!-- Tower plinth -->
+  <rect x="218" y="534" width="96" height="16" fill="#c8b88a" stroke="#0a0a0c" stroke-width="2"/>
+  <!-- Lithuanian flag on the tower (tiny tricolor, the national element per two-mark rule) -->
+  <!-- Flagpole -->
+  <line x1="266" y1="308" x2="266" y2="382" stroke="#0a0a0c" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Flag: yellow / green / red horizontal stripes -->
+  <rect x="266" y="308" width="40" height="10" fill="#fdb913" stroke="#0a0a0c" stroke-width="1"/>
+  <rect x="266" y="318" width="40" height="10" fill="#006a44" stroke="#0a0a0c" stroke-width="1"/>
+  <rect x="266" y="328" width="40" height="10" fill="#c1272d" stroke="#0a0a0c" stroke-width="1"/>
+
+  <!-- 2. Cathedral Belfry (freestanding, neoclassical) — lime accent on spire cap -->
+  <!-- Rusticated base -->
+  <rect x="598" y="802" width="60" height="44" fill="#e2d5b0" stroke="#0a0a0c" stroke-width="2.4"/>
+  <!-- Tall shaft -->
+  <rect x="604" y="500" width="48" height="304" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.6"/>
+  <!-- Classical top story (slightly wider) -->
+  <rect x="596" y="470" width="64" height="34" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.4"/>
+  <!-- Belfry arch opening -->
+  <path d="M 610 476 L 610 494 Q 628 480 646 494 L 646 476 Z" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4"/>
+  <!-- Spire base -->
+  <polygon points="596,470 660,470 628,428" fill="#a4452a" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Spire shaft -->
+  <rect x="624" y="408" width="8" height="22" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6"/>
+  <!-- Spire tip -->
+  <polygon points="623,408 633,408 628,376" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- Lime accent: small diamond cap on belfry spire (lime mark per two-mark rule) -->
+  <polygon points="628,372 634,378 628,384 622,378" fill="#d2dc50" stroke="#0a0a0c" stroke-width="1.4"/>
+  <!-- Belfry windows (pairs) -->
+  <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+    <rect x="614" y="528" width="12" height="18"/>
+    <rect x="630" y="528" width="12" height="18"/>
+    <rect x="614" y="566" width="12" height="18"/>
+    <rect x="630" y="566" width="12" height="18"/>
+    <rect x="614" y="604" width="12" height="18"/>
+    <rect x="630" y="604" width="12" height="18"/>
+    <rect x="614" y="642" width="12" height="18"/>
+    <rect x="630" y="642" width="12" height="18"/>
+    <rect x="614" y="680" width="12" height="18"/>
+    <rect x="630" y="680" width="12" height="18"/>
+    <rect x="614" y="718" width="12" height="18"/>
+    <rect x="630" y="718" width="12" height="18"/>
+    <rect x="614" y="756" width="12" height="18"/>
+    <rect x="630" y="756" width="12" height="18"/>
+  </g>
+
+  <!-- 3. Vilnius Cathedral (wide neoclassical) -->
+  <!-- Ground shadow -->
+  <rect x="680" y="838" width="264" height="8" fill="#0a0a0c" opacity="0.08"/>
+  <!-- Main body -->
+  <rect x="682" y="656" width="260" height="190" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.8"/>
+  <!-- Triangular pediment -->
+  <polygon points="682,656 942,656 812,590" fill="#efe1c4" stroke="#0a0a0c" stroke-width="2.6" stroke-linejoin="round"/>
+  <!-- Portico columns (7 columns) -->
+  <g fill="#e4d5af" stroke="#0a0a0c" stroke-width="1.8">
+    <rect x="700" y="656" width="14" height="190"/>
+    <rect x="732" y="656" width="14" height="190"/>
+    <rect x="764" y="656" width="14" height="190"/>
+    <rect x="796" y="656" width="14" height="190"/>
+    <rect x="828" y="656" width="14" height="190"/>
+    <rect x="860" y="656" width="14" height="190"/>
+    <rect x="892" y="656" width="14" height="190"/>
+  </g>
+  <!-- Cathedral main door (arched) -->
+  <path d="M 794 846 L 794 768 Q 812 750 830 768 L 830 846 Z" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.8"/>
+  <!-- Side chapels -->
+  <rect x="666" y="706" width="18" height="140" fill="#e4d5af" stroke="#0a0a0c" stroke-width="1.8"/>
+  <rect x="940" y="706" width="18" height="140" fill="#e4d5af" stroke="#0a0a0c" stroke-width="1.8"/>
+  <!-- Pediment tympanum circle detail -->
+  <circle cx="812" cy="630" r="16" fill="none" stroke="#0a0a0c" stroke-width="1.6" opacity="0.5"/>
+
+  <!-- 4. St. Anne's Church (red brick Gothic — the most iconic Vilnius building) -->
+  <!-- Ground shadow -->
+  <rect x="1072" y="828" width="154" height="8" fill="#0a0a0c" opacity="0.08"/>
+  <!-- Main nave body -->
+  <rect x="1082" y="610" width="128" height="228" fill="#b54a32" stroke="#0a0a0c" stroke-width="2.8"/>
+  <!-- Central gable: tall pointed Gothic facade -->
+  <polygon points="1082,610 1210,610 1146,520" fill="#b54a32" stroke="#0a0a0c" stroke-width="2.6" stroke-linejoin="round"/>
+  <!-- Central pinnacle spire -->
+  <rect x="1141" y="482" width="10" height="40" fill="#b54a32" stroke="#0a0a0c" stroke-width="1.8"/>
+  <polygon points="1139,482 1153,482 1146,448" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Left tower (thinner) -->
+  <rect x="1060" y="572" width="28" height="196" fill="#b54a32" stroke="#0a0a0c" stroke-width="2.2"/>
+  <polygon points="1058,572 1090,572 1074,526" fill="#a4452a" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Left tower smaller spire -->
+  <rect x="1070" y="510" width="8" height="18" fill="#b54a32" stroke="#0a0a0c" stroke-width="1.6"/>
+  <polygon points="1069,510 1079,510 1074,484" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6"/>
+  <!-- Right tower (thinner) -->
+  <rect x="1204" y="572" width="28" height="196" fill="#b54a32" stroke="#0a0a0c" stroke-width="2.2"/>
+  <polygon points="1202,572 1234,572 1218,526" fill="#a4452a" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Right tower smaller spire -->
+  <rect x="1214" y="510" width="8" height="18" fill="#b54a32" stroke="#0a0a0c" stroke-width="1.6"/>
+  <polygon points="1213,510 1223,510 1218,484" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.6"/>
+  <!-- Facade flanking pinnacles (Gothic detail) -->
+  <g fill="#b54a32" stroke="#0a0a0c" stroke-width="1.4">
+    <rect x="1090" y="548" width="8" height="30"/>
+    <polygon points="1089,548 1099,548 1094,524"/>
+    <rect x="1110" y="540" width="8" height="26"/>
+    <polygon points="1109,540 1119,540 1114,518"/>
+    <rect x="1168" y="540" width="8" height="26"/>
+    <polygon points="1167,540 1177,540 1172,518"/>
+    <rect x="1190" y="548" width="8" height="30"/>
+    <polygon points="1189,548 1199,548 1194,524"/>
+  </g>
+  <!-- Gothic pointed-arch windows -->
+  <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.4">
+    <path d="M 1098 638 L 1098 668 Q 1110 652 1122 668 L 1122 638 Z"/>
+    <path d="M 1130 638 L 1130 668 Q 1142 652 1154 668 L 1154 638 Z"/>
+    <path d="M 1162 638 L 1162 668 Q 1174 652 1186 668 L 1186 638 Z"/>
+    <path d="M 1098 686 L 1098 716 Q 1110 700 1122 716 L 1122 686 Z"/>
+    <path d="M 1130 686 L 1130 716 Q 1142 700 1154 716 L 1154 686 Z"/>
+    <path d="M 1162 686 L 1162 716 Q 1174 700 1186 716 L 1186 686 Z"/>
+    <path d="M 1098 734 L 1098 764 Q 1110 748 1122 764 L 1122 734 Z"/>
+    <path d="M 1130 734 L 1130 764 Q 1142 748 1154 764 L 1154 734 Z"/>
+    <path d="M 1162 734 L 1162 764 Q 1174 748 1186 764 L 1186 734 Z"/>
+  </g>
+  <!-- Horizontal brick-course lines -->
+  <g stroke="#3a2e22" stroke-width="1" opacity="0.35">
+    <line x1="1082" y1="650" x2="1210" y2="650"/>
+    <line x1="1082" y1="700" x2="1210" y2="700"/>
+    <line x1="1082" y1="750" x2="1210" y2="750"/>
+    <line x1="1082" y1="800" x2="1210" y2="800"/>
+  </g>
+
+  <!-- 5. Old Town infill buildings (Baroque / Classicist mix) -->
+  <!-- Building A: just right of belfry -->
+  <rect x="676" y="716" width="12" height="130" fill="#e5b966" stroke="#0a0a0c" stroke-width="1.6"/>
+  <polygon points="676,716 688,716 682,700" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.4"/>
+
+  <!-- Building B: right of Cathedral, left of St Anne -->
+  <rect x="968" y="680" width="60" height="166" fill="#ecc4bd" stroke="#0a0a0c" stroke-width="2.2"/>
+  <polygon points="968,680 1028,680 1028,660 1010,660 1010,642 988,642 988,660 968,660" fill="#ecc4bd" stroke="#0a0a0c" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="988,642 1010,642 999,618" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.8"/>
+  <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+    <rect x="976" y="700" width="12" height="18"/>
+    <rect x="996" y="700" width="12" height="18"/>
+    <rect x="976" y="734" width="12" height="18"/>
+    <rect x="996" y="734" width="12" height="18"/>
+    <rect x="976" y="768" width="12" height="18"/>
+    <rect x="996" y="768" width="12" height="18"/>
+    <rect x="976" y="802" width="12" height="18"/>
+    <rect x="996" y="802" width="12" height="18"/>
+  </g>
+
+  <!-- Building C: Bernardine church area (between St Anne and Three Crosses Hill) -->
+  <rect x="1248" y="650" width="88" height="188" fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.4"/>
+  <polygon points="1248,650 1336,650 1336,626 1316,626 1316,608 1292,608 1292,626 1248,626" fill="#d8c8a4" stroke="#0a0a0c" stroke-width="2.2" stroke-linejoin="round"/>
+  <polygon points="1292,608 1316,608 1304,582" fill="#a4452a" stroke="#0a0a0c" stroke-width="1.8"/>
+  <g fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.2">
+    <rect x="1260" y="672" width="12" height="18"/>
+    <rect x="1284" y="672" width="12" height="18"/>
+    <rect x="1308" y="672" width="12" height="18"/>
+    <rect x="1260" y="708" width="12" height="18"/>
+    <rect x="1284" y="708" width="12" height="18"/>
+    <rect x="1308" y="708" width="12" height="18"/>
+    <rect x="1260" y="744" width="12" height="18"/>
+    <rect x="1284" y="744" width="12" height="18"/>
+    <rect x="1308" y="744" width="12" height="18"/>
+    <rect x="1260" y="780" width="12" height="18"/>
+    <rect x="1284" y="780" width="12" height="18"/>
+    <rect x="1308" y="780" width="12" height="18"/>
+  </g>
+  <!-- Door arched entrance -->
+  <path d="M 1290 838 L 1290 796 Q 1304 780 1318 796 L 1318 838 Z" fill="#3a2e22" stroke="#0a0a0c" stroke-width="1.6"/>
+
+  <!-- Subtle cobblestone ground line -->
+  <path d="M 0 840 C 300 832 600 836 900 840 C 1200 844 1500 836 1800 840" fill="none" stroke="#0a0a0c" stroke-width="1.4" opacity="0.16"/>
+
+</svg>

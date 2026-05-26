@@ -3545,6 +3545,16 @@ window.WA._venuesAll = [
   /* Riga */
   { id:"v-kkc",       city:"riga",     name:"Kaņepes Kultūras centrs",      neighborhood:"Centrs",        kind:"community",    lat:56.9512, lng:24.1146, imageUrl:null, imageAttr:null, website:null, facebook:null, instagram:null },
   { id:"v-kim",       city:"riga",     name:"Kim? Contemporary Art Centre", neighborhood:"Centrs",        kind:"gallery",      lat:56.9430, lng:24.1010, imageUrl:null, imageAttr:null, website:null, facebook:null, instagram:null },
-  { id:"v-roberts",   city:"riga",     name:"Robert's Books",               neighborhood:"Centrs",        kind:"bookshop",     lat:56.9489, lng:24.1180, imageUrl:null, imageAttr:null, website:null, facebook:null, instagram:null }
+  { id:"v-roberts",   city:"riga",     name:"Robert's Books",               neighborhood:"Centrs",        kind:"bookshop",     lat:56.9489, lng:24.1180, imageUrl:null, imageAttr:null, website:null, facebook:null, instagram:null },
+  /* Vilnius — static seed for Places mode offline fallback. Live data
+     will come from ingest-osm once Vilnius is added to the CITIES map
+     (cloud step — not yet deployed). Real venues only; coords from OSM. */
+  { id:"v-loftas",    city:"vilnius",  name:"Loftas",                       neighborhood:"Naujamiestis",  kind:"arts centre",  lat:54.6825, lng:25.2640, imageUrl:null, imageAttr:null, website:"https://loftas.lt", facebook:"https://facebook.com/loftaslt", instagram:"https://instagram.com/loftas.lt" },
+  { id:"v-kablys",    city:"vilnius",  name:"Kablys",                       neighborhood:"Naujamiestis",  kind:"club",         lat:54.6779, lng:25.2821, imageUrl:null, imageAttr:null, website:"https://kablys.eu", facebook:"https://facebook.com/kablys.eu", instagram:null },
+  { id:"v-mint",      city:"vilnius",  name:"Mint Vinetu",                  neighborhood:"Senamiestis",   kind:"bookshop",     lat:54.6835, lng:25.2868, imageUrl:null, imageAttr:null, website:"https://mintvinetu.lt", facebook:null, instagram:"https://instagram.com/mintvinetu" },
+  { id:"v-skalvija",  city:"vilnius",  name:"Skalvija Cinema",              neighborhood:"Naujamiestis",  kind:"cinema",       lat:54.6847, lng:25.2671, imageUrl:null, imageAttr:null, website:"https://skalvija.lt", facebook:"https://facebook.com/skalvijacinema", instagram:null },
+  { id:"v-cac",       city:"vilnius",  name:"Contemporary Art Centre (CAC)","neighborhood":"Senamiestis", kind:"gallery",      lat:54.6834, lng:25.2847, imageUrl:null, imageAttr:null, website:"https://cac.lt", facebook:"https://facebook.com/contemporaryartcentre", instagram:"https://instagram.com/contemporaryartcentre" },
+  { id:"v-neringa",   city:"vilnius",  name:"Neringa",                      neighborhood:"Senamiestis",   kind:"community",    lat:54.6880, lng:25.2762, imageUrl:null, imageAttr:null, website:null, facebook:"https://facebook.com/nida.neringos.baro", instagram:null },
+  { id:"v-tolerancija",city:"vilnius", name:"Tolerancijos centras",         neighborhood:"Senamiestis",   kind:"community",    lat:54.6816, lng:25.2855, imageUrl:null, imageAttr:null, website:"https://jmuseum.lt", facebook:null, instagram:null }
 ];
 window.WA.venues = window.WA._venuesAll.filter(v => v.city === _waCity);

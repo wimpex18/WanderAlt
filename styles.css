@@ -258,6 +258,10 @@ img, svg { display: block; max-width: 100%; }
    buildings into the ribbon. Verified at 390x96 and 1280x120. */
 body[data-city="riga"]     .city-banner__img { object-position: center 56%; }
 body[data-city="helsinki"] .city-banner__img { object-position: center 50%; }
+/* Vilnius: Gediminas Tower on a hill + Cathedral belfry spire. Key landmarks
+   peak at ~y380-480 in the SVG; 50% crop frames them centrally in the ribbon.
+   (Same as Helsinki — both have elevated landmark tips well above the midline.) */
+body[data-city="vilnius"]  .city-banner__img { object-position: center 50%; }
 /* On a narrow viewport the full-bleed crop is naturally taller (the
    image scales to the smaller width), so the base 96px already shows
    the whole skyline — no shrink needed. A 48px ribbon here would clip

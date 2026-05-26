@@ -222,6 +222,15 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
 | (osm) | tallinn + riga + helsinki | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 |
 
+**Vilnius — scaffold ready, cloud deploy pending (May 2026):**
+Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`status: 'coming'`), static venue seed in `catalog.js` (Loftas · Kablys · Mint Vinetu · Skalvija · CAC · Neringa · Tolerancijos centras). The city shows as "Coming soon" in the dropdown but does not load live data.
+Cloud steps needed to go live (do NOT execute without explicit user instruction):
+1. Deploy `ingest-osm` vNext with Vilnius added to its `CITIES` map (bbox `54.5632,25.0319,54.8047,25.4830`).
+2. Research real Vilnius curator Telegram channels; insert `sources` rows once verified.
+3. No `ingest_hel_linkedevents`-equivalent for Vilnius — start with OSM venues + telegram when channels are identified.
+4. Add Vilnius to `geocode-picks` and `enrich-venues` cron coverage (they already run city-agnostic on all active picks — no code change, just ensure the `sources` rows exist).
+5. Flip `status: 'coming'` → `status: 'live'` in `city.js` after DB has content.
+
 **Pipeline flow:**
 `ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
 
