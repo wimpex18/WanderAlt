@@ -1,15 +1,9 @@
 // ============================================================
-// WanderAlt — process-staging  (v31)
-// v31 changes vs v30:
-//   • Reads pipeline_config table on each run:
-//       - skip_keywords  → reject before calling LLM
-//       - venue_whitelist → tell Gemini venue is pre-approved
-//       - keep_signals   → appended to system prompt to bias
-//                          Gemini toward keeping borderline picks
-//   • City now comes from sources.city (was hardcoded 'tallinn')
-//     so Riga picks get city='riga' correctly.
-//   • System prompt is city-aware (neighborhood list differs for
-//     Tallinn vs Riga).
+// WanderAlt — process-staging  (v33)
+// v33 changes vs v32:
+//   • Upgraded to gemini-3.5-flash (GA, May 2026).
+//   • Removed thinkingConfig — 3.5 Flash is accurate enough
+//     for event classification without explicit thinking tokens.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -18,7 +12,7 @@ const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
-const GEMINI_MODEL  = "gemini-2.5-flash";
+const GEMINI_MODEL  = "gemini-3.5-flash";
 const GROQ_MODEL    = "llama-3.3-70b-versatile";
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
@@ -138,16 +132,7 @@ async function callGemini(text: string, tag: string, city: string, keepSignals: 
   const bodyStr = JSON.stringify({
     systemInstruction: { parts: [{ text: systemPrompt(tag, city, keepSignals) }] },
     contents: [{ role: "user", parts: [{ text }] }],
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.3,
-      /* thinkingBudget: 512 tokens lets Gemini reason before judging
-         whether a staging message is genuine alt-culture. Small budget
-         keeps latency low but reduces false positives on edge cases
-         (e.g., Estonian-language posts, mixed-content channels).
-         Gemini 2.5 Flash feature — no effect on older models. */
-      thinkingConfig: { thinkingBudget: 512 },
-    },
+    generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
   });
   const headers = { "Content-Type": "application/json" };
   let res = await fetch(url, { method: "POST", headers, body: bodyStr });

@@ -3326,6 +3326,27 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 .match-again:hover { color: var(--c-accent); }
 
+/* Copy-link button — sits inline after "Try again", same visual weight.
+   Shows briefly as "✓ Copied" on success (JS swaps the label + class). */
+.match-copy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--s-4);
+  margin-left: var(--s-4);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.match-copy-link:hover { color: var(--c-accent); }
+.match-copy-link--copied { color: var(--c-accent); }
+
 @media (min-width: 768px) {
   .match-card__why { font-size: 44px; }
 }

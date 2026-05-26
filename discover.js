@@ -36,7 +36,7 @@
   const DEFAULT_SORT = { events: 'relevance', places: 'featured' };
 
   /* ── DOM refs ───────────────────────────────────────────── */
-  let input, matchToggle, matchWrap, matchResult, matchAgain,
+  let input, matchToggle, matchWrap, matchResult, matchAgain, copyLinkBtn,
       resultsSection, resultsList, resultsCount, emptyState,
       sheet, sheetBackdrop, filtersBtn, filterCount,
       catChipsEl, nhoodChipsEl, sortEl,
@@ -672,7 +672,8 @@
   const runMatch = async (prompt) => {
     if (!matchWrap || !matchResult) return;
     matchWrap.hidden = false;
-    if (matchAgain) matchAgain.hidden = true;
+    if (matchAgain)   matchAgain.hidden   = true;
+    if (copyLinkBtn)  copyLinkBtn.hidden  = true;
     /* Skeleton mirrors the hero card layout so the page doesn't shift
        when the result arrives. Static — no animation per brand brief. */
     matchResult.innerHTML = `
@@ -725,7 +726,8 @@
         ? `<ol class="match-list list-rows" role="list">${rest.map(h => renderMatchSecondary(h.pick, h.why)).join('')}</ol>`
         : '';
       matchResult.innerHTML = hero + list;
-      if (matchAgain) matchAgain.hidden = false;
+      if (matchAgain)  matchAgain.hidden  = false;
+      if (copyLinkBtn) copyLinkBtn.hidden = false;
       if (window.WA?.taste) {
         window.WA.taste.recordSeen(hits.map(h => h.pick?.id).filter(Boolean));
       }
@@ -741,8 +743,9 @@
       resultsSection.hidden = true;
       browseSects.forEach(s => { s.hidden = true; });
     } else {
-      if (matchWrap) matchWrap.hidden = true;
+      if (matchWrap)  matchWrap.hidden  = true;
       if (matchAgain) matchAgain.hidden = true;
+      if (copyLinkBtn) copyLinkBtn.hidden = true;
       run();
     }
     reflectAiExamples();
@@ -812,6 +815,7 @@
     matchWrap      = document.getElementById('discover-match-wrap');
     matchResult    = document.getElementById('discover-match-result');
     matchAgain     = document.getElementById('discover-match-again');
+    copyLinkBtn    = document.getElementById('discover-match-copy-link');
     resultsSection = document.getElementById('discover-results-section');
     resultsList    = document.getElementById('discover-results');
     resultsCount   = document.getElementById('discover-results-count');
@@ -965,8 +969,9 @@
       reflectAiExamples();
       if (state.mode === 'match') {
         state.ai = '';
-        if (matchWrap) matchWrap.hidden = true;
-        if (matchAgain) matchAgain.hidden = true;
+        if (matchWrap)   matchWrap.hidden   = true;
+        if (matchAgain)  matchAgain.hidden  = true;
+        if (copyLinkBtn) copyLinkBtn.hidden = true;
       } else {
         state.q = '';
       }
@@ -1005,6 +1010,23 @@
       matchAgain.addEventListener('click', () => {
         const prompt = (state.ai || input.value).trim();
         if (prompt) runMatch(prompt);
+      });
+    }
+
+    /* Copy-link button — copies the current URL (which already has ?mode=match&ai=…)
+       to the clipboard. Shows a brief "✓ Copied" label then reverts. */
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText(window.location.href).then(() => {
+          copyLinkBtn.classList.add('match-copy-link--copied');
+          const label = copyLinkBtn.childNodes[copyLinkBtn.childNodes.length - 1]; /* text node */
+          const orig = label.textContent;
+          label.textContent = ' ✓ Copied';
+          setTimeout(() => {
+            label.textContent = orig;
+            copyLinkBtn.classList.remove('match-copy-link--copied');
+          }, 2000);
+        });
       });
     }
 
