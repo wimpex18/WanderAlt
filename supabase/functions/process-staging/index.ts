@@ -138,7 +138,16 @@ async function callGemini(text: string, tag: string, city: string, keepSignals: 
   const bodyStr = JSON.stringify({
     systemInstruction: { parts: [{ text: systemPrompt(tag, city, keepSignals) }] },
     contents: [{ role: "user", parts: [{ text }] }],
-    generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.3,
+      /* thinkingBudget: 512 tokens lets Gemini reason before judging
+         whether a staging message is genuine alt-culture. Small budget
+         keeps latency low but reduces false positives on edge cases
+         (e.g., Estonian-language posts, mixed-content channels).
+         Gemini 2.5 Flash feature — no effect on older models. */
+      thinkingConfig: { thinkingBudget: 512 },
+    },
   });
   const headers = { "Content-Type": "application/json" };
   let res = await fetch(url, { method: "POST", headers, body: bodyStr });
