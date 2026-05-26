@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// match-pick  v5  —  hybrid AI search
+// match-pick  v8  —  hybrid AI search (find_many only)
 //
 // 4-stage pipeline:
 //   1. Cache check (match_cache, SWR semantics)
@@ -12,7 +12,6 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // POST body:
 //   { city: 'tallinn'|'helsinki'|'riga',
 //     prompt: string,
-//     mode?: 'find_many' (default, top 5) | 'find_one',
 //     bypass_cache?: boolean }
 //
 // Response (backward-compatible — `pick` is the top hit):
@@ -416,7 +415,7 @@ Deno.serve(async (req: Request) => {
 
   const t0 = Date.now();
   let body: {
-    city?: string; prompt?: string; mode?: string; bypass_cache?: boolean;
+    city?: string; prompt?: string; bypass_cache?: boolean;
     curated_only?: boolean;
     taste?: Record<string, string>;
     liked_ids?: string[]; disliked_ids?: string[]; seen_ids?: string[];
@@ -425,8 +424,7 @@ Deno.serve(async (req: Request) => {
 
   const city         = body.city && ALLOWED_CITIES.has(body.city) ? body.city : 'tallinn';
   const prompt       = (body.prompt || '').trim().slice(0, 400);
-  const mode         = body.mode === 'find_one' ? 'find_one' : 'find_many';
-  const topK         = mode === 'find_one' ? 1 : 5;
+  const topK         = 5;  /* always find_many — find_one was removed */
   const curatedOnly  = body.curated_only === true;
   const ctx: UserContext = {
     taste:        body.taste,
@@ -438,7 +436,7 @@ Deno.serve(async (req: Request) => {
   if (!prompt) return json({ ok: false, error: 'prompt required' }, 400);
 
   const normalized = normalizePrompt(prompt);
-  const hash       = await queryHash(city, prompt, mode, ctx.taste, curatedOnly);
+  const hash       = await queryHash(city, prompt, 'find_many', ctx.taste, curatedOnly);
 
   // ---- 1. Cache check ----
   if (!body.bypass_cache) {

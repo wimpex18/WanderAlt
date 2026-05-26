@@ -407,8 +407,7 @@
 
   /* Reflect the active scope (events | places) across the chrome:
      scope buttons, which pills are visible, sort options, the search
-     placeholder, and the map (events-only for now — Places is list-led;
-     venue pins on the map are the next step). */
+     placeholder, and the map (events-only; Places renders via setPlaces()). */
   const reflectType = () => {
     const places = state.type === 'places';
     document.querySelectorAll('.discover-scope__btn').forEach(b => {
@@ -460,8 +459,7 @@
   /* ── Map sync ───────────────────────────────────────── */
   /* Pushes Discover's filter state into the embedded map view. All five
      filter dimensions (q, time, cats, mood, nhoods) round-trip so the
-     list and map panes show the same set of picks. Mood/nhoods are
-     wired into map.js's getVisibleEntries via Phase 1b.5.                */
+     list and map panes always show the same set of picks.               */
   const syncMap = () => {
     const mv = window.WA && window.WA.MapView;
     if (!mv || !mv.isReady()) return;
@@ -480,8 +478,8 @@
     state.q || state.time !== 'all' || state.cats.size || state.nhoods.size || state.mood.length;
 
   const run = () => {
-    /* Places is a separate, list-led pipeline (venues, no map sync —
-       the map is events-only for now). */
+    /* Places has its own pipeline: runPlaces() filters venues and calls
+       MapView.setPlaces() to render venue pins on the map. */
     if (state.type === 'places') { runPlaces(); return; }
 
     /* Keep the map in sync with every filter change, regardless of mode. */

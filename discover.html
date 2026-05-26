@@ -287,9 +287,10 @@
       </div>
 
       <!-- Map pane -------------------------------------------------- -->
-      <!-- Reuses the existing map.js infrastructure: same DOM IDs the
-           module binds to, so initialisation is identical to map.html.
-           Discover drives the filter state via window.WA.MapView.       -->
+      <!-- map.js binds to these DOM IDs for the pin/cluster layer;
+           map-tiles.js mounts the MapLibre basemap into #map-canvas.
+           Discover drives both via WA.MapView (events) and
+           WA.MapView.setPlaces() (venue pins in Places mode).           -->
       <div class="discover-pane discover-pane--map" data-pane="map">
         <div class="map-viewport" id="map-viewport">
           <div id="map-canvas" class="map-canvas"></div>

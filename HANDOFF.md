@@ -18,7 +18,7 @@ All custom properties live in `:root` in `styles.css` lines 8–64. Changing a v
 | `--c-paper-deep` | `#fafaf9` | Recessed surfaces: search box, seg-tabs container, tonight quote bg |
 | `--c-ink` | `#0a0a0c` | Body text, primary headings, active nav fill |
 | `--c-ink-soft` | `#1f1f23` | Secondary headings, slightly softer body |
-| `--c-ink-mute` | `#71717a` | Meta text, eyebrows, counts, placeholder |
+| `--c-ink-mute` | `#5c5c66` | Meta text, eyebrows, counts, placeholder (darkened from #71717a to clear AA 4.36:1 contrast fail) |
 | `--c-rule` | `#e7e5e4` | Horizontal rules, borders on cards and inputs |
 | `--c-rule-strong` | `#d4d4d4` | Stronger rules where needed (currently spare) |
 | `--c-accent` | `oklch(0.42 0.07 195)` | Deep petrol — handles, hover states, focus rings, logo mark bg |
