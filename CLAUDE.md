@@ -64,7 +64,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 - No gradients, no box-shadows, max corner radius 4px.
 - Section dividers are **1px horizontal rules**, never background changes or large gaps.
 - Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile, map detail quote bar, locate-fab "on" state, admin pin marker. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). The older oxblood `#8a2a1a` accent has been fully retired from app code (May 2026 sweep — the legacy `map-world.js` that held the last references is deleted).
-- Background: warm newsprint `#f6f3ec`, never pure white.
+- Background: `--c-paper` = `#ffffff` (pure white). Earlier builds used warm newsprint `#f6f3ec`; the design evolved to clean white with `--c-paper-deep: #fafaf9` for recessed surfaces (search box, tonight quote bg). The map style still uses newsprint cream for land tiles — that is separate from the app background.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
 - Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow. Real photos (`.thumb--has-img`) get a **petrol duotone** (a `mix-blend-mode: color` overlay at 0.62) so disparate venue/event photos read as one editorial treatment — no second hue (the duotone IS petrol on newsprint). Tunable via that opacity.
