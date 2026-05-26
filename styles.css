@@ -1162,6 +1162,11 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .curator-rows {
   border-top: var(--rule-w) solid var(--c-rule);
 }
+/* Reserve space while the browse lists are loading (aria-busy) so they
+   don't shift the page when populateBrowse() fills them after first
+   paint. Sized to the common full-catalog case; released once filled. */
+.curator-rows[aria-busy="true"] { min-height: 300px; }
+.browse-rows[aria-busy="true"]  { min-height: 300px; }
 /* .curator-row / .browse-row are <button>s inside <li> (real button
    semantics + keyboard activation, and the <ul> keeps proper list
    structure). Reset the button chrome back to a plain editorial row. */
