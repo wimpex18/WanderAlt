@@ -1,6 +1,8 @@
 /* ============================================================
-   WanderAlt — send-digest edge function v9
-   v9: gemini-3.5-flash for email intro generation.
+   WanderAlt — send-digest edge function v10
+   v9:  gemini-3.5-flash for email intro generation.
+   v10: curator handle in the email uses petrol (--c-accent #055959),
+        retiring the last stray oxblood #8a2a1a in the codebase.
    ============================================================ */
 
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
@@ -112,7 +114,7 @@ const renderPickRow = (p: Pick) => {
     <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;color:#888;letter-spacing:0.05em;">${buildMeta(p)}</p>
     <p style="margin:0;font-family:'Georgia',serif;font-size:15px;line-height:1.6;color:#444;font-style:italic;">
       &ldquo;${p.quote}&rdquo;
-      <span style="font-style:normal;font-family:'Courier New',monospace;font-size:11px;color:#8a2a1a;white-space:nowrap;"> — ${p.handle}</span></p>
+      <span style="font-style:normal;font-family:'Courier New',monospace;font-size:11px;color:#055959;white-space:nowrap;"> — ${p.handle}</span></p>
   </td></tr>`;
 };
 
