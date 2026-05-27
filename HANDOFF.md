@@ -333,7 +333,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 **Multi-city (May 2026).** Three cities live: Tallinn (primary, 100+ picks), Helsinki (4 picks, growing), Riga (6 picks, growing). City selector is fully implemented — keyboard-accessible listbox in `city.js`. Switching city saves to `localStorage ('wa:city')` and reloads. Supabase data layer and all ingest pipelines are city-aware.
 
-**Vilnius scaffold (May 2026).** City plate SVG ready (`assets/vilnius-overview.svg` — Gediminas Tower, Cathedral + belfry, St. Anne's Church, Three Crosses). Entry in `city.js` CITIES array as `status: 'coming'` — shows "Coming soon" in the dropdown, not selectable. Static venue seed in `catalog.js` (7 real venues: Loftas, Kablys, Mint Vinetu, Skalvija, CAC, Neringa, Tolerancijos centras). Cloud steps documented in CLAUDE.md under the Vilnius section — do not deploy without explicit instruction.
+**Vilnius scaffold (May 2026).** City plate SVG ready (`assets/vilnius-overview.svg` — Gediminas Tower, Cathedral + belfry, St. Anne's Church, Three Crosses). Entry in `city.js` CITIES array as `status: 'coming'` — shows "Coming soon" in the dropdown, not selectable. Static venue seed in `catalog.js` (7 verified venues: Menų fabrikas Loftas, Kablys, Opium Club, CAC/ŠMC, Skalvija, Mint Vinetu, Vinyloteka). A verified event-source matrix (Telegram `@afishavilnius`, Resident Advisor GraphQL, Echo Gone Wrong, Partyzanai, venue/festival sites) is staged in CLAUDE.md. Cloud steps documented there too — do not deploy without explicit instruction.
 
 ---
 
