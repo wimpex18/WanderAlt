@@ -2,7 +2,7 @@
 
 A static, mobile-first website for discovering **alternative / underground culture in European cities**: vinyl shops, art squats, small music venues, craft bars, experimental gigs, political talks. Every item is vouched for by a human curator — the curator's voice is the product.
 
-First city: **Tallinn**. First screen: **Briefing** (the default landing).
+Live cities: **Tallinn · Helsinki · Riga**. Coming soon: **Vilnius** (scaffold ready, cloud deploy pending). First screen: **Briefing** (the default landing).
 
 ---
 

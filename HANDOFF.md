@@ -333,6 +333,8 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 **Multi-city (May 2026).** Three cities live: Tallinn (primary, 100+ picks), Helsinki (4 picks, growing), Riga (6 picks, growing). City selector is fully implemented — keyboard-accessible listbox in `city.js`. Switching city saves to `localStorage ('wa:city')` and reloads. Supabase data layer and all ingest pipelines are city-aware.
 
+**Vilnius scaffold (May 2026).** City plate SVG ready (`assets/vilnius-overview.svg` — Gediminas Tower, Cathedral + belfry, St. Anne's Church, Three Crosses). Entry in `city.js` CITIES array as `status: 'coming'` — shows "Coming soon" in the dropdown, not selectable. Static venue seed in `catalog.js` (7 verified venues: Menų fabrikas Loftas, Kablys, Opium Club, CAC/ŠMC, Skalvija, Mint Vinetu, Vinyloteka). A verified event-source matrix (Telegram `@afishavilnius`, Resident Advisor GraphQL, Echo Gone Wrong, Partyzanai, venue/festival sites) is staged in CLAUDE.md. Cloud steps documented there too — do not deploy without explicit instruction.
+
 ---
 
 ## Accessibility checklist
@@ -353,7 +355,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 - **Map sheet drag — momentum/fast-swipe**: basic snap to peek/60vh works; momentum-scroll and very fast flicks are not handled.
 - **wa-pulse + reduced-motion**: ~~not gated~~ Fixed May 2026 — global `animation: none !important` in reduced-motion block.
-- **City selector**: ~~no dropdown~~ Implemented in `city.js` — full keyboard-accessible listbox with thumbnails and status labels. Helsinki and Riga are live as of May 2026.
+- **City selector**: ~~no dropdown~~ Implemented in `city.js` — full keyboard-accessible listbox with thumbnails and status labels. Tallinn, Helsinki, Riga are live; Vilnius shows "Coming soon" (scaffold + city plate ready, cloud deploy pending).
 - **Venue/curator pages**: rendered client-side from `catalog.js` via URL params. Deep links require JS to be enabled.
 - **No `alt` on real images**: `image_url` thumbnails apply as CSS `background-image`; `aria-label` on the wrapper `.thumb` span is the accessible substitute. Worth revisiting if the approach moves to `<img>` elements.
 - **Pin/label collisions**: at certain aspect ratios, pin teardrops can visually overlap the SVG neighborhood labels. Cosmetic only; labels are `aria-hidden`.

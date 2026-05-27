@@ -249,6 +249,19 @@ img, svg { display: block; max-width: 100%; }
   user-select: none;
   pointer-events: none;
 }
+/* Per-city crop. The plates differ in composition: Tallinn sits on
+   cobbled ground (bases low, ~y1000), so the default 74% frames it.
+   Riga's Old Town sits across the Daugava (bases ~y820) and Helsinki's
+   skyline rises over the harbour with the cathedral dome up high
+   (~y356) — at 74% their building tops (Riga's spire, Helsinki's dome)
+   were cut off and the water dominated. Lifting the crop pulls whole
+   buildings into the ribbon. Verified at 390x96 and 1280x120. */
+body[data-city="riga"]     .city-banner__img { object-position: center 56%; }
+body[data-city="helsinki"] .city-banner__img { object-position: center 50%; }
+/* Vilnius: Gediminas Tower on a hill + Cathedral belfry spire. Key landmarks
+   peak at ~y380-480 in the SVG; 50% crop frames them centrally in the ribbon.
+   (Same as Helsinki — both have elevated landmark tips well above the midline.) */
+body[data-city="vilnius"]  .city-banner__img { object-position: center 50%; }
 /* On a narrow viewport the full-bleed crop is naturally taller (the
    image scales to the smaller width), so the base 96px already shows
    the whole skyline — no shrink needed. A 48px ribbon here would clip

@@ -222,6 +222,34 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
 | (osm) | tallinn + riga + helsinki | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 |
 
+**Vilnius — scaffold ready, cloud deploy pending (May 2026):**
+Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`status: 'coming'`), static venue seed in `catalog.js` (Menų fabrikas Loftas · Kablys · Opium Club · CAC/ŠMC · Skalvija · Mint Vinetu · Vinyloteka). The city shows as "Coming soon" in the dropdown but does not load live data.
+
+**Verified Vilnius source matrix (researched May 2026 — STAGED, not yet inserted into `sources`):**
+
+| Source | Type | Lang | Scope | Feed / ingest path |
+|---|---|---|---|---|
+| `t.me/afishavilnius` ("Афиша Вильнюс", ~7.6k subs) | telegram | RU | all Vilnius events; mainstream + some alt | scrape `t.me/s/afishavilnius` (same path as existing telegram sources) |
+| `ra.co/clubs/lt/vilnius` (Resident Advisor) | web | EN | techno/house/electronic club nights — best curated electronic source | **GraphQL API** (machine-readable — easiest ingest; new edge fn) |
+| `echogonewrong.com` | web | EN | Baltic contemporary-art press, exhibitions/openings | WordPress — likely `/feed/` RSS (verify) |
+| `partyzanai.com/dates/` | web | EN/LT | rave/techno net-label party dates (active into Jul 2026) | scrape |
+| `menufabrikas.lt` (Loftas) | web | LT/EN | alt-pop/electronic concerts, club nights | scrape |
+| `opiumclub.lt` | web | LT/EN | electronic/techno (Smala/Manfredas nights) | scrape (or rely on RA) |
+| `cac.lt` (ŠMC) | web | LT/EN | contemporary art, Baltic Triennial, film/performance | scrape |
+| `kinopavasaris.lt` · `sirenos.lt` · `vilniusfestivals.lt` (GAIDA) | web | LT/EN | annual film / theatre / new-music festivals | scrape (seasonal) |
+| `vna.lt` (Vilnius Night Alliance) · `neakivaizdinisvilnius.lt` | web | LT/EN | nightlife editorial / alt-city guide | scrape |
+
+Verified-but-excluded: **Lizdas** (Kaunas, not Vilnius; reportedly closing May 2026). Could-NOT-verify — do not add without a manual Telegram check: a dedicated RU "Точка/Tochka" Vilnius channel, "Thunderbox" record store. No public ICS calendars found on any source. `allevents.lt` is an *inbound* provider feed (mainstream commercial), `vilnius-events.lt` is Go Vilnius's official tourism listing (no API/RSS) — both low value, not staged.
+
+**Cloud steps to go live (do NOT execute without explicit user instruction):**
+1. Deploy `ingest-osm` vNext with Vilnius added to its `CITIES` map (bbox `54.5632,25.0319,54.8047,25.4830`).
+2. Insert `sources` rows from the matrix above — start with `t.me/afishavilnius` (telegram). Web sources mirror the existing `ingest-telliskivi` / `ingest-kinobize` scraper pattern; Resident Advisor warrants its own edge fn (GraphQL, no `sources` row needed unless modelled as a `web` source).
+3. No `ingest_hel_linkedevents`-equivalent for Vilnius — Resident Advisor's GraphQL is the closest structured feed.
+4. Add Vilnius to `geocode-picks` and `enrich-venues` cron coverage (already city-agnostic on all active picks — no code change, just ensure the `sources` rows exist).
+5. Flip `status: 'coming'` → `status: 'live'` in `city.js` after the DB has content.
+
+Caveat: `@afishavilnius` is Russian-language and leans mainstream — a coverage source, not a single-voice editorial curator like `@sigmundtells`. A dedicated underground curator channel still needs hand-verification on Telegram before it becomes the editorial voice for Vilnius.
+
 **Pipeline flow:**
 `ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
 

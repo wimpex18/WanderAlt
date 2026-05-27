@@ -17,13 +17,15 @@
    ============================================================ */
 (() => {
   /* Each city has a static illustrated overview plate at /assets/
-     <city>-overview.svg. The three plates (Tallinn, Helsinki, Riga)
-     ship under the city-plates-v2 brand bundle — see
-     brand/BRAND.md § 5 for the canonical two-mark rule. */
+     <city>-overview.svg. Live plates: Tallinn, Helsinki, Riga.
+     Coming-soon plate: Vilnius. All ship under the city-plates-v2
+     brand bundle — see brand/BRAND.md § 5 for the canonical
+     two-mark rule (one national flag + one lime accent). */
   const CITIES = [
-    { id: 'tallinn',  label: 'TALLINN',  status: 'live', thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'live', thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'live', thumb: './assets/riga-overview.svg'     },
+    { id: 'tallinn',  label: 'TALLINN',  status: 'live',   thumb: './assets/tallinn-overview.svg'  },
+    { id: 'helsinki', label: 'HELSINKI', status: 'live',   thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'live',   thumb: './assets/riga-overview.svg'     },
+    { id: 'vilnius',  label: 'VILNIUS',  status: 'coming', thumb: './assets/vilnius-overview.svg'  },
   ];
 
   const LS_KEY  = 'wa:city';
