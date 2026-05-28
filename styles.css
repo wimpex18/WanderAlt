@@ -497,13 +497,13 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   color: var(--c-ink-mute);
   letter-spacing: 0.01em;
   margin: var(--s-3) 0 0;
-  padding-bottom: var(--s-4);
+  padding-bottom: var(--s-2);
   border-bottom: var(--rule-w) solid var(--c-rule);
   text-wrap: balance;
 }
 
 .tonight {
-  padding: var(--s-3) 0 var(--s-5);
+  padding: var(--s-2) 0 var(--s-5);
 }
 
 .tonight__quote {
@@ -3634,7 +3634,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 
 /* Tonight card — bordered surface card with 12px radius */
 .tonight-card {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   padding: var(--s-4) var(--s-4) var(--s-4);
   background: var(--c-paper-deep);
   border: var(--rule-w) solid var(--c-rule);
