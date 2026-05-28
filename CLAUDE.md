@@ -198,7 +198,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 
 Sources live in the `public.sources` table; each row has `kind`, `channel`, `city`, `curator_handle`, `enabled`, `feed_url`. **Crons own the schedule** (see `cron.job`) — read-only here, only touch if asked.
 
-**Active source matrix (21 rows · 17 enabled · 4 intentionally disabled):**
+**Active source matrix (23 rows · 19 enabled · 4 intentionally disabled):**
 
 | Kind | City | Channel | Curator | Cron | Status |
 |---|---|---|---|---|---|
@@ -217,9 +217,11 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | telegram | helsinki | ayyevents | `@ayyevents` | same | ✅ live (May 2026) |
 | web | helsinki | hel-linkedevents | `@hel_today` | `wa-ingest-hel-linkedevents` (03:50 UTC) | ✅ live (May 2026) |
 | telegram | riga | notboring_riga | `@notboring_riga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live |
-| telegram | riga | udgstriga | `@udgstriga` | — | ❌ no real channel yet |
+| telegram | riga | udgstriga | `@udgstriga` | — | ❌ channel exists but dormant since July 2024 |
+| telegram | riga | AfishaRiga | `@AfishaRiga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) — RU aggregator, ~200 subs |
 | web | riga | kinobize | `@kinobize` | `wa-ingest-kinobize` (03:30 UTC) | ✅ live |
 | web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
+| web | riga | hanzasperons | `@hanzasperons` | `wa-ingest-hanzas-perons` (03:50 UTC) | ✅ live (May 2026) — major contemporary venue, hosts Skaņu Mežs; ~2 upcoming events publicly listed at a time |
 | telegram | vilnius | afishavilnius | `@afishavilnius` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) — RU aggregator |
 | web | vilnius | ra-vilnius | `@ra_vilnius` | `ingest-ra` (no cron yet — see Vilnius note) | ⚠️ deployed + validated, cron pending RA-ToS call |
 | (osm) | tallinn + riga + helsinki + vilnius | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 (Vilnius added v11) |
