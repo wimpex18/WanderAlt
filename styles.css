@@ -222,7 +222,7 @@ img, svg { display: block; max-width: 100%; }
    width makes the visible slice shorter the wider the viewport.
    ============================================================ */
 .city-banner {
-  height: 140px;
+  height: 100px;
   background: var(--c-paper-deep);
   border-bottom: var(--rule-w) solid var(--c-rule);
   cursor: pointer;
@@ -2776,7 +2776,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   /* Constrained-to-column width means the visible slice is narrower
      and the building span is more legible — bump the ribbon so the
      whole skyline (roofs through bases) reads on desktop. */
-  .city-banner { height: 240px; }
+  .city-banner { height: 160px; }
 
   .tonight { padding: var(--s-8) 0 var(--s-7); }
   .tonight__quote { margin: var(--s-4) 0 var(--s-4); }
@@ -4635,17 +4635,18 @@ a.handle:hover { color: var(--c-ink); }
      so they're hidden by the rule above — left here for clarity).      */
 }
 
-/* Desktop: split view, list left and map right.
-   Page is capped at 1024 (see --reading-max). Inside that, the list
-   takes ~46% and the map takes the rest with a comfortable gap.
-   Baymard's split-view study (which justified the Map+Search merger
-   in the first place) calls for "list informs, map orients" with
-   the map getting the larger share — minmax(0, 1.15fr) gives the
-   map a slight visual edge over the list. */
+/* Desktop: split view, list left and map right. The map gets the
+   bigger share (Baymard split-view study: "list informs, map orients").
+   Discover also opts out of the editorial reading cap on wide screens
+   so the map has real horizontal room — a 480-wide map column inside
+   a 960-wide reading column reads as a sidebar, not a map. Bounded
+   height keeps it from stretching into a tall vertical strip on
+   16:9 monitors. */
 @media (min-width: 1024px) {
+  body[data-page="discover"] .page { max-width: 1240px; }
   .discover-panes {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.6fr);
     gap: var(--s-5);
     align-items: start;
   }
@@ -4653,8 +4654,8 @@ a.handle:hover { color: var(--c-ink); }
   .discover-pane--map {
     position: sticky;
     top: var(--s-3);
-    height: calc(100vh - 140px);
-    min-height: 520px;
+    height: min(560px, calc(100vh - 220px));
+    min-height: 420px;
   }
 }
 
