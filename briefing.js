@@ -109,7 +109,7 @@
              Tonight${timeStr}
            </div>
          </div>
-         ${thumbEl(entry, true)}
+         ${entry.imageUrl ? thumbEl(entry, true) : ''}
          ${entry.imageAttr && entry.imageUrl ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
          <div class="tonight-card__meta">
            <span class="kind-badge">

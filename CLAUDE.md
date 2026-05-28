@@ -198,7 +198,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 
 Sources live in the `public.sources` table; each row has `kind`, `channel`, `city`, `curator_handle`, `enabled`, `feed_url`. **Crons own the schedule** (see `cron.job`) — read-only here, only touch if asked.
 
-**Active source matrix (21 rows · 17 enabled · 4 intentionally disabled):**
+**Active source matrix (24 rows · 20 enabled · 4 intentionally disabled):**
 
 | Kind | City | Channel | Curator | Cron | Status |
 |---|---|---|---|---|---|
@@ -217,12 +217,28 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | telegram | helsinki | ayyevents | `@ayyevents` | same | ✅ live (May 2026) |
 | web | helsinki | hel-linkedevents | `@hel_today` | `wa-ingest-hel-linkedevents` (03:50 UTC) | ✅ live (May 2026) |
 | telegram | riga | notboring_riga | `@notboring_riga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live |
-| telegram | riga | udgstriga | `@udgstriga` | — | ❌ no real channel yet |
+| telegram | riga | udgstriga | `@udgstriga` | — | ❌ channel exists but dormant since July 2024 |
+| telegram | riga | AfishaRiga | `@AfishaRiga` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) — RU aggregator, ~200 subs |
 | web | riga | kinobize | `@kinobize` | `wa-ingest-kinobize` (03:30 UTC) | ✅ live |
 | web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
+| web | riga | hanzasperons | `@hanzasperons` | `wa-ingest-hanzas-perons` (03:50 UTC) | ✅ live (May 2026) — major contemporary venue, hosts Skaņu Mežs; ~2 upcoming events publicly listed at a time |
+| web | riga | echogonewrong | `@echogonewrong` | `wa-ingest-echo-gone-wrong` (03:55 UTC) | ✅ live (May 2026) — Baltic art press RSS, filtered to Latvia categories; ~5-10 Riga items/week |
 | telegram | vilnius | afishavilnius | `@afishavilnius` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) — RU aggregator |
 | web | vilnius | ra-vilnius | `@ra_vilnius` | `ingest-ra` (no cron yet — see Vilnius note) | ⚠️ deployed + validated, cron pending RA-ToS call |
 | (osm) | tallinn + riga + helsinki + vilnius | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 (Vilnius added v11) |
+
+**Riga — May 2026 curator-voice round (notes for next session):**
+- **`@kseniakamikaza` curator added (no source row, no automated feed).** Ksenia Kamikaza (DJ, founder of UNDER Festival + Platz Für Tanz label, host of "Intelligent Beats" on Radio Naba since 2003) is the closest equivalent to `@sigmundtells`. She confirmed she's too busy organising events to personally curate a channel. Every alternative data source in her orbit was investigated (May 2026) and found not viable — see below. Admin-panel manual seeding is the only path for now.
+- **Echo Gone Wrong RSS quirk**: the feed at `echogonewrong.com/feed/` returns HTTP 403 to default user-agents (Cloudflare) but answers fine with a real desktop Safari UA. `ingest-echo-gone-wrong` v1 sets that UA explicitly. If another scraper needs this, copy the `BROWSER_UA` constant pattern from that function.
+- **KKC (kanepes.lv) investigated and skipped.** The site is a React SPA backed by WordPress; the WP REST API exposes a `pasakumi` post type but the latest event entry is from December 2024 — KKC's events database has been silent for ~5 months. Their React frontend likely reads from Facebook Events now. Re-evaluate if/when kanepes.lv publishes a fresh event again. For now, admin-panel manual seeding is the recommended path for KKC picks.
+- **All remaining Riga automated sources fully investigated (May 2026) — none viable:**
+  - `naba.lv` (Radio Naba): No RSS feed (`/feed/` → 404). Weekly schedule is on `naba.lsm.lv` which returns HTTP 403. Radio shows are broadcast events, not physical events with venues — wrong data model for WanderAlt.
+  - `underfestival.com` (UNDER Festival): 2025 editions (March Liepāja, May Riga) are past; 2026 not announced. No RSS or API.
+  - `skanumezs.lv` (Skaņu Mežs festival): Returns HTTP 406; already covered by Hanzas Perons ingest anyway.
+  - `lcca.lv` (Latvian Centre for Contemporary Art): Good content (Survival Kit 17, Aug–Sep 2026 in Riga) but JS-rendered pages — no machine-readable feed. Re-evaluate if LCCA adds an RSS feed.
+  - `rigamusicweek.lv` (Riga Music Week): November 2026, programme TBD, no RSS/API. Industry conference + showcase, not underground alt-culture.
+  - `kamikaza.info/radioshow/` (Ksenia's radio show archive): No schedule data, no feed.
+  - The three sources wired this session — `@AfishaRiga` (Telegram), `@hanzasperons` (web), `@echogonewrong` (RSS) — are the practical ceiling for automated Riga ingest until new sources emerge.
 
 **Vilnius — data pipeline live, still `coming` in the UI (May 2026):**
 Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`status: 'coming'`), static venue seed in `catalog.js` (offline fallback). The city shows as "Coming soon" in the dropdown and is NOT yet selectable — but the backend pipeline is wired and ingesting, so the DB fills with real content ahead of the eventual `live` flip.
