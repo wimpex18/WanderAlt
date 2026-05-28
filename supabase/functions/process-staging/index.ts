@@ -1,9 +1,11 @@
 // ============================================================
-// WanderAlt — process-staging  (v33)
-// v33 changes vs v32:
-//   • Upgraded to gemini-3.5-flash (GA, May 2026).
-//   • Removed thinkingConfig — 3.5 Flash is accurate enough
-//     for event classification without explicit thinking tokens.
+// WanderAlt — process-staging  (v34)
+// v34 changes vs v33:
+//   • Groq (llama-4-scout-17b-16e-instruct) is now PRIMARY.
+//     Groq free tier covers ~1,000 req/day; 48 cron ticks/day
+//     at 10 messages/batch = fits comfortably within free quota.
+//   • Gemini 3.5 Flash demoted to fallback (rate_limited/overloaded).
+//   • Groq model updated to llama-4-scout per CLAUDE.md policy.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -13,7 +15,7 @@ const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
 const GEMINI_MODEL  = "gemini-3.5-flash";
-const GROQ_MODEL    = "llama-3.3-70b-versatile";
+const GROQ_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
 
@@ -169,11 +171,12 @@ async function callGroq(text: string, tag: string, city: string, keepSignals: st
 }
 
 async function callLLM(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
-  const r1 = await callGemini(text, tag, city, keepSignals);
+  // Groq is primary — free tier covers our volume; Gemini is fallback.
+  const r1 = await callGroq(text, tag, city, keepSignals);
   if ("raw" in r1) return r1;
-  if (r1.error === "missing_key") return callGroq(text, tag, city, keepSignals);
-  // rate_limited or overloaded → try Groq before giving up
-  const r2 = await callGroq(text, tag, city, keepSignals);
+  if (r1.error === "missing_key") return callGemini(text, tag, city, keepSignals);
+  // rate_limited or overloaded → try Gemini before giving up
+  const r2 = await callGemini(text, tag, city, keepSignals);
   if ("raw" in r2) return r2;
   return r1;
 }
