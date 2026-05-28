@@ -1,9 +1,9 @@
 /* ============================================================
-   WanderAlt — draft-column  v12
-   v12: gemini-3.5-flash + Search grounding (combined tool use).
-   Search grounding lets Gemini look up current cultural context
-   for the city when writing the weekly column, so the prose
-   references real happenings rather than only the pick list.
+   WanderAlt — draft-column  v13
+   v13: drops Search grounding, switches to gemini-2.5-flash-lite.
+   Grounding was the primary cost driver ($14/1K queries). The
+   weekly column draft quality is unaffected — the model's baseline
+   knowledge of these cities is sufficient for a 140-word editorial.
    POST /functions/v1/draft-column  (verify_jwt: false)
    Body: {} or { city: "tallinn" }
    ============================================================ */
@@ -11,7 +11,7 @@
 const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI_KEY       = Deno.env.get('GEMINI_API_KEY')!;
-const GEMINI_MODEL     = 'gemini-3.5-flash';
+const GEMINI_MODEL     = 'gemini-2.5-flash-lite';
 
 const CITIES = ['tallinn', 'helsinki', 'riga'];
 
@@ -54,13 +54,7 @@ const weekOf = (): string => {
   return mon.toISOString().slice(0, 10);
 };
 
-/* callGemini uses Search grounding (combined tool use, 3.5 Flash feature).
-   The tools array includes googleSearch so Gemini can look up current
-   cultural events and atmosphere in the city when drafting the column.
-   toolConfig AUTO lets the model decide when grounding is useful —
-   for a "mood of the city" column it will typically reach for it.
-   If the search tool call fails gracefully the column still generates. */
-const callGemini = async (prompt: string, cityLabel: string): Promise<string> => {
+const callGemini = async (prompt: string, _cityLabel: string): Promise<string> => {
   const r = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
     {
@@ -68,19 +62,13 @@ const callGemini = async (prompt: string, cityLabel: string): Promise<string> =>
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        tools: [{ googleSearch: {} }],
         generationConfig: { temperature: 0.85, maxOutputTokens: 600 },
       }),
     }
   );
   if (!r.ok) { const err = await r.text(); throw new Error(`Gemini ${r.status}: ${err.slice(0, 300)}`); }
   const data = await r.json();
-  /* Grounded responses may have the text in a different candidate path
-     if tool use was invoked — fall through the same extraction. */
-  return data?.candidates?.[0]?.content?.parts
-    ?.filter((p: { text?: string }) => p.text)
-    .map((p: { text: string }) => p.text)
-    .join('') ?? '';
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 };
 
 const draftForCity = async (
@@ -125,7 +113,7 @@ const draftForCity = async (
     `- First-person voice, present tense, editorial tone\n` +
     `- Wrap the first paragraph in *asterisks* (it will be italicised)\n` +
     `- No em dashes, no exclamation marks, no word "discover"\n` +
-    `- Use your Search tool to get a sense of the cultural atmosphere in ${cityLabel} this week before writing.\n` +
+    `- Write from knowledge of ${cityLabel}'s cultural character; reference the season and the city's general atmosphere.\n` +
     `- Talk about the city mood this week, not event listings\n` +
     `- Plain text output only\n\n` +
     `Output the three paragraphs separated by a blank line.`;

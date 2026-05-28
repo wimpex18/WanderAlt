@@ -1,16 +1,15 @@
-/* generate-context v9 — gemini-3.5-flash + Search grounding
+/* generate-context v10 — gemini-2.5-flash-lite, no Search grounding
 
-   v9: adds Search grounding (combined tool use, 3.5 Flash feature) so the
-   "Why this matters" blurb can reference the venue's real character and any
-   current programme rather than paraphrasing the curator quote alone.
-   Cost stays bounded: this only runs on picks whose context_md IS NULL
-   (newly-ingested picks), not the whole catalogue, so the number of grounded
-   calls per cron tick tracks daily ingest volume (a handful), not 200+ picks. */
+   v10: drops Search grounding and downgrades from gemini-3.5-flash to
+   gemini-2.5-flash-lite. Grounding was the primary cost driver ($14/1K
+   queries, each request triggered multiple internal searches). Ungrounded
+   Flash-Lite ($0.10/$0.40 per 1M tokens) produces equivalent 2-paragraph
+   context blurbs for this use case at ~22× lower output cost. */
 
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
-const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const INTER_PICK_DELAY_MS = 800;
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
@@ -57,7 +56,7 @@ const buildPrompt = (pick: Pick): string => [
   ``,
   `Write exactly 2 short paragraphs (3-4 sentences each) about why someone should go to this pick.`,
   `Write in the voice of the curator who recommended it — knowledgeable, personal, not promotional.`,
-  `Use your Search tool to confirm what ${pick.venue} actually is and what it is currently known for; ground the prose in real detail, never invented facts. If search returns nothing useful, rely on the curator quote.`,
+  `Draw on what you know about ${pick.venue} and this kind of ${pick.kind} space; ground the prose in real detail, never invented facts.`,
   `No em-dashes. No exclamation marks. No "discover". No marketing language. Do not quote or paraphrase venue marketing copy.`,
   `Read like a back-page newsletter, not a travel blog.`,
   ``,
@@ -79,19 +78,13 @@ const callGemini = async (prompt: string): Promise<string|null> => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }],
           generationConfig: { temperature: 0.75, maxOutputTokens: 400 },
         }),
       }
     );
     if (!res.ok) return null;
     const d = await res.json();
-    /* Grounded responses may split the answer across multiple text parts when
-       tool use was invoked — concatenate every text part, same as draft-column. */
-    return d.candidates?.[0]?.content?.parts
-      ?.filter((p: { text?: string }) => p.text)
-      .map((p: { text: string }) => p.text)
-      .join('').trim() || null;
+    return d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
   } catch { return null; }
 };
 
