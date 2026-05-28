@@ -222,13 +222,19 @@ img, svg { display: block; max-width: 100%; }
    width makes the visible slice shorter the wider the viewport.
    ============================================================ */
 .city-banner {
-  height: 96px;
+  height: 140px;
   background: var(--c-paper-deep);
   border-bottom: var(--rule-w) solid var(--c-rule);
   cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: opacity var(--t-fast);
+  /* Sit inside the reading column so the ribbon aligns with content
+     edges instead of going full-bleed. Background swatch above sits
+     behind via the body, so the gutters look like part of the design,
+     not a clipping bug. */
+  max-width: var(--reading-max);
+  margin: 0 auto;
 }
 .city-banner:hover { opacity: 0.92; }
 .city-banner:focus-visible {
@@ -244,24 +250,18 @@ img, svg { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 74%;
+  object-position: center 60%;
   display: block;
   user-select: none;
   pointer-events: none;
 }
-/* Per-city crop. The plates differ in composition: Tallinn sits on
-   cobbled ground (bases low, ~y1000), so the default 74% frames it.
-   Riga's Old Town sits across the Daugava (bases ~y820) and Helsinki's
-   skyline rises over the harbour with the cathedral dome up high
-   (~y356) — at 74% their building tops (Riga's spire, Helsinki's dome)
-   were cut off and the water dominated. Lifting the crop pulls whole
-   buildings into the ribbon. Verified at 390x96 and 1280x120. */
-body[data-city="riga"]     .city-banner__img { object-position: center 56%; }
-body[data-city="helsinki"] .city-banner__img { object-position: center 50%; }
-/* Vilnius: Gediminas Tower on a hill + Cathedral belfry spire. Key landmarks
-   peak at ~y380-480 in the SVG; 50% crop frames them centrally in the ribbon.
-   (Same as Helsinki — both have elevated landmark tips well above the midline.) */
-body[data-city="vilnius"]  .city-banner__img { object-position: center 50%; }
+/* Per-city Y-crop. Each SVG's viewBox is now tightened to its
+   actual building bounds (~y200..y1100), so the default 60% slice
+   frames the whole skyline. Riga sits lower in its tightened view
+   (river takes the bottom third), so nudge the crop up. */
+body[data-city="riga"]     .city-banner__img { object-position: center 50%; }
+body[data-city="helsinki"] .city-banner__img { object-position: center 55%; }
+body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
 /* On a narrow viewport the full-bleed crop is naturally taller (the
    image scales to the smaller width), so the base 96px already shows
    the whole skyline — no shrink needed. A 48px ribbon here would clip
@@ -2772,10 +2772,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .wordmark { font-size: 20px; }
   .logo-mark { width: 30px; height: 30px; }
 
-  /* Full-bleed width makes the cityscape crop shorter the wider
-     the viewport — bump the ribbon so whole buildings stay visible
-     on desktop (see .city-banner note above). */
-  .city-banner { height: 120px; }
+  /* Constrained-to-column width means the visible slice is narrower
+     and the building span is more legible — bump the ribbon so the
+     whole skyline (roofs through bases) reads on desktop. */
+  .city-banner { height: 200px; }
 
   .tonight { padding: var(--s-8) 0 var(--s-7); }
   .tonight__quote { margin: var(--s-4) 0 var(--s-4); }
