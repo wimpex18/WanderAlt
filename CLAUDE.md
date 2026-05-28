@@ -198,7 +198,7 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
 
 Sources live in the `public.sources` table; each row has `kind`, `channel`, `city`, `curator_handle`, `enabled`, `feed_url`. **Crons own the schedule** (see `cron.job`) — read-only here, only touch if asked.
 
-**Active source matrix (23 rows · 19 enabled · 4 intentionally disabled):**
+**Active source matrix (24 rows · 20 enabled · 4 intentionally disabled):**
 
 | Kind | City | Channel | Curator | Cron | Status |
 |---|---|---|---|---|---|
@@ -222,9 +222,16 @@ Sources live in the `public.sources` table; each row has `kind`, `channel`, `cit
 | web | riga | kinobize | `@kinobize` | `wa-ingest-kinobize` (03:30 UTC) | ✅ live |
 | web | riga | splendidpalace | `@splendidpalace` | `wa-ingest-splendidpalace` (03:35 UTC) | ✅ live |
 | web | riga | hanzasperons | `@hanzasperons` | `wa-ingest-hanzas-perons` (03:50 UTC) | ✅ live (May 2026) — major contemporary venue, hosts Skaņu Mežs; ~2 upcoming events publicly listed at a time |
+| web | riga | echogonewrong | `@echogonewrong` | `wa-ingest-echo-gone-wrong` (03:55 UTC) | ✅ live (May 2026) — Baltic art press RSS, filtered to Latvia categories; ~5-10 Riga items/week |
 | telegram | vilnius | afishavilnius | `@afishavilnius` | `wa-ingest-telegram` (02:15 UTC) | ✅ live (May 2026) — RU aggregator |
 | web | vilnius | ra-vilnius | `@ra_vilnius` | `ingest-ra` (no cron yet — see Vilnius note) | ⚠️ deployed + validated, cron pending RA-ToS call |
 | (osm) | tallinn + riga + helsinki + vilnius | — | — | `wa-ingest-osm` (Mon 03:30 UTC) | ✅ live — multi-city since v8 (Vilnius added v11) |
+
+**Riga — May 2026 curator-voice round (notes for next session):**
+- **`@kseniakamikaza` curator added (no source row yet).** Ksenia Kamikaza (DJ, founder of UNDER Festival + Platz Für Tanz label, host of "Intelligent Beats" on Radio Naba since 2003) is the closest equivalent to `@sigmundtells` and was approved by the user as an editorial voice for Riga. She doesn't run a Telegram channel today — picks attributed to her have to be seeded manually via admin until a feed (Telegram, RSS, or radio playlist scrape of `naba.lv`) is wired.
+- **Echo Gone Wrong RSS quirk**: the feed at `echogonewrong.com/feed/` returns HTTP 403 to default user-agents (Cloudflare) but answers fine with a real desktop Safari UA. `ingest-echo-gone-wrong` v1 sets that UA explicitly. If another scraper needs this, copy the `BROWSER_UA` constant pattern from that function.
+- **KKC (kanepes.lv) investigated and skipped.** The site is a React SPA backed by WordPress; the WP REST API exposes a `pasakumi` post type but the latest event entry is from December 2024 — KKC's events database has been silent for ~5 months. Their React frontend likely reads from Facebook Events now. Re-evaluate if/when kanepes.lv publishes a fresh event again. For now, admin-panel manual seeding is the recommended path for KKC picks.
+- **Other untapped Riga sources noted in the research round** (none wired yet): `naba.lv` schedule scrape (Radio Naba, 40+ alt/indie shows including Intelligent Beats), `lcca.lv/survival-kit` (annual contemporary art festival), `underfestival.com` (Ksenia's annual fest, currently small footprint), `rigamusicweek.lv` (annual showcase), `skanumezs.lv` (October festival — Hanzas Perons already covers the venue side).
 
 **Vilnius — data pipeline live, still `coming` in the UI (May 2026):**
 Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`status: 'coming'`), static venue seed in `catalog.js` (offline fallback). The city shows as "Coming soon" in the dropdown and is NOT yet selectable — but the backend pipeline is wired and ingesting, so the DB fills with real content ahead of the eventual `live` flip.
