@@ -15,8 +15,8 @@ The product is a printed cultural weekly translated to web. Three implications f
 3. **Reading, not browsing.** Sessions should feel like reading the back page of a paper, not flipping through a catalogue.
 
 **AI providers, used right:**
-- **Gemini 2.5 Flash** — everywhere in the cron pipeline. Best for: classification, structured output, editorial composition that runs offline (cron / nightly). The only Gemini model in use; 2.0 and -pro return 404 "no longer available to new users" — never substitute.
-- **Groq Llama-3.3-70b-versatile** — real-time only. Good for: `match-pick` search, anything where p95 latency must be < 1s. Also fallback in `process-staging`.
+- **Gemini 3.5 Flash** — everywhere in the cron pipeline. Best for: classification, structured output, editorial composition that runs offline (cron / nightly). `gemini-2.5-flash` is the fallback; `-pro` and `gemini-2.0-flash` return 404 "no longer available to new users" — never substitute. Embeddings stay on `gemini-embedding-001`.
+- **Groq Llama-4-Scout-17b** (`meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`) — real-time only. Good for: `match-pick`, anything where p95 latency must be < 1s. Also fallback in `process-staging`.
 
 Everything below picks one of these two for a reason; keep it that way.
 
@@ -27,18 +27,20 @@ Everything below picks one of these two for a reason; keep it that way.
 Features already live. See `README.md` for implementation detail.
 
 - **Mood tags + chip filter** — `mood-chips.js`, multi-select on Briefing.
-- **Curator's column** — `draft-column` edge function (Gemini 2.5 Flash, Mon 08:00 UTC), admin approval, rendered on Briefing.
+- **Curator's column** — `draft-column` edge function (Gemini 3.5 Flash, Mon 08:00 UTC), admin approval, rendered on Briefing.
 - **Match-me** — `match-pick` edge function (Groq Llama-4-scout-17b, Llama-3.3-70b fallback), AI mode toggle on the unified Discover page (Search + Map merged May 2026).
 - **Discover (unified Search + Map)** — May 2026 consolidation per Baymard split-view research. Single page with shared filter state, list/map view toggle on mobile, side-by-side split ≥1024px.
 - **MapLibre basemap** — `map-tiles.js` + custom `map-style.json` (OpenFreeMap tiles). Replaced the illustrated SVG plane; pins now use real `picks.lat/lng` projected through `WA.MapTiles.project()`. `geocode-picks` cron backfills coords nightly.
-- **Multi-city ingest** — `ingest-osm` v9 covers Tallinn / Riga / Helsinki; Telegram / RSS / Fienta / venue scrapers all configured per the `sources` table. Riga has 543 OSM venues and 7 active picks; Tallinn has 162 active picks.
+- **Multi-city ingest** — `ingest-osm` v11 covers Tallinn / Riga / Helsinki / Vilnius in one nightly tick; Telegram / RSS / Fienta / venue scrapers all configured per the `sources` table (~24 source rows). See CLAUDE.md → "Live data sources & ingest pipeline" for the canonical source matrix.
 - **Beacon brand kit + city plates v2** — `brand/` masters, favicons, manifest, OG cards; illustrated city plates at `assets/<city>-overview.svg` shown as 80×60 thumbnails in the city selector and a 64 px city banner ribbon under the topbar on every page.
 - **Email digest** — `send-digest` (Sat 09:00 UTC), opt-in on Profile.
-- **"Why this matters"** — `generate-context` (nightly, Gemini 2.5 Flash), `<details>` on Venue detail.
+- **"Why this matters"** — `generate-context` (nightly, Gemini 3.5 Flash), `<details>` on Venue detail.
 - **OG images** — `og-image` edge function (Satori + @resvg/resvg-wasm), wired on Venue + Curator pages.
 - **Venue enrichment** — `enrich-venues` (nightly 03:30 UTC): Wikidata + Nominatim → `venue_details` table (website, address, lat/lng, short_desc, image). Admin panel exposes per-venue lock and bulk-run. Venue detail page shows enrichment inline.
 - **404 page** — `404.html`, matches site aesthetic.
 - **About / Privacy / Contact** — `about.html`, one editorial page with five sections (About / Curators / Venues / Privacy / Contact). Linked from every page's colophon. No separate Terms / Cookie banner — see CLAUDE.md "Domain + page architecture" for the single-domain, no-tracking stance.
+- **Loading skeletons** — static, layout-reserving skeletons (Tonight hero, pick rows, Discover browse rows) hold space until `wa:catalog-ready`, so hydration doesn't jolt. No shimmer / spinner, per the editorial brand.
+- **Editorial redesign of Today / Discover / Saved / Profile** (May 2026) — flat Tonight hero, rebalanced Discover split with an immersive AI concierge panel, unified ink-fill segmented controls, refined Profile. Same tokens, two-tone, voice-loudest.
 
 ---
 
@@ -61,11 +63,8 @@ venue links, and prints page numbers via `@page @bottom-right`.)*
 - Opt-in `navigator.geolocation`. Slider 5 / 15 / 30 min walk. JS computes haversine against each pin's `picks.lat/lng`.
 - Prerequisites are all shipped: pins use real WGS84 coords (post-MapLibre migration), `picks.lat/lng` is backfilled by the `geocode-picks` cron, and the locate-FAB already requests geolocation when toggled. Remaining work is the radius slider + haversine filter + the "use my location to bound results" UI affordance.
 
-### 8. Loading skeletons
-- Replace blank flicker before `wa:catalog-ready` with a single muted-mono line: `Loading the briefing…`. No shimmer, no spinner — too gimmicky for the brand. Just a subtitle.
-
-### 9. Curator weekly synthesis
-- On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Gemini 2.5 Flash, store in `curators.synthesis_md`.
+### 8. Curator weekly synthesis
+- On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Gemini 3.5 Flash, store in `curators.synthesis_md`.
 - The full column shipped — this is the smaller per-profile variant, which still has independent value on the curator page itself.
 
 ---
@@ -103,15 +102,14 @@ Each "sprint" assumes ~1 calendar week of evening sessions, not full-time work.
 **Sprint 1 — Quick wins** *(low-risk, high visual pay-off)*
 - ~~Print stylesheet~~ ✓ shipped May 2026
 - ~~"Surprise me" button~~ ✓ shipped (the `#surprise-btn` on Briefing)
-- Loading skeletons (2h) — only remaining quick win in this sprint
+- ~~Loading skeletons~~ ✓ shipped (static, layout-reserving)
 
 **Sprint 2 — Map depth**
-- Wire map pins to `venue_details` geocoords (half-day)
-- Walking radius filter: geolocation opt-in + haversine filter + slider (6h)
+- Walking radius filter: geolocation opt-in + haversine filter + slider (6h). Pins already use real WGS84 coords (post-MapLibre) and the locate-FAB already requests geolocation — remaining work is the slider + haversine filter.
 
 **Sprint 3 — Curator presence**
 - Curator weekly synthesis: edge fn + `curator.html` render (4h)
-- ~~City selector: promote from placeholder to real switcher~~ ✓ shipped — Riga is live with 543 OSM venues + 7 picks; Helsinki has 4 picks. The selector is now a real keyboard-accessible dropdown with city plate thumbnails.
+- ~~City selector: promote from placeholder to real switcher~~ ✓ shipped — a real keyboard-accessible dropdown with city-plate thumbnails. Tallinn / Helsinki / Riga are live; Vilnius is scaffolded as "coming soon".
 
 **Sprint 4+ — opportunistic**
 - Any Tier 3 items as the catalog grows and user feedback lands.
@@ -133,4 +131,4 @@ A handful of patterns to keep consistent:
 
 ---
 
-*Authored by Opus 4.7. Updated May 2026 to reflect shipped pipeline.*
+*Last updated May 2026 — reflects the shipped pipeline and the Today / Discover / Saved / Profile editorial redesign.*

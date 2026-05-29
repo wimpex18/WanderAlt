@@ -3553,8 +3553,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .deprecation-banner,
   .city-selector,
   .city-selector__chev,
-  .tonight-badge,
-  .tonight-actions,
+  .tonight__badge,
+  .tonight__actions,
   .venue-actions,
   .venue-back,
   .btn-primary,
@@ -3583,11 +3583,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .tonight__attr a { color: #000; text-decoration: none; }
   .tonight__attr-line { background: #000; }
 
-  /* ── Tonight card — keep together, border for definition ── */
-  .tonight-card {
+  /* ── Tonight hero — keep together (flat, no card border) ── */
+  .tonight {
     page-break-inside: avoid;
-    border: 0.5pt solid #000;
-    padding: 14pt;
     margin-bottom: 16pt;
   }
 
@@ -3620,7 +3618,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     margin: 20mm;
     @bottom-right {
       content: counter(page);
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--ff-mono);
       font-size: 9pt;
       color: #555;
     }
@@ -3632,110 +3630,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
    Additions for the Direction B redesign (May 2026).
    ============================================================ */
 
-/* Tonight card — bordered surface card with 12px radius */
-.tonight-card {
-  margin: 4px 0 0;
-  padding: var(--s-4) var(--s-4) var(--s-4);
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius-card);
-}
-.tonight-card__head { margin-bottom: var(--s-3); }
-.tonight-card__meta {
-  display: flex; align-items: center; gap: 8px;
-  margin: var(--s-3) 0 6px; flex-wrap: wrap;
-}
-.tonight-card__title {
-  display: block;
-  font-family: var(--ff-body);
-  font-size: 22px; font-weight: 600;
-  letter-spacing: -0.5px; line-height: 1.2;
-  color: var(--c-ink);
-  margin-bottom: 4px;
-}
-/* Override the global --fs-quote scale-up inside the briefing card —
-   the bordered card is a surface, not a hero, so the quote should
-   scale alongside body type, not dominate the page. */
-.tonight-card .tonight__quote {
-  margin: var(--s-3) 0 var(--s-2);
-  padding: 12px 14px;
-}
-.tonight-card .tonight__quote p {
-  font-size: 22px;
-  line-height: 1.25;
-}
-@media (min-width: 768px) {
-  .tonight-card { padding: var(--s-5) var(--s-5); }
-  .tonight-card__title { font-size: 26px; }
-  .tonight-card .tonight__quote p { font-size: 26px; }
-}
-@media (min-width: 1100px) {
-  .tonight-card .tonight__quote p { font-size: 28px; }
-}
-
-/* Tonight pill badge — lime pill with live dot */
-.tonight-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--c-lime);
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  margin-bottom: var(--s-3);
-}
-.tonight-badge__dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--c-ink);
-  flex-shrink: 0;
-  position: relative;
-}
-/* Pulsing ring — the "green motion element" */
-.tonight-badge__dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 1.5px solid var(--c-ink);
-  opacity: 0.5;
-  animation: wa-pulse 1.8s ease-out infinite;
-}
-
-/* Kind badge — petrol square + mono label */
-.kind-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px 5px 8px;
-  border-radius: 6px;
-  background: var(--c-paper);
-  border: var(--rule-w) solid var(--c-rule);
-  flex-shrink: 0;
-}
-.kind-badge__icon {
-  width: 20px; height: 20px;
-  border-radius: 4px;
-  background: var(--c-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-paper);
-  flex-shrink: 0;
-}
-.kind-badge__label {
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--c-ink-soft);
-  font-weight: 500;
-}
+/* The bordered Tonight card, lime pill badge and kind badge were retired
+   when the Today hero went flat (May 2026 editorial redesign — see the
+   EDITORIAL REDESIGN block at the end of this file + briefing.js
+   renderTonight). The hero now uses .tonight__badge / .tonight__kindline /
+   .tonight__title / .tonight__quote directly. .tonight__venue* stays — the
+   venue page and AI match card still reuse it. */
 
 /* Tonight venue name — sans, heavier */
 .tonight__venue-name {
@@ -3749,13 +3649,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 .tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
 
-/* CTA buttons in tonight card */
-.tonight-actions {
-  display: flex;
-  gap: var(--s-3);
-  margin-top: var(--s-4);
-  align-items: stretch;
-}
 /* Shared button skeleton — both primary + secondary use the same
    display (inline-flex), padding, font, and border-radius so they
    are pixel-identical in height and baseline. The earlier mismatch
@@ -4644,18 +4537,21 @@ a.handle:hover { color: var(--c-ink); }
    16:9 monitors. */
 @media (min-width: 1024px) {
   body[data-page="discover"] .page { max-width: 1240px; }
+  /* Rebalanced split (redesign May 2026): the editorial list breathes
+     (1fr) while the map stays prominent and sticky (1.18fr). The old
+     0.85/1.6 ratio was the main source of the cramped, dense feeling. */
   .discover-panes {
     display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.6fr);
-    gap: var(--s-5);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr);
+    gap: var(--s-7);
     align-items: start;
   }
   .discover-pane--list { min-width: 0; }
   .discover-pane--map {
     position: sticky;
-    top: var(--s-3);
-    height: min(560px, calc(100vh - 220px));
-    min-height: 420px;
+    top: var(--s-5);
+    height: min(640px, calc(100vh - 150px));
+    min-height: 540px;
   }
 }
 
@@ -4966,4 +4862,442 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-view-fab,
   .discover-sheet,
   .discover-sheet-backdrop { display: none !important; }
+}
+
+/* ============================================================
+   EDITORIAL REDESIGN — Discover · Today · Profile (May 2026)
+   ------------------------------------------------------------
+   Faithful evolution of the Compass system: same tokens, two-tone
+   petrol+lime, hairline rules, --t-fast/--t-mid motion, curator
+   voice loudest. Folds discover-redesign.css + pages-redesign.css
+   deltas in. No new :root variables (CLAUDE.md) — the redesign's
+   --c-accent-deep / --c-accent-line collapse to --c-accent, and
+   --c-cream uses the literal oklch(0.95 0.025 78) already in use.
+   Appended last so these win the cascade over the base rules.
+   ============================================================ */
+
+/* ── Discover: editorial lede (sets the tone, like Today's standfirst) ── */
+.discover-lede {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  margin: var(--s-3) 0 var(--s-5);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+.discover-lede__title {
+  font-size: 15px;
+  color: var(--c-ink-soft);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.discover-lede__title b { font-weight: 600; color: var(--c-ink); }
+.discover-lede__count {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  white-space: nowrap;
+}
+@media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
+/* Lede is editorial chrome — drop it on the mobile map view + AI mode. */
+body.discover-map-view .discover-lede { display: none; }
+body.discover-ai-mode  .discover-lede { display: none; }
+
+/* ── Discover: compact inline scope toggle ── */
+body[data-page="discover"] .discover-scope {
+  display: inline-flex;
+  gap: 3px;
+  margin: 0 0 var(--s-5);
+}
+body[data-page="discover"] .discover-scope__btn {
+  flex: 0 0 auto;
+  padding: 9px 28px;
+  border-radius: 5px;
+}
+@media (max-width: 767px) {
+  body[data-page="discover"] .discover-scope { display: flex; width: 100%; }
+  body[data-page="discover"] .discover-scope__btn { flex: 1; padding: 9px 12px; }
+}
+
+/* ── Discover: taller, refined search field ── */
+body[data-page="discover"] .discover-search {
+  padding: 0;
+  margin: 0 0 var(--s-4);
+  border-bottom: 0;
+  transition: background var(--t-mid), padding var(--t-mid), border-radius var(--t-mid);
+}
+body[data-page="discover"] .discover-search .search-box {
+  height: 54px;
+  gap: var(--s-3);
+  padding: 0 var(--s-3) 0 var(--s-4);
+  background: var(--c-paper);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
+}
+body[data-page="discover"] .discover-search .search-box:focus-within { border-color: var(--c-accent); }
+body[data-page="discover"] .discover-search .search-input { font-size: 17px; letter-spacing: -0.01em; }
+body[data-page="discover"] .discover-search .search-box__icon { color: var(--c-faint); }
+body[data-page="discover"] .discover-search .search-box__ai-btn {
+  width: 36px; height: 36px; margin: 0;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: 6px;
+  background: var(--c-paper-deep);
+}
+body[data-page="discover"] .discover-search .search-box__ai-btn:hover { color: var(--c-accent); border-color: var(--c-accent); }
+body[data-page="discover"] .discover-search .search-box__ai-btn[aria-pressed="true"] {
+  background: var(--c-accent); border-color: var(--c-accent); color: var(--c-lime);
+}
+
+/* ── Discover: pills wrap so the full Places venue-kind row fits ── */
+body[data-page="discover"] .discover-pills {
+  flex-wrap: wrap;
+  overflow: visible;
+  align-items: center;
+}
+
+/* ── Discover: filter rail — mono eyebrow legends with hairlines ── */
+@media (min-width: 1024px) {
+  body[data-page="discover"] .discover-sheet__title {
+    font-family: var(--ff-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--c-ink);
+  }
+  body[data-page="discover"] .discover-sheet__field legend.eyebrow {
+    display: block;
+    width: 100%;
+    padding-bottom: var(--s-2);
+    margin-bottom: var(--s-3);
+    border-bottom: var(--rule-w) solid var(--c-rule);
+  }
+  body[data-page="discover"] .discover-sheet__field { margin: 0 0 var(--s-5); }
+  body[data-page="discover"] .discover-sheet__field:last-child { margin-bottom: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   AI "MATCH" MODE — immersive, but flat & two-tone (solid petrol)
+   ════════════════════════════════════════════════════════════ */
+body.discover-ai-mode .discover-search {
+  background: var(--c-accent);
+  padding: var(--s-7);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--s-7);
+  position: relative;
+}
+body.discover-ai-mode .discover-search::before {
+  content: "WanderAlt concierge";
+  display: block;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-lime);
+  margin-bottom: var(--s-4);
+}
+body.discover-ai-mode .discover-search .search-box {
+  height: 62px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.24);
+}
+body.discover-ai-mode .discover-search .search-box:focus-within { border-color: var(--c-lime); }
+body.discover-ai-mode .discover-search .search-input { color: #fff; font-size: 19px; caret-color: var(--c-lime); }
+body.discover-ai-mode .discover-search .search-input::placeholder { color: rgba(255, 255, 255, 0.6); }
+body.discover-ai-mode .discover-search .search-box__icon { color: var(--c-lime); }
+body.discover-ai-mode .discover-search .search-box__ai-btn {
+  background: var(--c-lime); border-color: var(--c-lime); color: var(--c-accent);
+}
+body.discover-ai-mode .discover-search .search-box__clear { color: rgba(255, 255, 255, 0.72); }
+
+/* Example prompts sit on the petrol panel — invert them to read on dark. */
+body.discover-ai-mode .discover-ai-examples { margin-top: var(--s-4); }
+body.discover-ai-mode .discover-ai-example {
+  border: var(--rule-w) solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef5f3;
+  border-radius: 999px;
+  padding: 8px 14px;
+}
+body.discover-ai-mode .discover-ai-example:hover {
+  background: var(--c-lime); border-color: var(--c-lime); color: var(--c-accent);
+}
+
+/* Collapse every keyword/filter affordance so the concierge has full focus. */
+body.discover-ai-mode .discover-pills,
+body.discover-ai-mode .mood-chips,
+body.discover-ai-mode .discover-applied,
+body.discover-ai-mode .discover-sheet,
+body.discover-ai-mode .discover-browse-section,
+body.discover-ai-mode .discover-pane--map,
+body.discover-ai-mode #discover-results-section { display: none !important; }
+body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
+
+@media (min-width: 1024px) {
+  /* AI mode goes single column — the matched quote owns the page. */
+  body.discover-ai-mode .discover-panes { display: block; }
+  body.discover-ai-mode .discover-sheet[hidden] { display: none !important; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   TODAY — flat Tonight hero (curator quote is the loudest element)
+   ════════════════════════════════════════════════════════════ */
+.tonight__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+  background: var(--c-lime);
+  padding: 5px 11px;
+  border-radius: 999px;
+  margin: 0 0 var(--s-4);
+}
+.tonight__badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c-ink);
+}
+.tonight__kindline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+}
+.tonight__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+  border: var(--rule-w) solid var(--c-rule-strong);
+  padding: 4px 9px;
+  border-radius: 5px;
+}
+.tonight__kind .dot { width: 7px; height: 7px; border-radius: 50%; border: 2px solid var(--c-accent); }
+.tonight__where {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--c-ink-mute);
+  letter-spacing: 0.02em;
+}
+.tonight__title {
+  display: block;
+  font-family: var(--ff-body);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-4);
+}
+.tonight:hover .tonight__title,
+a.tonight__title:hover { color: var(--c-accent); }
+
+/* Flat hero quote — bigger, lime rule on the left, no surface card. */
+body[data-page="briefing"] .tonight__quote {
+  position: relative;
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-3);
+  padding: 0 0 0 var(--s-5);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  text-wrap: pretty;
+}
+body[data-page="briefing"] .tonight__quote::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  background: var(--c-lime);
+}
+body[data-page="briefing"] .tonight__attr {
+  display: block;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: var(--c-ink-mute);
+  margin: 0 0 var(--s-5);
+}
+
+.tonight__actions { display: flex; gap: var(--s-3); margin-top: var(--s-4); align-items: stretch; }
+.tonight__actions .bookmark { margin: 0; padding: 0; }
+.btn-going, .btn-save {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.btn-going { background: var(--c-ink); color: #fff; border: 0; }
+.btn-going:hover { background: var(--c-accent); }
+.btn-save { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-rule-strong); }
+.btn-save:hover { border-color: var(--c-accent); color: var(--c-accent); }
+
+/* Today: bigger editorial section title; subtle hover lift on picks. */
+body[data-page="briefing"] .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+@media (hover: hover) { body[data-page="briefing"] .pick:hover { transform: translateY(-1px); transition: transform var(--t-mid); } }
+
+@media (max-width: 767px) {
+  body[data-page="briefing"] .section-title { font-size: 24px; }
+  body[data-page="briefing"] .tonight__quote { font-size: 25px; }
+  .tonight__actions { flex-direction: column; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PROFILE — flat petrol avatar (no gradient), proper toggle switch
+   ════════════════════════════════════════════════════════════ */
+.profile-avatar {
+  width: 60px; height: 60px;
+  background: var(--c-accent);
+  background-image: none;
+  border: 0;
+}
+.profile-avatar__initial {
+  font-family: var(--ff-mono);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--c-lime);
+}
+/* Digest opt-in: real toggle switch (was a bare checkbox). */
+.profile-toggle__check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 42px; height: 24px;
+  border-radius: 999px;
+  background: var(--c-rule-strong);
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--t-fast);
+}
+.profile-toggle__check::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--t-mid);
+}
+.profile-toggle__check:checked { background: var(--c-accent); }
+.profile-toggle__check:checked::after { transform: translateX(18px); }
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="briefing"] .pick:hover { transform: none; }
+  .profile-toggle__check::after { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SAVED — same editorial language as Discover / Today / Profile
+   ------------------------------------------------------------
+   The page already shares the city banner, masthead nav and
+   .list-row treatment. These deltas align the head (hairline +
+   rhythm) and re-cast the segment switcher as the same compact
+   ink-fill segmented control used for Discover's Events|Places,
+   with lime reserved for the active/live count (two-tone rule).
+   ════════════════════════════════════════════════════════════ */
+body[data-page="saved"] .reading-head {
+  padding: var(--s-3) 0 var(--s-4);
+  margin-bottom: var(--s-5);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+body[data-page="saved"] .reading-head__title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+body[data-page="saved"] .reading-head__count {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+}
+
+/* Segmented control — match .discover-scope (paper-deep track, compact). */
+body[data-page="saved"] .seg-tabs {
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  margin: 0 0 var(--s-5);
+}
+body[data-page="saved"] .seg-tab {
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 14px;
+  gap: 7px;
+}
+body[data-page="saved"] .seg-tab__label { font-size: 14px; font-weight: 600; }
+body[data-page="saved"] .seg-tab__count {
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  color: var(--c-faint);
+  font-size: 11px;
+}
+
+/* Active segment = ink fill (like the Events|Places toggle), lime count. */
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"],
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
+  color: var(--c-paper);
+  font-weight: 600;
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__count,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__count {
+  background: var(--c-lime);
+  color: var(--c-ink);
+  border-color: transparent;
+  padding: 1px 7px;
+}
+
+/* Per-segment note → mono eyebrow rhythm, matching the filter rail. */
+body[data-page="saved"] .seg-note {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  padding: 0 0 var(--s-4);
+}
+
+@media (max-width: 767px) {
+  body[data-page="saved"] .seg-tab { padding: 9px 8px; }
+  body[data-page="saved"] .reading-head__title { font-size: 24px; }
 }

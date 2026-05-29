@@ -57,6 +57,13 @@
 
     <p class="print-head" aria-hidden="true"></p>
 
+    <!-- Editorial lede — sets the tone, like the Today page's standfirst.
+         Presentational only; city.js swaps the city name in .discover-lede__city. -->
+    <div class="discover-lede">
+      <p class="discover-lede__title">Browse every curated pick in <b class="discover-lede__city">Tallinn</b> — search, filter, or let the concierge match your night.</p>
+      <span class="discover-lede__count">vouched by humans</span>
+    </div>
+
     <!-- Events | Places scope switch. The permanent thing (a venue) and
          the dated thing (an event) are different objects, so this is a
          scoped toggle, not a filter facet (RA / Google Maps pattern).
@@ -127,6 +134,11 @@
       <button class="discover-pill" type="button" data-pill="kind:record store" data-mode="places" hidden>Record stores</button>
       <button class="discover-pill" type="button" data-pill="kind:bookshop"     data-mode="places" hidden>Bookshops</button>
       <button class="discover-pill" type="button" data-pill="kind:gallery"      data-mode="places" hidden>Galleries</button>
+      <button class="discover-pill" type="button" data-pill="kind:club"         data-mode="places" hidden>Clubs</button>
+      <button class="discover-pill" type="button" data-pill="kind:thrift"       data-mode="places" hidden>Flea &amp; thrift</button>
+      <button class="discover-pill" type="button" data-pill="kind:arts centre"  data-mode="places" hidden>Arts centres</button>
+      <button class="discover-pill" type="button" data-pill="kind:cinema"       data-mode="places" hidden>Cinemas</button>
+      <button class="discover-pill" type="button" data-pill="kind:community"    data-mode="places" hidden>Community</button>
       <button class="discover-pill discover-pill--more" type="button" id="discover-filters-btn">
         + Filters
         <span class="discover-pill__count" id="discover-filter-count" hidden>0</span>
