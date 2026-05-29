@@ -100,42 +100,39 @@
     const section = document.getElementById('tonight');
     if (!section || !entry) return;
 
-    const timeStr = entry.time ? ` &middot; ${entry.time}` : '';
+    /* Flat editorial hero (redesign May 2026): a lime TONIGHT signal, a
+       kind + neighborhood line, the title, then the curator quote as the
+       dominant element (lime rule, full display scale), then the actions.
+       No surface card, no hero thumbnail — the voice is the product. */
+    const timeStr  = entry.time ? ` &middot; ${entry.time}` : '';
+    const whereStr = entry.venue
+      ? `${entry.neighborhood} &middot; ${entry.venue}`
+      : entry.neighborhood;
     section.innerHTML =
-      `<div class="tonight-card">
-         <div class="tonight-card__head">
-           <div class="tonight-badge">
-             <span class="tonight-badge__dot" aria-hidden="true"></span>
-             Tonight${timeStr}
-           </div>
-         </div>
-         ${entry.imageUrl ? thumbEl(entry, true) : ''}
-         ${entry.imageAttr && entry.imageUrl ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
-         <div class="tonight-card__meta">
-           <span class="kind-badge">
-             <span class="kind-badge__icon" aria-hidden="true">
-               <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/></svg>
-             </span>
-             <span class="kind-badge__label">${entry.kind}</span>
-           </span>
-           <span class="meta">${entry.neighborhood}${timeStr}</span>
-         </div>
-         <a href="venue.html?id=${entry.id}" class="tonight-card__title" id="tonight-label">${entry.title}</a>
-         <blockquote class="tonight__quote">
-           <p>&ldquo;${entry.quote}&rdquo;</p>
-           <footer class="tonight__attr">
-             <span class="tonight__attr-line" aria-hidden="true"></span><a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a>
-           </footer>
-         </blockquote>
-         <div class="tonight-actions">
-           <a class="btn-primary" href="venue.html?id=${entry.id}">I&rsquo;m going &rarr;</a>
-           <label class="btn-secondary bookmark">
-             <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick" />
-             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>
-             Save
-           </label>
-         </div>
+      `<span class="tonight__badge">Tonight${timeStr}</span>
+       <div class="tonight__kindline">
+         <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
+         <span class="tonight__where">${whereStr}</span>
+       </div>
+       <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${entry.title}</a>
+       <blockquote class="tonight__quote">&ldquo;${entry.quote}&rdquo;</blockquote>
+       <p class="tonight__attr">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
+       <div class="tonight__actions">
+         <a class="btn-going" href="venue.html?id=${entry.id}">I&rsquo;m going
+           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
+         </a>
+         <label class="btn-save bookmark">
+           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick" />
+           <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 1.5h10v14l-5-3.5-5 3.5v-14z"/></svg>
+           Save
+         </label>
        </div>`;
+    /* Re-apply saved state to the freshly-rendered checkbox (surprise-me
+       re-renders the hero, so this can't rely on the one-shot init pass). */
+    if (window.WA?.Bookmarks) {
+      const cb = section.querySelector('.bookmark__check');
+      if (cb && window.WA.Bookmarks.get()[cb.dataset.id]) cb.checked = true;
+    }
   };
 
   /* ── This Week list ────────────────────────────────────── */
