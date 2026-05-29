@@ -3553,8 +3553,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .deprecation-banner,
   .city-selector,
   .city-selector__chev,
-  .tonight-badge,
-  .tonight-actions,
+  .tonight__badge,
+  .tonight__actions,
   .venue-actions,
   .venue-back,
   .btn-primary,
@@ -3583,11 +3583,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .tonight__attr a { color: #000; text-decoration: none; }
   .tonight__attr-line { background: #000; }
 
-  /* ── Tonight card — keep together, border for definition ── */
-  .tonight-card {
+  /* ── Tonight hero — keep together (flat, no card border) ── */
+  .tonight {
     page-break-inside: avoid;
-    border: 0.5pt solid #000;
-    padding: 14pt;
     margin-bottom: 16pt;
   }
 
@@ -3632,110 +3630,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
    Additions for the Direction B redesign (May 2026).
    ============================================================ */
 
-/* Tonight card — bordered surface card with 12px radius */
-.tonight-card {
-  margin: 4px 0 0;
-  padding: var(--s-4) var(--s-4) var(--s-4);
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius-card);
-}
-.tonight-card__head { margin-bottom: var(--s-3); }
-.tonight-card__meta {
-  display: flex; align-items: center; gap: 8px;
-  margin: var(--s-3) 0 6px; flex-wrap: wrap;
-}
-.tonight-card__title {
-  display: block;
-  font-family: var(--ff-body);
-  font-size: 22px; font-weight: 600;
-  letter-spacing: -0.5px; line-height: 1.2;
-  color: var(--c-ink);
-  margin-bottom: 4px;
-}
-/* Override the global --fs-quote scale-up inside the briefing card —
-   the bordered card is a surface, not a hero, so the quote should
-   scale alongside body type, not dominate the page. */
-.tonight-card .tonight__quote {
-  margin: var(--s-3) 0 var(--s-2);
-  padding: 12px 14px;
-}
-.tonight-card .tonight__quote p {
-  font-size: 22px;
-  line-height: 1.25;
-}
-@media (min-width: 768px) {
-  .tonight-card { padding: var(--s-5) var(--s-5); }
-  .tonight-card__title { font-size: 26px; }
-  .tonight-card .tonight__quote p { font-size: 26px; }
-}
-@media (min-width: 1100px) {
-  .tonight-card .tonight__quote p { font-size: 28px; }
-}
-
-/* Tonight pill badge — lime pill with live dot */
-.tonight-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--c-lime);
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  margin-bottom: var(--s-3);
-}
-.tonight-badge__dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--c-ink);
-  flex-shrink: 0;
-  position: relative;
-}
-/* Pulsing ring — the "green motion element" */
-.tonight-badge__dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 1.5px solid var(--c-ink);
-  opacity: 0.5;
-  animation: wa-pulse 1.8s ease-out infinite;
-}
-
-/* Kind badge — petrol square + mono label */
-.kind-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px 5px 8px;
-  border-radius: 6px;
-  background: var(--c-paper);
-  border: var(--rule-w) solid var(--c-rule);
-  flex-shrink: 0;
-}
-.kind-badge__icon {
-  width: 20px; height: 20px;
-  border-radius: 4px;
-  background: var(--c-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-paper);
-  flex-shrink: 0;
-}
-.kind-badge__label {
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--c-ink-soft);
-  font-weight: 500;
-}
+/* The bordered Tonight card, lime pill badge and kind badge were retired
+   when the Today hero went flat (May 2026 editorial redesign — see the
+   EDITORIAL REDESIGN block at the end of this file + briefing.js
+   renderTonight). The hero now uses .tonight__badge / .tonight__kindline /
+   .tonight__title / .tonight__quote directly. .tonight__venue* stays — the
+   venue page and AI match card still reuse it. */
 
 /* Tonight venue name — sans, heavier */
 .tonight__venue-name {
@@ -3749,13 +3649,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 .tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
 
-/* CTA buttons in tonight card */
-.tonight-actions {
-  display: flex;
-  gap: var(--s-3);
-  margin-top: var(--s-4);
-  align-items: stretch;
-}
 /* Shared button skeleton — both primary + secondary use the same
    display (inline-flex), padding, font, and border-radius so they
    are pixel-identical in height and baseline. The earlier mismatch
@@ -5319,4 +5212,92 @@ body[data-page="briefing"] .section-title { font-size: 28px; font-weight: 700; l
 @media (prefers-reduced-motion: reduce) {
   body[data-page="briefing"] .pick:hover { transform: none; }
   .profile-toggle__check::after { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SAVED — same editorial language as Discover / Today / Profile
+   ------------------------------------------------------------
+   The page already shares the city banner, masthead nav and
+   .list-row treatment. These deltas align the head (hairline +
+   rhythm) and re-cast the segment switcher as the same compact
+   ink-fill segmented control used for Discover's Events|Places,
+   with lime reserved for the active/live count (two-tone rule).
+   ════════════════════════════════════════════════════════════ */
+body[data-page="saved"] .reading-head {
+  padding: var(--s-3) 0 var(--s-4);
+  margin-bottom: var(--s-5);
+  border-bottom: var(--rule-w) solid var(--c-rule);
+}
+body[data-page="saved"] .reading-head__title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+body[data-page="saved"] .reading-head__count {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+}
+
+/* Segmented control — match .discover-scope (paper-deep track, compact). */
+body[data-page="saved"] .seg-tabs {
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  margin: 0 0 var(--s-5);
+}
+body[data-page="saved"] .seg-tab {
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 14px;
+  gap: 7px;
+}
+body[data-page="saved"] .seg-tab__label { font-size: 14px; font-weight: 600; }
+body[data-page="saved"] .seg-tab__count {
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  color: var(--c-faint);
+  font-size: 11px;
+}
+
+/* Active segment = ink fill (like the Events|Places toggle), lime count. */
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"],
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
+  color: var(--c-paper);
+  font-weight: 600;
+}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__count,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__count {
+  background: var(--c-lime);
+  color: var(--c-ink);
+  border-color: transparent;
+  padding: 1px 7px;
+}
+
+/* Per-segment note → mono eyebrow rhythm, matching the filter rail. */
+body[data-page="saved"] .seg-note {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  padding: 0 0 var(--s-4);
+}
+
+@media (max-width: 767px) {
+  body[data-page="saved"] .seg-tab { padding: 9px 8px; }
+  body[data-page="saved"] .reading-head__title { font-size: 24px; }
 }
