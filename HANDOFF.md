@@ -107,11 +107,11 @@ Used by `.map-bleed` and `.seg-tabs`. Set `width: calc(100% + 2 * var(--gutter))
 | Rule | `.rule` | 281 | — | 1px `--c-rule` |
 | Eyebrow | `.eyebrow` | 287 | — | mono, uppercase, 11px, muted |
 | Meta string | `.meta` | 296 | `.meta__time` | mono 12px; `__time` non-breaking |
-| Tonight badge | `.tonight-badge` | 2413 | — | lime pill, pulsing dot |
-| Kind badge | `.kind-badge` | (venue area) | — | accent dot icon + mono label |
+| Tonight badge | `.tonight__badge` | (redesign block) | — | lime pill + ink dot, "Tonight · TIME" |
+| Kind chip | `.tonight__kind` | (redesign block) | — | mono uppercase chip + petrol ring dot |
 | Thumbnail | `.thumb` | 421 | `.thumb--lg`, `.thumb--has-img` | halftone fallback or CSS `background-image` |
 | Bookmark toggle | `.bookmark` + `.bookmark__check` | 547 | — | `:checked` → `fill: currentColor` on SVG path |
-| Tonight card | `.tonight-card` | 2373 | — | bordered surface; scoped quote size |
+| Tonight hero | `.tonight` + `.tonight__*` | (redesign block) | — | flat hero (no card); display-italic quote with lime rule is the loudest element |
 | Primary button | `.btn-primary` | (685) | — | dark bg on hover |
 | Secondary button | `.btn-secondary` | (693) | — | outlined; fills on hover |
 | Bottom/top nav | `.nav` + `.nav__inner` | 1833 | — | fixed bottom mobile; sticky top desktop |
@@ -167,25 +167,23 @@ Active item expands to show its text label; all inactive items hide the label (`
 
 ### Briefing (`index.html`)
 
-**Tonight hero** (`#tonight .tonight-card`): rendered by `briefing.js:renderTonight()`. Structure:
+**Tonight hero** (`#tonight.tonight`): rendered by `briefing.js:renderTonight()`. A flat editorial hero (no surface card) — the curator quote is the loudest element. Structure:
 
 ```
-.tonight-card                       ← bordered surface, --c-paper-deep bg
-  .tonight-card__head
-    .tonight-badge                  ← lime pill, pulsing dot, "Tonight · TIME"
-  .thumb.thumb--lg                  ← real image or halftone initials fallback
-  p.photo-credit                    ← only if entry.imageAttr set
-  .tonight-card__meta               ← flex row: .kind-badge + .meta
-  a.tonight-card__title             ← 22/26/28px body-font venue link
-  blockquote.tonight__quote         ← italic display font, lime left border
-    p                               ← 22px mobile → 26px tablet → 28px desktop
-    footer.tonight__attr            ← line ornament + handle <a>
-  .tonight-actions
-    a.btn-primary "I'm going →"
-    label.btn-secondary.bookmark "Save"
+section#tonight.tonight
+  span.tonight__badge                ← lime pill + ink dot, "Tonight · TIME"
+  .tonight__kindline
+    span.tonight__kind               ← mono uppercase chip + petrol ring dot (kind)
+    span.tonight__where              ← "Neighborhood · Venue" (mono, muted)
+  a.tonight__title                   ← 23px body-font venue link
+  blockquote.tonight__quote          ← display italic, lime left rule; 25px mobile → 30px ≥768
+  p.tonight__attr                    ← "— @handle" (mono, muted; handle is petrol)
+  .tonight__actions
+    a.btn-going "I'm going →"        ← ink fill
+    label.btn-save.bookmark "Save"   ← outlined; wraps the .bookmark__check toggle
 ```
 
-Quote font is scoped: `.tonight-card .tonight__quote p` overrides `--fs-quote` (which is 32/44/52px globally) down to 22/26/28px. This keeps the bordered briefing card proportional without affecting the full-bleed venue detail hero.
+The hero quote overrides `--fs-quote` (scoped to `body[data-page="briefing"] .tonight__quote`) — no surface thumbnail, so the voice dominates. The `.bookmark__check` checkbox inside `.btn-save` keeps the standard bookmark wiring (fills petrol when saved).
 
 **This Week list** (`.picks`): `briefing.js:renderThisWeek()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox.
 
@@ -199,17 +197,22 @@ Quote font is scoped: `.tonight-card .tonight__quote p` overrides `--fs-quote` (
 
 Unified search + filter + map surface. Replaced the old `map.html` and `search.html` pages. Those files are now 5-line redirect stubs that forward legacy URLs via `discover-redirect.js`.
 
-**URL schema:** `?q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&sort=relevance|newest|title|curator&id=<pick-id>&ai=<prompt>&mode=match`
+**Scope switch:** a compact inline `.discover-scope` segmented control (Events | Places, ink-fill active) sets `state.type`. Events = curated picks; Places = permanent venues. Filters narrow within the active scope; Places hides the mood strip + AI link (both pick-only) and shows a row of venue-kind quick-pills.
+
+**URL schema:** `?type=events|places&q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&sort=…&id=<pick-id>&ai=<prompt>&mode=match`
+- **Sort** is mode-aware: Events → `relevance` (default) / `newest` ("Soonest"); Places → `featured` (default) / `nearest` (geolocation). A→Z and by-curator were dropped.
 - `?id=` is the active pin — written on pin tap, persists across filter changes, restored on popstate.
 - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify with search params.
 
 **Layout — mobile (< 1024px):** one pane at a time. Default: list. A floating "Map" FAB (`.discover-view-fab`) bottom-right toggles `data-view` on `#discover-panes` between `list` and `map`.
 
-**Layout — desktop (≥ 1024px):** CSS grid split view always on. List ~480px left, map fills right. FAB is hidden. `?view=` param is ignored.
+**Layout — desktop (≥ 1024px):** CSS grid split view always on, `minmax(0,1fr) minmax(0,1.18fr)` (list breathes, sticky map stays prominent). FAB is hidden. `?view=` param is ignored.
 
-**Filter pill row** (`.discover-pills`): Tonight · This week · Free · + Filters. Pills toggle `state.time` or `state.cats`. "+ Filters" opens the bottom sheet.
+**Filter pill row** (`.discover-pills`, wrapping): Events shows Tonight · This week · Free; Places shows venue-kind quick-pills (Record stores · Bookshops · Galleries · Clubs · Flea & thrift · Arts centres · Cinemas · Community). Pills toggle `state.time` or `state.cats`. "+ Filters" opens the sheet (mobile only).
 
-**Filter sheet** (`.discover-sheet`): slides up from bottom on mobile, from left on desktop. Contains category chips, neighborhood chips, sort select. "Apply" commits; "Clear" resets all.
+**Filter rail / sheet** (`.discover-sheet`): mobile = a fixed bottom sheet opened by "+ Filters" (Apply commits, Clear resets). Desktop ≥1024px = a persistent static left-rail atop the list column with mono eyebrow legends + hairline rules; changes apply live (no Apply button). Category chips, neighborhood chips, and a Sort **radio list** (not a `<select>`).
+
+**AI concierge mode** (`body.discover-ai-mode`, Events only): toggling the ✦ button turns `.discover-search` into an immersive solid-petrol panel (lime accents, "WanderAlt concierge" eyebrow) and collapses the pills, mood strip, filter rail, browse sections, results and map so the matched curator quote owns the screen. Pure CSS keyed on the body class `discover.js` already sets — no JS change.
 
 **List pane states:**
 
@@ -227,7 +230,8 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 | Method | Description |
 |---|---|
-| `setFilters({ q, time, cats, mood, nhoods })` | Push all 5 filter dimensions into the map engine |
+| `setFilters({ q, time, cats, mood, nhoods })` | Events layer — push all 5 filter dimensions into the map engine (also resets Places mode) |
+| `setPlaces(venues)` | Places layer — render an already-filtered venue set as pins (stashes state if the map isn't ready yet) |
 | `render()` | Re-render pins with current filter state |
 | `fitView()` | Fit/zoom the viewport to show all visible pins |
 | `focusPin(id)` | Select a pin by pick id, open detail panel, dispatch `wa:map-pin-changed` |
@@ -273,7 +277,7 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 | `.curator-row` | handle → accent | 2px accent ring | — |
 | `.browse-row` | label → accent | 2px accent ring | — |
 | `.map-pin` | scale up | 2px accent ring | accent fill (`aria-pressed="true"`) |
-| `.seg-tab` label | label → `--c-ink` | ring on preceding radio | white card lifted; lime count; bold label |
+| `.seg-tab` label | label → `--c-ink` | ring on preceding radio | ink-fill segment; paper label; lime count badge |
 | `.btn-primary` | opacity 0.88 | 2px accent ring | — |
 | `.city-selector` | `color: --c-accent` | 2px accent ring | — |
 
@@ -293,12 +297,10 @@ Mobile-first. Two breakpoints.
 - `.nav`: fixed bottom → `position: sticky; top: 0; order: 2` (masthead below wordmark, above main)
 - Discover split view activates at ≥1024px: CSS grid `480px 1fr`; `.discover-pane--map` fills remaining width
 - `.thumb--lg`: 72px → 88px; `.thumb`: 48px → 64px
-- `.tonight-card .tonight__quote p`: 22px → 26px
-- `.tonight-card__title`: 22px → 26px
+- Briefing `.tonight__quote`: 25px → 30px (flat hero; title stays 23px)
 
 **≥ 1100px** (`styles.css:2027`)
-- `--reading-max`: 840px → 960px; `--fs-quote`: 44px → 52px
-- `.tonight-card .tonight__quote p`: 26px → 28px
+- `--fs-quote`: 44px → 52px (the full-scale venue/match hero quote; the briefing hero quote stays 30px)
 
 Safe-area insets: `body` bottom padding and `.nav` use `env(safe-area-inset-bottom, 0px)`.
 
@@ -308,7 +310,7 @@ Safe-area insets: `body` bottom padding and `.nav` use `env(safe-area-inset-bott
 
 ## Pulse animation
 
-`@keyframes wa-pulse` drives the ring on `.tonight-badge__dot::after` and `.map-sheet__tonight-dot::after`:
+`@keyframes wa-pulse` drives the live-dot ring (e.g. `.map-sheet__tonight-dot::after`) and the map locate-FAB "locating" state (`.map-locate-fab--locating`):
 
 ```css
 @keyframes wa-pulse {
@@ -331,7 +333,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 **Tonight fallback.** `briefing.js` uses `catalog.find(e => e.tonight) || catalog[0]`. If no entry has the `tonight` flag, the first catalog entry becomes the hero. This prevents a blank Briefing page after a fresh DB import.
 
-**Multi-city (May 2026).** Three cities live: Tallinn (primary, 100+ picks), Helsinki (4 picks, growing), Riga (6 picks, growing). City selector is fully implemented — keyboard-accessible listbox in `city.js`. Switching city saves to `localStorage ('wa:city')` and reloads. Supabase data layer and all ingest pipelines are city-aware.
+**Multi-city (May 2026).** Three cities live: Tallinn (primary), Helsinki and Riga (both growing). Vilnius is scaffolded as "coming soon". City selector is fully implemented — keyboard-accessible listbox in `city.js`. Switching city saves to `localStorage ('wa:city')` and reloads. Supabase data layer and all ingest pipelines are city-aware.
 
 **Vilnius scaffold (May 2026).** City plate SVG ready (`assets/vilnius-overview.svg` — Gediminas Tower, Cathedral + belfry, St. Anne's Church, Three Crosses). Entry in `city.js` CITIES array as `status: 'coming'` — shows "Coming soon" in the dropdown, not selectable. Static venue seed in `catalog.js` (7 verified venues, offline fallback). **Backend pipeline is now live (May 2026):** `ingest-osm` v11 seeded ~410 Vilnius venues; two `sources` rows wired (`@afishavilnius` telegram aggregator + `@ra_vilnius` Resident Advisor GraphQL via the new `ingest-ra` fn, 24 events validated). The UI stays `status: 'coming'` until reviewed content + an editorial curator voice are settled — no single-voice underground Telegram channel exists for Vilnius yet (scene is on Instagram: @smala.art, @discotag). RA's recurring cron is intentionally NOT scheduled pending the RA-ToS call. Full state + remaining steps in CLAUDE.md's Vilnius section.
 

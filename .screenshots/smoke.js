@@ -72,6 +72,20 @@ const PAGES = [
      in the static catalog is sigmundtells-2516. */
   { name: 'venue-detail',     url: '/venue.html?id=sigmundtells-2516', waitMs: 1500 },
 
+  /* Place (standalone venue) page — name/kind/neighborhood/socials + the
+     "Events here" section. The venue id is resolved at runtime from the
+     loaded catalog (live ids differ from the static seed), so this stays
+     valid whether Supabase is reachable or the offline seed is in use. */
+  { name: 'place-detail',     url: '/place.html', waitMs: 1500,
+    setup: async (page) => {
+      const id = await page.evaluate(() =>
+        (window.WA && ((window.WA.venues && window.WA.venues[0] && window.WA.venues[0].id) ||
+         (window.WA._venuesAll && window.WA._venuesAll[0] && window.WA._venuesAll[0].id))) || null);
+      if (!id) throw new Error('place-detail: no venue id available in WA.venues / WA._venuesAll');
+      await page.goto(`${BASE}/place.html?id=${encodeURIComponent(id)}`, { waitUntil: 'networkidle0', timeout: 15000 });
+      await new Promise(r => setTimeout(r, 1200));
+    } },
+
   /* Riga city switch — confirms ingest output and multi-city catalog. */
   { name: 'riga-briefing',    url: '/index.html',     waitMs: 1800, city: 'riga' },
   { name: 'riga-discover',    url: '/discover.html',  waitMs: 2200, city: 'riga' },
