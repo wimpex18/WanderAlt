@@ -3618,7 +3618,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     margin: 20mm;
     @bottom-right {
       content: counter(page);
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--ff-mono);
       font-size: 9pt;
       color: #555;
     }
