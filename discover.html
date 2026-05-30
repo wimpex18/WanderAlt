@@ -184,6 +184,15 @@
               <legend class="eyebrow">Neighborhood</legend>
               <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
             </fieldset>
+            <!-- Walking-radius filter. Single-select chips (Any / 5 / 15 /
+                 30 min walk). Picking one requests the visitor's location
+                 and filters list + map pins by haversine distance.
+                 discover.js renders the chips into #discover-within. -->
+            <fieldset class="discover-sheet__field">
+              <legend class="eyebrow">Distance</legend>
+              <div class="discover-sheet__chips" id="discover-within" role="group" aria-label="Walking distance"></div>
+              <p class="discover-within-note meta" id="discover-within-note" hidden>Location unavailable &mdash; showing all.</p>
+            </fieldset>
             <fieldset class="discover-sheet__field">
               <legend class="eyebrow">Sort</legend>
               <!-- Radio list, not a <select> (Baymard: visible options beat a

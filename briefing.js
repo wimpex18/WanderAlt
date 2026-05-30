@@ -99,6 +99,7 @@
   const renderTonight = (entry) => {
     const section = document.getElementById('tonight');
     if (!section || !entry) return;
+    section.removeAttribute('aria-busy');   /* hydration done — drop the loading flag */
 
     /* Flat editorial hero (redesign May 2026): a lime TONIGHT signal, a
        kind + neighborhood line, the title, then the curator quote as the
@@ -133,6 +134,21 @@
       const cb = section.querySelector('.bookmark__check');
       if (cb && window.WA.Bookmarks.get()[cb.dataset.id]) cb.checked = true;
     }
+  };
+
+  /* Empty Tonight hero — shown when the active city has no picks yet (e.g.
+     a newly-unlocked city without a curator). Replaces the skeleton so the
+     page never reads as a perpetual loading state. */
+  const renderTonightEmpty = () => {
+    const section = document.getElementById('tonight');
+    if (!section) return;
+    section.removeAttribute('aria-busy');
+    const cityId    = window.WA?.CITY || 'tallinn';
+    const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
+    section.innerHTML =
+      `<span class="tonight__badge">Tonight</span>
+       <p class="tonight__empty">No pick for tonight in ${cityLabel} yet &mdash; curators are warming up. ` +
+       `In the meantime, <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
   };
 
   /* ── This Week list ────────────────────────────────────── */
@@ -418,11 +434,15 @@
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
 
-    renderTonight(tonight);
+    if (tonight) renderTonight(tonight);
+    else         renderTonightEmpty();
     /* Pass the full ordered set — renderThisWeek paginates internally. */
     renderThisWeek(orderedWeek);
     restoreBookmarks();
     wireBookmarks();
+    /* Surprise me has nothing to cycle through in an empty city. */
+    const surpriseBtn = document.getElementById('surprise-btn');
+    if (surpriseBtn) surpriseBtn.hidden = catalog.length === 0;
     wireSurprise(catalog);
     renderColumn();  /* async — doesn't block the sync render above */
 

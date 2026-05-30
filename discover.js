@@ -21,6 +21,7 @@
     nhoods: new Set(),   /* neighborhood names */
     mood:   [],          /* mood tag ids from mood-chips */
     sort:   'relevance', /* events: relevance|newest · places: featured|nearest */
+    within: 0,           /* walking-radius filter in minutes (0 = off | 5 | 15 | 30) */
     mode:   'search',    /* 'search' | 'match' */
     ai:     '',          /* the last AI prompt, persisted in URL */
     view:   'list',      /* 'list' | 'map' — mobile only; desktop is split */
@@ -39,7 +40,7 @@
   let input, matchToggle, matchWrap, matchResult, matchAgain, copyLinkBtn,
       resultsSection, resultsList, resultsCount, emptyState,
       sheet, sheetBackdrop, filtersBtn, filterCount,
-      catChipsEl, nhoodChipsEl, sortEl,
+      catChipsEl, nhoodChipsEl, sortEl, withinEl,
       browseSects, panesEl, viewToggleBtn;
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
@@ -204,15 +205,39 @@
     resultsList.innerHTML = venues.map(renderVenueRow).join('');
   };
 
-  /* Nearest needs the visitor's location; request it lazily and cache. */
+  /* Nearest + the walking-radius filter need the visitor's location;
+     request it lazily and cache. _locDenied records a failed/declined
+     attempt so the UI can explain why a radius isn't filtering. */
   let _userLoc = null;
+  let _locDenied = false;
   const ensureLocation = (cb) => {
     if (_userLoc || !navigator.geolocation) { cb(); return; }
     navigator.geolocation.getCurrentPosition(
-      pos => { _userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; cb(); },
-      ()  => { cb(); },                       /* denied → fall back to Featured */
+      pos => { _userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; _locDenied = false; cb(); },
+      ()  => { _locDenied = true; cb(); },    /* denied → fall back gracefully */
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
     );
+  };
+  /* Either spatial control needs the visitor's location before running. */
+  const needsLocation = () =>
+    state.within > 0 || (state.type === 'places' && state.sort === 'nearest');
+
+  /* Walking-radius filter. ~80 m/min (a relaxed 4.8 km/h stroll), so
+     5/15/30 min ≈ 400/1200/2400 m. Haversine against each entry's
+     lat/lng; entries without coords drop out once a radius is set. */
+  const WALK_M_PER_MIN = 80;
+  const haversineM = (aLat, aLng, bLat, bLng) => {
+    const R = 6371000, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+    const s = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  };
+  const withinFilter = (list) => {
+    if (!state.within || !_userLoc) return list;   /* off, or location unknown → no-op */
+    const max = state.within * WALK_M_PER_MIN;
+    return list.filter(e => e.lat != null && e.lng != null &&
+      haversineM(_userLoc.lat, _userLoc.lng, e.lat, e.lng) <= max);
   };
   const sortVenues = (list) => {
     const arr = list.slice();
@@ -234,6 +259,7 @@
       const t = state.q.toLowerCase();
       list = list.filter(v => `${v.name} ${v.neighborhood} ${venueKindLabel(v.kind)}`.toLowerCase().includes(t));
     }
+    list = withinFilter(list);
     list = sortVenues(list);
 
     /* Places always shows its list (browsing places is the job) — no
@@ -360,6 +386,7 @@
     if (state.time && state.time !== 'all') sp.set('time', state.time);
     if (state.cats.size)             sp.set('cat', [...state.cats].join(','));
     if (state.nhoods.size)           sp.set('nhood', [...state.nhoods].join(','));
+    if (state.within)                sp.set('within', String(state.within));
     if (state.sort && state.sort !== DEFAULT_SORT[state.type]) sp.set('sort', state.sort);
     if (state.ai)                    sp.set('ai', state.ai);
     if (state.mode === 'match')      sp.set('mode', 'match');
@@ -377,6 +404,7 @@
     state.time   = sp.get('time')  || 'all';
     state.cats   = new Set((sp.get('cat')   || '').split(',').filter(Boolean));
     state.nhoods = new Set((sp.get('nhood') || '').split(',').filter(Boolean));
+    state.within = [5, 15, 30].includes(parseInt(sp.get('within'), 10)) ? parseInt(sp.get('within'), 10) : 0;
     state.sort   = sp.get('sort')  || DEFAULT_SORT[state.type];
     state.ai     = sp.get('ai')    || '';
     state.mode   = sp.get('mode') === 'match' ? 'match' : 'search';
@@ -395,7 +423,7 @@
       btn.classList.toggle('discover-pill--on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    const n = state.cats.size + state.nhoods.size + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
+    const n = state.cats.size + state.nhoods.size + (state.within ? 1 : 0) + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
     if (filterCount && filtersBtn) {
       if (n > 0) { filterCount.hidden = false; filterCount.textContent = String(n); }
       else       { filterCount.hidden = true; }
@@ -426,6 +454,7 @@
        desktop persistent rail is populated and refreshes on mode switch. */
     renderCatChips();
     renderNhoodChips();
+    renderWithinChips();
     buildSortOptions();
   };
 
@@ -435,7 +464,7 @@
     if (!isDesktop()) return;
     reflectPills();
     writeUrlState();
-    if (state.type === 'places' && state.sort === 'nearest') ensureLocation(run);
+    if (needsLocation()) ensureLocation(run);
     else run();
   };
 
@@ -456,6 +485,19 @@
     return sel ? sel.value : DEFAULT_SORT[state.type];
   };
 
+  /* Walking-radius control — single-select chips (Any / 5 / 15 / 30 min
+     walk). Applies to both Events and Places (both carry lat/lng). */
+  const WITHIN_OPTS = [[0, 'Any'], [5, '5 min'], [15, '15 min'], [30, '30 min']];
+  const renderWithinChips = () => {
+    if (!withinEl) return;
+    withinEl.innerHTML = WITHIN_OPTS.map(([v, label]) => {
+      const on = state.within === v;
+      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-within="${v}" aria-pressed="${on}">${esc(label)}</button>`;
+    }).join('');
+    const note = document.getElementById('discover-within-note');
+    if (note) note.hidden = !(state.within > 0 && _locDenied);
+  };
+
   /* ── Map sync ───────────────────────────────────────── */
   /* Pushes Discover's filter state into the embedded map view. All five
      filter dimensions (q, time, cats, mood, nhoods) round-trip so the
@@ -469,13 +511,15 @@
       cats:   [...state.cats],
       mood:   state.mood,
       nhoods: [...state.nhoods],
+      within: state.within,
+      userLoc: _userLoc,
     });
     mv.render();
   };
 
   /* ── Main run loop ──────────────────────────────────── */
   const isAnyFilterActive = () =>
-    state.q || state.time !== 'all' || state.cats.size || state.nhoods.size || state.mood.length;
+    state.q || state.time !== 'all' || state.cats.size || state.nhoods.size || state.mood.length || state.within;
 
   const run = () => {
     /* Places has its own pipeline: runPlaces() filters venues and calls
@@ -501,8 +545,8 @@
     browseSects.forEach(s => { s.hidden = true; });
     resultsSection.hidden = false;
 
-    /* Pipeline: structured filters → keyword filter → sort. */
-    const structured = applyStructuredFilters(catalog);
+    /* Pipeline: structured filters → walking radius → keyword filter → sort. */
+    const structured = withinFilter(applyStructuredFilters(catalog));
     const textHit    = state.q ? keywordFilter(structured, state.q) : structured;
     const sorted     = sortEntries(textHit);
 
@@ -537,6 +581,7 @@
       chips.push({ type: 'cat', val: id, label: catLabel(id) });
     });
     state.nhoods.forEach(name => chips.push({ type: 'nhood', val: name, label: name }));
+    if (state.within) chips.push({ type: 'within', val: String(state.within), label: `${state.within} min walk` });
     if (!chips.length) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
     el.innerHTML = chips.map(c =>
@@ -561,10 +606,10 @@
         const t = state.q.toLowerCase();
         list = list.filter(v => `${v.name} ${v.neighborhood} ${venueKindLabel(v.kind)}`.toLowerCase().includes(t));
       }
-      return list.length;
+      return withinFilter(list).length;
     }
     const catalog    = (window.WA && window.WA.catalog) || [];
-    const structured = applyStructuredFilters(catalog);
+    const structured = withinFilter(applyStructuredFilters(catalog));
     const textHit    = state.q ? keywordFilter(structured, state.q) : structured;
     return textHit.length;
   };
@@ -790,6 +835,10 @@
     populateBrowse((window.WA && window.WA.catalog) || []);
     if (state.mode === 'match' && state.ai) {
       runMatch(state.ai);
+    } else if (needsLocation()) {
+      /* A deep-linked radius (or Places "nearest") needs the visitor's
+         location before the first paint can filter correctly. */
+      ensureLocation(() => { renderWithinChips(); run(); });
     } else {
       run();
     }
@@ -825,6 +874,7 @@
     catChipsEl     = document.getElementById('discover-cat-chips');
     nhoodChipsEl   = document.getElementById('discover-nhood-chips');
     sortEl         = document.getElementById('discover-sort');
+    withinEl       = document.getElementById('discover-within');
     panesEl        = document.getElementById('discover-panes');
     viewToggleBtn  = document.getElementById('discover-view-toggle');
     browseSects    = Array.from(document.querySelectorAll('.discover-browse-section'));
@@ -896,6 +946,7 @@
       if (!chip) return;
       if (chip.dataset.appliedType === 'cat')  state.cats.delete(chip.dataset.appliedVal);
       if (chip.dataset.appliedType === 'nhood') state.nhoods.delete(chip.dataset.appliedVal);
+      if (chip.dataset.appliedType === 'within') { state.within = 0; renderWithinChips(); }
       reflectPills();
       writeUrlState();
       run();
@@ -927,6 +978,18 @@
       updateApplyCount();
       liveApply();
     });
+    /* Walking-radius chips — single-select. Picking a radius lazily
+       requests the visitor's location, then applies (live on desktop;
+       reflected in the "Show N" count on mobile until Apply). */
+    withinEl?.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-within]');
+      if (!chip) return;
+      state.within = +chip.dataset.within || 0;
+      renderWithinChips();
+      const after = () => { renderWithinChips(); reflectPills(); updateApplyCount(); liveApply(); };
+      if (state.within > 0) ensureLocation(after);
+      else after();
+    });
     /* Sort radio change — applies live on the desktop rail. */
     sortEl?.addEventListener('change', () => {
       state.sort = selectedSort();
@@ -940,15 +1003,17 @@
       reflectPills();
       writeUrlState();
       closeSheet();
-      if (state.type === 'places' && state.sort === 'nearest') ensureLocation(run);
+      if (needsLocation()) ensureLocation(run);
       else run();
     });
     const clearFilters = () => {
       state.cats.clear();
       state.nhoods.clear();
+      state.within = 0;
       state.sort = DEFAULT_SORT[state.type];
       renderCatChips();
       renderNhoodChips();
+      renderWithinChips();
       buildSortOptions();
       reflectPills();
       writeUrlState();
@@ -1140,6 +1205,7 @@
       reflectAiExamples();
       if (window.WA?.MoodChips) state.mood = [...window.WA.MoodChips.active()];
       reflectPills();
+      renderWithinChips();
       reflectView();
       renderAll();
       if (state.id) {
