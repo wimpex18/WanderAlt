@@ -31,6 +31,16 @@
   let moodFilter = [];          /* mood tags; empty = no mood filter */
   let nhoodFilter = new Set();  /* neighborhood names; empty = all */
   let textQuery  = '';          /* free-text filter */
+  let withinMin  = 0;           /* walking-radius filter in minutes; 0 = off */
+  let userLoc    = null;        /* { lat, lng } for the radius filter */
+  const WALK_M_PER_MIN = 80;    /* ~4.8 km/h stroll (matches discover.js) */
+  function haversineM(aLat, aLng, bLat, bLng) {
+    const R = 6371000, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+    const s = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
 
   /* Places mode — when on, the map renders an injected set of venues
      (already filtered by discover.js) instead of filtered picks. Set via
@@ -108,7 +118,8 @@
         || timeFilter !== 'all'
         || catFilters.size > 0
         || moodFilter.length > 0
-        || nhoodFilter.size > 0;
+        || nhoodFilter.size > 0
+        || (withinMin > 0 && !!userLoc);
   }
 
   function getVisibleEntries() {
@@ -131,6 +142,8 @@
       if (wantFree && !(e.moodTags || []).includes('free')) return false;
       if (nhoodFilter.size > 0 && !nhoodFilter.has(e.neighborhood)) return false;
       if (moodFilter.length > 0 && !moodFilter.every(t => (e.moodTags || []).includes(t))) return false;
+      if (withinMin > 0 && userLoc &&
+          haversineM(userLoc.lat, userLoc.lng, e.lat, e.lng) > withinMin * WALK_M_PER_MIN) return false;
       if (q && !matchesText(e, q)) return false;
       return true;
     });
@@ -632,13 +645,15 @@
   // ── Public API ────────────────────────────────────────────────
   window.WA = window.WA || {};
   window.WA.MapView = {
-    setFilters({ q, time, cats, mood, nhoods } = {}) {
+    setFilters({ q, time, cats, mood, nhoods, within, userLoc: loc } = {}) {
       placesMode = false;          /* back to the events layer */
       if (q      !== undefined) textQuery   = q;
       if (time   !== undefined) timeFilter  = time;
       if (cats   !== undefined) catFilters  = new Set(cats);
       if (mood   !== undefined) moodFilter  = Array.isArray(mood) ? [...mood] : [];
       if (nhoods !== undefined) nhoodFilter = new Set(nhoods);
+      if (within !== undefined) withinMin   = within || 0;
+      if (loc    !== undefined) userLoc     = loc || null;
     },
     /* Places layer: render an already-filtered venue set as pins. */
     setPlaces(venues = []) {

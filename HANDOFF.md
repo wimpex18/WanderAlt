@@ -199,8 +199,9 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 **Scope switch:** a compact inline `.discover-scope` segmented control (Events | Places, ink-fill active) sets `state.type`. Events = curated picks; Places = permanent venues. Filters narrow within the active scope; Places hides the mood strip + AI link (both pick-only) and shows a row of venue-kind quick-pills.
 
-**URL schema:** `?type=events|places&q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&sort=…&id=<pick-id>&ai=<prompt>&mode=match`
+**URL schema:** `?type=events|places&q=&view=list|map&time=tonight|thisweek|all&cat=music,drink&nhood=Kalamaja&within=5|15|30&sort=…&id=<pick-id>&ai=<prompt>&mode=match`
 - **Sort** is mode-aware: Events → `relevance` (default) / `newest` ("Soonest"); Places → `featured` (default) / `nearest` (geolocation). A→Z and by-curator were dropped.
+- **Distance** (`within`): a walking-radius filter (Any / 5 / 15 / 30 min). One geolocation request (`ensureLocation`), then a shared haversine (`~80 m/min`) filters the list **and** the map pins (`setFilters({within,userLoc})` for Events; the pre-filtered set for Places). Desktop applies live; mobile commits on Apply. Declined location → unfiltered + an inline note.
 - `?id=` is the active pin — written on pin tap, persists across filter changes, restored on popstate.
 - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify with search params.
 

@@ -5301,3 +5301,6 @@ body[data-page="saved"] .seg-note {
   body[data-page="saved"] .seg-tab { padding: 9px 8px; }
   body[data-page="saved"] .reading-head__title { font-size: 24px; }
 }
+
+/* Walking-radius filter — note shown when location is unavailable. */
+.discover-within-note { margin: var(--s-2) 0 0; color: var(--c-ink-mute); }

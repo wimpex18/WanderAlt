@@ -41,6 +41,7 @@ Features already live. See `README.md` for implementation detail.
 - **About / Privacy / Contact** — `about.html`, one editorial page with five sections (About / Curators / Venues / Privacy / Contact). Linked from every page's colophon. No separate Terms / Cookie banner — see CLAUDE.md "Domain + page architecture" for the single-domain, no-tracking stance.
 - **Loading skeletons** — static, layout-reserving skeletons (Tonight hero, pick rows, Discover browse rows) hold space until `wa:catalog-ready`, so hydration doesn't jolt. No shimmer / spinner, per the editorial brand.
 - **Editorial redesign of Today / Discover / Saved / Profile** (May 2026) — flat Tonight hero, rebalanced Discover split with an immersive AI concierge panel, unified ink-fill segmented controls, refined Profile. Same tokens, two-tone, voice-loudest.
+- **Walking-radius filter** — Discover "Distance" control (Any / 5 / 15 / 30 min walk). Opt-in geolocation; a shared haversine filters both the list and the map pins (Events + Places). Deep-links via `&within=`, shows a removable applied chip, and falls back gracefully (with a note) if location is declined.
 
 ---
 
@@ -59,11 +60,7 @@ venue links, and prints page numbers via `@page @bottom-right`.)*
 - Pure JS. One button below Tonight: `Surprise me →`. Click fade-replaces the hero with a random pick from active catalog (filtered by current city). Respects `prefers-reduced-motion`.
 - Deliberately tier 2: charming, but the column already gives the Briefing its editorial heartbeat.
 
-### 7. Walking radius filter on Discover map
-- Opt-in `navigator.geolocation`. Slider 5 / 15 / 30 min walk. JS computes haversine against each pin's `picks.lat/lng`.
-- Prerequisites are all shipped: pins use real WGS84 coords (post-MapLibre migration), `picks.lat/lng` is backfilled by the `geocode-picks` cron, and the locate-FAB already requests geolocation when toggled. Remaining work is the radius slider + haversine filter + the "use my location to bound results" UI affordance.
-
-### 8. Curator weekly synthesis
+### 7. Curator weekly synthesis
 - On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Gemini 3.5 Flash, store in `curators.synthesis_md`.
 - The full column shipped — this is the smaller per-profile variant, which still has independent value on the curator page itself.
 
@@ -105,7 +102,7 @@ Each "sprint" assumes ~1 calendar week of evening sessions, not full-time work.
 - ~~Loading skeletons~~ ✓ shipped (static, layout-reserving)
 
 **Sprint 2 — Map depth**
-- Walking radius filter: geolocation opt-in + haversine filter + slider (6h). Pins already use real WGS84 coords (post-MapLibre) and the locate-FAB already requests geolocation — remaining work is the slider + haversine filter.
+- ~~Walking radius filter: geolocation opt-in + haversine filter~~ ✓ shipped (Discover "Distance" control, Events + Places).
 
 **Sprint 3 — Curator presence**
 - Curator weekly synthesis: edge fn + `curator.html` render (4h)
