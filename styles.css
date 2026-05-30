@@ -5304,3 +5304,16 @@ body[data-page="saved"] .seg-note {
 
 /* Walking-radius filter — note shown when location is unavailable. */
 .discover-within-note { margin: var(--s-2) 0 0; color: var(--c-ink-mute); }
+
+/* Empty Tonight hero — graceful state for a city with no picks yet. */
+.tonight__empty {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--c-ink-soft);
+  margin: var(--s-3) 0 0;
+  max-width: 36ch;
+}
+.tonight__empty a { color: var(--c-accent); font-style: normal; font-family: var(--ff-body); font-size: 15px; }
+.tonight__empty a:hover { text-decoration: underline; }

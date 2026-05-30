@@ -2,7 +2,7 @@
 
 A static, mobile-first website for discovering **alternative / underground culture in European cities**: vinyl shops, art squats, small music venues, craft bars, experimental gigs, political talks. Every item is vouched for by a human curator — the curator's voice is the product.
 
-Live cities: **Tallinn · Helsinki · Riga**. Coming soon: **Vilnius** (scaffold ready, cloud deploy pending). First screen: **Briefing** (the default landing).
+Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing (Places populated; Events/Today pending a curator). First screen: **Briefing** (the default landing).
 
 ---
 
@@ -198,7 +198,7 @@ when you're ready to flip the domain live.
 **One-time setup remaining:**
 - **Supabase Auth redirect URL** — configure in Supabase Dashboard → Auth → URL Configuration to point to the deployed domain.
 - **Allow user account deletion** — Supabase Dashboard → Authentication → Settings → "Allow users to delete their own accounts".
-- **Vilnius go-live** — the city's ingest pipeline runs and seeds real content, but it stays `status: 'coming'` in `city.js` until a curator voice is settled (see CLAUDE.md → Vilnius notes). Flip to `'live'` when ready.
+- **Vilnius public launch** — the city is unlocked for internal testing (`status: 'live'`), but it has no curator voice or curated picks yet, so Events/Today are empty (Places works). Settle a curator + confirm reviewed picks before treating it as a public launch (see CLAUDE.md → Vilnius notes).
 
 ---
 

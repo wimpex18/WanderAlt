@@ -106,7 +106,7 @@ Each "sprint" assumes ~1 calendar week of evening sessions, not full-time work.
 
 **Sprint 3 — Curator presence**
 - Curator weekly synthesis: edge fn + `curator.html` render (4h)
-- ~~City selector: promote from placeholder to real switcher~~ ✓ shipped — a real keyboard-accessible dropdown with city-plate thumbnails. Tallinn / Helsinki / Riga are live; Vilnius is scaffolded as "coming soon".
+- ~~City selector: promote from placeholder to real switcher~~ ✓ shipped — a real keyboard-accessible dropdown with city-plate thumbnails. Tallinn / Helsinki / Riga are live; Vilnius is unlocked for internal testing (Places-only until it has a curator).
 
 **Sprint 4+ — opportunistic**
 - Any Tier 3 items as the catalog grows and user feedback lands.
