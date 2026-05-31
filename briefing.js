@@ -136,6 +136,39 @@
     }
   };
 
+  /* Cities served by WanderAlt's in-house editorial desk rather than a
+     resident human curator. Their picks are surfaced from public listings
+     (the city's source feeds) and filtered by hand; the cards keep their
+     per-feed attribution, and this umbrella note states the arrangement
+     plainly so the "curated by humans" promise isn't quietly overstated.
+     Drop a city from this set the moment a resident curator takes over. */
+  const HOUSE_DESK_CITIES = new Set(['vilnius']);
+
+  /* Honest umbrella note under the standfirst, shown only for house-desk
+     cities. Names the desk as in-house, names the feeds, says there is no
+     resident curator yet, and invites one. Idempotent: re-running init
+     (taste re-render) won't duplicate it. */
+  const renderEditorialDeskNote = () => {
+    const cityId = window.WA?.CITY || 'tallinn';
+    const standfirst = document.querySelector('.standfirst');
+    const existing = document.getElementById('desk-note');
+    if (!HOUSE_DESK_CITIES.has(cityId) || !standfirst) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) return;
+    const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
+    const note = document.createElement('p');
+    note.className = 'desk-note';
+    note.id = 'desk-note';
+    note.innerHTML =
+      `${cityLabel} runs on WanderAlt&rsquo;s in-house editorial desk &mdash; ` +
+      `picks drawn from public listings and filtered by hand, while we look ` +
+      `for a resident curator. Know the scene? ` +
+      `<a href="./about.html#about-contact">Get in touch &rarr;</a>`;
+    standfirst.insertAdjacentElement('afterend', note);
+  };
+
   /* Empty Tonight hero — shown when the active city has no picks yet (e.g.
      a newly-unlocked city without a curator). Replaces the skeleton so the
      page never reads as a perpetual loading state. */
@@ -434,6 +467,7 @@
     /* Track the current tonight ID so Surprise me excludes it. */
     _surpriseExcludeId = tonight ? tonight.id : null;
 
+    renderEditorialDeskNote();
     if (tonight) renderTonight(tonight);
     else         renderTonightEmpty();
     /* Pass the full ordered set — renderThisWeek paginates internally. */
