@@ -5317,3 +5317,19 @@ body[data-page="saved"] .seg-note {
 }
 .tonight__empty a { color: var(--c-accent); font-style: normal; font-family: var(--ff-body); font-size: 15px; }
 .tonight__empty a:hover { text-decoration: underline; }
+
+/* Editorial-desk umbrella note — honest provenance line under the Today
+   standfirst for cities served by the in-house desk (no resident curator
+   yet). Mono caption rhythm so it reads as a masthead footnote, not a
+   marketing banner. */
+.desk-note {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-mute);
+  margin: var(--s-3) 0 0;
+  max-width: 60ch;
+}
+.desk-note a { color: var(--c-accent); }
+.desk-note a:hover { text-decoration: underline; }
