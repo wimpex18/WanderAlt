@@ -507,12 +507,34 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 
 .tonight__quote {
+  position: relative;
   margin: var(--s-4) 0 var(--s-3);
   padding: 14px 14px;
   border: 0;
-  border-left: 3px solid var(--c-lime);
   background: var(--c-paper-deep);
   border-radius: 0 8px 8px 0;
+}
+/* Lime left-rule as a pseudo-element so it can draw in top-to-bottom on
+   load — leads the eye to the quote (the loudest element on the screen).
+   Replaces the old border-left. Same @starting-style + allow-discrete
+   pattern as the page's entrance system; zeroed under reduced-motion. */
+.tonight__quote::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c-lime);
+  transform-origin: top;
+}
+@supports (transition-behavior: allow-discrete) {
+  .tonight__quote::before {
+    transition: transform var(--t-mid);
+  }
+  @starting-style {
+    .tonight__quote::before { transform: scaleY(0); }
+  }
 }
 .tonight__quote p {
   font-family: var(--ff-display);
@@ -2739,6 +2761,25 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   gap: 6px;
 }
 
+/* Active-tab lime signal — a 2px lime underline tucked inside the filled
+   pill, reinforcing "you are here" with the brand's active-state colour
+   (lime = live/active only). Subtle: sits under the label, not a full
+   re-style of the already-strong ink pill. */
+body[data-page="briefing"] .nav__item[data-nav="briefing"]::after,
+body[data-page="discover"] .nav__item[data-nav="discover"]::after,
+body[data-page="saved"]    .nav__item[data-nav="saved"]::after,
+body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
+  content: "";
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--c-lime);
+}
+
 .nav__item:hover { color: var(--c-ink-soft); }
 
 /* ============================================================
@@ -2929,6 +2970,19 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   }
 }
 
+/* Staggered entrance for the This Week list — each row settles a beat after
+   the previous one (editorial "deal the cards" feel). The .pick element only
+   transitions for the entrance fade-up (the hover lift lives on the child
+   .pick__link), so a per-row transition-delay staggers the entrance without
+   touching any other interaction. Reuses --t-mid; no new keyframes. Capped at
+   six rows so the list never feels slow, and zeroed under reduced-motion. */
+.thisweek .pick:nth-child(1) { transition-delay: 0ms; }
+.thisweek .pick:nth-child(2) { transition-delay: 45ms; }
+.thisweek .pick:nth-child(3) { transition-delay: 90ms; }
+.thisweek .pick:nth-child(4) { transition-delay: 135ms; }
+.thisweek .pick:nth-child(5) { transition-delay: 180ms; }
+.thisweek .pick:nth-child(n+6) { transition-delay: 225ms; }
+
 @media (hover: hover) {
   .pick__link {
     transition: transform var(--t-mid);
@@ -2943,6 +2997,15 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 }
 @media (hover: hover) {
   .bookmark:hover { transform: scale(1.06); }
+}
+/* List-row bookmark: keep the 20px glyph but guarantee a 44×44 hit area
+   (WCAG 2.5.5 / Apple HIG) on touch. Centred so the glyph doesn't shift. */
+.pick .bookmark {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .bookmark__check ~ svg path {
   transition: fill var(--t-mid), stroke var(--t-mid);
@@ -2965,6 +3028,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
     .match-card,
     .profile-section,
     .about-section { opacity: 1; transform: none; }
+    .tonight__quote::before { transform: scaleY(1); }
   }
   ::view-transition-group(*),
   ::view-transition-old(*),
@@ -5140,7 +5204,11 @@ body[data-page="briefing"] .tonight__attr {
 }
 
 .tonight__actions { display: flex; gap: var(--s-3); margin-top: var(--s-4); align-items: stretch; }
-.tonight__actions .bookmark { margin: 0; padding: 0; }
+/* The hero Save button carries the .bookmark class, whose base rule sets
+   align-self:start — that overrode the actions row's align-items:stretch and
+   collapsed the button to content height (≈25px). Re-stretch it here so both
+   CTAs fill the 50px row and clear the 44px min tap target (WCAG 2.5.5). */
+.tonight__actions .bookmark { margin: 0; padding: 0; align-self: stretch; }
 .btn-going, .btn-save {
   flex: 1;
   display: inline-flex;
@@ -5148,6 +5216,9 @@ body[data-page="briefing"] .tonight__attr {
   justify-content: center;
   gap: 8px;
   height: 50px;
+  /* height alone wasn't honoured on these flex items in some engines;
+     min-height guarantees the 50px tap target. */
+  min-height: 50px;
   border-radius: var(--radius);
   font-family: var(--ff-body);
   font-weight: 500;
