@@ -85,7 +85,14 @@ Cross-document View Transitions are enabled globally (`@view-transition { naviga
 
 Bookmark click is a smooth fill transition (no scale pop), bookmark hover is `scale(1.06)`. Desktop `.pick:hover` lifts 1px (hover-capable pointers only).
 
-`@media (prefers-reduced-motion: reduce)` cancels all of the above with `transition: none !important` + an explicit `@starting-style` override that zeros the entrance offset + `::view-transition-*` `animation: none`.
+**June 2026 mobile-home polish (all reuse the two tokens, no new keyframes):**
+- **This Week staggered entrance** — `.thisweek .pick:nth-child(n)` carries a `transition-delay` ramp (0/45/90/135/180/225ms, capped at row 6) so rows settle in sequence on the shared `--t-mid` fade-up. Pure delay on the existing entrance; zeroed by the reduced-motion `transition: none`.
+- **Tonight quote lime-rule draw-in** — the quote's lime left-rule is a `.tonight__quote::before` bar (replaced the old `border-left`) that draws in top-to-bottom via `scaleY(0→1)` using the same `@starting-style` + `allow-discrete` pattern as the entrance system. Reduced-motion resets it to `scaleY(1)`.
+- **Active-tab nav lime indicator** — a 2px `--c-lime` underline (`::after`) inside the active nav pill ("you are here", lime = active state).
+
+**Tap targets (WCAG 2.5.5 / Apple HIG):** hero `.btn-going`/`.btn-save` use `min-height: 50px` (a bare `height` was being dropped on these flex items), and the hero Save button re-asserts `align-self: stretch` to beat the base `.bookmark { align-self: start }`. List-row `.pick .bookmark` is padded to a 44×44 hit area while the glyph stays 20px.
+
+`@media (prefers-reduced-motion: reduce)` cancels all of the above with `transition: none !important` + an explicit `@starting-style` override that zeros the entrance offset, sets `.tonight__quote::before` to `scaleY(1)`, and `::view-transition-*` `animation: none`.
 
 **Do not add new keyframes, parallax, or bouncy easings.** If you need new motion, pick `--t-fast` or `--t-mid` and reuse the existing entrance selector list.
 
