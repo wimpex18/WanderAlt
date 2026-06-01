@@ -43,6 +43,12 @@
       catChipsEl, nhoodChipsEl, sortEl, withinEl,
       browseSects, panesEl, viewToggleBtn;
 
+  /* When true, the next renderList() skips the staggered entrance. Set while
+     the user is typing so the results list doesn't re-animate per keystroke;
+     view-level renders (load, filter/sort/mode change) leave it false and the
+     list animates. Reset on every render. */
+  let suppressEntrance = false;
+
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
   const esc = s => String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -148,6 +154,11 @@
 
   const renderList = (entries) => {
     if (!resultsList || !emptyState) return;
+    /* Opt the list into the staggered entrance unless we're mid-typing.
+       toggleAttribute keeps the @starting-style fade-up from re-firing on
+       every keystroke (run() is called per input event, no debounce). */
+    resultsList.toggleAttribute('data-animate', !suppressEntrance);
+    suppressEntrance = false;
     if (!entries.length) {
       resultsList.innerHTML = '';
       emptyState.hidden = false;
@@ -200,6 +211,8 @@
 
   const renderVenueList = (venues) => {
     if (!resultsList || !emptyState) return;
+    resultsList.toggleAttribute('data-animate', !suppressEntrance);
+    suppressEntrance = false;
     if (!venues.length) { resultsList.innerHTML = ''; emptyState.hidden = false; return; }
     emptyState.hidden = true;
     resultsList.innerHTML = venues.map(renderVenueRow).join('');
@@ -1050,6 +1063,7 @@
       if (state.mode === 'match') return;
       state.q = input.value.trim();
       writeUrlState();
+      suppressEntrance = true;   /* typing — don't re-animate the list per keystroke */
       run();
     });
     input.addEventListener('keydown', (e) => {
