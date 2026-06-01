@@ -5,13 +5,14 @@
     "start":       "npx http-server . -p 5173 -c-1 --cors",
     "admin":       "npx http-server . -p 8080 -c-1 --cors",
     "smoke":       "node .screenshots/smoke.js",
+    "preview":     "node .screenshots/preview.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "lighthouse":  "node .scripts/lighthouse-audit.js"
   },
   "devDependencies": {
     "lighthouse": "^13.3.0",
     "png-to-ico": "^3.0.1",
-    "puppeteer": "^24.43.1",
+    "puppeteer": "^25.1.0",
     "sharp": "^0.34.5"
   }
 }
