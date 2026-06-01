@@ -12,16 +12,19 @@ https://www.wanderalt.com/* https://wanderalt.app/:splat   301
 https://www.wanderalt.app/* https://wanderalt.app/:splat   301
 
 # Legacy URL aliases — the old /map and /search lived as standalone
-# pages before the May 2026 Discover consolidation. Their HTML stubs
-# still ship with redirect-on-load JS, but a server-side redirect is
-# instant, doesn't leak the old URL into history, and is what we tell
-# search engines via canonical. The JS stubs stay as a fallback for
-# anyone who somehow hits the HTML directly.
+# pages before the May 2026 Discover consolidation. These map to a
+# DIFFERENT target (discover.html, one with a query param), so they
+# are genuine redirects Cloudflare can't infer on its own. The HTML
+# stubs still ship with redirect-on-load JS as a fallback.
 /map     /discover.html?view=map    301
 /search  /discover.html             301
 
-# Pretty URLs — let visitors type wanderalt.app/about without the .html.
-/about      /about.html      301
-/discover   /discover.html   301
-/saved      /saved.html      301
-/profile    /profile.html    301
+# NOTE: do NOT add bare-name → *.html rules for /about, /discover,
+# /saved, /profile, /curator, /venue, /place. Cloudflare Pages already
+# serves pretty URLs natively (it 308-redirects /foo.html → /foo and
+# serves /foo as 200). A /discover → /discover.html rule fights that
+# canonicalisation and creates an INFINITE redirect loop
+# (/discover →301→ /discover.html →308→ /discover → …). The four rules
+# that used to live here were removed June 2026 after the loop was
+# found on the live preview; verified /curator and /venue (which never
+# had rules) already serve 200 on their own.
