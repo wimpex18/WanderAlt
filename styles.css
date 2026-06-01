@@ -2957,7 +2957,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .tonight,
   .match-card,
   .profile-section,
-  .about-section {
+  .about-section,
+  .list-rows[data-animate] .list-row {
     transition: opacity var(--t-mid), transform var(--t-mid);
     transition-behavior: allow-discrete;
   }
@@ -2966,22 +2967,36 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     .tonight,
     .match-card,
     .profile-section,
-    .about-section { opacity: 0; transform: translateY(8px); }
+    .about-section,
+    .list-rows[data-animate] .list-row { opacity: 0; transform: translateY(8px); }
   }
 }
 
-/* Staggered entrance for the This Week list — each row settles a beat after
-   the previous one (editorial "deal the cards" feel). The .pick element only
-   transitions for the entrance fade-up (the hover lift lives on the child
-   .pick__link), so a per-row transition-delay staggers the entrance without
-   touching any other interaction. Reuses --t-mid; no new keyframes. Capped at
-   six rows so the list never feels slow, and zeroed under reduced-motion. */
-.thisweek .pick:nth-child(1) { transition-delay: 0ms; }
-.thisweek .pick:nth-child(2) { transition-delay: 45ms; }
-.thisweek .pick:nth-child(3) { transition-delay: 90ms; }
-.thisweek .pick:nth-child(4) { transition-delay: 135ms; }
-.thisweek .pick:nth-child(5) { transition-delay: 180ms; }
-.thisweek .pick:nth-child(n+6) { transition-delay: 225ms; }
+/* Staggered entrance — each row settles a beat after the previous one
+   (editorial "deal the cards" feel). The row element only transitions for the
+   entrance fade-up (the hover lift lives on the child link), so a per-row
+   transition-delay staggers the entrance without touching any other
+   interaction. Reuses --t-mid; no new keyframes. Capped at six rows so the
+   list never feels slow, and zeroed under reduced-motion.
+
+   Applies to:
+     .thisweek .pick            — Briefing This Week (always on).
+     .list-rows[data-animate]   — Discover + Saved lists. The data-animate
+       attribute is the opt-in: Saved sets it permanently; Discover sets it
+       only on view-level renders (load, filter/sort/mode change) and DROPS it
+       while the user is typing, so the list never re-animates per keystroke. */
+.thisweek .pick:nth-child(1),
+.list-rows[data-animate] .list-row:nth-child(1) { transition-delay: 0ms; }
+.thisweek .pick:nth-child(2),
+.list-rows[data-animate] .list-row:nth-child(2) { transition-delay: 45ms; }
+.thisweek .pick:nth-child(3),
+.list-rows[data-animate] .list-row:nth-child(3) { transition-delay: 90ms; }
+.thisweek .pick:nth-child(4),
+.list-rows[data-animate] .list-row:nth-child(4) { transition-delay: 135ms; }
+.thisweek .pick:nth-child(5),
+.list-rows[data-animate] .list-row:nth-child(5) { transition-delay: 180ms; }
+.thisweek .pick:nth-child(n+6),
+.list-rows[data-animate] .list-row:nth-child(n+6) { transition-delay: 225ms; }
 
 @media (hover: hover) {
   .pick__link {
@@ -3027,7 +3042,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     .tonight,
     .match-card,
     .profile-section,
-    .about-section { opacity: 1; transform: none; }
+    .about-section,
+    .list-rows[data-animate] .list-row { opacity: 1; transform: none; }
     .tonight__quote::before { transform: scaleY(1); }
   }
   ::view-transition-group(*),
