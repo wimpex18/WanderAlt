@@ -198,7 +198,7 @@ when you're ready to flip the domain live.
 **One-time setup remaining:**
 - **Supabase Auth redirect URL** — configure in Supabase Dashboard → Auth → URL Configuration to point to the deployed domain.
 - **Allow user account deletion** — Supabase Dashboard → Authentication → Settings → "Allow users to delete their own accounts".
-- **Vilnius public launch** — the city is unlocked for internal testing (`status: 'live'`), but it has no curator voice or curated picks yet, so Events/Today are empty (Places works). Settle a curator + confirm reviewed picks before treating it as a public launch (see CLAUDE.md → Vilnius notes).
+- **Vilnius public launch** — the city is unlocked for internal testing (`status: 'live'`). It now runs on WanderAlt's **in-house editorial desk**: Events/Today are populated from the `@ra_vilnius` + `@afishavilnius` feeds via `process-staging` (attributed per-feed, with an honest umbrella note on Today), and Places is populated from ~410 OSM venues. Still pending before a real public launch: a **resident curator voice** (no single-voice underground channel exists yet) and the **RA recurring cron** (deliberately unscheduled on ToS grounds — RA only ingests when invoked by hand). See CLAUDE.md → Vilnius notes.
 
 ---
 
