@@ -1,11 +1,21 @@
 // ============================================================
-// WanderAlt — process-staging  (v34)
-// v34 changes vs v33:
-//   • Groq (llama-4-scout-17b-16e-instruct) is now PRIMARY.
-//     Groq free tier covers ~1,000 req/day; 48 cron ticks/day
-//     at 10 messages/batch = fits comfortably within free quota.
-//   • Gemini 3.5 Flash demoted to fallback (rate_limited/overloaded).
-//   • Groq model updated to llama-4-scout per CLAUDE.md policy.
+// WanderAlt — process-staging  (v37)
+// v37 changes vs v36 (cost policy):
+//   • Gemini fallback is now gated behind the pipeline_config flag
+//     `gemini_fallback_enabled` (default true). Flip it to false in
+//     one SQL statement to stop ALL Gemini spend fleet-wide without a
+//     redeploy — rate-limited messages then just wait for the next
+//     Groq window instead of billing Gemini. Insurance against a
+//     runaway bill (the €12/May incident was the old grounded
+//     generate-context, but this guards process-staging too).
+//   • GEMINI_MODEL corrected to gemini-2.5-flash (we standardised on
+//     2.5; 3.5 was never actually deployed here). 2.5-flash classifies
+//     accurately without thinkingConfig.
+//   In practice Groq (free) handles 100% of normal volume — over the
+//   last 14 days process-staging made 0 Gemini calls — so this flag is
+//   a safety valve, not a routine path.
+// v36: CITY_CONTEXT gained `helsinki`. v35: gained `vilnius`.
+// v34: Groq llama-4-scout primary, Gemini fallback.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -14,7 +24,7 @@ const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
-const GEMINI_MODEL  = "gemini-3.5-flash";
+const GEMINI_MODEL  = "gemini-2.5-flash";
 const GROQ_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
@@ -37,12 +47,21 @@ const CITY_CONTEXT: Record<string, { name: string; neighborhoods: string }> = {
     name: "Riga",
     neighborhoods: "Centrs|Quiet Centre|Āgenskalns|Mežaparks|Pārdaugava|Vecriga|other",
   },
+  vilnius: {
+    name: "Vilnius",
+    neighborhoods: "Senamiestis|Naujamiestis|Užupis|Šnipiškės|Žvėrynas|Antakalnis|other",
+  },
+  helsinki: {
+    name: "Helsinki",
+    neighborhoods: "Kallio|Töölö|Punavuori|Kruununhaka|Sörnäinen|Kamppi|Ruoholahti|Otaniemi|Espoo|other",
+  },
 };
 
 type PipelineConfig = {
   venueWhitelist: string[];
   skipKeywords: string[];
   keepSignals: string[];
+  geminiFallbackEnabled: boolean;
 };
 
 const validUntil = (day: string | null): string => {
@@ -84,7 +103,7 @@ standard shopping, real estate, job ads, generic lifestyle tips, tourist sightse
 without a cultural angle, networking events, business conferences.${keepHint}
 
 LANGUAGE HANDLING:
-  - Input may be English, Estonian, Latvian, or Russian, sometimes mixed.
+  - Input may be English, Estonian, Latvian, Lithuanian, Finnish, or Russian, sometimes mixed.
   - Output ALL text in natural English (translate as needed).
   - PRESERVE proper nouns verbatim: venue names, neighborhood names, named festivals and series.
   - Translate descriptive titles to English.
@@ -126,7 +145,7 @@ const retryDelay = (body: string): number => {
 
 type LLMResult =
   | { raw: string; provider: string }
-  | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed"; detail?: string };
+  | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed" | "fallback_disabled"; detail?: string };
 
 async function callGemini(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
   if (!GEMINI_KEY) return { error: "missing_key" };
@@ -170,25 +189,33 @@ async function callGroq(text: string, tag: string, city: string, keepSignals: st
   return { raw: j?.choices?.[0]?.message?.content ?? "", provider: GROQ_MODEL };
 }
 
-async function callLLM(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
-  // Groq is primary — free tier covers our volume; Gemini is fallback.
-  const r1 = await callGroq(text, tag, city, keepSignals);
+async function callLLM(text: string, tag: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
+  // Groq is primary — free tier covers our volume.
+  const r1 = await callGroq(text, tag, city, cfg.keepSignals);
   if ("raw" in r1) return r1;
-  if (r1.error === "missing_key") return callGemini(text, tag, city, keepSignals);
+  // Gemini fallback is gated: skip it entirely when the kill-switch is off
+  // (rate-limited messages just wait for the next Groq window — no spend).
+  if (!cfg.geminiFallbackEnabled) {
+    return r1.error === "missing_key" ? { error: "fallback_disabled" } : r1;
+  }
+  if (r1.error === "missing_key") return callGemini(text, tag, city, cfg.keepSignals);
   // rate_limited or overloaded → try Gemini before giving up
-  const r2 = await callGemini(text, tag, city, keepSignals);
+  const r2 = await callGemini(text, tag, city, cfg.keepSignals);
   if ("raw" in r2) return r2;
   return r1;
 }
 
 async function loadPipelineConfig(sb: ReturnType<typeof createClient>): Promise<PipelineConfig> {
   const { data } = await sb.from("pipeline_config").select("key, value");
-  const map: Record<string, string[]> = {};
-  for (const row of data ?? []) map[row.key] = row.value as string[];
+  const map: Record<string, unknown> = {};
+  for (const row of data ?? []) map[row.key] = row.value;
   return {
-    venueWhitelist: map.venue_whitelist ?? [],
-    skipKeywords: map.skip_keywords ?? [],
-    keepSignals: map.keep_signals ?? [],
+    venueWhitelist: (map.venue_whitelist as string[]) ?? [],
+    skipKeywords: (map.skip_keywords as string[]) ?? [],
+    keepSignals: (map.keep_signals as string[]) ?? [],
+    // default ON when the row is absent, so behaviour is unchanged until
+    // someone explicitly flips it to false.
+    geminiFallbackEnabled: map.gemini_fallback_enabled !== false,
   };
 }
 
@@ -236,10 +263,10 @@ async function processOne(
     ? `[NOTE: This event is from a pre-approved venue on the WanderAlt whitelist. Accept it unless the content is completely off-topic.]\n\n${m.text}`
     : m.text;
 
-  const llm = await callLLM(llmText, tagline, city, cfg.keepSignals);
+  const llm = await callLLM(llmText, tagline, city, cfg);
 
   if ("error" in llm) {
-    if (llm.error === "rate_limited" || llm.error === "overloaded" || llm.error === "missing_key")
+    if (llm.error === "rate_limited" || llm.error === "overloaded" || llm.error === "missing_key" || llm.error === "fallback_disabled")
       return releaseToNew(llm.error);
     return failMessage(llm.detail ?? llm.error);
   }
