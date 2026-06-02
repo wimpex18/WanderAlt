@@ -1,17 +1,21 @@
 /* ============================================================
-   WanderAlt — draft-column  v13
-   v13: drops Search grounding, switches to gemini-2.5-flash-lite.
-   Grounding was the primary cost driver ($14/1K queries). The
-   weekly column draft quality is unaffected — the model's baseline
-   knowledge of these cities is sufficient for a 140-word editorial.
+   WanderAlt — draft-column  v14
+   v14 (cost policy): Groq llama-4-scout is now PRIMARY; Gemini
+   gemini-2.5-flash-lite is the FALLBACK only. The weekly 140-word
+   editorial is plain text generation Groq handles well, and Groq's
+   free tier means this runs at ~€0. Per CLAUDE.md: free model first,
+   Gemini only when nothing else works.
+   v13: dropped Search grounding, switched to gemini-2.5-flash-lite.
    POST /functions/v1/draft-column  (verify_jwt: false)
    Body: {} or { city: "tallinn" }
    ============================================================ */
 
 const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const GEMINI_KEY       = Deno.env.get('GEMINI_API_KEY')!;
+const GEMINI_KEY       = Deno.env.get('GEMINI_API_KEY') ?? '';
+const GROQ_KEY         = Deno.env.get('GROQ_API_KEY') ?? '';
 const GEMINI_MODEL     = 'gemini-2.5-flash-lite';
+const GROQ_MODEL       = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 const CITIES = ['tallinn', 'helsinki', 'riga'];
 
@@ -54,26 +58,59 @@ const weekOf = (): string => {
   return mon.toISOString().slice(0, 10);
 };
 
-const callGemini = async (prompt: string, _cityLabel: string): Promise<string> => {
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
-    {
+/* Groq (primary). Returns text or null on failure. */
+const callGroq = async (prompt: string): Promise<string|null> => {
+  if (!GROQ_KEY) return null;
+  try {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.85, maxOutputTokens: 600 },
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.85,
+        max_tokens: 600,
       }),
-    }
-  );
-  if (!r.ok) { const err = await r.text(); throw new Error(`Gemini ${r.status}: ${err.slice(0, 300)}`); }
-  const data = await r.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.choices?.[0]?.message?.content?.trim() || null;
+  } catch { return null; }
+};
+
+/* Gemini (fallback only). */
+const callGemini = async (prompt: string): Promise<string|null> => {
+  if (!GEMINI_KEY) return null;
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.85, maxOutputTokens: 600 },
+        }),
+      }
+    );
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+  } catch { return null; }
+};
+
+/* Groq first; Gemini only if Groq yields nothing. */
+const generate = async (prompt: string): Promise<{ text: string; provider: string }> => {
+  const g = await callGroq(prompt);
+  if (g) return { text: g, provider: 'groq' };
+  const m = await callGemini(prompt);
+  if (m) return { text: m, provider: 'gemini' };
+  return { text: '', provider: 'none' };
 };
 
 const draftForCity = async (
   city: string, week: string
-): Promise<{ status: 'drafted' | 'skipped' | 'error'; curator_handle?: string; detail?: string }> => {
+): Promise<{ status: 'drafted' | 'skipped' | 'error'; curator_handle?: string; detail?: string; provider?: string }> => {
 
   const existing = await sbGet('columns', `city=eq.${city}&week_of=eq.${week}&status=in.(draft,published)&limit=1`);
   if ((existing as unknown[]).length > 0) return { status: 'skipped', detail: 'already exists' };
@@ -118,18 +155,16 @@ const draftForCity = async (
     `- Plain text output only\n\n` +
     `Output the three paragraphs separated by a blank line.`;
 
-  let bodyMd: string;
-  try { bodyMd = (await callGemini(prompt, cityLabel)).trim(); }
-  catch (err) { return { status: 'error', detail: String(err) }; }
-  if (!bodyMd) return { status: 'error', detail: 'empty Gemini response' };
+  const { text: bodyMd, provider } = await generate(prompt);
+  if (!bodyMd) return { status: 'error', detail: 'no LLM output' };
 
   try { await sbInsert('columns', { curator_handle: curatorHandle, city, body_md: bodyMd, status: 'draft', week_of: week }); }
   catch (err) { return { status: 'error', detail: String(err) }; }
 
-  try { await sbInsert('ingest_log', { fn: 'draft-column', status: 'ok', inserted: 1, rejected: 0 }); }
+  try { await sbInsert('ingest_log', { fn: 'draft-column', status: 'ok', inserted: 1, rejected: 0, detail: { provider } }); }
   catch (_) { /* non-fatal */ }
 
-  return { status: 'drafted', curator_handle: curatorHandle };
+  return { status: 'drafted', curator_handle: curatorHandle, provider };
 };
 
 Deno.serve(async (req) => {

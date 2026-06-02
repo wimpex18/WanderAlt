@@ -288,15 +288,19 @@ Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`statu
 
 ## LLM model policy (do not deviate)
 
-- **Gemini:** `gemini-3.5-flash` (GA May 19 2026) is the current text model. `gemini-2.5-flash` still works as a fallback; `-pro` and `gemini-2.0-flash` return 404 — never use them. Embeddings stay on `gemini-embedding-001` (do not "upgrade" embeddings to a flash model).
-  - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_KEY}`
-- **Groq:** primary `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`. Used in `match-pick` and as fallback in `process-staging`.
+**Cost rule (June 2026): Groq first, Gemini only when nothing else works.** Groq's free tier covers our volume; Gemini bills per token (and per query when grounded). Every text-generation function is Groq-primary with Gemini as a fallback. The €12/May spend was the *old* `generate-context` running Gemini **+ Google Search grounding** (~$14/1k queries) — grounding has since been removed everywhere and those functions moved to Groq-primary. Verify spend with the per-function provider logging (`gemini_calls` in responses / `provider` in `ingest_log.detail`).
+
+- **Gemini:** standardised on **`gemini-2.5-flash`** (and `gemini-2.5-flash-lite` for the cheap text functions). `gemini-3.5-flash` is NOT deployed (was documented but never shipped); `-pro` and `gemini-2.0-flash` return 404 — never use them. **No Search grounding anywhere** (it was the dominant cost driver). Embeddings stay on `gemini-embedding-001` (do not "upgrade" embeddings to a flash model — it's the one Gemini use with no free Groq equivalent).
+  - URL pattern: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
+- **Groq:** primary `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`. Primary for `match-pick`, `process-staging`, `generate-context`, `draft-column`.
 - Current per-function status:
-  - `process-staging` → Groq llama-4-scout primary (v34+) + Gemini 3.5 Flash fallback (no thinkingConfig — 3.5 classifies accurately without it). JSON output via `responseMimeType`. **v35** adds Vilnius to `CITY_CONTEXT` (see Vilnius notes); per-city neighborhood lists drive classification, so a missing city silently degrades to the Tallinn context.
-  - `draft-column` (v12) and `generate-context` (v9) → Gemini 3.5 Flash **+ Search grounding** (`tools: [{ googleSearch: {} }]`), so weekly columns and per-pick "why this matters" reference real current context. `generate-context` only grounds picks with `context_md IS NULL`, so cost tracks daily ingest volume, not the whole catalogue.
-  - `send-digest` (v9) → Gemini 3.5 Flash (weekly email intro, no grounding)
-  - `enrich-venues` → **no LLM** — Wikidata + Nominatim + Google Places (venue facts/photos/closure), not a Gemini function
-  - `embed-picks` / `match-pick` → embeddings on `gemini-embedding-001`; `match-pick` does ranking on Groq only (v8 — always `find_many`, topK=5; `find_one` mode removed)
+  - `process-staging` (**v37**) → Groq llama-4-scout primary; Gemini `2.5-flash` fallback **gated behind `pipeline_config.gemini_fallback_enabled`** (default true). Flip that key to `false` in one SQL statement to stop all Gemini spend fleet-wide with no redeploy (rate-limited messages then wait for the next Groq window). In practice Groq handles ~100% of volume — 0 Gemini calls in the last 14 days. JSON via `responseMimeType`. v35/v36 added the Vilnius + Helsinki `CITY_CONTEXT` entries (a missing city silently degrades to the Tallinn context).
+  - `generate-context` (**v11**) → Groq llama-4-scout primary, Gemini `2.5-flash-lite` fallback. No grounding. Response includes `gemini_calls` for monitoring. Only processes picks with `context_md IS NULL`.
+  - `draft-column` (**v14**) → Groq llama-4-scout primary, Gemini `2.5-flash-lite` fallback. No grounding. Weekly 140-word column; logs `provider` in `ingest_log.detail`.
+  - `send-digest` → Gemini `2.5-flash` (weekly email intro, no grounding). Low volume; not yet moved to Groq-primary (candidate if ever needed).
+  - `enrich-venues` → **no LLM** — Wikidata + Nominatim + Google Places (venue facts/photos/closure).
+  - `embed-picks` / `match-pick` → embeddings on `gemini-embedding-001` (no free equivalent — keep on Gemini); `match-pick` does ranking on Groq only (v8 — always `find_many`, topK=5).
+  - **Google Places spend** (separate from Gemini): `enrich-pick-images` (~$0.039/unique venue photo) + `geocode-picks` fallback. Intended spend, but the larger paid line — ~765 pick images/week during the May/June backfill. Dedups by venue. Revisit caps here before scaling cities, not the Gemini path.
   - `geocode-picks` → Nominatim primary, Google Places fallback. Backfills `picks.lat/lng` for any active pick missing coords. Invoke ad-hoc: `POST /functions/v1/geocode-picks {"city":"tallinn","limit":50}`. Inherently location-less picks (`venue ILIKE '%various%'`) should be nulled manually after — they geocode to a meaningless point.
 
 ## Cloud-session notes

@@ -1,15 +1,22 @@
-/* generate-context v10 — gemini-2.5-flash-lite, no Search grounding
+/* generate-context v11 — Groq-primary, Gemini fallback
 
-   v10: drops Search grounding and downgrades from gemini-3.5-flash to
-   gemini-2.5-flash-lite. Grounding was the primary cost driver ($14/1K
-   queries, each request triggered multiple internal searches). Ungrounded
-   Flash-Lite ($0.10/$0.40 per 1M tokens) produces equivalent 2-paragraph
-   context blurbs for this use case at ~22× lower output cost. */
+   v11 (cost policy): Groq llama-4-scout is now PRIMARY; Gemini
+   gemini-2.5-flash-lite is the FALLBACK only when Groq is
+   unavailable (missing key / 429 / 5xx). The “why this matters”
+   blurb is plain editorial text generation that Groq handles well,
+   and Groq's free tier means this function costs ~€0 in the normal
+   case. Per CLAUDE.md: use the free model when possible, Gemini only
+   when nothing else works.
+
+   v10: dropped Search grounding + downgraded to gemini-2.5-flash-lite
+   (grounding was the primary cost driver). Kept as the fallback model. */
 
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
+const GROQ    = Deno.env.get('GROQ_API_KEY') ?? '';
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GROQ_MODEL   = 'meta-llama/llama-4-scout-17b-16e-instruct';
 const INTER_PICK_DELAY_MS = 800;
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
@@ -52,22 +59,43 @@ const fetchPicks = async (id: string|null, limit: number): Promise<Pick[]> => {
 };
 
 const buildPrompt = (pick: Pick): string => [
-  `You are writing the "Why this matters" section for WanderAlt, an editorial guide to alternative culture in Tallinn.`,
+  `You are writing the \"Why this matters\" section for WanderAlt, an editorial guide to alternative culture in Tallinn.`,
   ``,
   `Write exactly 2 short paragraphs (3-4 sentences each) about why someone should go to this pick.`,
   `Write in the voice of the curator who recommended it — knowledgeable, personal, not promotional.`,
   `Draw on what you know about ${pick.venue} and this kind of ${pick.kind} space; ground the prose in real detail, never invented facts.`,
-  `No em-dashes. No exclamation marks. No "discover". No marketing language. Do not quote or paraphrase venue marketing copy.`,
+  `No em-dashes. No exclamation marks. No \"discover\". No marketing language. Do not quote or paraphrase venue marketing copy.`,
   `Read like a back-page newsletter, not a travel blog.`,
   ``,
   `Pick: ${pick.title}`,
   `Venue: ${pick.venue} (${pick.neighborhood}, ${pick.kind})`,
-  `Curator quote: "${pick.quote}"`,
+  `Curator quote: \"${pick.quote}\"`,
   pick.bio ? `Curator ${pick.handle}: ${pick.bio}` : `Curator: ${pick.handle}`,
   ``,
   `Output only the two paragraphs, no heading, no intro, no sign-off.`,
 ].join('\n');
 
+/* Groq (primary) — returns text or null on any failure. */
+const callGroq = async (prompt: string): Promise<string|null> => {
+  if (!GROQ) return null;
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${GROQ}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.75,
+        max_tokens: 400,
+      }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d?.choices?.[0]?.message?.content?.trim() || null;
+  } catch { return null; }
+};
+
+/* Gemini (fallback only). */
 const callGemini = async (prompt: string): Promise<string|null> => {
   if (!GEMINI) return null;
   try {
@@ -88,6 +116,15 @@ const callGemini = async (prompt: string): Promise<string|null> => {
   } catch { return null; }
 };
 
+/* Groq first; Gemini only if Groq yields nothing. Reports which ran. */
+const generate = async (prompt: string): Promise<{ text: string|null; provider: string }> => {
+  const g = await callGroq(prompt);
+  if (g) return { text: g, provider: 'groq' };
+  const m = await callGemini(prompt);
+  if (m) return { text: m, provider: 'gemini' };
+  return { text: null, provider: 'none' };
+};
+
 const saveContext = async (id: string, context_md: string): Promise<boolean> => {
   const r = await sbFetch(`/rest/v1/picks?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ context_md }) });
   return r.ok || r.status === 204;
@@ -100,15 +137,16 @@ Deno.serve(async (req: Request) => {
 
   const picks = await fetchPicks(specificId ?? null, limit);
   if (!picks.length) {
-    return new Response(JSON.stringify({ ok: true, processed: 0, skipped: 0, errors: [] }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: true, processed: 0, skipped: 0, errors: [], gemini_calls: 0 }), { headers: { 'Content-Type': 'application/json' } });
   }
 
-  let processed = 0, skipped = 0;
+  let processed = 0, skipped = 0, geminiCalls = 0;
   const errors: string[] = [];
 
   for (const pick of picks) {
-    const text = await callGemini(buildPrompt(pick));
-    if (!text) { skipped++; errors.push(`${pick.id}: Gemini returned nothing`); }
+    const { text, provider } = await generate(buildPrompt(pick));
+    if (provider === 'gemini') geminiCalls++;
+    if (!text) { skipped++; errors.push(`${pick.id}: no LLM output`); }
     else {
       const saved = await saveContext(pick.id, text);
       if (saved) processed++; else errors.push(`${pick.id}: DB write failed`);
@@ -117,5 +155,5 @@ Deno.serve(async (req: Request) => {
       await new Promise(r => setTimeout(r, INTER_PICK_DELAY_MS));
   }
 
-  return new Response(JSON.stringify({ ok: true, processed, skipped, errors }), { headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, processed, skipped, errors, gemini_calls: geminiCalls }), { headers: { 'Content-Type': 'application/json' } });
 });
