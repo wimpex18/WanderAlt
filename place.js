@@ -123,7 +123,7 @@
       </article>
 
       <footer class="colophon">
-        <p class="colophon__line">WanderAlt &middot; A curator vouched for every pick. AI is the index, not the editor. Places are sourced from OpenStreetMap.</p>
+        <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick. AI is the index, not the editor. Places are sourced from OpenStreetMap.</p>
       </footer>
     `;
   };

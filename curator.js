@@ -135,7 +135,7 @@
       </article>
 
       <footer class="colophon">
-        <p class="colophon__line">WanderAlt &middot; Tallinn edition &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
+        <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; Tallinn edition &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
       </footer>
     `;
 
