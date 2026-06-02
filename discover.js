@@ -1090,20 +1090,29 @@
       });
     }
 
-    /* Copy-link button — copies the current URL (which already has ?mode=match&ai=…)
-       to the clipboard. Shows a brief "✓ Copied" label then reverts. */
+    /* Share-link button — shares the current URL (which already has
+       ?mode=match&ai=…) via the native OS share sheet, falling back to a
+       clipboard copy. Shows a brief confirm label then reverts. */
     if (copyLinkBtn) {
-      copyLinkBtn.addEventListener('click', () => {
-        navigator.clipboard?.writeText(window.location.href).then(() => {
-          copyLinkBtn.classList.add('match-copy-link--copied');
-          const label = copyLinkBtn.childNodes[copyLinkBtn.childNodes.length - 1]; /* text node */
-          const orig = label.textContent;
-          label.textContent = ' ✓ Copied';
-          setTimeout(() => {
-            label.textContent = orig;
-            copyLinkBtn.classList.remove('match-copy-link--copied');
-          }, 2000);
-        });
+      const confirmLabel = (text) => {
+        copyLinkBtn.classList.add('match-copy-link--copied');
+        const label = copyLinkBtn.childNodes[copyLinkBtn.childNodes.length - 1]; /* text node */
+        const orig = label.textContent;
+        label.textContent = text;
+        setTimeout(() => {
+          label.textContent = orig;
+          copyLinkBtn.classList.remove('match-copy-link--copied');
+        }, 2000);
+      };
+      copyLinkBtn.addEventListener('click', async () => {
+        const share = window.WA && window.WA.Share;
+        if (share) {
+          const r = await share.url({ title: 'WanderAlt', text: 'A WanderAlt match', url: window.location.href });
+          if (r === 'shared') confirmLabel(' ✓ Shared');
+          else if (r === 'copied') confirmLabel(' ✓ Copied');
+        } else {
+          navigator.clipboard?.writeText(window.location.href).then(() => confirmLabel(' ✓ Copied'));
+        }
       });
     }
 

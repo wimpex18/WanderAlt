@@ -142,6 +142,8 @@
 
         <div class="venue-actions" style="display:flex;gap:10px;align-items:center;margin-top:var(--s-5)">
           <button class="btn-primary venue-going-btn" type="button" style="flex:1;text-align:center;">I&rsquo;m going &rarr;</button>
+          ${entry.day ? `<button class="btn-secondary venue-cal-btn" type="button" aria-label="Add to calendar">Add to calendar</button>` : ''}
+          <button class="btn-secondary venue-share-btn" type="button" aria-label="Share this pick">Share</button>
         </div>
 
         <!-- Why this matters — async-populated by fetchContext() after render -->
@@ -333,6 +335,35 @@
     if (cb && window.WA.Bookmarks) {
       cb.addEventListener('change', () => {
         window.WA.Bookmarks.set(entry.id, cb.checked);
+      });
+    }
+
+    /* Wire Share — native OS share sheet, clipboard fallback. */
+    const shareBtn = main.querySelector('.venue-share-btn');
+    if (shareBtn && window.WA.Share) {
+      shareBtn.addEventListener('click', async () => {
+        const r = await window.WA.Share.url({
+          title: entry.title,
+          text:  `${entry.title} — ${entry.venue}`,
+          url:   window.location.href,
+        });
+        if (r === 'copied' || r === 'shared') {
+          const prev = shareBtn.textContent;
+          shareBtn.textContent = r === 'copied' ? 'Link copied ✓' : 'Shared ✓';
+          setTimeout(() => { shareBtn.textContent = prev; }, 2000);
+        }
+      });
+    }
+
+    /* Wire Add to calendar — client-side .ics download (dated picks only). */
+    const calBtn = main.querySelector('.venue-cal-btn');
+    if (calBtn && window.WA.Share) {
+      calBtn.addEventListener('click', () => {
+        if (window.WA.Share.downloadIcs(entry)) {
+          const prev = calBtn.textContent;
+          calBtn.textContent = 'Added ✓';
+          setTimeout(() => { calBtn.textContent = prev; }, 2000);
+        }
       });
     }
   };

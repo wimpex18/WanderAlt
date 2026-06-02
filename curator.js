@@ -139,14 +139,26 @@
       </footer>
     `;
 
-    /* Wire share button. */
+    /* Wire share button — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('#curator-share-btn');
     if (shareBtn) {
-      shareBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-          shareBtn.textContent = 'Copied ✓';
+      shareBtn.addEventListener('click', async () => {
+        const share = window.WA && window.WA.Share;
+        const done = (label) => {
+          shareBtn.textContent = label;
           setTimeout(() => { shareBtn.textContent = 'Share →'; }, 2000);
-        });
+        };
+        if (share) {
+          const r = await share.url({
+            title: `${curator.name || curator.handle} on WanderAlt`,
+            text:  curator.tagline || '',
+            url:   window.location.href,
+          });
+          if (r === 'copied') done('Copied ✓');
+          else if (r === 'shared') done('Shared ✓');
+        } else {
+          navigator.clipboard.writeText(window.location.href).then(() => done('Copied ✓'));
+        }
       });
     }
 

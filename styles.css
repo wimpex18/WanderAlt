@@ -2052,8 +2052,9 @@ a.handle:hover {
 }
 .topbar__about:hover { color: var(--c-accent); }
 /* On very narrow phones the right group (About · Sign in · City) can
-   crowd the wordmark. Below 360px drop the About label — the home
-   standfirst and the Profile "About & info" section still surface it. */
+   crowd the wordmark. Below 360px drop the masthead About label — the
+   footer colophon (present on every content page since June 2026)
+   carries the About link as the fallback path. */
 @media (max-width: 360px) {
   .topbar__about { display: none; }
 }
