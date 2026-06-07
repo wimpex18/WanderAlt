@@ -52,14 +52,30 @@
 
   const venueHref = (id) => `venue.html?id=${encodeURIComponent(id)}`;
 
-  /* Going row — two-column grid with day label on the left. */
+  /* Photo media tile — reuses the app's duotone .thumb--lg treatment so
+     Saved matches the Discover photo cards. Falls back to the initials
+     tile when the entry has no image. Decorative supplementary link. */
+  const mediaHtml = (entry) => {
+    const imgUrl = entry.imageUrl || entry.image_url || null;
+    const initials = (entry.thumbInitials || entry.thumb_initials
+      || (entry.venue || entry.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const sty = imgUrl ? ` style="background-image:url('${String(imgUrl).replace(/'/g, '%27')}')"` : '';
+    return `<a class="list-row__media" href="${venueHref(entry.id)}" tabindex="-1" aria-hidden="true">
+      <span class="${cls}" role="img" aria-label="${entry.venue || entry.title}"${sty}>
+        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${initials}</span>
+      </span></a>`;
+  };
+
+  /* Going row — day label · photo · body grid. */
   const goingRow = (entry) => {
     const li = document.createElement('li');
-    li.className        = 'list-row list-row--going';
+    li.className        = 'list-row list-row--going list-row--card';
     li.dataset.catalogId = entry.id;
     li.innerHTML =
       `<p class="list-row__time">${entry.day === 'Tonight' ? 'Now' : entry.day}</p>
-       <div>
+       ${mediaHtml(entry)}
+       <div class="list-row__body">
          <p class="list-row__title">
            <a href="${venueHref(entry.id)}">${entry.title}</a>
          </p>
@@ -72,20 +88,23 @@
     return li;
   };
 
-  /* Reading row — standard single-column row. */
+  /* Reading row — photo · body card (matches Discover). */
   const readingRow = (entry) => {
     const li = document.createElement('li');
-    li.className        = 'list-row';
+    li.className        = 'list-row list-row--card';
     li.dataset.catalogId = entry.id;
     li.innerHTML =
-      `<p class="list-row__title">
-         <a href="${venueHref(entry.id)}">${entry.title}</a>
-       </p>
-       <p class="list-row__meta">${buildMeta(entry)}</p>
-       <p class="list-row__quote">
-         &mdash; ${entry.quote}
-         <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
-       </p>`;
+      `${mediaHtml(entry)}
+       <div class="list-row__body">
+         <p class="list-row__title">
+           <a href="${venueHref(entry.id)}">${entry.title}</a>
+         </p>
+         <p class="list-row__meta">${buildMeta(entry)}</p>
+         <p class="list-row__quote">
+           &mdash; ${entry.quote}
+           <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
+         </p>
+       </div>`;
     return li;
   };
 
