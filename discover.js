@@ -142,13 +142,34 @@
     const closedBadge = e.isClosed ? ` <span class="list-row__closed">closed</span>` : '';
     const isFree = (e.moodTags || []).includes('free');
     const freeBadge = isFree ? ` <span class="list-row__free">free</span>` : '';
-    const rowCls = e.isClosed ? 'list-row list-row--closed' : 'list-row';
+    const rowCls = e.isClosed ? 'list-row list-row--closed list-row--card' : 'list-row list-row--card';
+
+    /* Photo-forward card (June 2026): a venue photo on the left reusing the
+       app's duotone .thumb--lg treatment (consistent with the home picks +
+       venue page), so disparate event photos still read as one editorial
+       set. Falls back to the initials tile when the pick has no image_url.
+       The media is a decorative supplementary link (the title link is the
+       keyboard tab stop). content-visibility on .list-row keeps it lazy. */
+    const imgUrl   = e.imageUrl || e.image_url || null;
+    const initials = (e.thumbInitials || e.thumb_initials || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const thumbSty = imgUrl ? ` style="background-image:url('${imgUrl.replace(/'/g, '%27')}')"` : '';
+    const media =
+      `<a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
+         <span class="${thumbCls}" role="img" aria-label="${esc(e.venue || e.title)}"${thumbSty}>
+           <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
+         </span>
+       </a>`;
+
     return `<li class="${rowCls}" data-id="${esc(e.id)}">
-       <p class="list-row__title">
-         <a href="venue.html?id=${e.id}">${esc(e.title)}</a>${closedBadge}${freeBadge}${mapLinkA}
-       </p>
-       <p class="list-row__meta">${esc(buildMeta(e))}</p>
-       <p class="list-row__quote">&mdash; ${esc(e.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>
+       ${media}
+       <div class="list-row__body">
+         <p class="list-row__title">
+           <a href="venue.html?id=${e.id}">${esc(e.title)}</a>${closedBadge}${freeBadge}${mapLinkA}
+         </p>
+         <p class="list-row__meta">${esc(buildMeta(e))}</p>
+         <p class="list-row__quote">&mdash; ${esc(e.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>
+       </div>
      </li>`;
   };
 
