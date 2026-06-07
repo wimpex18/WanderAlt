@@ -1583,6 +1583,10 @@ body[data-page="saved"] .colophon {
 .list-row--card .list-row__media { display: block; text-decoration: none; flex: 0 0 auto; }
 .list-row--card .list-row__body { min-width: 0; }   /* let text ellipsis/wrap, not overflow the grid */
 .list-row--card .list-row__title { margin-top: 2px; }
+/* Saved "Going" rows keep their day-label column, then photo, then body. */
+.list-row--going.list-row--card {
+  grid-template-columns: 52px auto 1fr;
+}
 @media (hover: hover) {
   .list-row--card .list-row__media .thumb { transition: transform var(--t-mid); }
   .list-row--card:hover .list-row__media .thumb { transform: translateY(-2px); }
@@ -1871,6 +1875,63 @@ html.wa-taste-done .taste-onboarding { display: none; }
 .venue-head .eyebrow {
   margin-bottom: var(--s-2);
 }
+
+/* ── Photo-forward detail hero (venue page, June 2026) ───────────
+   Same scrim pattern as the Tonight hero: venue photo + eyebrow/title/
+   meta overlaid in white. Only when the pick has an image_url. */
+.detail-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 280px;
+  margin: var(--s-3) 0 var(--s-4);
+  padding: var(--s-5);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background-color: var(--c-ink);   /* fallback while photo loads / 404 */
+  background-size: cover;
+  background-position: center;
+  isolation: isolate;
+}
+.detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.74) 0%,
+    rgba(0, 0, 0, 0.4) 40%,
+    rgba(0, 0, 0, 0) 75%);
+}
+.detail-hero__foot { display: block; }
+.eyebrow--onphoto { color: rgba(255, 255, 255, 0.82); margin-bottom: var(--s-2); }
+.venue-title--onphoto { color: #fff; margin: 0 0 var(--s-2); }
+.meta--onphoto { color: rgba(255, 255, 255, 0.82); }
+@media (min-width: 768px) {
+  .detail-hero { min-height: 360px; }
+}
+
+/* Mood-tag chips (extracted from inline styles on the venue page). */
+.venue-moods {
+  margin: var(--s-3) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.venue-mood {
+  display: inline-block;
+  padding: 4px 12px;
+  min-height: 28px;          /* chip floor (Material chip ~32; this reads compact) */
+  border: 1px solid var(--c-rule);
+  border-radius: 999px;
+  font-family: var(--ff-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
+  text-decoration: none;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.venue-mood:hover { border-color: var(--c-accent); color: var(--c-accent); }
 .venue-title {
   font-family: var(--ff-display);   /* Fraunces — venue detail headline */
   font-size: 30px;

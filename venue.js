@@ -91,22 +91,41 @@
     const more     = moreAll.slice(0, 5);
     const moreRest = moreAll.length - more.length;
 
+    /* Mood-tag chips (interactive filter links) — kept below the header in
+       both layouts so they stay tappable rather than overlaid on a photo. */
+    const moodChips = entry.moodTags && entry.moodTags.length ? `
+        <p class="venue-moods">
+          ${entry.moodTags.map(t =>
+            `<a href="discover.html#mood=${encodeURIComponent(t)}" class="venue-mood">${t}</a>`
+          ).join('')}
+        </p>` : '';
+
+    /* Photo-forward header (June 2026): when the pick has an image_url, the
+       venue photo fills a banner with a scrim gradient and the eyebrow +
+       title + meta sit on it in white. No photo -> the flat header. The big
+       curator quote still leads below, either way. */
+    const header = entry.imageUrl
+      ? `<div class="detail-hero" style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')">
+           <div class="detail-hero__foot">
+             <p class="eyebrow eyebrow--onphoto">${eyebrow}</p>
+             <h1 class="venue-title venue-title--onphoto">${entry.title}</h1>
+             <p class="meta meta--onphoto">${buildMeta(entry)}</p>
+           </div>
+         </div>
+         ${moodChips}`
+      : `<div class="venue-head">
+           <p class="eyebrow">${eyebrow}</p>
+           <h1 class="venue-title">${entry.title}</h1>
+           <p class="meta">${buildMeta(entry)}</p>
+           ${moodChips}
+         </div>`;
+
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
 
       <article aria-label="${entry.title}">
 
-        <div class="venue-head">
-          <p class="eyebrow">${eyebrow}</p>
-          <h1 class="venue-title">${entry.title}</h1>
-          <p class="meta">${buildMeta(entry)}</p>
-        ${entry.moodTags && entry.moodTags.length ? `
-        <p style="margin:var(--s-2) 0 0;display:flex;flex-wrap:wrap;gap:6px;">
-          ${entry.moodTags.map(t =>
-            `<a href="discover.html#mood=${encodeURIComponent(t)}" style="display:inline-block;padding:3px 10px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:12px;font-weight:500;color:var(--c-ink-mute);text-decoration:none;">${t}</a>`
-          ).join('')}
-        </p>` : ''}
-        </div>
+        ${header}
 
         <hr class="rule" style="margin-bottom:var(--s-2)">
 
