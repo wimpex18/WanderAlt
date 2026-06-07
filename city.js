@@ -16,6 +16,22 @@
      catalog.js → city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
+  /* ── Right-size remote photos (Core Web Vitals, June 2026) ──────
+     Google Places (lh3.googleusercontent.com) photos arrive at
+     =s4800-w800 (~106 KB) even for a 72px thumb. Swapping the trailing
+     size directive to =w<width> cuts a thumbnail to ~9 KB (verified).
+     Only touches googleusercontent URLs that carry a size token; every
+     other host (Wikimedia, etc.) is returned unchanged. Exposed as
+     WA.img(url, width) and used at every background-image build site. */
+  window.WA = window.WA || {};
+  window.WA.img = (url, width) => {
+    if (!url || typeof url !== 'string' || !width) return url;
+    if (url.includes('googleusercontent.com')) {
+      return url.replace(/=[-a-z0-9]+$/i, `=w${width}`);
+    }
+    return url;
+  };
+
   /* Each city has a static illustrated overview plate at /assets/
      <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). All ship
      under the city-plates-v2 brand bundle — see brand/BRAND.md § 5 for

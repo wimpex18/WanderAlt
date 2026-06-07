@@ -60,7 +60,7 @@
     const initials = (entry.thumbInitials || entry.thumb_initials
       || (entry.venue || entry.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
     const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const sty = imgUrl ? ` style="background-image:url('${String(imgUrl).replace(/'/g, '%27')}')"` : '';
+    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
     return `<a class="list-row__media" href="${venueHref(entry.id)}" tabindex="-1" aria-hidden="true">
       <span class="${cls}" role="img" aria-label="${entry.venue || entry.title}"${sty}>
         <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${initials}</span>

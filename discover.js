@@ -153,7 +153,7 @@
     const imgUrl   = e.imageUrl || e.image_url || null;
     const initials = (e.thumbInitials || e.thumb_initials || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
     const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty = imgUrl ? ` style="background-image:url('${imgUrl.replace(/'/g, '%27')}')"` : '';
+    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
     const media =
       `<a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
          <span class="${thumbCls}" role="img" aria-label="${esc(e.venue || e.title)}"${thumbSty}>
@@ -715,7 +715,7 @@
     const initials = pick.thumbInitials || pick.thumb_initials
       || (pick.venue || pick.title || '??').slice(0, 2).toUpperCase();
     const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty = imgUrl ? ` style="background-image:url('${imgUrl.replace(/'/g, '%27')}')"` : '';
+    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
     const whyText  = why || pick.why || pick.quote || '';
     return `<div class="match-card">
        <p class="match-card__why">&ldquo;${esc(whyText)}&rdquo;</p>

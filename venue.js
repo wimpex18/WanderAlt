@@ -29,7 +29,7 @@
   const thumbEl = (entry, large = false) => {
     const cls   = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
     const style  = entry.imageUrl
-      ? ` style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')"` : '';
+      ? ` style="background-image:url('${WA.img(entry.imageUrl, 200).replace(/'/g, '%27')}')"` : '';
     const label  = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
     return `<span class="${cls}" role="img" aria-label="${label}"${style}>` +
            `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${entry.thumbInitials}</span>` +
@@ -105,7 +105,7 @@
        title + meta sit on it in white. No photo -> the flat header. The big
        curator quote still leads below, either way. */
     const header = entry.imageUrl
-      ? `<div class="detail-hero" style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')">
+      ? `<div class="detail-hero" style="background-image:url('${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}')">
            <div class="detail-hero__foot">
              <p class="eyebrow eyebrow--onphoto">${eyebrow}</p>
              <h1 class="venue-title venue-title--onphoto">${entry.title}</h1>

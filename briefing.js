@@ -82,7 +82,7 @@
   const thumbEl = (entry, large = false) => {
     const cls  = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
     const style = entry.imageUrl
-      ? ` style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')"` : '';
+      ? ` style="background-image:url('${WA.img(entry.imageUrl, 200).replace(/'/g, '%27')}')"` : '';
     const label = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
     return `<span class="${cls}" role="img" aria-label="${label}"${style}>` +
            `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${entry.thumbInitials}</span>` +
@@ -117,7 +117,7 @@
        leads. No photo -> the flat editorial header (kindline + title). */
     const head = entry.imageUrl
       ? `<a href="venue.html?id=${entry.id}" class="tonight__hero" id="tonight-label"
-            style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')">
+            style="background-image:url('${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}')">
            <span class="tonight__badge tonight__badge--onphoto">Tonight${timeStr}</span>
            <span class="tonight__hero-foot">
              <span class="tonight__kindline tonight__kindline--onphoto">
