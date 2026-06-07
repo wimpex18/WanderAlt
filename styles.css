@@ -48,17 +48,24 @@
   --ff-body:    'Inter', -apple-system, system-ui, sans-serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* ---------- Type scale (mobile first) ---------- */
+  /* ---------- Type scale (mobile first) ----------
+     A tightened, harmonic ramp (June 2026 rhythm pass): label 11 → meta 12
+     → body 16 → item-title 18 → quote 32. The old 16/17/18 mid-cluster
+     was muddy (three near-identical sizes); venue + pick titles now share
+     one 18px "item title" step so the hierarchy reads cleanly. */
   --fs-eyebrow:    11px;
   --fs-meta:       12px;
   --fs-body:       16px;
   --fs-pick:       18px;
-  --fs-venue:      17px;
+  --fs-venue:      18px;   /* merged with --fs-pick (was 17 — too close to 16/18) */
   --fs-transition: 11px;
   --fs-quote:      32px;   /* tuned down from 38 — 3 lines on mobile, not 11 */
 
-  /* ---------- Leading ---------- */
-  --lh-tight: 1.04;
+  /* ---------- Leading ----------
+     Tuned for the Inter (body) + Fraunces (display) pairing. Body 1.5 is
+     Inter's comfortable measure; tight 1.1 gives the large Fraunces-italic
+     quote room to breathe (1.04 was set for the denser old DM Serif). */
+  --lh-tight: 1.1;
   --lh-snug:  1.22;
   --lh-body:  1.5;
 
