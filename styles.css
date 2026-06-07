@@ -11,14 +11,20 @@
    in about.html and dropping a render-blocking connection — and ends
    the dependency on Google's CDN. font-display: swap matches the
    previous &display=swap behaviour. Files in /fonts (see fonts/). */
-@font-face { font-family: 'Geist'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/geist-400.woff2') format('woff2'); }
-@font-face { font-family: 'Geist'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/geist-500.woff2') format('woff2'); }
-@font-face { font-family: 'Geist'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/geist-600.woff2') format('woff2'); }
-@font-face { font-family: 'Geist'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/geist-700.woff2') format('woff2'); }
+/* Body sans = Inter (June 2026 brand evolution — replaced Geist, which is
+   Vercel's font and read as generic AI-startup). Display serif = Fraunces,
+   a soft, organic, slightly-70s "old-style" display face for city names,
+   titles and the curator quote (replaced the thinner DM Serif Display).
+   Geist Mono is retained for the small editorial eyebrow/label runs. */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/inter-500.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/inter-600.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/inter-700.woff2') format('woff2'); }
 @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/geist-mono-400.woff2') format('woff2'); }
 @font-face { font-family: 'Geist Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/geist-mono-500.woff2') format('woff2'); }
-@font-face { font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/dm-serif-display-400.woff2') format('woff2'); }
-@font-face { font-family: 'DM Serif Display'; font-style: italic; font-weight: 400; font-display: swap; src: url('fonts/dm-serif-display-400-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/fraunces-400.woff2') format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/fraunces-600.woff2') format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 400; font-display: swap; src: url('fonts/fraunces-400-italic.woff2') format('woff2'); }
 
 :root {
   /* ---------- Color — Compass palette ---------- */
@@ -38,8 +44,8 @@
   --c-faint:        #a1a1aa;
 
   /* ---------- Type families — Compass ---------- */
-  --ff-display: 'DM Serif Display', 'Source Serif 4', Georgia, serif;
-  --ff-body:    'Geist', -apple-system, system-ui, sans-serif;
+  --ff-display: 'Fraunces', 'DM Serif Display', Georgia, serif;
+  --ff-body:    'Inter', -apple-system, system-ui, sans-serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* ---------- Type scale (mobile first) ---------- */
@@ -86,6 +92,16 @@
   --radius-thumb:   8px;
   --rule-w:         1px;
   --nav-h:          68px;
+
+  /* ---------- Liquid Glass (June 2026 brand evolution) ----------
+     Frosted translucent chrome — the sticky topbar, bottom nav and the
+     mobile sheets float as glass over the content scrolling beneath.
+     Tuned subtle so it reads as depth, not decoration. Falls back to a
+     solid surface where backdrop-filter is unsupported (see @supports). */
+  --glass-bg:      rgba(255, 255, 255, 0.66);
+  --glass-bg-deep: rgba(250, 250, 249, 0.78);
+  --glass-blur:    saturate(180%) blur(20px);
+  --glass-hair:    rgba(20, 30, 30, 0.08);   /* hairline edge for glass */
 
   /* ---------- Motion ----------
      --t-fast  is the legacy color/border swap (already used in 30+ rules).
@@ -202,8 +218,17 @@ img, svg { display: block; max-width: 100%; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--c-paper);
-  border-bottom: var(--rule-w) solid var(--c-rule);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: var(--rule-w) solid var(--glass-hair);
+}
+
+/* Fallback: where backdrop-filter is unsupported, use solid surfaces so
+   the chrome never turns into unreadable see-through panels. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar    { background: var(--c-paper); }
+  .nav__inner { background: var(--c-paper-deep); }
 }
 
 /* ── City banner ─────────────────────────────────────────────
@@ -713,11 +738,11 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   margin-bottom: 0;
 }
 .section-title {
-  font-family: var(--ff-body);
-  font-size: 22px;
+  font-family: var(--ff-display);   /* Fraunces — editorial serif heading */
+  font-size: 24px;
   font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.5px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
 }
 .section-sub {
@@ -854,11 +879,11 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   min-width: 0;
 }
 .pick__title {
-  font-family: var(--ff-body);
+  font-family: var(--ff-display);   /* Fraunces — venue/event title */
   font-weight: 600;
   font-size: var(--fs-pick);
   line-height: var(--lh-snug);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
   text-wrap: pretty;
   transition: color var(--t-fast);
@@ -1370,11 +1395,11 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   padding: var(--s-5) 0 var(--s-4);
 }
 .reading-head__title {
-  font-family: var(--ff-body);
-  font-size: 28px;
-  font-weight: 700;
+  font-family: var(--ff-display);   /* Fraunces */
+  font-size: 30px;
+  font-weight: 600;
   line-height: 1.05;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
 }
 .reading-head__count {
@@ -1569,11 +1594,11 @@ body[data-page="saved"] .colophon {
   color: var(--c-ink);
 }
 .list-row__title {
-  font-family: var(--ff-body);
-  font-size: 17px;
+  font-family: var(--ff-display);   /* Fraunces — list title */
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.2;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
   text-wrap: balance;
 }
@@ -1824,11 +1849,11 @@ html.wa-taste-done .taste-onboarding { display: none; }
   margin-bottom: var(--s-2);
 }
 .venue-title {
-  font-family: var(--ff-body);
-  font-size: 26px;
-  font-weight: 700;
+  font-family: var(--ff-display);   /* Fraunces — venue detail headline */
+  font-size: 30px;
+  font-weight: 600;
   line-height: var(--lh-snug);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
   text-wrap: pretty;
   margin: 0 0 var(--s-2);
@@ -2725,18 +2750,21 @@ a.auth-panel__submit { display: inline-block; }
   right: 0;
   bottom: 0;
   z-index: 20;
-  background: var(--c-paper);
-  border-top: var(--rule-w) solid var(--c-rule);
+  background: transparent;   /* the pill below is the glass surface */
   padding: 8px 12px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Pill container — the five items float inside */
+/* Pill container — the five items float inside; frosted Liquid Glass */
 .nav__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--c-paper-deep);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--rule-w) solid var(--glass-hair);
+  box-shadow: 0 6px 24px rgba(20, 30, 30, 0.10);
   border-radius: 999px;
   padding: 4px;
   height: 52px;
@@ -4839,12 +4867,18 @@ body.discover-places .mood-chips { display: none; }
   right: 0;
   bottom: 0;
   max-height: 80vh;
-  background: var(--c-paper);
-  border-top: 1px solid var(--c-rule-strong);
+  /* Liquid Glass: the mobile filter sheet frosts over the list beneath. */
+  background: var(--glass-bg-deep);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-hair);
   display: flex;
   flex-direction: column;
   z-index: 71;
   animation: discover-sheet-up 180ms ease-out;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .discover-sheet { background: var(--c-paper); }
 }
 @keyframes discover-sheet-up {
   from { transform: translateY(100%); }
@@ -4982,6 +5016,11 @@ body.discover-sheet-open { overflow: hidden; }
     margin: 0 0 var(--s-4);
     animation: none;
     z-index: auto;
+    /* On desktop the sheet is an inline filter rail, not a floating
+       overlay — drop the glass so it reads as part of the page. */
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .discover-sheet[hidden] { display: flex !important; }   /* always visible */
   .discover-sheet__body  { overflow: visible; padding: var(--s-4) 0 0; }
@@ -5251,13 +5290,67 @@ body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
 }
 .tonight__title {
   display: block;
-  font-family: var(--ff-body);
-  font-size: 23px;
+  font-family: var(--ff-display);   /* Fraunces */
+  font-size: 26px;
   font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   color: var(--c-ink);
   margin: 0 0 var(--s-4);
+}
+
+/* ── Photo-forward Tonight hero (June 2026) ──────────────────────
+   Venue photo as a banner with a "scrim" gradient so overlaid white
+   text stays legible over any photo (NYT/Airbnb hero pattern). Only
+   rendered when the pick has an image_url; otherwise the flat header. */
+.tonight__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 300px;
+  margin: 0 0 var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background-color: var(--c-ink);   /* fallback while the photo loads / if it 404s */
+  background-size: cover;
+  background-position: center;
+  text-decoration: none;
+  isolation: isolate;
+}
+/* The scrim — transparent at top, dark at the foot, behind the text. */
+.tonight__hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.38) 38%,
+    rgba(0, 0, 0, 0) 72%);
+}
+.tonight__hero-foot { display: block; }
+.tonight__badge--onphoto {
+  position: absolute;
+  top: var(--s-4);
+  left: var(--s-4);
+}
+.tonight__kindline--onphoto { color: rgba(255, 255, 255, 0.92); }
+.tonight__kindline--onphoto .tonight__where { color: rgba(255, 255, 255, 0.78); }
+.tonight__title--onphoto {
+  color: #fff;
+  font-size: 34px;
+  margin: var(--s-2) 0 0;
+  text-wrap: pretty;
+}
+@media (hover: hover) {
+  .tonight__hero:hover .tonight__title--onphoto { color: #fff; }
+  .tonight__hero { transition: transform var(--t-mid); }
+  .tonight__hero:hover { transform: translateY(-2px); }
+}
+@media (min-width: 768px) {
+  .tonight__hero { min-height: 380px; }
+  .tonight__title--onphoto { font-size: 44px; }
 }
 .tonight:hover .tonight__title,
 a.tonight__title:hover { color: var(--c-accent); }
@@ -5332,7 +5425,7 @@ body[data-page="briefing"] .tonight__attr {
 .btn-save:hover { border-color: var(--c-accent); color: var(--c-accent); }
 
 /* Today: bigger editorial section title; subtle hover lift on picks. */
-body[data-page="briefing"] .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+body[data-page="briefing"] .section-title { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
 @media (hover: hover) { body[data-page="briefing"] .pick:hover { transform: translateY(-1px); transition: transform var(--t-mid); } }
 
 @media (max-width: 767px) {
