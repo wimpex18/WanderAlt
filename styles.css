@@ -331,7 +331,11 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
   text-transform: uppercase;
   color: var(--c-ink);
   padding: var(--s-1) var(--s-2);
-  margin: calc(-1 * var(--s-1)) calc(-1 * var(--s-2));
+  /* 44px tap target (the city switcher is tapped on mobile). Negative
+     vertical margin keeps the topbar visually compact while the hit area
+     stays full-height. */
+  min-height: 44px;
+  margin: calc(-1 * var(--s-3)) calc(-1 * var(--s-2));
 }
 
 .city-dot {
@@ -2036,12 +2040,14 @@ a.handle:hover {
 }
 
 .auth-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;   /* masthead tap target, consistent with the city switcher + nav */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-ink-mute);
-  padding: var(--s-1) 0;
   white-space: nowrap;
 }
 .auth-btn:hover { color: var(--c-accent); }
@@ -2053,12 +2059,14 @@ a.handle:hover {
    right group reads as one row. Injected by auth.js on every page
    except About itself. */
 .topbar__about {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;   /* masthead tap target, consistent with the city switcher + nav */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-ink-mute);
-  padding: var(--s-1) 0;
   white-space: nowrap;
 }
 .topbar__about:hover { color: var(--c-accent); }
@@ -2133,6 +2141,7 @@ a.handle:hover {
   display: inline-flex;
   align-items: center;
   padding: 9px 16px;
+  min-height: 44px;   /* Apple HIG tap target (padding alone left it ~38px) */
   background: var(--c-ink);
   color: var(--c-paper);
   border: none;
@@ -2150,6 +2159,7 @@ a.handle:hover {
   display: inline-flex;
   align-items: center;
   padding: 9px 16px;
+  min-height: 44px;   /* Apple HIG tap target */
   background: transparent;
   color: var(--c-ink);
   border: var(--rule-w) solid var(--c-rule);
@@ -2357,6 +2367,9 @@ a.auth-panel__submit { display: inline-block; }
   gap: var(--s-3);
   cursor: pointer;
   margin-top: var(--s-4);
+  /* The whole label is the toggle's hit area — keep it ≥44px tall (the
+     switch itself is only 24px) so the tap target meets Apple HIG. */
+  min-height: 44px;
 }
 .profile-toggle__check {
   width: 18px;
@@ -4704,13 +4717,19 @@ body.discover-places .mood-chips { display: none; }
    Icons are inline SVG with currentColor so they inherit the link tint. */
 .venue-social {
   display: flex;
-  gap: var(--s-3);
-  margin: 6px 0 0;
+  gap: 0;   /* hit-area boxes carry their own padding now */
+  /* negative margin keeps the card row visually tight even though each
+     link is a 44px-tall hit target */
+  margin: 0 calc(-1 * var(--s-2));
 }
 .venue-social__link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* 44px tap target (the glyph stays 16px; padding makes the hit area).
+     Apple HIG / WCAG 2.5.5 — was a 16×16 link. */
+  min-width: 44px;
+  min-height: 44px;
   color: var(--c-ink-mute);
   transition: color var(--t-fast), transform var(--t-fast);
 }
@@ -4751,8 +4770,10 @@ body.discover-places .mood-chips { display: none; }
   z-index: 50;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 10px 16px;
+  min-height: 44px;   /* Apple HIG tap target (was ~34px) */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
