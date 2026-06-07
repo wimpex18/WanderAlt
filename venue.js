@@ -66,19 +66,24 @@
     const descEl = document.querySelector('meta[name="description"]');
     if (descEl) descEl.content = `${entry.quote} — ${entry.handle}`;
 
-    /* OG / Twitter card — set image, title, and description. */
-    const OG_BASE = (window.WA && window.WA.BASE_URL)
-      ? `${window.WA.BASE_URL}/functions/v1/og-image`
-      : null;
-    if (OG_BASE) {
-      const ogImg = `${OG_BASE}?id=${encodeURIComponent(entry.id)}`;
+    /* OG / Twitter card — set image, title, description. Crawlers get this
+       server-side via the Pages middleware (they don't run JS); this keeps
+       the live DOM in sync so native OS share sheets that read current
+       meta show the same. Prefer the real venue photo (NYT/Airbnb-style),
+       falling back to the branded og-image card when there's no photo. */
+    const ogImg = entry.imageUrl
+      ? (window.WA.img ? window.WA.img(entry.imageUrl, 1200) : entry.imageUrl)
+      : ((window.WA && window.WA.BASE_URL)
+          ? `${window.WA.BASE_URL}/functions/v1/og-image?id=${encodeURIComponent(entry.id)}`
+          : null);
+    if (ogImg) {
       document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]')
         .forEach(m => m.setAttribute('content', ogImg));
-      const ogTitle = document.querySelector('meta[property="og:title"]');
-      if (ogTitle) ogTitle.setAttribute('content', `WanderAlt — ${entry.title} · Tallinn`);
-      const ogDesc = document.querySelector('meta[property="og:description"]');
-      if (ogDesc) ogDesc.setAttribute('content', `${entry.quote} — ${entry.handle}`);
     }
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', `WanderAlt — ${entry.title} · Tallinn`);
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', `${entry.quote} — ${entry.handle}`);
 
     const { href, label } = backLink();
     const eyebrow  = (entry.pin && entry.pin.eyebrow)
