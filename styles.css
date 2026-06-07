@@ -2851,6 +2851,7 @@ a.auth-panel__submit { display: inline-block; }
   gap: 2px;
   flex: 1;
   height: 100%;
+  min-height: 44px;   /* primary-nav tap-target floor (Apple HIG) */
   color: var(--c-ink-mute);
   position: relative;
   border-radius: 999px;
