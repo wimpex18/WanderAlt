@@ -45,7 +45,7 @@
 .admin-auth-input:focus { outline:2px solid var(--c-accent); }
 
 /* Shared section layout */
-.admin-key-row           { display:flex; gap:var(--s-2); margin-top:var(--s-2); }
+.admin-key-row           { display:flex; gap:var(--s-2); margin-top:var(--s-2); max-width:720px; }
 .admin-key-row input     { flex:1; padding:var(--s-2) var(--s-3);
                            border:1px solid var(--c-ink);
                            font-family:var(--ff-mono); font-size:var(--fs-meta);
@@ -84,7 +84,11 @@
 .admin-stat-badge--warn  { color:var(--c-ink-mute); }
 .admin-stat-badge--accent { color:var(--c-accent); border-color:var(--c-accent); }
 .admin-stat-badge--bad   { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
-.admin-search-row        { position:relative; margin-top:var(--s-4); }
+/* Match field width to expected input (Baymard): a search query / title
+   is short, so don't stretch these inputs to the full ~1280px column —
+   cap to a readable measure, left-aligned. (The public Discover search
+   bar stays wide on purpose — it's the primary search surface.) */
+.admin-search-row        { position:relative; margin-top:var(--s-4); max-width:560px; }
 .admin-search-row input  { width:100%; box-sizing:border-box;
                            padding:var(--s-2) var(--s-3); border:1px solid var(--c-ink);
                            font-family:var(--ff-mono); font-size:var(--fs-meta);
