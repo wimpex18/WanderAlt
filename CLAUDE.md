@@ -19,9 +19,11 @@ For deeper context, read these on demand (do NOT auto-import — they bloat cont
 ```bash
 npm start          # local dev server at http://localhost:5173 (npx http-server, no cache)
 npm run admin      # admin panel server at http://localhost:8080
+npm run verify     # structural sweep: self-boots a server, asserts no overflow / no console errors / 44px tap targets across every public page × 390·768·1440 (exits non-zero on failure)
+npm run smoke      # screenshot regression set (server must be running) ; npm run lighthouse = perf audit
 ```
 
-There is no test suite. Verify changes by opening `localhost:5173` (or `localhost:8080/admin.html`) in a browser and inspecting visually — or by reading the rendered DOM via Chrome MCP.
+There is no unit-test suite, but **run `npm run verify` after any layout/CSS/markup change** — it's the automated version of the manual overflow/error/tap-target sweep and catches regressions (it's how the 42px nav tap-target was found). For visual/photo fidelity, still eyeball the Cloudflare branch preview (`npm run preview`). Chrome MCP / opening `localhost:5173` works for ad-hoc inspection.
 
 For a **production-fidelity** check (real Google-Places photos + petrol duotone, which a local/sandbox server can't fetch), screenshot the **Cloudflare branch preview** the Pages bot posts on every PR: `npm run preview -- <branch-preview-url> [city] [page ...]` (`.screenshots/preview.js`). It launches headless Chrome with the flags needed to reach `*.pages.dev` from a restricted environment — `--disable-quic` (the sandbox blocks UDP/QUIC) and `--disable-features=EncryptedClientHello,UseDnsHttpsSvcb,UseDnsHttpsSvcbAlpn` (Cloudflare's ECH otherwise trips `ERR_ECH_FALLBACK_CERTIFICATE_INVALID`). `curl` reaches these URLs without flags; Chrome needs them.
 
