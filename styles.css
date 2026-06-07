@@ -694,20 +694,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   background-position: center;
 }
 .thumb--has-img .thumb__fallback { display: none; }
-/* Petrol duotone: a color-blend overlay maps the photo's luminance onto
-   the brand petrol, so disparate venue/event photos read as one
-   intentional editorial treatment (no second hue introduced — the
-   duotone IS petrol on newsprint). mix-blend-mode: color keeps form via
-   luminance; opacity tunes how monochrome it goes. */
-.thumb--has-img::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--c-accent);
-  mix-blend-mode: color;
-  opacity: 0.5;          /* tinted-but-legible; raise toward 0.8 for more monochrome */
-  pointer-events: none;
-}
+/* Full-colour venue photos (June 2026): the petrol duotone overlay was
+   retired so photos read vivid and inviting (Airbnb/Lime direction). The
+   thumb border + radius still keep the disparate photos visually tidy. */
 .photo-credit {
   font-family: var(--ff-mono);
   font-size: 9px;
@@ -3329,32 +3318,31 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    .tonight-card layout so swap-in is layout-stable (CLS friendly).
    Used by index.html until briefing.js's renderTonight() fires. */
 .skeleton-tonight {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--s-3);
   margin: var(--s-4) 0 0;
-  padding: var(--s-4);
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius-card);
-  /* Reserve ~the rendered Tonight card height so the skeleton→card swap
-     doesn't shift the page below it (the main remaining CLS source).
-     A typical card runs ~500px mobile / ~560px desktop. */
+  /* Reserve ~the rendered hero height (photo banner + quote + actions) so
+     the skeleton→hero swap doesn't shift the page below it. */
   min-height: 502px;
 }
 @media (min-width: 768px) {
   .skeleton-tonight { min-height: 560px; }
 }
-.skeleton-tonight__badge {
-  width: 88px; height: 22px;
-  border-radius: 999px;
-  background: var(--c-paper);
+/* Photo-banner placeholder — matches the .tonight__hero shape. */
+.skeleton-tonight__banner {
+  height: 300px;
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
   position: relative;
   overflow: hidden;
 }
-.skeleton-tonight__thumb {
-  width: 64px; height: 64px;
-  border-radius: var(--radius-thumb);
+@media (min-width: 768px) {
+  .skeleton-tonight__banner { height: 380px; }
+}
+.skeleton-tonight__badge {
+  width: 88px; height: 22px;
+  border-radius: 999px;
   background: var(--c-paper);
   position: relative;
   overflow: hidden;
@@ -3403,7 +3391,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 .skeleton-row__line--tagline { width: 80%; }
 .skeleton-row__line--count   { width: 28px; justify-self: end; }
 
-.skeleton-tonight__thumb::after,
+.skeleton-tonight__banner::after,
 .skeleton-tonight__line::after,
 .skeleton-tonight__actions::after,
 .skeleton-tonight__badge::after,
