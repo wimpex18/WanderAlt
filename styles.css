@@ -2117,6 +2117,11 @@ a.handle:hover {
 .auth-panel__input {
   display: block;
   width: 100%;
+  /* Email / password / digest are normal-range inputs — cap the width so
+     the field signals its expected length instead of stretching the full
+     page column (Baymard form-field guidance). No-op inside the narrow
+     auth overlay; caps it on the wide Profile page. */
+  max-width: 400px;
   font-family: var(--ff-body);
   font-size: var(--fs-body);
   background: var(--c-paper-deep);
