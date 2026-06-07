@@ -109,13 +109,33 @@
     const whereStr = entry.venue
       ? `${entry.neighborhood} &middot; ${entry.venue}`
       : entry.neighborhood;
+
+    /* Photo-forward header when a venue photo exists (June 2026): the image
+       fills a banner with a bottom-anchored scrim gradient (rgba 0 -> .6)
+       so the white title/kindline never disappear over a high-contrast
+       photo. The curator quote stays below in dark Fraunces — voice still
+       leads. No photo -> the flat editorial header (kindline + title). */
+    const head = entry.imageUrl
+      ? `<a href="venue.html?id=${entry.id}" class="tonight__hero" id="tonight-label"
+            style="background-image:url('${entry.imageUrl.replace(/'/g, '%27')}')">
+           <span class="tonight__badge tonight__badge--onphoto">Tonight${timeStr}</span>
+           <span class="tonight__hero-foot">
+             <span class="tonight__kindline tonight__kindline--onphoto">
+               <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
+               <span class="tonight__where">${whereStr}</span>
+             </span>
+             <span class="tonight__title tonight__title--onphoto">${entry.title}</span>
+           </span>
+         </a>`
+      : `<span class="tonight__badge">Tonight${timeStr}</span>
+         <div class="tonight__kindline">
+           <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
+           <span class="tonight__where">${whereStr}</span>
+         </div>
+         <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${entry.title}</a>`;
+
     section.innerHTML =
-      `<span class="tonight__badge">Tonight${timeStr}</span>
-       <div class="tonight__kindline">
-         <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
-         <span class="tonight__where">${whereStr}</span>
-       </div>
-       <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${entry.title}</a>
+      `${head}
        <blockquote class="tonight__quote">&ldquo;${entry.quote}&rdquo;</blockquote>
        <p class="tonight__attr">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
        <div class="tonight__actions">
