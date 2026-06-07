@@ -73,11 +73,13 @@
   /* One unified width across every page so navigating between
      Briefing / Discover / Saved / Profile / Venue / Curator / Admin
      feels visually continuous — content edges align across pages.
-     1024 sits comfortably above editorial readability (lines wrap
-     ~80 chars at our body type) and gives Discover's desktop split
-     enough room for list (~460) + gap + map (~520). On a 1920
-     monitor it leaves ~450 px margins each side: noticeably wider
-     than the old 680 cap, but not the full-bleed feel of 1280. */
+     The desktop ladder widens in steps (see the @media blocks below):
+     1100 → 1200 → 1280 as the viewport grows, so content uses the
+     screen like a modern responsive site instead of stranding ~480px
+     of empty margin on a 1920 monitor (the old 960 cap). Long-form
+     prose stays readable because text blocks carry their own `ch`
+     measures (56–64ch) inside this wider shell — the Apple pattern of
+     a wide layout with a constrained reading measure. */
   --reading-max:    1024px;
   --radius:         8px;
   --radius-card:    12px;
@@ -1404,6 +1406,12 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   padding: 4px;
   border: var(--rule-w) solid var(--c-rule);
   margin: 0;
+  /* Stay a compact, left-aligned control — without this the flex:1 tabs
+     stretch to the full (now ~1280px) page width on desktop, which reads
+     as a sparse banner rather than a segmented switcher (HIG/Material:
+     segmented controls are content-scaled). On a phone the viewport is
+     already narrower than this cap, so mobile keeps its full-width feel. */
+  max-width: 520px;
 }
 .seg-tab {
   flex: 1;
@@ -2794,7 +2802,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 @media (min-width: 768px) {
   :root {
     --gutter:      32px;
-    --reading-max: 840px;
+    --reading-max: 1100px;
     --fs-quote:    44px;
     --fs-pick:     20px;
     --fs-venue:    18px;
@@ -2912,12 +2920,20 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 }
 
 /* ============================================================
-   Large desktop — slightly more breathing room, same reading width
+   Large desktop — content widens to use the viewport (Apple-style
+   wide layout; text stays readable via per-block `ch` measures).
    ============================================================ */
 
 @media (min-width: 1100px) {
-  :root { --reading-max: 960px; --fs-quote: 52px; }
+  :root { --reading-max: 1200px; --fs-quote: 52px; }
   .tonight { padding: var(--s-9) 0 var(--s-8); }
+}
+
+/* Extra-wide monitors (≥1440): one more step so a 1920 screen isn't
+   half empty. 1280 leaves a comfortable ~80px gutter each side at
+   1440 and reads as a full, modern responsive layout. */
+@media (min-width: 1440px) {
+  :root { --reading-max: 1280px; }
 }
 
 /* ============================================================
@@ -4617,7 +4633,9 @@ a.handle:hover { color: var(--c-ink); }
    height keeps it from stretching into a tall vertical strip on
    16:9 monitors. */
 @media (min-width: 1024px) {
-  body[data-page="discover"] .page { max-width: 1240px; }
+  /* Discover shares the global --reading-max ladder (no bespoke width)
+     so its topbar/nav chrome aligns with the content below it and with
+     every other page. The list/map split lives inside that shared width. */
   /* Rebalanced split (redesign May 2026): the editorial list breathes
      (1fr) while the map stays prominent and sticky (1.18fr). The old
      0.85/1.6 ratio was the main source of the cramped, dense feeling. */

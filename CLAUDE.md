@@ -12,7 +12,7 @@ For deeper context, read these on demand (do NOT auto-import — they bloat cont
 - **Backend:** Supabase (REST + Edge Functions + pg_cron). Project ID `aqnsmmbrspkbfcvougeh`, region `eu-central-1`.
 - **Anon key:** in `supabase.js` (public on purpose — RLS is SELECT-only for tables, INSERT only for `bookmarks` and `digest_opt_ins`).
 - **Service role key:** never commit. Set as env var `SUPABASE_SERVICE_ROLE_KEY` in cloud env, or paste into admin panel localStorage locally.
-- **Canonical mobile viewport:** 390×844. Desktop breakpoint: **768px** (bottom nav → top masthead; content caps at **1024px** uniformly on every page so edges line up across navigation). Quote scales again at 1100px.
+- **Canonical mobile viewport:** 390×844. Desktop breakpoint: **768px** (bottom nav → top masthead). Content width is the shared `--reading-max` token, the SAME on every page so edges line up across navigation, and it widens up a responsive ladder so the layout uses the screen like a modern site instead of stranding empty margins (Apple-style: wide shell, text kept readable by per-block `ch` measures). Ladder: **1100px** ≥768 · **1200px** ≥1100 · **1280px** ≥1440 (mobile is full-width minus a 20px gutter; desktop gutter 32px). The topbar, masthead nav, city banner, `.page` and Discover's list/map split all key off this one token, so chrome and content stay aligned. Quote font scales again at 1100px. (June 2026: widened from the old 840/960 caps; Discover's bespoke 1240 override was removed so it shares the ladder.)
 
 ## Key commands
 
