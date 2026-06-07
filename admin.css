@@ -15,14 +15,20 @@
 
 /* Topbar right side: city + auth */
 .admin-topbar-right  { display:flex; align-items:center; gap:var(--s-2); margin-left:auto; }
+/* Admin is a desktop, mouse-driven data tool, so it uses density-
+   appropriate control heights (Material "dense" / Fluent desktop), not
+   the 44px touch floor used on the public pages. The topbar select +
+   auth button share a 32px height so they align cleanly side by side. */
 .admin-city-select   { font-family:var(--ff-mono); font-size:var(--fs-meta);
                        letter-spacing:.06em; text-transform:uppercase;
                        border:none; background:transparent; color:var(--c-ink);
                        cursor:pointer; padding:var(--s-1) var(--s-2);
+                       min-height:32px;
                        appearance:none; -webkit-appearance:none; }
 .admin-city-select:focus { outline:2px solid var(--c-accent); }
 .admin-auth-wrap     { position:relative; }
-.admin-auth-btn      { font-family:var(--ff-mono); font-size:var(--fs-meta);
+.admin-auth-btn      { display:inline-flex; align-items:center; min-height:32px;
+                       font-family:var(--ff-mono); font-size:var(--fs-meta);
                        letter-spacing:.06em; border:1px solid var(--c-rule-strong);
                        background:none; color:var(--c-ink-mute);
                        padding:var(--s-1) var(--s-3); cursor:pointer; }
