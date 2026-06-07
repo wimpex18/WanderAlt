@@ -140,8 +140,8 @@
         <!-- Venue details — website / address / short_desc; async-populated by fetchVenueDetails() -->
         <div id="venue-details" class="venue-details" hidden></div>
 
-        <div class="venue-actions" style="display:flex;gap:10px;align-items:center;margin-top:var(--s-5)">
-          <button class="btn-primary venue-going-btn" type="button" style="flex:1;text-align:center;">I&rsquo;m going &rarr;</button>
+        <div class="venue-actions">
+          <button class="btn-primary venue-going-btn" type="button">I&rsquo;m going &rarr;</button>
           ${entry.day ? `<button class="btn-secondary venue-cal-btn" type="button" aria-label="Add to calendar">Add to calendar</button>` : ''}
           <button class="btn-secondary venue-share-btn" type="button" aria-label="Share this pick">Share</button>
         </div>

@@ -99,6 +99,15 @@ Bookmark click is a smooth fill transition (no scale pop), bookmark hover is `sc
 
 **Do not add new keyframes, parallax, or bouncy easings.** If you need new motion, pick `--t-fast` or `--t-mid` and reuse the existing entrance selector list.
 
+## Layout / alignment system (design-system compliance)
+
+Audited against Apple HIG, Material Design 3 and Fluent 2 (June 2026) — full write-up + sources in `docs/layout-audit-2026-06.md`. The rules that matter for any future layout work:
+
+- **Spacing:** use the `--s-*` scale only (4/8/12/16/20/24/32/40/56/72 — a 4px base / 8px rhythm, already grid-compliant). No off-grid literals like `10px`; reach for the nearest token.
+- **Tap targets:** **44px is the interactive floor** (Apple HIG). Action buttons (`.btn-primary`/`.btn-secondary`/`.btn-going`/`.btn-save`), the Saved segmented control (`.seg-tab`) and the Discover scope toggle (`.discover-scope__btn`) all carry `min-height: 44px`. **Exception: chips stay ~32px** (Material chip spec) — do NOT blanket-bump chips to 44.
+- **Action buttons (CTA pairs):** on **desktop** size to content + left-align, primary first (NOT stretched edge-to-edge — full-width is a phone-only pattern). On **mobile** the primary CTA goes full-width and the pair stacks. This is why `.tonight__actions` and `.venue-actions` switch from content-sized rows to full-width-stacked under 768px. Keep gaps at 8–16px (`--s-3`).
+- **Width:** one shared `--reading-max` ladder for every page so chrome and content align (see the "Canonical mobile viewport" note up top).
+
 ## Content conventions
 
 - **Real Tallinn places only:** Sveta Baar, Fotografiska, Paavli Kultuurivabrik, Kai Art Center, Uus Laine, Kelm, EKKM, Lugemik, Telliskivi, etc. No fake venues, no marketing-voice copy.

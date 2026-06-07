@@ -1419,6 +1419,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 8px 10px;
+  /* 44px floor — this is the Saved page's primary navigation control
+     (Going/Reading/Past); padding alone left it at ~39px (Apple HIG min). */
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3760,6 +3763,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   justify-content: center;
   gap: 6px;
   padding: 11px 16px;
+  /* 44px floor = Apple HIG minimum tap target (the padding alone left these
+     at ~38px). Matches the rest of the app's interactive floor. */
+  min-height: 44px;
   border-radius: var(--radius);
   font-family: var(--ff-body);
   font-size: 13px;
@@ -3790,6 +3796,25 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   transition: border-color var(--t-fast), color var(--t-fast);
 }
 .btn-secondary:hover { border-color: var(--c-accent); color: var(--c-accent); }
+
+/* Venue detail action row (I'm going · Add to calendar · Share). Content-
+   sized + left-aligned on desktop (primary first); the base .btn-primary
+   flex:2 / .btn-secondary flex:1 would otherwise stretch all three across
+   the wide row. Gap is a token (was an inline off-grid 10px). */
+.venue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+  margin-top: var(--s-5);
+}
+.venue-actions .btn-primary,
+.venue-actions .btn-secondary { flex: 0 0 auto; }
+@media (max-width: 767px) {
+  /* Phone: primary CTA full-width (research-recommended), secondaries
+     wrap into the row beneath it. */
+  .venue-actions .btn-primary { flex: 1 1 100%; }
+}
 
 /* Curator handle color in Compass = petrol */
 .handle, a.handle { color: var(--c-accent); }
@@ -4398,6 +4423,12 @@ a.handle:hover { color: var(--c-ink); }
 }
 .discover-scope__btn {
   flex: 1 1 50%;
+  /* inline-flex + min-height keeps the label centred while meeting the
+     44px Apple HIG tap target (padding alone left it at ~39px). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 8px 12px;
   border: 0;
   border-radius: 5px;
@@ -5245,7 +5276,14 @@ body[data-page="briefing"] .tonight__attr {
    CTAs fill the 50px row and clear the 44px min tap target (WCAG 2.5.5). */
 .tonight__actions .bookmark { margin: 0; padding: 0; align-self: stretch; }
 .btn-going, .btn-save {
-  flex: 1;
+  /* Content-sized + left-aligned on desktop. Stretching a primary/secondary
+     CTA pair edge-to-edge across the (now ~1280px) row is a mobile-only
+     pattern; on wider screens Apple HIG / Material / Fluent all size action
+     buttons to content and left-align them, primary first. The mobile block
+     below restores full-width-stacked, which IS the recommended phone CTA. */
+  flex: 0 0 auto;
+  min-width: 150px;
+  padding: 0 var(--s-6);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5274,7 +5312,10 @@ body[data-page="briefing"] .section-title { font-size: 28px; font-weight: 700; l
 @media (max-width: 767px) {
   body[data-page="briefing"] .section-title { font-size: 24px; }
   body[data-page="briefing"] .tonight__quote { font-size: 25px; }
+  /* Phone: stack full-width — the recommended primary-CTA pattern on
+     narrow screens (maximises the tap target, clear hierarchy). */
   .tonight__actions { flex-direction: column; }
+  .btn-going, .btn-save { width: 100%; min-width: 0; }
 }
 
 /* ════════════════════════════════════════════════════════════
