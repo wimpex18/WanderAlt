@@ -1568,9 +1568,25 @@ body[data-page="saved"] .colophon {
      100+). contain-intrinsic-size reserves an estimate so the scrollbar
      stays stable; the browser remembers real heights once measured. */
   content-visibility: auto;
-  contain-intrinsic-size: auto 92px;
+  contain-intrinsic-size: auto 104px;   /* rows now carry a photo (taller) */
 }
 .list-row:last-child { border-bottom: 0; }
+
+/* Photo-forward Discover event card (June 2026): venue photo (left) +
+   text body. The media column auto-sizes to the .thumb--lg width. */
+.list-row--card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-4);
+  align-items: start;
+}
+.list-row--card .list-row__media { display: block; text-decoration: none; flex: 0 0 auto; }
+.list-row--card .list-row__body { min-width: 0; }   /* let text ellipsis/wrap, not overflow the grid */
+.list-row--card .list-row__title { margin-top: 2px; }
+@media (hover: hover) {
+  .list-row--card .list-row__media .thumb { transition: transform var(--t-mid); }
+  .list-row--card:hover .list-row__media .thumb { transform: translateY(-2px); }
+}
 
 /* Bookmarkable row — content + bookmark icon on the right */
 .list-row--bookmarkable {
