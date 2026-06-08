@@ -349,6 +349,7 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;   /* home link tap target (Apple HIG) */
   text-decoration: none;
   color: var(--c-ink);
 }
@@ -648,7 +649,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 
 /* ── Surprise me — bordered button below Tonight hero ── */
 .surprise-btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;   /* action button tap target (Apple HIG; was ~32px) */
   margin: var(--s-4) 0 var(--s-2);
   padding: 6px 14px;
   font-family: var(--ff-mono);
@@ -1688,6 +1691,9 @@ html.wa-taste-done .taste-onboarding { display: none; }
   gap: var(--s-2);
 }
 .taste-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;   /* Material chip height (was ~28px); chips are the 32px exception to the 44 floor */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
@@ -5410,6 +5416,14 @@ body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
 }
 .tonight__kindline--onphoto { color: rgba(255, 255, 255, 0.92); }
 .tonight__kindline--onphoto .tonight__where { color: rgba(255, 255, 255, 0.78); }
+/* The kind badge keeps explicit dark text + petrol dot, which vanish over
+   the photo/scrim — make it legible on the hero: white text, hairline
+   white border, lime dot (lime = the live "Tonight" signal, reads on dark). */
+.tonight__kindline--onphoto .tonight__kind {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.tonight__kindline--onphoto .tonight__kind .dot { border-color: var(--c-lime); }
 .tonight__title--onphoto {
   color: #fff;
   font-size: 34px;

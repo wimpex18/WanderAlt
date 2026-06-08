@@ -47,7 +47,7 @@ const TAP_SELECTORS = [
   '.seg-tab', '.discover-scope__btn', '.nav__item',
   '.city-selector', '.auth-btn', '.topbar__about', '.discover-view-fab',
   '.venue-social__link', '.auth-panel__submit', '.auth-panel__close',
-  '.profile-toggle',
+  '.profile-toggle', '.topbar__brand', '.surprise-btn',
 ];
 const TAP_FLOOR = 43; /* 44 minus 1px sub-pixel tolerance */
 
