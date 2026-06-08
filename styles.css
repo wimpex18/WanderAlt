@@ -1854,8 +1854,10 @@ html.wa-taste-done .taste-onboarding { display: none; }
    ============================================================ */
 
 .venue-back {
-  display: inline-block;
-  padding: var(--s-4) 0 var(--s-2);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;   /* back-nav tap target (Apple HIG; was ~42px) */
+  padding: var(--s-3) 0 var(--s-2);
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.08em;
@@ -1914,9 +1916,10 @@ html.wa-taste-done .taste-onboarding { display: none; }
   gap: 6px;
 }
 .venue-mood {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 4px 12px;
-  min-height: 28px;          /* chip floor (Material chip ~32; this reads compact) */
+  min-height: 32px;          /* Material chip height (chips are the 32px exception to the 44 floor) */
   border: 1px solid var(--c-rule);
   border-radius: 999px;
   font-family: var(--ff-body);
@@ -3162,6 +3165,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 /* List-row bookmark: keep the 20px glyph but guarantee a 44×44 hit area
    (WCAG 2.5.5 / Apple HIG) on touch. Centred so the glyph doesn't shift. */
 .pick .bookmark {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Venue detail bookmark: same 44×44 hit area as list rows (was ~36px). */
+.venue-venue .bookmark {
   min-width: 44px;
   min-height: 44px;
   display: inline-flex;
