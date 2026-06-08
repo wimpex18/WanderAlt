@@ -1,0 +1,21 @@
+{
+  "extraKnownMarketplaces": {
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
+      }
+    },
+    "ui-ux-pro-max-skill": {
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
+      }
+    }
+  },
+  "enabledPlugins": [
+    "design@knowledge-work-plugins",
+    "frontend-design@claude-plugins-official",
+    "ui-ux-pro-max@ui-ux-pro-max-skill"
+  ]
+}
