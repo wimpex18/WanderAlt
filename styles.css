@@ -5185,7 +5185,7 @@ body.discover-sheet-open { overflow: hidden; }
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--c-faint);
+  color: var(--c-ink-mute);   /* was --c-faint (2.56:1, failed WCAG AA) */
   white-space: nowrap;
 }
 @media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
@@ -5604,7 +5604,7 @@ body[data-page="saved"] .reading-head__count {
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--c-faint);
+  color: var(--c-ink-mute);   /* was --c-faint (2.56:1, failed WCAG AA); ink-mute = 6.6:1 */
 }
 
 /* Segmented control — match .discover-scope (paper-deep track, compact). */
@@ -5627,7 +5627,7 @@ body[data-page="saved"] .seg-tab__count {
   background: transparent;
   border: 0;
   padding: 0 2px;
-  color: var(--c-faint);
+  color: var(--c-ink-mute);   /* inactive count; active state overridden below. was --c-faint (2.56:1) */
   font-size: 11px;
 }
 
@@ -5659,7 +5659,7 @@ body[data-page="saved"] .seg-note {
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--c-faint);
+  color: var(--c-ink-mute);   /* was --c-faint (2.56:1, failed WCAG AA) */
   padding: 0 0 var(--s-4);
 }
 
