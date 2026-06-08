@@ -4135,8 +4135,8 @@ a.handle:hover { color: var(--c-ink); }
   box-shadow: 0 4px 12px rgba(0,0,0,0.07);
 }
 .map-zoom-btn {
-  width: 36px;
-  height: 34px;
+  width: 44px;
+  height: 44px;   /* 44px tap target (Apple HIG; was 36×34) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4163,8 +4163,8 @@ a.handle:hover { color: var(--c-ink); }
      flagged the partial overlap as a target-size hit. 56 px keeps a
      6 px gap above the attribution. */
   bottom: 56px;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;   /* 44px tap target (Apple HIG; was 36×36) */
   border-radius: 8px;
   background: var(--c-paper);
   border: 1px solid var(--c-rule);
@@ -4810,9 +4810,11 @@ a.handle:hover { color: var(--c-ink); }
   }
 }
 
-/* Hide the view-toggle FAB on desktop (both panes are always visible). */
+/* Hide the view-toggle FAB on desktop (both panes are always visible).
+   Scoped to body[data-page] so it outranks the base .discover-view-fab
+   display rule regardless of source order. */
 @media (min-width: 1024px) {
-  .discover-view-fab { display: none; }
+  body[data-page="discover"] .discover-view-fab { display: none; }
 }
 
 /* Places reuses the list + map (venue pins via MapView.setPlaces), but
