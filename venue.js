@@ -182,19 +182,24 @@
           <header class="search-section-head">
             <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
           </header>
-          <ol class="list-rows" role="list">
+          <ol class="list-rows" role="list" data-animate>
             ${more.map(e =>
-              /* Title is the venue link; quote handle is a sibling <a>.
-                 Wrapping the whole row in an <a> would nest the handle
-                 link, which browsers eject from the DOM tree. */
-              `<li class="list-row">
-                 <p class="list-row__title">
-                   <a href="venue.html?id=${e.id}">${e.title}</a>
-                 </p>
-                 <p class="list-row__meta">${buildMeta(e)}</p>
-                 <p class="list-row__quote">&mdash; ${e.quote}
-                   <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
-                 </p>
+              /* Photo-forward card (matches Discover / Saved / Curator): a
+                 venue photo (left) + body. The .thumb is a decorative
+                 supplementary link; the title link is the keyboard tab stop
+                 and the quote handle is a sibling <a> (nesting links is
+                 invalid — browsers eject the inner one). */
+              `<li class="list-row list-row--card" data-id="${e.id}">
+                 <a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">${thumbEl(e, true)}</a>
+                 <div class="list-row__body">
+                   <p class="list-row__title">
+                     <a href="venue.html?id=${e.id}">${e.title}</a>
+                   </p>
+                   <p class="list-row__meta">${buildMeta(e)}</p>
+                   <p class="list-row__quote">&mdash; ${e.quote}
+                     <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
+                   </p>
+                 </div>
                </li>`
             ).join('')}
           </ol>
