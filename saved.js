@@ -119,6 +119,18 @@
     return li;
   };
 
+  /* ── Taste nudge (on-device, shared idea with Today / Discover) ──
+     When the reader has a taste profile, surface their kind of place first
+     in Reading. Stable sort: 0-score ties keep catalog order, so curation
+     stays primary. Nothing leaves the device. */
+  const tastePrefsSet = () =>
+    Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
+  const tasteOrder = (arr) => {
+    const ts = window.WA?.taste?.tasteScore;
+    if (!ts || !tastePrefsSet()) return arr;
+    return [...arr].sort((a, b) => ts(b) - ts(a));
+  };
+
   /* ── Render ──────────────────────────────────────────────── */
 
   const renderLists = () => {
@@ -133,7 +145,11 @@
     const bookmarked    = catalog.filter(e => bookmarkedIds.includes(e.id));
     const goingEntries  = bookmarked.filter(e => !!e.day)
                                     .sort((a, b) => dayRank(a.day) - dayRank(b.day));
-    const readingEntries = bookmarked.filter(e => !e.day);
+    /* Reading has no inherent order (undated saves), so it's the natural
+       place for the gentle on-device taste nudge (same idea as Today's This
+       Week and Discover's Relevance sort). Going stays soonest-first — an
+       explicit chronological intent that taste must not override. */
+    const readingEntries = tasteOrder(bookmarked.filter(e => !e.day));
 
     /* ── Going ── */
     const goingList = document.querySelector('.list-rows--going');
@@ -155,6 +171,16 @@
       } else {
         readingList.appendChild(emptyRow('No places saved yet.'));
       }
+    }
+
+    /* One quiet cue when the taste nudge actually reordered Reading — the
+       "tuned to you" text links to the taste check on Today (mirrors
+       Discover). No per-card badges. */
+    const readingNote = document.querySelector('.seg-note--reading');
+    if (readingNote) {
+      readingNote.innerHTML = (tastePrefsSet() && readingEntries.length)
+        ? 'saved, no date set · <a class="taste-cue" href="index.html#taste-onboarding">tuned to you</a>'
+        : 'saved, no date set';
     }
 
     /* ── Update counts ── */

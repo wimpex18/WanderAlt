@@ -1601,6 +1601,36 @@ body[data-page="saved"] .colophon {
 .list-row--bookmarkable .bookmark {
   margin: -6px -8px 0 0;
 }
+/* Curator picks: photo card + a bookmark column → media · body · bookmark. */
+.list-row--card.list-row--bookmarkable {
+  grid-template-columns: auto 1fr auto;
+}
+
+/* Mood-tag pills on a pick row (curator page) — supplementary tag links
+   under the quote. Small by design (tag affordance, not a primary chip);
+   tint petrol on hover. */
+.list-row__tags {
+  margin: var(--s-2) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.list-row__tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--c-rule);
+  border-radius: 999px;
+  font-family: var(--ff-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
+  text-decoration: none;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.list-row__tag:hover {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+}
 
 /* Going row — grid with left time column */
 .list-row--going {
@@ -5709,3 +5739,16 @@ body[data-page="saved"] .seg-note {
 }
 .desk-note a { color: var(--c-accent); }
 .desk-note a:hover { text-decoration: underline; }
+
+/* "tuned to you" cue — the quiet on-device taste-nudge marker on Discover
+   results + Saved Reading. Inherits the muted caption colour so it stays a
+   whisper, underlined to read as a link, petrol on hover. Inline text link,
+   WCAG-exempt from the 44px tap floor. */
+.taste-cue {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color var(--t-fast);
+}
+.taste-cue:hover { color: var(--c-accent); }
