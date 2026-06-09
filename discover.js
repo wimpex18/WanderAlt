@@ -101,6 +101,24 @@
     });
   };
 
+  /* Gentle on-device taste nudge (shared idea with Today's This Week, B-5).
+     When the reader has set a taste profile, reorder the default Relevance
+     results by tasteScore as a SECONDARY signal — a stable sort, so the many
+     0-score ties keep the curated/recency order and curation stays primary.
+     Deliberately NOT applied when a search query is active (keywordFilter
+     already ranked by match strength, and an explicit query is a stronger
+     intent than taste) nor in Places mode (venues carry no mood_tags). A
+     quiet nudge, never an override; nothing leaves the device. */
+  const tastePrefsSet = () =>
+    Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
+  const tasteApplies = () =>
+    state.sort === 'relevance' && !state.q && tastePrefsSet();
+  const tasteOrder = (arr) => {
+    const ts = window.WA?.taste?.tasteScore;
+    if (!ts || !tasteApplies()) return arr;
+    return [...arr].sort((a, b) => ts(b) - ts(a));
+  };
+
   /* Sort options (from search.js:504). */
   const DAY_RANK = { Tonight: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
   const sortEntries = (entries) => {
@@ -118,7 +136,8 @@
       case 'curator':
         return arr.sort((a, b) => (a.handle || '').localeCompare(b.handle || ''));
       default:
-        return arr;
+        /* Relevance: keep curation/recency order, then fold in the taste nudge. */
+        return tasteOrder(arr);
     }
   };
 
@@ -586,7 +605,10 @@
 
     if (resultsCount) {
       const n = sorted.length;
-      resultsCount.textContent = n === 1 ? '1 result' : `${n} results`;
+      const base = n === 1 ? '1 result' : `${n} results`;
+      /* One quiet cue, only when the taste nudge actually reordered the list
+         (Relevance sort · no query · prefs set) — no per-card badges. */
+      resultsCount.textContent = tasteApplies() ? `${base} · tuned to you` : base;
     }
     if (emptyState) {
       emptyState.textContent = state.q
