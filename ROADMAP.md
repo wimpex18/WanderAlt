@@ -14,9 +14,9 @@ The product is a printed cultural weekly translated to web. Three implications f
 2. **Voice, not metadata.** A pick without a quote is wallpaper. New surfaces should give voice more room, not bury it under tags and ratings.
 3. **Reading, not browsing.** Sessions should feel like reading the back page of a paper, not flipping through a catalogue.
 
-**AI providers, used right:**
-- **Gemini 3.5 Flash** — everywhere in the cron pipeline. Best for: classification, structured output, editorial composition that runs offline (cron / nightly). `gemini-2.5-flash` is the fallback; `-pro` and `gemini-2.0-flash` return 404 "no longer available to new users" — never substitute. Embeddings stay on `gemini-embedding-001`.
-- **Groq Llama-4-Scout-17b** (`meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`) — real-time only. Good for: `match-pick`, anything where p95 latency must be < 1s. Also fallback in `process-staging`.
+**AI providers, used right (June 2026 cost rule — Groq first, Gemini only when nothing else works):**
+- **Groq Llama-4-Scout-17b** (`meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`) — **primary for every text function**: `process-staging`, `generate-context`, `draft-column`, `match-pick`. Free tier covers our volume.
+- **Gemini** — gated **fallback only** (`gemini-2.5-flash` / `-lite`), no Search grounding anywhere (it was the dominant cost driver). `gemini-3.5-flash` was documented but **never deployed**; `-pro` and `gemini-2.0-flash` return 404 — never substitute. Embeddings stay on `gemini-embedding-001` (no free Groq equivalent).
 
 Everything below picks one of these two for a reason; keep it that way.
 
@@ -27,15 +27,17 @@ Everything below picks one of these two for a reason; keep it that way.
 Features already live. See `README.md` for implementation detail.
 
 - **Mood tags + chip filter** — `mood-chips.js`, multi-select on Briefing.
-- **Curator's column** — `draft-column` edge function (Gemini 3.5 Flash, Mon 08:00 UTC), admin approval, rendered on Briefing.
+- **Curator's column** — `draft-column` edge function (Groq `llama-4-scout`, Gemini `2.5-flash-lite` fallback), admin approval, rendered on Briefing.
 - **Match-me** — `match-pick` edge function (Groq Llama-4-scout-17b, Llama-3.3-70b fallback), AI mode toggle on the unified Discover page (Search + Map merged May 2026).
 - **Discover (unified Search + Map)** — May 2026 consolidation per Baymard split-view research. Single page with shared filter state, list/map view toggle on mobile, side-by-side split ≥1024px.
 - **MapLibre basemap** — `map-tiles.js` + custom `map-style.json` (OpenFreeMap tiles). Replaced the illustrated SVG plane; pins now use real `picks.lat/lng` projected through `WA.MapTiles.project()`. `geocode-picks` cron backfills coords nightly.
 - **Multi-city ingest** — `ingest-osm` v11 covers Tallinn / Riga / Helsinki / Vilnius in one nightly tick; Telegram / RSS / Fienta / venue scrapers all configured per the `sources` table (~24 source rows). See CLAUDE.md → "Live data sources & ingest pipeline" for the canonical source matrix.
 - **Beacon brand kit + city plates v2** — `brand/` masters, favicons, manifest, OG cards; illustrated city plates at `assets/<city>-overview.svg` shown as 80×60 thumbnails in the city selector and a 64 px city banner ribbon under the topbar on every page.
 - **Email digest** — `send-digest` (Sat 09:00 UTC), opt-in on Profile.
-- **"Why this matters"** — `generate-context` (nightly, Gemini 3.5 Flash), `<details>` on Venue detail.
-- **OG images** — `og-image` edge function (Satori + @resvg/resvg-wasm), wired on Venue + Curator pages.
+- **"Why this matters"** — `generate-context` (nightly, Groq `llama-4-scout`, Gemini `2.5-flash-lite` fallback), `<details>` on Venue detail.
+- **OG images** — `og-image` edge function (Satori + @resvg/resvg-wasm) as the fallback card; per-pick previews use the real venue photo via the Pages middleware. Wired on Venue + Curator pages.
+- **Photo-forward cards + on-device taste nudge** — one `.list-row--card` (venue photo · body) across Discover / Saved / Curator / venue / place; `taste.js` gently re-orders four surfaces as a secondary stable-sort signal (curation stays primary). Card→hero View Transitions throughout.
+- **CI structural gate** — `.github/workflows/verify.yml` runs `npm run verify` on every PR + push to main.
 - **Venue enrichment** — `enrich-venues` (nightly 03:30 UTC): Wikidata + Nominatim → `venue_details` table (website, address, lat/lng, short_desc, image). Admin panel exposes per-venue lock and bulk-run. Venue detail page shows enrichment inline.
 - **404 page** — `404.html`, matches site aesthetic.
 - **About / Privacy / Contact** — `about.html`, one editorial page with five sections (About / Curators / Venues / Privacy / Contact). Linked from every page's colophon. No separate Terms / Cookie banner — see CLAUDE.md "Domain + page architecture" for the single-domain, no-tracking stance.
@@ -61,7 +63,7 @@ venue links, and prints page numbers via `@page @bottom-right`.)*
 - Deliberately tier 2: charming, but the column already gives the Briefing its editorial heartbeat.
 
 ### 7. Curator weekly synthesis
-- On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Gemini 3.5 Flash, store in `curators.synthesis_md`.
+- On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Groq `llama-4-scout` (Gemini `2.5-flash-lite` fallback), store in `curators.synthesis_md`.
 - The full column shipped — this is the smaller per-profile variant, which still has independent value on the curator page itself.
 
 ---
