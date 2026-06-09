@@ -33,6 +33,33 @@
        <path d="M6 3h12v18l-6-4-6 4V3z" />
      </svg>`;
 
+  /* Gentle on-device taste nudge — same idea as Today / Discover / Saved.
+     When the reader has a taste profile, surface this curator's picks that
+     match their taste first. Stable sort: 0-score ties keep curation order,
+     so the curator's own ordering stays primary. Nothing leaves the device. */
+  const tastePrefsSet = () =>
+    Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
+  const tasteOrder = (entries) => {
+    const ts = window.WA?.taste?.tasteScore;
+    if (!ts || !tastePrefsSet()) return entries;
+    return [...entries].sort((a, b) => ts(b) - ts(a));
+  };
+
+  /* Photo media tile — reuses the app's .thumb--lg treatment so curator
+     picks match the Discover / Saved photo cards. Falls back to the initials
+     tile when the pick has no image. Decorative supplementary link. */
+  const mediaHtml = (e) => {
+    const imgUrl = e.imageUrl || e.image_url || null;
+    const initials = (e.thumbInitials || e.thumb_initials
+      || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
+    return `<a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
+      <span class="${cls}" role="img" aria-label="${e.venue || e.title}"${sty}>
+        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${initials}</span>
+      </span></a>`;
+  };
+
   /* Infer a labelled back link from the previous page.
      For Discover and venue/curator referrers we preserve the full referrer
      URL so filter and pick state survive the round-trip.                  */
@@ -73,19 +100,20 @@
     const MAX_SHOWN = 30;
     const allTags   = [...new Set(picks.flatMap(e => e.moodTags || []))].sort();
 
-    const buildRows = (entries) => entries.slice(0, MAX_SHOWN).map(e => {
+    const buildRows = (entries) => tasteOrder(entries).slice(0, MAX_SHOWN).map(e => {
       const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
-      return `<li class="list-row list-row--bookmarkable">
-               <div>
+      return `<li class="list-row list-row--card list-row--bookmarkable" data-id="${e.id}">
+               ${mediaHtml(e)}
+               <div class="list-row__body">
                  <p class="list-row__title">
                    <a href="venue.html?id=${e.id}">${e.title}</a>
                  </p>
                  <p class="list-row__meta">${buildMeta(e)}</p>
                  <p class="list-row__quote">&mdash; ${e.quote}</p>
                  ${e.moodTags && e.moodTags.length
-                   ? `<p style="margin:var(--s-1) 0 0;display:flex;flex-wrap:wrap;gap:4px;">${
+                   ? `<p class="list-row__tags">${
                        e.moodTags.map(t =>
-                         `<a href="discover.html#mood=${encodeURIComponent(t)}" style="display:inline-block;padding:2px 8px;border:1px solid var(--c-rule);border-radius:999px;font-family:var(--ff-body);font-size:11px;font-weight:500;color:var(--c-ink-mute);text-decoration:none;">${t}</a>`
+                         `<a class="list-row__tag" href="discover.html#mood=${encodeURIComponent(t)}">${t}</a>`
                        ).join('')}</p>`
                    : ''}
                </div>
@@ -117,14 +145,17 @@
         <hr class="rule" style="margin: var(--s-7) 0 0">
         <section aria-labelledby="picks-label">
           <header class="search-section-head">
-            <p id="picks-label" class="eyebrow">${picks.length} pick${picks.length !== 1 ? 's' : ''} in Tallinn</p>
+            <p id="picks-label" class="eyebrow">${picks.length} pick${picks.length !== 1 ? 's' : ''} in Tallinn${
+              tastePrefsSet()
+                ? ' · <a class="taste-cue" href="index.html#taste-onboarding">tuned to you</a>'
+                : ''}</p>
           </header>
           ${allTags.length >= 2 ? `
           <div class="m-chips" id="curator-chips" style="margin-bottom:var(--s-4);">
             <button class="m-chip m-chip--active" type="button" data-tag="">All</button>
             ${allTags.map(t => `<button class="m-chip" type="button" data-tag="${t}">${t}</button>`).join('')}
           </div>` : ''}
-          <ol class="list-rows" role="list" id="curator-picks-list">
+          <ol class="list-rows" role="list" id="curator-picks-list" data-animate>
             ${buildRows(picks)}
           </ol>
           ${picks.length > MAX_SHOWN ? `<p class="meta" style="margin-top:var(--s-3)">Showing 30 of ${picks.length} picks.</p>` : ''}
