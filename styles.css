@@ -1581,7 +1581,9 @@ body[data-page="saved"] .colophon {
 }
 @media (hover: hover) {
   .list-row--card .list-row__media .thumb { transition: transform var(--t-mid); }
-  .list-row--card:hover .list-row__media .thumb { transform: translateY(-2px); }
+  /* Gentle lift + photo zoom on hover (photo-forward polish, restrained;
+     reuses --t-mid, no keyframes/bounce). */
+  .list-row--card:hover .list-row__media .thumb { transform: translateY(-2px) scale(1.03); }
 }
 
 /* Bookmarkable row — content + bookmark icon on the right */
@@ -3154,6 +3156,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .pick:hover .pick__link {
     transform: translateY(-1px);
   }
+  /* This Week photo zoom on hover — matches the Discover/Saved cards. */
+  .pick .thumb { transition: transform var(--t-mid); }
+  .pick:hover .thumb { transform: scale(1.03); }
 }
 
 .bookmark {
