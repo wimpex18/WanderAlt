@@ -49,6 +49,22 @@
     return parts.filter(Boolean).join(' · ');
   };
 
+  /* Photo media tile — reuses the app's .thumb--lg treatment so "Events
+     here" matches the Discover / Saved / Curator / venue photo cards. Falls
+     back to the initials tile when the pick has no image. Decorative
+     supplementary link (the title link is the keyboard tab stop). */
+  const mediaHtml = (e) => {
+    const imgUrl = e.imageUrl || e.image_url || null;
+    const initials = (e.thumbInitials || e.thumb_initials
+      || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
+    return `<a class="list-row__media" href="venue.html?id=${encodeURIComponent(e.id)}" tabindex="-1" aria-hidden="true">
+      <span class="${cls}" role="img" aria-label="${esc(e.venue || e.title)}"${sty}>
+        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
+      </span></a>`;
+  };
+
   const backLink = () => {
     try {
       const ref = new URL(document.referrer);
@@ -95,12 +111,15 @@
         <header class="search-section-head">
           <p id="here-label" class="eyebrow">Events here</p>
         </header>
-        <ol class="list-rows" role="list">
+        <ol class="list-rows" role="list" data-animate>
           ${here.map(e => `
-            <li class="list-row">
-              <p class="list-row__title"><a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a></p>
-              <p class="list-row__meta">${esc(buildMeta(e))}</p>
-              ${e.quote ? `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>` : ''}
+            <li class="list-row list-row--card" data-id="${esc(e.id)}">
+              ${mediaHtml(e)}
+              <div class="list-row__body">
+                <p class="list-row__title"><a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a></p>
+                <p class="list-row__meta">${esc(buildMeta(e))}</p>
+                ${e.quote ? `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>` : ''}
+              </div>
             </li>`).join('')}
         </ol>
       </section>` : `
