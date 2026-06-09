@@ -1,15 +1,18 @@
 name: verify
 
-# Runs the structural sweep (npm run verify) on every PR and on pushes to
-# main: self-boots a static server and asserts no horizontal overflow, no
-# console errors, and 44px tap targets across every public page × 390/768/
-# 1440. It's the automated version of the manual sweep — the same check the
-# CLAUDE.md working rules ask for after any layout/CSS/markup change — so
-# regressions (e.g. the 42px nav tap-target) get caught before merge.
+# Runs both automated sweeps on every PR and on pushes to main:
+#   · verify — structural: no horizontal overflow, no console errors, 44px
+#     tap targets across every param-less public page × 390/768/1440.
+#   · e2e — functional/behaviour: the param pages verify can't reach
+#     (curator/venue/place), photo cards on every list surface, the taste
+#     cue + deep-link, the card→hero View-Transition, bookmark persistence.
+# Together they're the automated version of the manual sweep the CLAUDE.md
+# working rules ask for after any layout/CSS/markup change, so regressions
+# (e.g. the 42px nav tap-target) get caught before merge.
 #
 # Cloudflare Pages still builds the branch preview for visual/photo fidelity;
-# this job is the structural gate that runs in CI rather than on a person's
-# machine.
+# this job is the structural+functional gate that runs in CI rather than on a
+# person's machine.
 
 on:
   pull_request:
@@ -44,3 +47,11 @@ jobs:
 
       - name: Structural sweep (overflow / console errors / tap targets)
         run: npm run verify
+
+      # Functional/behaviour sweep — exercises the param pages verify can't
+      # reach (curator/venue/place), photo cards on every list surface, the
+      # taste cue + deep-link, the card→hero View-Transition, bookmark
+      # persistence, and 44px tap targets. Leaves Supabase untouched (robust
+      # to live or static catalog). Same `verify` check gates both sweeps.
+      - name: Functional / E2E sweep
+        run: npm run e2e
