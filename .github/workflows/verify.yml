@@ -1,0 +1,46 @@
+name: verify
+
+# Runs the structural sweep (npm run verify) on every PR and on pushes to
+# main: self-boots a static server and asserts no horizontal overflow, no
+# console errors, and 44px tap targets across every public page × 390/768/
+# 1440. It's the automated version of the manual sweep — the same check the
+# CLAUDE.md working rules ask for after any layout/CSS/markup change — so
+# regressions (e.g. the 42px nav tap-target) get caught before merge.
+#
+# Cloudflare Pages still builds the branch preview for visual/photo fidelity;
+# this job is the structural gate that runs in CI rather than on a person's
+# machine.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel an in-flight run when a branch is pushed again — only the latest
+# commit needs checking.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Installs devDependencies (puppeteer downloads its pinned Chrome here).
+      - name: Install dependencies
+        run: npm ci
+
+      # verify.js spawns `npx http-server`; pre-fetch it so the run is
+      # deterministic and never blocks on a first-use install prompt.
+      - name: Pre-fetch http-server
+        run: npx -y http-server --version
+
+      - name: Structural sweep (overflow / console errors / tap targets)
+        run: npm run verify
