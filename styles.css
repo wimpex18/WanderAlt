@@ -131,6 +131,11 @@
 
 .topbar { view-transition-name: wa-topbar; }
 .nav    { view-transition-name: wa-nav; }
+/* Shared-element morph target: the venue detail hero pairs with the
+   `venue-hero` name that view-transition.js sets on the clicked card photo
+   (or Tonight hero) so the image expands into this hero across navigation.
+   Only one .detail-hero per page, so the name stays unique. */
+.detail-hero { view-transition-name: venue-hero; }
 
 /* ============================================================
    Reset / base
