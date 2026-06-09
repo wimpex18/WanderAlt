@@ -1599,7 +1599,15 @@ body[data-page="saved"] .colophon {
   gap: var(--s-2);
 }
 .list-row--bookmarkable .bookmark {
-  margin: -6px -8px 0 0;
+  /* 44×44 hit area (WCAG 2.5.5 / Apple HIG) while the glyph stays 20px,
+     centred so it doesn't shift. Negative top margin keeps the glyph aligned
+     near the title; the box grows leftward into the grid gap (no overflow). */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -10px -8px 0 0;
 }
 /* Curator picks: photo card + a bookmark column → media · body · bookmark. */
 .list-row--card.list-row--bookmarkable {

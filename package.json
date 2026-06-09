@@ -6,6 +6,7 @@
     "admin":       "npx http-server . -p 8080 -c-1 --cors",
     "smoke":       "node .screenshots/smoke.js",
     "verify":      "node .screenshots/verify.js",
+    "e2e":         "node .screenshots/e2e.js",
     "preview":     "node .screenshots/preview.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "lighthouse":  "node .scripts/lighthouse-audit.js"
