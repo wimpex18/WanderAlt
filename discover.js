@@ -607,8 +607,15 @@
       const n = sorted.length;
       const base = n === 1 ? '1 result' : `${n} results`;
       /* One quiet cue, only when the taste nudge actually reordered the list
-         (Relevance sort · no query · prefs set) — no per-card badges. */
-      resultsCount.textContent = tasteApplies() ? `${base} · tuned to you` : base;
+         (Relevance sort · no query · prefs set) — no per-card badges. The
+         "tuned to you" text links to the taste check on Today so the reader
+         can adjust what's biasing the order. */
+      if (tasteApplies()) {
+        resultsCount.innerHTML =
+          `${base} · <a class="taste-cue" href="index.html#taste-onboarding">tuned to you</a>`;
+      } else {
+        resultsCount.textContent = base;
+      }
     }
     if (emptyState) {
       emptyState.textContent = state.q

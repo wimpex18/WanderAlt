@@ -63,6 +63,19 @@
       wrap.hidden = false;
       reflect();
     }
+
+    /* Deep link: Discover/Saved's "tuned to you" cue points here so an
+       already-onboarded reader can adjust their taste. Drop the pre-paint
+       hide class (set by taste-flag.js), reveal, and scroll into view. */
+    const openFromHash = () => {
+      if (location.hash !== '#taste-onboarding') return;
+      document.documentElement.classList.remove('wa-taste-done');
+      wrap.hidden = false;
+      reflect();
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
   };
 
   /* ── Template helpers ──────────────────────────────────── */

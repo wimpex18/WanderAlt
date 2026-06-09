@@ -5709,3 +5709,16 @@ body[data-page="saved"] .seg-note {
 }
 .desk-note a { color: var(--c-accent); }
 .desk-note a:hover { text-decoration: underline; }
+
+/* "tuned to you" cue — the quiet on-device taste-nudge marker on Discover
+   results + Saved Reading. Inherits the muted caption colour so it stays a
+   whisper, underlined to read as a link, petrol on hover. Inline text link,
+   WCAG-exempt from the 44px tap floor. */
+.taste-cue {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color var(--t-fast);
+}
+.taste-cue:hover { color: var(--c-accent); }
