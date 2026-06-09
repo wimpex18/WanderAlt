@@ -233,7 +233,15 @@
     /* Hydration done — drop the loading attribute that the skeleton
        placeholders sit under. The next innerHTML write replaces them. */
     if (list.hasAttribute('aria-busy')) list.removeAttribute('aria-busy');
-    const entries = _weekFullSet.slice(0, _weekShown);
+    /* Gentle, on-device taste bias (B-5): re-order This Week by the taste
+       score (+1 per matching mood_tag, ± explicit feedback) so the most-
+       aligned curated picks surface first. Stable sort keeps curation /
+       recency order for ties; with no taste set every score is 0, so
+       nothing reorders. Curation stays primary — this only nudges, and it
+       never leaves the device (taste lives in localStorage). */
+    const ts = window.WA?.taste?.tasteScore;
+    const ordered = ts ? [..._weekFullSet].sort((a, b) => ts(b) - ts(a)) : _weekFullSet;
+    const entries = ordered.slice(0, _weekShown);
 
     /* Empty state — a graceful card with the active city's plate
        instead of a stark empty list. Hits any time This Week resolves
@@ -276,8 +284,12 @@
       const countLabel = showCount < totalCount
         ? `${showCount} of ${totalCount} picks`
         : `${showCount} picks`;
+      /* One subtle, honest cue when a taste profile is active — no per-card
+         badges (that would clutter and undercut the human-curation voice). */
+      const tasteActive = Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
       sub.textContent =
-        `${countLabel} · ${curatorCount} curator${curatorCount !== 1 ? 's' : ''}`;
+        `${countLabel} · ${curatorCount} curator${curatorCount !== 1 ? 's' : ''}` +
+        (tasteActive ? ' · tuned to you' : '');
     }
 
     /* Pick card structure note:
