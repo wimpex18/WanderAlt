@@ -766,12 +766,26 @@
 
   const renderMatchSecondary = (pick, why) => {
     const meta = [pick.neighborhood, pick.kind, pick.time].filter(Boolean).join(' · ');
-    return `<li class="list-row">
-       <p class="list-row__title">
-         <a href="venue.html?id=${encodeURIComponent(pick.id)}">${esc(pick.title)}</a>
-       </p>
-       <p class="list-row__meta">${esc(meta)}</p>
-       <p class="list-row__quote">&mdash; ${esc(why || pick.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a></p>
+    /* Photo-forward card, consistent with every other pick list (Discover
+       results / Saved / Curator / venue / place). Renders on the white page
+       below the petrol search box, so the standard card treatment applies. */
+    const imgUrl   = pick.imageUrl || pick.image_url || null;
+    const initials = (pick.thumbInitials || pick.thumb_initials || (pick.venue || pick.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
+    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
+    return `<li class="list-row list-row--card" data-id="${esc(pick.id)}">
+       <a class="list-row__media" href="venue.html?id=${encodeURIComponent(pick.id)}" tabindex="-1" aria-hidden="true">
+         <span class="${thumbCls}" role="img" aria-label="${esc(pick.venue || pick.title)}"${thumbSty}>
+           <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
+         </span>
+       </a>
+       <div class="list-row__body">
+         <p class="list-row__title">
+           <a href="venue.html?id=${encodeURIComponent(pick.id)}">${esc(pick.title)}</a>
+         </p>
+         <p class="list-row__meta">${esc(meta)}</p>
+         <p class="list-row__quote">&mdash; ${esc(why || pick.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a></p>
+       </div>
      </li>`;
   };
 

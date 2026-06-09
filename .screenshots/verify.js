@@ -48,7 +48,7 @@ const TAP_SELECTORS = [
   '.city-selector', '.auth-btn', '.topbar__about', '.discover-view-fab',
   '.venue-social__link', '.auth-panel__submit', '.auth-panel__close',
   '.profile-toggle', '.topbar__brand', '.surprise-btn',
-  '.map-zoom-btn', '.map-locate-fab',
+  '.map-zoom-btn', '.map-locate-fab', '.bookmark',
 ];
 const TAP_FLOOR = 43; /* 44 minus 1px sub-pixel tolerance */
 
