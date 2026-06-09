@@ -53,7 +53,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `supabase.js` | Live data fetcher; exposes `WA.BASE_URL` + `WA.ANON_KEY`; fires `wa:catalog-ready` |
 | `auth.js` | Email/password + Google OAuth, password reset; dispatches `wa:signed-in` / `wa:signed-out` |
 | `bookmark.js` | localStorage primary store + Supabase cloud sync; fires `wa:bookmarks-synced` |
-| `taste.js` | Taste-profile onboarding (energy/company/money axes); exposes `WA.taste.matchParams()` |
+| `taste.js` | Taste-profile onboarding (energy/company/money axes); exposes `WA.taste.matchParams()` + `WA.taste.tasteScore(entry)`. **Today's This Week is gently re-ordered by `tasteScore`** (stable sort — ties keep curation/recency; 0 score = no reorder) once a taste profile exists, with a subtle "· tuned to you" cue in the section-sub. On-device only (localStorage); curation stays primary — no per-card "for you" badges. |
 | `city.js`, `mood-chips.js` | Small shared utilities (city switcher, mood-tag filter via `#mood=…` hash) |
 | `share.js` | Shared share/calendar helper. `WA.Share.url()` = native OS share sheet (`navigator.share`) with clipboard fallback; `WA.Share.downloadIcs(entry)` = client-side `.ics` for dated picks (no dep, Blob download); `WA.Share.isDated()`. Used by venue.js (Share + Add-to-calendar), curator.js + discover.js (Share). Load before the page script. |
 | `styles.css` | All styles. Every design decision lives as a `:root` CSS variable. |
