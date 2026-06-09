@@ -28,6 +28,20 @@ const rest = (path: string, init: RequestInit = {}) =>
     },
   });
 
+// Best-effort: mark the matching pick as still-listed so wa_reconcile_absent_picks
+// won't flag it as silently cancelled. Keyed on the single-event pick id
+// (channel-message_id, matching process-staging). Never throws.
+async function bumpSeen(messageId: string) {
+  try {
+    const pid = `${CHANNEL}-${messageId}`.toLowerCase();
+    await rest(`picks?id=eq.${encodeURIComponent(pid)}&archived_at=is.null`, {
+      method:  'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body:    JSON.stringify({ last_seen_at: new Date().toISOString() }),
+    });
+  } catch (_) { /* best-effort */ }
+}
+
 function stripTags(html: string): string {
   return html
     .replace(/<[^>]+>/g, ' ')
@@ -159,6 +173,7 @@ async function upsertEvent(
     return 'error';
   }
   const body = await res.json().catch(() => []);
+  await bumpSeen(e.slug);
   return Array.isArray(body) && body.length ? 'inserted' : 'skipped';
 }
 
