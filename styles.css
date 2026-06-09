@@ -1683,6 +1683,38 @@ body[data-page="saved"] .colophon {
 }
 .list-row--closed .list-row__title a { color: var(--c-ink-mute); }
 .list-row--closed .list-row__quote   { opacity: 0.7; }
+
+/* Saved change-watch badges (A2). "changed" draws mild attention in petrol;
+   "no longer listed" is muted — the event is gone, not actionable. Both
+   reuse the .list-row__closed mono-caps pill shape. */
+.list-row__changed,
+.list-row__cancelled {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  border: 1px solid currentColor;
+}
+.list-row__changed   { color: var(--c-accent); }
+.list-row__cancelled { color: var(--c-ink-mute); }
+.list-row--gone .list-row__title { color: var(--c-ink-mute); }
+.list-row--gone .list-row__quote { opacity: 0.8; }
+.list-row__dismiss {
+  margin-left: 6px;
+  padding: 0;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--c-accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
 /* Small "on map →" affordance on a result row. Sits beside the title
    on the same line — mono, muted, accent on hover. */
 .list-row__map {
