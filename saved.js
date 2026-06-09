@@ -77,7 +77,7 @@
        ${mediaHtml(entry)}
        <div class="list-row__body">
          <p class="list-row__title">
-           <a href="${venueHref(entry.id)}">${entry.title}</a>
+           <a href="${venueHref(entry.id)}">${entry.title}</a>${entry.__change ? ` <span class="list-row__changed">${entry.__change}</span>` : ''}
          </p>
          <p class="list-row__meta">${buildMeta(entry)}</p>
          <p class="list-row__quote">
@@ -131,6 +131,42 @@
     return [...arr].sort((a, b) => ts(b) - ts(a));
   };
 
+  /* ── Change watch (A2) ──────────────────────────────────────
+     Snapshot each bookmarked pick so we can flag, on the reader's own
+     device, when a saved event's day/time changes since they last looked,
+     or when it's pulled from the listings entirely (cancelled / moved /
+     deduplicated away). On-device only — nothing is sent anywhere. */
+  const SNAP_KEY = 'wa:saved-snapshots';
+  const loadSnaps = () => {
+    try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '{}'); }
+    catch { return {}; }
+  };
+  const saveSnaps = (s) => {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(s)); } catch (_) { /* storage blocked */ }
+  };
+  const snapOf = (e) => ({
+    id: e.id, title: e.title, venue: e.venue, neighborhood: e.neighborhood,
+    kind: e.kind, day: e.day || '', time: e.time || '', handle: e.handle,
+  });
+
+  /* Compact "no longer listed" row, rendered from the last snapshot of a
+     bookmarked pick that has dropped out of the active catalog. Dismiss
+     removes the bookmark (and its snapshot) so the row clears. */
+  const goneRow = (snap) => {
+    const li = document.createElement('li');
+    li.className = 'list-row list-row--gone';
+    li.dataset.catalogId = snap.id;
+    li.innerHTML =
+      `<div class="list-row__body">
+         <p class="list-row__title">${snap.title || 'Saved event'} <span class="list-row__cancelled">no longer listed</span></p>
+         <p class="list-row__meta">${buildMeta(snap)}</p>
+         <p class="list-row__quote">Pulled from the listings &mdash; it may have been cancelled or moved.
+           <button type="button" class="list-row__dismiss" data-dismiss="${snap.id}">Dismiss</button>
+         </p>
+       </div>`;
+    return li;
+  };
+
   /* ── Render ──────────────────────────────────────────────── */
 
   const renderLists = () => {
@@ -151,13 +187,32 @@
        explicit chronological intent that taste must not override. */
     const readingEntries = tasteOrder(bookmarked.filter(e => !e.day));
 
-    /* ── Going ── */
+    /* ── Change watch (A2) ──
+       Flag day/time changes on dated picks vs the last snapshot, collect
+       bookmarked picks that have dropped out of the catalog (cancelled /
+       moved / deduped), then refresh snapshots for everything still present
+       and prune snapshots for picks no longer bookmarked. */
+    const snaps = loadSnaps();
+    goingEntries.forEach(e => {
+      const s = snaps[e.id];
+      if (s && (s.day !== (e.day || '') || s.time !== (e.time || ''))) {
+        e.__change = s.day !== (e.day || '') ? 'date changed' : 'time changed';
+      }
+    });
+    const present = new Set(catalog.map(e => e.id));
+    const gone = bookmarkedIds.filter(id => !present.has(id) && snaps[id]).map(id => snaps[id]);
+    bookmarked.forEach(e => { snaps[e.id] = snapOf(e); });
+    Object.keys(snaps).forEach(id => { if (!bookmarkedIds.includes(id)) delete snaps[id]; });
+    saveSnaps(snaps);
+
+    /* ── Going ── (gone/cancelled rows surface first so they're noticed) */
     const goingList = document.querySelector('.list-rows--going');
     if (goingList) {
       goingList.querySelectorAll('[data-catalog-id], [data-empty]').forEach(el => el.remove());
+      gone.forEach(s => goingList.appendChild(goneRow(s)));
       if (goingEntries.length) {
         goingEntries.forEach(e => goingList.appendChild(goingRow(e)));
-      } else {
+      } else if (!gone.length) {
         goingList.appendChild(emptyRow('No upcoming events bookmarked.'));
       }
     }
@@ -207,6 +262,19 @@
         `${goingCount + readingCount} active · ${pastCount} past`;
     }
   };
+
+  /* Dismiss a "no longer listed" row → drop the bookmark (and its snapshot)
+     and re-render. */
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.list-row__dismiss');
+    if (!btn) return;
+    const id = btn.dataset.dismiss;
+    if (window.WA?.Bookmarks) window.WA.Bookmarks.set(id, false);
+    const snaps = loadSnaps();
+    delete snaps[id];
+    saveSnaps(snaps);
+    renderLists();
+  });
 
   document.addEventListener('wa:catalog-ready',     renderLists);
   document.addEventListener('wa:bookmarks-synced',  renderLists);

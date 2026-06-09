@@ -42,7 +42,7 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `map-venues.js` | Category definitions (`WA.MAP_CATEGORIES`) — shared by map.js and discover.js chip rendering. |
 | `map.html` | 5-line redirect stub → `discover.html?view=map` (preserves `?id`, `?day`, `?mood` legacy params). |
 | `search.html` | 5-line redirect stub → `discover.html` (preserves `?q`, `?mode=match` legacy params). |
-| `saved.html` / `saved.js` | Going / Reading / Past segments |
+| `saved.html` / `saved.js` | Going / Reading / Past segments. **Change-watch (A2):** snapshots each bookmarked pick in localStorage (`wa:saved-snapshots`) and flags, on the reader's device, when a saved event's day/time changed since they last looked (`time changed` badge on Going) or when it's dropped from the listings — cancelled / moved / deduped (a "no longer listed" gone-row with a Dismiss that unbookmarks). On-device only. |
 | `venue.html` / `venue.js` | Pick (event) detail page — quote, venue, context, more from curator. The "more from curator" rows are photo-forward `.list-row--card`s (matching Discover/Saved/Curator) with the staggered entrance; loads view-transition.js so those cards morph into the next pick's hero. Back-link returns to full Discover URL (filters preserved). |
 | `place.html` / `place.js` | Standalone Places (venue) detail page — name, kind, neighborhood, social glyphs, and upcoming picks at that venue (each linking to its `venue.html`). Opened from Discover Places list rows + the map's venue detail panel (`?id=<venue-id>`). |
 | `curator.html` / `curator.js` | Curator profile — bio + all picks. Picks render as photo-forward `.list-row--card` rows (thumb · body · bookmark, consistent with Discover/Saved), with the staggered entrance, card→hero View Transition, and the on-device taste nudge + cue. |
@@ -181,7 +181,8 @@ The user is on a constrained plan. Polling burns quota and accomplishes nothing.
   SELECT fn, status, inserted, rejected, error, finished_at
     FROM ingest_log ORDER BY id DESC LIMIT 5;
   ```
-- **Crons own the schedule.** `process-staging` runs every 30 min; `ingest-telegram` nightly at 02:15 UTC; `generate-context` at 02:30; `enrich-venues` at 03:30; `send-digest` Saturday 09:00 UTC. Only touch a schedule if the user asks.
+- **Crons own the schedule.** `process-staging` runs every 30 min; `ingest-telegram` nightly at 02:15 UTC; `generate-context` at 02:30; `enrich-venues` at 03:30; `archive-stale` (expired picks → `archived_at`) + `rotate-tonight` daily ~04:00; `wa-dedup-picks` (04:30, in-DB `wa_dedup_active_picks()`) + `wa-purge-archived` (04:45, `wa_purge_old_archived()` deletes picks archived > 90 days); `send-digest` Saturday 09:00 UTC. Only touch a schedule if the user asks.
+- **Pick lifecycle (June 2026):** `picks.archived_at` soft-archives (app reads `archived_at IS NULL`); `picks.archive_reason` ∈ {`duplicate`, …} records why. `wa_dedup_active_picks()` archives EXACT-duplicate active picks (same city·venue·title·day·time — sources re-posting an event, or a correction posted as a NEW message that upsert-by-id can't merge), keeping the richest/bookmarked twin. Same-message EDITS already update in place via `process-staging`'s `upsert(onConflict:id)`. Silent source-side cancellations (event dropped with no new message) are NOT yet auto-detected — deferred (needs a per-scraper "last seen" signal). SQL lives in `supabase/migrations/20260609_pick_lifecycle_dedup_and_purge.sql`.
 - **Edge function versions:** deploy via Supabase MCP, confirm the returned version number, then stop. Do not test-fire manually in a loop.
 
 ## Discover page — architecture notes
@@ -289,7 +290,7 @@ Front-end: city plate SVG (`assets/vilnius-overview.svg`), city.js entry (`statu
 **Other verified sources (researched, NOT yet wired — scrape-only, mirror `ingest-telliskivi`/`ingest-kinobize`):** `echogonewrong.com` (Baltic art press, likely `/feed/` RSS), venue sites `menufabrikas.lt` / `opiumclub.lt` / `cac.lt`, festivals `kinopavasaris.lt` / `sirenos.lt` / `vilniusfestivals.lt` (GAIDA), editorial `vna.lt` / `neakivaizdinisvilnius.lt`. Excluded: **Lizdas** (Kaunas + closing). Not staged: `allevents.lt` (inbound provider feed, mainstream), `vilnius-events.lt` (Go Vilnius tourism, no feed). No public ICS calendars found on any source.
 
 **Pipeline flow:**
-`ingest-* → staging_messages → process-staging (every 30m) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05)`
+`ingest-* → staging_messages → process-staging (every 30m, upsert onConflict id) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (daily 04:05) → archive-stale → wa-dedup-picks (04:30) → wa-purge-archived (04:45)`
 
 **`ingest-osm` v10 (May 2026):** loops over a `CITIES` map (Tallinn, Riga, Helsinki) and ingests venues from each Overpass bounding box in one cron tick. Per-city try/catch so a 504 on one city doesn't abort the others — each city's outcome is reported separately in `ingest_log.detail.cities`. Accepts `{city: "..."}` body for ad-hoc backfills; with no body it runs all three. v10 captures `contact:facebook` / `contact:instagram` (bare handles normalised to full URLs) plus `contact:website`/`website` into the `venues.facebook` / `instagram` / `website` columns, powering the Places social glyphs. Social coverage is sparse (OSM tagging is spotty — ~20 FB / ~12 IG live) and degrades gracefully. Overpass is rate-limited; the cron retries next tick.
 
