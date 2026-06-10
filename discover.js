@@ -221,7 +221,18 @@
       return;
     }
     emptyState.hidden = true;
-    resultsList.innerHTML = entries.map(renderRow).join('');
+    /* F-11 guard: consecutive rows sharing one photo read as a rendering
+       bug — repeats drop to the initials tile (first occurrence keeps it). */
+    let prevImg = null;
+    const dupImg = new Set();
+    for (const e of entries) {
+      const img = e.imageUrl || e.image_url || null;
+      if (img && img === prevImg) dupImg.add(e.id);
+      if (img) prevImg = img;
+    }
+    resultsList.innerHTML = entries
+      .map(e => renderRow(dupImg.has(e.id) ? { ...e, imageUrl: null, image_url: null } : e))
+      .join('');
   };
 
   /* ── Places (venues) ─────────────────────────────────── */

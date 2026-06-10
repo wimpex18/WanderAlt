@@ -312,11 +312,21 @@
        DOM. Instead, .pick__link is a <div> grid container, and the
        thumb + title get their own <a>s pointing to venue.html.
        The .handle <a> inside .via is then a sibling, not a descendant. */
+    /* F-11 guard: consecutive rows sharing one photo read as a rendering
+       bug (legacy "Various venues" picks all carried the same venue shot)
+       — drop repeats to the initials tile; the first occurrence keeps it. */
+    let prevImg = null;
+    const dupImg = new Set();
+    for (const e of entries) {
+      if (e.imageUrl && e.imageUrl === prevImg) dupImg.add(e.id);
+      if (e.imageUrl) prevImg = e.imageUrl;
+    }
+
     list.innerHTML = entries.map(e =>
       `<li class="pick">
          <div class="pick__link">
            <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-             ${thumbEl(e)}
+             ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
            </a>
            <span class="pick__body">
              <a class="pick__title-link" href="venue.html?id=${e.id}">

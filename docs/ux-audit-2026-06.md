@@ -65,7 +65,7 @@ New regression scenarios added to the suite: **V-11** (filter feedback in viewpo
 
 ## Progress
 
-Implementation status lives in one place: `ROADMAP.md` → "Progress tracker". As of PR #65 (third batch): F-1 (root cause turned out to be a cascade-order bug painting the hero title ink — the scrim was secondary), F-2, F-4, F-7, F-9, F-10, F-12, F-13, F-14, F-15(b), F-18, F-19, F-20, F-21 fixed; F-22 mostly (search-field scale pending under F-16); F-3 partial. The V-14 sweep is live in `verify.js` and caught two controls this document never saw (`taste-skip` at 18px, `map-cluster` at 42px) on its first run. V-11 after F-15(b): results count + first row now in the first viewport at 1280×900 with a filter active; the pin lands one short scroll down — the remaining lever is above-the-pane chrome height (F-16).
+Implementation status lives in one place: `ROADMAP.md` → "Progress tracker". As of PR #65 (third batch): F-1 (root cause turned out to be a cascade-order bug painting the hero title ink — the scrim was secondary), F-2, F-4, F-7, F-9, F-10, F-12, F-13, F-14, F-15(b), F-18, F-19, F-20, F-21 fixed; F-22 mostly (search-field scale pending under F-16); F-3 partial. The V-14 sweep is live in `verify.js` and caught two controls this document never saw (`taste-skip` at 18px, `map-cluster` at 42px) on its first run. V-11 after F-15(b): results count + first row now in the first viewport at 1280×900 with a filter active; the pin lands one short scroll down — the remaining lever is above-the-pane chrome height (F-16). Fourth batch closed F-5/F-6/F-8/F-11 and extended the width ladder to 1440/1600 (≥1680/≥1920); the English-only content pipeline shipped cloud-side (see ROADMAP § English-only content pipeline).
 
 ---
 

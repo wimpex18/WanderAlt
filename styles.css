@@ -158,7 +158,7 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   font-optical-sizing: auto;
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--nav-h) + var(--s-6) + env(safe-area-inset-bottom, 0px));  /* + s-6 so the colophon scrolls clear of the glass nav (F-8) */
 }
 
 a {
@@ -2591,6 +2591,16 @@ a.auth-panel__submit { display: inline-block; }
   margin-top: var(--s-5);
 }
 .profile-actions--tight { margin-top: var(--s-4); }
+/* Phones: primary CTA full-width, pair stacks — the same rule Today and
+   the venue page already follow (F-5; Apple/Material phone pattern). */
+@media (max-width: 767px) {
+  .profile-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-3);
+  }
+  .profile-actions .auth-panel__submit { justify-content: center; text-align: center; }
+}
 
 /* Digest description muted meta */
 #profile-digest-desc { margin-top: var(--s-2); }
@@ -3199,6 +3209,17 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    1440 and reads as a full, modern responsive layout. */
 @media (min-width: 1440px) {
   :root { --reading-max: 1280px; }
+}
+
+/* Very large desktops (June 2026 widening): 1280 stranded ~320px of
+   empty margin per side at 1920 — two more ladder steps keep the shell
+   filling the screen (Airbnb/Linear-class fluid feel) while every text
+   block keeps its own ch measure for readability. */
+@media (min-width: 1680px) {
+  :root { --reading-max: 1440px; }
+}
+@media (min-width: 1920px) {
+  :root { --reading-max: 1600px; }
 }
 
 /* ============================================================
@@ -5407,6 +5428,16 @@ body.discover-sheet-open { overflow: hidden; }
   text-transform: uppercase;
   color: var(--c-ink-mute);   /* was --c-faint (2.56:1, failed WCAG AA) */
   white-space: nowrap;
+}
+/* Phones: the eyebrow shares the row and squeezed the standfirst to a
+   ~20ch measure with a dead right column (F-6) — stack instead. */
+@media (max-width: 767px) {
+  .discover-lede {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-2);
+  }
+  .discover-lede__count { order: -1; }
 }
 @media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
 /* Lede is editorial chrome — drop it on the mobile map view + AI mode. */
