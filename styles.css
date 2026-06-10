@@ -3076,13 +3076,18 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
      body-level flex column. */
   .city-banner { order: 2; }
 
-  /* Bottom nav → top masthead bar */
+  /* Bottom nav → top masthead bar.
+     width: 100% matters: .nav is a flex item in the body column, so
+     without it `margin: 0 auto` shrink-wraps the bar to its content
+     (~468px) and floats it mid-page instead of spanning the shared
+     --reading-max shell like the topbar / banner / page do. */
   .nav {
     position: static;
     order: 3;
     border-top: 0;
     border-bottom: var(--rule-w) solid var(--c-rule);
     padding: 0 var(--gutter);
+    width: 100%;
     max-width: var(--reading-max);
     margin: 0 auto;
     background: transparent;
@@ -3111,12 +3116,17 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   }
   /* Show all labels on desktop */
   .nav__item .nav__label { display: block; }
+  /* Active item must repeat the base item's padding/gap: this selector
+     outranks the `.nav__item` sizing below, and inheriting the mobile
+     pill's 12px/6px here left the active tab 8px shorter than its
+     neighbours (labels off the shared baseline). */
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
   body[data-page="saved"]    .nav__item[data-nav="saved"],
   body[data-page="profile"]  .nav__item[data-nav="profile"] {
     flex-direction: row;
-    padding: var(--s-3) 0;
+    padding: var(--s-4) 0;
+    gap: var(--s-3);
     color: var(--c-ink);
     border-bottom-color: var(--c-accent);
   }
