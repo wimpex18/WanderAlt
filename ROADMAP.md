@@ -71,12 +71,28 @@ A second pass with full-page captures + scrolled-to-bottom viewport shots at 144
 
 **F-17 · LOW — Profile + About polish pass.** Profile: the CTA pair (View reading list → / Export JSON) is the F-5 inconsistency — apply the mobile full-width-stack rule; equalize the password input and Update button to the same control height and width rhythm; section spacing onto the `--s-*` ladder where off-grid. About reads clean (ch measures hold; link cards aligned) — verify-only, no change expected.
 
+### Deep-read addendum (June 2026 — end-user usability pass; full write-up in `docs/ux-audit-2026-06.md`)
+
+A second, journey-level read of the same screenshot corpus. Headline: **the filter→result feedback loop is broken on desktop** — activating Tonight at 1280×900 leaves the results count, the matching row, and the map pin all below the fold while the map shows open water (`smoke-desktop-discover-tonight.png`). This compounds F-9 + F-15 and re-ranks them to the front of Phase 1. New findings:
+
+**F-18 · MEDIUM — curator bio renders at 142ch per line** (measured 1136px @16px at 1280) against the 56–64ch rule. One-line fix: `max-width: 64ch` on `.curator-profile__bio`; sweep other long-form blocks (V-13 gates it).
+
+**F-19 · MEDIUM — curator `Share →` is 73×27px and invisible to the harness.** Under the 44px floor, and its selector isn't in verify's committed TAP_SELECTORS, so the suite can't regress-catch it. Fix the control, add the selector, and add the generic ≥44px sweep (V-14) so unlisted controls can't hide again.
+
+**F-20 · LOW — place page is a dead end.** Kind label duplicated (eyebrow `GALLERY` + sub "Gallery"), two adjacent map links with indistinguishable labels ("Open in maps ↗" external vs "See on map →" internal), ~85% dead white below the fold. Reuse `.picks-empty` for the no-events state, disambiguate the link labels, show the neighborhood.
+
+**F-21 · LOW — concierge promise without a labeled affordance.** The standfirst sells "let the concierge match your night"; the only entry is an unlabeled sparkle glyph (the product's single "generic AI app" tell). Label it "Concierge" at least ≥768px.
+
+**F-22 · LOW — Discover control weight inverted.** Search field ~1216×64 (heaviest element, secondary action), scope toggle next (once-per-session action), while the actual workhorses (time/category filters) are the smallest. Folds into the F-15 redesign as its sizing principle: control weight proportional to use frequency.
+
+Suite additions: **V-11** filter feedback in viewport (count + ≥1 row + ≥1 pin at 1280×900 after activating Tonight) · **V-12** map default frame (per-city zoom ≥ ~11.5, city core in frame, every live city in `CITY_BOUNDS`) · **V-13** no prose block > 70ch · **V-14** generic interactive-control ≥44px sweep with exemption list.
+
 ### Execution phases (each lands with its regression assertion)
 
 | Phase | Scope | Findings | Exit criterion |
 |---|---|---|---|
 | **0 · Tooling** (done, this session) | deps installed on VM, verify green 24/24, fresh 42-shot smoke set, baseline extended to the audit surfaces | — | `npm run verify` exits 0; baseline in `docs/screenshots/baseline/` |
-| **1 · Legibility & a11y** | scrim ramp, placeholder contrast, glass-nav clearance | F-1, F-7, F-8 | new verify assertion: overlaid hero text box ⊂ scrim ≥0.4-alpha zone; placeholder color ≥4.5:1 |
+| **1 · Legibility & a11y** | **journey first (deep-read re-rank):** F-9 map defaults + F-15 result visibility, then scrim ramp, placeholder contrast, glass-nav clearance, bio measure, Share control | F-9, F-15, F-1, F-7, F-8, F-18, F-19 | V-11 + V-12 pass; new verify assertion: overlaid hero text box ⊂ scrim ≥0.4-alpha zone; placeholder color ≥4.5:1 |
 | **2 · Grid sweep** | all off-grid literals → `--s-*`; FAB offset derived from `--nav-h` | F-3 | `grep -E ':\s*[0-9]*(6|10|14|18)px' styles.css` count = 0 (chips' Material paddings whitelisted); smoke-diff reviewed |
 | **3 · Component unification** | Saved header + empty-card canon, Profile CTA rule, Discover standfirst stack, FAB clearance + scroll-strip fade | F-2, F-4, F-5, F-6 | scenarios V-5…V-8 below pass |
 | **4 · Baseline refresh & hardening** | replace intentionally-changed baselines, add the new assertions to `verify.js`/`e2e.js`, re-run Lighthouse | — | verify + e2e green; baseline README updated |
