@@ -1,6 +1,6 @@
 # WanderAlt — Architecture audit & roadmap (June 2026)
 
-A strict weak-point audit of the codebase, data layer, and docs, followed by a ranked remediation list. Written so a future contributor (or model) can act without re-deriving decisions. Read `README.md` for product context, `HANDOFF.md` for the engineering reference, `CLAUDE.md` for working conventions. This file replaces the May 2026 tier/sprint roadmap — everything in those tiers either shipped (see README → Roadmap → Built) or moved to "Explicitly NOT building" below.
+A strict weak-point audit of the codebase, data layer, and docs, followed by a ranked remediation list — plus, since June 2026, the **frontend & UI/UX execution roadmap** (screenshot-driven visual audit + E2E validation suite, first section below). Written so a future contributor (or model) can act without re-deriving decisions. Read `README.md` for product context, `HANDOFF.md` for the engineering reference, `CLAUDE.md` for working conventions. This file replaces the May 2026 tier/sprint roadmap — everything in those tiers either shipped (see README → Roadmap → Built) or moved to "Explicitly NOT building" below.
 
 **Numbers cited below were measured on 2026-06-09**, on a tree of ~15,600 first-party JS/CSS lines: `styles.css` 5,794 · `catalog.js` 3,563 · `admin.js` 2,216 · `discover.js` 1,310 · `map.js` 680 · `briefing.js` 604.
 
@@ -11,6 +11,74 @@ A strict weak-point audit of the codebase, data layer, and docs, followed by a r
 WanderAlt's soul is **curator voice** rendered as **editorial minimalism**: *curator voice is the largest element on screen.* Time, not feed. Voice, not metadata. Reading, not browsing. Any remediation that dilutes this is worse than the debt it fixes.
 
 LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated Gemini fallback, embeddings on `gemini-embedding-001`). It is deliberately NOT restated here — that's how the "Gemini 3.5 Flash" doc-drift happened.
+
+---
+
+## Frontend & UI/UX execution roadmap (June 2026 visual audit)
+
+A screenshot-driven audit of every public surface at 390/768/1440, run on the VM with the in-repo harness (method below). Design-system rules referenced here are canonical in `CLAUDE.md` → "Design system canon". Status at audit time: `npm run verify` **green, 24/24** page/width checks (zero overflow, zero console errors, zero tap-target violations) — the remaining flaws are finer-grained than the current assertions, which is exactly what this roadmap fixes: each finding lands with a new assertion so it can't regress silently.
+
+### VM tooling (reproduce the audit on any fresh container)
+
+```bash
+npm install            # puppeteer (bundled Chromium), sharp, lighthouse — all devDeps, no global installs
+npm run verify         # structural gate: 8 pages × 3 widths — overflow / console errors / 44px floor
+npm start &            # static server on :5173
+npm run smoke          # 42 screenshots → .screenshots/smoke-{mobile,desktop,wide}-*.png
+npm run e2e            # behavioural sweep (cards, taste cue, VT tagging, bookmarks)
+npm run lighthouse     # perf audit (slow; separate on purpose)
+```
+
+Screenshots are read directly (multimodal) or diffed against `docs/screenshots/baseline/`. Console/page errors are captured by the harness itself (same noise filter in smoke/verify/e2e: sandbox cert blocks + dummy-JWT 401/403 ignored). For production fidelity (real Google-Places photos, live Supabase data) screenshot the Cloudflare branch preview: `npm run preview -- <branch-url>` — the script already carries the Chrome flags the sandbox needs (`--disable-quic`, ECH disables). No new dependencies are required for any of this; if pixel-diff automation is ever wanted, `pixelmatch` is the candidate — **ask before adding** (CLAUDE.md working rule).
+
+### Audit findings (verified on screenshots + in CSS; ranked)
+
+**F-1 · HIGH — hero scrim ramp fails long titles (venue detail, mobile).** `.detail-hero::before` runs `rgba(0,0,0,.74) → .4 @40% → 0 @75%`. A 3-line Fraunces title + meta + eyebrow stacked bottom-up pushes the title's upper lines into the <0.2-alpha zone — over a bright photo the white title drops below AA (visible in `smoke-mobile-venue-detail.png`). Fix in `styles.css` only: deepen/extend the ramp (≈ `.78 → .45 @50% → 0 @92%`) so the full text block sits in the ≥0.4-alpha zone; re-check the Tonight hero (`.tonight__hero`) uses the same corrected ramp. No markup change.
+
+**F-2 · MEDIUM — Discover mobile list end-state.** (a) The Map/List FAB occludes the last list rows — the list needs bottom clearance ≥ FAB height + offset while the FAB is shown. (b) The mood-chip strip and the curator-quote rows cut hard at the right viewport edge with no scroll affordance — add an end-fade `mask-image` on the scroll strips (pure CSS, reuses no new tokens). Both visible in `smoke-mobile-discover-list.png`.
+
+**F-3 · MEDIUM — ~50 off-grid spacing literals.** Measured: 9× `gap: 6px`, 5× `padding: 10px …`, 4× `padding: 0 6px`, 7× `margin-{left,right}: 6px`, plus one-offs (`9px 14px`, `8px 10px`…). Worst case is *derived-value drift*: `.discover-view-fab { bottom: calc(72px + var(--s-3)) }` hardcodes a 72px nav clearance while `--nav-h` is 68px. Sweep every literal to the nearest `--s-*` token and derive chrome offsets from `--nav-h`/tokens. Mechanical, but do it as one reviewed PR with a full smoke-diff — 1–2px visual shifts are expected and must be eyeballed.
+
+**F-4 · MEDIUM — Saved page header/empty-state coherence.** The H1 is statically "Your reading list" while the active segment is **Going** (label mismatch reads as a bug), and the empty states are bare mono one-liners ("No upcoming events bookmarked.") while Today's `.picks-empty` sets the canon (city plate + title + sub + link). Unify: per-segment empty card reusing `.picks-empty`, and either a segment-neutral H1 ("Saved") or copy that names the page, not one tab.
+
+**F-5 · LOW — CTA rule applied inconsistently.** The documented mobile rule (primary full-width, pair stacks) is implemented on Today + venue but Profile's `View reading list → / Export JSON` pair stays content-sized at 390. Decide once (recommendation: apply the rule — Profile is a touch page) and encode it in the shared button block rather than per-page actions.
+
+**F-6 · LOW — Discover standfirst squeezed at 390.** The standfirst shares its row with the `VOUCHED BY HUMANS` eyebrow, cutting the measure to ~22ch with a dead right column. Below 768 the eyebrow should stack above the standfirst (the Today page already stacks its equivalent).
+
+**F-7 · LOW — placeholder contrast.** `--c-faint` (#a1a1aa, 2.6:1) styles the search placeholder + glyph. Canonised as decorative-only in CLAUDE.md; strict WCAG readings count placeholders as text — move placeholder text to `--c-ink-mute` italic (6.6:1) and keep `--c-faint` for the glyph.
+
+**F-8 · LOW — content shows through the glass bottom-nav at page end.** On short pages (empty Saved) the colophon renders behind the translucent nav pill (legible-but-cluttered). Bottom padding should guarantee the last content line clears `--nav-h` + safe-area at every page length.
+
+### Execution phases (each lands with its regression assertion)
+
+| Phase | Scope | Findings | Exit criterion |
+|---|---|---|---|
+| **0 · Tooling** (done, this session) | deps installed on VM, verify green 24/24, fresh 42-shot smoke set, baseline extended to the audit surfaces | — | `npm run verify` exits 0; baseline in `docs/screenshots/baseline/` |
+| **1 · Legibility & a11y** | scrim ramp, placeholder contrast, glass-nav clearance | F-1, F-7, F-8 | new verify assertion: overlaid hero text box ⊂ scrim ≥0.4-alpha zone; placeholder color ≥4.5:1 |
+| **2 · Grid sweep** | all off-grid literals → `--s-*`; FAB offset derived from `--nav-h` | F-3 | `grep -E ':\s*[0-9]*(6|10|14|18)px' styles.css` count = 0 (chips' Material paddings whitelisted); smoke-diff reviewed |
+| **3 · Component unification** | Saved header + empty-card canon, Profile CTA rule, Discover standfirst stack, FAB clearance + scroll-strip fade | F-2, F-4, F-5, F-6 | scenarios V-5…V-8 below pass |
+| **4 · Baseline refresh & hardening** | replace intentionally-changed baselines, add the new assertions to `verify.js`/`e2e.js`, re-run Lighthouse | — | verify + e2e green; baseline README updated |
+
+One working rule carries over unchanged: **make only the targeted change per PR** — no adjacent refactors riding along, and `npm run verify` + a smoke-diff on every one.
+
+### E2E UI/UX validation suite (visual assertions)
+
+Scenarios V-1…V-4 are already automated (verify.js / e2e.js); V-5…V-10 are the audit's additions — run them via the smoke set + baseline diff until Phase 4 encodes them as code assertions. Baseline screenshots: `docs/screenshots/baseline/` (10 original + 3 added by this audit: `smoke-mobile-saved`, `smoke-mobile-profile`, `smoke-mobile-venue-detail`).
+
+| # | Surface · viewport | Steps | Visual assertion | Harness |
+|---|---|---|---|---|
+| V-1 | all 8 public pages · 390/768/1440 | load, settle 1.5s | no horizontal overflow; no real console/page errors; every committed control ≥44px | `verify.js` (automated, CI-gating) |
+| V-2 | Discover/Saved/Curator/venue/place · 390 | load with live or static catalog | photo-forward `.list-row--card` renders on all five pick-list surfaces; initials tile when no `image_url` | `e2e.js` (automated) |
+| V-3 | index→venue · 390 | tap a This Week card | clicked `.thumb` carries `view-transition-name: venue-hero`; detail hero morph target present | `e2e.js` (automated) |
+| V-4 | Discover/Saved/Curator · 390 | seed taste profile, load | one "· tuned to you" cue per surface, linking to `index.html#taste-onboarding`; no per-card badges | `e2e.js` (automated) |
+| V-5 | venue detail · 390, pick with 3-line title | load `venue.html?id=<long-title pick>` | every overlaid white text pixel-row sits where scrim alpha ≥0.4; eyebrow/title/meta legible over the brightest photo in the catalog | smoke shot `mobile-venue-detail` vs baseline → Phase-1 code assertion |
+| V-6 | Discover · 390, Events, no filters | scroll list to end | last `.list-row` fully visible above the FAB; mood strip + curator rows show end-fade affordance when scrollable | smoke shot `mobile-discover-list` → Phase-3 assertion |
+| V-7 | Saved · 390, zero bookmarks | open each segment | each empty segment renders the `.picks-empty` card pattern (plate + title + sub), not a bare mono line; H1 doesn't contradict the active segment | smoke shot `mobile-saved` (baselined this audit) |
+| V-8 | Profile · 390, signed in | load with dummy session | primary CTA full-width, secondary stacked beneath (post-F-5); toggle row ≥44px | smoke shot `mobile-profile` (baselined this audit) |
+| V-9 | Today ↔ Discover ↔ Saved ↔ Profile · 768/1440 | navigate via masthead | content left edges align across pages (shared `--reading-max` ladder); topbar/nav morph, no flicker | smoke `desktop-*`/`wide-*` set vs baseline |
+| V-10 | Today · 390, reduced-motion emulated | `prefers-reduced-motion: reduce` | no entrance offset, lime rule at `scaleY(1)`, no VT animation — page identical to settled state | manual/Phase-4 (`page.emulateMediaFeatures`) |
+
+Pass criteria for the suite as a whole: verify 24/24, e2e green, and zero unexplained baseline diffs. A diff is either a regression (fix it) or an intentional change (replace the baseline in the same PR, per `docs/screenshots/README.md`).
 
 ---
 

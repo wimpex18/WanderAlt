@@ -66,19 +66,63 @@ Deploy edge functions via the Supabase MCP `deploy_edge_function` tool — never
 | `robots.txt` / `sitemap.xml` / `.well-known/security.txt` | SEO + security-contact files. robots.txt blocks GPTBot / ClaudeBot / PerplexityBot etc — curator credit matters more than AI training data. |
 | `LAUNCH.md` | Launch-day checklist — DNS, Pages, email, Search Console, OG verification, social handles. Read top-to-bottom on the actual launch day. |
 
-## Visual conventions (Claude cannot infer these)
+## Design system canon (June 2026 — canonical for all UI work)
 
-- Strictly left-aligned. **No centered blocks.**
-- **Type system (June 2026 brand evolution):** body/metadata = **Inter** (`--ff-body`, replaced Geist, which was Vercel's font and read as generic AI-startup); city names + venue/event titles + the curator quote = **Fraunces** (`--ff-display`, a soft organic "old-style" display serif, replaced DM Serif Display); small editorial eyebrows/labels stay **Geist Mono** (`--ff-mono`). Apply `--ff-display` to titles, `--ff-body` to everything else, `--ff-mono` to uppercase label runs only. Self-hosted woff2 in `fonts/` (CSP `font-src 'self'` — no Google Fonts CDN).
-- **Liquid Glass + photo-forward (June 2026):** the earlier "no gradients, no box-shadows" rule is **relaxed for these specific, tokenised uses** — do NOT scatter gradients/shadows elsewhere. (1) Frosted **Liquid Glass** chrome on the sticky topbar, the bottom-nav pill and the mobile sheets via `--glass-bg`/`--glass-blur`/`--glass-hair` + `backdrop-filter` (with an `@supports` solid fallback). (2) A photo-forward **Tonight hero** (`.tonight__hero`) — the venue photo with a bottom-anchored **scrim** gradient (`rgba(0,0,0,0)→.72`) so overlaid white title/kindline stay legible; falls back to the flat header when the pick has no `image_url`. (3) Real photos over text always get a scrim, never a raw `text-shadow`. Corner radius now uses `--radius`/`--radius-card` (8/12px), not the old 4px cap.
-- Section dividers are **1px horizontal rules**, never background changes or large gaps.
-- Single primary accent: petrol `#055959` (`--c-accent`) — handles, arrows, hover, focus rings, logo tile, map detail quote bar, locate-fab "on" state, admin pin marker. Signal lime `#d2dc50` (`--c-lime`) is reserved for live/active state highlights (Tonight badge, active segment count, logo diamond). The older oxblood `#8a2a1a` accent has been fully retired from app code (May 2026 sweep — the legacy `map-world.js` that held the last references is deleted).
-- Background: `--c-paper` = `#ffffff` (pure white). Earlier builds used warm newsprint `#f6f3ec`; the design evolved to clean white with `--c-paper-deep: #fafaf9` for recessed surfaces (search box, tonight quote bg). The map style still uses newsprint cream for land tiles — that is separate from the app background.
+One brand, one component language, one spacing grid. The full execution roadmap + audit findings live in `ROADMAP.md` § Frontend; per-page deltas in `HANDOFF.md`. The rules below are the contract every UI change must satisfy.
+
+### Brand independence
+
+WanderAlt's aesthetic is **editorial newsletter, not AI product**. Never reach for tool-default or AI-startup styling: no Anthropic-palette defaults (clay/coral/cream chat-UI tones), no purple/indigo gradient washes, no glassmorphism beyond the three sanctioned Liquid Glass surfaces, no default system-font fallback shipping as the actual face. The brand is two-tone petrol + lime over white with Inter/Fraunces/Geist Mono — anything that reads "generic 2024 AI app" is off-brand by definition.
+
+### Color & contrast (WCAG 2.2 AA is the floor; measured ratios)
+
+| Pair | Ratio | Use |
+|---|---|---|
+| `--c-ink` `#0a0a0c` on `--c-paper` `#fff` | 19.8:1 | body, titles — AAA |
+| `--c-ink-soft` `#1f1f23` on paper | 16.4:1 | secondary prose |
+| `--c-ink-mute` `#5c5c66` on paper / `--c-paper-deep` | 6.6:1 / 6.4:1 | meta, eyebrows — passes AA at 11–13px (this token was darkened from `#71717a` precisely to clear 4.5:1; do not lighten) |
+| `--c-accent` petrol `#055959` on paper (and white on petrol) | 8.1:1 | links, focus rings, accents, solid panels |
+| `--c-lime` `#d2dc50` under ink text | 13.3:1 | badges/fills only |
+| `--c-lime` on paper | 1.5:1 | **forbidden as text/icon** — lime is a fill behind ink, never a foreground |
+| `--c-faint` `#a1a1aa` on paper | 2.6:1 | decorative only (placeholder italic, search glyph) — never labels |
+
+- Single primary accent: **petrol** (`--c-accent`) — handles, arrows, hover, focus, logo tile, map quote bar, locate-fab "on". **Lime** (`--c-lime`) is signal-only: live/active state (Tonight badge, active segment count, active-nav underline, logo diamond). **No third color** (oxblood `#8a2a1a` fully retired May 2026). Background `--c-paper` = pure white; `--c-paper-deep #fafaf9` for recessed surfaces (the map style's newsprint-cream land is separate from app background).
+- **Text over photos:** white text on a bottom-anchored black scrim, **never** raw `text-shadow`. Rule of thumb: overlaid text must sit within the scrim's ≥0.4-alpha zone — long (3-line) titles on tall heroes are the known failure mode (see ROADMAP F-1); extend the scrim ramp rather than shrinking the title.
+
+### Typography
+
+- **Fraunces** (`--ff-display`) = city names, venue/event titles, curator quote. **Inter** (`--ff-body`) = everything else. **Geist Mono** (`--ff-mono`) = uppercase eyebrow/label runs only. Self-hosted woff2 in `fonts/` (CSP `font-src 'self'`, no Google Fonts CDN). Inter replaced Geist (read as generic AI-startup); Fraunces replaced DM Serif Display.
+- Scale (mobile-first, harmonic — do not add intermediate steps): eyebrow 11 → meta 12 → body 16 → item-title 18 → quote 32 (`--fs-*`). Venue + pick titles share the single 18px step on purpose; the old 16/17/18 mid-cluster was deliberately collapsed.
 - **Curator quote is the largest element on every screen** — larger than venue name or photo. Voice is the product.
-- **Editorial redesign (May 2026):** Today / Discover / Saved / Profile share one editorial language. Today's Tonight hero is flat (no surface card): lime `TONIGHT` signal → kind + neighborhood line → title → display-italic quote with a lime rule → actions. Discover uses a `1fr / 1.18fr` list/map split, a static filter rail with mono eyebrow legends, and an **immersive AI concierge mode** — a solid-petrol panel keyed purely on `body.discover-ai-mode` (collapses filters/map). Saved's Going/Reading/Past switcher and Discover's Events|Places toggle are the same compact ink-fill segmented control (lime = active/live count only). Profile uses a flat petrol avatar with a lime initial + a real toggle switch. All deltas live in the "EDITORIAL REDESIGN" block at the end of `styles.css` and reuse existing `:root` tokens — do not add new variables.
+
+### Component canon (one implementation per pattern — reuse, never fork)
+
+- **Segmented control** (`.seg-tab` / `.discover-scope__btn`): compact ink-fill, lime = active/live count only. Shared by Saved Going/Reading/Past and Discover Events|Places.
+- **Photo card row** (`.list-row--card`): full-colour `.thumb--lg` photo left · title/meta/quote body · bookmark; initials-tile fallback when no `image_url`. Shared by Discover Events, Saved, Curator picks, venue "more from", place "events here". Places rows stay social-glyph-only (OSM venues carry no photos).
+- **Hero with scrim** (`.tonight__hero` / `.detail-hero`): photo + bottom-anchored scrim + white eyebrow/title/meta; flat-header fallback without `image_url`.
+- **Chips** (`.chip`/`.mood-chip`/`.venue-mood`): ~32px tall (Material chip spec — the sanctioned exception to the 44px floor); active state carries a leading "✓" (WCAG 1.4.1, never color-only).
+- **Buttons:** desktop CTA pairs size to content, left-aligned, primary first; mobile primary goes full-width and the pair stacks (`.tonight__actions`, `.venue-actions`). Gaps 8–16px via tokens.
+- **Empty states:** the crafted card pattern (`.picks-empty` — city plate + title + sub) is the canon; bare one-line mono strings are a flaw to migrate away from (ROADMAP F-4).
+- **Liquid Glass** is allowed on exactly three chrome surfaces — sticky topbar, bottom-nav pill, mobile sheets — via `--glass-bg`/`--glass-blur`/`--glass-hair` + `backdrop-filter` with the `@supports` solid fallback. Do NOT scatter gradients/shadows elsewhere; the only other sanctioned gradient is the hero scrim, the only sanctioned shadow is the FAB's.
+- Section dividers are **1px horizontal rules** (`--c-rule`), never background changes or large gaps. Strictly left-aligned content — **no centered blocks** (the desktop masthead nav is the one chrome exception).
+- Corner radius: `--radius` 8 / `--radius-card` 12 only.
+- **Editorial redesign deltas (May 2026)** all live in the "EDITORIAL REDESIGN" block at the end of `styles.css` and reuse `:root` tokens — Today's flat Tonight hero (lime TONIGHT signal → kindline → title → display-italic quote with lime rule → actions), Discover's `1fr/1.18fr` list/map split + mono-eyebrow filter rail + solid-petrol AI concierge mode keyed on `body.discover-ai-mode`, Profile's flat petrol avatar + real toggle switch.
 - All tokens live in `:root` in `styles.css`. Do not introduce new CSS variables without asking.
-- Real photos via `image_url` when available, CSS halftone fallback otherwise. Never use external image URLs that bypass the `image_url` flow. Photos render **full-colour** (June 2026 — the old petrol-duotone `mix-blend-mode` overlay on `.thumb--has-img` was retired for a vivid, inviting Airbnb/Lime feel); the thumb border + radius keep disparate photos tidy, and photos over text always get a scrim (heroes), never a raw text-shadow.
-- Perf: long lists (`.list-row` on Discover/Saved/venue) use `content-visibility: auto` + `contain-intrinsic-size` to skip off-screen render. Fonts self-hosted (see HANDOFF). Both no-build.
+
+### Spacing & sizing (the grid is law)
+
+- Use the `--s-*` scale only: 4/8/12/16/20/24/32/40/56/72 (4px base, 8px rhythm — Apple HIG / M3 / Fluent 2 compliant). **No off-grid literals** (`6px`, `10px`, `14px`…) in new code; ~50 legacy off-grid literals are scheduled for the ROADMAP Phase-2 sweep — don't add to them. Chrome offsets derive from tokens, not magic numbers (the FAB's hardcoded `72px` clearance vs `--nav-h: 68px` is the cautionary example, ROADMAP F-3).
+- **Tap targets: 44px floor** (Apple HIG) on public/touch pages — `min-height: 44px` or padded 44px hit area on: `.btn-primary`/`.btn-secondary`/`.btn-going`/`.btn-save` (heroes use 50px), `.seg-tab`, `.discover-scope__btn`, nav items, `.city-selector`, `.auth-btn`, `.topbar__about`, `.discover-view-fab`, `.venue-social__link` (44px box, 16px glyph), `.auth-panel__submit`/`__close`, `.profile-toggle`, list-row `.bookmark` (44×44 padded hit area, 20px glyph). **Correct exceptions, do NOT "fix":** chips ~32px (Material spec); inline text links (colophon, "on map →", handles — WCAG-exempt); the admin panel (desktop mouse tool, ~32px density). Sources: `docs/layout-audit-2026-06.md`.
+- **Width:** one shared `--reading-max` ladder for every page (1100 ≥768 · 1200 ≥1100 · 1280 ≥1440) so chrome and content edges align; long-form text keeps per-block `ch` measures (56–64ch) inside the wide shell.
+- Real photos via `image_url` only (never external URLs bypassing that flow), rendered **full-colour** (petrol-duotone overlay retired June 2026); CSS halftone fallback otherwise.
+- Perf: long lists (`.list-row`) use `content-visibility: auto` + `contain-intrinsic-size`; fonts self-hosted. Both no-build.
+
+### Validation (run before claiming any UI change done)
+
+1. `npm run verify` — overflow / console errors / 44px floor, 8 pages × 3 widths. Non-negotiable after any layout/CSS/markup change.
+2. `npm run smoke` (server running) — 40+ screenshots; diff the high-signal set against `docs/screenshots/baseline/` (see `docs/screenshots/README.md`). Replace baselines only for intentional changes.
+3. `npm run e2e` — behavioural sweep (photo cards on all five surfaces, taste cue, VT tagging, bookmark persistence).
+4. Production fidelity (real photos + live data): screenshot the Cloudflare branch preview via `npm run preview -- <url>`.
 
 ## Motion conventions (May 2026)
 
@@ -103,15 +147,6 @@ Bookmark click is a smooth fill transition (no scale pop), bookmark hover is `sc
 `@media (prefers-reduced-motion: reduce)` cancels all of the above with `transition: none !important` + an explicit `@starting-style` override that zeros the entrance offset, sets `.tonight__quote::before` to `scaleY(1)`, and `::view-transition-*` `animation: none`.
 
 **Do not add new keyframes, parallax, or bouncy easings.** If you need new motion, pick `--t-fast` or `--t-mid` and reuse the existing entrance selector list.
-
-## Layout / alignment system (design-system compliance)
-
-Audited against Apple HIG, Material Design 3 and Fluent 2 (June 2026) — full write-up + sources in `docs/layout-audit-2026-06.md`. The rules that matter for any future layout work:
-
-- **Spacing:** use the `--s-*` scale only (4/8/12/16/20/24/32/40/56/72 — a 4px base / 8px rhythm, already grid-compliant). No off-grid literals like `10px`; reach for the nearest token.
-- **Tap targets:** **44px is the interactive floor** (Apple HIG) on the public/touch pages. Carries `min-height: 44px` (or a padded 44px hit area): action buttons (`.btn-primary`/`.btn-secondary`/`.btn-going`/`.btn-save`), tabs (`.seg-tab`, `.discover-scope__btn`, nav items), masthead controls (`.city-selector`, `.auth-btn`, `.topbar__about`), the Map/List FAB (`.discover-view-fab`), auth-overlay buttons (`.auth-panel__submit`/`__close`), the digest toggle row (`.profile-toggle`), and the Places social glyphs (`.venue-social__link` — 44px box, 16px glyph). **Exceptions (correct, do NOT "fix"):** chips stay ~32px (Material chip spec); **inline** text links (colophon About, "on map →", curator handles) are WCAG-exempt; the **admin panel** is a desktop mouse tool and uses density-appropriate controls (~32px), not the 44 touch floor. Full audit + sources: `docs/layout-audit-2026-06.md`.
-- **Action buttons (CTA pairs):** on **desktop** size to content + left-align, primary first (NOT stretched edge-to-edge — full-width is a phone-only pattern). On **mobile** the primary CTA goes full-width and the pair stacks. This is why `.tonight__actions` and `.venue-actions` switch from content-sized rows to full-width-stacked under 768px. Keep gaps at 8–16px (`--s-3`).
-- **Width:** one shared `--reading-max` ladder for every page so chrome and content align (see the "Canonical mobile viewport" note up top).
 
 ## Content conventions
 
