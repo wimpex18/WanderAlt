@@ -1,133 +1,122 @@
-# WanderAlt — Roadmap
+# WanderAlt — Architecture audit & roadmap (June 2026)
 
-A plan for what's next, written so a future contributor (or Sonnet 4.6) can implement without re-deriving decisions. Read `README.md` for product context, `HANDOFF.md` for the engineering reference, `CLAUDE.md` for working conventions. This file is opinionated and ranked.
+A strict weak-point audit of the codebase, data layer, and docs, followed by a ranked remediation list. Written so a future contributor (or model) can act without re-deriving decisions. Read `README.md` for product context, `HANDOFF.md` for the engineering reference, `CLAUDE.md` for working conventions. This file replaces the May 2026 tier/sprint roadmap — everything in those tiers either shipped (see README → Roadmap → Built) or moved to "Explicitly NOT building" below.
 
----
-
-## Framing
-
-WanderAlt's soul is **curator voice** rendered as **editorial minimalism**. The product principle that protects every other decision: *curator voice is the largest element on screen.* Every feature must amplify that, not crowd it.
-
-The product is a printed cultural weekly translated to web. Three implications follow:
-
-1. **Time, not feed.** Items don't refresh by scroll position. They publish on a cadence (a week, a tonight). Anything that smells like an algorithmic feed dilutes the brand.
-2. **Voice, not metadata.** A pick without a quote is wallpaper. New surfaces should give voice more room, not bury it under tags and ratings.
-3. **Reading, not browsing.** Sessions should feel like reading the back page of a paper, not flipping through a catalogue.
-
-**AI providers, used right (June 2026 cost rule — Groq first, Gemini only when nothing else works):**
-- **Groq Llama-4-Scout-17b** (`meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`) — **primary for every text function**: `process-staging`, `generate-context`, `draft-column`, `match-pick`. Free tier covers our volume.
-- **Gemini** — gated **fallback only** (`gemini-2.5-flash` / `-lite`), no Search grounding anywhere (it was the dominant cost driver). `gemini-3.5-flash` was documented but **never deployed**; `-pro` and `gemini-2.0-flash` return 404 — never substitute. Embeddings stay on `gemini-embedding-001` (no free Groq equivalent).
-
-Everything below picks one of these two for a reason; keep it that way.
+**Numbers cited below were measured on 2026-06-09**, on a tree of ~15,600 first-party JS/CSS lines: `styles.css` 5,794 · `catalog.js` 3,563 · `admin.js` 2,216 · `discover.js` 1,310 · `map.js` 680 · `briefing.js` 604.
 
 ---
 
-## Shipped
+## Framing (unchanged — protects every decision below)
 
-Features already live. See `README.md` for implementation detail.
+WanderAlt's soul is **curator voice** rendered as **editorial minimalism**: *curator voice is the largest element on screen.* Time, not feed. Voice, not metadata. Reading, not browsing. Any remediation that dilutes this is worse than the debt it fixes.
 
-- **Mood tags + chip filter** — `mood-chips.js`, multi-select on Briefing.
-- **Curator's column** — `draft-column` edge function (Groq `llama-4-scout`, Gemini `2.5-flash-lite` fallback), admin approval, rendered on Briefing.
-- **Match-me** — `match-pick` edge function (Groq Llama-4-scout-17b, Llama-3.3-70b fallback), AI mode toggle on the unified Discover page (Search + Map merged May 2026).
-- **Discover (unified Search + Map)** — May 2026 consolidation per Baymard split-view research. Single page with shared filter state, list/map view toggle on mobile, side-by-side split ≥1024px.
-- **MapLibre basemap** — `map-tiles.js` + custom `map-style.json` (OpenFreeMap tiles). Replaced the illustrated SVG plane; pins now use real `picks.lat/lng` projected through `WA.MapTiles.project()`. `geocode-picks` cron backfills coords nightly.
-- **Multi-city ingest** — `ingest-osm` v11 covers Tallinn / Riga / Helsinki / Vilnius in one nightly tick; Telegram / RSS / Fienta / venue scrapers all configured per the `sources` table (~24 source rows). See CLAUDE.md → "Live data sources & ingest pipeline" for the canonical source matrix.
-- **Beacon brand kit + city plates v2** — `brand/` masters, favicons, manifest, OG cards; illustrated city plates at `assets/<city>-overview.svg` shown as 80×60 thumbnails in the city selector and a 64 px city banner ribbon under the topbar on every page.
-- **Email digest** — `send-digest` (Sat 09:00 UTC), opt-in on Profile.
-- **"Why this matters"** — `generate-context` (nightly, Groq `llama-4-scout`, Gemini `2.5-flash-lite` fallback), `<details>` on Venue detail.
-- **OG images** — `og-image` edge function (Satori + @resvg/resvg-wasm) as the fallback card; per-pick previews use the real venue photo via the Pages middleware. Wired on Venue + Curator pages.
-- **Photo-forward cards + on-device taste nudge** — one `.list-row--card` (venue photo · body) across Discover / Saved / Curator / venue / place; `taste.js` gently re-orders four surfaces as a secondary stable-sort signal (curation stays primary). Card→hero View Transitions throughout.
-- **CI structural gate** — `.github/workflows/verify.yml` runs `npm run verify` on every PR + push to main.
-- **Venue enrichment** — `enrich-venues` (nightly 03:30 UTC): Wikidata + Nominatim → `venue_details` table (website, address, lat/lng, short_desc, image). Admin panel exposes per-venue lock and bulk-run. Venue detail page shows enrichment inline.
-- **404 page** — `404.html`, matches site aesthetic.
-- **About / Privacy / Contact** — `about.html`, one editorial page with five sections (About / Curators / Venues / Privacy / Contact). Linked from every page's colophon. No separate Terms / Cookie banner — see CLAUDE.md "Domain + page architecture" for the single-domain, no-tracking stance.
-- **Loading skeletons** — static, layout-reserving skeletons (Tonight hero, pick rows, Discover browse rows) hold space until `wa:catalog-ready`, so hydration doesn't jolt. No shimmer / spinner, per the editorial brand.
-- **Editorial redesign of Today / Discover / Saved / Profile** (May 2026) — flat Tonight hero, rebalanced Discover split with an immersive AI concierge panel, unified ink-fill segmented controls, refined Profile. Same tokens, two-tone, voice-loudest.
-- **Walking-radius filter** — Discover "Distance" control (Any / 5 / 15 / 30 min walk). Opt-in geolocation; a shared haversine filters both the list and the map pins (Events + Places). Deep-links via `&within=`, shows a removable applied chip, and falls back gracefully (with a note) if location is declined.
+LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated Gemini fallback, embeddings on `gemini-embedding-001`). It is deliberately NOT restated here — that's how the "Gemini 3.5 Flash" doc-drift happened.
 
 ---
 
-## Tier 1 — Outstanding moves (build these)
+## 1. Architectural Gaps & Technical Debt
 
-*(Print stylesheet was here — shipped May 2026, see "Shipped"
-above. The `@media print` block in `styles.css:2832` hides chrome,
-keeps the editorial column intact, prints the website URL next to
-venue links, and prints page numbers via `@page @bottom-right`.)*
+**Repo ↔ production drift is the #1 structural risk.** The repo holds 15 edge functions; production runs more (`archive-stale`, `rotate-tonight`, `geocode-picks`, `enrich-pick-images`, `ingest-telegram`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong`, `ingest-hel-linkedevents`, `classify-moods`, …) that exist **only deployed**. Instrumenting the scrapers in June required pulling live source from Supabase to edit it — there is no review, no history, no rollback for those functions. The migrations directory is a *journal*, not a bootstrap: changes are applied to the DB first via MCP, files written after, and some contain one-shot backfills — replaying them on a fresh project would not reproduce production. Until the deployed-only functions are committed, every edit to them is a production hotfix.
 
----
+**Pick identity is coupled to source message numbering.** `picks.id = channel-message_id` means a correction posted as a *new* message mints a new identity. The dedup cron (`wa_dedup_active_picks`) is a compensating control, not a fix — and it has a real edge: if two users bookmarked *different* twins of the same event, one user's bookmark now points at an archived pick and Saved will render it as "no longer listed" even though the event is alive under the surviving twin. Low frequency, but it's a correctness hole in the bookmark contract.
 
-## Tier 2 — Solid wins
+**Script-tag ordering is the module system, and nothing enforces it.** `buildMeta` is hand-copied into **5** page scripts, the photo-thumb markup into **5**, `bookmarkSVG` into 3, the taste-nudge helpers into 3, `esc()` into 2, and `KIND_MAP` is duplicated between `discover.js` and `map.js` "by convention". The failure class is proven: `taste.js` was simply missing from `saved.html` and the feature silently no-op'd until June. No build step is a sound constraint; *no shared `ui-helpers.js` script* is not — one more `<script defer>` tag costs nothing and collapses the 5-way copies.
 
-### 6. "Surprise me" — single button on Briefing
-- Pure JS. One button below Tonight: `Surprise me →`. Click fade-replaces the hero with a random pick from active catalog (filtered by current city). Respects `prefers-reduced-motion`.
-- Deliberately tier 2: charming, but the column already gives the Briefing its editorial heartbeat.
+**Detail pages render on a single event with no guard.** `curator.js` and `venue.js` render **only** on `wa:catalog-ready`; `place.js` alone has the init-if-data-already-present guard. Worse, their document-level listeners are bound inside `render()`, so adding the guard naively risks double-binding. Restructure (bind once at module scope) before touching init.
 
-### 7. Curator weekly synthesis
-- On `curator.html`, an auto-generated 2-line *"Reading lately"* paragraph synthesizing their last 3–5 picks. Cron weekly, Groq `llama-4-scout` (Gemini `2.5-flash-lite` fallback), store in `curators.synthesis_md`.
-- The full column shipped — this is the smaller per-profile variant, which still has independent value on the curator page itself.
+**Append-only CSS is order-dependent by design.** All redesign deltas live in override blocks at the end of `styles.css` (5,794 lines, one file). The desktop-FAB-visible bug was exactly this class of failure: a `@media` hide rule defined *before* the base rule it had to beat. Each new block at the end raises the chance of the next one.
+
+**Scrapers fail silently into "ok".** Every ingest function parses HTML with hand regexes (brittle is accepted), but a source markup change yields *zero parsed events* with `ingest_log.status='ok'`. There are no fixtures to test parsers against and no zero-yield alert. A dead source looks identical to a quiet week.
+
+**Lifecycle machinery now spans 6 crons + 7 instrumented scrapers + per-source flags** (`archive-stale`, `rotate-tonight`, `reset-tonight`, `wa-dedup-picks`, `wa-purge-archived`, `wa-reconcile-absent` + `bumpSeen` in every snapshot scraper + `sources.reconcile_absences`). It's individually sound and collectively undocumented as a system — the reconcile's dry-run→enforce flip is an untracked memory item with no runbook.
 
 ---
 
-## Tier 3 — Quiet experiments to revisit
+## 2. UX & State Management Friction
 
-These are off-roadmap but worth keeping a record of, to avoid re-debating.
+**HIGH — Saved's "no longer listed" can fire falsely offline, with a destructive Dismiss.** `supabase.js` dispatches `wa:catalog-ready` *even when the live fetch fails and the static fallback is used* (by design, so pages render). Saved's change-watch diffs bookmarks against whichever catalog loaded — so on a flaky connection the static catalog (~170 entries vs ~1,000 live) makes **every live bookmarked pick** render as a "no longer listed" gone-row, and its Dismiss button **permanently unbookmarks**. Fix: expose a `WA.DATA_LIVE` flag from `supabase.js` and gate gone-detection (not the time-changed badges) on it; consider an undo on Dismiss regardless.
 
-- **"What's on the desk" — public curator workspace.** Curator profile shows drafts they're considering. Print-magazine "letters" energy. Hard: requires curator-side UX. **Revisit after column ships.**
-- **Chrono-pin map.** Time slider 18:00 → 02:00, pins light up at their event time. Visual delight. **Revisit after picks have proper time fields.**
-- **Lineage edges.** Manually-curated cross-references between picks ("If you went to X, the through-line to Y is…"). Editorial annotation. **Revisit if curators ask for it.**
-- **Time-traveled briefing.** "Same week last year" page. **Revisit at 12-month anniversary.**
+**Change-watch only fires when the user opens Saved.** A night-of cancellation goes unseen unless they happen to check; the digest is weekly. This is a deliberate no-push brand stance — but the digest email is the one sanctioned channel and doesn't yet include "your saved events changed". That's the gap worth closing, not notifications.
+
+**localStorage is a junk drawer with three naming conventions.** Nine keys across `wa:` (`wa:city`, `wa:saved-snapshots`), `wa-` (`wa-taste-prefs`, `wa-taste-onboarded`, `wa-match-feedback`, `wa-match-seen`, `wa-admin-*`) and `wanderalt:*:v1` (`bookmarks`, `session`). Only the last family is versioned. Any shape change to snapshots or taste prefs has no migration story — it will just silently misparse.
+
+**Bookmark cloud sync is fire-and-forget.** No retry, no conflict resolution beyond last-write-wins per id, and a failed `deleteCloud` leaves a ghost row that resurrects the bookmark on the next `syncFromCloud`. Acceptable at current scale; will generate "my bookmark came back" reports eventually.
+
+**Discover re-filters on every keystroke with no debounce.** `run()` does full `keywordFilter` over the catalog plus map sync per input event. Fine at ~1,000 picks; it is the first thing that will jank as cities multiply. A 150 ms debounce preserves the feel and removes the cliff.
+
+**Two split-brain conventions confuse deep-linking.** Mood lives in the URL *hash* (`#mood=`, owned by `mood-chips.js`) while every other filter is a search param — documented, but it means copied links behave differently for mood. And the map is empty-until-filtered in Events but shows-all in Places; each is defensible alone, together they teach the user two opposite mental models of the same pane.
 
 ---
 
-## Explicitly NOT building
+## 3. Scope Creep & Complexity Risks
 
-These would dilute the brand. Listed so the next person knows the answer is no without having to ask.
+**Per-city cost is ~7 touchpoints with no enforced checklist.** A new city needs: `city.js` entry, plate SVG, `catalog.js` static seed, `process-staging` `CITY_CONTEXT` entry, `sources` rows, scraper(s), neighborhood whitelist. The `CITY_CONTEXT` omission *silently degrades to Tallinn context* and has bitten twice (Vilnius, then Helsinki — ~1,900 misrejected messages). Either make a missing city entry a hard error in `process-staging`, or commit a NEW-CITY checklist; the silent-degrade default is the worst of the options.
+
+**`catalog.js` (3,563 lines) grows linearly with cities.** The static fallback ships to every visitor on every page. Vilnius alone added a venue seed. Decide the fallback's contract now — "enough to render something" (cap per city) vs "full mirror" (move to a fetched JSON with cache, defeating its offline purpose). Unbounded growth in a render-blocking-adjacent script is the dead-end.
+
+**One bespoke regex scraper per venue website is linear maintenance.** Ten ingest functions already; each new venue site adds a parser someone must fix when the markup shifts. The Fienta/Linked-Events pattern (structured APIs) is the sustainable shape; HTML scrapers should be the exception that earns its keep, not the default for every "verified, NOT yet wired" source in CLAUDE.md.
+
+**Two OG code paths for one feature.** The Pages middleware (real venue photo) supersedes the Satori `og-image` card for any pick with a photo; the edge function remains as fallback. Fine — but it's two render paths, two failure modes, and the Satori path has already silently 401'd once (verify_jwt flip). Candidate for retirement once photo coverage is near-total.
+
+**`admin.js` is a 2,216-line monolith with the service key pasted into localStorage.** Accepted as a desktop tool for one trusted operator; it should never grow features faster than that assumption holds.
+
+**Test-suite self-healing hides data nondeterminism by design.** The e2e suite re-derives IDs when the live/static catalog flips mid-run. Right call for CI stability — but it means a green run cannot tell you *which* data source it exercised. Keep the suite honest by logging the source it ran against.
+
+---
+
+## 4. Missing Context Real-Estate
+
+What a contributor cannot currently find anywhere in the repo, in priority order:
+
+1. **DB schema reference** — tables, columns, RLS policies, triggers, SQL functions. The dead `picks_autopin_trigger` broke every insert fleet-wide for weeks precisely because no doc said it existed. One generated `docs/db-schema.md` (or committed `supabase db dump --schema-only`) ends the per-session `information_schema` spelunking.
+2. **Deployed-function inventory** — name, version, `verify_jwt`, in-repo? A drift map. Three scrapers and at least six other functions exist only in production; nothing lists them.
+3. **The deployed-only function sources themselves** — commit them. This is the single highest-leverage missing artifact.
+4. **localStorage key registry** — key, owner file, shape, versioning policy. Nine keys, three conventions, zero documentation.
+5. **Reconcile enforce runbook** — the criteria for flipping `wa_reconcile_absent_picks` to enforce (candidate count stable for N days, spot-check sample_ids), who flips it, and the rollback (`archive_reason='source_absent'` rows are reversible).
+6. **Scraper fixtures** — one saved HTML/JSON sample per source, so parser changes are testable offline and a zero-yield run can be distinguished from a markup change.
+7. **Docs ownership map** — which file is canonical for what. README/ROADMAP/CLAUDE/HANDOFF have already drifted apart once (the never-deployed "Gemini 3.5 Flash" survived in two files after CLAUDE.md was corrected). One paragraph per doc stating "canonical for X, summary of Y" prevents the next drift.
+8. **Per-page error-state matrix** — bad `?id`, network fail, JS off. `<noscript>` shipped June 2026; bad-id copy and behavior still vary by page.
+
+---
+
+## Ranked remediation
+
+**P0 — correctness (do first):**
+- Gate Saved's gone-detection on a live-data flag (`WA.DATA_LIVE`); add undo to Dismiss.
+- Commit the deployed-only edge functions to the repo.
+
+**P1 — structural (next):**
+- Extract shared `ui-helpers.js` (`buildMeta`, thumb/media markup, `bookmarkSVG`, taste helpers, `esc`) — one script tag, no build step.
+- Hard-fail `process-staging` on a missing `CITY_CONTEXT` entry.
+- `docs/db-schema.md` + deployed-function inventory.
+
+**P2 — resilience:**
+- Zero-yield alerting on ingest (`inserted+skipped === 0` → `status='warn'` + surface in admin pipeline panel).
+- Debounce Discover's `run()` (150 ms).
+- Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.
+
+**P3 — hygiene:**
+- localStorage key registry + converge on one prefix for new keys.
+- Restructure curator/venue init (bind listeners once; add the place.js-style guard).
+- Decide `catalog.js`'s per-city cap before city #5.
+
+---
+
+## Explicitly NOT building (unchanged)
+
+These would dilute the brand. Listed so the next person knows the answer is no without asking.
 
 - ❌ **Comments / replies on picks.** This is a paper, not a forum.
 - ❌ **Star ratings or any 5-point UI.** Voice ≠ rating.
-- ❌ **Push notifications.** Interruption is the opposite of editorial.
-- ❌ **Trending / popular sort.** The whole point is curator-curated, not algorithm-curated.
-- ❌ **"For you" personalised feed.** Same.
+- ❌ **Push notifications.** Interruption is the opposite of editorial. (The weekly digest is the sanctioned channel — extend *it*.)
+- ❌ **Trending / popular sort.** Curator-curated, not algorithm-curated.
+- ❌ **"For you" personalised feed.** Same. (The taste nudge stays a quiet secondary sort, never a feed.)
 - ❌ **Multi-language UI.** Maybe at 10× the audience; not now.
 - ❌ **Generic admin dashboard with charts.** Admin should look like the rest of the app.
 - ❌ **Onboarding tour / coachmarks.** If the app needs explaining, it's wrong.
 
----
-
-## Sequencing — proposed sprints
-
-Each "sprint" assumes ~1 calendar week of evening sessions, not full-time work.
-
-**Sprint 1 — Quick wins** *(low-risk, high visual pay-off)*
-- ~~Print stylesheet~~ ✓ shipped May 2026
-- ~~"Surprise me" button~~ ✓ shipped (the `#surprise-btn` on Briefing)
-- ~~Loading skeletons~~ ✓ shipped (static, layout-reserving)
-
-**Sprint 2 — Map depth**
-- ~~Walking radius filter: geolocation opt-in + haversine filter~~ ✓ shipped (Discover "Distance" control, Events + Places).
-
-**Sprint 3 — Curator presence**
-- Curator weekly synthesis: edge fn + `curator.html` render (4h)
-- ~~City selector: promote from placeholder to real switcher~~ ✓ shipped — a real keyboard-accessible dropdown with city-plate thumbnails. Tallinn / Helsinki / Riga are live; Vilnius is unlocked for internal testing (Places-only until it has a curator).
-
-**Sprint 4+ — opportunistic**
-- Any Tier 3 items as the catalog grows and user feedback lands.
+Still-open product ideas that survived the old Tier 2/3 (kept for the record, unranked): curator weekly synthesis ("Reading lately" on `curator.html`), chrono-pin map, lineage edges, time-traveled briefing.
 
 ---
 
-## Implementation notes for the executor
-
-A handful of patterns to keep consistent:
-
-- **Edge function naming:** verb-noun, lowercase-hyphen. `classify-moods`, `draft-column`, `match-pick`, `send-digest`, `generate-context`, `og-image`. Existing convention.
-- **AI prompts live in code, not env.** Inline in the edge function with comments explaining tone goals. Do not hide them in JSON config — the prompt *is* the product spec.
-- **Always cache LLM output to a column.** Never call an LLM at request time except for `match-pick` and similar real-time features. Everything else is cron-batched and cached.
-- **Voice rules for prompts:** include in every editorial prompt: *"No em-dashes in headlines. No exclamation marks. No 'discover'. No marketing voice. Read like a back-page newsletter."* This is repetitive but enforces the brand.
-- **CSS additions:** reuse the existing token system and component classes. New components only when the existing inventory genuinely doesn't fit.
-- **HTML pages stay defer-script and CSP-friendly.** No inline scripts.
-- **Mobile-first canonical width 390×844.** Verify every new component there before desktop.
-- **Test pattern:** the `node` smoke-test approach used to verify the recent auth/profile work is good. Add to it as features land.
-
----
-
-*Last updated May 2026 — reflects the shipped pipeline and the Today / Discover / Saved / Profile editorial redesign.*
+*Last rewritten June 2026 — converted from the May tier/sprint roadmap into a weak-point audit after the photo-card / taste / lifecycle wave shipped.*
