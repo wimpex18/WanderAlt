@@ -1,5 +1,19 @@
 // ============================================================
-// WanderAlt — process-staging  (v37)
+// WanderAlt — process-staging  (v38)
+// v38 changes vs v37 (English-only app):
+//   • LANGUAGE HANDLING hardened: 42 active picks had verbatim
+//     Cyrillic titles despite the v34+ "output English" rule —
+//     llama-4-scout copies source titles. The prompt now states the
+//     hard requirement first, explains that event titles are
+//     DESCRIPTIONS (not proper nouns) with concrete RU/ET examples,
+//     and adds Polish/Ukrainian to the input list.
+//   • Code-level compliance guard: after parsing, any pick whose
+//     title/quote still contains Cyrillic gets ONE targeted batch
+//     translation call (Groq) before upsert — picks are saved to
+//     Supabase already in English. Fail-open: if the fix call fails,
+//     the original text is kept (translate-picks backfills later).
+//   • title_original: when the guard rewrites a title, the source
+//     title is preserved in picks.title_original.
 // v37 changes vs v36 (cost policy):
 //   • Gemini fallback is now gated behind the pipeline_config flag
 //     `gemini_fallback_enabled` (default true). Flip it to false in
@@ -85,7 +99,7 @@ const systemPrompt = (tagline: string, city: string, keepSignals: string[]): str
   const keepHint = keepSignals.length
     ? `\nBIAS TOWARD KEEPING a borderline pick when these terms appear in the text: ${keepSignals.join(", ")}.`
     : "";
-  return `You are an editor for WanderAlt, a guide to ${ctx.name}'s underground and alternative culture.
+  return `You are an editor for WanderAlt, an ENGLISH-LANGUAGE guide to ${ctx.name}'s underground and alternative culture.
 Curator voice: "${tagline}"
 
 Your task: extract ALL specific events and places from this post that fit WanderAlt.
@@ -102,11 +116,16 @@ WanderAlt REJECTS: fitness/gyms, beauty/spa, mainstream chains and franchises,
 standard shopping, real estate, job ads, generic lifestyle tips, tourist sightseeing
 without a cultural angle, networking events, business conferences.${keepHint}
 
-LANGUAGE HANDLING:
-  - Input may be English, Estonian, Latvian, Lithuanian, Finnish, or Russian, sometimes mixed.
-  - Output ALL text in natural English (translate as needed).
-  - PRESERVE proper nouns verbatim: venue names, neighborhood names, named festivals and series.
-  - Translate descriptive titles to English.
+LANGUAGE (HARD REQUIREMENT — the app is English-only):
+  - Input may be English, Estonian, Latvian, Lithuanian, Polish, Finnish, Ukrainian, or Russian, sometimes mixed.
+  - EVERY output field (title, quote) MUST be natural English. NEVER copy a non-English title verbatim.
+  - Event titles are DESCRIPTIONS, not proper nouns — always translate them:
+      "Дворовый концерт в Копли" → "Courtyard concert in Kopli"
+      "Kirjandusõhtu raamatupoes" → "Literary evening at the bookshop"
+      "Винный вечер в Veino" → "Wine evening at Veino"
+  - PRESERVE proper nouns inside the English title: venue names, artist and band names,
+    named festivals and series. For films/plays use the international English title when one
+    exists. Transliterate personal names to Latin script.
   - Quotes are punchy English curator voice, 1-2 sentences.
 
 FIELD RULES:
@@ -123,7 +142,7 @@ FIELD RULES:
       walk-up (no ticket needed), ticketed (requires booking)
 
 Return STRICT JSON:
-{"picks":[{"title":"English title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"curator voice English 1-2 sentences","thumb_initials":"XX","mood_tags":["tag1","tag2"]}]}
+{"picks":[{"title":"natural ENGLISH title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"curator voice English 1-2 sentences","thumb_initials":"XX","mood_tags":["tag1","tag2"]}]}
 
 If no picks: {"picks":[],"reason":"brief phrase"}
 Return ONLY the JSON object.`;
@@ -205,6 +224,52 @@ async function callLLM(text: string, tag: string, city: string, cfg: PipelineCon
   return r1;
 }
 
+// ── English-compliance guard (v38) ───────────────────────────
+// The classifier occasionally copies non-Latin titles verbatim despite
+// the prompt. Detect Cyrillic in title/quote and run ONE targeted batch
+// translation (Groq) so picks are written to the DB already in English.
+// Fail-open: on any error the original text is kept (the translate-picks
+// backfill catches stragglers later).
+const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));
+
+async function fixNonEnglish(picks: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
+  const idx = picks
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => hasCyrillic(p.title) || hasCyrillic(p.quote));
+  if (!idx.length || !GROQ_KEY) return picks;
+  const items = idx.map(({ p, i }) => ({ i, title: String(p.title), quote: String(p.quote ?? "") }));
+  const sys = `You translate event listings into natural English for an English-only city guide.
+Keep proper nouns: venue names, artist and band names, named festivals/series. For films and
+plays use the international English title when one exists. Transliterate personal names.
+Return STRICT JSON: {"items":[{"i":0,"title":"English title, max 70 chars","quote":"English quote or empty string"}]}
+Return one entry per input item, same "i". Return ONLY the JSON object.`;
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: "system", content: sys }, { role: "user", content: JSON.stringify({ items }) }],
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return picks;
+    const j = await res.json();
+    const out = JSON.parse(j?.choices?.[0]?.message?.content ?? "{}");
+    if (!out || !Array.isArray(out.items)) return picks;
+    for (const item of out.items) {
+      const target = idx.find(({ i }) => i === item.i);
+      if (!target || !item.title || hasCyrillic(item.title)) continue;
+      const p = picks[target.i];
+      p.title_original = String(p.title);   // preserve the source title
+      p.title = String(item.title);
+      if (item.quote && hasCyrillic(p.quote) && !hasCyrillic(item.quote)) p.quote = String(item.quote);
+    }
+  } catch (_) { /* fail-open */ }
+  return picks;
+}
+
 async function loadPipelineConfig(sb: ReturnType<typeof createClient>): Promise<PipelineConfig> {
   const { data } = await sb.from("pipeline_config").select("key, value");
   const map: Record<string, unknown> = {};
@@ -274,7 +339,7 @@ async function processOne(
   const result = parseJson(llm.raw);
   if (!result) return failMessage("unparseable: " + llm.raw.slice(0, 200));
 
-  const validPicks = (result.picks as Record<string, unknown>[]).filter(
+  let validPicks = (result.picks as Record<string, unknown>[]).filter(
     (p) => p.title && p.venue && p.kind && p.neighborhood,
   );
 
@@ -285,6 +350,9 @@ async function processOne(
       .eq("id", m.id);
     return { status: "rejected", detail: { reason, id: m.id } };
   }
+
+  // v38: guarantee English before anything is written.
+  validPicks = await fixNonEnglish(validPicks);
 
   const inserted: { id: string; title: string }[] = [];
   for (const p of validPicks) {
@@ -318,6 +386,7 @@ async function processOne(
       source_message_id: m.id,
       valid_until: validUntil(day),
       archived_at: null,
+      ...(p.title_original ? { title_original: String(p.title_original) } : {}),
     }, { onConflict: "id" });
     if (upsertErr) throw new Error(`upsert ${pid}: ${upsertErr.message ?? JSON.stringify(upsertErr)}`);
     inserted.push({ id: pid, title });
