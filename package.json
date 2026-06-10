@@ -5,6 +5,7 @@
     "start":       "npx http-server . -p 5173 -c-1 --cors",
     "admin":       "npx http-server . -p 8080 -c-1 --cors",
     "smoke":       "node .screenshots/smoke.js",
+    "scroll":      "node .screenshots/scroll.js",
     "verify":      "node .screenshots/verify.js",
     "e2e":         "node .screenshots/e2e.js",
     "preview":     "node .screenshots/preview.js",

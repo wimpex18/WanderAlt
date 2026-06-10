@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22   # puppeteer 25 requires >=22.12 (EBADENGINE warnings on 20)
           cache: npm
 
       # Installs devDependencies (puppeteer downloads its pinned Chrome here).

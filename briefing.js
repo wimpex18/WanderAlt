@@ -119,9 +119,10 @@
        dominant element (lime rule, full display scale), then the actions.
        No surface card, no hero thumbnail — the voice is the product. */
     const timeStr  = entry.time ? ` &middot; ${entry.time}` : '';
-    const whereStr = entry.venue
-      ? `${entry.neighborhood} &middot; ${entry.venue}`
-      : entry.neighborhood;
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const heroNhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other'
+      ? entry.neighborhood : '';
+    const whereStr = [heroNhood, entry.venue].filter(Boolean).join(' &middot; ');
 
     /* Photo-forward header when a venue photo exists (June 2026): the image
        fills a banner with a bottom-anchored scrim gradient (rgba 0 -> .6)
@@ -311,11 +312,21 @@
        DOM. Instead, .pick__link is a <div> grid container, and the
        thumb + title get their own <a>s pointing to venue.html.
        The .handle <a> inside .via is then a sibling, not a descendant. */
+    /* F-11 guard: consecutive rows sharing one photo read as a rendering
+       bug (legacy "Various venues" picks all carried the same venue shot)
+       — drop repeats to the initials tile; the first occurrence keeps it. */
+    let prevImg = null;
+    const dupImg = new Set();
+    for (const e of entries) {
+      if (e.imageUrl && e.imageUrl === prevImg) dupImg.add(e.id);
+      if (e.imageUrl) prevImg = e.imageUrl;
+    }
+
     list.innerHTML = entries.map(e =>
       `<li class="pick">
          <div class="pick__link">
            <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-             ${thumbEl(e)}
+             ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
            </a>
            <span class="pick__body">
              <a class="pick__title-link" href="venue.html?id=${e.id}">

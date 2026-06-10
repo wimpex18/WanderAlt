@@ -18,6 +18,28 @@ LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated
 
 A screenshot-driven audit of every public surface at 390/768/1440, run on the VM with the in-repo harness (method below). Design-system rules referenced here are canonical in `CLAUDE.md` → "Design system canon". Status at audit time: `npm run verify` **green, 24/24** page/width checks (zero overflow, zero console errors, zero tap-target violations) — the remaining flaws are finer-grained than the current assertions, which is exactly what this roadmap fixes: each finding lands with a new assertion so it can't regress silently.
 
+### Progress tracker (updated per PR — last: PR #65 fifth batch, June 2026 — **all 22 findings closed**)
+
+| Finding | Status | Finding | Status |
+|---|---|---|---|
+| F-1 hero scrim / title legibility | **FIXED** — root cause was a cascade-order bug painting the hero title ink (`.venue-title` declared after its `--onphoto` modifier); compound selector + full-height scrim ramp | F-12 raw `other` in meta | **FIXED** — guarded in every meta builder (5× buildMeta + Tonight kindline + venue block) |
+| F-2 FAB occlusion + strip affordance | **FIXED** — list-pane tail clearance + right-edge fade mask on `.mood-chips`/`.discover-pills` | F-13 venue context raw markdown | **FIXED** — `*emphasis*`/`_emphasis_` → `<em>`, HTML-escaped (mid-sentence cut = stored text, a generate-context artifact — out of frontend scope) |
+| F-3 off-grid literals | **FIXED** — 40 literals converted to `--s-*` tokens; remaining six are chip-class paddings, annotated as grid-exempt in styles.css | F-14 masthead width/baseline | **FIXED** (earlier in PR #65) |
+| F-4 Saved header/empty canon | **FIXED** — `.picks-empty` cards per segment, H1 → "Saved" | F-15 filter-rail/sort placement | **FIXED** — option (b) shipped: facet dropdown-pill row above results, sort right-aligned in the row; V-11 closed in full by the F-16 chrome compression |
+| F-5 Profile CTA rule | **FIXED** — `.profile-actions` stacks full-width <768 | F-16 chrome/rhythm pass | **FIXED** — Discover desktop chrome compressed (banner ribbon 120px, pills + mood strip share one hairline-split row, tighter lede); **V-11 now fully passes**: count, first row AND pin all inside the first viewport at 1280×900 with a filter active |
+| F-6 standfirst squeeze @390 | **FIXED** — lede stacks below 768, eyebrow above | F-17 Profile/About polish | **mostly fixed** — F-5 CTA stack shipped; About verified clean |
+| F-7 placeholder contrast | **FIXED** — `::placeholder` → `--c-ink-mute` (6.6:1) | F-18 curator bio 142ch | **FIXED** — `max-width: 64ch` |
+| F-8 glass-nav clearance | **FIXED** — body bottom padding + `--s-6` | F-19 Share 73×27 + harness blind spot | **FIXED** — `.curator-share` 44px + V-14 sweep live in verify.js (sweep immediately caught `taste-skip` at 18px and `map-cluster` at 42px; both fixed) |
+| F-9 map defaults + Vilnius | **FIXED** — `CITY_VIEWS` per-city land-weighted center/zoom (Tallinn/Riga 12.4, Helsinki 12.0, Vilnius 12.2), loud error on unknown city; probe confirms all four boot on their own core | F-20 place-page dead end | **FIXED** — kind de-duplicated, map links disambiguated, `.picks-empty` card |
+| F-10 repeated fallback quote | **FIXED** — `isEchoQuote()` in all five row renderers; echo rows attribute as "via @handle" | F-21 concierge label | **FIXED** — visible "Concierge" ≥768, button at 44px |
+| F-11 duplicate thumbs | **FIXED** — 91 legacy non-spatial photos nulled in Supabase (7 active) + consecutive-dup render guard on Today/Discover lists | F-22 control-weight inversion | **FIXED** — F-15b consolidated the workhorse filters into one labelled row; F-16's compression rebalanced the remaining chrome |
+
+**English-only content pipeline (June 2026, owner request).** The app is English; sources post in ET/RU/LV/LT/PL/FI/UK. Shipped cloud-side, not in this repo: `process-staging` **v38** hardens the language contract (event titles are descriptions, not proper nouns — with RU/ET examples) and adds a write-time compliance guard (any pick whose title/quote still contains Cyrillic gets one targeted Groq translation call before upsert, source title preserved in the new `picks.title_original` column — migration `picks_title_original_english_app`). New **`translate-picks`** function (v2, hand-invoke only, NOT scheduled — Groq llama-4-scout, ~25 items/call, time-capped) backfilled the backlog: two invocations + one manual SQL pass took 672 active picks to **0 Cyrillic titles / 0 Cyrillic quotes**, 66 originals preserved. Latin-script non-English titles are LLM-detected by the same function. `generate-context`/quotes were already English; Google Places (photos/geocode) is language-neutral.
+
+**Cloud sources committed (June 2026).** The deployed-only drift for the translation work is closed: `supabase/functions/process-staging/index.ts` synced to the deployed v38, `supabase/functions/translate-picks/index.ts` (v2) and the `20260610_picks_title_original.sql` migration journal added. (The broader deployed-only inventory — scrapers etc. — remains the architecture audit's item #3.)
+
+**Desktop width ladder extended (June 2026, owner request).** `--reading-max` gains 1440 ≥1680 and 1600 ≥1920 — a 1920 screen now carries 160px side margins instead of 320px. Swept 6 pages × {1680, 1920}: zero overflow, shell/chrome aligned (masthead spans the new widths). Per-block `ch` measures keep prose readable inside the wider shell.
+
 ### VM tooling (reproduce the audit on any fresh container)
 
 ```bash
@@ -49,12 +71,50 @@ Screenshots are read directly (multimodal) or diffed against `docs/screenshots/b
 
 **F-8 · LOW — content shows through the glass bottom-nav at page end.** On short pages (empty Saved) the colophon renders behind the translucent nav pill (legible-but-cluttered). Bottom padding should guarantee the last content line clears `--nav-h` + safe-area at every page length.
 
+### Below-the-fold & map-default addendum (June 2026 follow-up sweep)
+
+A second pass with full-page captures + scrolled-to-bottom viewport shots at 1440 (`npm run scroll` — added with this sweep) and a probe of the Discover map's default framing. These ran against **live Supabase data** (real photos loaded), so F-10…F-13 are production content/render issues, not sandbox artifacts.
+
+**F-9 · HIGH — map default framing is water-dominated, and Vilnius has no bounds entry.** The map boots by fitting `CITY_BOUNDS` (`map-tiles.js`), but the boxes extend deep into the sea: Tallinn `[[24.65,59.39],[24.86,59.49]]` fits to **zoom 10.88 on desktop / 9.62 mobile** with the Gulf of Finland filling most of the pane and the city core compressed into the bottom edge (Riga 10.69 similar; Helsinki's box also reaches past 60.2 into open water). Worse, **`CITY_BOUNDS` has no `vilnius` entry** — the city is live for internal testing, and `|| CITY_BOUNDS.tallinn` silently frames a Vilnius reader on Tallinn, 600 km away (same silent-fallback class as the `CITY_CONTEXT` bug that bit twice). Fix in `map-tiles.js`: land-weighted per-city default views (trim the north edges to the coastline, or store explicit `{center, zoom}` per city — city core should fill the pane at ~zoom 12+), add `vilnius`, and make an unknown city a loud console error, never a Tallinn fallback.
+
+**F-10 · MEDIUM — fallback quote repeats on every row.** On `curator.html` and venue "more from", every pick lacking its own quote prints the curator's signature line ("The underground isn't a place. It's a posture.") — six identical quotes in a row reads as a rendering bug and dilutes the one line that's supposed to be the loudest thing on screen. Render the fallback once (page level, where it already lives in the curator header) and omit the per-row quote when it would repeat.
+
+**F-11 · MEDIUM — identical thumbnails on consecutive rows.** Today's This Week tail shows six `@raul.reads` "Various venues" picks all carrying the **same photo**. `enrich-pick-images` skips non-spatial venues now, but legacy rows kept the photo it once assigned. Two-part fix: one-shot SQL nulling `image_url` where `venue ILIKE '%various%'` (the initials tile is the honest fallback), plus a render-side guard that drops to the initials tile when a thumb would duplicate its predecessor.
+
+**F-12 · LOW — raw `other` neighborhood leaks into meta.** Rows print `other · gig · Thu` — a raw bucket value shown verbatim. `buildMeta` should omit the neighborhood segment when it's `other`.
+
+**F-13 · LOW — venue "READ MORE" context renders raw markdown and truncates mid-sentence.** Seen live: "This isn't merely a chance to watch *Alcarràs" — a literal `*` from unprocessed emphasis, cut without an ellipsis. Strip/replace markdown emphasis in `context_md` rendering and truncate on a word boundary with `…`.
+
+**F-14 · FIXED (June 2026) — desktop masthead nav floated as a ~468px island and the active tab sat off-baseline.** Two CSS defects: `.nav`'s `margin: 0 auto` shrink-wrapped it as a body-flex item (the declared `max-width: var(--reading-max)` never engaged — `width: 100%` was missing), so the bar floated mid-page instead of spanning the shell like the topbar/banner/page; and the desktop active-item selector outranked the base sizing rule, inheriting the mobile pill's 12px/6px padding/gap — the active tab rendered 47px vs its neighbours' 55px, knocking labels off the shared baseline (the "Profile not aligned" report). Both fixed in `styles.css`; masthead now spans `--reading-max`, left-aligned with content edges, all items 55px on one baseline. Regression guard: V-9 baseline diff catches both classes.
+
+**F-15 · MEDIUM — Discover desktop filter rail and sort placement (proposal).** The stacked rail (quick pills → mood strip → FILTERS → CATEGORY → NEIGHBORHOOD → DISTANCE → SORT radio) consumes the top ~900px of the results column before the first event row, and the time dimension appears twice (Tonight/This week pills *and* the rail). Proposal, in order of preference: (a) at ≥1280 promote the rail to a true third column — `rail | results | map` — so results start at the top of their column; or (b) collapse CATEGORY/NEIGHBORHOOD/DISTANCE into compact dropdown-pills on one row above the results (the pattern Airbnb/Booking settled on). Independent of (a)/(b): SORT is a view control, not a filter — move it out of the rail onto the results-count line as a compact right-aligned "Sort: Relevance ▾", and merge the duplicated time controls. Chip size stays 32px (Material spec) — the win is placement and grouping, not scale.
+
+**F-16 · MEDIUM — Today page scale & alignment rhythm pass.** Element sizing on the main page drifts: the mono eyebrow/section-label runs, section subs, and right-aligned counts ("83 more in Discover") don't share one consistent scale step or baseline with their left-side counterparts ("Browse all this week →"); This Week thumbnails differ in size from the same picks' Discover card thumbs; the digest input + Subscribe button pair don't share a height. One pass, token-only changes: every label on the 11/12px mono steps, left link + right count on one baseline per section rule, thumbs on the shared `.thumb--lg` size, input/button pair equalized at the 44px control height.
+
+**F-17 · LOW — Profile + About polish pass.** Profile: the CTA pair (View reading list → / Export JSON) is the F-5 inconsistency — apply the mobile full-width-stack rule; equalize the password input and Update button to the same control height and width rhythm; section spacing onto the `--s-*` ladder where off-grid. About reads clean (ch measures hold; link cards aligned) — verify-only, no change expected.
+
+### Deep-read addendum (June 2026 — end-user usability pass; full write-up in `docs/ux-audit-2026-06.md`)
+
+A second, journey-level read of the same screenshot corpus. Headline: **the filter→result feedback loop is broken on desktop** — activating Tonight at 1280×900 leaves the results count, the matching row, and the map pin all below the fold while the map shows open water (`smoke-desktop-discover-tonight.png`). This compounds F-9 + F-15 and re-ranks them to the front of Phase 1. New findings:
+
+**F-18 · MEDIUM — curator bio renders at 142ch per line** (measured 1136px @16px at 1280) against the 56–64ch rule. One-line fix: `max-width: 64ch` on `.curator-profile__bio`; sweep other long-form blocks (V-13 gates it).
+
+**F-19 · MEDIUM — curator `Share →` is 73×27px and invisible to the harness.** Under the 44px floor, and its selector isn't in verify's committed TAP_SELECTORS, so the suite can't regress-catch it. Fix the control, add the selector, and add the generic ≥44px sweep (V-14) so unlisted controls can't hide again.
+
+**F-20 · LOW — place page is a dead end.** Kind label duplicated (eyebrow `GALLERY` + sub "Gallery"), two adjacent map links with indistinguishable labels ("Open in maps ↗" external vs "See on map →" internal), ~85% dead white below the fold. Reuse `.picks-empty` for the no-events state, disambiguate the link labels, show the neighborhood.
+
+**F-21 · LOW — concierge promise without a labeled affordance.** The standfirst sells "let the concierge match your night"; the only entry is an unlabeled sparkle glyph (the product's single "generic AI app" tell). Label it "Concierge" at least ≥768px.
+
+**F-22 · LOW — Discover control weight inverted.** Search field ~1216×64 (heaviest element, secondary action), scope toggle next (once-per-session action), while the actual workhorses (time/category filters) are the smallest. Folds into the F-15 redesign as its sizing principle: control weight proportional to use frequency.
+
+Suite additions: **V-11** filter feedback in viewport (count + ≥1 row + ≥1 pin at 1280×900 after activating Tonight) · **V-12** map default frame (per-city zoom ≥ ~11.5, city core in frame, every live city in `CITY_BOUNDS`) · **V-13** no prose block > 70ch · **V-14** generic interactive-control ≥44px sweep with exemption list.
+
 ### Execution phases (each lands with its regression assertion)
 
 | Phase | Scope | Findings | Exit criterion |
 |---|---|---|---|
 | **0 · Tooling** (done, this session) | deps installed on VM, verify green 24/24, fresh 42-shot smoke set, baseline extended to the audit surfaces | — | `npm run verify` exits 0; baseline in `docs/screenshots/baseline/` |
-| **1 · Legibility & a11y** | scrim ramp, placeholder contrast, glass-nav clearance | F-1, F-7, F-8 | new verify assertion: overlaid hero text box ⊂ scrim ≥0.4-alpha zone; placeholder color ≥4.5:1 |
+| **1 · Legibility & a11y** | **journey first (deep-read re-rank):** F-9 map defaults + F-15 result visibility, then scrim ramp, placeholder contrast, glass-nav clearance, bio measure, Share control | F-9, F-15, F-1, F-7, F-8, F-18, F-19 | V-11 + V-12 pass; new verify assertion: overlaid hero text box ⊂ scrim ≥0.4-alpha zone; placeholder color ≥4.5:1 |
 | **2 · Grid sweep** | all off-grid literals → `--s-*`; FAB offset derived from `--nav-h` | F-3 | `grep -E ':\s*[0-9]*(6|10|14|18)px' styles.css` count = 0 (chips' Material paddings whitelisted); smoke-diff reviewed |
 | **3 · Component unification** | Saved header + empty-card canon, Profile CTA rule, Discover standfirst stack, FAB clearance + scroll-strip fade | F-2, F-4, F-5, F-6 | scenarios V-5…V-8 below pass |
 | **4 · Baseline refresh & hardening** | replace intentionally-changed baselines, add the new assertions to `verify.js`/`e2e.js`, re-run Lighthouse | — | verify + e2e green; baseline README updated |

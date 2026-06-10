@@ -33,16 +33,30 @@
 
   const buildMeta = (entry) => {
     const parts = [];
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const nhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null;
     /* Going rows: show neighborhood · kind · time (day already in time-col) */
     if (entry.day) {
-      parts.push(entry.neighborhood, entry.kind);
+      parts.push(nhood, entry.kind);
       if (entry.time) parts.push(entry.time);
     } else {
       /* Reading rows (places): neighborhood · kind · hours if set */
-      parts.push(entry.venue || entry.neighborhood, entry.kind);
+      parts.push(entry.venue || nhood, entry.kind);
       if (entry.time) parts.push(entry.time);
     }
     return parts.filter(Boolean).join(' · ');
+  };
+
+  /* A pick whose quote merely echoes the curator's signature tagline adds
+     noise row after row (F-10) — render the quote only when it was written
+     for the pick; otherwise attribute the row with a quiet "via @handle"
+     (the Today list idiom). Empty quotes take the same path. */
+  const isEchoQuote = (e) => {
+    const q = (e.quote || '').trim().toLowerCase();
+    if (!q) return true;
+    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
+    const c  = cs.find(x => x.handle === e.handle);
+    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
   };
 
   /* ── Row builders ─────────────────────────────────────────── */
@@ -80,10 +94,12 @@
            <a href="${venueHref(entry.id)}">${entry.title}</a>${entry.__change ? ` <span class="list-row__changed">${entry.__change}</span>` : ''}
          </p>
          <p class="list-row__meta">${buildMeta(entry)}</p>
-         <p class="list-row__quote">
+         ${isEchoQuote(entry)
+           ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a></p>`
+           : `<p class="list-row__quote">
            &mdash; ${entry.quote}
            <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
-         </p>
+         </p>`}
        </div>`;
     return li;
   };
@@ -100,22 +116,31 @@
            <a href="${venueHref(entry.id)}">${entry.title}</a>
          </p>
          <p class="list-row__meta">${buildMeta(entry)}</p>
-         <p class="list-row__quote">
+         ${isEchoQuote(entry)
+           ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a></p>`
+           : `<p class="list-row__quote">
            &mdash; ${entry.quote}
            <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
-         </p>
+         </p>`}
        </div>`;
     return li;
   };
 
-  /* Empty-state row shown when a dynamic segment has no items. */
-  const emptyRow = (msg) => {
+  /* Empty-state row shown when a dynamic segment has no items — the
+     crafted .picks-empty card (city plate + title + sub), same canon as
+     Today and the place page; bare mono one-liners read as broken (F-4). */
+  const emptyRow = (title, subHTML) => {
     const li = document.createElement('li');
-    li.className = 'list-row';
     li.dataset.empty = 'true';
+    const city = localStorage.getItem('wa:city') || 'tallinn';
     li.innerHTML =
-      `<p style="font-family:var(--ff-mono);font-size:var(--fs-meta);
-                 color:var(--c-ink-mute);letter-spacing:0.04em">${msg}</p>`;
+      `<div class="picks-empty">
+         <div class="picks-empty__plate" style="background-image:url('./assets/${city}-overview.svg')" aria-hidden="true"></div>
+         <div class="picks-empty__body">
+           <p class="picks-empty__title">${title}</p>
+           <p class="picks-empty__sub">${subHTML}</p>
+         </div>
+       </div>`;
     return li;
   };
 
@@ -213,7 +238,8 @@
       if (goingEntries.length) {
         goingEntries.forEach(e => goingList.appendChild(goingRow(e)));
       } else if (!gone.length) {
-        goingList.appendChild(emptyRow('No upcoming events bookmarked.'));
+        goingList.appendChild(emptyRow('Nothing on the calendar yet',
+          'Save a dated pick and it lands here. <a href="./discover.html?time=thisweek">Browse this week &rarr;</a>'));
       }
     }
 
@@ -224,7 +250,8 @@
       if (readingEntries.length) {
         readingEntries.forEach(e => readingList.appendChild(readingRow(e)));
       } else {
-        readingList.appendChild(emptyRow('No places saved yet.'));
+        readingList.appendChild(emptyRow('No saves yet',
+          'Bookmark places and writing to come back to. <a href="./discover.html?type=places">Browse places &rarr;</a>'));
       }
     }
 

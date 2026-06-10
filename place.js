@@ -43,10 +43,24 @@
     : '';
 
   const buildMeta = (e) => {
-    const parts = [e.neighborhood, e.kind];
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
+    const parts = [nhood, e.kind];
     if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
     else if (e.time)                  parts.push(e.time);
     return parts.filter(Boolean).join(' · ');
+  };
+
+  /* A pick whose quote merely echoes the curator's signature tagline adds
+     noise row after row (F-10) — render the quote only when it was written
+     for the pick; otherwise attribute the row with a quiet "via @handle"
+     (the Today list idiom). Empty quotes take the same path. */
+  const isEchoQuote = (e) => {
+    const q = (e.quote || '').trim().toLowerCase();
+    if (!q) return true;
+    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
+    const c  = cs.find(x => x.handle === e.handle);
+    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
   };
 
   /* Photo media tile — reuses the app's .thumb--lg treatment so "Events
@@ -82,7 +96,9 @@
     if (descEl) descEl.content = `${venue.name} — ${kindLabel(venue.kind)} in ${venue.neighborhood || venue.city}.`;
 
     const { href, label } = backLink();
-    const meta = [venue.neighborhood, kindLabel(venue.kind)].filter(Boolean).join(' · ');
+    /* Kind already carries the eyebrow — repeating it here printed the
+       same word twice on venues with no neighborhood (F-20). */
+    const meta = venue.neighborhood || '';
 
     const links = [
       socialLink('website',   venue.website,   venue.name),
@@ -96,8 +112,8 @@
        map. Only when the venue is geocoded. */
     const mapLinks = (venue.lat != null && venue.lng != null)
       ? `<p class="place-maplinks">
-           <a class="place-maplink" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">Open in maps &uarr;</a>
-           <a class="place-maplink" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}">See on map &rarr;</a>
+           <a class="place-maplink" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">Open in Google Maps &uarr;</a>
+           <a class="place-maplink" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}">See on city map &rarr;</a>
          </p>`
       : '';
 
@@ -118,13 +134,21 @@
               <div class="list-row__body">
                 <p class="list-row__title"><a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a></p>
                 <p class="list-row__meta">${esc(buildMeta(e))}</p>
-                ${e.quote ? `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>` : ''}
+                ${isEchoQuote(e)
+                  ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
+                  : `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`}
               </div>
             </li>`).join('')}
         </ol>
       </section>` : `
       <hr class="rule" style="margin-bottom:0">
-      <p class="meta place-no-events">No events scheduled here right now. Check back, or <a href="./discover.html">browse what&rsquo;s on &rarr;</a></p>`;
+      <div class="picks-empty">
+        <div class="picks-empty__plate" style="background-image:url('./assets/${esc(venue.city || (window.WA && window.WA.CITY) || 'tallinn')}-overview.svg')" aria-hidden="true"></div>
+        <div class="picks-empty__body">
+          <p class="picks-empty__title">Nothing on here right now</p>
+          <p class="picks-empty__sub">Check back, or <a href="./discover.html">browse what&rsquo;s on &rarr;</a></p>
+        </div>
+      </div>`;
 
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>

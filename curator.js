@@ -21,7 +21,9 @@
    ============================================================ */
 (() => {
   const buildMeta = (entry) => {
-    const parts = [entry.neighborhood, entry.kind];
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const nhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null;
+    const parts = [nhood, entry.kind];
     if (entry.day && entry.day !== 'Tonight') parts.push(entry.time ? `${entry.day} ${entry.time}` : entry.day);
     else if (entry.time)                      parts.push(entry.time);
     return parts.filter(Boolean).join(' · ');
@@ -109,7 +111,9 @@
                    <a href="venue.html?id=${e.id}">${e.title}</a>
                  </p>
                  <p class="list-row__meta">${buildMeta(e)}</p>
-                 <p class="list-row__quote">&mdash; ${e.quote}</p>
+                 ${e.quote && (!curator.tagline || e.quote.trim().toLowerCase() !== curator.tagline.trim().toLowerCase())
+                   ? `<p class="list-row__quote">&mdash; ${e.quote}</p>`
+                   : ''}
                  ${e.moodTags && e.moodTags.length
                    ? `<p class="list-row__tags">${
                        e.moodTags.map(t =>
@@ -133,7 +137,7 @@
         <div class="curator-profile">
           <p class="curator-profile__handle">${curator.handle}</p>
           ${curator.tagline ? `<p class="curator-profile__tagline">${curator.tagline}</p>` : ''}
-          <button type="button" id="curator-share-btn" style="margin-top:var(--s-3);font-family:var(--ff-mono);font-size:11px;letter-spacing:0.06em;color:var(--c-ink-mute);background:none;border:1px solid var(--c-rule);border-radius:3px;padding:4px 10px;cursor:pointer;">Share &rarr;</button>
+          <button type="button" id="curator-share-btn" class="curator-share">Share &rarr;</button>
         </div>
 
         ${curator.bio ? `
