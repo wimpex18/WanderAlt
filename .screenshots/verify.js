@@ -64,10 +64,29 @@ const BUTTON_SWEEP_EXEMPT =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* Wait for the self-booted server to actually accept connections —
+   a fixed sleep raced npx's cold-cache startup on CI (the 2026-06-10
+   ERR_CONNECTION_REFUSED failure). Polls up to ~30 s. */
+const waitForServer = async (url, timeoutMs = 30_000) => {
+  const http = require('http');
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const ok = await new Promise((resolve) => {
+      const req = http.get(url, (res) => { res.resume(); resolve(true); });
+      req.on('error', () => resolve(false));
+      req.setTimeout(2000, () => { req.destroy(); resolve(false); });
+    });
+    if (ok) return;
+    await sleep(300);
+  }
+  throw new Error(`server at ${url} did not come up within ${timeoutMs}ms`);
+};
+
+
 (async () => {
   const server = spawn('npx', ['http-server', '.', '-p', String(PORT), '-c-1', '--silent'],
     { stdio: 'ignore' });
-  await sleep(2000);
+  await waitForServer(`${BASE}/index.html`);
 
   const browser = await puppeteer.launch({
     headless: true,
