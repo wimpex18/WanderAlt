@@ -49,8 +49,18 @@ const TAP_SELECTORS = [
   '.venue-social__link', '.auth-panel__submit', '.auth-panel__close',
   '.profile-toggle', '.topbar__brand', '.surprise-btn',
   '.map-zoom-btn', '.map-locate-fab', '.bookmark',
+  '.curator-share', '.search-box__ai-btn',
 ];
 const TAP_FLOOR = 43; /* 44 minus 1px sub-pixel tolerance */
+
+/* V-14 — generic sweep: EVERY visible <button> must hit the floor unless
+   it matches an exemption. Exists because the curator Share button sat at
+   73×27 for months, invisible to the committed-selector check above
+   (ROADMAP F-19). Exemptions = the sanctioned small patterns only:
+   chips (~32px Material spec) and the in-field clear (×) affordance. */
+const BUTTON_SWEEP_EXEMPT =
+  '.chip, .mood-chip, .venue-mood, .m-chip, .taste-chip, .sheet-chip, ' +
+  '.discover-pill, .search-box__clear';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -117,6 +127,25 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         return [...new Set(out)];
       }, TAP_SELECTORS, TAP_FLOOR);
       for (const s of small) failures.push(`TAPTARGET ${where}  ${s}`);
+
+      /* 4. V-14 generic button sweep (catches controls missing from
+            TAP_SELECTORS — see the constant's comment). */
+      const sweep = await page.evaluate((exempt, floor) => {
+        const out = [];
+        for (const el of document.querySelectorAll('button')) {
+          if (el.matches(exempt) || el.closest(exempt)) continue;
+          const r = el.getBoundingClientRect();
+          const cs = getComputedStyle(el);
+          const visible = r.width > 0 && r.height > 0 &&
+            cs.display !== 'none' && cs.visibility !== 'hidden';
+          if (visible && r.height < floor) {
+            const tag = el.className || el.id || el.textContent.trim().slice(0, 24);
+            out.push(`button[${tag}] (${Math.round(r.height)}px)`);
+          }
+        }
+        return [...new Set(out)];
+      }, BUTTON_SWEEP_EXEMPT, TAP_FLOOR);
+      for (const s of sweep) failures.push(`BTNSWEEP  ${where}  ${s}`);
 
       await page.close();
     }

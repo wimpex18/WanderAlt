@@ -12,9 +12,9 @@
        FAB behaviour at end of content
      · the map's DEFAULT framing on Discover (no filters): zoom,
        center per city, printed as JSON + a pane screenshot —
-       catches water-dominated fit and missing CITY_BOUNDS
-       entries (a city absent from map-tiles.js silently frames
-       Tallinn)
+       catches water-dominated framing and missing CITY_VIEWS
+       entries (a city absent from map-tiles.js falls back to
+       Tallinn framing, with a console error since F-9)
 
    Server must be running at :5173 (npm start). Findings from the
    first run: ROADMAP.md § F-9…F-13.
@@ -36,8 +36,8 @@ const PAGES = [
 ];
 
 /* Cities whose Discover map default framing gets probed. Vilnius is
-   included on purpose: it has no CITY_BOUNDS entry yet (F-9) and
-   must stop silently framing Tallinn. */
+   included on purpose: it had no city entry before F-9 and silently
+   framed Tallinn — keep probing so the class of bug stays dead. */
 const MAP_CITIES = ['tallinn', 'riga', 'helsinki', 'vilnius'];
 
 (async () => {

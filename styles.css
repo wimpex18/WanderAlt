@@ -1200,6 +1200,18 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   transition: color var(--t-fast), background var(--t-fast);
 }
 .search-box__ai-btn:hover { color: var(--c-accent); }
+/* "Concierge" label — the standfirst promises a concierge; an unlabeled
+   sparkle was the one generic-AI tell (F-21). Icon-only below 768. */
+.search-box__ai-label {
+  display: none;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (min-width: 768px) {
+  .search-box__ai-label { display: inline; }
+}
 .discover-search[data-mode="match"] .search-box__ai-btn { color: var(--c-accent); }
 .discover-search[data-mode="match"] .search-box { border-color: var(--c-accent); }
 
@@ -1251,7 +1263,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   appearance: none;
 }
 .search-input::placeholder {
-  color: var(--c-faint);
+  /* ink-mute, not faint: placeholders are text under strict WCAG
+     readings — faint (#a1a1aa, 2.6:1) stays decorative-glyph-only (F-7). */
+  color: var(--c-ink-mute);
   font-style: italic;
   opacity: 1;
 }
@@ -1795,6 +1809,9 @@ html.wa-taste-done .taste-onboarding { display: none; }
   align-items: center;
 }
 .taste-skip, .taste-done, .taste-reset {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;   /* tap-target floor — the sweep caught these at 18px (F-19/V-14) */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.06em;
@@ -1972,14 +1989,22 @@ html.wa-taste-done .taste-onboarding { display: none; }
   position: absolute;
   inset: 0;
   z-index: -1;
+  /* Full-height ramp (F-1): a 3-line title + eyebrow + meta fills most
+     of the 280px mobile hero, so the ≥0.4-alpha zone must reach ~2/3 up
+     and never hit zero — the old 75% stop left long titles' upper lines
+     on near-raw photo (measured against the brightest catalog photos). */
   background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.74) 0%,
-    rgba(0, 0, 0, 0.4) 40%,
-    rgba(0, 0, 0, 0) 75%);
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.55) 38%,
+    rgba(0, 0, 0, 0.38) 68%,
+    rgba(0, 0, 0, 0.12) 100%);
 }
 .detail-hero__foot { display: block; }
 .eyebrow--onphoto { color: rgba(255, 255, 255, 0.82); margin-bottom: var(--s-2); }
-.venue-title--onphoto { color: #fff; margin: 0 0 var(--s-2); }
+/* Compound selector on purpose: the base .venue-title rule is declared
+   AFTER this modifier (same specificity), which silently painted the
+   hero title ink-on-photo — the real F-1 root cause. */
+.venue-title.venue-title--onphoto { color: #fff; margin: 0 0 var(--s-2); }
 .meta--onphoto { color: rgba(255, 255, 255, 0.82); }
 @media (min-width: 768px) {
   .detail-hero { min-height: 360px; }
@@ -2184,8 +2209,29 @@ html.wa-taste-done .taste-onboarding { display: none; }
   line-height: var(--lh-body);
   color: var(--c-ink-soft);
   text-wrap: pretty;
+  max-width: 64ch;   /* reading measure inside the wide shell (was ~142ch at 1280 — F-18) */
   margin: 0 0 var(--s-2);
 }
+
+/* Curator share — mono micro-action, 44px floor (was a 73×27 inline-styled
+   button invisible to the verify harness — F-19). */
+.curator-share {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: var(--s-2);
+  padding: 0 var(--s-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  background: none;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.curator-share:hover { color: var(--c-accent); border-color: var(--c-accent); }
 
 @media (min-width: 768px) {
   .curator-profile { padding: var(--s-6) 0 var(--s-4); }
@@ -3320,6 +3366,15 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   padding: 0 var(--gutter) 2px;   /* 2px bottom prevents chip border clip */
 }
 .mood-chips::-webkit-scrollbar { display: none; }
+/* Scroll affordance: fade the right edge of the strip where it scrolls
+   (mobile) so cut-off chips read as "more this way", not clipped (F-2). */
+@media (max-width: 767px) {
+  .mood-chips,
+  .discover-pills {
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--s-6)), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--s-6)), transparent);
+  }
+}
 
 /* ============================================================
    404 PAGE
@@ -4516,8 +4571,8 @@ a.handle:hover { color: var(--c-ink); }
 .map-cluster {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 42px;
-  height: 42px;
+  width: 44px;    /* tap-target floor (was 42 — V-14 sweep) */
+  height: 44px;
   border-radius: 50%;
   background: var(--cluster-bg, var(--c-ink));
   color: #fff;
@@ -4981,7 +5036,7 @@ body.discover-places .mood-chips { display: none; }
 .discover-view-fab {
   position: fixed;
   right: var(--s-3);
-  bottom: calc(72px + var(--s-3));  /* clear of bottom nav */
+  bottom: calc(var(--nav-h) + var(--s-3));  /* clear of bottom nav — derived, not the old hardcoded 72px (F-3) */
   z-index: 50;
   display: inline-flex;
   align-items: center;
@@ -5003,6 +5058,13 @@ body.discover-places .mood-chips { display: none; }
 .discover-view-fab:hover { background: var(--c-accent); }
 .discover-view-fab--map-active { background: var(--c-accent); }
 .discover-view-fab__label { line-height: 1; }
+
+/* While the FAB floats (mobile/tablet — hidden in the desktop split),
+   give the list pane enough tail room that the last rows can scroll
+   clear of it (F-2: the FAB sat on top of the final rows). */
+@media (max-width: 1023px) {
+  .discover-pane--list { padding-bottom: calc(var(--s-9) + var(--s-2)); }
+}
 
 /* ── Free-entry badge in result rows ───────────────────────── */
 .list-row__free {
@@ -5318,9 +5380,11 @@ body[data-page="discover"] .discover-search .search-box:focus-within { border-co
 body[data-page="discover"] .discover-search .search-input { font-size: 17px; letter-spacing: -0.01em; }
 body[data-page="discover"] .discover-search .search-box__icon { color: var(--c-faint); }
 body[data-page="discover"] .discover-search .search-box__ai-btn {
-  width: 36px; height: 36px; margin: 0;
+  width: auto; min-width: 44px; min-height: 44px; margin: 0;
+  gap: var(--s-2);
+  padding: 0 var(--s-2);
   border: var(--rule-w) solid var(--c-rule);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--c-paper-deep);
 }
 body[data-page="discover"] .discover-search .search-box__ai-btn:hover { color: var(--c-accent); border-color: var(--c-accent); }
@@ -5506,10 +5570,13 @@ body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
   position: absolute;
   inset: 0;
   z-index: -1;
+  /* Same full-height ramp as .detail-hero (F-1) — long titles stay in
+     the ≥0.4-alpha zone, eyebrow/badge keep a ≥0.12 floor at the top. */
   background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.72) 0%,
-    rgba(0, 0, 0, 0.38) 38%,
-    rgba(0, 0, 0, 0) 72%);
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.55) 38%,
+    rgba(0, 0, 0, 0.38) 68%,
+    rgba(0, 0, 0, 0.12) 100%);
 }
 .tonight__hero-foot { display: block; }
 .tonight__badge--onphoto {

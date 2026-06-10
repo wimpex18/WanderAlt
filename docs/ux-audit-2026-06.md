@@ -63,4 +63,10 @@ New regression scenarios added to the suite: **V-11** (filter feedback in viewpo
 
 ---
 
+## Progress
+
+Implementation status lives in one place: `ROADMAP.md` → "Progress tracker". As of PR #65: F-1 (root cause turned out to be a cascade-order bug painting the hero title ink — the scrim was secondary), F-2, F-7, F-9, F-14, F-18, F-19, F-20, F-21 fixed; F-3 partial; the V-14 sweep is live in `verify.js` and caught two controls this document never saw (`taste-skip` at 18px, `map-cluster` at 42px) on its first run.
+
+---
+
 *June 2026 — second-pass (deep) read of the same screenshot corpus; companion to `ROADMAP.md` § Frontend and the per-page audits in `docs/design-audit-*.md`.*

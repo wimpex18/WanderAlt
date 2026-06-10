@@ -18,6 +18,22 @@ LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated
 
 A screenshot-driven audit of every public surface at 390/768/1440, run on the VM with the in-repo harness (method below). Design-system rules referenced here are canonical in `CLAUDE.md` → "Design system canon". Status at audit time: `npm run verify` **green, 24/24** page/width checks (zero overflow, zero console errors, zero tap-target violations) — the remaining flaws are finer-grained than the current assertions, which is exactly what this roadmap fixes: each finding lands with a new assertion so it can't regress silently.
 
+### Progress tracker (updated per PR — last: PR #65, June 2026)
+
+| Finding | Status | Finding | Status |
+|---|---|---|---|
+| F-1 hero scrim / title legibility | **FIXED** — root cause was a cascade-order bug painting the hero title ink (`.venue-title` declared after its `--onphoto` modifier); compound selector + full-height scrim ramp | F-12 raw `other` in meta | open |
+| F-2 FAB occlusion + strip affordance | **FIXED** — list-pane tail clearance + right-edge fade mask on `.mood-chips`/`.discover-pills` | F-13 venue context raw markdown | open |
+| F-3 off-grid literals | **partial** — FAB offset now derives from `--nav-h`; the ~50-literal sweep stays Phase 2 | F-14 masthead width/baseline | **FIXED** (earlier in PR #65) |
+| F-4 Saved header/empty canon | open | F-15 filter-rail/sort placement | open — needs the (a) third-column vs (b) dropdown-pills call |
+| F-5 Profile CTA rule | open | F-16 Today rhythm pass | open |
+| F-6 standfirst squeeze @390 | open | F-17 Profile/About polish | open |
+| F-7 placeholder contrast | **FIXED** — `::placeholder` → `--c-ink-mute` (6.6:1) | F-18 curator bio 142ch | **FIXED** — `max-width: 64ch` |
+| F-8 glass-nav clearance | open | F-19 Share 73×27 + harness blind spot | **FIXED** — `.curator-share` 44px + V-14 sweep live in verify.js (sweep immediately caught `taste-skip` at 18px and `map-cluster` at 42px; both fixed) |
+| F-9 map defaults + Vilnius | **FIXED** — `CITY_VIEWS` per-city land-weighted center/zoom (Tallinn/Riga 12.4, Helsinki 12.0, Vilnius 12.2), loud error on unknown city; probe confirms all four boot on their own core | F-20 place-page dead end | **FIXED** — kind de-duplicated, map links disambiguated, `.picks-empty` card |
+| F-10 repeated fallback quote | open (needs live-data render change) | F-21 concierge label | **FIXED** — visible "Concierge" ≥768, button at 44px |
+| F-11 duplicate thumbs | open (one-shot SQL + render guard) | F-22 control-weight inversion | open (folds into F-15) |
+
 ### VM tooling (reproduce the audit on any fresh container)
 
 ```bash

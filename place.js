@@ -82,7 +82,9 @@
     if (descEl) descEl.content = `${venue.name} — ${kindLabel(venue.kind)} in ${venue.neighborhood || venue.city}.`;
 
     const { href, label } = backLink();
-    const meta = [venue.neighborhood, kindLabel(venue.kind)].filter(Boolean).join(' · ');
+    /* Kind already carries the eyebrow — repeating it here printed the
+       same word twice on venues with no neighborhood (F-20). */
+    const meta = venue.neighborhood || '';
 
     const links = [
       socialLink('website',   venue.website,   venue.name),
@@ -96,8 +98,8 @@
        map. Only when the venue is geocoded. */
     const mapLinks = (venue.lat != null && venue.lng != null)
       ? `<p class="place-maplinks">
-           <a class="place-maplink" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">Open in maps &uarr;</a>
-           <a class="place-maplink" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}">See on map &rarr;</a>
+           <a class="place-maplink" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">Open in Google Maps &uarr;</a>
+           <a class="place-maplink" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}">See on city map &rarr;</a>
          </p>`
       : '';
 
@@ -124,7 +126,13 @@
         </ol>
       </section>` : `
       <hr class="rule" style="margin-bottom:0">
-      <p class="meta place-no-events">No events scheduled here right now. Check back, or <a href="./discover.html">browse what&rsquo;s on &rarr;</a></p>`;
+      <div class="picks-empty">
+        <div class="picks-empty__plate" style="background-image:url('./assets/${esc(venue.city || (window.WA && window.WA.CITY) || 'tallinn')}-overview.svg')" aria-hidden="true"></div>
+        <div class="picks-empty__body">
+          <p class="picks-empty__title">Nothing on here right now</p>
+          <p class="picks-empty__sub">Check back, or <a href="./discover.html">browse what&rsquo;s on &rarr;</a></p>
+        </div>
+      </div>`;
 
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>

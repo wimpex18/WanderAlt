@@ -17,11 +17,21 @@
   'use strict';
   window.WA = window.WA || {};
 
-  /* City defaults — used by fitBounds() before any pins have lat/lng. */
-  const CITY_BOUNDS = {
-    tallinn:  [[24.65, 59.39], [24.86, 59.49]],
-    helsinki: [[24.84, 60.13], [25.10, 60.27]],
-    riga:     [[24.02, 56.89], [24.21, 57.02]],
+  /* City default views — what the map shows before any pins exist.
+     Explicit land-weighted {center, zoom} per city, NOT a bbox fit:
+     these are coastal cities, so fitting a bounding box put half the
+     frame in open water (Tallinn fit to its old bbox landed at zoom
+     ~10.9 desktop / ~9.6 mobile with the Gulf of Finland filling the
+     pane — ROADMAP F-9). A fixed center/zoom also frames identically
+     in the narrow mobile pane and the desktop split pane.
+     EVERY live city in city.js MUST have an entry — a missing one is
+     a loud console error (the silent fall-back-to-Tallinn class of
+     bug has bitten twice; see CITY_CONTEXT in process-staging). */
+  const CITY_VIEWS = {
+    tallinn:  { center: [24.745, 59.434], zoom: 12.4 },  /* Old Town · Kalamaja · Telliskivi */
+    helsinki: { center: [24.938, 60.168], zoom: 12.0 },  /* Kallio · Punavuori · Kamppi */
+    riga:     { center: [24.105, 56.946], zoom: 12.4 },  /* Centrs · Old Riga · Miera iela */
+    vilnius:  { center: [25.282, 54.685], zoom: 12.2 },  /* Senamiestis · Užupis · Naujamiestis */
   };
 
   let map      = null;     /* maplibregl.Map instance */
@@ -37,14 +47,18 @@
       console.warn('[map-tiles] maplibregl global not found — basemap disabled.');
       return null;
     }
-    const city   = opts.city || (window.WA && window.WA.CITY) || 'tallinn';
-    const bounds = CITY_BOUNDS[city] || CITY_BOUNDS.tallinn;
+    const city = opts.city || (window.WA && window.WA.CITY) || 'tallinn';
+    let view = CITY_VIEWS[city];
+    if (!view) {
+      console.error(`[map-tiles] no CITY_VIEWS entry for "${city}" — add one. Falling back to Tallinn framing.`);
+      view = CITY_VIEWS.tallinn;
+    }
 
     map = new maplibregl.Map({
       container:   containerId,
       style:       opts.styleUrl || './map-style.json',
-      bounds,
-      fitBoundsOptions: { padding: 40 },
+      center:      view.center,
+      zoom:        view.zoom,
       attributionControl: { compact: true },
       cooperativeGestures: false,
       dragRotate: false,

@@ -133,7 +133,7 @@
         <div class="curator-profile">
           <p class="curator-profile__handle">${curator.handle}</p>
           ${curator.tagline ? `<p class="curator-profile__tagline">${curator.tagline}</p>` : ''}
-          <button type="button" id="curator-share-btn" style="margin-top:var(--s-3);font-family:var(--ff-mono);font-size:11px;letter-spacing:0.06em;color:var(--c-ink-mute);background:none;border:1px solid var(--c-rule);border-radius:3px;padding:4px 10px;cursor:pointer;">Share &rarr;</button>
+          <button type="button" id="curator-share-btn" class="curator-share">Share &rarr;</button>
         </div>
 
         ${curator.bio ? `
