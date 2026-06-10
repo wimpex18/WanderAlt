@@ -43,10 +43,24 @@
     : '';
 
   const buildMeta = (e) => {
-    const parts = [e.neighborhood, e.kind];
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
+    const parts = [nhood, e.kind];
     if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
     else if (e.time)                  parts.push(e.time);
     return parts.filter(Boolean).join(' · ');
+  };
+
+  /* A pick whose quote merely echoes the curator's signature tagline adds
+     noise row after row (F-10) — render the quote only when it was written
+     for the pick; otherwise attribute the row with a quiet "via @handle"
+     (the Today list idiom). Empty quotes take the same path. */
+  const isEchoQuote = (e) => {
+    const q = (e.quote || '').trim().toLowerCase();
+    if (!q) return true;
+    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
+    const c  = cs.find(x => x.handle === e.handle);
+    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
   };
 
   /* Photo media tile — reuses the app's .thumb--lg treatment so "Events
@@ -120,7 +134,9 @@
               <div class="list-row__body">
                 <p class="list-row__title"><a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a></p>
                 <p class="list-row__meta">${esc(buildMeta(e))}</p>
-                ${e.quote ? `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>` : ''}
+                ${isEchoQuote(e)
+                  ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
+                  : `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`}
               </div>
             </li>`).join('')}
         </ol>

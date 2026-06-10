@@ -5246,35 +5246,103 @@ body.discover-places .mood-chips { display: none; }
 body.discover-sheet-open { overflow: hidden; }
 
 /* ── Desktop split presentation ─────────────────────────────── */
+/* Facet pills (F-15b) — hidden on mobile (the sheet shows groups
+   expanded); ≥1024px each becomes the dropdown trigger of its group. */
+.facet-pill { display: none; }
+
 @media (min-width: 1024px) {
-  /* Persistent filter rail at the top of the list column — no sheet, no
-     "+ Filters" trigger, no Apply (changes apply live). A wide split-view
-     has room to keep filters visible (Baymard desktop guidance). */
+  /* The sheet becomes ONE compact row of facet dropdown-pills directly
+     above the results (F-15b — Airbnb/Booking pattern). The old stacked
+     rail consumed ~900px of the results column before the first row;
+     control weight is now proportional to use frequency (F-22). No
+     "+ Filters" trigger, no Apply (changes apply live). */
   .discover-sheet {
     position: static;
     width: auto;
     max-height: none;
     border: 0;
-    border-bottom: var(--rule-w) solid var(--c-rule);
     border-radius: 0;
-    margin: 0 0 var(--s-4);
+    margin: 0 0 var(--s-3);
     animation: none;
     z-index: auto;
-    /* On desktop the sheet is an inline filter rail, not a floating
-       overlay — drop the glass so it reads as part of the page. */
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-3);
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
   .discover-sheet[hidden] { display: flex !important; }   /* always visible */
-  .discover-sheet__body  { overflow: visible; padding: var(--s-4) 0 0; }
-  .discover-sheet__head  { padding: 0 0 var(--s-2); border-bottom: 0; }
+  .discover-sheet__body {
+    overflow: visible;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-2);
+    flex: 1;
+  }
+  .discover-sheet__field {
+    position: relative;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .discover-sheet__field legend { display: none; }   /* the pill carries the label */
+  /* Sort reads as a view control, not a filter — push it to the row's
+     right end, aligned over the results count below. */
+  .discover-sheet__field--sort { margin-left: auto; }
+  .discover-sheet__field--sort .discover-sheet__panel { left: auto; right: 0; }
+
+  .facet-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-1);
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    font-family: var(--ff-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.04em;
+    color: var(--c-ink-soft);
+    background: var(--c-paper);
+    border: var(--rule-w) solid var(--c-rule);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color var(--t-fast), border-color var(--t-fast);
+  }
+  .facet-pill::after { content: "▾"; font-size: 9px; color: var(--c-ink-mute); }
+  .facet-pill:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  /* Carrying a selection: petrol signal (count text comes from JS). */
+  .facet-pill--on { border-color: var(--c-accent); color: var(--c-accent); }
+  .discover-sheet__field[data-open] .facet-pill {
+    border-color: var(--c-ink);
+    color: var(--c-ink);
+  }
+
+  /* The group content becomes an anchored popover card — solid paper +
+     hairline, no shadow/glass (canon: glass is chrome-only). */
+  .discover-sheet__panel { display: none; }
+  .discover-sheet__field[data-open] .discover-sheet__panel {
+    display: block;
+    position: absolute;
+    top: calc(100% + var(--s-2));
+    left: 0;
+    z-index: 30;
+    min-width: 340px;
+    max-width: 440px;
+    padding: var(--s-4);
+    background: var(--c-paper);
+    border: var(--rule-w) solid var(--c-rule-strong);
+    border-radius: var(--radius-card);
+  }
+  .discover-sheet__head  { padding: 0; border-bottom: 0; }
+  .discover-sheet__title { display: none; }
   .discover-sheet__handle,
   .discover-sheet__close,
   .discover-sheet__foot,
   .discover-pill--more,
   .discover-sheet-backdrop { display: none !important; }
-  /* Rail reset, shown only when a filter is active (calm at rest). */
+  /* Row reset, shown only when a filter is active (calm at rest). */
   .discover-sheet__clear-top:not([hidden]) { display: inline-block; }
   /* Desktop never locks body scroll for the (now inline) filters. */
   body.discover-sheet-open { overflow: auto; }
@@ -5399,25 +5467,13 @@ body[data-page="discover"] .discover-pills {
   align-items: center;
 }
 
-/* ── Discover: filter rail — mono eyebrow legends with hairlines ── */
+/* ── Discover: desktop facet row (F-15b) ──────────────────────
+   Replaces the old stacked-rail legend treatment: the pills carry the
+   labels, so legends stay hidden and the fields sit flush in one row. */
 @media (min-width: 1024px) {
-  body[data-page="discover"] .discover-sheet__title {
-    font-family: var(--ff-mono);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--c-ink);
-  }
-  body[data-page="discover"] .discover-sheet__field legend.eyebrow {
-    display: block;
-    width: 100%;
-    padding-bottom: var(--s-2);
-    margin-bottom: var(--s-3);
-    border-bottom: var(--rule-w) solid var(--c-rule);
-  }
-  body[data-page="discover"] .discover-sheet__field { margin: 0 0 var(--s-5); }
-  body[data-page="discover"] .discover-sheet__field:last-child { margin-bottom: 0; }
+  body[data-page="discover"] .discover-sheet__field legend.eyebrow { display: none; }
+  body[data-page="discover"] .discover-sheet__field { margin: 0; }
+  body[data-page="discover"] .facet-pill { white-space: nowrap; }
 }
 
 /* ════════════════════════════════════════════════════════════

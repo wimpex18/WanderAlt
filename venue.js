@@ -43,6 +43,18 @@
     return parts.filter(Boolean).join(' · ');
   };
 
+  /* A pick whose quote merely echoes the curator's signature tagline adds
+     noise row after row (F-10) — render the quote only when it was written
+     for the pick; otherwise attribute the row with a quiet "via @handle"
+     (the Today list idiom). Empty quotes take the same path. */
+  const isEchoQuote = (e) => {
+    const q = (e.quote || '').trim().toLowerCase();
+    if (!q) return true;
+    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
+    const c  = cs.find(x => x.handle === e.handle);
+    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
+  };
+
   /* Infer a labelled back link from the previous page.
      For Discover and curator pages we preserve the full referrer URL so
      the user lands back in exactly the state they left.                 */
@@ -151,7 +163,7 @@
             ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
             <span class="tonight__venue-body">
               <span class="tonight__venue-name">${entry.venue}</span>
-              <span class="meta">${entry.neighborhood} &middot; ${entry.kind}${entry.time ? ' &middot; ' + entry.time : ''}</span>
+              <span class="meta">${buildMeta(entry)}</span>
             </span>
           </div>
           <label class="bookmark">
@@ -196,9 +208,11 @@
                      <a href="venue.html?id=${e.id}">${e.title}</a>
                    </p>
                    <p class="list-row__meta">${buildMeta(e)}</p>
-                   <p class="list-row__quote">&mdash; ${e.quote}
+                   ${isEchoQuote(e)
+                     ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>`
+                     : `<p class="list-row__quote">&mdash; ${e.quote}
                      <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
-                   </p>
+                   </p>`}
                  </div>
                </li>`
             ).join('')}
@@ -236,11 +250,18 @@
         const bodyEl    = document.getElementById('venue-context-body');
         if (!detailsEl || !bodyEl) return;
 
-        /* Convert double newlines to paragraph breaks */
+        /* Convert double newlines to paragraph breaks. context_md is
+           lightly marked-down — render *emphasis* as <em> instead of
+           leaking literal asterisks (F-13), and escape everything else. */
+        const escCtx = (s) => s
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const emphasize = (s) => s
+          .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+          .replace(/\b_([^_\n]+)_\b/g, '<em>$1</em>');
         bodyEl.innerHTML = ctx
           .split(/\n\n+/)
           .filter(p => p.trim())
-          .map(p => `<p>${p.trim()}</p>`)
+          .map(p => `<p>${emphasize(escCtx(p.trim()))}</p>`)
           .join('');
 
         detailsEl.hidden = false;

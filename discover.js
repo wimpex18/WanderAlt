@@ -142,10 +142,24 @@
   };
 
   const buildMeta = (e) => {
-    const parts = [e.neighborhood, e.kind];
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
+    const parts = [nhood, e.kind];
     if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
     else if (e.time)                  parts.push(e.time);
     return parts.filter(Boolean).join(' · ');
+  };
+
+  /* A pick whose quote merely echoes the curator's signature tagline adds
+     noise row after row (F-10) — render the quote only when it was written
+     for the pick; otherwise attribute the row with a quiet "via @handle"
+     (the Today list idiom). Empty quotes take the same path. */
+  const isEchoQuote = (e) => {
+    const q = (e.quote || '').trim().toLowerCase();
+    if (!q) return true;
+    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
+    const c  = cs.find(x => x.handle === e.handle);
+    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
   };
 
   /* Row rendering matches search.js's list-row markup, plus data-id so
@@ -187,7 +201,9 @@
            <a href="venue.html?id=${e.id}">${esc(e.title)}</a>${closedBadge}${freeBadge}${mapLinkA}
          </p>
          <p class="list-row__meta">${esc(buildMeta(e))}</p>
-         <p class="list-row__quote">&mdash; ${esc(e.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>
+         ${isEchoQuote(e)
+           ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
+           : `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`}
        </div>
      </li>`;
   };
@@ -484,6 +500,50 @@
     /* Desktop rail's "Clear" appears only when something is active. */
     const railClear = document.getElementById('discover-rail-clear');
     if (railClear) railClear.hidden = n === 0;
+    updateFacetPills();
+  };
+
+  /* ── Facet pills (desktop, F-15b) ────────────────────────────
+     Label each dropdown-pill with its current selection so the row is
+     scannable without opening anything: "Category · 2", "≤ 15 min",
+     "Sort: Soonest". CSS hides the pills on mobile (the sheet shows
+     the groups expanded there). */
+  const updateFacetPills = () => {
+    document.querySelectorAll('.discover-sheet__field[data-facet]').forEach(field => {
+      const pill = field.querySelector('.facet-pill');
+      if (!pill) return;
+      const facet = field.dataset.facet;
+      let label = '';
+      let on = false;
+      if (facet === 'cat') {
+        const n = state.cats.size;
+        label = n ? `Category · ${n}` : 'Category';
+        on = n > 0;
+      } else if (facet === 'nhood') {
+        const n = state.nhoods.size;
+        label = n ? `Neighborhood · ${n}` : 'Neighborhood';
+        on = n > 0;
+      } else if (facet === 'within') {
+        label = state.within ? `≤ ${state.within} min` : 'Distance';
+        on = !!state.within;
+      } else if (facet === 'sort') {
+        const opts = SORT_OPTS[state.type] || SORT_OPTS.events;
+        const cur = opts.find(([v]) => v === state.sort);
+        label = `Sort: ${cur ? cur[1] : ''}`.trim();
+        on = state.sort !== DEFAULT_SORT[state.type];
+      }
+      pill.textContent = label;
+      pill.classList.toggle('facet-pill--on', on);
+    });
+  };
+
+  const closeFacetPanels = (except) => {
+    document.querySelectorAll('.discover-sheet__field[data-open]').forEach(f => {
+      if (f === except) return;
+      delete f.dataset.open;
+      const pill = f.querySelector('.facet-pill');
+      if (pill) pill.setAttribute('aria-expanded', 'false');
+    });
   };
 
   /* Reflect the active scope (events | places) across the chrome:
@@ -1033,6 +1093,25 @@
     if (filtersBtn) filtersBtn.addEventListener('click', openSheet);
     document.getElementById('discover-sheet-close')?.addEventListener('click', closeSheet);
     sheetBackdrop?.addEventListener('click', closeSheet);
+
+    /* Facet dropdown-pills (desktop, F-15b): toggle the group's panel,
+       one open at a time; outside click / Escape closes. */
+    document.querySelectorAll('.facet-pill[data-facet-toggle]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const field = pill.closest('.discover-sheet__field');
+        if (!field) return;
+        const opening = !field.dataset.open;
+        closeFacetPanels(field);
+        if (opening) { field.dataset.open = 'true'; pill.setAttribute('aria-expanded', 'true'); }
+        else         { delete field.dataset.open;   pill.setAttribute('aria-expanded', 'false'); }
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.discover-sheet__field')) closeFacetPanels();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeFacetPanels();
+    });
 
     /* Sheet category / neighborhood chip clicks. */
     catChipsEl?.addEventListener('click', (e) => {

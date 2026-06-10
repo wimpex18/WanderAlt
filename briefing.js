@@ -119,9 +119,10 @@
        dominant element (lime rule, full display scale), then the actions.
        No surface card, no hero thumbnail — the voice is the product. */
     const timeStr  = entry.time ? ` &middot; ${entry.time}` : '';
-    const whereStr = entry.venue
-      ? `${entry.neighborhood} &middot; ${entry.venue}`
-      : entry.neighborhood;
+    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    const heroNhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other'
+      ? entry.neighborhood : '';
+    const whereStr = [heroNhood, entry.venue].filter(Boolean).join(' &middot; ');
 
     /* Photo-forward header when a venue photo exists (June 2026): the image
        fills a banner with a bottom-anchored scrim gradient (rgba 0 -> .6)
