@@ -1,31 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// ingest-fienta  v1
-// Pulls Tallinn underground venue events from Fienta's JSON API
-// and pushes them to staging_messages for process-staging to
-// turn into curated picks.
-//
-// Sources rows (kind='fienta'):
-//   channel    = Fienta organizer slug or id (e.g. 'paavli-kultuurivabrik', '15')
-//   feed_url   = full JSON endpoint (https://fienta.com/o/<slug>?format=json)
-//   curator_handle = '@paavli' | '@vonkrahl' | ... (FK to curators)
-//
-// On each run:
-//   1. Read all enabled sources where kind='fienta'.
-//   2. Fetch the JSON for each.
-//   3. For every future event (starts_at >= now), upsert into
-//      staging_messages with channel = source.channel and
-//      message_id = event.id (deduplication key).
-//   4. Update last_scraped_at on the source.
-//   5. Write a single row to ingest_log.
-//
-// Schedule (pg_cron, see migration):
-//   ingest-fienta runs daily at 04:00 UTC, after enrich-venues.
-//
-// Manual trigger (smoke test):
-//   curl -X POST -H "Authorization: Bearer <SERVICE_KEY>" \
-//     "$SUPABASE_URL/functions/v1/ingest-fienta"
+// ingest-fienta  v2
+// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
+//   for wa_reconcile_absent_picks (silent-cancellation detection).
+// Pulls Tallinn underground venue events from Fienta's JSON API and pushes
+// them to staging_messages. Dedup key: (channel, message_id=event.id).
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -59,11 +39,11 @@ async function bumpSeen(channel: string, messageId: string | number) {
 type FientaEvent = {
   id: number;
   title: string;
-  starts_at: string;          // 'YYYY-MM-DD HH:mm:ss' (local time, Estonia)
+  starts_at: string;
   ends_at?: string;
   venue?: string;
   address?: string;
-  description?: string;       // HTML
+  description?: string;
   url?: string;
   image_url?: string;
   organizer_name?: string;
@@ -83,7 +63,6 @@ type Source = {
   feed_url: string | null;
 };
 
-// Strip HTML tags from description, collapse whitespace, cap length.
 function plain(html: string | undefined, max = 600): string {
   if (!html) return '';
   return html
@@ -97,10 +76,8 @@ function plain(html: string | undefined, max = 600): string {
     .slice(0, max);
 }
 
-// Compose a staging text in a shape process-staging expects.
-// Mirrors the Telegram message style: title, venue, when, blurb.
 function composeText(e: FientaEvent): string {
-  const when  = e.starts_at?.slice(0, 16).replace(' ', ' · '); // "2026-05-16 · 23:00"
+  const when  = e.starts_at?.slice(0, 16).replace(' ', ' · ');
   const venue = e.venue ? `Venue: ${e.venue}` : '';
   const blurb = plain(e.description, 600);
   const cats  = e.categories?.length ? `Categories: ${e.categories.join(', ')}` : '';
@@ -124,11 +101,9 @@ async function fetchSourceEvents(source: Source): Promise<FientaEvent[]> {
   return (body.events ?? []).filter(e => {
     if (!e.id || !e.title || !e.starts_at) return false;
     if (e.event_status && e.event_status !== 'scheduled') return false;
-    // Drop gift cards and other "events" that span ~all year.
     const startMs = Date.parse(e.starts_at.replace(' ', 'T') + '+02:00');
     if (Number.isNaN(startMs)) return false;
-    if (startMs < now - 86400_000) return false;  // already past
-    // Filter long-running placeholder "events" (>180d) — usually gift cards.
+    if (startMs < now - 86400_000) return false;
     if (e.ends_at) {
       const endMs = Date.parse(e.ends_at.replace(' ', 'T') + '+02:00');
       if (!Number.isNaN(endMs) && (endMs - startMs) > 180 * 86400_000) return false;
@@ -138,7 +113,6 @@ async function fetchSourceEvents(source: Source): Promise<FientaEvent[]> {
 }
 
 async function upsertEvent(source: Source, e: FientaEvent): Promise<'inserted'|'skipped'|'error'> {
-  // Upsert by (channel, message_id) which is the unique key on staging_messages.
   const row = {
     source_id:  source.id,
     channel:    source.channel,
@@ -180,7 +154,7 @@ async function logRun(stats: { inserted: number; skipped: number; rejected: numb
       error:       stats.error,
       finished_at: new Date().toISOString(),
     }),
-  }).catch(() => { /* ingest_log is optional — never fail the run on logging issues */ });
+  }).catch(() => { /* ingest_log is optional */ });
 }
 
 Deno.serve(async () => {
