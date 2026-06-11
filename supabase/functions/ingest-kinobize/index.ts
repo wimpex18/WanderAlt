@@ -1,12 +1,10 @@
 // ============================================================
-// ingest-kinobize  v1
+// ingest-kinobize  v2
+// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
+//   for wa_reconcile_absent_picks (silent-cancellation detection).
 // Scrapes Kino Bize (art-house cinema, Riga) film schedule from
-// https://kinobize.lv/en/repertoire and pushes films to
-// staging_messages for process-staging to curate.
-//
-// Source: server-side rendered HTML — no AJAX needed.
+// https://kinobize.lv/en/repertoire and pushes films to staging_messages.
 // Dedup key: (channel, message_id) where message_id = slug-id.
-// Schedule: added by migration (03:30 UTC daily).
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -52,16 +50,14 @@ function stripTags(html: string): string {
 
 type KinoBizeEvent = {
   id: string;
-  slug: string;      // "title-slug-id" — dedup key
+  slug: string;
   url: string;
   title: string;
   category: string;
-  dateText: string;  // raw date string for editorial context
+  dateText: string;
   dateIso: string;
 };
 
-// Dates arrive as "Tomorrow 11:00", "Today 14:00", or "Monday, 18.05. 20:30".
-// Latvia is EEST (UTC+3) in summer, EET (UTC+2) in winter.
 function parseDateText(dateText: string): string {
   const now = new Date();
 
@@ -79,7 +75,6 @@ function parseDateText(dateText: string): string {
     return d.toISOString();
   }
 
-  // "Monday, 18.05. 20:30" or just "18.05. 20:30"
   const absM = dateText.match(/(\d+)\.(\d+)\.\s*(\d+):(\d+)/);
   if (absM) {
     const [, day, month, hour, min] = absM;
@@ -95,25 +90,19 @@ function parseListing(html: string): KinoBizeEvent[] {
   const events: KinoBizeEvent[] = [];
   const seen = new Set<string>();
 
-  // Each <li> is one film card with 1-N screening times.
   const liParts = html.split(/<li[\s>]/);
   for (const li of liParts.slice(1)) {
-    // Film detail link: /en/repertoire/<category>/<slug>/<id>
     const linkM = li.match(/href="(\/en\/repertoire\/([^/"]+)\/([^/"]+)\/(\d+))"/);
     if (!linkM) continue;
     const [, href, category, slug, id] = linkM;
     if (seen.has(id)) continue;
     seen.add(id);
 
-    // Title: first text node inside the film anchor.
-    // Anchor may contain English + Latvian title on separate lines.
     const anchorRx = new RegExp(href.replace(/\//g, '\\/') + '"[^>]*>([\\s\\S]*?)<\\/a>');
     const anchorM = li.match(anchorRx);
     const rawTitle = anchorM ? stripTags(anchorM[1]) : slug;
-    // Take only the first logical line (English title).
     const title = rawTitle.split(/\n|\r|  +/)[0].trim() || slug;
 
-    // First date/time string in this card.
     const dateM = li.match(/(Tomorrow|Today)\s+\d+:\d+/i) ||
                   li.match(/\w+,\s*\d+\.\d+\.\s*\d+:\d+/) ||
                   li.match(/\d+\.\d+\.\s*\d+:\d+/);
