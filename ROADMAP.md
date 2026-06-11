@@ -40,6 +40,8 @@ A screenshot-driven audit of every public surface at 390/768/1440, run on the VM
 
 **Desktop width ladder extended (June 2026, owner request).** `--reading-max` gains 1440 ≥1680 and 1600 ≥1920 — a 1920 screen now carries 160px side margins instead of 320px. Swept 6 pages × {1680, 1920}: zero overflow, shell/chrome aligned (masthead spans the new widths). Per-block `ch` measures keep prose readable inside the wider shell.
 
+**Performance + a11y pass (June 2026).** First Lighthouse run of the overhaul era, then two fixes: **MapLibre now lazy-loads after first paint** (`maplibre-loader.js`; `map-tiles.js` re-runs init on `wa:maplibre-ready`, and Discover's `syncMap` queues one re-sync via `MapTiles.onReady` — the old early-return left pins empty under lazy boot), and About's prose links gained underlines (the one a11y miss — color-only links). Scores after: **Today 95 · Discover 96 (was 79; TBT 340ms → ~0) · About 99 — accessibility/best-practices/SEO 100 everywhere.** Full reports regenerate via `npm run lighthouse` (summary committed, big JSONs gitignored). Known CLS ~0.11 on Today/About (banner/font arrival) is the remaining sub-threshold item. e2e's nav() also gained a one-retry guard for headless Chrome's transient `ERR_ABORTED` (it gates CI).
+
 ### VM tooling (reproduce the audit on any fresh container)
 
 ```bash
@@ -224,9 +226,9 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 - Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.
 
 **P3 — hygiene:**
-- localStorage key registry + converge on one prefix for new keys.
-- Restructure curator/venue init (bind listeners once; add the place.js-style guard).
-- Decide `catalog.js`'s per-city cap before city #5.
+- ~~localStorage key registry.~~ **DONE June 2026** — `docs/localstorage-registry.md`: all 11 keys, owner/shape/versioning, plus the rules (new keys `wa:` + versioned).
+- ~~Restructure curator/venue init.~~ **DONE June 2026** — curator's document-level listeners (bookmark change + `wa:bookmarks-synced`) moved to module scope (they stacked a duplicate pair per re-render); both pages gained the place.js-style init-if-data-present guard.
+- ~~Decide `catalog.js`'s per-city cap.~~ **DECIDED June 2026** — the fallback's contract is "enough to render something": **≤40 picks + ≤12 venues per city** for every city added from here on. Current seed: Tallinn 158 picks (grandfathered pending an editorial trim — choosing survivors is editorial work), Riga 7, Helsinki 4; venues ≤7 everywhere. Enforce on addition, not retroactively.
 
 ---
 
@@ -243,11 +245,20 @@ These would dilute the brand. Listed so the next person knows the answer is no w
 - ❌ **Generic admin dashboard with charts.** Admin should look like the rest of the app.
 - ❌ **Onboarding tour / coachmarks.** If the app needs explaining, it's wrong.
 
-**Summer 2026 design explorations (proposals — not commitments, owner to pick):**
-- ~~**Dock the mobile List|Map toggle.**~~ **SHIPPED June 2026** — the FAB is now a centered docked segmented pill (List | Map with glyphs) flush above the glass nav; one button, segments reflect state, whole pill = the 44px target, keeps the single sanctioned shadow.
-- **Per-city category chips** when city #5 lands (Tallinn's "Craft beer / Vinyl & books" verbatim in Riga today — fine while true, data-driven later).
-- **Digest "your saved events changed" section** — the sanctioned no-push channel for the change-watch (extends `send-digest`, complements the on-device badges).
+**Summer 2026 design explorations (updated June 11 post-WWDC 2026 — proposals, owner to pick):**
+
+*WWDC 2026 context (June 8–9; iOS 27 dev beta 1 — researched via MacRumors' iOS-27/WWDC roundups + 9to5mac's iOS-27 guide on June 11):* a "Snow Leopard"-style refinement year — performance and cleanup over visual overhaul. The design facts that matter to us: **Liquid Glass was tuned for readability** (sharper, more detailed icon rendering; a user-facing **translucency-level slider**; more **depth/separation** in nav bars, menus and buttons); search and assistant merged into one **"Search or Ask"** surface (Siri lives in the Dynamic Island, replacing Spotlight); **extra-large widgets** (Calendar/Photos/Music); app-level redesigns (Music artist pages, Screen Time) and a changed Notification-Center access pattern that promptly ate "broke 15 years of muscle memory" coverage; iPadOS 27/macOS 27 get design parity. Net read for WanderAlt: Apple is *refining glass for legibility, not expanding it* — our three-surface restraint is the current pattern, and the items below follow the same grain. (Re-verified June 11 after the quota reset — the icon story confirmed: iOS 27 integrates **additional Liquid Glass layers directly into icon artwork**, the refraction between layers making icons sharper and fixing iOS 26's blurry icons; users get a 'Clear' icon look via Home Screen edit; the updated HIG auto-applies to apps on the Liquid Glass framework. This validates the layered two-file Beacon master in `brand/masters/icon-layered/` as exactly the right prep — the lime diamond is the refractive layer. Sources: TechTimes, BGR, Cult of Mac WWDC-26 coverage.)
+
+- ~~**`prefers-reduced-transparency` on the three glass surfaces**~~ **SHIPPED June 2026** — the media query swaps all three glass surfaces to their solid fallbacks with a stronger hairline; the web analog of iOS 27's translucency slider.
+- ~~**Chrome separation micro-pass**~~ **SHIPPED June 2026** — `--glass-hair` 0.08→0.10 (0.16 under reduced transparency); facet popover already carried `--c-rule-strong`.
+- **"Search or Ask" — pattern validated, keep the surface unified** *(note, no work).* iOS 27 merges search + assistant into one field — exactly Discover's search box with the in-field Concierge toggle. Recorded so a future session doesn't split them into separate surfaces.
+- ~~**Icon ladder: sharpness audit + layered master**~~ **SHIPPED June 2026** — and the audit caught a real shipping bug: `brand/favicon/favicon.svg` had lost its `<style>` block and rendered BLACK in browser tabs (classes with no fills); fixed with explicit petrol/lime fills, ladder verified legible at 16/32/48/64. `brand/masters/icon-layered/` added (background tile + foreground diamond + README) feeding both Apple's layered-icon pipeline and Android adaptive icons.
+- **Native-shell readiness ledger** *(new — owner direction: future iOS/Android apps on top of this web app).* Already native-shaped: bottom tab nav (≈ UITabBar / M3 nav bar), the docked List|Map segmented pill (shipped June 2026), card→hero View Transitions (≈ matched-geometry transitions), self-hosted fonts, manifest + full icon ladder, no-tracking posture. To plan for the shells, not the web app: an **extra-large "Tonight" widget** (the hero pick is a born XL widget — iOS 27 just expanded that tier), Saved "Going" as a **Live Activity** candidate (user-initiated, arguably compatible with the no-push stance — owner call needed), per-platform layered icons (previous item). Principle: web stays the product; native = thin shell + widgets, never a fork.
+- **Muscle-memory caution, recorded:** even Apple took flak this cycle for changing the Notification-Center gesture. Our navigation-pattern changes stay baseline-gated and one-per-PR.
+- ~~**Per-city category chips**~~ **SHIPPED June 2026 (early)** — `renderCatChips` now offers only categories/kinds with matches in the current city's data (selected ones always keep their chip; full list shown until data loads).
+- ~~**Digest "your saved events changed" section**~~ **SHIPPED June 2026** — server-side design settled and implemented: `digest_opt_ins.user_id` (captured at opt-in when signed in), `pick_changes` day/time journal (trigger `picks_log_change`, purged at 60 days via `wa-purge-pick-changes`), and `send-digest` **v11** composing the per-recipient block (changed = journal in 7-day window; "no longer listed" = archived_at in window). Anonymous opt-ins get the unchanged digest; fail-open. v11 also fixed `GEMINI_MODEL` from the nonexistent `gemini-3.5-flash` (every weekly intro had silently 404'd to the static fallback) to `gemini-2.5-flash`. Migration `20260611_digest_changed_events_foundation.sql`.
 - Curator "Reading lately" weekly synthesis (below) remains the strongest editorial idea on the shelf.
+- *(Shipped from the original list: the docked List|Map toggle, June 2026 — the FAB-era corner button is gone.)*
 
 Still-open product ideas that survived the old Tier 2/3 (kept for the record, unranked): curator weekly synthesis ("Reading lately" on `curator.html`), chrono-pin map, lineage edges, time-traveled briefing.
 

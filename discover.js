@@ -419,9 +419,24 @@
      mechanism — the meaning of a "category" just depends on scope. */
   const renderCatChips = () => {
     if (!catChipsEl) return;
-    const pairs = state.type === 'places'
+    /* Per-city chips (June 2026, parked-exploration shipped early): only
+       offer categories/kinds that actually have matches in the current
+       city's data — Tallinn's "Street art" chip shouldn't dead-end a
+       Helsinki reader. A currently-SELECTED category always keeps its
+       chip so an active filter can be cleared. Falls back to the full
+       list while the catalog is still empty (pre-data paint). */
+    const catalog = (window.WA && window.WA.catalog) || [];
+    const venues  = (window.WA && window.WA.venues)  || [];
+    const hasCat = (id) => id === 'free'
+      ? catalog.some(e => (e.moodTags || []).includes('free'))
+      : catalog.some(e => normaliseKind(e.kind) === id);
+    const hasKind = (k) => venues.some(v => v.kind === k);
+    let pairs = state.type === 'places'
       ? ((window.WA && window.WA.VENUE_KINDS) || []).map(k => [k, venueKindLabel(k)])
       : ((window.WA && window.WA.MAP_CATEGORIES) || []).map(c => [c.id, c.label]);
+    const present = state.type === 'places' ? hasKind : hasCat;
+    const dataReady = state.type === 'places' ? venues.length > 0 : catalog.length > 0;
+    if (dataReady) pairs = pairs.filter(([id]) => present(id) || state.cats.has(id));
     catChipsEl.innerHTML = pairs.map(([id, label]) => {
       const on = state.cats.has(id);
       return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${esc(id)}" aria-pressed="${on}">${esc(label)}</button>`;
@@ -606,9 +621,21 @@
   /* Pushes Discover's filter state into the embedded map view. All five
      filter dimensions (q, time, cats, mood, nhoods) round-trip so the
      list and map panes always show the same set of picks.               */
+  let _mapSyncQueued = false;
   const syncMap = () => {
     const mv = window.WA && window.WA.MapView;
-    if (!mv || !mv.isReady()) return;
+    if (!mv) return;
+    if (!mv.isReady()) {
+      /* MapLibre boots lazily after first paint (maplibre-loader.js) —
+         with the old early-return the filter state pushed during run()
+         never reached the map and pins stayed empty until the next user
+         interaction. Queue ONE re-sync for the moment the map is ready. */
+      if (!_mapSyncQueued && window.WA.MapTiles?.onReady) {
+        _mapSyncQueued = true;
+        window.WA.MapTiles.onReady(() => { _mapSyncQueued = false; syncMap(); });
+      }
+      return;
+    }
     mv.setFilters({
       q:      state.q,
       time:   state.time,

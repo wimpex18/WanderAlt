@@ -428,5 +428,8 @@
     }
   };
 
+  /* place.js-style guard (ROADMAP P3): render from the static catalog
+     immediately when present; wa:catalog-ready re-renders with live data. */
+  if (window.WA && (window.WA._catalogAll || window.WA.catalog)) init();
   document.addEventListener('wa:catalog-ready', init);
 })();

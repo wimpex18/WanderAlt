@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-
-  
-  <rect class="bg" x="0" y="0" width="32" height="32" rx="4"></rect>
-  <rect class="fg" x="11" y="11" width="10" height="10" rx="1.2" transform="rotate(45 16 16)"></rect>
+  <!-- Beacon mark, generic-size favicon. Explicit fills on purpose: an
+       earlier build referenced .bg/.fg classes whose <style> block got
+       stripped, shipping a black-on-black tab icon (caught in the June
+       2026 icon-sharpness audit). Geometry matches favicon-32.svg. -->
+  <rect x="0" y="0" width="32" height="32" rx="4" fill="#055959"></rect>
+  <rect x="11" y="11" width="10" height="10" rx="1.2" fill="#d2dc50" transform="rotate(45 16 16)"></rect>
 </svg>

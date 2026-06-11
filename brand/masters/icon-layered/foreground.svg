@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Beacon layered master · FOREGROUND layer (lime diamond).
+       Spec proportions: diamond side = 0.20 x tile side (204.8/1024),
+       diamond rx = 0.12 x diamond side (24.58) — same ratios as the
+       flat masters (brand/BRAND.md). Centered; sized to stay inside
+       Android's adaptive-icon 66/108 safe zone and Apple's layered-
+       icon parallax crop. Canonical lime #d2dc50 = oklch(0.86 0.16 113). -->
+  <rect x="409.6" y="409.6" width="204.8" height="204.8" rx="24.58" fill="#d2dc50"
+        transform="rotate(45 512 512)"/>
+</svg>

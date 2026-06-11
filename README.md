@@ -24,6 +24,8 @@ Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for intern
 ├── 404.html              # 404 page — matches site aesthetic
 ├── styles.css            # All styles, CSS variables in :root for easy tuning
 ├── catalog.js            # Static fallback catalog — used when Supabase is unreachable
+│                         #   (contract: ≤40 picks + ≤12 venues per city for new cities)
+├── ui-helpers.js         # Shared render helpers (WA.UI: esc/buildMeta/isEchoQuote/bookmarkSVG/thumb/rowMedia)
 ├── supabase.js           # Live data layer — fetches from Supabase, fires wa:catalog-ready
 ├── auth.js               # Email/password + Google OAuth + password reset
 ├── bookmark.js           # Bookmark store — localStorage primary + Supabase cloud sync
@@ -33,6 +35,7 @@ Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for intern
 ├── map.js                # Pan/zoom map engine — exposes window.WA.MapView API; embedded in Discover
 ├── map-venues.js         # Category definitions (WA.MAP_CATEGORIES) shared by map + discover
 ├── map-tiles.js          # MapLibre GL basemap (WA.MapTiles API) — OpenFreeMap tiles + custom style
+├── maplibre-loader.js    # Lazy-loads the MapLibre bundle after first paint (Discover perf: 79 → 96)
 ├── map-style.json        # Custom MapLibre style — newsprint land, muted petrol water, off-white roads
 ├── saved.js              # Saved renderer — injects bookmarked rows from catalog
 ├── venue.js              # Pick detail renderer — back-link returns to full Discover URL
@@ -47,6 +50,8 @@ Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for intern
 ├── brand/                # Beacon brand kit — tile + wordmark masters, favicons, PWA/iOS/Android icons,
 │                         #   social cards, BRAND.md (palette/type/lockup spec), IMPLEMENTATION.md
 ├── manifest.webmanifest  # PWA web manifest — references brand/pwa/*.svg, theme color #055959
+├── supabase/             # Edge-function sources (full mirror of all 30 deployed) + migration journal
+├── docs/                 # db-schema.md, localstorage-registry.md, ux-audit, layout audits, screenshots/baseline
 ├── docs/archive/         # Wireframes + market research (gitignored, local only)
 ├── CLAUDE.md             # Claude Code instructions (file map, conventions, API keys, LLM policy)
 ├── HANDOFF.md            # Engineering reference — tokens, components, state matrices
@@ -55,7 +60,7 @@ Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for intern
 
 No build step. **Open `index.html` directly in a browser** to view, or run `npm start` for a local dev server at `http://localhost:5173`.
 
-Canonical mobile design width: **390px**. Responsive up to desktop with a constrained **1024px reading column** applied uniformly to every page so edges line up across navigation (briefing, discover, saved, profile, venue, curator, admin all share the same max-width).
+Canonical mobile design width: **390px**. Responsive up to desktop on one shared `--reading-max` ladder applied uniformly to every page so edges line up across navigation — **1100px ≥768 · 1200 ≥1100 · 1280 ≥1440 · 1440 ≥1680 · 1600 ≥1920** (June 2026 widening; long-form text keeps per-block `ch` measures inside the wide shell).
 
 ---
 

@@ -108,7 +108,7 @@
   --glass-bg:      rgba(255, 255, 255, 0.66);
   --glass-bg-deep: rgba(250, 250, 249, 0.78);
   --glass-blur:    saturate(180%) blur(20px);
-  --glass-hair:    rgba(20, 30, 30, 0.08);   /* hairline edge for glass */
+  --glass-hair:    rgba(20, 30, 30, 0.10);   /* hairline edge for glass — 0.08→0.10 June 2026, the iOS-27-echo chrome-separation micro-pass */
 
   /* ---------- Motion ----------
      --t-fast  is the legacy color/border swap (already used in 30+ rules).
@@ -241,6 +241,22 @@ img, svg { display: block; max-width: 100%; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .topbar    { background: var(--c-paper); }
   .nav__inner { background: var(--c-paper-deep); }
+}
+
+/* User preference beats aesthetics (June 2026 — the web analog of
+   iOS 27's user-facing translucency slider): when the visitor asks the
+   OS for reduced transparency, all three Liquid Glass surfaces go
+   solid, with a slightly stronger hairline for separation. */
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-hair: rgba(20, 30, 30, 0.16); }
+  .topbar,
+  .nav__inner,
+  .discover-sheet {
+    background: var(--c-paper) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .nav__inner { background: var(--c-paper-deep) !important; }
 }
 
 /* ── City banner ─────────────────────────────────────────────
@@ -2884,6 +2900,14 @@ a.auth-panel__submit { display: inline-block; }
   margin: 0 0 var(--s-3);
 }
 .about-section p:last-child { margin-bottom: 0; }
+/* Prose links must not rely on color alone (WCAG 1.4.1 / Lighthouse
+   link-in-text-block — the June 2026 perf+a11y pass's one finding). */
+.about-section p a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
 .about-section p strong { color: var(--c-ink); font-weight: 600; }
 .about-list {
   font-family: var(--ff-body);
