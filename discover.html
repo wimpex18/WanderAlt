@@ -379,13 +379,25 @@
 
     </div>
 
-    <!-- View toggle FAB (mobile only) — flips between list and map panes. -->
+    <!-- View toggle (mobile only) — flips between list and map panes.
+         Docked segmented pill above the bottom nav (summer 2026: the
+         free-floating FAB was the last 2018-Material idiom; docked
+         bottom-chrome accessories are the current pattern). Still ONE
+         button — tapping flips the view; the segments reflect state. -->
     <button class="discover-view-fab" id="discover-view-toggle" type="button" aria-label="Switch to map view">
-      <span class="discover-view-fab__label">Map</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/>
-        <path d="M9 4v16M15 6v16"/>
-      </svg>
+      <span class="discover-view-fab__seg discover-view-fab__seg--on" data-seg="list">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h10"/>
+        </svg>
+        List
+      </span>
+      <span class="discover-view-fab__seg" data-seg="map">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/>
+          <path d="M9 4v16M15 6v16"/>
+        </svg>
+        Map
+      </span>
     </button>
 
   </main>

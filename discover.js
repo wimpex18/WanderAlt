@@ -740,8 +740,10 @@
     if (panesEl) panesEl.dataset.view = state.view;
     if (viewToggleBtn) {
       const isMap = state.view === 'map';
-      const label = viewToggleBtn.querySelector('.discover-view-fab__label');
-      if (label) label.textContent = isMap ? 'List' : 'Map';
+      viewToggleBtn.querySelectorAll('.discover-view-fab__seg').forEach(seg => {
+        seg.classList.toggle('discover-view-fab__seg--on',
+          (seg.dataset.seg === 'map') === isMap);
+      });
       viewToggleBtn.setAttribute('aria-label', isMap ? 'Switch to list view' : 'Switch to map view');
       viewToggleBtn.classList.toggle('discover-view-fab--map-active', isMap);
     }

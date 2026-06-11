@@ -5054,18 +5054,22 @@ body.discover-places .mood-chips { display: none; }
 .place-maplink:hover { color: var(--c-ink); }
 .place-no-events { margin-top: var(--s-4); color: var(--c-ink-mute); }
 
-/* ── View-toggle FAB (mobile) ───────────────────────────────── */
+/* ── View toggle (mobile) — docked segmented pill ─────────────
+   Sits centered, flush above the glass bottom nav (summer 2026: the
+   free-floating corner FAB was the last 2018-Material idiom; docked
+   bottom-chrome accessories are the current pattern). One button,
+   two state segments; the whole pill is the 44px tap target and it
+   keeps the app's single sanctioned shadow. */
 .discover-view-fab {
   position: fixed;
-  right: var(--s-3);
-  bottom: calc(var(--nav-h) + var(--s-3));  /* clear of bottom nav — derived, not the old hardcoded 72px (F-3) */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + var(--s-2));
   z-index: 50;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  min-height: 44px;   /* Apple HIG tap target (was ~34px) */
+  padding: var(--s-1);
+  min-height: 44px;
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
@@ -5075,11 +5079,21 @@ body.discover-places .mood-chips { display: none; }
   border-radius: 999px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
-  transition: background var(--t-fast);
 }
-.discover-view-fab:hover { background: var(--c-accent); }
-.discover-view-fab--map-active { background: var(--c-accent); }
-.discover-view-fab__label { line-height: 1; }
+.discover-view-fab__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: 999px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.discover-view-fab__seg--on {
+  background: var(--c-paper);
+  color: var(--c-ink);
+}
 
 /* While the FAB floats (mobile/tablet — hidden in the desktop split),
    give the list pane enough tail room that the last rows can scroll
