@@ -1,5 +1,11 @@
 // ============================================================
-// WanderAlt — process-staging  (v38)
+// WanderAlt — process-staging  (v39)
+// v39 changes vs v38 (ROADMAP P1):
+//   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
+//     marked error with an actionable rejection) instead of silently
+//     classifying against the Tallinn context — that silent degrade
+//     bit twice (Vilnius, then Helsinki: ~1,900 misrejected messages).
+//     Adding a city now hard-requires the context entry.
 // v38 changes vs v37 (English-only app):
 //   • LANGUAGE HANDLING hardened: 42 active picks had verbatim
 //     Cyrillic titles despite the v34+ "output English" rule —
@@ -14,20 +20,7 @@
 //     the original text is kept (translate-picks backfills later).
 //   • title_original: when the guard rewrites a title, the source
 //     title is preserved in picks.title_original.
-// v37 changes vs v36 (cost policy):
-//   • Gemini fallback is now gated behind the pipeline_config flag
-//     `gemini_fallback_enabled` (default true). Flip it to false in
-//     one SQL statement to stop ALL Gemini spend fleet-wide without a
-//     redeploy — rate-limited messages then just wait for the next
-//     Groq window instead of billing Gemini. Insurance against a
-//     runaway bill (the €12/May incident was the old grounded
-//     generate-context, but this guards process-staging too).
-//   • GEMINI_MODEL corrected to gemini-2.5-flash (we standardised on
-//     2.5; 3.5 was never actually deployed here). 2.5-flash classifies
-//     accurately without thinkingConfig.
-//   In practice Groq (free) handles 100% of normal volume — over the
-//   last 14 days process-staging made 0 Gemini calls — so this flag is
-//   a safety valve, not a routine path.
+// v37: Gemini fallback gated behind pipeline_config.gemini_fallback_enabled.
 // v36: CITY_CONTEXT gained `helsinki`. v35: gained `vilnius`.
 // v34: Groq llama-4-scout primary, Gemini fallback.
 // ============================================================
@@ -300,6 +293,16 @@ async function processOne(
   const handle  = src?.curator_handle ?? m.channel;
   const city    = src?.city ?? "tallinn";
   const tagline = tagMap[handle] ?? "underground cultural picks";
+
+  // v39: never silently classify against the wrong city context.
+  if (!CITY_CONTEXT[city]) {
+    await sb.from("staging_messages")
+      .update({ status: "error",
+                rejection: `no CITY_CONTEXT entry for city "${city}" — add it to process-staging before ingesting this city`,
+                processed_at: new Date().toISOString() })
+      .eq("id", m.id);
+    return { status: "error", detail: { error: `missing CITY_CONTEXT: ${city}`, id: m.id } };
+  }
 
   const releaseToNew = async (reason: string) => {
     await sb.from("staging_messages").update({ status: "new" }).eq("id", m.id);

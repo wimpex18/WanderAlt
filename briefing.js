@@ -92,21 +92,10 @@
 
   /* Returns a .thumb span — uses real image when entry.imageUrl is set,
      otherwise falls back to the halftone placeholder + initials badge.  */
-  const thumbEl = (entry, large = false) => {
-    const cls  = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
-    const style = entry.imageUrl
-      ? ` style="background-image:url('${WA.img(entry.imageUrl, 200).replace(/'/g, '%27')}')"` : '';
-    const label = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
-    return `<span class="${cls}" role="img" aria-label="${label}"${style}>` +
-           `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${entry.thumbInitials}</span>` +
-           `</span>`;
-  };
+  /* Shared render helpers — single implementation in ui-helpers.js (P1). */
+  const { bookmarkSVG } = window.WA.UI;
+  const thumbEl = window.WA.UI.thumb;
 
-  const bookmarkSVG = () =>
-    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-         stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-       <path d="M6 3h12v18l-6-4-6 4V3z" />
-     </svg>`;
 
   /* ── Tonight hero ──────────────────────────────────────── */
   const renderTonight = (entry) => {

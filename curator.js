@@ -20,20 +20,10 @@
      catalog.js → supabase.js → auth.js → bookmark.js → curator.js
    ============================================================ */
 (() => {
-  const buildMeta = (entry) => {
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
-    const nhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null;
-    const parts = [nhood, entry.kind];
-    if (entry.day && entry.day !== 'Tonight') parts.push(entry.time ? `${entry.day} ${entry.time}` : entry.day);
-    else if (entry.time)                      parts.push(entry.time);
-    return parts.filter(Boolean).join(' · ');
-  };
+  /* Shared render helpers — single implementation in ui-helpers.js (P1). */
+  const { buildMeta, bookmarkSVG } = window.WA.UI;
+  const mediaHtml = window.WA.UI.rowMedia;
 
-  const bookmarkSVG = () =>
-    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-         stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-       <path d="M6 3h12v18l-6-4-6 4V3z" />
-     </svg>`;
 
   /* Gentle on-device taste nudge — same idea as Today / Discover / Saved.
      When the reader has a taste profile, surface this curator's picks that
@@ -50,17 +40,6 @@
   /* Photo media tile — reuses the app's .thumb--lg treatment so curator
      picks match the Discover / Saved photo cards. Falls back to the initials
      tile when the pick has no image. Decorative supplementary link. */
-  const mediaHtml = (e) => {
-    const imgUrl = e.imageUrl || e.image_url || null;
-    const initials = (e.thumbInitials || e.thumb_initials
-      || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
-    return `<a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-      <span class="${cls}" role="img" aria-label="${e.venue || e.title}"${sty}>
-        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${initials}</span>
-      </span></a>`;
-  };
 
   /* Infer a labelled back link from the previous page.
      For Discover and venue/curator referrers we preserve the full referrer

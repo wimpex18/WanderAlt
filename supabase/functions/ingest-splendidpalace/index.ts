@@ -1,16 +1,9 @@
 // ============================================================
-// ingest-splendidpalace  v1
-// Scrapes Splendid Palace (Riga) events from
-// https://splendidpalace.lv/lv/pasakumi and pushes to
-// staging_messages for process-staging to curate.
-//
-// HTML structure: server-rendered.
-//   <a href="/lv/pasakumi/<slug>"><img><h3>Title</h3>…</a>
-//   Date format: "Datums: DD.MM.YYYY", time: "HH:MM"
-// Content is Latvian — Gemini handles it fine in process-staging.
-//
+// ingest-splendidpalace  v2
+// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
+//   for wa_reconcile_absent_picks (silent-cancellation detection).
+// Scrapes Splendid Palace (Riga) events from https://splendidpalace.lv/lv/pasakumi.
 // Dedup key: (channel, message_id) where message_id = slug.
-// Schedule: added by migration (03:35 UTC daily).
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -58,12 +51,11 @@ type SplendidEvent = {
   slug: string;
   url: string;
   title: string;
-  dateText: string;  // "DD.MM.YYYY"
-  timeText: string;  // "HH:MM"
+  dateText: string;
+  timeText: string;
   dateIso: string;
 };
 
-// Date format "18.05.2026", time "15:30". Latvia EEST = UTC+3 in summer.
 function parseDateDMY(dateText: string, timeText: string): string {
   const dm = dateText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
   if (!dm) return new Date().toISOString();
@@ -85,20 +77,15 @@ function parseListing(html: string): SplendidEvent[] {
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
 
-    // Capture surrounding context: 300 chars before (for venue/time block)
-    // and 600 chars after (for title, date).
     const from = Math.max(0, match.index - 300);
     const section = html.slice(from, match.index + 600);
 
-    // Title inside <h3> near the link.
     const h3m = section.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
     const title = h3m ? stripTags(h3m[1]) : slug;
 
-    // Date: first DD.MM.YYYY in section.
     const dateM = section.match(/\d{2}\.\d{2}\.\d{4}/);
     const dateText = dateM ? dateM[0] : '';
 
-    // Time: first HH:MM (not part of date).
     const timeM = section.match(/\b\d{1,2}:\d{2}\b/);
     const timeText = timeM ? timeM[0] : '';
 

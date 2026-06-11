@@ -50,9 +50,8 @@
   let suppressEntrance = false;
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
-  const esc = s => String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  /* Shared render helpers — single implementation in ui-helpers.js (P1). */
+  const { esc, buildMeta, isEchoQuote } = window.WA.UI;
 
   /* Multi-word AND + field-weight relevance (from search.js:26). */
   const keywordFilter = (corpus, term) => {
@@ -141,26 +140,7 @@
     }
   };
 
-  const buildMeta = (e) => {
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
-    const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
-    const parts = [nhood, e.kind];
-    if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
-    else if (e.time)                  parts.push(e.time);
-    return parts.filter(Boolean).join(' · ');
-  };
 
-  /* A pick whose quote merely echoes the curator's signature tagline adds
-     noise row after row (F-10) — render the quote only when it was written
-     for the pick; otherwise attribute the row with a quiet "via @handle"
-     (the Today list idiom). Empty quotes take the same path. */
-  const isEchoQuote = (e) => {
-    const q = (e.quote || '').trim().toLowerCase();
-    if (!q) return true;
-    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
-    const c  = cs.find(x => x.handle === e.handle);
-    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
-  };
 
   /* Row rendering matches search.js's list-row markup, plus data-id so
      the pin↔card sync handler can find the matching card.              */
@@ -394,7 +374,7 @@
         return `<li><button type="button" class="curator-row" data-search="${esc(handle)}">
           <span class="curator-row__handle">${esc(handle)}</span>
           ${bio ? `<span class="curator-row__quote">&mdash; ${esc(bio)}</span>` : ''}
-          <span class="curator-row__count">${n}</span>
+          <span class="curator-row__count">${n} pick${n !== 1 ? 's' : ''}</span>
         </button></li>`;
       }).join(''); }
     }
@@ -427,7 +407,7 @@
         const label = KIND_LABELS[kind] || (kind.charAt(0).toUpperCase() + kind.slice(1));
         return `<li><button type="button" class="browse-row" data-search="${esc(kind)}">
           <span class="browse-row__label">${esc(label)}</span>
-          <span class="browse-row__count">${n}</span>
+          <span class="browse-row__count">${n} place${n !== 1 ? 's' : ''}</span>
         </button></li>`;
       }).join('');
     }
@@ -760,8 +740,10 @@
     if (panesEl) panesEl.dataset.view = state.view;
     if (viewToggleBtn) {
       const isMap = state.view === 'map';
-      const label = viewToggleBtn.querySelector('.discover-view-fab__label');
-      if (label) label.textContent = isMap ? 'List' : 'Map';
+      viewToggleBtn.querySelectorAll('.discover-view-fab__seg').forEach(seg => {
+        seg.classList.toggle('discover-view-fab__seg--on',
+          (seg.dataset.seg === 'map') === isMap);
+      });
       viewToggleBtn.setAttribute('aria-label', isMap ? 'Switch to list view' : 'Switch to map view');
       viewToggleBtn.classList.toggle('discover-view-fab--map-active', isMap);
     }
@@ -1211,6 +1193,11 @@
     });
 
     /* Keyword input. */
+    /* Keystroke filtering is debounced 150ms (ROADMAP P2): run() does a
+       full keywordFilter over the catalog + map sync, fine at ~1,000
+       picks but the first thing to jank as cities multiply. 150ms is
+       under the perception threshold for "instant". */
+    let typeTimer = null;
     input.addEventListener('input', () => {
       reflectClear();
       reflectAiExamples();
@@ -1218,7 +1205,8 @@
       state.q = input.value.trim();
       writeUrlState();
       suppressEntrance = true;   /* typing — don't re-animate the list per keystroke */
-      run();
+      clearTimeout(typeTimer);
+      typeTimer = setTimeout(run, 150);
     });
     input.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' || state.mode !== 'match') return;

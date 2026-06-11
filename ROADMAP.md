@@ -210,17 +210,17 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 ## Ranked remediation
 
 **P0 — correctness (do first):**
-- Gate Saved's gone-detection on a live-data flag (`WA.DATA_LIVE`); add undo to Dismiss.
-- Commit the deployed-only edge functions to the repo.
+- ~~Gate Saved's gone-detection on a live-data flag (`WA.DATA_LIVE`); add undo to Dismiss.~~ **DONE June 2026** — `supabase.js` exposes `WA.DATA_LIVE`; gone-rows render only against live data; Dismiss leaves an 8-second Undo that restores bookmark + snapshot.
+- Commit the deployed-only edge functions to the repo. **Partial** — `process-staging` (v39) + `translate-picks` (v2) committed and in sync; the deployed-only scrapers (`ingest-telegram`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong`, `ingest-hel-linkedevents`, `archive-stale`, `rotate-tonight`, `geocode-picks`, `enrich-pick-images`, `classify-moods`, …) remain.
 
 **P1 — structural (next):**
-- Extract shared `ui-helpers.js` (`buildMeta`, thumb/media markup, `bookmarkSVG`, taste helpers, `esc`) — one script tag, no build step.
-- Hard-fail `process-staging` on a missing `CITY_CONTEXT` entry.
-- `docs/db-schema.md` + deployed-function inventory.
+- ~~Extract shared `ui-helpers.js` — one script tag, no build step.~~ **DONE June 2026** — `WA.UI` carries `esc`/`buildMeta`/`isEchoQuote`/`bookmarkSVG`/`thumb`/`rowMedia`; six page scripts alias from it. The extraction immediately caught real drift: venue.js's `buildMeta` had silently missed the F-12 guard. (Taste helpers not extracted — 3 small copies, lower churn.)
+- ~~Hard-fail `process-staging` on a missing `CITY_CONTEXT` entry.~~ **DONE June 2026** — v39 (deployed + committed) marks such messages `error` with an actionable rejection instead of silently classifying against the Tallinn context.
+- ~~`docs/db-schema.md` + deployed-function inventory.~~ **DONE June 2026** — `docs/db-schema.md` generated from production (17 tables, 24 RLS policies, 3 triggers, 12 SQL functions, 30 crons; notes that `sources`/`staging_messages`/`ingest_log` are RLS-enabled with zero policies, i.e. service-role-only). Regenerate on schema change; don't hand-edit.
 
 **P2 — resilience:**
-- Zero-yield alerting on ingest (`inserted+skipped === 0` → `status='warn'` + surface in admin pipeline panel).
-- Debounce Discover's `run()` (150 ms).
+- ~~Zero-yield alerting on ingest.~~ **DONE June 2026** — central SQL check `wa_ingest_zero_yield_check()` (cron `wa-ingest-health`, daily 06:10 UTC; migration `20260611_ingest_zero_yield_health.sql`): flags any `ingest-%` fn whose 3 most recent ok-runs all yielded 0 inserted + 0 skipped, as one `fn='ingest-health', status='warn'` row the admin pipeline panel surfaces. No per-scraper redeploys needed.
+- ~~Debounce Discover's `run()` (150 ms).~~ **DONE June 2026.**
 - Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.
 
 **P3 — hygiene:**
@@ -242,6 +242,12 @@ These would dilute the brand. Listed so the next person knows the answer is no w
 - ❌ **Multi-language UI.** Maybe at 10× the audience; not now.
 - ❌ **Generic admin dashboard with charts.** Admin should look like the rest of the app.
 - ❌ **Onboarding tour / coachmarks.** If the app needs explaining, it's wrong.
+
+**Summer 2026 design explorations (proposals — not commitments, owner to pick):**
+- ~~**Dock the mobile List|Map toggle.**~~ **SHIPPED June 2026** — the FAB is now a centered docked segmented pill (List | Map with glyphs) flush above the glass nav; one button, segments reflect state, whole pill = the 44px target, keeps the single sanctioned shadow.
+- **Per-city category chips** when city #5 lands (Tallinn's "Craft beer / Vinyl & books" verbatim in Riga today — fine while true, data-driven later).
+- **Digest "your saved events changed" section** — the sanctioned no-push channel for the change-watch (extends `send-digest`, complements the on-device badges).
+- Curator "Reading lately" weekly synthesis (below) remains the strongest editorial idea on the shelf.
 
 Still-open product ideas that survived the old Tier 2/3 (kept for the record, unranked): curator weekly synthesis ("Reading lately" on `curator.html`), chrono-pin map, lineage edges, time-traveled briefing.
 

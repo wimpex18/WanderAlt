@@ -1,18 +1,13 @@
 // ============================================================
-// ingest-telliskivi  v2
+// ingest-telliskivi  v3
+// v3 (Jun 2026): bumpSeen() marks each still-listed pick's
+//   last_seen_at so wa_reconcile_absent_picks can detect silent
+//   source-side cancellations. Best-effort; never blocks ingest.
 // Scrapes the Telliskivi Creative City events listing page and
 // pushes events to staging_messages for process-staging.
 //
 // Source: https://telliskivi.cc/en/events/
-// HTML structure (no AJAX — server-side rendered):
-//   .card               — one event card
-//   .card__overlay-link — href = event detail URL
-//   .card__timestamp-date / .card__timestamp-day — "May 16" / "Saturday"
-//   .card__title        — event title
-//   .card__meta-item    — [0] = category, [1] = venue
-//
 // Dedup key: (channel, message_id) where message_id = URL slug.
-// Schedule: added to sources table + cron by migration.
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -49,7 +44,7 @@ async function bumpSeen(messageId: string) {
   } catch (_) { /* best-effort */ }
 }
 
-// ── Minimal HTML string parser ───────────────────────────────
+// ── Minimal HTML string parser ────────────────────────────────
 function between(html: string, open: string, close: string): string {
   const start = html.indexOf(open);
   if (start < 0) return '';
@@ -58,7 +53,6 @@ function between(html: string, open: string, close: string): string {
   return end < 0 ? '' : html.slice(from, end).trim();
 }
 
-// Extract all occurrences of content between two strings.
 function allBetween(html: string, open: string, close: string): string[] {
   const results: string[] = [];
   let pos = 0;
@@ -74,7 +68,6 @@ function allBetween(html: string, open: string, close: string): string[] {
   return results;
 }
 
-// Strip all HTML tags and decode basic entities.
 function stripTags(html: string): string {
   return html
     .replace(/<[^>]+>/g, ' ')
@@ -86,26 +79,22 @@ function stripTags(html: string): string {
 type TelliskiviEvent = {
   slug: string;
   url: string;
-  date: string;   // "May 16 Saturday"
+  date: string;
   title: string;
   category: string;
   venue: string;
 };
 
 function parseListingPage(html: string): TelliskiviEvent[] {
-  // Scope to the .js-events container to avoid nav links.
   const jsEventsStart = html.indexOf('class="js-events"');
   if (jsEventsStart < 0) return [];
   const eventsHtml = html.slice(jsEventsStart);
 
   const events: TelliskiviEvent[] = [];
-  // Split by card boundaries
   const cards = eventsHtml.split('<div class="card ');
   for (let i = 1; i < cards.length; i++) {
     const card = cards[i];
 
-    // URL + slug from overlay link
-    // href comes before class in actual HTML: <a href="..." class="card__overlay-link">
     const urlMatch = card.match(/href="(https?:\/\/telliskivi\.cc\/en\/events\/[^"]+)"/);
     if (!urlMatch) continue;
     const url = urlMatch[1];
@@ -113,18 +102,15 @@ function parseListingPage(html: string): TelliskiviEvent[] {
     if (!slugMatch) continue;
     const slug = slugMatch[1];
 
-    // Date
     const dateStr = stripTags(between(card, 'card__timestamp-date">', '</span>'));
     const dayStr  = stripTags(between(card, 'card__timestamp-day">',  '</span>'));
     const date = [dateStr, dayStr].filter(Boolean).join(' ');
 
-    // Title
     const title = stripTags(between(card, 'card__title">', '</h3>'));
     if (!title) continue;
 
-    // Meta items: [0] = category (has class text-light), [1] = venue
     const metaItems = allBetween(card, 'card__meta-item', '</div>')
-      .map(raw => stripTags(raw.replace(/^[^>]*>/, '')));  // strip the opening tag remainder
+      .map(raw => stripTags(raw.replace(/^[^>]*>/, '')));
     const category = metaItems[0] ?? '';
     const venue    = metaItems[1] ?? 'Telliskivi Creative City';
 
@@ -133,10 +119,7 @@ function parseListingPage(html: string): TelliskiviEvent[] {
   return events;
 }
 
-// Parse month name + day into a rough ISO date for future-check.
-// Returns null if unparseable.
 function parseEventDate(dateStr: string): Date | null {
-  // e.g. "May 16 Saturday" or "Mar 4 Tuesday"
   const m = dateStr.match(/(\w+)\s+(\d+)/);
   if (!m) return null;
   const months: Record<string, number> = {
@@ -148,7 +131,6 @@ function parseEventDate(dateStr: string): Date | null {
   const day = parseInt(m[2], 10);
   const year = new Date().getFullYear();
   const d = new Date(year, month, day);
-  // If the date looks past by more than 7 days, assume next year.
   if (Date.now() - d.getTime() > 7 * 86400_000) d.setFullYear(year + 1);
   return d;
 }
@@ -238,7 +220,6 @@ Deno.serve(async () => {
 
     const now = Date.now();
     for (const e of events) {
-      // Skip events in the past (> 1 day ago).
       const d = parseEventDate(e.date);
       if (d && d.getTime() < now - 86400_000) {
         totalSkipped++;
