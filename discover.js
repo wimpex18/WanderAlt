@@ -621,9 +621,21 @@
   /* Pushes Discover's filter state into the embedded map view. All five
      filter dimensions (q, time, cats, mood, nhoods) round-trip so the
      list and map panes always show the same set of picks.               */
+  let _mapSyncQueued = false;
   const syncMap = () => {
     const mv = window.WA && window.WA.MapView;
-    if (!mv || !mv.isReady()) return;
+    if (!mv) return;
+    if (!mv.isReady()) {
+      /* MapLibre boots lazily after first paint (maplibre-loader.js) —
+         with the old early-return the filter state pushed during run()
+         never reached the map and pins stayed empty until the next user
+         interaction. Queue ONE re-sync for the moment the map is ready. */
+      if (!_mapSyncQueued && window.WA.MapTiles?.onReady) {
+        _mapSyncQueued = true;
+        window.WA.MapTiles.onReady(() => { _mapSyncQueued = false; syncMap(); });
+      }
+      return;
+    }
     mv.setFilters({
       q:      state.q,
       time:   state.time,

@@ -44,7 +44,12 @@
   function init(containerId, opts = {}) {
     if (map) return map;
     if (typeof window.maplibregl === 'undefined') {
-      console.warn('[map-tiles] maplibregl global not found — basemap disabled.');
+      /* maplibre is lazy-loaded after first paint (maplibre-loader.js,
+         June 2026 perf pass) — re-run init when it announces itself
+         instead of giving up. The pending/onReady queues already absorb
+         any calls made in the meantime. */
+      document.addEventListener('wa:maplibre-ready',
+        () => init(containerId, opts), { once: true });
       return null;
     }
     const city = opts.city || (window.WA && window.WA.CITY) || 'tallinn';

@@ -108,7 +108,16 @@ const isNoise = (t) =>
 
   const nav = async (url) => {
     errs = [];
-    await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+    try {
+      await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+    } catch (e) {
+      /* net::ERR_ABORTED is a known headless-Chrome navigation flake
+         (observed pre-existing, ~1 in 10 full runs; e2e gates CI, so a
+         single transient abort must not fail the build). One retry. */
+      if (!String(e).includes('ERR_ABORTED')) throw e;
+      await sleep(500);
+      await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+    }
     await sleep(800);
   };
 

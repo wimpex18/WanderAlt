@@ -2900,6 +2900,14 @@ a.auth-panel__submit { display: inline-block; }
   margin: 0 0 var(--s-3);
 }
 .about-section p:last-child { margin-bottom: 0; }
+/* Prose links must not rely on color alone (WCAG 1.4.1 / Lighthouse
+   link-in-text-block — the June 2026 perf+a11y pass's one finding). */
+.about-section p a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
 .about-section p strong { color: var(--c-ink); font-weight: 600; }
 .about-list {
   font-family: var(--ff-body);
