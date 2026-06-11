@@ -21,9 +21,9 @@
      catalog.js → city.js → supabase.js → bookmark.js → place.js
    ============================================================ */
 (() => {
-  const esc = s => String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  /* Shared render helpers — single implementation in ui-helpers.js (P1). */
+  const { esc, buildMeta, isEchoQuote } = window.WA.UI;
+  const mediaHtml = window.WA.UI.rowMedia;
 
   const KIND_LABELS = {
     'record store': 'Record store', 'bookshop': 'Bookshop', 'gallery': 'Gallery',
@@ -42,42 +42,12 @@
     ? `<a class="venue-social__link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(name)} on ${kind}">${SOCIAL_SVG[kind]}</a>`
     : '';
 
-  const buildMeta = (e) => {
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
-    const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
-    const parts = [nhood, e.kind];
-    if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
-    else if (e.time)                  parts.push(e.time);
-    return parts.filter(Boolean).join(' · ');
-  };
 
-  /* A pick whose quote merely echoes the curator's signature tagline adds
-     noise row after row (F-10) — render the quote only when it was written
-     for the pick; otherwise attribute the row with a quiet "via @handle"
-     (the Today list idiom). Empty quotes take the same path. */
-  const isEchoQuote = (e) => {
-    const q = (e.quote || '').trim().toLowerCase();
-    if (!q) return true;
-    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
-    const c  = cs.find(x => x.handle === e.handle);
-    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
-  };
 
   /* Photo media tile — reuses the app's .thumb--lg treatment so "Events
      here" matches the Discover / Saved / Curator / venue photo cards. Falls
      back to the initials tile when the pick has no image. Decorative
      supplementary link (the title link is the keyboard tab stop). */
-  const mediaHtml = (e) => {
-    const imgUrl = e.imageUrl || e.image_url || null;
-    const initials = (e.thumbInitials || e.thumb_initials
-      || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
-    return `<a class="list-row__media" href="venue.html?id=${encodeURIComponent(e.id)}" tabindex="-1" aria-hidden="true">
-      <span class="${cls}" role="img" aria-label="${esc(e.venue || e.title)}"${sty}>
-        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
-      </span></a>`;
-  };
 
   const backLink = () => {
     try {

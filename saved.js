@@ -47,17 +47,11 @@
     return parts.filter(Boolean).join(' · ');
   };
 
-  /* A pick whose quote merely echoes the curator's signature tagline adds
-     noise row after row (F-10) — render the quote only when it was written
-     for the pick; otherwise attribute the row with a quiet "via @handle"
-     (the Today list idiom). Empty quotes take the same path. */
-  const isEchoQuote = (e) => {
-    const q = (e.quote || '').trim().toLowerCase();
-    if (!q) return true;
-    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
-    const c  = cs.find(x => x.handle === e.handle);
-    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
-  };
+  /* Shared render helpers — single implementation in ui-helpers.js (P1).
+     (buildMeta stays local: Going rows carry the day in a separate time
+     column, so Saved's meta line differs from the standard one.) */
+  const { isEchoQuote } = window.WA.UI;
+  const mediaHtml = window.WA.UI.rowMedia;
 
   /* ── Row builders ─────────────────────────────────────────── */
 
@@ -69,17 +63,6 @@
   /* Photo media tile — reuses the app's duotone .thumb--lg treatment so
      Saved matches the Discover photo cards. Falls back to the initials
      tile when the entry has no image. Decorative supplementary link. */
-  const mediaHtml = (entry) => {
-    const imgUrl = entry.imageUrl || entry.image_url || null;
-    const initials = (entry.thumbInitials || entry.thumb_initials
-      || (entry.venue || entry.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
-    return `<a class="list-row__media" href="${venueHref(entry.id)}" tabindex="-1" aria-hidden="true">
-      <span class="${cls}" role="img" aria-label="${entry.venue || entry.title}"${sty}>
-        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${initials}</span>
-      </span></a>`;
-  };
 
   /* Going row — day label · photo · body grid. */
   const goingRow = (entry) => {
@@ -225,7 +208,14 @@
       }
     });
     const present = new Set(catalog.map(e => e.id));
-    const gone = bookmarkedIds.filter(id => !present.has(id) && snaps[id]).map(id => snaps[id]);
+    /* Gone-detection ONLY against live data (WA.DATA_LIVE): the static
+       fallback holds a fraction of the live catalog, so diffing against
+       it would flag every live bookmark as "no longer listed" — with a
+       destructive Dismiss attached (ROADMAP P0). Time-changed badges
+       stay ungated (they compare snapshot-to-entry, not presence). */
+    const gone = (window.WA && window.WA.DATA_LIVE)
+      ? bookmarkedIds.filter(id => !present.has(id) && snaps[id]).map(id => snaps[id])
+      : [];
     bookmarked.forEach(e => { snaps[e.id] = snapOf(e); });
     Object.keys(snaps).forEach(id => { if (!bookmarkedIds.includes(id)) delete snaps[id]; });
     saveSnaps(snaps);
@@ -290,17 +280,47 @@
     }
   };
 
-  /* Dismiss a "no longer listed" row → drop the bookmark (and its snapshot)
-     and re-render. */
+  /* Dismiss a "no longer listed" row → drop the bookmark (and its
+     snapshot), but leave an Undo behind for ~8s — Dismiss is otherwise
+     a one-tap destructive action on data the diff might have gotten
+     wrong (ROADMAP P0). Undo restores both bookmark and snapshot. */
+  let undoStash = null;   /* { id, snap } of the last dismissal */
   document.addEventListener('click', (e) => {
+    const undoBtn = e.target.closest('.list-row__undo');
+    if (undoBtn) {
+      const id = undoBtn.dataset.undo;
+      if (window.WA?.Bookmarks) window.WA.Bookmarks.set(id, true);
+      if (undoStash && undoStash.id === id && undoStash.snap) {
+        const snaps = loadSnaps();
+        snaps[id] = undoStash.snap;
+        saveSnaps(snaps);
+      }
+      undoStash = null;
+      renderLists();
+      return;
+    }
     const btn = e.target.closest('.list-row__dismiss');
     if (!btn) return;
     const id = btn.dataset.dismiss;
-    if (window.WA?.Bookmarks) window.WA.Bookmarks.set(id, false);
     const snaps = loadSnaps();
+    undoStash = { id, snap: snaps[id] };
+    if (window.WA?.Bookmarks) window.WA.Bookmarks.set(id, false);
     delete snaps[id];
     saveSnaps(snaps);
-    renderLists();
+    const li = btn.closest('li');
+    if (li) {
+      li.innerHTML =
+        `<div class="list-row__body">
+           <p class="list-row__quote">Removed from Saved.
+             <button type="button" class="list-row__undo" data-undo="${id}">Undo</button>
+           </p>
+         </div>`;
+      setTimeout(() => {
+        if (undoStash && undoStash.id === id) { undoStash = null; renderLists(); }
+      }, 8000);
+    } else {
+      renderLists();
+    }
   });
 
   document.addEventListener('wa:catalog-ready',     renderLists);

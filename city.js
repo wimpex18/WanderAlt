@@ -178,7 +178,7 @@
           `</span>` +
           `<span class="city-dropdown__body">` +
           `  <span class="city-dropdown__name">${city.label}</span>` +
-          `  <span class="city-dropdown__status">${disabled ? 'Coming soon' : 'Live'}</span>` +
+          `  <span class="city-dropdown__status">${disabled ? 'Coming soon' : ''}</span>` +   /* "Live" on every row was noise — status only informs when it varies */
           `</span>`;
 
         if (!disabled) {

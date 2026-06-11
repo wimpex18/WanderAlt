@@ -1,5 +1,11 @@
 // ============================================================
-// WanderAlt — process-staging  (v38)
+// WanderAlt — process-staging  (v39)
+// v39 changes vs v38 (ROADMAP P1):
+//   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
+//     marked error with an actionable rejection) instead of silently
+//     classifying against the Tallinn context — that silent degrade
+//     bit twice (Vilnius, then Helsinki: ~1,900 misrejected messages).
+//     Adding a city now hard-requires the context entry.
 // v38 changes vs v37 (English-only app):
 //   • LANGUAGE HANDLING hardened: 42 active picks had verbatim
 //     Cyrillic titles despite the v34+ "output English" rule —
@@ -300,6 +306,16 @@ async function processOne(
   const handle  = src?.curator_handle ?? m.channel;
   const city    = src?.city ?? "tallinn";
   const tagline = tagMap[handle] ?? "underground cultural picks";
+
+  // v39: never silently classify against the wrong city context.
+  if (!CITY_CONTEXT[city]) {
+    await sb.from("staging_messages")
+      .update({ status: "error",
+                rejection: `no CITY_CONTEXT entry for city "${city}" — add it to process-staging before ingesting this city`,
+                processed_at: new Date().toISOString() })
+      .eq("id", m.id);
+    return { status: "error", detail: { error: `missing CITY_CONTEXT: ${city}`, id: m.id } };
+  }
 
   const releaseToNew = async (reason: string) => {
     await sb.from("staging_messages").update({ status: "new" }).eq("id", m.id);

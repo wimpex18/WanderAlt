@@ -206,9 +206,14 @@
          city-filtered slice. */
       window.WA._catalogAll = all;
       window.WA.catalog     = all.filter(e => e.city === CITY);
+      /* Saved's change-watch gates its destructive "no longer listed"
+         detection on this: against the static fallback (~170 entries)
+         every live bookmark looks "gone" (ROADMAP P0). */
+      window.WA.DATA_LIVE = true;
     } else {
       /* Keep static catalog.js snapshot; log so devtools shows the reason. */
       console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);
+      window.WA.DATA_LIVE = false;
     }
 
     if (pastResult.status === 'fulfilled') {

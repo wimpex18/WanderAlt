@@ -20,40 +20,12 @@
      catalog.js → supabase.js → bookmark.js → venue.js
    ============================================================ */
 (() => {
-  const bookmarkSVG = () =>
-    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-         stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-       <path d="M6 3h12v18l-6-4-6 4V3z" />
-     </svg>`;
+  /* Shared render helpers — single implementation in ui-helpers.js (P1). */
+  const { buildMeta, isEchoQuote, bookmarkSVG } = window.WA.UI;
+  const thumbEl = window.WA.UI.thumb;
 
-  const thumbEl = (entry, large = false) => {
-    const cls   = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
-    const style  = entry.imageUrl
-      ? ` style="background-image:url('${WA.img(entry.imageUrl, 200).replace(/'/g, '%27')}')"` : '';
-    const label  = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
-    return `<span class="${cls}" role="img" aria-label="${label}"${style}>` +
-           `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${entry.thumbInitials}</span>` +
-           `</span>`;
-  };
 
-  const buildMeta = (entry) => {
-    const parts = [entry.neighborhood, entry.kind];
-    if (entry.day && entry.day !== 'Tonight') parts.push(entry.time ? `${entry.day} ${entry.time}` : entry.day);
-    else if (entry.time)                      parts.push(entry.time);
-    return parts.filter(Boolean).join(' · ');
-  };
 
-  /* A pick whose quote merely echoes the curator's signature tagline adds
-     noise row after row (F-10) — render the quote only when it was written
-     for the pick; otherwise attribute the row with a quiet "via @handle"
-     (the Today list idiom). Empty quotes take the same path. */
-  const isEchoQuote = (e) => {
-    const q = (e.quote || '').trim().toLowerCase();
-    if (!q) return true;
-    const cs = (window.WA && (window.WA._curatorsAll || window.WA.curators)) || [];
-    const c  = cs.find(x => x.handle === e.handle);
-    return !!(c && c.tagline && q === c.tagline.trim().toLowerCase());
-  };
 
   /* Infer a labelled back link from the previous page.
      For Discover and curator pages we preserve the full referrer URL so
