@@ -419,9 +419,24 @@
      mechanism — the meaning of a "category" just depends on scope. */
   const renderCatChips = () => {
     if (!catChipsEl) return;
-    const pairs = state.type === 'places'
+    /* Per-city chips (June 2026, parked-exploration shipped early): only
+       offer categories/kinds that actually have matches in the current
+       city's data — Tallinn's "Street art" chip shouldn't dead-end a
+       Helsinki reader. A currently-SELECTED category always keeps its
+       chip so an active filter can be cleared. Falls back to the full
+       list while the catalog is still empty (pre-data paint). */
+    const catalog = (window.WA && window.WA.catalog) || [];
+    const venues  = (window.WA && window.WA.venues)  || [];
+    const hasCat = (id) => id === 'free'
+      ? catalog.some(e => (e.moodTags || []).includes('free'))
+      : catalog.some(e => normaliseKind(e.kind) === id);
+    const hasKind = (k) => venues.some(v => v.kind === k);
+    let pairs = state.type === 'places'
       ? ((window.WA && window.WA.VENUE_KINDS) || []).map(k => [k, venueKindLabel(k)])
       : ((window.WA && window.WA.MAP_CATEGORIES) || []).map(c => [c.id, c.label]);
+    const present = state.type === 'places' ? hasKind : hasCat;
+    const dataReady = state.type === 'places' ? venues.length > 0 : catalog.length > 0;
+    if (dataReady) pairs = pairs.filter(([id]) => present(id) || state.cats.has(id));
     catChipsEl.innerHTML = pairs.map(([id, label]) => {
       const on = state.cats.has(id);
       return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${esc(id)}" aria-pressed="${on}">${esc(label)}</button>`;

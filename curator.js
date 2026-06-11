@@ -193,23 +193,24 @@
       });
     }
 
-    /* Wire bookmark toggles. */
-    if (window.WA.Bookmarks) {
-      document.addEventListener('change', (e) => {
-        const cb = e.target.closest('.bookmark__check');
-        if (!cb) return;
-        window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
-      });
-
-      /* Re-sync checkbox states when cloud bookmarks arrive. */
-      document.addEventListener('wa:bookmarks-synced', () => {
-        const store = window.WA.Bookmarks.get();
-        document.querySelectorAll('.bookmark__check').forEach(cb => {
-          cb.checked = !!(store[cb.dataset.id]);
-        });
-      });
-    }
   };
+
+  /* Document-level wiring — bound ONCE at module scope. These used to be
+     bound inside render(), stacking a duplicate pair on every re-render
+     (ROADMAP P3 — restructure before adding the init guard, or the guard
+     makes the double-bind worse). Bookmarks availability is checked at
+     event time, not bind time. */
+  document.addEventListener('change', (e) => {
+    const cb = e.target.closest('.bookmark__check');
+    if (!cb || !window.WA?.Bookmarks) return;
+    window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
+  });
+  document.addEventListener('wa:bookmarks-synced', () => {
+    const store = window.WA?.Bookmarks?.get?.() || {};
+    document.querySelectorAll('.bookmark__check').forEach(cb => {
+      cb.checked = !!store[cb.dataset.id];
+    });
+  });
 
   const renderNotFound = () => {
     const main = document.getElementById('curator-main');
@@ -261,5 +262,10 @@
     render(curator, picks);
   };
 
+  /* place.js-style guard (ROADMAP P3): when the static catalog is already
+     present (script ran after catalog.js — the normal defer order), render
+     immediately instead of waiting for the live fetch; wa:catalog-ready
+     re-renders with live data. render() is idempotent (innerHTML swap). */
+  if (window.WA && (window.WA._curatorsAll || window.WA.curators)) init();
   document.addEventListener('wa:catalog-ready', init);
 })();

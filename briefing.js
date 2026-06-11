@@ -566,7 +566,14 @@
               'Content-Type': 'application/json',
               Prefer:         'return=minimal',
             },
-            body: JSON.stringify({ email, city }),
+            /* Attach the account when signed in — lets send-digest compose
+               the per-recipient "your saved events changed" block (the
+               sanctioned no-push channel). Anonymous opt-ins still work. */
+            body: JSON.stringify({
+              email, city,
+              ...(window.WA?.Auth?.session?.user_id
+                ? { user_id: window.WA.Auth.session.user_id } : {}),
+            }),
           });
           if (res.ok || res.status === 409 /* already subscribed */) {
             status.textContent = 'You\'re on the list.';
