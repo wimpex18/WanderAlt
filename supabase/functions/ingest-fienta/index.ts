@@ -1,7 +1,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// ingest-fienta  v4
+// ingest-fienta  v5
+// v5 (Jun 2026): THE FIX — staging upsert now targets on_conflict=
+//   channel,message_id. Without it PostgREST resolved ON CONFLICT against
+//   the PK, so every re-crawled duplicate 409'd ('error', not 'skipped')
+//   and bumpSeen never ran — the root cause of the under-processing and
+//   the false stale-flags on live events.
 // v4 (Jun 2026): permanent per-channel diagnostics in ingest_log.detail —
 //   { fetched, eligible, inserted, skipped, bumped } per source — to
 //   diagnose + monitor the under-processing observed June 2026 (~2 of ~13
@@ -152,7 +157,11 @@ async function upsertEvent(source: Source, e: FientaEvent): Promise<{ r: 'insert
     permalink:  e.url ?? `https://fienta.com/o/${source.channel}`,
     status:     'new',
   };
-  const res = await rest('staging_messages', {
+  /* on_conflict=channel,message_id is load-bearing: without it PostgREST
+     targets the PK for ON CONFLICT, so re-crawled (duplicate) events 409
+     instead of skipping — and bumpSeen below never runs. That was the June
+     2026 under-processing bug (errors=23/skipped=0 in the v4 diagnostics). */
+  const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
     body:   JSON.stringify(row),
