@@ -213,7 +213,7 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 
 **P0 — correctness (do first):**
 - ~~Gate Saved's gone-detection on a live-data flag (`WA.DATA_LIVE`); add undo to Dismiss.~~ **DONE June 2026** — `supabase.js` exposes `WA.DATA_LIVE`; gone-rows render only against live data; Dismiss leaves an 8-second Undo that restores bookmark + snapshot.
-- Commit the deployed-only edge functions to the repo. **Partial** — `process-staging` (v39) + `translate-picks` (v2) committed and in sync; the deployed-only scrapers (`ingest-telegram`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong`, `ingest-hel-linkedevents`, `archive-stale`, `rotate-tonight`, `geocode-picks`, `enrich-pick-images`, `classify-moods`, …) remain.
+- ~~Commit the deployed-only edge functions to the repo.~~ **DONE June 2026** — all 30 functions are now committed under `supabase/functions/` and in sync with production (spot-checked: the instrumented scrapers carry their `bumpSeen`/`last_seen_at` changes; append-stream sources like `ingest-telegram` correctly carry none). Repo is the source of truth again; no more editing live source to make a change.
 
 **P1 — structural (next):**
 - ~~Extract shared `ui-helpers.js` — one script tag, no build step.~~ **DONE June 2026** — `WA.UI` carries `esc`/`buildMeta`/`isEchoQuote`/`bookmarkSVG`/`thumb`/`rowMedia`; six page scripts alias from it. The extraction immediately caught real drift: venue.js's `buildMeta` had silently missed the F-12 guard. (Taste helpers not extracted — 3 small copies, lower churn.)
@@ -223,12 +223,22 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 **P2 — resilience:**
 - ~~Zero-yield alerting on ingest.~~ **DONE June 2026** — central SQL check `wa_ingest_zero_yield_check()` (cron `wa-ingest-health`, daily 06:10 UTC; migration `20260611_ingest_zero_yield_health.sql`): flags any `ingest-%` fn whose 3 most recent ok-runs all yielded 0 inserted + 0 skipped, as one `fn='ingest-health', status='warn'` row the admin pipeline panel surfaces. No per-scraper redeploys needed.
 - ~~Debounce Discover's `run()` (150 ms).~~ **DONE June 2026.**
-- Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.
+- ~~Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.~~ **DONE + ENFORCED June 2026** — `docs/reconcile-enforce-runbook.md`. Dry-run converged (233 → 220 → 116 → 8 → 8); the cron is now `wa_reconcile_absent_picks(true, 3)` for the web scrapers. **Fienta excluded** after spot-checking the 8 stable candidates against the live feed exposed false positives (Starbenders/Napalm Death still listed but flagged) — root cause: `ingest-fienta` under-processes its feed (~2 of ~13 events/run), so its `last_seen` signal is unreliable. See the new **"ingest-fienta under-processing" finding** below; re-enable Fienta in the reconcile only after that's fixed.
 
 **P3 — hygiene:**
 - ~~localStorage key registry.~~ **DONE June 2026** — `docs/localstorage-registry.md`: all 11 keys, owner/shape/versioning, plus the rules (new keys `wa:` + versioned).
 - ~~Restructure curator/venue init.~~ **DONE June 2026** — curator's document-level listeners (bookmark change + `wa:bookmarks-synced`) moved to module scope (they stacked a duplicate pair per re-render); both pages gained the place.js-style init-if-data-present guard.
 - ~~Decide `catalog.js`'s per-city cap.~~ **DECIDED June 2026** — the fallback's contract is "enough to render something": **≤40 picks + ≤12 venues per city** for every city added from here on. Current seed: Tallinn 158 picks (grandfathered pending an editorial trim — choosing survivors is editorial work), Riga 7, Helsinki 4; venues ≤7 everywhere. Enforce on addition, not retroactively.
+
+---
+
+## New findings (June 2026 — from the reconcile-enforce investigation)
+
+**1. `ingest-fienta` under-processes its feed (HIGH — active data loss).** Evidence: the Fienta org feeds list ~13 future events each, but only ~2 active Fienta picks get their `last_seen_at` bumped per run, and two **currently-listed** events (Starbenders 02.07, Napalm Death 17.11) were flagged stale by the reconcile while still present in `fienta.com/o/paavli-kultuurivabrik?format=json`. `ingest_log` shows `status='ok'` with `inserted` 0–2/day, so the zero-yield health check doesn't catch it (it's low-yield, not zero). Root cause not yet confirmed — candidates: the per-event `bumpSeen` PATCH not matching live picks, events being filtered out of `fetchSourceEvents` before `bumpSeen`, or process-staging having minted multi-slug ids that `bumpSeen`'s single-id key (`channel-message_id`) can't hit. **Next step: add one debug line to `bumpSeen` (log pid + PATCH row count), run `ingest-fienta` once, inspect.** Do NOT ship a blind fix to a live ingest function. Fienta is excluded from the reconcile until this is resolved (see `docs/reconcile-enforce-runbook.md`).
+
+**2. Fienta picks carry `day=null` + a synthetic `valid_until` (MEDIUM — data quality).** The 8 stale candidates all have `day=null` and an identical `valid_until=2026-08-14` (a generic ~90-day fallback), so their real event date is unknown and they never expire on time. Symptom of process-staging not extracting a date from the Fienta `starts_at` for some events. Worth a pass once #1 is understood — they're likely the same root cause (events that slipped through with bad date parsing in the May backfill).
+
+**3. The zero-yield health check has a blind spot.** `wa_ingest_zero_yield_check()` flags *0* inserted+skipped, but `ingest-fienta` demonstrates a source can be *low-yield-broken* (2 of 13) while logging `ok`. Consider a per-source "expected vs actual event count" sanity signal, or have scrapers log `parsed`/`processed` (not just `inserted`) so a collapse from 13→2 is visible.
 
 ---
 
