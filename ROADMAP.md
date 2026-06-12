@@ -232,6 +232,16 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 
 ---
 
+## New findings (June 2026 — from the reconcile-enforce investigation)
+
+**1. `ingest-fienta` under-processes its feed (HIGH — active data loss).** Evidence: the Fienta org feeds list ~13 future events each, but only ~2 active Fienta picks get their `last_seen_at` bumped per run, and two **currently-listed** events (Starbenders 02.07, Napalm Death 17.11) were flagged stale by the reconcile while still present in `fienta.com/o/paavli-kultuurivabrik?format=json`. `ingest_log` shows `status='ok'` with `inserted` 0–2/day, so the zero-yield health check doesn't catch it (it's low-yield, not zero). Root cause not yet confirmed — candidates: the per-event `bumpSeen` PATCH not matching live picks, events being filtered out of `fetchSourceEvents` before `bumpSeen`, or process-staging having minted multi-slug ids that `bumpSeen`'s single-id key (`channel-message_id`) can't hit. **Next step: add one debug line to `bumpSeen` (log pid + PATCH row count), run `ingest-fienta` once, inspect.** Do NOT ship a blind fix to a live ingest function. Fienta is excluded from the reconcile until this is resolved (see `docs/reconcile-enforce-runbook.md`).
+
+**2. Fienta picks carry `day=null` + a synthetic `valid_until` (MEDIUM — data quality).** The 8 stale candidates all have `day=null` and an identical `valid_until=2026-08-14` (a generic ~90-day fallback), so their real event date is unknown and they never expire on time. Symptom of process-staging not extracting a date from the Fienta `starts_at` for some events. Worth a pass once #1 is understood — they're likely the same root cause (events that slipped through with bad date parsing in the May backfill).
+
+**3. The zero-yield health check has a blind spot.** `wa_ingest_zero_yield_check()` flags *0* inserted+skipped, but `ingest-fienta` demonstrates a source can be *low-yield-broken* (2 of 13) while logging `ok`. Consider a per-source "expected vs actual event count" sanity signal, or have scrapers log `parsed`/`processed` (not just `inserted`) so a collapse from 13→2 is visible.
+
+---
+
 ## Explicitly NOT building (unchanged)
 
 These would dilute the brand. Listed so the next person knows the answer is no without asking.
