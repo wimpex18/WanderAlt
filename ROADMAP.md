@@ -95,7 +95,7 @@ A second pass with full-page captures + scrolled-to-bottom viewport shots at 144
 
 **F-17 · LOW — Profile + About polish pass.** Profile: the CTA pair (View reading list → / Export JSON) is the F-5 inconsistency — apply the mobile full-width-stack rule; equalize the password input and Update button to the same control height and width rhythm; section spacing onto the `--s-*` ladder where off-grid. About reads clean (ch measures hold; link cards aligned) — verify-only, no change expected.
 
-### Deep-read addendum (June 2026 — end-user usability pass; full write-up in `docs/ux-audit-2026-06.md`)
+### Deep-read addendum (June 2026 — end-user usability pass; full write-up in `docs/audits/ux-audit-2026-06.md`)
 
 A second, journey-level read of the same screenshot corpus. Headline: **the filter→result feedback loop is broken on desktop** — activating Tonight at 1280×900 leaves the results count, the matching row, and the map pin all below the fold while the map shows open water (`smoke-desktop-discover-tonight.png`). This compounds F-9 + F-15 and re-ranks them to the front of Phase 1. New findings:
 
