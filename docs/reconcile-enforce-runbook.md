@@ -25,41 +25,30 @@ The candidate count fell as the scrapers started feeding `last_seen`, exactly as
 
 This is the proof the signal works: had this been in enforce mode on Jun 9 it would have wrongly archived 233 live events.
 
-## Before you flip — the Fienta caveat (do not skip)
+## Current status — ENFORCE (web sources only), since Jun 12 2026
 
-As of Jun 12 **all 8 stable candidates are Fienta** (paavli-kultuurivabrik 5, Von Krahl `15` 3); **zero** are from the web scrapers. Two readings:
+The cron runs `wa_reconcile_absent_picks(true, 3)`. **Fienta is excluded** (`reconcile_absences=false` on both Fienta channels). Web-source candidate set was 0 at flip, so nothing was archived on enable — the machinery is live and will archive genuine web-venue cancellations going forward.
 
-1. The web scrapers' `last_seen` bump is working — good.
-2. **Fienta events can leave the org feed for reasons other than cancellation** — sales window closed, sold out, or the event moved orgs. Absence there is a weaker cancellation signal than a venue's "all events" page dropping a row.
+### Why Fienta was excluded (the investigation that flipped the decision)
 
-So **do not blanket-enforce yet.** Two safe paths:
+All 8 stable candidates were Fienta, and spot-checking them against the live `fienta.com/o/…?format=json` feed showed the absence signal is **unreliable**:
 
-- **Recommended — web-first enforce.** Enforce only the venue-page scrapers (where absence ≈ removed), keep Fienta in dry-run until its absence semantics are confirmed:
-  ```sql
-  -- temporarily narrow to web snapshot sources, then enforce
-  -- (verify the list first: SELECT channel,kind,reconcile_absences FROM sources WHERE reconcile_absences;)
-  ```
-  The cleanest implementation is a `p_kinds` guard or a second flag; until that's added, web sources currently produce 0 candidates anyway, so enforcing as-is would archive only the 8 Fienta rows — which is exactly what we're NOT sure about. **Therefore: confirm Fienta first.**
-- **Confirm Fienta, then enforce all.** Open the 8 candidate Fienta events on fienta.com (ids in the latest `reconcile-absent` `sample_ids`). If they 404 / show cancelled → absence = cancellation, enforce is safe. If they're live but off the org feed → Fienta needs a different signal; leave it in dry-run and set `reconcile_absences=false` on the two Fienta channels.
+| Candidate | Live feed | Verdict |
+|---|---|---|
+| Nikki Nair, EYEHATEGOD, Drew McDowall (paavli) | absent | genuinely gone ✓ |
+| **Starbenders** (paavli, Jul 2) | **present** | **false positive** ✗ |
+| **Napalm Death** (paavli, Nov 17) | **present** | **false positive** ✗ |
 
-## Flip to enforce
+The false positives have `last_seen_at` stuck at their May-16 creation date despite being listed — because **`ingest-fienta` is under-processing the feed** (logs `status='ok'` but only ~2 events ingested per run vs ~13+ in each org feed). Until that scraper bug is fixed, Fienta absence ≠ cancellation. **Do not re-enable `reconcile_absences` on Fienta until `ingest-fienta` reliably bumps `last_seen` for every listed event** (verify: after a run, `SELECT count(*) FROM picks p JOIN … WHERE src.kind='fienta' AND last_seen_at::date=now()::date` should ≈ the number of active Fienta picks still in the feed, not 2).
 
-Decision gate (all must hold):
-1. Candidate count stable (±small) for **≥3 consecutive days** — currently 2 (Jun 11–12). Wait one more day.
-2. The latest `sample_ids` spot-checked against the live sources and confirmed actually gone.
-3. Fienta caveat resolved (above).
+The 8 stale Fienta candidates were **not** archived (2+ are live). They have `day=null` + a synthetic `valid_until=2026-08-14`; they'll expire via `archive-stale` then, or get cleaned when ingest-fienta is fixed.
 
-Then re-point the cron from dry-run to enforce:
+### To re-enable a source for enforce later
 
 ```sql
-SELECT cron.schedule('wa-reconcile-absent', '0 5 * * *',
-                     $$SELECT wa_reconcile_absent_picks(true, 3)$$);
-```
-
-Run once by hand first and read the result before trusting the cron:
-
-```sql
-SELECT wa_reconcile_absent_picks(true, 3);   -- returns the number archived
+UPDATE sources SET reconcile_absences = true WHERE channel = '<channel>';
+-- then watch one dry-run-equivalent: temporarily SELECT wa_reconcile_absent_picks(false, 3)
+-- and spot-check the sample_ids before trusting the enforcing cron.
 ```
 
 ## Rollback
