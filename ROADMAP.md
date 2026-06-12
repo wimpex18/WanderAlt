@@ -213,7 +213,7 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 
 **P0 — correctness (do first):**
 - ~~Gate Saved's gone-detection on a live-data flag (`WA.DATA_LIVE`); add undo to Dismiss.~~ **DONE June 2026** — `supabase.js` exposes `WA.DATA_LIVE`; gone-rows render only against live data; Dismiss leaves an 8-second Undo that restores bookmark + snapshot.
-- Commit the deployed-only edge functions to the repo. **Partial** — `process-staging` (v39) + `translate-picks` (v2) committed and in sync; the deployed-only scrapers (`ingest-telegram`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong`, `ingest-hel-linkedevents`, `archive-stale`, `rotate-tonight`, `geocode-picks`, `enrich-pick-images`, `classify-moods`, …) remain.
+- ~~Commit the deployed-only edge functions to the repo.~~ **DONE June 2026** — all 30 functions are now committed under `supabase/functions/` and in sync with production (spot-checked: the instrumented scrapers carry their `bumpSeen`/`last_seen_at` changes; append-stream sources like `ingest-telegram` correctly carry none). Repo is the source of truth again; no more editing live source to make a change.
 
 **P1 — structural (next):**
 - ~~Extract shared `ui-helpers.js` — one script tag, no build step.~~ **DONE June 2026** — `WA.UI` carries `esc`/`buildMeta`/`isEchoQuote`/`bookmarkSVG`/`thumb`/`rowMedia`; six page scripts alias from it. The extraction immediately caught real drift: venue.js's `buildMeta` had silently missed the F-12 guard. (Taste helpers not extracted — 3 small copies, lower churn.)
@@ -223,7 +223,7 @@ What a contributor cannot currently find anywhere in the repo, in priority order
 **P2 — resilience:**
 - ~~Zero-yield alerting on ingest.~~ **DONE June 2026** — central SQL check `wa_ingest_zero_yield_check()` (cron `wa-ingest-health`, daily 06:10 UTC; migration `20260611_ingest_zero_yield_health.sql`): flags any `ingest-%` fn whose 3 most recent ok-runs all yielded 0 inserted + 0 skipped, as one `fn='ingest-health', status='warn'` row the admin pipeline panel surfaces. No per-scraper redeploys needed.
 - ~~Debounce Discover's `run()` (150 ms).~~ **DONE June 2026.**
-- Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.
+- ~~Reconcile enforce runbook; flip to enforce only after the dry-run count stabilizes.~~ **DONE June 2026** — `docs/reconcile-enforce-runbook.md`. The dry-run has converged (233 → 220 → 116 → 8 → 8 candidates over Jun 9–12) so the signal is validated; the runbook documents the flip/rollback SQL and flags the open caveat that all 8 stable candidates are **Fienta** (whose feed drops sold-out/closed-sales events, a weaker cancellation signal than a venue page) — so confirm Fienta absence semantics before blanket-enforcing.
 
 **P3 — hygiene:**
 - ~~localStorage key registry.~~ **DONE June 2026** — `docs/localstorage-registry.md`: all 11 keys, owner/shape/versioning, plus the rules (new keys `wa:` + versioned).
