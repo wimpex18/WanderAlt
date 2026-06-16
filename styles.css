@@ -6164,3 +6164,111 @@ body[data-page="saved"] .seg-note {
 .returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
 .returnbar .ic { width: 15px; height: 15px; color: var(--c-accent); }
 .returnbar:hover { color: var(--c-accent); }
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 1: TODAY (index.html + briefing.js)
+   Ported from docs/redesign-jun26/wa-pages.css (Today block) +
+   wa-core standfirst, tokens translated to production --c-*/--ff-*,
+   widths on the --reading-max ladder. Overrides the May-2026
+   flat-hero Today rules earlier in this file.
+   ════════════════════════════════════════════════════════════ */
+
+/* Standfirst — editorial statement row */
+.standfirst{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-7);padding-top:var(--s-7);padding-bottom:var(--s-6);margin:0}
+.standfirst__t{font-family:var(--ff-display);font-style:italic;font-size:38px;line-height:1.15;letter-spacing:-.01em;font-weight:400;color:var(--c-ink);text-wrap:pretty}
+.standfirst__t em,.standfirst__city{font-style:italic;color:var(--c-accent)}
+.standfirst__meta{font-family:var(--ff-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--c-ink-mute);white-space:nowrap;padding-bottom:6px}
+
+/* Tonight — 2-col editorial hero (left voice · right media plate) */
+.tonight{display:grid;grid-template-columns:1.25fr .85fr;gap:var(--s-8);padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
+.tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
+.tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
+.tonight__kicker b{color:var(--c-ink);font-weight:500}
+.tonight__title{font-family:var(--ff-display);font-size:42px;line-height:1.08;font-weight:600;letter-spacing:-.018em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-6);display:block}
+a.tonight__title:hover{color:var(--c-accent)}
+.quote{border-left:3px solid var(--c-lime);padding-left:var(--s-6);margin:0 0 var(--s-4)}
+.quote__t{font-family:var(--ff-display);font-style:italic;font-size:28px;line-height:1.3;color:var(--c-ink-soft);text-wrap:pretty;margin:0}
+.quote__attr{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.quote__attr .handle{font-size:13.5px}
+.tonight__actions{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-7);flex-wrap:wrap}
+.tonight__actions .btn--quiet{margin-left:auto}
+.tonight__media{display:flex;flex-direction:column;gap:14px}
+.tonight__photo{position:relative;display:block;min-height:340px;border-radius:var(--radius-card);border:var(--rule-w) solid var(--c-rule);overflow:hidden;background:var(--c-paper-deep)}
+.tonight__photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tonight__photo .tag{position:absolute;top:14px;left:14px}
+.tonight__venue{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep)}
+.tonight__venue b{display:block;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink);letter-spacing:-.01em;margin-bottom:3px}
+.tonight__venue .meta{font-size:12px}
+
+/* This week + From-the-desk rail */
+.week{display:grid;grid-template-columns:1.25fr .85fr;gap:var(--s-8);padding-bottom:var(--s-2)}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-5);padding:var(--s-4) 0 var(--s-3);border-bottom:var(--rule-w) solid var(--c-rule)}
+.sechead__t{font-family:var(--ff-display);font-size:30px;font-weight:600;letter-spacing:-.018em;margin:0}
+.thisweek{margin:0}
+.picks{margin:0}
+.pick{display:grid;grid-template-columns:72px 1fr auto;gap:var(--s-5);align-items:center;padding:var(--s-5) 0;border-bottom:var(--rule-w) solid var(--c-rule)}
+.pick__img{display:block;width:72px;height:72px}
+.pick .thumb{width:72px;height:72px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule)}
+.pick__body{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pick__title{font-family:var(--ff-display);font-size:19px;font-weight:600;letter-spacing:-.012em;line-height:1.2;color:var(--c-ink)}
+.pick__title-link:hover .pick__title{color:var(--c-accent)}
+.pick .meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.pick .via{font-size:12.5px}
+.pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
+.pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
+.week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
+.week__rail{display:flex;flex-direction:column}
+
+/* The Column — curator metadata plate */
+.column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
+.column__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-bottom:var(--s-4);margin-bottom:var(--s-5);border-bottom:var(--rule-w) solid var(--c-rule)}
+.column__eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent)}
+.column__body{font-family:var(--ff-display);font-style:italic;font-size:21px;line-height:1.5;color:var(--c-ink-soft);text-wrap:pretty}
+.column__body em{color:var(--c-accent)}
+.column__body p+p{margin-top:var(--s-3)}
+.column__sig{display:flex;align-items:center;gap:12px;margin-top:var(--s-5)}
+.column__ava{width:34px;height:34px;border-radius:var(--radius);background:var(--c-accent);color:var(--c-lime);display:grid;place-items:center;font-family:var(--ff-mono);font-size:12px;flex-shrink:0}
+
+/* Digest plate */
+.digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
+.digest-optin .rule{display:none}
+.digest-optin__row{display:flex;gap:10px;margin-top:14px}
+.digest-optin__email{flex:1;min-width:0;height:48px}
+.digest-optin__submit{height:48px}
+
+/* Taste check — editorial plate */
+.taste-onboarding{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin-top:var(--s-6)}
+.taste-onboarding__intro{margin:8px 0 var(--s-4);line-height:1.55}
+.taste-q{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) 0;border-top:var(--rule-w) solid var(--c-rule)}
+.taste-q__prompt{font-size:15.5px;font-weight:500;color:var(--c-ink-soft)}
+
+/* ── Today mobile ─────────────────────────────────────────── */
+@media (max-width:767px){
+  .standfirst{flex-direction:column;align-items:flex-start;gap:10px;padding-top:var(--s-6);padding-bottom:var(--s-5)}
+  .standfirst__t{font-size:27px;line-height:1.2}
+  .standfirst__meta{padding:0}
+  .tonight{display:block;padding-top:var(--s-2);padding-bottom:var(--s-7)}
+  .tonight__title{font-size:31px;margin-bottom:var(--s-4)}
+  .tonight__media{margin-bottom:var(--s-5)}
+  .tonight__photo{min-height:0;height:215px}
+  .quote{padding-left:var(--s-4)}
+  .quote__t{font-size:24px;line-height:1.38}
+  .tonight__actions{flex-direction:column;gap:10px;margin-top:var(--s-6)}
+  .tonight__actions .btn{width:100%}
+  .tonight__actions .btn--quiet{margin-left:0}
+  .week{display:block}
+  .sechead__t{font-size:24px}
+  .pick{grid-template-columns:64px 1fr auto;gap:var(--s-4);padding:var(--s-4) 0}
+  .pick__img,.pick .thumb{width:64px;height:64px}
+  .pick__title{font-size:17px}
+  .week__foot{flex-direction:column;align-items:flex-start;gap:12px}
+  .week__rail{margin-top:var(--s-7)}
+}
+
+/* Tonight hero — solo (no photo) collapses to one column; hero save button */
+.tonight--solo{grid-template-columns:1fr}
+.tonight__main{min-width:0}
+.tonight__save{gap:8px}
+.tonight__save .ic{width:16px;height:18px}
+.tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}

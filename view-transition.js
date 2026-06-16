@@ -32,7 +32,7 @@
        clicked card. Plain list rows (e.g. venue "more from") have no
        .thumb, so they fall through to a default cross-fade. */
     let source = null;
-    if (link.classList.contains('tonight__hero')) {
+    if (link.classList.contains('tonight__hero') || link.classList.contains('tonight__photo')) {
       source = link;
     } else {
       const card = link.closest('.pick, .list-row--card');
