@@ -3963,8 +3963,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .venue-context { display: block !important; }
   .venue-context__body { display: block !important; }
 
-  /* ── Print the actual URLs behind the social/web buttons ── */
-  .social-btn::after {
+  /* ── Print the actual URLs behind the social/web icons ── */
+  .social-icon::after {
     content: " (" attr(href) ")";
     font-size: 8pt;
     color: #555;
@@ -6181,46 +6181,32 @@ body[data-page="profile"] .profile-actions .auth-panel__close:hover{border-color
 
 /* ════════════════════════════════════════════════════════════
    SOCIAL / WEB LINKS — venue + place detail pages
-   Plate & Rule button family: framed hairline button, monochrome
-   stroke glyph + mono label, petrol on hover. Glyphs stay
-   monochrome by design — the two-tone brand forbids brand colours.
-   Rendered by WA.UI.socialButtons() (ui-helpers.js); used on
-   venue.html (events) and place.html (places). On mobile the row
-   stretches each button to a comfortable, equal tap target.
+   Compact icon-only row (link-in-bio style): small recognizable
+   brand marks, no frames, no labels. Glyphs inherit currentColor
+   and go petrol on hover, so the two-tone brand holds. Each link
+   keeps a 44px tap target around a ~22px glyph; the row is nudged
+   left so the first glyph sits flush with the text above it.
+   Rendered by WA.UI.socialButtons() (ui-helpers.js); same on
+   desktop and mobile. Used on venue.html + place.html.
    ════════════════════════════════════════════════════════════ */
-.social-links { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
-.social-btn {
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-top: var(--s-3);
+  margin-left: -11px;   /* (44 − 22) / 2 — align the first glyph flush-left */
+}
+.social-icon {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
+  justify-content: center;
+  width: 44px;
   height: 44px;
-  padding: 0 var(--s-4);
-  border: var(--rule-w) solid var(--c-rule-strong);
-  border-radius: var(--radius);
-  background: var(--c-paper);
   color: var(--c-ink-soft);
-  font-family: var(--ff-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   text-decoration: none;
-  white-space: nowrap;
-  transition: border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition: color var(--t-fast), transform var(--t-fast);
 }
-.social-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
-@media (hover: hover) { .social-btn:hover { transform: translateY(-1px); } }
-.social-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
-.social-btn__ic {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.social-btn__label { line-height: 1; }
-@media (max-width: 767px) {
-  .social-btn { flex: 1 1 auto; justify-content: center; padding: 0 var(--s-3); }
-}
+.social-icon svg { width: 22px; height: 22px; display: block; }
+.social-icon:hover { color: var(--c-accent); }
+@media (hover: hover) { .social-icon:hover { transform: translateY(-1px); } }
+.social-icon:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
