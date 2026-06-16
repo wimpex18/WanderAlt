@@ -176,13 +176,11 @@
             <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
             <span class="action-btn__label">I&rsquo;m going</span>
           </button>
-          ${entry.day ? `<button class="action-btn venue-cal-btn" type="button" aria-label="Add to calendar">
+          ${entry.day ? `<button class="action-icon venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
             <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
-            <span class="action-btn__label">Add to calendar</span>
           </button>` : ''}
-          <button class="action-btn venue-share-btn" type="button" aria-label="Share this pick">
+          <button class="action-icon venue-share-btn" type="button" aria-label="Share this pick" title="Share">
             <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-            <span class="action-btn__label">Share</span>
           </button>
         </div>
 
@@ -392,6 +390,17 @@
       });
     }
 
+    /* Icon-only action buttons can't show a text confirmation, so briefly
+       swap the glyph to a petrol check, then restore it. */
+    const flashDone = (el) => {
+      if (!el || el.dataset.flashing) return;
+      const orig = el.innerHTML;
+      el.dataset.flashing = '1';
+      el.classList.add('action-icon--done');
+      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+      setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+    };
+
     /* Wire Share — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('.venue-share-btn');
     if (shareBtn && window.WA.Share) {
@@ -401,14 +410,7 @@
           text:  `${entry.title} — ${entry.venue}`,
           url:   window.location.href,
         });
-        if (r === 'copied' || r === 'shared') {
-          const lbl = shareBtn.querySelector('.action-btn__label');
-          if (lbl) {
-            const prev = lbl.textContent;
-            lbl.textContent = r === 'copied' ? 'Link copied ✓' : 'Shared ✓';
-            setTimeout(() => { lbl.textContent = prev; }, 2000);
-          }
-        }
+        if (r === 'copied' || r === 'shared') flashDone(shareBtn);
       });
     }
 
@@ -416,14 +418,7 @@
     const calBtn = main.querySelector('.venue-cal-btn');
     if (calBtn && window.WA.Share) {
       calBtn.addEventListener('click', () => {
-        if (window.WA.Share.downloadIcs(entry)) {
-          const lbl = calBtn.querySelector('.action-btn__label');
-          if (lbl) {
-            const prev = lbl.textContent;
-            lbl.textContent = 'Added ✓';
-            setTimeout(() => { lbl.textContent = prev; }, 2000);
-          }
-        }
+        if (window.WA.Share.downloadIcs(entry)) flashDone(calBtn);
       });
     }
   };

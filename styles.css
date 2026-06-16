@@ -4073,17 +4073,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    the wide row. Gap is a token (was an inline off-grid 10px). */
 .venue-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;       /* all three actions stay on one line */
   gap: var(--s-3);
   align-items: center;
   margin-top: var(--s-5);
-}
-.venue-actions .btn-primary,
-.venue-actions .btn-secondary { flex: 0 0 auto; }
-@media (max-width: 767px) {
-  /* Phone: primary CTA full-width (research-recommended), secondaries
-     wrap into the row beneath it. */
-  .venue-actions .btn-primary { flex: 1 1 100%; }
 }
 
 /* Curator handle color in Compass = petrol */
@@ -6305,3 +6298,26 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
 .action-btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
 .action-btn--primary:hover { background: var(--c-accent-deep); border-color: var(--c-accent-deep); color: #fff; }
 .action-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* Icon-only secondary actions (Add to calendar, Share) — unified with the
+   social-icon scale: borderless, 44px tap target, ~22px glyph, petrol on
+   hover. Keeps the event-action row to one line next to the labelled
+   petrol "I'm going" primary. .action-icon--done = transient petrol check. */
+.action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--c-ink-soft);
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.action-icon .ic { width: 22px; height: 22px; }
+.action-icon:hover { color: var(--c-accent); }
+@media (hover: hover) { .action-icon:hover { transform: translateY(-1px); } }
+.action-icon:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
+.action-icon--done { color: var(--c-accent); }
