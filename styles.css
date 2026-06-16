@@ -754,37 +754,6 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 
 .picks { display: flex; flex-direction: column; }
 
-/* "Show more" footer beneath the picks list. Editorial pagination —
-   left-aligned mono button, no shadow, no fill. Mirrors the briefing's
-   "back-page of a newsletter" voice. */
-.picks-footer {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-4);
-  padding: var(--s-4) 0 var(--s-2);
-  border-top: var(--rule-w) solid var(--c-rule);
-  margin-top: var(--s-3);
-}
-.picks-footer__btn {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-family: var(--ff-mono);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  color: var(--c-accent);
-  cursor: pointer;
-  text-align: left;
-}
-.picks-footer__btn:hover { color: var(--c-ink); }
-.picks-footer__meta {
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  color: var(--c-ink-mute);
-  margin: 0;
-  margin-left: auto;
-}
-
 /* ── Empty state for This Week ───────────────────────────────
    Shown by briefing.js when _weekFullSet has zero entries. Uses
    the active city's plate as a 200×150 hero on the left, with
@@ -859,15 +828,6 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 .pick:last-child { border-bottom: 0; }
 
-/* .pick__link is now a <div> grid container — see briefing.js for why.
-   The thumb and title each get their own <a> so the via-handle <a>
-   isn't nested inside another <a>. */
-.pick__link {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: var(--s-4);
-  align-items: start;
-}
 .pick__img       { display: block; }
 .pick__title-link { display: block; }
 .pick__body {
@@ -3959,7 +3919,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .deprecation-banner,
   .city-selector,
   .city-selector__chev,
-  .tonight__badge,
   .tonight__actions,
   .venue-actions,
   .venue-back,
@@ -4037,11 +3996,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    ============================================================ */
 
 /* The bordered Tonight card, lime pill badge and kind badge were retired
-   when the Today hero went flat (May 2026 editorial redesign — see the
-   EDITORIAL REDESIGN block at the end of this file + briefing.js
-   renderTonight). The hero now uses .tonight__badge / .tonight__kindline /
-   .tonight__title / .tonight__quote directly. .tonight__venue* stays — the
-   venue page and AI match card still reuse it. */
+   when the Today hero went flat (May 2026), then fully superseded by the
+   June 2026 Plate & Rule redesign — the Today hero now lives in the
+   "Phase 1: TODAY" block at the end of this file (briefing.js renderTonight
+   emits .tonight__signal / .tag--live / .tonight__title / .quote /
+   .tonight__media). .tonight__venue* stays — the venue page and AI match
+   card still reuse it. */
 
 /* Tonight venue name — sans, heavier */
 .tonight__venue-name {
@@ -5612,188 +5572,8 @@ body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
   body.discover-ai-mode .discover-sheet[hidden] { display: none !important; }
 }
 
-/* ════════════════════════════════════════════════════════════
-   TODAY — flat Tonight hero (curator quote is the loudest element)
-   ════════════════════════════════════════════════════════════ */
-.tonight__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  background: var(--c-lime);
-  padding: 5px 11px;
-  border-radius: 999px;
-  margin: 0 0 var(--s-4);
-}
-.tonight__badge::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--c-ink);
-}
-.tonight__kindline {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--s-3);
-  margin: 0 0 var(--s-3);
-}
-.tonight__kind {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  border: var(--rule-w) solid var(--c-rule-strong);
-  padding: 4px 9px;
-  border-radius: 5px;
-}
-.tonight__kind .dot { width: 7px; height: 7px; border-radius: 50%; border: 2px solid var(--c-accent); }
-.tonight__where {
-  font-family: var(--ff-mono);
-  font-size: 12px;
-  color: var(--c-ink-mute);
-  letter-spacing: 0.02em;
-}
-.tonight__title {
-  display: block;
-  font-family: var(--ff-display);   /* Fraunces */
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  color: var(--c-ink);
-  margin: 0 0 var(--s-4);
-}
-
-/* ── Photo-forward Tonight hero (June 2026) ──────────────────────
-   Venue photo as a banner with a "scrim" gradient so overlaid white
-   text stays legible over any photo (NYT/Airbnb hero pattern). Only
-   rendered when the pick has an image_url; otherwise the flat header. */
-.tonight__hero {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 300px;
-  margin: 0 0 var(--s-5);
-  padding: var(--s-5);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-  background-color: var(--c-ink);   /* fallback while the photo loads / if it 404s */
-  background-size: cover;
-  background-position: center;
-  text-decoration: none;
-  isolation: isolate;
-}
-/* The scrim — transparent at top, dark at the foot, behind the text. */
-.tonight__hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  /* Same full-height ramp as .detail-hero (F-1) — long titles stay in
-     the ≥0.4-alpha zone, eyebrow/badge keep a ≥0.12 floor at the top. */
-  background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.55) 38%,
-    rgba(0, 0, 0, 0.38) 68%,
-    rgba(0, 0, 0, 0.12) 100%);
-}
-.tonight__hero-foot { display: block; }
-.tonight__badge--onphoto {
-  position: absolute;
-  top: var(--s-4);
-  left: var(--s-4);
-}
-.tonight__kindline--onphoto { color: rgba(255, 255, 255, 0.92); }
-.tonight__kindline--onphoto .tonight__where { color: rgba(255, 255, 255, 0.78); }
-/* The kind badge keeps explicit dark text + petrol dot, which vanish over
-   the photo/scrim — make it legible on the hero: white text, hairline
-   white border, lime dot (lime = the live "Tonight" signal, reads on dark). */
-.tonight__kindline--onphoto .tonight__kind {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.55);
-}
-.tonight__kindline--onphoto .tonight__kind .dot { border-color: var(--c-lime); }
-.tonight__title--onphoto {
-  color: #fff;
-  font-size: 34px;
-  margin: var(--s-2) 0 0;
-  text-wrap: pretty;
-}
-@media (hover: hover) {
-  .tonight__hero:hover .tonight__title--onphoto { color: #fff; }
-  .tonight__hero { transition: transform var(--t-mid); }
-  .tonight__hero:hover { transform: translateY(-2px); }
-}
-@media (min-width: 768px) {
-  .tonight__hero { min-height: 380px; }
-  .tonight__title--onphoto { font-size: 44px; }
-}
-.tonight:hover .tonight__title,
-a.tonight__title:hover { color: var(--c-accent); }
-
-/* Flat hero quote — bigger, lime rule on the left, no surface card. */
-body[data-page="briefing"] .tonight__quote {
-  position: relative;
-  font-family: var(--ff-display);
-  font-style: italic;
-  font-size: 30px;
-  line-height: 1.18;
-  letter-spacing: -0.01em;
-  color: var(--c-ink);
-  margin: 0 0 var(--s-3);
-  padding: 0 0 0 var(--s-5);
-  background: none;
-  border: 0;
-  border-radius: 0;
-  text-wrap: pretty;
-}
-body[data-page="briefing"] .tonight__quote::before {
-  content: "";
-  position: absolute;
-  left: 0; top: var(--s-2); bottom: var(--s-2);
-  width: 3px;
-  background: var(--c-lime);
-}
-body[data-page="briefing"] .tonight__attr {
-  display: block;
-  font-family: var(--ff-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: none;
-  color: var(--c-ink-mute);
-  margin: 0 0 var(--s-5);
-}
-
-.tonight__actions { display: flex; gap: var(--s-3); margin-top: var(--s-4); align-items: stretch; }
-/* The hero Save button carries the .bookmark class, whose base rule sets
-   align-self:start — that overrode the actions row's align-items:stretch and
-   collapsed the button to content height (≈25px). Re-stretch it here so both
-   CTAs fill the 50px row and clear the 44px min tap target (WCAG 2.5.5). */
-.tonight__actions .bookmark { margin: 0; padding: 0; align-self: stretch; }
-/* (.btn-going / .btn-save retired — the Tonight hero now uses the .btn
-   family; see the Plate & Rule Phase 1 block.) */
-
-/* Today: bigger editorial section title; subtle hover lift on picks. */
-body[data-page="briefing"] .section-title { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+/* Today: subtle hover lift on This Week picks (Phase 1 owns the rest). */
 @media (hover: hover) { body[data-page="briefing"] .pick:hover { transform: translateY(-1px); transition: transform var(--t-mid); } }
-
-@media (max-width: 767px) {
-  body[data-page="briefing"] .section-title { font-size: 24px; }
-  body[data-page="briefing"] .tonight__quote { font-size: 25px; }
-  /* Phone: stack full-width — the recommended primary-CTA pattern on
-     narrow screens (maximises the tap target, clear hierarchy). */
-  .tonight__actions { flex-direction: column; }
-}
 
 /* ════════════════════════════════════════════════════════════
    PROFILE — flat petrol avatar (no gradient), proper toggle switch
@@ -6382,3 +6162,27 @@ body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var
 /* Retire the last 999px pills: mood tag → radius-8 control, list tag → radius-4 */
 .venue-mood{border-radius:var(--radius)}
 .list-row__tag{border-radius:var(--radius-tag)}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 4b: PROFILE (no Claude Design board;
+   aligned to About's rule-header pattern + the control family).
+   ════════════════════════════════════════════════════════════ */
+body[data-page="profile"] .profile-head{padding-top:var(--s-8);padding-bottom:var(--s-6)}
+body[data-page="profile"] .profile-head__email{font-family:var(--ff-display);font-size:30px;font-weight:600;letter-spacing:-.018em}
+body[data-page="profile"] .profile-avatar{border-radius:var(--radius);background:var(--c-accent)}
+body[data-page="profile"] .profile-avatar__initial{color:var(--c-lime)}
+/* Section headers → serif title with a hairline rule (matches About) */
+body[data-page="profile"] .profile-section{padding-top:var(--s-7)}
+body[data-page="profile"] .profile-section .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-4);border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
+body[data-page="profile"] .profile-section .section-title{font-family:var(--ff-display);font-size:26px;font-weight:600;letter-spacing:-.018em}
+/* Password field → .field look */
+body[data-page="profile"] .auth-panel__input{width:100%;height:52px;padding:0 18px;border:1.5px solid var(--c-rule-strong);border-radius:var(--radius);background:var(--c-paper);font-family:var(--ff-body);font-size:16.5px}
+body[data-page="profile"] .auth-panel__input:focus-visible{border-color:var(--c-accent);outline:none}
+/* Secondary actions (Export / Reset / Clear) → quiet button family.
+   Scoped to .profile-actions so the auth-overlay close (×) is untouched. */
+body[data-page="profile"] .profile-actions .auth-panel__close{height:52px;min-height:52px;padding:0 24px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);color:var(--c-ink-soft);font-family:var(--ff-body);font-size:15px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;width:auto}
+body[data-page="profile"] .profile-actions .auth-panel__close:hover{border-color:var(--c-ink);color:var(--c-ink)}
+@media (max-width:767px){
+  body[data-page="profile"] .profile-head__email{font-size:24px}
+  body[data-page="profile"] .profile-section .section-title{font-size:22px}
+}

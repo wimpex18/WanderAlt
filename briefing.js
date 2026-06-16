@@ -201,10 +201,13 @@
     const section = document.getElementById('tonight');
     if (!section) return;
     section.removeAttribute('aria-busy');
+    /* No photo / hero in the empty state — collapse the 2-col Tonight grid
+       to a single column so the tag + note read as one editorial block. */
+    section.classList.add('tonight--solo');
     const cityId    = window.WA?.CITY || 'tallinn';
     const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
     section.innerHTML =
-      `<span class="tonight__badge">Tonight</span>
+      `<div class="tonight__signal"><span class="tag tag--live">Tonight</span></div>
        <p class="tonight__empty">No pick for tonight in ${cityLabel} yet &mdash; curators are warming up. ` +
        `In the meantime, <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
   };
