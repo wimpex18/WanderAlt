@@ -6019,3 +6019,148 @@ body[data-page="saved"] .seg-note {
   transition: color var(--t-fast);
 }
 .taste-cue:hover { color: var(--c-accent); }
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — June 2026 redesign (Claude Design)
+   ------------------------------------------------------------
+   Full visual reskin. Source of truth: docs/redesign-jun26/
+   (wa-core.css + wa-pages.css + boards-*.jsx). Ported onto the
+   production token system per the approved plan:
+     · KEEP Fraunces/Inter (NOT DM Serif/Geist) and the responsive
+       --reading-max ladder (NOT a fixed 1240 --shell).
+     · Redesign --petrol/--lime/--ink/--rule map 1:1 to --c-*.
+   Radius vocabulary: 4 (tags) · 8 (controls) · 12 (plates); the
+   999px pill is retired (bottom nav → docked bar, view-fab →
+   radius-8). Phase 0 = shape language + shared chrome.
+   ════════════════════════════════════════════════════════════ */
+:root {
+  --radius-tag:    4px;   /* the redesign's tag radius (alongside 8/12) */
+  --c-paper-sink:  #f4f3f0;
+  --c-accent-deep: oklch(0.36 0.065 195);
+  --c-accent-line: oklch(0.88 0.02 195);
+  --c-cream:       #f6f3ec;
+}
+
+/* ── .shell — every block obeys one grid (mapped to the ladder) ── */
+.shell { width: 100%; max-width: var(--reading-max); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* ── Shared atoms ─────────────────────────────────────────────── */
+.wa-plate { background: var(--c-paper); border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); }
+.wa-plate--sunk { background: var(--c-paper-deep); }
+.tag { display: inline-flex; align-items: center; gap: 7px; font-family: var(--ff-mono); font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; padding: 7px 12px; border-radius: var(--radius-tag); }
+.tag--live { background: var(--c-lime); color: var(--c-ink); }
+.tag--live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-ink); }
+.tag--ghost { border: var(--rule-w) solid var(--c-rule-strong); color: var(--c-ink-mute); background: var(--c-paper); }
+.tag--photo { border: 1px solid rgba(255,255,255,.45); color: #fff; background: rgba(10,10,12,.35); }
+.dotsep { color: var(--c-faint); }
+
+/* ── Buttons — ONE family, four weights, 8px radius, 52px tall ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; height: 52px; padding: 0 28px; border-radius: var(--radius); font-family: var(--ff-body); font-size: 16px; font-weight: 600; letter-spacing: -.01em; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.btn--primary { background: var(--c-ink); color: var(--c-paper); }
+.btn--primary:hover { background: var(--c-accent); }
+.btn--secondary { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-ink); }
+.btn--secondary:hover { background: var(--c-ink); color: var(--c-paper); }
+.btn--quiet { background: var(--c-paper); color: var(--c-ink-soft); border: var(--rule-w) solid var(--c-rule-strong); }
+.btn--quiet:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.btn--petrol { background: var(--c-accent); color: #fff; }
+.btn--petrol:hover { background: var(--c-accent-deep); }
+.btn--sm { height: 44px; padding: 0 20px; font-size: 15px; }
+.btn .ic { width: 18px; height: 18px; }
+.linkact { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--c-ink); padding: 10px 0; border-bottom: 2px solid var(--c-lime); transition: color var(--t-fast); }
+.linkact:hover { color: var(--c-accent); }
+.linkact .ic { width: 15px; height: 15px; }
+
+/* ── Chips · segmented control · fields ───────────────────────── */
+.wa-chip { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: var(--radius); border: var(--rule-w) solid var(--c-rule-strong); background: var(--c-paper); font-family: var(--ff-mono); font-size: 13px; letter-spacing: .03em; color: var(--c-ink-soft); white-space: nowrap; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast); }
+.wa-chip:hover { border-color: var(--c-ink); }
+.wa-chip--on { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-paper); }
+.wa-chip--on::before { content: "✓"; font-size: 11px; }
+.wa-chip--facet { gap: 10px; color: var(--c-ink); }
+.wa-chip--facet::after { content: ""; width: 7px; height: 7px; border-right: 1.4px solid var(--c-ink-mute); border-bottom: 1.4px solid var(--c-ink-mute); transform: rotate(45deg) translateY(-2px); }
+.wa-seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--c-paper-deep); border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius); }
+.wa-seg__tab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 24px; border-radius: calc(var(--radius) - 3px); font-size: 15px; font-weight: 600; color: var(--c-ink-mute); transition: background var(--t-fast), color var(--t-fast); }
+.wa-seg__tab:hover { color: var(--c-ink); }
+.wa-seg__tab--on { background: var(--c-ink); color: var(--c-paper); }
+.wa-seg__count { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; opacity: .7; }
+.field { display: flex; align-items: center; gap: 14px; height: 52px; min-width: 0; padding: 0 18px; background: var(--c-paper); border: 1.5px solid var(--c-rule-strong); border-radius: var(--radius); transition: border-color var(--t-fast); }
+.field:focus-within { border-color: var(--c-accent); }
+.field .ic { width: 19px; height: 19px; color: var(--c-faint); flex-shrink: 0; }
+.field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 16.5px; color: var(--c-ink); }
+.field__input::placeholder { color: var(--c-ink-mute); font-style: italic; }
+.ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
+
+/* ── Banner — a framed PLATE on the grid, not a loose strip ───── */
+.city-banner {
+  height: 150px;
+  margin: var(--s-5) auto 0;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  border-bottom: var(--rule-w) solid var(--c-rule);   /* override the old strip's heavier bottom rule */
+  background: var(--c-cream);
+}
+.city-banner__img { object-position: center 64%; }
+
+/* ── Docked bottom bar (mobile) — replaces the floating glass pill.
+   Full-width, hairline top, every tab labelled, petrol active underline.
+   Reskin of the existing .nav markup; glass surface kept (sanctioned +
+   reduced-transparency aware). ─────────────────────────────────────── */
+@media (max-width: 767px) {
+  .nav { padding: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .nav__inner {
+    background: var(--glass-bg);
+    border: 0;
+    border-top: var(--rule-w) solid var(--c-rule);
+    border-radius: 0;
+    box-shadow: none;
+    height: auto;
+    padding: 6px 8px 8px;
+  }
+  /* every tab: column icon+label, equal width, no pill fill */
+  .nav__item,
+  body[data-page="briefing"] .nav__item[data-nav="briefing"],
+  body[data-page="discover"] .nav__item[data-nav="discover"],
+  body[data-page="saved"]    .nav__item[data-nav="saved"],
+  body[data-page="profile"]  .nav__item[data-nav="profile"] {
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0 6px;
+    min-height: 54px;
+    background: transparent;
+    border-radius: var(--radius);
+    color: var(--c-ink-mute);
+  }
+  .nav__item .nav__label { display: block; font-size: 11px; font-weight: 500; letter-spacing: .01em; }
+  .nav__icon { width: 23px; height: 23px; }
+  /* active: ink colour + petrol underline tab (as drawn) */
+  body[data-page="briefing"] .nav__item[data-nav="briefing"],
+  body[data-page="discover"] .nav__item[data-nav="discover"],
+  body[data-page="saved"]    .nav__item[data-nav="saved"],
+  body[data-page="profile"]  .nav__item[data-nav="profile"] { color: var(--c-ink); }
+  body[data-page="briefing"] .nav__item[data-nav="briefing"] .nav__label,
+  body[data-page="discover"] .nav__item[data-nav="discover"] .nav__label,
+  body[data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
+  body[data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label { font-weight: 600; }
+  body[data-page="briefing"] .nav__item[data-nav="briefing"]::after,
+  body[data-page="discover"] .nav__item[data-nav="discover"]::after,
+  body[data-page="saved"]    .nav__item[data-nav="saved"]::after,
+  body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
+    content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 2.5px; border-radius: 2px; background: var(--c-accent);
+  }
+}
+
+/* ── Desktop masthead tabs — petrol active underline (as drawn) ── */
+@media (min-width: 768px) {
+  body[data-page="briefing"] .nav__item[data-nav="briefing"]::after,
+  body[data-page="discover"] .nav__item[data-nav="discover"]::after,
+  body[data-page="saved"]    .nav__item[data-nav="saved"]::after,
+  body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
+    background: var(--c-accent); height: 3px;
+  }
+}
+
+/* ── Return bar — mobile About escape hatch (used Phase 3) ─────── */
+.returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
+.returnbar .ic { width: 15px; height: 15px; color: var(--c-accent); }
+.returnbar:hover { color: var(--c-accent); }
