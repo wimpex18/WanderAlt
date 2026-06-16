@@ -15,6 +15,8 @@
      bookmarkSVG()      the bookmark glyph
      thumb(e, large)    a .thumb span (photo or initials tile)
      rowMedia(e)        the .list-row__media link wrapping a --lg thumb
+     socialButtons(v)   web/social link buttons for a venue/place
+                        ({ name, website, facebook, instagram })
 
    Load order: any page script using WA.UI must load AFTER this file
    (all pages use <script defer>, so document order is the contract).
@@ -82,5 +84,34 @@
       </span></a>`;
   };
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia };
+  /* External web / social links for a venue or place, rendered as the
+     Plate & Rule button family: a framed hairline button with a monochrome
+     stroke glyph + a mono label, petrol on hover (.social-links / .social-btn
+     in styles.css). Glyphs are monochrome by design — the two-tone brand
+     forbids brand colours. Pass { name, website, facebook, instagram };
+     only the links present are rendered, and '' comes back when there are
+     none. Single source of truth for the social glyphs on detail pages. */
+  const SOCIAL_SVG = {
+    website:   '<svg class="social-btn__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 2.6 15.2 0 18M12 3c-2.6 2.8-2.6 15.2 0 18"/></svg>',
+    facebook:  '<svg class="social-btn__ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M15.2 8.3h-1.4c-1 0-1.6.7-1.6 1.8V12m-1.9 0h4.3m-2.4 0v6.9"/></svg>',
+    instagram: '<svg class="social-btn__ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5.5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.7" cy="7.3" r="1.05" fill="currentColor" stroke="none"/></svg>',
+  };
+  const SOCIAL_LABEL = { website: 'Website', facebook: 'Facebook', instagram: 'Instagram' };
+
+  const socialButtons = (obj) => {
+    if (!obj) return '';
+    const name = obj.name || 'This venue';
+    const btns = ['website', 'facebook', 'instagram']
+      .filter(k => obj[k])
+      .map(k => {
+        const aria = k === 'website' ? `${name} website` : `${name} on ${SOCIAL_LABEL[k]}`;
+        return `<a class="social-btn" data-social="${k}" href="${esc(obj[k])}" ` +
+               `target="_blank" rel="noopener noreferrer" aria-label="${esc(aria)}">` +
+               `${SOCIAL_SVG[k]}<span class="social-btn__label">${SOCIAL_LABEL[k]}</span></a>`;
+      })
+      .join('');
+    return btns ? `<div class="social-links">${btns}</div>` : '';
+  };
+
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, SOCIAL_SVG, socialButtons };
 })();

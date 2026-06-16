@@ -21,7 +21,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { buildMeta, isEchoQuote, bookmarkSVG } = window.WA.UI;
+  const { buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
 
 
@@ -74,6 +74,24 @@
                   || (entry.day === 'Tonight' ? 'Tonight' : entry.day)
                   || 'Place';
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[entry.id]);
+
+    /* Web / social links for this pick's venue. venue_details (fetched
+       async below) only carries a website; Facebook/Instagram live on the
+       venues table — so match this event's venue by name against the
+       already-loaded venues catalog (no extra request) and reuse them.
+       fetchVenueDetails() merges in a website later if the venue row had
+       none. */
+    const venuesAll = (window.WA && (window.WA._venuesAll || window.WA.venues)) || [];
+    const vKey = (entry.venue || '').trim().toLowerCase();
+    const matchedVenue = vKey
+      ? venuesAll.find(v => (v.name || '').trim().toLowerCase() === vKey)
+      : null;
+    const socialObj = {
+      name:      entry.venue,
+      website:   (matchedVenue && matchedVenue.website)   || null,
+      facebook:  (matchedVenue && matchedVenue.facebook)  || null,
+      instagram: (matchedVenue && matchedVenue.instagram) || null,
+    };
 
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
@@ -145,7 +163,12 @@
           </label>
         </div>
 
-        <!-- Venue details — website / address / short_desc; async-populated by fetchVenueDetails() -->
+        <!-- Web / social links for the venue (Website / Facebook / Instagram).
+             Seeded synchronously from the matched venue; fetchVenueDetails()
+             merges in a website from venue_details when the row had none. -->
+        <div id="venue-social">${socialButtons(socialObj)}</div>
+
+        <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
         <div id="venue-details" class="venue-details" hidden></div>
 
         <div class="venue-actions">
@@ -265,6 +288,15 @@
         const vd   = rows[0];
         if (!vd) return;
 
+        /* Website lives in the social-button row (#venue-social). When the
+           venues table had none for this venue, fall back to the
+           venue_details website and re-render the row so it still shows. */
+        if (vd.website && !socialObj.website) {
+          socialObj.website = vd.website;
+          const se = document.getElementById('venue-social');
+          if (se) se.innerHTML = socialButtons(socialObj);
+        }
+
         const el = document.getElementById('venue-details');
         if (!el) return;
 
@@ -275,16 +307,6 @@
           parts.push(`<p class="venue-details__status venue-details__status--perm">Permanently closed</p>`);
         } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
           parts.push(`<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>`);
-        }
-
-        // Website
-        if (vd.website) {
-          let domain = vd.website;
-          try { domain = new URL(vd.website).hostname.replace(/^www\./, ''); } catch (_) {}
-          parts.push(
-            `<a class="venue-details__website" href="${vd.website}"` +
-            ` target="_blank" rel="noopener noreferrer">${domain} ↗</a>`
-          );
         }
 
         // Address → Google Maps deep link
