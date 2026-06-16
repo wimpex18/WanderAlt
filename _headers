@@ -28,7 +28,13 @@
   # injects inline width/height on the canvas elements it manages;
   # removing it breaks the map. img-src https: keeps Google Places /
   # Supabase Storage CDNs working without each being whitelisted.
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://tiles.openfreemap.org https://overpass-api.de https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  # worker-src 'self' blob: is REQUIRED by MapLibre: it spawns its
+  # tile-processing worker from a blob: URL. Without this, worker-src
+  # falls back to script-src ('self' https://unpkg.com), the blob
+  # worker is refused, and the map canvas mounts but never paints any
+  # tiles. This does NOT loosen main-thread script execution — page
+  # scripts stay locked to 'self'/unpkg; only blob workers are allowed.
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.in https://tiles.openfreemap.org https://overpass-api.de https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 # ── Caching ─────────────────────────────────────────────────
 # HTML: never cache aggressively — content rotates with the weekly catalog
