@@ -6340,3 +6340,64 @@ body[data-page="discover"] .curator-rows > li:hover{border-color:var(--c-ink)}
 
 /* Facet dropdown-pills unified to the radius-8 control shape (Phase 2). */
 body[data-page="discover"] .facet-pill{border-radius:var(--radius)}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 3: ABOUT (about.html, static markup)
+   Reskin of the existing sections to the board components
+   (boards-about.jsx); all content preserved. CSS-only + the
+   mobile return bar added in markup.
+   ════════════════════════════════════════════════════════════ */
+.returnbar{display:none}   /* desktop hides it; mobile shows (below) */
+
+body[data-page="about"] .about-head{padding-top:var(--s-8);padding-bottom:var(--s-7)}
+body[data-page="about"] .about-head__row{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-8)}
+body[data-page="about"] .about-head__title{font-family:var(--ff-display);font-style:italic;font-size:50px;line-height:1.08;letter-spacing:-.012em;font-weight:400;margin:var(--s-3) 0 0;text-wrap:pretty}
+body[data-page="about"] .about-head__mark{flex-shrink:0;margin-top:var(--s-2)}
+body[data-page="about"] .about-head__lede{font-size:18px;line-height:1.65;color:var(--c-ink-soft);max-width:56ch;text-wrap:pretty;margin-top:var(--s-6)}
+
+/* Section headers → serif title with a hairline rule */
+body[data-page="about"] .about-section{padding-top:var(--s-7)}
+body[data-page="about"] .about-section .section-head{border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
+body[data-page="about"] .about-section .section-title{font-family:var(--ff-display);font-size:32px;font-weight:600;letter-spacing:-.02em}
+body[data-page="about"] .about-section > p{font-size:16.5px;line-height:1.7;color:var(--c-ink-soft);max-width:62ch}
+body[data-page="about"] .about-section > p + p{margin-top:var(--s-3)}
+
+/* City strip → citycard plates */
+body[data-page="about"] .about-cities{padding-top:var(--s-2)}
+body[data-page="about"] .about-cities__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5)}
+body[data-page="about"] .about-cities__item{display:flex;flex-direction:column;gap:0}
+body[data-page="about"] .about-cities__item img{width:100%;aspect-ratio:3/2;object-fit:cover;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-cream)}
+body[data-page="about"] .about-cities__name{font-family:var(--ff-body);font-weight:600;font-size:16px;margin-top:var(--s-3)}
+body[data-page="about"] .about-cities__status{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;margin-top:var(--s-1);font-family:var(--ff-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:var(--radius-tag)}
+body[data-page="about"] .about-cities__status--live{background:var(--c-lime);color:var(--c-ink)}
+body[data-page="about"] .about-cities__dot{display:none}
+
+/* How-it-works → step plates (board omits the icons) */
+body[data-page="about"] .about-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);padding-top:var(--s-6)}
+body[data-page="about"] .about-steps__item{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6)}
+body[data-page="about"] .about-steps__icon{display:none}
+body[data-page="about"] .about-steps__num{font-family:var(--ff-mono);font-size:13px;letter-spacing:.2em;color:var(--c-accent);margin-bottom:var(--s-4)}
+body[data-page="about"] .about-steps__title{font-family:var(--ff-display);font-size:19px;font-weight:600;letter-spacing:-.012em;margin-bottom:var(--s-2)}
+body[data-page="about"] .about-steps__body{font-size:15px;line-height:1.6;color:var(--c-ink-mute)}
+
+/* Open-source links → linkcard plates */
+body[data-page="about"] .about-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);padding-top:var(--s-5)}
+body[data-page="about"] .about-links__a{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:var(--s-4);align-items:center;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-5);height:100%;transition:border-color var(--t-fast)}
+body[data-page="about"] .about-links__icon{grid-column:1;grid-row:1 / span 2;align-self:center}
+body[data-page="about"] .about-links__label,body[data-page="about"] .about-links__sub{grid-column:2;min-width:0;overflow-wrap:anywhere}
+body[data-page="about"] .about-links__a:hover{border-color:var(--c-ink)}
+body[data-page="about"] .about-links__icon{display:grid;place-items:center;width:40px;height:40px;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius);background:var(--c-paper-deep);color:var(--c-accent);flex-shrink:0}
+body[data-page="about"] .about-links__label{display:block;font-family:var(--ff-mono);font-size:13.5px;font-weight:500;margin-bottom:3px}
+body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var(--c-ink-mute)}
+
+@media (max-width:767px){
+  .returnbar{display:flex}
+  body[data-page="about"] .about-head__row{flex-direction:column;gap:0}
+  body[data-page="about"] .about-head__mark{display:none}
+  body[data-page="about"] .about-head__title{font-size:33px}
+  body[data-page="about"] .about-head__lede{font-size:16.5px}
+  body[data-page="about"] .about-cities__list,
+  body[data-page="about"] .about-steps,
+  body[data-page="about"] .about-links{grid-template-columns:1fr;gap:var(--s-4)}
+  body[data-page="about"] .about-section .section-title{font-size:25px}
+}
