@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WanderAlt — Redesign, June 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=Geist:wght@400;500;600;650;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="wa-core.css">
+<link rel="stylesheet" href="wa-pages.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="../lib/design-canvas.jsx"></script>
+<script type="text/babel" src="chrome.jsx"></script>
+<script type="text/babel" src="board-tokens.jsx"></script>
+<script type="text/babel" src="boards-today.jsx"></script>
+<script type="text/babel" src="boards-discover.jsx"></script>
+<script type="text/babel" src="boards-about.jsx"></script>
+<style>
+  html, body { margin: 0; height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const App = () => (
+  <DesignCanvas title="WanderAlt — unified redesign · June 2026">
+    <DCSection id="tokens" title="01 · Shape language — Plate &amp; Rule">
+      <DCArtboard id="tok" label="Tokens · buttons, chips, type, radius" width={1280} height={800}>
+        <TokensBoard/>
+      </DCArtboard>
+      <DCPostIt>
+        Plate &amp; Rule: every surface is a framed plate (12px) or a hairline rule.
+        One control radius (8px), one tag radius (4px). The 999px pill, the sharp
+        white button and the black rounded button are all replaced by ONE button family.
+      </DCPostIt>
+    </DCSection>
+
+    <DCSection id="desktop" title="02 · Desktop — one shell, every block aligned">
+      <DCArtboard id="d-today" label="Today · desktop 1440" width={1440} height={1900}>
+        <TodayDesk/>
+      </DCArtboard>
+      <DCArtboard id="d-discover" label="Discover · desktop 1440" width={1440} height={2080}>
+        <DiscoverDesk/>
+      </DCArtboard>
+      <DCArtboard id="d-about" label="About · desktop 1440" width={1440} height={1980}>
+        <AboutDesk/>
+      </DCArtboard>
+      <DCPostIt>
+        The fix for the alignment bug: one .shell (1240px + 32px gutters) owns every
+        edge — topbar, banner plate, tabs, content, colophon. The banner is now a framed
+        plate ON the grid, and the tab row spans its full width with a shared hairline.
+      </DCPostIt>
+    </DCSection>
+
+    <DCSection id="mobile" title="03 · Mobile — full nav parity + no dead ends">
+      <DCArtboard id="m-today" label="Today · 390" width={390} height={844}>
+        <TodayMob/>
+      </DCArtboard>
+      <DCArtboard id="m-today-2" label="Today · scrolled" width={390} height={844}>
+        <TodayMobScrolled/>
+      </DCArtboard>
+      <DCArtboard id="m-discover" label="Discover · 390" width={390} height={844}>
+        <DiscoverMob/>
+      </DCArtboard>
+      <DCArtboard id="m-about" label="About · 390 (return bar)" width={390} height={844}>
+        <AboutMob/>
+      </DCArtboard>
+      <DCPostIt>
+        Mobile now gets the SAME four destinations as desktop via a docked, labelled
+        tab bar (the nav omission was auth-gating in nav.js, not CSS — see NAV-FINDINGS.md).
+        About adds a return bar under the topbar so there is no dead end.
+      </DCPostIt>
+    </DCSection>
+  </DesignCanvas>
+);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
