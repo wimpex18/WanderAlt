@@ -375,6 +375,11 @@
 
   /* ── Topbar button ───────────────────────────────────────── */
 
+  /* Leading glyphs for the masthead marketing links — same stroke .ic
+     family as the nav/return-bar icons. Icon + label keeps them legible. */
+  const ICON_ABOUT = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.75h.01"/></svg>';
+  const ICON_USER  = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3.5-6 7-6s7 2 7 6"/></svg>';
+
   const updateBtn = () => {
     if (!btn) return;
     if (window.WA.Auth.isSignedIn()) {
@@ -383,7 +388,7 @@
       btn.hidden = true;
     } else {
       btn.hidden = false;
-      btn.textContent = 'Sign in';
+      btn.innerHTML = `${ICON_USER}<span>Sign in</span>`;
       btn.setAttribute('aria-label', 'Sign in');
     }
   };
@@ -413,7 +418,8 @@
       const about = document.createElement('a');
       about.className = 'topbar__about';
       about.href = './about.html';
-      about.textContent = 'About';
+      about.innerHTML = `${ICON_ABOUT}<span>About</span>`;
+      about.setAttribute('aria-label', 'About');
       right.prepend(about);
     }
 

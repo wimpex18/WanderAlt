@@ -172,9 +172,18 @@
         <div id="venue-details" class="venue-details" hidden></div>
 
         <div class="venue-actions">
-          <button class="btn-primary venue-going-btn" type="button">I&rsquo;m going &rarr;</button>
-          ${entry.day ? `<button class="btn-secondary venue-cal-btn" type="button" aria-label="Add to calendar">Add to calendar</button>` : ''}
-          <button class="btn-secondary venue-share-btn" type="button" aria-label="Share this pick">Share</button>
+          <button class="action-btn action-btn--primary venue-going-btn" type="button" aria-label="I'm going">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+            <span class="action-btn__label">I&rsquo;m going</span>
+          </button>
+          ${entry.day ? `<button class="action-btn venue-cal-btn" type="button" aria-label="Add to calendar">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
+            <span class="action-btn__label">Add to calendar</span>
+          </button>` : ''}
+          <button class="action-btn venue-share-btn" type="button" aria-label="Share this pick">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            <span class="action-btn__label">Share</span>
+          </button>
         </div>
 
         <!-- Why this matters — async-populated by fetchContext() after render -->
@@ -368,7 +377,8 @@
     if (goingBtn && window.WA.Bookmarks) {
       goingBtn.addEventListener('click', () => {
         window.WA.Bookmarks.set(entry.id, true);
-        goingBtn.textContent = 'Saved ✓';
+        const lbl = goingBtn.querySelector('.action-btn__label');
+        if (lbl) lbl.textContent = 'Saved ✓';
         goingBtn.style.opacity = '0.7';
         setTimeout(() => { window.location.href = './saved.html'; }, 700);
       });
@@ -392,9 +402,12 @@
           url:   window.location.href,
         });
         if (r === 'copied' || r === 'shared') {
-          const prev = shareBtn.textContent;
-          shareBtn.textContent = r === 'copied' ? 'Link copied ✓' : 'Shared ✓';
-          setTimeout(() => { shareBtn.textContent = prev; }, 2000);
+          const lbl = shareBtn.querySelector('.action-btn__label');
+          if (lbl) {
+            const prev = lbl.textContent;
+            lbl.textContent = r === 'copied' ? 'Link copied ✓' : 'Shared ✓';
+            setTimeout(() => { lbl.textContent = prev; }, 2000);
+          }
         }
       });
     }
@@ -404,9 +417,12 @@
     if (calBtn && window.WA.Share) {
       calBtn.addEventListener('click', () => {
         if (window.WA.Share.downloadIcs(entry)) {
-          const prev = calBtn.textContent;
-          calBtn.textContent = 'Added ✓';
-          setTimeout(() => { calBtn.textContent = prev; }, 2000);
+          const lbl = calBtn.querySelector('.action-btn__label');
+          if (lbl) {
+            const prev = lbl.textContent;
+            lbl.textContent = 'Added ✓';
+            setTimeout(() => { lbl.textContent = prev; }, 2000);
+          }
         }
       });
     }

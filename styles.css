@@ -1455,13 +1455,13 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"],
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
-  background: var(--c-paper);
-  border-color: var(--c-rule);
+  background: var(--c-accent-soft);
+  border-color: transparent;
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
-  color: var(--c-ink);
+  color: var(--c-accent);
   font-weight: 600;
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
@@ -2213,8 +2213,20 @@ a.handle:hover {
 
 .topbar__right {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-4);
+}
+
+/* Iconified marketing links — leading glyph + label (auth.js injects the
+   .ic SVGs). Icon keeps the link recognizable at a glance. On mobile the
+   topbar is tight, so drop the labels and show icon-only (aria-label keeps
+   them accessible) — also de-emphasises these secondary links vs the
+   bottom nav. */
+.auth-btn .ic, .topbar__about .ic { width: 16px; height: 16px; flex-shrink: 0; }
+.auth-btn, .topbar__about { gap: 7px; }
+@media (max-width: 767px) {
+  .auth-btn .ic, .topbar__about .ic { width: 19px; height: 19px; }
+  .auth-btn span, .topbar__about span { display: none; }
 }
 
 .auth-btn {
@@ -4701,10 +4713,10 @@ a.handle:hover { color: var(--c-ink); }
 }
 .discover-scope__btn:hover { color: var(--c-ink); }
 .discover-scope__btn--on {
-  background: var(--c-ink);
-  color: var(--c-paper);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
 }
-.discover-scope__btn--on:hover { color: var(--c-paper); }
+.discover-scope__btn--on:hover { color: var(--c-accent); }
 
 .discover-search {
   padding: var(--s-4) 0 var(--s-2);
@@ -5830,11 +5842,15 @@ body[data-page="saved"] .seg-note {
 @media (max-width: 767px) {
   .nav { padding: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .nav__inner {
-    background: var(--glass-bg);
+    /* More opaque than the 0.66 glass token: a bottom bar sits over
+       scrolling content, and at 0.66 the text bled through and the bar
+       read as "missing". 0.92 + blur keeps the Liquid Glass feel while
+       staying legible; the top shadow lifts it off the content. */
+    background: rgba(255, 255, 255, 0.92);
     border: 0;
-    border-top: var(--rule-w) solid var(--c-rule);
+    border-top: var(--rule-w) solid var(--glass-hair);
     border-radius: 0;
-    box-shadow: none;
+    box-shadow: 0 -2px 16px rgba(20, 30, 30, 0.07);
     height: auto;
     padding: 6px 8px 8px;
   }
@@ -6017,7 +6033,7 @@ body[data-page="discover"] .deck{border:var(--rule-w) solid var(--c-rule);border
 body[data-page="discover"] .deck .discover-scope{display:inline-flex;gap:4px;padding:4px;width:auto;align-self:flex-start;margin:0;background:var(--c-paper-deep);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius)}
 body[data-page="discover"] .deck .discover-scope__btn{min-height:44px;height:44px;padding:0 24px;border:0;border-radius:calc(var(--radius) - 3px);background:none;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink-mute);transition:background var(--t-fast),color var(--t-fast)}
 body[data-page="discover"] .deck .discover-scope__btn:hover{color:var(--c-ink)}
-body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-ink);color:var(--c-paper)}
+body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-accent-soft);color:var(--c-accent)}
 
 /* Search → field */
 body[data-page="discover"] .deck .discover-search{margin:0}
@@ -6220,3 +6236,72 @@ body[data-page="profile"] .profile-actions .auth-panel__close:hover{border-color
   .social-icon__g--fill { display: none; }
   .social-icon__g--line { display: inline-flex; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ACTIVE-TAB HIGHLIGHT (Lightyear-inspired "chosen category")
+   Swaps the petrol underline on the primary nav for a soft
+   petrol-tint rounded highlight behind the active tab — mobile
+   dock + desktop masthead. Petrol-only (no third colour), radius
+   8 (no 999px pill). Consolidated here so it wins the layered nav
+   cascade by source order; !important only to beat the desktop
+   `.nav__item { background: transparent !important }` base.
+   ════════════════════════════════════════════════════════════ */
+body[data-page="briefing"] .nav__item[data-nav="briefing"]::after,
+body[data-page="discover"] .nav__item[data-nav="discover"]::after,
+body[data-page="saved"]    .nav__item[data-nav="saved"]::after,
+body[data-page="profile"]  .nav__item[data-nav="profile"]::after { display: none; }
+
+body[data-page="briefing"] .nav__item[data-nav="briefing"],
+body[data-page="discover"] .nav__item[data-nav="discover"],
+body[data-page="saved"]    .nav__item[data-nav="saved"],
+body[data-page="profile"]  .nav__item[data-nav="profile"] {
+  background: var(--c-accent-soft) !important;
+  color: var(--c-accent);
+  border-radius: var(--radius);
+  border-bottom-color: transparent;
+}
+
+@media (max-width: 767px) {
+  /* small gaps so the highlighted tab reads as a separated chip */
+  .nav__inner { gap: 2px; }
+}
+@media (min-width: 768px) {
+  /* masthead: horizontal padding so the highlight is a chip, not flush text */
+  body[data-page="briefing"] .nav__item[data-nav="briefing"],
+  body[data-page="discover"] .nav__item[data-nav="discover"],
+  body[data-page="saved"]    .nav__item[data-nav="saved"],
+  body[data-page="profile"]  .nav__item[data-nav="profile"] {
+    padding: var(--s-3) var(--s-4);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACTION BUTTONS — event page (venue.html)
+   Compact icon+label buttons replacing the old full-width
+   btn-primary/secondary trio ("I'm going / Add to calendar /
+   Share"). "I'm going" is the petrol primary; the rest are quiet
+   hairline. Same on desktop and mobile (auto-width, wraps).
+   ════════════════════════════════════════════════════════════ */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 44px;
+  padding: 0 var(--s-4);
+  border: var(--rule-w) solid var(--c-rule-strong);
+  border-radius: var(--radius);
+  background: var(--c-paper);
+  color: var(--c-ink-soft);
+  font-family: var(--ff-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+.action-btn .ic { width: 18px; height: 18px; flex-shrink: 0; }
+.action-btn:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.action-btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
+.action-btn--primary:hover { background: var(--c-accent-deep); border-color: var(--c-accent-deep); color: #fff; }
+.action-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
