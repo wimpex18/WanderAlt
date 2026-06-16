@@ -109,7 +109,10 @@
          it, like a cultural weekly's masthead line. city.js swaps the
          .standfirst__city span to the active city ("your city" is the
          no-JS fallback). -->
-    <h1 class="standfirst">The alternative-culture briefing for <span class="standfirst__city">your city</span>.</h1>
+    <div class="standfirst">
+      <h1 class="standfirst__t">The alternative-culture briefing for <em class="standfirst__city">your city</em>.</h1>
+      <span class="standfirst__meta" id="standfirst-meta">The weekly briefing</span>
+    </div>
 
     <!-- Tonight hero — populated by briefing.js from catalog.js.
          The skeleton card reserves the layout space so the real
@@ -161,14 +164,13 @@
       </div>
     </section>
 
-    <!-- Surprise me: random pick from active catalog, fade-swaps Tonight. -->
-    <button id="surprise-btn" class="surprise-btn" type="button" aria-label="Show a surprise pick">Surprise me &rarr;</button>
-
-    <!-- This week -->
-    <section class="thisweek" aria-labelledby="thisweek-label">
-      <header class="section-head">
-        <h2 id="thisweek-label" class="section-title">This week</h2>
-        <p class="section-sub">4 picks &middot; 4 curators</p>
+    <!-- This week + From-the-desk rail (2-col on desktop). Surprise me now
+         lives in the Tonight action row (briefing.js renderTonight). -->
+    <section class="week">
+     <div class="thisweek week__main" aria-labelledby="thisweek-label">
+      <header class="sechead">
+        <h2 id="thisweek-label" class="sechead__t">This week</h2>
+        <p class="section-sub meta">4 picks &middot; 4 curators</p>
       </header>
       <!-- Picks populated by briefing.js from catalog.js. Skeleton rows
            sit in place until wa:catalog-ready fires so the layout is
@@ -199,22 +201,24 @@
           <span class="skeleton-pick__bookmark"></span>
         </li>
       </ol>
-    </section>
-
-    <!-- Digest opt-in — for visitors without an account. -->
-    <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
-      <hr class="rule" />
-      <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
-      <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
-      <form id="digest-optin-form" data-no-submit>
-        <div class="digest-optin__row">
-          <input type="email" class="auth-panel__input digest-optin__email" id="digest-optin-email"
-                 aria-label="Email address for the weekly digest"
-                 placeholder="your@email.com" autocomplete="email" required />
-          <button type="submit" class="auth-panel__submit digest-optin__submit" id="digest-optin-submit">Subscribe</button>
-        </div>
-      </form>
-      <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
+     </div>
+     <aside class="week__rail">
+       <header class="sechead"><h2 class="sechead__t">From the desk</h2></header>
+       <!-- .column injected here by briefing.js renderColumn (when a published column exists) -->
+       <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
+         <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
+         <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
+         <form id="digest-optin-form" data-no-submit>
+           <div class="digest-optin__row">
+             <input type="email" class="auth-panel__input digest-optin__email" id="digest-optin-email"
+                    aria-label="Email address for the weekly digest"
+                    placeholder="your@email.com" autocomplete="email" required />
+             <button type="submit" class="btn btn--petrol digest-optin__submit" id="digest-optin-submit">Subscribe</button>
+           </div>
+         </form>
+         <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
+       </section>
+     </aside>
     </section>
 
     <footer class="colophon">

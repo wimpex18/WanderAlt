@@ -669,29 +669,8 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .tonight__venue:hover .tonight__venue-name { color: var(--c-accent); }
 
 /* ── Surprise me — bordered button below Tonight hero ── */
-.surprise-btn {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;   /* action button tap target (Apple HIG; was ~32px) */
-  margin: var(--s-4) 0 var(--s-2);
-  padding: var(--s-2) var(--s-4);
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
-  color: var(--c-ink);
-  background: none;
-  border: 1px solid var(--c-rule-strong);
-  cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast);
-}
-.surprise-btn:hover {
-  color: var(--c-accent);
-  border-color: var(--c-accent);
-}
-.surprise-btn:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
-}
+/* (.surprise-btn retired — Surprise now uses the .btn family in the
+   Tonight action row; see the Plate & Rule Phase 1 block.) */
 
 /* ============================================================
    Thumbnails (CSS-only; no image downloads this pass)
@@ -775,37 +754,6 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 
 .picks { display: flex; flex-direction: column; }
 
-/* "Show more" footer beneath the picks list. Editorial pagination —
-   left-aligned mono button, no shadow, no fill. Mirrors the briefing's
-   "back-page of a newsletter" voice. */
-.picks-footer {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-4);
-  padding: var(--s-4) 0 var(--s-2);
-  border-top: var(--rule-w) solid var(--c-rule);
-  margin-top: var(--s-3);
-}
-.picks-footer__btn {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-family: var(--ff-mono);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  color: var(--c-accent);
-  cursor: pointer;
-  text-align: left;
-}
-.picks-footer__btn:hover { color: var(--c-ink); }
-.picks-footer__meta {
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  color: var(--c-ink-mute);
-  margin: 0;
-  margin-left: auto;
-}
-
 /* ── Empty state for This Week ───────────────────────────────
    Shown by briefing.js when _weekFullSet has zero entries. Uses
    the active city's plate as a 200×150 hero on the left, with
@@ -880,15 +828,6 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 .pick:last-child { border-bottom: 0; }
 
-/* .pick__link is now a <div> grid container — see briefing.js for why.
-   The thumb and title each get their own <a> so the via-handle <a>
-   isn't nested inside another <a>. */
-.pick__link {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: var(--s-4);
-  align-items: start;
-}
 .pick__img       { display: block; }
 .pick__title-link { display: block; }
 .pick__body {
@@ -3980,7 +3919,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .deprecation-banner,
   .city-selector,
   .city-selector__chev,
-  .tonight__badge,
   .tonight__actions,
   .venue-actions,
   .venue-back,
@@ -4058,11 +3996,12 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    ============================================================ */
 
 /* The bordered Tonight card, lime pill badge and kind badge were retired
-   when the Today hero went flat (May 2026 editorial redesign — see the
-   EDITORIAL REDESIGN block at the end of this file + briefing.js
-   renderTonight). The hero now uses .tonight__badge / .tonight__kindline /
-   .tonight__title / .tonight__quote directly. .tonight__venue* stays — the
-   venue page and AI match card still reuse it. */
+   when the Today hero went flat (May 2026), then fully superseded by the
+   June 2026 Plate & Rule redesign — the Today hero now lives in the
+   "Phase 1: TODAY" block at the end of this file (briefing.js renderTonight
+   emits .tonight__signal / .tag--live / .tonight__title / .quote /
+   .tonight__media). .tonight__venue* stays — the venue page and AI match
+   card still reuse it. */
 
 /* Tonight venue name — sans, heavier */
 .tonight__venue-name {
@@ -5633,216 +5572,8 @@ body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
   body.discover-ai-mode .discover-sheet[hidden] { display: none !important; }
 }
 
-/* ════════════════════════════════════════════════════════════
-   TODAY — flat Tonight hero (curator quote is the loudest element)
-   ════════════════════════════════════════════════════════════ */
-.tonight__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  background: var(--c-lime);
-  padding: 5px 11px;
-  border-radius: 999px;
-  margin: 0 0 var(--s-4);
-}
-.tonight__badge::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--c-ink);
-}
-.tonight__kindline {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--s-3);
-  margin: 0 0 var(--s-3);
-}
-.tonight__kind {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--c-ink);
-  border: var(--rule-w) solid var(--c-rule-strong);
-  padding: 4px 9px;
-  border-radius: 5px;
-}
-.tonight__kind .dot { width: 7px; height: 7px; border-radius: 50%; border: 2px solid var(--c-accent); }
-.tonight__where {
-  font-family: var(--ff-mono);
-  font-size: 12px;
-  color: var(--c-ink-mute);
-  letter-spacing: 0.02em;
-}
-.tonight__title {
-  display: block;
-  font-family: var(--ff-display);   /* Fraunces */
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-  color: var(--c-ink);
-  margin: 0 0 var(--s-4);
-}
-
-/* ── Photo-forward Tonight hero (June 2026) ──────────────────────
-   Venue photo as a banner with a "scrim" gradient so overlaid white
-   text stays legible over any photo (NYT/Airbnb hero pattern). Only
-   rendered when the pick has an image_url; otherwise the flat header. */
-.tonight__hero {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 300px;
-  margin: 0 0 var(--s-5);
-  padding: var(--s-5);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-  background-color: var(--c-ink);   /* fallback while the photo loads / if it 404s */
-  background-size: cover;
-  background-position: center;
-  text-decoration: none;
-  isolation: isolate;
-}
-/* The scrim — transparent at top, dark at the foot, behind the text. */
-.tonight__hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  /* Same full-height ramp as .detail-hero (F-1) — long titles stay in
-     the ≥0.4-alpha zone, eyebrow/badge keep a ≥0.12 floor at the top. */
-  background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.55) 38%,
-    rgba(0, 0, 0, 0.38) 68%,
-    rgba(0, 0, 0, 0.12) 100%);
-}
-.tonight__hero-foot { display: block; }
-.tonight__badge--onphoto {
-  position: absolute;
-  top: var(--s-4);
-  left: var(--s-4);
-}
-.tonight__kindline--onphoto { color: rgba(255, 255, 255, 0.92); }
-.tonight__kindline--onphoto .tonight__where { color: rgba(255, 255, 255, 0.78); }
-/* The kind badge keeps explicit dark text + petrol dot, which vanish over
-   the photo/scrim — make it legible on the hero: white text, hairline
-   white border, lime dot (lime = the live "Tonight" signal, reads on dark). */
-.tonight__kindline--onphoto .tonight__kind {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.55);
-}
-.tonight__kindline--onphoto .tonight__kind .dot { border-color: var(--c-lime); }
-.tonight__title--onphoto {
-  color: #fff;
-  font-size: 34px;
-  margin: var(--s-2) 0 0;
-  text-wrap: pretty;
-}
-@media (hover: hover) {
-  .tonight__hero:hover .tonight__title--onphoto { color: #fff; }
-  .tonight__hero { transition: transform var(--t-mid); }
-  .tonight__hero:hover { transform: translateY(-2px); }
-}
-@media (min-width: 768px) {
-  .tonight__hero { min-height: 380px; }
-  .tonight__title--onphoto { font-size: 44px; }
-}
-.tonight:hover .tonight__title,
-a.tonight__title:hover { color: var(--c-accent); }
-
-/* Flat hero quote — bigger, lime rule on the left, no surface card. */
-body[data-page="briefing"] .tonight__quote {
-  position: relative;
-  font-family: var(--ff-display);
-  font-style: italic;
-  font-size: 30px;
-  line-height: 1.18;
-  letter-spacing: -0.01em;
-  color: var(--c-ink);
-  margin: 0 0 var(--s-3);
-  padding: 0 0 0 var(--s-5);
-  background: none;
-  border: 0;
-  border-radius: 0;
-  text-wrap: pretty;
-}
-body[data-page="briefing"] .tonight__quote::before {
-  content: "";
-  position: absolute;
-  left: 0; top: var(--s-2); bottom: var(--s-2);
-  width: 3px;
-  background: var(--c-lime);
-}
-body[data-page="briefing"] .tonight__attr {
-  display: block;
-  font-family: var(--ff-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: none;
-  color: var(--c-ink-mute);
-  margin: 0 0 var(--s-5);
-}
-
-.tonight__actions { display: flex; gap: var(--s-3); margin-top: var(--s-4); align-items: stretch; }
-/* The hero Save button carries the .bookmark class, whose base rule sets
-   align-self:start — that overrode the actions row's align-items:stretch and
-   collapsed the button to content height (≈25px). Re-stretch it here so both
-   CTAs fill the 50px row and clear the 44px min tap target (WCAG 2.5.5). */
-.tonight__actions .bookmark { margin: 0; padding: 0; align-self: stretch; }
-.btn-going, .btn-save {
-  /* Content-sized + left-aligned on desktop. Stretching a primary/secondary
-     CTA pair edge-to-edge across the (now ~1280px) row is a mobile-only
-     pattern; on wider screens Apple HIG / Material / Fluent all size action
-     buttons to content and left-align them, primary first. The mobile block
-     below restores full-width-stacked, which IS the recommended phone CTA. */
-  flex: 0 0 auto;
-  min-width: 150px;
-  padding: 0 var(--s-6);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 50px;
-  /* height alone wasn't honoured on these flex items in some engines;
-     min-height guarantees the 50px tap target. */
-  min-height: 50px;
-  border-radius: var(--radius);
-  font-family: var(--ff-body);
-  font-weight: 500;
-  font-size: 15px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
-}
-.btn-going { background: var(--c-ink); color: #fff; border: 0; }
-.btn-going:hover { background: var(--c-accent); }
-.btn-save { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-rule-strong); }
-.btn-save:hover { border-color: var(--c-accent); color: var(--c-accent); }
-
-/* Today: bigger editorial section title; subtle hover lift on picks. */
-body[data-page="briefing"] .section-title { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+/* Today: subtle hover lift on This Week picks (Phase 1 owns the rest). */
 @media (hover: hover) { body[data-page="briefing"] .pick:hover { transform: translateY(-1px); transition: transform var(--t-mid); } }
-
-@media (max-width: 767px) {
-  body[data-page="briefing"] .section-title { font-size: 24px; }
-  body[data-page="briefing"] .tonight__quote { font-size: 25px; }
-  /* Phone: stack full-width — the recommended primary-CTA pattern on
-     narrow screens (maximises the tap target, clear hierarchy). */
-  .tonight__actions { flex-direction: column; }
-  .btn-going, .btn-save { width: 100%; min-width: 0; }
-}
 
 /* ════════════════════════════════════════════════════════════
    PROFILE — flat petrol avatar (no gradient), proper toggle switch
@@ -6164,3 +5895,294 @@ body[data-page="saved"] .seg-note {
 .returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
 .returnbar .ic { width: 15px; height: 15px; color: var(--c-accent); }
 .returnbar:hover { color: var(--c-accent); }
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 1: TODAY (index.html + briefing.js)
+   Ported from docs/redesign-jun26/wa-pages.css (Today block) +
+   wa-core standfirst, tokens translated to production --c-*/--ff-*,
+   widths on the --reading-max ladder. Overrides the May-2026
+   flat-hero Today rules earlier in this file.
+   ════════════════════════════════════════════════════════════ */
+
+/* Standfirst — editorial statement row */
+.standfirst{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-7);padding-top:var(--s-7);padding-bottom:var(--s-6);margin:0}
+.standfirst__t{font-family:var(--ff-display);font-style:italic;font-size:38px;line-height:1.15;letter-spacing:-.01em;font-weight:400;color:var(--c-ink);text-wrap:pretty}
+.standfirst__t em,.standfirst__city{font-style:italic;color:var(--c-accent)}
+.standfirst__meta{font-family:var(--ff-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--c-ink-mute);white-space:nowrap;padding-bottom:6px}
+
+/* Tonight — 2-col editorial hero (left voice · right media plate).
+   Children are flat (signal·title·media·quote·actions in DOM order) so the
+   mobile stack shows the photo between title and quote, as drawn; desktop
+   pins the text items to col 1 and the media plate to col 2. */
+.tonight{display:grid;grid-template-columns:1.25fr .85fr;column-gap:var(--s-8);row-gap:0;padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
+.tonight > .tonight__signal,.tonight > .tonight__title,.tonight > .quote,.tonight > .tonight__actions{grid-column:1}
+.tonight > .tonight__media{grid-column:2;grid-row:1 / span 5}
+.tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
+.tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
+.tonight__kicker b{color:var(--c-ink);font-weight:500}
+.tonight__title{font-family:var(--ff-display);font-size:42px;line-height:1.08;font-weight:600;letter-spacing:-.018em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-6);display:block}
+a.tonight__title:hover{color:var(--c-accent)}
+.quote{border-left:3px solid var(--c-lime);padding-left:var(--s-6);margin:0 0 var(--s-4)}
+.quote__t{font-family:var(--ff-display);font-style:italic;font-size:28px;line-height:1.3;color:var(--c-ink-soft);text-wrap:pretty;margin:0}
+.quote__attr{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.quote__attr .handle{font-size:13.5px}
+.tonight__actions{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-7);flex-wrap:wrap}
+.tonight__actions .btn--quiet{margin-left:auto}
+.tonight__media{display:flex;flex-direction:column;gap:14px}
+.tonight__photo{position:relative;display:block;min-height:340px;border-radius:var(--radius-card);border:var(--rule-w) solid var(--c-rule);overflow:hidden;background:var(--c-paper-deep)}
+.tonight__photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tonight__photo .tag{position:absolute;top:14px;left:14px}
+.tonight__venue{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep)}
+.tonight__venue b{display:block;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink);letter-spacing:-.01em;margin-bottom:3px}
+.tonight__venue .meta{font-size:12px}
+
+/* This week + From-the-desk rail */
+.week{display:grid;grid-template-columns:1.25fr .85fr;gap:var(--s-8);padding-bottom:var(--s-2)}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-5);padding:var(--s-4) 0 var(--s-3);border-bottom:var(--rule-w) solid var(--c-rule)}
+.sechead__t{font-family:var(--ff-display);font-size:30px;font-weight:600;letter-spacing:-.018em;margin:0}
+.thisweek{margin:0}
+.picks{margin:0}
+.pick{display:grid;grid-template-columns:72px 1fr auto;gap:var(--s-5);align-items:center;padding:var(--s-5) 0;border-bottom:var(--rule-w) solid var(--c-rule)}
+.pick__img{display:block;width:72px;height:72px}
+.pick .thumb{width:72px;height:72px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule)}
+.pick__body{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pick__title{font-family:var(--ff-display);font-size:19px;font-weight:600;letter-spacing:-.012em;line-height:1.2;color:var(--c-ink)}
+.pick__title-link:hover .pick__title{color:var(--c-accent)}
+.pick .meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.pick .via{font-size:12.5px}
+.pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
+.pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
+.week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
+.week__rail{display:flex;flex-direction:column}
+
+/* The Column — curator metadata plate */
+.column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
+.column__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-bottom:var(--s-4);margin-bottom:var(--s-5);border-bottom:var(--rule-w) solid var(--c-rule)}
+.column__eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent)}
+.column__body{font-family:var(--ff-display);font-style:italic;font-size:21px;line-height:1.5;color:var(--c-ink-soft);text-wrap:pretty}
+.column__body em{color:var(--c-accent)}
+.column__body p+p{margin-top:var(--s-3)}
+.column__sig{display:flex;align-items:center;gap:12px;margin-top:var(--s-5)}
+.column__ava{width:34px;height:34px;border-radius:var(--radius);background:var(--c-accent);color:var(--c-lime);display:grid;place-items:center;font-family:var(--ff-mono);font-size:12px;flex-shrink:0}
+
+/* Digest plate */
+.digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
+.digest-optin .rule{display:none}
+.digest-optin__row{display:flex;gap:10px;margin-top:14px}
+.digest-optin__email{flex:1;min-width:0;height:48px}
+.digest-optin__submit{height:48px}
+
+/* Taste check — editorial plate */
+.taste-onboarding{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin-top:var(--s-6)}
+.taste-onboarding__intro{margin:8px 0 var(--s-4);line-height:1.55}
+.taste-q{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) 0;border-top:var(--rule-w) solid var(--c-rule)}
+.taste-q__prompt{font-size:15.5px;font-weight:500;color:var(--c-ink-soft)}
+
+/* ── Today mobile ─────────────────────────────────────────── */
+@media (max-width:767px){
+  .standfirst{flex-direction:column;align-items:flex-start;gap:10px;padding-top:var(--s-6);padding-bottom:var(--s-5)}
+  .standfirst__t{font-size:27px;line-height:1.2}
+  .standfirst__meta{padding:0}
+  .tonight{display:flex;flex-direction:column;padding-top:var(--s-2);padding-bottom:var(--s-7)}
+  .tonight__title{font-size:31px;margin-bottom:var(--s-4)}
+  .tonight__media{margin:0 0 var(--s-5)}
+  .tonight__venue{display:none}   /* board mobile = photo only */
+  .tonight__photo{margin-bottom:0}
+  .tonight__photo{min-height:0;height:215px}
+  .quote{padding-left:var(--s-4)}
+  .quote__t{font-size:24px;line-height:1.38}
+  .tonight__actions{flex-direction:column;gap:10px;margin-top:var(--s-6)}
+  .tonight__actions .btn{width:100%}
+  .tonight__actions .btn--quiet{margin-left:0}
+  .week{display:block}
+  .sechead__t{font-size:24px}
+  .pick{grid-template-columns:64px 1fr auto;gap:var(--s-4);padding:var(--s-4) 0}
+  .pick__img,.pick .thumb{width:64px;height:64px}
+  .pick__title{font-size:17px}
+  .week__foot{flex-direction:column;align-items:flex-start;gap:12px}
+  .week__rail{margin-top:var(--s-7)}
+}
+
+/* Tonight hero — solo (no photo) collapses to one column; hero save button */
+.tonight--solo{grid-template-columns:1fr}
+.tonight__main{min-width:0}
+.tonight__save{gap:8px}
+.tonight__save .ic{width:16px;height:18px}
+.tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 2: DISCOVER (discover.html + discover.js)
+   Reskin only — discover.js filter/map logic is untouched. Controls
+   grouped into one .deck plate; scope→segmented control; quick pills
+   + mood → unified radius-8 chips (999px retired here too); map pane
+   framed as a sticky plate with the real MapLibre canvas inside;
+   list rows aligned to the Plate & Rule row look.
+   ════════════════════════════════════════════════════════════ */
+body[data-page="discover"] .deck{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper);padding:var(--s-5);display:flex;flex-direction:column;gap:var(--s-4);margin:var(--s-3) 0 var(--s-5);box-shadow:0 1px 0 rgba(10,10,12,.02)}
+
+/* Scope → segmented control */
+body[data-page="discover"] .deck .discover-scope{display:inline-flex;gap:4px;padding:4px;width:auto;align-self:flex-start;margin:0;background:var(--c-paper-deep);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius)}
+body[data-page="discover"] .deck .discover-scope__btn{min-height:44px;height:44px;padding:0 24px;border:0;border-radius:calc(var(--radius) - 3px);background:none;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink-mute);transition:background var(--t-fast),color var(--t-fast)}
+body[data-page="discover"] .deck .discover-scope__btn:hover{color:var(--c-ink)}
+body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-ink);color:var(--c-paper)}
+
+/* Search → field */
+body[data-page="discover"] .deck .discover-search{margin:0}
+body[data-page="discover"] .deck .discover-search .search-box{height:52px;gap:14px;padding:0 18px;background:var(--c-paper);border:1.5px solid var(--c-rule-strong);border-radius:var(--radius)}
+body[data-page="discover"] .deck .discover-search .search-box:focus-within{border-color:var(--c-accent)}
+
+/* Quick pills + mood → unified chips (radius 8, mono; 999px retired) */
+body[data-page="discover"] .deck .discover-pills,
+body[data-page="discover"] .deck .mood-chips{margin:0;padding:0;gap:var(--s-2);flex-wrap:wrap;border:0}
+body[data-page="discover"] .deck .discover-pill,
+body[data-page="discover"] .deck .m-chip{height:38px;min-height:38px;padding:0 16px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);font-family:var(--ff-mono);font-size:13px;letter-spacing:.03em;color:var(--c-ink-soft);box-shadow:none;transition:border-color var(--t-fast),background var(--t-fast),color var(--t-fast)}
+body[data-page="discover"] .deck .discover-pill:hover,
+body[data-page="discover"] .deck .m-chip:hover{border-color:var(--c-ink)}
+body[data-page="discover"] .deck .discover-pill--on,
+body[data-page="discover"] .deck .m-chip--on,
+body[data-page="discover"] .deck .m-chip[aria-pressed="true"]{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-paper)}
+body[data-page="discover"] .deck .discover-pill--more{border-style:dashed;color:var(--c-ink)}
+
+/* A hairline rule between the search row and the chip rows */
+body[data-page="discover"] .deck .discover-pills{padding-top:var(--s-4);border-top:var(--rule-w) solid var(--c-rule)}
+
+/* Map pane → framed plate (real MapLibre canvas inside) */
+body[data-page="discover"] .discover-pane--map{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);overflow:hidden}
+/* Zoom control cluster → mapctl plate */
+body[data-page="discover"] .map-zoom-ctrl{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius);overflow:hidden;background:var(--c-paper);box-shadow:0 2px 10px rgba(10,10,12,.08)}
+body[data-page="discover"] .map-zoom-btn{border-radius:0}
+
+/* List rows aligned to the Plate & Rule row (thumb radius 8, serif title) */
+body[data-page="discover"] .list-row__title{font-family:var(--ff-display);letter-spacing:-.012em}
+body[data-page="discover"] .list-row .thumb--lg{border-radius:var(--radius)}
+
+/* Curator browse cards → curcard plates */
+body[data-page="discover"] .curator-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--s-4)}
+body[data-page="discover"] .curator-rows > li{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-5);transition:border-color var(--t-fast)}
+body[data-page="discover"] .curator-rows > li:hover{border-color:var(--c-ink)}
+
+@media (max-width:767px){
+  body[data-page="discover"] .deck{padding:var(--s-4);gap:var(--s-3)}
+  body[data-page="discover"] .deck .discover-scope{align-self:stretch}
+  body[data-page="discover"] .deck .discover-scope__btn{flex:1;justify-content:center;padding:0}
+  body[data-page="discover"] .curator-rows{grid-template-columns:1fr}
+}
+
+/* Facet dropdown-pills unified to the radius-8 control shape (Phase 2). */
+body[data-page="discover"] .facet-pill{border-radius:var(--radius)}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 3: ABOUT (about.html, static markup)
+   Reskin of the existing sections to the board components
+   (boards-about.jsx); all content preserved. CSS-only + the
+   mobile return bar added in markup.
+   ════════════════════════════════════════════════════════════ */
+.returnbar{display:none}   /* desktop hides it; mobile shows (below) */
+
+body[data-page="about"] .about-head{padding-top:var(--s-8);padding-bottom:var(--s-7)}
+body[data-page="about"] .about-head__row{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-8)}
+body[data-page="about"] .about-head__title{font-family:var(--ff-display);font-style:italic;font-size:50px;line-height:1.08;letter-spacing:-.012em;font-weight:400;margin:var(--s-3) 0 0;text-wrap:pretty}
+body[data-page="about"] .about-head__mark{flex-shrink:0;margin-top:var(--s-2)}
+body[data-page="about"] .about-head__lede{font-size:18px;line-height:1.65;color:var(--c-ink-soft);max-width:56ch;text-wrap:pretty;margin-top:var(--s-6)}
+
+/* Section headers → serif title with a hairline rule */
+body[data-page="about"] .about-section{padding-top:var(--s-7)}
+body[data-page="about"] .about-section .section-head{border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
+body[data-page="about"] .about-section .section-title{font-family:var(--ff-display);font-size:32px;font-weight:600;letter-spacing:-.02em}
+body[data-page="about"] .about-section > p{font-size:16.5px;line-height:1.7;color:var(--c-ink-soft);max-width:62ch}
+body[data-page="about"] .about-section > p + p{margin-top:var(--s-3)}
+
+/* City strip → citycard plates */
+body[data-page="about"] .about-cities{padding-top:var(--s-2)}
+body[data-page="about"] .about-cities__list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5)}
+body[data-page="about"] .about-cities__item{display:flex;flex-direction:column;gap:0}
+body[data-page="about"] .about-cities__item img{width:100%;aspect-ratio:3/2;object-fit:cover;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-cream)}
+body[data-page="about"] .about-cities__name{font-family:var(--ff-body);font-weight:600;font-size:16px;margin-top:var(--s-3)}
+body[data-page="about"] .about-cities__status{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;margin-top:var(--s-1);font-family:var(--ff-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:var(--radius-tag)}
+body[data-page="about"] .about-cities__status--live{background:var(--c-lime);color:var(--c-ink)}
+body[data-page="about"] .about-cities__dot{display:none}
+
+/* How-it-works → step plates (board omits the icons) */
+body[data-page="about"] .about-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);padding-top:var(--s-6)}
+body[data-page="about"] .about-steps__item{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6)}
+body[data-page="about"] .about-steps__icon{display:none}
+body[data-page="about"] .about-steps__num{font-family:var(--ff-mono);font-size:13px;letter-spacing:.2em;color:var(--c-accent);margin-bottom:var(--s-4)}
+body[data-page="about"] .about-steps__title{font-family:var(--ff-display);font-size:19px;font-weight:600;letter-spacing:-.012em;margin-bottom:var(--s-2)}
+body[data-page="about"] .about-steps__body{font-size:15px;line-height:1.6;color:var(--c-ink-mute)}
+
+/* Open-source links → linkcard plates */
+body[data-page="about"] .about-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);padding-top:var(--s-5)}
+body[data-page="about"] .about-links__a{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:var(--s-4);align-items:center;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-5);height:100%;transition:border-color var(--t-fast)}
+body[data-page="about"] .about-links__icon{grid-column:1;grid-row:1 / span 2;align-self:center}
+body[data-page="about"] .about-links__label,body[data-page="about"] .about-links__sub{grid-column:2;min-width:0;overflow-wrap:anywhere}
+body[data-page="about"] .about-links__a:hover{border-color:var(--c-ink)}
+body[data-page="about"] .about-links__icon{display:grid;place-items:center;width:40px;height:40px;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius);background:var(--c-paper-deep);color:var(--c-accent);flex-shrink:0}
+body[data-page="about"] .about-links__label{display:block;font-family:var(--ff-mono);font-size:13.5px;font-weight:500;margin-bottom:3px}
+body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var(--c-ink-mute)}
+
+@media (max-width:767px){
+  .returnbar{display:flex}
+  body[data-page="about"] .about-head__row{flex-direction:column;gap:0}
+  body[data-page="about"] .about-head__mark{display:none}
+  body[data-page="about"] .about-head__title{font-size:33px}
+  body[data-page="about"] .about-head__lede{font-size:16.5px}
+  body[data-page="about"] .about-cities__list,
+  body[data-page="about"] .about-steps,
+  body[data-page="about"] .about-links{grid-template-columns:1fr;gap:var(--s-4)}
+  body[data-page="about"] .about-section .section-title{font-size:25px}
+}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 4: secondary pages + unification
+   Brings saved/profile/venue/curator/place onto the one button
+   family, segmented control, and radius vocabulary (4/8/12).
+   ════════════════════════════════════════════════════════════ */
+/* Legacy CTAs adopt the one button family (52px, radius-8, ink/petrol) */
+.btn-primary,.btn-secondary{height:52px;min-height:52px;padding:0 28px;border-radius:var(--radius);font-family:var(--ff-body);font-size:16px;font-weight:600;letter-spacing:-.01em;gap:10px}
+.btn-primary{background:var(--c-ink);color:var(--c-paper);border:0}
+.btn-primary:hover{background:var(--c-accent);color:var(--c-paper)}
+.btn-secondary{background:var(--c-paper);color:var(--c-ink);border:1.5px solid var(--c-ink)}
+.btn-secondary:hover{background:var(--c-ink);color:var(--c-paper);border-color:var(--c-ink)}
+
+/* Profile / auth / digest submit → primary button */
+.auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-ink);color:var(--c-paper);font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
+.auth-panel__submit:hover:not(:disabled){background:var(--c-accent);color:var(--c-paper)}
+
+/* Saved segmented control → align radius + ink-fill active (matches Discover scope) */
+.seg-tabs{border-radius:var(--radius)}
+.seg-tab__count{border-radius:var(--radius-tag)}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"],
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]{background:var(--c-ink);border-color:var(--c-ink)}
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label{color:var(--c-paper)}
+
+/* Retire the last 999px pills: mood tag → radius-8 control, list tag → radius-4 */
+.venue-mood{border-radius:var(--radius)}
+.list-row__tag{border-radius:var(--radius-tag)}
+
+/* ════════════════════════════════════════════════════════════
+   PLATE & RULE — Phase 4b: PROFILE (no Claude Design board;
+   aligned to About's rule-header pattern + the control family).
+   ════════════════════════════════════════════════════════════ */
+body[data-page="profile"] .profile-head{padding-top:var(--s-8);padding-bottom:var(--s-6)}
+body[data-page="profile"] .profile-head__email{font-family:var(--ff-display);font-size:30px;font-weight:600;letter-spacing:-.018em}
+body[data-page="profile"] .profile-avatar{border-radius:var(--radius);background:var(--c-accent)}
+body[data-page="profile"] .profile-avatar__initial{color:var(--c-lime)}
+/* Section headers → serif title with a hairline rule (matches About) */
+body[data-page="profile"] .profile-section{padding-top:var(--s-7)}
+body[data-page="profile"] .profile-section .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-4);border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
+body[data-page="profile"] .profile-section .section-title{font-family:var(--ff-display);font-size:26px;font-weight:600;letter-spacing:-.018em}
+/* Password field → .field look */
+body[data-page="profile"] .auth-panel__input{width:100%;height:52px;padding:0 18px;border:1.5px solid var(--c-rule-strong);border-radius:var(--radius);background:var(--c-paper);font-family:var(--ff-body);font-size:16.5px}
+body[data-page="profile"] .auth-panel__input:focus-visible{border-color:var(--c-accent);outline:none}
+/* Secondary actions (Export / Reset / Clear) → quiet button family.
+   Scoped to .profile-actions so the auth-overlay close (×) is untouched. */
+body[data-page="profile"] .profile-actions .auth-panel__close{height:52px;min-height:52px;padding:0 24px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);color:var(--c-ink-soft);font-family:var(--ff-body);font-size:15px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;width:auto}
+body[data-page="profile"] .profile-actions .auth-panel__close:hover{border-color:var(--c-ink);color:var(--c-ink)}
+@media (max-width:767px){
+  body[data-page="profile"] .profile-head__email{font-size:24px}
+  body[data-page="profile"] .profile-section .section-title{font-size:22px}
+}

@@ -103,52 +103,54 @@
     if (!section || !entry) return;
     section.removeAttribute('aria-busy');   /* hydration done — drop the loading flag */
 
-    /* Flat editorial hero (redesign May 2026): a lime TONIGHT signal, a
-       kind + neighborhood line, the title, then the curator quote as the
-       dominant element (lime rule, full display scale), then the actions.
-       No surface card, no hero thumbnail — the voice is the product. */
-    const timeStr  = entry.time ? ` &middot; ${entry.time}` : '';
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    /* Plate & Rule (June 2026): a 2-col editorial hero — left column carries
+       the live signal, title, lime pull-quote and actions; the photo moves
+       to a framed media plate on the right (with the venue plate beneath).
+       'other' is a data bucket, not a place — never print it (F-12). */
+    const esc = window.WA.UI.esc;
     const heroNhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other'
       ? entry.neighborhood : '';
-    const whereStr = [heroNhood, entry.venue].filter(Boolean).join(' &middot; ');
+    const kicker = [entry.time ? `<b>${esc(entry.time)}</b>` : '', esc(entry.venue), esc(entry.kind)]
+      .filter(Boolean).join(' &middot; ');
 
-    /* Photo-forward header when a venue photo exists (June 2026): the image
-       fills a banner with a bottom-anchored scrim gradient (rgba 0 -> .6)
-       so the white title/kindline never disappear over a high-contrast
-       photo. The curator quote stays below in dark Fraunces — voice still
-       leads. No photo -> the flat editorial header (kindline + title). */
-    const head = entry.imageUrl
-      ? `<a href="venue.html?id=${entry.id}" class="tonight__hero" id="tonight-label"
-            style="background-image:url('${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}')">
-           <span class="tonight__badge tonight__badge--onphoto">Tonight${timeStr}</span>
-           <span class="tonight__hero-foot">
-             <span class="tonight__kindline tonight__kindline--onphoto">
-               <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
-               <span class="tonight__where">${whereStr}</span>
-             </span>
-             <span class="tonight__title tonight__title--onphoto">${entry.title}</span>
-           </span>
-         </a>`
-      : `<span class="tonight__badge">Tonight${timeStr}</span>
-         <div class="tonight__kindline">
-           <span class="tonight__kind"><span class="dot" aria-hidden="true"></span>${entry.kind}</span>
-           <span class="tonight__where">${whereStr}</span>
-         </div>
-         <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${entry.title}</a>`;
+    /* Photo stays an <a> to the venue so view-transition.js morphs it into
+       the detail hero. No photo -> single column (.tonight--solo), voice only. */
+    const media = entry.imageUrl
+      ? `<div class="tonight__media">
+           <a class="tonight__photo" href="venue.html?id=${entry.id}" aria-label="${esc(entry.title)}">
+             <img src="${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}" alt="">
+             <span class="tag tag--photo">${esc(entry.kind)}</span>
+           </a>
+           <div class="tonight__venue">
+             <div>
+               <b>${esc(entry.venue)}</b>
+               <span class="meta">${[heroNhood, entry.time ? `doors ${esc(entry.time)}` : ''].filter(Boolean).join(' &middot; ')}</span>
+             </div>
+             <a class="linkact" href="venue.html?id=${entry.id}">Venue<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+           </div>
+         </div>`
+      : '';
 
+    section.classList.toggle('tonight--solo', !entry.imageUrl);
     section.innerHTML =
-      `${head}
-       <blockquote class="tonight__quote">&ldquo;${entry.quote}&rdquo;</blockquote>
-       <p class="tonight__attr">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
+      `<div class="tonight__signal">
+         <span class="tag tag--live">Tonight</span>
+         <span class="tonight__kicker">${kicker}</span>
+       </div>
+       <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${esc(entry.title)}</a>
+       ${media}
+       <figure class="quote">
+         <blockquote class="quote__t">&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
+         <figcaption class="quote__attr">
+           <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>
+         </figcaption>
+       </figure>
        <div class="tonight__actions">
-         <a class="btn-going" href="venue.html?id=${entry.id}">I&rsquo;m going
-           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
-         </a>
-         <label class="btn-save bookmark">
-           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick" />
-           <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 1.5h10v14l-5-3.5-5 3.5v-14z"/></svg>
-           Save
+         <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+         <button class="btn btn--secondary" id="surprise-btn" type="button" aria-label="Show a surprise pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3"/></svg>Surprise me</button>
+         <label class="btn btn--quiet tonight__save">
+           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
          </label>
        </div>`;
     /* Re-apply saved state to the freshly-rendered checkbox (surprise-me
@@ -199,10 +201,13 @@
     const section = document.getElementById('tonight');
     if (!section) return;
     section.removeAttribute('aria-busy');
+    /* No photo / hero in the empty state — collapse the 2-col Tonight grid
+       to a single column so the tag + note read as one editorial block. */
+    section.classList.add('tonight--solo');
     const cityId    = window.WA?.CITY || 'tallinn';
     const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
     section.innerHTML =
-      `<span class="tonight__badge">Tonight</span>
+      `<div class="tonight__signal"><span class="tag tag--live">Tonight</span></div>
        <p class="tonight__empty">No pick for tonight in ${cityLabel} yet &mdash; curators are warming up. ` +
        `In the meantime, <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
   };
@@ -313,17 +318,15 @@
 
     list.innerHTML = entries.map(e =>
       `<li class="pick">
-         <div class="pick__link">
-           <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-             ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
+         <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
+           ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
+         </a>
+         <div class="pick__body">
+           <a class="pick__title-link" href="venue.html?id=${e.id}">
+             <span class="pick__title">${e.title}</span>
            </a>
-           <span class="pick__body">
-             <a class="pick__title-link" href="venue.html?id=${e.id}">
-               <span class="pick__title">${e.title}</span>
-             </a>
-             <span class="meta">${e.venue} &middot; ${e.kind}${timeSpan(e)}</span>
-             <span class="via">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></span>
-           </span>
+           <span class="meta">${e.venue} &middot; ${e.kind}${timeSpan(e)}</span>
+           <span class="via">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></span>
          </div>
          <label class="bookmark">
            <input type="checkbox" class="bookmark__check" data-id="${e.id}"
@@ -344,12 +347,10 @@
     if (remaining > 0) {
       footer = document.createElement('div');
       footer.id = 'picks-footer';
-      footer.className = 'picks-footer';
+      footer.className = 'week__foot';
       footer.innerHTML = `
-        <a class="picks-footer__btn" href="./discover.html?time=thisweek">
-          Browse all this week &rarr;
-        </a>
-        <p class="picks-footer__meta">${remaining} more in Discover</p>
+        <a class="linkact" href="./discover.html?time=thisweek">Browse all this week<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+        <span class="meta">${remaining} more in Discover</span>
       `;
       list.parentNode.insertBefore(footer, list.nextSibling);
     }
@@ -373,13 +374,19 @@
 
   /* ── Surprise me ───────────────────────────────────────────── */
   let _surpriseExcludeId = null;
+  let _surpriseCatalog   = [];
 
+  /* Surprise now lives in the Tonight action row, which renderTonight()
+     rebuilds on every shuffle — so the click is handled by ONE delegated
+     listener (bound once) rather than a per-button binding. */
   const wireSurprise = (catalog) => {
-    const btn = document.getElementById('surprise-btn');
-    if (!btn) return;
+    _surpriseCatalog = catalog;
+    if (wireSurprise._bound) return;
+    wireSurprise._bound = true;
 
-    btn.addEventListener('click', () => {
-      const pool = catalog.filter(e => e.id !== _surpriseExcludeId);
+    document.addEventListener('click', (ev) => {
+      if (!ev.target.closest('#surprise-btn')) return;
+      const pool = _surpriseCatalog.filter(e => e.id !== _surpriseExcludeId);
       if (!pool.length) return;
 
       const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -458,21 +465,27 @@
 
       const issueLabel = col.issue_num ? ` · Issue ${col.issue_num}` : '';
 
+      const initials = (col.curator_handle || '@').replace('@', '').slice(0, 2).toUpperCase() || '??';
       const el = document.createElement('section');
       el.className = 'column';
       el.setAttribute('aria-labelledby', 'column-label');
       el.innerHTML =
-        `<p id="column-label" class="column__eyebrow">Column${issueLabel}</p>` +
+        `<div class="column__head">` +
+          `<span id="column-label" class="column__eyebrow">Column${issueLabel}</span>` +
+          `<span class="meta">weekly</span>` +
+        `</div>` +
         `<div class="column__body">${toHtml(col.body_md)}</div>` +
-        `<p class="column__sig">` +
-          `<span aria-hidden="true">—</span>` +
+        `<div class="column__sig">` +
+          `<span class="column__ava" aria-hidden="true">${initials}</span>` +
           `<a class="handle" href="curator.html?handle=${encodeURIComponent(col.curator_handle)}">${col.curator_handle}</a>` +
-          (approvedDate ? `<span>&middot; ${approvedDate}</span>` : '') +
-        `</p>`;
+          (approvedDate ? `<span class="meta">&middot; ${approvedDate}</span>` : '') +
+        `</div>`;
 
-      /* Insert before .thisweek */
-      const thisWeekEl = document.querySelector('.thisweek');
-      if (thisWeekEl) thisWeekEl.parentNode.insertBefore(el, thisWeekEl);
+      /* Insert into the From-the-desk rail, above the digest plate. */
+      const rail   = document.querySelector('.week__rail');
+      const digest = document.getElementById('digest-optin-wrap');
+      if (rail && digest)   rail.insertBefore(el, digest);
+      else if (rail)        rail.prepend(el);
     } catch (_) {
       /* Network errors are silently swallowed — the page degrades gracefully. */
     }
@@ -513,15 +526,16 @@
     _surpriseExcludeId = tonight ? tonight.id : null;
 
     renderEditorialDeskNote();
+    const sfMeta = document.getElementById('standfirst-meta');
+    if (sfMeta) sfMeta.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     if (tonight) renderTonight(tonight);
     else         renderTonightEmpty();
     /* Pass the full ordered set — renderThisWeek paginates internally. */
     renderThisWeek(orderedWeek);
     restoreBookmarks();
     wireBookmarks();
-    /* Surprise me has nothing to cycle through in an empty city. */
-    const surpriseBtn = document.getElementById('surprise-btn');
-    if (surpriseBtn) surpriseBtn.hidden = catalog.length === 0;
+    /* Surprise me lives in the Tonight actions; renderTonightEmpty omits it
+       for an empty city, so no separate hide guard is needed. */
     wireSurprise(catalog);
     renderColumn();  /* async — doesn't block the sync render above */
 

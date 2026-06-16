@@ -74,6 +74,9 @@
          scoped toggle, not a filter facet (RA / Google Maps pattern).
          It sits above search because it scopes everything below it.
          discover.js reads/writes &type=events|places. -->
+    <!-- Control deck — scope · search · quick filters · mood, grouped in
+         one Plate & Rule plate (Phase 2). discover.js logic unchanged. -->
+    <div class="deck">
     <div class="discover-scope" role="tablist" aria-label="Browse events or places">
       <button class="discover-scope__btn discover-scope__btn--on" type="button"
               role="tab" aria-selected="true" data-type="events">Events</button>
@@ -160,6 +163,7 @@
          orientation win). Hidden when no sheet filters are active;
          discover.js renders it. -->
     <div class="discover-applied" id="discover-applied" aria-label="Active filters" hidden></div>
+    </div><!-- /.deck -->
 
     <!-- View panes: list (default) and map. Mobile shows one at a time
          via the view-toggle FAB; desktop ≥1024px shows both side-by-side. -->
