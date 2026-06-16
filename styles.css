@@ -6179,8 +6179,13 @@ body[data-page="saved"] .seg-note {
 .standfirst__t em,.standfirst__city{font-style:italic;color:var(--c-accent)}
 .standfirst__meta{font-family:var(--ff-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--c-ink-mute);white-space:nowrap;padding-bottom:6px}
 
-/* Tonight — 2-col editorial hero (left voice · right media plate) */
-.tonight{display:grid;grid-template-columns:1.25fr .85fr;gap:var(--s-8);padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
+/* Tonight — 2-col editorial hero (left voice · right media plate).
+   Children are flat (signal·title·media·quote·actions in DOM order) so the
+   mobile stack shows the photo between title and quote, as drawn; desktop
+   pins the text items to col 1 and the media plate to col 2. */
+.tonight{display:grid;grid-template-columns:1.25fr .85fr;column-gap:var(--s-8);row-gap:0;padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
+.tonight > .tonight__signal,.tonight > .tonight__title,.tonight > .quote,.tonight > .tonight__actions{grid-column:1}
+.tonight > .tonight__media{grid-column:2;grid-row:1 / span 5}
 .tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
 .tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
 .tonight__kicker b{color:var(--c-ink);font-weight:500}
@@ -6247,9 +6252,11 @@ a.tonight__title:hover{color:var(--c-accent)}
   .standfirst{flex-direction:column;align-items:flex-start;gap:10px;padding-top:var(--s-6);padding-bottom:var(--s-5)}
   .standfirst__t{font-size:27px;line-height:1.2}
   .standfirst__meta{padding:0}
-  .tonight{display:block;padding-top:var(--s-2);padding-bottom:var(--s-7)}
+  .tonight{display:flex;flex-direction:column;padding-top:var(--s-2);padding-bottom:var(--s-7)}
   .tonight__title{font-size:31px;margin-bottom:var(--s-4)}
-  .tonight__media{margin-bottom:var(--s-5)}
+  .tonight__media{margin:0 0 var(--s-5)}
+  .tonight__venue{display:none}   /* board mobile = photo only */
+  .tonight__photo{margin-bottom:0}
   .tonight__photo{min-height:0;height:215px}
   .quote{padding-left:var(--s-4)}
   .quote__t{font-size:24px;line-height:1.38}

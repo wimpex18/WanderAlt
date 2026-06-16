@@ -133,28 +133,26 @@
 
     section.classList.toggle('tonight--solo', !entry.imageUrl);
     section.innerHTML =
-      `<div class="tonight__main">
-         <div class="tonight__signal">
-           <span class="tag tag--live">Tonight</span>
-           <span class="tonight__kicker">${kicker}</span>
-         </div>
-         <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${esc(entry.title)}</a>
-         <figure class="quote">
-           <blockquote class="quote__t">&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
-           <figcaption class="quote__attr">
-             <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>
-           </figcaption>
-         </figure>
-         <div class="tonight__actions">
-           <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-           <button class="btn btn--secondary" id="surprise-btn" type="button" aria-label="Show a surprise pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3"/></svg>Surprise me</button>
-           <label class="btn btn--quiet tonight__save">
-             <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
-             <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
-           </label>
-         </div>
+      `<div class="tonight__signal">
+         <span class="tag tag--live">Tonight</span>
+         <span class="tonight__kicker">${kicker}</span>
        </div>
-       ${media}`;
+       <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${esc(entry.title)}</a>
+       ${media}
+       <figure class="quote">
+         <blockquote class="quote__t">&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
+         <figcaption class="quote__attr">
+           <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>
+         </figcaption>
+       </figure>
+       <div class="tonight__actions">
+         <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+         <button class="btn btn--secondary" id="surprise-btn" type="button" aria-label="Show a surprise pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3"/></svg>Surprise me</button>
+         <label class="btn btn--quiet tonight__save">
+           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
+         </label>
+       </div>`;
     /* Re-apply saved state to the freshly-rendered checkbox (surprise-me
        re-renders the hero, so this can't rely on the one-shot init pass). */
     if (window.WA?.Bookmarks) {
