@@ -209,11 +209,13 @@
          <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
          <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
          <form id="digest-optin-form" data-no-submit>
-           <div class="digest-optin__row">
-             <input type="email" class="auth-panel__input digest-optin__email" id="digest-optin-email"
+           <div class="digest-field">
+             <input type="email" class="digest-field__email" id="digest-optin-email"
                     aria-label="Email address for the weekly digest"
                     placeholder="your@email.com" autocomplete="email" required />
-             <button type="submit" class="btn btn--petrol digest-optin__submit" id="digest-optin-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg>Subscribe</button>
+             <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
+               <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+             </button>
            </div>
          </form>
          <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>

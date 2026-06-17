@@ -2629,13 +2629,54 @@ a.auth-panel__submit { display: inline-block; }
    ============================================================ */
 .digest-optin__label { margin-bottom: var(--s-2); }
 .digest-optin__desc  { margin-bottom: var(--s-3); }
-.digest-optin__row {
+
+/* Composite signup field (2026 pattern): the email input and its submit are
+   one unit — an inline petrol icon-button docked at the end of the field,
+   not a separate chunky button. Substack/Ghost-style. */
+.digest-field {
+  position: relative;
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  height: 52px;
+  margin-top: 14px;
+  background: var(--c-paper);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
+  transition: border-color var(--t-fast);
 }
-.digest-optin__email  { flex: 1; min-width: 180px; }
-.digest-optin__submit { white-space: nowrap; }
+.digest-field:focus-within { border-color: var(--c-accent); }
+.digest-field__email {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 56px 0 16px;          /* clears the docked submit */
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--ff-body);
+  font-size: 16px;
+  color: var(--c-ink);
+}
+.digest-field__submit {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--c-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.digest-field__submit:hover { background: var(--c-accent-deep); }
+.digest-field__submit:disabled { opacity: 0.5; cursor: default; }
+.digest-field__submit .ic { width: 19px; height: 19px; }
+.digest-field__submit:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 
 /* ============================================================
    Colophon
@@ -5968,12 +6009,9 @@ a.tonight__title:hover{color:var(--c-accent)}
 .column__sig{display:flex;align-items:center;gap:12px;margin-top:var(--s-5)}
 .column__ava{width:34px;height:34px;border-radius:var(--radius);background:var(--c-accent);color:var(--c-lime);display:grid;place-items:center;font-family:var(--ff-mono);font-size:12px;flex-shrink:0}
 
-/* Digest plate */
+/* Digest plate (the signup field itself is .digest-field, above) */
 .digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
 .digest-optin .rule{display:none}
-.digest-optin__row{display:flex;gap:10px;margin-top:14px}
-.digest-optin__email{flex:1;min-width:0;height:48px}
-.digest-optin__submit{height:48px}
 
 /* Taste check — editorial plate */
 .taste-onboarding{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin-top:var(--s-6)}
