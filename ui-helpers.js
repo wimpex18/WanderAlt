@@ -127,5 +127,28 @@
     return btns ? `<div class="social-links">${btns}</div>` : '';
   };
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons };
+  /* Password show/hide. passwordField() wraps a password <input> in a
+     composite .field-pw with an embedded eye toggle (same borderless
+     icon-button language as .social-icon); one delegated handler below
+     toggles type + glyph for every such field, whenever rendered. The
+     glyphs are the Tabler eye / eye-off marks. */
+  const EYE_SVG     = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>';
+  const EYE_OFF_SVG = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>';
+  const passwordField = (inputHtml, wrapStyle) =>
+    `<span class="field-pw"${wrapStyle ? ` style="${wrapStyle}"` : ''}>${inputHtml}` +
+    `<button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false">${EYE_SVG}</button></span>`;
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('.pw-toggle');
+    if (!btn) return;
+    const input = btn.parentNode && btn.parentNode.querySelector('input');
+    if (!input) return;
+    const reveal = input.type === 'password';
+    input.type = reveal ? 'text' : 'password';
+    btn.innerHTML = reveal ? EYE_OFF_SVG : EYE_SVG;
+    btn.setAttribute('aria-pressed', reveal ? 'true' : 'false');
+    btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+  });
+
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons, passwordField };
 })();

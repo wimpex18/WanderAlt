@@ -79,8 +79,11 @@
       <header class="section-head">
         <h2 id="profile-password-label" class="section-title">Change password</h2>
       </header>
-      <input class="auth-panel__input" id="profile-pw" type="password"
-             placeholder="New password (min 6 chars)" autocomplete="new-password" />
+      <span class="field-pw">
+        <input class="auth-panel__input" id="profile-pw" type="password"
+               placeholder="New password (min 6 chars)" autocomplete="new-password" />
+        <button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg></button>
+      </span>
       <div class="profile-actions">
         <button class="auth-panel__submit" id="profile-pw-submit" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><span>Update password</span></button>
       </div>
