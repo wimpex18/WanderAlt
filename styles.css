@@ -2353,44 +2353,52 @@ a.handle:hover {
 .pw-toggle:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
 .auth-panel__actions {
   display: flex;
-  align-items: center;
-  gap: var(--s-5);
+  align-items: stretch;     /* submit + cancel share one height */
+  gap: var(--s-3);
   margin-top: var(--s-5);
 }
+/* Submit + Cancel are equal halves spanning the form width — same width as
+   the inputs/Google above, same 52px height as every form control. */
+.auth-panel__actions .auth-panel__submit,
+.auth-panel__actions .auth-panel__close { flex: 1; }
 .auth-panel__submit {
   display: inline-flex;
   align-items: center;
-  padding: 9px 16px;
-  min-height: 44px;   /* Apple HIG tap target (padding alone left it ~38px) */
-  background: var(--c-ink);
-  color: var(--c-paper);
+  justify-content: center;
+  gap: 8px;
+  height: 52px;                 /* unified form-control height */
+  padding: 0 20px;
+  background: var(--c-accent);  /* primary = petrol (unified across the app) */
+  color: #fff;
   border: none;
   border-radius: var(--radius);
   font-family: var(--ff-body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   transition: background var(--t-fast);
 }
-.auth-panel__submit:hover:not(:disabled) { background: var(--c-ink-soft); color: var(--c-paper); }
+.auth-panel__submit:hover:not(:disabled) { background: var(--c-accent-deep); color: #fff; }
 .auth-panel__submit:disabled { opacity: 0.4; cursor: default; }
 .auth-panel__close {
   display: inline-flex;
   align-items: center;
-  padding: 9px 16px;
-  min-height: 44px;   /* Apple HIG tap target */
-  background: transparent;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;                 /* matches the submit */
+  padding: 0 20px;
+  background: var(--c-paper);
   color: var(--c-ink);
-  border: var(--rule-w) solid var(--c-rule);
+  border: var(--rule-w) solid var(--c-rule-strong);
   border-radius: var(--radius);
   font-family: var(--ff-body);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color var(--t-fast);
+  transition: border-color var(--t-fast), color var(--t-fast);
 }
-.auth-panel__close:hover { border-color: var(--c-ink); }
+.auth-panel__close:hover { border-color: var(--c-ink); color: var(--c-ink); }
 .auth-panel__status {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
@@ -2406,8 +2414,9 @@ a.handle:hover {
   justify-content: center;
   gap: var(--s-2);
   width: 100%;
+  height: 52px;            /* matches the inputs + submit below it */
   margin: 0 0 var(--s-4);
-  padding: var(--s-3) var(--s-4);
+  padding: 0 var(--s-4);
   border: var(--rule-w) solid var(--c-rule-strong);
   border-radius: var(--radius);
   font-family: var(--ff-mono);
@@ -5852,8 +5861,8 @@ body[data-page="saved"] .seg-note {
 
 /* ── Buttons — ONE family, four weights, 8px radius, 52px tall ── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; height: 52px; padding: 0 28px; border-radius: var(--radius); font-family: var(--ff-body); font-size: 16px; font-weight: 600; letter-spacing: -.01em; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
-.btn--primary { background: var(--c-ink); color: var(--c-paper); }
-.btn--primary:hover { background: var(--c-accent); }
+.btn--primary { background: var(--c-accent); color: #fff; }
+.btn--primary:hover { background: var(--c-accent-deep); }
 .btn--secondary { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-ink); }
 .btn--secondary:hover { background: var(--c-ink); color: var(--c-paper); }
 .btn--quiet { background: var(--c-paper); color: var(--c-ink-soft); border: var(--rule-w) solid var(--c-rule-strong); }
@@ -6206,14 +6215,14 @@ body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var
    ════════════════════════════════════════════════════════════ */
 /* Legacy CTAs adopt the one button family (52px, radius-8, ink/petrol) */
 .btn-primary,.btn-secondary{height:52px;min-height:52px;padding:0 28px;border-radius:var(--radius);font-family:var(--ff-body);font-size:16px;font-weight:600;letter-spacing:-.01em;gap:10px}
-.btn-primary{background:var(--c-ink);color:var(--c-paper);border:0}
-.btn-primary:hover{background:var(--c-accent);color:var(--c-paper)}
+.btn-primary{background:var(--c-accent);color:#fff;border:0}
+.btn-primary:hover{background:var(--c-accent-deep);color:#fff}
 .btn-secondary{background:var(--c-paper);color:var(--c-ink);border:1.5px solid var(--c-ink)}
 .btn-secondary:hover{background:var(--c-ink);color:var(--c-paper);border-color:var(--c-ink)}
 
 /* Profile / auth / digest submit → primary button */
-.auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-ink);color:var(--c-paper);font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
-.auth-panel__submit:hover:not(:disabled){background:var(--c-accent);color:var(--c-paper)}
+.auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-accent);color:#fff;font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
+.auth-panel__submit:hover:not(:disabled){background:var(--c-accent-deep);color:#fff}
 
 /* Saved segmented control → align radius + ink-fill active (matches Discover scope) */
 .seg-tabs{border-radius:var(--radius)}
