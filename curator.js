@@ -116,7 +116,7 @@
         <div class="curator-profile">
           <p class="curator-profile__handle">${curator.handle}</p>
           ${curator.tagline ? `<p class="curator-profile__tagline">${curator.tagline}</p>` : ''}
-          <button type="button" id="curator-share-btn" class="curator-share">Share &rarr;</button>
+          <button type="button" id="curator-share-btn" class="curator-share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg><span>Share</span></button>
         </div>
 
         ${curator.bio ? `

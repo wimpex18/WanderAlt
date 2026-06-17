@@ -69,8 +69,8 @@
         Nothing saved yet. <a href="./discover.html">Browse Discover</a> to find picks worth keeping.
       </p>
       <div class="profile-actions">
-        <a class="auth-panel__submit" href="./saved.html">View saved picks &rarr;</a>
-        <button class="auth-panel__close" id="profile-export-btn" type="button">Export JSON</button>
+        <a class="auth-panel__submit" href="./saved.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4" /></svg><span>View saved picks</span></a>
+        <button class="auth-panel__close" id="profile-export-btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg><span>Export JSON</span></button>
       </div>
     </section>
 
@@ -82,7 +82,7 @@
       <input class="auth-panel__input" id="profile-pw" type="password"
              placeholder="New password (min 6 chars)" autocomplete="new-password" />
       <div class="profile-actions">
-        <button class="auth-panel__submit" id="profile-pw-submit" type="button">Update password</button>
+        <button class="auth-panel__submit" id="profile-pw-submit" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><span>Update password</span></button>
       </div>
       <p class="auth-panel__status" id="profile-pw-status" aria-live="polite"></p>
     </section>
@@ -111,8 +111,8 @@
       </header>
       <p class="meta profile-section__line" id="taste-feedback-count"></p>
       <div class="profile-actions profile-actions--tight">
-        <button class="auth-panel__close" id="taste-reset-prefs-btn" type="button">Reset preferences</button>
-        <button class="auth-panel__close" id="taste-clear-feedback-btn" type="button">Clear feedback</button>
+        <button class="auth-panel__close" id="taste-reset-prefs-btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" /></svg><span>Reset preferences</span></button>
+        <button class="auth-panel__close" id="taste-clear-feedback-btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg><span>Clear feedback</span></button>
       </div>
       <p class="auth-panel__status" id="taste-status" aria-live="polite"></p>
     </section>
@@ -129,7 +129,7 @@
         What WanderAlt is, who curates it, how to get in touch, and what we do with your data.
       </p>
       <div class="profile-actions">
-        <a class="auth-panel__submit" href="./about.html">About WanderAlt &rarr;</a>
+        <a class="auth-panel__submit" href="./about.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.75h.01" /></svg><span>About WanderAlt</span></a>
       </div>
     </section>
 
@@ -139,18 +139,18 @@
         <h2 id="profile-signout-label" class="section-title">Session</h2>
       </header>
       <div class="profile-actions">
-        <button class="auth-panel__close" id="profile-signout" type="button">Sign out</button>
+        <button class="auth-panel__close" id="profile-signout" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M9 12h12l-3 -3" /><path d="M18 15l3 -3" /></svg><span>Sign out</span></button>
       </div>
       <p class="profile-section__line profile-section__line--danger">
-        <button class="profile-danger-btn" id="profile-delete-btn" type="button">Delete account&hellip;</button>
+        <button class="profile-danger-btn" id="profile-delete-btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg><span>Delete account&hellip;</span></button>
       </p>
       <div class="profile-delete-confirm" id="profile-delete-confirm" hidden>
         <p class="profile-delete-confirm__warning">This permanently deletes your account and all saved data. Type DELETE to confirm.</p>
         <input class="auth-panel__input" id="profile-delete-input" type="text"
                placeholder="DELETE" autocomplete="off" />
         <div class="profile-actions">
-          <button class="auth-panel__submit" id="profile-delete-submit" type="button">Delete my account</button>
-          <button class="auth-panel__close" id="profile-delete-cancel" type="button">Cancel</button>
+          <button class="auth-panel__submit" id="profile-delete-submit" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg><span>Delete my account</span></button>
+          <button class="auth-panel__close" id="profile-delete-cancel" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg><span>Cancel</span></button>
         </div>
       </div>
       <p class="auth-panel__status" id="profile-delete-status" aria-live="polite"></p>

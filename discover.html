@@ -137,9 +137,9 @@
          Places shows the most common venue-kind shortcuts. discover.js
          toggles [data-mode] visibility. + Filters is shared. -->
     <nav class="discover-pills" aria-label="Quick filters">
-      <button class="discover-pill" type="button" data-pill="tonight"  data-mode="events">Tonight</button>
-      <button class="discover-pill" type="button" data-pill="thisweek" data-mode="events">This week</button>
-      <button class="discover-pill" type="button" data-pill="free"     data-mode="events">Free</button>
+      <button class="discover-pill" type="button" data-pill="tonight"  data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008" /></svg>Tonight</button>
+      <button class="discover-pill" type="button" data-pill="thisweek" data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>This week</button>
+      <button class="discover-pill" type="button" data-pill="free"     data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3" /></svg>Free</button>
       <button class="discover-pill" type="button" data-pill="kind:record store" data-mode="places" hidden>Record stores</button>
       <button class="discover-pill" type="button" data-pill="kind:bookshop"     data-mode="places" hidden>Bookshops</button>
       <button class="discover-pill" type="button" data-pill="kind:gallery"      data-mode="places" hidden>Galleries</button>
@@ -149,7 +149,7 @@
       <button class="discover-pill" type="button" data-pill="kind:cinema"       data-mode="places" hidden>Cinemas</button>
       <button class="discover-pill" type="button" data-pill="kind:community"    data-mode="places" hidden>Community</button>
       <button class="discover-pill discover-pill--more" type="button" id="discover-filters-btn">
-        + Filters
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>Filters
         <span class="discover-pill__count" id="discover-filter-count" hidden>0</span>
       </button>
     </nav>
@@ -192,14 +192,14 @@
                  revealing .discover-sheet__panel as an anchored popover. -->
             <fieldset class="discover-sheet__field" data-facet="cat">
               <legend class="eyebrow">Category</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false">Category</button>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6h-6l0 -6" /><path d="M14 4h6v6h-6l0 -6" /><path d="M4 14h6v6h-6l0 -6" /><path d="M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>Category</button>
               <div class="discover-sheet__panel">
                 <div class="discover-sheet__chips" id="discover-cat-chips"></div>
               </div>
             </fieldset>
             <fieldset class="discover-sheet__field" data-facet="nhood">
               <legend class="eyebrow">Neighborhood</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false">Neighborhood</button>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0" /></svg>Neighborhood</button>
               <div class="discover-sheet__panel">
                 <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
               </div>
@@ -210,7 +210,7 @@
                  discover.js renders the chips into #discover-within. -->
             <fieldset class="discover-sheet__field" data-facet="within">
               <legend class="eyebrow">Distance</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false">Distance</button>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M7 21l3 -4" /><path d="M16 21l-2 -4l-3 -3l1 -6" /><path d="M6 12l2 -3l4 -1l3 3l3 1" /></svg>Distance</button>
               <div class="discover-sheet__panel">
                 <div class="discover-sheet__chips" id="discover-within" role="group" aria-label="Walking distance"></div>
                 <p class="discover-within-note meta" id="discover-within-note" hidden>Location unavailable &mdash; showing all.</p>
@@ -218,7 +218,7 @@
             </fieldset>
             <fieldset class="discover-sheet__field discover-sheet__field--sort" data-facet="sort">
               <legend class="eyebrow">Sort</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false">Sort</button>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l4 -4l4 4m-4 -4v14" /><path d="M21 15l-4 4l-4 -4m4 4v-14" /></svg>Sort</button>
               <div class="discover-sheet__panel">
                 <!-- Radio list, not a <select> (Baymard: visible options beat a
                      dropdown under ~5 choices). Options populated per mode. -->

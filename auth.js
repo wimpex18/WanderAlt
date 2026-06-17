@@ -185,7 +185,7 @@
       <input class="auth-panel__input" id="auth-email"    type="email"    placeholder="Email"    autocomplete="email"            spellcheck="false" />
       <input class="auth-panel__input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" style="margin-top:var(--s-3)" />
       <div class="auth-panel__actions">
-        <button class="auth-panel__submit" id="auth-submit">Sign in</button>
+        <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M21 12h-13l3 -3" /><path d="M11 15l-3 -3" /></svg><span>Sign in</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>
       </div>
       <p class="auth-panel__links">
@@ -230,7 +230,7 @@
       <input class="auth-panel__input" id="auth-email"    type="email"    placeholder="Email"              autocomplete="email"       spellcheck="false" />
       <input class="auth-panel__input" id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="new-password" style="margin-top:var(--s-3)" />
       <div class="auth-panel__actions">
-        <button class="auth-panel__submit" id="auth-submit">Create account</button>
+        <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg><span>Create account</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>
       </div>
       <p class="auth-panel__links">
@@ -280,7 +280,7 @@
       <p class="auth-panel__desc">Enter your email — we'll send a reset link.</p>
       <input class="auth-panel__input" id="auth-email" type="email" placeholder="Email" autocomplete="email" spellcheck="false" />
       <div class="auth-panel__actions">
-        <button class="auth-panel__submit" id="auth-submit">Send reset link</button>
+        <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg><span>Send reset link</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>
       </div>
       <p class="auth-panel__links">
@@ -319,7 +319,7 @@
       <p class="auth-panel__desc">Choose a new password for your account.</p>
       <input class="auth-panel__input" id="auth-password" type="password" placeholder="New password (min 6 chars)" autocomplete="new-password" />
       <div class="auth-panel__actions">
-        <button class="auth-panel__submit" id="auth-submit">Update password</button>
+        <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><span>Update password</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>
       </div>
       <p class="auth-panel__status" id="auth-status" aria-live="polite"></p>`;
@@ -361,7 +361,7 @@
       <p id="auth-panel-title" class="auth-panel__title">Account</p>
       <p class="auth-panel__desc">${email}</p>
       <div class="auth-panel__actions">
-        <a class="auth-panel__submit" href="./profile.html">View profile</a>
+        <a class="auth-panel__submit" href="./profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0 -4 3.5 -6 7 -6s7 2 7 6" /></svg><span>View profile</span></a>
         <button class="auth-panel__close" id="auth-close">Close</button>
       </div>
       <button class="auth-panel__link" id="auth-signout" style="margin-top:var(--s-4)">Sign out</button>
