@@ -183,7 +183,7 @@
       </a>
       <p class="auth-panel__divider"><span>or</span></p>
       <input class="auth-panel__input" id="auth-email"    type="email"    placeholder="Email"    autocomplete="email"            spellcheck="false" />
-      ${window.WA.UI.passwordField('<input class=\"auth-panel__input\" id=\"auth-password\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" />', 'margin-top:var(--s-3)')}
+      ${window.WA.UI.passwordField('<input class=\"auth-panel__input\" id=\"auth-password\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" />', 'margin-top:var(--s-4)')}
       <div class="auth-panel__actions">
         <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M21 12h-13l3 -3" /><path d="M11 15l-3 -3" /></svg><span>Sign in</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>
@@ -228,7 +228,7 @@
     p.innerHTML = `
       <p id="auth-panel-title" class="auth-panel__title">Create account</p>
       <input class="auth-panel__input" id="auth-email"    type="email"    placeholder="Email"              autocomplete="email"       spellcheck="false" />
-      ${window.WA.UI.passwordField('<input class=\"auth-panel__input\" id=\"auth-password\" type=\"password\" placeholder=\"Password (min 6 chars)\" autocomplete=\"new-password\" />', 'margin-top:var(--s-3)')}
+      ${window.WA.UI.passwordField('<input class=\"auth-panel__input\" id=\"auth-password\" type=\"password\" placeholder=\"Password (min 6 chars)\" autocomplete=\"new-password\" />', 'margin-top:var(--s-4)')}
       <div class="auth-panel__actions">
         <button class="auth-panel__submit" id="auth-submit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg><span>Create account</span></button>
         <button class="auth-panel__close"  id="auth-close">Cancel</button>

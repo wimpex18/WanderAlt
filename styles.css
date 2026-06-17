@@ -2295,7 +2295,10 @@ a.handle:hover {
   font-size: 22px;
   line-height: var(--lh-snug);
   color: var(--c-ink);
-  margin: 0 0 var(--s-2);
+  /* Heading gets the MOST breathing room below it (s-6 24px) — never the
+     tightest gap. Fields then run on a consistent s-4 rhythm; the action
+     row keeps an s-5 group-break above it (set on .auth-panel__actions). */
+  margin: 0 0 var(--s-6);
 }
 .auth-panel__desc {
   font-family: var(--ff-mono);
@@ -5225,7 +5228,10 @@ body.discover-places .mood-chips { display: none; }
   border: 0;
   color: var(--c-ink);
   cursor: pointer;
-  padding: 4px 8px;
+  width: 44px;
+  height: 44px;          /* tap floor (compact tier) */
+  display: grid;
+  place-items: center;
 }
 .discover-sheet__body {
   overflow-y: auto;
