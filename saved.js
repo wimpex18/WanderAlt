@@ -273,7 +273,7 @@
     if (readingTab) readingTab.textContent = String(readingCount);
     if (pastTab)    pastTab.textContent    = String(pastCount);
 
-    const head = document.querySelector('.reading-head__count');
+    const head = document.getElementById('saved-count');
     if (head) {
       head.textContent =
         `${goingCount + readingCount} active · ${pastCount} past`;

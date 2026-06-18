@@ -53,9 +53,9 @@
 
     <!-- Reading-list head: display title + active count (mono, right).
          Matches handoff saved.jsx. -->
-    <header class="reading-head">
-      <h1 class="reading-head__title">Saved</h1>
-      <p class="reading-head__count">0 active &middot; 0 past</p>
+    <header class="page-head">
+      <h1 class="page-head__title">Saved</h1>
+      <p class="page-head__meta" id="saved-count">0 active &middot; 0 past</p>
     </header>
 
     <!-- Segment switcher — CSS-only via :checked sibling selectors.
@@ -68,15 +68,15 @@
 
     <nav class="seg-tabs" aria-label="Saved filters">
       <label for="seg-going" class="seg-tab">
-        <span class="seg-tab__label">Going</span>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg><span class="seg-tab__label">Going</span>
         <span class="seg-tab__count">0</span>
       </label>
       <label for="seg-reading" class="seg-tab">
-        <span class="seg-tab__label">Reading</span>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4" /></svg><span class="seg-tab__label">Reading</span>
         <span class="seg-tab__count">0</span>
       </label>
       <label for="seg-past" class="seg-tab">
-        <span class="seg-tab__label">Past</span>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2" /><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" /><path d="M10 12l4 0" /></svg><span class="seg-tab__label">Past</span>
         <span class="seg-tab__count">3</span>
       </label>
     </nav>

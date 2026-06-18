@@ -1455,13 +1455,13 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"],
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
-  background: var(--c-paper);
-  border-color: var(--c-rule);
+  background: var(--c-accent-soft);
+  border-color: transparent;
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
-  color: var(--c-ink);
+  color: var(--c-accent);
   font-weight: 600;
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
@@ -2054,14 +2054,6 @@ html.wa-taste-done .taste-onboarding { display: none; }
   padding:     var(--s-4) 0 var(--s-2);
   border-top:  var(--rule-w) solid var(--c-rule);
 }
-.venue-details__website {
-  font-family:  var(--ff-mono);
-  font-size:    var(--fs-meta);
-  color:        var(--c-accent);
-  text-decoration: none;
-  letter-spacing: .03em;
-}
-.venue-details__website:hover { text-decoration: underline; }
 .venue-details__address {
   font-family:  var(--ff-mono);
   font-size:    var(--fs-meta);
@@ -2221,8 +2213,20 @@ a.handle:hover {
 
 .topbar__right {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-4);
+}
+
+/* Iconified marketing links — leading glyph + label (auth.js injects the
+   .ic SVGs). Icon keeps the link recognizable at a glance. On mobile the
+   topbar is tight, so drop the labels and show icon-only (aria-label keeps
+   them accessible) — also de-emphasises these secondary links vs the
+   bottom nav. */
+.auth-btn .ic, .topbar__about .ic { width: 16px; height: 16px; flex-shrink: 0; }
+.auth-btn, .topbar__about { gap: 7px; }
+@media (max-width: 767px) {
+  .auth-btn .ic, .topbar__about .ic { width: 19px; height: 19px; }
+  .auth-btn span, .topbar__about span { display: none; }
 }
 
 .auth-btn {
@@ -2291,7 +2295,10 @@ a.handle:hover {
   font-size: 22px;
   line-height: var(--lh-snug);
   color: var(--c-ink);
-  margin: 0 0 var(--s-2);
+  /* Heading gets the MOST breathing room below it (s-6 24px) — never the
+     tightest gap. Fields then run on a consistent s-4 rhythm; the action
+     row keeps an s-5 group-break above it (set on .auth-panel__actions). */
+  margin: 0 0 var(--s-6);
 }
 .auth-panel__desc {
   font-family: var(--ff-mono);
@@ -2300,68 +2307,101 @@ a.handle:hover {
   letter-spacing: 0.02em;
   margin: 0 0 var(--s-5);
 }
+/* Unified text field — one look across auth + profile + (composite) digest:
+   52px, 1.5px hairline (rule-strong), radius-8, petrol focus. Matches the
+   Plate & Rule .field atom and the .digest-field/.search-box treatment so
+   every input on the site reads as the same control. */
 .auth-panel__input {
   display: block;
   width: 100%;
-  /* Email / password / digest are normal-range inputs — cap the width so
-     the field signals its expected length instead of stretching the full
-     page column (Baymard form-field guidance). No-op inside the narrow
-     auth overlay; caps it on the wide Profile page. */
-  max-width: 400px;
+  /* Email / password are normal-range inputs — cap the width so the field
+     signals its expected length instead of stretching the full page column
+     (Baymard). No-op in the narrow auth overlay; caps it on Profile. */
+  max-width: 420px;
+  height: 52px;
   font-family: var(--ff-body);
-  font-size: var(--fs-body);
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
+  font-size: 16px;
+  background: var(--c-paper);
+  border: 1.5px solid var(--c-rule-strong);
   border-radius: var(--radius);
-  padding: var(--s-3) var(--s-4);
+  padding: 0 16px;
   color: var(--c-ink);
   outline: none;
   transition: border-color var(--t-fast);
 }
-.auth-panel__input:focus {
-  border-color: var(--c-accent);
-  background: var(--c-paper);
+.auth-panel__input:focus,
+.auth-panel__input:focus-visible { border-color: var(--c-accent); }
+
+/* Password field — composite: the input with an embedded show/hide eye
+   toggle (same borderless icon-button language as .social-icon/.action-icon). */
+.field-pw { position: relative; display: block; max-width: 420px; }
+.field-pw .auth-panel__input { width: 100%; max-width: none; padding-right: 52px; }
+.pw-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--c-ink-mute);
+  transition: color var(--t-fast);
 }
+.pw-toggle:hover { color: var(--c-accent); }
+.pw-toggle .ic { width: 20px; height: 20px; }
+.pw-toggle:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
 .auth-panel__actions {
   display: flex;
-  align-items: center;
-  gap: var(--s-5);
+  align-items: stretch;     /* submit + cancel share one height */
+  gap: var(--s-3);
   margin-top: var(--s-5);
 }
+/* Submit + Cancel are equal halves spanning the form width — same width as
+   the inputs/Google above, same 52px height as every form control. */
+.auth-panel__actions .auth-panel__submit,
+.auth-panel__actions .auth-panel__close { flex: 1; }
 .auth-panel__submit {
   display: inline-flex;
   align-items: center;
-  padding: 9px 16px;
-  min-height: 44px;   /* Apple HIG tap target (padding alone left it ~38px) */
-  background: var(--c-ink);
-  color: var(--c-paper);
+  justify-content: center;
+  gap: 8px;
+  height: 52px;                 /* unified form-control height */
+  padding: 0 20px;
+  background: var(--c-accent);  /* primary = petrol (unified across the app) */
+  color: #fff;
   border: none;
   border-radius: var(--radius);
   font-family: var(--ff-body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   transition: background var(--t-fast);
 }
-.auth-panel__submit:hover:not(:disabled) { background: var(--c-ink-soft); color: var(--c-paper); }
+.auth-panel__submit:hover:not(:disabled) { background: var(--c-accent-deep); color: #fff; }
 .auth-panel__submit:disabled { opacity: 0.4; cursor: default; }
 .auth-panel__close {
   display: inline-flex;
   align-items: center;
-  padding: 9px 16px;
-  min-height: 44px;   /* Apple HIG tap target */
-  background: transparent;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;                 /* matches the submit */
+  padding: 0 20px;
+  background: var(--c-paper);
   color: var(--c-ink);
-  border: var(--rule-w) solid var(--c-rule);
+  border: var(--rule-w) solid var(--c-rule-strong);
   border-radius: var(--radius);
   font-family: var(--ff-body);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color var(--t-fast);
+  transition: border-color var(--t-fast), color var(--t-fast);
 }
-.auth-panel__close:hover { border-color: var(--c-ink); }
+.auth-panel__close:hover { border-color: var(--c-ink); color: var(--c-ink); }
 .auth-panel__status {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
@@ -2377,8 +2417,9 @@ a.handle:hover {
   justify-content: center;
   gap: var(--s-2);
   width: 100%;
+  height: 52px;            /* matches the inputs + submit below it */
   margin: 0 0 var(--s-4);
-  padding: var(--s-3) var(--s-4);
+  padding: 0 var(--s-4);
   border: var(--rule-w) solid var(--c-rule-strong);
   border-radius: var(--radius);
   font-family: var(--ff-mono);
@@ -2625,13 +2666,54 @@ a.auth-panel__submit { display: inline-block; }
    ============================================================ */
 .digest-optin__label { margin-bottom: var(--s-2); }
 .digest-optin__desc  { margin-bottom: var(--s-3); }
-.digest-optin__row {
+
+/* Composite signup field (2026 pattern): the email input and its submit are
+   one unit — an inline petrol icon-button docked at the end of the field,
+   not a separate chunky button. Substack/Ghost-style. */
+.digest-field {
+  position: relative;
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  height: 52px;
+  margin-top: 14px;
+  background: var(--c-paper);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
+  transition: border-color var(--t-fast);
 }
-.digest-optin__email  { flex: 1; min-width: 180px; }
-.digest-optin__submit { white-space: nowrap; }
+.digest-field:focus-within { border-color: var(--c-accent); }
+.digest-field__email {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 56px 0 16px;          /* clears the docked submit */
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--ff-body);
+  font-size: 16px;
+  color: var(--c-ink);
+}
+.digest-field__submit {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--c-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.digest-field__submit:hover { background: var(--c-accent-deep); }
+.digest-field__submit:disabled { opacity: 0.5; cursor: default; }
+.digest-field__submit .ic { width: 19px; height: 19px; }
+.digest-field__submit:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 
 /* ============================================================
    Colophon
@@ -3971,8 +4053,8 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .venue-context { display: block !important; }
   .venue-context__body { display: block !important; }
 
-  /* ── Print venue website URL ── */
-  .venue-details__website::after {
+  /* ── Print the actual URLs behind the social/web icons ── */
+  .social-icon::after {
     content: " (" attr(href) ")";
     font-size: 8pt;
     color: #555;
@@ -4069,17 +4151,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
    the wide row. Gap is a token (was an inline off-grid 10px). */
 .venue-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;       /* all three actions stay on one line */
   gap: var(--s-3);
   align-items: center;
   margin-top: var(--s-5);
-}
-.venue-actions .btn-primary,
-.venue-actions .btn-secondary { flex: 0 0 auto; }
-@media (max-width: 767px) {
-  /* Phone: primary CTA full-width (research-recommended), secondaries
-     wrap into the row beneath it. */
-  .venue-actions .btn-primary { flex: 1 1 100%; }
 }
 
 /* Curator handle color in Compass = petrol */
@@ -4709,10 +4784,10 @@ a.handle:hover { color: var(--c-ink); }
 }
 .discover-scope__btn:hover { color: var(--c-ink); }
 .discover-scope__btn--on {
-  background: var(--c-ink);
-  color: var(--c-paper);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
 }
-.discover-scope__btn--on:hover { color: var(--c-paper); }
+.discover-scope__btn--on:hover { color: var(--c-accent); }
 
 .discover-search {
   padding: var(--s-4) 0 var(--s-2);
@@ -5153,7 +5228,10 @@ body.discover-places .mood-chips { display: none; }
   border: 0;
   color: var(--c-ink);
   cursor: pointer;
-  padding: 4px 8px;
+  width: 44px;
+  height: 44px;          /* tap floor (compact tier) */
+  display: grid;
+  place-items: center;
 }
 .discover-sheet__body {
   overflow-y: auto;
@@ -5442,9 +5520,9 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-lede__count { order: -1; }
 }
 @media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
-/* Lede is editorial chrome — drop it on the mobile map view + AI mode. */
-body.discover-map-view .discover-lede { display: none; }
-body.discover-ai-mode  .discover-lede { display: none; }
+/* Header is editorial chrome — drop it on the mobile map view + AI mode. */
+body.discover-map-view .page-head--discover { display: none; }
+body.discover-ai-mode  .page-head--discover { display: none; }
 
 /* ── Discover: compact inline scope toggle ── */
 body[data-page="discover"] .discover-scope {
@@ -5669,17 +5747,19 @@ body[data-page="saved"] .seg-tab__count {
   font-size: 11px;
 }
 
-/* Active segment = ink fill (like the Events|Places toggle), lime count. */
+/* Active segment = soft petrol highlight (matches the nav + Discover scope),
+   lime count. color:accent so the leading .ic inherits petrol. */
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"],
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
-  background: var(--c-ink);
-  border-color: var(--c-ink);
+  background: var(--c-accent-soft);
+  border-color: transparent;
+  color: var(--c-accent);
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label {
-  color: var(--c-paper);
+  color: var(--c-accent);
   font-weight: 600;
 }
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
@@ -5787,8 +5867,8 @@ body[data-page="saved"] .seg-note {
 
 /* ── Buttons — ONE family, four weights, 8px radius, 52px tall ── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; height: 52px; padding: 0 28px; border-radius: var(--radius); font-family: var(--ff-body); font-size: 16px; font-weight: 600; letter-spacing: -.01em; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
-.btn--primary { background: var(--c-ink); color: var(--c-paper); }
-.btn--primary:hover { background: var(--c-accent); }
+.btn--primary { background: var(--c-accent); color: #fff; }
+.btn--primary:hover { background: var(--c-accent-deep); }
 .btn--secondary { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-ink); }
 .btn--secondary:hover { background: var(--c-ink); color: var(--c-paper); }
 .btn--quiet { background: var(--c-paper); color: var(--c-ink-soft); border: var(--rule-w) solid var(--c-rule-strong); }
@@ -5838,11 +5918,15 @@ body[data-page="saved"] .seg-note {
 @media (max-width: 767px) {
   .nav { padding: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .nav__inner {
-    background: var(--glass-bg);
+    /* More opaque than the 0.66 glass token: a bottom bar sits over
+       scrolling content, and at 0.66 the text bled through and the bar
+       read as "missing". 0.92 + blur keeps the Liquid Glass feel while
+       staying legible; the top shadow lifts it off the content. */
+    background: rgba(255, 255, 255, 0.92);
     border: 0;
-    border-top: var(--rule-w) solid var(--c-rule);
+    border-top: var(--rule-w) solid var(--glass-hair);
     border-radius: 0;
-    box-shadow: none;
+    box-shadow: 0 -2px 16px rgba(20, 30, 30, 0.07);
     height: auto;
     padding: 6px 8px 8px;
   }
@@ -5965,12 +6049,9 @@ a.tonight__title:hover{color:var(--c-accent)}
 .column__sig{display:flex;align-items:center;gap:12px;margin-top:var(--s-5)}
 .column__ava{width:34px;height:34px;border-radius:var(--radius);background:var(--c-accent);color:var(--c-lime);display:grid;place-items:center;font-family:var(--ff-mono);font-size:12px;flex-shrink:0}
 
-/* Digest plate */
+/* Digest plate (the signup field itself is .digest-field, above) */
 .digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
 .digest-optin .rule{display:none}
-.digest-optin__row{display:flex;gap:10px;margin-top:14px}
-.digest-optin__email{flex:1;min-width:0;height:48px}
-.digest-optin__submit{height:48px}
 
 /* Taste check — editorial plate */
 .taste-onboarding{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin-top:var(--s-6)}
@@ -6025,7 +6106,7 @@ body[data-page="discover"] .deck{border:var(--rule-w) solid var(--c-rule);border
 body[data-page="discover"] .deck .discover-scope{display:inline-flex;gap:4px;padding:4px;width:auto;align-self:flex-start;margin:0;background:var(--c-paper-deep);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius)}
 body[data-page="discover"] .deck .discover-scope__btn{min-height:44px;height:44px;padding:0 24px;border:0;border-radius:calc(var(--radius) - 3px);background:none;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink-mute);transition:background var(--t-fast),color var(--t-fast)}
 body[data-page="discover"] .deck .discover-scope__btn:hover{color:var(--c-ink)}
-body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-ink);color:var(--c-paper)}
+body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-accent-soft);color:var(--c-accent)}
 
 /* Search → field */
 body[data-page="discover"] .deck .discover-search{margin:0}
@@ -6140,24 +6221,24 @@ body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var
    ════════════════════════════════════════════════════════════ */
 /* Legacy CTAs adopt the one button family (52px, radius-8, ink/petrol) */
 .btn-primary,.btn-secondary{height:52px;min-height:52px;padding:0 28px;border-radius:var(--radius);font-family:var(--ff-body);font-size:16px;font-weight:600;letter-spacing:-.01em;gap:10px}
-.btn-primary{background:var(--c-ink);color:var(--c-paper);border:0}
-.btn-primary:hover{background:var(--c-accent);color:var(--c-paper)}
+.btn-primary{background:var(--c-accent);color:#fff;border:0}
+.btn-primary:hover{background:var(--c-accent-deep);color:#fff}
 .btn-secondary{background:var(--c-paper);color:var(--c-ink);border:1.5px solid var(--c-ink)}
 .btn-secondary:hover{background:var(--c-ink);color:var(--c-paper);border-color:var(--c-ink)}
 
 /* Profile / auth / digest submit → primary button */
-.auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-ink);color:var(--c-paper);font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
-.auth-panel__submit:hover:not(:disabled){background:var(--c-accent);color:var(--c-paper)}
+.auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-accent);color:#fff;font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
+.auth-panel__submit:hover:not(:disabled){background:var(--c-accent-deep);color:#fff}
 
 /* Saved segmented control → align radius + ink-fill active (matches Discover scope) */
 .seg-tabs{border-radius:var(--radius)}
 .seg-tab__count{border-radius:var(--radius-tag)}
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"],
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
-#seg-past:checked    ~ .seg-tabs label[for="seg-past"]{background:var(--c-ink);border-color:var(--c-ink)}
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]{background:var(--c-accent-soft);border-color:transparent;color:var(--c-accent)}
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__label,
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__label,
-#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label{color:var(--c-paper)}
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__label{color:var(--c-accent)}
 
 /* Retire the last 999px pills: mood tag → radius-8 control, list tag → radius-4 */
 .venue-mood{border-radius:var(--radius)}
@@ -6175,9 +6256,7 @@ body[data-page="profile"] .profile-avatar__initial{color:var(--c-lime)}
 body[data-page="profile"] .profile-section{padding-top:var(--s-7)}
 body[data-page="profile"] .profile-section .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-4);border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
 body[data-page="profile"] .profile-section .section-title{font-family:var(--ff-display);font-size:26px;font-weight:600;letter-spacing:-.018em}
-/* Password field → .field look */
-body[data-page="profile"] .auth-panel__input{width:100%;height:52px;padding:0 18px;border:1.5px solid var(--c-rule-strong);border-radius:var(--radius);background:var(--c-paper);font-family:var(--ff-body);font-size:16.5px}
-body[data-page="profile"] .auth-panel__input:focus-visible{border-color:var(--c-accent);outline:none}
+/* (password/text field styling is now the unified .auth-panel__input base) */
 /* Secondary actions (Export / Reset / Clear) → quiet button family.
    Scoped to .profile-actions so the auth-overlay close (×) is untouched. */
 body[data-page="profile"] .profile-actions .auth-panel__close{height:52px;min-height:52px;padding:0 24px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);color:var(--c-ink-soft);font-family:var(--ff-body);font-size:15px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;width:auto}
@@ -6186,3 +6265,216 @@ body[data-page="profile"] .profile-actions .auth-panel__close:hover{border-color
   body[data-page="profile"] .profile-head__email{font-size:24px}
   body[data-page="profile"] .profile-section .section-title{font-size:22px}
 }
+
+/* ════════════════════════════════════════════════════════════
+   SOCIAL / WEB LINKS — venue + place detail pages
+   Compact icon-only row (link-in-bio style): small recognizable
+   brand marks, no frames, no labels. Glyphs inherit currentColor
+   and go petrol on hover, so the two-tone brand holds. Each link
+   keeps a 44px tap target around a ~22px glyph; the row is nudged
+   left so the first glyph sits flush with the text above it.
+   Two glyph sets ship per link and swap by viewport: filled marks
+   on mobile, outline marks on desktop (.social-icon__g--fill /
+   --line). Rendered by WA.UI.socialButtons() (ui-helpers.js);
+   used on venue.html + place.html.
+   ════════════════════════════════════════════════════════════ */
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-top: var(--s-3);
+  margin-left: -11px;   /* (44 − 22) / 2 — align the first glyph flush-left */
+}
+.social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--c-ink-soft);
+  text-decoration: none;
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.social-icon__g { display: inline-flex; }
+.social-icon svg { width: 22px; height: 22px; display: block; }
+.social-icon:hover { color: var(--c-accent); }
+@media (hover: hover) { .social-icon:hover { transform: translateY(-1px); } }
+.social-icon:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Mobile shows the filled set; desktop (≥768) shows the outline set. */
+.social-icon__g--line { display: none; }
+@media (min-width: 768px) {
+  .social-icon__g--fill { display: none; }
+  .social-icon__g--line { display: inline-flex; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACTIVE-TAB HIGHLIGHT (Lightyear-inspired "chosen category")
+   Swaps the petrol underline on the primary nav for a soft
+   petrol-tint rounded highlight behind the active tab — mobile
+   dock + desktop masthead. Petrol-only (no third colour), radius
+   8 (no 999px pill). Consolidated here so it wins the layered nav
+   cascade by source order; !important only to beat the desktop
+   `.nav__item { background: transparent !important }` base.
+   ════════════════════════════════════════════════════════════ */
+body[data-page="briefing"] .nav__item[data-nav="briefing"]::after,
+body[data-page="discover"] .nav__item[data-nav="discover"]::after,
+body[data-page="saved"]    .nav__item[data-nav="saved"]::after,
+body[data-page="profile"]  .nav__item[data-nav="profile"]::after { display: none; }
+
+body[data-page="briefing"] .nav__item[data-nav="briefing"],
+body[data-page="discover"] .nav__item[data-nav="discover"],
+body[data-page="saved"]    .nav__item[data-nav="saved"],
+body[data-page="profile"]  .nav__item[data-nav="profile"] {
+  background: var(--c-accent-soft) !important;
+  color: var(--c-accent);
+  border-radius: var(--radius);
+  border-bottom-color: transparent;
+}
+
+@media (max-width: 767px) {
+  /* small gaps so the highlighted tab reads as a separated chip */
+  .nav__inner { gap: 2px; }
+}
+@media (min-width: 768px) {
+  /* masthead: horizontal padding so the highlight is a chip, not flush text */
+  body[data-page="briefing"] .nav__item[data-nav="briefing"],
+  body[data-page="discover"] .nav__item[data-nav="discover"],
+  body[data-page="saved"]    .nav__item[data-nav="saved"],
+  body[data-page="profile"]  .nav__item[data-nav="profile"] {
+    padding: var(--s-3) var(--s-4);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACTION BUTTONS — event page (venue.html)
+   Compact icon+label buttons replacing the old full-width
+   btn-primary/secondary trio ("I'm going / Add to calendar /
+   Share"). "I'm going" is the petrol primary; the rest are quiet
+   hairline. Same on desktop and mobile (auto-width, wraps).
+   ════════════════════════════════════════════════════════════ */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 44px;
+  padding: 0 var(--s-4);
+  border: var(--rule-w) solid var(--c-rule-strong);
+  border-radius: var(--radius);
+  background: var(--c-paper);
+  color: var(--c-ink-soft);
+  font-family: var(--ff-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+.action-btn .ic { width: 18px; height: 18px; flex-shrink: 0; }
+.action-btn:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.action-btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
+.action-btn--primary:hover { background: var(--c-accent-deep); border-color: var(--c-accent-deep); color: #fff; }
+.action-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* Icon-only secondary actions (Add to calendar, Share) — unified with the
+   social-icon scale: borderless, 44px tap target, ~22px glyph, petrol on
+   hover. Keeps the event-action row to one line next to the labelled
+   petrol "I'm going" primary. .action-icon--done = transient petrol check. */
+.action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--c-ink-soft);
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.action-icon .ic { width: 22px; height: 22px; }
+.action-icon:hover { color: var(--c-accent); }
+@media (hover: hover) { .action-icon:hover { transform: translateY(-1px); } }
+.action-icon:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
+.action-icon--done { color: var(--c-accent); }
+
+/* ════════════════════════════════════════════════════════════
+   LEADING ICONS on labelled controls (July 2026 icon pass)
+   Discover pills/facets, Saved seg-tabs, Today taste + digest,
+   Profile actions, auth panel CTAs, curator share. The .ic glyph
+   is display:block, so each control must be a flex row; size the
+   glyph + give it a leading gap. Primary CTAs keep their label.
+   ════════════════════════════════════════════════════════════ */
+.facet-pill,
+.taste-skip, .taste-done, .taste-reset,
+.curator-share, .profile-danger-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+}
+a.auth-panel__submit { display: inline-flex; align-items: center; justify-content: center; }
+.discover-pill .ic, .facet-pill .ic, .seg-tab .ic,
+.taste-skip .ic, .taste-done .ic, .taste-reset .ic,
+.curator-share .ic, .profile-danger-btn .ic,
+.auth-panel__submit .ic, .auth-panel__close .ic {
+  width: 15px; height: 15px; flex-shrink: 0;
+}
+/* Leading gap where the control has no flex gap of its own
+   (.seg-tab already sets gap:8px, so it's excluded here). */
+.discover-pill .ic, .facet-pill .ic,
+.taste-skip .ic, .taste-done .ic, .taste-reset .ic,
+.curator-share .ic, .profile-danger-btn .ic,
+.auth-panel__submit .ic, .auth-panel__close .ic {
+  margin-right: 6px;
+}
+/* Active quick-pill already shows the leading "✓" (WCAG, not colour-only) —
+   hide the category glyph then so it isn't ✓ + icon + label. */
+.discover-pill--on .ic { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   PAGE HEADER — one shared component for every page's top title
+   block (replaces .standfirst / .discover-lede / .reading-head /
+   .about-head / .venue-head titles). eyebrow (mono kicker) ·
+   title (Fraunces) · meta (mono). One type scale, one rhythm
+   (eyebrow→title→meta tight, then a section gap below), left-
+   aligned on the reading column. Variants: --profile (avatar row).
+   ════════════════════════════════════════════════════════════ */
+.page-head { padding: var(--s-7) 0 var(--s-6); }
+.page-head__eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0 0 var(--s-2);
+}
+.page-head__title {
+  font-family: var(--ff-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  color: var(--c-ink);
+  margin: 0;
+  text-wrap: pretty;
+}
+.page-head__title em,
+.page-head__title b,
+.page-head__city { font-style: normal; font-weight: inherit; color: var(--c-accent); }
+.page-head__meta {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  margin: var(--s-3) 0 0;
+}
+@media (max-width: 767px) {
+  .page-head { padding: var(--s-6) 0 var(--s-5); }
+  .page-head__title { font-size: 26px; }
+}
+/* Profile variant — avatar + identity row, same title/meta type. */
+.page-head--profile .page-head__row { display: flex; align-items: center; gap: var(--s-5); }
+.page-head--profile .page-head__info { flex: 1; min-width: 0; }
+.page-head--profile .page-head__title { font-size: 28px; overflow-wrap: anywhere; }
+@media (max-width: 767px) { .page-head--profile .page-head__title { font-size: 22px; } }

@@ -22,7 +22,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, socialButtons } = window.WA.UI;
   const mediaHtml = window.WA.UI.rowMedia;
 
   const KIND_LABELS = {
@@ -31,18 +31,6 @@
     'cinema': 'Cinema', 'community': 'Community space',
   };
   const kindLabel = (k) => KIND_LABELS[k] || (k ? k[0].toUpperCase() + k.slice(1) : 'Place');
-
-  /* Minimalist social glyphs — mirror discover.js / map.js. */
-  const SOCIAL_SVG = {
-    website:   '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10" cy="10" r="7.25"/><path d="M2.75 10h14.5M10 2.75c2 2.2 2 12.3 0 14.5M10 2.75c-2 2.2-2 12.3 0 14.5"/></svg>',
-    facebook:  '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12.4 6.6h1.85M11 17V10.4m0 0V8.2c0-1 .7-1.6 1.6-1.6m-1.6 3.8H8.9m2.1 0h1.9"/></svg>',
-    instagram: '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.25" y="3.25" width="13.5" height="13.5" rx="4"/><circle cx="10" cy="10" r="3.1"/><circle cx="14" cy="6" r=".5" fill="currentColor" stroke="none"/></svg>',
-  };
-  const socialLink = (kind, url, name) => url
-    ? `<a class="venue-social__link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(name)} on ${kind}">${SOCIAL_SVG[kind]}</a>`
-    : '';
-
-
 
   /* Photo media tile — reuses the app's .thumb--lg treatment so "Events
      here" matches the Discover / Saved / Curator / venue photo cards. Falls
@@ -70,12 +58,12 @@
        same word twice on venues with no neighborhood (F-20). */
     const meta = venue.neighborhood || '';
 
-    const links = [
-      socialLink('website',   venue.website,   venue.name),
-      socialLink('facebook',  venue.facebook,  venue.name),
-      socialLink('instagram', venue.instagram, venue.name),
-    ].filter(Boolean).join('');
-    const social = links ? `<p class="venue-social venue-social--detail">${links}</p>` : '';
+    const social = socialButtons({
+      name:      venue.name,
+      website:   venue.website,
+      facebook:  venue.facebook,
+      instagram: venue.instagram,
+    });
 
     /* Map affordances: a Google-Maps deep link (lightweight — no embedded
        MapLibre on a detail page) + a link back to the place on Discover's
@@ -124,10 +112,10 @@
       <a class="venue-back" href="${href}">${label}</a>
 
       <article aria-label="${esc(venue.name)}">
-        <div class="venue-head">
-          <p class="eyebrow">${esc(kindLabel(venue.kind))}</p>
-          <h1 class="venue-title">${esc(venue.name)}</h1>
-          <p class="meta">${esc(meta)}</p>
+        <div class="page-head">
+          <p class="page-head__eyebrow">${esc(kindLabel(venue.kind))}</p>
+          <h1 class="page-head__title">${esc(venue.name)}</h1>
+          <p class="page-head__meta">${esc(meta)}</p>
           ${social}
           ${mapLinks}
         </div>

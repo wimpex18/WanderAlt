@@ -21,7 +21,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { buildMeta, isEchoQuote, bookmarkSVG } = window.WA.UI;
+  const { buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
 
 
@@ -75,6 +75,24 @@
                   || 'Place';
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[entry.id]);
 
+    /* Web / social links for this pick's venue. venue_details (fetched
+       async below) only carries a website; Facebook/Instagram live on the
+       venues table — so match this event's venue by name against the
+       already-loaded venues catalog (no extra request) and reuse them.
+       fetchVenueDetails() merges in a website later if the venue row had
+       none. */
+    const venuesAll = (window.WA && (window.WA._venuesAll || window.WA.venues)) || [];
+    const vKey = (entry.venue || '').trim().toLowerCase();
+    const matchedVenue = vKey
+      ? venuesAll.find(v => (v.name || '').trim().toLowerCase() === vKey)
+      : null;
+    const socialObj = {
+      name:      entry.venue,
+      website:   (matchedVenue && matchedVenue.website)   || null,
+      facebook:  (matchedVenue && matchedVenue.facebook)  || null,
+      instagram: (matchedVenue && matchedVenue.instagram) || null,
+    };
+
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
     const more     = moreAll.slice(0, 5);
@@ -102,10 +120,10 @@
            </div>
          </div>
          ${moodChips}`
-      : `<div class="venue-head">
-           <p class="eyebrow">${eyebrow}</p>
-           <h1 class="venue-title">${entry.title}</h1>
-           <p class="meta">${buildMeta(entry)}</p>
+      : `<div class="page-head">
+           <p class="page-head__eyebrow">${eyebrow}</p>
+           <h1 class="page-head__title">${entry.title}</h1>
+           <p class="page-head__meta">${buildMeta(entry)}</p>
            ${moodChips}
          </div>`;
 
@@ -145,13 +163,25 @@
           </label>
         </div>
 
-        <!-- Venue details — website / address / short_desc; async-populated by fetchVenueDetails() -->
+        <!-- Web / social links for the venue (Website / Facebook / Instagram).
+             Seeded synchronously from the matched venue; fetchVenueDetails()
+             merges in a website from venue_details when the row had none. -->
+        <div id="venue-social">${socialButtons(socialObj)}</div>
+
+        <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
         <div id="venue-details" class="venue-details" hidden></div>
 
         <div class="venue-actions">
-          <button class="btn-primary venue-going-btn" type="button">I&rsquo;m going &rarr;</button>
-          ${entry.day ? `<button class="btn-secondary venue-cal-btn" type="button" aria-label="Add to calendar">Add to calendar</button>` : ''}
-          <button class="btn-secondary venue-share-btn" type="button" aria-label="Share this pick">Share</button>
+          <button class="action-btn action-btn--primary venue-going-btn" type="button" aria-label="I'm going">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+            <span class="action-btn__label">I&rsquo;m going</span>
+          </button>
+          ${entry.day ? `<button class="action-icon venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
+          </button>` : ''}
+          <button class="action-icon venue-share-btn" type="button" aria-label="Share this pick" title="Share">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+          </button>
         </div>
 
         <!-- Why this matters — async-populated by fetchContext() after render -->
@@ -265,6 +295,15 @@
         const vd   = rows[0];
         if (!vd) return;
 
+        /* Website lives in the social-button row (#venue-social). When the
+           venues table had none for this venue, fall back to the
+           venue_details website and re-render the row so it still shows. */
+        if (vd.website && !socialObj.website) {
+          socialObj.website = vd.website;
+          const se = document.getElementById('venue-social');
+          if (se) se.innerHTML = socialButtons(socialObj);
+        }
+
         const el = document.getElementById('venue-details');
         if (!el) return;
 
@@ -275,16 +314,6 @@
           parts.push(`<p class="venue-details__status venue-details__status--perm">Permanently closed</p>`);
         } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
           parts.push(`<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>`);
-        }
-
-        // Website
-        if (vd.website) {
-          let domain = vd.website;
-          try { domain = new URL(vd.website).hostname.replace(/^www\./, ''); } catch (_) {}
-          parts.push(
-            `<a class="venue-details__website" href="${vd.website}"` +
-            ` target="_blank" rel="noopener noreferrer">${domain} ↗</a>`
-          );
         }
 
         // Address → Google Maps deep link
@@ -346,7 +375,8 @@
     if (goingBtn && window.WA.Bookmarks) {
       goingBtn.addEventListener('click', () => {
         window.WA.Bookmarks.set(entry.id, true);
-        goingBtn.textContent = 'Saved ✓';
+        const lbl = goingBtn.querySelector('.action-btn__label');
+        if (lbl) lbl.textContent = 'Saved ✓';
         goingBtn.style.opacity = '0.7';
         setTimeout(() => { window.location.href = './saved.html'; }, 700);
       });
@@ -360,6 +390,17 @@
       });
     }
 
+    /* Icon-only action buttons can't show a text confirmation, so briefly
+       swap the glyph to a petrol check, then restore it. */
+    const flashDone = (el) => {
+      if (!el || el.dataset.flashing) return;
+      const orig = el.innerHTML;
+      el.dataset.flashing = '1';
+      el.classList.add('action-icon--done');
+      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+      setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+    };
+
     /* Wire Share — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('.venue-share-btn');
     if (shareBtn && window.WA.Share) {
@@ -369,11 +410,7 @@
           text:  `${entry.title} — ${entry.venue}`,
           url:   window.location.href,
         });
-        if (r === 'copied' || r === 'shared') {
-          const prev = shareBtn.textContent;
-          shareBtn.textContent = r === 'copied' ? 'Link copied ✓' : 'Shared ✓';
-          setTimeout(() => { shareBtn.textContent = prev; }, 2000);
-        }
+        if (r === 'copied' || r === 'shared') flashDone(shareBtn);
       });
     }
 
@@ -381,11 +418,7 @@
     const calBtn = main.querySelector('.venue-cal-btn');
     if (calBtn && window.WA.Share) {
       calBtn.addEventListener('click', () => {
-        if (window.WA.Share.downloadIcs(entry)) {
-          const prev = calBtn.textContent;
-          calBtn.textContent = 'Added ✓';
-          setTimeout(() => { calBtn.textContent = prev; }, 2000);
-        }
+        if (window.WA.Share.downloadIcs(entry)) flashDone(calBtn);
       });
     }
   };

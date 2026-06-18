@@ -109,10 +109,10 @@
          it, like a cultural weekly's masthead line. city.js swaps the
          .standfirst__city span to the active city ("your city" is the
          no-JS fallback). -->
-    <div class="standfirst">
-      <h1 class="standfirst__t">The alternative-culture briefing for <em class="standfirst__city">your city</em>.</h1>
-      <span class="standfirst__meta" id="standfirst-meta">The weekly briefing</span>
-    </div>
+    <header class="page-head">
+      <h1 class="page-head__title">The alternative-culture briefing for <em class="page-head__city">your city</em>.</h1>
+      <p class="page-head__meta" id="standfirst-meta">The weekly briefing</p>
+    </header>
 
     <!-- Tonight hero — populated by briefing.js from catalog.js.
          The skeleton card reserves the layout space so the real
@@ -158,9 +158,9 @@
         </div>
       </div>
       <div class="taste-onboarding__foot">
-        <button type="button" class="taste-skip" id="taste-skip">Skip</button>
-        <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
-        <button type="button" class="taste-reset" id="taste-reset" hidden>Reset</button>
+        <button type="button" class="taste-skip" id="taste-skip"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg><span>Skip</span></button>
+        <button type="button" class="taste-done" id="taste-done" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5l10 -10" /></svg><span>Done</span></button>
+        <button type="button" class="taste-reset" id="taste-reset" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" /></svg><span>Reset</span></button>
       </div>
     </section>
 
@@ -209,11 +209,13 @@
          <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
          <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
          <form id="digest-optin-form" data-no-submit>
-           <div class="digest-optin__row">
-             <input type="email" class="auth-panel__input digest-optin__email" id="digest-optin-email"
+           <div class="digest-field">
+             <input type="email" class="digest-field__email" id="digest-optin-email"
                     aria-label="Email address for the weekly digest"
                     placeholder="your@email.com" autocomplete="email" required />
-             <button type="submit" class="btn btn--petrol digest-optin__submit" id="digest-optin-submit">Subscribe</button>
+             <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
+               <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+             </button>
            </div>
          </form>
          <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
