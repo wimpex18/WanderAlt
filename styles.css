@@ -5520,9 +5520,9 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-lede__count { order: -1; }
 }
 @media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
-/* Lede is editorial chrome — drop it on the mobile map view + AI mode. */
-body.discover-map-view .discover-lede { display: none; }
-body.discover-ai-mode  .discover-lede { display: none; }
+/* Header is editorial chrome — drop it on the mobile map view + AI mode. */
+body.discover-map-view .page-head--discover { display: none; }
+body.discover-ai-mode  .page-head--discover { display: none; }
 
 /* ── Discover: compact inline scope toggle ── */
 body[data-page="discover"] .discover-scope {
@@ -6430,3 +6430,48 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 /* Active quick-pill already shows the leading "✓" (WCAG, not colour-only) —
    hide the category glyph then so it isn't ✓ + icon + label. */
 .discover-pill--on .ic { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   PAGE HEADER — one shared component for every page's top title
+   block (replaces .standfirst / .discover-lede / .reading-head /
+   .about-head / .venue-head titles). eyebrow (mono kicker) ·
+   title (Fraunces) · meta (mono). One type scale, one rhythm
+   (eyebrow→title→meta tight, then a section gap below), left-
+   aligned on the reading column. Variants: --profile (avatar row).
+   ════════════════════════════════════════════════════════════ */
+.page-head { padding: var(--s-7) 0 var(--s-6); }
+.page-head__eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0 0 var(--s-2);
+}
+.page-head__title {
+  font-family: var(--ff-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  color: var(--c-ink);
+  margin: 0;
+  text-wrap: pretty;
+}
+.page-head__title em,
+.page-head__title b,
+.page-head__city { font-style: normal; font-weight: inherit; color: var(--c-accent); }
+.page-head__meta {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-mute);
+  margin: var(--s-3) 0 0;
+}
+@media (max-width: 767px) {
+  .page-head { padding: var(--s-6) 0 var(--s-5); }
+  .page-head__title { font-size: 26px; }
+}
+/* Profile variant — avatar + identity row, same title/meta type. */
+.page-head--profile .page-head__row { display: flex; align-items: center; gap: var(--s-5); }

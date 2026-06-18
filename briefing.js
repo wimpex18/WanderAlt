@@ -175,7 +175,7 @@
      (taste re-render) won't duplicate it. */
   const renderEditorialDeskNote = () => {
     const cityId = window.WA?.CITY || 'tallinn';
-    const standfirst = document.querySelector('.standfirst');
+    const standfirst = document.querySelector('.page-head');
     const existing = document.getElementById('desk-note');
     if (!HOUSE_DESK_CITIES.has(cityId) || !standfirst) {
       if (existing) existing.remove();

@@ -135,7 +135,7 @@
        title case (e.g. "Tallinn"). Works for any city in CITIES, so
        new cities need no copy change. */
     const cityCap = current.id.charAt(0).toUpperCase() + current.id.slice(1);
-    document.querySelectorAll('.standfirst__city, .discover-lede__city').forEach(el => {
+    document.querySelectorAll('.page-head__city').forEach(el => {
       el.textContent = cityCap;
     });
 
