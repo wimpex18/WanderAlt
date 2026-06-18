@@ -120,10 +120,10 @@
            </div>
          </div>
          ${moodChips}`
-      : `<div class="venue-head">
-           <p class="eyebrow">${eyebrow}</p>
-           <h1 class="venue-title">${entry.title}</h1>
-           <p class="meta">${buildMeta(entry)}</p>
+      : `<div class="page-head">
+           <p class="page-head__eyebrow">${eyebrow}</p>
+           <h1 class="page-head__title">${entry.title}</h1>
+           <p class="page-head__meta">${buildMeta(entry)}</p>
            ${moodChips}
          </div>`;
 

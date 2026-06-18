@@ -6475,3 +6475,6 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 }
 /* Profile variant — avatar + identity row, same title/meta type. */
 .page-head--profile .page-head__row { display: flex; align-items: center; gap: var(--s-5); }
+.page-head--profile .page-head__info { flex: 1; min-width: 0; }
+.page-head--profile .page-head__title { font-size: 28px; overflow-wrap: anywhere; }
+@media (max-width: 767px) { .page-head--profile .page-head__title { font-size: 22px; } }

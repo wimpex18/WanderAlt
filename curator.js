@@ -113,11 +113,12 @@
 
       <article aria-label="Curator: ${curator.handle}">
 
-        <div class="curator-profile">
-          <p class="curator-profile__handle">${curator.handle}</p>
-          ${curator.tagline ? `<p class="curator-profile__tagline">${curator.tagline}</p>` : ''}
+        <header class="page-head">
+          <p class="page-head__eyebrow">Curator</p>
+          <h1 class="page-head__title">${curator.handle}</h1>
+          ${curator.tagline ? `<p class="page-head__meta">${curator.tagline}</p>` : ''}
           <button type="button" id="curator-share-btn" class="curator-share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg><span>Share</span></button>
-        </div>
+        </header>
 
         ${curator.bio ? `
         <hr class="rule" style="margin-bottom:var(--s-5)">

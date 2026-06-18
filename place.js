@@ -112,10 +112,10 @@
       <a class="venue-back" href="${href}">${label}</a>
 
       <article aria-label="${esc(venue.name)}">
-        <div class="venue-head">
-          <p class="eyebrow">${esc(kindLabel(venue.kind))}</p>
-          <h1 class="venue-title">${esc(venue.name)}</h1>
-          <p class="meta">${esc(meta)}</p>
+        <div class="page-head">
+          <p class="page-head__eyebrow">${esc(kindLabel(venue.kind))}</p>
+          <h1 class="page-head__title">${esc(venue.name)}</h1>
+          <p class="page-head__meta">${esc(meta)}</p>
           ${social}
           ${mapLinks}
         </div>
