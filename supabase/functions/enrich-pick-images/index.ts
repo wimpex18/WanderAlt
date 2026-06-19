@@ -19,7 +19,18 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 //
 // Cost: ~$0.039 per unique venue (within free tier credit).
 //
-// POST body: { city?: string, limit?: number, dry_run?: boolean }
+// v3 (Jun 2026): optional `heal` mode. We store Google's *resolved*
+// photo URI (the ephemeral lh3.googleusercontent.com/place-photos/…
+// link), which Google expires/revokes for a small minority of photos
+// over time — they start returning 403 and the venue card shows its
+// initials placeholder. heal mode HEAD-checks existing Google image
+// URLs, nulls only the ones that no longer resolve, and the normal
+// refill loop then fetches a fresh photoUri for just those. This is
+// broken-only and self-contained (no storage bucket, no new function);
+// almost all stored URLs keep working, so heal touches very few rows.
+//
+// POST body: { city?: string, limit?: number, dry_run?: boolean,
+//              heal?: boolean, heal_limit?: number }
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -86,6 +97,73 @@ async function fetchPlacePhoto(
     const md = await mediaRes.json();
     return md?.photoUri ?? null;
   } catch { return null; }
+}
+
+// Returns true if the stored photo URL no longer resolves (expired/
+// revoked by Google). Network errors are treated as "still valid" so a
+// transient blip never wipes a good URL.
+async function isDeadPhotoUrl(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    // 403/404/410 = Google has dropped this resolved photo URI.
+    return res.status === 403 || res.status === 404 || res.status === 410;
+  } catch {
+    return false;
+  }
+}
+
+// heal: find active picks whose stored Google photo URL has gone dead
+// and null those (only) so the refill loop re-fetches a fresh URI.
+async function healCity(city: string, healLimit: number, dryRun: boolean) {
+  const url = `${SUPABASE_URL}/rest/v1/picks` +
+    `?city=eq.${encodeURIComponent(city)}` +
+    `&archived_at=is.null&image_url=like.*googleusercontent.com*` +
+    `&select=id,image_url&order=id.asc`;
+  const res = await fetch(url, { headers: sbHeaders() });
+  if (!res.ok) return { checked: 0, dead: 0, nulled: 0, error: 'fetch failed', status: res.status };
+  const rows = await res.json() as Array<{ id: string; image_url: string }>;
+
+  // De-dupe by URL — many picks share one venue photo, so we HEAD each
+  // distinct URL once.
+  const byUrl = new Map<string, string[]>();
+  for (const r of rows) {
+    if (!r.image_url) continue;
+    const ids = byUrl.get(r.image_url) ?? [];
+    ids.push(r.id);
+    byUrl.set(r.image_url, ids);
+  }
+  const distinct = [...byUrl.keys()].slice(0, healLimit);
+
+  // HEAD-check in small concurrent batches to stay within the wall clock.
+  const dead: string[] = [];
+  const BATCH = 20;
+  for (let i = 0; i < distinct.length; i += BATCH) {
+    const slice = distinct.slice(i, i + BATCH);
+    const flags = await Promise.all(slice.map(isDeadPhotoUrl));
+    slice.forEach((u, j) => { if (flags[j]) dead.push(u); });
+  }
+
+  const deadIds = dead.flatMap(u => byUrl.get(u) ?? []);
+  let nulled = 0;
+  if (deadIds.length && !dryRun) {
+    const idList = deadIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
+    const upRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})`,
+      {
+        method:  'PATCH',
+        headers: sbHeaders({ Prefer: 'return=minimal' }),
+        body:    JSON.stringify({ image_url: null }),
+      }
+    );
+    if (upRes.ok) nulled = deadIds.length;
+  }
+
+  return {
+    checked:    distinct.length,
+    dead_urls:  dead.length,
+    nulled:     dryRun ? 0 : nulled,
+    dead_picks: deadIds.length,
+  };
 }
 
 async function enrichCity(city: string, limit: number, dryRun: boolean) {
@@ -172,11 +250,13 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
 
   const t0 = Date.now();
-  let body: { city?: string; limit?: number; dry_run?: boolean } = {};
+  let body: { city?: string; limit?: number; dry_run?: boolean; heal?: boolean; heal_limit?: number } = {};
   try { body = await req.json(); } catch { /* no body */ }
 
-  const limit  = Math.min(body.limit ?? 30, 100);
-  const dryRun = body.dry_run === true;
+  const limit     = Math.min(body.limit ?? 30, 100);
+  const dryRun    = body.dry_run === true;
+  const heal      = body.heal === true;
+  const healLimit = Math.min(body.heal_limit ?? 400, 1000);
 
   // When city is omitted, run all cities in sequence (cron mode).
   // Vilnius is excluded until the city flips from 'coming' to 'live'.
@@ -186,12 +266,16 @@ Deno.serve(async (req: Request) => {
 
   const reports: Array<Record<string, unknown>> = [];
   for (const c of cities) {
-    reports.push(await enrichCity(c, limit, dryRun));
+    // heal first: null any dead Google URLs so enrichCity refills them.
+    const healReport = heal ? await healCity(c, healLimit, dryRun) : undefined;
+    const enrichReport = await enrichCity(c, limit, dryRun);
+    reports.push(heal ? { ...enrichReport, heal: healReport } : enrichReport);
   }
 
   return json({
     ok: true,
     dry_run: dryRun,
+    heal,
     cities: reports,
     latency_ms: Date.now() - t0,
   });
