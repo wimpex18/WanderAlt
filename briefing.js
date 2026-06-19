@@ -46,12 +46,14 @@
         reflect();
         return;
       }
-      if (e.target.id === 'taste-skip' || e.target.id === 'taste-done') {
+      const act = e.target.closest('button');
+      if (!act) return;
+      if (act.id === 'taste-skip' || act.id === 'taste-done') {
         taste.setOnboarded();
         wrap.hidden = true;
         return;
       }
-      if (e.target.id === 'taste-reset') {
+      if (act.id === 'taste-reset') {
         taste.resetOnboarding();
         taste.clearAllFeedback();
         reflect();
@@ -118,6 +120,7 @@
     const media = entry.imageUrl
       ? `<div class="tonight__media">
            <a class="tonight__photo" href="venue.html?id=${entry.id}" aria-label="${esc(entry.title)}">
+             <span class="tonight__photo-ph" aria-hidden="true">${esc(entry.thumbInitials || (entry.venue || '?').slice(0, 2).toUpperCase())}</span>
              <img src="${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}" alt="">
              <span class="tag tag--photo">${esc(entry.kind)}</span>
            </a>
@@ -148,7 +151,7 @@
        <div class="tonight__actions">
          <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
          <button class="btn btn--secondary" id="surprise-btn" type="button" aria-label="Show a surprise pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3"/></svg>Surprise me</button>
-         <label class="btn btn--quiet tonight__save">
+         <label class="btn btn--secondary tonight__save">
            <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
          </label>
@@ -159,6 +162,11 @@
       const cb = section.querySelector('.bookmark__check');
       if (cb && window.WA.Bookmarks.get()[cb.dataset.id]) cb.checked = true;
     }
+    /* Venue photos come from Google Places URLs that can expire/403 — on a
+       load failure drop the broken <img> so the initials placeholder shows
+       (CSP forbids an inline onerror, so wire it here). */
+    const heroImg = section.querySelector('.tonight__photo img');
+    if (heroImg) heroImg.addEventListener('error', () => heroImg.remove());
   };
 
   /* Cities served by WanderAlt's in-house editorial desk rather than a

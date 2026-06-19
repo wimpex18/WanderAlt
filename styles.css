@@ -331,8 +331,8 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
    At 26 px tile this rounds to: rx 5, diamond 5×5, diamond rx 1.
    Master SVG lives at brand/masters/tile.svg.                          */
 .logo-mark {
-  width: 26px; height: 26px;
-  border-radius: 5px;
+  width: 32px; height: 32px;
+  border-radius: 6px;
   background: var(--c-accent);
   display: inline-flex;
   align-items: center;
@@ -340,8 +340,8 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
   flex-shrink: 0;
 }
 .logo-mark__diamond {
-  width: 5px; height: 5px;
-  border-radius: 1px;
+  width: 7px; height: 7px;
+  border-radius: 1.5px;
   background: var(--c-lime);
   transform: rotate(45deg);
 }
@@ -351,14 +351,14 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
   margin: 0 auto;
   padding: var(--s-3) var(--gutter);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--s-4);
 }
 
 .wordmark {
   font-family: var(--ff-body);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.4px;
   line-height: 1;
@@ -1706,83 +1706,92 @@ body[data-page="saved"] .colophon {
    Inline banner above the Tonight hero. Each axis (energy/
    company/money) has two mutually-exclusive chip choices.
    ============================================================ */
+/* ── Taste tuner (Today) — a plate with a clear title and three label+chips
+   clusters (each label sits directly above its two choices). Active choice =
+   the petrol highlight (same as nav/segmented). Clear Skip/Done actions. ── */
 .taste-onboarding {
-  padding: var(--s-5) 0 var(--s-5);
-  border-bottom: var(--rule-w) solid var(--c-rule);
-  margin-bottom: var(--s-5);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
+  padding: var(--s-6);
+  margin: var(--s-7) 0 var(--s-6);
 }
-/* Onboarded users: hide the banner before first paint (class set by the
-   inline <head> script) so it never reserves space — no layout shift. */
+/* Onboarded users: hide before first paint (class set by the head script). */
 html.wa-taste-done .taste-onboarding { display: none; }
+.taste-onboarding__head { margin-bottom: var(--s-5); }
+.taste-onboarding__title {
+  font-family: var(--ff-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--c-ink);
+  margin: 0 0 var(--s-2);
+}
 .taste-onboarding__intro {
-  margin: var(--s-1) 0 var(--s-4);
-  max-width: 56ch;
-}
-.taste-q {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--s-3);
-  margin-bottom: var(--s-3);
-}
-.taste-q__prompt {
-  margin: 0;
   font-family: var(--ff-body);
   font-size: 15px;
-  color: var(--c-ink);
-  min-width: 140px;
+  line-height: 1.5;
+  color: var(--c-ink-mute);
+  margin: 0;
+  max-width: 60ch;
 }
-.taste-q__choices {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
+.taste-onboarding__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-5);
 }
+.taste-q { display: flex; flex-direction: column; gap: var(--s-2); }
+.taste-q__prompt {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+}
+.taste-q__choices { display: flex; gap: var(--s-2); }
 .taste-chip {
+  flex: 1;
   display: inline-flex;
   align-items: center;
-  min-height: 32px;   /* Material chip height (was ~28px); chips are the 32px exception to the 44 floor */
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-  padding: 4px 12px;
-  border: 1px solid var(--c-rule-strong);
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink-soft);
   background: var(--c-paper);
-  color: var(--c-ink);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
 }
-.taste-chip:hover { border-color: var(--c-ink); }
-.taste-chip--on {
-  background: var(--c-ink);
-  color: var(--c-paper);
-  border-color: var(--c-ink);
+.taste-chip:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.taste-chip--on { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-accent); }
+.taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-6); }
+.taste-skip, .taste-reset {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; padding: 0 var(--s-4);
+  font-family: var(--ff-body); font-size: 14px; font-weight: 600;
+  color: var(--c-ink-soft); background: var(--c-paper);
+  border: var(--rule-w) solid var(--c-rule-strong); border-radius: var(--radius);
+  cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast);
 }
-.taste-onboarding__foot {
-  display: flex;
-  gap: var(--s-3);
-  margin-top: var(--s-4);
-  align-items: center;
-}
-.taste-skip, .taste-done, .taste-reset {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;   /* tap-target floor — the sweep caught these at 18px (F-19/V-14) */
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
-  color: var(--c-ink-mute);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-.taste-skip:hover  { color: var(--c-accent); }
-.taste-reset:hover { color: var(--c-accent); }
+.taste-skip:hover, .taste-reset:hover { border-color: var(--c-ink); color: var(--c-ink); }
+.taste-reset { margin-left: auto; }
 .taste-done {
-  color: var(--c-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; padding: 0 var(--s-5);
+  font-family: var(--ff-body); font-size: 14px; font-weight: 600;
+  color: #fff; background: var(--c-accent); border: 0; border-radius: var(--radius);
+  cursor: pointer; transition: background var(--t-fast);
 }
-.taste-done:hover { text-decoration: underline; }
+.taste-done:hover { background: var(--c-accent-deep); }
+@media (max-width: 767px) {
+  .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-4); }
+  .taste-onboarding__title { font-size: 20px; }
+}
 
 
 /* Curator-vouched toggle — small inline switch beside the Match-me link. */
@@ -3131,8 +3140,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
      and dropping sticky removes the magic-number offset. */
   .topbar { position: static; order: 1; }
   .topbar__inner { padding: var(--s-5) var(--gutter); }
-  .wordmark { font-size: 20px; }
-  .logo-mark { width: 30px; height: 30px; }
+  .wordmark { font-size: 26px; }
+  .logo-mark { width: 40px; height: 40px; border-radius: 8px; }
+  .logo-mark__diamond { width: 9px; height: 9px; }
 
   /* Constrained-to-column width means the visible slice is narrower
      and the building span is more legible — bump the ribbon so the
@@ -5998,9 +6008,14 @@ body[data-page="saved"] .seg-note {
    Children are flat (signal·title·media·quote·actions in DOM order) so the
    mobile stack shows the photo between title and quote, as drawn; desktop
    pins the text items to col 1 and the media plate to col 2. */
-.tonight{display:grid;grid-template-columns:1.25fr .85fr;column-gap:var(--s-8);row-gap:0;padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
-.tonight > .tonight__signal,.tonight > .tonight__title,.tonight > .quote,.tonight > .tonight__actions{grid-column:1}
-.tonight > .tonight__media{grid-column:2;grid-row:1 / span 5}
+.tonight{display:grid;grid-template-columns:1.25fr .85fr;grid-template-rows:auto auto auto 1fr auto;column-gap:var(--s-8);row-gap:0;padding-top:var(--s-8);padding-bottom:var(--s-8);align-items:start}
+.tonight > .tonight__signal{grid-column:1;grid-row:1}
+.tonight > .tonight__title{grid-column:1;grid-row:2}
+.tonight > .quote{grid-column:1;grid-row:3}
+/* row 4 is a flexible spacer so the action row (row 5) bottom-aligns with the
+   media column's venue block */
+.tonight > .tonight__actions{grid-column:1;grid-row:5}
+.tonight > .tonight__media{grid-column:2;grid-row:1 / 6}
 .tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
 .tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
 .tonight__kicker b{color:var(--c-ink);font-weight:500}
@@ -6010,12 +6025,20 @@ a.tonight__title:hover{color:var(--c-accent)}
 .quote__t{font-family:var(--ff-display);font-style:italic;font-size:28px;line-height:1.3;color:var(--c-ink-soft);text-wrap:pretty;margin:0}
 .quote__attr{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
 .quote__attr .handle{font-size:13.5px}
-.tonight__actions{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-7);flex-wrap:wrap}
-.tonight__actions .btn--quiet{margin-left:auto}
+.tonight__actions{display:flex;align-items:stretch;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:wrap}
 .tonight__media{display:flex;flex-direction:column;gap:14px}
 .tonight__photo{position:relative;display:block;min-height:340px;border-radius:var(--radius-card);border:var(--rule-w) solid var(--c-rule);overflow:hidden;background:var(--c-paper-deep)}
 .tonight__photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.tonight__photo .tag{position:absolute;top:14px;left:14px}
+.tonight__photo .tag{position:absolute;top:14px;left:14px;z-index:1}
+/* Placeholder behind the photo — shown (venue initials on a tile) when the
+   image_url is missing or fails to load, so it never reads as a broken icon. */
+.tonight__photo-ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--ff-mono);font-size:46px;font-weight:500;letter-spacing:.04em;color:var(--c-ink-mute);background:var(--c-paper-deep)}
+/* Desktop: three equal action buttons on one row; photo grows so the venue
+   block sits at the column's bottom (level with the action row). */
+@media (min-width:768px){
+  .tonight__actions .btn{flex:1}
+  .tonight__photo{flex:1}
+}
 .tonight__venue{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep)}
 .tonight__venue b{display:block;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink);letter-spacing:-.01em;margin-bottom:3px}
 .tonight__venue .meta{font-size:12px}
@@ -6053,11 +6076,7 @@ a.tonight__title:hover{color:var(--c-accent)}
 .digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
 .digest-optin .rule{display:none}
 
-/* Taste check — editorial plate */
-.taste-onboarding{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin-top:var(--s-6)}
-.taste-onboarding__intro{margin:8px 0 var(--s-4);line-height:1.55}
-.taste-q{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) 0;border-top:var(--rule-w) solid var(--c-rule)}
-.taste-q__prompt{font-size:15.5px;font-weight:500;color:var(--c-ink-soft)}
+/* (Taste tuner styling is the redesigned block earlier in this file.) */
 
 /* ── Today mobile ─────────────────────────────────────────── */
 @media (max-width:767px){
@@ -6478,3 +6497,8 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 .page-head--profile .page-head__info { flex: 1; min-width: 0; }
 .page-head--profile .page-head__title { font-size: 28px; overflow-wrap: anywhere; }
 @media (max-width: 767px) { .page-head--profile .page-head__title { font-size: 22px; } }
+/* About variant — copy on the left, the brand mark on the right. */
+.page-head--about { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-6); }
+.page-head--about .page-head__copy { flex: 1; min-width: 0; }
+.page-head--about .about-head__lede { margin-top: var(--s-4); }
+@media (max-width: 767px) { .page-head--about .page-head__mark { display: none; } }
