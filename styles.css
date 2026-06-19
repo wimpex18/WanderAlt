@@ -380,7 +380,7 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
   align-items: center;
   gap: var(--s-2);
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--c-ink);
@@ -393,7 +393,7 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
 }
 
 .city-dot {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: var(--c-lime);
   flex-shrink: 0;
@@ -408,8 +408,8 @@ body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
 }
 .city-selector__chev svg {
   display: block;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   stroke: currentColor;
   stroke-width: 1.5;
   stroke-linecap: square;
@@ -912,7 +912,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   background: var(--c-paper);
   color: var(--c-ink-soft);
   border: var(--rule-w) solid var(--c-rule);
-  border-radius: 999px;
+  border-radius: var(--radius);   /* control radius — 999px pill retired */
   font-family: var(--ff-body);
   font-size: 12px;
   font-weight: 500;
@@ -923,11 +923,11 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 .m-chip:hover { background: var(--c-paper-deep); border-color: var(--c-rule-strong); }
 .m-chip--on {
-  background: var(--c-ink);
-  color: var(--c-paper);
-  border-color: var(--c-ink);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  border-color: var(--c-accent);
 }
-.m-chip--on:hover { background: var(--c-ink); }
+.m-chip--on:hover { background: var(--c-accent-soft); color: var(--c-accent); }
 
 /* Teardrop pin — numbered, positioned by inline style (left%/top%). */
 .map-pin {
@@ -2231,10 +2231,11 @@ a.handle:hover {
    topbar is tight, so drop the labels and show icon-only (aria-label keeps
    them accessible) — also de-emphasises these secondary links vs the
    bottom nav. */
-.auth-btn .ic, .topbar__about .ic { width: 16px; height: 16px; flex-shrink: 0; }
-.auth-btn, .topbar__about { gap: 7px; }
+.auth-btn .ic, .topbar__about .ic { width: 18px; height: 18px; flex-shrink: 0; }
+/* .topbar__right ancestor → wins over the base .auth-btn/.topbar__about font */
+.topbar__right .auth-btn, .topbar__right .topbar__about { gap: 7px; font-size: 13.5px; }
 @media (max-width: 767px) {
-  .auth-btn .ic, .topbar__about .ic { width: 19px; height: 19px; }
+  .auth-btn .ic, .topbar__about .ic { width: 21px; height: 21px; }
   .auth-btn span, .topbar__about span { display: none; }
 }
 
@@ -4889,11 +4890,11 @@ a.handle:hover { color: var(--c-ink); }
 }
 .discover-pill:hover { border-color: var(--c-accent); color: var(--c-accent); }
 .discover-pill--on {
-  background: var(--c-accent);
-  color: var(--c-paper);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
   border-color: var(--c-accent);
 }
-.discover-pill--on:hover { color: var(--c-paper); }
+.discover-pill--on:hover { color: var(--c-accent); }
 /* Active state must not rely on color alone (WCAG 1.4.1). A leading
    checkmark marks selection in grayscale / for color-blind users. */
 .discover-pill--on::before {
@@ -6141,7 +6142,7 @@ body[data-page="discover"] .deck .discover-pill:hover,
 body[data-page="discover"] .deck .m-chip:hover{border-color:var(--c-ink)}
 body[data-page="discover"] .deck .discover-pill--on,
 body[data-page="discover"] .deck .m-chip--on,
-body[data-page="discover"] .deck .m-chip[aria-pressed="true"]{background:var(--c-ink);border-color:var(--c-ink);color:var(--c-paper)}
+body[data-page="discover"] .deck .m-chip[aria-pressed="true"]{background:var(--c-accent-soft);border-color:var(--c-accent);color:var(--c-accent)}
 body[data-page="discover"] .deck .discover-pill--more{border-style:dashed;color:var(--c-ink)}
 
 /* A hairline rule between the search row and the chip rows */
