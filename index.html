@@ -131,36 +131,37 @@
          lands first. Shown only when the user hasn't onboarded yet. -->
     <section class="taste-onboarding" id="taste-onboarding"
              aria-labelledby="taste-onboarding-label">
-      <p id="taste-onboarding-label" class="eyebrow">A quick taste check</p>
-      <p class="taste-onboarding__intro meta">
-        Three taps. We&rsquo;ll bias the briefing to what you like &mdash;
-        nothing is sent to a server.
-      </p>
-      <div class="taste-q">
-        <p class="taste-q__prompt">Tonight, do you want it&hellip;</p>
-        <div class="taste-q__choices">
-          <button type="button" class="taste-chip" data-axis="energy" data-choice="loud"  aria-pressed="false">loud</button>
-          <button type="button" class="taste-chip" data-axis="energy" data-choice="quiet" aria-pressed="false">quiet</button>
-        </div>
+      <div class="taste-onboarding__head">
+        <h2 id="taste-onboarding-label" class="taste-onboarding__title">Tune tonight&rsquo;s briefing</h2>
+        <p class="taste-onboarding__intro">Three taps &mdash; we bias your picks to the night you want. Nothing leaves this device.</p>
       </div>
-      <div class="taste-q">
-        <p class="taste-q__prompt">Going&hellip;</p>
-        <div class="taste-q__choices">
-          <button type="button" class="taste-chip" data-axis="company" data-choice="solo"   aria-pressed="false">solo</button>
-          <button type="button" class="taste-chip" data-axis="company" data-choice="social" aria-pressed="false">with people</button>
+      <div class="taste-onboarding__grid">
+        <div class="taste-q">
+          <span class="taste-q__prompt">Energy</span>
+          <div class="taste-q__choices">
+            <button type="button" class="taste-chip" data-axis="energy" data-choice="loud"  aria-pressed="false">Loud</button>
+            <button type="button" class="taste-chip" data-axis="energy" data-choice="quiet" aria-pressed="false">Quiet</button>
+          </div>
         </div>
-      </div>
-      <div class="taste-q">
-        <p class="taste-q__prompt">Budget&hellip;</p>
-        <div class="taste-q__choices">
-          <button type="button" class="taste-chip" data-axis="money" data-choice="free"     aria-pressed="false">free</button>
-          <button type="button" class="taste-chip" data-axis="money" data-choice="ticketed" aria-pressed="false">happy to pay</button>
+        <div class="taste-q">
+          <span class="taste-q__prompt">Company</span>
+          <div class="taste-q__choices">
+            <button type="button" class="taste-chip" data-axis="company" data-choice="solo"   aria-pressed="false">Solo</button>
+            <button type="button" class="taste-chip" data-axis="company" data-choice="social" aria-pressed="false">With people</button>
+          </div>
+        </div>
+        <div class="taste-q">
+          <span class="taste-q__prompt">Budget</span>
+          <div class="taste-q__choices">
+            <button type="button" class="taste-chip" data-axis="money" data-choice="free"     aria-pressed="false">Free</button>
+            <button type="button" class="taste-chip" data-axis="money" data-choice="ticketed" aria-pressed="false">Ticketed</button>
+          </div>
         </div>
       </div>
       <div class="taste-onboarding__foot">
-        <button type="button" class="taste-skip" id="taste-skip"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg><span>Skip</span></button>
-        <button type="button" class="taste-done" id="taste-done" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5l10 -10" /></svg><span>Done</span></button>
-        <button type="button" class="taste-reset" id="taste-reset" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" /></svg><span>Reset</span></button>
+        <button type="button" class="taste-skip" id="taste-skip">Skip for now</button>
+        <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
+        <button type="button" class="taste-reset" id="taste-reset" hidden>Reset</button>
       </div>
     </section>
 
