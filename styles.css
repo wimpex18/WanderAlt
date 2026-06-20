@@ -697,6 +697,19 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   background-position: center;
 }
 .thumb--has-img .thumb__fallback { display: none; }
+/* Venue photos render as an <img> over the initials tile (not a CSS
+   background), so a dead Google Places URL fires onerror and ui-helpers.js
+   drops it — the initials show instead of a blank grey square. */
+.thumb__img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
 /* Full-colour venue photos (June 2026): the petrol duotone overlay was
    retired so photos read vivid and inviting (Airbnb/Lime direction). The
    thumb border + radius still keep the disparate photos visually tidy. */
@@ -1965,6 +1978,10 @@ html.wa-taste-done .taste-onboarding { display: none; }
     rgba(0, 0, 0, 0.12) 100%);
 }
 .detail-hero__foot { display: block; }
+/* Invisible probe carrying the hero photo URL: a background image has no
+   onerror, so this <img> gives venue.js a hook to swap an expired Google
+   Places hero for the flat header instead of leaving a black box. */
+.detail-hero__probe { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .eyebrow--onphoto { color: rgba(255, 255, 255, 0.82); margin-bottom: var(--s-2); }
 /* Compound selector on purpose: the base .venue-title rule is declared
    AFTER this modifier (same specificity), which silently painted the
@@ -6087,7 +6104,7 @@ a.tonight__title:hover{color:var(--c-accent)}
   .tonight{display:flex;flex-direction:column;padding-top:var(--s-2);padding-bottom:var(--s-7)}
   .tonight__title{font-size:31px;margin-bottom:var(--s-4)}
   .tonight__media{margin:0 0 var(--s-5)}
-  .tonight__venue{display:none}   /* board mobile = photo only */
+  .tonight__media .tonight__venue{display:none}   /* hero board mobile = photo only; scoped so the venue-detail row + Discover match hero stay visible */
   .tonight__photo{margin-bottom:0}
   .tonight__photo{min-height:0;height:215px}
   .quote{padding-left:var(--s-4)}

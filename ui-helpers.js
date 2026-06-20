@@ -57,32 +57,36 @@
        <path d="M6 3h12v18l-6-4-6 4V3z" />
      </svg>`;
 
-  /* A .thumb span — real photo when entry.imageUrl is set, otherwise the
-     initials tile. Used by the Tonight venue block + This Week rows. */
+  /* A .thumb span — real photo when an image_url is set, otherwise the
+     initials tile. Used by the Tonight venue block, This Week rows, the
+     venue-detail venue row and Discover's match hero.
+
+     The photo is an <img> (not a CSS background) on purpose: venue photos
+     resolve to Google Places CDN URLs that can later 403, and a background
+     image has no onerror hook — so a dead URL used to leave a blank grey
+     square. The initials tile is rendered behind the <img>; a single global
+     error handler (below) drops a broken .thumb__img so those initials show,
+     matching the Tonight hero which already degraded this way. */
   const thumb = (entry, large = false) => {
-    const cls   = `thumb${large ? ' thumb--lg' : ''}${entry.imageUrl ? ' thumb--has-img' : ''}`;
-    const style = entry.imageUrl
-      ? ` style="background-image:url('${WA.img(entry.imageUrl, 200).replace(/'/g, '%27')}')"` : '';
-    const label = entry.imageUrl ? entry.venue : `${entry.venue} placeholder`;
-    return `<span class="${cls}" role="img" aria-label="${esc(label)}"${style}>` +
-           `<span class="thumb__fallback" aria-hidden="${!!entry.imageUrl}">${esc(entry.thumbInitials || '')}</span>` +
+    const imgUrl   = entry.imageUrl || entry.image_url || null;
+    const initials = (entry.thumbInitials || entry.thumb_initials
+      || (entry.venue || entry.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
+    const cls   = `thumb${large ? ' thumb--lg' : ''}`;
+    const label = imgUrl ? (entry.venue || entry.title || '') : `${entry.venue || entry.title || ''} placeholder`;
+    const img   = imgUrl
+      ? `<img class="thumb__img" src="${esc(WA.img(String(imgUrl), large ? 400 : 200))}" alt="" loading="lazy" decoding="async">`
+      : '';
+    return `<span class="${cls}" role="img" aria-label="${esc(label)}">` +
+           `<span class="thumb__fallback" aria-hidden="true">${esc(initials)}</span>` +
+           img +
            `</span>`;
   };
 
   /* The photo-card row media: a decorative .list-row__media link wrapping a
      --lg thumb (the title link is the keyboard tab stop). Shared by
      Discover events, Saved, Curator picks, place "events here". */
-  const rowMedia = (e) => {
-    const imgUrl = e.imageUrl || e.image_url || null;
-    const initials = (e.thumbInitials || e.thumb_initials
-      || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const cls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const sty = imgUrl ? ` style="background-image:url('${WA.img(String(imgUrl), 200).replace(/'/g, '%27')}')"` : '';
-    return `<a class="list-row__media" href="venue.html?id=${encodeURIComponent(e.id)}" tabindex="-1" aria-hidden="true">
-      <span class="${cls}" role="img" aria-label="${esc(e.venue || e.title)}"${sty}>
-        <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
-      </span></a>`;
-  };
+  const rowMedia = (e) =>
+    `<a class="list-row__media" href="venue.html?id=${encodeURIComponent(e.id)}" tabindex="-1" aria-hidden="true">${thumb(e, true)}</a>`;
 
   /* External web / social links for a venue or place, rendered as a compact
      icon-only row (.social-links / .social-icon in styles.css) — small
@@ -149,6 +153,16 @@
     btn.setAttribute('aria-pressed', reveal ? 'true' : 'false');
     btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
   });
+
+  /* Drop broken venue photos so the initials tile behind them shows. Google
+     Places CDN URLs can 403 over time; image error events don't bubble, so
+     listen in the capture phase at the document root. One handler covers
+     every .thumb__img on every page (Today, Discover, Saved, Curator, venue,
+     place). */
+  document.addEventListener('error', (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
+  }, true);
 
   window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons, passwordField };
 })();
