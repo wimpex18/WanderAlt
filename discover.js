@@ -51,7 +51,7 @@
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, rowMedia, thumb } = window.WA.UI;
 
   /* Multi-word AND + field-weight relevance (from search.js:26). */
   const keywordFilter = (corpus, term) => {
@@ -158,21 +158,12 @@
     const rowCls = e.isClosed ? 'list-row list-row--closed list-row--card' : 'list-row list-row--card';
 
     /* Photo-forward card (June 2026): a venue photo on the left reusing the
-       app's duotone .thumb--lg treatment (consistent with the home picks +
+       app's shared .thumb--lg treatment (consistent with the home picks +
        venue page), so disparate event photos still read as one editorial
-       set. Falls back to the initials tile when the pick has no image_url.
-       The media is a decorative supplementary link (the title link is the
-       keyboard tab stop). content-visibility on .list-row keeps it lazy. */
-    const imgUrl   = e.imageUrl || e.image_url || null;
-    const initials = (e.thumbInitials || e.thumb_initials || (e.venue || e.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
-    const media =
-      `<a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-         <span class="${thumbCls}" role="img" aria-label="${esc(e.venue || e.title)}"${thumbSty}>
-           <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
-         </span>
-       </a>`;
+       set. rowMedia() falls back to the initials tile when the pick has no
+       image_url (or the photo URL 403s). The media is a decorative
+       supplementary link (the title link is the keyboard tab stop). */
+    const media = rowMedia(e);
 
     return `<li class="${rowCls}" data-id="${esc(e.id)}">
        ${media}
@@ -820,11 +811,6 @@
   };
 
   const renderMatchHero = (pick, why) => {
-    const imgUrl   = pick.imageUrl || pick.image_url || null;
-    const initials = pick.thumbInitials || pick.thumb_initials
-      || (pick.venue || pick.title || '??').slice(0, 2).toUpperCase();
-    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
     const whyText  = why || pick.why || pick.quote || '';
     return `<div class="match-card">
        <p class="match-card__why">&ldquo;${esc(whyText)}&rdquo;</p>
@@ -833,9 +819,7 @@
          <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a>
        </p>
        <a class="tonight__venue" href="venue.html?id=${encodeURIComponent(pick.id)}">
-         <span class="${thumbCls}" role="img" aria-label="${esc(pick.venue || pick.title)}"${thumbSty}>
-           <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
-         </span>
+         ${thumb(pick, true)}
          <span class="tonight__venue-body">
            <span class="tonight__venue-name">${esc(pick.title)}</span>
            <span class="meta">${esc(pick.neighborhood || '')} &middot; ${esc(pick.kind || '')}${pick.time ? ' &middot; ' + esc(pick.time) : ''}</span>
@@ -849,16 +833,8 @@
     /* Photo-forward card, consistent with every other pick list (Discover
        results / Saved / Curator / venue / place). Renders on the white page
        below the petrol search box, so the standard card treatment applies. */
-    const imgUrl   = pick.imageUrl || pick.image_url || null;
-    const initials = (pick.thumbInitials || pick.thumb_initials || (pick.venue || pick.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const thumbCls = `thumb thumb--lg${imgUrl ? ' thumb--has-img' : ''}`;
-    const thumbSty = imgUrl ? ` style="background-image:url('${WA.img(imgUrl, 200).replace(/'/g, '%27')}')"` : '';
     return `<li class="list-row list-row--card" data-id="${esc(pick.id)}">
-       <a class="list-row__media" href="venue.html?id=${encodeURIComponent(pick.id)}" tabindex="-1" aria-hidden="true">
-         <span class="${thumbCls}" role="img" aria-label="${esc(pick.venue || pick.title)}"${thumbSty}>
-           <span class="thumb__fallback" aria-hidden="${!!imgUrl}">${esc(initials)}</span>
-         </span>
-       </a>
+       ${rowMedia(pick)}
        <div class="list-row__body">
          <p class="list-row__title">
            <a href="venue.html?id=${encodeURIComponent(pick.id)}">${esc(pick.title)}</a>

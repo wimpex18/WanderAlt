@@ -98,7 +98,7 @@
     address:   r.address   ?? null,
     coordsSource: r.coords_source ?? null,
     coordsLocked: !!r.coords_locked,
-    permalink: null,            /* sourced from staging_messages via separate join — TODO */
+    permalink: r.source_url || null,   /* external event/ticket page (picks.source_url, sourced from staging_messages.permalink) */
     /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });

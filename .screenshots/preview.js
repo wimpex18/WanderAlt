@@ -4,7 +4,7 @@
    ------------------------------------------------------------
    Why this exists: the local dev server / sandbox can't always
    fetch the third-party assets that ship in production — most
-   notably the Google Places CDN photos behind `.thumb--has-img`
+   notably the Google Places CDN photos in `.thumb__img`
    (they render as empty boxes locally). The Cloudflare branch
    preview URL that the Pages bot posts on every PR DOES serve the
    real thing, so this script points a headless Chrome at it and
@@ -84,9 +84,12 @@ const slug = (s) => s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice
       await new Promise((r) => setTimeout(r, 4000));
 
       const meta = await page.evaluate(() => {
-        const thumbs = [...document.querySelectorAll('.thumb--has-img')];
-        const withBg = thumbs.filter((el) => getComputedStyle(el).backgroundImage !== 'none').length;
-        return { thumbs: thumbs.length, withBg };
+        /* Venue photos are now <img class="thumb__img"> over an initials tile
+           (June 2026); a broken Google URL is removed by ui-helpers.js, so a
+           surviving img with naturalWidth > 0 means a photo actually painted. */
+        const imgs   = [...document.querySelectorAll('.thumb__img')];
+        const loaded = imgs.filter((el) => el.complete && el.naturalWidth > 0).length;
+        return { thumbs: imgs.length, withBg: loaded };
       });
 
       await page.screenshot({ path: path.join(OUT, `live-${tag}-fold.png`) });

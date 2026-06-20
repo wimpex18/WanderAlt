@@ -21,8 +21,27 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
+
+  /* The one external "where to act" link for a pick — its source/ticket page
+     (picks.source_url, surfaced as entry.permalink). Ticketing hosts read
+     "Tickets", everything else "Event page"; Telegram curator posts carry no
+     event page and are filtered out upstream, so nothing renders for them.
+     A labelled .action-btn (44px compact tier), consistent with the venue
+     action row, opening in a new tab. */
+  const sourceCta = (url) => {
+    if (!url) return '';
+    let host = '';
+    try { host = new URL(url).host.replace(/^www\./, ''); } catch (_) { return ''; }
+    if (/(^|\.)t\.me$/.test(host) || /telegram/i.test(host)) return '';
+    const isTickets = /fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(host);
+    const label = isTickets ? 'Tickets' : 'Event page';
+    return `<div class="venue-source">
+        <a class="action-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+           aria-label="${label} (opens in a new tab)">${label}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+      </div>`;
+  };
 
 
 
@@ -107,25 +126,33 @@
           ).join('')}
         </p>` : '';
 
+    /* Flat header (no photo). Kept as a named string so a hero whose photo
+       fails to load can swap to exactly this — matching every photoless
+       pick — rather than sitting on a black box. */
+    const headerFlat =
+      `<div class="page-head">
+         <p class="page-head__eyebrow">${eyebrow}</p>
+         <h1 class="page-head__title">${entry.title}</h1>
+         <p class="page-head__meta">${buildMeta(entry)}</p>
+       </div>`;
+
     /* Photo-forward header (June 2026): when the pick has an image_url, the
        venue photo fills a banner with a scrim gradient and the eyebrow +
-       title + meta sit on it in white. No photo -> the flat header. The big
-       curator quote still leads below, either way. */
-    const header = entry.imageUrl
-      ? `<div class="detail-hero" style="background-image:url('${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}')">
+       title + meta sit on it in white. The visible fill is a CSS background;
+       an invisible <img> probe with the same URL gives us an onerror hook
+       (backgrounds have none) so an expired Google Places URL degrades to
+       the flat header. The big curator quote still leads below, either way. */
+    const heroUrl = entry.imageUrl ? WA.img(entry.imageUrl, 1080).replace(/'/g, '%27') : '';
+    const header = (entry.imageUrl
+      ? `<div class="detail-hero" style="background-image:url('${heroUrl}')">
+           <img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true">
            <div class="detail-hero__foot">
              <p class="eyebrow eyebrow--onphoto">${eyebrow}</p>
              <h1 class="venue-title venue-title--onphoto">${entry.title}</h1>
              <p class="meta meta--onphoto">${buildMeta(entry)}</p>
            </div>
-         </div>
-         ${moodChips}`
-      : `<div class="page-head">
-           <p class="page-head__eyebrow">${eyebrow}</p>
-           <h1 class="page-head__title">${entry.title}</h1>
-           <p class="page-head__meta">${buildMeta(entry)}</p>
-           ${moodChips}
-         </div>`;
+         </div>`
+      : headerFlat) + moodChips;
 
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
@@ -167,6 +194,9 @@
              Seeded synchronously from the matched venue; fetchVenueDetails()
              merges in a website from venue_details when the row had none. -->
         <div id="venue-social">${socialButtons(socialObj)}</div>
+
+        <!-- Source / ticket page for this pick (Tickets / Event page), when present -->
+        ${sourceCta(entry.permalink)}
 
         <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
         <div id="venue-details" class="venue-details" hidden></div>
@@ -231,6 +261,18 @@
         <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; Tallinn edition &middot; A curator vouched for every pick. AI is the index, not the editor.</p>
       </footer>
     `;
+
+    /* If the hero photo URL is dead (Google Places URIs can 403 over time),
+       swap the scrim hero for the flat header so the title is never left on
+       a black box. The probe shares the hero's URL, so it errors in lockstep
+       with the unpaintable background. */
+    const heroProbe = main.querySelector('.detail-hero__probe');
+    if (heroProbe) {
+      heroProbe.addEventListener('error', () => {
+        const hero = heroProbe.closest('.detail-hero');
+        if (hero) hero.outerHTML = headerFlat;
+      });
+    }
 
     /* Async fetch context_md from Supabase and reveal the <details>. */
     const fetchContext = async () => {
