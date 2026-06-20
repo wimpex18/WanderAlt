@@ -49,11 +49,14 @@
      arrives async from venue_details. Empty string when the venue has none. */
   const renderExt = (sv, permalink) => {
     const parts = [];
-    if (sv.website) {
-      parts.push(`<a class="action-btn" href="${esc(sv.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(sv.name || 'Venue')} website (opens in a new tab)">Visit website${EXT_ICON}</a>`);
-    }
+    /* Event/ticket page FIRST — a link straight to this event (where you buy
+       a ticket) is more useful than the venue's home page, which is only the
+       fallback. */
     const ticket = sourceCta(permalink);
     if (ticket) parts.push(ticket);
+    if (sv.website) {
+      parts.push(`<a class="action-btn" href="${esc(sv.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(sv.name || 'Venue')} website (opens in a new tab)">Venue website${EXT_ICON}</a>`);
+    }
     const social = socialButtons({ name: sv.name, facebook: sv.facebook, instagram: sv.instagram });
     if (social) parts.push(social);
     return parts.join('');
@@ -347,7 +350,7 @@
           `${base}/rest/v1/venue_details` +
           `?city=eq.${encodeURIComponent(city)}` +
           `&venue_key=eq.${encodeURIComponent(venueKey)}` +
-          `&select=website,address,short_desc,opening_hours,phone,business_status&limit=1`,
+          `&select=website,facebook,instagram,address,short_desc,opening_hours,phone,business_status&limit=1`,
           { headers: { apikey: key, Authorization: `Bearer ${key}` } }
         );
         if (!r.ok) return;
@@ -355,11 +358,15 @@
         const vd   = rows[0];
         if (!vd) return;
 
-        /* The venue website shows as a labelled button in the external-links
-           row (#venue-ext). When the venues table had none, fall back to the
-           venue_details website and re-render the row so it still shows. */
-        if (vd.website && !socialObj.website) {
-          socialObj.website = vd.website;
+        /* Website/Facebook/Instagram show in the external-links row (#venue-ext).
+           The venues table seeds them synchronously; venue_details (Wikidata +
+           Google + homepage scrape) fills any the venues row was missing, then
+           we re-render the row so they still appear. */
+        let extChanged = false;
+        for (const k of ['website', 'facebook', 'instagram']) {
+          if (vd[k] && !socialObj[k]) { socialObj[k] = vd[k]; extChanged = true; }
+        }
+        if (extChanged) {
           const ext = document.getElementById('venue-ext');
           if (ext) ext.innerHTML = renderExt(socialObj, entry.permalink);
         }
