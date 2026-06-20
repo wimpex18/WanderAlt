@@ -276,10 +276,12 @@ async function scrapeWebsite(websiteUrl: string): Promise<ScrapeResult> {
     }
 
     // First plausible profile URL — skip share widgets, login, posts, etc.
+    // The trailing handle class stops at the first non-handle char (/, ", ?…),
+    // so the match is already a clean profile URL with no trailing junk.
     const fb = html.match(/https?:\/\/(?:www\.|m\.)?facebook\.com\/(?!sharer|plugins|tr[/?]|dialog|login|groups\/|events\/|watch[/?]|profile\.php)[A-Za-z0-9.\-]{2,}/i);
-    if (fb) out.facebook = fb[0].replace(/[\\"')&].*$/, '').replace(/\/+$/, '');
+    if (fb) out.facebook = fb[0];
     const ig = html.match(/https?:\/\/(?:www\.)?instagram\.com\/(?!p\/|reel\/|reels\/|explore|accounts|stories\/)[A-Za-z0-9._]{2,}/i);
-    if (ig) out.instagram = ig[0].replace(/[\\"')&?].*$/, '').replace(/\/+$/, '');
+    if (ig) out.instagram = ig[0];
 
     return out;
   } catch { return out; }
