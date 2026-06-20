@@ -24,12 +24,14 @@
   const { esc, buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
 
-  /* The one external "where to act" link for a pick — its source/ticket page
-     (picks.source_url, surfaced as entry.permalink). Ticketing hosts read
-     "Tickets", everything else "Event page"; Telegram curator posts carry no
-     event page and are filtered out upstream, so nothing renders for them.
-     A labelled .action-btn (44px compact tier), consistent with the venue
-     action row, opening in a new tab. */
+  /* Standard "opens elsewhere" diagonal-arrow glyph (Tabler external-link),
+     shared by the website + ticket buttons. */
+  const EXT_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg>';
+
+  /* The pick's external source/ticket page (picks.source_url -> entry.permalink).
+     Ticketing hosts read "Tickets", other event pages "Event page"; Telegram
+     curator posts carry no event page and are filtered out. Returns a bare
+     labelled .action-btn so it sits in the external-links row. */
   const sourceCta = (url) => {
     if (!url) return '';
     let host = '';
@@ -37,10 +39,24 @@
     if (/(^|\.)t\.me$/.test(host) || /telegram/i.test(host)) return '';
     const isTickets = /fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(host);
     const label = isTickets ? 'Tickets' : 'Event page';
-    return `<div class="venue-source">
-        <a class="action-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
-           aria-label="${label} (opens in a new tab)">${label}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
-      </div>`;
+    return `<a class="action-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${label} (opens in a new tab)">${label}${EXT_ICON}</a>`;
+  };
+
+  /* The external-links row for a pick: the venue website + ticket/event page
+     as labelled buttons (the primary "how do I actually go" actions, so they
+     keep labels per the icon-system rules), then Facebook/Instagram as the
+     compact icon set. Re-rendered by fetchVenueDetails() when a website
+     arrives async from venue_details. Empty string when the venue has none. */
+  const renderExt = (sv, permalink) => {
+    const parts = [];
+    if (sv.website) {
+      parts.push(`<a class="action-btn" href="${esc(sv.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(sv.name || 'Venue')} website (opens in a new tab)">Visit website${EXT_ICON}</a>`);
+    }
+    const ticket = sourceCta(permalink);
+    if (ticket) parts.push(ticket);
+    const social = socialButtons({ name: sv.name, facebook: sv.facebook, instagram: sv.instagram });
+    if (social) parts.push(social);
+    return parts.join('');
   };
 
 
@@ -174,32 +190,33 @@
 
         <hr class="rule" style="margin-top:var(--s-4)">
 
-        <div class="venue-venue">
-          <div class="tonight__venue">
-            ${thumbEl(entry, true)}
-            ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
-            <span class="tonight__venue-body">
-              <span class="tonight__venue-name">${entry.venue}</span>
-              <span class="meta">${buildMeta(entry)}</span>
-            </span>
+        <!-- Venue: which place hosts this pick. Reuses the app photo-card
+             atoms (thumb + body) in an aligned card with a clear eyebrow, so
+             the block's purpose reads at a glance. -->
+        <section class="venue-block" aria-label="Venue">
+          <p class="eyebrow">Venue</p>
+          <div class="venue-card">
+            <span class="venue-card__media">${thumbEl(entry, true)}</span>
+            <div class="venue-card__body">
+              <p class="venue-card__name">${entry.venue}</p>
+              <p class="list-row__meta">${buildMeta(entry)}</p>
+            </div>
+            <label class="bookmark">
+              <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
+                     aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
+              ${bookmarkSVG()}
+            </label>
           </div>
-          <label class="bookmark">
-            <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
-                   aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
-            ${bookmarkSVG()}
-          </label>
-        </div>
+          ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
 
-        <!-- Web / social links for the venue (Website / Facebook / Instagram).
-             Seeded synchronously from the matched venue; fetchVenueDetails()
-             merges in a website from venue_details when the row had none. -->
-        <div id="venue-social">${socialButtons(socialObj)}</div>
+          <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
+          <div id="venue-details" class="venue-details" hidden></div>
 
-        <!-- Source / ticket page for this pick (Tickets / Event page), when present -->
-        ${sourceCta(entry.permalink)}
-
-        <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
-        <div id="venue-details" class="venue-details" hidden></div>
+          <!-- External "how to go" links: venue website + ticket/event page
+               (labelled buttons) then Facebook/Instagram icons. Re-rendered by
+               fetchVenueDetails() when a website arrives from venue_details. -->
+          <div id="venue-ext" class="venue-ext">${renderExt(socialObj, entry.permalink)}</div>
+        </section>
 
         <div class="venue-actions">
           <button class="action-btn action-btn--primary venue-going-btn" type="button" aria-label="I'm going">
@@ -214,11 +231,13 @@
           </button>
         </div>
 
-        <!-- Why this matters — async-populated by fetchContext() after render -->
-        <details class="venue-context" id="venue-context" hidden>
-          <summary class="venue-context__toggle">Read more &rarr;</summary>
-          <div class="venue-context__body" id="venue-context-body"></div>
-        </details>
+        <!-- About this event — the curator's longer context, async-populated
+             by fetchContext(). Shown as a plain section (not a disclosure) so
+             the detail reads without a click. -->
+        <section class="venue-about" id="venue-context" hidden>
+          <p class="eyebrow">About this event</p>
+          <div class="venue-about__body" id="venue-context-body"></div>
+        </section>
 
         ${more.length ? `
         <hr class="rule" style="margin-bottom:0">
@@ -309,7 +328,6 @@
           .join('');
 
         detailsEl.hidden = false;
-        detailsEl.open = true;
       } catch (_) { /* gracefully absent */ }
     };
 
@@ -337,13 +355,13 @@
         const vd   = rows[0];
         if (!vd) return;
 
-        /* Website lives in the social-button row (#venue-social). When the
-           venues table had none for this venue, fall back to the
+        /* The venue website shows as a labelled button in the external-links
+           row (#venue-ext). When the venues table had none, fall back to the
            venue_details website and re-render the row so it still shows. */
         if (vd.website && !socialObj.website) {
           socialObj.website = vd.website;
-          const se = document.getElementById('venue-social');
-          if (se) se.innerHTML = socialButtons(socialObj);
+          const ext = document.getElementById('venue-ext');
+          if (ext) ext.innerHTML = renderExt(socialObj, entry.permalink);
         }
 
         const el = document.getElementById('venue-details');
