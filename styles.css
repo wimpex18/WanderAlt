@@ -2026,51 +2026,54 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 
 /* Venue-row: thumbnail + info block + bookmark in one line. */
-.venue-venue {
+/* ── Venue card — which place hosts this pick ────────────────── */
+/* Reuses the app's photo-card atoms (thumb + body) in a labelled plate so
+   the block's purpose reads at a glance: photo + venue name + meta on the
+   left, bookmark on the right, all on one aligned baseline. */
+.venue-block { margin: var(--s-5) 0; }
+.venue-block > .eyebrow { margin-bottom: var(--s-3); }
+.venue-card {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: start;
-  gap: var(--s-2);
-  padding: var(--s-5) 0 var(--s-4);
+  grid-template-columns: auto 1fr auto;
+  gap: var(--s-4);
+  align-items: center;
+  padding: var(--s-4);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
 }
-.venue-venue .tonight__venue {
-  padding-top: 0;
-}
-/* Suppress the inherited nav-link hover on the venue block —
-   we're already on this page, it's not a clickable link. */
-.venue-venue .tonight__venue:hover .tonight__venue-name {
+.venue-card__body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.venue-card__name {
+  font-family: var(--ff-body);
+  font-weight: 600;
+  font-size: var(--fs-venue);
+  line-height: var(--lh-snug);
   color: var(--c-ink);
+  text-wrap: pretty;
 }
 
-/* ── Why this matters (venue-context) ───────────────────────── */
-.venue-context {
+/* External "how do I go" links — venue website + ticket/event page as
+   labelled buttons, then social icons. Wraps; collapses when empty. */
+.venue-ext { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); margin-top: var(--s-4); }
+.venue-ext:empty { display: none; }
+.venue-ext .social-links { margin: 0; }
+
+/* ── About this event (curator's longer context) ─────────────── */
+.venue-about {
   margin: var(--s-5) 0;
   border-top: var(--rule-w) solid var(--c-rule);
   padding-top: var(--s-4);
 }
-.venue-context__toggle {
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-ink-mute);
-  cursor: pointer;
-  list-style: none;          /* hide the default triangle in Firefox */
-  user-select: none;
-}
-.venue-context__toggle::-webkit-details-marker { display: none; }
-.venue-context__toggle:hover { color: var(--c-accent); }
-.venue-context[open] .venue-context__toggle { color: var(--c-ink-soft); }
-.venue-context__body {
-  padding-top: var(--s-4);
+.venue-about > .eyebrow { margin-bottom: var(--s-3); }
+.venue-about__body {
   font-family: var(--ff-body);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--c-ink-soft);
   text-wrap: pretty;
 }
-.venue-context__body p { margin: 0 0 var(--s-4); }
-.venue-context__body p:last-child { margin-bottom: 0; }
+.venue-about__body p { margin: 0 0 var(--s-4); }
+.venue-about__body p:last-child { margin-bottom: 0; }
 
 /* ── Venue enrichment details (website / address / short_desc) ── */
 .venue-details {
@@ -3403,12 +3406,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   justify-content: center;
 }
 /* Venue detail bookmark: same 44×44 hit area as list rows (was ~36px). */
-.venue-venue .bookmark {
+.venue-card .bookmark {
   min-width: 44px;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
+  margin: 0;
 }
 .bookmark__check ~ svg path {
   transition: fill var(--t-mid), stroke var(--t-mid);
@@ -4184,10 +4189,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   align-items: center;
   margin-top: var(--s-5);
 }
-
-/* External source / ticket CTA (Tickets / Event page) — its own row above the
-   on-platform action row so the two labelled buttons never crowd one line. */
-.venue-source { margin-top: var(--s-4); }
 
 /* Curator handle color in Compass = petrol */
 .handle, a.handle { color: var(--c-accent); }
