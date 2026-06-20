@@ -21,8 +21,27 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
+
+  /* The one external "where to act" link for a pick — its source/ticket page
+     (picks.source_url, surfaced as entry.permalink). Ticketing hosts read
+     "Tickets", everything else "Event page"; Telegram curator posts carry no
+     event page and are filtered out upstream, so nothing renders for them.
+     A labelled .action-btn (44px compact tier), consistent with the venue
+     action row, opening in a new tab. */
+  const sourceCta = (url) => {
+    if (!url) return '';
+    let host = '';
+    try { host = new URL(url).host.replace(/^www\./, ''); } catch (_) { return ''; }
+    if (/(^|\.)t\.me$/.test(host) || /telegram/i.test(host)) return '';
+    const isTickets = /fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(host);
+    const label = isTickets ? 'Tickets' : 'Event page';
+    return `<div class="venue-source">
+        <a class="action-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+           aria-label="${label} (opens in a new tab)">${label}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>
+      </div>`;
+  };
 
 
 
@@ -175,6 +194,9 @@
              Seeded synchronously from the matched venue; fetchVenueDetails()
              merges in a website from venue_details when the row had none. -->
         <div id="venue-social">${socialButtons(socialObj)}</div>
+
+        <!-- Source / ticket page for this pick (Tickets / Event page), when present -->
+        ${sourceCta(entry.permalink)}
 
         <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
         <div id="venue-details" class="venue-details" hidden></div>

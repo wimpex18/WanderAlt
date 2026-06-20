@@ -4185,6 +4185,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   margin-top: var(--s-5);
 }
 
+/* External source / ticket CTA (Tickets / Event page) — its own row above the
+   on-platform action row so the two labelled buttons never crowd one line. */
+.venue-source { margin-top: var(--s-4); }
+
 /* Curator handle color in Compass = petrol */
 .handle, a.handle { color: var(--c-accent); }
 a.handle:hover { color: var(--c-ink); }

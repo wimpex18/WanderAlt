@@ -387,6 +387,12 @@ async function processOne(
       mood_tags: moodTags,
       auto_generated: true,
       source_message_id: m.id,
+      /* Carry the source/ticket page from the staging row so the detail page
+         can link out. Telegram curator posts aren't event/ticket pages, so
+         only web permalinks are kept (matches the backfill). */
+      source_url: (typeof m.permalink === "string"
+        && /^https?:\/\//i.test(m.permalink)
+        && !/(\/\/(www\.)?t\.me\/|telegram)/i.test(m.permalink)) ? m.permalink : null,
       valid_until: validUntil(day),
       archived_at: null,
       ...(p.title_original ? { title_original: String(p.title_original) } : {}),
