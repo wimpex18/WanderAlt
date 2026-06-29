@@ -3219,18 +3219,20 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     order: 3;
     border-top: 0;
     border-bottom: var(--rule-w) solid var(--c-rule);
-    padding: 0 var(--gutter);
+    padding: 0;
     width: 100%;
-    max-width: var(--reading-max);
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     background: transparent;
   }
   .nav__inner {
     background: transparent;
     border-radius: 0;
     height: auto;
-    padding: 0;
-    gap: var(--s-6);
+    padding: var(--s-2) var(--gutter);
+    max-width: var(--reading-max);
+    margin: 0 auto;
+    gap: var(--s-3);
     justify-content: flex-start;
   }
   .page { order: 4; width: 100%; padding-bottom: var(--s-8); }
@@ -3239,36 +3241,31 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     flex-direction: row;
     flex: 0 0 auto;
     height: auto;
-    padding: var(--s-3) 0;
+    padding: var(--s-3) var(--s-4);
     gap: var(--s-2);
-    border-radius: 0;
-    background: transparent !important;
+    border-radius: var(--radius);
+    background: transparent;
     color: var(--c-ink-mute);
     border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    transition: background var(--t-fast), color var(--t-fast);
+  }
+  .nav__item:hover {
+    color: var(--c-ink);
+    background: var(--c-paper-deep);
   }
   /* Show all labels on desktop */
   .nav__item .nav__label { display: block; }
-  /* Active item must repeat the base item's padding/gap: this selector
-     outranks the `.nav__item` sizing below, and inheriting the mobile
-     pill's 12px/6px here left the active tab 8px shorter than its
-     neighbours (labels off the shared baseline). */
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
   body[data-page="saved"]    .nav__item[data-nav="saved"],
   body[data-page="profile"]  .nav__item[data-nav="profile"] {
     flex-direction: row;
-    padding: var(--s-4) 0;
-    gap: var(--s-3);
-    color: var(--c-ink);
-    border-bottom-color: var(--c-accent);
+    padding: var(--s-3) var(--s-4);
+    gap: var(--s-2);
+    color: var(--c-accent);
   }
   .nav__icon  { width: 20px; height: 20px; }
   .nav__label { font-size: 14px; font-weight: 500; }
-  /* Slightly looser spacing on desktop so the masthead feels like a
-     proper newspaper section row, not a cramped iOS tab bar. */
-  .nav__inner { gap: var(--s-7); }
-  .nav__item  { padding: var(--s-4) 0; gap: var(--s-3); }
 }
 
 /* ============================================================
@@ -6378,15 +6375,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   /* small gaps so the highlighted tab reads as a separated chip */
   .nav__inner { gap: 2px; }
 }
-@media (min-width: 768px) {
-  /* masthead: horizontal padding so the highlight is a chip, not flush text */
-  body[data-page="briefing"] .nav__item[data-nav="briefing"],
-  body[data-page="discover"] .nav__item[data-nav="discover"],
-  body[data-page="saved"]    .nav__item[data-nav="saved"],
-  body[data-page="profile"]  .nav__item[data-nav="profile"] {
-    padding: var(--s-3) var(--s-4);
-  }
-}
+
 
 /* ════════════════════════════════════════════════════════════
    ACTION BUTTONS — event page (venue.html)
