@@ -340,35 +340,24 @@
   }
 
   // ── Detail sheet / panel ─────────────────────────────────────
-  /* Minimalist social glyphs (mirror discover.js's set) for the venue
-     detail panel — website / Facebook / Instagram, currentColor. */
-  const DETAIL_SOCIAL = {
-    website:   '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="7.25"/><path d="M2.75 10h14.5M10 2.75c2 2.2 2 12.3 0 14.5M10 2.75c-2 2.2-2 12.3 0 14.5"/></svg>',
-    facebook:  '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12.4 6.6h1.85M11 17V10.4m0 0V8.2c0-1 .7-1.6 1.6-1.6m-1.6 3.8H8.9m2.1 0h1.9"/></svg>',
-    instagram: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3.25" y="3.25" width="13.5" height="13.5" rx="4"/><circle cx="10" cy="10" r="3.1"/><circle cx="14" cy="6" r=".5" fill="currentColor" stroke="none"/></svg>',
-  };
-
   /* Venue (Places) detail — a permanent place, not a dated pick: no
      curator quote, no "I'm going", no bookmark. Name + kind + hood +
-     social links. */
+     social links. The social row reuses the shared WA.UI.socialButtons()
+     → .social-icon system (one impl, 22px, filled-mobile/outline-desktop)
+     instead of a local 16px glyph fork. */
   function venueDetailHTML(entry) {
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg:'#444', label: entry.kind };
     const meta = [entry.neighborhood, entry.kind].filter(Boolean).join(' · ');
-    const social = (k, url) => url
-      ? `<a class="venue-social__link" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${entry.title} on ${k}">${DETAIL_SOCIAL[k]}</a>`
-      : '';
-    const links = [
-      social('website', entry.website), social('facebook', entry.facebook), social('instagram', entry.instagram),
-    ].filter(Boolean).join('');
+    const social = window.WA.UI.socialButtons({ name: entry.title, website: entry.website, facebook: entry.facebook, instagram: entry.instagram });
     return `<div class="map-detail__head">
         <span class="map-detail__eyebrow">${c.label || entry.kind}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
       <h2 class="map-detail__title"><a href="place.html?id=${encodeURIComponent(entry.id)}">${entry.title}</a></h2>
       <p class="meta">${meta}</p>
-      ${links ? `<p class="venue-social venue-social--detail">${links}</p>` : ''}
+      ${social}
       <nav class="map-detail__more" aria-label="Place">
         <a class="map-detail__more-link map-detail__more-link--list" href="place.html?id=${encodeURIComponent(entry.id)}">View place &rarr;</a>
       </nav>`;

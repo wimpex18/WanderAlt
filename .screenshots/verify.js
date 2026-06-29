@@ -46,7 +46,7 @@ const TAP_SELECTORS = [
   '.btn-primary', '.btn-secondary', '.btn-going', '.btn-save',
   '.seg-tab', '.discover-scope__btn', '.nav__item',
   '.city-selector', '.auth-btn', '.topbar__about', '.discover-view-fab',
-  '.venue-social__link', '.auth-panel__submit', '.auth-panel__close',
+  '.social-icon', '.auth-panel__submit', '.auth-panel__close',
   '.profile-toggle', '.topbar__brand', '.surprise-btn',
   '.map-zoom-btn', '.map-locate-fab', '.bookmark',
   '.curator-share', '.search-box__ai-btn',
