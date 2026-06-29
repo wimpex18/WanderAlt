@@ -24,3 +24,4 @@ node_modules/
 # only the lightweight summary.json which captures the four scores per page.
 docs/lighthouse/*.json
 !docs/lighthouse/summary.json
+.screenshots/audit/
