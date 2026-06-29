@@ -1768,7 +1768,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 38px;   /* chip tier — matches .wa-chip / .m-chip / .discover-pill (was 44, out of step) */
   padding: 0 var(--s-3);
   font-family: var(--ff-body);
   font-size: 14px;
@@ -5116,7 +5116,7 @@ body.discover-places .mood-chips { display: none; }
   color: var(--c-paper);
   background: var(--c-ink);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);   /* 8px — the 999px pill is retired (Plate & Rule) */
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
 }
@@ -5125,7 +5125,7 @@ body.discover-places .mood-chips { display: none; }
   align-items: center;
   gap: var(--s-2);
   padding: var(--s-2) var(--s-4);
-  border-radius: 999px;
+  border-radius: calc(var(--radius) - 3px);   /* 5px inner — matches .wa-seg/.discover-scope seg */
   line-height: 1;
   color: rgba(255, 255, 255, 0.72);
   transition: background var(--t-fast), color var(--t-fast);
