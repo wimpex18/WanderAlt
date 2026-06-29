@@ -2255,7 +2255,8 @@ a.handle:hover {
 /* .topbar__right ancestor → wins over the base .auth-btn/.topbar__about font */
 .topbar__right .auth-btn, .topbar__right .topbar__about { gap: 7px; font-size: 13.5px; }
 @media (max-width: 767px) {
-  .auth-btn .ic, .topbar__about .ic { width: 21px; height: 21px; }
+  /* icon-only on mobile → matches the 22px icon-only tier (.action-icon/.social-icon) */
+  .auth-btn .ic, .topbar__about .ic { width: 22px; height: 22px; }
   .auth-btn span, .topbar__about span { display: none; }
 }
 
@@ -2382,7 +2383,7 @@ a.handle:hover {
   transition: color var(--t-fast);
 }
 .pw-toggle:hover { color: var(--c-accent); }
-.pw-toggle .ic { width: 20px; height: 20px; }
+.pw-toggle .ic { width: 18px; height: 18px; }
 .pw-toggle:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 6px; }
 .auth-panel__actions {
   display: flex;
@@ -2742,7 +2743,7 @@ a.auth-panel__submit { display: inline-block; }
 }
 .digest-field__submit:hover { background: var(--c-accent-deep); }
 .digest-field__submit:disabled { opacity: 0.5; cursor: default; }
-.digest-field__submit .ic { width: 19px; height: 19px; }
+.digest-field__submit .ic { width: 18px; height: 18px; }
 .digest-field__submit:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 
 /* ============================================================
@@ -5925,7 +5926,7 @@ body[data-page="saved"] .seg-note {
 .wa-seg__count { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; opacity: .7; }
 .field { display: flex; align-items: center; gap: 14px; height: 52px; min-width: 0; padding: 0 18px; background: var(--c-paper); border: 1.5px solid var(--c-rule-strong); border-radius: var(--radius); transition: border-color var(--t-fast); }
 .field:focus-within { border-color: var(--c-accent); }
-.field .ic { width: 19px; height: 19px; color: var(--c-faint); flex-shrink: 0; }
+.field .ic { width: 18px; height: 18px; color: var(--c-faint); flex-shrink: 0; }
 .field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 16.5px; color: var(--c-ink); }
 .field__input::placeholder { color: var(--c-ink-mute); font-style: italic; }
 .ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
@@ -6127,7 +6128,7 @@ a.tonight__title:hover{color:var(--c-accent)}
 .tonight--solo{grid-template-columns:1fr}
 .tonight__main{min-width:0}
 .tonight__save{gap:8px}
-.tonight__save .ic{width:16px;height:18px}
+.tonight__save .ic{width:18px;height:18px}
 .tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}
 
