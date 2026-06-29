@@ -1768,7 +1768,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 38px;   /* chip tier — matches .wa-chip / .m-chip / .discover-pill (was 44, out of step) */
   padding: 0 var(--s-3);
   font-family: var(--ff-body);
   font-size: 14px;
@@ -2735,7 +2735,7 @@ a.auth-panel__submit { display: inline-block; }
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: calc(var(--radius) - 3px);   /* 5px — the app's inset-control radius (.wa-seg / view-fab seg); was off-scale 6px */
   background: var(--c-accent);
   color: #fff;
   cursor: pointer;
@@ -5116,7 +5116,7 @@ body.discover-places .mood-chips { display: none; }
   color: var(--c-paper);
   background: var(--c-ink);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);   /* 8px — the 999px pill is retired (Plate & Rule) */
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
 }
@@ -5125,7 +5125,7 @@ body.discover-places .mood-chips { display: none; }
   align-items: center;
   gap: var(--s-2);
   padding: var(--s-2) var(--s-4);
-  border-radius: 999px;
+  border-radius: calc(var(--radius) - 3px);   /* 5px inner — matches .wa-seg/.discover-scope seg */
   line-height: 1;
   color: rgba(255, 255, 255, 0.72);
   transition: background var(--t-fast), color var(--t-fast);
@@ -5256,7 +5256,7 @@ body.discover-places .mood-chips { display: none; }
 .sheet-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;                 /* roomier tap target in the sheet */
+  min-height: 38px;                 /* filter-chip tier — matches .discover-pill / .deck .m-chip / curator chips (was 34) */
   padding: 6px 12px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
@@ -6128,12 +6128,15 @@ body[data-page="discover"] .deck .discover-search .search-box:focus-within{borde
 body[data-page="discover"] .deck .discover-pills,
 body[data-page="discover"] .deck .mood-chips{margin:0;padding:0;gap:var(--s-2);flex-wrap:wrap;border:0}
 body[data-page="discover"] .deck .discover-pill,
-body[data-page="discover"] .deck .m-chip{height:38px;min-height:38px;padding:0 16px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);font-family:var(--ff-mono);font-size:13px;letter-spacing:.03em;color:var(--c-ink-soft);box-shadow:none;transition:border-color var(--t-fast),background var(--t-fast),color var(--t-fast)}
+body[data-page="discover"] .deck .m-chip,
+body[data-page="curator"] .m-chip{height:38px;min-height:38px;padding:0 16px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule-strong);background:var(--c-paper);font-family:var(--ff-mono);font-size:13px;letter-spacing:.03em;color:var(--c-ink-soft);box-shadow:none;transition:border-color var(--t-fast),background var(--t-fast),color var(--t-fast)}
 body[data-page="discover"] .deck .discover-pill:hover,
-body[data-page="discover"] .deck .m-chip:hover{border-color:var(--c-ink)}
+body[data-page="discover"] .deck .m-chip:hover,
+body[data-page="curator"] .m-chip:hover{border-color:var(--c-ink)}
 body[data-page="discover"] .deck .discover-pill--on,
 body[data-page="discover"] .deck .m-chip--on,
-body[data-page="discover"] .deck .m-chip[aria-pressed="true"]{background:var(--c-accent-soft);border-color:var(--c-accent);color:var(--c-accent)}
+body[data-page="discover"] .deck .m-chip[aria-pressed="true"],
+body[data-page="curator"] .m-chip--active{background:var(--c-accent-soft);border-color:var(--c-accent);color:var(--c-accent)}
 body[data-page="discover"] .deck .discover-pill--more{border-style:dashed;color:var(--c-ink)}
 
 /* A hairline rule between the search row and the chip rows */
