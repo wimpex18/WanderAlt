@@ -134,8 +134,11 @@
     </section>
 
     <!-- Quick-filter pills. Mode-aware: Events shows time/free shortcuts,
-         Places shows the most common venue-kind shortcuts. discover.js
-         toggles [data-mode] visibility. + Filters is shared. -->
+         Places shows the 4 most common venue-kind shortcuts. discover.js
+         toggles [data-mode] visibility. + Filters is shared. Minimalist deck
+         (Revolut/Lightyear pattern): only a few categories sit inline; the
+         full set lives in the Filters sheet (Category facet renders every
+         WA.VENUE_KIND), so nothing is lost — just one tap away. -->
     <nav class="discover-pills" aria-label="Quick filters">
       <button class="discover-pill" type="button" data-pill="tonight"  data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008" /></svg>Tonight</button>
       <button class="discover-pill" type="button" data-pill="thisweek" data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>This week</button>
@@ -144,10 +147,8 @@
       <button class="discover-pill" type="button" data-pill="kind:bookshop"     data-mode="places" hidden>Bookshops</button>
       <button class="discover-pill" type="button" data-pill="kind:gallery"      data-mode="places" hidden>Galleries</button>
       <button class="discover-pill" type="button" data-pill="kind:club"         data-mode="places" hidden>Clubs</button>
-      <button class="discover-pill" type="button" data-pill="kind:thrift"       data-mode="places" hidden>Flea &amp; thrift</button>
-      <button class="discover-pill" type="button" data-pill="kind:arts centre"  data-mode="places" hidden>Arts centres</button>
-      <button class="discover-pill" type="button" data-pill="kind:cinema"       data-mode="places" hidden>Cinemas</button>
-      <button class="discover-pill" type="button" data-pill="kind:community"    data-mode="places" hidden>Community</button>
+      <!-- Thrift / Arts centres / Cinemas / Community live in the Filters sheet
+           (Category facet) to keep the inline deck short — see comment above. -->
       <button class="discover-pill discover-pill--more" type="button" id="discover-filters-btn">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>Filters
         <span class="discover-pill__count" id="discover-filter-count" hidden>0</span>
