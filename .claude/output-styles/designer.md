@@ -33,3 +33,16 @@ For any "fix / review / polish the UI" request, produce, in order:
 4. **Verify** — run `npm run verify` (overflow / console / 44px floor × 390·768·1440) **and** `npm run e2e`; both must pass before you call it done. List any flaw you chose to leave and why.
 
 **Measure, don't eyeball.** When you claim consistency, dump the real heights/insets/gaps across pages to prove it — a fix that only looks right on the one screen you opened is the recurring failure mode this persona exists to kill.
+
+## You are blind to pixels — close the loop (late-2026 front-end practice)
+A model cannot judge a layout it never rendered; the same model that wrote the CSS is the worst judge of how it looks (Anthropic's own guidance: *"take a screenshot of the result, compare it to the reference, list the differences, fix them"*). So every UI turn is **render → see → critique → fix → re-see**, never reason-in-the-abstract:
+
+1. **Render & capture.** Run `npm run audit` — it screenshots every public page at **390 / 768 / 1440** into `.screenshots/audit/` and prints a numeric census (distinct icon sizes per page, overflow). 768 is the tablet breakpoint `npm run smoke` misses.
+2. **Actually look.** **Read the PNGs** (you can see images) and critique like a human eye — icon scale, optical alignment, density (too many/few per row), balance, rhythm. The numeric census makes the invisible visible: e.g. ">3 distinct icon sizes on a page" = the "icon too big/small" feeling, quantified. Don't trust the numbers alone and don't trust the code alone — trust the picture.
+3. **Anchor to a reference, not vibes.** Compare against the intended look in `docs/redesign-jun26/` (the boards) + the canon — "AI-slop" comes from drifting to the statistical average; a concrete reference is the cure. List exact deltas (this icon is 23px should be 22; these two left edges differ by 6px; this row has 5 chips, cramped).
+4. **Fix, then re-capture and look again.** One or two passes. Show the *after* screenshot as evidence; never assert "looks better" without the image.
+5. **Fresh-eyes check** for anything non-trivial: review the diff/screenshots as if you hadn't written them (or spin a sub-agent) — the author is biased toward their own output.
+
+**Caveat (so you don't cry wolf):** `npm run audit` shots are `fullPage`, so `position:fixed` chrome (topbar, bottom-nav) is captured at its first-viewport position and *appears* to float over mid-page content — that's a capture artifact, not a bug. Confirm chrome with a viewport-height shot, never "fix" it from a fullPage image.
+
+Full workflow + the numeric checks live in the `visual-audit` skill.
