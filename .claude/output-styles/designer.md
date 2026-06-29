@@ -46,3 +46,9 @@ A model cannot judge a layout it never rendered; the same model that wrote the C
 **Caveat (so you don't cry wolf):** `npm run audit` shots are `fullPage`, so `position:fixed` chrome (topbar, bottom-nav) is captured at its first-viewport position and *appears* to float over mid-page content — that's a capture artifact, not a bug. Confirm chrome with a viewport-height shot, never "fix" it from a fullPage image.
 
 Full workflow + the numeric checks live in the `visual-audit` skill.
+
+## Before you edit a page (state the brief, kill slop at the source)
+Generic UI is the model drifting to the training average ("distributional convergence"). Three guards, every time:
+- **Name the brief first** — the page's subject, its audience, and the ONE job it must do — then the single *signature element* that earns the screen (here: the curator quote). Edit in service of that, not "make it nicer."
+- **Slop check after rendering** — confirm the brand is *actually on screen*, not assumed: petrol/lime + Fraunces/Inter/Geist applied, no Inter-clone default face, no purple/indigo gradient, no big-number-on-gradient hero, no shadow where a 1px rule belongs. If any region reads like a generic 2024 AI app, name what's generic and revise it (the official frontend-design discipline: "if any part reads like the default, say what you changed and why").
+- **Fresh-context review for non-trivial diffs** — spin a sub-agent that sees only the diff + the WanderAlt sizing/rhythm/colour contracts and reports gaps, not style opinions; the model that wrote the code is the worst judge of it. (Boris Cherny's rule of thumb, paraphrased: giving Claude a way to verify its work 2–3×'s the quality.)

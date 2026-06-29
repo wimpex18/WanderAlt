@@ -14,9 +14,11 @@ A model edits CSS without seeing the result, so it misses what a human catches i
 
 ## The loop (do every step — do not skip to code)
 
+0. **State the brief first (kills slop at the source).** Before touching CSS, name the page's subject, its audience, and the ONE job the screen must do — then the single *signature element* that earns it (here: the curator quote). Generic UI is the model drifting to the training average ("distributional convergence"); a stated brief + a reference is the antidote. Every edit serves the brief, not "make it nicer."
+
 1. **Capture.** `npm run audit` → screenshots every public page at **390 / 768 / 1440** into `.screenshots/audit/<page>-<width>.png`, and prints a per-page numeric census: distinct icon (svg) sizes + any horizontal overflow. (For a param page — venue/curator/place — or a specific state, take a targeted shot with a quick puppeteer snippet at the same widths.)
 
-2. **See.** **Read the PNGs** (Claude can view images). For each, critique like a senior product designer, naming concrete deltas — not "looks good":
+2. **See — and run the slop check.** **Read the PNGs** (Claude can view images). First confirm the brand is *actually on screen*, not assumed: petrol/lime + Fraunces/Inter/Geist applied, no Inter-clone default face, no purple/indigo gradient, no big-number-on-gradient hero, no shadow where a 1px rule belongs. If any region reads like a generic 2024 AI app, name what's generic before anything else. Then critique like a senior product designer, naming concrete deltas — not "looks good":
    - **Icon scale:** are glyphs one consistent size per context? The census flags ">3 distinct icon sizes per page" — reconcile to the icon system (~22px glyph in a 44px target). One-off odd sizes (e.g. a lone 23px among 22s) are the "too big/small" feeling, quantified.
    - **Alignment (optical, not math):** do sibling left edges line up? Do icons sit on the text's cap-height/baseline, not its geometric center? Flag edges that differ by a few px.
    - **Density:** any row with too many elements (cramped) or too few (stranded)? Count per row.
@@ -29,7 +31,7 @@ A model edits CSS without seeing the result, so it misses what a human catches i
 
 5. **Re-capture, re-read, prove.** `npm run audit` again; read the *after* PNGs; show the after image as evidence. One or two passes. Then run `npm run verify` + `npm run e2e` (must pass).
 
-6. **Fresh eyes** for anything non-trivial: re-review the after-screenshots as if you hadn't written them, or delegate to a sub-agent — the author is biased toward their own work.
+6. **Fresh-context review** for anything non-trivial: spin a sub-agent that sees only the diff + the after-screenshots + the WanderAlt sizing/rhythm/colour contracts, and have it report gaps (not style opinions) — the model that wrote the code is the worst judge of it. Giving Claude a way to verify its own work is the single highest-leverage quality move (Boris Cherny's rule of thumb, paraphrased: it roughly 2–3×'s output quality).
 
 ## Hard caveat — fixed chrome in fullPage shots
 `npm run audit` uses `fullPage`, so `position:fixed` chrome (topbar, bottom-nav) is captured at its first-viewport position and **looks like it floats over mid-page content**. That is a screenshot artifact, **not a layout bug.** Confirm chrome with a viewport-height (`fullPage:false`) shot before ever "fixing" it. Crying wolf on this artifact wastes a whole pass.
