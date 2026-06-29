@@ -2735,7 +2735,7 @@ a.auth-panel__submit { display: inline-block; }
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: calc(var(--radius) - 3px);   /* 5px — the app's inset-control radius (.wa-seg / view-fab seg); was off-scale 6px */
   background: var(--c-accent);
   color: #fff;
   cursor: pointer;
