@@ -6040,6 +6040,9 @@ a.tonight__title:hover{color:var(--c-accent)}
 .tonight__venue{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep)}
 .tonight__venue b{display:block;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink);letter-spacing:-.01em;margin-bottom:3px}
 .tonight__venue .meta{font-size:12px}
+/* Today hero: the venue card sits in the bottom control row opposite the
+   52px action buttons, so match their height exactly (content centres). */
+body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding-bottom:0}
 
 /* This week (2-col index) + full-width From-the-desk band below.
    Stacked on desktop so the curator column + digest read as an editorial
@@ -6066,7 +6069,7 @@ a.tonight__title:hover{color:var(--c-accent)}
 /* From the desk = full-width band below the week index. Heading spans the row;
    the curator column (when present) and the digest sit side by side, and the
    digest grows to fill the row on weeks with no published column. */
-.week__rail{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
+.week__rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
 .week__rail>.sechead{flex:1 1 100%}
 .week__rail>.column{flex:2 1 360px;margin:0}
 .week__rail>.digest-optin{flex:1 1 300px;margin-top:0}

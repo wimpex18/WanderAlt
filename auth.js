@@ -433,6 +433,18 @@
       }
     });
 
+    /* Profile nav tab (bottom dock + masthead) shares the topbar button's
+       gate: signed-in lets the link open profile.html; otherwise intercept
+       and open the auth modal instead of bouncing through profile.html's
+       redirect. Delegated so it covers every page that ships the nav. */
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest && e.target.closest('[data-nav="profile"]');
+      if (!link) return;
+      if (window.WA.Auth.isSignedIn()) return;   // authed → navigate normally
+      e.preventDefault();
+      openOverlay(window.WA.Auth.recoverySession ? 'set-password' : 'sign-in');
+    });
+
     document.addEventListener('wa:signed-in',  updateBtn);
     document.addEventListener('wa:signed-out', updateBtn);
 

@@ -471,7 +471,7 @@
         ? new Date(col.approved_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
         : '';
 
-      const issueLabel = col.issue_num ? ` · Issue ${col.issue_num}` : '';
+      const issueLabel = col.issue_num ? ` · Edition No. ${col.issue_num}` : '';
 
       const initials = (col.curator_handle || '@').replace('@', '').slice(0, 2).toUpperCase() || '??';
       const el = document.createElement('section');
