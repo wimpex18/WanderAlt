@@ -32,11 +32,11 @@ All custom properties live in `:root` in `styles.css` lines 8–64. Changing a v
 
 | Token | Value | Role |
 |---|---|---|
-| `--ff-display` | `'DM Serif Display', 'Source Serif 4', Georgia, serif` | Tonight quote, curator quotes, venue hero |
-| `--ff-body` | `'Geist', -apple-system, system-ui, sans-serif` | All running text, headings, nav labels |
+| `--ff-display` | `'Fraunces', 'DM Serif Display', Georgia, serif` | Page titles, Tonight + curator quotes, venue hero |
+| `--ff-body` | `'Inter', -apple-system, system-ui, sans-serif` | All running text, headings, nav labels |
 | `--ff-mono` | `'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace` | Eyebrows, meta strings, handles, counts |
 
-Fonts are **self-hosted** (woff2, Latin subset) in `/fonts`, declared via `@font-face` at the top of `styles.css` (`font-display: swap`). Was Google Fonts via `<link>` — self-hosting removed the `fonts.gstatic.com` third-party origin (honours the about.html "no third-party" promise + drops a render-blocking connection). Weights: Geist 400/500/600/700, Geist Mono 400/500, DM Serif Display 400 normal+italic. To add a weight: download the Latin woff2, add a `@font-face`.
+Fonts are **self-hosted** (woff2, Latin subset) in `/fonts`, declared via `@font-face` at the top of `styles.css` (`font-display: swap`). Was Google Fonts via `<link>` — self-hosting removed the `fonts.gstatic.com` third-party origin (honours the about.html "no third-party" promise + drops a render-blocking connection). Weights: Fraunces 600, Inter 400/500/600/700, Geist Mono 400/500. To add a weight: download the Latin woff2, add a `@font-face`.
 
 ### Type scale
 
@@ -61,7 +61,7 @@ Leading tokens: `--lh-tight: 1.04` / `--lh-snug: 1.22` / `--lh-body: 1.5`
 | Token | Value | Purpose |
 |---|---|---|
 | `--gutter` | `20px` | Left/right page padding |
-| `--reading-max` | `1024px` | Max content column width — applied uniformly to every page so edges align across navigation (May 2026, was 680) |
+| `--reading-max` | ladder: `1100`≥768 · `1200`≥1100 · `1280`≥1440 · `1440`≥1680 · `1600`≥1920 | Max content column width — one shared token on every page so edges align (June 2026 widened from the single 1024) |
 | `--radius` | `8px` | Default border-radius (inputs, focus rings) |
 | `--radius-card` | `12px` | Cards (search box, tonight card) |
 | `--radius-thumb` | `8px` | Thumbnail images |

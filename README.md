@@ -48,7 +48,7 @@ Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for intern
 ├── mood-chips.js         # Mood-tag filter chips; writes to #mood= hash
 ├── assets/               # SVG icons / static assets
 ├── brand/                # Beacon brand kit — tile + wordmark masters, favicons, PWA/iOS/Android icons,
-│                         #   social cards, BRAND.md (palette/type/lockup spec), IMPLEMENTATION.md
+│                         #   social cards, BRAND.md (palette/type/lockup spec)
 ├── manifest.webmanifest  # PWA web manifest — references brand/pwa/*.svg, theme color #055959
 ├── supabase/             # Edge-function sources (full mirror of all 30 deployed) + migration journal
 ├── docs/                 # db-schema.md, localstorage-registry.md, ux-audit, layout audits, screenshots/baseline
@@ -83,8 +83,8 @@ Three typefaces, **self-hosted** as `woff2` in `fonts/` (no Google Fonts request
 
 | Family | Role | Why |
 |---|---|---|
-| **Geist** | Body + titles — event names, headings, nav, buttons | A clean, contemporary grotesque that stays quiet so the curator quote dominates. Loaded 400/500/600/700. |
-| **DM Serif Display** *(italic)* | Display — the curator pull-quote, the loudest element on every screen | A high-contrast magazine display cut with a genuinely beautiful italic; gives the "printed cultural weekly" feel instantly. |
+| **Fraunces** | Display — page titles + the curator pull-quote (the loudest element on screens that surface a pick) | A high-contrast editorial serif with a genuinely beautiful italic; gives the "printed cultural weekly" feel instantly. Self-hosted woff2, weights 600. |
+| **Inter** | Body — event names, headings, nav, buttons, running text | A clean, contemporary grotesque that stays quiet so the curator quote dominates. Loaded 400/500/600/700. |
 | **Geist Mono** | Metadata — neighborhood · type · time, curator handles, eyebrows, counts, pills | A modern monospace that reads as a filing system next to the body type — exactly the tension we want. Loaded 400/500. |
 
 The hero quote scales with `--fs-quote` (32px → 44px → 52px ≥1100px). Self-hosted weights are preloaded above the fold on Briefing and Discover to avoid layout shift.
@@ -115,16 +115,14 @@ Change the accent, the paper tone, or the quote size in one place and the whole 
 
 ---
 
-## Accessibility notes (first pass)
+## Accessibility notes
 
 - Landmarks: `<header role="banner">`, `<main>`, `<nav aria-label="Primary">`.
 - Skip link to `#tonight` for keyboard users.
 - Every link/button has a descriptive accessible name.
 - Active nav item uses `aria-current="page"` and a color contrast shift, not color alone.
 - Focus-visible outlines on interactive controls.
-- Color contrast for ink-on-paper passes WCAG AA at all body and metadata sizes.
-
-Not yet: real image `alt` text (placeholders only this pass).
+- Color contrast for ink-on-paper passes WCAG 2.2 AA at all body and metadata sizes.
 
 ---
 
@@ -151,8 +149,7 @@ chosen over Vercel for this site because (a) bandwidth is unlimited on
 the free tier vs Vercel Hobby's 100 GB/mo cap, (b) the edge network is
 3-4× denser, which matters for our EU audience, and (c) using
 Cloudflare for hosting + DNS + email routing keeps the operational
-surface to one dashboard. See `LAUNCH.md` for the step-by-step setup
-when you're ready to flip the domain live.
+surface to one dashboard.
 
 ## Deploying (Cloudflare Pages)
 
@@ -164,7 +161,7 @@ when you're ready to flip the domain live.
    - **Build output directory:** `/`
 4. Deploy. You get a `*.pages.dev` URL immediately; add a custom domain from the project settings.
 
-`_headers` (security headers + cache rules) and `_redirects` (apex/www + the `wanderalt.com → wanderalt.app` 301 + pretty-URL aliases) are read automatically by Pages. See `LAUNCH.md` for the full go-live checklist.
+`_headers` (security headers + cache rules) and `_redirects` (apex/www + the `wanderalt.com → wanderalt.app` 301 + pretty-URL aliases) are read automatically by Pages.
 
 ---
 
