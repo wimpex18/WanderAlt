@@ -1750,8 +1750,11 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 .taste-onboarding__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--s-5);
+  /* Groups hug their content and cluster left, so the chips stay compact
+     instead of stretching across the wide desktop card. Mobile = 1 col. */
+  grid-template-columns: repeat(3, max-content);
+  justify-content: start;
+  gap: var(--s-5) var(--s-7);
 }
 .taste-q { display: flex; flex-direction: column; gap: var(--s-2); }
 .taste-q__prompt {
@@ -1764,7 +1767,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 .taste-q__choices { display: flex; gap: var(--s-2); }
 .taste-chip {
-  flex: 1;
+  flex: 0 0 auto;   /* hug content on desktop; mobile restores flex:1 for 2-up */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1803,6 +1806,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 .taste-done:hover { background: var(--c-accent-deep); }
 @media (max-width: 767px) {
   .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-4); }
+  .taste-q__choices .taste-chip { flex: 1; }   /* 2-up full-width tap targets on mobile */
   .taste-onboarding__title { font-size: 20px; }
 }
 
@@ -5749,8 +5753,8 @@ body[data-page="saved"] .seg-tab__count {
   font-size: 11px;
 }
 
-/* Active segment = soft petrol highlight (matches the nav + Discover scope),
-   lime count. color:accent so the leading .ic inherits petrol. */
+/* Active segment = soft petrol highlight (matches the nav + Discover scope).
+   color:accent so the leading .ic inherits petrol. */
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"],
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"],
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"] {
@@ -5767,10 +5771,12 @@ body[data-page="saved"] .seg-tab__count {
 #seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count,
 #seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__count,
 #seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__count {
-  background: var(--c-lime);
-  color: var(--c-ink);
+  /* Active count = quiet petrol, matching the active label — not a loud lime
+     badge (lime is signal-only; a lime "0" spotlit an empty list). */
+  background: transparent;
+  color: var(--c-accent);
   border-color: transparent;
-  padding: 1px 7px;
+  padding: 0 2px;
 }
 
 /* Per-segment note → mono eyebrow rhythm, matching the filter rail. */
