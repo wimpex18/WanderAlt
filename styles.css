@@ -6041,12 +6041,17 @@ a.tonight__title:hover{color:var(--c-accent)}
 .tonight__venue b{display:block;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink);letter-spacing:-.01em;margin-bottom:3px}
 .tonight__venue .meta{font-size:12px}
 
-/* This week + From-the-desk rail */
-.week{display:grid;grid-template-columns:1.25fr .85fr;gap:var(--s-8);padding-bottom:var(--s-2)}
+/* This week (2-col index) + full-width From-the-desk band below.
+   Stacked on desktop so the curator column + digest read as an editorial
+   footer band and never leave a short, stranded sidebar. */
+.week{display:block;padding-bottom:var(--s-2)}
 .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-5);padding:var(--s-4) 0 var(--s-3);border-bottom:var(--rule-w) solid var(--c-rule)}
 .sechead__t{font-family:var(--ff-display);font-size:32px;font-weight:600;letter-spacing:-.018em;margin:0}
 .thisweek{margin:0}
 .picks{margin:0}
+/* This-week picks become a 2-col index on desktop so the full width reads as
+   a tidy grid, not sparse wide rows (single col on mobile). */
+.thisweek .picks{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--s-8)}
 .pick{display:grid;grid-template-columns:72px 1fr auto;gap:var(--s-5);align-items:center;padding:var(--s-5) 0;border-bottom:var(--rule-w) solid var(--c-rule)}
 .pick__img{display:block;width:72px;height:72px}
 .pick .thumb{width:72px;height:72px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule)}
@@ -6058,7 +6063,13 @@ a.tonight__title:hover{color:var(--c-accent)}
 .pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
 .pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
 .week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
-.week__rail{display:flex;flex-direction:column}
+/* From the desk = full-width band below the week index. Heading spans the row;
+   the curator column (when present) and the digest sit side by side, and the
+   digest grows to fill the row on weeks with no published column. */
+.week__rail{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
+.week__rail>.sechead{flex:1 1 100%}
+.week__rail>.column{flex:2 1 360px;margin:0}
+.week__rail>.digest-optin{flex:1 1 300px;margin-top:0}
 
 /* The Column — curator metadata plate */
 .column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
@@ -6093,6 +6104,7 @@ a.tonight__title:hover{color:var(--c-accent)}
   .tonight__actions .btn{width:100%}
   .tonight__actions .btn--quiet{margin-left:0}
   .week{display:block}
+  .thisweek .picks{grid-template-columns:1fr}   /* single-col list on mobile */
   .sechead__t{font-size:24px}
   .pick{grid-template-columns:64px 1fr auto;gap:var(--s-4);padding:var(--s-4) 0}
   .pick__img,.pick .thumb{width:64px;height:64px}
