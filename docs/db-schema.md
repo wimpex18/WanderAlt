@@ -50,12 +50,14 @@ PK: `id`. FKs: `handle → curators.handle`, `venue_id → venues.id`, `source_m
 | search_vector | tsvector | yes | — | maintained by `picks_search_vector_trigger` |
 | lat | double precision | yes | — | WGS84; used by MapLibre map |
 | lng | double precision | yes | — | WGS84 |
-| address | text | yes | — | postal address from geocode-picks (Places/Nominatim) |
-| coords_source | text | yes | — | `nominatim` \| `google_places` \| `venue_join` \| `manual` |
+| address | text | yes | — | postal address from geocode-picks (Nominatim); `google_places` is a legacy value on old rows |
+| coords_source | text | yes | — | `nominatim` \| `google_places` (legacy) \| `venue_join` \| `manual` |
 | **coords_locked** | boolean | no | `false` | **Lifecycle:** true = admin pin override; geocode-picks skips the row |
 | **archive_reason** | text | yes | — | **Lifecycle:** why archived — e.g. `duplicate` (wa_dedup_active_picks), `source_absent` (wa_reconcile_absent_picks) |
 | **last_seen_at** | timestamptz | yes | `now()` | **Lifecycle:** bumped by snapshot scrapers each crawl; staleness signal for absence reconciliation |
 | **title_original** | text | yes | — | **Lifecycle/provenance:** source-language title before English translation (NULL if already English) |
+| geocode_failed_at | timestamptz | yes | — | set by geocode-picks when Nominatim can't resolve the venue; skipped for 14 days rather than retried every tick |
+| image_enrich_failed_at | timestamptz | yes | — | set by enrich-images when Wikidata has no photo for the venue; skipped for 14 days rather than retried every run |
 
 ### curators (26 rows)
 
@@ -206,7 +208,7 @@ PK: `id`. Keyed by (`city`, `venue_key`) text key, not FK.
 
 ### venue_details (98 rows)
 
-PK: `id`. Enrichment facts keyed by (`city`, `venue_key`); populated by enrich-venues (Wikidata/Nominatim/Google Places).
+PK: `id`. Enrichment facts keyed by (`city`, `venue_key`); populated by enrich-venues (Wikidata/Nominatim/homepage scrape — Google Places was dropped Jul 2026, see `docs/backend-and-pipeline.md`).
 
 | Column | Type | Nullable | Default | Notes |
 |---|---|---|---|---|
@@ -221,14 +223,14 @@ PK: `id`. Enrichment facts keyed by (`city`, `venue_key`); populated by enrich-v
 | short_desc | text | yes | — | |
 | wikidata_id | text | yes | — | |
 | osm_id | bigint | yes | — | |
-| opening_hours | text | yes | — | JSON array of weekdayDescriptions from Google Places regularOpeningHours |
+| opening_hours | text | yes | — | legacy — JSON array from Google Places, no longer written |
 | source | text | no | `'wikidata'` | |
 | manual_lock | boolean | no | `false` | |
 | enriched_at | timestamptz | no | `now()` | |
 | is_closed | boolean | no | `false` | |
-| google_place_id | text | yes | — | Places (New) ID for refresh without re-search |
-| business_status | text | yes | — | `OPERATIONAL` \| `CLOSED_TEMPORARILY` \| `CLOSED_PERMANENTLY` |
-| phone | text | yes | — | national phone number from Google Places |
+| google_place_id | text | yes | — | legacy — Places (New) ID, no longer written |
+| business_status | text | yes | — | legacy — no longer written (closure now Wikidata P576 only) |
+| phone | text | yes | — | legacy — no longer written |
 
 ### digest_opt_ins (0 rows)
 

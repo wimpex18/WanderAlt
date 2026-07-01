@@ -29,6 +29,11 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // broken-only and self-contained (no storage bucket, no new function);
 // almost all stored URLs keep working, so heal touches very few rows.
 //
+// v4 (Jul 2026): venues Places genuinely has no photo for get
+// `image_enrich_failed_at` stamped so the hourly cron stops re-buying a
+// Places search for them every run — previously a permanently-photoless
+// venue was rebilled forever since `image_url IS NULL` never changed.
+//
 // POST body: { city?: string, limit?: number, dry_run?: boolean,
 //              heal?: boolean, heal_limit?: number }
 // ============================================================
@@ -36,6 +41,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PLACES_KEY   = Deno.env.get('GOOGLE_PLACES_API_KEY') ?? '';
+
+const FAIL_COOLDOWN_DAYS = 14;
 
 const CITY_CENTER: Record<string, [number, number]> = {
   tallinn:  [59.4370, 24.7536],
@@ -170,9 +177,11 @@ async function enrichCity(city: string, limit: number, dryRun: boolean) {
   const center = CITY_CENTER[city];
   if (!center) return { city, ok: false, error: `unknown city ${city}` };
 
+  const failCutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400 * 1000).toISOString();
   const picksUrl = `${SUPABASE_URL}/rest/v1/picks` +
     `?city=eq.${encodeURIComponent(city)}` +
     `&archived_at=is.null&image_url=is.null` +
+    `&or=(image_enrich_failed_at.is.null,image_enrich_failed_at.lt.${failCutoff})` +
     `&select=id,venue,neighborhood&order=id.asc`;
   const picksRes = await fetch(picksUrl, { headers: sbHeaders() });
   if (!picksRes.ok) return { city, ok: false, error: 'picks fetch failed', status: picksRes.status };
@@ -200,6 +209,14 @@ async function enrichCity(city: string, limit: number, dryRun: boolean) {
     if (!photoUri) {
       failed++;
       results.push({ venue: g.venue, status: 'no_photo' });
+      if (!dryRun) {
+        const idList = g.pick_ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
+        await fetch(`${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})`, {
+          method:  'PATCH',
+          headers: sbHeaders({ Prefer: 'return=minimal' }),
+          body:    JSON.stringify({ image_enrich_failed_at: new Date().toISOString() }),
+        }).catch(() => {});
+      }
       continue;
     }
 

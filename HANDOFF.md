@@ -229,7 +229,7 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 **Map engine internals** — the `WA.MapView` / `WA.MapTiles` API surface, the `wa:*` custom-event bus (`wa:map-pin-changed`, `wa:mood-changed`, `wa:catalog-ready`), and the pin-clustering algorithm — live in `docs/backend-and-pipeline.md` → "Discover internals" (the single-source version). `discover.js` drives the map through that API off filter state.
 
-**Adding a map pin:** set `picks.lat` and `picks.lng` (real WGS84 coordinates) on the row. The `geocode-picks` cron does this automatically nightly (Nominatim primary, Google Places fallback); admins can also drag the marker in the pick modal's MapLibre mini-map. `map.js:renderPins()` projects coords via `WA.MapTiles.project()` — no HTML change needed.
+**Adding a map pin:** set `picks.lat` and `picks.lng` (real WGS84 coordinates) on the row. The `geocode-picks` cron does this automatically every 20 min (Nominatim only, free); admins can also drag the marker in the pick modal's MapLibre mini-map. `map.js:renderPins()` projects coords via `WA.MapTiles.project()` — no HTML change needed.
 
 ### Saved (`saved.html`)
 
