@@ -32,11 +32,11 @@ All custom properties live in `:root` in `styles.css` lines 8–64. Changing a v
 
 | Token | Value | Role |
 |---|---|---|
-| `--ff-display` | `'DM Serif Display', 'Source Serif 4', Georgia, serif` | Tonight quote, curator quotes, venue hero |
-| `--ff-body` | `'Geist', -apple-system, system-ui, sans-serif` | All running text, headings, nav labels |
+| `--ff-display` | `'Fraunces', 'DM Serif Display', Georgia, serif` | Page titles, Tonight + curator quotes, venue hero |
+| `--ff-body` | `'Inter', -apple-system, system-ui, sans-serif` | All running text, headings, nav labels |
 | `--ff-mono` | `'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace` | Eyebrows, meta strings, handles, counts |
 
-Fonts are **self-hosted** (woff2, Latin subset) in `/fonts`, declared via `@font-face` at the top of `styles.css` (`font-display: swap`). Was Google Fonts via `<link>` — self-hosting removed the `fonts.gstatic.com` third-party origin (honours the about.html "no third-party" promise + drops a render-blocking connection). Weights: Geist 400/500/600/700, Geist Mono 400/500, DM Serif Display 400 normal+italic. To add a weight: download the Latin woff2, add a `@font-face`.
+Fonts are **self-hosted** (woff2, Latin subset) in `/fonts`, declared via `@font-face` at the top of `styles.css` (`font-display: swap`). Was Google Fonts via `<link>` — self-hosting removed the `fonts.gstatic.com` third-party origin (honours the about.html "no third-party" promise + drops a render-blocking connection). Weights: Fraunces 600, Inter 400/500/600/700, Geist Mono 400/500. To add a weight: download the Latin woff2, add a `@font-face`.
 
 ### Type scale
 
@@ -61,7 +61,7 @@ Leading tokens: `--lh-tight: 1.04` / `--lh-snug: 1.22` / `--lh-body: 1.5`
 | Token | Value | Purpose |
 |---|---|---|
 | `--gutter` | `20px` | Left/right page padding |
-| `--reading-max` | `1024px` | Max content column width — applied uniformly to every page so edges align across navigation (May 2026, was 680) |
+| `--reading-max` | ladder: `1100`≥768 · `1200`≥1100 · `1280`≥1440 · `1440`≥1680 · `1600`≥1920 | Max content column width — one shared token on every page so edges align (June 2026 widened from the single 1024) |
 | `--radius` | `8px` | Default border-radius (inputs, focus rings) |
 | `--radius-card` | `12px` | Cards (search box, tonight card) |
 | `--radius-thumb` | `8px` | Thumbnail images |
@@ -227,27 +227,7 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 **Map pane** (`.discover-pane--map`): MapLibre GL basemap (`#map-canvas`) overlaid with absolute-positioned `#map-pins`, `#map-empty-hint`, and `#map-detail`. `map-tiles.js` owns the basemap (`window.WA.MapTiles`); `map.js` owns the pin layer (`window.WA.MapView`); `discover.js` drives both via filter state. Pin positions come from `picks.lat/lng` projected through `WA.MapTiles.project(lng, lat)`.
 
-**WA.MapView API** (exposed at end of `map.js` IIFE):
-
-| Method | Description |
-|---|---|
-| `setFilters({ q, time, cats, mood, nhoods })` | Events layer — push all 5 filter dimensions into the map engine (also resets Places mode) |
-| `setPlaces(venues)` | Places layer — render an already-filtered venue set as pins (stashes state if the map isn't ready yet) |
-| `render()` | Re-render pins with current filter state |
-| `fitView()` | Fit/zoom the viewport to show all visible pins |
-| `focusPin(id)` | Select a pin by pick id, open detail panel, dispatch `wa:map-pin-changed` |
-| `closeDetail()` | Close the detail panel, clear active pin |
-| `isReady()` | Returns true once the SVG world has been injected |
-
-**Custom events:**
-
-| Event | Fired by | Payload | Consumed by |
-|---|---|---|---|
-| `wa:map-pin-changed` | `map.js` on pin tap/focus/deselect | `{ id }` (empty string on deselect) | `discover.js` — highlights card, writes `?id=` to URL |
-| `wa:mood-changed` | `mood-chips.js` | `{ tags: string[] }` | `discover.js`, `briefing.js` |
-| `wa:catalog-ready` | `supabase.js` | — | all pages |
-
-**Pin clustering:** greedy O(n²) screen-distance algorithm (50px radius), debounced re-render 180ms on pan/zoom. Cluster button shows count badge; click zooms in. Implemented in `map.js`.
+**Map engine internals** — the `WA.MapView` / `WA.MapTiles` API surface, the `wa:*` custom-event bus (`wa:map-pin-changed`, `wa:mood-changed`, `wa:catalog-ready`), and the pin-clustering algorithm — live in `docs/backend-and-pipeline.md` → "Discover internals" (the single-source version). `discover.js` drives the map through that API off filter state.
 
 **Adding a map pin:** set `picks.lat` and `picks.lng` (real WGS84 coordinates) on the row. The `geocode-picks` cron does this automatically nightly (Nominatim primary, Google Places fallback); admins can also drag the marker in the pick modal's MapLibre mini-map. `map.js:renderPins()` projects coords via `WA.MapTiles.project()` — no HTML change needed.
 
@@ -359,8 +339,6 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 ## Known limitations
 
 - **Map sheet drag — momentum/fast-swipe**: basic snap to peek/60vh works; momentum-scroll and very fast flicks are not handled.
-- **wa-pulse + reduced-motion**: ~~not gated~~ Fixed May 2026 — global `animation: none !important` in reduced-motion block.
-- **City selector**: ~~no dropdown~~ Implemented in `city.js` — full keyboard-accessible listbox with thumbnails and status labels. Tallinn, Helsinki, Riga are live; Vilnius is unlocked for internal testing (Places-only until it has a curator).
 - **Venue/curator pages**: rendered client-side from `catalog.js` via URL params. Deep links require JS to be enabled.
 - **No `alt` on real images**: `image_url` thumbnails apply as CSS `background-image`; `aria-label` on the wrapper `.thumb` span is the accessible substitute. Worth revisiting if the approach moves to `<img>` elements.
 - **Pin/label collisions**: at certain aspect ratios, pin teardrops can visually overlap the SVG neighborhood labels. Cosmetic only; labels are `aria-hidden`.
@@ -369,26 +347,7 @@ The `::after` pseudo-element: `position: absolute; inset: -3px; border-radius: 5
 
 ## Tooling (local audits)
 
-Installed in `/tmp` for this sandbox (not committed): **Lighthouse** + **pa11y** (axe runner), driven against `localhost:5173` via the Playwright Chromium at `/opt/pw-browsers/chromium-1223/chrome-linux64/chrome` (set `CHROME_PATH`). MapLibre can be made to work offline by route-intercepting the unpkg JS/CSS and stubbing `tiles.openfreemap.org` (sprites→empty, planet→empty vector source) — that's how the Places venue-pin layer was verified without network.
-
-Index.html after the May-2026 pass: **Perf 81 / A11y 96 / Best-practices 96 / SEO 100 / CLS 0.109** (was Perf 68 / CLS 0.503).
-
-**Fixed this pass:**
-- **CLS 0.503 → 0.109.** Root cause was NOT the Supabase timeout (briefing.js renders from the static catalog synchronously). It was two post-first-paint DOM mutations: (1) the taste-onboarding banner revealed by JS (+253px) and (2) the Tonight skeleton (424px) → card (501px) swap. Fixes: the banner now ships **visible** and an inline `<head>` script hides it pre-paint for onboarded users (`html.wa-taste-done`), eliminating the reveal shift for both cohorts; and `.skeleton-tonight` got a `min-height` (~502px mobile / ~560px desktop) matching a typical card. New visitors on a fast connection now measure CLS 0.
-- **Browse-row `list` (3×)** — fixed: curator/browse rows are now `<li><button class="curator-row|browse-row">` (real button semantics + native keyboard activation; the `<ul>` keeps proper list structure). Button chrome reset in CSS.
-- **Map zoom-control `aria-prohibited-attr`** — fixed (`role="group"`).
-- **Discover browse-view CLS** — the browse sections (curators/neighborhoods/by-kind) fill from empty after first paint (populateBrowse), shifting the page. Reserved space with `min-height: 300px` on the `[aria-busy]` lists (released on fill, like the Tonight skeleton). Under 4× CPU throttle this took discover CLS ~0.60 → ~0.15. `content-visibility: auto` on `.list-row` was verified NOT to cause CLS (results-view CLS 0.046).
-- **CSP verified** — simulated the exact production CSP as a response header across index/discover/place/saved/profile: **0 violations** (taste-flag.js runs under `script-src 'self'`; MapLibre loads from unpkg; no inline scripts). The self-host-fonts CSP tightening (dropped fonts.googleapis/gstatic) is safe.
-
-> Note on Lighthouse perf in this sandbox: the score swings ~55–81 run-to-run from CPU contention (concurrent node/playwright/http-server) — treat it as noise; trust CLS/structural audits, and re-measure perf on a deployed preview.
-
-**Still open:**
-- **pa11y/Discover: 8× color-contrast — axe false-positives.** The flagged nodes are `#map-empty-hint` text + the zoom buttons, which are `--c-ink`/`--c-ink-soft` (near-black, >15:1 on cream). They sit over the map canvas, so axe can't resolve the background and flags conservatively. Not real failures. (Separately, `--c-ink-mute` was darkened #71717a→#5c5c66 to clear a genuine 4.36:1 AA fail on real meta text.)
-- **CLS 0.109** — borderline "good". Diagnosed as small, timing-sensitive skeleton-swap noise under throttling, NOT the Tonight quote (the card height is consistent). Deliberately did NOT clamp the curator quote — voice is the product, and clamping wouldn't fix the residual anyway.
-- **Filter/sort micro-design (done May 2026):** active pills + sheet chips carry a leading "✓" (WCAG 1.4.1 — selection no longer color-only); pills got a 44px invisible tap-target inset; the sort `<select>` is now a visible 2-row radio list (Baymard: no dropdowns under ~5 options).
-- **Desktop filter rail (done May 2026):** the `#discover-sheet` markup lives inside `.discover-pane--list`. Mobile (<1024px) keeps the fixed bottom sheet (opened by "+ Filters"; `openSheet` switches map→list first since the fixed sheet can't render inside a `display:none` pane). Desktop (≥1024px) shows it as a **persistent left-rail** at the top of the list column — always visible (`[hidden]` overridden), "+ Filters"/Apply/Clear/close/handle/backdrop hidden, and changes **apply live** (`liveApply()` runs on chip/sort change when `matchMedia('(min-width:1024px)')`). Verified: rail is constrained to the 407px list column with the map at right.
-- **Map-pin category glyphs (done May 2026):** Places pins use distinct per-venue-kind Lucide line glyphs (`VENUE_PIN_ICONS` in `map.js`: disc / book-open / image / music / tag / palette / film / users) instead of the coarse `KIND_MAP` bucket. Event pins keep the bucket glyphs. Filter chips stay text-only per the research (icons belong on pins, not chips, for a text-forward brand).
-- **Perf**: minify JS/CSS + unused CSS — build-step concerns; Cloudflare Pages auto-minify covers most given the no-build philosophy.
+Reproduction + the audit harness live in `CLAUDE.md` → Commands (`npm run verify`/`e2e`/`smoke`/`lighthouse`) and `docs/screenshots/README.md` (V-1…V-14 suite + baselines). The June-2026 Lighthouse results (Today 95 · Discover 96 · About 99; a11y/BP/SEO 100) and the CLS / lazy-MapLibre history are in `ROADMAP.md` → "Frontend & UI/UX visual audit". Residual: CLS ~0.11 on Today/About (banner + font arrival, sub-threshold); JS/CSS minification is left to Cloudflare Pages auto-minify (no-build philosophy).
 
 ---
 

@@ -46,7 +46,7 @@
 # Hashed/versioned assets: long cache. styles.css doesn't have a hash so
 # stays on the conservative 5-minute cache via the /* rule above; static
 # brand assets are immutable by design (they only change with a version
-# bump that triggers a filename change per brand/IMPLEMENTATION.md).
+# bump that triggers a filename change).
 /brand/*
   Cache-Control: public, max-age=2592000, immutable
 

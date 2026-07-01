@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Programmatic Lighthouse audit. Runs against the local dev server
    at http://localhost:5173 and writes scores to docs/lighthouse/.
-   Per LAUNCH.md QA target: Performance ≥ 90, Accessibility ≥ 95,
+   QA targets: Performance ≥ 90, Accessibility ≥ 95,
    Best Practices ≥ 95, SEO ≥ 100.
 
        npm start            # in one terminal

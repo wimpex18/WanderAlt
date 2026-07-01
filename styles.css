@@ -777,7 +777,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .picks-empty {
   /* Plate-as-hero layout: the city plate dominates the card top, the
      editorial message + CTA sit below. Bumped from the original
-     200×150 thumbnail to a 480×320 hero per brand/IMPLEMENTATION.md
+     200×150 thumbnail to a 480×320 hero
      § City plates "Empty-state splashes: scale up to 600–800 px"
      (the plate is on the upper bound of the spec's 600 — capped at
      480 so it still respects the 1024-wide page).                    */

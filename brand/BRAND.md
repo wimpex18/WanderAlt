@@ -2,7 +2,7 @@
 
 **Direction shipped:** `01 · Beacon` — petrol tile + signal-lime diamond.
 **Version:** v2 · May 2026
-**Built on:** the live Compass design system (palette + type tokens are 1:1 with `src/refresh-shared.jsx`).
+**Built on:** the live design tokens in `styles.css` `:root` — the `--c-*` palette and `--ff-*` type are the source of truth.
 
 ---
 
@@ -33,14 +33,14 @@ Tile-bleed variants (iOS, Android, Play Store) drop the rounding — the OS appl
 
 | Token | Canonical (OKLCH) | sRGB | Usage |
 |---|---|---|---|
-| `--petrol` | `oklch(0.42 0.07 195)` | `#055959` | Tile ground · primary brand chrome |
-| `--lime` | `oklch(0.86 0.16 113)` | `#d2dc50` | Diamond · signal · live-state highlight |
-| `--ink` | — | `#0a0a0c` | Body text · dark-mode tile ground |
-| `--paper` | — | `#ffffff` | App background |
-| `--surface` | — | `#fafaf9` | Secondary surfaces, cards |
-| `--hairline` | — | `#e7e5e4` | 1 px rules and borders |
-| `--muted` | — | `#71717a` | Secondary text, mono labels |
-| `--body` | — | `#1f1f23` | Body copy on paper |
+| `--c-accent` | `oklch(0.42 0.07 195)` | `#055959` | Tile ground · primary brand chrome (petrol) |
+| `--c-lime` | `oklch(0.86 0.16 113)` | `#d2dc50` | Diamond · signal · live-state highlight (signal-only) |
+| `--c-ink` | — | `#0a0a0c` | Body text · dark-mode tile ground |
+| `--c-paper` | — | `#ffffff` | App background |
+| `--c-paper-deep` | — | `#fafaf9` | Secondary surfaces, cards |
+| `--c-rule` | — | `#e7e5e4` | 1 px rules and borders |
+| `--c-ink-mute` | — | `#5c5c66` | Secondary text, mono labels (WCAG 2.2 AA floor — do not lighten) |
+| `--c-ink-soft` | — | `#1f1f23` | Body copy on paper |
 
 **OKLCH is the source of truth.** When the rendering environment supports it (modern browsers, Sharp 0.32+, resvg, Figma), use the OKLCH literal. The sRGB hex is provided so older rasterizers (older librsvg, ImageMagick legacy builds) produce visually identical output.
 
@@ -52,12 +52,11 @@ All asset SVGs in this folder embed the hex values for portability and document 
 
 | Family | Weight | Where |
 |---|---|---|
-| **Geist** | 600 | Wordmark · navigation · titles |
-| Geist | 400 / 500 | Body copy, buttons |
+| **Fraunces** | 600 | Page titles · curator pull-quotes (the loudest element on screens that surface a pick) · OG card hero |
+| **Inter** | 400 / 500 / 600 / 700 | Body copy, headings, nav, buttons |
 | **Geist Mono** | 400 / 500 | Metadata, eyebrows, location chips, tag labels |
-| **DM Serif Display** | 400 Italic | Editorial pull-quotes · the "Alt." in the editorial wordmark · OG card hero |
 
-Already loaded by the app via Google Fonts. No new families.
+Self-hosted woff2 (`/fonts`, `@font-face` in `styles.css`), **no Google CDN**. The **wordmark** masters in this folder are set in Geist 600 — that's the logo's own type, separate from the app faces above.
 
 ### Wordmark — two variants
 

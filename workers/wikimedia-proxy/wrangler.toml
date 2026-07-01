@@ -14,7 +14,7 @@ compatibility_date = "2026-05-19"
 # Account context — set CLOUDFLARE_ACCOUNT_ID env var to override,
 # otherwise wrangler will prompt and use whichever account you log
 # into with `wrangler login`. The MCP-verified account is documented
-# in LAUNCH.md §0.
+# in the Cloudflare dashboard.
 
 # Observability — capture logs without paid Logpush.
 [observability]
