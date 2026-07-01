@@ -1,21 +1,32 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// enrich-venues v12
-// Enriches venue_details rows from Wikidata + Nominatim + Google Places.
+// enrich-venues v14
+// Enriches venue_details rows from Wikidata + Nominatim + a website scrape.
 // Mirrors found images into venue_images AND propagates to picks.image_url.
 // Sets is_closed=true and archives picks when Wikidata P576 is present.
 //
+// v14 (Jul 2026): dropped the Google Places call — Places is a paid,
+// no-free-tier API and this function was calling it unconditionally for
+// every venue with no freshness check, 2-3x/day. Closure detection and
+// business hours/phone that used to come from Places' businessStatus are
+// gone; Wikidata P576 (dissolved/demolished) is now the only closure
+// signal. Website/image fall back to Wikidata + the homepage scrape only.
+//
+// v13 (Jul 2026): skip venues enriched within ENRICH_COOLDOWN_DAYS instead
+// of always re-processing the alphabetically-first `limit` venues — the
+// backlog now actually advances, and fresh venues stop being rebilled
+// for identical data.
+//
 // v12 (Jun 2026): also captures venue SOCIAL links (website/facebook/
-// instagram) so the detail page can surface them. website = Wikidata P856 /
-// Google websiteUri; facebook/instagram = Wikidata P2013/P2003, else scraped
-// from the venue homepage (one fetch, shared with the og:image step). Stored
-// on venue_details.{website,facebook,instagram}.
+// instagram) so the detail page can surface them. website = Wikidata P856;
+// facebook/instagram = Wikidata P2013/P2003, else scraped from the venue
+// homepage (one fetch, shared with the og:image step). Stored on
+// venue_details.{website,facebook,instagram}.
 //
 // Image sources tried in order per venue:
 //   1. Wikidata P18 → Wikimedia Commons thumbnail (?width=800)
-//   2. Google Places API photo (requires GOOGLE_PLACES_API_KEY env var)
-//   3. Venue website og:image (from the homepage scrape)
+//   2. Venue website og:image (from the homepage scrape)
 //
 // POST body: { city: string, limit?: number, venue_key?: string }
 // ---------------------------------------------------------------------------
@@ -30,14 +41,14 @@ const CITY_QID: Record<string, string> = {
   helsinki:'Q1757',
 };
 
-const CITY_COORDS: Record<string, [number, number]> = {
-  tallinn: [59.4370, 24.7536],
-  riga:    [56.9460, 24.1059],
-  vilnius: [54.6872, 25.2797],
-  helsinki:[60.1699, 24.9384],
-};
-
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// A venue re-enriched within this window is skipped (unless targeted via
+// venue_key) — previously every run re-called Google Places for the same
+// alphabetically-first N venues with no freshness check, so the backlog
+// never advanced past the first ~30 and already-current venues got
+// rebilled 2-3x/day for no new data.
+const ENRICH_COOLDOWN_DAYS = 14;
 
 // ---------------------------------------------------------------------------
 // Supabase REST helpers
@@ -173,79 +184,6 @@ async function nominatimLookup(venueName: string, city: string): Promise<{ addre
 }
 
 // ---------------------------------------------------------------------------
-// Google Places API (New) — fetch venue details + photo in two calls.
-// Call 1: places:searchText — returns id, photos, opening hours, business
-//         status, phone, website in one round-trip.
-// Call 2: photo media endpoint — resolves the photo reference to a photoUri.
-// Only runs when GOOGLE_PLACES_API_KEY is set.
-// ---------------------------------------------------------------------------
-interface PlaceData {
-  placeId:        string   | null;
-  photoUri:       string   | null;
-  businessStatus: string   | null;   // OPERATIONAL | CLOSED_TEMPORARILY | CLOSED_PERMANENTLY
-  openingHours:   string[] | null;   // weekdayDescriptions array
-  phone:          string   | null;
-  websiteUri:     string   | null;
-}
-
-async function fetchGooglePlaceData(name: string, lat: number, lng: number): Promise<PlaceData | null> {
-  const key = Deno.env.get('GOOGLE_PLACES_API_KEY');
-  if (!key) return null;
-  try {
-    // Call 1: search — all fields we need except the resolved photo URL
-    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'X-Goog-Api-Key':  key,
-        'X-Goog-FieldMask': [
-          'places.id',
-          'places.photos',
-          'places.regularOpeningHours.weekdayDescriptions',
-          'places.businessStatus',
-          'places.nationalPhoneNumber',
-          'places.websiteUri',
-        ].join(','),
-      },
-      body: JSON.stringify({
-        textQuery:    name,
-        languageCode: 'en',
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000.0 } },
-        maxResultCount: 1,
-      }),
-    });
-    if (!searchRes.ok) return null;
-    const sd = await searchRes.json();
-    const place = sd.places?.[0];
-    if (!place) return null;
-
-    const out: PlaceData = {
-      placeId:        place.id                                        ?? null,
-      photoUri:       null,
-      businessStatus: place.businessStatus                            ?? null,
-      openingHours:   place.regularOpeningHours?.weekdayDescriptions  ?? null,
-      phone:          place.nationalPhoneNumber                       ?? null,
-      websiteUri:     place.websiteUri                                ?? null,
-    };
-
-    // Call 2: resolve photo to a stable CDN URI (only if photos exist)
-    const photoName = place.photos?.[0]?.name;
-    if (photoName) {
-      const mediaRes = await fetch(
-        `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true`,
-        { headers: { 'X-Goog-Api-Key': key } }
-      );
-      if (mediaRes.ok) {
-        const md = await mediaRes.json();
-        out.photoUri = md.photoUri ?? null;
-      }
-    }
-
-    return out;
-  } catch { return null; }
-}
-
-// ---------------------------------------------------------------------------
 // Website homepage scrape — fetch the venue site ONCE and pull both the
 // og:image and any Facebook/Instagram profile links from the markup. Most
 // venue sites link their socials in the header/footer; JS-only SPAs that
@@ -327,13 +265,25 @@ Deno.serve(async (req: Request) => {
       seen.add(k);
       all.push({ name: row.venue, key: k });
     }
-    const lockedRows = await dbGet(`venue_details?city=eq.${encodeURIComponent(city)}&manual_lock=eq.true&select=venue_key`);
-    const locked = new Set(Array.isArray(lockedRows) ? lockedRows.map((r: { venue_key: string }) => r.venue_key) : []);
-    venues = all.filter(v => !locked.has(v.key)).slice(0, limitN);
+    const detailRows = await dbGet(`venue_details?city=eq.${encodeURIComponent(city)}&select=venue_key,manual_lock,enriched_at`);
+    const locked   = new Set<string>();
+    const freshAt  = new Map<string, string>();
+    if (Array.isArray(detailRows)) {
+      for (const r of detailRows as Array<{ venue_key: string; manual_lock: boolean; enriched_at: string | null }>) {
+        if (r.manual_lock) locked.add(r.venue_key);
+        if (r.enriched_at) freshAt.set(r.venue_key, r.enriched_at);
+      }
+    }
+    const cooldownCutoff = Date.now() - ENRICH_COOLDOWN_DAYS * 86400 * 1000;
+    const stale = all.filter(v => {
+      if (locked.has(v.key)) return false;
+      const last = freshAt.get(v.key);
+      return !last || new Date(last).getTime() < cooldownCutoff;
+    });
+    venues = stale.slice(0, limitN);
   }
 
-  const [cityLat, cityLng] = CITY_COORDS[city] ?? [0, 0];
-  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string; image_source?: string; business_status?: string }> = [];
+  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string; image_source?: string }> = [];
 
   for (const venue of venues) {
     await sleep(300);
@@ -366,15 +316,10 @@ Deno.serve(async (req: Request) => {
       if (source !== 'wikidata') source = 'nominatim';
     }
 
-    // ── Google Places enrichment (one search call covers everything) ──
-    const placeData = await fetchGooglePlaceData(name, cityLat, cityLng);
-    if (placeData) await sleep(200);
+    // Closure signal: Wikidata P576 (dissolved/demolished) only.
+    const isClosed = claims.isClosed;
 
-    // Merge closure: either Wikidata P576 or Google CLOSED_PERMANENTLY
-    const isClosed = claims.isClosed || placeData?.businessStatus === 'CLOSED_PERMANENTLY';
-
-    // Website: Wikidata P856 wins; Google Places is the fallback
-    const website = claims.website || placeData?.websiteUri || null;
+    const website = claims.website || null;
 
     // Scrape the venue homepage ONCE for og:image + social links (when we
     // have a site). Socials: Wikidata wins, the scrape fills the gaps.
@@ -399,10 +344,6 @@ Deno.serve(async (req: Request) => {
     if (lng)                     row.lng             = lng;
     if (address)                 row.address         = address;
     if (isClosed)                row.is_closed       = true;
-    if (placeData?.placeId)      row.google_place_id = placeData.placeId;
-    if (placeData?.businessStatus) row.business_status = placeData.businessStatus;
-    if (placeData?.phone)        row.phone           = placeData.phone;
-    if (placeData?.openingHours) row.opening_hours   = JSON.stringify(placeData.openingHours);
 
     await dbUpsert('venue_details', row, 'city,venue_key');
 
@@ -416,8 +357,7 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({ archived_at: new Date().toISOString() }),
         }
       );
-      const closedSource = claims.isClosed ? 'wikidata' : 'google';
-      if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key} (source: ${closedSource})`);
+      if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key} (source: wikidata)`);
     }
 
     // ── Image enrichment ─────────────────────────────────────────────
@@ -438,14 +378,7 @@ Deno.serve(async (req: Request) => {
         await sleep(100);
       }
 
-      // Source 2: Google Places photo (already fetched above — reuse placeData)
-      if (!imageUrl && placeData?.photoUri) {
-        imageUrl = placeData.photoUri;
-        await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'google_places' }, 'city,venue_key');
-        imageSource = 'google_places';
-      }
-
-      // Source 3: Venue website og:image (from the homepage scrape above)
+      // Source 2: Venue website og:image (from the homepage scrape above)
       if (!imageUrl && scraped.ogImage) {
         imageUrl = scraped.ogImage;
         await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'og_image' }, 'city,venue_key');
@@ -462,9 +395,8 @@ Deno.serve(async (req: Request) => {
       wikidata_id:    wikidataId ?? undefined,
       source,
       image_source:   imageSource ?? undefined,
-      business_status: placeData?.businessStatus ?? undefined,
     });
-    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${isClosed} (${placeData?.businessStatus ?? 'no-google'}) image=${imageSource ?? 'none'}`);
+    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${isClosed} image=${imageSource ?? 'none'}`);
   }
 
   return new Response(JSON.stringify({

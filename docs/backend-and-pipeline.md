@@ -42,7 +42,7 @@ Encyclopedic detail relocated out of `CLAUDE.md` (which is now contracts-only). 
 
 ## Supabase pipeline
 
-**Flow:** `ingest-* → staging_messages → process-staging (every 30m, upsert onConflict id) → picks → enrich-pick-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (04:05) → archive-stale → wa-dedup-picks (04:30) → wa-purge-archived (04:45)`.
+**Flow:** `ingest-* → staging_messages → process-staging (every 30m, upsert onConflict id) → picks → enrich-images → geocode-picks → enrich-venues → classify-moods → embed-picks → rotate-tonight (04:05) → archive-stale → wa-dedup-picks (04:30) → wa-purge-archived (04:45)`.
 
 **Crons own the schedule** (`cron.job`) — only touch if asked. Healthy crons invoke via `public.invoke_wa_fn(fn)` (sends anon Bearer); a raw `net.http_post` with no Authorization header 401s against `verify_jwt:true` functions (fixed June 2026 for hel-linkedevents + generate-context). `wa-ingest-health` (06:10) flags any `ingest-%` fn whose 3 latest ok-runs all yielded 0.
 
@@ -87,5 +87,6 @@ Policy (Groq-first, gated Gemini fallback, no grounding, embeddings on `gemini-e
 - `draft-column` (v14) → Groq primary, Gemini `2.5-flash-lite` fallback. Weekly 140-word column.
 - `send-digest` (v11) → Gemini `2.5-flash` (low volume). Composes the "your saved events changed" block from `digest_opt_ins.user_id` + `pick_changes`.
 - `match-pick` (v8) → ranking on Groq only (`find_many`, topK=5); embeddings on `gemini-embedding-001`.
-- `enrich-venues` → no LLM (Wikidata + Nominatim + Google Places).
-- `geocode-picks` → Nominatim primary, Google Places fallback. `enrich-pick-images` → Google Places (~$0.039/unique venue) — the larger paid line; revisit caps before scaling cities.
+- `enrich-venues` → no LLM, no paid API (Wikidata + Nominatim + a homepage og:image scrape).
+- `geocode-picks` → Nominatim only. `enrich-images` → Wikidata/Wikimedia only (populates `picks.image_url`). Both free/unauthenticated.
+- **Google Places retired (Jul 2026):** `GOOGLE_PLACES_API_KEY` was removed after an uncapped-retry bug (`geocode-picks`, `enrich-venues`, and the old `enrich-pick-images` re-billed Places every cron tick for venues it could never resolve) produced an unexpected ~€45 charge. `geocode-picks`/`enrich-venues`/`enrich-images` all stamp a `*_failed_at` cooldown column on a pick/venue so an unresolvable one is skipped for 14 days instead of retried every run. `enrich-pick-images` is dormant (cron unscheduled, code kept in case Places is deliberately re-enabled). `discover-venues` (admin-triggered external venue search) still needs the key and simply 503s without it — acceptable since it's manual, not cron-driven.

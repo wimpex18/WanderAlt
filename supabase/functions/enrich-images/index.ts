@@ -1,6 +1,7 @@
 /* ============================================================
-   enrich-images v7 — populate picks.image_url from venue_images
-   table (self-learning DB cache) with Wikidata fallback.
+   enrich-images v8 — populate picks.image_url from venue_images
+   table (self-learning DB cache) with Wikidata fallback. Free/
+   unauthenticated Wikimedia APIs only — no paid Google key.
    ------------------------------------------------------------
    Flow per pick:
    1. Batch-load venue_images for all venues in the current run.
@@ -14,6 +15,16 @@
    - Add rows to venue_images with the new city name.
    - The Wikidata path works city-agnostically out of the box.
    - No redeploy needed.
+
+   v8 (Jul 2026): this is now the sole picks.image_url filler —
+   enrich-pick-images (Google Places, paid) was retired. Two fixes
+   that mirror what caused the Places overspend:
+     - iterates tallinn/helsinki/riga when no `city` is given, instead
+       of silently defaulting to tallinn and leaving other cities'
+       picks NULL forever.
+     - a pick Wikidata has no image for gets `image_enrich_failed_at`
+       stamped so it's skipped for FAIL_COOLDOWN_DAYS instead of
+       re-querying Wikidata for the same unmatchable venue every run.
    ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -22,6 +33,7 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const AGENT            = 'WanderAlt/1.0 (cultural events guide)';
 const BATCH            = 10;
+const FAIL_COOLDOWN_DAYS = 14;
 
 const VENUE_TYPES = new Set([
   'Q41176','Q811979','Q1060829','Q41253','Q860861','Q207694','Q7075',
@@ -119,28 +131,22 @@ async function enrichPick(
   return { status: 'not_found' };
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+async function enrichCity(city: string, limit: number) {
+  const failCutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400 * 1000).toISOString();
 
-  let city = 'tallinn', limit = BATCH;
-  try {
-    const body = await req.json().catch(() => ({}));
-    if (body.city)  city  = String(body.city);
-    if (body.limit) limit = Math.min(Number(body.limit), 50);
-  } catch (_) { /**/ }
-
-  /* Fetch picks that still need images. */
+  /* Fetch picks that still need images, skipping recent no-match failures. */
   const { data: picks, error } = await db
     .from('picks')
     .select('id, venue, title')
     .eq('city', city)
     .is('archived_at', null)
     .or('image_url.is.null,image_url.eq.')
+    .or(`image_enrich_failed_at.is.null,image_enrich_failed_at.lt.${failCutoff}`)
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  if (error)        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  if (!picks?.length) return new Response(JSON.stringify({ enriched: 0, message: 'All picks already have images.' }));
+  if (error)        return { city, ok: false, error: error.message };
+  if (!picks?.length) return { city, ok: true, enriched: 0, message: 'All picks already have images.' };
 
   /* Batch-fetch venue_images for all venues in this run (single DB round-trip). */
   const venueKeys = [...new Set(picks.map(p => p.venue.toLowerCase().trim()))];
@@ -155,17 +161,45 @@ Deno.serve(async (req: Request) => {
   );
 
   const results: Array<{ id: string; venue: string; status: string; url?: string }> = [];
+  const failedIds: string[] = [];
   for (const pick of picks) {
     const r = await enrichPick(pick, city, knownMap);
     results.push({ id: pick.id, venue: pick.venue, ...r });
+    if (r.status === 'not_found') failedIds.push(pick.id);
+  }
+
+  if (failedIds.length) {
+    await db.from('picks')
+      .update({ image_enrich_failed_at: new Date().toISOString() })
+      .in('id', failedIds);
   }
 
   const enriched = results.filter(r => r.status.startsWith('enriched')).length;
   const skipped  = results.filter(r => r.status.startsWith('skipped')).length;
   console.log(`[enrich-images] city=${city} enriched=${enriched}/${picks.length} skipped=${skipped}`);
 
+  return { city, ok: true, total: picks.length, enriched, skipped, results };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+  let city: string | null = null, limit = BATCH;
+  try {
+    const body = await req.json().catch(() => ({}));
+    if (body.city)  city  = String(body.city);
+    if (body.limit) limit = Math.min(Number(body.limit), 50);
+  } catch (_) { /**/ }
+
+  // When city is omitted, run all live cities in sequence (cron mode).
+  // Vilnius stays excluded until it flips from 'coming' to 'live'.
+  const cities = city ? [city.toLowerCase()] : ['tallinn', 'helsinki', 'riga'];
+
+  const reports = [];
+  for (const c of cities) reports.push(await enrichCity(c, limit));
+
   return new Response(
-    JSON.stringify({ city, total: picks.length, enriched, skipped, results }),
+    JSON.stringify({ cities: reports }),
     { headers: { 'Content-Type': 'application/json' } }
   );
 });

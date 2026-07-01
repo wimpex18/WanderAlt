@@ -1,24 +1,36 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// geocode-picks v4
+// geocode-picks v6
 //
 // Two responsibilities:
 //   * Default mode (batch): backfill picks.lat/lng + picks.address for
-//     active picks whose coords or address is still NULL. Skip locked
-//     rows. Runs hourly via the wa-geocode-picks pg_cron job.
+//     active picks whose coords or address is still NULL, via Nominatim
+//     (OpenStreetMap, free/unauthenticated) only. Skip locked rows. Runs
+//     every 20 min via the wa-geocode-picks pg_cron job.
 //   * action='reverse' mode (per-call): proxy a single reverse-geocode
 //     to Nominatim and return the resolved address. Used by the admin
 //     pin editor so the browser never hits Nominatim directly (keeps
 //     a single User-Agent identity, respects the OSM usage policy,
 //     and hides editor IPs).
+//
+// v6 (Jul 2026): dropped the Google Places fallback — Places is a paid,
+// no-free-tier API and was being rebilled every 20-minute tick for venues
+// it could never resolve. A venue Nominatim can't find now just stays
+// unresolved (admin can pin it manually); `geocode_failed_at` still stamps
+// so unresolvable venues are skipped for FAIL_COOLDOWN_DAYS instead of
+// hammering Nominatim forever.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const PLACES_KEY   = Deno.env.get('GOOGLE_PLACES_API_KEY') ?? '';
 
 const MAX_NOMINATIM_KM = 4;
+
+// A venue Nominatim can't resolve stays failed for this long before it's
+// retried again — avoids hammering the free Nominatim API forever for a
+// venue name it will never match.
+const FAIL_COOLDOWN_DAYS = 14;
 
 const CITY_CENTER: Record<string, [number, number]> = {
   tallinn:  [59.4370, 24.7536],
@@ -103,40 +115,6 @@ async function nominatimReverse(lat: number, lng: number): Promise<string | null
   } catch { return null; }
 }
 
-interface PlaceHit { lat: number; lng: number; address: string | null; place_id: string; }
-async function placesGeocode(
-  venue: string, neighborhood: string, city: string, centerLat: number, centerLng: number,
-): Promise<PlaceHit | null> {
-  if (!PLACES_KEY) return null;
-  const q = [venue, neighborhood].filter(Boolean).join(', ') + `, ${city}`;
-  try {
-    const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type':     'application/json',
-        'X-Goog-Api-Key':   PLACES_KEY,
-        'X-Goog-FieldMask': 'places.id,places.location,places.displayName,places.formattedAddress',
-      },
-      body: JSON.stringify({
-        textQuery:      q,
-        languageCode:   'en',
-        locationBias:   { circle: { center: { latitude: centerLat, longitude: centerLng }, radius: 10000 } },
-        maxResultCount: 1,
-      }),
-    });
-    if (!r.ok) return null;
-    const d = await r.json();
-    const place = d.places?.[0];
-    if (!place?.location) return null;
-    return {
-      lat:      place.location.latitude,
-      lng:      place.location.longitude,
-      address:  place.formattedAddress ?? null,
-      place_id: place.id || '',
-    };
-  } catch { return null; }
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -175,10 +153,11 @@ Deno.serve(async (req: Request) => {
   const center  = CITY_CENTER[city];
   if (!center) return json({ ok: false, error: `unknown city ${city}` }, 400);
 
+  const failCutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400 * 1000).toISOString();
   const picksUrl = `${SUPABASE_URL}/rest/v1/picks` +
     `?city=eq.${encodeURIComponent(city)}` +
     `&archived_at=is.null&coords_locked=eq.false` +
-    `&or=(lat.is.null,address.is.null)` +
+    `&and=(or(lat.is.null,address.is.null),or(geocode_failed_at.is.null,geocode_failed_at.lt.${failCutoff}))` +
     `&select=id,venue,neighborhood,lat,lng,address&order=id.asc`;
   const picksRes = await fetch(picksUrl, { headers: sbHeaders() });
   if (!picksRes.ok) return json({ ok: false, error: 'picks fetch failed', status: picksRes.status }, 500);
@@ -211,27 +190,20 @@ Deno.serve(async (req: Request) => {
   }
 
   const todo = [...groups.values()].slice(0, limit);
-  let geocoded = 0, addressed = 0, failed = 0, nomHits = 0, placesHits = 0, reverseHits = 0;
+  let geocoded = 0, addressed = 0, failed = 0, nomHits = 0, reverseHits = 0;
   const results: Array<Record<string, unknown>> = [];
 
   for (const g of todo) {
     await sleep(1100);
     let coords: { lat: number; lng: number } | null = g.have_coords;
     let address: string | null = null;
-    let placeId = '';
-    let source: 'nominatim' | 'google_places' | 'reverse' | null = null;
+    let source: 'nominatim' | 'reverse' | null = null;
 
     if (!coords) {
       const nom = await nominatimGeocode(g.venue, g.neighborhood, city);
       if (nom && distKm(center, [nom.lat, nom.lng]) <= MAX_NOMINATIM_KM) {
         coords = { lat: nom.lat, lng: nom.lng }; address = nom.address;
         source = 'nominatim'; nomHits++;
-      } else {
-        const pl = await placesGeocode(g.venue, g.neighborhood, city, center[0], center[1]);
-        if (pl) {
-          coords = { lat: pl.lat, lng: pl.lng }; address = pl.address;
-          placeId = pl.place_id; source = 'google_places'; placesHits++;
-        }
       }
     } else {
       address = await nominatimReverse(coords.lat, coords.lng);
@@ -241,6 +213,14 @@ Deno.serve(async (req: Request) => {
     if (!coords) {
       failed++;
       results.push({ venue: g.venue, neighborhood: g.neighborhood, status: 'no_match' });
+      if (!dryRun) {
+        const idList = g.pick_ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
+        await fetch(`${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})`, {
+          method:  'PATCH',
+          headers: sbHeaders({ Prefer: 'return=minimal' }),
+          body:    JSON.stringify({ geocode_failed_at: new Date().toISOString() }),
+        }).catch(() => {});
+      }
       continue;
     }
 
@@ -275,7 +255,6 @@ Deno.serve(async (req: Request) => {
       venue: g.venue, neighborhood: g.neighborhood,
       status: 'ok', source, lat: coords.lat, lng: coords.lng,
       address: address || undefined,
-      place_id: placeId || undefined,
       picks_updated: g.pick_ids.length,
     });
   }
@@ -290,7 +269,6 @@ Deno.serve(async (req: Request) => {
     picks_addressed:  addressed,
     groups_failed:    failed,
     nominatim_hits:   nomHits,
-    places_hits:      placesHits,
     reverse_hits:     reverseHits,
     latency_ms:       Date.now() - t0,
     results,
