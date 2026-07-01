@@ -1,6 +1,6 @@
 # Audits — historical, point-in-time
 
-These are dated snapshots from the June 2026 design/UX/layout overhaul. Their findings have been **acted on and shipped** (see `ROADMAP.md` → the F-1…F-22 tracker and the UX-audit addendum). They are kept as a record of *why* decisions were made, not as live specs — do not treat them as the current state.
+These are dated snapshots from the June 2026 design/UX/layout overhaul. Their findings have been **acted on and shipped** (see `ROADMAP.md` → "Frontend & UI/UX visual audit" — all F-1…F-22 closed). They are kept as a record of *why* decisions were made, not as live specs — do not treat them as the current state.
 
 | File | What it captured |
 |---|---|
