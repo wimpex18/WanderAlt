@@ -126,6 +126,14 @@ Used by `.map-bleed` and `.seg-tabs`. Set `width: calc(100% + 2 * var(--gutter))
 | Map detail | `.map-detail` | — | — | desktop side-panel detail; hidden <768px |
 | Auth panel | `.auth-panel` | (1220) | — | modal overlay |
 | Colophon | `.colophon` | (1360) | — | mono, muted, bottom of page |
+| View toggle (Jul 2026) | `.nav__viewrow` + `.discover-view-seg` | (July 2026 block) | — | docked List\|Map seg inside bottom glass chrome; fixed pill 768–1023; hidden ≥1024 |
+| Scope count badge | `.discover-scope__count` | (July 2026 block) | — | lime on active scope segment, quiet mono inactive, hidden at 0 |
+| Saved summary plate | `.saved-foot` | (July 2026 block) | — | serif-italic count line + mono lifecycle sub |
+| Profile plate | `.profile-plate` + `__row/__copy/__desc` | (July 2026 block) | — | 12px plate for taste cue + digest |
+| Info rule row | `.profile-rule` | (July 2026 block) | — | full-width link row, hover → petrol label |
+| Composite digest field | `.digest-field` + `__email/__submit` | — | `--on` | input with docked petrol icon submit; check glyph when subscribed |
+| Venue icon row | `.venue-iconrow` | (July 2026 block) | — | 44px icon-only actions under the primary CTA |
+| Venue place link | `.venue-card__go` | (July 2026 block) | — | mono uppercase petrol "Venue →", underline swaps ink on hover |
 
 ---
 
@@ -167,31 +175,32 @@ Active item expands to show its text label; all inactive items hide the label (`
 
 ### Briefing (`index.html`)
 
-**Tonight hero** (`#tonight.tonight`): rendered by `briefing.js:renderTonight()`. A flat editorial hero (no surface card) — the curator quote is the loudest element. Structure:
+**Tonight hero** (`#tonight.tonight`): rendered by `briefing.js:renderTonight()`. A flat editorial hero (no surface card) — **the curator quote is the loudest element** (July 2026 boards 1b/1g restored this after the title had grown to 42px display type). Structure:
 
 ```
 section#tonight.tonight
-  span.tonight__badge                ← lime pill + ink dot, "Tonight · TIME"
-  .tonight__kindline
-    span.tonight__kind               ← mono uppercase chip + petrol ring dot (kind)
-    span.tonight__where              ← "Neighborhood · Venue" (mono, muted)
-  a.tonight__title                   ← 23px body-font venue link
-  blockquote.tonight__quote          ← display italic, lime left rule; 25px mobile → 30px ≥768
-  p.tonight__attr                    ← "— @handle" (mono, muted; handle is petrol)
-  .tonight__actions
-    a.btn-going "I'm going →"        ← ink fill
-    label.btn-save.bookmark "Save"   ← outlined; wraps the .bookmark__check toggle
+  .tonight__signal
+    span.tag.tag--live "Tonight"     ← lime tag (signal-only)
+    span.tonight__kicker             ← mono "Neighborhood · type · time"
+  a.tonight__title                   ← QUIET Inter 23px (21px mobile) venue link
+  blockquote.quote
+    p.quote__t                       ← Fraunces italic, ink; 42px ≥768 / 29px mobile — loudest on screen
+    .quote__attr                     ← @handle + meta
+  .tonight__media                    ← photo figure + venue row; DESKTOP ONLY (display:none <768 — mobile hero is voice-only)
+  .tonight__actions                  ← ONE row, equal-width (flex:1), capped 440px ≥768
+    a.btn.btn--primary "I'm going"   ← petrol, 52px form tier
+    label.btn.btn--secondary.tonight__save "Save"  ← quiet outline; wraps .bookmark__check
 ```
 
-The hero quote overrides `--fs-quote` (scoped to `body[data-page="briefing"] .tonight__quote`) — no surface thumbnail, so the voice dominates. The `.bookmark__check` checkbox inside `.btn-save` keeps the standard bookmark wiring (fills petrol when saved).
+**Surprise me** (`#surprise-btn`) was demoted out of the hero action row (July 2026): it is a 44px `.action-icon` (shuffle glyph) in the This Week section header, inside `.sechead__side` next to the picks count. Static markup in `index.html`; `briefing.js` hides it for an empty city and handles the click via one delegated listener.
 
 **This Week list** (`.picks`): `briefing.js:renderThisWeek()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox.
 
 **Curator's Column** (`.column`): injected above `.thisweek` by `briefing.js:renderColumn()` (async Supabase fetch). Absent if no published column exists. Minimal Markdown rendered to `<p>/<strong>/<em>`.
 
-**Mood chips**: `mood-chips.js` populates `.mood-chips`; fires `wa:mood-changed`. Briefing re-filters This Week on that event; Tonight is not re-filtered.
+**Mood chips**: live on Discover only (inside the Filters sheet/rail since July 2026). `briefing.js` forwards legacy `index.html#mood=` deep-links to Discover before rendering.
 
-**Surprise me** (`#surprise-btn`): cycles Tonight through catalog; respects `prefers-reduced-motion`.
+Surprise-me cycles Tonight through the catalog and respects `prefers-reduced-motion`.
 
 ### Discover (`discover.html`)
 
@@ -205,13 +214,17 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 - `?id=` is the active pin — written on pin tap, persists across filter changes, restored on popstate.
 - `#mood=…` is owned by `mood-chips.js` (hash, not search param) — do not unify with search params.
 
-**Layout — mobile (< 1024px):** one pane at a time. Default: list. A floating "Map" FAB (`.discover-view-fab`) bottom-right toggles `data-view` on `#discover-panes` between `list` and `map`.
+**Layout — mobile (< 768px):** one pane at a time. Default: list. A **docked List|Map segmented control** (`.nav__viewrow` > `#discover-view-toggle.discover-view-seg`) sits INSIDE the bottom glass chrome, above the tab row — one glass surface (moved from `.nav__inner` to `.nav` on this page), no content occlusion. July 2026: the floating `.discover-view-fab` pill is retired. Still one button — tapping flips `data-view` on `#discover-panes`; the segments reflect state (accent-soft active segment).
 
-**Layout — desktop (≥ 1024px):** CSS grid split view always on, `minmax(0,1fr) minmax(0,1.18fr)` (list breathes, sticky map stays prominent). FAB is hidden. `?view=` param is ignored.
+**Layout — tablet (768–1023px):** the nav is a top masthead, so `.nav__viewrow` goes `position:fixed` at the viewport bottom (paper bg + shadow).
 
-**Filter pill row** (`.discover-pills`, wrapping): Events shows Tonight · This week · Free; Places shows venue-kind quick-pills (Record stores · Bookshops · Galleries · Clubs · Flea & thrift · Arts centres · Cinemas · Community). Pills toggle `state.time` or `state.cats`. "+ Filters" opens the sheet (mobile only).
+**Layout — desktop (≥ 1024px):** 3-col CSS grid always on: `236px minmax(0,1fr) minmax(0,1.15fr)` — persistent filter **rail** (the hoisted `.discover-sheet`) · editorial list · sticky map. The view toggle, quick pills, and the `.page-head--discover` are all hidden (the deck toolbar owns the chrome); `?view=` param is ignored. The `.deck` compresses into one 44-tier toolbar band under the masthead: scope switch left, 400px search box (52px) + labelled petrol Concierge button right, applied-filters row wrapping below. The **city banner is hidden on Discover at every viewport** (city.js still injects it) so results crest the fold.
 
-**Filter rail / sheet** (`.discover-sheet`): mobile = a fixed bottom sheet opened by "+ Filters" (Apply commits, Clear resets). Desktop ≥1024px = a persistent static left-rail atop the list column with mono eyebrow legends + hairline rules; changes apply live (no Apply button). Category chips, neighborhood chips, and a Sort **radio list** (not a `<select>`).
+**Scope counts:** each `.discover-scope__btn` carries a `.discover-scope__count` badge with the live catalog size per scope — lime on the ACTIVE segment only (signal-only rule), quiet mono on the inactive one, hidden at 0 (`discover.js:updateScopeCounts()`).
+
+**Filter pill row** (`.discover-pills`, wrapping, **mobile/tablet only** — hidden ≥1024px where the rail is the one filter language): Events shows Tonight · This week · Free; Places shows venue-kind quick-pills (Record stores · Bookshops · Galleries · Clubs · Flea & thrift · Arts centres · Cinemas · Community). Pills toggle `state.time` or `state.cats`. "+ Filters" opens the sheet (mobile only).
+
+**Filter rail / sheet** (`.discover-sheet`): mobile = a fixed bottom sheet opened by "+ Filters" (Apply commits, Clear resets). Desktop ≥1024px = the persistent left rail — the first grid column — with the fieldsets open under mono eyebrow legends, split by hairline rules; changes apply live (no Apply button, facet dropdown-pills retired July 2026). Facets top-to-bottom: **When** (single-select chips mirroring the mobile quick pills, events-only, `#discover-when`), Category chips, Neighborhood chips, Distance, **Mood** (the `.mood-chips` strip folded in from the old inline deck row, events-only), and a Sort **radio list** (not a `<select>`). Events-only fieldsets carry `data-mode="events"` and are hidden in Places scope. The sheet markup sits before `.discover-pane--list` in the grid; on mobile it's `position:fixed` so source order is irrelevant there.
 
 **AI concierge mode** (`body.discover-ai-mode`, Events only): toggling the ✦ button turns `.discover-search` into an immersive solid-petrol panel (lime accents, "WanderAlt concierge" eyebrow) and collapses the pills, mood strip, filter rail, browse sections, results and map so the matched curator quote owns the screen. Pure CSS keyed on the body class `discover.js` already sets — no JS change.
 
@@ -239,13 +252,34 @@ Unified search + filter + map surface. Replaced the old `map.html` and `search.h
 
 | Variant | Class | Layout | Left col |
 |---|---|---|---|
-| Going | `.list-row--going` | 2-col grid (52px + 1fr) | TONIGHT / MON / FRI (mono 10px) |
+| Going | `.list-row--going` | 2-col grid (52px + 1fr) | day cell in the **tag language** (July 2026): `.list-row__time` = quiet 4px-radius bordered tag (MON / FRI); `.list-row__time--live` = lime-filled TONIGHT (the one live signal) |
 | Reading | `.list-row--bookmarkable` | 2-col grid (1fr + auto) | — |
 | Past | `.list-row--past` | compact single-line | — (date on right) |
 
 **Seg notes** (`.seg-note--going/reading/past`): short copy lines below the tabs; visibility driven by the same radio-sibling selectors.
 
+**Seg counts (July 2026):** the ACTIVE segment's `.seg-tab__count` renders as the one lime badge (live-state signal) — except at 0, where `saved.js` adds `.seg-tab__count--zero` so a spotlit zero never advertises an empty list. Inactive counts stay quiet mono.
+
+**Summary plate (July 2026):** when the Going list has dated rows, `saved.js` appends a `.saved-foot` plate (`data-empty` so re-renders clean it up): a serif-italic count line ("Two nights on the calendar.") + a mono sub stating the lifecycle rule (dated picks move to Past the morning after) with a "Browse this week →" bridge.
+
 **Count arithmetic:** active count = Going + Reading rows. Past count = Past rows only. Both shown in `.reading-head__count`.
+
+### Venue detail (`venue.html`)
+
+Rendered by `venue.js` from `?id=`. July 2026 (board 1d) order: **quote → actions → venue plate**.
+
+1. Curator-quote hero (or `.detail-hero` scrim hero when the pick has a photo) — the quote stays the loudest element.
+2. `.venue-actions` directly under the voice: a full-width labelled petrol `.btn--primary` "I'm going" (52px form tier), then `.venue-iconrow` — an icon-only 44px compact row: save (`.venue-save` bookmark), Add-to-calendar (dated picks only), Share, and a Google-Maps link (venue + city query). The two control tiers never mix in one row. Desktop: actions capped 440px; icon row left-aligned (−11px optical flush).
+3. `.venue-block` plate: thumb + name + meta + **one** labelled `.venue-card__go` "Venue →" mono link into `place.html` (rendered only when the pick's venue matches a places row) — replaces the old bookmark-in-plate and twin ambiguous map links.
+4. "About this event" context, then "More from @handle".
+
+### Profile (`profile.html`)
+
+July 2026 (board 1f): high-value sections are **plates**, low-frequency links are **rules**.
+
+- **Taste cue plate** (`.profile-plate` on `#taste-section`): eyebrow + the prefs summary in serif italic (`.profile-taste-cue`) + a 44px `.action-icon` edit-pencil linking to the taste check on Today. Reset controls beneath drop to the 44px compact tier.
+- **Saturday digest plate** (`#digest`): eyebrow + desc + the composite `.digest-field` — the account email (readonly) with the petrol submit docked inside the field's end. Subscribe state lives on the button (`aria-pressed` + `.digest-field__submit--on`, arrow ↔ check glyph); `profile.js:reflectDigestState()` drives it. Replaces the old checkbox toggle.
+- **About & info** as `.profile-rules`: full-width `.profile-rule` link rows (label left, mono "About →" pointer right, hairline dividers) — no petrol CTA for legal/info content.
 
 ---
 
@@ -276,9 +310,10 @@ Mobile-first. Two breakpoints.
 - Body switches to `display: flex; flex-direction: column; min-height: 100vh`; bottom padding removed
 - `.topbar`: `position: sticky` → `static`, `order: 1`
 - `.nav`: fixed bottom → `position: sticky; top: 0; order: 2` (masthead below wordmark, above main)
-- Discover split view activates at ≥1024px: CSS grid `480px 1fr`; `.discover-pane--map` fills remaining width
+- Discover 3-col split activates at ≥1024px: CSS grid `236px minmax(0,1fr) minmax(0,1.15fr)` (rail · list · sticky map)
 - `.thumb--lg`: 72px → 88px; `.thumb`: 48px → 64px
-- Briefing `.tonight__quote`: 25px → 30px (flat hero; title stays 23px)
+- Briefing `.quote__t`: 29px → 42px (voice-first hero; the quiet Inter title goes 21px → 23px); `.tonight__media` photo column appears (hidden <768)
+- `.city-banner`: 88px → 120px (hidden on Discover at all widths)
 
 **≥ 1100px** (`styles.css:2027`)
 - `--fs-quote`: 44px → 52px (the full-scale venue/match hero quote; the briefing hero quote stays 30px)

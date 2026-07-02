@@ -16,6 +16,8 @@ LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated
 
 The screenshot-driven visual audit of every public surface at 390/768/1440 (findings **F-1…F-22**) is **fully closed** — all 22 shipped June 2026, plus the follow-up passes (English-only content pipeline, the `--reading-max` desktop width ladder, and the Lighthouse perf/a11y pass: Today 95 · Discover 96 · About 99, a11y/BP/SEO 100). The per-finding detail lives in `docs/audits/` (dated per-surface critiques) and in README → Roadmap → Built; the V-1…V-14 visual-assertion suite + the VM reproduction steps live in `docs/screenshots/README.md`. Method in one line: `npm run verify` (structural gate — overflow / console / 44px floor) + `npm run smoke`/`e2e` against `docs/screenshots/baseline/`, or `npm run preview -- <branch-url>` for production fidelity (real photos, live data).
 
+**July 2026 design-sync pass (boards 1a–1i) — SHIPPED** (PR #92): voice-first hierarchy restored on Today (quote 42px Fraunces, title quiet Inter; mobile hero voice-only — also fixed the 390px photo-sliver collapse); Save joined the hero row, Surprise-me demoted to the This Week header; Discover dropped its banner + lede chrome, folded the mood strip into the Filters sheet, docked List|Map into the bottom glass chrome (floating pill retired) and went 3-col on desktop (rail · list · map) with a 52-tier search toolbar; venue detail reordered to quote → actions → venue plate with one labelled "Venue →" link; Profile got taste-cue + digest plates (composite `.digest-field`) and quiet info rule rows; Saved got tag date-cells, the lime active-count badge (zero-suppressed) and a closing summary plate; the lime `.linkact` underline retired (petrol link mark). Per-page detail in `HANDOFF.md`.
+
 ---
 
 ## 1. Architectural Gaps & Technical Debt
@@ -107,6 +109,12 @@ These would dilute the brand. Listed so the next person knows the answer is no w
 
 ---
 
+## Provider strategy (July 2026)
+
+The researched revision of every external AI/places/events dependency — free-tier LLM landscape (Groq/Gemini 3.x/OpenRouter/Workers AI), the Overture-based replacement for the retired Google Places path, events-source candidates, cron dial-down + spend guardrails, and the phased plan — lives in **`docs/provider-strategy-jul26.md`** (status: proposal, owner to green-light phases).
+
+---
+
 ## Design explorations shelf (proposals, owner to pick)
 
 WWDC 2026 read: a refinement year — Apple *refined* Liquid Glass for legibility (sharper layered icons, a user-facing translucency slider, more nav depth), it didn't expand it. Our three-surface glass restraint matches the grain, and the layered Beacon master in `brand/masters/icon-layered/` (background tile + refractive lime diamond) is the right prep for iOS 27's layered-icon pipeline + Android adaptive icons.
@@ -121,4 +129,4 @@ Still-open product ideas (unranked, kept for the record): curator weekly synthes
 
 ---
 
-*Last rewritten June 2026 — converted from the May tier/sprint roadmap into a weak-point audit after the photo-card / taste / lifecycle wave shipped. Closed frontend-audit + remediation trackers collapsed to pointers July 2026.*
+*Last rewritten June 2026 — converted from the May tier/sprint roadmap into a weak-point audit after the photo-card / taste / lifecycle wave shipped. Closed frontend-audit + remediation trackers collapsed to pointers July 2026; July 2026 design-sync pass (boards 1a–1i) recorded above.*
