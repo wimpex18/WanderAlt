@@ -474,7 +474,9 @@
       btn.classList.toggle('discover-pill--on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    const n = state.cats.size + state.nhoods.size + (state.within ? 1 : 0) + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0);
+    renderWhenChips();   /* the rail's When facet mirrors the quick pills */
+    const n = state.cats.size + state.nhoods.size + (state.within ? 1 : 0) + (state.sort !== DEFAULT_SORT[state.type] ? 1 : 0)
+            + (state.time && state.time !== 'all' ? 1 : 0) + state.mood.length;   /* When + Mood live in the sheet now */
     if (filterCount && filtersBtn) {
       if (n > 0) { filterCount.hidden = false; filterCount.textContent = String(n); }
       else       { filterCount.hidden = true; }
@@ -541,6 +543,11 @@
     document.querySelectorAll('.discover-pill[data-mode]').forEach(b => {
       b.hidden = b.dataset.mode !== state.type;
     });
+    /* Mode-scoped rail/sheet facets (When, Mood are events-only). */
+    document.querySelectorAll('.discover-sheet__field[data-mode]').forEach(f => {
+      f.hidden = f.dataset.mode !== state.type;
+    });
+    updateScopeCounts();
     if (input) {
       input.placeholder = places ? 'Search places…' : 'Search anything…';
     }
@@ -591,6 +598,32 @@
     }).join('');
     const note = document.getElementById('discover-within-note');
     if (note) note.hidden = !(state.within > 0 && _locDenied);
+  };
+
+  /* When — single-select chips in the filter rail/sheet (board 1h),
+     mirroring the mobile quick pills onto the one filter language. */
+  const WHEN_OPTS = [['tonight', 'Tonight'], ['thisweek', 'This week'], ['all', 'All dates']];
+  const renderWhenChips = () => {
+    const whenEl = document.getElementById('discover-when');
+    if (!whenEl) return;
+    whenEl.innerHTML = WHEN_OPTS.map(([v, label]) => {
+      const on = state.time === v || (v === 'all' && (!state.time || state.time === 'all'));
+      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-when="${v}" aria-pressed="${on}">${esc(label)}</button>`;
+    }).join('');
+  };
+
+  /* Scope counts — the live catalog size per scope, rendered as the one
+     lime badge on the ACTIVE scope segment (board 1c/1h; signal-only). */
+  const updateScopeCounts = () => {
+    const counts = {
+      events: ((window.WA && window.WA.catalog) || []).length,
+      places: ((window.WA && window.WA.venues)  || []).length,
+    };
+    document.querySelectorAll('.discover-scope__count').forEach(el => {
+      const n = counts[el.dataset.count] || 0;
+      el.textContent = String(n);
+      el.hidden = n === 0;
+    });
   };
 
   /* ── Map sync ───────────────────────────────────────── */
@@ -743,12 +776,12 @@
     if (panesEl) panesEl.dataset.view = state.view;
     if (viewToggleBtn) {
       const isMap = state.view === 'map';
-      viewToggleBtn.querySelectorAll('.discover-view-fab__seg').forEach(seg => {
-        seg.classList.toggle('discover-view-fab__seg--on',
+      viewToggleBtn.querySelectorAll('.discover-view-seg__seg').forEach(seg => {
+        seg.classList.toggle('discover-view-seg__seg--on',
           (seg.dataset.seg === 'map') === isMap);
       });
       viewToggleBtn.setAttribute('aria-label', isMap ? 'Switch to list view' : 'Switch to map view');
-      viewToggleBtn.classList.toggle('discover-view-fab--map-active', isMap);
+      viewToggleBtn.classList.toggle('discover-view-seg--map-active', isMap);
     }
     /* Tag body so CSS can hide chrome that doesn't belong over the map. */
     document.body.classList.toggle('discover-map-view', state.view === 'map');
@@ -1127,6 +1160,15 @@
       if (state.within > 0) ensureLocation(after);
       else after();
     });
+    /* When chips — single-select; mirrors onto the quick pills. */
+    document.getElementById('discover-when')?.addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-when]');
+      if (!chip) return;
+      state.time = chip.dataset.when || 'all';
+      reflectPills();          /* re-renders the When chips too */
+      updateApplyCount();
+      liveApply();
+    });
     /* Sort radio change — applies live on the desktop rail. */
     sortEl?.addEventListener('change', () => {
       state.sort = selectedSort();
@@ -1147,7 +1189,11 @@
       state.cats.clear();
       state.nhoods.clear();
       state.within = 0;
+      state.time = 'all';                    /* When lives in the sheet now */
       state.sort = DEFAULT_SORT[state.type];
+      /* Mood lives in the sheet too — clearing fires wa:mood-changed,
+         which sets state.mood and re-runs; guard keeps it single-run. */
+      if (state.mood.length) window.WA.MoodChips?.clear?.();
       renderCatChips();
       renderNhoodChips();
       renderWithinChips();

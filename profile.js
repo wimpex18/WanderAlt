@@ -131,9 +131,28 @@
   const BASE = () => window.WA.BASE_URL || '';
   const KEY  = () => window.WA.ANON_KEY  || '';
 
+  /* Composite .digest-field (July 2026 board 1f): the account email with
+     the petrol submit docked inside replaces the old checkbox toggle.
+     Subscribed state lives on the button (aria-pressed + --on class);
+     pressing it toggles the preference. */
+  let _digestEnabled = false;
+  const reflectDigestState = () => {
+    const btn = $('#profile-digest-toggle');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', String(_digestEnabled));
+    btn.classList.toggle('digest-field__submit--on', _digestEnabled);
+    btn.setAttribute('aria-label', _digestEnabled
+      ? 'Unsubscribe from the weekly digest'
+      : 'Subscribe to the weekly digest');
+    btn.innerHTML = _digestEnabled
+      ? '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>'
+      : '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>';
+  };
+
   const loadDigestPref = async () => {
-    const check = $('#profile-digest-check');
-    if (!check) return;
+    const emailField = $('#profile-digest-email');
+    if (emailField) emailField.value = session.email || '';
+    if (!$('#profile-digest-toggle')) return;
     try {
       const res = await fetch(
         `${BASE()}/rest/v1/profiles?user_id=eq.${encodeURIComponent(session.user_id)}&select=digest_enabled&limit=1`,
@@ -141,7 +160,11 @@
       );
       if (!res.ok) return;
       const rows = await res.json().catch(() => []);
-      check.checked = !!(rows[0]?.digest_enabled);
+      _digestEnabled = !!(rows[0]?.digest_enabled);
+      reflectDigestState();
+      if (_digestEnabled) {
+        setStatus('profile-digest-status', 'You\'re in — next digest: Saturday.');
+      }
     } catch { /* silently absent */ }
   };
 
@@ -170,8 +193,11 @@
   };
 
   loadDigestPref();
-  $('#profile-digest-check')?.addEventListener('change', (e) => {
-    saveDigestPref(e.target.checked);
+  $('#profile-digest-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _digestEnabled = !_digestEnabled;
+    reflectDigestState();
+    saveDigestPref(_digestEnabled);
   });
 
   /* ── Change password ─────────────────────────────────────── */

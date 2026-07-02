@@ -90,28 +90,19 @@
       <p class="auth-panel__status" id="profile-pw-status" aria-live="polite"></p>
     </section>
 
-    <!-- Weekly digest opt-in. -->
-    <section class="profile-section" id="digest" aria-labelledby="profile-digest-label">
-      <header class="section-head">
-        <h2 id="profile-digest-label" class="section-title">Weekly digest</h2>
-      </header>
-      <label class="profile-toggle" id="profile-digest-wrap">
-        <input type="checkbox" class="profile-toggle__check" id="profile-digest-check"
-               aria-describedby="profile-digest-desc" />
-        <span class="profile-toggle__label">Email me a weekly briefing</span>
-      </label>
-      <p class="meta profile-section__line" id="profile-digest-desc">
-        Sent Saturday mornings — 5 picks + a short editorial intro. No tracking links.
-      </p>
-      <p class="auth-panel__status" id="profile-digest-status" aria-live="polite"></p>
-    </section>
-
-    <!-- Taste & recommendations — prefs summary + reset controls. -->
-    <section class="profile-section" id="taste-section" aria-labelledby="profile-taste-label">
-      <header class="section-head">
-        <h2 id="profile-taste-label" class="section-title">Taste &amp; recommendations</h2>
-        <p class="section-sub" id="taste-prefs-summary"></p>
-      </header>
+    <!-- Taste cue — promoted to a plate (July 2026 board 1f): the profile
+         summary in the serif-italic voice + a 44px edit icon linking back
+         to the taste check on Today. Reset controls stay beneath. -->
+    <section class="profile-section profile-plate" id="taste-section" aria-labelledby="profile-taste-label">
+      <div class="profile-plate__row">
+        <div class="profile-plate__copy">
+          <p class="eyebrow" id="profile-taste-label">Your taste cue</p>
+          <p class="profile-taste-cue" id="taste-prefs-summary"></p>
+        </div>
+        <a class="action-icon" href="./index.html#taste-onboarding" aria-label="Edit taste preferences" title="Edit taste preferences">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1L19.5 7.5a2.1 2.1 0 0 0-3-3L5 16z" /></svg>
+        </a>
+      </div>
       <p class="meta profile-section__line" id="taste-feedback-count"></p>
       <div class="profile-actions profile-actions--tight">
         <button class="auth-panel__close" id="taste-reset-prefs-btn" type="button"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" /></svg><span>Reset preferences</span></button>
@@ -120,19 +111,44 @@
       <p class="auth-panel__status" id="taste-status" aria-live="polite"></p>
     </section>
 
-    <!-- About & info — surfaces the About page from inside Profile, the
-         research-backed home for low-frequency info/legal content. The
-         topbar About link covers signed-out visitors; this covers the
-         signed-in account view. -->
+    <!-- Saturday digest — plate with the composite .digest-field (board 1f):
+         the account email with the petrol submit docked inside, replacing
+         the old checkbox toggle. profile.js drives subscribe state. -->
+    <section class="profile-section profile-plate" id="digest" aria-labelledby="profile-digest-label">
+      <p class="eyebrow" id="profile-digest-label">Saturday digest</p>
+      <p class="profile-plate__desc" id="profile-digest-desc">
+        One email, Saturday 09:00. Next week&rsquo;s picks in your curator&rsquo;s words. No tracking links.
+      </p>
+      <form id="profile-digest-form" data-no-submit>
+        <div class="digest-field">
+          <input type="email" class="digest-field__email" id="profile-digest-email"
+                 aria-label="Email address for the weekly digest"
+                 aria-describedby="profile-digest-desc" readonly />
+          <button type="submit" class="digest-field__submit" id="profile-digest-toggle"
+                  aria-label="Subscribe to the weekly digest" aria-pressed="false">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+          </button>
+        </div>
+      </form>
+      <p class="auth-panel__status" id="profile-digest-status" aria-live="polite"></p>
+    </section>
+
+    <!-- About & info — quiet rule rows (board 1f: "settings are rules,
+         not plates"). Low-frequency info/legal links don't earn a petrol
+         CTA; each row is a full-width link with a mono pointer. -->
     <section class="profile-section" aria-labelledby="profile-about-label">
       <header class="section-head">
         <h2 id="profile-about-label" class="section-title">About &amp; info</h2>
       </header>
-      <p class="meta profile-section__line">
-        What WanderAlt is, who curates it, how to get in touch, and what we do with your data.
-      </p>
-      <div class="profile-actions">
-        <a class="auth-panel__submit" href="./about.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.75h.01" /></svg><span>About WanderAlt</span></a>
+      <div class="profile-rules">
+        <a class="profile-rule" href="./about.html">
+          <span class="profile-rule__label">What WanderAlt is &amp; who curates it</span>
+          <span class="profile-rule__go">About &rarr;</span>
+        </a>
+        <a class="profile-rule" href="./about.html#about-privacy">
+          <span class="profile-rule__label">Data &amp; privacy</span>
+          <span class="profile-rule__go">About &rarr;</span>
+        </a>
       </div>
     </section>
 
@@ -160,6 +176,7 @@
     </section>
 
     <footer class="colophon">
+      <p class="colophon__line">no tracking &middot; no analytics &middot; strictly-necessary storage only</p>
       <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
     </footer>
 

@@ -4031,7 +4031,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .discover-pane--map,
   .discover-search,
   .discover-pills,
-  .discover-view-fab,
+  .nav__viewrow,
   .digest-optin,
   .deprecation-banner,
   .city-selector,
@@ -5043,12 +5043,12 @@ a.handle:hover { color: var(--c-ink); }
   /* Discover shares the global --reading-max ladder (no bespoke width)
      so its topbar/nav chrome aligns with the content below it and with
      every other page. The list/map split lives inside that shared width. */
-  /* Rebalanced split (redesign May 2026): the editorial list breathes
-     (1fr) while the map stays prominent and sticky (1.18fr). The old
-     0.85/1.6 ratio was the main source of the cramped, dense feeling. */
+  /* July 2026 board 1h: 3-col split — 236px filter rail (the hoisted
+     .discover-sheet), then the editorial list (1fr), then the sticky
+     map (1.15fr). */
   .discover-panes {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr);
+    grid-template-columns: 236px minmax(0, 1fr) minmax(0, 1.15fr);
     gap: var(--s-7);
     align-items: start;
   }
@@ -5061,11 +5061,10 @@ a.handle:hover { color: var(--c-ink); }
   }
 }
 
-/* Hide the view-toggle FAB on desktop (both panes are always visible).
-   Scoped to body[data-page] so it outranks the base .discover-view-fab
-   display rule regardless of source order. */
+/* Hide the docked List|Map view row on desktop (both panes are always
+   visible in the split). */
 @media (min-width: 1024px) {
-  body[data-page="discover"] .discover-view-fab { display: none; }
+  body[data-page="discover"] .nav__viewrow { display: none; }
 }
 
 /* Places reuses the list + map (venue pins via MapView.setPlaces), but
@@ -5104,46 +5103,73 @@ body.discover-places .mood-chips { display: none; }
    bottom-chrome accessories are the current pattern). One button,
    two state segments; the whole pill is the 44px tap target and it
    keeps the app's single sanctioned shadow. */
-.discover-view-fab {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--nav-h) + var(--s-2));
-  z-index: 50;
-  display: inline-flex;
-  align-items: center;
-  padding: var(--s-1);
-  min-height: 44px;
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
-  color: var(--c-paper);
-  background: var(--c-ink);
-  border: 0;
-  border-radius: var(--radius);   /* 8px — the 999px pill is retired (Plate & Rule) */
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+/* July 2026 board 1c: the toggle docks INSIDE the bottom glass chrome,
+   centered above the tab row — one surface, no occlusion (the floating
+   ink pill is retired). Light segmented control, same vocabulary as
+   .discover-scope: paper-deep track, accent-soft active segment. */
+.nav__viewrow {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-2) var(--s-2) 0;
 }
-.discover-view-fab__seg {
+.discover-view-seg {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-4);
+  gap: 4px;
+  padding: 4px;
+  min-height: 44px;
+  background: var(--c-paper-deep);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.discover-view-seg__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 var(--s-5);
+  align-self: stretch;
   border-radius: calc(var(--radius) - 3px);   /* 5px inner — matches .wa-seg/.discover-scope seg */
   line-height: 1;
-  color: rgba(255, 255, 255, 0.72);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
   transition: background var(--t-fast), color var(--t-fast);
 }
-.discover-view-fab__seg--on {
-  background: var(--c-paper);
-  color: var(--c-ink);
+.discover-view-seg__seg--on {
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  font-weight: 600;
 }
 
-/* While the FAB floats (mobile/tablet — hidden in the desktop split),
-   give the list pane enough tail room that the last rows can scroll
-   clear of it (F-2: the FAB sat on top of the final rows). */
+/* Tablet (768–1023): the nav is a top masthead, so the view toggle keeps
+   the old docked-above-the-fold position at the viewport bottom. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nav__viewrow {
+    position: fixed;
+    left: 50%;
+    bottom: var(--s-4);
+    transform: translateX(-50%);
+    z-index: 50;
+    padding: 0;
+  }
+  .discover-view-seg {
+    background: var(--c-paper);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* Keep tail room so the last rows scroll clear of the bottom chrome. */
 @media (max-width: 1023px) {
   .discover-pane--list { padding-bottom: calc(var(--s-9) + var(--s-2)); }
+}
+/* The docked seg adds a row to the bottom chrome — give the page body
+   the extra clearance on phones. */
+@media (max-width: 767px) {
+  body[data-page="discover"] {
+    padding-bottom: calc(var(--nav-h) + var(--s-9) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ── Free-entry badge in result rows ───────────────────────── */
@@ -5273,9 +5299,11 @@ body.discover-places .mood-chips { display: none; }
 }
 .sheet-chip:hover { border-color: var(--c-ink); }
 .sheet-chip--on {
-  background: var(--c-ink);
-  color: var(--c-paper);
-  border-color: var(--c-ink);
+  /* Active state = accent-soft plate (July 2026 system: petrol-only,
+     ink fills retired from selection states). */
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  border-color: var(--c-accent);
 }
 /* Non-color selection cue (WCAG 1.4.1) — matches the quick-pill check. */
 .sheet-chip--on::before {
@@ -5334,125 +5362,85 @@ body.discover-sheet-open { overflow: hidden; }
 .facet-pill { display: none; }
 
 @media (min-width: 1024px) {
-  /* The sheet becomes ONE compact row of facet dropdown-pills directly
-     above the results (F-15b — Airbnb/Booking pattern). The old stacked
-     rail consumed ~900px of the results column before the first row;
-     control weight is now proportional to use frequency (F-22). No
-     "+ Filters" trigger, no Apply (changes apply live). */
+  /* July 2026 board 1h: the filter sheet becomes a persistent left RAIL,
+     the first column of the 3-col split (rail | list | map). Groups sit
+     open under mono eyebrow legends, split by hairline rules; no
+     "+ Filters" trigger, no Apply (changes apply live via liveApply). */
   .discover-sheet {
     position: static;
     width: auto;
     max-height: none;
+    display: block;
     border: 0;
+    border-right: var(--rule-w) solid var(--c-rule);
     border-radius: 0;
-    margin: 0 0 var(--s-3);
+    margin: 0;
+    padding: 0 var(--s-5) var(--s-6) 0;
     animation: none;
     z-index: auto;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--s-3);
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .discover-sheet[hidden] { display: flex !important; }   /* always visible */
+  .discover-sheet[hidden] { display: block !important; }   /* always visible */
   .discover-sheet__body {
     overflow: visible;
     padding: 0;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--s-2);
-    flex: 1;
+    display: block;
   }
   .discover-sheet__field {
-    position: relative;
+    position: static;
     border: 0;
-    margin: 0;
-    padding: 0;
+    border-top: var(--rule-w) solid var(--c-rule);
+    margin: var(--s-5) 0 0;
+    padding: var(--s-5) 0 0;
   }
-  .discover-sheet__field legend { display: none; }   /* the pill carries the label */
-  /* Sort reads as a view control, not a filter — push it to the row's
-     right end, aligned over the results count below. */
-  .discover-sheet__field--sort { margin-left: auto; }
-  .discover-sheet__field--sort .discover-sheet__panel { left: auto; right: 0; }
-
-  .facet-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-1);
-    min-height: 44px;
-    padding: 0 var(--s-3);
-    font-family: var(--ff-mono);
-    font-size: var(--fs-meta);
-    letter-spacing: 0.04em;
-    color: var(--c-ink-soft);
-    background: var(--c-paper);
-    border: var(--rule-w) solid var(--c-rule);
-    border-radius: 999px;
-    cursor: pointer;
-    transition: color var(--t-fast), border-color var(--t-fast);
-  }
-  .facet-pill::after { content: "▾"; font-size: 9px; color: var(--c-ink-mute); }
-  .facet-pill:hover { border-color: var(--c-accent); color: var(--c-accent); }
-  /* Carrying a selection: petrol signal (count text comes from JS). */
-  .facet-pill--on { border-color: var(--c-accent); color: var(--c-accent); }
-  .discover-sheet__field[data-open] .facet-pill {
-    border-color: var(--c-ink);
-    color: var(--c-ink);
-  }
-
-  /* The group content becomes an anchored popover card — solid paper +
-     hairline, no shadow/glass (canon: glass is chrome-only). */
-  .discover-sheet__panel { display: none; }
+  .discover-sheet__field[hidden] { display: none; }
+  .discover-sheet__field:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  /* The legend is the group's mono eyebrow (the dropdown pill is gone). */
+  .discover-sheet__field legend.eyebrow { display: block; margin-bottom: var(--s-3); }
+  .facet-pill { display: none; }
+  /* Panels sit open in the rail — no popover. */
+  .discover-sheet__panel,
   .discover-sheet__field[data-open] .discover-sheet__panel {
     display: block;
-    position: absolute;
-    top: calc(100% + var(--s-2));
-    left: 0;
-    z-index: 30;
-    min-width: 340px;
-    max-width: 440px;
-    padding: var(--s-4);
-    background: var(--c-paper);
-    border: var(--rule-w) solid var(--c-rule-strong);
-    border-radius: var(--radius-card);
+    position: static;
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
   }
-  .discover-sheet__head  { padding: 0; border-bottom: 0; }
+  .discover-sheet__chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+  .discover-sheet__head  { padding: 0 0 var(--s-2); border-bottom: 0; display: flex; justify-content: flex-end; }
   .discover-sheet__title { display: none; }
   .discover-sheet__handle,
   .discover-sheet__close,
   .discover-sheet__foot,
   .discover-pill--more,
   .discover-sheet-backdrop { display: none !important; }
-  /* Row reset, shown only when a filter is active (calm at rest). */
-  .discover-sheet__clear-top:not([hidden]) { display: inline-block; }
+  /* Rail reset, shown only when a filter is active (calm at rest);
+     44px compact tier like every inline toolbar control. */
+  .discover-sheet__clear-top:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--c-accent);
+  }
   /* Desktop never locks body scroll for the (now inline) filters. */
   body.discover-sheet-open { overflow: auto; }
 
-  /* ── Discover chrome compression (F-16) ────────────────────
-     The stack above the list/map panes decides whether the V-11
-     feedback loop (count + row + PIN in the first viewport after a
-     filter tap) holds at 1280×900. Three trims, Discover-only:
-     a slimmer banner ribbon on the working surface, the quick pills
-     and mood strip sharing one row (split by a hairline), and a
-     tighter lede. ~100px regained. */
-  body[data-page="discover"] .city-banner { height: 120px; }
+  /* ── Discover chrome compression (F-16 → July 2026 board 1h) ──
+     The working surface drops the editorial chrome: no page head —
+     the deck toolbar + rail + panes own the viewport, so V-11
+     (count + row + pin after a filter tap) holds with room to spare. */
   body[data-page="discover"] .discover-lede { margin-bottom: var(--s-3); }
-  body[data-page="discover"] .discover-pills,
-  body[data-page="discover"] .mood-chips {
-    display: inline-flex;
-    vertical-align: middle;
-    width: auto;
-    overflow-x: visible;
-    margin: 0 0 var(--s-3);
-    padding: var(--s-3) 0 var(--s-1);
-  }
-  body[data-page="discover"] .discover-pills {
-    margin-right: var(--s-4);
-    padding-right: var(--s-4);
-    border-right: var(--rule-w) solid var(--c-rule);
-  }
+  body[data-page="discover"] .page-head--discover { display: none; }
+  /* Quick pills fold away — the rail's When/Kind groups are the one
+     filter language on desktop. */
+  body[data-page="discover"] .discover-pills { display: none; }
 }
 /* Mobile never shows the header clear (the sheet footer has "Clear all"). */
 .discover-sheet__clear-top {
@@ -5473,7 +5461,7 @@ body.discover-sheet-open { overflow: hidden; }
   .discover-search,
   .discover-pills,
   .discover-pane--map,
-  .discover-view-fab,
+  .nav__viewrow,
   .discover-sheet,
   .discover-sheet-backdrop { display: none !important; }
 }
@@ -5584,14 +5572,9 @@ body[data-page="discover"] .discover-pills {
   align-items: center;
 }
 
-/* ── Discover: desktop facet row (F-15b) ──────────────────────
-   Replaces the old stacked-rail legend treatment: the pills carry the
-   labels, so legends stay hidden and the fields sit flush in one row. */
-@media (min-width: 1024px) {
-  body[data-page="discover"] .discover-sheet__field legend.eyebrow { display: none; }
-  body[data-page="discover"] .discover-sheet__field { margin: 0; }
-  body[data-page="discover"] .facet-pill { white-space: nowrap; }
-}
+/* ── Discover: desktop rail (July 2026 board 1h) ──────────────
+   The rail shows each group's legend as its mono eyebrow; the facet
+   dropdown-pills are retired (see the rail block above). */
 
 /* ════════════════════════════════════════════════════════════
    AI "MATCH" MODE — immersive, but flat & two-tone (solid petrol)
@@ -5877,16 +5860,18 @@ body[data-page="saved"] .seg-note {
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; height: 52px; padding: 0 28px; border-radius: var(--radius); font-family: var(--ff-body); font-size: 16px; font-weight: 600; letter-spacing: -.01em; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
 .btn--primary { background: var(--c-accent); color: #fff; }
 .btn--primary:hover { background: var(--c-accent-deep); }
-.btn--secondary { background: var(--c-paper); color: var(--c-ink); border: 1.5px solid var(--c-ink); }
-.btn--secondary:hover { background: var(--c-ink); color: var(--c-paper); }
+.btn--secondary { background: var(--c-paper); color: var(--c-ink-soft); border: var(--rule-w) solid var(--c-rule-strong); }
+.btn--secondary:hover { border-color: var(--c-ink); color: var(--c-ink); }
 .btn--quiet { background: var(--c-paper); color: var(--c-ink-soft); border: var(--rule-w) solid var(--c-rule-strong); }
 .btn--quiet:hover { border-color: var(--c-ink); color: var(--c-ink); }
 .btn--petrol { background: var(--c-accent); color: #fff; }
 .btn--petrol:hover { background: var(--c-accent-deep); }
 .btn--sm { height: 44px; padding: 0 20px; font-size: 15px; }
 .btn .ic { width: 18px; height: 18px; }
-.linkact { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--c-ink); padding: 10px 0; border-bottom: 2px solid var(--c-lime); transition: color var(--t-fast); }
-.linkact:hover { color: var(--c-accent); }
+/* July 2026: petrol link mark (board 1d/1g) — the old lime underline
+   broke the "lime is signal-only, never text decoration" rule. */
+.linkact { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--c-accent); padding: 10px 0; border-bottom: var(--rule-w) solid var(--c-accent); transition: color var(--t-fast), border-color var(--t-fast); }
+.linkact:hover { color: var(--c-ink); border-bottom-color: var(--c-ink); }
 .linkact .ic { width: 15px; height: 15px; }
 
 /* ── Chips · segmented control · fields ───────────────────────── */
@@ -5910,7 +5895,9 @@ body[data-page="saved"] .seg-note {
 
 /* ── Banner — a framed PLATE on the grid, not a loose strip ───── */
 .city-banner {
-  height: 150px;
+  /* July 2026 pass: compressed 150 → 88 mobile / 120 desktop so the
+     curator's voice crests the first viewport (design board 1b/1g). */
+  height: 88px;
   margin: var(--s-5) auto 0;
   border: var(--rule-w) solid var(--c-rule);
   border-radius: var(--radius-card);
@@ -5918,6 +5905,7 @@ body[data-page="saved"] .seg-note {
   background: var(--c-cream);
 }
 .city-banner__img { object-position: center 64%; }
+@media (min-width: 768px) { .city-banner { height: 120px; } }
 
 /* ── Docked bottom bar (mobile) — replaces the floating glass pill.
    Full-width, hairline top, every tab labelled, petrol active underline.
@@ -6017,10 +6005,13 @@ body[data-page="saved"] .seg-note {
 .tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
 .tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
 .tonight__kicker b{color:var(--c-ink);font-weight:500}
-.tonight__title{font-family:var(--ff-display);font-size:42px;line-height:1.08;font-weight:600;letter-spacing:-.018em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-6);display:block}
+/* July 2026 boards 1b/1g restore the voice-first hierarchy on Today:
+   the event title is quiet Inter body type and the curator quote is the
+   loudest element on the screen (Fraunces italic, 29px → 42px). */
+.tonight__title{font-family:var(--ff-body);font-size:23px;line-height:1.25;font-weight:600;letter-spacing:-.01em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-5);display:block}
 a.tonight__title:hover{color:var(--c-accent)}
 .quote{border-left:3px solid var(--c-lime);padding-left:var(--s-6);margin:0 0 var(--s-4)}
-.quote__t{font-family:var(--ff-display);font-style:italic;font-size:28px;line-height:1.3;color:var(--c-ink-soft);text-wrap:pretty;margin:0}
+.quote__t{font-family:var(--ff-display);font-style:italic;font-size:42px;line-height:1.1;font-weight:400;color:var(--c-ink);text-wrap:pretty;margin:0}
 .quote__attr{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
 .quote__attr .handle{font-size:13.5px}
 .tonight__actions{display:flex;align-items:stretch;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:wrap}
@@ -6035,6 +6026,8 @@ a.tonight__title:hover{color:var(--c-accent)}
    block sits at the column's bottom (level with the action row). */
 @media (min-width:768px){
   .tonight__actions .btn{flex:1}
+  /* Two equal buttons read best capped near the board's 440px row. */
+  .tonight__actions{max-width:440px}
   .tonight__photo{flex:1}
 }
 .tonight__venue{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding:var(--s-4) var(--s-5);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep)}
@@ -6048,8 +6041,11 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
    Stacked on desktop so the curator column + digest read as an editorial
    footer band and never leave a short, stranded sidebar. */
 .week{display:block;padding-bottom:var(--s-2)}
-.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-5);padding:var(--s-4) 0 var(--s-3);border-bottom:var(--rule-w) solid var(--c-rule)}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:var(--s-5);padding:var(--s-4) 0 var(--s-3);border-bottom:var(--rule-w) solid var(--c-rule)}
 .sechead__t{font-family:var(--ff-display);font-size:32px;font-weight:600;letter-spacing:-.018em;margin:0}
+/* Count + the demoted Surprise-me shuffle share the header's right edge. */
+.sechead__side{display:flex;align-items:center;gap:var(--s-2)}
+.sechead__side .section-sub{padding:0;margin:0}
 .thisweek{margin:0}
 .picks{margin:0}
 /* This-week picks become a 2-col index on desktop so the full width reads as
@@ -6096,16 +6092,17 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
   .standfirst__t{font-size:27px;line-height:1.2}
   .standfirst__meta{padding:0}
   .tonight{display:flex;flex-direction:column;padding-top:var(--s-2);padding-bottom:var(--s-7)}
-  .tonight__title{font-size:31px;margin-bottom:var(--s-4)}
+  .tonight__title{font-size:21px;margin-bottom:var(--s-4)}
   .tonight__media{margin:0 0 var(--s-5)}
   .tonight__media .tonight__venue{display:none}   /* hero board mobile = photo only; scoped so the venue-detail row + Discover match hero stay visible */
   .tonight__photo{margin-bottom:0}
   .tonight__photo{min-height:0;height:215px}
   .quote{padding-left:var(--s-4)}
-  .quote__t{font-size:24px;line-height:1.38}
-  .tonight__actions{flex-direction:column;gap:10px;margin-top:var(--s-6)}
-  .tonight__actions .btn{width:100%}
-  .tonight__actions .btn--quiet{margin-left:0}
+  .quote__t{font-size:29px;line-height:1.15}
+  /* July 2026 board 1b: I'm going + Save share one row at equal width
+     (the third button left the row, so stacking is no longer needed). */
+  .tonight__actions{flex-direction:row;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:nowrap}
+  .tonight__actions .btn{flex:1;width:auto;min-width:0;padding:0 var(--s-4)}
   .week{display:block}
   .thisweek .picks{grid-template-columns:1fr}   /* single-col list on mobile */
   .sechead__t{font-size:24px}
@@ -6258,8 +6255,8 @@ body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var
 .btn-primary,.btn-secondary{height:52px;min-height:52px;padding:0 28px;border-radius:var(--radius);font-family:var(--ff-body);font-size:16px;font-weight:600;letter-spacing:-.01em;gap:10px}
 .btn-primary{background:var(--c-accent);color:#fff;border:0}
 .btn-primary:hover{background:var(--c-accent-deep);color:#fff}
-.btn-secondary{background:var(--c-paper);color:var(--c-ink);border:1.5px solid var(--c-ink)}
-.btn-secondary:hover{background:var(--c-ink);color:var(--c-paper);border-color:var(--c-ink)}
+.btn-secondary{background:var(--c-paper);color:var(--c-ink-soft);border:var(--rule-w) solid var(--c-rule-strong)}
+.btn-secondary:hover{border-color:var(--c-ink);color:var(--c-ink);background:var(--c-paper)}
 
 /* Profile / auth / digest submit → primary button */
 .auth-panel__submit{min-height:52px;border-radius:var(--radius);background:var(--c-accent);color:#fff;font-family:var(--ff-body);font-weight:600;letter-spacing:-.01em}
@@ -6510,3 +6507,292 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 .page-head--about .page-head__copy { flex: 1; min-width: 0; }
 .page-head--about .about-head__lede { margin-top: var(--s-4); }
 @media (max-width: 767px) { .page-head--about .page-head__mark { display: none; } }
+
+/* ════════════════════════════════════════════════════════════
+   JULY 2026 PASS — design-sync from the "WanderAlt Redesign
+   Jul26" boards (1a–1i). Zero new tokens; restatements of the
+   existing system. Grouped per page below.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Saved (board 1e) ────────────────────────────────────────
+   One date language across Saved and Today: the Going row's day
+   cell reuses the tag atoms — lime only for the live TONIGHT
+   signal, quiet 4px-radius tags for future days. */
+.list-row__time {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  padding: 6px 0;
+  margin-top: var(--s-1);        /* optical align with the row title */
+  text-align: center;
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-tag);
+  color: var(--c-ink-mute);
+}
+.list-row__time--live {
+  background: var(--c-lime);
+  border-color: transparent;
+  color: var(--c-ink);
+  font-weight: 500;
+}
+
+/* Active segment's count = the one lime badge (live-state signal);
+   a lime zero would spotlight an empty list, so .seg-tab__count--zero
+   (set by saved.js) keeps it quiet. */
+#seg-going:checked   ~ .seg-tabs label[for="seg-going"]   .seg-tab__count:not(.seg-tab__count--zero),
+#seg-reading:checked ~ .seg-tabs label[for="seg-reading"] .seg-tab__count:not(.seg-tab__count--zero),
+#seg-past:checked    ~ .seg-tabs label[for="seg-past"]    .seg-tab__count:not(.seg-tab__count--zero) {
+  background: var(--c-lime);
+  color: var(--c-ink);
+  border-color: transparent;
+  padding: 1px 7px;
+  border-radius: var(--radius-tag);
+}
+
+/* Calm summary plate under the Going rows — lifecycle note + bridge. */
+.saved-foot {
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
+  padding: var(--s-5);
+  margin-top: var(--s-6);
+}
+.saved-foot__line {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-ink);
+  margin: 0;
+}
+.saved-foot__sub {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--c-ink-mute);
+  margin: var(--s-2) 0 0;
+}
+.saved-foot__sub a { color: var(--c-accent); }
+
+/* ── Profile (board 1f) ──────────────────────────────────────
+   Taste cue + Saturday digest are promoted to plates; the info
+   links become quiet rule rows ("settings are rules, not plates"). */
+body[data-page="profile"] .profile-section.profile-plate {
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+  margin-top: var(--s-7);
+}
+.profile-plate__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+.profile-plate__copy { min-width: 0; }
+.profile-taste-cue {
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--c-ink);
+  margin: var(--s-2) 0 0;
+}
+.profile-plate__desc {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-ink-soft);
+  margin: var(--s-2) 0 var(--s-4);
+  max-width: 56ch;
+}
+/* Inside a plate the reset controls drop to the 44px compact tier
+   (they are secondary to the plate's own content). */
+body[data-page="profile"] .profile-plate .profile-actions .auth-panel__close {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  font-size: 14px;
+}
+
+/* Quiet rule rows for low-frequency info links. */
+.profile-rules { display: flex; flex-direction: column; }
+.profile-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 52px;
+  padding: var(--s-3) 0;
+  border-bottom: var(--rule-w) solid var(--c-rule);
+  text-decoration: none;
+}
+.profile-rule__label {
+  font-family: var(--ff-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-ink);
+}
+.profile-rule__go {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  white-space: nowrap;
+}
+.profile-rule:hover .profile-rule__label { color: var(--c-accent); }
+
+/* ── Pick detail (board 1d) ──────────────────────────────────
+   Actions sit directly under the curator quote: labelled petrol
+   primary (52 form tier), then an icon-only 44 row (save /
+   calendar / share / map). The venue plate follows with one
+   labelled "Venue →" link into the place page. */
+body[data-page="venue"] .venue-actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s-2);
+}
+body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
+.venue-iconrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-5);
+}
+/* The hero save control joins the icon row at the shared 44 tier. */
+.venue-iconrow .venue-save {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+.venue-card__go {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  border-bottom: var(--rule-w) solid var(--c-accent);
+  padding-bottom: 2px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.venue-card__go:hover { color: var(--c-ink); border-bottom-color: var(--c-ink); }
+@media (min-width: 768px) {
+  body[data-page="venue"] .venue-actions { max-width: 440px; }
+  /* Left-aligned on the reading column (centered blocks are mobile-only
+     here); -11px aligns the first glyph flush like .social-links. */
+  .venue-iconrow { justify-content: flex-start; margin-left: -11px; }
+}
+
+/* ── Discover (boards 1c / 1h) ───────────────────────────────
+   The working surface drops the city banner on every viewport —
+   results crest the fold (city.js still injects it; hidden here). */
+body[data-page="discover"] .city-banner { display: none; }
+
+/* Mobile bottom chrome: ONE glass surface for the docked List|Map
+   seg + the tab row (board 1c). The glass moves from .nav__inner to
+   .nav so both rows sit on it. */
+@media (max-width: 767px) {
+  body[data-page="discover"] .nav {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: var(--rule-w) solid var(--glass-hair);
+    box-shadow: 0 -2px 16px rgba(20, 30, 30, 0.07);
+  }
+  body[data-page="discover"] .nav__inner {
+    background: transparent;
+    border-top: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Scope counts — the one lime badge, live-state only: visible on the
+   ACTIVE scope segment, quiet mono on the inactive one. */
+.discover-scope__count {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-ink-mute);
+  padding: 2px 6px;
+  border-radius: var(--radius-tag);
+}
+.discover-scope__btn--on .discover-scope__count {
+  background: var(--c-lime);
+  color: var(--c-ink);
+}
+
+/* Concierge ✦ — petrol at rest, docked in the field's end (board 1c);
+   the label shows on desktop, icon-only on phones (board 1c vs 1h). */
+body[data-page="discover"] .discover-search .search-box__ai-btn {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: #fff;
+}
+body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
+  background: var(--c-accent-deep);
+  border-color: var(--c-accent-deep);
+  color: #fff;
+}
+@media (max-width: 767px) {
+  .search-box__ai-label { display: none; }
+}
+
+/* Desktop deck → one 44-tier toolbar row directly under the masthead
+   (board 1h: control weight proportional to use frequency — search is
+   a 340px control in the chrome band, not a 1216px hero). */
+@media (min-width: 1024px) {
+  body[data-page="discover"] .deck {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-4);
+    border: 0;
+    border-bottom: var(--rule-w) solid var(--c-rule);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 0 var(--s-4);
+    margin: var(--s-3) 0 var(--s-6);
+  }
+  body[data-page="discover"] .deck .discover-scope { margin: 0; }
+  body[data-page="discover"] .deck .discover-scope__btn {
+    padding: 0 16px;
+    font-size: 13.5px;
+  }
+  body[data-page="discover"] .deck .discover-search {
+    width: 400px;
+    margin: 0 0 0 auto;
+  }
+  body[data-page="discover"] .deck .discover-search .search-box {
+    height: 52px;
+    gap: var(--s-2);
+    padding: 0 5px 0 var(--s-3);
+  }
+  /* The retired facet dropdown-pills stay dead on desktop even though a
+     later shared icon rule sets them inline-flex. */
+  body[data-page="discover"] .facet-pill { display: none !important; }
+  body[data-page="discover"] .deck .discover-applied { flex-basis: 100%; }
+  /* AI mode: the concierge panel takes the full band width again. */
+  body.discover-ai-mode .deck { display: block; }
+  body.discover-ai-mode .deck .discover-search { width: auto; margin: 0; }
+}
+
+/* ── Today mobile hero (board 1b) ────────────────────────────
+   The phone hero is voice-only: no photo block (it lives in the
+   desktop right rail). Also retires a long-standing collapse bug —
+   the photo anchor has no in-flow content, so at 390 it shrank to
+   a 2px sliver of dead space whenever it rendered. */
+@media (max-width: 767px) {
+  body[data-page="briefing"] .tonight__media { display: none; }
+  /* The base grid's align-items:start leaks into the mobile flex column
+     and shrink-wraps children — stretch so the action row spans. */
+  body[data-page="briefing"] .tonight { align-items: stretch; }
+}

@@ -109,7 +109,16 @@
     notify(active);
   });
 
+  /* Clear all mood tags — used by Discover's "Clear all" now that the
+     mood strip lives inside the Filters sheet (July 2026 board 1c). */
+  const clearAll = () => {
+    const empty = new Set();
+    setHash(empty);
+    renderChips(empty);
+    notify(empty);
+  };
+
   /* Public API */
   window.WA             = window.WA || {};
-  window.WA.MoodChips   = { active: getActive };
+  window.WA.MoodChips   = { active: getActive, clear: clearAll };
 })();

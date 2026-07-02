@@ -173,6 +173,11 @@
          </div>`
       : headerFlat) + moodChips;
 
+    /* Map link for the icon row — venue name + city (venue_details refines
+       the address async, but the name query already resolves in Maps). */
+    const cityName = (window.WA && window.WA.CITY) || 'tallinn';
+    const mapsUrl  = `https://maps.google.com/?q=${encodeURIComponent(`${entry.venue}, ${cityName}`)}`;
+
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
 
@@ -191,24 +196,46 @@
           </blockquote>
         </section>
 
-        <hr class="rule" style="margin-top:var(--s-4)">
+        <!-- Actions directly under the voice (July 2026 board 1d): the
+             labelled petrol primary keeps the 52 form tier; save / calendar
+             / share / map are icon-only 44s in their own compact row —
+             the two tiers never mix in one row. -->
+        <div class="venue-actions">
+          <button class="btn btn--primary venue-going-btn" type="button">
+            <span class="action-btn__label">I&rsquo;m going</span>
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+          </button>
+          <div class="venue-iconrow">
+            <label class="bookmark venue-save" title="Save this pick">
+              <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
+                     aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
+              ${bookmarkSVG()}
+            </label>
+            ${entry.day ? `<button class="action-icon venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
+            </button>` : ''}
+            <button class="action-icon venue-share-btn" type="button" aria-label="Share this pick" title="Share">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            </button>
+            <a class="action-icon" href="${mapsUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(entry.venue)} on the map (opens in a new tab)" title="On the map">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+            </a>
+          </div>
+        </div>
 
-        <!-- Venue: which place hosts this pick. Reuses the app photo-card
-             atoms (thumb + body) in an aligned card with a clear eyebrow, so
-             the block's purpose reads at a glance. -->
+        <hr class="rule" style="margin-top:var(--s-5)">
+
+        <!-- Venue plate (board 1d): thumb + name + meta + ONE labelled
+             "Venue →" link into the place page — answers the old
+             place-page dead end without twin ambiguous map links. -->
         <section class="venue-block" aria-label="Venue">
-          <p class="eyebrow">Venue</p>
           <div class="venue-card">
             <span class="venue-card__media">${thumbEl(entry, true)}</span>
             <div class="venue-card__body">
               <p class="venue-card__name">${entry.venue}</p>
               <p class="list-row__meta">${buildMeta(entry)}</p>
             </div>
-            <label class="bookmark">
-              <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
-                     aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
-              ${bookmarkSVG()}
-            </label>
+            ${matchedVenue ? `<a class="venue-card__go" href="place.html?id=${encodeURIComponent(matchedVenue.id)}">Venue &rarr;</a>` : ''}
           </div>
           ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
 
@@ -220,19 +247,6 @@
                fetchVenueDetails() when a website arrives from venue_details. -->
           <div id="venue-ext" class="venue-ext">${renderExt(socialObj, entry.permalink)}</div>
         </section>
-
-        <div class="venue-actions">
-          <button class="action-btn action-btn--primary venue-going-btn" type="button" aria-label="I'm going">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
-            <span class="action-btn__label">I&rsquo;m going</span>
-          </button>
-          ${entry.day ? `<button class="action-icon venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
-          </button>` : ''}
-          <button class="action-icon venue-share-btn" type="button" aria-label="Share this pick" title="Share">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-          </button>
-        </div>
 
         <!-- About this event — the curator's longer context, async-populated
              by fetchContext(). Shown as a plain section (not a disclosure) so
