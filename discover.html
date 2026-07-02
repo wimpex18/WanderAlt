@@ -62,11 +62,12 @@
 
     <p class="print-head" aria-hidden="true"></p>
 
-    <!-- Editorial lede — sets the tone, like the Today page's standfirst.
-         Presentational only; city.js swaps the city name in .discover-lede__city. -->
+    <!-- Editorial lede (July 2026 board 1c) — eyebrow + short title;
+         desktop hides it entirely (the deck toolbar owns the chrome).
+         city.js swaps the city name in .page-head__city. -->
     <header class="page-head page-head--discover">
-      <h1 class="page-head__title">Browse every curated pick in <b class="page-head__city">Tallinn</b>.</h1>
-      <p class="page-head__meta">Search, filter, or let the concierge match your night &middot; vouched by humans</p>
+      <p class="page-head__eyebrow">Vouched by humans</p>
+      <h1 class="page-head__title">Every pick in <b class="page-head__city">Tallinn</b>.</h1>
     </header>
 
     <!-- Events | Places scope switch. The permanent thing (a venue) and
@@ -79,9 +80,9 @@
     <div class="deck">
     <div class="discover-scope" role="tablist" aria-label="Browse events or places">
       <button class="discover-scope__btn discover-scope__btn--on" type="button"
-              role="tab" aria-selected="true" data-type="events">Events</button>
+              role="tab" aria-selected="true" data-type="events">Events <span class="discover-scope__count" data-count="events" hidden>0</span></button>
       <button class="discover-scope__btn" type="button"
-              role="tab" aria-selected="false" data-type="places">Places</button>
+              role="tab" aria-selected="false" data-type="places">Places <span class="discover-scope__count" data-count="places" hidden>0</span></button>
     </div>
 
     <!-- Compact search bar. Icon expands the input on tap (mobile);
@@ -155,8 +156,8 @@
       </button>
     </nav>
 
-    <!-- Mood chips — mood-chips.js renders chip buttons here. -->
-    <nav class="mood-chips" aria-label="Filter by mood"></nav>
+    <!-- Mood chips folded into the Filters sheet (July 2026 board 1c) —
+         the deck stays scope · search · quick pills · applied row. -->
 
     <!-- Applied-filters overview — removable chips for the category /
          neighborhood filters hidden inside the sheet, so users can see
@@ -167,16 +168,15 @@
     </div><!-- /.deck -->
 
     <!-- View panes: list (default) and map. Mobile shows one at a time
-         via the view-toggle FAB; desktop ≥1024px shows both side-by-side. -->
+         via the docked List|Map seg in the bottom chrome; desktop ≥1024px
+         shows rail + list + map side-by-side. -->
     <div class="discover-panes" id="discover-panes" data-view="list">
 
-      <!-- List pane ------------------------------------------------- -->
-      <div class="discover-pane discover-pane--list" data-pane="list">
-
         <!-- Filters. Mobile: a bottom sheet opened by "+ Filters" (position
-             fixed, so its place in the list pane is irrelevant there).
-             Desktop ≥1024px: a persistent left-rail atop the list column
-             (static, always visible, live-apply, "+ Filters"/Apply hidden). -->
+             fixed, so its place in the grid is irrelevant there).
+             Desktop ≥1024px: a persistent left rail — the first column of
+             the 3-col split (board 1h), static, live-apply,
+             "+ Filters"/Apply hidden. -->
         <aside class="discover-sheet" id="discover-sheet" aria-label="Filters" hidden>
           <div class="discover-sheet__handle" aria-hidden="true"></div>
           <header class="discover-sheet__head">
@@ -190,7 +190,17 @@
             <!-- Each field is a stacked group inside the mobile sheet and a
                  facet dropdown-pill ≥1024px (F-15b): the .facet-pill button
                  (CSS-hidden on mobile) toggles [data-open] on the fieldset,
-                 revealing .discover-sheet__panel as an anchored popover. -->
+                 revealing .discover-sheet__panel as an anchored popover.
+                 ≥1024 the rail shows the fields open (board 1h). -->
+            <!-- When — single-select chips mirroring the mobile quick pills
+                 (events only; discover.js renders into #discover-when). -->
+            <fieldset class="discover-sheet__field" data-facet="when" data-mode="events">
+              <legend class="eyebrow">When</legend>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /></svg>When</button>
+              <div class="discover-sheet__panel">
+                <div class="discover-sheet__chips" id="discover-when" role="group" aria-label="When"></div>
+              </div>
+            </fieldset>
             <fieldset class="discover-sheet__field" data-facet="cat">
               <legend class="eyebrow">Category</legend>
               <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6h-6l0 -6" /><path d="M14 4h6v6h-6l0 -6" /><path d="M4 14h6v6h-6l0 -6" /><path d="M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>Category</button>
@@ -217,6 +227,15 @@
                 <p class="discover-within-note meta" id="discover-within-note" hidden>Location unavailable &mdash; showing all.</p>
               </div>
             </fieldset>
+            <!-- Mood chips — folded in from the deck (board 1c). mood-chips.js
+                 renders chip buttons into every .mood-chips container. -->
+            <fieldset class="discover-sheet__field" data-facet="mood" data-mode="events">
+              <legend class="eyebrow">Mood</legend>
+              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9 10h.01M15 10h.01" /><path d="M9.5 15a3.5 3.5 0 0 0 5 0" /></svg>Mood</button>
+              <div class="discover-sheet__panel">
+                <nav class="mood-chips" aria-label="Filter by mood"></nav>
+              </div>
+            </fieldset>
             <fieldset class="discover-sheet__field discover-sheet__field--sort" data-facet="sort">
               <legend class="eyebrow">Sort</legend>
               <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l4 -4l4 4m-4 -4v14" /><path d="M21 15l-4 4l-4 -4m4 4v-14" /></svg>Sort</button>
@@ -232,6 +251,9 @@
             <button class="btn-primary discover-sheet__apply" id="discover-sheet-apply" type="button">Apply</button>
           </footer>
         </aside>
+
+      <!-- List pane ------------------------------------------------- -->
+      <div class="discover-pane discover-pane--list" data-pane="list">
 
         <!-- AI match results — populated by discover.js when AI mode is active. -->
         <section class="match-wrap" id="discover-match-wrap" aria-label="AI match results" hidden>
@@ -385,27 +407,6 @@
 
     </div>
 
-    <!-- View toggle (mobile only) — flips between list and map panes.
-         Docked segmented pill above the bottom nav (summer 2026: the
-         free-floating FAB was the last 2018-Material idiom; docked
-         bottom-chrome accessories are the current pattern). Still ONE
-         button — tapping flips the view; the segments reflect state. -->
-    <button class="discover-view-fab" id="discover-view-toggle" type="button" aria-label="Switch to map view">
-      <span class="discover-view-fab__seg discover-view-fab__seg--on" data-seg="list">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h10"/>
-        </svg>
-        List
-      </span>
-      <span class="discover-view-fab__seg" data-seg="map">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/>
-          <path d="M9 4v16M15 6v16"/>
-        </svg>
-        Map
-      </span>
-    </button>
-
   </main>
 
   <!-- Mobile filter sheet backdrop (the sheet itself lives inside the
@@ -413,6 +414,27 @@
   <div class="discover-sheet-backdrop" id="discover-sheet-backdrop" hidden></div>
 
   <nav class="nav" aria-label="Primary">
+    <!-- View toggle — flips between list and map panes (mobile only;
+         desktop shows both). July 2026 board 1c: docked INSIDE the bottom
+         glass chrome above the tab row — one surface, no occlusion (the
+         floating pill is retired). Still ONE button — tapping flips the
+         view; the segments reflect state. -->
+    <div class="nav__viewrow">
+      <button class="discover-view-seg" id="discover-view-toggle" type="button" aria-label="Switch to map view">
+        <span class="discover-view-seg__seg discover-view-seg__seg--on" data-seg="list">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10"/>
+          </svg>
+          List
+        </span>
+        <span class="discover-view-seg__seg" data-seg="map">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>
+          </svg>
+          Map
+        </span>
+      </button>
+    </div>
     <div class="nav__inner">
       <a class="nav__item" data-nav="briefing" href="./index.html">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">

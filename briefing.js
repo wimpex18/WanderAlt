@@ -150,12 +150,16 @@
        </figure>
        <div class="tonight__actions">
          <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-         <button class="btn btn--secondary" id="surprise-btn" type="button" aria-label="Show a surprise pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3"/></svg>Surprise me</button>
          <label class="btn btn--secondary tonight__save">
            <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
          </label>
        </div>`;
+    /* Surprise-me was demoted out of the hero action row (July 2026 board
+       1b) — it lives in the This Week header now. Un-hide it here in case
+       an empty-city render hid it earlier in this session. */
+    const surpriseBtn = document.getElementById('surprise-btn');
+    if (surpriseBtn) surpriseBtn.hidden = false;
     /* Re-apply saved state to the freshly-rendered checkbox (surprise-me
        re-renders the hero, so this can't rely on the one-shot init pass). */
     if (window.WA?.Bookmarks) {
@@ -218,6 +222,9 @@
       `<div class="tonight__signal"><span class="tag tag--live">Tonight</span></div>
        <p class="tonight__empty">No pick for tonight in ${cityLabel} yet &mdash; curators are warming up. ` +
        `In the meantime, <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
+    /* No catalog to surprise from — hide the This Week header shuffle. */
+    const surpriseBtn = document.getElementById('surprise-btn');
+    if (surpriseBtn) surpriseBtn.hidden = true;
   };
 
   /* ── This Week list ────────────────────────────────────── */
@@ -384,9 +391,9 @@
   let _surpriseExcludeId = null;
   let _surpriseCatalog   = [];
 
-  /* Surprise now lives in the Tonight action row, which renderTonight()
-     rebuilds on every shuffle — so the click is handled by ONE delegated
-     listener (bound once) rather than a per-button binding. */
+  /* Surprise lives in the This Week section header (static markup in
+     index.html, July 2026 board 1b). The click is handled by ONE delegated
+     listener (bound once) so it keeps working across hero re-renders. */
   const wireSurprise = (catalog) => {
     _surpriseCatalog = catalog;
     if (wireSurprise._bound) return;
@@ -542,8 +549,8 @@
     renderThisWeek(orderedWeek);
     restoreBookmarks();
     wireBookmarks();
-    /* Surprise me lives in the Tonight actions; renderTonightEmpty omits it
-       for an empty city, so no separate hide guard is needed. */
+    /* Surprise me lives in the This Week header; renderTonight /
+       renderTonightEmpty toggle its visibility for empty cities. */
     wireSurprise(catalog);
     renderColumn();  /* async — doesn't block the sync render above */
 

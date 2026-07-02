@@ -165,13 +165,19 @@
       </div>
     </section>
 
-    <!-- This week + From-the-desk rail (2-col on desktop). Surprise me now
-         lives in the Tonight action row (briefing.js renderTonight). -->
+    <!-- This week + From-the-desk rail (2-col on desktop). Surprise me
+         lives here in the section header (July 2026 board 1b) — demoted
+         out of the Tonight hero action row. -->
     <section class="week">
      <div class="thisweek week__main" aria-labelledby="thisweek-label">
       <header class="sechead">
         <h2 id="thisweek-label" class="sechead__t">This week</h2>
-        <p class="section-sub meta">4 picks &middot; 4 curators</p>
+        <div class="sechead__side">
+          <p class="section-sub meta">4 picks &middot; 4 curators</p>
+          <button class="action-icon" id="surprise-btn" type="button" aria-label="Show a surprise pick" title="Surprise me">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3" /></svg>
+          </button>
+        </div>
       </header>
       <!-- Picks populated by briefing.js from catalog.js. Skeleton rows
            sit in place until wa:catalog-ready fires so the layout is

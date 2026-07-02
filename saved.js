@@ -70,7 +70,7 @@
     li.className        = 'list-row list-row--going list-row--card';
     li.dataset.catalogId = entry.id;
     li.innerHTML =
-      `<p class="list-row__time">${entry.day === 'Tonight' ? 'Now' : entry.day}</p>
+      `<p class="list-row__time${entry.day === 'Tonight' ? ' list-row__time--live' : ''}">${entry.day === 'Tonight' ? 'Tonight' : entry.day}</p>
        ${mediaHtml(entry)}
        <div class="list-row__body">
          <p class="list-row__title">
@@ -227,6 +227,21 @@
       gone.forEach(s => goingList.appendChild(goneRow(s)));
       if (goingEntries.length) {
         goingEntries.forEach(e => goingList.appendChild(goingRow(e)));
+        /* Calm summary plate under the dated rows (July 2026 board 1e):
+           states the lifecycle rule and bridges to Discover. data-empty
+           opts it into the per-render cleanup above. */
+        const n     = goingEntries.length;
+        const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const count = words[n] || String(n);
+        const foot  = document.createElement('li');
+        foot.dataset.empty = 'true';
+        foot.innerHTML =
+          `<div class="saved-foot">
+             <p class="saved-foot__line">${count} ${n === 1 ? 'night' : 'nights'} on the calendar.</p>
+             <p class="saved-foot__sub">Dated picks move to Past the morning after.
+               <a href="./discover.html?time=thisweek">Browse this week &rarr;</a></p>
+           </div>`;
+        goingList.appendChild(foot);
       } else if (!gone.length) {
         goingList.appendChild(emptyRow('Nothing on the calendar yet',
           'Save a dated pick and it lands here. <a href="./discover.html?time=thisweek">Browse this week &rarr;</a>'));
@@ -269,9 +284,17 @@
     const readingTab = document.querySelector('label[for="seg-reading"] .seg-tab__count');
     const pastTab    = document.querySelector('label[for="seg-past"]    .seg-tab__count');
 
-    if (goingTab)   goingTab.textContent   = String(goingCount);
-    if (readingTab) readingTab.textContent = String(readingCount);
-    if (pastTab)    pastTab.textContent    = String(pastCount);
+    /* The active segment's count renders as the one lime badge (live-state
+       signal) — except when it's 0, where a spotlit zero would read wrong.
+       CSS keys the badge on :checked + :not(.seg-tab__count--zero). */
+    const setCount = (el, n) => {
+      if (!el) return;
+      el.textContent = String(n);
+      el.classList.toggle('seg-tab__count--zero', n === 0);
+    };
+    setCount(goingTab,   goingCount);
+    setCount(readingTab, readingCount);
+    setCount(pastTab,    pastCount);
 
     const head = document.getElementById('saved-count');
     if (head) {
