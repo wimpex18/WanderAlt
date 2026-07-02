@@ -15,6 +15,9 @@ const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ    = Deno.env.get('GROQ_API_KEY') ?? '';
+// OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
+const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
+const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'meta-llama/llama-3.3-70b-instruct:free';
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const GROQ_MODEL   = 'meta-llama/llama-4-scout-17b-16e-instruct';
 const INTER_PICK_DELAY_MS = 800;
@@ -96,6 +99,29 @@ const callGroq = async (prompt: string): Promise<string|null> => {
 };
 
 /* Gemini (fallback only). */
+const callOpenRouter = async (prompt: string): Promise<string|null> => {
+  if (!OPENROUTER_KEY) return null;
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://wanderalt.app',
+        'X-Title': 'WanderAlt pipeline',
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j?.choices?.[0]?.message?.content ?? null;
+  } catch { return null; }
+};
+
 const callGemini = async (prompt: string): Promise<string|null> => {
   if (!GEMINI) return null;
   try {
@@ -116,10 +142,12 @@ const callGemini = async (prompt: string): Promise<string|null> => {
   } catch { return null; }
 };
 
-/* Groq first; Gemini only if Groq yields nothing. Reports which ran. */
+/* Groq first; then the OpenRouter :free lane (inert without its key); Gemini last. */
 const generate = async (prompt: string): Promise<{ text: string|null; provider: string }> => {
   const g = await callGroq(prompt);
   if (g) return { text: g, provider: 'groq' };
+  const o = await callOpenRouter(prompt);
+  if (o) return { text: o, provider: 'openrouter' };
   const m = await callGemini(prompt);
   if (m) return { text: m, provider: 'gemini' };
   return { text: null, provider: 'none' };

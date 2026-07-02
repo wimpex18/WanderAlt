@@ -9,6 +9,12 @@ A researched revision of every external API/AI dependency, written pre-release (
 - **Bonus outage fix** — `embed-picks` had been 500ing every run since ~12 Jun (client-side id-diff blew the HTTP/2 header limit past ~500 embeddings; 496/516 active picks unembedded). v3 ships a DB-side anti-join RPC; backfill embedded 303 immediately, cron drains the rest. The concierge had been silently degraded the whole time.
 - R2 (Groq prompt caching) and R9 (hybrid retrieval) remain open — see the phased plan.
 
+**Second status update (2 Jul 2026, late session):**
+- **ALL crons frozen** (owner decision — pre-release, nobody uses the app): every `cron.job` set `active=false`, schedules preserved; embeddings backlog fully drained first. Re-enable SQL + per-cron API analysis in `docs/backend-and-pipeline.md`.
+- **ICS calendar feed shipped** (`calendar-feed` edge fn + Today/curator UI links) — the market-scan top pick.
+- **OpenRouter lane wired in repo** (process-staging/generate-context/draft-column), inert until `OPENROUTER_API_KEY` exists; deploy-on-key procedure in the backend doc. R4 closed code-side.
+- Remaining owner console actions: create the OpenRouter key (free, no card) → Supabase secret `OPENROUTER_API_KEY`; optional CF API token (`CF_ACCOUNT_ID` + `CF_AI_TOKEN` secrets) for the Workers-AI embeddings exit; Groq spend cap + Google budget alert.
+
 Each recommendation below is marked R-n; the phased plan at the bottom orders them.
 
 ### July 2026 free-tier landscape — second research pass (verified)

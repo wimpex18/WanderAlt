@@ -552,6 +552,13 @@
     /* Surprise me lives in the This Week header; renderTonight /
        renderTonightEmpty toggle its visibility for empty cities. */
     wireSurprise(catalog);
+    /* Calendar-feed link (This Week header) — point at the active city.
+       Static markup defaults to tallinn for the no-JS case. */
+    const calLink = document.getElementById('calendar-feed-link');
+    if (calLink && window.WA?.BASE_URL) {
+      calLink.href = `${window.WA.BASE_URL}/functions/v1/calendar-feed` +
+                     `?city=${encodeURIComponent(window.WA.CITY || 'tallinn')}`;
+    }
     renderColumn();  /* async — doesn't block the sync render above */
 
     /* Re-render This Week when the taste profile changes (after onboarding
