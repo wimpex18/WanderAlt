@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// embed-picks  v1
+// embed-picks  v3 — DB-side anti-join (Jul 2026)
 // Generates 768-dim embeddings for picks via Google text-embedding-005,
 // upserts into pick_embeddings. Used by the hybrid-search retriever.
 //
@@ -114,31 +114,28 @@ Deno.serve(async (req: Request) => {
   const force = body.force === true;
   const limit = Math.min(body.limit ?? 100, 200);
 
-  // Build the picks query
-  let picksUrl =
-    `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}&archived_at=is.null` +
-    `&select=id,title,venue,neighborhood,kind,quote,mood_tags`;
-
+  // Fetch the picks to embed. The not-yet-embedded set comes from a DB-side
+  // anti-join RPC — the old client-side diff passed every embedded id back
+  // as one giant id=not.in.(...) URL filter, which blew the HTTP/2 header
+  // limit past ~500 embeddings and 500'd every run (Jun–Jul 2026 outage).
+  let picksRes: Response;
   if (body.pick_id) {
-    picksUrl += `&id=eq.${encodeURIComponent(body.pick_id)}`;
-  } else if (!force) {
-    // Get already-embedded ids — diff client-side
-    const existingRes  = await fetch(
-      `${SUPABASE_URL}/rest/v1/pick_embeddings?select=pick_id&limit=1000`,
-      { headers: sbHeaders() }
-    );
-    const existing = (await existingRes.json()) as { pick_id: string }[];
-    const skipIds  = new Set(existing.map(r => r.pick_id));
-
-    if (skipIds.size) {
-      // PostgREST IN filter — escape ids that contain commas/quotes
-      const ids = [...skipIds].map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-      picksUrl += `&id=not.in.(${ids})`;
-    }
+    picksRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}&archived_at=is.null` +
+      `&select=id,title,venue,neighborhood,kind,quote,mood_tags&id=eq.${encodeURIComponent(body.pick_id)}&limit=${limit}`,
+      { headers: sbHeaders() });
+  } else if (force) {
+    picksRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}&archived_at=is.null` +
+      `&select=id,title,venue,neighborhood,kind,quote,mood_tags&limit=${limit}`,
+      { headers: sbHeaders() });
+  } else {
+    picksRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wa_picks_missing_embeddings`, {
+      method:  'POST',
+      headers: sbHeaders(),
+      body:    JSON.stringify({ p_city: city, p_limit: limit }),
+    });
   }
-  picksUrl += `&limit=${limit}`;
-
-  const picksRes = await fetch(picksUrl, { headers: sbHeaders() });
   if (!picksRes.ok) {
     return new Response(JSON.stringify({ ok: false, error: `picks query failed: ${picksRes.status}` }), { status: 500 });
   }

@@ -14,6 +14,9 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI_KEY       = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ_KEY         = Deno.env.get('GROQ_API_KEY') ?? '';
+// OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
+const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
+const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'meta-llama/llama-3.3-70b-instruct:free';
 const GEMINI_MODEL     = 'gemini-2.5-flash-lite';
 const GROQ_MODEL       = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
@@ -79,6 +82,29 @@ const callGroq = async (prompt: string): Promise<string|null> => {
 };
 
 /* Gemini (fallback only). */
+const callOpenRouter = async (prompt: string): Promise<string|null> => {
+  if (!OPENROUTER_KEY) return null;
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://wanderalt.app',
+        'X-Title': 'WanderAlt pipeline',
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j?.choices?.[0]?.message?.content ?? null;
+  } catch { return null; }
+};
+
 const callGemini = async (prompt: string): Promise<string|null> => {
   if (!GEMINI_KEY) return null;
   try {
@@ -103,6 +129,8 @@ const callGemini = async (prompt: string): Promise<string|null> => {
 const generate = async (prompt: string): Promise<{ text: string; provider: string }> => {
   const g = await callGroq(prompt);
   if (g) return { text: g, provider: 'groq' };
+  const o = await callOpenRouter(prompt);
+  if (o) return { text: o, provider: 'openrouter' };
   const m = await callGemini(prompt);
   if (m) return { text: m, provider: 'gemini' };
   return { text: '', provider: 'none' };

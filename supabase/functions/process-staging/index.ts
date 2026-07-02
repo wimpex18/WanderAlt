@@ -20,6 +20,8 @@
 //     the original text is kept (translate-picks backfills later).
 //   • title_original: when the guard rewrites a title, the source
 //     title is preserved in picks.title_original.
+// v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
+//      Gemini text fallback retired via config flag (kept as last resort).
 // v37: Gemini fallback gated behind pipeline_config.gemini_fallback_enabled.
 // v36: CITY_CONTEXT gained `helsinki`. v35: gained `vilnius`.
 // v34: Groq llama-4-scout primary, Gemini fallback.
@@ -31,6 +33,11 @@ const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
+// OpenRouter free lane (Jul 2026 policy): inert until the owner creates
+// OPENROUTER_API_KEY (free, no card — openrouter.ai/keys). Model must be a
+// :free-suffixed id so the lane can never bill.
+const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
+const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "meta-llama/llama-3.3-70b-instruct:free";
 const GEMINI_MODEL  = "gemini-2.5-flash";
 const GROQ_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
 const BATCH_SIZE    = 10;   // max messages per invocation
@@ -201,10 +208,40 @@ async function callGroq(text: string, tag: string, city: string, keepSignals: st
   return { raw: j?.choices?.[0]?.message?.content ?? "", provider: GROQ_MODEL };
 }
 
+async function callOpenRouter(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+  if (!OPENROUTER_KEY) return { error: "missing_key" };
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://wanderalt.app",
+      "X-Title": "WanderAlt pipeline",
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [{ role: "system", content: systemPrompt(tag, city, keepSignals) }, { role: "user", content: text }],
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (res.status === 429) return { error: "rate_limited" };
+  if (res.status >= 500)  return { error: "overloaded", detail: `openrouter ${res.status}` };
+  if (!res.ok) return { error: "all_failed", detail: `openrouter ${res.status}: ${await res.text()}` };
+  const j = await res.json();
+  return { raw: j?.choices?.[0]?.message?.content ?? "", provider: `openrouter/${OPENROUTER_MODEL}` };
+}
+
 async function callLLM(text: string, tag: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
   // Groq is primary — free tier covers our volume.
   const r1 = await callGroq(text, tag, city, cfg.keepSignals);
   if ("raw" in r1) return r1;
+  // OpenRouter :free is the sanctioned fallback lane (Jul 2026) — tried on
+  // any Groq failure, skipped silently while the key doesn't exist.
+  if (OPENROUTER_KEY) {
+    const ro = await callOpenRouter(text, tag, city, cfg.keepSignals);
+    if ("raw" in ro) return ro;
+  }
   // Gemini fallback is gated: skip it entirely when the kill-switch is off
   // (rate-limited messages just wait for the next Groq window — no spend).
   if (!cfg.geminiFallbackEnabled) {
