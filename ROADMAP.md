@@ -111,7 +111,7 @@ These would dilute the brand. Listed so the next person knows the answer is no w
 
 ## Provider strategy (July 2026)
 
-The researched revision of every external AI/places/events dependency — free-tier LLM landscape (Groq/Gemini 3.x/OpenRouter/Workers AI), the Overture-based replacement for the retired Google Places path, events-source candidates, cron dial-down + spend guardrails, and the phased plan — lives in **`docs/provider-strategy-jul26.md`** (status: proposal, owner to green-light phases).
+The researched revision of every external AI/places/events dependency — free-tier LLM landscape (Groq/OpenRouter/Cerebras/Workers AI), the Overture-based replacement for the retired Google Places path, events-source candidates, cron dial-down + spend guardrails, and the phased plan — lives in **`docs/provider-strategy-jul26.md`**. **P0 + P1 applied 2 Jul 2026**: crons dialled down, `places_index` + `discover-venues` v2 shipped (Google-free venue search, 4 cities), Gemini text fallback retired, and the `embed-picks` June outage found + fixed (v3). The companion **competitor/market scan** with adopt/adapt/avoid feature calls (ICS calendar feeds, curator weekly note, quote-first shares) is **`docs/market-scan-jul26.md`**.
 
 ---
 

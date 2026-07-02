@@ -2,7 +2,21 @@
 
 A researched revision of every external API/AI dependency, written pre-release (no users; only the owner + Claude Code exercise the app). Goal: **everything on free tiers or open data**, no surprise bills, and catch up with the July 2026 landscape before launch. Companion to `docs/backend-and-pipeline.md` (current pipeline state) and the LLM policy in `CLAUDE.md`.
 
-**Status: proposal.** Nothing here is applied yet except the already-shipped Google Places retirement. Each recommendation is marked R-n; the phased plan at the bottom orders them. LLM-policy changes (R2, R3) amend `CLAUDE.md` — owner sign-off first.
+**Status update (2 Jul 2026, evening session): P0 + P1 + the Gemini-text exit are APPLIED.**
+- **P0 done** — cron dial-down live (`process-staging` hourly, `embed-picks` 4×/day, `geocode-picks` daily; restore SQL in `docs/backend-and-pipeline.md`). Spend caps remain owner-console TODOs.
+- **P1 done, Google-free venue search shipped** — `places_index` (1,895 Overture venues, 4 cities incl. Vilnius) + `wa_search_places_index` RPC + `discover-venues` v2. R5 closed.
+- **Gemini text fallback retired** (`gemini_fallback_enabled=false`; owner asked to avoid Gemini) — text generation is Groq-only; R3 is superseded by the stronger exit, R4 (OpenRouter/Cerebras lane) awaits an owner-created free key. Embeddings remain the one Gemini free-tier call pending the Workers-AI migration (needs CF token + re-embed).
+- **Bonus outage fix** — `embed-picks` had been 500ing every run since ~12 Jun (client-side id-diff blew the HTTP/2 header limit past ~500 embeddings; 496/516 active picks unembedded). v3 ships a DB-side anti-join RPC; backfill embedded 303 immediately, cron drains the rest. The concierge had been silently degraded the whole time.
+- R2 (Groq prompt caching) and R9 (hybrid retrieval) remain open — see the phased plan.
+
+Each recommendation below is marked R-n; the phased plan at the bottom orders them.
+
+### July 2026 free-tier landscape — second research pass (verified)
+
+- **Cerebras**: ~1M tokens/day free, no card; free catalog volatile (llama-3.3-70b, qwen3, gpt-oss-120b seen; 8K context cap on free) — fastest inference available.
+- **Mistral La Plateforme**: ~1B tokens/month on the Experiment tier, but requires opting into data training — borderline for curator content; use only with that trade-off acknowledged.
+- **GitHub Models**: free access incl. GPT-4o/Claude-class models behind Azure — fine for experiments, rate-limited for pipelines.
+- **Places/geo interactive APIs (complements to the Overture open-data path)**: LocationIQ 5,000 req/day free (2 rps, attribution); Geoapify 3,000 req/day (free batch geocoding); HERE 250K transactions/month; TomTom 50K/day. Any of these could replace Nominatim for interactive admin lookups if volume ever grows — none are needed today.
 
 ---
 

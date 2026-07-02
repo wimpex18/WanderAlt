@@ -1,74 +1,74 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// discover-venues  v1
-// External AI-augmented discovery — called only when match-pick
-// returns `suggested_more: true` (i.e. fewer than 3 strong DB hits).
+// discover-venues  v2 — Overture-backed (July 2026)
+// External-search discovery — called only when match-pick returns
+// `suggested_more: true` (i.e. fewer than 3 strong DB hits).
+//
+// v1 called the metered Google Places API (retired after the July
+// 2026 uncapped-retry bill). v2 searches the local `places_index`
+// table instead — 1,895 alt-culture venues for the four cities,
+// extracted from the Overture Maps places theme (open data,
+// CDLA-Permissive/Apache-2.0; June 2026 release). Zero external
+// calls, zero keys, zero marginal cost.
 //
 // Strategy:
-//   1. Call Google Places (New) searchText scoped to the city.
-//   2. Reject chains, fast food, hotels, tourist traps.
-//   3. For each strong result, check `venue_details.google_place_id`:
-//        - If we already have this venue → high-confidence "known"
-//        - If not → still surface, but flag as "new venue suggestion"
+//   1. Derive candidate venue kinds from the prompt keywords.
+//   2. Query `wa_search_places_index` (pg_trgm name/category
+//      similarity + kind boost + Overture confidence nudge).
+//   3. For each hit, check `venue_details.venue_key`:
+//        - already known → high-confidence "known"
+//        - new → surface flagged as "new venue suggestion"
 //   4. Save each as a pick with `pending_review = true`,
-//      `discovery_source = 'google_places'`,
+//      `discovery_source = 'overture_index'`,
 //      `discovery_query = original prompt`.
-//   5. Return hits in match-pick-compatible shape so the frontend can
-//      render them with a clear "pending review" badge.
+//   5. Return hits in match-pick-compatible shape so the frontend
+//      renders them with the "pending review" badge.
 //
 // POST body:
-//   { city: 'tallinn'|'helsinki'|'riga', prompt: string, limit?: number }
+//   { city: 'tallinn'|'helsinki'|'riga'|'vilnius', prompt: string, limit?: number }
 //
 // Response (matches match-pick shape):
 //   { ok, hits: [{ pick, why }], classifier: 'discovery',
 //     saved: number, cached: false, latency_ms }
 // ============================================================
 
-const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const PLACES_KEY    = Deno.env.get('GOOGLE_PLACES_API_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga']);
+const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga', 'vilnius']);
 
-// City centre coords used as a search bias (~5 km radius)
-const CITY_COORDS: Record<string, [number, number]> = {
-  tallinn:  [59.4370, 24.7536],
-  helsinki: [60.1699, 24.9384],
-  riga:     [56.9460, 24.1059],
-};
+// Prompt keywords → places_index kinds. First pass of the search: a hit on
+// any keyword adds that kind to the RPC's boost list. Kept deliberately
+// literal — the concierge's semantic layer already ran in match-pick.
+const KIND_KEYWORDS: Array<[RegExp, string]> = [
+  [/vinyl|record|lp\b|dj|crate/i,                'record store'],
+  [/book|read|zine|literatur/i,                  'bookshop'],
+  [/galler|art\b|exhibit|paint|photo/i,          'gallery'],
+  [/club|techno|rave|dance|gig|concert|live music|venue/i, 'club'],
+  [/thrift|vintage|second.?hand|flea|kirbu/i,    'thrift'],
+  [/arts centre|art center|culture|cultural|studio/i, 'arts centre'],
+  [/cinema|film|movie|screening/i,               'cinema'],
+  [/community|diy|collective|workshop|maker/i,   'community'],
+  [/theatre|theater|stage|perform|comedy|improv/i, 'theatre'],
+];
 
-// Place types we never want surfaced from Google Places —
-// WanderAlt is curated alternative culture, not tourist guidebook
-const REJECT_TYPES = new Set([
-  'lodging', 'hotel', 'motel', 'hostel',
-  'fast_food_restaurant', 'meal_takeaway',
-  'gas_station', 'atm', 'bank', 'pharmacy',
-  'shopping_mall', 'supermarket', 'convenience_store',
-  'gym', 'spa', 'beauty_salon', 'hair_care',
-  'car_dealer', 'car_rental', 'car_repair', 'car_wash', 'parking',
-  'real_estate_agency', 'insurance_agency', 'lawyer', 'accounting',
-  'embassy', 'local_government_office',
-  'tourist_attraction',  // too generic — WanderAlt picks specific things
-]);
-
-// Best-effort mapping from a Google place's primary type to our `kind`
-const TYPE_TO_KIND: Record<string, string> = {
-  bar:                  'bar',
-  night_club:           'club',
-  cafe:                 'place',
-  restaurant:           'place',
-  art_gallery:          'gallery',
-  museum:               'museum',
-  performing_arts_theater: 'theatre',
-  movie_theater:        'cinema',
-  library:              'library',
-  book_store:           'bookshop',
-  music_store:          'record store',
-  thrift_store:         'thrift',
-  community_center:     'arts centre',
-  cultural_center:      'arts centre',
-};
+interface IndexPlace {
+  id:         string;
+  city:       string;
+  name:       string;
+  kind:       string;
+  category:   string;
+  lat:        number | null;
+  lng:        number | null;
+  address:    string | null;
+  locality:   string | null;
+  website:    string | null;
+  facebook:   string | null;
+  instagram:  string | null;
+  confidence: number | null;
+  score:      number;
+}
 
 const sbHeaders = (extra: Record<string, string> = {}) => ({
   apikey:        SERVICE_KEY,
@@ -96,142 +96,63 @@ const inferInitials = (s: string): string => {
   return (words[0][0] + words[1][0]).toUpperCase();
 };
 
-interface GooglePlace {
-  id:              string;
-  displayName?:    { text: string };
-  formattedAddress?: string;
-  location?:       { latitude: number; longitude: number };
-  primaryType?:    string;
-  types?:          string[];
-  businessStatus?: string;
-  photos?:         Array<{ name: string }>;
-  websiteUri?:     string;
-  rating?:         number;
-  userRatingCount?: number;
-}
+const kindsFromPrompt = (prompt: string): string[] => {
+  const kinds = new Set<string>();
+  for (const [re, kind] of KIND_KEYWORDS) if (re.test(prompt)) kinds.add(kind);
+  return [...kinds];
+};
 
-async function searchGooglePlaces(prompt: string, city: string, limit: number): Promise<GooglePlace[]> {
-  if (!PLACES_KEY) return [];
-  const [lat, lng] = CITY_COORDS[city] ?? [0, 0];
+async function searchPlacesIndex(prompt: string, city: string, limit: number): Promise<IndexPlace[]> {
   try {
-    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'X-Goog-Api-Key':  PLACES_KEY,
-        'X-Goog-FieldMask': [
-          'places.id',
-          'places.displayName',
-          'places.formattedAddress',
-          'places.location',
-          'places.primaryType',
-          'places.types',
-          'places.businessStatus',
-          'places.photos',
-          'places.websiteUri',
-          'places.rating',
-          'places.userRatingCount',
-        ].join(','),
-      },
-      body: JSON.stringify({
-        textQuery:    `${prompt} in ${city}`,
-        languageCode: 'en',
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 5000.0 } },
-        maxResultCount: Math.min(limit + 3, 10),  // overfetch to allow filtering
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wa_search_places_index`, {
+      method:  'POST',
+      headers: sbHeaders(),
+      body:    JSON.stringify({
+        p_city:  city,
+        p_q:     prompt,
+        p_kinds: kindsFromPrompt(prompt),
+        p_limit: Math.min(limit + 3, 10),  // overfetch to allow known-venue merge
       }),
     });
     if (!res.ok) {
-      console.error(`places.searchText failed ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      console.error(`wa_search_places_index failed ${res.status}: ${(await res.text()).slice(0, 200)}`);
       return [];
     }
-    const data = await res.json();
-    return data?.places ?? [];
+    return await res.json() as IndexPlace[];
   } catch (e) {
-    console.error('places.searchText exception', e);
+    console.error('wa_search_places_index exception', e);
     return [];
   }
 }
 
-async function resolvePhoto(photoName: string): Promise<string | null> {
-  try {
-    const r = await fetch(
-      `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true`,
-      { headers: { 'X-Goog-Api-Key': PLACES_KEY } }
-    );
-    if (!r.ok) return null;
-    const j = await r.json();
-    return j?.photoUri ?? null;
-  } catch { return null; }
-}
-
-// Look up which Google Place IDs we already have in venue_details.
-// Returns a Map<placeId, venue_key> so we can wire `venue` to the curated name.
-async function fetchKnownVenues(placeIds: string[], city: string): Promise<Map<string, { display_name: string }>> {
-  if (!placeIds.length) return new Map();
-  const idList = placeIds.map(id => `"${id}"`).join(',');
+// Look up which of the hit names we already curate in venue_details.
+// Returns a Map<venue_key, display_name>.
+async function fetchKnownVenues(names: string[], city: string): Promise<Map<string, string>> {
+  if (!names.length) return new Map();
+  const keys = names.map(n => `"${n.toLowerCase().replace(/"/g, '')}"`).join(',');
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/venue_details?city=eq.${encodeURIComponent(city)}` +
-    `&google_place_id=in.(${idList})&select=google_place_id,display_name`,
+    `&venue_key=in.(${keys})&select=venue_key,display_name`,
     { headers: sbHeaders() }
   );
   if (!r.ok) return new Map();
-  const rows = await r.json() as Array<{ google_place_id: string; display_name: string }>;
-  return new Map(rows.map(r => [r.google_place_id, { display_name: r.display_name }]));
+  const rows = await r.json() as Array<{ venue_key: string; display_name: string }>;
+  return new Map(rows.map(r => [r.venue_key, r.display_name]));
 }
 
-interface DiscoveryRow {
-  place:    GooglePlace;
-  kind:     string;
-  knownAs?: string;  // curated venue name if already in DB
-}
-
-// Map (neighborhood, lat, lng) → (world_x, world_y) via the SQL helper that
-// knows the artistic Tallinn SVG layout. Returns null on RPC failure so the
-// pick still saves without coords rather than blocking the discovery flow.
-async function worldCoords(
-  neighborhood: string,
-  lat: number | null,
-  lng: number | null,
-  seed: string,
-): Promise<{ world_x: number; world_y: number } | null> {
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wa_pick_world_coords`, {
-      method:  'POST',
-      headers: sbHeaders(),
-      body:    JSON.stringify({ neighborhood, lat, lng, seed }),
-    });
-    if (!r.ok) return null;
-    const rows = await r.json();
-    const row  = Array.isArray(rows) ? rows[0] : rows;
-    if (!row || typeof row.world_x !== 'number') return null;
-    return { world_x: row.world_x, world_y: row.world_y };
-  } catch { return null; }
-}
-
-// Persist the Google Places enrichment to venue_details so future picks of
-// the same venue (Telegram, admin, etc.) can reuse the lat/lng — no second
-// Places API call needed. Idempotent via the (city, venue_key) unique index.
-async function upsertVenueDetails(
-  city: string,
-  name: string,
-  place: GooglePlace,
-): Promise<void> {
-  const lat = place.location?.latitude;
-  const lng = place.location?.longitude;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return;
-
+// Persist the index row to venue_details so future picks of the same venue
+// reuse lat/lng — idempotent via the (city, venue_key) unique index.
+async function upsertVenueDetails(city: string, place: IndexPlace): Promise<void> {
+  if (typeof place.lat !== 'number' || typeof place.lng !== 'number') return;
   const body = {
     city,
-    venue_key:       name.toLowerCase(),
-    display_name:    name,
-    google_place_id: place.id,
-    lat,
-    lng,
-    address:         place.formattedAddress || null,
-    website:         place.websiteUri || null,
-    business_status: place.businessStatus || null,
-    is_closed:       place.businessStatus === 'CLOSED_PERMANENTLY',
-    source:          'google_places',
+    venue_key:       place.name.toLowerCase(),
+    display_name:    place.name,
+    lat:             place.lat,
+    lng:             place.lng,
+    address:         place.address || null,
+    website:         place.website || null,
+    source:          'overture_index',
     enriched_at:     new Date().toISOString(),
   };
   try {
@@ -244,25 +165,6 @@ async function upsertVenueDetails(
       },
     );
   } catch (_) { /* best-effort */ }
-}
-
-function filterAndClassify(places: GooglePlace[]): DiscoveryRow[] {
-  const out: DiscoveryRow[] = [];
-  for (const place of places) {
-    if (place.businessStatus && place.businessStatus !== 'OPERATIONAL') continue;
-    const types = new Set(place.types ?? []);
-    // Reject obvious non-cultural categories
-    if ([...types].some(t => REJECT_TYPES.has(t))) continue;
-    if (!place.displayName?.text) continue;
-
-    // Pick a kind from the type list, default to 'place'
-    let kind = 'place';
-    for (const t of [place.primaryType ?? '', ...types]) {
-      if (TYPE_TO_KIND[t]) { kind = TYPE_TO_KIND[t]; break; }
-    }
-    out.push({ place, kind });
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -289,13 +191,9 @@ Deno.serve(async (req: Request) => {
   const limit  = Math.min(body.limit ?? 5, 5);
 
   if (!prompt) return json({ ok: false, error: 'prompt required' }, 400);
-  if (!PLACES_KEY) return json({
-    ok: false,
-    error: 'GOOGLE_PLACES_API_KEY not configured',
-  }, 503);
 
-  // ---- 1. Search Google Places ----
-  const places = await searchGooglePlaces(prompt, city, limit);
+  // ---- 1. Search the local Overture index ----
+  const places = await searchPlacesIndex(prompt, city, limit);
   if (!places.length) {
     return json({
       ok:         true,
@@ -303,55 +201,33 @@ Deno.serve(async (req: Request) => {
       classifier: 'discovery',
       saved:      0,
       empty:      true,
-      diagnostic: { places: 0, filtered: 0, rejected_types: [] as string[] },
+      diagnostic: { places: 0, filtered: 0 },
       cached:     false,
       latency_ms: Date.now() - t0,
     });
   }
 
-  // ---- 2. Filter + classify ----
-  const filtered      = filterAndClassify(places).slice(0, limit);
-  const rejectedTypes = places
-    .filter(p => !filtered.some(f => f.place.id === p.id))
-    .map(p => p.primaryType || '(no primary type)');
+  const filtered = places.slice(0, limit);
 
-  // ---- 3. Cross-reference with our venues ----
-  const placeIds = filtered.map(r => r.place.id).filter(Boolean);
-  const known    = await fetchKnownVenues(placeIds, city);
-  for (const row of filtered) {
-    const k = known.get(row.place.id);
-    if (k) row.knownAs = k.display_name;
-  }
+  // ---- 2. Cross-reference with our curated venues ----
+  const known = await fetchKnownVenues(filtered.map(p => p.name), city);
 
-  // ---- 4. Upsert as pending picks ----
+  // ---- 3. Upsert as pending picks ----
   const hits: Array<{ pick: Record<string, unknown>; why: string }> = [];
   let saved = 0;
 
-  for (const row of filtered) {
-    const place = row.place;
-    const name  = row.knownAs || place.displayName?.text || 'Unknown';
-    const slug  = slugify(name);
-    const id    = `discovery-${slug}-${place.id.slice(-8)}`;
+  for (const place of filtered) {
+    const knownAs = known.get(place.name.toLowerCase());
+    const name    = knownAs || place.name;
+    const slug    = slugify(name);
+    const id      = `discovery-${slug}-${place.id.slice(-8)}`;
 
-    // Resolve a photo (best-effort)
-    let imageUrl: string | null = null;
-    if (place.photos?.[0]?.name) {
-      imageUrl = await resolvePhoto(place.photos[0].name);
-    }
+    const neighborhood = place.locality && place.locality.toLowerCase() !== city
+      ? place.locality
+      : 'other';
 
-    // Address → neighborhood (rough — just grab the first comma-stripped part if
-    // formattedAddress starts with a street, otherwise leave blank for admin)
-    const addressParts = (place.formattedAddress || '').split(',').map(s => s.trim()).filter(Boolean);
-    const neighborhood = addressParts.length >= 2 ? addressParts[addressParts.length - 2] : 'other';
-
-    // Compute illustrated-map coordinates so the pick has a pin position the
-    // moment an editor approves it.
-    const lat = place.location?.latitude  ?? null;
-    const lng = place.location?.longitude ?? null;
-    const wc  = await worldCoords(neighborhood, lat, lng, id);
-
-    // Persist Google's data to venue_details for future reuse.
-    await upsertVenueDetails(city, name, place);
+    // Persist the index data to venue_details for future reuse.
+    await upsertVenueDetails(city, place);
 
     const picksRow = {
       id,
@@ -359,26 +235,27 @@ Deno.serve(async (req: Request) => {
       title:             `${name} — pending review`,
       venue:             name,
       neighborhood,
-      kind:              row.kind,
+      kind:              place.kind,
       day:               null,
       time:              null,
-      quote:             `Surfaced by external search for "${prompt}". Not yet vouched for by a curator.`,
+      quote:             `Surfaced from the places index for "${prompt}". Not yet vouched for by a curator.`,
       handle:            '@discovery',
       thumb_initials:    inferInitials(name),
-      image_url:         imageUrl,
-      image_attr:        'Google Places',
+      image_url:         null,
+      image_attr:        null,
       tonight:           false,
       this_week:         false,
       mood_tags:         [],
       auto_generated:    true,
       source_message_id: null,
       pending_review:    true,
-      discovery_source:  'google_places',
+      discovery_source:  'overture_index',
       discovery_query:   prompt,
       valid_until:       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),  // 30 days
       archived_at:       null,
-      world_x:           wc?.world_x ?? null,
-      world_y:           wc?.world_y ?? null,
+      lat:               place.lat,
+      lng:               place.lng,
+      coords_source:     place.lat != null ? 'venue_join' : null,
     };
 
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/picks`, {
@@ -394,37 +271,38 @@ Deno.serve(async (req: Request) => {
           title:        picksRow.title,
           venue:        name,
           neighborhood,
-          kind:         row.kind,
+          kind:         place.kind,
           quote:        picksRow.quote,
           handle:       '@discovery',
           day:          null,
           time:         null,
           moodTags:     [],
           thumbInitials: picksRow.thumb_initials,
-          imageUrl,
-          imageAttr:    'Google Places',
+          imageUrl:     null,
+          imageAttr:    null,
           pin:          null,
-          world_x:      wc?.world_x ?? null,
-          world_y:      wc?.world_y ?? null,
+          lat:          place.lat,
+          lng:          place.lng,
           tonight:      false,
           thisWeek:     false,
           pending:      true,
-          discoverySource: 'google_places',
-          rating:       place.rating ?? null,
-          ratingCount:  place.userRatingCount ?? null,
-          knownVenue:   !!row.knownAs,
-          mapsUrl:      `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+          discoverySource: 'overture_index',
+          rating:       null,
+          ratingCount:  null,
+          knownVenue:   !!knownAs,
+          website:      place.website,
+          mapsUrl:      `https://maps.google.com/?q=${encodeURIComponent(`${name}, ${city}`)}`,
         },
-        why: row.knownAs
-          ? `A venue we already cover, surfaced again by external search — open for review.`
-          : `Surfaced by external search and not yet curated. Worth a closer look before publishing.`,
+        why: knownAs
+          ? `A venue we already cover, surfaced again by index search — open for review.`
+          : `Surfaced from the open places index and not yet curated. Worth a closer look before publishing.`,
       });
     } else {
       console.error(`discovery upsert ${id} failed: ${upsertRes.status} ${(await upsertRes.text()).slice(0, 120)}`);
     }
   }
 
-  // ---- 5. Log the run ----
+  // ---- 4. Log the run ----
   await fetch(`${SUPABASE_URL}/rest/v1/ingest_log`, {
     method:  'POST',
     headers: sbHeaders({ Prefer: 'return=minimal' }),
@@ -445,7 +323,7 @@ Deno.serve(async (req: Request) => {
     classifier: 'discovery',
     saved,
     empty:      hits.length === 0,
-    diagnostic: { places: places.length, filtered: filtered.length, rejected_types: rejectedTypes },
+    diagnostic: { places: places.length, filtered: filtered.length },
     cached:     false,
     latency_ms: Date.now() - t0,
   });
