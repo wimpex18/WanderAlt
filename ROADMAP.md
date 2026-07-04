@@ -8,13 +8,13 @@ A strict weak-point audit of the codebase, data layer, and docs, followed by a r
 
 WanderAlt's soul is **curator voice** rendered as **editorial minimalism**: *curator voice is the largest element on screen.* Time, not feed. Voice, not metadata. Reading, not browsing. Any remediation that dilutes this is worse than the debt it fixes.
 
-LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, gated Gemini fallback, embeddings on `gemini-embedding-001`). It is deliberately NOT restated here — that's how the "Gemini 3.5 Flash" doc-drift happened.
+LLM policy is canonical in `CLAUDE.md` → "LLM model policy" (Groq-first, OpenRouter `:free` second lane, gated-off Gemini, embeddings on Cloudflare Workers AI `bge-m3`). It is deliberately NOT restated here — that's how the "Gemini 3.5 Flash" doc-drift happened.
 
 ---
 
 ## Frontend & UI/UX visual audit (June 2026) — CLOSED
 
-The screenshot-driven visual audit of every public surface at 390/768/1440 (findings **F-1…F-22**) is **fully closed** — all 22 shipped June 2026, plus the follow-up passes (English-only content pipeline, the `--reading-max` desktop width ladder, and the Lighthouse perf/a11y pass: Today 95 · Discover 96 · About 99, a11y/BP/SEO 100). The per-finding detail lives in `docs/audits/` (dated per-surface critiques) and in README → Roadmap → Built; the V-1…V-14 visual-assertion suite + the VM reproduction steps live in `docs/screenshots/README.md`. Method in one line: `npm run verify` (structural gate — overflow / console / 44px floor) + `npm run smoke`/`e2e` against `docs/screenshots/baseline/`, or `npm run preview -- <branch-url>` for production fidelity (real photos, live data).
+The screenshot-driven visual audit of every public surface at 390/768/1440 (findings **F-1…F-22**) is **fully closed** — all 22 shipped June 2026, plus the follow-up passes (English-only content pipeline, the `--reading-max` desktop width ladder, and the Lighthouse perf/a11y pass: Today 95 · Discover 96 · About 99, a11y/BP/SEO 100). Per-finding detail lives in README → Roadmap → Built; the V-1…V-14 visual-assertion suite + the VM reproduction steps live in `docs/screenshots/README.md`. Method in one line: `npm run verify` (structural gate — overflow / console / 44px floor) + `npm run smoke`/`e2e` against `docs/screenshots/baseline/`, or `npm run preview -- <branch-url>` for production fidelity (real photos, live data).
 
 **July 2026 design-sync pass (boards 1a–1i) — SHIPPED** (PR #92): voice-first hierarchy restored on Today (quote 42px Fraunces, title quiet Inter; mobile hero voice-only — also fixed the 390px photo-sliver collapse); Save joined the hero row, Surprise-me demoted to the This Week header; Discover dropped its banner + lede chrome, folded the mood strip into the Filters sheet, docked List|Map into the bottom glass chrome (floating pill retired) and went 3-col on desktop (rail · list · map) with a 52-tier search toolbar; venue detail reordered to quote → actions → venue plate with one labelled "Venue →" link; Profile got taste-cue + digest plates (composite `.digest-field`) and quiet info rule rows; Saved got tag date-cells, the lime active-count badge (zero-suppressed) and a closing summary plate; the lime `.linkact` underline retired (petrol link mark). Per-page detail in `HANDOFF.md`.
 
@@ -86,6 +86,8 @@ Most of the June-2026 gaps below are now filled — `docs/db-schema.md` (schema 
 
 ## New findings (June 2026 — from the reconcile-enforce investigation)
 
+*(Dormant while all crons are disabled pre-release — see `docs/backend-and-pipeline.md` → cron freeze. Re-check `ingest-fienta` before re-enabling `wa-reconcile-absent`.)*
+
 **1. `ingest-fienta` under-processes its feed (HIGH — active data loss).** Evidence: the Fienta org feeds list ~13 future events each, but only ~2 active Fienta picks get their `last_seen_at` bumped per run, and two **currently-listed** events (Starbenders 02.07, Napalm Death 17.11) were flagged stale by the reconcile while still present in `fienta.com/o/paavli-kultuurivabrik?format=json`. `ingest_log` shows `status='ok'` with `inserted` 0–2/day, so the zero-yield health check doesn't catch it (it's low-yield, not zero). Root cause not yet confirmed — candidates: the per-event `bumpSeen` PATCH not matching live picks, events being filtered out of `fetchSourceEvents` before `bumpSeen`, or process-staging having minted multi-slug ids that `bumpSeen`'s single-id key (`channel-message_id`) can't hit. **Next step: add one debug line to `bumpSeen` (log pid + PATCH row count), run `ingest-fienta` once, inspect.** Do NOT ship a blind fix to a live ingest function. Fienta is excluded from the reconcile until this is resolved (see `docs/reconcile-enforce-runbook.md`).
 
 **2. Fienta picks carry `day=null` + a synthetic `valid_until` (MEDIUM — data quality).** The 8 stale candidates all have `day=null` and an identical `valid_until=2026-08-14` (a generic ~90-day fallback), so their real event date is unknown and they never expire on time. Symptom of process-staging not extracting a date from the Fienta `starts_at` for some events. Likely the same root cause as #1 (bad date parsing in the May backfill).
@@ -129,4 +131,4 @@ Still-open product ideas (unranked, kept for the record): curator weekly synthes
 
 ---
 
-*Last rewritten June 2026 — converted from the May tier/sprint roadmap into a weak-point audit after the photo-card / taste / lifecycle wave shipped. Closed frontend-audit + remediation trackers collapsed to pointers July 2026; July 2026 design-sync pass (boards 1a–1i) recorded above.*
+*Last rewritten June 2026 — converted from the May tier/sprint roadmap into a weak-point audit after the photo-card / taste / lifecycle wave shipped. Closed frontend-audit + remediation trackers collapsed to pointers July 2026; July 2026 design-sync pass (boards 1a–1i) recorded above; provider revision (Google fully exited, OpenRouter + Workers AI live, all crons frozen pre-release) closes out **v0.7.12** — the discovery-phase milestone this file was tracking toward.*
