@@ -17,7 +17,7 @@ const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ    = Deno.env.get('GROQ_API_KEY') ?? '';
 // OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
 const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
-const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'meta-llama/llama-3.3-70b-instruct:free';
+const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'openai/gpt-oss-120b:free';
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const GROQ_MODEL   = 'meta-llama/llama-4-scout-17b-16e-instruct';
 const INTER_PICK_DELAY_MS = 800;
@@ -142,12 +142,14 @@ const callGemini = async (prompt: string): Promise<string|null> => {
   } catch { return null; }
 };
 
-/* Groq first; then the OpenRouter :free lane (inert without its key); Gemini last. */
-const generate = async (prompt: string): Promise<{ text: string|null; provider: string }> => {
+/* Groq first; then the OpenRouter :free lane (inert without its key);
+   Gemini last, and ONLY if the pipeline_config kill-switch allows it. */
+const generate = async (prompt: string, geminiGateEnabled: boolean): Promise<{ text: string|null; provider: string }> => {
   const g = await callGroq(prompt);
   if (g) return { text: g, provider: 'groq' };
   const o = await callOpenRouter(prompt);
   if (o) return { text: o, provider: 'openrouter' };
+  if (!geminiGateEnabled) return { text: null, provider: 'none' };
   const m = await callGemini(prompt);
   if (m) return { text: m, provider: 'gemini' };
   return { text: null, provider: 'none' };
@@ -156,6 +158,17 @@ const generate = async (prompt: string): Promise<{ text: string|null; provider: 
 const saveContext = async (id: string, context_md: string): Promise<boolean> => {
   const r = await sbFetch(`/rest/v1/picks?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ context_md }) });
   return r.ok || r.status === 204;
+};
+
+/* Same kill-switch process-staging reads — Gemini fallback is retired
+   (pipeline_config.gemini_fallback_enabled=false) until an owner re-flips
+   it. This function used to call Gemini unconditionally as a last resort,
+   ungated, which contradicted the policy; fixed to match process-staging. */
+const loadGeminiGateEnabled = async (): Promise<boolean> => {
+  const r = await sbFetch(`/rest/v1/pipeline_config?key=eq.gemini_fallback_enabled&select=value&limit=1`);
+  if (!r.ok) return true;
+  const rows = await r.json().catch(() => []) as Array<{ value: unknown }>;
+  return rows[0]?.value !== false;
 };
 
 Deno.serve(async (req: Request) => {
@@ -168,11 +181,12 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ ok: true, processed: 0, skipped: 0, errors: [], gemini_calls: 0 }), { headers: { 'Content-Type': 'application/json' } });
   }
 
+  const geminiGateEnabled = await loadGeminiGateEnabled();
   let processed = 0, skipped = 0, geminiCalls = 0;
   const errors: string[] = [];
 
   for (const pick of picks) {
-    const { text, provider } = await generate(buildPrompt(pick));
+    const { text, provider } = await generate(buildPrompt(pick), geminiGateEnabled);
     if (provider === 'gemini') geminiCalls++;
     if (!text) { skipped++; errors.push(`${pick.id}: no LLM output`); }
     else {

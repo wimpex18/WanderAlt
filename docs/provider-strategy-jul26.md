@@ -15,6 +15,14 @@ A researched revision of every external API/AI dependency, written pre-release (
 - **OpenRouter lane wired in repo** (process-staging/generate-context/draft-column), inert until `OPENROUTER_API_KEY` exists; deploy-on-key procedure in the backend doc. R4 closed code-side.
 - Remaining owner console actions: create the OpenRouter key (free, no card) → Supabase secret `OPENROUTER_API_KEY`; optional CF API token (`CF_ACCOUNT_ID` + `CF_AI_TOKEN` secrets) for the Workers-AI embeddings exit; Groq spend cap + Google budget alert.
 
+**Third status update (3 Jul 2026): the exit is complete — Google is fully gone.**
+- Owner deleted the Google Cloud billing account entirely and revoked the Places key — the strongest possible cap (no billing account attached means Google literally cannot charge the project).
+- Owner created `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN` and set all three as Supabase secrets.
+- **OpenRouter lane activated**: deployed to `process-staging`, `generate-context`, `draft-column`. Live-probed the model catalog first — `meta-llama/llama-3.3-70b-instruct:free` 429'd (shared pool busy), `openai/gpt-oss-120b:free` answered clean, so that's the pinned default. Verified via direct invocation (crons are frozen, so no cron traffic exercises this yet — that's expected and fine).
+- **Embeddings fully migrated off Gemini**: `embed-picks` v4 and `match-pick`'s query embedder now call Cloudflare Workers AI `@cf/baai/bge-m3` (1024-dim). `pick_embeddings` column + HNSW index migrated to `vector(1024)`; full corpus re-embedded same-day across all 4 cities (drained to 0 missing, confirmed by re-running embed-picks and getting "nothing to do" everywhere).
+- **Found and fixed a real bug while doing this**: `match-pick` had been silently broken — it selected `world_x`/`world_y` columns that no longer exist (dropped with the old illustrated-map feature), so every hybrid-search candidate fetch 400'd and the AI concierge always returned zero results, independent of any embeddings work. Fixed and verified live with real relevant hits in two different cities.
+- R4 (OpenRouter) and the embeddings half of R9's infrastructure are both now DONE, not proposed. Remaining open item from the original plan: R2 (Groq prompt caching) and the hybrid-retrieval *ranking* quality work (R9 proper — the retrieval plumbing already existed as `search_picks_hybrid`, this pass only fixed its embedding dependency).
+
 Each recommendation below is marked R-n; the phased plan at the bottom orders them.
 
 ### July 2026 free-tier landscape — second research pass (verified)

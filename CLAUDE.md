@@ -43,13 +43,15 @@ npm run smoke    # screenshot regression (server running) · npm run lighthouse 
 
 ## Supabase pipeline (CRITICAL — constrained plan)
 - **Never poll.** Fire a cron/function once, say "draining, check back ~10 min", end the turn. Health checks are one-shot SQL (`staging_messages` status counts · `picks WHERE archived_at IS NULL` · `ingest_log ORDER BY id DESC LIMIT 5`).
+- **ALL 30 CRONS ARE DISABLED** (owner decision, pre-release — no users yet). `cron.job.active=false` app-wide; schedules preserved. Every function still works via direct invocation; nothing runs on a timer. Re-enable SQL + per-cron restore notes → `docs/backend-and-pipeline.md`. Don't re-enable without being asked.
 - **Crons own the schedule** — only touch if asked. App reads `picks WHERE archived_at IS NULL`. Pick id = `channel-message_id`; staging upserts MUST use `?on_conflict=channel,message_id`. Any new city MUST get a `process-staging` `CITY_CONTEXT` entry. Flow, source matrix, lifecycle → `docs/backend-and-pipeline.md`.
 
 ## LLM model policy (do not deviate)
-- **Groq only for text generation (July 2026).** Primary `meta-llama/llama-4-scout-17b-16e-instruct` (fallback `llama-3.3-70b-versatile`) for match-pick / process-staging / generate-context / draft-column. Free tier has carried 100% of volume.
-- **Gemini text fallback is RETIRED** — `pipeline_config.gemini_fallback_enabled=false` (flipped 2 Jul 2026; code paths kept, do not re-enable without owner sign-off). The sanctioned *next* fallback lane is an **OpenRouter `:free` model** (e.g. `meta-llama/llama-3.3-70b-instruct:free`) or **Cerebras free tier** — wire only when the owner creates the (free, no-card) key. **No Search grounding anywhere.**
-- **Embeddings**: `gemini-embedding-001` (Gemini free tier — the ONE remaining Google call; a free-tier project with no billing account cannot be charged). Exit path = Cloudflare Workers AI `bge-m3` (needs CF token + full re-embed) → `docs/provider-strategy-jul26.md`.
-- **Pin models by exact id and verify the id exists (AI Studio / provider console) before changing** — never trust a model name from memory; that's how the "gemini-3.5" doc-drift happened. Per-function versions → `docs/backend-and-pipeline.md`.
+- **Groq first for every text-generation function** (`match-pick`, `process-staging`, `generate-context`, `draft-column`, `classify-moods`). Primary `meta-llama/llama-4-scout-17b-16e-instruct` (fallback `llama-3.3-70b-versatile`). Free tier has carried ~100% of volume.
+- **OpenRouter `:free` is the live second lane** (`OPENROUTER_API_KEY` set; model pinned via `OPENROUTER_MODEL`, currently `openai/gpt-oss-120b:free` — probed live, not assumed). Tried on any Groq failure, before Gemini.
+- **Gemini is RETIRED, not deleted** — `pipeline_config.gemini_fallback_enabled=false`; every function above gates its (still-present) Gemini call on this flag, so flipping it back on is a one-row DB change, not a redeploy. **Google Cloud billing is fully deleted** (owner action) — don't assume `GEMINI_API_KEY` still authenticates; verify before relying on it. **No Search grounding anywhere.**
+- **Embeddings**: **Cloudflare Workers AI `@cf/baai/bge-m3`** (1024-dim, free 10k neurons/day) — `embed-picks` + `match-pick`'s query embedder. `gemini-embedding-001` is fully retired; `pick_embeddings.embedding` is `vector(1024)`. The Google exit (Places API, text fallback, embeddings, billing account) is complete — nothing in the pipeline still calls Google.
+- **Pin models by exact id and verify the id exists (provider console/dashboard) before changing** — never trust a model name from memory; that's how the "gemini-3.5" doc-drift happened, and how the OpenRouter default model got probed live instead of guessed. Per-function versions → `docs/backend-and-pipeline.md`.
 
 ## Working rules
 - Visual change = make **only** that change; don't refactor adjacent code. Don't add CSS vars / deps without asking. Keep `README.md` current on scope changes.

@@ -1,7 +1,14 @@
 // ============================================================
-// WanderAlt — classify-moods  (v1)
+// WanderAlt — classify-moods  (v2)
 // One-time backfill: reads all active picks with empty mood_tags
-// and classifies them using Gemini Flash.
+// and classifies them.
+//
+// v2 (Jul 2026): this function was found Gemini-only with a hard 503
+// if GEMINI_API_KEY was absent — the one pipeline function that never
+// got the Groq-first policy applied. Brought in line with
+// process-staging/generate-context/draft-column: Groq primary, then
+// the OpenRouter :free lane, then Gemini gated behind the same
+// pipeline_config.gemini_fallback_enabled kill-switch (currently false).
 //
 // Invocation: POST to /functions/v1/classify-moods (no body needed).
 // Idempotent: only processes picks with mood_tags = '{}' or NULL.
@@ -21,6 +28,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY   = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-2.5-flash";
+const GROQ_KEY     = Deno.env.get("GROQ_API_KEY");
+const GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct";
+const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
+const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-oss-120b:free";
 const BATCH_SIZE   = 20;   // picks per LLM call
 const INTER_DELAY  = 1500; // ms between batches
 
@@ -54,8 +65,8 @@ Classify each pick using these mood tags (choose 1-4 that honestly describe the 
   walk-up   — no advance ticket needed, just show up
   ticketed  — requires booking or a ticket purchase
 
-Return ONLY a JSON array, one object per pick, in the same order:
-[{"id":"...","tags":["tag1","tag2"]}, ...]
+Return ONLY strict JSON, one object per pick in the same order, shaped exactly like:
+{"results":[{"id":"...","tags":["tag1","tag2"]}, ...]}
 
 Do not include any explanation or text outside the JSON.
 
@@ -63,8 +74,53 @@ Picks:
 ${list}`;
 };
 
-// ── Gemini call with one retry on 429 ─────────────────────────
-const callGemini = async (prompt: string): Promise<string> => {
+// ── Groq (primary) ─────────────────────────────────────────────
+const callGroq = async (prompt: string): Promise<string | null> => {
+  if (!GROQ_KEY) return null;
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j?.choices?.[0]?.message?.content ?? null;
+  } catch { return null; }
+};
+
+// ── OpenRouter :free (fallback lane — inert until its key exists) ──
+const callOpenRouter = async (prompt: string): Promise<string | null> => {
+  if (!OPENROUTER_KEY) return null;
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://wanderalt.app",
+        "X-Title": "WanderAlt pipeline",
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j?.choices?.[0]?.message?.content ?? null;
+  } catch { return null; }
+};
+
+// ── Gemini call with one retry on 429 (gated last resort) ───────
+const callGemini = async (prompt: string): Promise<string | null> => {
+  if (!GEMINI_KEY) return null;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const body = JSON.stringify({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -82,12 +138,36 @@ const callGemini = async (prompt: string): Promise<string> => {
   return j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
 };
 
+// ── Groq first; then the OpenRouter :free lane; Gemini last and ONLY
+//    if the pipeline_config kill-switch allows it (matches the rest of
+//    the pipeline — see process-staging/generate-context/draft-column). ──
+const generate = async (prompt: string, geminiGateEnabled: boolean): Promise<string> => {
+  const g = await callGroq(prompt);
+  if (g) return g;
+  const o = await callOpenRouter(prompt);
+  if (o) return o;
+  if (!geminiGateEnabled) throw new Error("all providers failed (Gemini gated off)");
+  const m = await callGemini(prompt);
+  if (m) return m;
+  throw new Error("all providers failed, including Gemini");
+};
+
+const loadGeminiGateEnabled = async (sb: ReturnType<typeof createClient>): Promise<boolean> => {
+  const { data } = await sb.from("pipeline_config").select("value").eq("key", "gemini_fallback_enabled").maybeSingle();
+  return data?.value !== false;
+};
+
 // ── JSON parse with fallback extraction ───────────────────────
+// Accepts either a bare array (legacy Gemini-only shape) or the current
+// {"results":[...]} object shape (needed so Groq/OpenRouter's json_object
+// response mode — which requires a top-level object — validates).
 const parseResults = (raw: string): Array<{ id: string; tags: string[] }> => {
   const tryParse = (s: string) => {
     try {
       const a = JSON.parse(s);
-      return Array.isArray(a) ? a : null;
+      if (Array.isArray(a)) return a;
+      if (a && Array.isArray(a.results)) return a.results;
+      return null;
     } catch { return null; }
   };
   return (
@@ -107,9 +187,10 @@ const json = (body: unknown, status = 200) =>
 
 export default {
   async fetch(_req: Request): Promise<Response> {
-    if (!GEMINI_KEY) return json({ ok: false, error: "GEMINI_API_KEY not set" }, 503);
+    if (!GROQ_KEY && !OPENROUTER_KEY && !GEMINI_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
 
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+    const geminiGateEnabled = await loadGeminiGateEnabled(sb);
 
     // Only process picks that haven't been tagged yet
     const { data: picks, error: fetchErr } = await sb
@@ -132,7 +213,7 @@ export default {
       const batch = picks.slice(i, i + BATCH_SIZE);
 
       try {
-        const raw     = await callGemini(buildPrompt(batch));
+        const raw     = await generate(buildPrompt(batch), geminiGateEnabled);
         const results = parseResults(raw);
 
         for (const r of results) {
