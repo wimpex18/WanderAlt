@@ -8,6 +8,9 @@ Deno.serve((_req) => {
     "SUPABASE_SERVICE_ROLE_KEY",
     "RESEND_API_KEY",
     "DIGEST_FROM_EMAIL",
+    "OPENROUTER_API_KEY",
+    "CF_ACCOUNT_ID",
+    "CF_AI_TOKEN",
   ];
   const result: Record<string, boolean> = {};
   for (const k of keys) {

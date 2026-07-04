@@ -27,15 +27,18 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GROQ_KEY     = Deno.env.get('GROQ_API_KEY') ?? '';
-const GEMINI_KEY   = Deno.env.get('GEMINI_API_KEY') ?? '';
+const CF_ACCOUNT   = Deno.env.get('CF_ACCOUNT_ID') ?? '';
+const CF_TOKEN     = Deno.env.get('CF_AI_TOKEN') ?? '';
 
-const EMBED_MODEL  = 'gemini-embedding-001';
+// Query embeddings on Cloudflare Workers AI bge-m3 (Jul 2026 — the Google
+// key was revoked; must match embed-picks' document model + 1024 dims).
+const EMBED_MODEL  = '@cf/baai/bge-m3';
 const GROQ_MODELS  = [
   'meta-llama/llama-4-scout-17b-16e-instruct',
   'llama-3.3-70b-versatile',
 ];
 
-const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga']);
+const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga', 'vilnius']);
 
 // SWR: 1 h fresh, 24 h max-age
 const STALE_AFTER_MS  =  60 * 60 * 1000;
@@ -155,25 +158,23 @@ async function setCached(hash: string, normalized: string, city: string, respons
 
 // ----- query embedding ------------------------------------------------------
 async function embedQuery(text: string): Promise<number[] | null> {
-  if (!GEMINI_KEY) return null;
+  if (!CF_ACCOUNT || !CF_TOKEN) return null;
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${GEMINI_KEY}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        content: { parts: [{ text }] },
-        taskType: 'RETRIEVAL_QUERY',
-        outputDimensionality: 768,
-      }),
-    });
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${EMBED_MODEL}`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: [text] }),
+      },
+    );
     if (!res.ok) {
       console.error(`embedQuery failed ${res.status}: ${(await res.text()).slice(0,120)}`);
       return null;
     }
     const j   = await res.json();
-    const vec = j?.embedding?.values;
-    return Array.isArray(vec) && vec.length === 768 ? vec : null;
+    const vec = j?.result?.data?.[0];
+    return Array.isArray(vec) && vec.length === 1024 ? vec : null;
   } catch (e) {
     console.error('embedQuery exception', e);
     return null;
@@ -203,7 +204,7 @@ const PICK_COLS = [
   'id','title','venue','neighborhood','kind','quote','handle',
   'day','time','mood_tags','thumb_initials',
   'image_url','image_attr',
-  'pin_num','pin_left','pin_top','pin_eyebrow','world_x','world_y',
+  'pin_num','pin_left','pin_top','pin_eyebrow',
   'tonight','this_week','pending_review','discovery_source',
 ].join(',');
 
@@ -214,7 +215,7 @@ interface PickRow {
   mood_tags: string[]|null; thumb_initials: string|null;
   image_url: string|null; image_attr: string|null;
   pin_num: number|null; pin_left: number|null; pin_top: number|null;
-  pin_eyebrow: string|null; world_x: number|null; world_y: number|null;
+  pin_eyebrow: string|null;
   tonight: boolean; this_week: boolean;
   pending_review: boolean; discovery_source: string|null;
 }
@@ -389,8 +390,10 @@ const toPick = (p: PickRow, why?: string) => ({
   pin: p.pin_num != null
     ? { num: p.pin_num, left: p.pin_left, top: p.pin_top, eyebrow: p.pin_eyebrow }
     : null,
-  world_x:          p.world_x,
-  world_y:          p.world_y,
+  /* world_x/world_y columns were dropped with the illustrated map —
+     keys kept null for response-shape compat with older callers. */
+  world_x:          null,
+  world_y:          null,
   tonight:          p.tonight,
   thisWeek:         p.this_week,
   pending:          p.pending_review,

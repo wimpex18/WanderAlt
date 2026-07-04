@@ -37,7 +37,7 @@ const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
 // OPENROUTER_API_KEY (free, no card — openrouter.ai/keys). Model must be a
 // :free-suffixed id so the lane can never bill.
 const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
-const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "meta-llama/llama-3.3-70b-instruct:free";
+const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-oss-120b:free";
 const GEMINI_MODEL  = "gemini-2.5-flash";
 const GROQ_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
 const BATCH_SIZE    = 10;   // max messages per invocation
@@ -449,7 +449,7 @@ const json = (body: unknown, status = 200) =>
 
 export default {
   async fetch(_req: Request): Promise<Response> {
-    if (!GEMINI_KEY && !GROQ_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
+    if (!GEMINI_KEY && !GROQ_KEY && !OPENROUTER_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Pre-fetch curator taglines and pipeline config once for the whole batch

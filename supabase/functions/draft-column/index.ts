@@ -16,7 +16,7 @@ const GEMINI_KEY       = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ_KEY         = Deno.env.get('GROQ_API_KEY') ?? '';
 // OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
 const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
-const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'meta-llama/llama-3.3-70b-instruct:free';
+const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'openai/gpt-oss-120b:free';
 const GEMINI_MODEL     = 'gemini-2.5-flash-lite';
 const GROQ_MODEL       = 'meta-llama/llama-4-scout-17b-16e-instruct';
 

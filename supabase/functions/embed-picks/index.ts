@@ -1,9 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// embed-picks  v3 — DB-side anti-join (Jul 2026)
-// Generates 768-dim embeddings for picks via Google text-embedding-005,
+// embed-picks  v4 — Cloudflare Workers AI bge-m3 (Jul 2026)
+// Generates 1024-dim embeddings via @cf/baai/bge-m3 (free 10k neurons/day;
+// the owner revoked the Google key, closing the last Google dependency),
 // upserts into pick_embeddings. Used by the hybrid-search retriever.
+// v3 fixed the anti-join outage; v4 swaps the provider + batches requests.
 //
 // POST body:
 //   { city?: string, force?: boolean, limit?: number, pick_id?: string }
@@ -15,16 +17,12 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const GEMINI_KEY   = Deno.env.get('GEMINI_API_KEY')!;
+const CF_ACCOUNT   = Deno.env.get('CF_ACCOUNT_ID')!;
+const CF_TOKEN     = Deno.env.get('CF_AI_TOKEN')!;
 
-// Embedding model — 2026 default, 768-dim, same Gemini key
-// Try the newest first, fall back to older if not available
-const EMBEDDING_MODELS = (Deno.env.get('GEMINI_EMBED_MODEL') || '')
-  .split(',').map(s => s.trim()).filter(Boolean);
-const MODEL_CHAIN = EMBEDDING_MODELS.length
-  ? EMBEDDING_MODELS
-  : ['gemini-embedding-001', 'text-embedding-005', 'text-embedding-004'];
-const EMBED_DIM = 768;
+const EMBED_MODEL = '@cf/baai/bge-m3';
+const EMBED_DIM   = 1024;
+const BATCH       = 25;   // texts per Workers AI request
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
@@ -58,45 +56,35 @@ const buildEmbeddingText = (p: Pick): string =>
     (p.mood_tags || []).join(' '),
   ].filter(Boolean).join(' · ');
 
-async function embedOne(text: string, model: string): Promise<{ ok: true; vec: number[]; model: string } | { ok: false; status: number; body: string }> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${GEMINI_KEY}`;
-  // gemini-embedding-001 supports outputDimensionality; older models ignore it
-  const body: Record<string, unknown> = {
-    content:  { parts: [{ text }] },
-    taskType: 'RETRIEVAL_DOCUMENT',
-  };
-  if (model === 'gemini-embedding-001') {
-    body.outputDimensionality = EMBED_DIM;
+// Embed a batch of texts in one Workers AI call. Returns vectors in input
+// order, or null on failure (the whole batch is retried next run — the
+// anti-join makes every run incremental).
+async function cfEmbedBatch(texts: string[]): Promise<number[][] | null> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${EMBED_MODEL}`,
+      {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: texts }),
+      },
+    );
+    if (!res.ok) {
+      console.error(`workers-ai embed failed ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      return null;
+    }
+    const j    = await res.json();
+    const data = j?.result?.data;
+    if (!Array.isArray(data) || data.length !== texts.length ||
+        data.some((v: unknown) => !Array.isArray(v) || (v as number[]).length !== EMBED_DIM)) {
+      console.error(`workers-ai bad shape: ${Array.isArray(data) ? data.length : typeof data}`);
+      return null;
+    }
+    return data as number[][];
+  } catch (e) {
+    console.error('workers-ai embed exception', e);
+    return null;
   }
-  const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const respBody = await res.text().catch(() => '');
-    return { ok: false, status: res.status, body: respBody.slice(0, 300) };
-  }
-  const j   = await res.json();
-  const vec = j?.embedding?.values;
-  if (!Array.isArray(vec) || vec.length !== EMBED_DIM) {
-    return { ok: false, status: 0, body: `bad vector shape: ${Array.isArray(vec) ? vec.length : typeof vec}` };
-  }
-  return { ok: true, vec, model };
-}
-
-// Walk the model chain — return as soon as one works, accumulate errors otherwise
-async function embedWithFallback(text: string): Promise<{ vec: number[]; model: string } | { errors: string[] }> {
-  const errs: string[] = [];
-  for (const model of MODEL_CHAIN) {
-    const r = await embedOne(text, model);
-    if (r.ok) return { vec: r.vec, model: r.model };
-    errs.push(`${model}:${r.status}:${r.body.slice(0, 100)}`);
-    // Bail out on auth errors — same key will fail on every model
-    if (r.status === 401 || r.status === 403) break;
-  }
-  console.error(`embed chain exhausted: ${errs.join(' | ')}`);
-  return { errors: errs };
 }
 
 // pgvector accepts the literal form "[0.1,0.2,...]" via REST.
@@ -149,35 +137,34 @@ Deno.serve(async (req: Request) => {
 
   let embedded = 0;
   const errors: string[] = [];
-  let usedModel = MODEL_CHAIN[0];
 
-  for (const p of picks) {
-    const text   = buildEmbeddingText(p);
-    const result = await embedWithFallback(text);
-    if ('errors' in result) {
-      errors.push(`${p.id} → ${result.errors[0] || 'unknown'}`);
+  for (let i = 0; i < picks.length; i += BATCH) {
+    const chunk = picks.slice(i, i + BATCH);
+    const vecs  = await cfEmbedBatch(chunk.map(buildEmbeddingText));
+    if (!vecs) {
+      errors.push(`batch ${i / BATCH}: workers-ai failed (${chunk.length} picks deferred)`);
       continue;
     }
-    usedModel = result.model;
-
-    const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/pick_embeddings`, {
-      method:  'POST',
-      headers: sbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
-      body: JSON.stringify({
-        pick_id:       p.id,
-        embedding:     vecLiteral(result.vec),
-        embedded_text: text,
-        model:         result.model,
-        updated_at:    new Date().toISOString(),
-      }),
-    });
-    if (upsertRes.ok) {
-      embedded++;
-    } else {
-      const errBody = await upsertRes.text().catch(() => '');
-      errors.push(`${p.id}: ${upsertRes.status} ${errBody.slice(0, 100)}`);
+    for (let k = 0; k < chunk.length; k++) {
+      const p = chunk[k];
+      const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/pick_embeddings`, {
+        method:  'POST',
+        headers: sbHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify({
+          pick_id:       p.id,
+          embedding:     vecLiteral(vecs[k]),
+          embedded_text: buildEmbeddingText(p),
+          model:         EMBED_MODEL,
+          updated_at:    new Date().toISOString(),
+        }),
+      });
+      if (upsertRes.ok) embedded++;
+      else {
+        const errBody = await upsertRes.text().catch(() => '');
+        errors.push(`${p.id}: ${upsertRes.status} ${errBody.slice(0, 100)}`);
+      }
     }
-    await sleep(50);
+    await sleep(150);
   }
 
   // Log the run (best-effort)
@@ -199,7 +186,7 @@ Deno.serve(async (req: Request) => {
     embedded,
     errors:    errors.length,
     total:     picks.length,
-    model:     usedModel,
+    model:     EMBED_MODEL,
     samples:   errors.slice(0, 3),
   }), { headers: { 'Content-Type': 'application/json' } });
 });
