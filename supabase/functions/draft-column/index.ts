@@ -125,19 +125,31 @@ const callGemini = async (prompt: string): Promise<string|null> => {
   } catch { return null; }
 };
 
-/* Groq first; Gemini only if Groq yields nothing. */
-const generate = async (prompt: string): Promise<{ text: string; provider: string }> => {
+/* Same kill-switch process-staging reads — Gemini fallback is retired
+   (pipeline_config.gemini_fallback_enabled=false) until an owner re-flips
+   it. This function used to call Gemini unconditionally as a last resort,
+   ungated, which contradicted the policy; fixed to match process-staging. */
+const loadGeminiGateEnabled = async (): Promise<boolean> => {
+  const rows = await sbGet('pipeline_config', 'key=eq.gemini_fallback_enabled&select=value&limit=1')
+    .catch(() => []) as Array<{ value: unknown }>;
+  return rows[0]?.value !== false;
+};
+
+/* Groq first; then the OpenRouter :free lane (inert without its key);
+   Gemini last, and ONLY if the pipeline_config kill-switch allows it. */
+const generate = async (prompt: string, geminiGateEnabled: boolean): Promise<{ text: string; provider: string }> => {
   const g = await callGroq(prompt);
   if (g) return { text: g, provider: 'groq' };
   const o = await callOpenRouter(prompt);
   if (o) return { text: o, provider: 'openrouter' };
+  if (!geminiGateEnabled) return { text: '', provider: 'none' };
   const m = await callGemini(prompt);
   if (m) return { text: m, provider: 'gemini' };
   return { text: '', provider: 'none' };
 };
 
 const draftForCity = async (
-  city: string, week: string
+  city: string, week: string, geminiGateEnabled: boolean
 ): Promise<{ status: 'drafted' | 'skipped' | 'error'; curator_handle?: string; detail?: string; provider?: string }> => {
 
   const existing = await sbGet('columns', `city=eq.${city}&week_of=eq.${week}&status=in.(draft,published)&limit=1`);
@@ -183,7 +195,7 @@ const draftForCity = async (
     `- Plain text output only\n\n` +
     `Output the three paragraphs separated by a blank line.`;
 
-  const { text: bodyMd, provider } = await generate(prompt);
+  const { text: bodyMd, provider } = await generate(prompt, geminiGateEnabled);
   if (!bodyMd) return { status: 'error', detail: 'no LLM output' };
 
   try { await sbInsert('columns', { curator_handle: curatorHandle, city, body_md: bodyMd, status: 'draft', week_of: week }); }
@@ -208,11 +220,12 @@ Deno.serve(async (req) => {
   } catch (_) {}
 
   const week = weekOf();
+  const geminiGateEnabled = await loadGeminiGateEnabled();
   const drafted: unknown[] = [], skipped: unknown[] = [], errors: unknown[] = [];
 
   for (const city of targetCities) {
     try {
-      const result = await draftForCity(city, week);
+      const result = await draftForCity(city, week, geminiGateEnabled);
       if (result.status === 'drafted')      drafted.push({ city, ...result });
       else if (result.status === 'skipped') skipped.push({ city, ...result });
       else                                  errors.push({ city, ...result });
