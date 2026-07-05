@@ -1,5 +1,8 @@
 // ============================================================
-// ingest-telliskivi  v3
+// ingest-telliskivi  v4
+// v4 (Jul 2026): staging_messages POST was missing
+//   ?on_conflict=channel,message_id, so repeat listings 409'd instead
+//   of being silently ignored.
 // v3 (Jun 2026): bumpSeen() marks each still-listed pick's
 //   last_seen_at so wa_reconcile_absent_picks can detect silent
 //   source-side cancellations. Best-effort; never blocks ingest.
@@ -164,7 +167,7 @@ async function upsertEvent(
     permalink:  e.url,
     status:     'new',
   };
-  const res = await rest('staging_messages', {
+  const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method:  'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
     body:    JSON.stringify(row),
