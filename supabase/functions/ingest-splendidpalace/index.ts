@@ -1,5 +1,8 @@
 // ============================================================
-// ingest-splendidpalace  v2
+// ingest-splendidpalace  v3
+// v3 (Jul 2026): staging_messages POST was missing
+//   ?on_conflict=channel,message_id, so repeat listings 409'd instead
+//   of being silently ignored.
 // v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
 //   for wa_reconcile_absent_picks (silent-cancellation detection).
 // Scrapes Splendid Palace (Riga) events from https://splendidpalace.lv/lv/pasakumi.
@@ -131,7 +134,7 @@ async function upsertEvent(
     permalink:  e.url,
     status:     'new',
   };
-  const res = await rest('staging_messages', {
+  const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method:  'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
     body:    JSON.stringify(row),

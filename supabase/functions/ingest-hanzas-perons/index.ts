@@ -1,5 +1,9 @@
 // ============================================================
-// ingest-hanzas-perons  v5
+// ingest-hanzas-perons  v6
+// v6 (Jul 2026): staging_messages POST was missing
+//   ?on_conflict=channel,message_id, so PostgREST couldn't resolve
+//   repeat-event conflicts and returned raw 409s (logged as errors on
+//   every run once the listing repeated day to day).
 // v5 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
 //   for wa_reconcile_absent_picks (silent-cancellation detection).
 // Scrapes the Hanzas Perons all-events page (Riga) and pushes events to
@@ -187,7 +191,7 @@ async function upsertEvent(
     permalink:  e.url,
     status:     'new',
   };
-  const res = await rest('staging_messages', {
+  const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method:  'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
     body:    JSON.stringify(row),

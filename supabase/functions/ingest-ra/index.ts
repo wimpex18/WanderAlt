@@ -1,5 +1,8 @@
 // ============================================================
-// ingest-ra  v1
+// ingest-ra  v2
+// v2 (Jul 2026): staging_messages POST was missing
+//   ?on_conflict=channel,message_id, so repeat listings would 409
+//   instead of being silently ignored.
 // Pulls upcoming electronic / club events from Resident Advisor
 // (ra.co) via their GraphQL endpoint and pushes them to
 // staging_messages for process-staging to curate.
@@ -143,7 +146,7 @@ async function upsertEvent(
     permalink:  `https://ra.co${ev.contentUrl}`,
     status:     'new',
   };
-  const res = await rest('staging_messages', {
+  const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method:  'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
     body:    JSON.stringify(row),

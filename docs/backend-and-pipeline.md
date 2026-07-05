@@ -74,6 +74,7 @@ Encyclopedic detail relocated out of `CLAUDE.md` (which is now contracts-only). 
 Disabled/dormant: hel_nocturnes, kaisa_writes, mattias_v, raul_reads (Telegram placeholders), udgstriga (dormant).
 
 ### Gotchas & settled decisions (do not re-raise)
+- **v0.7.12.1 (Jul 2026):** `ingest-hanzas-perons`, `ingest-echo-gone-wrong`, `ingest-splendidpalace`, `ingest-telliskivi`, `ingest-kinobize`, and `ingest-ra` were all missing `?on_conflict=channel,message_id` on their `staging_messages` POST (only `ingest-fienta` had it right) — a repeat of the exact under-processing bug this file already warned about at the top of this section. Repeat listings 409'd instead of being silently ignored; confirmed live via `get_logs(service:'api')` showing raw 409s on `hanzasperons` (100% error rate, every run) and `echogonewrong` (partial). Fixed in all 6; re-invoked both live afterward and confirmed `errored:0`.
 - **echogonewrong** needs a real desktop Safari UA (Cloudflare 403s default UAs) — copy the `BROWSER_UA` pattern. It's an RSS feed (items age off) → excluded from absence-reconcile.
 - **hel-linkedevents** is municipal open data, ~40% off-brand noise — filtered by `SKIP_VENUE_PATTERNS` (location.name) + `SKIP_PATTERNS` + `pipeline_config.skip_keywords` (checked before the LLM, free). Don't add the bare `lapsi` term (Finnish-compound false positives).
 - **ingest-osm** loops a `CITIES` map (4 cities, per-city try/catch), captures `contact:website/facebook/instagram`. Overpass rate-limited; retries next tick.
