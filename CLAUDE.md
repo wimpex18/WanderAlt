@@ -21,6 +21,10 @@ npm run smoke    # screenshot regression (server running) · npm run lighthouse 
 ```
 **Run `npm run verify` after ANY layout/CSS/markup change; `npm run e2e` for behaviour.** Real photos/duotone only render on the Cloudflare PR preview — `npm run preview -- <branch-preview-url>`.
 
+**Test tooling is Puppeteer (`.screenshots/*.js`) — not Playwright.** Cloud sessions sometimes get a pre-installed Playwright Chromium and a nudge toward it (see `docs/hybrid-cloud-local.md`); ignore that for this repo's own scripts and keep using `puppeteer.launch()`. If a session's `node_modules` is missing `/root/.cache/puppeteer` ("Could not find Chrome"), that means Puppeteer's own postinstall download never ran — fix it with a plain `npm install` (not an `executablePath` workaround); the sandbox network can reach the Chrome-for-Testing CDN fine.
+
+**Keep Puppeteer/Lighthouse/sharp current when you touch them.** Bumped to Puppeteer 25.3, Lighthouse 13.4, sharp 0.35 (Jul 2026) — check `npm view <pkg> version` before assuming a pin is stale; don't guess.
+
 ## Layout & design contracts (must never regress)
 - **Viewport** 390×844 canonical; desktop breakpoint **768px** (bottom-nav → masthead). One shared width token **`--reading-max`** on every page so edges align; ladder **1100**≥768 · **1200**≥1100 · **1280**≥1440 · **1440**≥1680 · **1600**≥1920 (mobile = full-width − 20px gutter; desktop gutter 32px). Long text keeps per-block `ch` measures (56–64ch).
 - **Two-tone brand:** petrol `--c-accent #055959` is the only accent; lime `--c-lime #d2dc50` is **signal-only** (live/active state) and **forbidden as text/icon**. **No third color.** White `--c-paper` background. WCAG 2.2 AA floor — do not lighten `--c-ink-mute #5c5c66`.
