@@ -6137,6 +6137,39 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}
 
+/* ── Tonight set (July 2026) — up to 3 diversified picks, not a single
+   hero. #tonight keeps the shared .tonight class (venue.js's own detail
+   hero reuses .tonight/.tonight__* for its curator-quote section) so
+   this ID-scoped rule only undoes the 2-col grid meant for that single-
+   hero shape on THIS page; .tonight-card is its own component, unrelated
+   to .tonight__* (leave those alone — still live on venue.html + the
+   Discover AI-match hero). */
+#tonight.tonight { display: block; padding-top: var(--s-8); padding-bottom: var(--s-7); }
+.tonight-set { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); align-items: stretch; }
+.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-6); }
+.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); }
+.tonight-card__kicker { font-family: var(--ff-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink-mute); }
+.tonight-card__kicker b { color: var(--c-ink); font-weight: 500; }
+.tonight-card__title { font-family: var(--ff-body); font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0 0 var(--s-4); display: block; }
+a.tonight-card__title:hover { color: var(--c-accent); }
+.tonight-card__quote { flex: 1; margin: 0 0 var(--s-5); }
+.tonight-card__quote blockquote { font-family: var(--ff-display); font-style: italic; font-size: 18px; line-height: 1.45; color: var(--c-ink-soft); margin: 0 0 var(--s-3); text-wrap: pretty; }
+.tonight-card__quote figcaption .handle { font-family: var(--ff-mono); font-size: 12.5px; }
+.tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
+.tonight-card__actions .btn { flex: 1; }
+.tonight-card__save { flex-shrink: 0; }
+@media (max-width: 1099px) { .tonight-set { grid-template-columns: 1fr; } }
+
+/* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
+   dated This Week picks. Reuses .sechead + .picks/.list-row--card, so it
+   inherits their spacing/rhythm automatically — no new list component. */
+.worth-a-visit { margin-top: var(--s-8); }
+.worth-a-visit .sechead { margin-bottom: var(--s-3); }
+
+/* ── This-week calendar subscribe — its own labelled row (was an icon-
+   only button crammed next to the picks-count stats, ambiguous scope). */
+.week__subscribe { display: inline-flex; margin: var(--s-4) 0 var(--s-5); }
+
 /* ════════════════════════════════════════════════════════════
    PLATE & RULE — Phase 2: DISCOVER (discover.html + discover.js)
    Reskin only — discover.js filter/map logic is untouched. Controls

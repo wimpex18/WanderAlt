@@ -103,78 +103,61 @@
   const thumbEl = window.WA.UI.thumb;
 
 
-  /* ── Tonight hero ──────────────────────────────────────── */
-  const renderTonight = (entry) => {
+  /* ── Tonight set (July 2026: diversified, up to 3 picks) ──
+     Was a single hero pick; most cities carry zero rows with tonight=true
+     (rotate-tonight's cron is frozen), so the old code silently fell back
+     to catalog[0] — an arbitrary first-in-array item, not a curated
+     choice. Now selectTonightSet() (see init()) picks up to 3 candidates
+     spanning different `kind`s, and every card still carries a real
+     curator quote — several small voices, not a bare listing grid. Text-
+     only (no photo) by design, so the quotes stay the loudest thing on
+     screen even with 3 cards instead of 1. */
+  const renderTonight = (entries) => {
     const section = document.getElementById('tonight');
-    if (!section || !entry) return;
+    if (!section || !entries || !entries.length) return;
     section.removeAttribute('aria-busy');   /* hydration done — drop the loading flag */
+    section.classList.remove('tonight--solo');
 
-    /* Plate & Rule (June 2026): a 2-col editorial hero — left column carries
-       the live signal, title, lime pull-quote and actions; the photo moves
-       to a framed media plate on the right (with the venue plate beneath).
-       'other' is a data bucket, not a place — never print it (F-12). */
     const esc = window.WA.UI.esc;
-    const heroNhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other'
-      ? entry.neighborhood : '';
-    const kicker = [entry.time ? `<b>${esc(entry.time)}</b>` : '', esc(entry.venue), esc(entry.kind)]
-      .filter(Boolean).join(' &middot; ');
+    const cards = entries.map(entry => {
+      const kicker = [entry.time ? `<b>${esc(entry.time)}</b>` : '', esc(entry.venue), esc(entry.kind)]
+        .filter(Boolean).join(' &middot; ');
+      return `<article class="tonight-card">
+         <div class="tonight-card__signal">
+           <span class="tag tag--live">Tonight</span>
+           <span class="tonight-card__kicker">${kicker}</span>
+         </div>
+         <a href="venue.html?id=${entry.id}" class="tonight-card__title">${esc(entry.title)}</a>
+         <figure class="tonight-card__quote">
+           <blockquote>&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
+           <figcaption><a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a></figcaption>
+         </figure>
+         <div class="tonight-card__actions">
+           <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+           <label class="bookmark tonight-card__save" title="Save this pick">
+             <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save: ${esc(entry.title)}">
+             ${bookmarkSVG()}
+           </label>
+         </div>
+       </article>`;
+    }).join('');
 
-    /* Photo stays an <a> to the venue so view-transition.js morphs it into
-       the detail hero. No photo -> single column (.tonight--solo), voice only. */
-    const media = entry.imageUrl
-      ? `<div class="tonight__media">
-           <a class="tonight__photo" href="venue.html?id=${entry.id}" aria-label="${esc(entry.title)}">
-             <span class="tonight__photo-ph" aria-hidden="true">${esc(entry.thumbInitials || (entry.venue || '?').slice(0, 2).toUpperCase())}</span>
-             <img src="${WA.img(entry.imageUrl, 1080).replace(/'/g, '%27')}" alt="">
-             <span class="tag tag--photo">${esc(entry.kind)}</span>
-           </a>
-           <div class="tonight__venue">
-             <div>
-               <b>${esc(entry.venue)}</b>
-               <span class="meta">${[heroNhood, entry.time ? `doors ${esc(entry.time)}` : ''].filter(Boolean).join(' &middot; ')}</span>
-             </div>
-             <a class="linkact" href="venue.html?id=${entry.id}">Venue<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-           </div>
-         </div>`
-      : '';
-
-    section.classList.toggle('tonight--solo', !entry.imageUrl);
     section.innerHTML =
-      `<div class="tonight__signal">
-         <span class="tag tag--live">Tonight</span>
-         <span class="tonight__kicker">${kicker}</span>
-       </div>
-       <a href="venue.html?id=${entry.id}" class="tonight__title" id="tonight-label">${esc(entry.title)}</a>
-       ${media}
-       <figure class="quote">
-         <blockquote class="quote__t">&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
-         <figcaption class="quote__attr">
-           <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>
-         </figcaption>
-       </figure>
-       <div class="tonight__actions">
-         <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-         <label class="btn btn--secondary tonight__save">
-           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save this pick">
-           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg><span>Save</span>
-         </label>
-       </div>`;
+      `<h2 class="visually-hidden" id="tonight-label">Tonight</h2>
+       <div class="tonight-set">${cards}</div>`;
     /* Surprise-me was demoted out of the hero action row (July 2026 board
        1b) — it lives in the This Week header now. Un-hide it here in case
        an empty-city render hid it earlier in this session. */
     const surpriseBtn = document.getElementById('surprise-btn');
     if (surpriseBtn) surpriseBtn.hidden = false;
-    /* Re-apply saved state to the freshly-rendered checkbox (surprise-me
-       re-renders the hero, so this can't rely on the one-shot init pass). */
+    /* Re-apply saved state to the freshly-rendered checkboxes (surprise-me
+       re-renders the set, so this can't rely on the one-shot init pass). */
     if (window.WA?.Bookmarks) {
-      const cb = section.querySelector('.bookmark__check');
-      if (cb && window.WA.Bookmarks.get()[cb.dataset.id]) cb.checked = true;
+      const saved = window.WA.Bookmarks.get();
+      section.querySelectorAll('.bookmark__check').forEach(cb => {
+        if (saved[cb.dataset.id]) cb.checked = true;
+      });
     }
-    /* Venue photos come from Google Places URLs that can expire/403 — on a
-       load failure drop the broken <img> so the initials placeholder shows
-       (CSP forbids an inline onerror, so wire it here). */
-    const heroImg = section.querySelector('.tonight__photo img');
-    if (heroImg) heroImg.addEventListener('error', () => heroImg.remove());
   };
 
   /* Cities served by WanderAlt's in-house editorial desk rather than a
@@ -392,7 +375,7 @@
   };
 
   /* ── Surprise me ───────────────────────────────────────────── */
-  let _surpriseExcludeId = null;
+  let _surpriseExcludeIds = new Set();
   let _surpriseCatalog   = [];
 
   /* Surprise lives in the This Week section header (static markup in
@@ -405,23 +388,23 @@
 
     document.addEventListener('click', (ev) => {
       if (!ev.target.closest('#surprise-btn')) return;
-      const pool = _surpriseCatalog.filter(e => e.id !== _surpriseExcludeId);
+      const pool = _surpriseCatalog.filter(e => !_surpriseExcludeIds.has(e.id));
       if (!pool.length) return;
 
       const pick = pool[Math.floor(Math.random() * pool.length)];
-      _surpriseExcludeId = pick.id;
+      _surpriseExcludeIds = new Set([pick.id]);
 
       const section = document.getElementById('tonight');
       if (!section) return;
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduced) {
-        renderTonight(pick);
+        renderTonight([pick]);
       } else {
         section.style.transition = 'opacity 160ms ease';
         section.style.opacity    = '0';
         setTimeout(() => {
-          renderTonight(pick);
+          renderTonight([pick]);
           section.style.opacity = '1';
           setTimeout(() => {
             section.style.removeProperty('opacity');
@@ -432,17 +415,97 @@
     });
   };
 
+  /* ── Tonight selection (July 2026) ────────────────────────
+     Up to 3 candidates spanning different `kind`s. Prefers rows the
+     backend explicitly flagged tonight=true; falls back to This Week
+     items scheduled for today's weekday when a city has none (true for
+     3 of 4 cities right now — rotate-tonight's cron is frozen, see
+     ROADMAP), so Tonight is never just catalog[0]'s arbitrary first
+     row. */
+  const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const selectTonightSet = (catalog, max = 3) => {
+    /* Explicit tonight=true rows come first (a genuine curator flag), then
+       today-scheduled This Week items pad out the rest — so a city with
+       exactly one explicit flag still gets a diversified set instead of
+       an oddly-sparse single card, while curator flags still lead. */
+    const explicit  = catalog.filter(e => e.tonight);
+    const today     = WEEKDAY_ABBR[new Date().getDay()];
+    const scheduled = catalog.filter(e => e.thisWeek && e.day === today && !e.tonight);
+    const pool = [...explicit, ...scheduled];
+
+    const out = [];
+    const seenKinds = new Set();
+    for (const e of pool) {
+      if (out.length >= max) break;
+      if (seenKinds.has(e.kind)) continue;
+      seenKinds.add(e.kind);
+      out.push(e);
+    }
+    for (const e of pool) {
+      if (out.length >= max) break;
+      if (!out.includes(e)) out.push(e);
+    }
+    return out;
+  };
+
+  /* ── Worth a visit (July 2026) ─────────────────────────────
+     A short strip of evergreen venues/places (day === null — the same
+     signal Discover's Places scope uses) below the dated This Week
+     picks, so Today surfaces underground spots worth knowing about, not
+     only scheduled events. Small on purpose (PAGE_SIZE-style restraint,
+     see renderThisWeek) — a pointer into Discover, not a second feed. */
+  const WORTH_A_VISIT_MAX = 3;
+  const selectWorthAVisit = (catalog, excludeIds, max = WORTH_A_VISIT_MAX) => {
+    const venues = catalog.filter(e => e.day === null && !excludeIds.has(e.id));
+    /* Photo-bearing venues first (reads better in the card row), then the rest. */
+    const withPhoto = venues.filter(e => e.imageUrl);
+    const withoutPhoto = venues.filter(e => !e.imageUrl);
+    return [...withPhoto, ...withoutPhoto].slice(0, max);
+  };
+
+  const renderWorthAVisit = (entries) => {
+    const section = document.getElementById('worth-a-visit');
+    const list    = document.getElementById('worth-a-visit-list');
+    if (!section || !list) return;
+    if (!entries.length) { section.hidden = true; return; }
+    section.hidden = false;
+
+    const esc = window.WA.UI.esc;
+    const { rowMedia, buildMeta, bookmarkSVG: bmSVG } = window.WA.UI;
+    const saved = window.WA?.Bookmarks?.get() || {};
+    list.innerHTML = entries.map(e => `
+      <li class="list-row list-row--card" data-id="${esc(e.id)}">
+        ${rowMedia(e)}
+        <div class="list-row__body">
+          <p class="list-row__title"><a href="venue.html?id=${esc(e.id)}">${esc(e.title)}</a></p>
+          <p class="list-row__meta">${esc(buildMeta(e))}</p>
+        </div>
+        <label class="bookmark">
+          <input type="checkbox" class="bookmark__check" data-id="${esc(e.id)}"
+                 aria-label="Bookmark: ${esc(e.title)}" ${saved[e.id] ? 'checked' : ''}>
+          ${bmSVG()}
+        </label>
+      </li>`).join('');
+  };
+
   /* ── Init ──────────────────────────────────────────────── */
   const init = () => {
     const catalog   = (window.WA && window.WA.catalog) || [];
 
-    /* If no entry is flagged tonight/thisWeek (e.g. all auto-generated
-       picks have the flags unset), fall back to the most-recent entries
-       so the page is never blank after a fresh DB import.              */
-    const tonight   = catalog.find(e => e.tonight) || catalog[0] || null;
-    const allWeek   = catalog.filter(e => e.thisWeek);
+    const tonightSet = selectTonightSet(catalog);
+    const tonightIds = new Set(tonightSet.map(e => e.id));
+    const worthAVisit = selectWorthAVisit(catalog, tonightIds);
+    const excludeFromWeek = new Set([...tonightIds, ...worthAVisit.map(e => e.id)]);
+
+    /* If nothing is flagged thisWeek (e.g. all auto-generated picks have
+       the flags unset), fall back to the most-recent entries so the page
+       is never blank after a fresh DB import. Tonight/Worth-a-visit picks
+       are excluded so the same pick doesn't repeat twice on one page. */
+    const allWeek   = catalog.filter(e => e.thisWeek && !excludeFromWeek.has(e.id));
     const fallback  = allWeek.length === 0;
-    const weekSrc   = fallback ? catalog.slice(0, 8) : allWeek;
+    const weekSrc   = fallback
+      ? catalog.filter(e => !excludeFromWeek.has(e.id)).slice(0, 8)
+      : allWeek;
 
     /* Apply taste re-ordering before slicing to 8: items aligned with the
        user's onboarding answers (and previous 👍) bubble to the top. Falls
@@ -463,14 +526,15 @@
     };
     const orderedWeek = orderByTaste(weekSrc);
 
-    /* Track the current tonight ID so Surprise me excludes it. */
-    _surpriseExcludeId = tonight ? tonight.id : null;
+    /* Track the current tonight picks so Surprise me excludes them. */
+    _surpriseExcludeIds = tonightIds;
 
     renderEditorialDeskNote();
     const sfMeta = document.getElementById('standfirst-meta');
     if (sfMeta) sfMeta.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-    if (tonight) renderTonight(tonight);
-    else         renderTonightEmpty();
+    if (tonightSet.length) renderTonight(tonightSet);
+    else                   renderTonightEmpty();
+    renderWorthAVisit(worthAVisit);
     /* Pass the full ordered set — renderThisWeek paginates internally. */
     renderThisWeek(orderedWeek);
     restoreBookmarks();
