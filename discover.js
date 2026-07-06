@@ -51,7 +51,7 @@
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote, rowMedia, thumb, socialButtons, bookmarkSVG } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, rowMedia, thumb, socialButtons, bookmarkSVG, kindIconSvg } = window.WA.UI;
 
   /* Multi-word AND + field-weight relevance (from search.js:26). */
   const keywordFilter = (corpus, term) => {
@@ -221,16 +221,21 @@
   };
   const venueKindLabel = (k) => VENUE_KIND_LABELS[k] || (k ? k[0].toUpperCase() + k.slice(1) : '');
 
-  /* A place is a permanent venue, not a dated pick — no curator quote.
-     Card shows name, kind + neighborhood, and a small row of social
-     glyphs (website / Facebook / Instagram) when present. Reuses the
+  /* A place is a permanent venue, not a dated pick — no curator quote (a
+     place has no single curator attached the way a pick does). Card shows
+     name, kind + neighborhood, a small row of social glyphs (website /
+     Facebook / Instagram) when present, and a save toggle. Reuses the
      shared WA.UI.socialButtons() → .social-icon system (one impl, 22px,
      filled-mobile/outline-desktop) instead of a local glyph fork.
      Photo/glyph-led (Jul 2026): places carry image_url same as picks, so
      they get the same thumb() treatment — real photo, or the kind-based
      glyph placeholder — instead of a bare text row (the one place-row
      gap left over from the pick-row redesign). Links to place.html, not
-     venue.html, so a manual media link replaces rowMedia(). */
+     venue.html, so a manual media link replaces rowMedia().
+     Bookmarkable (Jul 2026): places share the same WA.Bookmarks store as
+     picks — Google Maps Saved Places / Airbnb Wishlist convention, saving
+     a place for later needs no date attached. Surfaces in Saved's
+     Reading tab alongside dateless picks. */
   const renderVenueRow = (v, isDup) => {
     const meta = [v.neighborhood, venueKindLabel(v.kind)].filter(Boolean).join(' · ');
     const social = socialButtons({ name: v.name, website: v.website, facebook: v.facebook, instagram: v.instagram });
@@ -238,13 +243,19 @@
       ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map &rarr;</a>`
       : '';
     const media = `<a class="list-row__media" href="place.html?id=${encodeURIComponent(v.id)}" tabindex="-1" aria-hidden="true">${thumb(isDup ? { ...v, imageUrl: null, image_url: null } : v, true)}</a>`;
-    return `<li class="list-row list-row--venue list-row--card" data-id="${esc(v.id)}">
+    const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[v.id]);
+    return `<li class="list-row list-row--venue list-row--card list-row--bookmarkable" data-id="${esc(v.id)}">
        ${media}
        <div class="list-row__body">
          <p class="list-row__title"><a href="place.html?id=${encodeURIComponent(v.id)}">${esc(v.name)}</a>${onMap}</p>
          <p class="list-row__meta">${esc(meta)}</p>
          ${social}
        </div>
+       <label class="bookmark" title="Save this place">
+         <input type="checkbox" class="bookmark__check" data-id="${esc(v.id)}"
+                aria-label="Save: ${esc(v.name)}" ${isMarked ? 'checked' : ''}>
+         ${bookmarkSVG()}
+       </label>
      </li>`;
   };
 
@@ -438,9 +449,16 @@
     const present = state.type === 'places' ? hasKind : hasCat;
     const dataReady = state.type === 'places' ? venues.length > 0 : catalog.length > 0;
     if (dataReady) pairs = pairs.filter(([id]) => present(id) || state.cats.has(id));
+    /* Places categories get an icon (Jul 2026 — modern category-browsing
+       pattern per Google Maps' Explore-tab icon row / Atlas Obscura's
+       "browse by interest"): a venue kind is a recognizable shape at a
+       glance, so the icon carries real scanning value here. Events
+       categories keep text-only chips — the day/time/mood facets that
+       matter for a dated pick aren't shape-like the same way. */
     catChipsEl.innerHTML = pairs.map(([id, label]) => {
       const on = state.cats.has(id);
-      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${esc(id)}" aria-pressed="${on}">${esc(label)}</button>`;
+      const icon = state.type === 'places' ? kindIconSvg(id) : '';
+      return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" data-cat="${esc(id)}" aria-pressed="${on}">${icon}${esc(label)}</button>`;
     }).join('');
   };
 

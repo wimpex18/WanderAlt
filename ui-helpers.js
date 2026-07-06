@@ -64,13 +64,13 @@
      Round caps/joins on purpose — distinct from the sharp .ic action-icon
      system, since these describe content rather than trigger an action. */
   const KIND_GLYPH = {
-    gig: 'music', club: 'music', 'record store': 'music',
+    gig: 'music', club: 'music',
     theatre: 'theatre', burlesque: 'theatre',
     cinema: 'film',
     exhibition: 'art', gallery: 'art', art: 'art', museum: 'art', 'arts centre': 'art',
     talk: 'mic', lecture: 'mic',
     bar: 'drink',
-    bookshop: 'book',
+    bookshop: 'book', 'record store': 'vinyl',
     thrift: 'tag', market: 'tag',
   };
   const GLYPH_PATH = {
@@ -81,6 +81,11 @@
     mic:     '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
     drink:   '<path d="M6 3h12l-1.6 9.5a4.4 4.4 0 0 1-8.8 0L6 3z"/><path d="M12 15v6"/><path d="M8.5 21h7"/>',
     book:    '<path d="M12 6c-2-1.5-5-2-8-1.3v13c3-.7 6-.2 8 1.3 2-1.5 5-2 8-1.3v-13c-3-.7-6-.2-8 1.3z"/><path d="M12 6v13"/>',
+    /* Distinct from "music" (gig/club) on purpose — record store shows up
+       right next to Club in Discover's Places quick-filter row, and two
+       identical icons side by side in a 4-chip row defeats the point of
+       using icons for at-a-glance scanning. */
+    vinyl:   '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/>',
     tag:     '<path d="M3 11.5 11.5 3H19v7.5L10.5 19z"/><circle cx="15" cy="7" r="1.3"/>',
     star:    '<path d="M12 3.5 14.4 9l6 .8-4.4 4 1.1 6-5.1-3-5.1 3 1.1-6-4.4-4 6-.8z"/>',
   };
@@ -88,6 +93,18 @@
     const key = KIND_GLYPH[(kind || '').toLowerCase()] || 'star';
     return `<svg class="thumb__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
            `stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH_PATH[key]}</svg>`;
+  };
+
+  /* Same glyph set, styled as a functional .ic action-icon (sharp square
+     caps/joins, matching the button/chip icon system) instead of the
+     rounded decorative thumb__glyph — for category-browsing chips (Jul
+     2026: Discover's Places quick-filter row + Filters-sheet category
+     chips), where the glyph is labeling a tappable filter, not standing
+     in for a missing photo. One shared path-per-kind source (GLYPH_PATH)
+     for both contexts — never fork the icon set. */
+  const kindIconSvg = (kind) => {
+    const key = KIND_GLYPH[(kind || '').toLowerCase()] || 'star';
+    return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${GLYPH_PATH[key]}</svg>`;
   };
 
   /* A .thumb span — real photo when an image_url is set, otherwise a
@@ -195,5 +212,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons, passwordField };
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons, passwordField };
 })();

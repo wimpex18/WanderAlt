@@ -5248,6 +5248,8 @@ body.discover-places .mood-chips { display: none; }
   font-size: 11px;
   line-height: 1;
 }
+/* Same "don't stack ✓ + icon + label" rule as .discover-pill--on above. */
+.sheet-chip--on .ic { display: none; }
 /* Sort is a radio list (visible options, one tap) rather than a select. */
 .discover-sort {
   display: flex;
@@ -6448,7 +6450,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   display: inline-flex; align-items: center; justify-content: center;
 }
 a.auth-panel__submit { display: inline-flex; align-items: center; justify-content: center; }
-.discover-pill .ic, .facet-pill .ic, .seg-tab .ic,
+.discover-pill .ic, .facet-pill .ic, .seg-tab .ic, .sheet-chip .ic,
 .taste-skip .ic, .taste-done .ic, .taste-reset .ic,
 .curator-share .ic, .profile-danger-btn .ic,
 .auth-panel__submit .ic, .auth-panel__close .ic {
@@ -6456,7 +6458,7 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 }
 /* Leading gap where the control has no flex gap of its own
    (.seg-tab already sets gap:8px, so it's excluded here). */
-.discover-pill .ic, .facet-pill .ic,
+.discover-pill .ic, .facet-pill .ic, .sheet-chip .ic,
 .taste-skip .ic, .taste-done .ic, .taste-reset .ic,
 .curator-share .ic, .profile-danger-btn .ic,
 .auth-panel__submit .ic, .auth-panel__close .ic {
@@ -6494,6 +6496,13 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
   margin: 0;
   text-wrap: pretty;
 }
+/* place.html only — a save toggle beside the title, since a place has
+   no "I'm going" primary action (Jul 2026: places are bookmarkable,
+   same store as picks — Google Maps Saved Places / Airbnb Wishlist
+   convention). Doesn't touch .page-head itself, used unchanged
+   everywhere else. */
+.place-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); }
+.place-save { flex-shrink: 0; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; }
 .page-head__title em,
 .page-head__title b,
 .page-head__city { font-style: normal; font-weight: inherit; color: var(--c-accent); }
