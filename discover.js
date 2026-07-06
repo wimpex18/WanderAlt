@@ -231,13 +231,13 @@
      glyph placeholder — instead of a bare text row (the one place-row
      gap left over from the pick-row redesign). Links to place.html, not
      venue.html, so a manual media link replaces rowMedia(). */
-  const renderVenueRow = (v) => {
+  const renderVenueRow = (v, isDup) => {
     const meta = [v.neighborhood, venueKindLabel(v.kind)].filter(Boolean).join(' · ');
     const social = socialButtons({ name: v.name, website: v.website, facebook: v.facebook, instagram: v.instagram });
     const onMap = (v.lat != null && v.lng != null)
       ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map &rarr;</a>`
       : '';
-    const media = `<a class="list-row__media" href="place.html?id=${encodeURIComponent(v.id)}" tabindex="-1" aria-hidden="true">${thumb(v, true)}</a>`;
+    const media = `<a class="list-row__media" href="place.html?id=${encodeURIComponent(v.id)}" tabindex="-1" aria-hidden="true">${thumb(isDup ? { ...v, imageUrl: null, image_url: null } : v, true)}</a>`;
     return `<li class="list-row list-row--venue list-row--card" data-id="${esc(v.id)}">
        ${media}
        <div class="list-row__body">
@@ -254,7 +254,16 @@
     suppressEntrance = false;
     if (!venues.length) { resultsList.innerHTML = ''; emptyState.hidden = false; return; }
     emptyState.hidden = true;
-    resultsList.innerHTML = venues.map(renderVenueRow).join('');
+    /* Same F-11 guard as the Events tab: consecutive rows sharing one
+       photo read as a rendering bug — drop repeats to the glyph tile. */
+    let prevImg = null;
+    const dupImg = new Set();
+    for (const v of venues) {
+      const img = v.imageUrl || v.image_url || null;
+      if (img && img === prevImg) dupImg.add(v.id);
+      if (img) prevImg = img;
+    }
+    resultsList.innerHTML = venues.map(v => renderVenueRow(v, dupImg.has(v.id))).join('');
   };
 
   /* Nearest + the walking-radius filter need the visitor's location;
