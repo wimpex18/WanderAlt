@@ -201,7 +201,7 @@ Mobile: 1-col stack. ≥1100px: 3-col grid (`repeat(3, 1fr)`).
 
 **This Week list** (`.picks`): `briefing.js:renderThisWeek()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox.
 
-**Curator's Column** (`.column`): retired from Today (July 2026) — `renderColumn()` fetched the latest published `columns` row and injected it into `.week__rail`, but only 1 of 16 rows ever reached `published` (see ROADMAP), so the slot was empty on nearly every visit. The `.column`/`.column__*` CSS is kept for the "Reading lately" curator.html feature on the ROADMAP shelf, which is the concept's next home per the market-scan research (editorial voice belongs on its own curator page, not a homepage rail).
+**Curator's Column** (`.column`): retired from Today (July 2026) — `renderColumn()` fetched the latest published `columns` row and injected it into `.week__rail`, but only 1 of 16 rows ever reached `published` (see ROADMAP), so the slot was empty on nearly every visit. The `.column`/`.column__*` CSS moved to curator.html as "Reading lately" (below) — its next home per the market-scan research (editorial voice belongs on its own curator page, not a homepage rail).
 
 **Mood chips**: live on Discover only (inside the Filters sheet/rail since July 2026). `briefing.js` forwards legacy `index.html#mood=` deep-links to Discover before rendering.
 
@@ -277,6 +277,12 @@ Rendered by `venue.js` from `?id=`. July 2026 (board 1d) order: **quote → acti
 2. `.venue-actions` directly under the voice: a full-width labelled petrol `.btn--primary` "I'm going" (52px form tier), then `.venue-iconrow` — an icon-only 44px compact row: save (`.venue-save` bookmark), Add-to-calendar (dated picks only), Share, and a Google-Maps link (venue + city query). The two control tiers never mix in one row. Desktop: actions capped 440px; icon row left-aligned (−11px optical flush).
 3. `.venue-block` plate: thumb + name + meta + **one** labelled `.venue-card__go` "Venue →" mono link into `place.html` (rendered only when the pick's venue matches a places row) — replaces the old bookmark-in-plate and twin ambiguous map links.
 4. "About this event" context, then "More from @handle".
+
+### Curator (`curator.html`)
+
+Rendered by `curator.js` from `?handle=`. Profile header (avatar/`.handle`/bio) → **Reading lately** → picks list.
+
+**Reading lately** (`#curator-column-slot`, July 2026): `renderReadingLately(curator)` runs async, after the synchronous `render()` — it never blocks the page. Fetches this curator's own latest `columns` row (`status=eq.published`, `order=week_of.desc&limit=1`), matching on `curator_handle=in.(@handle,handle)` since a handful of historical `columns` rows were written with the bare (no-`@`) handle — the same back-compat pattern `init()` already applies to `?handle=` lookups. Renders into the slot using the retired-from-Today `.column`/`.column__*` markup (eyebrow "Reading lately · Edition No. N", approved-date meta, minimal-Markdown body: `**strong**`/`*em*`/blank-line paragraphs, no other syntax). Absent entirely — `#curator-column-slot` stays empty, `:not(:empty)` CSS margin never applies — when the curator has no published column or the fetch fails; failures are swallowed silently (same degrade-gracefully posture as the rest of the page).
 
 ### Profile (`profile.html`)
 

@@ -41,6 +41,69 @@
      picks match the Discover / Saved photo cards. Falls back to the initials
      tile when the pick has no image. Decorative supplementary link. */
 
+  /* ── Reading lately ────────────────────────────────────────
+     The curator-column feature's home since July 2026 (retired from
+     Today's week__rail — see ROADMAP: it was published once in 16 tries
+     there, a per-city cadence nobody kept feeding). Per-curator instead:
+     fetches this curator's own latest published columns row. Reuses the
+     .column/.column__* markup+CSS the old Today rail used (kept for
+     exactly this). Minimal Markdown: *em*, **strong**, blank-line
+     paragraphs. Gracefully absent — no published column, no section. */
+  const toColumnHtml = (md) => {
+    const escaped = md
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const inline = escaped
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+    return inline
+      .split(/\n\n+/)
+      .filter(p => p.trim())
+      .map(p => `<p>${p.replace(/\n/g, ' ').trim()}</p>`)
+      .join('');
+  };
+
+  const renderReadingLately = async (curator) => {
+    const slot = document.getElementById('curator-column-slot');
+    if (!slot) return;
+    const url = window.WA && window.WA.BASE_URL;
+    const key = window.WA && window.WA.ANON_KEY;
+    if (!url || !key) return;
+
+    try {
+      // back-compat: a few `columns` rows historically stored the handle without
+      // the leading "@" (same quirk `init()` already works around for curators/picks)
+      const bare = curator.handle.replace(/^@/, '');
+      const handles = `${curator.handle},${bare}`;
+      const res = await fetch(
+        `${url}/rest/v1/columns?curator_handle=in.(${encodeURIComponent(handles)})` +
+        `&status=eq.published&order=week_of.desc&limit=1&select=*`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!rows || !rows.length || !rows[0].body_md) return;
+
+      const col = rows[0];
+      const dateLabel = col.approved_at
+        ? new Date(col.approved_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+        : '';
+      const issueLabel = col.issue_num ? ` &middot; Edition No. ${col.issue_num}` : '';
+
+      slot.innerHTML =
+        `<section class="column" aria-labelledby="reading-lately-label">
+           <div class="column__head">
+             <span id="reading-lately-label" class="column__eyebrow">Reading lately${issueLabel}</span>
+             ${dateLabel ? `<span class="meta">${dateLabel}</span>` : ''}
+           </div>
+           <div class="column__body">${toColumnHtml(col.body_md)}</div>
+         </section>`;
+    } catch (_) {
+      /* Network errors are silently swallowed — the page degrades gracefully. */
+    }
+  };
+
   /* Infer a labelled back link from the previous page.
      For Discover and venue/curator referrers we preserve the full referrer
      URL so filter and pick state survive the round-trip.                  */
@@ -128,6 +191,8 @@
         <hr class="rule" style="margin-bottom:var(--s-5)">
         <p class="curator-profile__bio">${curator.bio}</p>
         ` : ''}
+
+        <div id="curator-column-slot"></div>
 
         ${picks.length ? `
         <hr class="rule" style="margin: var(--s-7) 0 0">
@@ -265,6 +330,7 @@
     }
 
     render(curator, picks);
+    renderReadingLately(curator);  /* async — doesn't block the sync render above */
   };
 
   /* place.js-style guard (ROADMAP P3): when the static catalog is already

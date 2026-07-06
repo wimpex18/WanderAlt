@@ -6084,9 +6084,10 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .week__rail{margin-top:var(--s-8)}
 .week__rail>.digest-optin{margin-top:0}
 
-/* The Column — curator metadata plate. No longer injected on Today (see
-   above); kept for the "Reading lately" curator.html feature on the
-   ROADMAP shelf, which will reuse this exact styling. */
+/* The Column — curator metadata plate. No longer injected on Today; lives
+   on curator.html as "Reading lately" (July 2026) — curator.js's
+   #curator-column-slot fills in only when a published column exists. */
+#curator-column-slot:not(:empty){margin:var(--s-7) 0}
 .column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
 .column__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-bottom:var(--s-4);margin-bottom:var(--s-5);border-bottom:var(--rule-w) solid var(--c-rule)}
 .column__eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent)}
