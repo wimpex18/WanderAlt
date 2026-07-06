@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-180 200 2160 850" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 200 1800 850" preserveAspectRatio="xMidYMid slice">
 
   <!-- Background: warm newsprint (same as Tallinn/Helsinki/Riga) -->
-  <rect x="-180" width="2160" height="1200" fill="#f6f3ec"/>
+  <rect width="1800" height="1200" fill="#f6f3ec"/>
 
   <!-- Sky corner fills — upper-left (Baltic air mass) -->
   <path d="M 0 0 L 520 0 C 440 90 340 200 220 300 C 140 360 60 400 0 420 Z" fill="#d9e2e3"/>

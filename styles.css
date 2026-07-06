@@ -5904,7 +5904,13 @@ body[data-page="saved"] .seg-note {
   border-bottom: var(--rule-w) solid var(--c-rule);   /* override the old strip's heavier bottom rule */
   background: var(--c-cream);
 }
-.city-banner__img { object-position: center 64%; }
+/* contain (not cover): the banner is a ~10:1 wide/short strip but the
+   plate art is a ~2:1 illustration — cover can only ever show a thin
+   cropped slice of the height. contain shows the whole skyline intact
+   (foundations through roofs/flags), matching .city-dropdown__thumb;
+   the cream letterbox margin is invisible since it equals the SVG's
+   own background fill (#f6f3ec == --c-cream). */
+.city-banner__img { object-fit: contain; object-position: center; }
 @media (min-width: 768px) { .city-banner { height: 120px; } }
 
 /* ── Docked bottom bar (mobile) — replaces the floating glass pill.
