@@ -87,8 +87,29 @@
     return li;
   };
 
-  /* Reading row — photo · body card (matches Discover). */
+  /* Reading row — photo · body card (matches Discover). Branches for a
+     bookmarked place (Jul 2026): no quote/handle (a place has no single
+     curator attached), links to place.html not venue.html, name not
+     title — same rowMedia() can't be reused since it hardcodes the
+     venue.html link. */
+  const placeReadingRow = (place) => {
+    const li = document.createElement('li');
+    li.className        = 'list-row list-row--card';
+    li.dataset.catalogId = place.id;
+    const meta = [place.neighborhood, place.kind].filter(Boolean).join(' · ');
+    li.innerHTML =
+      `<a class="list-row__media" href="place.html?id=${encodeURIComponent(place.id)}" tabindex="-1" aria-hidden="true">${window.WA.UI.thumb(place, true)}</a>
+       <div class="list-row__body">
+         <p class="list-row__title">
+           <a href="place.html?id=${encodeURIComponent(place.id)}">${place.name}</a>
+         </p>
+         <p class="list-row__meta">${meta}</p>
+       </div>`;
+    return li;
+  };
+
   const readingRow = (entry) => {
+    if (entry._isPlace) return placeReadingRow(entry);
     const li = document.createElement('li');
     li.className        = 'list-row list-row--card';
     li.dataset.catalogId = entry.id;
@@ -189,11 +210,23 @@
     const bookmarked    = catalog.filter(e => bookmarkedIds.includes(e.id));
     const goingEntries  = bookmarked.filter(e => !!e.day)
                                     .sort((a, b) => dayRank(a.day) - dayRank(b.day));
+    /* Bookmarked places (Jul 2026 — Google Maps Saved Places / Airbnb
+       Wishlist convention: saving a *place* for later needs no date
+       attached, same as an undated pick). Kept out of `bookmarked` on
+       purpose — that array feeds the change-watch/snapshot pipeline
+       below, which is pick-only; a place would never match `catalog` so
+       it'd either be silently ignored there or, worse, misread as
+       "gone." Merged in only for Reading's render, tagged _isPlace so
+       readingRow() can render the place-shaped fields (name, not title;
+       no quote/handle; links to place.html). */
+    const venuesAll        = (window.WA?._venuesAll) || (window.WA?.venues) || [];
+    const bookmarkedVenues = venuesAll.filter(v => bookmarkedIds.includes(v.id))
+                                       .map(v => ({ ...v, _isPlace: true }));
     /* Reading has no inherent order (undated saves), so it's the natural
        place for the gentle on-device taste nudge (same idea as Today's This
        Week and Discover's Relevance sort). Going stays soonest-first — an
        explicit chronological intent that taste must not override. */
-    const readingEntries = tasteOrder(bookmarked.filter(e => !e.day));
+    const readingEntries = tasteOrder([...bookmarked.filter(e => !e.day), ...bookmarkedVenues]);
 
     /* ── Change watch (A2) ──
        Flag day/time changes on dated picks vs the last snapshot, collect

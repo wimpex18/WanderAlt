@@ -6,23 +6,30 @@
    and renders a standalone place page:
 
      ← Back link (Discover)
-     Eyebrow (kind) · h1 name · meta (neighborhood · kind)
+     Eyebrow (kind) · h1 name · meta (neighborhood · kind) · Save
      Social links (website / Facebook / Instagram)
      Open in maps ↗  ·  See on map →
      ──────
      Events here — picks at this venue (RA / Google-Maps pattern)
      Colophon
 
-   A place is a permanent venue, not a dated pick: no curator
-   quote, no bookmark. The events nested below ARE picks and link
-   to their own venue.html detail.
+   A place is a permanent venue, not a dated pick: no curator quote (a
+   place has no single curator attached the way a pick does — "Events
+   here" below is where curator voice shows up, per-event). It IS
+   bookmarkable though (Jul 2026 — Google Maps Saved Places / Airbnb
+   Wishlist pattern: saving a *place* to check out later, no date
+   attached, is a standard place-discovery convention, not something
+   that should be withheld just because it's not a dated pick). Shares
+   the same window.WA.Bookmarks store as picks; saved.js's Reading tab
+   surfaces bookmarked places alongside dateless picks — both read as
+   "things to check out, no schedule" to the reader already.
 
    Load order (place.html):
      catalog.js → city.js → supabase.js → bookmark.js → place.js
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote, socialButtons } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, socialButtons, bookmarkSVG } = window.WA.UI;
   const mediaHtml = window.WA.UI.rowMedia;
 
   const KIND_LABELS = {
@@ -64,6 +71,12 @@
       facebook:  venue.facebook,
       instagram: venue.instagram,
     });
+
+    const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[venue.id]);
+    const saveToggle = `<label class="bookmark place-save" title="Save this place">
+      <input type="checkbox" class="bookmark__check" data-id="${esc(venue.id)}" aria-label="Save: ${esc(venue.name)}"${isMarked ? ' checked' : ''}>
+      ${bookmarkSVG()}
+    </label>`;
 
     /* Map affordances: a Google-Maps deep link (lightweight — no embedded
        MapLibre on a detail page) + a link back to the place on Discover's
@@ -113,8 +126,13 @@
 
       <article aria-label="${esc(venue.name)}">
         <div class="page-head">
-          <p class="page-head__eyebrow">${esc(kindLabel(venue.kind))}</p>
-          <h1 class="page-head__title">${esc(venue.name)}</h1>
+          <div class="place-head-row">
+            <div>
+              <p class="page-head__eyebrow">${esc(kindLabel(venue.kind))}</p>
+              <h1 class="page-head__title">${esc(venue.name)}</h1>
+            </div>
+            ${saveToggle}
+          </div>
           <p class="page-head__meta">${esc(meta)}</p>
           ${social}
           ${mapLinks}
@@ -159,6 +177,15 @@
       renderNotFound();
     }
   };
+
+  /* Bookmark toggle — persists via the shared store. Delegated once on
+     document since render() rebuilds #place-main's innerHTML (a per-
+     element listener would leak on re-render via wa:catalog-ready). */
+  document.addEventListener('change', (e) => {
+    const cb = e.target.closest('.bookmark__check');
+    if (!cb || !window.WA.Bookmarks) return;
+    window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
+  });
 
   if (window.WA && window.WA.venues) init();
   document.addEventListener('wa:catalog-ready', init);

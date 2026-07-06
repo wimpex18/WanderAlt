@@ -157,7 +157,7 @@
 
     const railCards = rest.map(entry => {
       const meta = [esc(entry.venue), entry.time ? esc(entry.time) : null].filter(Boolean).join(' &middot; ');
-      return `<article class="tonight-rail__card">
+      return `<article class="tonight-rail__card" role="listitem">
          <a class="tonight-rail__link" href="venue.html?id=${entry.id}">
            ${thumbEl(entry, true)}
            <span class="tonight-rail__title">${esc(entry.title)}</span>
