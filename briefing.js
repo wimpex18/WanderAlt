@@ -474,7 +474,7 @@
     const { rowMedia, buildMeta, bookmarkSVG: bmSVG } = window.WA.UI;
     const saved = window.WA?.Bookmarks?.get() || {};
     list.innerHTML = entries.map(e => `
-      <li class="list-row list-row--card" data-id="${esc(e.id)}">
+      <li class="list-row list-row--card list-row--bookmarkable" data-id="${esc(e.id)}">
         ${rowMedia(e)}
         <div class="list-row__body">
           <p class="list-row__title"><a href="venue.html?id=${esc(e.id)}">${esc(e.title)}</a></p>

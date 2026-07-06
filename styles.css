@@ -6157,7 +6157,10 @@ a.tonight-card__title:hover { color: var(--c-accent); }
 .tonight-card__quote figcaption .handle { font-family: var(--ff-mono); font-size: 12.5px; }
 .tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
 .tonight-card__actions .btn { flex: 1; }
-.tonight-card__save { flex-shrink: 0; }
+/* 44px tap floor (WCAG 2.5.5) — base .bookmark is a bare 20px glyph +
+   8px padding = 36px; the venue-detail action row's .venue-save gets
+   the same explicit min-width/height treatment for the same reason. */
+.tonight-card__save { flex-shrink: 0; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; }
 @media (max-width: 1099px) { .tonight-set { grid-template-columns: 1fr; } }
 
 /* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
