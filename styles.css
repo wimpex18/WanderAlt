@@ -1765,9 +1765,19 @@ html.wa-taste-done .taste-onboarding { display: none; }
   text-transform: uppercase;
   color: var(--c-ink-mute);
 }
-.taste-q__choices { display: flex; gap: var(--s-2); }
+/* Joined equal-width pair (like .wa-seg, at the chip-height tier) — each
+   axis is a binary either/or, so both choices share one width instead of
+   hugging their own text (was visibly lopsided: "Solo" vs "With people"). */
+.taste-q__choices {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--c-paper-deep);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
+}
 .taste-chip {
-  flex: 0 0 auto;   /* hug content on desktop; mobile restores flex:1 for 2-up */
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1777,14 +1787,15 @@ html.wa-taste-done .taste-onboarding { display: none; }
   font-size: 14px;
   font-weight: 600;
   color: var(--c-ink-soft);
-  background: var(--c-paper);
-  border: 1.5px solid var(--c-rule-strong);
-  border-radius: var(--radius);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 3px);
   cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  white-space: nowrap;   /* flex:1 siblings will shrink-wrap text otherwise ("With people") */
+  transition: color var(--t-fast), background var(--t-fast);
 }
-.taste-chip:hover { border-color: var(--c-ink); color: var(--c-ink); }
-.taste-chip--on { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-accent); }
+.taste-chip:hover { color: var(--c-ink); }
+.taste-chip--on { background: var(--c-accent-soft); color: var(--c-accent); }
 .taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-6); }
 .taste-skip, .taste-reset {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1806,7 +1817,6 @@ html.wa-taste-done .taste-onboarding { display: none; }
 .taste-done:hover { background: var(--c-accent-deep); }
 @media (max-width: 767px) {
   .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-4); }
-  .taste-q__choices .taste-chip { flex: 1; }   /* 2-up full-width tap targets on mobile */
   .taste-onboarding__title { font-size: 20px; }
 }
 
@@ -6068,11 +6078,10 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
 .pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
 .week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
-/* From the desk = full-width band below the week index. Heading spans the row;
-   the curator column (when present) and the digest sit side by side, and the
-   digest grows to fill the row on weeks with no published column. */
+/* Full-width band below the week index. The curator column (when present —
+   rare, see ROADMAP) and the digest sit side by side; the digest grows to
+   fill the row on weeks with no published column. */
 .week__rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
-.week__rail>.sechead{flex:1 1 100%}
 .week__rail>.column{flex:2 1 360px;margin:0}
 .week__rail>.digest-optin{flex:1 1 300px;margin-top:0}
 

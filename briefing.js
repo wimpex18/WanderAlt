@@ -42,7 +42,11 @@
     wrap.addEventListener('click', (e) => {
       const chip = e.target.closest('.taste-chip');
       if (chip) {
-        taste.setPrefs({ [chip.dataset.axis]: chip.dataset.choice });
+        const { axis, choice } = chip.dataset;
+        /* Tapping the already-active choice deselects it (back to "no
+           preference" for that axis) instead of being permanently stuck. */
+        if (taste.getPrefs()[axis] === choice) taste.unsetPref(axis);
+        else taste.setPrefs({ [axis]: choice });
         reflect();
         return;
       }

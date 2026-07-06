@@ -159,7 +159,7 @@
         </div>
       </div>
       <div class="taste-onboarding__foot">
-        <button type="button" class="taste-skip" id="taste-skip">Skip for now</button>
+        <button type="button" class="taste-skip" id="taste-skip">Skip</button>
         <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
         <button type="button" class="taste-reset" id="taste-reset" hidden>Reset</button>
       </div>
@@ -215,8 +215,10 @@
       </ol>
      </div>
      <aside class="week__rail">
-       <header class="sechead"><h2 class="sechead__t">From the desk</h2></header>
-       <!-- .column injected here by briefing.js renderColumn (when a published column exists) -->
+       <!-- .column injected here by briefing.js renderColumn (when a published
+            column exists — rare in practice, see ROADMAP's curator-column note).
+            It carries its own eyebrow/heading, so no static rail header is
+            needed above it or above the digest form. -->
        <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
          <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
          <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
