@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-180 100 2160 1000" preserveAspectRatio="xMidYMid slice">
-
-  <rect x="-180" width="2160" height="1200" fill="#f6f3ec"></rect>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 100 1800 1000" preserveAspectRatio="xMidYMid slice">
+  
+  <rect width="1800" height="1200" fill="#f6f3ec"></rect>
 
   
   <path d="M 0 0 L 1180 0 C 1020 90 880 180 720 250 C 540 330 320 380 0 460 Z" fill="#d9e2e3"></path>

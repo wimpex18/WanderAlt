@@ -30,6 +30,16 @@
     document.dispatchEvent(new CustomEvent('wa:taste-changed', { detail: merged }));
     return merged;
   };
+  /* Clears one axis back to "no preference" — lets a chip be tapped
+     again to deselect, instead of every axis being permanently sticky
+     once chosen. */
+  const unsetPref = (axis) => {
+    const prefs = getPrefs();
+    delete prefs[axis];
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    document.dispatchEvent(new CustomEvent('wa:taste-changed', { detail: prefs }));
+    return prefs;
+  };
   const isOnboarded  = () => localStorage.getItem(ONBOARDED_KEY) === '1';
   const setOnboarded = () => localStorage.setItem(ONBOARDED_KEY, '1');
   const resetOnboarding = () => {
@@ -190,7 +200,7 @@
 
   window.WA = window.WA || {};
   window.WA.taste = {
-    getPrefs, setPrefs, isOnboarded, setOnboarded, resetOnboarding,
+    getPrefs, setPrefs, unsetPref, isOnboarded, setOnboarded, resetOnboarding,
     clearAllFeedback,
     getFeedback, recordLike, recordDislike, clearVote, voteFor,
     getSeen, recordSeen,

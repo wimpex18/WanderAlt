@@ -1765,9 +1765,19 @@ html.wa-taste-done .taste-onboarding { display: none; }
   text-transform: uppercase;
   color: var(--c-ink-mute);
 }
-.taste-q__choices { display: flex; gap: var(--s-2); }
+/* Joined equal-width pair (like .wa-seg, at the chip-height tier) — each
+   axis is a binary either/or, so both choices share one width instead of
+   hugging their own text (was visibly lopsided: "Solo" vs "With people"). */
+.taste-q__choices {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--c-paper-deep);
+  border: 1.5px solid var(--c-rule-strong);
+  border-radius: var(--radius);
+}
 .taste-chip {
-  flex: 0 0 auto;   /* hug content on desktop; mobile restores flex:1 for 2-up */
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1777,14 +1787,15 @@ html.wa-taste-done .taste-onboarding { display: none; }
   font-size: 14px;
   font-weight: 600;
   color: var(--c-ink-soft);
-  background: var(--c-paper);
-  border: 1.5px solid var(--c-rule-strong);
-  border-radius: var(--radius);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 3px);
   cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  white-space: nowrap;   /* flex:1 siblings will shrink-wrap text otherwise ("With people") */
+  transition: color var(--t-fast), background var(--t-fast);
 }
-.taste-chip:hover { border-color: var(--c-ink); color: var(--c-ink); }
-.taste-chip--on { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-accent); }
+.taste-chip:hover { color: var(--c-ink); }
+.taste-chip--on { background: var(--c-accent-soft); color: var(--c-accent); }
 .taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-6); }
 .taste-skip, .taste-reset {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1806,7 +1817,6 @@ html.wa-taste-done .taste-onboarding { display: none; }
 .taste-done:hover { background: var(--c-accent-deep); }
 @media (max-width: 767px) {
   .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-4); }
-  .taste-q__choices .taste-chip { flex: 1; }   /* 2-up full-width tap targets on mobile */
   .taste-onboarding__title { font-size: 20px; }
 }
 
@@ -5904,7 +5914,13 @@ body[data-page="saved"] .seg-note {
   border-bottom: var(--rule-w) solid var(--c-rule);   /* override the old strip's heavier bottom rule */
   background: var(--c-cream);
 }
-.city-banner__img { object-position: center 64%; }
+/* contain (not cover): the banner is a ~10:1 wide/short strip but the
+   plate art is a ~2:1 illustration — cover can only ever show a thin
+   cropped slice of the height. contain shows the whole skyline intact
+   (foundations through roofs/flags), matching .city-dropdown__thumb;
+   the cream letterbox margin is invisible since it equals the SVG's
+   own background fill (#f6f3ec == --c-cream). */
+.city-banner__img { object-fit: contain; object-position: center; }
 @media (min-width: 768px) { .city-banner { height: 120px; } }
 
 /* ── Docked bottom bar (mobile) — replaces the floating glass pill.
@@ -6062,15 +6078,15 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
 .pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
 .week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
-/* From the desk = full-width band below the week index. Heading spans the row;
-   the curator column (when present) and the digest sit side by side, and the
-   digest grows to fill the row on weeks with no published column. */
-.week__rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
-.week__rail>.sechead{flex:1 1 100%}
-.week__rail>.column{flex:2 1 360px;margin:0}
-.week__rail>.digest-optin{flex:1 1 300px;margin-top:0}
+/* Full-width band below the week index — just the digest opt-in plate.
+   Used to also host the curator column (briefing.js renderColumn); retired
+   July 2026, see index.html's comment above the digest markup. */
+.week__rail{margin-top:var(--s-8)}
+.week__rail>.digest-optin{margin-top:0}
 
-/* The Column — curator metadata plate */
+/* The Column — curator metadata plate. No longer injected on Today (see
+   above); kept for the "Reading lately" curator.html feature on the
+   ROADMAP shelf, which will reuse this exact styling. */
 .column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
 .column__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-bottom:var(--s-4);margin-bottom:var(--s-5);border-bottom:var(--rule-w) solid var(--c-rule)}
 .column__eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent)}
@@ -6120,6 +6136,42 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .tonight__save .ic{width:18px;height:18px}
 .tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}
+
+/* ── Tonight set (July 2026) — up to 3 diversified picks, not a single
+   hero. #tonight keeps the shared .tonight class (venue.js's own detail
+   hero reuses .tonight/.tonight__* for its curator-quote section) so
+   this ID-scoped rule only undoes the 2-col grid meant for that single-
+   hero shape on THIS page; .tonight-card is its own component, unrelated
+   to .tonight__* (leave those alone — still live on venue.html + the
+   Discover AI-match hero). */
+#tonight.tonight { display: block; padding-top: var(--s-8); padding-bottom: var(--s-7); }
+.tonight-set { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); align-items: stretch; }
+.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-6); }
+.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); }
+.tonight-card__kicker { font-family: var(--ff-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink-mute); }
+.tonight-card__kicker b { color: var(--c-ink); font-weight: 500; }
+.tonight-card__title { font-family: var(--ff-body); font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0 0 var(--s-4); display: block; }
+a.tonight-card__title:hover { color: var(--c-accent); }
+.tonight-card__quote { flex: 1; margin: 0 0 var(--s-5); }
+.tonight-card__quote blockquote { font-family: var(--ff-display); font-style: italic; font-size: 18px; line-height: 1.45; color: var(--c-ink-soft); margin: 0 0 var(--s-3); text-wrap: pretty; }
+.tonight-card__quote figcaption .handle { font-family: var(--ff-mono); font-size: 12.5px; }
+.tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
+.tonight-card__actions .btn { flex: 1; }
+/* 44px tap floor (WCAG 2.5.5) — base .bookmark is a bare 20px glyph +
+   8px padding = 36px; the venue-detail action row's .venue-save gets
+   the same explicit min-width/height treatment for the same reason. */
+.tonight-card__save { flex-shrink: 0; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; }
+@media (max-width: 1099px) { .tonight-set { grid-template-columns: 1fr; } }
+
+/* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
+   dated This Week picks. Reuses .sechead + .picks/.list-row--card, so it
+   inherits their spacing/rhythm automatically — no new list component. */
+.worth-a-visit { margin-top: var(--s-8); }
+.worth-a-visit .sechead { margin-bottom: var(--s-3); }
+
+/* ── This-week calendar subscribe — its own labelled row (was an icon-
+   only button crammed next to the picks-count stats, ambiguous scope). */
+.week__subscribe { display: inline-flex; margin: var(--s-4) 0 var(--s-5); }
 
 /* ════════════════════════════════════════════════════════════
    PLATE & RULE — Phase 2: DISCOVER (discover.html + discover.js)
