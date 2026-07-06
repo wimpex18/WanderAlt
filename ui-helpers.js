@@ -52,32 +52,63 @@
   };
 
   const bookmarkSVG = () =>
-    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+    `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
          stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
        <path d="M6 3h12v18l-6-4-6 4V3z" />
      </svg>`;
 
-  /* A .thumb span — real photo when an image_url is set, otherwise the
-     initials tile. Used by the Tonight venue block, This Week rows, the
-     venue-detail venue row and Discover's match hero.
+  /* Kind-based placeholder glyphs (July 2026 photo-led redesign) — a plain
+     two-letter monogram reads as a broken avatar; a glyph that names the
+     kind of thing (a note for a gig, a mask-light for theatre) reads as a
+     deliberate placeholder and keeps a no-photo row scannable at a glance.
+     Round caps/joins on purpose — distinct from the sharp .ic action-icon
+     system, since these describe content rather than trigger an action. */
+  const KIND_GLYPH = {
+    gig: 'music', club: 'music',
+    theatre: 'theatre', burlesque: 'theatre',
+    cinema: 'film',
+    exhibition: 'art', gallery: 'art', art: 'art', museum: 'art',
+    talk: 'mic', lecture: 'mic',
+    bar: 'drink',
+    bookshop: 'book',
+    thrift: 'tag', market: 'tag',
+  };
+  const GLYPH_PATH = {
+    music:   '<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2.4"/><circle cx="17" cy="16" r="2.4"/>',
+    theatre: '<circle cx="12" cy="5" r="1.8"/><path d="M8 20l3-12h2l3 12z"/>',
+    film:    '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M8 5v14M16 5v14M3 10h5M16 10h5M3 15h5M16 15h5"/>',
+    art:     '<path d="M12 3a9 9 0 1 0 6.4 15.4c.8-.8.3-2.2-.8-2.4h-1.3a2.7 2.7 0 0 1-2-4.5A9 9 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1.1"/><circle cx="11.5" cy="7.5" r="1.1"/><circle cx="15.8" cy="9.5" r="1.1"/>',
+    mic:     '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/>',
+    drink:   '<path d="M6 3h12l-1.6 9.5a4.4 4.4 0 0 1-8.8 0L6 3z"/><path d="M12 15v6"/><path d="M8.5 21h7"/>',
+    book:    '<path d="M12 6c-2-1.5-5-2-8-1.3v13c3-.7 6-.2 8 1.3 2-1.5 5-2 8-1.3v-13c-3-.7-6-.2-8 1.3z"/><path d="M12 6v13"/>',
+    tag:     '<path d="M3 11.5 11.5 3H19v7.5L10.5 19z"/><circle cx="15" cy="7" r="1.3"/>',
+    star:    '<path d="M12 3.5 14.4 9l6 .8-4.4 4 1.1 6-5.1-3-5.1 3 1.1-6-4.4-4 6-.8z"/>',
+  };
+  const kindGlyphSvg = (kind) => {
+    const key = KIND_GLYPH[(kind || '').toLowerCase()] || 'star';
+    return `<svg class="thumb__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+           `stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPH_PATH[key]}</svg>`;
+  };
+
+  /* A .thumb span — real photo when an image_url is set, otherwise a
+     kind-based glyph tile. Used by the Tonight venue block, This Week rows,
+     the venue-detail venue row and Discover's match hero.
 
      The photo is an <img> (not a CSS background) on purpose: venue photos
      resolve to Google Places CDN URLs that can later 403, and a background
      image has no onerror hook — so a dead URL used to leave a blank grey
-     square. The initials tile is rendered behind the <img>; a single global
-     error handler (below) drops a broken .thumb__img so those initials show,
+     square. The glyph tile is rendered behind the <img>; a single global
+     error handler (below) drops a broken .thumb__img so the glyph shows,
      matching the Tonight hero which already degraded this way. */
   const thumb = (entry, large = false) => {
-    const imgUrl   = entry.imageUrl || entry.image_url || null;
-    const initials = (entry.thumbInitials || entry.thumb_initials
-      || (entry.venue || entry.title || '?').slice(0, 2)).toUpperCase().slice(0, 2);
-    const cls   = `thumb${large ? ' thumb--lg' : ''}`;
-    const label = imgUrl ? (entry.venue || entry.title || '') : `${entry.venue || entry.title || ''} placeholder`;
-    const img   = imgUrl
+    const imgUrl = entry.imageUrl || entry.image_url || null;
+    const cls    = `thumb${large ? ' thumb--lg' : ''}`;
+    const label  = imgUrl ? (entry.venue || entry.title || '') : `${entry.venue || entry.title || ''} placeholder`;
+    const img    = imgUrl
       ? `<img class="thumb__img" src="${esc(WA.img(String(imgUrl), large ? 400 : 200))}" alt="" loading="lazy" decoding="async">`
       : '';
     return `<span class="${cls}" role="img" aria-label="${esc(label)}">` +
-           `<span class="thumb__fallback" aria-hidden="true">${esc(initials)}</span>` +
+           kindGlyphSvg(entry.kind) +
            img +
            `</span>`;
   };

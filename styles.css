@@ -124,8 +124,7 @@
    Browsers without support fall back to instant navigation.
    The topbar and primary nav get persistent names so they
    morph instead of cross-fading — chrome shouldn't flicker
-   between pages. The city-banner is short enough that fading
-   it with the page body looks fine, no name needed.
+   between pages.
    ============================================================ */
 @view-transition { navigation: auto; }
 
@@ -258,70 +257,6 @@ img, svg { display: block; max-width: 100%; }
   }
   .nav__inner { background: var(--c-paper-deep) !important; }
 }
-
-/* ── City banner ─────────────────────────────────────────────
-   Decorative cityscape ribbon sat below the sticky topbar on
-   every content page. Shows the active city's illustrated plate
-   (brand/BRAND.md § 5) as a recognizable skyline — buildings sit
-   on the ground line with a little sky above. Acts as a subtle
-   "you are here" cue and ties the brand chrome to the current
-   city without taking editorial weight from the content below.
-   Injected by city.js; per-city image keyed off body[data-city].
-   Clickable as a shortcut to open the city-selector dropdown.
-
-   Height: the plate is a 3:2 illustration with the building band
-   in its lower-middle (y≈460–1004 of 1200). object-position:
-   center 74% pulls the visible crop down onto that band so we see
-   whole buildings — roofs through bases — instead of a thin slice
-   through the middle. Taller on desktop because the full-bleed
-   width makes the visible slice shorter the wider the viewport.
-   ============================================================ */
-.city-banner {
-  height: 100px;
-  background: var(--c-paper-deep);
-  border-bottom: var(--rule-w) solid var(--c-rule);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: opacity var(--t-fast);
-  /* Sit inside the reading column so the ribbon aligns with the
-     content grid below. width:100% is required because body is a
-     flex column on desktop — without it the banner shrinks to the
-     SVG's intrinsic viewBox width instead of filling up to max. */
-  width: 100%;
-  max-width: var(--reading-max);
-  margin: 0 auto;
-}
-.city-banner:hover { opacity: 0.92; }
-.city-banner:focus-visible {
-  outline: 2px solid var(--c-accent);
-  outline-offset: -2px;
-}
-/* The plate image fills the ribbon and is cropped to the skyline.
-   width/height attrs on the <img> tag (set in city.js) give the
-   browser the intrinsic 3:2 aspect so layout is reserved before
-   bytes arrive — the previous CSS background-image approach was
-   the main CLS source. */
-.city-banner__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 60%;
-  display: block;
-  user-select: none;
-  pointer-events: none;
-}
-/* Per-city Y-crop. Each SVG's viewBox is now tightened to its
-   actual building bounds (~y200..y1100), so the default 60% slice
-   frames the whole skyline. Riga sits lower in its tightened view
-   (river takes the bottom third), so nudge the crop up. */
-body[data-city="riga"]     .city-banner__img { object-position: center 50%; }
-body[data-city="helsinki"] .city-banner__img { object-position: center 55%; }
-body[data-city="vilnius"]  .city-banner__img { object-position: center 55%; }
-/* On a narrow viewport the full-bleed crop is naturally taller (the
-   image scales to the smaller width), so the base 96px already shows
-   the whole skyline — no shrink needed. A 48px ribbon here would clip
-   back to a thin mid-building slice, which is exactly what we fixed. */
 
 /* Logo mark — Beacon. Petrol squircle tile + lime diamond.
    Proportions are canonical (see brand/BRAND.md §1):
@@ -722,15 +657,13 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   margin: 3px 0 0;
   line-height: 1.3;
 }
-.thumb__fallback {
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--c-ink-mute);
-  background: var(--c-paper);
-  padding: 2px var(--s-2);   /* 2px = optical text fit */
-  border-radius: var(--radius);
-}
+/* Kind-based placeholder glyph (July 2026) — replaces the old plain
+   two-letter monogram; ui-helpers.js:thumb() picks the glyph by e.kind. */
+/* Fixed size (not a % of the container) — a thumb can be a non-square
+   box (the Tonight rail's wide photo strip), and width%/height% resolve
+   against each axis independently, stretching the glyph off-square. */
+.thumb__glyph { width: 22px; height: 22px; color: var(--c-accent-deep); flex-shrink: 0; }
+.thumb--lg .thumb__glyph { width: 30px; height: 30px; }
 
 /* ============================================================
    This week — list of 4 picks
@@ -1726,24 +1659,27 @@ body[data-page="saved"] .colophon {
   border: var(--rule-w) solid var(--c-rule);
   border-radius: var(--radius-card);
   background: var(--c-paper-deep);
-  padding: var(--s-6);
+  padding: var(--s-5) var(--s-6);
   margin: var(--s-7) 0 var(--s-6);
 }
 /* Onboarded users: hide before first paint (class set by the head script). */
 html.wa-taste-done .taste-onboarding { display: none; }
-.taste-onboarding__head { margin-bottom: var(--s-5); }
+.taste-onboarding__head { margin-bottom: var(--s-4); }
+/* First-run-only prompt (never shown again once onboarded) — sized as a
+   supporting panel, not a page-level heading, so it doesn't compete with
+   the picks above it. */
 .taste-onboarding__title {
-  font-family: var(--ff-display);
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.018em;
+  font-family: var(--ff-body);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
-  margin: 0 0 var(--s-2);
+  margin: 0 0 var(--s-1);
 }
 .taste-onboarding__intro {
   font-family: var(--ff-body);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 13.5px;
+  line-height: 1.4;
   color: var(--c-ink-mute);
   margin: 0;
   max-width: 60ch;
@@ -1796,7 +1732,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 .taste-chip:hover { color: var(--c-ink); }
 .taste-chip--on { background: var(--c-accent-soft); color: var(--c-accent); }
-.taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-6); }
+.taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-5); }
 .taste-skip, .taste-reset {
   display: inline-flex; align-items: center; justify-content: center;
   height: 44px; padding: 0 var(--s-4);
@@ -1816,8 +1752,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 .taste-done:hover { background: var(--c-accent-deep); }
 @media (max-width: 767px) {
-  .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-4); }
-  .taste-onboarding__title { font-size: 20px; }
+  .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-3); }
 }
 
 
@@ -3180,11 +3115,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .logo-mark { width: 40px; height: 40px; border-radius: 8px; }
   .logo-mark__diamond { width: 9px; height: 9px; }
 
-  /* Constrained-to-column width means the visible slice is narrower
-     and the building span is more legible — bump the ribbon so the
-     whole skyline (roofs through bases) reads on desktop. */
-  .city-banner { height: 160px; }
-
   .tonight { padding: var(--s-8) 0 var(--s-7); }
   .tonight__quote { margin: var(--s-4) 0 var(--s-4); }
   .tonight__transition { margin: var(--s-6) 0 var(--s-3); }
@@ -3217,12 +3147,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 
   /* Search input scales up on wider screens */
   .search-input { font-size: 28px; }
-
-  /* City banner sits between the topbar (order 1) and the masthead
-     nav (order 3). Default order is 0 — without this rule the banner
-     would float above the entire layout on desktop because of the
-     body-level flex column. */
-  .city-banner { order: 2; }
 
   /* Bottom nav → top masthead bar.
      width: 100% matters: .nav is a flex item in the body column, so
@@ -3408,8 +3332,9 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 @media (hover: hover) {
   .bookmark:hover { transform: scale(1.06); }
 }
-/* List-row bookmark: keep the 20px glyph but guarantee a 44×44 hit area
-   (WCAG 2.5.5 / Apple HIG) on touch. Centred so the glyph doesn't shift. */
+/* List-row bookmark: keep the 22px glyph (unified standalone-icon tier)
+   but guarantee a 44×44 hit area (WCAG 2.5.5 / Apple HIG). Centred so the
+   glyph doesn't shift. */
 .pick .bookmark {
   min-width: 44px;
   min-height: 44px;
@@ -3597,12 +3522,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   flex-direction: column;
   gap: var(--s-3);
   margin: var(--s-4) 0 0;
-  /* Reserve ~the rendered hero height (photo banner + quote + actions) so
-     the skeleton→hero swap doesn't shift the page below it. */
-  min-height: 502px;
+  /* Reserve ~the rendered hero+rail height so the skeleton→content swap
+     doesn't shift the page below it. Mobile wraps the quote to more lines
+     (narrower hero card) than the wider desktop column, so mobile is
+     taller here — measured against the real hero+rail render. */
+  min-height: 590px;
 }
 @media (min-width: 768px) {
-  .skeleton-tonight { min-height: 560px; }
+  .skeleton-tonight { min-height: 500px; }
 }
 /* Photo-banner placeholder — matches the .tonight__hero shape. */
 .skeleton-tonight__banner {
@@ -4023,12 +3950,11 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 
   /* ── Hide all chrome ──
      Everything in this list is interactive / navigational and has
-     no value on paper. The city-banner ribbon, discover map pane,
-     and search box were added after the original print stylesheet —
-     extend the hide list as new chrome ships.                       */
+     no value on paper. The discover map pane and search box were
+     added after the original print stylesheet — extend the hide
+     list as new chrome ships.                                       */
   .topbar,
   .nav,
-  .city-banner,
   .bookmark,
   .auth-overlay,
   .auth-trigger,
@@ -5882,7 +5808,7 @@ body[data-page="saved"] .seg-note {
    broke the "lime is signal-only, never text decoration" rule. */
 .linkact { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--c-accent); padding: 10px 0; border-bottom: var(--rule-w) solid var(--c-accent); transition: color var(--t-fast), border-color var(--t-fast); }
 .linkact:hover { color: var(--c-ink); border-bottom-color: var(--c-ink); }
-.linkact .ic { width: 15px; height: 15px; }
+.linkact .ic { width: 18px; height: 18px; }
 
 /* ── Chips · segmented control · fields ───────────────────────── */
 .wa-chip { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: var(--radius); border: var(--rule-w) solid var(--c-rule-strong); background: var(--c-paper); font-family: var(--ff-mono); font-size: 13px; letter-spacing: .03em; color: var(--c-ink-soft); white-space: nowrap; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast); }
@@ -5902,26 +5828,6 @@ body[data-page="saved"] .seg-note {
 .field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 16.5px; color: var(--c-ink); }
 .field__input::placeholder { color: var(--c-ink-mute); font-style: italic; }
 .ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
-
-/* ── Banner — a framed PLATE on the grid, not a loose strip ───── */
-.city-banner {
-  /* July 2026 pass: compressed 150 → 88 mobile / 120 desktop so the
-     curator's voice crests the first viewport (design board 1b/1g). */
-  height: 88px;
-  margin: var(--s-5) auto 0;
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius-card);
-  border-bottom: var(--rule-w) solid var(--c-rule);   /* override the old strip's heavier bottom rule */
-  background: var(--c-cream);
-}
-/* contain (not cover): the banner is a ~10:1 wide/short strip but the
-   plate art is a ~2:1 illustration — cover can only ever show a thin
-   cropped slice of the height. contain shows the whole skyline intact
-   (foundations through roofs/flags), matching .city-dropdown__thumb;
-   the cream letterbox margin is invisible since it equals the SVG's
-   own background fill (#f6f3ec == --c-cream). */
-.city-banner__img { object-fit: contain; object-position: center; }
-@media (min-width: 768px) { .city-banner { height: 120px; } }
 
 /* ── Docked bottom bar (mobile) — replaces the floating glass pill.
    Full-width, hairline top, every tab labelled, petrol active underline.
@@ -5989,7 +5895,7 @@ body[data-page="saved"] .seg-note {
 
 /* ── Return bar — mobile About escape hatch (used Phase 3) ─────── */
 .returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
-.returnbar .ic { width: 15px; height: 15px; color: var(--c-accent); }
+.returnbar .ic { width: 18px; height: 18px; color: var(--c-accent); }
 .returnbar:hover { color: var(--c-accent); }
 
 /* ════════════════════════════════════════════════════════════
@@ -6068,6 +5974,12 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
    a tidy grid, not sparse wide rows (single col on mobile). */
 .thisweek .picks{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--s-8)}
 .pick{display:grid;grid-template-columns:72px 1fr auto;gap:var(--s-5);align-items:center;padding:var(--s-5) 0;border-bottom:var(--rule-w) solid var(--c-rule)}
+/* Day-group header (Jul 2026) — spans both grid columns so it breaks the
+   row cleanly regardless of the mobile/desktop column count. Biggest gap
+   near it (group break), never the tightest — the day is the coarsest
+   grouping on this list. */
+.week-daylabel{grid-column:1/-1;font-family:var(--ff-mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute);padding:var(--s-5) 0 var(--s-2)}
+.week-daylabel:first-child{padding-top:0}
 .pick__img{display:block;width:72px;height:72px}
 .pick .thumb{width:72px;height:72px;border-radius:var(--radius);border:var(--rule-w) solid var(--c-rule)}
 .pick__body{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -6138,31 +6050,77 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .tonight__actions input.bookmark__check{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .tonight__actions .bookmark__check:checked ~ span::after{content:"d";letter-spacing:0}
 
-/* ── Tonight set (July 2026) — up to 3 diversified picks, not a single
-   hero. #tonight keeps the shared .tonight class (venue.js's own detail
-   hero reuses .tonight/.tonight__* for its curator-quote section) so
-   this ID-scoped rule only undoes the 2-col grid meant for that single-
-   hero shape on THIS page; .tonight-card is its own component, unrelated
-   to .tonight__* (leave those alone — still live on venue.html + the
-   Discover AI-match hero). */
+/* ── Tonight set (Jul 2026) — hero + horizontal rail, not N equal cards.
+   #tonight keeps the shared .tonight class (venue.js's own detail hero
+   reuses .tonight/.tonight__* for its curator-quote section) so this
+   ID-scoped rule only undoes the 2-col grid meant for that single-hero
+   shape on THIS page; .tonight-card/.tonight-rail are their own
+   components, unrelated to .tonight__* (leave those alone — still live
+   on venue.html + the Discover AI-match hero). */
 #tonight.tonight { display: block; padding-top: var(--s-8); padding-bottom: var(--s-7); }
-.tonight-set { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); align-items: stretch; }
-.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-6); }
-.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); }
+.tonight-set { display: flex; flex-direction: column; gap: var(--s-5); }
+.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-5) var(--s-6); }
+.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-3); }
 .tonight-card__kicker { font-family: var(--ff-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink-mute); }
 .tonight-card__kicker b { color: var(--c-ink); font-weight: 500; }
-.tonight-card__title { font-family: var(--ff-body); font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0 0 var(--s-4); display: block; }
+/* Photo/glyph leads, title+quote-caption follow — title is the largest
+   text on the card now; the quote reuses the app-wide .list-row__quote
+   caption instead of standing alone as the dominant element. */
+.tonight-card__body { display: flex; gap: var(--s-4); align-items: flex-start; flex: 1; margin-bottom: var(--s-5); }
+.tonight-card__text { min-width: 0; max-width: 62ch; }
+.tonight-card__title { font-family: var(--ff-body); font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0; display: block; }
 a.tonight-card__title:hover { color: var(--c-accent); }
-.tonight-card__quote { flex: 1; margin: 0 0 var(--s-5); }
-.tonight-card__quote blockquote { font-family: var(--ff-display); font-style: italic; font-size: 18px; line-height: 1.45; color: var(--c-ink-soft); margin: 0 0 var(--s-3); text-wrap: pretty; }
-.tonight-card__quote figcaption .handle { font-family: var(--ff-mono); font-size: 12.5px; }
 .tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
 .tonight-card__actions .btn { flex: 1; }
+/* On a wide desktop hero the full-width CTA would stretch to ~900px+ —
+   cap it to a sane button width instead of an edge-to-edge bar. */
+@media (min-width: 768px) { .tonight-card--hero .tonight-card__actions { max-width: 360px; } }
 /* 44px tap floor (WCAG 2.5.5) — base .bookmark is a bare 20px glyph +
    8px padding = 36px; the venue-detail action row's .venue-save gets
    the same explicit min-width/height treatment for the same reason. */
 .tonight-card__save { flex-shrink: 0; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; }
-@media (max-width: 1099px) { .tonight-set { grid-template-columns: 1fr; } }
+/* The hero gets a bigger thumb than the default 72px .thumb--lg — it's
+   the one card that should read as clearly primary at a glance. */
+.tonight-card--hero .tonight-card__body .thumb { width: 96px; height: 96px; }
+
+/* Rail — the non-flagship Tonight picks. Fixed-height horizontal scroller
+   (Summer 2026 hero+rail convention: Airbnb Explore / Apple News / Spotify
+   Home) instead of stacking more equal-weight cards, so 1 extra pick or 5
+   costs the same vertical space and the size gap vs the hero above IS the
+   hierarchy signal. Bleeds to the viewport edge on mobile so the first
+   card aligns with the reading column but the scroll affordance (next
+   card peeking in) is visible. */
+.tonight-rail {
+  display: flex;
+  gap: var(--s-4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 2px var(--gutter) var(--s-2);
+}
+.tonight-rail::-webkit-scrollbar { display: none; }
+.tonight-rail__card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
+  padding: var(--s-4);
+  position: relative;
+}
+.tonight-rail__link { display: flex; flex-direction: column; gap: var(--s-3); text-decoration: none; color: inherit; }
+.tonight-rail__link .thumb { width: 100%; height: 96px; }
+.tonight-rail__title { font-family: var(--ff-body); font-size: 14.5px; font-weight: 700; line-height: 1.3; letter-spacing: -.005em; color: var(--c-ink); }
+.tonight-rail__link:hover .tonight-rail__title { color: var(--c-accent); }
+.tonight-rail__meta { font-family: var(--ff-mono); font-size: 11px; color: var(--c-ink-mute); }
+.tonight-rail__save { position: absolute; top: var(--s-2); right: var(--s-2); min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; background: var(--glass-bg, rgba(255,255,255,.75)); border-radius: var(--radius); }
+@media (min-width: 768px) { .tonight-rail__card { width: 200px; } }
 
 /* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
    dated This Week picks. Reuses .sechead + .picks/.list-row--card, so it
@@ -6494,7 +6452,7 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 .taste-skip .ic, .taste-done .ic, .taste-reset .ic,
 .curator-share .ic, .profile-danger-btn .ic,
 .auth-panel__submit .ic, .auth-panel__close .ic {
-  width: 15px; height: 15px; flex-shrink: 0;
+  width: 18px; height: 18px; flex-shrink: 0;
 }
 /* Leading gap where the control has no flex gap of its own
    (.seg-tab already sets gap:8px, so it's excluded here). */
@@ -6742,11 +6700,6 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
      here); -11px aligns the first glyph flush like .social-links. */
   .venue-iconrow { justify-content: flex-start; margin-left: -11px; }
 }
-
-/* ── Discover (boards 1c / 1h) ───────────────────────────────
-   The working surface drops the city banner on every viewport —
-   results crest the fold (city.js still injects it; hidden here). */
-body[data-page="discover"] .city-banner { display: none; }
 
 /* Mobile bottom chrome: ONE glass surface for the docked List|Map
    seg + the tab row (board 1c). The glass moves from .nav__inner to

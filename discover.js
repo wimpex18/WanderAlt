@@ -51,7 +51,7 @@
 
   /* ── Utility helpers (lifted/adapted from search.js) ───── */
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote, rowMedia, thumb, socialButtons } = window.WA.UI;
+  const { esc, buildMeta, isEchoQuote, rowMedia, thumb, socialButtons, bookmarkSVG } = window.WA.UI;
 
   /* Multi-word AND + field-weight relevance (from search.js:26). */
   const keywordFilter = (corpus, term) => {
@@ -155,7 +155,8 @@
     const closedBadge = e.isClosed ? ` <span class="list-row__closed">closed</span>` : '';
     const isFree = (e.moodTags || []).includes('free');
     const freeBadge = isFree ? ` <span class="list-row__free">free</span>` : '';
-    const rowCls = e.isClosed ? 'list-row list-row--closed list-row--card' : 'list-row list-row--card';
+    const rowCls = (e.isClosed ? 'list-row list-row--closed list-row--card' : 'list-row list-row--card')
+      + ' list-row--bookmarkable';
 
     /* Photo-forward card (June 2026): a venue photo on the left reusing the
        app's shared .thumb--lg treatment (consistent with the home picks +
@@ -164,6 +165,7 @@
        image_url (or the photo URL 403s). The media is a decorative
        supplementary link (the title link is the keyboard tab stop). */
     const media = rowMedia(e);
+    const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
 
     return `<li class="${rowCls}" data-id="${esc(e.id)}">
        ${media}
@@ -176,6 +178,11 @@
            ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
            : `<p class="list-row__quote">&mdash; ${esc(e.quote)} <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`}
        </div>
+       <label class="bookmark" title="Save this pick">
+         <input type="checkbox" class="bookmark__check" data-id="${esc(e.id)}"
+                aria-label="Bookmark: ${esc(e.title)}" ${isMarked ? 'checked' : ''}>
+         ${bookmarkSVG()}
+       </label>
      </li>`;
   };
 
@@ -848,10 +855,11 @@
 
   const renderMatchSecondary = (pick, why) => {
     const meta = [pick.neighborhood, pick.kind, pick.time].filter(Boolean).join(' · ');
+    const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[pick.id]);
     /* Photo-forward card, consistent with every other pick list (Discover
        results / Saved / Curator / venue / place). Renders on the white page
        below the petrol search box, so the standard card treatment applies. */
-    return `<li class="list-row list-row--card" data-id="${esc(pick.id)}">
+    return `<li class="list-row list-row--card list-row--bookmarkable" data-id="${esc(pick.id)}">
        ${rowMedia(pick)}
        <div class="list-row__body">
          <p class="list-row__title">
@@ -860,6 +868,11 @@
          <p class="list-row__meta">${esc(meta)}</p>
          <p class="list-row__quote">&mdash; ${esc(why || pick.quote || '')} <a class="handle" href="curator.html?handle=${encodeURIComponent(pick.handle)}">${esc(pick.handle)}</a></p>
        </div>
+       <label class="bookmark" title="Save this pick">
+         <input type="checkbox" class="bookmark__check" data-id="${esc(pick.id)}"
+                aria-label="Bookmark: ${esc(pick.title)}" ${isMarked ? 'checked' : ''}>
+         ${bookmarkSVG()}
+       </label>
      </li>`;
   };
 
@@ -1366,6 +1379,16 @@
         }
       });
     }
+
+    /* Bookmark toggle on a result row — persists via the shared store.
+       Delegated on document since both the results list AND the Match-me
+       secondary list replace their innerHTML on every re-render (a
+       per-row listener would leak); one handler covers both. */
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest('.bookmark__check');
+      if (!cb || !window.WA.Bookmarks) return;
+      window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
+    });
 
     /* Pin click in the embedded map → highlight + scroll card + update URL. */
     document.addEventListener('wa:map-pin-changed', (e) => {

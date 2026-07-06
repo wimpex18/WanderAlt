@@ -90,16 +90,16 @@ const PAGES = [
   { name: 'riga-briefing',    url: '/index.html',     waitMs: 1800, city: 'riga' },
   { name: 'riga-discover',    url: '/discover.html',  waitMs: 2200, city: 'riga' },
 
-  /* Banner click — clicking .city-banner should open the city
-     dropdown (city.js wires the banner click to btn.click()). The
-     screenshot captures the dropdown open over the briefing. */
-  { name: 'banner-dropdown',  url: '/index.html',     waitMs: 1500,
+  /* City dropdown — the topbar city-selector button opens it (the July
+     2026 redesign removed the decorative city-banner ribbon, which used
+     to offer this as a secondary click target; the topbar button is the
+     only affordance now). */
+  { name: 'city-dropdown',  url: '/index.html',     waitMs: 1500,
     setup: async (page) => {
-      const banner = await page.$('.city-banner');
-      if (banner) { await banner.click(); await new Promise(r => setTimeout(r, 400)); }
-      /* Sanity check: assert the dropdown is now in the DOM. */
+      const btn = await page.$('.city-selector');
+      if (btn) { await btn.click(); await new Promise(r => setTimeout(r, 400)); }
       const ok = await page.$('.city-dropdown');
-      if (!ok) throw new Error('banner click did NOT open the dropdown');
+      if (!ok) throw new Error('city-selector click did NOT open the dropdown');
     } },
 
   /* Briefing empty state — pick a mood combo that nothing matches so
