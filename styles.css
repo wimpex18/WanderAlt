@@ -6078,14 +6078,15 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
 .pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
 .week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
-/* Full-width band below the week index. The curator column (when present —
-   rare, see ROADMAP) and the digest sit side by side; the digest grows to
-   fill the row on weeks with no published column. */
-.week__rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--s-5) var(--s-8);margin-top:var(--s-8)}
-.week__rail>.column{flex:2 1 360px;margin:0}
-.week__rail>.digest-optin{flex:1 1 300px;margin-top:0}
+/* Full-width band below the week index — just the digest opt-in plate.
+   Used to also host the curator column (briefing.js renderColumn); retired
+   July 2026, see index.html's comment above the digest markup. */
+.week__rail{margin-top:var(--s-8)}
+.week__rail>.digest-optin{margin-top:0}
 
-/* The Column — curator metadata plate */
+/* The Column — curator metadata plate. No longer injected on Today (see
+   above); kept for the "Reading lately" curator.html feature on the
+   ROADMAP shelf, which will reuse this exact styling. */
 .column{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6);margin:0}
 .column__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-bottom:var(--s-4);margin-bottom:var(--s-5);border-bottom:var(--rule-w) solid var(--c-rule)}
 .column__eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent)}

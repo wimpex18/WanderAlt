@@ -432,84 +432,6 @@
     });
   };
 
-  /* ── Curator's Column ─────────────────────────────────── */
-  /* Fetch the latest published column for the current city from
-     Supabase and inject it above .thisweek. Gracefully absent
-     if WA.BASE_URL / WA.ANON_KEY aren't set or no
-     published column exists for this week.                     */
-  const renderColumn = async () => {
-    /* Guard: if a column was already injected (e.g. init ran twice), skip. */
-    if (document.querySelector('.column')) return;
-    const url  = window.WA && window.WA.BASE_URL;
-    const key  = window.WA && window.WA.ANON_KEY;
-    const city = (window.WA && window.WA.CITY) || 'tallinn';
-    if (!url || !key) return;
-
-    try {
-      const res = await fetch(
-        `${url}/rest/v1/columns?city=eq.${city}&status=eq.published` +
-        `&order=week_of.desc&limit=1&select=*`,
-        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
-      );
-      if (!res.ok) return;
-      const rows = await res.json();
-      if (!rows || !rows.length) return;
-
-      const col = rows[0];
-      if (!col.body_md) return;
-
-      /* Convert minimal Markdown:
-         - *text* → <em>text</em>
-         - **text** → <strong>text</strong>
-         - double newlines → paragraph breaks           */
-      const toHtml = (md) => {
-        const escaped = md
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;');
-        const inline = escaped
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.+?)\*/g, '<em>$1</em>');
-        return inline
-          .split(/\n\n+/)
-          .filter(p => p.trim())
-          .map(p => `<p>${p.replace(/\n/g, ' ').trim()}</p>`)
-          .join('');
-      };
-
-      /* Format date: "May 2026" */
-      const approvedDate = col.approved_at
-        ? new Date(col.approved_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-        : '';
-
-      const issueLabel = col.issue_num ? ` · Edition No. ${col.issue_num}` : '';
-
-      const initials = (col.curator_handle || '@').replace('@', '').slice(0, 2).toUpperCase() || '??';
-      const el = document.createElement('section');
-      el.className = 'column';
-      el.setAttribute('aria-labelledby', 'column-label');
-      el.innerHTML =
-        `<div class="column__head">` +
-          `<span id="column-label" class="column__eyebrow">Column${issueLabel}</span>` +
-          `<span class="meta">weekly</span>` +
-        `</div>` +
-        `<div class="column__body">${toHtml(col.body_md)}</div>` +
-        `<div class="column__sig">` +
-          `<span class="column__ava" aria-hidden="true">${initials}</span>` +
-          `<a class="handle" href="curator.html?handle=${encodeURIComponent(col.curator_handle)}">${col.curator_handle}</a>` +
-          (approvedDate ? `<span class="meta">&middot; ${approvedDate}</span>` : '') +
-        `</div>`;
-
-      /* Insert into the From-the-desk rail, above the digest plate. */
-      const rail   = document.querySelector('.week__rail');
-      const digest = document.getElementById('digest-optin-wrap');
-      if (rail && digest)   rail.insertBefore(el, digest);
-      else if (rail)        rail.prepend(el);
-    } catch (_) {
-      /* Network errors are silently swallowed — the page degrades gracefully. */
-    }
-  };
-
   /* ── Init ──────────────────────────────────────────────── */
   const init = () => {
     const catalog   = (window.WA && window.WA.catalog) || [];
@@ -563,8 +485,6 @@
       calLink.href = `${window.WA.BASE_URL}/functions/v1/calendar-feed` +
                      `?city=${encodeURIComponent(window.WA.CITY || 'tallinn')}`;
     }
-    renderColumn();  /* async — doesn't block the sync render above */
-
     /* Re-render This Week when the taste profile changes (after onboarding
        or a Profile-page edit). */
     document.addEventListener('wa:taste-changed', () => {

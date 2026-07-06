@@ -196,7 +196,7 @@ section#tonight.tonight
 
 **This Week list** (`.picks`): `briefing.js:renderThisWeek()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox.
 
-**Curator's Column** (`.column`): injected above `.thisweek` by `briefing.js:renderColumn()` (async Supabase fetch). Absent if no published column exists. Minimal Markdown rendered to `<p>/<strong>/<em>`.
+**Curator's Column** (`.column`): retired from Today (July 2026) — `renderColumn()` fetched the latest published `columns` row and injected it into `.week__rail`, but only 1 of 16 rows ever reached `published` (see ROADMAP), so the slot was empty on nearly every visit. The `.column`/`.column__*` CSS is kept for the "Reading lately" curator.html feature on the ROADMAP shelf, which is the concept's next home per the market-scan research (editorial voice belongs on its own curator page, not a homepage rail).
 
 **Mood chips**: live on Discover only (inside the Filters sheet/rail since July 2026). `briefing.js` forwards legacy `index.html#mood=` deep-links to Discover before rendering.
 
