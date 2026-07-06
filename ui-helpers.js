@@ -64,10 +64,10 @@
      Round caps/joins on purpose — distinct from the sharp .ic action-icon
      system, since these describe content rather than trigger an action. */
   const KIND_GLYPH = {
-    gig: 'music', club: 'music',
+    gig: 'music', club: 'music', 'record store': 'music',
     theatre: 'theatre', burlesque: 'theatre',
     cinema: 'film',
-    exhibition: 'art', gallery: 'art', art: 'art', museum: 'art',
+    exhibition: 'art', gallery: 'art', art: 'art', museum: 'art', 'arts centre': 'art',
     talk: 'mic', lecture: 'mic',
     bar: 'drink',
     bookshop: 'book',
