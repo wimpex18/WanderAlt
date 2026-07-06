@@ -175,23 +175,29 @@ Active item expands to show its text label; all inactive items hide the label (`
 
 ### Briefing (`index.html`)
 
-**Tonight set** (`#tonight`, rendered by `briefing.js:renderTonight()` + `selectTonightSet()`, July 2026 redesign — replaces the old single-pick hero): up to 3 diversified `.tonight-card` plates, one per distinct `kind` where possible, each still voice-forward (own quote, smaller than the old 42px hero but still the loudest thing in its card — no photo, text-only by design so quotes stay dominant even at 3-up). Why: most cities carry **zero** `tonight=true` rows (`rotate-tonight`'s cron is frozen — see ROADMAP), so the old `catalog.find(e => e.tonight) || catalog[0]` fell back to an arbitrary first-array-item, not a curated choice (this is the "Film Club: Alcarràs" bug a user flagged). `selectTonightSet(catalog, max=3)` now: explicit `tonight=true` rows first (still the top-priority signal when a curator sets it), padded with This-Week items scheduled for today's weekday, diversified by `kind`, capped at 3. `#tonight` keeps the shared `.tonight` class (`venue.js`'s own detail hero reuses `.tonight`/`.tonight__*` for its curator-quote section) — an ID-scoped override (`#tonight.tonight{display:block}`) undoes just the 2-col grid built for the old single-hero shape; `.tonight-card` is a distinct component, unrelated to `.tonight__*` (those stay live on `venue.html` + Discover's AI-match hero — never touch them from here). Structure per card:
+**Tonight set** (`#tonight`, rendered by `briefing.js:renderTonight()` + `selectTonightSet()` — July 2026, redesigned a second time later that same month, see below): up to 3 diversified picks, one per distinct `kind` where possible. Why diversified at all: most cities carry **zero** `tonight=true` rows (`rotate-tonight`'s cron is frozen — see ROADMAP), so the old `catalog.find(e => e.tonight) || catalog[0]` fell back to an arbitrary first-array-item, not a curated choice (the "Film Club: Alcarràs" bug a user flagged). `selectTonightSet(catalog, max=3)`: explicit `tonight=true` rows first (still the top-priority signal when a curator sets it), padded with This-Week items scheduled for today's weekday, diversified by `kind`, capped at 3.
+
+**Hero + rail, not 3 equal cards (Jul 2026, second pass — owner-directed departure from the original "quotes stay loudest at 3-up" call above).** Three full-width stacked cards cost ~3 mobile screens of scroll with no visual hierarchy between them. `renderTonight` now splits `entries` into `[hero, ...rest]`:
 
 ```
-article.tonight-card
-  .tonight-card__signal
-    span.tag.tag--live "Tonight"
-    span.tonight-card__kicker        ← mono "time · venue · kind"
-  a.tonight-card__title              ← Inter 19px
-  figure.tonight-card__quote
-    blockquote                       ← Fraunces italic 18px
-    figcaption a.handle
-  .tonight-card__actions
-    a.btn.btn--primary "I'm going"   ← petrol, 52px form tier, flex:1
-    label.bookmark.tonight-card__save
+.tonight-set                          ← flex column
+  article.tonight-card.tonight-card--hero
+    .tonight-card__signal              ← "Tonight" tag + mono "time · venue · kind"
+    .tonight-card__body                ← flex row
+      span.thumb.thumb--lg (96px)      ← real photo, or a kind-glyph placeholder
+      .tonight-card__text (max 62ch)
+        a.tonight-card__title           ← Inter 20px 700, the largest text on the card
+        p.list-row__quote               ← shared 13px italic caption (NOT a big blockquote)
+    .tonight-card__actions
+      a.btn.btn--primary "I'm going"    ← capped max-width:360px on desktop, was edge-to-edge
+      label.bookmark.tonight-card__save
+  .tonight-rail                        ← horizontal scroll-snap strip, only if rest.length
+    article.tonight-rail__card × N     ← 168px (200px ≥768px), thumb + title + meta, no quote/CTA
+      a.tonight-rail__link
+      label.bookmark.tonight-rail__save ← 44px, absolute-positioned over the thumb corner
 ```
 
-Mobile: 1-col stack. ≥1100px: 3-col grid (`repeat(3, 1fr)`).
+The hero/rail size difference *is* the hierarchy signal (Summer-2026 "hero + rail" convention — Airbnb Explore, Apple News, Spotify Home — for one-primary-plus-peers content). Rail cards drop the quote and CTA entirely; title + time/venue is enough for a peer-glance, and that reduction is what makes the hero read as the hero. `#tonight` keeps the shared `.tonight` class (`venue.js`'s own detail hero reuses `.tonight`/`.tonight__*` for its curator-quote section) — an ID-scoped override (`#tonight.tonight{display:block}`) undoes the old 2-col grid built for the single-hero shape; `.tonight-card`/`.tonight-rail` are distinct components, unrelated to `.tonight__*` (those stay live on `venue.html` + Discover's AI-match hero — never touch them from here).
 
 **Worth a visit** (`#worth-a-visit`, `briefing.js:selectWorthAVisit()` + `renderWorthAVisit()`, July 2026): a short (max 3) strip of evergreen venues/places — `day === null`, the same signal Discover's Places scope uses — below This Week's dated picks, so Today surfaces underground spots worth knowing about, not only scheduled events. Photo-bearing entries sort first. Reuses `.list-row--card` (via `WA.UI.rowMedia`/`buildMeta`) — no new list component. Hidden entirely (`hidden` attribute) when there's nothing to show. Tonight-set and Worth-a-visit picks are excluded from This Week below so nothing repeats twice on one page.
 
@@ -199,9 +205,9 @@ Mobile: 1-col stack. ≥1100px: 3-col grid (`repeat(3, 1fr)`).
 
 **Surprise me** (`#surprise-btn`): unchanged — a 44px `.action-icon` (shuffle glyph) in the This Week section header, inside `.sechead__side` next to the picks count. Static markup in `index.html`; `briefing.js` hides it for an empty city and handles the click via one delegated listener. Its exclude-set (`_surpriseExcludeIds`) now tracks all current Tonight-set ids (was a single id).
 
-**This Week list** (`.picks`): `briefing.js:renderThisWeek()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox.
+**This Week list** (`.picks`): `briefing.js:renderThisWeek()`/`renderWeekPage()`. Each `<li class="pick">` uses a `.pick__link` div grid — not a single `<a>` — to avoid nested anchor ejection. Contains: thumb link + title link + meta + via handle + bookmark checkbox. **Day-grouped (Jul 2026):** a `<li class="week-daylabel">` (spans both grid columns via `grid-column:1/-1`, so it breaks the row cleanly on the desktop 2-col grid too) prints whenever `entry.day` changes walking the list in its current (taste-biased) order; `timeSpan()` dropped the day from its own inline output since it's now redundant under the group header. With no taste profile set the order is already chronological so groups come out clean; a heavy taste re-sort could in principle repeat a day label non-consecutively — not guarded against, reads fine if it happens.
 
-**Curator's Column** (`.column`): retired from Today (July 2026) — `renderColumn()` fetched the latest published `columns` row and injected it into `.week__rail`, but only 1 of 16 rows ever reached `published` (see ROADMAP), so the slot was empty on nearly every visit. The `.column`/`.column__*` CSS is kept for the "Reading lately" curator.html feature on the ROADMAP shelf, which is the concept's next home per the market-scan research (editorial voice belongs on its own curator page, not a homepage rail).
+**Curator's Column** (`.column`): retired from Today (July 2026) — `renderColumn()` fetched the latest published `columns` row and injected it into `.week__rail`, but only 1 of 16 rows ever reached `published` (see ROADMAP), so the slot was empty on nearly every visit. The `.column`/`.column__*` CSS moved to curator.html as "Reading lately" (below) — its next home per the market-scan research (editorial voice belongs on its own curator page, not a homepage rail).
 
 **Mood chips**: live on Discover only (inside the Filters sheet/rail since July 2026). `briefing.js` forwards legacy `index.html#mood=` deep-links to Discover before rendering.
 
@@ -278,6 +284,12 @@ Rendered by `venue.js` from `?id=`. July 2026 (board 1d) order: **quote → acti
 3. `.venue-block` plate: thumb + name + meta + **one** labelled `.venue-card__go` "Venue →" mono link into `place.html` (rendered only when the pick's venue matches a places row) — replaces the old bookmark-in-plate and twin ambiguous map links.
 4. "About this event" context, then "More from @handle".
 
+### Curator (`curator.html`)
+
+Rendered by `curator.js` from `?handle=`. Profile header (avatar/`.handle`/bio) → **Reading lately** → picks list.
+
+**Reading lately** (`#curator-column-slot`, July 2026): `renderReadingLately(curator)` runs async, after the synchronous `render()` — it never blocks the page. Fetches this curator's own latest `columns` row (`status=eq.published`, `order=week_of.desc&limit=1`), matching on `curator_handle=in.(@handle,handle)` since a handful of historical `columns` rows were written with the bare (no-`@`) handle — the same back-compat pattern `init()` already applies to `?handle=` lookups. Renders into the slot using the retired-from-Today `.column`/`.column__*` markup (eyebrow "Reading lately · Edition No. N", approved-date meta, minimal-Markdown body: `**strong**`/`*em*`/blank-line paragraphs, no other syntax). Absent entirely — `#curator-column-slot` stays empty, `:not(:empty)` CSS margin never applies — when the curator has no published column or the fetch fails; failures are swallowed silently (same degrade-gracefully posture as the rest of the page).
+
 ### Profile (`profile.html`)
 
 July 2026 (board 1f): high-value sections are **plates**, low-frequency links are **rules**.
@@ -318,7 +330,7 @@ Mobile-first. Two breakpoints.
 - Discover 3-col split activates at ≥1024px: CSS grid `236px minmax(0,1fr) minmax(0,1.15fr)` (rail · list · sticky map)
 - `.thumb--lg`: 72px → 88px; `.thumb`: 48px → 64px
 - Briefing `.quote__t`: 29px → 42px (voice-first hero; the quiet Inter title goes 21px → 23px); `.tonight__media` photo column appears (hidden <768)
-- `.city-banner`: 88px → 120px (hidden on Discover at all widths)
+- `.city-banner`: **removed entirely (Jul 2026)** — was pure decoration duplicating the page-head title + topbar city switcher on every content page; `city.js` no longer injects it, no responsive scaling to track here anymore.
 
 **≥ 1100px** (`styles.css:2027`)
 - `--fs-quote`: 44px → 52px (the full-scale venue/match hero quote; the briefing hero quote stays 30px)

@@ -69,49 +69,6 @@
     /* Stamp the active city on <body> so CSS can hook off it. */
     document.body.dataset.city = current.id;
 
-    /* Inject the city banner — a cityscape ribbon (96px mobile / 120px
-       desktop, cropped to the skyline via object-position) below
-       the topbar that shows the current city's illustrated plate.
-       Visible on every content page (skipped on admin to keep the
-       internal tool dense). Doing this from JS means we don't have
-       to edit every HTML file's body.
-
-       Implementation note: the banner used to be a CSS background-image
-       on the wrapper <div>. That meant the browser couldn't reserve
-       layout for the image before fetching it, which leaked 0.5+ CLS
-       on first paint. Now the wrapper holds a real <img> with
-       explicit width/height (giving the browser an intrinsic ratio
-       BEFORE network), object-fit: cover (so it still center-crops),
-       and fetchpriority="high" (the banner is in the LCP region for
-       most pages). Drops CLS from ~0.5 to ~0.05.                       */
-    const onAdminPage = document.body.dataset.page === 'admin';
-    if (!onAdminPage && !document.querySelector('.city-banner')) {
-      const topbar = document.querySelector('.topbar');
-      if (topbar) {
-        const banner = document.createElement('div');
-        banner.className = 'city-banner';
-        banner.setAttribute('aria-hidden', 'true');
-        const img = document.createElement('img');
-        img.src = `./assets/${current.id}-overview.svg`;
-        img.alt = '';
-        img.width = 1800;
-        img.height = 1200;
-        img.decoding = 'async';
-        img.fetchPriority = 'high';
-        img.className = 'city-banner__img';
-        banner.appendChild(img);
-        /* Clicking the banner opens the city dropdown — quick affordance
-           for "I want a different city" without scrolling back to the
-           topbar selector. stopPropagation prevents the same click
-           bubbling to the document-level close-on-outside handler. */
-        banner.addEventListener('click', (e) => {
-          e.stopPropagation();
-          btn.click();
-        });
-        topbar.insertAdjacentElement('afterend', banner);
-      }
-    }
-
     /* Update page <title>: replace any city name with the current one. */
     CITIES.forEach(c => {
       const cap = c.id.charAt(0).toUpperCase() + c.id.slice(1);

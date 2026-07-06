@@ -86,15 +86,12 @@
 
   /* ── Template helpers ──────────────────────────────────── */
 
-  /* Returns a <span class="meta__time"> wrapping the timing
-     portion of a meta string, or '' if no time is set.      */
-  const timeSpan = (entry) => {
-    if (!entry.time) return '';
-    if (!entry.day || entry.day === 'Tonight') {
-      return `<span class="meta__time"> &middot; ${entry.time}</span>`;
-    }
-    return `<span class="meta__time"> &middot; ${entry.day} ${entry.time}</span>`;
-  };
+  /* Returns a <span class="meta__time"> wrapping the timing portion of a
+     meta string, or '' if no time is set. Time only, no day — This Week
+     rows sit under a .week-daylabel group header now, so repeating the
+     day inline on every row would be redundant. */
+  const timeSpan = (entry) =>
+    entry.time ? `<span class="meta__time"> &middot; ${entry.time}</span>` : '';
 
   /* Returns a .thumb span — uses real image when entry.imageUrl is set,
      otherwise falls back to the halftone placeholder + initials badge.  */
@@ -103,15 +100,26 @@
   const thumbEl = window.WA.UI.thumb;
 
 
-  /* ── Tonight set (July 2026: diversified, up to 3 picks) ──
+  /* ── Tonight set (Jul 2026: hero + horizontal rail) ──
      Was a single hero pick; most cities carry zero rows with tonight=true
      (rotate-tonight's cron is frozen), so the old code silently fell back
      to catalog[0] — an arbitrary first-in-array item, not a curated
-     choice. Now selectTonightSet() (see init()) picks up to 3 candidates
-     spanning different `kind`s, and every card still carries a real
-     curator quote — several small voices, not a bare listing grid. Text-
-     only (no photo) by design, so the quotes stay the loudest thing on
-     screen even with 3 cards instead of 1. */
+     choice. selectTonightSet() (see init()) picks up to 3 candidates
+     spanning different `kind`s, priority order (explicit tonight=true
+     first) — entries[0] is the flagship.
+
+     Three equal full-width cards stacked vertically cost ~3 screens of
+     mobile scroll and gave the eye no way to tell "flagship" from "#3 of
+     3." Summer 2026 mobile convention for one-primary-plus-peers content
+     (Airbnb Explore, Apple News, Spotify Home) is a hero + a horizontally
+     scrollable rail for the rest — fixed height regardless of rail count,
+     and the size difference itself IS the hierarchy signal. Photo/glyph-
+     led throughout: every card leads with the shared thumb (real photo or
+     the kind-based glyph placeholder); the curator quote is a caption
+     (.list-row__quote, shared with This Week/Discover/Saved) under the
+     hero's title, not the dominant element — rail cards drop the quote
+     entirely (title + time/venue is enough for a peer-item glance; the
+     full quote+CTA treatment is what makes the hero the hero). */
   const renderTonight = (entries) => {
     const section = document.getElementById('tonight');
     if (!section || !entries || !entries.length) return;
@@ -119,32 +127,56 @@
     section.classList.remove('tonight--solo');
 
     const esc = window.WA.UI.esc;
-    const cards = entries.map(entry => {
-      const kicker = [entry.time ? `<b>${esc(entry.time)}</b>` : '', esc(entry.venue), esc(entry.kind)]
-        .filter(Boolean).join(' &middot; ');
-      return `<article class="tonight-card">
-         <div class="tonight-card__signal">
-           <span class="tag tag--live">Tonight</span>
-           <span class="tonight-card__kicker">${kicker}</span>
+    const [hero, ...rest] = entries;
+
+    const heroKicker = [hero.time ? `<b>${esc(hero.time)}</b>` : '', esc(hero.venue), esc(hero.kind)]
+      .filter(Boolean).join(' &middot; ');
+    const heroQuote = hero.quote
+      ? `<p class="list-row__quote">&ldquo;${esc(hero.quote)}&rdquo; <a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a></p>`
+      : `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a></p>`;
+    const heroCard = `<article class="tonight-card tonight-card--hero">
+       <div class="tonight-card__signal">
+         <span class="tag tag--live">Tonight</span>
+         <span class="tonight-card__kicker">${heroKicker}</span>
+       </div>
+       <div class="tonight-card__body">
+         ${thumbEl(hero, true)}
+         <div class="tonight-card__text">
+           <a href="venue.html?id=${hero.id}" class="tonight-card__title">${esc(hero.title)}</a>
+           ${heroQuote}
          </div>
-         <a href="venue.html?id=${entry.id}" class="tonight-card__title">${esc(entry.title)}</a>
-         <figure class="tonight-card__quote">
-           <blockquote>&ldquo;${esc(entry.quote)}&rdquo;</blockquote>
-           <figcaption><a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a></figcaption>
-         </figure>
-         <div class="tonight-card__actions">
-           <a class="btn btn--primary" href="venue.html?id=${entry.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-           <label class="bookmark tonight-card__save" title="Save this pick">
-             <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save: ${esc(entry.title)}">
-             ${bookmarkSVG()}
-           </label>
-         </div>
+       </div>
+       <div class="tonight-card__actions">
+         <a class="btn btn--primary" href="venue.html?id=${hero.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+         <label class="bookmark tonight-card__save" title="Save this pick">
+           <input type="checkbox" class="bookmark__check" data-id="${hero.id}" aria-label="Save: ${esc(hero.title)}">
+           ${bookmarkSVG()}
+         </label>
+       </div>
+     </article>`;
+
+    const railCards = rest.map(entry => {
+      const meta = [esc(entry.venue), entry.time ? esc(entry.time) : null].filter(Boolean).join(' &middot; ');
+      return `<article class="tonight-rail__card">
+         <a class="tonight-rail__link" href="venue.html?id=${entry.id}">
+           ${thumbEl(entry, true)}
+           <span class="tonight-rail__title">${esc(entry.title)}</span>
+           <span class="tonight-rail__meta">${meta}</span>
+         </a>
+         <label class="bookmark tonight-rail__save" title="Save this pick">
+           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save: ${esc(entry.title)}">
+           ${bookmarkSVG()}
+         </label>
        </article>`;
     }).join('');
 
+    const rail = rest.length
+      ? `<div class="tonight-rail" role="list">${railCards}</div>`
+      : '';
+
     section.innerHTML =
       `<h2 class="visually-hidden" id="tonight-label">Tonight</h2>
-       <div class="tonight-set">${cards}</div>`;
+       <div class="tonight-set">${heroCard}${rail}</div>`;
     /* Surprise-me was demoted out of the hero action row (July 2026 board
        1b) — it lives in the This Week header now. Un-hide it here in case
        an empty-city render hid it earlier in this session. */
@@ -318,8 +350,20 @@
       if (e.imageUrl) prevImg = e.imageUrl;
     }
 
-    list.innerHTML = entries.map(e =>
-      `<li class="pick">
+    /* Day-grouped (Jul 2026): a flat list of 8 same-shape rows made you
+       read every row to find "what's on Thursday" — a day label between
+       groups turns that into a glance. Walks entries in their current
+       (taste-biased) order and drops a label whenever the day changes;
+       with no taste profile set the order is already chronological, so
+       groups come out clean. A day value repeating non-consecutively
+       (possible once taste re-sorting shuffles across days) just prints
+       a second small label — reads fine, doesn't need guarding against. */
+    let lastDay = null;
+    list.innerHTML = entries.map(e => {
+      const dayLabel = (e.day && e.day !== lastDay)
+        ? `<li class="week-daylabel">${window.WA.UI.esc(e.day)}</li>` : '';
+      lastDay = e.day || lastDay;
+      return dayLabel + `<li class="pick">
          <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
            ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
          </a>
@@ -335,8 +379,8 @@
                   aria-label="Bookmark: ${e.title}">
            ${bookmarkSVG()}
          </label>
-       </li>`
-    ).join('');
+       </li>`;
+    }).join('');
 
     /* Bridge to Discover — the one sanctioned Today→Discover link. When
        the week has more picks than we show here, send the long tail to
