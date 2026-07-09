@@ -85,12 +85,16 @@ export async function onRequest(context) {
   try {
     if (isVenue) {
       const rows = await sbGet(
-        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url&limit=1`);
+        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city&limit=1`);
       const pick = rows[0];
       if (!pick) return res;                            // unknown id → default OG
       const photo = !!pick.image_url;
+      /* City is a lowercase slug in the DB ('tallinn', 'riga', …). */
+      const city = pick.city
+        ? pick.city.charAt(0).toUpperCase() + pick.city.slice(1)
+        : 'Tallinn';
       return rewrite(res, {
-        title:       `WanderAlt — ${pick.title} · Tallinn`,
+        title:       `WanderAlt — ${pick.title} · ${city}`,
         description: pick.quote ? `${pick.quote} — ${pick.handle}` : `A curator's pick — ${pick.handle}`,
         image:       photo
           ? sizedPhoto(pick.image_url, 1200)

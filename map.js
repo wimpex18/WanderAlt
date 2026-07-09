@@ -59,16 +59,9 @@
   let _reclusterTimer = null;
 
   // ── Categories / icons ────────────────────────────────────────
-  const KIND_MAP = {
-    'gig': 'music', 'club': 'music', 'noise': 'music',
-    'talk': 'culture', 'lecture': 'culture',
-    'exhibition': 'culture', 'gallery': 'culture',
-    'record store': 'vinyl', 'bookshop': 'vinyl',
-    'thrift': 'market',
-    /* venue-only kinds (Places mode) */
-    'cinema': 'film', 'arts centre': 'culture', 'community': 'culture',
-  };
-  function normaliseKind(k) { return KIND_MAP[k] || k; }
+  /* Shared impl in map-venues.js (loads first) — one kind→bucket map for
+     the pins here and discover.js' category chips. */
+  const normaliseKind = window.WA?.normaliseKind || ((k) => k);
 
   /* Inline SVG icons keyed by normalised kind. Same set as before. */
   const PIN_ICONS = {
@@ -147,12 +140,6 @@
       if (q && !matchesText(e, q)) return false;
       return true;
     });
-  }
-
-  // ── URL state (skipped on Discover — discover.js owns the URL) ─
-  function writeUrlState() {
-    if (document.body?.dataset?.page === 'discover') return;
-    /* Standalone map.html no longer exists, but keep the no-op guard. */
   }
 
   // ── Pin / cluster rendering ───────────────────────────────────
@@ -290,7 +277,6 @@
         } else {
           closeDetail();
         }
-        writeUrlState();
         document.dispatchEvent(new CustomEvent('wa:map-pin-changed', {
           detail: { id: activeId },
         }));
@@ -449,15 +435,8 @@
       initSheetDrag();
     }
     document.getElementById('detail-close')?.addEventListener('click', () => {
-      closeDetail(); activeId = null; renderPins(); writeUrlState();
+      closeDetail(); activeId = null; renderPins();
       document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));
-    });
-    [sheetEl, detailEl].forEach(el => {
-      el.addEventListener('change', e => {
-        const cb = e.target.closest('.bookmark__check');
-        if (!cb || !window.WA?.Bookmarks) return;
-        WA.Bookmarks.set(cb.dataset.id, cb.checked);
-      });
     });
 
     /* Close when the user clicks the basemap outside the panel + pins. */
@@ -466,7 +445,7 @@
       if (panel.contains(e.target)) return;
       if (e.target.closest('.map-pin-new, .map-cluster')) return;
       viewport.removeEventListener('pointerdown', handleOutside);
-      closeDetail(); activeId = null; renderPins(); writeUrlState();
+      closeDetail(); activeId = null; renderPins();
       document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));
     };
     setTimeout(() => viewport.addEventListener('pointerdown', handleOutside), 0);
@@ -573,6 +552,18 @@
     detailEl = document.getElementById('map-detail');
     if (!viewport || !pinsEl) return;
 
+    /* Bookmark toggles inside the detail panel / sheet — bound ONCE here.
+       (Previously bound inside openDetail, which stacked one more listener
+       on these persistent elements per pin-open, so a single toggle fired
+       WA.Bookmarks.set N times.) */
+    [sheetEl, detailEl].forEach(el => {
+      el?.addEventListener('change', e => {
+        const cb = e.target.closest('.bookmark__check');
+        if (!cb || !window.WA?.Bookmarks) return;
+        WA.Bookmarks.set(cb.dataset.id, cb.checked);
+      });
+    });
+
     const T = window.WA?.MapTiles;
     if (!T) {
       console.warn('[map.js] WA.MapTiles not loaded — basemap missing.');
@@ -581,16 +572,14 @@
     T.init('map-canvas', { city: (window.WA && window.WA.CITY) || 'tallinn' });
 
     /* Reposition pins on every camera move; debounced re-cluster on settle. */
+    const recluster = () => {
+      clearTimeout(_reclusterTimer);
+      _reclusterTimer = setTimeout(renderPins, 120);
+    };
     T.on('move', positionPins);
-    T.on('moveend', () => {
-      clearTimeout(_reclusterTimer);
-      _reclusterTimer = setTimeout(renderPins, 120);
-    });
-    T.on('zoom',  positionPins);
-    T.on('zoomend', () => {
-      clearTimeout(_reclusterTimer);
-      _reclusterTimer = setTimeout(renderPins, 120);
-    });
+    T.on('zoom', positionPins);
+    T.on('moveend', recluster);
+    T.on('zoomend', recluster);
 
     /* Zoom controls — wire existing buttons to MapLibre. */
     document.getElementById('btn-zoom-in')?.addEventListener('click', () => T.getMap()?.zoomIn());

@@ -71,10 +71,15 @@ export default {
 
     // Fetch with CF edge cache. cacheEverything = cache regardless of
     // Wikipedia's own Cache-Control header (it sometimes ships shorter).
+    // TTL by status: only successes get the 24h; a transient 404/5xx from
+    // Wikimedia must not be pinned at the edge for a day.
     const upstream = await fetch(target.toString(), {
       method: request.method,
       headers: forwardHeaders,
-      cf: { cacheTtl: CACHE_TTL_SECONDS, cacheEverything: true },
+      cf: {
+        cacheTtlByStatus: { '200-299': CACHE_TTL_SECONDS, '404': 60, '500-599': 0 },
+        cacheEverything: true,
+      },
     });
 
     // Build a clean response: copy bytes + safe headers, drop cookies.
@@ -85,7 +90,11 @@ export default {
       const v = upstream.headers.get(k);
       if (v) cleanHeaders.set(k, v);
     }
-    cleanHeaders.set('cache-control', `public, max-age=${CACHE_TTL_SECONDS}, immutable`);
+    // Long immutable caching only for real images; browsers must not hold
+    // onto an upstream error (or a 304 revalidation) for 24h.
+    cleanHeaders.set('cache-control', upstream.ok || upstream.status === 304
+      ? `public, max-age=${CACHE_TTL_SECONDS}, immutable`
+      : 'no-store');
     cleanHeaders.set('x-content-type-options', 'nosniff');
     cleanHeaders.set('referrer-policy', 'no-referrer');
     cleanHeaders.set('access-control-allow-origin', 'https://wanderalt.app');
