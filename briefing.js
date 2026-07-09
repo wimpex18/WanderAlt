@@ -157,7 +157,9 @@
 
     const railCards = rest.map(entry => {
       const meta = [esc(entry.venue), entry.time ? esc(entry.time) : null].filter(Boolean).join(' &middot; ');
-      return `<article class="tonight-rail__card" role="listitem">
+      /* div, not article: role="listitem" is not an allowed role on
+         <article> (ARIA in HTML), and the role wins anyway. */
+      return `<div class="tonight-rail__card" role="listitem">
          <a class="tonight-rail__link" href="venue.html?id=${entry.id}">
            ${thumbEl(entry, true)}
            <span class="tonight-rail__title">${esc(entry.title)}</span>
@@ -167,7 +169,7 @@
            <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save: ${esc(entry.title)}">
            ${bookmarkSVG()}
          </label>
-       </article>`;
+       </div>`;
     }).join('');
 
     const rail = rest.length

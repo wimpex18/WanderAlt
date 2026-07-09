@@ -141,8 +141,10 @@
     /* "on map" is a JS-handled action on Discover (no navigation); the
        href is a fallback for users with JS disabled. data-focus-pin tells
        the click handler to call WA.MapView.focusPin instead.           */
+    /* Arrow is aria-hidden so the accessible name contains the visible
+       text "on map" (WCAG 2.5.3 Label in Name). */
     const mapLinkA = hasCoords
-      ? `<a class="list-row__map" href="discover.html?id=${encodeURIComponent(e.id)}&view=map" data-focus-pin="${esc(e.id)}" aria-label="Show on map">on map &rarr;</a>`
+      ? `<a class="list-row__map" href="discover.html?id=${encodeURIComponent(e.id)}&view=map" data-focus-pin="${esc(e.id)}" aria-label="Show on map">on map <span aria-hidden="true">&rarr;</span></a>`
       : '';
     const closedBadge = e.isClosed ? ` <span class="list-row__closed">closed</span>` : '';
     const isFree = (e.moodTags || []).includes('free');
@@ -231,8 +233,9 @@
   const renderVenueRow = (v, isDup) => {
     const meta = [v.neighborhood, venueKindLabel(v.kind)].filter(Boolean).join(' · ');
     const social = socialButtons({ name: v.name, website: v.website, facebook: v.facebook, instagram: v.instagram });
+    /* Arrow aria-hidden — same WCAG 2.5.3 fix as the events row above. */
     const onMap = (v.lat != null && v.lng != null)
-      ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map &rarr;</a>`
+      ? `<a class="list-row__map" href="place.html?id=${encodeURIComponent(v.id)}&view=map" data-focus-pin="${esc(v.id)}" aria-label="Show ${esc(v.name)} on map">on map <span aria-hidden="true">&rarr;</span></a>`
       : '';
     const media = `<a class="list-row__media" href="place.html?id=${encodeURIComponent(v.id)}" tabindex="-1" aria-hidden="true">${thumb(isDup ? { ...v, imageUrl: null, image_url: null } : v, true)}</a>`;
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[v.id]);
