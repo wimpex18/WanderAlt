@@ -59,16 +59,9 @@
   let _reclusterTimer = null;
 
   // ── Categories / icons ────────────────────────────────────────
-  const KIND_MAP = {
-    'gig': 'music', 'club': 'music', 'noise': 'music',
-    'talk': 'culture', 'lecture': 'culture',
-    'exhibition': 'culture', 'gallery': 'culture',
-    'record store': 'vinyl', 'bookshop': 'vinyl',
-    'thrift': 'market',
-    /* venue-only kinds (Places mode) */
-    'cinema': 'film', 'arts centre': 'culture', 'community': 'culture',
-  };
-  function normaliseKind(k) { return KIND_MAP[k] || k; }
+  /* Shared impl in map-venues.js (loads first) — one kind→bucket map for
+     the pins here and discover.js' category chips. */
+  const normaliseKind = window.WA?.normaliseKind || ((k) => k);
 
   /* Inline SVG icons keyed by normalised kind. Same set as before. */
   const PIN_ICONS = {

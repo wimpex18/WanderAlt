@@ -75,14 +75,9 @@
     return hits.map(([, e]) => e);
   };
 
-  /* Kind normalisation matches map.js so 'free' / 'music' chips line up. */
-  const KIND_MAP = {
-    'gig': 'music', 'club': 'music', 'noise': 'music',
-    'talk': 'culture', 'lecture': 'culture', 'exhibition': 'culture', 'gallery': 'culture',
-    'record store': 'vinyl', 'bookshop': 'vinyl',
-    'thrift': 'market',
-  };
-  const normaliseKind = (k) => KIND_MAP[k] || k;
+  /* Shared impl in map-venues.js (loads first) so the map pins and these
+     category chips can never drift apart again. */
+  const normaliseKind = window.WA?.normaliseKind || ((k) => k);
 
   /* Apply time / category / free / neighborhood / mood filters. */
   const applyStructuredFilters = (entries) => {

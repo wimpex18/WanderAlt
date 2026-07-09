@@ -38,40 +38,50 @@
   const setCity   = (c) => { currentCity = c; localStorage.setItem('wa-admin-city', c); };
 
   /* ── Supabase REST helpers ───────────────────────────────── */
-  const GET = (qs) =>
-    fetch(`${BASE}/rest/v1/picks?${qs}`, {
+  /* One anon read + one service-key write. Every table-specific wrapper
+     below is a thin alias — the headers / key guard / error surfacing
+     used to be six near-identical blocks plus inline fetch copies that
+     had already drifted apart (different alerts, one silent). */
+  const sbRead = (pathQs) =>
+    fetch(`${BASE}/rest/v1/${pathQs}`, {
       headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
     }).then(r => r.json());
 
-  const PATCH = async (filter, body) => {
-    if (!hasKey()) { alert('Paste your service role key first.'); return null; }
+  /* opts: method ('PATCH'), prefer ('return=minimal'), label,
+     onError: 'alert' (default — read body, alert + console),
+              'log'    (read body, console only — fire-and-forget writes),
+              'ignore' (do NOT touch the body; caller inspects the
+                        Response itself, e.g. to show a status line).
+     Returns the Response, or null when no service key is pasted. */
+  const sbWrite = async (pathQs, body, opts = {}) => {
+    const { method = 'PATCH', prefer = 'return=minimal',
+            label = 'Write', onError = 'alert' } = opts;
+    if (!hasKey()) {
+      if (onError === 'alert') alert('Paste your service role key first.');
+      else console.warn(`${label}: service key required`);
+      return null;
+    }
     const key = getKey();
-    const r = await fetch(`${BASE}/rest/v1/picks?${filter}`, {
-      method:  'PATCH',
+    const r = await fetch(`${BASE}/rest/v1/${pathQs}`, {
+      method,
       headers: {
         apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json', Prefer: 'return=minimal',
+        'Content-Type': 'application/json', Prefer: prefer,
       },
       body: JSON.stringify(body),
     });
-    if (!r.ok) { const msg = await r.text(); console.error('PATCH failed', msg); alert(`Write failed.\n\n${msg}`); }
+    if (!r.ok && onError !== 'ignore') {
+      const msg = await r.text();
+      console.error(`${label} failed`, msg);
+      if (onError === 'alert') alert(`${label} failed.\n\n${msg}`);
+    }
     return r;
   };
 
-  const POST_PICK = async (body) => {
-    if (!hasKey()) { alert('Paste your service role key first.'); return null; }
-    const key = getKey();
-    const r = await fetch(`${BASE}/rest/v1/picks`, {
-      method:  'POST',
-      headers: {
-        apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json', Prefer: 'return=representation',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) { const msg = await r.text(); alert(`Create failed.\n\n${msg}`); }
-    return r;
-  };
+  const GET       = (qs) => sbRead(`picks?${qs}`);
+  const PATCH     = (filter, body) => sbWrite(`picks?${filter}`, body);
+  const POST_PICK = (body) => sbWrite('picks', body,
+    { method: 'POST', prefer: 'return=representation', label: 'Create' });
 
   /* ── State ──────────────────────────────────────────────── */
   let allPicks   = [];
@@ -693,62 +703,20 @@
   /* ══════════════════════════════════════════════════════════
      VENUES
      ══════════════════════════════════════════════════════════ */
-  const VENUES_GET = (qs) =>
-    fetch(`${BASE}/rest/v1/venues?${qs}`, {
-      headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
-    }).then(r => r.json());
+  const VENUES_GET = (qs) => sbRead(`venues?${qs}`);
 
-  const VENUES_PATCH = async (id, body) => {
-    if (!hasKey()) { alert('Service key required.'); return null; }
-    const key = getKey();
-    const r   = await fetch(`${BASE}/rest/v1/venues?id=eq.${encodeURIComponent(id)}`, {
-      method:  'PATCH',
-      headers: {
-        apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json', Prefer: 'return=minimal',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) { const msg = await r.text(); alert(`Venue update failed.\n\n${msg}`); }
-    return r;
-  };
+  const VENUES_PATCH = (id, body) =>
+    sbWrite(`venues?id=eq.${encodeURIComponent(id)}`, body, { label: 'Venue update' });
 
-  const VENUES_POST = async (body) => {
-    if (!hasKey()) { alert('Service key required.'); return null; }
-    const key = getKey();
-    const r   = await fetch(`${BASE}/rest/v1/venues`, {
-      method:  'POST',
-      headers: {
-        apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json', Prefer: 'return=representation',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) { const msg = await r.text(); alert(`Create venue failed.\n\n${msg}`); }
-    return r;
-  };
+  const VENUES_POST = (body) => sbWrite('venues', body,
+    { method: 'POST', prefer: 'return=representation', label: 'Create venue' });
 
   /* ── venue_details REST helpers ─ */
-  const VD_GET = (qs) =>
-    fetch(`${BASE}/rest/v1/venue_details?${qs}`, {
-      headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
-    }).then(r => r.json());
+  const VD_GET = (qs) => sbRead(`venue_details?${qs}`);
 
-  const VD_UPSERT = async (body) => {
-    if (!hasKey()) { console.warn('VD_UPSERT: service key required'); return null; }
-    const key = getKey();
-    const r   = await fetch(`${BASE}/rest/v1/venue_details`, {
-      method:  'POST',
-      headers: {
-        apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=minimal',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) { const msg = await r.text(); console.error(`VD upsert failed: ${msg}`); }
-    return r;
-  };
+  const VD_UPSERT = (body) => sbWrite('venue_details', body,
+    { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+      label: 'VD upsert', onError: 'log' });
 
   /* ── Venue modal state ─ */
   let venueModalRecord = null;
@@ -1399,22 +1367,20 @@
     if (status) status.textContent = 'Saving…';
     if (btn)    btn.disabled = true;
 
-    const key     = getKey();
-    const headers = { apikey: key, Authorization: `Bearer ${key}`,
-                      'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
     try {
-      const res = await fetch(`${BASE}/rest/v1/curators`, {
-        method:  'POST',
-        headers,
-        body: JSON.stringify({ handle, city, name, tagline, bio, source_channel: source }),
-      });
-      if (res.ok || res.status === 204) {
+      /* onError:'ignore' — this modal reports failures in its own status
+         line (parsing the error body itself), not via alert(). */
+      const res = await sbWrite('curators',
+        { handle, city, name, tagline, bio, source_channel: source },
+        { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+          label: 'Curator save', onError: 'ignore' });
+      if (res && (res.ok || res.status === 204)) {
         if (status) status.textContent = 'Saved.';
         await loadCurators();
         setTimeout(closeCuratorModal, 700);
       } else {
-        const data = await res.json().catch(() => ({}));
-        if (status) status.textContent = data.message || `Error ${res.status}`;
+        const data = res ? await res.json().catch(() => ({})) : {};
+        if (status) status.textContent = data.message || `Error ${res ? res.status : 'no key'}`;
       }
     } catch (err) {
       if (status) status.textContent = `Network error: ${err.message}`;
@@ -1495,27 +1461,10 @@
   /* ══════════════════════════════════════════════════════════
      COLUMNS
      ══════════════════════════════════════════════════════════ */
-  const COLUMNS_GET = async (qs) => {
-    const r = await fetch(`${BASE}/rest/v1/columns?${qs}`, {
-      headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
-    });
-    return r.json();
-  };
+  const COLUMNS_GET = (qs) => sbRead(`columns?${qs}`);
 
-  const COLUMNS_PATCH = async (id, body) => {
-    if (!hasKey()) { alert('Service key required.'); return null; }
-    const key = getKey();
-    const r   = await fetch(`${BASE}/rest/v1/columns?id=eq.${encodeURIComponent(id)}`, {
-      method:  'PATCH',
-      headers: {
-        apikey: key, Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json', Prefer: 'return=minimal',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) { const msg = await r.text(); alert(`Column update failed.\n\n${msg}`); }
-    return r;
-  };
+  const COLUMNS_PATCH = (id, body) =>
+    sbWrite(`columns?id=eq.${encodeURIComponent(id)}`, body, { label: 'Column update' });
 
   const loadColumns = async () => {
     const statusEl = $('columns-status');
@@ -2173,20 +2122,11 @@
     $('enrichment-list')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.admin-btn--lock-toggle');
       if (!btn) return;
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const vdId  = btn.dataset.vdId;
-      const isLocked = btn.dataset.locked === '1';
-      const newLock  = !isLocked;
-      const key      = getKey();
-      const r = await fetch(`${BASE}/rest/v1/venue_details?id=eq.${encodeURIComponent(vdId)}`, {
-        method:  'PATCH',
-        headers: {
-          apikey: key, Authorization: `Bearer ${key}`,
-          'Content-Type': 'application/json', Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({ manual_lock: newLock }),
-      });
-      if (r.ok) await loadEnrichmentList(vePage);
+      const vdId    = btn.dataset.vdId;
+      const newLock = btn.dataset.locked !== '1';
+      const r = await sbWrite(`venue_details?id=eq.${encodeURIComponent(vdId)}`,
+        { manual_lock: newLock }, { label: 'Lock toggle' });
+      if (r?.ok) await loadEnrichmentList(vePage);
     });
 
     /* ── Curators section ── */
@@ -2197,13 +2137,10 @@
     $('curator-delete-btn')?.addEventListener('click', async () => {
       if (!modalCurator) return;
       if (!confirm(`Delete curator "${modalCurator.handle}"?\n\nThis does not delete their picks.`)) return;
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const key = getKey();
-      const res = await fetch(
-        `${BASE}/rest/v1/curators?handle=eq.${encodeURIComponent(modalCurator.handle)}`,
-        { method: 'DELETE', headers: { apikey: key, Authorization: `Bearer ${key}` } }
-      );
-      if (res.ok) { closeCuratorModal(); await loadCurators(); }
+      const res = await sbWrite(
+        `curators?handle=eq.${encodeURIComponent(modalCurator.handle)}`,
+        undefined, { method: 'DELETE', label: 'Curator delete' });
+      if (res?.ok) { closeCuratorModal(); await loadCurators(); }
     });
     $('curator-modal')?.addEventListener('click', (e) => {
       if (e.target === $('curator-modal')) closeCuratorModal();

@@ -1,8 +1,22 @@
 /* map-venues.js — category buckets + pin palette used by map.js/discover.js.
-   Exposes WA.MAP_CATEGORIES and WA.MAP_CAT. (The district list and the
-   geoToWorld/worldToGeo linear fits left with map-world.js, retired
-   May 2026 after the v2 city plates superseded it.)                          */
+   Exposes WA.MAP_CATEGORIES, WA.MAP_CAT, WA.KIND_MAP, WA.normaliseKind.
+   (The district list and the geoToWorld/worldToGeo linear fits left with
+   map-world.js, retired May 2026 after the v2 city plates superseded it.)    */
 window.WA = window.WA || {};
+
+/* Kind → category bucket. The ONE shared impl (was hand-copied into
+   discover.js and map.js "by convention" — ROADMAP §1). Loads before both
+   consumers on discover.html. The last line is venue kinds (Places mode);
+   events never carry them, so the superset is safe for both callers. */
+WA.KIND_MAP = {
+  'gig': 'music', 'club': 'music', 'noise': 'music',
+  'talk': 'culture', 'lecture': 'culture',
+  'exhibition': 'culture', 'gallery': 'culture',
+  'record store': 'vinyl', 'bookshop': 'vinyl',
+  'thrift': 'market',
+  'cinema': 'film', 'arts centre': 'culture', 'community': 'culture',
+};
+WA.normaliseKind = (k) => WA.KIND_MAP[k] || k;
 
 WA.MAP_CATEGORIES = [
   { id: 'music',   label: 'Music' },

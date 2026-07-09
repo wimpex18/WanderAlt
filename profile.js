@@ -275,16 +275,12 @@
     }
 
     if (feedbackEl) {
-      const fb      = taste.getFeedback();
-      const liked   = (fb.liked    || []).length;
-      const disliked = (fb.disliked || []).length;
-      const seen    = taste.getSeen().length;
-      if (liked || disliked || seen) {
-        feedbackEl.textContent =
-          `${liked} liked · ${disliked} disliked · ${seen} seen`;
-      } else {
-        feedbackEl.textContent = 'No feedback recorded yet';
-      }
+      /* Only the seen count is shown — the 👍/👎 write path retired with
+         the old search page, so liked/disliked could never be non-zero. */
+      const seen = taste.getSeen().length;
+      feedbackEl.textContent = seen
+        ? `${seen} match result${seen !== 1 ? 's' : ''} seen`
+        : 'No match history yet';
     }
   };
 
@@ -310,7 +306,7 @@
     renderTasteSection();
     const el = $('#taste-status');
     if (el) {
-      el.textContent = 'Feedback and seen history cleared.';
+      el.textContent = 'Match history cleared.';
       el.style.color = 'var(--c-ink-mute)';
     }
   });
