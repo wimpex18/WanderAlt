@@ -211,6 +211,18 @@
     `<span class="field-pw"${wrapStyle ? ` style="${wrapStyle}"` : ''}>${inputHtml}` +
     `<button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false">${EYE_SVG}</button></span>`;
 
+  /* Icon-only action buttons can't show a text confirmation — flash the
+     glyph to a petrol check, then restore. One impl for the venue action
+     row and the curator share button (was two hand-copies). */
+  const flashDone = (el) => {
+    if (!el || el.dataset.flashing) return;
+    const orig = el.innerHTML;
+    el.dataset.flashing = '1';
+    el.classList.add('action-icon--done');
+    el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+    setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+  };
+
   document.addEventListener('click', (e) => {
     const btn = e.target.closest && e.target.closest('.pw-toggle');
     if (!btn) return;
@@ -233,5 +245,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState };
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
 })();

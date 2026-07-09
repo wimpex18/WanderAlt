@@ -471,16 +471,9 @@
       });
     }
 
-    /* Icon-only action buttons can't show a text confirmation, so briefly
-       swap the glyph to a petrol check, then restore it. */
-    const flashDone = (el) => {
-      if (!el || el.dataset.flashing) return;
-      const orig = el.innerHTML;
-      el.dataset.flashing = '1';
-      el.classList.add('action-icon--done');
-      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-      setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
-    };
+    /* Icon-only action buttons flash the glyph to a petrol check on
+       success — shared impl in ui-helpers (curator share uses it too). */
+    const flashDone = window.WA.UI.flashDone;
 
     /* Wire Share — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('.venue-share-btn');

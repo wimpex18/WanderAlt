@@ -285,13 +285,19 @@
        never leaves the device (taste lives in localStorage). */
     const ts = window.WA?.taste?.tasteScore;
     const tasteOrdered = ts ? [..._weekFullSet].sort((a, b) => ts(b) - ts(a)) : _weekFullSet;
-    /* Day-group (Tonight→Mon…Sun) as the PRIMARY order — catalog order is
-       NOT chronological, so without this the day labels below repeat
-       (Fri·Sat·Sun·Sat·Wed·Fri, caught by the July 2026 visual audit).
-       Stable sort: the taste nudge above survives within each day. */
+    /* Day-group as the PRIMARY order — catalog order is NOT chronological,
+       so without this the day labels below repeat (Fri·Sat·Sun·Sat·Wed·Fri,
+       caught by the July 2026 visual audit). The week wheel is ROTATED to
+       read forward from today: a Thursday reader sees Fri before next Mon
+       (today's own picks live in Tonight, so today's day name means "later
+       this week"). Stable sort: the taste nudge above survives within each
+       day. */
     const rank = window.WA.UI.DAY_RANK;
+    const todayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+    const todayRank = rank[todayName] || 1;
+    const rot = (d) => d === 'Tonight' ? 0 : ((rank[d] - todayRank + 7) % 7) + 1;
     const ordered = tasteOrdered
-      .map((e, i) => ({ e, i, r: e.day in rank ? rank[e.day] : 99 }))
+      .map((e, i) => ({ e, i, r: e.day in rank ? rot(e.day) : 99 }))
       .sort((a, b) => a.r - b.r || a.i - b.i)
       .map(x => x.e);
     const entries = ordered.slice(0, _weekShown);

@@ -55,18 +55,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       await page.evaluate(() => localStorage.setItem('wa:city', 'tallinn')).catch(() => {});
       await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
       await sleep(1200);
-      /* .list-row uses content-visibility:auto, so rows that were never
-         near the viewport are SKIPPED in a fullPage capture and shot as
-         empty boxes (the July 2026 audit chased that ghost across three
-         pages). Scroll through the document once to force paint, then
-         return to the top before capturing. */
-      await page.evaluate(async () => {
-        const step = window.innerHeight;
-        for (let y = 0; y < document.body.scrollHeight; y += step) {
-          window.scrollTo(0, y);
-          await new Promise((r) => setTimeout(r, 40));
-        }
-        window.scrollTo(0, 0);
+      /* .list-row uses content-visibility:auto, so off-viewport rows are
+         SKIPPED in a fullPage capture and shot as empty boxes (the July
+         2026 audit chased that ghost across three pages). Scrolling
+         through first is NOT enough — the skip is continuous, rows
+         re-blank once scrolled away — so force them visible for the
+         capture only. This renders exactly what a scrolling user sees. */
+      await page.addStyleTag({
+        content: '.list-row { content-visibility: visible !important; }',
       }).catch(() => {});
       await sleep(400);
       await page.screenshot({ path: path.join(OUT, `${name}-${width}.png`), fullPage: true }).catch(() => {});

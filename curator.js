@@ -177,11 +177,13 @@
           <p class="page-head__eyebrow">Curator</p>
           <h1 class="page-head__title">${curator.handle}</h1>
           ${curator.tagline ? `<p class="page-head__meta">${curator.tagline}</p>` : ''}
-          <button type="button" id="curator-share-btn" class="curator-share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg><span>Share</span></button>
-          <a class="action-icon" href="${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent((window.WA && window.WA.CITY) || 'tallinn')}&amp;handle=${encodeURIComponent(curator.handle)}"
-             aria-label="Subscribe to ${curator.handle}'s picks in your calendar" title="Calendar feed (.ics)">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
-          </a>
+          <div class="curator-actions">
+            <button type="button" id="curator-share-btn" class="action-icon" aria-label="Share this curator page" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg></button>
+            <a class="action-icon" href="${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent((window.WA && window.WA.CITY) || 'tallinn')}&amp;handle=${encodeURIComponent(curator.handle)}"
+               aria-label="Subscribe to ${curator.handle}'s picks in your calendar" title="Calendar feed (.ics)">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
+            </a>
+          </div>
         </header>
 
         ${curator.bio ? `
@@ -220,29 +222,22 @@
       </footer>
     `;
 
-    /* Wire share button — native OS share sheet, clipboard fallback. */
+    /* Wire share button — native OS share sheet, clipboard fallback.
+       Icon-only (same .action-icon idiom as the venue action row); the
+       shared flashDone swaps the glyph to a petrol check on success. */
     const shareBtn = main.querySelector('#curator-share-btn');
     if (shareBtn) {
       shareBtn.addEventListener('click', async () => {
         const share = window.WA && window.WA.Share;
-        /* Swap only the label span, then restore the original markup —
-           overwriting textContent would destroy the icon SVG for good. */
-        const idleHtml = shareBtn.innerHTML;
-        const done = (label) => {
-          const span = shareBtn.querySelector('span');
-          if (span) span.textContent = label;
-          setTimeout(() => { shareBtn.innerHTML = idleHtml; }, 2000);
-        };
         if (share) {
           const r = await share.url({
             title: `${curator.name || curator.handle} on WanderAlt`,
             text:  curator.tagline || '',
             url:   window.location.href,
           });
-          if (r === 'copied') done('Copied ✓');
-          else if (r === 'shared') done('Shared ✓');
+          if (r === 'copied' || r === 'shared') window.WA.UI.flashDone(shareBtn);
         } else {
-          navigator.clipboard.writeText(window.location.href).then(() => done('Copied ✓'));
+          navigator.clipboard.writeText(window.location.href).then(() => window.WA.UI.flashDone(shareBtn));
         }
       });
     }
