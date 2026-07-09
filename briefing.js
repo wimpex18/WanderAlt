@@ -421,6 +421,14 @@
   /* ── Surprise me ───────────────────────────────────────────── */
   let _surpriseExcludeIds = new Set();
   let _surpriseCatalog   = [];
+  /* init() runs twice on a normal load (static catalog immediately, then
+     again on wa:catalog-ready once live data lands). Re-rendering twice is
+     fine; re-BINDING listeners twice is not — a double-bound taste-chip
+     handler toggles a pref on and straight back off, and bookmark/digest
+     handlers fire duplicate writes. So all listener wiring below is gated
+     on _initBound (same pattern as discover.js). */
+  let _initBound = false;
+  let _weekSrc   = [];
 
   /* Surprise lives in the This Week section header (static markup in
      index.html, July 2026 board 1b). The click is handled by ONE delegated
@@ -552,23 +560,15 @@
       : allWeek;
 
     /* Apply taste re-ordering before slicing to 8: items aligned with the
-       user's onboarding answers (and previous 👍) bubble to the top. Falls
-       back to original order when there's no taste profile. */
-    const orderByTaste = (entries) => {
-      const taste = window.WA?.taste;
-      if (!taste) return entries;
-      const prefs = taste.getPrefs();
-      const fb    = taste.getFeedback();
-      if (!Object.keys(prefs).length && !(fb.liked?.length) && !(fb.disliked?.length)) {
-        return entries;  /* untouched corpus order */
-      }
-      /* Stable sort — bigger score first; ties keep original order via index. */
-      return entries
-        .map((e, i) => ({ e, i, s: taste.tasteScore(e) }))
-        .sort((a, b) => b.s - a.s || a.i - b.i)
-        .map(x => x.e);
-    };
+       user's onboarding answers bubble to the top. Falls back to original
+       order when there's no taste profile. Shared impl in taste.js. */
+    const orderByTaste = (entries) =>
+      window.WA?.taste ? window.WA.taste.orderByTaste(entries) : entries;
     const orderedWeek = orderByTaste(weekSrc);
+    /* Kept at module scope so the bind-once wa:taste-changed listener
+       below re-renders the CURRENT week source, not the one from the
+       first (possibly static-catalog) init run. */
+    _weekSrc = weekSrc;
 
     /* Track the current tonight picks so Surprise me excludes them. */
     _surpriseExcludeIds = tonightIds;
@@ -582,7 +582,6 @@
     /* Pass the full ordered set — renderThisWeek paginates internally. */
     renderThisWeek(orderedWeek);
     restoreBookmarks();
-    wireBookmarks();
     /* Surprise me lives in the This Week header; renderTonight /
        renderTonightEmpty toggle its visibility for empty cities. */
     wireSurprise(catalog);
@@ -593,10 +592,18 @@
       calLink.href = `${window.WA.BASE_URL}/functions/v1/calendar-feed` +
                      `?city=${encodeURIComponent(window.WA.CITY || 'tallinn')}`;
     }
+
+    /* Everything below binds listeners to elements that survive re-init
+       (document, the static onboarding/digest markup) — bind once. */
+    if (_initBound) return;
+    _initBound = true;
+
+    wireBookmarks();
     /* Re-render This Week when the taste profile changes (after onboarding
-       or a Profile-page edit). */
+       or a Profile-page edit). Reads _weekSrc so a taste change after the
+       live catalog lands reorders live picks, not the static seed. */
     document.addEventListener('wa:taste-changed', () => {
-      const reordered = orderByTaste(weekSrc);
+      const reordered = orderByTaste(_weekSrc);
       renderThisWeek(reordered);
       restoreBookmarks();
     });

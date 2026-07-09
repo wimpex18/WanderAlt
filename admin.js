@@ -14,6 +14,15 @@
   /* ── Helpers ─────────────────────────────────────────────── */
   const $ = (id) => document.getElementById(id);
 
+  /* HTML-escape for every template interpolation of DB-sourced text.
+     Not optional cosmetics: discovery rows carry titles/venues scraped
+     from external sources, and this panel runs with the service-role
+     key in localStorage — a stored payload rendered unescaped here
+     would execute with that key in reach. */
+  const escAttr = (s) => String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   /* ── Service role key (localStorage) ────────────────────── */
   const getKey  = ()  => localStorage.getItem('wa-admin-key') || '';
   const setKey  = (k) => localStorage.setItem('wa-admin-key', k);
@@ -144,11 +153,11 @@
     const p = allPicks.find(x => x.tonight);
     el.innerHTML = p
       ? `<div class="admin-pick-row">
-           <span>${p.title}</span>
-           <span class="meta">${p.venue} &middot; ${p.neighborhood || ''}</span>
-           <button class="admin-btn--edit" data-id="${p.id}"
-                   aria-label="Edit ${p.title}" title="Edit">&#9998;</button>
-           <button class="admin-btn--rm" data-id="${p.id}" data-field="tonight"
+           <span>${escAttr(p.title)}</span>
+           <span class="meta">${escAttr(p.venue)} &middot; ${escAttr(p.neighborhood)}</span>
+           <button class="admin-btn--edit" data-id="${escAttr(p.id)}"
+                   aria-label="Edit ${escAttr(p.title)}" title="Edit">&#9998;</button>
+           <button class="admin-btn--rm" data-id="${escAttr(p.id)}" data-field="tonight"
                    aria-label="Remove tonight flag">&times;</button>
          </div>`
       : `<p class="meta admin-empty">None set.</p>`;
@@ -157,13 +166,14 @@
   /* ══════════════════════════════════════════════════════════
      THIS WEEK RENDERER
      ══════════════════════════════════════════════════════════ */
+  const DAY_ORDER = ['Tonight', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   const getFilteredPicks = () => {
     let picks = allPicks.filter(x => x.this_week);
     if (twState.kindFilter) picks = picks.filter(p => p.kind === twState.kindFilter);
     if (twState.dayFilter)  picks = picks.filter(p => p.day  === twState.dayFilter);
     if (twState.dateFrom)   picks = picks.filter(p => p.valid_until && p.valid_until >= twState.dateFrom);
     if (twState.dateTo)     picks = picks.filter(p => p.valid_until && p.valid_until <= twState.dateTo);
-    const DAY_ORDER = ['Tonight', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     if (twState.sort === 'title') picks.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     if (twState.sort === 'kind')  picks.sort((a, b) => (a.kind  || '').localeCompare(b.kind  || ''));
     if (twState.sort === 'day')   picks.sort((a, b) => {
@@ -193,7 +203,6 @@
     }
 
     if (ctrl) {
-      const DAY_ORDER = ['Tonight', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const kinds = [...new Set(all.map(p => p.kind).filter(Boolean))].sort();
       const days  = [...new Set(all.map(p => p.day).filter(Boolean))]
         .sort((a, b) => (DAY_ORDER.indexOf(a) + 1 || 99) - (DAY_ORDER.indexOf(b) + 1 || 99));
@@ -202,11 +211,11 @@
         <div class="tw-filter-bar">
           <select id="tw-kind" aria-label="Filter by kind">
             <option value="">All kinds</option>
-            ${kinds.map(k => `<option value="${k}" ${twState.kindFilter === k ? 'selected' : ''}>${k}</option>`).join('')}
+            ${kinds.map(k => `<option value="${escAttr(k)}" ${twState.kindFilter === k ? 'selected' : ''}>${escAttr(k)}</option>`).join('')}
           </select>
           <select id="tw-day" aria-label="Filter by day">
             <option value="">All days</option>
-            ${days.map(d => `<option value="${d}" ${twState.dayFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
+            ${days.map(d => `<option value="${escAttr(d)}" ${twState.dayFilter === d ? 'selected' : ''}>${escAttr(d)}</option>`).join('')}
           </select>
           <label class="tw-date-label">From
             <input type="date" id="tw-from" value="${twState.dateFrom}" aria-label="Valid from" />
@@ -239,14 +248,14 @@
 
     list.innerHTML = page.length
       ? page.map(p => {
-          const dateBit = p.valid_until ? ` &middot; until&nbsp;${p.valid_until.slice(0, 10)}` : '';
-          const dayBit  = p.day ? ` &middot; ${p.day}` : '';
+          const dateBit = p.valid_until ? ` &middot; until&nbsp;${escAttr(p.valid_until.slice(0, 10))}` : '';
+          const dayBit  = p.day ? ` &middot; ${escAttr(p.day)}` : '';
           return `<li class="admin-pick-row">
-            <span>${p.title}</span>
-            <span class="meta">${p.venue} &middot; ${p.kind || '—'}${dayBit}${dateBit}</span>
-            <button class="admin-btn--edit" data-id="${p.id}"
-                    aria-label="Edit ${p.title}" title="Edit">&#9998;</button>
-            <button class="admin-btn--rm" data-id="${p.id}" data-field="this_week"
+            <span>${escAttr(p.title)}</span>
+            <span class="meta">${escAttr(p.venue)} &middot; ${escAttr(p.kind) || '—'}${dayBit}${dateBit}</span>
+            <button class="admin-btn--edit" data-id="${escAttr(p.id)}"
+                    aria-label="Edit ${escAttr(p.title)}" title="Edit">&#9998;</button>
+            <button class="admin-btn--rm" data-id="${escAttr(p.id)}" data-field="this_week"
                     aria-label="Remove from this week">&times;</button>
           </li>`;
         }).join('')
@@ -299,7 +308,7 @@
         <div class="tw-filter-bar">
           <select id="ap-kind" aria-label="Filter by kind">
             <option value="">All kinds</option>
-            ${kinds.map(k => `<option value="${k}" ${apState.kindFilter === k ? 'selected' : ''}>${k}</option>`).join('')}
+            ${kinds.map(k => `<option value="${escAttr(k)}" ${apState.kindFilter === k ? 'selected' : ''}>${escAttr(k)}</option>`).join('')}
           </select>
           <select id="ap-sort" aria-label="Sort">
             <option value="default" ${apState.sort === 'default' ? 'selected' : ''}>Sort: default</option>
@@ -326,10 +335,10 @@
           const meta  = [p.venue, p.kind, p.neighborhood, p.day].filter(Boolean).join(' · ');
           const noPin = (p.lat == null || p.lng == null) ? ' <em class="admin-pick-row__noPin">(unpinned)</em>' : '';
           return `<li class="admin-pick-row">
-            <span>${p.title}${noPin}</span>
-            <span class="meta">${meta}${flags ? ` &nbsp;<em class="admin-pick-row__flags">${flags}</em>` : ''}</span>
-            <button class="admin-btn--edit" data-id="${p.id}"
-                    aria-label="Edit ${p.title}" title="Edit">&#9998;</button>
+            <span>${escAttr(p.title)}${noPin}</span>
+            <span class="meta">${escAttr(meta)}${flags ? ` &nbsp;<em class="admin-pick-row__flags">${flags}</em>` : ''}</span>
+            <button class="admin-btn--edit" data-id="${escAttr(p.id)}"
+                    aria-label="Edit ${escAttr(p.title)}" title="Edit">&#9998;</button>
           </li>`;
         }).join('')
       : `<li class="meta admin-empty" style="padding:var(--s-3) 0">No picks loaded yet.</li>`;
@@ -569,10 +578,10 @@
       venue_id:     $('mf-venue-id').value     || null,
       kind:         $('mf-kind').value         || null,
       neighborhood: $('mf-neighborhood').value.trim() || null,
-      handle:       $('mf-handle').value.trim(),
+      handle:       $('mf-handle').value.trim() || null,
       day:          $('mf-day').value           || null,
       valid_until:  $('mf-valid-until').value   || null,
-      quote:        $('mf-quote').value.trim(),
+      quote:        $('mf-quote').value.trim()  || null,
       context_md:   $('mf-context').value.trim() || null,
       tonight:      $('mf-tonight').checked,
       this_week:    $('mf-thisweek').checked,
@@ -674,9 +683,9 @@
     if (!hits.length) { resultsEl.hidden = true; return; }
     resultsEl.hidden  = false;
     resultsEl.innerHTML = hits.map(p =>
-      `<li class="admin-result" data-id="${p.id}" role="option" tabindex="0">
-         ${p.title}
-         <span class="meta">&middot; ${p.venue}${p.kind ? ' &middot; ' + p.kind : ''}</span>
+      `<li class="admin-result" data-id="${escAttr(p.id)}" role="option" tabindex="0">
+         ${escAttr(p.title)}
+         <span class="meta">&middot; ${escAttr(p.venue)}${p.kind ? ' &middot; ' + escAttr(p.kind) : ''}</span>
        </li>`
     ).join('');
   };
@@ -895,8 +904,8 @@
         resultsEl.hidden  = false;
         resultsEl.innerHTML = hits.map(v => {
           const detail = [v.kind, v.neighborhood].filter(Boolean).join(' · ');
-          return `<li class="admin-result" data-id="${v.id}" role="option" tabindex="0">
-            ${v.name}${detail ? ` <span class="meta">&middot; ${detail}</span>` : ''}
+          return `<li class="admin-result" data-id="${escAttr(v.id)}" role="option" tabindex="0">
+            ${escAttr(v.name)}${detail ? ` <span class="meta">&middot; ${escAttr(detail)}</span>` : ''}
           </li>`;
         }).join('');
       } catch { resultsEl.hidden = true; }
@@ -949,10 +958,10 @@
           const closed = v.status === 'possibly_closed'
             ? ` <em style="opacity:.5">(possibly closed)</em>` : '';
           return `<li class="admin-pick-row">
-            <span>${v.name}</span>
-            <span class="meta">${meta}${closed}</span>
-            <button class="admin-btn--edit admin-btn--edit-venue" data-venue-id="${v.id}"
-                    aria-label="Edit ${v.name}" title="Edit">&#9998;</button>
+            <span>${escAttr(v.name)}</span>
+            <span class="meta">${escAttr(meta)}${closed}</span>
+            <button class="admin-btn--edit admin-btn--edit-venue" data-venue-id="${escAttr(v.id)}"
+                    aria-label="Edit ${escAttr(v.name)}" title="Edit">&#9998;</button>
           </li>`;
         }).join('');
       }
@@ -975,7 +984,7 @@
         }
       }
     } catch (err) {
-      if (list) list.innerHTML = `<li class="meta" style="color:var(--c-accent);padding:var(--s-3) 0">Error: ${err.message}</li>`;
+      if (list) list.innerHTML = `<li class="meta" style="color:var(--c-accent);padding:var(--s-3) 0">Error: ${escAttr(err.message)}</li>`;
       if ($('venues-count')) $('venues-count').textContent = '';
     }
   };
@@ -1019,18 +1028,21 @@
         list.innerHTML = rows.map(row => {
           const ts     = row.enriched_at ? new Date(row.enriched_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) : '';
           const locked = row.manual_lock ? ' 🔒' : '';
-          const wd     = row.wikidata_id ? ` · <a href="https://www.wikidata.org/wiki/${row.wikidata_id}" target="_blank" rel="noopener" style="color:var(--c-accent)">${row.wikidata_id}</a>` : '';
+          /* wikidata_id feeds an href — escape AND pin it to the expected
+             Q-id shape so a poisoned row can't mint an arbitrary link. */
+          const wdId   = /^Q\d+$/.test(row.wikidata_id || '') ? row.wikidata_id : null;
+          const wd     = wdId ? ` · <a href="https://www.wikidata.org/wiki/${escAttr(wdId)}" target="_blank" rel="noopener" style="color:var(--c-accent)">${escAttr(wdId)}</a>` : '';
           const site   = row.website
-            ? (() => { try { return ' · ' + new URL(row.website).hostname.replace(/^www\./, ''); } catch { return ''; } })()
+            ? (() => { try { return ' · ' + escAttr(new URL(row.website).hostname.replace(/^www\./, '')); } catch { return ''; } })()
             : '';
-          return `<li class="admin-pick-row" data-vd-id="${row.id}" data-vd-key="${row.venue_key}">
-            <span>${row.display_name || row.venue_key}${locked}</span>
-            <span class="meta">${row.source || ''}${wd}${site}</span>
+          return `<li class="admin-pick-row" data-vd-id="${escAttr(row.id)}" data-vd-key="${escAttr(row.venue_key)}">
+            <span>${escAttr(row.display_name || row.venue_key)}${locked}</span>
+            <span class="meta">${escAttr(row.source)}${wd}${site}</span>
             <span class="meta" style="white-space:nowrap">${ts}</span>
             <button class="admin-btn--edit admin-btn--lock-toggle"
-                    data-vd-id="${row.id}" data-locked="${row.manual_lock ? '1' : '0'}"
+                    data-vd-id="${escAttr(row.id)}" data-locked="${row.manual_lock ? '1' : '0'}"
                     title="${row.manual_lock ? 'Unlock (allow auto-enrichment)' : 'Lock (protect manual edits)'}"
-                    aria-label="${row.manual_lock ? 'Unlock' : 'Lock'} ${row.display_name || row.venue_key}">
+                    aria-label="${row.manual_lock ? 'Unlock' : 'Lock'} ${escAttr(row.display_name || row.venue_key)}">
               ${row.manual_lock ? '🔒' : '🔓'}
             </button>
           </li>`;
@@ -1055,7 +1067,7 @@
         }
       }
     } catch (err) {
-      if (list) list.innerHTML = `<li class="meta" style="color:var(--c-accent);padding:var(--s-3) 0">Error: ${err.message}</li>`;
+      if (list) list.innerHTML = `<li class="meta" style="color:var(--c-accent);padding:var(--s-3) 0">Error: ${escAttr(err.message)}</li>`;
     }
   };
 
@@ -1065,10 +1077,6 @@
      and handle='@discovery'. This list lets editors approve (publish
      + re-embed) or reject (archive) each one.
      ══════════════════════════════════════════════════════════ */
-  const escAttr = (s) => String(s || '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
   const stripPendingSuffix = (title) =>
     String(title || '').replace(/\s*[—-]\s*pending review\s*$/i, '').trim();
 
@@ -1106,8 +1114,11 @@
         const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
         const initials   = row.thumb_initials
           || (row.venue || cleanTitle).slice(0, 2).toUpperCase();
+        /* image_url is the most-untrusted field on a discovery row — escape
+           the whole style attribute value ('%27 for quotes inside url()),
+           a bare single-quote replace still let " break out of style="". */
         const thumbStyle = row.image_url
-          ? `background-image:url('${row.image_url.replace(/'/g, '%27')}')`
+          ? escAttr(`background-image:url('${String(row.image_url).replace(/'/g, '%27')}')`)
           : '';
         const thumbInner = row.image_url ? '' : escAttr(initials);
         const metaBits = [row.neighborhood, row.kind].filter(Boolean).join(' · ');
@@ -1336,11 +1347,11 @@
     list.innerHTML = curatorsList.length
       ? curatorsList.map(c => `
           <li class="admin-pick-row">
-            <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${c.handle}</span>
-            <span class="meta">${[c.name, c.tagline].filter(Boolean).join(' — ') || '—'}
+            <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${escAttr(c.handle)}</span>
+            <span class="meta">${escAttr([c.name, c.tagline].filter(Boolean).join(' — ') || '—')}
               ${c.pick_count != null ? `<em style="opacity:.55"> · ${c.pick_count} picks</em>` : ''}</span>
-            <button class="admin-btn--edit" data-curator-handle="${c.handle}"
-                    aria-label="Edit ${c.handle}" title="Edit">&#9998;</button>
+            <button class="admin-btn--edit" data-curator-handle="${escAttr(c.handle)}"
+                    aria-label="Edit ${escAttr(c.handle)}" title="Edit">&#9998;</button>
           </li>`
         ).join('')
       : `<li class="meta admin-empty" style="padding:var(--s-3) 0">No curators found for ${currentCity}.</li>`;
@@ -1546,23 +1557,26 @@
       const preview    = (col.body_md || '').slice(0, 200).replace(/\n/g, ' ');
       const isDraft    = col.status === 'draft';
 
-      return `<div class="admin-col-row" data-col-id="${col.id}">
+      /* body_md is LLM-drafted text — escaped everywhere it lands, and
+         especially inside the <textarea>: an unescaped "</textarea><script>"
+         in a draft would otherwise break out and run in this panel. */
+      return `<div class="admin-col-row" data-col-id="${escAttr(col.id)}">
         <div class="admin-col-meta">
-          <span class="admin-col-handle">${col.curator_handle}</span>
+          <span class="admin-col-handle">${escAttr(col.curator_handle)}</span>
           <span class="admin-col-week">week of ${weekLabel}${issueLabel}</span>
-          <span class="admin-col-status">${col.status}</span>
+          <span class="admin-col-status">${escAttr(col.status)}</span>
         </div>
-        <p class="admin-col-preview">${preview}&hellip;</p>
-        <textarea class="admin-col-body" data-col-id="${col.id}"
-                  aria-label="Column body for ${col.curator_handle}">${col.body_md || ''}</textarea>
+        <p class="admin-col-preview">${escAttr(preview)}&hellip;</p>
+        <textarea class="admin-col-body" data-col-id="${escAttr(col.id)}"
+                  aria-label="Column body for ${escAttr(col.curator_handle)}">${escAttr(col.body_md)}</textarea>
         <div class="admin-col-actions">
           <button class="admin-col-btn admin-col-btn--edit"
-                  data-col-id="${col.id}" data-action="edit">Edit draft</button>
+                  data-col-id="${escAttr(col.id)}" data-action="edit">Edit draft</button>
           ${isDraft ? `
           <button class="admin-col-btn admin-col-btn--approve"
-                  data-col-id="${col.id}" data-action="approve">Approve &amp; publish</button>
+                  data-col-id="${escAttr(col.id)}" data-action="approve">Approve &amp; publish</button>
           <button class="admin-col-btn admin-col-btn--reject"
-                  data-col-id="${col.id}" data-action="reject">Reject</button>` : ''}
+                  data-col-id="${escAttr(col.id)}" data-action="reject">Reject</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1601,13 +1615,17 @@
         if (ta?.classList.contains('is-open')) body.body_md = ta.value;
         await COLUMNS_PATCH(colId, body);
         col.status = 'published';
-        renderColumns(); wireColumns();
+        /* renderColumns only — the listeners here are delegated on the
+           persistent #columns-list, so re-running wireColumns after every
+           action stacked duplicate handlers (double confirm(), double
+           PATCH). wireColumns is called exactly once, from init. */
+        renderColumns();
         return;
       }
       if (action === 'reject') {
         if (!confirm('Reject this column?')) return;
         const r = await COLUMNS_PATCH(colId, { status: 'rejected' });
-        if (r?.ok) { col.status = 'rejected'; renderColumns(); wireColumns(); }
+        if (r?.ok) { col.status = 'rejected'; renderColumns(); }
       }
     });
 
@@ -1716,7 +1734,8 @@
     loadAll();
     loadColumns();
     loadVenuesList(0);
-    loadEnrichmentList(0);
+    /* loadEnrichmentList(0) fires from the enrichment section below —
+       calling it here too doubled the request on every page load. */
     loadReviewQueue();
     loadCurators();
     wireColumns();
@@ -1852,9 +1871,9 @@
           if (!Array.isArray(hits) || !hits.length) { resultsEl.hidden = true; return; }
           resultsEl.hidden  = false;
           resultsEl.innerHTML = hits.map(v =>
-            `<li class="admin-result" data-id="${v.id}" data-name="${v.name.replace(/"/g, '&quot;')}"
+            `<li class="admin-result" data-id="${escAttr(v.id)}" data-name="${escAttr(v.name)}"
                  role="option" tabindex="0">
-               ${v.name}${v.kind ? ` <span class="meta">&middot; ${v.kind}</span>` : ''}
+               ${escAttr(v.name)}${v.kind ? ` <span class="meta">&middot; ${escAttr(v.kind)}</span>` : ''}
              </li>`
           ).join('');
         } catch { $('mf-venue-results').hidden = true; }

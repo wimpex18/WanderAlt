@@ -142,10 +142,5 @@
     return true;
   }
 
-  /* True when a pick is dated (so a calendar export makes sense). */
-  function isDated(entry) {
-    return !!(entry && entry.day);
-  }
-
-  window.WA.Share = { url: shareUrl, downloadIcs, isDated };
+  window.WA.Share = { url: shareUrl, downloadIcs };
 })();

@@ -101,12 +101,6 @@
     return { x: p.x, y: p.y };
   }
 
-  function unproject(x, y) {
-    if (!map) return null;
-    const c = map.unproject([x, y]);
-    return { lng: c.lng, lat: c.lat };
-  }
-
   /* Fit map to a bounding box covering all visible pin coords. */
   function fitToPicks(entries, options = {}) {
     if (!map) return;
@@ -146,12 +140,11 @@
     pending.push(fn);
   }
 
-  function resize() { if (map) map.resize(); }
   function isReady() { return ready; }
   function getMap()  { return map; }
 
   window.WA.MapTiles = {
-    init, project, unproject, fitToPicks, flyTo,
-    on, onReady, resize, isReady, getMap,
+    init, project, fitToPicks, flyTo,
+    on, onReady, isReady, getMap,
   };
 })();

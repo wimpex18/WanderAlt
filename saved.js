@@ -136,7 +136,7 @@
   const emptyRow = (title, subHTML) => {
     const li = document.createElement('li');
     li.dataset.empty = 'true';
-    const city = localStorage.getItem('wa:city') || 'tallinn';
+    const city = (window.WA && window.WA.CITY) || 'tallinn';
     li.innerHTML =
       `<div class="picks-empty">
          <div class="picks-empty__plate" style="background-image:url('./assets/${city}-overview.svg')" aria-hidden="true"></div>
@@ -150,15 +150,12 @@
 
   /* ── Taste nudge (on-device, shared idea with Today / Discover) ──
      When the reader has a taste profile, surface their kind of place first
-     in Reading. Stable sort: 0-score ties keep catalog order, so curation
-     stays primary. Nothing leaves the device. */
+     in Reading. Shared stable-sort impl in taste.js: 0-score ties keep
+     catalog order, so curation stays primary. Nothing leaves the device. */
   const tastePrefsSet = () =>
     Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
-  const tasteOrder = (arr) => {
-    const ts = window.WA?.taste?.tasteScore;
-    if (!ts || !tastePrefsSet()) return arr;
-    return [...arr].sort((a, b) => ts(b) - ts(a));
-  };
+  const tasteOrder = (arr) =>
+    window.WA?.taste ? window.WA.taste.orderByTaste(arr) : arr;
 
   /* ── Change watch (A2) ──────────────────────────────────────
      Snapshot each bookmarked pick so we can flag, on the reader's own

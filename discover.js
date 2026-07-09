@@ -112,13 +112,14 @@
     Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
   const tasteApplies = () =>
     state.sort === 'relevance' && !state.q && tastePrefsSet();
-  const tasteOrder = (arr) => {
-    const ts = window.WA?.taste?.tasteScore;
-    if (!ts || !tasteApplies()) return arr;
-    return [...arr].sort((a, b) => ts(b) - ts(a));
-  };
+  /* Shared stable-sort impl lives in taste.js; Discover adds its own gate
+     (only the default relevance sort, never over an active search). */
+  const tasteOrder = (arr) =>
+    (tasteApplies() && window.WA?.taste) ? window.WA.taste.orderByTaste(arr) : arr;
 
-  /* Sort options (from search.js:504). */
+  /* Sort options. 'title'/'curator' sorts were dropped from SORT_OPTS
+     long ago; buildSortOptions resets any stale state.sort, so only
+     newest + the relevance default remain reachable here. */
   const DAY_RANK = { Tonight: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
   const sortEntries = (entries) => {
     const arr = [...entries];
@@ -130,10 +131,6 @@
           if (ra !== rb) return ra - rb;
           return (a.time || '').localeCompare(b.time || '');
         });
-      case 'title':
-        return arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-      case 'curator':
-        return arr.sort((a, b) => (a.handle || '').localeCompare(b.handle || ''));
       default:
         /* Relevance: keep curation/recency order, then fold in the taste nudge. */
         return tasteOrder(arr);

@@ -212,5 +212,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, SOCIAL_SVG, SOCIAL_SVG_LINE, socialButtons, passwordField };
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField };
 })();

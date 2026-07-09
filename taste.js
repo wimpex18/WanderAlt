@@ -8,9 +8,9 @@
      • wa-match-seen        id[]   (recently-shown pick ids, FIFO 200)
 
    Used by:
-     • briefing.js  → re-orders This Week by taste alignment
-     • search.js    → sends taste/feedback/seen to match-pick;
-                      renders 👍/👎 controls on match hits
+     • briefing.js / discover.js / saved.js / curator.js
+                    → re-order lists by taste alignment (orderByTaste)
+     • discover.js  → sends taste/feedback/seen to match-pick (matchParams)
      • match-pick   → biases the LLM rerank prompt
    ============================================================ */
 (() => {
@@ -53,35 +53,14 @@
     document.dispatchEvent(new CustomEvent('wa:taste-changed'));
   };
 
-  /* — Feedback — capped so request bodies stay small. */
-  const FEEDBACK_CAP = 50;
+  /* — Feedback — written only by the DB merge on sign-in these days
+     (the 👍/👎 write path went with the retired search page). */
   const getFeedback  = () => {
     try { return JSON.parse(localStorage.getItem(FEEDBACK_KEY) || '{}'); }
     catch { return {}; }
   };
   const writeFeedback = (f) => localStorage.setItem(FEEDBACK_KEY, JSON.stringify(f));
 
-  const recordLike = (id) => {
-    const f = getFeedback();
-    f.liked    = [id, ...((f.liked    || []).filter(x => x !== id))].slice(0, FEEDBACK_CAP);
-    f.disliked =       (f.disliked || []).filter(x => x !== id);
-    writeFeedback(f);
-    document.dispatchEvent(new CustomEvent('wa:taste-feedback', { detail: { id, vote: 'like' } }));
-  };
-  const recordDislike = (id) => {
-    const f = getFeedback();
-    f.disliked = [id, ...((f.disliked || []).filter(x => x !== id))].slice(0, FEEDBACK_CAP);
-    f.liked    =       (f.liked    || []).filter(x => x !== id);
-    writeFeedback(f);
-    document.dispatchEvent(new CustomEvent('wa:taste-feedback', { detail: { id, vote: 'dislike' } }));
-  };
-  const clearVote = (id) => {
-    const f = getFeedback();
-    f.liked    = (f.liked    || []).filter(x => x !== id);
-    f.disliked = (f.disliked || []).filter(x => x !== id);
-    writeFeedback(f);
-    document.dispatchEvent(new CustomEvent('wa:taste-feedback', { detail: { id, vote: null } }));
-  };
   const voteFor = (id) => {
     const f = getFeedback();
     if ((f.liked    || []).includes(id)) return 'like';
@@ -120,6 +99,19 @@
     if (voteFor(entry?.id) === 'like')    s += 2;
     if (voteFor(entry?.id) === 'dislike') s -= 3;
     return s;
+  };
+
+  /* — Taste re-ordering — the one shared implementation (was hand-copied
+     into briefing/discover/saved/curator). Higher tasteScore first; a
+     stable sort so 0-score ties keep the caller's (curation) order.
+     Returns the input untouched when no prefs are set, so untuned
+     visitors always see pure curation order. */
+  const orderByTaste = (entries) => {
+    if (!Object.keys(getPrefs()).length) return entries;
+    return entries
+      .map((e, i) => ({ e, i, s: tasteScore(e) }))
+      .sort((a, b) => b.s - a.s || a.i - b.i)
+      .map(x => x.e);
   };
 
   /* — Convenience: spread into a match-pick request body. */
@@ -167,44 +159,18 @@
     } catch { /* gracefully absent */ }
   };
 
-  /* Upsert a single feedback row to DB. Fire-and-forget; errors are silent. */
-  const upsertToDb = async (session, pick_id, vote) => {
-    const base = window.WA?.BASE_URL;
-    if (!base || !session?.access_token) return;
-    try {
-      await fetch(`${base}/rest/v1/user_match_history`, {
-        method:  'POST',
-        headers: {
-          apikey:         window.WA.ANON_KEY,
-          Authorization:  `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          Prefer:         'resolution=merge-duplicates,return=minimal',
-        },
-        body: JSON.stringify({ pick_id, vote: vote || null }),
-      });
-    } catch { /* gracefully absent */ }
-  };
-
-  /* Wire auto-sync on sign-in and on each feedback event. */
+  /* Wire auto-sync on sign-in. */
   document.addEventListener('wa:signed-in', (e) => {
     const session = e.detail?.session || window.WA?.Auth?.session;
     if (session) loadFromDb(session);
-  });
-
-  document.addEventListener('wa:taste-feedback', (e) => {
-    const session = window.WA?.Auth?.session;
-    if (!session) return;
-    const { id, vote } = e.detail || {};
-    if (id) upsertToDb(session, id, vote);
   });
 
   window.WA = window.WA || {};
   window.WA.taste = {
     getPrefs, setPrefs, unsetPref, isOnboarded, setOnboarded, resetOnboarding,
     clearAllFeedback,
-    getFeedback, recordLike, recordDislike, clearVote, voteFor,
+    getFeedback,
     getSeen, recordSeen,
-    tasteScore, matchParams,
-    loadFromDb, upsertToDb,
+    tasteScore, orderByTaste, matchParams,
   };
 })();

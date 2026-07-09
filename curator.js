@@ -27,15 +27,12 @@
 
   /* Gentle on-device taste nudge — same idea as Today / Discover / Saved.
      When the reader has a taste profile, surface this curator's picks that
-     match their taste first. Stable sort: 0-score ties keep curation order,
-     so the curator's own ordering stays primary. Nothing leaves the device. */
+     match their taste first. Shared stable-sort impl in taste.js: 0-score
+     ties keep the curator's own ordering primary. Nothing leaves the device. */
   const tastePrefsSet = () =>
     Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
-  const tasteOrder = (entries) => {
-    const ts = window.WA?.taste?.tasteScore;
-    if (!ts || !tastePrefsSet()) return entries;
-    return [...entries].sort((a, b) => ts(b) - ts(a));
-  };
+  const tasteOrder = (entries) =>
+    window.WA?.taste ? window.WA.taste.orderByTaste(entries) : entries;
 
   /* Photo media tile — reuses the app's .thumb--lg treatment so curator
      picks match the Discover / Saved photo cards. Falls back to the initials
@@ -228,9 +225,13 @@
     if (shareBtn) {
       shareBtn.addEventListener('click', async () => {
         const share = window.WA && window.WA.Share;
+        /* Swap only the label span, then restore the original markup —
+           overwriting textContent would destroy the icon SVG for good. */
+        const idleHtml = shareBtn.innerHTML;
         const done = (label) => {
-          shareBtn.textContent = label;
-          setTimeout(() => { shareBtn.textContent = 'Share →'; }, 2000);
+          const span = shareBtn.querySelector('span');
+          if (span) span.textContent = label;
+          setTimeout(() => { shareBtn.innerHTML = idleHtml; }, 2000);
         };
         if (share) {
           const r = await share.url({
