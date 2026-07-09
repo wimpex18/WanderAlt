@@ -510,7 +510,8 @@
     const { href, label } = backLink();
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
-      <p class="empty-line">This pick isn&rsquo;t in the catalog &mdash; it may have moved.</p>
+      ${window.WA.UI.emptyState('Not in the catalog',
+        'This pick may have moved or expired. <a href="discover.html">Browse this week &rarr;</a>')}
     `;
   };
 

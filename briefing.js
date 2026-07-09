@@ -284,7 +284,16 @@
        nothing reorders. Curation stays primary — this only nudges, and it
        never leaves the device (taste lives in localStorage). */
     const ts = window.WA?.taste?.tasteScore;
-    const ordered = ts ? [..._weekFullSet].sort((a, b) => ts(b) - ts(a)) : _weekFullSet;
+    const tasteOrdered = ts ? [..._weekFullSet].sort((a, b) => ts(b) - ts(a)) : _weekFullSet;
+    /* Day-group (Tonight→Mon…Sun) as the PRIMARY order — catalog order is
+       NOT chronological, so without this the day labels below repeat
+       (Fri·Sat·Sun·Sat·Wed·Fri, caught by the July 2026 visual audit).
+       Stable sort: the taste nudge above survives within each day. */
+    const rank = window.WA.UI.DAY_RANK;
+    const ordered = tasteOrdered
+      .map((e, i) => ({ e, i, r: e.day in rank ? rank[e.day] : 99 }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)
+      .map(x => x.e);
     const entries = ordered.slice(0, _weekShown);
 
     /* Empty state — a graceful card with the active city's plate
@@ -344,7 +353,8 @@
        The .handle <a> inside .via is then a sibling, not a descendant. */
     /* F-11 guard: consecutive rows sharing one photo read as a rendering
        bug (legacy "Various venues" picks all carried the same venue shot)
-       — drop repeats to the initials tile; the first occurrence keeps it. */
+       — drop repeats to the initials tile; the first occurrence keeps it.
+       Runs on the final visual order so the guard sees real neighbours. */
     let prevImg = null;
     const dupImg = new Set();
     for (const e of entries) {
@@ -352,14 +362,6 @@
       if (e.imageUrl) prevImg = e.imageUrl;
     }
 
-    /* Day-grouped (Jul 2026): a flat list of 8 same-shape rows made you
-       read every row to find "what's on Thursday" — a day label between
-       groups turns that into a glance. Walks entries in their current
-       (taste-biased) order and drops a label whenever the day changes;
-       with no taste profile set the order is already chronological, so
-       groups come out clean. A day value repeating non-consecutively
-       (possible once taste re-sorting shuffles across days) just prints
-       a second small label — reads fine, doesn't need guarding against. */
     let lastDay = null;
     list.innerHTML = entries.map(e => {
       const dayLabel = (e.day && e.day !== lastDay)

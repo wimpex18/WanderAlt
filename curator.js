@@ -289,7 +289,8 @@
     const { href, label } = backLink();
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
-      <p class="empty-line">Curator not found.</p>
+      ${window.WA.UI.emptyState('No curator by that handle',
+        'They may write for another city. <a href="index.html">Back to today&rsquo;s briefing &rarr;</a>')}
     `;
   };
 

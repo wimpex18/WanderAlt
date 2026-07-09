@@ -5866,7 +5866,9 @@ body[data-page="saved"] .seg-note {
     color: var(--c-ink-mute);
   }
   .nav__item .nav__label { display: block; font-size: 11px; font-weight: 500; letter-spacing: .01em; }
-  .nav__icon { width: 23px; height: 23px; }
+  /* 22px — the app-wide glyph size (.ic / .social-icon system); this was
+     23px via append-only drift (base 24 → 20 → 23 across three rules). */
+  .nav__icon { width: 22px; height: 22px; }
   /* active: ink colour + petrol underline tab (as drawn) */
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
