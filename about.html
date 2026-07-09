@@ -40,11 +40,15 @@
     </div>
   </header>
 
-  <!-- Mobile escape hatch from About (Phase 3) — desktop hides it. -->
-  <a class="returnbar" href="./index.html">
-    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>
-    <span>Back to today&rsquo;s briefing</span>
-  </a>
+  <!-- Mobile escape hatch from About (Phase 3) — desktop hides it.
+       Wrapped in a nav landmark so no content sits outside landmarks
+       (WCAG landmarks/region). -->
+  <nav aria-label="Back">
+    <a class="returnbar" href="./index.html">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>
+      <span>Back to today&rsquo;s briefing</span>
+    </a>
+  </nav>
 
   <main id="about-main" class="page about" role="main">
 
