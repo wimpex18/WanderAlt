@@ -316,6 +316,59 @@ const isNoise = (t) =>
     if (small.length) fail(`TAP ${u} :: ${small.slice(0, 4).join(', ')}`);
   }
 
+  /* ── Taste onboarding, UN-seeded ─────────────────────────────
+     Regression check for the July 2026 double-init bug: briefing.js'
+     init() ran on both the static catalog AND wa:catalog-ready and
+     re-bound the chip click handler, so one tap set a pref and the
+     second (duplicate) handler instantly unset it. The main page above
+     seeds wa-taste-onboarded=1 and never renders the banner — which is
+     exactly how that bug shipped unseen — so this section drives a
+     fresh page with NO taste keys and asserts a chip tap sticks. */
+  const page2 = await browser.newPage();
+  await page2.setViewport({ width: 390, height: 844 });
+  await page2.evaluateOnNewDocument(() => {
+    try {
+      localStorage.setItem('wa:city', 'tallinn');
+      localStorage.removeItem('wa-taste-prefs');
+      localStorage.removeItem('wa-taste-onboarded');
+    } catch (e) { /* storage blocked */ }
+    window.__waCatReady = false;
+    document.addEventListener('wa:catalog-ready', () => { window.__waCatReady = true; });
+  });
+  await page2.goto(`${BASE}/index.html`, { waitUntil: 'networkidle2', timeout: 25000 });
+  /* The double-bind only manifested AFTER the second init (live catalog),
+     so wait for wa:catalog-ready before tapping. */
+  await page2.waitForFunction(() => window.__waCatReady === true, { timeout: 15000 }).catch(() => {});
+  await sleep(800);
+
+  const chipSel = '#taste-onboarding .taste-chip';
+  const hasChips = await page2.$(chipSel);
+  did();
+  if (!hasChips) fail('TASTE-UNSEEDED index.html :: onboarding banner did not render');
+  if (hasChips) {
+    const readChip = () => page2.evaluate(() => {
+      const chip = document.querySelector('#taste-onboarding .taste-chip');
+      let prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem('wa-taste-prefs') || '{}'); } catch (e) { /* noop */ }
+      return { pressed: chip.getAttribute('aria-pressed'), val: prefs[chip.dataset.axis] || null, choice: chip.dataset.choice };
+    });
+    await page2.click(chipSel);
+    await sleep(250);
+    const st1 = await readChip();
+    did();
+    if (!(st1.pressed === 'true' && st1.val === st1.choice)) {
+      fail(`TASTE-UNSEEDED first tap :: chip must stay selected (pressed=${st1.pressed}, pref=${st1.val})`);
+    }
+    await page2.click(chipSel);
+    await sleep(250);
+    const st2 = await readChip();
+    did();
+    if (!(st2.pressed === 'false' && st2.val === null)) {
+      fail(`TASTE-UNSEEDED second tap :: chip must deselect (pressed=${st2.pressed}, pref=${st2.val})`);
+    }
+  }
+  await page2.close();
+
   await browser.close();
   server.kill();
 
@@ -324,5 +377,5 @@ const isNoise = (t) =>
     failures.forEach((f) => console.error('  ✗ ' + f));
     process.exit(1);
   }
-  console.log(`OK — ${checks} functional/E2E checks passed (pages · cards · taste · view-transition · bookmark · tap targets)`);
+  console.log(`OK — ${checks} functional/E2E checks passed (pages · cards · taste + onboarding · view-transition · bookmark · tap targets)`);
 })().catch((e) => { console.error('HARNESS ERROR:', e); process.exit(2); });
