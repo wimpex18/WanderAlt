@@ -130,6 +130,16 @@
       facebook:  (matchedVenue && matchedVenue.facebook)  || null,
       instagram: (matchedVenue && matchedVenue.instagram) || null,
     };
+    /* The venue plate's meta is the VENUE's identity (place · kind) —
+       buildMeta(entry) repeated the event's full "nhood · kind · day time"
+       line verbatim 40px under the identical page-head meta, and a venue
+       isn't "Fri 21:00" (July 2026 audit). Prefer the venue record; fall
+       back to the pick's fields, minus the 'other' data bucket. */
+    const venueMeta = [
+      (matchedVenue && matchedVenue.neighborhood) ||
+        (entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null),
+      (matchedVenue && matchedVenue.kind) || null,
+    ].filter(Boolean).join(' &middot; ');
 
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
@@ -233,7 +243,7 @@
             <span class="venue-card__media">${thumbEl(entry, true)}</span>
             <div class="venue-card__body">
               <p class="venue-card__name">${entry.venue}</p>
-              <p class="list-row__meta">${buildMeta(entry)}</p>
+              ${venueMeta ? `<p class="list-row__meta">${venueMeta}</p>` : ''}
             </div>
             ${matchedVenue ? `<a class="venue-card__go" href="place.html?id=${encodeURIComponent(matchedVenue.id)}">Venue &rarr;</a>` : ''}
           </div>
