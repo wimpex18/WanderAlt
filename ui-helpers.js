@@ -30,6 +30,11 @@
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+  /* Week ordering for day-grouped lists (Tonight first, then Mon–Sun;
+     unknown/absent days sink to the end). One shared table so This Week's
+     day groups and any other day-sorted surface agree on the week shape. */
+  const DAY_RANK = { Tonight: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+
   const buildMeta = (e) => {
     /* 'other' is a data bucket, not a place — never print it (F-12). */
     const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
@@ -130,6 +135,22 @@
            `</span>`;
   };
 
+  /* The crafted empty / error state (city plate + Fraunces title + sub) —
+     ONE impl for Saved's empty segments and the detail pages' bad-id
+     states, which used to be a bare italic one-liner that read as broken
+     next to the rest of the app's empty-state canon. subHTML may carry
+     a CTA link; title is plain text. */
+  const emptyState = (title, subHTML) => {
+    const city = (window.WA && window.WA.CITY) || 'tallinn';
+    return `<div class="picks-empty">
+         <div class="picks-empty__plate" style="background-image:url('./assets/${city}-overview.svg')" aria-hidden="true"></div>
+         <div class="picks-empty__body">
+           <p class="picks-empty__title">${esc(title)}</p>
+           <p class="picks-empty__sub">${subHTML}</p>
+         </div>
+       </div>`;
+  };
+
   /* The photo-card row media: a decorative .list-row__media link wrapping a
      --lg thumb (the title link is the keyboard tab stop). Shared by
      Discover events, Saved, Curator picks, place "events here". */
@@ -190,6 +211,18 @@
     `<span class="field-pw"${wrapStyle ? ` style="${wrapStyle}"` : ''}>${inputHtml}` +
     `<button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false">${EYE_SVG}</button></span>`;
 
+  /* Icon-only action buttons can't show a text confirmation — flash the
+     glyph to a petrol check, then restore. One impl for the venue action
+     row and the curator share button (was two hand-copies). */
+  const flashDone = (el) => {
+    if (!el || el.dataset.flashing) return;
+    const orig = el.innerHTML;
+    el.dataset.flashing = '1';
+    el.classList.add('action-icon--done');
+    el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+    setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+  };
+
   document.addEventListener('click', (e) => {
     const btn = e.target.closest && e.target.closest('.pw-toggle');
     if (!btn) return;
@@ -212,5 +245,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField };
+  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
 })();

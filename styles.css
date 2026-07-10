@@ -2141,23 +2141,15 @@ html.wa-taste-done .taste-onboarding { display: none; }
 
 /* Curator share — mono micro-action, 44px floor (was a 73×27 inline-styled
    button invisible to the verify harness — F-19). */
-.curator-share {
-  display: inline-flex;
+/* Curator page-head action pair (share + calendar feed) — icon-only
+   .action-icon buttons, same idiom as the venue action row (the old
+   bordered labelled .curator-share forked the share pattern). */
+.curator-actions {
+  display: flex;
   align-items: center;
-  min-height: 44px;
+  gap: var(--s-2);
   margin-top: var(--s-2);
-  padding: 0 var(--s-3);
-  font-family: var(--ff-mono);
-  font-size: var(--fs-eyebrow);
-  letter-spacing: 0.06em;
-  color: var(--c-ink-mute);
-  background: none;
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast);
 }
-.curator-share:hover { color: var(--c-accent); border-color: var(--c-accent); }
 
 @media (min-width: 768px) {
   .curator-profile { padding: var(--s-6) 0 var(--s-4); }
@@ -2891,6 +2883,24 @@ a.auth-panel__submit { display: inline-block; }
   border-top: var(--rule-w) solid var(--c-rule);
   border-bottom: 0;
   padding: var(--s-5) 0 var(--s-3);
+}
+/* Desktop: heading rail + copy column (newspaper label idiom). Six
+   stacked sections each left the right half of 1440 empty once their
+   text hit its measure (July 2026 audit) — the section title now sits
+   in a left rail beside its copy. Still left-aligned; the hairline
+   moves to the section so it keeps spanning the full width; the
+   .about-links cards keep the whole row. */
+@media (min-width: 1100px) {
+  .about-section {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 64ch);
+    column-gap: var(--s-7);
+    align-items: start;
+    border-top: var(--rule-w) solid var(--c-rule);
+  }
+  .about-section .section-head { border-top: 0; grid-column: 1; }
+  .about-section > :not(.section-head) { grid-column: 2; }
+  .about-section > .about-links { grid-column: 1 / -1; }
 }
 .about-section p {
   font-family: var(--ff-body);
@@ -5064,7 +5074,11 @@ body.discover-places .mood-chips { display: none; }
   align-items: center;
   gap: 7px;
   padding: 0 var(--s-5);
-  align-self: stretch;
+  height: 44px;                               /* real tap target per segment,
+                                                 same as .wa-seg__tab */
+  border: 0;                                  /* real <button> segments now */
+  background: none;
+  cursor: pointer;
   border-radius: calc(var(--radius) - 3px);   /* 5px inner — matches .wa-seg/.discover-scope seg */
   line-height: 1;
   font-family: var(--ff-body);
@@ -5866,7 +5880,9 @@ body[data-page="saved"] .seg-note {
     color: var(--c-ink-mute);
   }
   .nav__item .nav__label { display: block; font-size: 11px; font-weight: 500; letter-spacing: .01em; }
-  .nav__icon { width: 23px; height: 23px; }
+  /* 22px — the app-wide glyph size (.ic / .social-icon system); this was
+     23px via append-only drift (base 24 → 20 → 23 across three rules). */
+  .nav__icon { width: 22px; height: 22px; }
   /* active: ink colour + petrol underline tab (as drawn) */
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
@@ -5970,6 +5986,14 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 /* Count + the demoted Surprise-me shuffle share the header's right edge. */
 .sechead__side{display:flex;align-items:center;gap:var(--s-2)}
 .sechead__side .section-sub{padding:0;margin:0}
+/* Mobile: the Fraunces title wrapped to two lines against the side meta
+   at 390 (July 2026 audit) — stack instead: title line, then meta +
+   actions on their own row. */
+@media (max-width: 767px) {
+  .sechead{flex-wrap:wrap}
+  .sechead__t{flex:1 0 100%}
+  .sechead__side{width:100%;justify-content:space-between}
+}
 .thisweek{margin:0}
 .picks{margin:0}
 /* This-week picks become a 2-col index on desktop so the full width reads as
@@ -6084,6 +6108,14 @@ a.tonight-card__title:hover { color: var(--c-accent); }
 /* The hero gets a bigger thumb than the default 72px .thumb--lg — it's
    the one card that should read as clearly primary at a glance. */
 .tonight-card--hero .tonight-card__body .thumb { width: 96px; height: 96px; }
+/* Desktop: the hero's photo earns real estate — a 96px square reads as a
+   list thumb at 1440 and left the plate hollow (July 2026 audit). The
+   photo/glyph plate becomes a proper media column; the text column keeps
+   its 62ch measure. Photo-led is the hero's hierarchy signal. */
+@media (min-width: 1100px) {
+  .tonight-card--hero .tonight-card__body { gap: var(--s-6); }
+  .tonight-card--hero .tonight-card__body .thumb { width: 300px; height: 200px; }
+}
 
 /* Rail — the non-flagship Tonight picks. Fixed-height horizontal scroller
    (Summer 2026 hero+rail convention: Airbnb Explore / Apple News / Spotify
@@ -6446,13 +6478,13 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
    ════════════════════════════════════════════════════════════ */
 .facet-pill,
 .taste-skip, .taste-done, .taste-reset,
-.curator-share, .profile-danger-btn {
+.profile-danger-btn {
   display: inline-flex; align-items: center; justify-content: center;
 }
 a.auth-panel__submit { display: inline-flex; align-items: center; justify-content: center; }
 .discover-pill .ic, .facet-pill .ic, .seg-tab .ic, .sheet-chip .ic,
 .taste-skip .ic, .taste-done .ic, .taste-reset .ic,
-.curator-share .ic, .profile-danger-btn .ic,
+.profile-danger-btn .ic,
 .auth-panel__submit .ic, .auth-panel__close .ic {
   width: 18px; height: 18px; flex-shrink: 0;
 }
@@ -6460,7 +6492,7 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
    (.seg-tab already sets gap:8px, so it's excluded here). */
 .discover-pill .ic, .facet-pill .ic, .sheet-chip .ic,
 .taste-skip .ic, .taste-done .ic, .taste-reset .ic,
-.curator-share .ic, .profile-danger-btn .ic,
+.profile-danger-btn .ic,
 .auth-panel__submit .ic, .auth-panel__close .ic {
   margin-right: 6px;
 }

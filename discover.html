@@ -417,23 +417,26 @@
     <!-- View toggle — flips between list and map panes (mobile only;
          desktop shows both). July 2026 board 1c: docked INSIDE the bottom
          glass chrome above the tab row — one surface, no occlusion (the
-         floating pill is retired). Still ONE button — tapping flips the
-         view; the segments reflect state. -->
+         floating pill is retired). A REAL two-button segmented control
+         (July 2026 a11y audit): each segment is a button with
+         aria-pressed, so the accessible name matches the visible text —
+         the old single wrapper button was named "Switch to map view"
+         while visibly reading "List / Map" (WCAG 2.5.3). -->
     <div class="nav__viewrow">
-      <button class="discover-view-seg" id="discover-view-toggle" type="button" aria-label="Switch to map view">
-        <span class="discover-view-seg__seg discover-view-seg__seg--on" data-seg="list">
+      <div class="discover-view-seg" id="discover-view-toggle" role="group" aria-label="List or map view">
+        <button type="button" class="discover-view-seg__seg discover-view-seg__seg--on" data-seg="list" aria-pressed="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
             <path d="M4 6h16M4 12h16M4 18h10"/>
           </svg>
           List
-        </span>
-        <span class="discover-view-seg__seg" data-seg="map">
+        </button>
+        <button type="button" class="discover-view-seg__seg" data-seg="map" aria-pressed="false">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>
           </svg>
           Map
-        </span>
-      </button>
+        </button>
+      </div>
     </div>
     <div class="nav__inner">
       <a class="nav__item" data-nav="briefing" href="./index.html">

@@ -815,10 +815,10 @@
     if (viewToggleBtn) {
       const isMap = state.view === 'map';
       viewToggleBtn.querySelectorAll('.discover-view-seg__seg').forEach(seg => {
-        seg.classList.toggle('discover-view-seg__seg--on',
-          (seg.dataset.seg === 'map') === isMap);
+        const on = (seg.dataset.seg === 'map') === isMap;
+        seg.classList.toggle('discover-view-seg__seg--on', on);
+        seg.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
-      viewToggleBtn.setAttribute('aria-label', isMap ? 'Switch to list view' : 'Switch to map view');
       viewToggleBtn.classList.toggle('discover-view-seg--map-active', isMap);
     }
     /* Tag body so CSS can hide chrome that doesn't belong over the map. */
@@ -1108,10 +1108,14 @@
       });
     });
 
-    /* View toggle FAB (mobile only — desktop always shows both panes). */
+    /* View toggle (mobile only — desktop always shows both panes).
+       Two real segment buttons: each selects its own view (tapping the
+       active one is a no-op), delegated on the group wrapper. */
     if (viewToggleBtn) {
-      viewToggleBtn.addEventListener('click', () => {
-        setView(state.view === 'map' ? 'list' : 'map');
+      viewToggleBtn.addEventListener('click', (e) => {
+        const seg = e.target.closest('.discover-view-seg__seg');
+        if (!seg) return;
+        setView(seg.dataset.seg === 'map' ? 'map' : 'list');
       });
     }
 

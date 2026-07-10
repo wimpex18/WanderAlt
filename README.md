@@ -4,6 +4,8 @@ A static, mobile-first website for discovering **alternative / underground cultu
 
 Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing (Places populated; Events/Today pending a curator). First screen: **Briefing** (the default landing).
 
+**Current version: v0.8.0** (10 Jul 2026) — refactor + accessibility pass + visual-audit design pass + the data-lifecycle revision (events hard-delete 14 days after expiry; lifecycle crons live, ingest/LLM crons still frozen pre-release). Release notes: `ROADMAP.md` → v0.8.0 entry; stamp in `package.json`.
+
 ---
 
 ## Structure

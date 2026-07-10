@@ -136,15 +136,7 @@
   const emptyRow = (title, subHTML) => {
     const li = document.createElement('li');
     li.dataset.empty = 'true';
-    const city = (window.WA && window.WA.CITY) || 'tallinn';
-    li.innerHTML =
-      `<div class="picks-empty">
-         <div class="picks-empty__plate" style="background-image:url('./assets/${city}-overview.svg')" aria-hidden="true"></div>
-         <div class="picks-empty__body">
-           <p class="picks-empty__title">${title}</p>
-           <p class="picks-empty__sub">${subHTML}</p>
-         </div>
-       </div>`;
+    li.innerHTML = window.WA.UI.emptyState(title, subHTML);
     return li;
   };
 

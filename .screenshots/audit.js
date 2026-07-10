@@ -55,6 +55,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       await page.evaluate(() => localStorage.setItem('wa:city', 'tallinn')).catch(() => {});
       await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
       await sleep(1200);
+      /* .list-row uses content-visibility:auto, so off-viewport rows are
+         SKIPPED in a fullPage capture and shot as empty boxes (the July
+         2026 audit chased that ghost across three pages). Scrolling
+         through first is NOT enough — the skip is continuous, rows
+         re-blank once scrolled away — so force them visible for the
+         capture only. This renders exactly what a scrolling user sees. */
+      await page.addStyleTag({
+        content: '.list-row { content-visibility: visible !important; }',
+      }).catch(() => {});
+      await sleep(400);
       await page.screenshot({ path: path.join(OUT, `${name}-${width}.png`), fullPage: true }).catch(() => {});
 
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

@@ -153,7 +153,8 @@
     const { href, label } = backLink();
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
-      <p class="empty-line">This place isn&rsquo;t in the catalog &mdash; it may have closed or moved.</p>
+      ${window.WA.UI.emptyState('Not in the catalog',
+        'This place may have closed or moved. <a href="discover.html?type=places">Browse places &rarr;</a>')}
     `;
   };
 

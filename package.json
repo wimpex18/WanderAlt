@@ -1,5 +1,6 @@
 {
   "name": "wanderalt",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "start": "npx http-server . -p 5173 -c-1 --cors",

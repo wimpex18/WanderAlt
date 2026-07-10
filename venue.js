@@ -130,6 +130,16 @@
       facebook:  (matchedVenue && matchedVenue.facebook)  || null,
       instagram: (matchedVenue && matchedVenue.instagram) || null,
     };
+    /* The venue plate's meta is the VENUE's identity (place · kind) —
+       buildMeta(entry) repeated the event's full "nhood · kind · day time"
+       line verbatim 40px under the identical page-head meta, and a venue
+       isn't "Fri 21:00" (July 2026 audit). Prefer the venue record; fall
+       back to the pick's fields, minus the 'other' data bucket. */
+    const venueMeta = [
+      (matchedVenue && matchedVenue.neighborhood) ||
+        (entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null),
+      (matchedVenue && matchedVenue.kind) || null,
+    ].filter(Boolean).join(' &middot; ');
 
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
@@ -233,7 +243,7 @@
             <span class="venue-card__media">${thumbEl(entry, true)}</span>
             <div class="venue-card__body">
               <p class="venue-card__name">${entry.venue}</p>
-              <p class="list-row__meta">${buildMeta(entry)}</p>
+              ${venueMeta ? `<p class="list-row__meta">${venueMeta}</p>` : ''}
             </div>
             ${matchedVenue ? `<a class="venue-card__go" href="place.html?id=${encodeURIComponent(matchedVenue.id)}">Venue &rarr;</a>` : ''}
           </div>
@@ -471,16 +481,9 @@
       });
     }
 
-    /* Icon-only action buttons can't show a text confirmation, so briefly
-       swap the glyph to a petrol check, then restore it. */
-    const flashDone = (el) => {
-      if (!el || el.dataset.flashing) return;
-      const orig = el.innerHTML;
-      el.dataset.flashing = '1';
-      el.classList.add('action-icon--done');
-      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-      setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
-    };
+    /* Icon-only action buttons flash the glyph to a petrol check on
+       success — shared impl in ui-helpers (curator share uses it too). */
+    const flashDone = window.WA.UI.flashDone;
 
     /* Wire Share — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('.venue-share-btn');
@@ -510,7 +513,8 @@
     const { href, label } = backLink();
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
-      <p class="empty-line">This pick isn&rsquo;t in the catalog &mdash; it may have moved.</p>
+      ${window.WA.UI.emptyState('Not in the catalog',
+        'This pick may have moved or expired. <a href="discover.html">Browse this week &rarr;</a>')}
     `;
   };
 

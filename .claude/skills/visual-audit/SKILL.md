@@ -36,5 +36,8 @@ A model edits CSS without seeing the result, so it misses what a human catches i
 ## Hard caveat — fixed chrome in fullPage shots
 `npm run audit` uses `fullPage`, so `position:fixed` chrome (topbar, bottom-nav) is captured at its first-viewport position and **looks like it floats over mid-page content**. That is a screenshot artifact, **not a layout bug.** Confirm chrome with a viewport-height (`fullPage:false`) shot before ever "fixing" it. Crying wolf on this artifact wastes a whole pass.
 
+## Hard caveat — content-visibility empties in fullPage shots
+`.list-row` carries `content-visibility: auto` (perf: Discover/Saved hold 100+ rows). Off-viewport rows are **skipped by the renderer** — continuously, not just on first paint — so fullPage captures show them as **empty hairline boxes** (and `innerText` probes return `""`). Scrolling through first does NOT help; rows re-blank once scrolled away. Real users scrolling see everything — artifact, not a bug (the July 2026 audit chased this ghost across three pages before pinning it). `audit.js` injects `content-visibility: visible !important` on `.list-row` at capture time; any ad-hoc puppeteer shot of a long list must inject the same override, and any "rows render empty" finding must be re-verified with it before being reported.
+
 ## Output shape
 For a review, report: per page, 4–6 concrete observed flaws (with the screenshot region + the canon rule each breaks), the numeric census highlights, then the prioritized fix list. For a fix, report: before screenshot finding → token-level change → after screenshot → verify/e2e result.
