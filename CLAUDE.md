@@ -47,7 +47,7 @@ npm run smoke    # screenshot regression (server running) · npm run lighthouse 
 
 ## Supabase pipeline (CRITICAL — constrained plan)
 - **Never poll.** Fire a cron/function once, say "draining, check back ~10 min", end the turn. Health checks are one-shot SQL (`staging_messages` status counts · `picks WHERE archived_at IS NULL` · `ingest_log ORDER BY id DESC LIMIT 5`).
-- **ALL 30 CRONS ARE DISABLED** (owner decision, pre-release — no users yet). `cron.job.active=false` app-wide; schedules preserved. Every function still works via direct invocation; nothing runs on a timer. Re-enable SQL + per-cron restore notes → `docs/backend-and-pipeline.md`. Don't re-enable without being asked.
+- **Cron freeze, revised 10 Jul 2026: the 6 zero-cost LIFECYCLE crons run (archive/rotate/reset-tonight, dedup, purge, monthly OSM ping); ALL ingest/LLM/enrich/digest crons stay DISABLED** (owner decision, pre-release — no users yet; the €45 bill was Google's, that provider is fully gone). Events hard-delete 14 days after archiving (`wa_purge_old_archived`); venues are checked quarterly-style (90-day OSM absence), not weekly. Every frozen function still works via direct invocation. Re-enable SQL + per-cron restore notes → `docs/backend-and-pipeline.md`. Don't re-enable more without being asked.
 - **Crons own the schedule** — only touch if asked. App reads `picks WHERE archived_at IS NULL`. Pick id = `channel-message_id`; staging upserts MUST use `?on_conflict=channel,message_id`. Any new city MUST get a `process-staging` `CITY_CONTEXT` entry. Flow, source matrix, lifecycle → `docs/backend-and-pipeline.md`.
 
 ## LLM model policy (do not deviate)

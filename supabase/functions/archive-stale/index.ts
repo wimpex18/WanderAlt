@@ -1,5 +1,11 @@
 // ============================================================
-// WanderAlt — archive-stale  (v8)
+// WanderAlt — archive-stale  (v9)
+// v9 (Jul 2026): venue OSM-absence window 21 → 90 days. Venues are
+//                stable for years, and the OSM presence ping now
+//                runs monthly (was weekly) — a 21-day window would
+//                false-flag every venue between pings. Caught when
+//                the cron freeze left last_seen_at frozen and a
+//                hand-run flagged 4 healthy venues.
 // v8 (May 2026): cap archived_titles at MAX_TITLES so detail JSONB
 //                stays bounded if a long quiet period leaves
 //                hundreds of picks to expire in one run.
@@ -10,7 +16,7 @@
 // Runs nightly. Two jobs:
 //   1. PICKS: archive picks whose valid_until has passed; clear
 //      tonight on any pick older than 36 h.
-//   2. VENUES: flag venues not seen by OSM for > 21 days as
+//   2. VENUES: flag venues not seen by OSM for > 90 days as
 //      possibly_closed; archive auto-generated picks for them.
 //
 // All operations are idempotent.
@@ -84,10 +90,10 @@ export default {
       errors.push(`1b: ${e instanceof Error ? e.message : String(e)}`);
     }
 
-    // ── 2a. Flag venues not seen by OSM for > 21 days ───────────
+    // ── 2a. Flag venues not seen by OSM for > 90 days ───────────
     let stalledIds: string[] = [];
     try {
-      const staleDate = new Date(Date.now() - 21 * 86400_000).toISOString();
+      const staleDate = new Date(Date.now() - 90 * 86400_000).toISOString();
       const { data: stalledVenues, error } = await sb
         .from("venues")
         .update({ status: "possibly_closed" })

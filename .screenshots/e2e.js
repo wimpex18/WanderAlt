@@ -190,6 +190,22 @@ const isNoise = (t) =>
       handle: multi,
       venue: venWithPicks && venWithPicks.id,
       undated: cat.filter((e) => !e.day).slice(0, 3).map((e) => e.id),
+      /* Most common mood tag (from the chip vocabulary) — used as a
+         data-independent ACTIVE filter for the Discover list checks.
+         Unfiltered Discover shows browse sections (no cards), and the
+         ?time=thisweek filter depends on editorial this_week flags that
+         can be legitimately zero (the Jul 2026 ingestion freeze); a mood
+         tag rides on nearly every pick regardless of editorial state. */
+      mood: (() => {
+        /* Must mirror TAGS in mood-chips.js — the hash parser drops
+           anything outside that vocabulary. */
+        const CHIP_TAGS = ['quiet', 'loud', 'indoors', 'outdoors', 'solo', 'social', 'drinks', 'sober', 'walk-up', 'ticketed'];
+        const tally = {};
+        cat.forEach((e) => (e.moodTags || []).forEach((t) => {
+          if (CHIP_TAGS.includes(t)) tally[t] = (tally[t] || 0) + 1;
+        }));
+        return Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0] || 'indoors';
+      })(),
     };
   });
   if (!ids.pick || !ids.handle || !ids.venue) {
@@ -235,7 +251,11 @@ const isNoise = (t) =>
       fail(`CARDS ${label} :: ${JSON.stringify(r)}`);
     }
   };
-  await cardCheck('/discover.html?type=events&time=thisweek', '#discover-results', 'Discover events', null);
+  /* Unfiltered events list on purpose: ?time=thisweek depends on editorial
+     this_week flags, which can be legitimately zero (the Jul 2026 ingestion
+     freeze left only evergreen picks) — this check's job is card RENDERING,
+     not editorial state. */
+  await cardCheck(`/discover.html?type=events#mood=${ids.mood}`, '#discover-results', 'Discover events', null);
   await cardCheck(`/curator.html?handle=${encodeURIComponent(ids.handle)}`, '#curator-picks-list', 'Curator picks', 'curator');
   await cardCheck(`/venue.html?id=${encodeURIComponent(ids.pick)}`, 'section[aria-labelledby=more-label] .list-rows', 'Venue more', 'venue');
   await cardCheck(`/place.html?id=${encodeURIComponent(ids.venue)}`, 'section[aria-labelledby=here-label] .list-rows', 'Place events', 'place');
@@ -251,7 +271,7 @@ const isNoise = (t) =>
     did();
     if (href !== 'index.html#taste-onboarding') fail(`TASTE cue ${label} :: ${href}`);
   };
-  await cueCheck('/discover.html?type=events&time=thisweek', '#discover-results-count', 'Discover', null);
+  await cueCheck(`/discover.html?type=events#mood=${ids.mood}`, '#discover-results-count', 'Discover', null);
   await cueCheck(`/curator.html?handle=${encodeURIComponent(ids.handle)}`, '#picks-label', 'Curator', 'curator');
 
   /* Saved Reading cue — seed undated bookmarks first. */
@@ -269,7 +289,7 @@ const isNoise = (t) =>
   if (!reopened) fail('TASTE reopen Today :: banner not shown from hash');
 
   /* 5 · Card→hero View-Transition tags the clicked photo. */
-  await navFor('/discover.html?type=events&time=thisweek', '#discover-results .list-row--card');
+  await navFor(`/discover.html?type=events#mood=${ids.mood}`, '#discover-results .list-row--card');
   const vtName = await page.evaluate(() => {
     const card = document.querySelector('#discover-results .list-row--card');
     const thumb = card && card.querySelector('.thumb');
