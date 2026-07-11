@@ -25,3 +25,7 @@ node_modules/
 docs/lighthouse/*.json
 !docs/lighthouse/summary.json
 .screenshots/audit/
+
+# Local render helpers for the Jul26 design canvas (symlink + temp render copy)
+docs/redesign-jul26-v3/fonts
+docs/redesign-jul26-v3/.render-canvas.html
