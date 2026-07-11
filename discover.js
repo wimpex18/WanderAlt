@@ -829,6 +829,7 @@
     state.view = newView === 'map' ? 'map' : 'list';
     reflectView();
     writeUrlState();
+    setDetent(state.view === 'map' ? 'peek' : 'half', { fromView: true });
     /* When switching to map, the viewport just became visible — its
        getBoundingClientRect() now returns real dimensions, so fit. */
     if (state.view === 'map') {
@@ -838,6 +839,84 @@
         if (mv && mv.isReady()) mv.fitView();
       });
     }
+  };
+
+  /* ── Dusk sheet detents (board 3c) ────────────────────
+     The map is always the scene; the results list floats over it as a
+     glass sheet with three stops — peek (88px of header above the dock),
+     half, full. Peek IS the old "map view", so ?view=map deep links and
+     setView() keep working; the seg toggle itself is retired. */
+  const DETENTS = ['peek', 'half', 'full'];
+  let _detent = 'half';
+  /* Sheet-top stops in px (mobile viewport). Keep in sync with the CSS
+     --sheet-y values in styles.css (Dusk discover block). */
+  const detentTops = () => ({
+    peek: window.innerHeight - 180,
+    half: Math.round(window.innerHeight * 0.5),
+    full: 132,
+  });
+  const setDetent = (d, { fromView = false } = {}) => {
+    if (!DETENTS.includes(d)) d = 'half';
+    _detent = d;
+    if (panesEl) panesEl.dataset.detent = d;
+    /* Keep view state + URL in sync: peek = map. */
+    if (!fromView) {
+      const v = d === 'peek' ? 'map' : 'list';
+      if (v !== state.view) {
+        state.view = v;
+        reflectView();
+        writeUrlState();
+      }
+      if (d === 'peek') {
+        requestAnimationFrame(() => {
+          syncMap();
+          const mv = window.WA && window.WA.MapView;
+          if (mv && mv.isReady()) mv.fitView();
+        });
+      }
+    }
+  };
+  const bindSheetGrip = () => {
+    const grip = document.getElementById('discover-grip');
+    const pane = document.querySelector('.discover-pane--list');
+    if (!grip || !pane) return;
+    let startY = 0, startTop = 0, dragging = false, moved = false;
+    grip.addEventListener('click', () => {
+      if (moved) { moved = false; return; }   /* drag's trailing click */
+      /* Tap / keyboard path: cycle half → full → peek → half. */
+      setDetent(_detent === 'half' ? 'full' : _detent === 'full' ? 'peek' : 'half');
+    });
+    grip.addEventListener('pointerdown', (e) => {
+      dragging = true; moved = false;
+      startY = e.clientY;
+      startTop = pane.getBoundingClientRect().top;
+      pane.classList.add('dsheet-dragging');
+      grip.setPointerCapture(e.pointerId);
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dy = e.clientY - startY;
+      if (Math.abs(dy) > 6) moved = true;
+      const stops = detentTops();
+      const top = Math.max(stops.full, Math.min(stops.peek, startTop + dy));
+      pane.style.transform = `translateY(${top}px)`;
+    });
+    const release = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      pane.classList.remove('dsheet-dragging');
+      if (moved) {
+        const dy = e.clientY - startY;
+        const top = Math.max(0, startTop + dy);
+        const stops = detentTops();
+        const nearest = DETENTS.reduce((a, b) =>
+          Math.abs(stops[b] - top) < Math.abs(stops[a] - top) ? b : a);
+        setDetent(nearest);
+      }
+      pane.style.removeProperty('transform');
+    };
+    grip.addEventListener('pointerup', release);
+    grip.addEventListener('pointercancel', release);
   };
 
   /* ── AI "match me" mode ─────────────────────────────── */
@@ -1085,6 +1164,10 @@
     reflectType();
     reflectPills();
     reflectView();
+    /* Dusk sheet: seed the detent from the deep-linked view and wire the
+       grip (drag + tap). Desktop hides the grip; the binding is inert. */
+    setDetent(state.view === 'map' ? 'peek' : 'half', { fromView: true });
+    bindSheetGrip();
 
     /* Events | Places scope switch. Switching clears the controls that
        don't translate across scopes (category means different things;
