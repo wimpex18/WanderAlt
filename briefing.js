@@ -326,7 +326,7 @@
       const cityId    = window.WA?.CITY || 'tallinn';
       const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
       const reason = _weekIsFiltered
-        ? 'No picks match the active filter.'
+        ? 'Nothing matches; loosen a filter.'
         : `No picks this week in ${cityLabel} yet — curators are warming up.`;
       if (!emptyCard) {
         emptyCard = document.createElement('div');
