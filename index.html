@@ -67,6 +67,7 @@
        externalised so the strict CSP (script-src 'self') allows it. -->
   <script src="./taste-flag.js"></script>
   <script defer src="./catalog.js"></script>
+  <script defer src="./share.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
@@ -76,17 +77,28 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./briefing.js"></script>
 </head>
-<body data-page="briefing">
+<body data-page="briefing" data-skin="dusk">
 
   <a class="skip-link" href="#tonight">Skip to tonight</a>
 
-  <!-- Top bar -->
-  <header class="topbar" role="banner">
+  <!-- Top bar — Dusk Glass floating island (board 3b mobile / 3e masthead).
+       On desktop the fixed .nav overlays this island's middle so the whole
+       band reads as ONE masthead: logo · tabs · search-or-ask · city. -->
+  <header class="topbar island island--deep" role="banner">
     <div class="topbar__inner">
       <a href="#" class="topbar__brand" aria-label="WanderAlt home">
         <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
         <span class="wordmark">WanderAlt</span>
       </a>
+      <!-- Search-or-ask (desktop masthead only, board 3e): a plain GET form
+           into Discover — no JS, CSP-clean. The ✦ key is the submit. -->
+      <form class="masthead-search" action="./discover.html" method="get" role="search">
+        <input class="masthead-search__input one-line" type="search" name="q"
+               placeholder="Search or ask" aria-label="Search or ask" />
+        <button class="masthead-search__key" type="submit" aria-label="Search">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+        </button>
+      </form>
       <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
         <span class="city-dot" aria-hidden="true"></span>
         <span class="city-selector__name">TALLINN</span>
@@ -103,31 +115,85 @@
          city.js populates this with "WanderAlt · CITY · Date". -->
     <p class="print-head" aria-hidden="true"></p>
 
+    <!-- Dusk Glass scene (board 3b/3e): tonight's photo is the whole
+         viewport; the hero voice + the This Week ticket rail float over
+         it. briefing.js paints #scene-bg (photo or the dusk-gradient
+         fallback — never a gray box). -->
+    <div class="scene" id="scene">
+      <div class="scene__bg scene__bg--fallback" id="scene-bg" aria-hidden="true"></div>
+      <div class="scene__scrim" aria-hidden="true"></div>
+
+      <!-- Tonight hero — populated by briefing.js from catalog.js.
+           The skeleton reserves layout space against a CLS jolt. -->
+      <section id="tonight" class="scene__main" aria-labelledby="tonight-label" aria-busy="true">
+        <div class="skeleton-tonight" aria-hidden="true">
+          <span class="skeleton-tonight__line skeleton-tonight__line--quote"></span>
+          <span class="skeleton-tonight__line skeleton-tonight__line--quote2"></span>
+          <span class="skeleton-tonight__line skeleton-tonight__line--attr"></span>
+          <span class="skeleton-tonight__actions"></span>
+        </div>
+      </section>
+
+      <!-- This week — a snap-scroll rail of 64px glass tickets (mobile),
+           4 equal tickets with the digest as the 4th (desktop ≥1100). -->
+      <section class="week">
+       <div class="thisweek week__main" aria-labelledby="thisweek-label">
+        <header class="sechead">
+          <h2 id="thisweek-label" class="sechead__t">This week</h2>
+          <div class="sechead__side">
+            <p class="section-sub meta">4 picks &middot; 4 curators</p>
+            <button class="action-icon" id="surprise-btn" type="button" aria-label="Show a surprise pick" title="Surprise me">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3" /></svg>
+            </button>
+          </div>
+        </header>
+        <ol class="picks" role="list" aria-busy="true" aria-live="polite">
+          <li class="skeleton-pick" aria-hidden="true">
+            <span class="skeleton-pick__thumb"></span>
+            <span class="skeleton-pick__lines">
+              <span class="skeleton-pick__line skeleton-pick__line--title"></span>
+            </span>
+          </li>
+          <li class="skeleton-pick" aria-hidden="true">
+            <span class="skeleton-pick__thumb"></span>
+            <span class="skeleton-pick__lines">
+              <span class="skeleton-pick__line skeleton-pick__line--title"></span>
+            </span>
+          </li>
+        </ol>
+       </div>
+       <aside class="week__rail">
+         <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
+           <p id="digest-optin-label" class="eyebrow digest-optin__label">Saturday digest</p>
+           <p class="meta digest-optin__desc">One email, Saturday 09:00. Next week&rsquo;s picks in your curator&rsquo;s words.</p>
+           <form id="digest-optin-form" data-no-submit>
+             <div class="digest-field">
+               <input type="email" class="digest-field__email" id="digest-optin-email"
+                      aria-label="Email address for the weekly digest"
+                      placeholder="your@email.com" autocomplete="email" required />
+               <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
+                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+               </button>
+             </div>
+           </form>
+           <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
+         </section>
+       </aside>
+      </section>
+    </div>
+
+    <!-- Below the scene: the editorial long tail. -->
+    <div class="page-below">
+
     <!-- Standfirst — one-line value statement so a first-time visitor
-         immediately understands what WanderAlt is. Editorial deck voice,
-         not marketing. Sits above the Tonight hero with a 1px rule under
-         it, like a cultural weekly's masthead line. city.js swaps the
-         .standfirst__city span to the active city ("your city" is the
-         no-JS fallback). -->
+         immediately understands what WanderAlt is. city.js swaps the
+         .page-head__city span to the active city. -->
     <header class="page-head">
       <h1 class="page-head__title">The alternative-culture briefing for <em class="page-head__city">your city</em>.</h1>
       <p class="page-head__meta" id="standfirst-meta">The weekly briefing</p>
     </header>
 
-    <!-- Tonight hero — populated by briefing.js from catalog.js.
-         The skeleton card reserves the layout space so the real
-         Tonight card slots in without a big CLS jolt on first paint. -->
-    <section id="tonight" class="tonight" aria-labelledby="tonight-label" aria-busy="true">
-      <div class="skeleton-tonight" aria-hidden="true">
-        <span class="skeleton-tonight__line skeleton-tonight__line--quote"></span>
-        <span class="skeleton-tonight__line skeleton-tonight__line--quote2"></span>
-        <span class="skeleton-tonight__line skeleton-tonight__line--attr"></span>
-        <span class="skeleton-tonight__actions"></span>
-      </div>
-    </section>
-
-    <!-- Taste-profile onboarding — appears below Tonight so editorial voice
-         lands first. Shown only when the user hasn't onboarded yet. -->
+    <!-- Taste-profile onboarding — shown only when the user hasn't onboarded yet. -->
     <section class="taste-onboarding" id="taste-onboarding"
              aria-labelledby="taste-onboarding-label">
       <div class="taste-onboarding__head">
@@ -164,97 +230,30 @@
       </div>
     </section>
 
-    <!-- This week + From-the-desk rail (2-col on desktop). Surprise me
-         lives here in the section header (July 2026 board 1b) — demoted
-         out of the Tonight hero action row. -->
-    <section class="week">
-     <div class="thisweek week__main" aria-labelledby="thisweek-label">
+    <!-- Worth a visit: a short strip of evergreen venues — underground
+         spots worth knowing about, not only scheduled events. Populated
+         by briefing.js renderWorthAVisit; hidden when empty. -->
+    <section class="worth-a-visit" id="worth-a-visit" aria-labelledby="worth-a-visit-label" hidden>
       <header class="sechead">
-        <h2 id="thisweek-label" class="sechead__t">This week</h2>
-        <div class="sechead__side">
-          <p class="section-sub meta">4 picks &middot; 4 curators</p>
-          <button class="action-icon" id="surprise-btn" type="button" aria-label="Show a surprise pick" title="Surprise me">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3" /></svg>
-          </button>
-        </div>
+        <h2 id="worth-a-visit-label" class="sechead__t">Worth a visit</h2>
       </header>
-      <!-- Own labelled row, separate from the picks-count stats above —
-           it subscribes to the WHOLE week's feed, not any one pick below,
-           which read ambiguous sitting icon-only next to "N picks · N
-           curators" (July 2026 fix). -->
-      <a class="linkact week__subscribe" id="calendar-feed-link"
-         href="https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn"
-         aria-label="Subscribe to this week in your calendar" title="Calendar feed (.ics)">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4" /></svg>
-        Subscribe to this week
-      </a>
-      <!-- Picks populated by briefing.js from catalog.js. Skeleton rows
-           sit in place until wa:catalog-ready fires so the layout is
-           stable across hydration. -->
-      <ol class="picks" role="list" aria-busy="true" aria-live="polite">
-        <li class="skeleton-pick" aria-hidden="true">
-          <span class="skeleton-pick__thumb"></span>
-          <span class="skeleton-pick__lines">
-            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
-            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
-          </span>
-          <span class="skeleton-pick__bookmark"></span>
-        </li>
-        <li class="skeleton-pick" aria-hidden="true">
-          <span class="skeleton-pick__thumb"></span>
-          <span class="skeleton-pick__lines">
-            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
-            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
-          </span>
-          <span class="skeleton-pick__bookmark"></span>
-        </li>
-        <li class="skeleton-pick" aria-hidden="true">
-          <span class="skeleton-pick__thumb"></span>
-          <span class="skeleton-pick__lines">
-            <span class="skeleton-pick__line skeleton-pick__line--title"></span>
-            <span class="skeleton-pick__line skeleton-pick__line--meta"></span>
-          </span>
-          <span class="skeleton-pick__bookmark"></span>
-        </li>
-      </ol>
-      <!-- Worth a visit (July 2026): a short strip of evergreen venues
-           below the dated picks — underground spots worth knowing about,
-           not only scheduled events. Populated by briefing.js
-           renderWorthAVisit; hidden entirely when there's nothing to show. -->
-      <section class="worth-a-visit" id="worth-a-visit" aria-labelledby="worth-a-visit-label" hidden>
-        <header class="sechead">
-          <h2 id="worth-a-visit-label" class="sechead__t">Worth a visit</h2>
-        </header>
-        <ul class="picks" id="worth-a-visit-list" role="list"></ul>
-      </section>
-     </div>
-     <aside class="week__rail">
-       <!-- The curator-column feature (.column, briefing.js renderColumn) was
-            retired from this page July 2026 — it was published once since
-            May 2026 (see ROADMAP's curator-column note); the concept's next
-            home is a "Reading lately" section on curator.html, not a rail
-            here. .column/.column__* CSS is kept for that future work. -->
-       <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
-         <p id="digest-optin-label" class="eyebrow digest-optin__label">Weekly digest</p>
-         <p class="meta digest-optin__desc">Saturday mornings &mdash; 5 picks, no tracking links.</p>
-         <form id="digest-optin-form" data-no-submit>
-           <div class="digest-field">
-             <input type="email" class="digest-field__email" id="digest-optin-email"
-                    aria-label="Email address for the weekly digest"
-                    placeholder="your@email.com" autocomplete="email" required />
-             <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
-               <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
-             </button>
-           </div>
-         </form>
-         <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
-       </section>
-     </aside>
+      <ul class="list-rows" id="worth-a-visit-list" role="list"></ul>
     </section>
+
+    <!-- Calendar-feed subscribe — it subscribes to the WHOLE week's feed,
+         so it keeps its own labelled row down here, not a per-pick icon. -->
+    <a class="linkact week__subscribe" id="calendar-feed-link"
+       href="https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn"
+       aria-label="Subscribe to this week in your calendar" title="Calendar feed (.ics)">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4" /></svg>
+      Subscribe to this week
+    </a>
 
     <footer class="colophon">
       <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
     </footer>
+
+    </div><!-- /.page-below -->
 
   </main>
 
@@ -262,7 +261,7 @@
        Active state is driven by `body[data-page="…"]` matching
        `.nav__item[data-nav="…"]` — no JS needed. -->
   <nav class="nav" aria-label="Primary">
-    <div class="nav__inner">      <a class="nav__item" data-nav="briefing" href="./index.html" aria-current="page">
+    <div class="nav__inner island island--deep">      <a class="nav__item" data-nav="briefing" href="./index.html" aria-current="page">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
           <path d="M5 3h11l3 3v15H5V3z" />
           <path d="M8 8h8M8 12h8M8 16h5" />
