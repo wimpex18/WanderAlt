@@ -166,6 +166,32 @@
       ? `<blockquote class="scene-quote"><p>${esc(hero.quote)}</p></blockquote>`
       : '';
 
+    /* Desktop right card (board 3e): THE VENUE (from the venues seed,
+       matched by name — same rule as venue.js) + FROM THE DESK (the
+       curator's own motto from the curators table; the true COLUMN
+       block returns when draft-column wakes). Hidden < 1100 via CSS. */
+    const venuesAll = (window.WA && (window.WA._venuesAll || window.WA.venues)) || [];
+    const vKey = (hero.venue || '').trim().toLowerCase();
+    const matchedVenue = vKey
+      ? venuesAll.find(v => (v.name || '').trim().toLowerCase() === vKey) : null;
+    const curator = ((window.WA && window.WA.curators) || [])
+      .find(c => c.handle === hero.handle);
+    const venueMetaLine = matchedVenue
+      ? [matchedVenue.neighborhood, matchedVenue.kind].filter(Boolean).join(' &middot; ')
+      : '';
+    const aside = (matchedVenue || (curator && curator.tagline)) ? `
+       <aside class="scene-aside island" aria-label="Venue and curator">
+         ${matchedVenue ? `
+         <p class="scene-aside__label">The venue</p>
+         <p class="scene-aside__name">${esc(matchedVenue.name)}</p>
+         <p class="scene-aside__meta one-line">${venueMetaLine}${venueMetaLine ? ' &middot; ' : ''}<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">venue &nearr;</a></p>` : ''}
+         ${matchedVenue && curator && curator.tagline ? '<hr class="scene-aside__rule">' : ''}
+         ${curator && curator.tagline ? `
+         <p class="scene-aside__label">From the desk</p>
+         <blockquote class="scene-aside__motto"><p>${esc(curator.tagline)}</p></blockquote>
+         <a class="scene-aside__go" href="curator.html?handle=${encodeURIComponent(hero.handle)}">Read &rarr;</a>` : ''}
+       </aside>` : '';
+
     section.innerHTML =
       `<h2 class="visually-hidden" id="tonight-label">Tonight</h2>
        <div class="scene-tags">
@@ -191,7 +217,8 @@
                  data-share-url="venue.html?id=${hero.id}">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
          </button>
-       </div>`;
+       </div>
+       ${aside}`;
     /* Surprise-me was demoted out of the hero action row (July 2026 board
        1b) — it lives in the This Week header now. Un-hide it here in case
        an empty-city render hid it earlier in this session. */

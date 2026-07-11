@@ -17,6 +17,9 @@
   <link rel="stylesheet" href="styles.css" />
   <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
   <script src="./theme.js"></script>
+  <!-- city.js swaps the CTA's .page-head__city to the active city
+       (it's dependency-free: reads wa:city, sets WA.CITY). -->
+  <script defer src="./city.js"></script>
 </head>
 <body data-page="404" data-skin="dusk">
 

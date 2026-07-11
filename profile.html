@@ -47,6 +47,17 @@
 
   <main id="profile-main" class="page" role="main">
 
+    <!-- Signed-out invite (board 4c): a glass card over the dusk scene.
+         profile.js reveals it (and hides the account sections) when no
+         session exists; the lime CTA opens the ONE auth overlay. -->
+    <section class="profile-welcome island island--deep" id="profile-welcome" hidden aria-label="Sign in">
+      <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
+      <h2 class="profile-welcome__title">Back for the night?</h2>
+      <p class="profile-welcome__sub">Saves &amp; taste cue sync across devices</p>
+      <button class="scene-cta profile-welcome__cta" id="profile-welcome-signin" type="button">Sign in</button>
+      <p class="profile-welcome__note">browsing works without an account &middot; <a href="./index.html">tonight &rarr;</a></p>
+    </section>
+
     <!-- Profile head — avatar + email + stats strip. -->
     <header class="page-head page-head--profile">
       <p class="page-head__eyebrow">Account</p>

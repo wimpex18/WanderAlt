@@ -88,6 +88,9 @@
       updateBtn();
       document.dispatchEvent(new CustomEvent('wa:signed-out'));
     },
+    /* Open the sign-in overlay programmatically (signed-out profile's
+       board-4c invite card uses this — one auth form, many doors). */
+    openSignIn: () => openOverlay('sign-in'),
   };
 
   /* ── Restore or parse session ────────────────────────────── */

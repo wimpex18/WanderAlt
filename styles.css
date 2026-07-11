@@ -8699,3 +8699,154 @@ body[data-skin="dusk"][data-page="profile"] .profile-rule--btn {
   [data-skin="dusk"] .scene__bg,
   [data-skin="dusk"] .scene__scrim { display: none !important; }
 }
+
+/* ── Signed-out profile invite (board 4c) ──────────────────── */
+body[data-skin="dusk"][data-page="profile"] .profile-welcome {
+  border-radius: var(--radius-sheet);
+  padding: var(--s-6) var(--s-5);
+  margin-top: var(--s-7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 16px 48px rgba(0,0,0,.4);
+}
+body[data-skin="dusk"][data-page="profile"] .profile-welcome .logo-mark {
+  width: 44px; height: 44px; border-radius: 12px;
+}
+body[data-skin="dusk"][data-page="profile"] .profile-welcome__title {
+  font-family: var(--ff-display);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--g-text);
+  margin: var(--s-5) 0 var(--s-2);
+}
+body[data-skin="dusk"][data-page="profile"] .profile-welcome__sub {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+  margin: 0 0 var(--s-6);   /* heading→content 24 > field gap (rhythm law) */
+}
+body[data-skin="dusk"][data-page="profile"] .profile-welcome__cta { width: 100%; }
+body[data-skin="dusk"][data-page="profile"] .profile-welcome__note {
+  font-family: var(--ff-mono);
+  font-size: 11.5px;
+  color: var(--g-dim);
+  margin: var(--s-4) 0 0;
+}
+body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: var(--g-petrol); }
+
+/* ── Quote "more" (board 4f: clamp 4 + more) ───────────────── */
+[data-skin="dusk"] .scene-quote--open p {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+[data-skin="dusk"] .quote-more {
+  margin: 6px 0 0 17px;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+
+/* ── Today's desktop venue + desk card (board 3e right rail) ── */
+[data-skin="dusk"] .scene-aside { display: none; }
+@media (min-width: 1100px) {
+  [data-skin="dusk"] .scene-aside {
+    display: block;
+    position: absolute;   /* inside .scene__main, the masthead-w column */
+    right: 0;
+    top: 0;
+    width: 300px;
+    background: rgba(13,20,21,.72);
+    border-radius: var(--radius-island);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+    padding: 18px;
+  }
+  [data-theme="day"] [data-skin="dusk"] .scene-aside { background: var(--glass-deep); }
+  [data-skin="dusk"] .scene-aside__label {
+    font-family: var(--ff-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--g-faint);
+    margin: 0;
+  }
+  [data-skin="dusk"] .scene-aside__name {
+    font-family: var(--ff-body);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--g-text);
+    margin: 8px 0 0;
+  }
+  [data-skin="dusk"] .scene-aside__meta {
+    font-family: var(--ff-mono);
+    font-size: 11.5px;
+    color: var(--g-soft);
+    margin: 4px 0 0;
+  }
+  [data-skin="dusk"] .scene-aside__meta a { color: var(--g-petrol); }
+  [data-skin="dusk"] .scene-aside__rule {
+    height: 1px;
+    background: var(--glass-hair);
+    border: 0;
+    margin: 16px 0;
+  }
+  [data-skin="dusk"] .scene-aside__motto { margin: 8px 0 0; padding: 0; border: 0; }
+  [data-skin="dusk"] .scene-aside__motto p {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--g-text);
+    margin: 0;
+    text-wrap: pretty;
+  }
+  [data-skin="dusk"] .scene-aside__go {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--g-petrol);
+  }
+  /* Keep the headline column clear of the card. */
+  [data-skin="dusk"] .scene-title,
+  [data-skin="dusk"] .scene-quote { max-width: min(640px, calc(100% - 340px)); }
+}
+
+/* ── About joins the system (prose on the dusk gradient) ───── */
+body[data-skin="dusk"][data-page="about"] {
+  background:
+    radial-gradient(700px 480px at 82% -120px, rgba(5,140,134,.16), transparent 65%),
+    var(--g-bg);
+  background-attachment: fixed;
+}
+body[data-skin="dusk"][data-page="about"] .page {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: 96px var(--gutter) var(--s-8);
+}
+@media (min-width: 768px) {
+  body[data-skin="dusk"][data-page="about"] .page { padding-top: 128px; }
+}
+body[data-skin="dusk"][data-page="about"] .section-title,
+body[data-skin="dusk"][data-page="about"] .about-head__title { color: var(--g-text); }
+body[data-skin="dusk"][data-page="about"] .about-head__lede,
+body[data-skin="dusk"][data-page="about"] .about-section p,
+body[data-skin="dusk"][data-page="about"] .about-list li,
+body[data-skin="dusk"][data-page="about"] .about-steps li { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="about"] .about-section { border-color: var(--glass-hair); }
+body[data-skin="dusk"][data-page="about"] .about-cities__item { border-color: var(--glass-hair); }
+body[data-skin="dusk"][data-page="about"] .about-cities__name { color: var(--g-text); }
+body[data-skin="dusk"][data-page="about"] .about-cities__status { color: var(--g-soft); }
+body[data-skin="dusk"][data-page="about"] .about-contact a,
+body[data-skin="dusk"][data-page="about"] .about-links a { color: var(--g-petrol); }
+body[data-skin="dusk"][data-page="about"] .returnbar { border-color: var(--glass-hair); }
+body[data-skin="dusk"][data-page="about"] .returnbar a { color: var(--g-petrol); }
