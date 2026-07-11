@@ -105,10 +105,13 @@
      mobile sheets float as glass over the content scrolling beneath.
      Tuned subtle so it reads as depth, not decoration. Falls back to a
      solid surface where backdrop-filter is unsupported (see @supports). */
-  --glass-bg:      rgba(255, 255, 255, 0.66);
-  --glass-bg-deep: rgba(250, 250, 249, 0.78);
-  --glass-blur:    saturate(180%) blur(20px);
-  --glass-hair:    rgba(20, 30, 30, 0.10);   /* hairline edge for glass — 0.08→0.10 June 2026, the iOS-27-echo chrome-separation micro-pass */
+  /* `-legacy` suffix since Jul 2026: the Dusk Glass block at the end of
+     this file owns the canonical --glass-* names (different value shapes).
+     These die with the light chrome as the page passes land (PRs 2–4). */
+  --glass-bg:          rgba(255, 255, 255, 0.66);
+  --glass-bg-deep:     rgba(250, 250, 249, 0.78);
+  --glass-blur-legacy: saturate(180%) blur(20px);
+  --glass-hair-legacy: rgba(20, 30, 30, 0.10);   /* hairline edge for glass — 0.08→0.10 June 2026, the iOS-27-echo chrome-separation micro-pass */
 
   /* ---------- Motion ----------
      --t-fast  is the legacy color/border swap (already used in 30+ rules).
@@ -230,9 +233,9 @@ img, svg { display: block; max-width: 100%; }
   top: 0;
   z-index: 10;
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: var(--rule-w) solid var(--glass-hair);
+  backdrop-filter: var(--glass-blur-legacy);
+  -webkit-backdrop-filter: var(--glass-blur-legacy);
+  border-bottom: var(--rule-w) solid var(--glass-hair-legacy);
 }
 
 /* Fallback: where backdrop-filter is unsupported, use solid surfaces so
@@ -247,7 +250,7 @@ img, svg { display: block; max-width: 100%; }
    OS for reduced transparency, all three Liquid Glass surfaces go
    solid, with a slightly stronger hairline for separation. */
 @media (prefers-reduced-transparency: reduce) {
-  :root { --glass-hair: rgba(20, 30, 30, 0.16); }
+  :root { --glass-hair-legacy: rgba(20, 30, 30, 0.16); }
   .topbar,
   .nav__inner,
   .discover-sheet {
@@ -3012,9 +3015,9 @@ a.auth-panel__submit { display: inline-block; }
   align-items: center;
   justify-content: space-between;
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--rule-w) solid var(--glass-hair);
+  backdrop-filter: var(--glass-blur-legacy);
+  -webkit-backdrop-filter: var(--glass-blur-legacy);
+  border: var(--rule-w) solid var(--glass-hair-legacy);
   box-shadow: 0 6px 24px rgba(20, 30, 30, 0.10);
   border-radius: 999px;
   padding: 4px;
@@ -5169,9 +5172,9 @@ body.discover-places .mood-chips { display: none; }
   max-height: 80vh;
   /* Liquid Glass: the mobile filter sheet frosts over the list beneath. */
   background: var(--glass-bg-deep);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-top: 1px solid var(--glass-hair);
+  backdrop-filter: var(--glass-blur-legacy);
+  -webkit-backdrop-filter: var(--glass-blur-legacy);
+  border-top: 1px solid var(--glass-hair-legacy);
   display: flex;
   flex-direction: column;
   z-index: 71;
@@ -5858,7 +5861,7 @@ body[data-page="saved"] .seg-note {
        staying legible; the top shadow lifts it off the content. */
     background: rgba(255, 255, 255, 0.92);
     border: 0;
-    border-top: var(--rule-w) solid var(--glass-hair);
+    border-top: var(--rule-w) solid var(--glass-hair-legacy);
     border-radius: 0;
     box-shadow: 0 -2px 16px rgba(20, 30, 30, 0.07);
     height: auto;
@@ -6748,9 +6751,9 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
 @media (max-width: 767px) {
   body[data-page="discover"] .nav {
     background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border-top: var(--rule-w) solid var(--glass-hair);
+    backdrop-filter: var(--glass-blur-legacy);
+    -webkit-backdrop-filter: var(--glass-blur-legacy);
+    border-top: var(--rule-w) solid var(--glass-hair-legacy);
     box-shadow: 0 -2px 16px rgba(20, 30, 30, 0.07);
   }
   body[data-page="discover"] .nav__inner {
@@ -6843,3 +6846,80 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
      and shrink-wraps children — stretch so the action row spans. */
   body[data-page="briefing"] .tonight { align-items: stretch; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   DUSK GLASS (July 2026 redesign — docs/redesign-jul26-v3/)
+   Three named layers, nothing else: SCENE (full-bleed photo /
+   map / dusk gradient) · GLASS (every panel + control, ONE
+   .island recipe) · SIGNAL (lime: one CTA per screen, live
+   dots, TONIGHT tag, selected pin — never text/border/icon).
+   Tokens override the June vocabulary by design: --radius
+   8→14 (controls), --radius-tag 4→8, one 48px --unit replaces
+   the 52/44 two-tier system. Canonical --glass-* names live
+   here; the June light chrome runs on the *-legacy twins until
+   the page passes (PRs 2–4) delete it.
+   ════════════════════════════════════════════════════════════ */
+:root {
+  /* DUSK (default after civil dusk) */
+  --g-bg:#0a1011;  --g-text:#f4f1e8;
+  --g-mute:rgba(244,241,232,.72);          /* AA floor for running text */
+  --g-faint:rgba(244,241,232,.5);          /* placeholder/decor only */
+  --g-petrol:#7adcd6;                       /* interactive text/icons on dark */
+  --g-petrol-deep:#055959;                  /* filled keys: logo, ✦ send */
+  --g-lime:#d2dc50; --g-ink-on-lime:#0a1011;
+  --glass:rgba(16,24,25,.55);               /* panels + secondary controls */
+  --glass-deep:rgba(16,24,25,.82);          /* chrome: topbar, dock, sheets */
+  --glass-active:rgba(60,184,178,.16);
+  --glass-active-line:rgba(60,184,178,.4);  /* ring around the active tint */
+  --glass-hair:rgba(255,255,255,.14);
+  --glass-blur:24px;                        /* chrome 28–32px */
+  --unit:48px;                              /* EVERY interactive control */
+  --radius:14px;          /* controls */
+  --radius-island:20px;   /* floating bars, cards */
+  --radius-sheet:24px;    /* sheets, hero answer cards */
+  --radius-tag:8px;       /* tags, date cells, count badges */
+}
+[data-theme="day"] {
+  /* DAYBREAK twin (board 4e) — same DOM, tokens only */
+  --g-bg:#f4f1e8; --g-text:#101a1b;
+  --g-mute:rgba(16,26,27,.72); --g-faint:rgba(16,26,27,.5);
+  --g-petrol:#055959;                       /* CTA by day (lime fails on paper) */
+  --glass:rgba(255,255,255,.62); --glass-deep:rgba(255,255,255,.72);
+  --glass-active:rgba(5,89,89,.10);
+  --glass-active-line:rgba(5,89,89,.3);
+  --glass-hair:rgba(16,26,27,.10);
+  /* lime steps back to signal-only (live dots, TONIGHT tag) */
+}
+
+/* ── The ONE glass recipe — never hand-rolled rgba+blur ─────── */
+.island {
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+.island--deep {
+  /* chrome tier: topbar, dock, sheets */
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+}
+.island--active {
+  /* THE active state — tabs, segs, chips, dock, pins */
+  background: var(--glass-active);
+  border-color: var(--glass-active-line);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .island { background: #131b1c; }   /* solid Night surface */
+}
+@media (prefers-reduced-transparency: reduce) {
+  .island { background: #131b1c; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* ── Single-line law atoms (law 3, board 3a) ─────────────────
+   Control rows are one line at one height; meta lines never
+   wrap — titles alone may take 2 lines (cards only). */
+.wa-row { display: flex; align-items: center; gap: 8px; height: var(--unit); }
+.one-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
