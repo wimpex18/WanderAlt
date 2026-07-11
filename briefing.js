@@ -86,13 +86,6 @@
 
   /* ── Template helpers ──────────────────────────────────── */
 
-  /* Returns a <span class="meta__time"> wrapping the timing portion of a
-     meta string, or '' if no time is set. Time only, no day — This Week
-     rows sit under a .week-daylabel group header now, so repeating the
-     day inline on every row would be redundant. */
-  const timeSpan = (entry) =>
-    entry.time ? `<span class="meta__time"> &middot; ${entry.time}</span>` : '';
-
   /* Returns a .thumb span — uses real image when entry.imageUrl is set,
      otherwise falls back to the halftone placeholder + initials badge.  */
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
@@ -120,65 +113,84 @@
      hero's title, not the dominant element — rail cards drop the quote
      entirely (title + time/venue is enough for a peer-item glance; the
      full quote+CTA treatment is what makes the hero the hero). */
+  /* Dusk Glass (Jul 2026, board 3b/3e): the hero is the scene — tonight's
+     photo fills the viewport, the voice floats over it. entries[0] is the
+     flagship; the rest of the tonight set joins the This Week ticket rail
+     (renderWeekPage prepends them) instead of a separate card rail. */
+
+  /* Paint the scene background: the hero photo when it exists, else keep
+     the dusk-gradient fallback (never a gray box — board 4f). A probe img
+     downgrades to the gradient when a stale photo URL 403s. */
+  const paintScene = (entry) => {
+    const bg = document.getElementById('scene-bg');
+    if (!bg) return;
+    if (!entry || !entry.imageUrl) {
+      bg.style.backgroundImage = '';
+      bg.classList.add('scene__bg--fallback');
+      return;
+    }
+    const url = window.WA.img(entry.imageUrl, 1080).replace(/'/g, '%27');
+    bg.style.backgroundImage = `url('${url}')`;
+    bg.classList.remove('scene__bg--fallback');
+    const probe = new Image();
+    probe.addEventListener('error', () => {
+      bg.style.backgroundImage = '';
+      bg.classList.add('scene__bg--fallback');
+    });
+    probe.src = url;
+  };
+
+  /* "FRI 10 JUL" — the scene ticker's date piece. */
+  const tickerDate = () => new Date().toLocaleDateString('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  }).replace(',', '').toUpperCase();
+
   const renderTonight = (entries) => {
     const section = document.getElementById('tonight');
     if (!section || !entries || !entries.length) return;
     section.removeAttribute('aria-busy');   /* hydration done — drop the loading flag */
-    section.classList.remove('tonight--solo');
 
     const esc = window.WA.UI.esc;
-    const [hero, ...rest] = entries;
+    const hero = entries[0];
+    paintScene(hero);
 
-    const heroKicker = [hero.time ? `<b>${esc(hero.time)}</b>` : '', esc(hero.venue), esc(hero.kind)]
+    const glassTag = [esc(hero.kind), esc(hero.neighborhood && hero.neighborhood.toLowerCase() !== 'other' ? hero.neighborhood : hero.venue)]
       .filter(Boolean).join(' &middot; ');
-    const heroQuote = hero.quote
-      ? `<p class="list-row__quote">&ldquo;${esc(hero.quote)}&rdquo; <a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a></p>`
-      : `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a></p>`;
-    const heroCard = `<article class="tonight-card tonight-card--hero">
-       <div class="tonight-card__signal">
-         <span class="tag tag--live">Tonight</span>
-         <span class="tonight-card__kicker">${heroKicker}</span>
-       </div>
-       <div class="tonight-card__body">
-         ${thumbEl(hero, true)}
-         <div class="tonight-card__text">
-           <a href="venue.html?id=${hero.id}" class="tonight-card__title">${esc(hero.title)}</a>
-           ${heroQuote}
-         </div>
-       </div>
-       <div class="tonight-card__actions">
-         <a class="btn btn--primary" href="venue.html?id=${hero.id}">I&rsquo;m going<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-         <label class="bookmark tonight-card__save" title="Save this pick">
-           <input type="checkbox" class="bookmark__check" data-id="${hero.id}" aria-label="Save: ${esc(hero.title)}">
-           ${bookmarkSVG()}
-         </label>
-       </div>
-     </article>`;
-
-    const railCards = rest.map(entry => {
-      const meta = [esc(entry.venue), entry.time ? esc(entry.time) : null].filter(Boolean).join(' &middot; ');
-      /* div, not article: role="listitem" is not an allowed role on
-         <article> (ARIA in HTML), and the role wins anyway. */
-      return `<div class="tonight-rail__card" role="listitem">
-         <a class="tonight-rail__link" href="venue.html?id=${entry.id}">
-           ${thumbEl(entry, true)}
-           <span class="tonight-rail__title">${esc(entry.title)}</span>
-           <span class="tonight-rail__meta">${meta}</span>
-         </a>
-         <label class="bookmark tonight-rail__save" title="Save this pick">
-           <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save: ${esc(entry.title)}">
-           ${bookmarkSVG()}
-         </label>
-       </div>`;
-    }).join('');
-
-    const rail = rest.length
-      ? `<div class="tonight-rail" role="list">${railCards}</div>`
+    const ticker = `${tickerDate()} &middot; PICK 1 OF ${Math.max(_tickerTotal, 1)}`;
+    const attr = ['&mdash; ' +
+      `<a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a>`,
+      esc(hero.venue), hero.time ? `doors ${esc(hero.time)}` : null,
+    ].filter(Boolean).join(' &middot; ');
+    const quote = hero.quote
+      ? `<blockquote class="scene-quote"><p>${esc(hero.quote)}</p></blockquote>`
       : '';
 
     section.innerHTML =
       `<h2 class="visually-hidden" id="tonight-label">Tonight</h2>
-       <div class="tonight-set">${heroCard}${rail}</div>`;
+       <div class="scene-tags">
+         ${(() => {   /* lime is the TONIGHT signal only — other days ride glass */
+           const isTonight = hero.tonight || hero.day === ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+           const label = (isTonight ? 'Tonight' : (hero.day ? esc(hero.day) : 'This week')) + (hero.time ? ` &middot; ${esc(hero.time)}` : '');
+           return `<span class="tag ${isTonight ? 'tag--live' : 'tag--scene'}">${label}</span>`;
+         })()}
+         ${glassTag ? `<span class="tag tag--scene one-line">${glassTag}</span>` : ''}
+       </div>
+       <p class="scene-ticker one-line">${ticker}</p>
+       <a class="scene-title" href="venue.html?id=${hero.id}">${esc(hero.title)}</a>
+       ${quote}
+       <p class="scene-attr one-line">${attr}</p>
+       <div class="scene-actions wa-row">
+         <a class="scene-cta" href="venue.html?id=${hero.id}">I&rsquo;m going &rarr;</a>
+         <label class="bookmark scene-key" title="Save this pick">
+           <input type="checkbox" class="bookmark__check" data-id="${hero.id}" aria-label="Save: ${esc(hero.title)}">
+           ${bookmarkSVG()}
+         </label>
+         <button class="scene-key scene-share" type="button" aria-label="Share this pick" title="Share"
+                 data-share-title="${esc(hero.title)}" data-share-text="${esc(hero.title)} &mdash; ${esc(hero.venue)}"
+                 data-share-url="venue.html?id=${hero.id}">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
+         </button>
+       </div>`;
     /* Surprise-me was demoted out of the hero action row (July 2026 board
        1b) — it lives in the This Week header now. Un-hide it here in case
        an empty-city render hid it earlier in this session. */
@@ -230,19 +242,21 @@
   /* Empty Tonight hero — shown when the active city has no picks yet (e.g.
      a newly-unlocked city without a curator). Replaces the skeleton so the
      page never reads as a perpetual loading state. */
+  /* Empty Tonight (board 4f): fall back to the week's first pick with a
+     THIS WEEK tag; only a city with no picks at all gets the curator-voice
+     quiet-night line over the dusk gradient — never a loading state. */
   const renderTonightEmpty = () => {
     const section = document.getElementById('tonight');
     if (!section) return;
     section.removeAttribute('aria-busy');
-    /* No photo / hero in the empty state — collapse the 2-col Tonight grid
-       to a single column so the tag + note read as one editorial block. */
-    section.classList.add('tonight--solo');
+    paintScene(null);
     const cityId    = window.WA?.CITY || 'tallinn';
     const cityLabel = cityId.charAt(0).toUpperCase() + cityId.slice(1);
     section.innerHTML =
-      `<div class="tonight__signal"><span class="tag tag--live">Tonight</span></div>
-       <p class="tonight__empty">No pick for tonight in ${cityLabel} yet &mdash; curators are warming up. ` +
-       `In the meantime, <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
+      `<h2 class="visually-hidden" id="tonight-label">Tonight</h2>
+       <div class="scene-tags"><span class="tag tag--live">Tonight</span></div>
+       <p class="scene-empty">Quiet night. The city is resting.</p>
+       <p class="scene-attr">No pick for tonight in ${cityLabel} yet &mdash; <a href="./discover.html?type=places">browse places &rarr;</a></p>`;
     /* No catalog to surprise from — hide the This Week header shuffle. */
     const surpriseBtn = document.getElementById('surprise-btn');
     if (surpriseBtn) surpriseBtn.hidden = true;
@@ -326,90 +340,45 @@
         `  <p class="picks-empty__title">${reason}</p>` +
         `  <p class="picks-empty__sub"><a href="./discover.html">Browse Discover &rarr;</a></p>` +
         `</div>`;
-      if (sub) sub.textContent = '0 picks';
-      const footer = document.getElementById('picks-footer');
-      if (footer) footer.remove();
+      if (sub) sub.textContent = '';
       return;
     }
     if (emptyCard) emptyCard.remove();
 
-    const curatorCount = new Set(_weekFullSet.map(e => e.handle)).size;
+    /* Board 3b: the section header's right side is the bridge into
+       Discover — "ALL 12 →" (mono, quiet). Replaces the old counts line
+       + below-list footer; taste still orders the rail silently. */
     if (sub) {
-      /* Counter reflects what's CURRENTLY shown vs the total available
-         in the active set. "20 of 47 picks · 12 curators".               */
-      const filteredHasMore = _weekIsFiltered && _weekTotalAll > _weekFullSet.length;
-      const showCount  = entries.length;
-      const totalCount = filteredHasMore ? _weekTotalAll : _weekFullSet.length;
-      const countLabel = showCount < totalCount
-        ? `${showCount} of ${totalCount} picks`
-        : `${showCount} picks`;
-      /* One subtle, honest cue when a taste profile is active — no per-card
-         badges (that would clutter and undercut the human-curation voice). */
-      const tasteActive = Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
-      sub.textContent =
-        `${countLabel} · ${curatorCount} curator${curatorCount !== 1 ? 's' : ''}` +
-        (tasteActive ? ' · tuned to you' : '');
+      const total = Math.max(_weekTotalAll, _weekFullSet.length) + _tonightExtras.length;
+      sub.innerHTML =
+        `<a class="week-all" href="./discover.html?time=thisweek">ALL ${total} &rarr;</a>`;
     }
 
-    /* Pick card structure note:
-       The whole card is NOT a single <a> any more — that nested the
-       handle <a> inside the venue <a>, which browsers eject from the
-       DOM. Instead, .pick__link is a <div> grid container, and the
-       thumb + title get their own <a>s pointing to venue.html.
-       The .handle <a> inside .via is then a sibling, not a descendant. */
-    /* F-11 guard: consecutive rows sharing one photo read as a rendering
-       bug (legacy "Various venues" picks all carried the same venue shot)
-       — drop repeats to the initials tile; the first occurrence keeps it.
-       Runs on the final visual order so the guard sees real neighbours. */
-    let prevImg = null;
-    const dupImg = new Set();
-    for (const e of entries) {
-      if (e.imageUrl && e.imageUrl === prevImg) dupImg.add(e.id);
-      if (e.imageUrl) prevImg = e.imageUrl;
-    }
-
-    let lastDay = null;
-    list.innerHTML = entries.map(e => {
-      const dayLabel = (e.day && e.day !== lastDay)
-        ? `<li class="week-daylabel">${window.WA.UI.esc(e.day)}</li>` : '';
-      lastDay = e.day || lastDay;
-      return dayLabel + `<li class="pick">
-         <a class="pick__img" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">
-           ${thumbEl(dupImg.has(e.id) ? { ...e, imageUrl: null } : e)}
+    /* Dusk Glass tickets (board 3b/3e): one snap-scroll rail of 64px glass
+       tickets — day cell · title · one-line mono meta. The rest of the
+       tonight set rides in front with a lime TONIGHT cell (lime = live
+       signal only). Single-line by construction, everything ellipsizes. */
+    const esc = window.WA.UI.esc;
+    const ticket = (e, live = false) => {
+      const meta = [
+        e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : e.venue,
+        e.kind, e.time,
+      ].filter(Boolean).join(' · ');
+      const day = live ? 'TONIGHT'
+        : (e.day ? e.day.slice(0, 3) : (e.kind || '·').slice(0, 4)).toUpperCase();
+      return `<li class="ticket">
+         <a class="ticket__link" href="venue.html?id=${e.id}">
+           <span class="ticket__day${live ? ' ticket__day--live' : ''}">${esc(day)}</span>
+           <span class="ticket__body">
+             <span class="ticket__title one-line">${esc(e.title)}</span>
+             <span class="ticket__meta one-line">${esc(meta)}</span>
+           </span>
          </a>
-         <div class="pick__body">
-           <a class="pick__title-link" href="venue.html?id=${e.id}">
-             <span class="pick__title">${e.title}</span>
-           </a>
-           <span class="meta">${e.venue} &middot; ${e.kind}${timeSpan(e)}</span>
-           <span class="via">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></span>
-         </div>
-         <label class="bookmark">
-           <input type="checkbox" class="bookmark__check" data-id="${e.id}"
-                  aria-label="Bookmark: ${e.title}">
-           ${bookmarkSVG()}
-         </label>
        </li>`;
-    }).join('');
-
-    /* Bridge to Discover — the one sanctioned Today→Discover link. When
-       the week has more picks than we show here, send the long tail to
-       Discover (pre-filtered to this week) instead of paginating on the
-       home page. This teaches the mental model (Today = curated now,
-       Discover = browse everything) rather than duplicating the browse. */
-    let footer = document.getElementById('picks-footer');
-    if (footer) footer.remove();
-    const remaining = _weekFullSet.length - entries.length;
-    if (remaining > 0) {
-      footer = document.createElement('div');
-      footer.id = 'picks-footer';
-      footer.className = 'week__foot';
-      footer.innerHTML = `
-        <a class="linkact" href="./discover.html?time=thisweek">Browse all this week<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-        <span class="meta">${remaining} more in Discover</span>
-      `;
-      list.parentNode.insertBefore(footer, list.nextSibling);
-    }
+    };
+    list.innerHTML =
+      _tonightExtras.map(e => ticket(e, true)).join('') +
+      entries.map(e => ticket(e)).join('');
   };
 
   /* ── Bookmark wiring ───────────────────────────────────── */
@@ -439,6 +408,11 @@
      on _initBound (same pattern as discover.js). */
   let _initBound = false;
   let _weekSrc   = [];
+  /* Tonight candidates beyond the flagship — they open the This Week rail
+     as lime-cell TONIGHT tickets (renderWeekPage). */
+  let _tonightExtras = [];
+  /* "PICK 1 OF N" — N is the same set the rail + ALL link count. */
+  let _tickerTotal = 1;
 
   /* Surprise lives in the This Week section header (static markup in
      index.html, July 2026 board 1b). The click is handled by ONE delegated
@@ -586,11 +560,25 @@
     renderEditorialDeskNote();
     const sfMeta = document.getElementById('standfirst-meta');
     if (sfMeta) sfMeta.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-    if (tonightSet.length) renderTonight(tonightSet);
-    else                   renderTonightEmpty();
+    _tonightExtras = tonightSet.slice(1);
+    _tickerTotal = weekSrc.length + tonightSet.length;
+    /* Board 4f: with no tonight candidates the hero falls back to the
+       week's first pick (tag shows its day, not TONIGHT — and the rail
+       drops it so the same pick doesn't sit in both); only a city with
+       nothing at all gets the quiet-night line. */
+    let weekForRail = orderedWeek;
+    if (tonightSet.length) {
+      renderTonight(tonightSet);
+    } else if (orderedWeek.length) {
+      renderTonight([orderedWeek[0]]);
+      weekForRail = orderedWeek.slice(1);
+      _weekSrc = weekForRail;
+    } else {
+      renderTonightEmpty();
+    }
     renderWorthAVisit(worthAVisit);
     /* Pass the full ordered set — renderThisWeek paginates internally. */
-    renderThisWeek(orderedWeek);
+    renderThisWeek(weekForRail);
     restoreBookmarks();
     /* Surprise me lives in the This Week header; renderTonight /
        renderTonightEmpty toggle its visibility for empty cities. */
@@ -609,6 +597,18 @@
     _initBound = true;
 
     wireBookmarks();
+    /* Hero share key (board 3b) — delegated so it survives re-renders.
+       Native share sheet with clipboard fallback via WA.Share. */
+    document.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('.scene-share');
+      if (!btn || !window.WA?.Share) return;
+      const r = await window.WA.Share.url({
+        title: btn.dataset.shareTitle,
+        text:  btn.dataset.shareText,
+        url:   new URL(btn.dataset.shareUrl, window.location.href).href,
+      });
+      if (r === 'copied' || r === 'shared') window.WA.UI.flashDone(btn);
+    });
     /* Re-render This Week when the taste profile changes (after onboarding
        or a Profile-page edit). Reads _weekSrc so a taste change after the
        live catalog lands reorders live picks, not the static seed. */

@@ -57,7 +57,12 @@ const PAGES = [
   { name: 'discover-tonight', url: '/discover.html',               waitMs: 2200,
     setup: async (page) => {
       const pill = await page.$('[data-pill="tonight"]');
-      if (pill) { await pill.click(); await new Promise(r => setTimeout(r, 800)); }
+      /* boundingBox() is null for the desktop layout, where the mobile
+         pills are retired (display:none) — clicking a 0×0 node throws. */
+      if (pill && await pill.boundingBox()) {
+        await pill.click();
+        await new Promise(r => setTimeout(r, 800));
+      }
     } },
   { name: 'saved',            url: '/saved.html',                  waitMs: 1200, signedIn: true },
   { name: 'profile',          url: '/profile.html',                waitMs: 1500, signedIn: true },
