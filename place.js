@@ -73,24 +73,29 @@
     });
 
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[venue.id]);
-    const saveToggle = `<label class="bookmark place-save" title="Save this place">
+    const saveToggle = `<label class="bookmark scene-key scene-key--incard place-save" title="Save this place">
       <input type="checkbox" class="bookmark__check" data-id="${esc(venue.id)}" aria-label="Save: ${esc(venue.name)}"${isMarked ? ' checked' : ''}>
       ${bookmarkSVG()}
     </label>`;
 
-    /* Map affordances: a Google-Maps deep link (lightweight — no embedded
-       MapLibre on a detail page) + a link back to the place on Discover's
-       map. Only when the venue is geocoded. */
-    const mapLinks = (venue.lat != null && venue.lng != null)
-      ? `<p class="place-maplinks">
-           <a class="place-maplink" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">Open in Google Maps &uarr;</a>
-           <a class="place-maplink" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}">See on city map &rarr;</a>
-         </p>`
-      : '';
-
     /* Events here — picks whose venue name matches this place. */
     const here = picks.filter(p => p.venue && venue.name &&
       p.venue.trim().toLowerCase() === venue.name.trim().toLowerCase());
+
+    /* Dusk Glass scene (no board for this page — the system applied):
+       the venue's photo comes from a pick held here (venues carry no
+       image_url of their own); the fallback is the kind glyph on the
+       dusk gradient, never a gray box. */
+    const photoPick = here.find(p => p.imageUrl);
+    const heroUrl = photoPick
+      ? window.WA.img(photoPick.imageUrl, 1080).replace(/'/g, '%27') : '';
+    const sceneBg = heroUrl
+      ? `<div class="scene__bg" style="background-image:url('${heroUrl}')" aria-hidden="true"><img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true"></div>`
+      : `<div class="scene__bg scene__bg--fallback" aria-hidden="true"><span class="scene__glyph">${window.WA.UI.thumb({ ...venue, imageUrl: null, title: venue.name }, true)}</span></div>`;
+
+    /* Lime is the live signal: only when something here is on tonight. */
+    const today = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+    const liveTonight = here.some(p => p.tonight || p.day === 'Tonight' || p.day === today);
 
     const eventsSection = here.length ? `
       <hr class="rule" style="margin-bottom:0">
@@ -121,30 +126,66 @@
         </div>
       </div>`;
 
+    /* Map keys: Google-Maps deep link + the place on Discover's map —
+       icon keys in the one 48 action row (geocoded venues only). */
+    const mapKeys = (venue.lat != null && venue.lng != null)
+      ? `<a class="scene-key scene-key--incard" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer" aria-label="Open in Google Maps (opens in a new tab)" title="Open in Google Maps">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+         </a>
+         <a class="scene-key scene-key--incard" href="./discover.html?type=places&amp;id=${encodeURIComponent(venue.id)}" aria-label="See on the city map" title="See on the city map">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+         </a>`
+      : '';
+
     main.innerHTML = `
-      <a class="venue-back" href="${href}">${label}</a>
-
       <article aria-label="${esc(venue.name)}">
-        <div class="page-head">
-          <div class="place-head-row">
-            <div>
-              <p class="page-head__eyebrow">${esc(kindLabel(venue.kind))}</p>
-              <h1 class="page-head__title">${esc(venue.name)}</h1>
-            </div>
-            ${saveToggle}
-          </div>
-          <p class="page-head__meta">${esc(meta)}</p>
-          ${social}
-          ${mapLinks}
-        </div>
 
+      <div class="scene scene--detail scene--place">
+        ${sceneBg}
+        <div class="scene__scrim" aria-hidden="true"></div>
+        <a class="scene-float scene-float--back" href="${href}" aria-label="Back to Discover">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </a>
+
+        <div class="scene__main">
+          <div class="scene-tags">
+            ${liveTonight ? '<span class="tag tag--live">Tonight</span>' : ''}
+            <span class="tag tag--scene one-line">${esc(kindLabel(venue.kind))}${meta ? ` &middot; ${esc(meta)}` : ''}</span>
+          </div>
+          <h1 class="scene-title scene-title--detail">${esc(venue.name)}</h1>
+
+          <div class="answer island island--deep">
+            <p class="scene-meta one-line">${here.length
+              ? `${here.length} pick${here.length !== 1 ? 's' : ''} here`
+              : 'Nothing on right now'}</p>
+            <div class="scene-actions scene-actions--place wa-row">
+              ${saveToggle}
+              ${mapKeys}
+              ${social}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-below">
         ${eventsSection}
-      </article>
 
       <footer class="colophon">
         <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick. Places are sourced from OpenStreetMap.</p>
       </footer>
+      </div><!-- /.page-below -->
+      </article>
     `;
+
+    /* Photo probe: a dead pick-photo URL drops the scene to the dusk
+       gradient (never a gray box). */
+    const probe = main.querySelector('.detail-hero__probe');
+    if (probe) {
+      probe.addEventListener('error', () => {
+        const bg = probe.closest('.scene__bg');
+        if (bg) { bg.style.backgroundImage = ''; bg.classList.add('scene__bg--fallback'); }
+      });
+    }
   };
 
   const renderNotFound = () => {

@@ -7085,6 +7085,9 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   background: var(--glass-active) !important;
   border: 1px solid var(--glass-active-line);
   color: var(--g-petrol);
+  flex-direction: row;
+  gap: 8px;
+  min-height: var(--unit);
 }
 [data-skin="dusk"][data-page="briefing"] .nav__item[data-nav="briefing"]::after,
 [data-skin="dusk"][data-page="venue"]    .nav__item[data-nav="briefing"]::after,
@@ -7726,4 +7729,571 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   }
   [data-skin="dusk"] .topbar,
   [data-skin="dusk"] .nav__inner { background: #131b1c !important; }
+}
+
+/* ── Dusk coverage sweep (elements the boards implied but never drew:
+      shared overlays + focus/selection on dark) ─────────────────── */
+[data-skin="dusk"] :focus-visible { outline-color: var(--g-petrol); }
+[data-skin="dusk"] ::selection { background: rgba(122,220,214,.3); color: var(--g-text); }
+
+/* City dropdown opens from the dusk topbar island. */
+[data-skin="dusk"] .city-dropdown {
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 16px 48px rgba(0,0,0,.5);
+}
+[data-skin="dusk"] .city-dropdown__name { color: var(--g-text); }
+[data-skin="dusk"] .city-dropdown__status { color: var(--g-faint); }
+[data-skin="dusk"] .city-dropdown__item:hover,
+[data-skin="dusk"] .city-dropdown__item:focus { background: rgba(255,255,255,.07); }
+[data-skin="dusk"] .city-dropdown__item[aria-selected="true"],
+[data-skin="dusk"] .city-dropdown__item--on .city-dropdown__name { color: var(--g-petrol); }
+
+/* Auth overlay (auth.js modal) over a dusk scene. */
+[data-skin="dusk"] .auth-overlay { background: rgba(10,16,17,.7); }
+[data-skin="dusk"] .auth-panel {
+  background: var(--glass-deep);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius-sheet);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 16px 48px rgba(0,0,0,.5);
+  color: var(--g-text);
+}
+[data-skin="dusk"] .auth-panel__title { color: var(--g-text); }
+[data-skin="dusk"] .auth-panel__desc { color: var(--g-mute); }
+[data-skin="dusk"] .auth-panel__input {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.14);
+  color: var(--g-text);
+}
+[data-skin="dusk"] .auth-panel__input::placeholder { color: var(--g-faint); }
+[data-skin="dusk"] .auth-panel__input:focus,
+[data-skin="dusk"] .auth-panel__input:focus-visible { border-color: var(--g-petrol); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-skin="dusk"] .city-dropdown,
+  [data-skin="dusk"] .auth-panel { background: #131b1c; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-skin="dusk"] .city-dropdown,
+  [data-skin="dusk"] .auth-panel {
+    background: #131b1c !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Place page (no board — the system applied: scene + glass action row). */
+[data-skin="dusk"] .scene--place .scene__glyph { position: absolute; inset: 0; display: grid; place-items: center; }
+[data-skin="dusk"] .scene--place .scene__glyph .thumb {
+  width: 96px; height: 96px; border-radius: var(--radius-island);
+  opacity: .8;
+}
+[data-skin="dusk"] .scene-meta {
+  margin: 10px 0 0;
+  font-family: var(--ff-mono);
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(244,241,232,.55);
+}
+[data-skin="dusk"] .scene-actions--place .social-icon,
+[data-skin="dusk"] .scene-actions--place .action-icon { color: rgba(244,241,232,.8); }
+/* Place action row: social buttons ride the same 48 key tier. */
+[data-skin="dusk"] .scene-actions--place { flex-wrap: nowrap; }
+[data-skin="dusk"] .scene-actions--place .social-icon {
+  width: var(--unit);
+  height: var(--unit);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+[data-skin="dusk"] .scene-actions--place .social-links { display: contents; }
+[data-skin="dusk"] .scene-actions--place .social-icon { border-radius: var(--radius); margin: 0; }
+
+/* place.html rides data-page="discover" (nav highlight) — the June
+   discover dock glass (body[data-page] specificity) must not repaint
+   the dusk dock. Dies with the June discover chrome in the map-scene
+   pass. */
+@media (max-width: 767px) {
+  body[data-skin="dusk"][data-page="discover"] .nav {
+    background: transparent;
+    border-top: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  body[data-skin="dusk"][data-page="discover"] .nav__inner {
+    background: var(--glass-deep);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 40px rgba(0,0,0,.45);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DUSK GLASS — DISCOVER (boards 3c + 4d): the map is ALWAYS the
+   scene; results ride a draggable glass sheet (detents peek /
+   half / full — peek IS the retired "map view"); filters are one
+   horizontal 48 rail + the More+ sheet's 3-col grids. Desktop:
+   floating glass panels over the full-bleed map.
+   ════════════════════════════════════════════════════════════ */
+body[data-skin="dusk"][data-page="discover"] .page-head--discover {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;   /* h1 stays for AT/SEO */
+}
+
+/* The map pane is the scene — full-bleed, behind everything. */
+body[data-skin="dusk"][data-page="discover"] .discover-panes { display: block; }
+body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
+  display: block;
+  position: fixed;
+  inset: 0;
+  height: 100vh;      /* the June split-pane sets an explicit height */
+  height: 100svh;
+  min-height: 0;
+  width: 100%;
+  z-index: 0;
+  background: var(--g-bg);
+  border: 0;
+  border-radius: 0;
+}
+body[data-skin="dusk"][data-page="discover"] .map-viewport,
+body[data-skin="dusk"][data-page="discover"] .map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
+  background: var(--glass-deep);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  color: var(--g-mute);
+}
+body[data-skin="dusk"][data-page="discover"] .map-empty-hint__title { color: var(--g-text); }
+body[data-skin="dusk"][data-page="discover"] .map-sheet,
+body[data-skin="dusk"][data-page="discover"] .map-detail {
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  color: var(--g-text);
+}
+
+/* Topbar search composite (lives inside the island, board 3c). */
+body[data-skin="dusk"][data-page="discover"] .discover-search { flex: 1; min-width: 0; position: relative; }
+body[data-skin="dusk"][data-page="discover"] .discover-search form { margin: 0; }
+body[data-skin="dusk"][data-page="discover"] .search-box {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 0 12px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  box-shadow: none;
+}
+body[data-skin="dusk"][data-page="discover"] .search-box__icon { color: var(--g-faint); display: grid; place-items: center; }
+body[data-skin="dusk"][data-page="discover"] .search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--g-text);
+}
+body[data-skin="dusk"][data-page="discover"] .search-input::placeholder { color: var(--g-faint); font-style: normal; }
+body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: var(--g-petrol-deep);
+  color: var(--g-lime);
+  font-family: var(--ff-body);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn[aria-pressed="true"] { filter: brightness(1.25); }
+body[data-skin="dusk"][data-page="discover"] .search-box__clear { color: var(--g-faint); }
+body[data-skin="dusk"][data-page="discover"] .discover-ai-examples {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  z-index: 40;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-ai-example {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-tag);
+  color: var(--g-mute);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+/* The deck becomes the horizontal filter rail floating over the map. */
+body[data-skin="dusk"][data-page="discover"] .deck {
+  position: fixed;
+  top: 84px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;   /* the June mobile deck is a column plate */
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 16px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+body[data-skin="dusk"][data-page="discover"] .deck::-webkit-scrollbar { display: none; }
+body[data-skin="dusk"][data-page="discover"] .discover-applied { display: none; }
+/* The pills nav joins the deck rail as siblings — one line, no wrap. */
+body[data-skin="dusk"][data-page="discover"] .discover-pills { display: contents; }
+body[data-skin="dusk"][data-page="discover"] .discover-scope {
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Board 3c mobile topbar: logo tile · search · city — no wordmark.
+   The brand link keeps a 44px hit box around the 28px tile. */
+@media (max-width: 767px) {
+  body[data-skin="dusk"][data-page="discover"] .wordmark { display: none; }
+  body[data-skin="dusk"][data-page="discover"] .topbar__brand {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    margin-right: 0;
+  }
+}
+body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
+  top: 42%;
+  color: var(--g-mute);
+}
+body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body strong { color: var(--g-text); }
+/* MapLibre attribution rides the dusk scene quietly. */
+body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib {
+  background: rgba(16,24,25,.7) !important;
+  color: var(--g-faint);
+  border-radius: 8px;
+  font-size: 10px;
+}
+body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-mute); }
+/* Rows in the sheet: flat hairline dividers, not plates. */
+body[data-skin="dusk"][data-page="discover"] .curator-row,
+body[data-skin="dusk"][data-page="discover"] .browse-row {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--glass-hair);
+  border-radius: 0;
+  box-shadow: none;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-scope {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
+body[data-skin="dusk"][data-page="discover"] .discover-pill {
+  flex: none;
+  height: var(--unit);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px;
+  scroll-snap-align: start;
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  font-family: var(--ff-mono);
+  font-size: 12.5px;
+  letter-spacing: .02em;
+  color: var(--g-text);
+  white-space: nowrap;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-scope__btn--on,
+body[data-skin="dusk"][data-page="discover"] .discover-pill[aria-pressed="true"],
+body[data-skin="dusk"][data-page="discover"] .discover-pill--on {
+  background: var(--glass-active);
+  border-color: var(--glass-active-line);
+  color: var(--g-petrol);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-pill .ic { width: 16px; height: 16px; }
+body[data-skin="dusk"][data-page="discover"] .discover-pill__count,
+body[data-skin="dusk"][data-page="discover"] .discover-scope__count {
+  background: var(--g-lime);
+  color: var(--g-ink-on-lime);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+}
+
+/* ── The results sheet (mobile) ────────────────────────────── */
+@media (max-width: 1023px) {
+  body[data-skin="dusk"][data-page="discover"] { overflow: hidden; height: 100svh; }
+  body[data-skin="dusk"][data-page="discover"] .page { padding: 0; }
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 100svh;
+    z-index: 15;
+    transform: translateY(var(--sheet-y, 50svh));
+    transition: transform var(--t-mid);
+    background: var(--glass-deep);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    border-bottom: 0;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: 0 -12px 48px rgba(0,0,0,.45);
+    padding: 6px 16px 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="peek"] .discover-pane--list { --sheet-y: calc(100svh - 180px); }
+  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="half"] .discover-pane--list { --sheet-y: 50svh; }
+  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="full"] .discover-pane--list { --sheet-y: 132px; }
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list.dsheet-dragging { transition: none; }
+  /* Sheet content clears the floating dock at every detent. */
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list > *:last-child { margin-bottom: 120px; }
+  /* No zoom / locate chrome over the mobile scene (pinch + the
+     Distance filter cover both). */
+  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl,
+  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { display: none; }
+}
+body[data-skin="dusk"][data-page="discover"] .dsheet-grip {
+  display: block;
+  width: 100%;
+  height: 44px;   /* tap floor — the visual is the 4px bar inside */
+  margin-top: -8px;
+  background: none;
+  border: 0;
+  cursor: grab;
+  touch-action: none;
+}
+body[data-skin="dusk"][data-page="discover"] .dsheet-grip span {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto;
+  border-radius: 4px;
+  background: rgba(244,241,232,.35);
+}
+
+/* Sheet innards go dark glass. */
+body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: rgba(244,241,232,.65); }
+body[data-skin="dusk"][data-page="discover"] .curator-row,
+body[data-skin="dusk"][data-page="discover"] .browse-row { border-color: var(--glass-hair); color: var(--g-text); }
+body[data-skin="dusk"][data-page="discover"] .curator-row__handle { color: var(--g-petrol); }
+body[data-skin="dusk"][data-page="discover"] .curator-row__tagline,
+body[data-skin="dusk"][data-page="discover"] .browse-row__count,
+body[data-skin="dusk"][data-page="discover"] .curator-row__count { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="discover"] .skeleton-row__line { background: rgba(255,255,255,.07); }
+body[data-skin="dusk"][data-page="discover"] .list-row--active {
+  background: var(--glass-active);
+  border-radius: var(--radius);
+}
+
+/* ── Filter sheet → board 4d (3-col grids, Reset:Show = 1:2) ── */
+body[data-skin="dusk"][data-page="discover"] .discover-sheet {
+  background: var(--glass-deep);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border: 1px solid var(--glass-hair);
+  color: var(--g-text);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__title {
+  font-family: var(--ff-display);
+  color: var(--g-text);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__close,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear-top { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__field { border-color: var(--glass-hair); }
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: rgba(244,241,232,.55); }
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip {
+  height: var(--unit);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  margin: 0;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius);
+  color: var(--g-text);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip--on,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip--on,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip--on,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip[aria-pressed="true"],
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip[aria-pressed="true"] {
+  background: var(--glass-active);
+  border-color: var(--glass-active-line);
+  color: var(--g-petrol);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sort,
+body[data-skin="dusk"][data-page="discover"] .discover-sort label { color: var(--g-text); }
+/* The desktop-only facet-pill toggles never render inside the dusk
+   mobile sheet (their fieldsets are already open groups there). */
+@media (max-width: 1023px) {
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet .facet-pill { display: none !important; }
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__foot {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--glass-hair);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear {
+  flex: 1;
+  height: var(--unit);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius);
+  color: var(--g-text);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__apply {
+  flex: 2;
+  height: var(--unit);
+  background: var(--g-lime);
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--g-ink-on-lime);
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(210,220,80,.25);
+}
+body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { background: rgba(10,16,17,.6); }
+
+/* ── Desktop: floating glass panels over the full-bleed map ── */
+@media (min-width: 1024px) {
+  body[data-skin="dusk"][data-page="discover"] { overflow: hidden; height: 100vh; }
+  body[data-skin="dusk"][data-page="discover"] .page { padding: 0; max-width: none; }
+  /* Filter rail — left panel. */
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
+    position: fixed;
+    left: 24px;
+    top: 104px;
+    bottom: 24px;
+    width: 264px;
+    z-index: 10;
+    border-radius: var(--radius-island);
+    overflow-y: auto;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 40px rgba(0,0,0,.4);
+  }
+  /* Masthead: the nav tabs overlay the island's left half — give the
+     search composite a left offset so they never collide. */
+  body[data-skin="dusk"][data-page="discover"] .discover-search { margin-left: 372px; }
+  /* Deck rail + results — the second panel. */
+  body[data-skin="dusk"][data-page="discover"] .deck {
+    left: 312px;
+    top: 104px;
+    right: auto;
+    width: 432px;
+    padding: 12px 16px 8px;
+    background: var(--glass-deep);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    border-bottom: 0;
+    border-radius: var(--radius-island) var(--radius-island) 0 0;
+    z-index: 11;
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
+    display: block;
+    position: fixed;
+    left: 312px;
+    top: 172px;
+    bottom: 24px;
+    width: 432px;
+    z-index: 10;
+    background: var(--glass-deep);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-island) var(--radius-island);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 40px rgba(0,0,0,.4);
+    padding: 8px 16px 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  body[data-skin="dusk"][data-page="discover"] .dsheet-grip { display: none; }
+  /* Map chrome docks bottom-right, glass keys (locate above zoom). */
+  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { right: 24px; bottom: 24px; }
+  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { right: 24px; bottom: 196px; left: auto; top: auto; }
+  body[data-skin="dusk"][data-page="discover"] .map-zoom-btn,
+  body[data-skin="dusk"][data-page="discover"] .map-locate-fab {
+    background: var(--glass-deep);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    color: var(--g-text);
+  }
+}
+
+/* Fallbacks for the discover glass surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list,
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet,
+  body[data-skin="dusk"][data-page="discover"] .deck,
+  body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
+  body[data-skin="dusk"][data-page="discover"] .discover-pill { background: #131b1c; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--list,
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet,
+  body[data-skin="dusk"][data-page="discover"] .deck,
+  body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
+  body[data-skin="dusk"][data-page="discover"] .discover-pill {
+    background: #131b1c !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }

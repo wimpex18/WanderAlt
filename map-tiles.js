@@ -59,9 +59,13 @@
       view = CITY_VIEWS.tallinn;
     }
 
+    /* Dusk Glass pages get the dark twin of the editorial style —
+       the map IS the scene there (board 3c), not a paper inset. */
+    const defaultStyle = document.body.dataset.skin === 'dusk'
+      ? './map-style-dusk.json' : './map-style.json';
     map = new maplibregl.Map({
       container:   containerId,
-      style:       opts.styleUrl || './map-style.json',
+      style:       opts.styleUrl || defaultStyle,
       center:      view.center,
       zoom:        view.zoom,
       attributionControl: { compact: true },
