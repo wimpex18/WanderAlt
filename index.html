@@ -62,6 +62,8 @@
   <link rel="preload" as="font" type="font/woff2" href="fonts/inter-400.woff2" crossorigin />
 
   <link rel="stylesheet" href="styles.css" />
+  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <script src="./theme.js"></script>
   <!-- Anti-CLS: hide the taste banner before first paint for onboarded
        users (see taste-flag.js). Non-defer so it runs before body render;
        externalised so the strict CSP (script-src 'self') allows it. -->

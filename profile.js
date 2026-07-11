@@ -377,4 +377,29 @@
       deleteSubmit.disabled = false;
     }
   });
+
+  /* ── Appearance (board 4b/4e) ────────────────────────────────
+     One settings row; tap cycles AUTO → DUSK → DAYBREAK. AUTO's value
+     line names tonight's switch time from theme.js's sun table. */
+  const appearanceRow   = document.getElementById('appearance-row');
+  const appearanceValue = document.getElementById('appearance-value');
+  const reflectAppearance = () => {
+    const T = window.WA && window.WA.Theme;
+    if (!T || !appearanceValue) return;
+    const p = T.get();
+    appearanceValue.textContent =
+      p === 'dusk' ? 'DUSK' :
+      p === 'day'  ? 'DAYBREAK' :
+      `AUTO · DUSK AT ${T.duskLabel()}`;
+  };
+  if (appearanceRow) {
+    appearanceRow.addEventListener('click', () => {
+      const T = window.WA && window.WA.Theme;
+      if (!T) return;
+      const next = { auto: 'dusk', dusk: 'day', day: 'auto' }[T.get()] || 'auto';
+      T.set(next);
+      reflectAppearance();
+    });
+    reflectAppearance();
+  }
 })();

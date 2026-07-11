@@ -1,5 +1,14 @@
 # WanderAlt — Engineering Reference
 
+> **Dusk Glass (v0.8.5, 11 Jul 2026):** every public page was reskinned onto the
+> Dusk Glass system — scenes + one `.island` glass recipe + one 48px unit, with
+> the Daybreak light twin (`theme.js`, `[data-theme="day"]` token swap). The
+> AUTHORITATIVE spec for that system is `docs/redesign-jul26-v3/CC-HANDOFF.md`
+> (+ the design canvas beside it) and the laws in `CLAUDE.md`. The page specs
+> below describe the June system where they conflict — trust the running site,
+> the Dusk spec, and the `[data-skin="dusk"]` blocks at the end of `styles.css`
+> first; sections here are being rewritten incrementally.
+
 This is the engineering reference for WanderAlt. It documents design tokens, component contracts, page-by-page specs, interactive states, and responsive behaviour. Read `README.md` first for product context and aesthetic philosophy — nothing here repeats that.
 
 The codebase is plain HTML + CSS + vanilla JS with no build step. All measurements live in `styles.css`. All content comes from `catalog.js` (static fallback) and Supabase (live data). Screenshots go stale; the running site is always the source of truth.

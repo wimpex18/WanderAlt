@@ -314,7 +314,7 @@
        CSS keys the badge on :checked + :not(.seg-tab__count--zero). */
     const setCount = (el, n) => {
       if (!el) return;
-      el.textContent = String(n);
+      el.textContent = n > 99 ? '99+' : String(n);   /* board 4f */
       el.classList.toggle('seg-tab__count--zero', n === 0);
     };
     setCount(goingTab,   goingCount);

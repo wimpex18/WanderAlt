@@ -15,6 +15,8 @@
 
 
   <link rel="stylesheet" href="styles.css" />
+  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <script src="./theme.js"></script>
   <script defer src="./catalog.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
@@ -141,6 +143,14 @@
         <h2 id="profile-about-label" class="section-title">About &amp; info</h2>
       </header>
       <div class="profile-rules">
+        <!-- Appearance (board 4b/4e): tap cycles AUTO → DUSK → DAYBREAK.
+             theme.js resolves AUTO from the city's precomputed sun table;
+             the value line shows tonight's switch time. -->
+        <button class="profile-rule profile-rule--btn" id="appearance-row" type="button"
+                aria-label="Appearance — cycles auto, dusk, daybreak">
+          <span class="profile-rule__label">Appearance</span>
+          <span class="profile-rule__go" id="appearance-value">AUTO</span>
+        </button>
         <a class="profile-rule" href="./about.html">
           <span class="profile-rule__label">What WanderAlt is &amp; who curates it</span>
           <span class="profile-rule__go">About &rarr;</span>

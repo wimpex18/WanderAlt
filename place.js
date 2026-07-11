@@ -132,7 +132,7 @@
       ? `<a class="scene-key scene-key--incard" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer" aria-label="Open in Google Maps (opens in a new tab)" title="Open in Google Maps">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
          </a>
-         <a class="scene-key scene-key--incard" href="./discover.html?type=places&amp;id=${encodeURIComponent(venue.id)}" aria-label="See on the city map" title="See on the city map">
+         <a class="scene-key scene-key--incard" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}" aria-label="See on the city map" title="See on the city map">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
          </a>`
       : '';

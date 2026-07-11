@@ -156,7 +156,8 @@
 
     const glassTag = [esc(hero.kind), esc(hero.neighborhood && hero.neighborhood.toLowerCase() !== 'other' ? hero.neighborhood : hero.venue)]
       .filter(Boolean).join(' &middot; ');
-    const ticker = `${tickerDate()} &middot; PICK 1 OF ${Math.max(_tickerTotal, 1)}`;
+    const ticker = `${tickerDate()} &middot; PICK 1 OF ${Math.max(_tickerTotal, 1)}` +
+      (navigator.onLine === false ? ' &middot; OFFLINE' : '');
     const attr = ['&mdash; ' +
       `<a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a>`,
       esc(hero.venue), hero.time ? `doors ${esc(hero.time)}` : null,
