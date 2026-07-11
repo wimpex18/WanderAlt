@@ -9,6 +9,7 @@ misparse).
 
 | Key | Owner file | Shape | Versioned | Purpose / notes |
 |---|---|---|---|---|
+| `wa:appearance` | `theme.js` | string (`auto`/`dusk`/`day`) | no | Dusk/Daybreak appearance. `auto` follows the per-city sun table (civil dawn→dusk); set from Profile → Appearance. |
 | `wa:city` | `city.js` | string (`tallinn`/`riga`/`helsinki`/`vilnius`) | no | Active city. Read by `catalog.js` before `city.js` runs (load-order dependency). |
 | `wa:saved-snapshots` | `saved.js` | `{ [pickId]: {id,title,venue,neighborhood,kind,day,time,handle} }` | no | Change-watch (A2): last-seen snapshot per bookmarked pick; powers "time changed" badges + gone-rows. Gone-detection additionally gated on `WA.DATA_LIVE`. |
 | `wa-taste-prefs` | `taste.js` (`PREFS_KEY`) | `{ energy?, company?, money? }` strings | no | Taste-profile axes from onboarding. |

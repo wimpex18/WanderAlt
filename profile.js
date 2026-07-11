@@ -30,11 +30,26 @@
     }
   };
 
-  /* ── Auth gate ───────────────────────────────────────────── */
-
+  /* ── Auth gate (board 4c) ────────────────────────────────────
+     Signed out, the page IS the invite: the glass welcome card over
+     the dusk gradient, its lime CTA opening the one auth overlay.
+     (Replaces the old redirect to index — a Profile tab that bounced
+     you home read as broken.) Signing in reloads into the account. */
   const auth = window.WA && window.WA.Auth;
   if (!auth || !auth.isSignedIn()) {
-    Promise.resolve().then(() => { window.location.replace('./index.html'); });
+    const welcome = document.getElementById('profile-welcome');
+    if (welcome) {
+      welcome.hidden = false;
+      document.querySelectorAll('#profile-main > .profile-section, #profile-main > .page-head')
+        .forEach(el => { el.hidden = true; });
+      const cta = document.getElementById('profile-welcome-signin');
+      if (cta) cta.addEventListener('click', () => {
+        if (window.WA.Auth && window.WA.Auth.openSignIn) window.WA.Auth.openSignIn();
+      });
+      document.addEventListener('wa:signed-in', () => window.location.reload());
+    } else {
+      Promise.resolve().then(() => { window.location.replace('./index.html'); });
+    }
     return;
   }
 
@@ -377,4 +392,29 @@
       deleteSubmit.disabled = false;
     }
   });
+
+  /* ── Appearance (board 4b/4e) ────────────────────────────────
+     One settings row; tap cycles AUTO → DUSK → DAYBREAK. AUTO's value
+     line names tonight's switch time from theme.js's sun table. */
+  const appearanceRow   = document.getElementById('appearance-row');
+  const appearanceValue = document.getElementById('appearance-value');
+  const reflectAppearance = () => {
+    const T = window.WA && window.WA.Theme;
+    if (!T || !appearanceValue) return;
+    const p = T.get();
+    appearanceValue.textContent =
+      p === 'dusk' ? 'DUSK' :
+      p === 'day'  ? 'DAYBREAK' :
+      `AUTO · DUSK AT ${T.duskLabel()}`;
+  };
+  if (appearanceRow) {
+    appearanceRow.addEventListener('click', () => {
+      const T = window.WA && window.WA.Theme;
+      if (!T) return;
+      const next = { auto: 'dusk', dusk: 'day', day: 'auto' }[T.get()] || 'auto';
+      T.set(next);
+      reflectAppearance();
+    });
+    reflectAppearance();
+  }
 })();

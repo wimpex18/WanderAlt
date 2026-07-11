@@ -157,6 +157,8 @@ const PAGES = [
       await page.evaluate(
         ({ session, city }) => {
           localStorage.setItem('wa:city', city);
+          /* Pin the theme: baselines must not flip with the sun (theme.js). */
+          localStorage.setItem('wa:appearance', 'dusk');
           if (session) localStorage.setItem('wanderalt:session:v1', session);
           else         localStorage.removeItem('wanderalt:session:v1');
         },

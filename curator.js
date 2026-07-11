@@ -173,17 +173,25 @@
 
       <article aria-label="Curator: ${curator.handle}">
 
-        <header class="page-head">
-          <p class="page-head__eyebrow">Curator</p>
-          <h1 class="page-head__title">${curator.handle}</h1>
-          ${curator.tagline ? `<p class="page-head__meta">${curator.tagline}</p>` : ''}
-          <div class="curator-actions">
-            <button type="button" id="curator-share-btn" class="action-icon" aria-label="Share this curator page" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg></button>
-            <a class="action-icon" href="${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent((window.WA && window.WA.CITY) || 'tallinn')}&amp;handle=${encodeURIComponent(curator.handle)}"
-               aria-label="Subscribe to ${curator.handle}'s picks in your calendar" title="Calendar feed (.ics)">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
-            </a>
+        <!-- Dusk board 4f: ONE glass head card — avatar · handle · mono
+             ticker (picks · city · Telegram ↗) · motto quote. Handles
+             match the Telegram slug, so the ↗ link derives from it. -->
+        <header class="curator-card island">
+          <div class="curator-card__row">
+            <span class="curator-card__avatar" aria-hidden="true">${(curator.handle || '@?').replace('@', '').charAt(0).toUpperCase()}</span>
+            <div class="curator-card__id">
+              <h1 class="curator-card__handle">${curator.handle}</h1>
+              <p class="curator-card__ticker one-line">${picks.length} PICK${picks.length !== 1 ? 'S' : ''} &middot; ${((window.WA && window.WA.CITY) || 'tallinn').toUpperCase()} &middot; <a href="https://t.me/${encodeURIComponent((curator.handle || '').replace('@', ''))}" target="_blank" rel="noopener noreferrer">TELEGRAM &nearr;</a></p>
+            </div>
+            <div class="curator-actions">
+              <button type="button" id="curator-share-btn" class="action-icon" aria-label="Share this curator page" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg></button>
+              <a class="action-icon" href="${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent((window.WA && window.WA.CITY) || 'tallinn')}&amp;handle=${encodeURIComponent(curator.handle)}"
+                 aria-label="Subscribe to ${curator.handle}'s picks in your calendar" title="Calendar feed (.ics)">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
+              </a>
+            </div>
           </div>
+          ${curator.tagline ? `<blockquote class="curator-card__motto"><p>&ldquo;${curator.tagline}&rdquo;</p></blockquote>` : ''}
         </header>
 
         ${curator.bio ? `

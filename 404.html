@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>WanderAlt — Not Found</title>
   <meta name="description" content="This page doesn't exist — or not yet." />
-  <meta name="theme-color" content="#055959" />
+  <meta name="theme-color" content="#0a1011" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
@@ -15,12 +15,17 @@
 
 
   <link rel="stylesheet" href="styles.css" />
+  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <script src="./theme.js"></script>
+  <!-- city.js swaps the CTA's .page-head__city to the active city
+       (it's dependency-free: reads wa:city, sets WA.CITY). -->
+  <script defer src="./city.js"></script>
 </head>
-<body data-page="404">
+<body data-page="404" data-skin="dusk">
 
   <a class="skip-link" href="#not-found-main">Skip to content</a>
 
-  <header class="topbar" role="banner">
+  <header class="topbar island island--deep" role="banner">
     <div class="topbar__inner">
       <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home"><span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span><span class="wordmark">WanderAlt</span></a>
     </div>
@@ -28,16 +33,16 @@
 
   <main id="not-found-main" class="page" role="main">
 
+    <!-- Board 4f: curator voice, then the one lime CTA back into tonight.
+         city.js swaps .page-head__city to the active city. -->
     <section class="not-found">
       <p class="eyebrow">404</p>
-      <blockquote class="tonight__quote">
-        <p>&ldquo;Nothing here tonight.&rdquo;</p>
-      </blockquote>
+      <p class="not-found__line">This corner is empty.<br>The night isn&rsquo;t.</p>
       <p class="not-found__copy">
         This page doesn&rsquo;t exist &mdash; or it did once and is gone now,
         which is the nature of things worth paying attention to.
       </p>
-      <a class="not-found__back" href="./index.html">&larr; Back to Briefing</a>
+      <a class="scene-cta not-found__cta" href="./index.html">Tonight in <span class="page-head__city">Tallinn</span>&nbsp;&rarr;</a>
     </section>
 
     <footer class="colophon">
@@ -47,7 +52,7 @@
   </main>
 
   <nav class="nav" aria-label="Primary">
-    <div class="nav__inner">
+    <div class="nav__inner island island--deep">
       <a class="nav__item" data-nav="briefing" href="./index.html">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
           <path d="M5 3h11l3 3v15H5V3z" />

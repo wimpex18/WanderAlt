@@ -317,6 +317,21 @@
       </article>
     `;
 
+    /* Quote clamps at 4 lines (board 4f); when it actually overflows,
+       a quiet "more" un-clamps it in place. */
+    const quoteP = main.querySelector('.answer .scene-quote p');
+    if (quoteP && quoteP.scrollHeight > quoteP.clientHeight + 2) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'quote-more';
+      more.textContent = 'more';
+      more.addEventListener('click', () => {
+        quoteP.closest('.scene-quote').classList.add('scene-quote--open');
+        more.remove();
+      });
+      quoteP.closest('.scene-quote').insertAdjacentElement('afterend', more);
+    }
+
     /* If the scene photo URL is dead (Google Places URIs can 403 over
        time), drop to the dusk-gradient fallback — the voice and answer
        card are separate layers, so nothing else moves (board 4f: never

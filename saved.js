@@ -64,26 +64,29 @@
      Saved matches the Discover photo cards. Falls back to the initials
      tile when the entry has no image. Decorative supplementary link. */
 
-  /* Going row — day label · photo · body grid. */
+  /* Going row (Dusk board 4a): fixed date cell (lime = TONIGHT only) ·
+     title + one-line `venue · time` meta · bookmark toggle. The photo
+     and quote stay on the pick detail — this row must fit one line at
+     390px beside the date cell and the bookmark. */
   const goingRow = (entry) => {
     const li = document.createElement('li');
-    li.className        = 'list-row list-row--going list-row--card';
+    li.className        = 'list-row list-row--going';
     li.dataset.catalogId = entry.id;
+    const live = entry.day === 'Tonight';
+    const meta = [entry.venue, entry.time].filter(Boolean).join(' · ');
     li.innerHTML =
-      `<p class="list-row__time${entry.day === 'Tonight' ? ' list-row__time--live' : ''}">${entry.day === 'Tonight' ? 'Tonight' : entry.day}</p>
-       ${mediaHtml(entry)}
+      `<span class="srow-date${live ? ' srow-date--live' : ''}">${live ? 'TONIGHT' : (entry.day || '').slice(0, 3).toUpperCase()}</span>
        <div class="list-row__body">
-         <p class="list-row__title">
+         <p class="list-row__title one-line">
            <a href="${venueHref(entry.id)}">${entry.title}</a>${entry.__change ? ` <span class="list-row__changed">${entry.__change}</span>` : ''}
          </p>
-         <p class="list-row__meta">${buildMeta(entry)}</p>
-         ${isEchoQuote(entry)
-           ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a></p>`
-           : `<p class="list-row__quote">
-           &mdash; ${entry.quote}
-           <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
-         </p>`}
-       </div>`;
+         <p class="list-row__meta one-line">${meta}</p>
+       </div>
+       <label class="bookmark" title="Remove from Saved">
+         <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
+                aria-label="Saved: ${entry.title}" checked>
+         ${window.WA.UI.bookmarkSVG()}
+       </label>`;
     return li;
   };
 
@@ -311,7 +314,7 @@
        CSS keys the badge on :checked + :not(.seg-tab__count--zero). */
     const setCount = (el, n) => {
       if (!el) return;
-      el.textContent = String(n);
+      el.textContent = n > 99 ? '99+' : String(n);   /* board 4f */
       el.classList.toggle('seg-tab__count--zero', n === 0);
     };
     setCount(goingTab,   goingCount);
@@ -366,6 +369,15 @@
     } else {
       renderLists();
     }
+  });
+
+  /* Un-saving from a row (the bookmark toggle, board 4a): persist, then
+     re-render after a beat so the row doesn't vanish mid-tap. */
+  document.addEventListener('change', (e) => {
+    const cb = e.target.closest('.bookmark__check');
+    if (!cb || !window.WA?.Bookmarks) return;
+    window.WA.Bookmarks.set(cb.dataset.id, cb.checked);
+    setTimeout(renderLists, 400);
   });
 
   document.addEventListener('wa:catalog-ready',     renderLists);

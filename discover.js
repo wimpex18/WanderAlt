@@ -742,10 +742,11 @@
         resultsCount.textContent = base;
       }
     }
+    /* Curator voice, board 4f — never system voice in an empty state. */
     if (emptyState) {
       emptyState.textContent = state.q
-        ? `Nothing found for "${state.q}"`
-        : 'No picks match the active filters.';
+        ? `Nothing answers to "${state.q}". Try fewer words.`
+        : 'Nothing matches; loosen a filter.';
     }
     renderList(sorted);
     renderApplied();
