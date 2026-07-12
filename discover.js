@@ -934,7 +934,7 @@
     document.body.classList.toggle('discover-ai-mode', isMatch);
     if (input) {
       input.placeholder = isMatch ? 'Describe your night…'
-        : (state.type === 'places' ? 'Search places…' : 'Search anything…');
+        : (state.type === 'places' ? 'Search places…' : 'Search or ask…');
       input.setAttribute('enterkeyhint', isMatch ? 'go' : 'search');
     }
   };
