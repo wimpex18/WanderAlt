@@ -52,7 +52,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       const page = await browser.newPage();
       await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
       await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await page.evaluate(() => localStorage.setItem('wa:city', 'tallinn')).catch(() => {});
+      await page.evaluate(() => { localStorage.setItem('wa:city', 'tallinn');
+        /* Pin dusk: audits grade against the dusk boards; without this the
+           theme flips with the sun (theme.js auto). */
+        localStorage.setItem('wa:appearance', 'dusk'); }).catch(() => {});
       await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
       await sleep(1200);
       /* .list-row uses content-visibility:auto, so off-viewport rows are
