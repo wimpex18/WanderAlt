@@ -2530,6 +2530,21 @@ a.auth-panel__submit { display: inline-block; }
   user-select: none;
 }
 
+/* Profile — signed-out state (Jul 2026). Rhythm: heading block → body
+   (heading→content tier) < body → actions (group tier). */
+.profile-signedout__body {
+  max-width: 56ch;
+  margin: var(--s-5) 0 0;
+  color: var(--c-ink-soft);
+}
+.profile-signedout__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  max-width: 360px;
+  margin-top: var(--s-6);
+}
+
 .profile-section {
   padding-bottom: var(--s-4);
 }

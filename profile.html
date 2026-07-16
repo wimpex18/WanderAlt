@@ -46,6 +46,32 @@
 
   <main id="profile-main" class="page" role="main">
 
+    <!-- Signed-out state (design-critique should-fix, Jul 2026): a direct
+         load of profile.html without a session used to bounce silently to
+         index.html — tap Profile, land on Today, no explanation. Now the
+         page says what an account is for and offers the same auth sheet
+         the nav tab opens. Hidden by default; profile.js reveals it (and
+         hides the signed-in sections) when no session is present. The
+         Sign-in link carries data-nav="profile" so auth.js's existing
+         delegated interceptor opens the sign-in overlay — one mechanism,
+         not a fork. -->
+    <section id="profile-signed-out" aria-labelledby="profile-signedout-title" hidden>
+      <header class="page-head">
+        <p class="page-head__eyebrow">Account</p>
+        <h1 class="page-head__title" id="profile-signedout-title">Sign in to see your account.</h1>
+        <p class="page-head__meta">bookmarks &middot; weekly digest &middot; delete anytime</p>
+      </header>
+      <p class="profile-signedout__body">
+        Your saved picks and taste preferences live in your browser either way.
+        An account syncs them across devices and can send you the Saturday digest.
+        We store your email and your bookmarks &mdash; that&rsquo;s the whole list.
+      </p>
+      <div class="profile-signedout__actions">
+        <a class="auth-panel__submit" href="./profile.html" data-nav="profile"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" transform="translate(4 -3)"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg><span>Sign in</span></a>
+        <a class="auth-panel__close" href="./index.html"><span>Back to the briefing</span></a>
+      </div>
+    </section>
+
     <!-- Profile head — avatar + email + stats strip. -->
     <header class="page-head page-head--profile">
       <p class="page-head__eyebrow">Account</p>

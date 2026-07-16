@@ -31,6 +31,7 @@ const PAGES = [
   ['discover-week',   '/discover.html?time=thisweek'],
   ['discover-places', '/discover.html?type=places'],
   ['saved',           '/saved.html'],
+  ['profile',         '/profile.html'],   /* fresh context = signed-out state */
   ['about',           '/about.html'],
   ['404',             '/404.html'],
 ];

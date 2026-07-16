@@ -34,7 +34,17 @@
 
   const auth = window.WA && window.WA.Auth;
   if (!auth || !auth.isSignedIn()) {
-    Promise.resolve().then(() => { window.location.replace('./index.html'); });
+    /* Signed-out: show the explanatory state instead of silently bouncing
+       to index.html (tap Profile → land on Today, no explanation — the
+       design-critique should-fix). Signed-in sections hide; the Sign-in
+       CTA opens auth.js's overlay via its data-nav="profile" interceptor;
+       a successful sign-in re-runs the page. */
+    const out = document.getElementById('profile-signed-out');
+    for (const el of document.querySelectorAll('#profile-main > *')) {
+      if (el !== out) el.hidden = true;
+    }
+    if (out) out.hidden = false;
+    document.addEventListener('wa:signed-in', () => window.location.reload(), { once: true });
     return;
   }
 

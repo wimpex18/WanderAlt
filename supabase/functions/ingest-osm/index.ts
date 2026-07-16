@@ -1,5 +1,13 @@
 // ============================================================
-// WanderAlt — ingest-osm  (v11)
+// WanderAlt — ingest-osm  (v12)
+// v12 (Jul 2026, design-critique should-fix): two curation guards.
+//   • Chain blocklist: pipeline_config.venue_chain_blocklist (string[],
+//     word-prefix match on the venue name, case-insensitive) skips
+//     mainstream chains at ingest — 18 "Apollo" mall bookshops/multiplex
+//     rows had flooded the Places list of an *underground* guide.
+//   • Upsert no longer writes `status` — the column defaults to 'active'
+//     on INSERT, and existing rows keep curator-set statuses; previously
+//     every OSM run silently re-activated rejected venues.
 // v11 (May 2026): add Vilnius to the CITIES map (bbox covers the
 //                 core cultural districts — Senamiestis, Naujamiestis,
 //                 Užupis, Žvėrynas, Antakalnis, Valakampiai). No other
@@ -68,12 +76,27 @@ const tagToKind = (t: Record<string, string>) => {
   return null;
 };
 
+/* Chain blocklist (v12): entries match as a case-insensitive word prefix
+   of the venue name — "apollo" skips "Apollo", "Apollo Kino", "Apollo Kids"
+   but NOT "Apollonia". Config-driven so curators extend it without a
+   redeploy: pipeline_config key `venue_chain_blocklist`, value string[]. */
+const loadChainBlocklist = async (sb: ReturnType<typeof createClient>): Promise<RegExp[]> => {
+  const { data } = await sb.from("pipeline_config")
+    .select("value").eq("key", "venue_chain_blocklist").maybeSingle();
+  const list = Array.isArray(data?.value) ? data.value : [];
+  return list
+    .map((s: unknown) => String(s).trim())
+    .filter(Boolean)
+    .map((s: string) => new RegExp(`^${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"));
+};
+
 async function ingestCity(
   sb: ReturnType<typeof createClient>,
   city: string,
   bbox: string,
   now: string,
-): Promise<{ upserted: number; total: number }> {
+  blocklist: RegExp[],
+): Promise<{ upserted: number; total: number; blocked: number }> {
   const res = await fetch(OVERPASS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8",
@@ -91,6 +114,7 @@ async function ingestCity(
   }>;
 
   const rows: Record<string, unknown>[] = [];
+  let blocked = 0;
 
   for (const el of elements) {
     const t    = el.tags ?? {};
@@ -101,6 +125,8 @@ async function ingestCity(
     const lat = el.lat ?? el.center?.lat;
     const lng = el.lon ?? el.center?.lon;
     if (!lat || !lng) continue;
+    /* v12: mainstream chains never enter the catalog. */
+    if (blocklist.some((re) => re.test(name))) { blocked++; continue; }
 
     rows.push({
       id:           slugify(name) + "-" + el.id,
@@ -112,7 +138,8 @@ async function ingestCity(
       website:      t.website || t["contact:website"] || null,
       facebook:     normSocial(t["contact:facebook"]  || t.facebook,  "https://facebook.com/"),
       instagram:    normSocial(t["contact:instagram"] || t.instagram, "https://instagram.com/"),
-      status:       "active",
+      /* v12: no `status` here — INSERTs get the column default ('active'),
+         existing rows keep curator-set statuses (rejections must stick). */
       last_seen_at: now,
       updated_at:   now,
     });
@@ -127,7 +154,7 @@ async function ingestCity(
     upserted += Math.min(CHUNK, rows.length - i);
   }
 
-  return { upserted, total: elements.length };
+  return { upserted, total: elements.length, blocked };
 }
 
 export default {
@@ -156,14 +183,16 @@ export default {
       .from("ingest_log").insert({ fn: "ingest-osm" }).select("id").single();
     const logId = log?.id;
 
-    const perCity: Record<string, { upserted?: number; total?: number; error?: string }> = {};
+    const blocklist = await loadChainBlocklist(sb);
+
+    const perCity: Record<string, { upserted?: number; total?: number; blocked?: number; error?: string }> = {};
     let totalUpserted = 0;
     const errors: string[] = [];
 
     for (const [city, bbox] of cities) {
       try {
-        const out = await ingestCity(sb, city, bbox, now);
-        perCity[city]  = { upserted: out.upserted, total: out.total };
+        const out = await ingestCity(sb, city, bbox, now, blocklist);
+        perCity[city]  = { upserted: out.upserted, total: out.total, blocked: out.blocked };
         totalUpserted += out.upserted;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
