@@ -55,3 +55,45 @@ jobs:
       # to live or static catalog). Same `verify` check gates both sweeps.
       - name: Functional / E2E sweep
         run: npm run e2e
+
+  # Pixel-diff regression (npm run visual) — 21 deterministic shots
+  # (static catalog via aborted REST, frozen Date) vs the committed
+  # baselines in .screenshots/visual-baselines/. Runs on macOS because
+  # the baselines were rendered on macOS — Linux font rasterisation
+  # would diff every text pixel. A legit design change fails this job
+  # by design: re-baseline with `npm run visual:update` and commit the
+  # changed PNGs in the same PR.
+  visual:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          # Skip Puppeteer's Chrome download — this job only needs Playwright.
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Pre-fetch http-server
+        run: npx -y http-server --version
+
+      - name: Visual regression (pixel diff vs committed baselines)
+        run: npm run visual
+
+      # On failure, the actual/expected/diff PNGs are the whole story —
+      # surface them as an artifact instead of making anyone re-run locally.
+      - name: Upload diff artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: test-results/
+          retention-days: 7
