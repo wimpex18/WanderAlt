@@ -3400,6 +3400,7 @@ window.WA._catalogAll = [
 /* Filter the all-cities list to the active city. supabase.js will
    replace this with live data once the network responds, but the
    filter ensures the offline fallback respects the city setting. */
+if (window.WA.when) window.WA.when.stampAll(window.WA._catalogAll);
 window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
 
 window.WA._curatorsAll = [

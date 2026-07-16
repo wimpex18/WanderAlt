@@ -260,6 +260,10 @@
   let _weekShown    = PAGE_SIZE;
   let _weekIsFiltered = false;
   let _weekTotalAll = 0;      /* full week count, for the "N of M" label */
+  let _weekIsFallback = false; /* true = nothing dated/flagged this week; the
+                                  section shows latest picks and SAYS so —
+                                  never fabricate "This week" (design-critique
+                                  must-fix #1, Jul 2026). */
 
   /* total = unfiltered count, used only when isFiltered=true to show "N of M". */
   const renderThisWeek = (entries, total = entries.length, isFiltered = false) => {
@@ -286,6 +290,12 @@
     const ts = window.WA?.taste?.tasteScore;
     const ordered = ts ? [..._weekFullSet].sort((a, b) => ts(b) - ts(a)) : _weekFullSet;
     const entries = ordered.slice(0, _weekShown);
+
+    /* Honest heading: when the never-blank fallback is active there is
+       nothing actually dated this week — say "Latest picks", don't claim
+       "This week". Reset on every render (city switch re-renders). */
+    const headEl = document.getElementById('thisweek-label');
+    if (headEl) headEl.textContent = _weekIsFallback ? 'Latest picks' : 'This week';
 
     /* Empty state — a graceful card with the active city's plate
        instead of a stark empty list. Hits any time This Week resolves
@@ -325,14 +335,16 @@
       const filteredHasMore = _weekIsFiltered && _weekTotalAll > _weekFullSet.length;
       const showCount  = entries.length;
       const totalCount = filteredHasMore ? _weekTotalAll : _weekFullSet.length;
+      const picksNoun  = (n) => `pick${n !== 1 ? 's' : ''}`;
       const countLabel = showCount < totalCount
-        ? `${showCount} of ${totalCount} picks`
-        : `${showCount} picks`;
+        ? `${showCount} of ${totalCount} ${picksNoun(totalCount)}`
+        : `${showCount} ${picksNoun(showCount)}`;
       /* One subtle, honest cue when a taste profile is active — no per-card
          badges (that would clutter and undercut the human-curation voice). */
       const tasteActive = Object.keys(window.WA?.taste?.getPrefs?.() || {}).length > 0;
       sub.textContent =
         `${countLabel} · ${curatorCount} curator${curatorCount !== 1 ? 's' : ''}` +
+        (_weekIsFallback ? ' · nothing dated this week yet' : '') +
         (tasteActive ? ' · tuned to you' : '');
     }
 
@@ -483,7 +495,9 @@
        exactly one explicit flag still gets a diversified set instead of
        an oddly-sparse single card, while curator flags still lead. */
     const explicit  = catalog.filter(e => e.tonight);
-    const today     = WEEKDAY_ABBR[new Date().getDay()];
+    /* Shared Baltic-clock weekday (when.js) so Tonight membership agrees
+       with the stamped flags; local-clock fallback for safety. */
+    const today     = window.WA?.when?.todayAbbrev() || WEEKDAY_ABBR[new Date().getDay()];
     const scheduled = catalog.filter(e => e.thisWeek && e.day === today && !e.tonight);
     const pool = [...explicit, ...scheduled];
 
@@ -571,6 +585,7 @@
        below re-renders the CURRENT week source, not the one from the
        first (possibly static-catalog) init run. */
     _weekSrc = weekSrc;
+    _weekIsFallback = fallback;
 
     /* Track the current tonight picks so Surprise me excludes them. */
     _surpriseExcludeIds = tonightIds;

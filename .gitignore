@@ -18,7 +18,13 @@ node_modules/
 
 # Local screenshots from the puppeteer smoke-test (keep shoot.js, drop PNGs).
 # Curated baseline lives at docs/screenshots/baseline/ (versioned).
+# NB .screenshots/visual-baselines/ is NOT ignored — those PNGs are the
+# committed pixel-diff baselines for `npm run visual`.
 .screenshots/*.png
+
+# Playwright test-runner artifacts (failure diffs, traces, reports).
+test-results/
+playwright-report/
 
 # Full Lighthouse reports (regenerated via `npm run lighthouse`). Keep
 # only the lightweight summary.json which captures the four scores per page.
