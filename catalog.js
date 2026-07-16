@@ -519,7 +519,7 @@ window.WA._catalogAll = [
     city:          "tallinn",
     title:         "Nikki Nair (US)",
     venue:         "Paavli Kultuurivabrik",
-    neighborhood:  "Pohja-Tallinn",
+    neighborhood:  "Põhja-Tallinn",
     kind:          "club",
     day:           null,
     time:          "23:00",
@@ -540,7 +540,7 @@ window.WA._catalogAll = [
     city:          "tallinn",
     title:         "EYEHATEGOD, Childbeater, HUKK Live",
     venue:         "Paavli Kultuurivabrik",
-    neighborhood:  "Pohja-Tallinn",
+    neighborhood:  "Põhja-Tallinn",
     kind:          "gig",
     day:           null,
     time:          "19:00",
@@ -561,7 +561,7 @@ window.WA._catalogAll = [
     city:          "tallinn",
     title:         "Drew McDowall (UK) & Robert Nikolajev",
     venue:         "Paavli Kultuurivabrik",
-    neighborhood:  "Pohja-Tallinn",
+    neighborhood:  "Põhja-Tallinn",
     kind:          "gig",
     day:           null,
     time:          "19:00",
@@ -582,7 +582,7 @@ window.WA._catalogAll = [
     city:          "tallinn",
     title:         "Starbenders (US) Live",
     venue:         "Paavli Kultuurivabrik",
-    neighborhood:  "Pohja-Tallinn",
+    neighborhood:  "Põhja-Tallinn",
     kind:          "gig",
     day:           null,
     time:          "19:00",
@@ -603,7 +603,7 @@ window.WA._catalogAll = [
     city:          "tallinn",
     title:         "Napalm Death, Master, The Brat, Goatburner",
     venue:         "Paavli Kultuurivabrik",
-    neighborhood:  "Pohja-Tallinn",
+    neighborhood:  "Põhja-Tallinn",
     kind:          "gig",
     day:           null,
     time:          "19:00",
@@ -965,6 +965,7 @@ window.WA._catalogAll = [
 /* Filter the all-cities list to the active city. supabase.js will
    replace this with live data once the network responds, but the
    filter ensures the offline fallback respects the city setting. */
+if (window.WA.when) window.WA.when.stampAll(window.WA._catalogAll);
 window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
 
 window.WA._curatorsAll = [

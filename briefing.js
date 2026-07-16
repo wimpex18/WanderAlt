@@ -302,6 +302,10 @@
   let _weekShown    = PAGE_SIZE;
   let _weekIsFiltered = false;
   let _weekTotalAll = 0;      /* full week count, for the "N of M" label */
+  let _weekIsFallback = false; /* true = nothing dated/flagged this week; the
+                                  section shows latest picks and SAYS so —
+                                  never fabricate "This week" (design-critique
+                                  must-fix #1, Jul 2026). */
 
   /* total = unfiltered count, used only when isFiltered=true to show "N of M". */
   const renderThisWeek = (entries, total = entries.length, isFiltered = false) => {
@@ -344,6 +348,12 @@
       .map(x => x.e);
     const entries = ordered.slice(0, _weekShown);
 
+    /* Honest heading: when the never-blank fallback is active there is
+       nothing actually dated this week — say "Latest picks", don't claim
+       "This week". Reset on every render (city switch re-renders). */
+    const headEl = document.getElementById('thisweek-label');
+    if (headEl) headEl.textContent = _weekIsFallback ? 'Latest picks' : 'This week';
+
     /* Empty state — a graceful card with the active city's plate
        instead of a stark empty list. Hits any time This Week resolves
        to zero picks (typical for thinner cities like Helsinki / Riga,
@@ -378,8 +388,12 @@
        + below-list footer; taste still orders the rail silently. */
     if (sub) {
       const total = Math.max(_weekTotalAll, _weekFullSet.length) + _tonightExtras.length;
+      /* Honesty guard (critique #1): on the never-blank fallback the rail
+         shows LATEST picks, none dated this week — the bridge must not
+         deep-link into a 0-result ?time=thisweek Discover. */
+      const bridge = _weekIsFallback ? './discover.html' : './discover.html?time=thisweek';
       sub.innerHTML =
-        `<a class="week-all" href="./discover.html?time=thisweek">ALL ${total} &rarr;</a>`;
+        `<a class="week-all" href="${bridge}">ALL ${total} &rarr;</a>`;
     }
 
     /* Dusk Glass tickets (board 3b/3e): one snap-scroll rail of 64px glass
@@ -493,7 +507,9 @@
        exactly one explicit flag still gets a diversified set instead of
        an oddly-sparse single card, while curator flags still lead. */
     const explicit  = catalog.filter(e => e.tonight);
-    const today     = WEEKDAY_ABBR[new Date().getDay()];
+    /* Shared Baltic-clock weekday (when.js) so Tonight membership agrees
+       with the stamped flags; local-clock fallback for safety. */
+    const today     = window.WA?.when?.todayAbbrev() || WEEKDAY_ABBR[new Date().getDay()];
     const scheduled = catalog.filter(e => e.thisWeek && e.day === today && !e.tonight);
     const pool = [...explicit, ...scheduled];
 
@@ -581,6 +597,7 @@
        below re-renders the CURRENT week source, not the one from the
        first (possibly static-catalog) init run. */
     _weekSrc = weekSrc;
+    _weekIsFallback = fallback;
 
     /* Track the current tonight picks so Surprise me excludes them. */
     _surpriseExcludeIds = tonightIds;

@@ -204,6 +204,7 @@
          a pick from another city, curator profile for a Riga curator
          while CITY=tallinn, etc.). The listing pages keep using the
          city-filtered slice. */
+      if (window.WA.when) window.WA.when.stampAll(all);
       window.WA._catalogAll = all;
       window.WA.catalog     = all.filter(e => e.city === CITY);
       /* Saved's change-watch gates its destructive "no longer listed"
