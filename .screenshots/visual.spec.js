@@ -63,7 +63,13 @@ for (const [name, url] of PAGES) {
         FixedDate.UTC = OrigDate.UTC;
         // eslint-disable-next-line no-global-assign
         window.Date = FixedDate;
-        try { localStorage.setItem('wa:city', 'tallinn'); } catch (_) {}
+        try {
+          localStorage.setItem('wa:city', 'tallinn');
+          /* Pin dusk explicitly — theme.js otherwise picks the skin from
+             the sun table, and 18:00 July Baltic is daylight. Baselines
+             grade the dusk boards (Jul 2026 Dusk Glass). */
+          localStorage.setItem('wa:appearance', 'dusk');
+        } catch (_) {}
       }, FIXED_TIME.getTime());
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.goto(url, { waitUntil: 'load' });

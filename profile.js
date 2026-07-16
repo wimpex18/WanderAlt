@@ -30,21 +30,26 @@
     }
   };
 
-  /* ── Auth gate ───────────────────────────────────────────── */
-
+  /* ── Auth gate (board 4c) ────────────────────────────────────
+     Signed out, the page IS the invite: the glass welcome card over
+     the dusk gradient, its lime CTA opening the one auth overlay.
+     (Replaces the old redirect to index — a Profile tab that bounced
+     you home read as broken.) Signing in reloads into the account. */
   const auth = window.WA && window.WA.Auth;
   if (!auth || !auth.isSignedIn()) {
-    /* Signed-out: show the explanatory state instead of silently bouncing
-       to index.html (tap Profile → land on Today, no explanation — the
-       design-critique should-fix). Signed-in sections hide; the Sign-in
-       CTA opens auth.js's overlay via its data-nav="profile" interceptor;
-       a successful sign-in re-runs the page. */
-    const out = document.getElementById('profile-signed-out');
-    for (const el of document.querySelectorAll('#profile-main > *')) {
-      if (el !== out) el.hidden = true;
+    const welcome = document.getElementById('profile-welcome');
+    if (welcome) {
+      welcome.hidden = false;
+      document.querySelectorAll('#profile-main > .profile-section, #profile-main > .page-head')
+        .forEach(el => { el.hidden = true; });
+      const cta = document.getElementById('profile-welcome-signin');
+      if (cta) cta.addEventListener('click', () => {
+        if (window.WA.Auth && window.WA.Auth.openSignIn) window.WA.Auth.openSignIn();
+      });
+      document.addEventListener('wa:signed-in', () => window.location.reload());
+    } else {
+      Promise.resolve().then(() => { window.location.replace('./index.html'); });
     }
-    if (out) out.hidden = false;
-    document.addEventListener('wa:signed-in', () => window.location.reload(), { once: true });
     return;
   }
 
@@ -387,4 +392,29 @@
       deleteSubmit.disabled = false;
     }
   });
+
+  /* ── Appearance (board 4b/4e) ────────────────────────────────
+     One settings row; tap cycles AUTO → DUSK → DAYBREAK. AUTO's value
+     line names tonight's switch time from theme.js's sun table. */
+  const appearanceRow   = document.getElementById('appearance-row');
+  const appearanceValue = document.getElementById('appearance-value');
+  const reflectAppearance = () => {
+    const T = window.WA && window.WA.Theme;
+    if (!T || !appearanceValue) return;
+    const p = T.get();
+    appearanceValue.textContent =
+      p === 'dusk' ? 'DUSK' :
+      p === 'day'  ? 'DAYBREAK' :
+      `AUTO · DUSK AT ${T.duskLabel()}`;
+  };
+  if (appearanceRow) {
+    appearanceRow.addEventListener('click', () => {
+      const T = window.WA && window.WA.Theme;
+      if (!T) return;
+      const next = { auto: 'dusk', dusk: 'day', day: 'auto' }[T.get()] || 'auto';
+      T.set(next);
+      reflectAppearance();
+    });
+    reflectAppearance();
+  }
 })();

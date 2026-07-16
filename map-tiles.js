@@ -59,9 +59,16 @@
       view = CITY_VIEWS.tallinn;
     }
 
+    /* Dusk Glass pages get the dark twin of the editorial style —
+       the map IS the scene there (board 3c), not a paper inset. The
+       Daybreak theme (theme.js) flips it back to the paper style. */
+    const styleFor = () =>
+      (document.body.dataset.skin === 'dusk' &&
+       document.documentElement.dataset.theme !== 'day')
+        ? './map-style-dusk.json' : './map-style.json';
     map = new maplibregl.Map({
       container:   containerId,
-      style:       opts.styleUrl || './map-style.json',
+      style:       opts.styleUrl || styleFor(),
       center:      view.center,
       zoom:        view.zoom,
       attributionControl: { compact: true },
@@ -72,6 +79,19 @@
     });
 
     map.touchZoomRotate.disableRotation();
+
+    /* Hot-swap the basemap when the Dusk/Daybreak theme flips
+       (Profile → Appearance, or the auto sunset switch on a long-
+       lived tab). MapLibre re-fetches the style; pins are DOM
+       overlays, so they survive untouched. */
+    let _activeStyle = opts.styleUrl || styleFor();
+    document.addEventListener('wa:theme-changed', () => {
+      const next = styleFor();
+      if (map && !opts.styleUrl && next !== _activeStyle) {
+        _activeStyle = next;
+        try { map.setStyle(next); } catch (_) { /* style mid-load */ }
+      }
+    });
 
     map.on('load', () => {
       ready = true;

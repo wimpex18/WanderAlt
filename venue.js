@@ -108,9 +108,6 @@
     if (ogDesc) ogDesc.setAttribute('content', `${entry.quote} — ${entry.handle}`);
 
     const { href, label } = backLink();
-    const eyebrow  = (entry.pin && entry.pin.eyebrow)
-                  || (entry.day === 'Tonight' ? 'Tonight' : entry.day)
-                  || 'Place';
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[entry.id]);
 
     /* Web / social links for this pick's venue. venue_details (fetched
@@ -130,14 +127,24 @@
       facebook:  (matchedVenue && matchedVenue.facebook)  || null,
       instagram: (matchedVenue && matchedVenue.instagram) || null,
     };
+    /* The venue plate's meta is the VENUE's identity (place · kind) —
+       buildMeta(entry) repeated the event's full "nhood · kind · day time"
+       line verbatim 40px under the identical page-head meta, and a venue
+       isn't "Fri 21:00" (July 2026 audit). Prefer the venue record; fall
+       back to the pick's fields, minus the 'other' data bucket. */
+    const venueMeta = [
+      (matchedVenue && matchedVenue.neighborhood) ||
+        (entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null),
+      (matchedVenue && matchedVenue.kind) || null,
+    ].filter(Boolean).join(' &middot; ');
 
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);
     const more     = moreAll.slice(0, 5);
     const moreRest = moreAll.length - more.length;
 
-    /* Mood-tag chips (interactive filter links) — kept below the header in
-       both layouts so they stay tappable rather than overlaid on a photo. */
+    /* Mood-tag chips (interactive filter links) — kept in the long tail
+       below the answer card so they stay tappable, never over the photo. */
     const moodChips = entry.moodTags && entry.moodTags.length ? `
         <p class="venue-moods">
           ${entry.moodTags.map(t =>
@@ -145,85 +152,96 @@
           ).join('')}
         </p>` : '';
 
-    /* Flat header (no photo). Kept as a named string so a hero whose photo
-       fails to load can swap to exactly this — matching every photoless
-       pick — rather than sitting on a black box. */
-    const headerFlat =
-      `<div class="page-head">
-         <p class="page-head__eyebrow">${eyebrow}</p>
-         <h1 class="page-head__title">${entry.title}</h1>
-         <p class="page-head__meta">${buildMeta(entry)}</p>
-       </div>`;
-
-    /* Photo-forward header (June 2026): when the pick has an image_url, the
-       venue photo fills a banner with a scrim gradient and the eyebrow +
-       title + meta sit on it in white. The visible fill is a CSS background;
-       an invisible <img> probe with the same URL gives us an onerror hook
-       (backgrounds have none) so an expired Google Places URL degrades to
-       the flat header. The big curator quote still leads below, either way. */
-    const heroUrl = entry.imageUrl ? WA.img(entry.imageUrl, 1080).replace(/'/g, '%27') : '';
-    const header = (entry.imageUrl
-      ? `<div class="detail-hero" style="background-image:url('${heroUrl}')">
-           <img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true">
-           <div class="detail-hero__foot">
-             <p class="eyebrow eyebrow--onphoto">${eyebrow}</p>
-             <h1 class="venue-title venue-title--onphoto">${entry.title}</h1>
-             <p class="meta meta--onphoto">${buildMeta(entry)}</p>
-           </div>
-         </div>`
-      : headerFlat) + moodChips;
-
-    /* Map link for the icon row — venue name + city (venue_details refines
-       the address async, but the name query already resolves in Maps). */
+    /* Map link — venue name + city (venue_details refines the address
+       async, but the name query already resolves in Maps). */
     const cityName = (window.WA && window.WA.CITY) || 'tallinn';
     const mapsUrl  = `https://maps.google.com/?q=${encodeURIComponent(`${entry.venue}, ${cityName}`)}`;
 
-    main.innerHTML = `
-      <a class="venue-back" href="${href}">${label}</a>
+    /* Dusk Glass (board 3d): the photo is the scene; a probe img downgrades
+       a dead URL to the dusk-gradient fallback (never a gray box). */
+    const heroUrl = entry.imageUrl ? WA.img(entry.imageUrl, 1080).replace(/'/g, '%27') : '';
+    const sceneBg = entry.imageUrl
+      ? `<div class="scene__bg" style="background-image:url('${heroUrl}')" aria-hidden="true"><img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true"></div>`
+      : `<div class="scene__bg scene__bg--fallback" aria-hidden="true">${!entry.imageUrl ? `<span class="scene__glyph">${thumbEl({ ...entry, imageUrl: null }, true)}</span>` : ''}</div>`;
 
+    /* The three answer cells (WHEN / WHERE / GETTING IN) — 12px values,
+       single-line. GETTING IN reads the honest best source we have:
+       ticket/event page host → mood tags (ticketed / walk-up) → the
+       venue's door, stated plainly. */
+    const whenVal = [entry.day === 'Tonight' || entry.tonight ? 'Tonight' : entry.day, entry.time]
+      .filter(Boolean).join(' ') || 'Open dates';
+    const whereVal = matchedVenue
+      ? `<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">${esc(entry.venue)} &nearr;</a>`
+      : `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">${esc(entry.venue)} &nearr;</a>`;
+    let inVal = 'At the venue';
+    let ticketHost = '';
+    try { ticketHost = entry.permalink ? new URL(entry.permalink).host : ''; } catch (_) {}
+    if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
+      inVal = `<a href="${esc(entry.permalink)}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
+    } else if ((entry.moodTags || []).includes('ticketed')) {
+      inVal = 'Ticketed';
+    } else if ((entry.moodTags || []).includes('walk-up')) {
+      inVal = 'Walk-up';
+    }
+
+    /* Lime is the TONIGHT signal only — any other day rides glass. */
+    const isTonight = entry.tonight || entry.day === 'Tonight'
+      || entry.day === ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+    const tagDay = isTonight ? 'Tonight' : (entry.day || 'Place');
+    const tagClass = isTonight ? 'tag--live' : 'tag--scene';
+
+    main.innerHTML = `
       <article aria-label="${entry.title}">
 
-        ${header}
+      <div class="scene scene--detail">
+        ${sceneBg}
+        <div class="scene__scrim" aria-hidden="true"></div>
+        <a class="scene-float scene-float--back" href="${href}" aria-label="${label.replace('&larr; ', 'Back to ')}">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </a>
+        <button class="scene-float scene-float--share venue-share-btn" type="button" aria-label="Share this pick" title="Share">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
+        </button>
 
-        <hr class="rule" style="margin-bottom:var(--s-2)">
+        <div class="scene__main">
+          <div class="scene-tags">
+            <span class="tag ${tagClass}">${esc(tagDay)}</span>
+            ${venueMeta ? `<span class="tag tag--scene one-line">${venueMeta}</span>` : (entry.kind ? `<span class="tag tag--scene one-line">${esc(entry.kind)}</span>` : '')}
+          </div>
+          <h1 class="scene-title scene-title--detail">${entry.title}</h1>
 
-        <section class="tonight" aria-label="Curator quote">
-          <blockquote class="tonight__quote">
-            <p>&ldquo;${entry.quote}&rdquo;</p>
-            <footer class="tonight__attr">
-              <span class="tonight__attr-line" aria-hidden="true"></span><a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a>
-            </footer>
-          </blockquote>
-        </section>
-
-        <!-- Actions directly under the voice (July 2026 board 1d): the
-             labelled petrol primary keeps the 52 form tier; save / calendar
-             / share / map are icon-only 44s in their own compact row —
-             the two tiers never mix in one row. -->
-        <div class="venue-actions">
-          <button class="btn btn--primary venue-going-btn" type="button">
-            <span class="action-btn__label">I&rsquo;m going</span>
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
-          </button>
-          <div class="venue-iconrow">
-            <label class="bookmark venue-save" title="Save this pick">
-              <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
-                     aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
-              ${bookmarkSVG()}
-            </label>
-            ${entry.day ? `<button class="action-icon venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
-            </button>` : ''}
-            <button class="action-icon venue-share-btn" type="button" aria-label="Share this pick" title="Share">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-            </button>
-            <a class="action-icon" href="${mapsUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(entry.venue)} on the map (opens in a new tab)" title="On the map">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
-            </a>
+          <!-- The whole answer is ONE glass card: quote → three equal
+               56px info cells → one 48 action row. -->
+          <div class="answer island island--deep">
+            <blockquote class="scene-quote scene-quote--card"><p>${entry.quote}</p></blockquote>
+            <p class="scene-attr one-line">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a>${moreAll.length ? ` &middot; ${moreAll.length + 1} picks` : ''}</p>
+            <div class="answer__cells wa-row">
+              <span class="answer__cell"><span class="answer__k">When</span><span class="answer__v one-line">${whenVal}</span></span>
+              <span class="answer__cell"><span class="answer__k">Where</span><span class="answer__v one-line">${whereVal}</span></span>
+              <span class="answer__cell"><span class="answer__k">Getting in</span><span class="answer__v one-line">${inVal}</span></span>
+            </div>
+            <div class="scene-actions wa-row">
+              <button class="scene-cta venue-going-btn" type="button">
+                <span class="action-btn__label">I&rsquo;m going &rarr;</span>
+              </button>
+              <label class="bookmark scene-key scene-key--incard" title="Save this pick">
+                <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
+                       aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
+                ${bookmarkSVG()}
+              </label>
+              ${entry.day ? `<button class="scene-key scene-key--incard venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="15" rx="2"/><path d="M4 11h16M8 3v5M16 3v5"/></svg>
+              </button>` : ''}
+              <a class="scene-key scene-key--incard" href="${mapsUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(entry.venue)} on the map (opens in a new tab)" title="On the map">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+              </a>
+            </div>
           </div>
         </div>
+      </div>
 
-        <hr class="rule" style="margin-top:var(--s-5)">
+      <div class="page-below">
+        ${moodChips}
 
         <!-- Venue plate (board 1d): thumb + name + meta + ONE labelled
              "Venue →" link into the place page — answers the old
@@ -233,7 +251,7 @@
             <span class="venue-card__media">${thumbEl(entry, true)}</span>
             <div class="venue-card__body">
               <p class="venue-card__name">${entry.venue}</p>
-              <p class="list-row__meta">${buildMeta(entry)}</p>
+              ${venueMeta ? `<p class="list-row__meta">${venueMeta}</p>` : ''}
             </div>
             ${matchedVenue ? `<a class="venue-card__go" href="place.html?id=${encodeURIComponent(matchedVenue.id)}">Venue &rarr;</a>` : ''}
           </div>
@@ -291,22 +309,42 @@
           </p>` : ''}
         </section>` : ''}
 
-      </article>
-
       <footer class="colophon">
         <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
       </footer>
+
+      </div><!-- /.page-below -->
+      </article>
     `;
 
-    /* If the hero photo URL is dead (Google Places URIs can 403 over time),
-       swap the scrim hero for the flat header so the title is never left on
-       a black box. The probe shares the hero's URL, so it errors in lockstep
-       with the unpaintable background. */
+    /* Quote clamps at 4 lines (board 4f); when it actually overflows,
+       a quiet "more" un-clamps it in place. */
+    const quoteP = main.querySelector('.answer .scene-quote p');
+    if (quoteP && quoteP.scrollHeight > quoteP.clientHeight + 2) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'quote-more';
+      more.textContent = 'more';
+      more.addEventListener('click', () => {
+        quoteP.closest('.scene-quote').classList.add('scene-quote--open');
+        more.remove();
+      });
+      quoteP.closest('.scene-quote').insertAdjacentElement('afterend', more);
+    }
+
+    /* If the scene photo URL is dead (Google Places URIs can 403 over
+       time), drop to the dusk-gradient fallback — the voice and answer
+       card are separate layers, so nothing else moves (board 4f: never
+       a gray box). The probe shares the background's URL, so it errors
+       in lockstep with the unpaintable CSS background. */
     const heroProbe = main.querySelector('.detail-hero__probe');
     if (heroProbe) {
       heroProbe.addEventListener('error', () => {
-        const hero = heroProbe.closest('.detail-hero');
-        if (hero) hero.outerHTML = headerFlat;
+        const bg = heroProbe.closest('.scene__bg');
+        if (bg) {
+          bg.style.backgroundImage = '';
+          bg.classList.add('scene__bg--fallback');
+        }
       });
     }
 
@@ -471,16 +509,9 @@
       });
     }
 
-    /* Icon-only action buttons can't show a text confirmation, so briefly
-       swap the glyph to a petrol check, then restore it. */
-    const flashDone = (el) => {
-      if (!el || el.dataset.flashing) return;
-      const orig = el.innerHTML;
-      el.dataset.flashing = '1';
-      el.classList.add('action-icon--done');
-      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-      setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
-    };
+    /* Icon-only action buttons flash the glyph to a petrol check on
+       success — shared impl in ui-helpers (curator share uses it too). */
+    const flashDone = window.WA.UI.flashDone;
 
     /* Wire Share — native OS share sheet, clipboard fallback. */
     const shareBtn = main.querySelector('.venue-share-btn');
@@ -510,7 +541,8 @@
     const { href, label } = backLink();
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
-      <p class="empty-line">This pick isn&rsquo;t in the catalog &mdash; it may have moved.</p>
+      ${window.WA.UI.emptyState('Not in the catalog',
+        'This pick may have moved or expired. <a href="discover.html">Browse this week &rarr;</a>')}
     `;
   };
 

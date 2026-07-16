@@ -71,7 +71,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       deviceScaleFactor: 1,
     });
     await context.addInitScript(() => {
-      try { localStorage.setItem('wa:city', 'tallinn'); } catch (_) {}
+      try {
+        localStorage.setItem('wa:city', 'tallinn');
+        /* Pin dusk: audits grade against the dusk boards; without this
+           theme.js flips the skin with the sun (Jul 2026 Dusk Glass). */
+        localStorage.setItem('wa:appearance', 'dusk');
+      } catch (_) {}
     });
     return context.newPage();
   };

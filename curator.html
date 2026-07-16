@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>WanderAlt — Curator · Tallinn</title>
   <meta name="description" content="A WanderAlt curator's picks in Tallinn." />
-  <meta name="theme-color" content="#055959" />
+  <meta name="theme-color" content="#0a1011" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
@@ -27,6 +27,8 @@
 
   <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
   <link rel="stylesheet" href="styles.css" />
+  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <script src="./theme.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./catalog.js"></script>
   <script defer src="./ui-helpers.js"></script>
@@ -39,11 +41,11 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./curator.js"></script>
 </head>
-<body data-page="curator">
+<body data-page="curator" data-skin="dusk">
 
   <a class="skip-link" href="#curator-main">Skip to curator</a>
 
-  <header class="topbar" role="banner">
+  <header class="topbar island island--deep" role="banner">
     <div class="topbar__inner">
       <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
         <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
@@ -70,7 +72,7 @@
   </main>
 
   <nav class="nav" aria-label="Primary">
-    <div class="nav__inner">      <a class="nav__item" data-nav="briefing" href="./index.html">
+    <div class="nav__inner island island--deep">      <a class="nav__item" data-nav="briefing" href="./index.html">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
           <path d="M5 3h11l3 3v15H5V3z" />
           <path d="M8 8h8M8 12h8M8 16h5" />

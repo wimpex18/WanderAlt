@@ -77,6 +77,18 @@ function pastEntry(p) {
 
   console.log(`picks: ${picks.length}, curators: ${curators.length}, past: ${past.length}`);
 
+  /* The Places (venues) seed is HAND-CURATED (README: ≤12 per city, real
+     venues only) — it does not come from the DB's 2,500-row OSM venues
+     table. Carry the existing block over verbatim so a regen never
+     clobbers curation. */
+  const catalogPath = path.join(__dirname, '..', 'catalog.js');
+  const existing = fs.readFileSync(catalogPath, 'utf8');
+  const venuesStart = existing.indexOf('/* Static Places (venues) seed');
+  const venuesBlock = venuesStart !== -1
+    ? existing.slice(venuesStart).trimEnd() + '\n'
+    : null;
+  if (!venuesBlock) throw new Error('catalog.js venues block not found — refusing to drop the curated Places seed');
+
   const out = `/* ============================================================
    WanderAlt — content catalog (static fallback)
    ------------------------------------------------------------
@@ -84,22 +96,42 @@ function pastEntry(p) {
      node .scripts/regen-catalog.js
    This is loaded first; supabase.js then replaces it with live
    data when the network is reachable.
+
+   The raw multi-city list is exposed as \`window.WA._catalogAll\`;
+   \`window.WA.catalog\` is the slice for the currently selected
+   city (read from localStorage 'wa:city' since city.js loads
+   after this file). Same for curators. Without this filter, an
+   offline visitor on the Riga or Helsinki city setting would
+   see Tallinn picks bleed through.
    ============================================================ */
 window.WA = window.WA || {};
 
-window.WA.catalog = [
+const _waCity = (() => {
+  try { return localStorage.getItem('wa:city') || 'tallinn'; }
+  catch { return 'tallinn'; }
+})();
+
+window.WA._catalogAll = [
 ${picks.map(pickEntry).join(',\n')}
 ];
 
-window.WA.curators = [
+/* Filter the all-cities list to the active city. supabase.js will
+   replace this with live data once the network responds, but the
+   filter ensures the offline fallback respects the city setting. */
+window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
+
+window.WA._curatorsAll = [
 ${curators.map(curatorEntry).join(',\n')}
 ];
+
+window.WA.curators = window.WA._curatorsAll.filter(c => c.city === _waCity);
 
 window.WA.past = [
 ${past.map(pastEntry).join(',\n')}
 ];
-`;
 
-  fs.writeFileSync(path.join(__dirname, '..', 'catalog.js'), out);
-  console.log('Wrote catalog.js');
+${venuesBlock}`;
+
+  fs.writeFileSync(catalogPath, out);
+  console.log('Wrote catalog.js (modern _catalogAll format, curated venues preserved)');
 })().catch(e => { console.error(e); process.exit(1); });

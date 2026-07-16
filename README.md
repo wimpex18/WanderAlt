@@ -4,6 +4,8 @@ A static, mobile-first website for discovering **alternative / underground cultu
 
 Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing (Places populated; Events/Today pending a curator). First screen: **Briefing** (the default landing).
 
+**Current version: v0.8.5** (11 Jul 2026) — the **Dusk Glass redesign**: every public page rides a scene (photo, dark map, or dusk gradient) under one `.island` glass recipe, with the Daybreak light twin auto-switching at each city's civil dusk (`theme.js`, Profile → Appearance). Design source: `docs/redesign-jul26-v3/`. Release notes: `ROADMAP.md` → v0.8.5 entry; stamp in `package.json`.
+
 ---
 
 ## Structure
