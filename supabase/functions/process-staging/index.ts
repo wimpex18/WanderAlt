@@ -1,5 +1,11 @@
 // ============================================================
-// WanderAlt — process-staging  (v39)
+// WanderAlt — process-staging  (v42)
+// v42 (Jul 2026, design-critique must-fix #4): Tallinn CITY_CONTEXT spelled
+//      "Pohja-Tallinn" without the diacritic, so the LLM minted an ASCII
+//      duplicate of Põhja-Tallinn that split neighborhood filters/counts
+//      (5 picks vs 2). Fixed to Põhja-Tallinn; existing rows merged by SQL.
+// v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
+//      Gemini text fallback retired via config flag (kept as last resort).
 // v39 changes vs v38 (ROADMAP P1):
 //   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
 //     marked error with an actionable rejection) instead of silently
@@ -20,8 +26,6 @@
 //     the original text is kept (translate-picks backfills later).
 //   • title_original: when the guard rewrites a title, the source
 //     title is preserved in picks.title_original.
-// v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
-//      Gemini text fallback retired via config flag (kept as last resort).
 // v37: Gemini fallback gated behind pipeline_config.gemini_fallback_enabled.
 // v36: CITY_CONTEXT gained `helsinki`. v35: gained `vilnius`.
 // v34: Groq llama-4-scout primary, Gemini fallback.
@@ -55,7 +59,7 @@ const VALID_MOOD_TAGS = new Set([
 const CITY_CONTEXT: Record<string, { name: string; neighborhoods: string }> = {
   tallinn: {
     name: "Tallinn",
-    neighborhoods: "Kalamaja|Telliskivi|Vanalinn|Kadriorg|Pohja-Tallinn|other",
+    neighborhoods: "Kalamaja|Telliskivi|Vanalinn|Kadriorg|Põhja-Tallinn|other",
   },
   riga: {
     name: "Riga",

@@ -195,7 +195,12 @@
         <hr class="rule" style="margin: var(--s-7) 0 0">
         <section aria-labelledby="picks-label">
           <header class="search-section-head">
-            <p id="picks-label" class="eyebrow">${picks.length} pick${picks.length !== 1 ? 's' : ''} in Tallinn${
+            <p id="picks-label" class="eyebrow">${picks.length} pick${picks.length !== 1 ? 's' : ''} in ${(() => {
+              /* The curator's home city, not a hardcoded "Tallinn" — a Riga
+                 curator's page must not claim the wrong city (critique #5). */
+              const c = curator.city || (picks[0] && picks[0].city) || (window.WA && window.WA.CITY) || 'tallinn';
+              return c.charAt(0).toUpperCase() + c.slice(1);
+            })()}${
               tastePrefsSet()
                 ? ' · <a class="taste-cue" href="index.html#taste-onboarding">tuned to you</a>'
                 : ''}</p>

@@ -68,8 +68,8 @@ Copy two paragraphs below says "We're live in Tallinn, with Helsinki and Riga **
 Visible to users twice: search.html neighborhoods list shows both ("5 picks" + "2 picks" for the same place), and Discover's filter rail renders both chips. Diacritic normalization at ingest + a one-time merge. Also: "other" is lowercase among capitalized names.
 
 ### 5. Counts disagree with the lists they caption
-- Places tab badge says **6**; results header says **54 places**.
-- curator.html says **"6 picks in Tallinn"**; renders **2** rows.
+- Places tab badge says **6**; results header says **54 places**. *(Root cause found: `renderAll()` never refreshes the scope badges, so they freeze at the static-seed counts while catalog-ready re-renders live results.)*
+- ~~curator.html says "6 picks in Tallinn"; renders 2 rows.~~ **Retracted** — segment captures show label and rows agree; the "missing" rows were the fullPage lazy-render artifact. What IS real: the label hardcodes "in Tallinn" for every curator, including Riga/Helsinki ones.
 - (And Today's "8 picks · 3 curators" vs Discover's 0 — same family as #1.)
 
 Counts must be computed from the same filtered set that renders. Nothing erodes "curated by humans" faster than numbers that don't add up.

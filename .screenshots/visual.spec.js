@@ -43,6 +43,12 @@ for (const [name, url] of PAGES) {
     test(`${name} @${width}`, async ({ page }) => {
       await page.route('**/rest/v1/**', (r) => r.abort());
       await page.route('**/functions/v1/**', (r) => r.abort());
+      /* Block MapLibre (unpkg) + tiles: the map canvas paints
+         nondeterministically in headless (flaked discover-week@1440 by a
+         few px) and the basemap can't rasterise here anyway. The map
+         column renders as its empty plate — deterministic. */
+      await page.route('**/unpkg.com/**', (r) => r.abort());
+      await page.route('**/openfreemap.org/**', (r) => r.abort());
       /* Freeze Date via an init shim rather than page.clock: the shim
          pins only "now" and leaves timers/rAF real, so it cannot interact
          with toHaveScreenshot's stabilization or the app's timeouts. */

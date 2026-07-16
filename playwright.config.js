@@ -16,9 +16,11 @@ module.exports = defineConfig({
   snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}',
   expect: {
     toHaveScreenshot: {
-      /* Small tolerance absorbs font antialiasing drift across machines
-         without hiding real layout regressions. */
-      maxDiffPixelRatio: 0.02,
+      /* Absolute pixel budget, NOT a ratio: 2% of a 1440×900 page is
+         ~26k pixels — enough to swallow a real change (it hid the About
+         badge fix entirely, Jul 2026). 100px absorbs antialiasing drift
+         while any visible UI change (a chip is ~1.5k px) still fails. */
+      maxDiffPixels: 100,
       animations: 'disabled',
     },
   },

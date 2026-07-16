@@ -1027,6 +1027,12 @@
   };
 
   const renderAll = () => {
+    /* Scope badges must track the same data snapshot as the results they
+       sit next to. reflectType() only runs on scope switches, so without
+       this the badges froze at the static-seed counts while catalog-ready
+       re-rendered live results ("Places 6" beside "54 places" — critique
+       must-fix #5). */
+    updateScopeCounts();
     populateBrowse((window.WA && window.WA.catalog) || []);
     if (state.mode === 'match' && state.ai) {
       runMatch(state.ai);
