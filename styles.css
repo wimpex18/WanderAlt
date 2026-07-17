@@ -454,6 +454,12 @@ body[data-page="discover"] .discover-browse-section .eyebrow,
 body[data-page="discover"] #discover-results-section .eyebrow {
   color: var(--c-accent);
 }
+/* This pair outranks the generic dusk eyebrow override — dark petrol on the
+   dark sheet measured 1.53:1 (axe serious, a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .discover-browse-section .eyebrow,
+body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow {
+  color: var(--g-mute);
+}
 
 .rule {
   border: 0;
@@ -1080,6 +1086,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .search-box:focus-within {
   border-color: var(--c-accent);
   background: var(--c-paper);
+  /* Keyboard focus must be unmistakable, not a 1px border tint — the inner
+     input suppresses its own outline (a11y audit Jul 2026). */
+  box-shadow: 0 0 0 1px var(--c-accent);
 }
 .search-box__icon {
   color: var(--c-accent);
@@ -2673,7 +2682,7 @@ a.auth-panel__submit { display: inline-block; }
   border-radius: var(--radius);
   transition: border-color var(--t-fast);
 }
-.digest-field:focus-within { border-color: var(--c-accent); }
+.digest-field:focus-within { border-color: var(--c-accent); box-shadow: 0 0 0 1px var(--c-accent); }
 .digest-field__email {
   flex: 1;
   min-width: 0;
@@ -3073,14 +3082,25 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   flex: 0 0 auto;
   padding: 0 16px;
 }
-/* Hide labels on inactive tabs — icon only */
-.nav__item .nav__label { display: none; }
+/* Hide labels on inactive tabs — icon only VISUALLY, but keep the text in
+   the accessible name: display:none empties it and every inactive dock tab
+   became a nameless link (axe link-name, serious — a11y audit Jul 2026). */
+.nav__item .nav__label {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 /* Show label only on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"] .nav__label,
 body[data-page="discover"] .nav__item[data-nav="discover"] .nav__label,
 body[data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
 body[data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
-  display: block;
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 /* Show label inline next to icon on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"],
@@ -3222,8 +3242,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     color: var(--c-ink);
     background: var(--c-paper-deep);
   }
-  /* Show all labels on desktop */
-  .nav__item .nav__label { display: block; }
+  /* Show all labels on desktop — also undo the mobile visually-hidden clip */
+  .nav__item .nav__label {
+    display: block;
+    position: static;
+    width: auto; height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
   body[data-page="saved"]    .nav__item[data-nav="saved"],
@@ -5859,7 +5885,7 @@ body[data-page="saved"] .seg-note {
 .wa-seg__tab--on { background: var(--c-ink); color: var(--c-paper); }
 .wa-seg__count { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; opacity: .7; }
 .field { display: flex; align-items: center; gap: 14px; height: 52px; min-width: 0; padding: 0 18px; background: var(--c-paper); border: 1.5px solid var(--c-rule-strong); border-radius: var(--radius); transition: border-color var(--t-fast); }
-.field:focus-within { border-color: var(--c-accent); }
+.field:focus-within { border-color: var(--c-accent); box-shadow: 0 0 0 1px var(--c-accent); }
 .field .ic { width: 18px; height: 18px; color: var(--c-faint); flex-shrink: 0; }
 .field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 16.5px; color: var(--c-ink); }
 .field__input::placeholder { color: var(--c-ink-mute); font-style: italic; }
@@ -7058,6 +7084,12 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     border: 1px solid var(--glass-fill-line);
     border-radius: var(--radius);
   }
+  /* The inner input sets outline:0 — keyboard focus needs a visible ring
+     on the composite field (a11y audit Jul 2026). */
+  [data-skin="dusk"] .masthead-search:focus-within {
+    border-color: var(--g-petrol);
+    box-shadow: 0 0 0 1px var(--g-petrol);
+  }
   [data-skin="dusk"] .masthead-search__input {
     flex: 1;
     min-width: 0;
@@ -7116,8 +7148,18 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .nav__icon { width: 21px; height: 21px; stroke-width: 1.75; }
 [data-skin="dusk"] .nav__item:hover { color: var(--g-mute); }
 @media (max-width: 767px) {
-  /* idle tabs icon-only — the active pill alone expands with its label */
-  [data-skin="dusk"] .nav__item .nav__label { display: none; }
+  /* idle tabs icon-only VISUALLY — the active pill alone expands with its
+     label. display:none removed the text from the accessible name and made
+     every idle dock tab a nameless link (axe link-name, serious — a11y
+     audit Jul 2026); the clip pattern keeps the name. */
+  [data-skin="dusk"] .nav__item .nav__label {
+    display: block;
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 /* Active tab expands with its label — the ONE active state. */
 [data-skin="dusk"][data-page="briefing"] .nav__item[data-nav="briefing"],
@@ -7150,6 +7192,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"][data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
 [data-skin="dusk"][data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
   display: block;
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip-path: none;
   font-size: 12px;
   font-weight: 600;
 }
@@ -7371,7 +7417,9 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   font-weight: 500;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--g-soft);
+  /* g-mute, not g-soft: 11px section labels are text — g-soft (.6) measured
+     ~4.0:1 on day (axe serious); g-mute is the documented AA floor. */
+  color: var(--g-mute);
 }
 [data-skin="dusk"] .sechead { flex-wrap: nowrap; }
 [data-skin="dusk"] .sechead__t { flex: none; }
@@ -7577,7 +7625,9 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .picks-empty a,
 [data-skin="dusk"] .page-head__meta a { color: var(--g-petrol); }
 [data-skin="dusk"] .colophon { border-top: 1px solid var(--glass-hair); }
-[data-skin="dusk"] .colophon__line { color: var(--g-faint); }
+/* g-mute, not g-faint: the colophon is small running text — g-faint (.5)
+   measured ~3.5:1 on the day theme (axe serious, a11y audit Jul 2026). */
+[data-skin="dusk"] .colophon__line { color: var(--g-mute); }
 [data-skin="dusk"] .colophon__line a { color: var(--g-mute); }
 [data-skin="dusk"] .desk-note { color: var(--g-mute); }
 [data-skin="dusk"] .linkact { color: var(--g-petrol); border-bottom-color: var(--g-petrol); }
@@ -7607,7 +7657,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .taste-onboarding__title { color: var(--g-text); }
 [data-skin="dusk"] .taste-onboarding__intro { color: var(--g-mute); }
-[data-skin="dusk"] .taste-q__prompt { color: var(--g-faint); }
+/* g-mute, not g-faint: 12px prompts are running text — g-faint (.5 alpha)
+   measured ~3.5:1 on the day theme (axe serious, a11y audit Jul 2026);
+   g-mute is the documented AA floor. */
+[data-skin="dusk"] .taste-q__prompt { color: var(--g-mute); }
 [data-skin="dusk"] .taste-q__choices {
   background: var(--glass-fill);
   border: 1px solid var(--glass-fill-line);
@@ -7725,7 +7778,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     color: var(--g-mute);
   }
   [data-skin="dusk"] .nav__icon { display: none; }
-  [data-skin="dusk"] .nav__item .nav__label { display: block; font-size: 14px; font-weight: 500; }
+  [data-skin="dusk"] .nav__item .nav__label { display: block; position: static; width: auto; height: auto; overflow: visible; clip-path: none; font-size: 14px; font-weight: 500; }
   [data-skin="dusk"][data-page] .nav__item[data-nav] .nav__label { font-size: 14px; }
   /* Scene paddings clear the fixed masthead. */
   [data-skin="dusk"] .scene { padding: 120px 24px 40px; }
@@ -7954,6 +8007,12 @@ body[data-skin="dusk"][data-page="discover"] .search-box {
   border-radius: 12px;
   box-shadow: none;
 }
+/* box-shadow:none above also erased the keyboard focus ring — the inner
+   input suppresses its own outline (a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .search-box:focus-within {
+  border-color: var(--g-petrol);
+  box-shadow: 0 0 0 1px var(--g-petrol);
+}
 body[data-skin="dusk"][data-page="discover"] .search-box__icon { color: var(--g-faint); display: grid; place-items: center; }
 body[data-skin="dusk"][data-page="discover"] .search-input {
   flex: 1;
@@ -8175,12 +8234,15 @@ body[data-skin="dusk"][data-page="discover"] .dsheet-grip span {
 }
 
 /* Sheet innards go dark glass. */
-body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: var(--g-soft); }
+body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .curator-row,
 body[data-skin="dusk"][data-page="discover"] .browse-row { border-color: var(--glass-hair); color: var(--g-text); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__handle { color: var(--g-petrol); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__tagline,
 body[data-skin="dusk"][data-page="discover"] .browse-row__count,
+/* __quote was missed by this override and kept the LIGHT-theme ink-mute on
+   dark glass — 2.7:1 (axe serious, a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .curator-row__quote,
 body[data-skin="dusk"][data-page="discover"] .curator-row__count { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .skeleton-row__line { background: var(--glass-fill); }
 body[data-skin="dusk"][data-page="discover"] .list-row--active {
@@ -8203,7 +8265,7 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet__title {
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__close,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear-top { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__field { border-color: var(--glass-hair); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-soft); }
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
   display: grid;
@@ -8874,10 +8936,21 @@ body[data-skin="dusk"][data-page="about"] .about-section { border-color: var(--g
 body[data-skin="dusk"][data-page="about"] .about-cities__item { border-color: var(--glass-hair); }
 body[data-skin="dusk"][data-page="about"] .about-cities__name { color: var(--g-text); }
 body[data-skin="dusk"][data-page="about"] .about-cities__status { color: var(--g-soft); }
-body[data-skin="dusk"][data-page="about"] .about-contact a,
-body[data-skin="dusk"][data-page="about"] .about-links a { color: var(--g-petrol); }
+/* The LIVE badge keeps its lime plate in every theme — 60%-alpha glass text
+   on lime was ~1.2:1 dusk / ~2.7:1 day (axe serious, a11y audit Jul 2026).
+   Solid ink on lime in both. */
+body[data-skin="dusk"][data-page="about"] .about-cities__status--live { color: var(--c-ink); }
+body[data-skin="dusk"][data-page="about"] .about-contact a { color: var(--g-petrol); }
+/* The "Built in the open" anchors sit on WHITE plates (About stays paper
+   by spec) — the global dusk `a { color: inherit }` cascaded cream text
+   onto them at 1.5:1 (axe serious, a11y audit Jul 2026). Pin solid ink. */
+body[data-skin="dusk"][data-page="about"] .about-links__a { color: var(--c-ink); }
+/* The returnbar IS the anchor (<a class="returnbar">) — the old
+   `.returnbar a` rule targeted a child that doesn't exist, so the global
+   dusk `a{color:inherit}` cascaded cream onto its light paper-deep plate
+   at 1.08:1 (axe serious, a11y audit Jul 2026). Pin ink on the element. */
+body[data-skin="dusk"][data-page="about"] a.returnbar { color: var(--c-ink); }
 body[data-skin="dusk"][data-page="about"] .returnbar { border-color: var(--glass-hair); }
-body[data-skin="dusk"][data-page="about"] .returnbar a { color: var(--g-petrol); }
 body[data-skin="dusk"][data-page="about"] .about-steps__item {
   background: var(--glass-fill);
   border-color: var(--glass-fill-line);
