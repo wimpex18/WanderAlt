@@ -141,9 +141,11 @@
      next to the rest of the app's empty-state canon. subHTML may carry
      a CTA link; title is plain text. */
   const emptyState = (title, subHTML) => {
-    const city = (window.WA && window.WA.CITY) || 'tallinn';
-    return `<div class="picks-empty">
-         <div class="picks-empty__plate" style="background-image:url('./assets/${city}-overview.svg')" aria-hidden="true"></div>
+    /* Compact since Jul 2026 (owner direction): no city-overview plate —
+       the big illustration ate ~450px of vertical space in every empty
+       state; the city art lives on About and in the city selector. The
+       curator-voice line + bridge link carry the state. */
+    return `<div class="picks-empty picks-empty--compact">
          <div class="picks-empty__body">
            <p class="picks-empty__title">${esc(title)}</p>
            <p class="picks-empty__sub">${subHTML}</p>

@@ -369,11 +369,12 @@
       if (!emptyCard) {
         emptyCard = document.createElement('div');
         emptyCard.id = 'picks-empty';
-        emptyCard.className = 'picks-empty';
+        emptyCard.className = 'picks-empty picks-empty--compact';
         list.parentNode.insertBefore(emptyCard, list.nextSibling);
       }
       emptyCard.innerHTML =
-        `<div class="picks-empty__plate" style="background-image:url('./assets/${cityId}-overview.svg')" aria-hidden="true"></div>` +
+        /* No city-overview plate (owner direction, Jul 2026) — compact
+           curator-voice state; the city art lives on About + selector. */
         `<div class="picks-empty__body">` +
         `  <p class="picks-empty__title">${reason}</p>` +
         `  <p class="picks-empty__sub"><a href="./discover.html">Browse Discover &rarr;</a></p>` +
