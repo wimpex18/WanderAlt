@@ -8920,6 +8920,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: va
     padding: 18px;
   }
   [data-theme="day"] [data-skin="dusk"] .scene-aside { background: var(--glass-deep); }
+
   [data-skin="dusk"] .scene-aside__label {
     font-family: var(--ff-mono);
     font-size: 11px;
@@ -9023,3 +9024,29 @@ body[data-skin="dusk"][data-page="about"] .about-steps__title { color: var(--g-t
 body[data-skin="dusk"][data-page="about"] .about-steps__body { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="about"] .about-section strong,
 body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-text); }
+
+/* ── Daybreak scene policy (owner direction, Jul 2026) ──
+   By day the venue photo is NOT a page backdrop: Today's scene sits on
+   paper (the photo belongs to the venue page), and the venue page shows
+   its photo FRAMED at the top instead of full-bleed behind the text. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene__bg,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene__scrim {
+  display: none;
+}
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__bg {
+  position: relative;
+  inset: auto;
+  height: 240px;
+  margin: 0 var(--gutter) var(--s-5);
+  border-radius: var(--radius-island);
+  border: var(--rule-w) solid var(--glass-hair);
+  overflow: hidden;
+}
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__scrim { display: none; }
+/* Scene text now sits on paper by day — the over-photo glow reads as a
+   smudge there. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-title,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-title--detail,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-title {
+  text-shadow: none;
+}
