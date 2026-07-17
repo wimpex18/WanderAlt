@@ -11,12 +11,15 @@
     "e2e": "node .screenshots/e2e.js",
     "audit": "node .screenshots/audit.js",
     "visual": "playwright test --config=playwright.config.js",
+    "a11y": "node .screenshots/a11y.js",
+    "visibility": "node .screenshots/visibility.js",
     "visual:update": "playwright test --config=playwright.config.js --update-snapshots",
     "preview": "node .screenshots/preview.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "lighthouse": "node .scripts/lighthouse-audit.js"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "lighthouse": "^13.4.0",
     "playwright": "^1.61.1",

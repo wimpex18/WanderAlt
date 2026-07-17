@@ -12,8 +12,16 @@ module.exports = defineConfig({
   testMatch: 'visual.spec.js',
   timeout: 60_000,
   fullyParallel: true,
-  /* Flat, readable baseline names: .screenshots/visual-baselines/<name>.png */
-  snapshotPathTemplate: '{testDir}/visual-baselines/{arg}{ext}',
+  /* Flat, readable baseline names. Two committed sets: local Macs compare
+     against visual-baselines/, CI compares against visual-baselines-ci/ —
+     the dusk glass blur composites differently across GPUs (measured
+     129–46k px cross-machine on identical pages, Jul 2026), so each
+     environment gets its own baselines at full sensitivity instead of one
+     set with a uselessly loose budget. Re-baseline CI via the
+     update-ci-baselines workflow_dispatch; local via npm run visual:update. */
+  snapshotPathTemplate: process.env.CI
+    ? '{testDir}/visual-baselines-ci/{arg}{ext}'
+    : '{testDir}/visual-baselines/{arg}{ext}',
   expect: {
     toHaveScreenshot: {
       /* Absolute pixel budget, NOT a ratio: 2% of a 1440×900 page is

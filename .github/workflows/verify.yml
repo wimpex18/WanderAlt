@@ -18,6 +18,16 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Manual: regenerate the CI visual baselines (visual-baselines-ci/) on
+  # the runner and upload them as an artifact to download + commit. Needed
+  # after any intended design change — CI compares against ITS OWN set
+  # because the dusk glass blur composites differently across GPUs.
+  workflow_dispatch:
+    inputs:
+      update-visual-baselines:
+        description: 'Regenerate visual-baselines-ci and upload artifact'
+        type: boolean
+        default: false
 
 # Cancel an in-flight run when a branch is pushed again — only the latest
 # commit needs checking.
@@ -85,8 +95,33 @@ jobs:
       - name: Pre-fetch http-server
         run: npx -y http-server --version
 
-      - name: Visual regression (pixel diff vs committed baselines)
-        run: npm run visual
+      # Manual re-baseline mode (workflow_dispatch): regenerate the CI set
+      # and publish it as an artifact to download and commit.
+      - name: Regenerate CI baselines
+        if: github.event_name == 'workflow_dispatch' && inputs.update-visual-baselines
+        run: npm run visual:update
+        env:
+          CI: 'true'
+
+      - name: Upload regenerated baselines
+        if: github.event_name == 'workflow_dispatch' && inputs.update-visual-baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines-ci
+          path: .screenshots/visual-baselines-ci/
+          retention-days: 7
+
+      # Normal gate: compare against the committed CI baseline set. Until
+      # that set is bootstrapped (first workflow_dispatch run), skip with a
+      # notice instead of failing every PR on a set that doesn't exist.
+      - name: Visual regression (pixel diff vs committed CI baselines)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          if [ -d .screenshots/visual-baselines-ci ]; then
+            npm run visual
+          else
+            echo "::notice::visual-baselines-ci/ not committed yet — run the update-visual-baselines dispatch and commit the artifact to arm this gate."
+          fi
 
       # On failure, the actual/expected/diff PNGs are the whole story —
       # surface them as an artifact instead of making anyone re-run locally.
