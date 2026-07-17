@@ -1680,6 +1680,12 @@ body[data-page="saved"] .colophon {
   color: var(--c-ink-mute);
   text-transform: uppercase;
   white-space: nowrap;
+  /* 13px-tall link measured at 0px from the 44px bookmark toggle
+     (spacing probe, Jul 2026) — grow the hit area VERTICALLY only, no
+     layout shift; horizontal padding would overlap the toggle's box. */
+  padding: 12px 0;
+  margin-top: -12px;
+  margin-bottom: -12px;
   vertical-align: baseline;
 }
 .list-row__map:hover { color: var(--c-accent); }

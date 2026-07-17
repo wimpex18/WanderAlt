@@ -56,6 +56,27 @@ with `__element` / `--modifier` used consistently. No orphan naming schemes.
    deliberately does not swap with `--scrim-rgb` (scene scrims). The authored
    F-1 stop math moved to the token definition; render pixel-identical.
 
+## Unknown-knowns probes (third pass, 18 Jul)
+- **Reduced motion: PASS** — empirical `document.getAnimations()` check under
+  `reducedMotion: reduce`, all pages × both skins: zero running animations,
+  including WAAPI/JS-driven ones the CSS gate can't reach. The universal
+  `* { animation/transition: none !important }` gate holds.
+- **WCAG 1.4.10 reflow @320px: PASS** — no horizontal overflow on any page,
+  either skin (closes the register item from the first audit).
+- **Adjacent-target spacing @390:** one real fix — the 13px-tall "ON MAP →"
+  link sat at 0px from the 44px bookmark toggle (grew its hit area
+  vertically; horizontal padding would have overlapped the toggle's box).
+  Advisory register (sanctioned patterns, owner call if ever revisited):
+  dock tabs 2px apart (48px targets — WCAG-fine, below the 8px NN/g
+  "should"), composite-field key at 0px (by design), stacked list rows,
+  taste-chip grid at 3px.
+- **Day-theme pixel coverage:** the Daybreak twin had ZERO visual-regression
+  shots while dusk had 24. Suite now runs both skins — 48 baselines
+  (dusk names unchanged; day gets `-day`), stable ×4 consecutive after an
+  image-settle wait fixed thumbnail pop-in flake (48→47→44 before; 48×4 after).
+- **Playwright currency:** 1.61.1 verified as the latest published against
+  the registry at probe time — no update available.
+
 ## Fixed in this pass
 Duplicate keyframes (live-dot animation bug) · 4 motion-law violations ·
 venue/place socials pattern fork (critique #9, the last must/should-fix
