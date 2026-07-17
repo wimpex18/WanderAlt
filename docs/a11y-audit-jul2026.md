@@ -64,6 +64,40 @@ the Cloudflare preview when new hero images land.
 - Zoom-to-200% not automated; `verify`'s overflow checks at 390 approximate
   reflow but are not the 1.4.10 reflow test.
 
+## Visibility scan + control census (second pass, 17 Jul)
+`npm run visibility` (new): ghost-element detector (alpha/opacity ghosts,
+sub-2:1 solid-chain contrast, and **pixel-probing** of text over photos/glass
+— the element is screenshotted and its luminance range measured, catching
+invisible-over-media text no CSS math can) plus a control census (every
+interactive control's height/radius per page × skin × width, aggregated by
+class). Scanner lessons learned the hard way, now baked in: Chromium returns
+`oklch()` computed colors (regex RGB parsing fabricates ratios — normalize
+via canvas); a bg chain with no opaque layer is *unverifiable*, not white;
+`clip-path` sr-only elements are invisible by design.
+
+**Census verdict:** the 48px-unit system largely held (nav, pills, chips,
+scope buttons, CTAs all 48/r14 — and the unit matches industry consensus:
+Apple HIG 44pt, Material 3 48dp, NN/g ≈1cm). Real drift, all fixed:
+- `city-selector` was the one control rendering two sizes (40/r12 mobile vs
+  48/r14 desktop) → one unit everywhere.
+- The Discover deck's search shell was the app's only 40px control → 48.
+- Docked field keys (digest ✦, masthead search key, CONCIERGE) ran 32–46 at
+  radii 9/10 → the law's 38/r8 (the CONCIERGE button had three different
+  sizes depending on which rule won).
+- `taste-chip` minted an 11px radius via `calc(14px - 3px)` → 8.
+- MapLibre's attribution (an OSM **license requirement**) measured 1.7–2.8:1
+  on translucent plates → solid plates, AA-floor text, both themes.
+
+**Deliberately not changed:** the pervasive 44px icon-button tier
+(bookmarks, action icons, zoom) — sanctioned by the surviving icon-system
+contract ("44px tap target around a ~22px glyph"); `.seg-tabs`' 10px radius
+(a container, not a control). Both noted for an owner ruling.
+
+**Non-text contrast register (WCAG 1.4.11):** glass button *shapes* on glass
+backgrounds (boundary ≥3:1) aren't yet measured by any scan here — the
+practitioner checklists (Adham Dannaway, Balsamiq) call this the most-missed
+button check. Candidate for a future probe.
+
 ## Priority follow-ups
 1. Manual VoiceOver pass on Today + Discover (flows, not properties).
 2. Wire `npm run a11y` into CI next to verify/e2e (it exits non-zero on serious).

@@ -675,6 +675,18 @@ body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow 
    against each axis independently, stretching the glyph off-square. */
 .thumb__glyph { width: 22px; height: 22px; color: var(--c-accent-deep); flex-shrink: 0; }
 .thumb--lg .thumb__glyph { width: 30px; height: 30px; }
+/* Dusk tiles are dark — the paper-era deep-petrol glyph measured ~1.1:1 on
+   them (42 invisible placeholders on Places; visibility scan Jul 2026).
+   g-petrol swaps per theme, keeping the glyph legible on both. The tile
+   itself also goes to the glass fill: Today's rows kept the light paper
+   tile, which made the now-light glyph invisible the OTHER way (1.54:1) —
+   one tile treatment on dusk, per the "kind glyph on dusk gradient, never
+   a gray box" law. */
+[data-skin="dusk"] .thumb__glyph { color: var(--g-petrol); }
+[data-skin="dusk"] .thumb {
+  background: var(--glass-fill);
+  border-color: var(--glass-hair);
+}
 
 /* ============================================================
    This week — list of 4 picks
@@ -1739,7 +1751,9 @@ html.wa-taste-done .taste-onboarding { display: none; }
   color: var(--c-ink-soft);
   background: transparent;
   border: 0;
-  border-radius: calc(var(--radius) - 3px);
+  /* Radius vocabulary is 8/14/20/24 — calc(14 - 3) minted an 11px radius
+     found nowhere else (control census, Jul 2026). */
+  border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;   /* flex:1 siblings will shrink-wrap text otherwise ("With people") */
   transition: color var(--t-fast), background var(--t-fast);
@@ -4260,11 +4274,13 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink-mute);
   margin: 2px 0 var(--s-3);
 }
-/* MapLibre attribution control — quieter than default, matches paper bg */
+/* MapLibre attribution control — quieter than default, matches paper bg.
+   Solid plate, not .85 alpha: the OSM attribution is a license requirement
+   and measured ~2:1 over map tiles (visibility scan, Jul 2026). */
 .maplibregl-ctrl-attrib {
   font-family: var(--ff-mono);
   font-size: 9px;
-  background: rgba(246, 243, 236, 0.85);
+  background: rgb(246, 243, 236);
 }
 .maplibregl-ctrl-attrib a { color: var(--c-ink-mute); }
 /* Hide MapLibre's default logo (we'll keep attribution but remove the badge) */
@@ -7053,13 +7069,16 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .auth-btn { display: none; }
 [data-skin="dusk"] .topbar__right { display: flex; align-items: center; gap: var(--s-2); }
 [data-skin="dusk"] .city-selector {
-  height: 40px;
+  /* One unit + one radius everywhere — this was 40px/r12 on mobile while
+     the desktop rule used 48/r14, the only control rendering two sizes
+     (control census, Jul 2026). */
+  height: var(--unit);
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 0 14px;
   background: var(--glass-fill);
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 0;
   font-family: var(--ff-mono);
   font-size: 10.5px;
@@ -7104,13 +7123,15 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   /* 44px hit box around the 38px visual key — the tap floor and the
      "38 inside the 48 shell" law both hold. */
   [data-skin="dusk"] .masthead-search__key {
-    height: 44px;
-    width: 44px;
+    /* Docked key inside the 48 shell = 38, radius from the vocabulary
+       (was 44/r10 — control census, Jul 2026). */
+    height: 38px;
+    width: 38px;
     position: relative;
     display: grid;
     place-items: center;
     background: none;
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--g-lime);
   }
   [data-skin="dusk"] .masthead-search__key::before {
@@ -7118,7 +7139,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     position: absolute;
     inset: 3px;
     background: var(--g-petrol-deep);
-    border-radius: 10px;
+    border-radius: 8px;
   }
   [data-skin="dusk"] .masthead-search__key .ic { width: 18px; height: 18px; stroke-width: 1.75; position: relative; z-index: 1; }
 }
@@ -7533,8 +7554,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .digest-field__email::placeholder { color: var(--g-faint); }
 [data-skin="dusk"] .digest-field__submit {
-  width: 44px;
-  height: 44px;
+  /* Docked key inside the 48 shell = 38 per the dusk law (was 44). */
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   flex: none;
   position: relative;
   right: auto;
@@ -7543,7 +7566,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   display: grid;
   place-items: center;
   background: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--g-lime);
 }
 [data-skin="dusk"] .digest-field__submit::before {
@@ -7551,7 +7574,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   position: absolute;
   inset: 3px;
   background: var(--g-petrol-deep);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 [data-skin="dusk"] .digest-field__submit .ic { width: 18px; height: 18px; position: relative; z-index: 1; }
 [data-skin="dusk"] .auth-panel__status { color: var(--g-mute); }
@@ -7645,6 +7668,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .picks-empty__title { color: var(--g-text); font-family: var(--ff-display); font-style: italic; }
 [data-skin="dusk"] .picks-empty__sub a { color: var(--g-petrol); }
 [data-skin="dusk"] .bookmark__icon { color: var(--g-mute); width: 20px; height: 20px; }
+/* List-row bookmarks carry a classless svg (older markup than .bookmark__icon)
+   and kept light-theme ink-soft on dusk rows — 1.17:1 (visibility scan). */
+[data-skin="dusk"] .bookmark > svg { color: var(--g-mute); }
+[data-skin="dusk"] .bookmark .bookmark__check:checked ~ svg { color: var(--g-petrol); }
 [data-skin="dusk"] .bookmark__check:checked + .bookmark__icon,
 [data-skin="dusk"] .bookmark__check:checked ~ .bookmark__icon { color: var(--g-petrol); }
 
@@ -7997,7 +8024,8 @@ body[data-skin="dusk"][data-page="discover"] .map-detail {
 body[data-skin="dusk"][data-page="discover"] .discover-search { flex: 1; min-width: 0; position: relative; }
 body[data-skin="dusk"][data-page="discover"] .discover-search form { margin: 0; }
 body[data-skin="dusk"][data-page="discover"] .search-box {
-  height: 40px;
+  /* One unit: was the only 40px control shell in the app (census, Jul 2026). */
+  height: var(--unit);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -8027,12 +8055,14 @@ body[data-skin="dusk"][data-page="discover"] .search-input {
 }
 body[data-skin="dusk"][data-page="discover"] .search-input::placeholder { color: var(--g-faint); font-style: normal; }
 body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn {
-  height: 32px;
+  /* Docked key in the 48 search shell = 38/r8 per the dusk law (was
+     32/r9 here vs 44 in the base rule — three sizes for one control). */
+  height: 38px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 0 10px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--g-petrol-deep);
   color: var(--g-lime);
   font-family: var(--ff-body);
@@ -8118,12 +8148,23 @@ body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body { color: var(
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body strong { color: var(--g-text); }
 /* MapLibre attribution rides the dusk scene quietly. */
 body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib {
-  background: rgba(16,24,25,.7) !important;
-  color: var(--g-faint);
+  /* Solid plate + AA-floor text — was .7 alpha with g-faint at ~2.8:1
+     (visibility scan, Jul 2026); the OSM credit must stay readable. */
+  background: rgb(16,24,25) !important;
+  color: var(--g-mute);
   border-radius: 8px;
   font-size: 10px;
 }
-body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-text); }
+/* data-skin is static — on the DAY theme the dark plate above would show
+   dark-on-dark (1.01:1, visibility scan). Day swaps to the paper plate. */
+[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib,
+[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib {
+  background: rgb(246, 243, 236) !important;
+  color: var(--c-ink-mute);
+}
+[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a,
+[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--c-accent); }
 /* Rows in the sheet: flat hairline dividers, not plates. */
 body[data-skin="dusk"][data-page="discover"] .curator-row,
 body[data-skin="dusk"][data-page="discover"] .browse-row {
@@ -8238,6 +8279,11 @@ body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { col
 body[data-skin="dusk"][data-page="discover"] .curator-row,
 body[data-skin="dusk"][data-page="discover"] .browse-row { border-color: var(--glass-hair); color: var(--g-text); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__handle { color: var(--g-petrol); }
+/* The label kept light-theme solid ink on the dark sheet — 1.09:1, every
+   NEIGHBORHOODS / BY KIND row invisible on dusk (visibility scan Jul 2026;
+   the section read as blank space in renders). */
+body[data-skin="dusk"][data-page="discover"] .browse-row__label { color: var(--g-text); }
+body[data-skin="dusk"][data-page="discover"] .browse-row:hover .browse-row__label { color: var(--g-petrol); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__tagline,
 body[data-skin="dusk"][data-page="discover"] .browse-row__count,
 /* __quote was missed by this override and kept the LIGHT-theme ink-mute on
@@ -8528,7 +8574,9 @@ body[data-skin="dusk"][data-page="saved"] #seg-past:checked    ~ .seg-tabs label
 body[data-skin="dusk"][data-page="saved"] .seg-note {
   font-family: var(--ff-mono);
   font-size: 11px;
-  color: var(--g-dim);
+  /* g-mute, not g-dim: 11px mono over the day scene probed at luminance
+     range 14 — effectively invisible (visibility scan, Jul 2026). */
+  color: var(--g-mute);
 }
 /* Rows live on one glass sheet; 76px rows, hairline dividers. */
 body[data-skin="dusk"][data-page="saved"] .list-rows {
@@ -8956,7 +9004,7 @@ body[data-skin="dusk"][data-page="about"] .about-steps__item {
   border-color: var(--glass-fill-line);
 }
 body[data-skin="dusk"][data-page="about"] .about-steps__icon svg { stroke: var(--g-petrol); }
-body[data-skin="dusk"][data-page="about"] .about-steps__num { color: var(--g-faint); }
+body[data-skin="dusk"][data-page="about"] .about-steps__num { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="about"] .about-steps__title { color: var(--g-text); }
 body[data-skin="dusk"][data-page="about"] .about-steps__body { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="about"] .about-section strong,

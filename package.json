@@ -12,6 +12,7 @@
     "audit": "node .screenshots/audit.js",
     "visual": "playwright test --config=playwright.config.js",
     "a11y": "node .screenshots/a11y.js",
+    "visibility": "node .screenshots/visibility.js",
     "visual:update": "playwright test --config=playwright.config.js --update-snapshots",
     "preview": "node .screenshots/preview.js",
     "build:icons": "node .scripts/rasterize-favicons.js",

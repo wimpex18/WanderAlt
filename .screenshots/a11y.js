@@ -22,7 +22,7 @@ const { AxeBuilder } = require('@axe-core/playwright');
 
 const PORT = 5196;
 const BASE = `http://127.0.0.1:${PORT}`;
-const WIDTHS = [390, 1440];
+const WIDTHS = [390, 768, 1440];
 /* theme.js vocabulary: 'dusk' | 'day' (NOT 'daybreak' — an unknown value
    silently falls back to sun-following auto, which is time-of-run-dependent). */
 const SKINS = ['dusk', 'day'];
