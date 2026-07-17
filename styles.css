@@ -1012,7 +1012,7 @@ body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow 
   border-radius: 50%;
   border: 1px solid var(--c-accent);
   opacity: 0.5;
-  animation: wa-pulse 1.8s ease-out infinite;
+  animation: wa-ripple 1.8s ease-out infinite;
 }
 .map-sheet__body {
   flex: 1;
@@ -4202,8 +4202,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 .handle, a.handle { color: var(--c-accent); }
 a.handle:hover { color: var(--c-ink); }
 
-/* ── wa-pulse animation for live dot ── */
-@keyframes wa-pulse {
+/* ── wa-ripple: expanding ping (was a DUPLICATE @keyframes wa-pulse that
+   silently overrode the breathing pulse for every consumer — ds audit
+   Jul 2026). Ring/ping consumers use this; dots breathe with wa-pulse. */
+@keyframes wa-ripple {
   0%   { opacity: 0.5; transform: scale(1); }
   100% { opacity: 0; transform: scale(2.5); }
 }
@@ -4280,7 +4282,7 @@ a.handle:hover { color: var(--c-ink); }
 .maplibregl-ctrl-attrib {
   font-family: var(--ff-mono);
   font-size: 9px;
-  background: rgb(246, 243, 236);
+  background: var(--c-cream);
 }
 .maplibregl-ctrl-attrib a { color: var(--c-ink-mute); }
 /* Hide MapLibre's default logo (we'll keep attribution but remove the badge) */
@@ -4307,7 +4309,7 @@ a.handle:hover { color: var(--c-ink); }
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
-  transition: filter 140ms ease, transform 140ms ease;
+  transition: filter var(--t-fast), transform var(--t-fast);
   z-index: 1;
 }
 .map-pin-new--active {
@@ -4376,7 +4378,7 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* ── Category chip override (coloured active state) ─────── */
-.map-cat-chip { transition: background 140ms ease, color 140ms ease, border-color 140ms ease; }
+.map-cat-chip { transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
 
 /* ── Zoom controls ─────────────────────────────────────────── */
 .map-zoom-ctrl {
@@ -4453,7 +4455,7 @@ a.handle:hover { color: var(--c-ink); }
   max-height: 55vh;
   overflow-y: auto;
   transform: translateY(0);
-  transition: transform 220ms ease;
+  transition: transform var(--t-mid);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
   will-change: transform;
 }
@@ -4688,7 +4690,7 @@ a.handle:hover { color: var(--c-ink); }
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 1px 5px rgba(0,0,0,0.28);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
   z-index: 6;
 }
 .map-cluster:hover {
@@ -5851,9 +5853,7 @@ body[data-page="saved"] .seg-note {
    ════════════════════════════════════════════════════════════ */
 :root {
   --radius-tag:    4px;   /* the redesign's tag radius (alongside 8/12) */
-  --c-paper-sink:  #f4f3f0;
   --c-accent-deep: oklch(0.36 0.065 195);
-  --c-accent-line: oklch(0.88 0.02 195);
   --c-cream:       #f6f3ec;
 }
 
