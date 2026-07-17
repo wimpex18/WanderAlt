@@ -38,17 +38,23 @@ with `__element` / `--modifier` used consistently. No orphan naming schemes.
 | Buttons (`.scene-cta`/`.action-btn`/icon tier) | ✅ | 48 CTA / 44 icon tier (sanctioned) | **venue↔place socials fork unified this pass** — website now rides the shared `socialButtons` icon row on both detail pages | 8/10 |
 | Scrims/scenes | dusk+day authored ✅ | — | photo-scrim literals vs `--scrim-*` tokens split | 7/10 |
 
-## Priority actions
-1. **Type-scale consolidation (owner decision needed):** approve a mapping for
-   the fractional sizes (10.5→11? 13.5→14 or 13?) and the long tail; then a
-   single mechanical pass + visual re-baseline. Biggest consistency win left.
-2. **Resolve the pill contradiction:** June retired 999px; Dusk reintroduced it
-   for the dock/toggles. Whichever wins should be written into CLAUDE.md's
-   radius vocabulary so future sessions stop treating one of them as drift.
-3. **Photo-scrim literals → `--scrim-*`:** the black rgba photo scrims predate
-   the token set; migrating them makes day-theme scrims theme-aware. Needs
-   eyeball checks per surface (photos want dark scrims in both themes — decide
-   intent first).
+## Priority actions — ALL RESOLVED (owner-approved, 17 Jul)
+1. **Type-scale consolidation ✅** — approved mapping applied: every fractional
+   size rounded to its integer neighbor (10.5→11, 11.5→12, 12.5→13, 13.5→14,
+   14.5→15, 15.5→16, 16.5→17; 32 sites). Distinct font sizes 53 → 46; the
+   half-pixel merges are visually invisible (hero/tickers eyeball-verified,
+   one-line law intact) but kill the near-duplicate tier ambiguity. The
+   remaining integer tail carries real hierarchy and stays.
+2. **Pill ruling ✅** — written into CLAUDE.md Dusk law #7: fully-rounded 999px
+   is sanctioned for exactly (a) floating glass chrome capsules (dock island,
+   floating toggles, switch tracks) and (b) ≤24px badges/dots/counts.
+   Tags = `--radius-tag` 8, chips = `--radius` 14, button controls never
+   capsule. Five straggler sites normalized (`.list-row__tag`, `.venue-mood`,
+   `.discover-ai-example`, `.discover-pill` base, the accent chip spec).
+3. **Photo scrim ✅** — new `--scrim-photo` token (owner-approved addition):
+   THEME-INVARIANT dark ramp — photos need dark scrims in both themes, so it
+   deliberately does not swap with `--scrim-rgb` (scene scrims). The authored
+   F-1 stop math moved to the token definition; render pixel-identical.
 
 ## Fixed in this pass
 Duplicate keyframes (live-dot animation bug) · 4 motion-law violations ·
