@@ -81,9 +81,11 @@ Apple HIG 44pt, Material 3 48dp, NN/g ≈1cm). Real drift, all fixed:
 - `city-selector` was the one control rendering two sizes (40/r12 mobile vs
   48/r14 desktop) → one unit everywhere.
 - The Discover deck's search shell was the app's only 40px control → 48.
-- Docked field keys (digest ✦, masthead search key, CONCIERGE) ran 32–46 at
-  radii 9/10 → the law's 38/r8 (the CONCIERGE button had three different
-  sizes depending on which rule won).
+- Docked field keys (digest ✦, masthead search key, CONCIERGE): radii 9/10
+  → 8, and CONCIERGE's 32px box (vs 44 in its base rule) → 44. Census
+  lesson: the law's "38px docked key" is the *visual plate* — the `::before`
+  inset already renders 38 inside a 44 tap box, and verify's BTNSWEEP
+  rightly rejected literal 38px boxes.
 - `taste-chip` minted an 11px radius via `calc(14px - 3px)` → 8.
 - MapLibre's attribution (an OSM **license requirement**) measured 1.7–2.8:1
   on translucent plates → solid plates, AA-floor text, both themes.

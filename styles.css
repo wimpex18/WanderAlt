@@ -7123,10 +7123,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   /* 44px hit box around the 38px visual key — the tap floor and the
      "38 inside the 48 shell" law both hold. */
   [data-skin="dusk"] .masthead-search__key {
-    /* Docked key inside the 48 shell = 38, radius from the vocabulary
-       (was 44/r10 — control census, Jul 2026). */
-    height: 38px;
-    width: 38px;
+    /* 44 tap box; the ::before inset renders the law's 38px visual plate.
+       Radius normalized to the vocabulary (was r10). */
+    height: 44px;
+    width: 44px;
     position: relative;
     display: grid;
     place-items: center;
@@ -7554,9 +7554,11 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .digest-field__email::placeholder { color: var(--g-faint); }
 [data-skin="dusk"] .digest-field__submit {
-  /* Docked key inside the 48 shell = 38 per the dusk law (was 44). */
-  width: 38px;
-  height: 38px;
+  /* The law's "38px docked key" is the VISUAL plate (the ::before inset
+     below renders 44-3-3 = 38) — the button box stays 44 for the tap
+     floor (verify BTNSWEEP; mis-"unified" to 38 and reverted, Jul 2026). */
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   flex: none;
   position: relative;
@@ -8055,9 +8057,9 @@ body[data-skin="dusk"][data-page="discover"] .search-input {
 }
 body[data-skin="dusk"][data-page="discover"] .search-input::placeholder { color: var(--g-faint); font-style: normal; }
 body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn {
-  /* Docked key in the 48 search shell = 38/r8 per the dusk law (was
-     32/r9 here vs 44 in the base rule — three sizes for one control). */
-  height: 38px;
+  /* 44 tap box per the floor (was 32 here vs 44 in the base rule — two
+     sizes for one control); radius normalized to the vocabulary (was r9). */
+  height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
