@@ -1,20 +1,20 @@
 {
-  "generated": "2026-06-16T15:22:37.579Z",
+  "generated": "2026-07-17T11:50:28.698Z",
   "pages": {
     "briefing": {
-      "performance": 94,
-      "accessibility": 100,
-      "best-practices": 100,
+      "performance": 98,
+      "accessibility": 93,
+      "best-practices": 77,
       "seo": 100
     },
     "discover": {
-      "performance": 94,
-      "accessibility": 100,
+      "performance": 95,
+      "accessibility": 97,
       "best-practices": 100,
       "seo": 100
     },
     "about": {
-      "performance": 94,
+      "performance": 98,
       "accessibility": 100,
       "best-practices": 100,
       "seo": 100

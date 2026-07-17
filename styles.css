@@ -2208,10 +2208,20 @@ html.wa-taste-done .taste-onboarding { display: none; }
 
 a.handle {
   color: var(--c-accent);
-  text-decoration: none;
+  /* WCAG 1.4.1 (Use of Color): inline @handle links sit in prose and are
+     only 1.23:1 apart from surrounding text — color alone can't carry
+     "this is a link" (Lighthouse link-in-text-block; axe's tag-set missed
+     it). A thin, offset underline gives the non-color cue while keeping
+     the editorial restraint. Standalone handles (curator header <h1>) are
+     not <a>, so this scopes to real links only. */
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in oklch, currentColor 45%, transparent);
 }
 a.handle:hover {
   color: var(--c-ink);
+  text-decoration-color: currentColor;
 }
 
 /* ============================================================
