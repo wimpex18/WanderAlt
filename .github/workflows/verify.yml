@@ -30,9 +30,12 @@ on:
         default: false
 
 # Cancel an in-flight run when a branch is pushed again — only the latest
-# commit needs checking.
+# commit needs checking. Keyed by EVENT too (Jul 2026): without it, a
+# manual update-visual-baselines dispatch shared the group with the branch's
+# pull_request run and cancelled it mid-flight, leaving the PR tip with no
+# completed check. Dispatch and PR runs are now independent.
 concurrency:
-  group: verify-${{ github.ref }}
+  group: verify-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
