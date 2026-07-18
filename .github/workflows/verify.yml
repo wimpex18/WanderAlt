@@ -135,3 +135,59 @@ jobs:
           name: visual-diffs
           path: test-results/
           retention-days: 7
+
+  # Accessibility GATE (npm run a11y) — axe-core WCAG 2.1 AA across every
+  # public page × both skins × 390/768/1440, plus a keyboard-focus walk.
+  # Exits non-zero on serious/critical violations, so it fails the PR —
+  # this is what locks in the Jul 2026 a11y fixes (contrast, link-names,
+  # focus rings) against regression. DOM/axe based, so ubuntu is fine.
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Pre-fetch http-server
+        run: npx -y http-server --version
+      - name: Accessibility sweep (axe WCAG 2.1 AA, both skins)
+        run: npm run a11y
+
+  # Visibility scan (npm run visibility) — INFORMATIONAL, not a gate.
+  # Ghost-element detector (alpha/opacity/contrast + pixel-probe of text
+  # over photos) + control census. It has known benign probe classes
+  # (thin mono glyphs, sr-only), so it must NOT block merges; it runs
+  # continue-on-error and uploads its report for humans to read.
+  visibility:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Pre-fetch http-server
+        run: npx -y http-server --version
+      - name: Visibility + control census (informational)
+        run: npm run visibility | tee visibility-report.txt
+      - name: Upload visibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visibility-report
+          path: visibility-report.txt
+          retention-days: 7

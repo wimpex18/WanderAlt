@@ -55,6 +55,19 @@ for (const [name, url] of PAGES) {
          column renders as its empty plate — deterministic. */
       await page.route('**/unpkg.com/**', (r) => r.abort());
       await page.route('**/openfreemap.org/**', (r) => r.abort());
+      /* Block ALL remote venue photos → deterministic placeholder glyphs.
+         The spec left storage/Google/Wikimedia images live, so photos
+         loaded on network-timing luck; across two SEPARATE CI runner VMs
+         that produced 17% pixel diffs (a photo present in one run, glyph
+         in the other) — the baseline-regen run and the compare run never
+         agreed. The image-settle wait can't fix cross-run network variance;
+         blocking photos makes the render photo-independent and stable. */
+      await page.route('**/*.{jpg,jpeg,png,webp,avif,gif}', (r) => r.abort());
+      await page.route('**/googleusercontent.com/**', (r) => r.abort());
+      await page.route('**/*.wikimedia.org/**', (r) => r.abort());
+      await page.route('**/*.wikipedia.org/**', (r) => r.abort());
+      await page.route('**/img/wm/**', (r) => r.abort());
+      await page.route('**/*.supabase.co/**/storage/**', (r) => r.abort());
       /* Freeze Date via an init shim rather than page.clock: the shim
          pins only "now" and leaves timers/rAF real, so it cannot interact
          with toHaveScreenshot's stabilization or the app's timeouts. */

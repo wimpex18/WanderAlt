@@ -95,12 +95,27 @@ Apple HIG 44pt, Material 3 48dp, NN/g ≈1cm). Real drift, all fixed:
 contract ("44px tap target around a ~22px glyph"); `.seg-tabs`' 10px radius
 (a container, not a control). Both noted for an owner ruling.
 
-**Non-text contrast register (WCAG 1.4.11):** glass button *shapes* on glass
-backgrounds (boundary ≥3:1) aren't yet measured by any scan here — the
-practitioner checklists (Adham Dannaway, Balsamiq) call this the most-missed
-button check. Candidate for a future probe.
+**Non-text contrast (WCAG 1.4.11) — now probed (`npm run contrast-ui`, Jul 2026).**
+The new probe composites each control's fill and border against the background
+just outside it (canvas-normalized, oklch-safe) and flags boundaries < 3:1.
+Result: **dusk is clean; the Daybreak (day) theme's INACTIVE glass controls are
+sub-3:1** — Discover/Places pills, sheet-chips, scope tabs and the city selector
+render as `border: 1px rgba(16,26,27,.10)` (~1.3:1) over a ~62%-white fill on
+cream (~1.0:1), no edge shadow. **Active/selected states are fine** (petrol tint,
+≥3:1), so *state* is distinguishable; the gap is the resting outline of unselected
+controls. Verified by eye: perceptible but faint.
+- **This is an OWNER decision, not auto-fixed** (same class as the pill/type
+  rulings): strengthening every day-theme inactive-control border (e.g. `--glass`
+  border alpha .10 → ~.30, or a 1px inset edge) is a visible change to the whole
+  shipped Daybreak aesthetic. The controls are identifiable today by text +
+  grouping + strong active states; 1.4.11 strictly wants the resting boundary
+  ≥3:1. Recommend bumping the day inactive-control border to reach 3:1 — small,
+  systemic, and it clears the whole register at once. Dusk needs nothing.
 
 ## Priority follow-ups
-1. Manual VoiceOver pass on Today + Discover (flows, not properties).
-2. Wire `npm run a11y` into CI next to verify/e2e (it exits non-zero on serious).
+1. Manual VoiceOver pass on Today + Discover — script ready at
+   `docs/voiceover-test-checklist.md` (flows, not properties).
+2. ✅ `npm run a11y` wired into CI as a hard gate (+ `visibility` informational);
+   `npm run contrast-ui` available for the 1.4.11 decision above.
 3. Re-check scrim-over-photo contrast whenever hero imagery is refreshed.
+4. **Owner:** decide the Daybreak inactive-control border strength (1.4.11 above).
