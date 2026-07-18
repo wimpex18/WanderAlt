@@ -9076,3 +9076,18 @@ body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-tex
 [data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-title {
   text-shadow: none;
 }
+/* The mono ticker / attribution / week-bridge carry ALPHA (.45–.6) for
+   over-photo legibility — a night scrim backs them. On the day PAPER
+   scene (photo hidden above) that alpha drops them to ~2.3–3.3:1 → axe
+   serious (a11y gate, Jul 2026). Solid tokens on day: ink-mute ~6:1 for
+   the muted mono texts, petrol accent for the ALL→ link. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-ticker,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-attr,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-aside__label,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-ticker,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-attr {
+  color: var(--c-ink-mute);
+}
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .week-all {
+  color: var(--c-accent);
+}
