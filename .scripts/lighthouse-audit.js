@@ -5,7 +5,15 @@
    Best Practices ≥ 95, SEO ≥ 100.
 
        npm start            # in one terminal
-       node .scripts/lighthouse-audit.js                                */
+       node .scripts/lighthouse-audit.js
+
+   CAVEAT (Jul 2026): best-practices on localhost UNDER-reports because
+   supabase.js's proxifyImage() bypasses the /img/wm/ Wikimedia cookie-
+   stripping proxy on localhost (dev needs no Worker). So localhost hits
+   raw Wikimedia URLs that set cookies → third-party-cookies flag. On
+   production those go through workers/wikimedia-proxy/ (cookies stripped).
+   For a TRUE best-practices score, audit production:
+       WA_URL=https://wanderalt.app node .scripts/lighthouse-audit.js      */
 const fs        = require('fs');
 const path      = require('path');
 const puppeteer = require('puppeteer');
