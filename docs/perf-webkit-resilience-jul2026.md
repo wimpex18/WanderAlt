@@ -16,14 +16,26 @@ get WebKit, where `backdrop-filter`/`oklch`/`clip-path` classically break), and
 Performance is strong (95–98) even with glass blur + photo scenes. Two briefing
 outliers, both diagnosed to the exact element/URL:
 
-- **best-practices 77** → `third-party-cookies` + `inspector-issues`, both from
-  **Wikimedia-hotlinked hero/thumb photos** (`commons.wikimedia.org`,
-  `upload.wikimedia.org`) in the static catalog setting third-party cookies.
-  Ironic for a "we don't track you" site. **Owner action (data/pipeline, not
-  code):** the live pipeline serves images from Supabase storage; the static
-  `catalog.js` snapshot still carries Wikimedia placeholder URLs. Fix at the
-  source — proxy/rehost catalog images, or regenerate the snapshot from
-  storage-backed picks — rather than in CSS.
+- **best-practices 77 → LOCALHOST MEASUREMENT ARTIFACT, not a production bug
+  (corrected 18 Jul after direct verification).** `third-party-cookies` +
+  `inspector-issues` came from **Wikimedia** hero/thumb photos
+  (`commons.wikimedia.org`, `upload.wikimedia.org`) setting cookies
+  (`WMF-Last-Access`, `GeoIP` — curl-confirmed). BUT: `supabase.js`'s
+  `proxifyImage()` rewrites Wikimedia URLs to `/img/wm/<enc>` on production,
+  where the `workers/wikimedia-proxy/` Cloudflare Worker re-fetches and strips
+  Set-Cookie + sets `referrer-policy: no-referrer`. **It deliberately bypasses
+  on localhost** (so dev needs no worker), which is exactly what Lighthouse hit
+  — the raw cookie-setting URL. On `wanderalt.app` the "no third-party cookies"
+  promise holds. **Google photos** (`lh3.googleusercontent.com`, 39 live picks)
+  were also checked: HTTP 200, **zero Set-Cookie** — never a cookie issue.
+  Lesson baked into `.scripts/lighthouse-audit.js`: run against production (or
+  read best-practices with the localhost proxy-bypass in mind).
+  - *Residual, minor, non-urgent (owner):* those 39 Google URLs are a live
+    dependency on the **retired** Google Places photo CDN — they work today and
+    set no cookies, but bypass the app's own edge cache and could be revoked.
+    Re-enrich them to Supabase storage when convenient (pipeline op), or extend
+    the proxy + `WA.img` to route Google through the edge too (perf/caching win;
+    needs a coordinated worker redeploy → client push, or Google images 404).
 - **a11y 93 (desktop 1280)** → `color-contrast` on `.scene-ticker` /
   `.scene-attr` / `.scene-aside__label` (mono text over the desktop photo hero
   — the text-over-photo manual-check class; scrim-covered, photo-dependent,
@@ -62,8 +74,11 @@ been a regression.
   success/error copy. WCAG 3.3.1 met.
 
 ## Follow-ups
-1. **Owner:** rehost/proxy the Wikimedia catalog images (best-practices 77 →
-   ~100; removes third-party cookies from the "no-tracking" site).
+1. **Owner (optional, non-urgent):** re-enrich the 39 Google-Places-CDN image
+   URLs to Supabase storage (the Places API is retired; the URLs work + set no
+   cookies today but are a dependency worth removing). Best-practices "77" needs
+   no action — it was a localhost artifact (see above); production proxies
+   Wikimedia and Google sets no cookies.
 2. Consider adding `npm run lighthouse` + a WebKit line to CI once a headless
    Chrome/WebKit is provisioned there.
 3. Desktop scene-text-over-photo contrast stays in the manual-check register
