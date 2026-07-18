@@ -8336,7 +8336,17 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet__close,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear-top { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__field { border-color: var(--glass-hair); }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-mute); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips,
+/* Mood chips are short + uniform → the sanctioned repeat(3,1fr) grid.
+   Category/neighborhood labels ("Vinyl & books", "Põhja-Tallinn") are
+   wider than a 75px 3-col cell, so at 1440 the centered text overflowed
+   and clipped on BOTH sides ("nyl & boo" — should-fix #10). 2 columns
+   (~117px cells) fit them, still a grid (never a ragged wrap, per the
+   single-line law); the ellipsis guard below catches any outlier. */
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -8349,6 +8359,12 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* min-width:0 + ellipsis so a too-long label degrades to a clean
+     one-sided ellipsis inside its cell, never a both-sides clip. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 0 10px;
   margin: 0;
   background: var(--glass-fill);
