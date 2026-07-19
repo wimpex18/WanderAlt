@@ -1,0 +1,45 @@
+diff --git a/.github/workflows/verify.yml b/.github/workflows/verify.yml
+index 1620bb0..1133d40 100644
+--- a/.github/workflows/verify.yml
++++ b/.github/workflows/verify.yml
+@@ -160,6 +160,40 @@ jobs:
+       - name: Accessibility sweep (axe WCAG 2.1 AA, both skins)
+         run: npm run a11y
+ 
++  # ARIA snapshot GATE (npm run aria) — locks the accessibility TREE
++  # (roles, accessible names, nesting, order) a screen reader walks, the
++  # automated complement to the manual VoiceOver checklist. Catches what
++  # axe (properties) and pixel-diff (looks) can't: a nav tab losing its
++  # name, a heading demoted to a div, a title→plain-text regression. The
++  # tree is GPU-independent → deterministic on ubuntu, ONE baseline set
++  # (.screenshots/aria-baselines/). A deliberate markup change fails this
++  # by design: re-baseline with `npm run aria:update` and commit the .yml.
++  aria:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 22
++          cache: npm
++      - name: Install dependencies
++        run: npm ci
++        env:
++          PUPPETEER_SKIP_DOWNLOAD: 'true'
++      - name: Install Playwright Chromium
++        run: npx playwright install --with-deps chromium
++      - name: Pre-fetch http-server
++        run: npx -y http-server --version
++      - name: ARIA snapshot regression (accessibility tree)
++        run: npm run aria
++      - name: Upload ARIA diffs
++        if: failure()
++        uses: actions/upload-artifact@v4
++        with:
++          name: aria-diffs
++          path: test-results/
++          retention-days: 7
++
+   # Visibility scan (npm run visibility) — INFORMATIONAL, not a gate.
+   # Ghost-element detector (alpha/opacity/contrast + pixel-probe of text
+   # over photos) + control census. It has known benign probe classes

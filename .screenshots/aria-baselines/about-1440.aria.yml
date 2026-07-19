@@ -1,0 +1,104 @@
+- link "Skip to about":
+  - /url: "#about-main"
+- banner:
+  - link "WanderAlt home":
+    - /url: ./index.html
+    - text: ""
+  - button "TALLINN"
+- navigation "Back"
+- main:
+  - paragraph: About
+  - heading "A curated guide to the other city." [level=1]
+  - paragraph: WanderAlt is alternative culture in European cities, vouched for by human curators. Underground rooms, second-hand pages, late-night cinemas, noise gigs — the things that don’t make the visitor guide.
+  - region "Cities":
+    - list:
+      - listitem:
+        - paragraph: Tallinn
+        - paragraph: Live
+      - listitem:
+        - paragraph: Helsinki
+        - paragraph: In flight
+      - listitem:
+        - paragraph: Riga
+        - paragraph: In flight
+  - region "What this is":
+    - heading "What this is" [level=2]
+    - paragraph: "Every WanderAlt pick is chosen by a human curator who lives in the city and cares about its underground — never an algorithm. Their name and their own words ride along with every pick, not just as a byline: read a pick’s own page and the curator’s voice is what you see first. AI is the index that keeps the catalog clean; it never writes the editorial."
+    - paragraph: We’re live in Tallinn, with Helsinki and Riga in flight. Picks refresh on a weekly cadence — this is meant to read like a cultural weekly, not a feed.
+    - list "How it works":
+      - listitem:
+        - paragraph: /\d+/
+        - paragraph: A curator picks.
+        - paragraph: A human who lives in the city chooses a venue, a night, or a reading. Writes a one-line quote in their own voice.
+      - listitem:
+        - paragraph: /\d+/
+        - paragraph: AI cleans the index.
+        - paragraph: We use AI to deduplicate, geocode, classify and tag — everything that scales badly when humans do it. Never to write copy.
+      - listitem:
+        - paragraph: /\d+/
+        - paragraph: You read the weekly.
+        - paragraph: A few picks for tonight, a handful for the week, a curator’s own column on their page — published on a cadence, not a feed.
+  - region "The curators":
+    - heading "The curators" [level=2]
+    - paragraph: Each curator has a public profile and a small handful of picks per week. We don’t pay them — the deal is editorial control over their own section, a permanent home for their voice, and an audience that reads rather than scrolls.
+    - paragraph:
+      - text: If you write about your city the way our existing curators do (
+      - link "@sigmundtells":
+        - /url: curator.html?handle=%40sigmundtells
+      - text: ","
+      - link "@notboring_riga":
+        - /url: curator.html?handle=%40notboring_riga
+      - text: ","
+      - link "@katestrelca":
+        - /url: curator.html?handle=%40katestrelca
+      - text: ) get in touch — we’re always adding city by city.
+  - region "For venues & promoters":
+    - heading "For venues & promoters" [level=2]
+    - paragraph: We don’t list restaurants. We don’t take payment for placement. We don’t do advertorials. If your venue runs the kind of evenings our curators write about — experimental music, exhibitions with a point of view, late cinemas, readings, dance parties that aren’t for everyone — reach out and we’ll point a curator your way.
+    - paragraph: /Need a pick removed or corrected\? Email below\. We aim to action genuine requests within \d+ hours\./
+  - region "Privacy & data":
+    - heading "Privacy & data" [level=2]
+    - paragraph:
+      - strong: We don’t track you.
+      - text: No analytics scripts, no ad networks, no third-party tracking. We use the edge logs from our host (Cloudflare) to see total traffic; those are anonymous and aggregate, and the same logs every web server keeps. The only data we
+      - emphasis: store
+      - text: "is what you give us:"
+    - list:
+      - listitem: Your email, if you subscribe to the weekly digest or create an account. Used to send the digest and authenticate you. Never shared.
+      - listitem: Your bookmarks and taste preferences, in your browser’s localStorage (and synced to your account if signed in) so the app remembers what you saved.
+    - paragraph:
+      - text: That’s the entire list. We don’t need a cookie banner because we don’t use any cookies that aren’t strictly necessary for the app to function. To delete everything, sign in and use the
+      - link "Delete account":
+        - /url: ./profile.html
+      - text: button on your profile, or email us and we’ll handle it manually.
+    - paragraph: "Hosting: Supabase (Frankfurt, EU). No data leaves the EU."
+  - region "Built in the open":
+    - heading "Built in the open" [level=2]
+    - paragraph: WanderAlt is open source. The website, ingest pipeline, edge functions and brand kit all live in one public repo. If something looks wrong, file an issue or a pull request — both reach the maintainers faster than email.
+    - list:
+      - listitem:
+        - link "github.com/wimpex18/wanderalt Source, issues, pull requests":
+          - /url: https://github.com/wimpex18/wanderalt
+      - listitem:
+        - link "Roadmap What we're building, what we're not, and why":
+          - /url: https://github.com/wimpex18/wanderalt/blob/main/ROADMAP.md
+      - listitem:
+        - link "Engineering handoff Tokens, components, state matrices — for contributors":
+          - /url: https://github.com/wimpex18/wanderalt/blob/main/HANDOFF.md
+  - region "Contact":
+    - heading "Contact" [level=2]
+    - paragraph:
+      - link "hello@wanderalt.app":
+        - /url: mailto:hello@wanderalt.app
+      - text: · replies in a few days, usually
+    - paragraph: For curator inquiries, venue listings, takedowns, press, or just to say hi.
+  - paragraph: WanderAlt · A curator vouched for every pick
+- navigation "Primary":
+  - link "Today":
+    - /url: ./index.html
+  - link "Discover":
+    - /url: ./discover.html
+  - link "Saved":
+    - /url: ./saved.html
+  - link "Profile":
+    - /url: ./profile.html

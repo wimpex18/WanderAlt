@@ -1,0 +1,102 @@
+- link "Skip to tonight":
+  - /url: "#tonight"
+- banner:
+  - link "WanderAlt home":
+    - /url: "#"
+    - text: ""
+  - search:
+    - searchbox "Search or ask"
+    - button "Search"
+  - button "TALLINN"
+- main:
+  - region "Tonight":
+    - heading "Tonight" [level=2]
+    - text: /Sat · \d+:\d+ club · Põhja-Tallinn/
+    - paragraph: /THU \d+ JUL · PICK 1 OF 1/
+    - link "Uus Laine — late DJ bar, no lineup":
+      - /url: venue.html?id=uus-laine
+    - blockquote:
+      - paragraph: After midnight, no lineup, no regrets.
+    - paragraph:
+      - text: —
+      - link "@hel.nocturnes":
+        - /url: curator.html?handle=%40hel.nocturnes
+      - text: /· Uus Laine · doors \d+:\d+/
+    - link "I’m going →":
+      - /url: venue.html?id=uus-laine
+    - 'checkbox "Save: Uus Laine — late DJ bar, no lineup"'
+    - button "Share this pick"
+    - complementary "Venue and curator":
+      - paragraph: From the desk
+      - blockquote:
+        - paragraph: After midnight the city reveals itself.
+      - link "Read →":
+        - /url: curator.html?handle=%40hel.nocturnes
+  - heading "This week" [level=2]
+  - paragraph
+  - button "Show a surprise pick"
+  - list
+  - paragraph: No picks this week in Tallinn yet — curators are warming up.
+  - paragraph:
+    - link "Browse Discover →":
+      - /url: ./discover.html
+  - complementary:
+    - region "Saturday digest":
+      - textbox "Email address for the weekly digest":
+        - /placeholder: your@email.com
+      - button "Subscribe to the weekly digest"
+  - heading "The alternative-culture briefing for Tallinn." [level=1]:
+    - text: ""
+    - emphasis: Tallinn
+    - text: ""
+  - paragraph: /Thu, \d+ Jul \d+/
+  - region "Tune tonight’s briefing":
+    - heading "Tune tonight’s briefing" [level=2]
+    - paragraph: Three taps — we bias your picks to the night you want. Nothing leaves this device.
+    - text: Energy
+    - button "Loud"
+    - button "Quiet"
+    - text: Company
+    - button "Solo"
+    - button "With people"
+    - text: Budget
+    - button "Free"
+    - button "Ticketed"
+    - button "Skip"
+  - region "Worth a visit":
+    - heading "Worth a visit" [level=2]
+    - list:
+      - listitem:
+        - paragraph:
+          - 'link "Film Club: Alcarràs Screening & Discussion"':
+            - /url: venue.html?id=sigmundtells-2516
+        - paragraph: Vanalinn · cinema
+        - 'checkbox "Bookmark: Film Club: Alcarràs Screening & Discussion"'
+      - listitem:
+        - paragraph:
+          - link "English Performances at Kanuti Gildi SAAL":
+            - /url: venue.html?id=giadafromgamma-1773810091
+        - paragraph: Vanalinn · theatre
+        - 'checkbox "Bookmark: English Performances at Kanuti Gildi SAAL"'
+      - listitem:
+        - paragraph:
+          - link "EGS Exhibition":
+            - /url: venue.html?id=giadafromgamma-1776052882-egs-exhibition
+        - paragraph: exhibition
+        - 'checkbox "Bookmark: EGS Exhibition"'
+  - link "Subscribe to this week in your calendar":
+    - /url: https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn
+    - text: ""
+  - paragraph:
+    - link "About":
+      - /url: ./about.html
+    - text: · WanderAlt · A curator vouched for every pick
+- navigation "Primary":
+  - link "Today":
+    - /url: ./index.html
+  - link "Discover":
+    - /url: ./discover.html
+  - link "Saved":
+    - /url: ./saved.html
+  - link "Profile":
+    - /url: ./profile.html

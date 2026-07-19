@@ -1,5 +1,5 @@
 /* ============================================================
-   enrich-images v8 — populate picks.image_url from venue_images
+   enrich-images v9 — populate picks.image_url from venue_images
    table (self-learning DB cache) with Wikidata fallback. Free/
    unauthenticated Wikimedia APIs only — no paid Google key.
    ------------------------------------------------------------
@@ -25,6 +25,13 @@
      - a pick Wikidata has no image for gets `image_enrich_failed_at`
        stamped so it's skipped for FAIL_COOLDOWN_DAYS instead of
        re-querying Wikidata for the same unmatchable venue every run.
+
+   v9 (Jul 2026): optional `dry_run`. WanderAlt is human-curated, so
+   auto-matched Wikidata photos want a review before they go live. With
+   {"dry_run": true} the function reports the venue → proposed image URL
+   it WOULD write (status `would_enrich_*`) and writes nothing — no pick
+   update, no venue_images cache, no failed_at stamp. Default is false
+   (unchanged behaviour).
    ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -89,18 +96,21 @@ async function getImageFilename(id: string): Promise<string | null> {
 async function enrichPick(
   pick: { id: string; venue: string; title: string },
   city: string,
-  knownMap: Map<string, { url: string; attr: string }>
-): Promise<{ status: string; url?: string }> {
+  knownMap: Map<string, { url: string; attr: string }>,
+  dryRun: boolean
+): Promise<{ status: string; url?: string; attr?: string }> {
   const key = pick.venue.toLowerCase().trim();
   if (GENERIC_VENUES.has(key)) return { status: 'skipped_generic_venue' };
 
   /* 1. DB-backed known-venue lookup (O(1), no network call). */
   const known = knownMap.get(key);
   if (known) {
-    await db.from('picks')
-      .update({ image_url: known.url, image_attr: known.attr })
-      .eq('id', pick.id);
-    return { status: 'enriched_known', url: known.url };
+    if (!dryRun) {
+      await db.from('picks')
+        .update({ image_url: known.url, image_attr: known.attr })
+        .eq('id', pick.id);
+    }
+    return { status: dryRun ? 'would_enrich_known' : 'enriched_known', url: known.url, attr: known.attr };
   }
 
   /* 2. Wikidata dynamic search. */
@@ -114,24 +124,26 @@ async function enrichPick(
     const url  = thumbUrl(filename);
     const attr = `Wikimedia Commons — ${filename.replace(/^File:/, '').replace(/_/g, ' ')}`;
 
-    /* Write to pick. */
-    await db.from('picks')
-      .update({ image_url: url, image_attr: attr })
-      .eq('id', pick.id);
+    if (!dryRun) {
+      /* Write to pick. */
+      await db.from('picks')
+        .update({ image_url: url, image_attr: attr })
+        .eq('id', pick.id);
 
-    /* Cache in venue_images — next pick at this venue costs 0 API calls. */
-    await db.from('venue_images').upsert(
-      { city, venue_key: key, image_url: url, image_attr: attr, source: 'wikidata' },
-      { onConflict: 'city,venue_key', ignoreDuplicates: true }
-    );
+      /* Cache in venue_images — next pick at this venue costs 0 API calls. */
+      await db.from('venue_images').upsert(
+        { city, venue_key: key, image_url: url, image_attr: attr, source: 'wikidata' },
+        { onConflict: 'city,venue_key', ignoreDuplicates: true }
+      );
+    }
 
-    return { status: 'enriched_wikidata', url };
+    return { status: dryRun ? 'would_enrich_wikidata' : 'enriched_wikidata', url, attr };
   }
 
   return { status: 'not_found' };
 }
 
-async function enrichCity(city: string, limit: number) {
+async function enrichCity(city: string, limit: number, dryRun: boolean) {
   const failCutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400 * 1000).toISOString();
 
   /* Fetch picks that still need images, skipping recent no-match failures. */
@@ -163,32 +175,34 @@ async function enrichCity(city: string, limit: number) {
   const results: Array<{ id: string; venue: string; status: string; url?: string }> = [];
   const failedIds: string[] = [];
   for (const pick of picks) {
-    const r = await enrichPick(pick, city, knownMap);
+    const r = await enrichPick(pick, city, knownMap, dryRun);
     results.push({ id: pick.id, venue: pick.venue, ...r });
     if (r.status === 'not_found') failedIds.push(pick.id);
   }
 
-  if (failedIds.length) {
+  /* Stamp the cooldown only on real runs — a dry run must not mutate. */
+  if (failedIds.length && !dryRun) {
     await db.from('picks')
       .update({ image_enrich_failed_at: new Date().toISOString() })
       .in('id', failedIds);
   }
 
-  const enriched = results.filter(r => r.status.startsWith('enriched')).length;
+  const enriched = results.filter(r => r.status.startsWith('enriched') || r.status.startsWith('would_enrich')).length;
   const skipped  = results.filter(r => r.status.startsWith('skipped')).length;
-  console.log(`[enrich-images] city=${city} enriched=${enriched}/${picks.length} skipped=${skipped}`);
+  console.log(`[enrich-images] city=${city} dry_run=${dryRun} matched=${enriched}/${picks.length} skipped=${skipped}`);
 
-  return { city, ok: true, total: picks.length, enriched, skipped, results };
+  return { city, ok: true, dry_run: dryRun, total: picks.length, enriched, skipped, results };
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-  let city: string | null = null, limit = BATCH;
+  let city: string | null = null, limit = BATCH, dryRun = false;
   try {
     const body = await req.json().catch(() => ({}));
     if (body.city)  city  = String(body.city);
     if (body.limit) limit = Math.min(Number(body.limit), 50);
+    if (body.dry_run === true) dryRun = true;
   } catch (_) { /**/ }
 
   // When city is omitted, run all live cities in sequence (cron mode).
@@ -196,10 +210,10 @@ Deno.serve(async (req: Request) => {
   const cities = city ? [city.toLowerCase()] : ['tallinn', 'helsinki', 'riga'];
 
   const reports = [];
-  for (const c of cities) reports.push(await enrichCity(c, limit));
+  for (const c of cities) reports.push(await enrichCity(c, limit, dryRun));
 
   return new Response(
-    JSON.stringify({ cities: reports }),
+    JSON.stringify({ dry_run: dryRun, cities: reports }),
     { headers: { 'Content-Type': 'application/json' } }
   );
 });

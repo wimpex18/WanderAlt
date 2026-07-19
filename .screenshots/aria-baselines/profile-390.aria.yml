@@ -1,0 +1,30 @@
+- link "Skip to profile":
+  - /url: "#profile-main"
+- banner:
+  - link "WanderAlt home":
+    - /url: ./index.html
+    - text: ""
+  - button "TALLINN"
+- main:
+  - region "Sign in":
+    - heading "Back for the night?" [level=2]
+    - paragraph: Saves & taste cue sync across devices
+    - button "Sign in"
+    - paragraph:
+      - text: browsing works without an account ·
+      - link "tonight →":
+        - /url: ./index.html
+  - paragraph: no tracking · no analytics · strictly-necessary storage only
+  - paragraph:
+    - link "About":
+      - /url: ./about.html
+    - text: · WanderAlt · A curator vouched for every pick
+- navigation "Primary":
+  - link "Today":
+    - /url: ./index.html
+  - link "Discover":
+    - /url: ./discover.html
+  - link "Saved":
+    - /url: ./saved.html
+  - link "Profile":
+    - /url: ./profile.html

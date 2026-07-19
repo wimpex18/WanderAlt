@@ -1,0 +1,109 @@
+- link "Skip to curator":
+  - /url: "#curator-main"
+- banner:
+  - link "WanderAlt home":
+    - /url: ./index.html
+    - text: ""
+  - button "TALLINN"
+- main:
+  - link "← Today":
+    - /url: ./index.html
+  - 'article "Curator: @helsinkievents"':
+    - heading "@helsinkievents" [level=1]
+    - paragraph:
+      - text: 4 PICKS · TALLINN ·
+      - link "TELEGRAM ↗":
+        - /url: https://t.me/helsinkievents
+    - button "Share this curator page"
+    - link "Subscribe to @helsinkievents's picks in your calendar":
+      - /url: https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn&handle=%40helsinkievents
+    - blockquote:
+      - paragraph: “Events across Helsinki, daily.”
+    - separator
+    - paragraph: Public Telegram channel aggregating events across Helsinki — gigs, exhibitions, club nights, talks. Curated picks flow through WanderAlt's editorial filter.
+    - separator
+    - region "4 picks in Helsinki":
+      - paragraph: 4 picks in Helsinki
+      - button "All"
+      - button "indoors"
+      - button "loud"
+      - button "outdoors"
+      - button "quiet"
+      - button "sober"
+      - button "social"
+      - button "solo"
+      - button "walk-up"
+      - list:
+        - listitem:
+          - paragraph:
+            - link "History of Suomenlinna Church Exhibition":
+              - /url: venue.html?id=helsinkievents-3904
+          - paragraph: Suomenlinna · exhibition
+          - paragraph: — Discover the history of Suomenlinna Church from the 18th century to the present day
+          - paragraph:
+            - link "indoors":
+              - /url: discover.html#mood=indoors
+            - link "sober":
+              - /url: discover.html#mood=sober
+            - link "solo":
+              - /url: discover.html#mood=solo
+          - 'checkbox "Bookmark: History of Suomenlinna Church Exhibition"'
+        - listitem:
+          - paragraph:
+            - link "Vantaa Summer Stage Concerts":
+              - /url: venue.html?id=helsinkievents-3946-vantaan-kes-lava-concerts
+          - paragraph: Vantaa · gig
+          - paragraph: — Free summer concert program in Vantaa
+          - paragraph:
+            - link "social":
+              - /url: discover.html#mood=social
+            - link "outdoors":
+              - /url: discover.html#mood=outdoors
+            - link "loud":
+              - /url: discover.html#mood=loud
+          - 'checkbox "Bookmark: Vantaa Summer Stage Concerts"'
+        - listitem:
+          - paragraph:
+            - link "Free outdoor dance floor at Amos Rex":
+              - /url: venue.html?id=helsinkievents-3953-free-outdoor-dance-floor-at-am
+          - paragraph: Lasipalatsi · place
+          - paragraph: — Experience a unique outdoor dance floor with Bluetooth connection, where you can play your own music and dance for free.
+          - paragraph:
+            - link "outdoors":
+              - /url: discover.html#mood=outdoors
+            - link "social":
+              - /url: discover.html#mood=social
+            - link "walk-up":
+              - /url: discover.html#mood=walk-up
+            - link "sober":
+              - /url: discover.html#mood=sober
+          - 'checkbox "Bookmark: Free outdoor dance floor at Amos Rex"'
+        - listitem:
+          - paragraph:
+            - link "New exhibition on Helsinki's history":
+              - /url: venue.html?id=helsinkievents-3972
+          - paragraph: Kruununhaka · exhibition
+          - paragraph: — Discover Helsinki's hidden meanings and surprising history at this new exhibition. Explore the city's significant moments and residents' lives through the centuries.
+          - paragraph:
+            - link "quiet":
+              - /url: discover.html#mood=quiet
+            - link "indoors":
+              - /url: discover.html#mood=indoors
+            - link "sober":
+              - /url: discover.html#mood=sober
+            - link "solo":
+              - /url: discover.html#mood=solo
+          - 'checkbox "Bookmark: New exhibition on Helsinki''s history"'
+  - paragraph:
+    - link "About":
+      - /url: ./about.html
+    - text: · WanderAlt · A curator vouched for every pick
+- navigation "Primary":
+  - link "Today":
+    - /url: ./index.html
+  - link "Discover":
+    - /url: ./discover.html
+  - link "Saved":
+    - /url: ./saved.html
+  - link "Profile":
+    - /url: ./profile.html

@@ -26,8 +26,8 @@
   # fonts.googleapis.com and font-src is 'self' only.
   # 'unsafe-inline' on style-src is retained ONLY because MapLibre
   # injects inline width/height on the canvas elements it manages;
-  # removing it breaks the map. img-src https: keeps Google Places /
-  # Supabase Storage CDNs working without each being whitelisted.
+  # removing it breaks the map. img-src https: keeps the Supabase Storage
+  # CDN (pick-images bucket) working without whitelisting each host.
   # worker-src 'self' blob: is REQUIRED by MapLibre: it spawns its
   # tile-processing worker from a blob: URL. Without this, worker-src
   # falls back to script-src ('self' https://unpkg.com), the blob

@@ -12,6 +12,11 @@ module.exports = defineConfig({
   testMatch: 'visual.spec.js',
   timeout: 60_000,
   fullyParallel: true,
+  /* Playwright defaults to ~half the logical cores, which left the macOS
+     CI runner at 1–2 workers and the 48-shot suite at ~7.5 min. Use all
+     cores in CI — pixel output is per-page deterministic (animations off,
+     fonts settled), so more workers can't change a diff, only wall-clock. */
+  workers: process.env.CI ? '100%' : undefined,
   /* Flat, readable baseline names. Two committed sets: local Macs compare
      against visual-baselines/, CI compares against visual-baselines-ci/ —
      the dusk glass blur composites differently across GPUs (measured
