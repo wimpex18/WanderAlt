@@ -57,9 +57,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const lowVis = [];
   const census = new Map(); /* key → { heights:Map, radii:Set, pages:Set } */
 
-  for (const skin of SKINS) {
-    for (const [name, url] of PAGES) {
-      for (const width of WIDTHS) {
+  /* Each (skin, page, width) scan is independent; run them through a
+     bounded pool instead of 42 serial context loads (was the dominant
+     CI cost). Shared ghosts/lowVis/census updates are race-free — JS is
+     single-threaded, so map/array writes between awaits don't interleave. */
+  const tasks = [];
+  for (const skin of SKINS)
+    for (const [name, url] of PAGES)
+      for (const width of WIDTHS)
+        tasks.push({ skin, name, url, width });
+
+  const runOne = async ({ skin, name, url, width }) => {
         const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
         await context.addInitScript((s) => {
           try { localStorage.setItem('wa:city', 'tallinn'); localStorage.setItem('wa:appearance', s); } catch (_) {}
@@ -243,11 +251,18 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           }
         }
 
-        await page.close();
-        await context.close();
-      }
+        await page.close().catch(() => {});
+        await context.close().catch(() => {});
+  };
+
+  const CONCURRENCY = 5;
+  let idx = 0;
+  await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
+    while (idx < tasks.length) {
+      const t = tasks[idx++];
+      await runOne(t).catch((e) => console.error(`  visibility task error ${t.name}·${t.skin}·${t.width}: ${e.message}`));
     }
-  }
+  }));
 
   await browser.close();
   server.kill();

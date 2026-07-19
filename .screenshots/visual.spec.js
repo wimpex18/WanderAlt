@@ -94,7 +94,7 @@ for (const [name, url] of PAGES) {
          NB Playwright signature: (fn, ARG, options) — options third; passing
          {timeout} second silently becomes the fn's argument and the wait
          runs unbounded (cost us a 60s-per-test hang, Jul 2026). */
-      await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 8000 }).catch(() => {});
+      await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 5000 }).catch(() => {});
       await page.waitForTimeout(600);
       /* Storage thumbnails stay unblocked (photo cards are part of what we
          regress) — so wait for every in-DOM image to settle, or pop-in

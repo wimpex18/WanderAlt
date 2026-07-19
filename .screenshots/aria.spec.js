@@ -74,7 +74,7 @@ async function harden(page) {
 }
 
 async function settle(page) {
-  await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 8000 }).catch(() => {});
+  await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 5000 }).catch(() => {});
   /* Let the post-catalog re-render (saved counts, list swaps) and fonts
      finish so the tree is at steady state before snapshotting. */
   await page.evaluate(() => (document.fonts && document.fonts.ready) || Promise.resolve()).catch(() => {});
