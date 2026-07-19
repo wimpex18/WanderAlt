@@ -30,12 +30,12 @@ outliers, both diagnosed to the exact element/URL:
   were also checked: HTTP 200, **zero Set-Cookie** — never a cookie issue.
   Lesson baked into `.scripts/lighthouse-audit.js`: run against production (or
   read best-practices with the localhost proxy-bypass in mind).
-  - *Residual, minor, non-urgent (owner):* those 39 Google URLs are a live
-    dependency on the **retired** Google Places photo CDN — they work today and
-    set no cookies, but bypass the app's own edge cache and could be revoked.
-    Re-enrich them to Supabase storage when convenient (pipeline op), or extend
-    the proxy + `WA.img` to route Google through the edge too (perf/caching win;
-    needs a coordinated worker redeploy → client push, or Google images 404).
+  - *Residual (owner) — RESOLVED 19 Jul 2026.* The "work today" note aged badly:
+    a re-check found **22 of 32 of those Google URLs already returning 403** (they
+    were being revoked, not just at-risk). Nulled the 25 dead picks and migrated
+    the 14 survivors into the new **`pick-images` Supabase Storage bucket** (fn
+    `import-pick-photos`). `picks.image_url` is now 0 google / 14 storage / 33
+    null — the CDN dependency is gone. Details → `docs/backend-and-pipeline.md`.
 - **a11y 93 (desktop 1280)** → `color-contrast` on `.scene-ticker` /
   `.scene-attr` / `.scene-aside__label` (mono text over the desktop photo hero
   — the text-over-photo manual-check class; scrim-covered, photo-dependent,
