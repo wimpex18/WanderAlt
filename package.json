@@ -12,6 +12,8 @@
     "audit": "node .screenshots/audit.js",
     "visual": "playwright test --config=playwright.config.js",
     "a11y": "node .screenshots/a11y.js",
+    "aria": "playwright test --config=playwright.aria.config.js",
+    "aria:update": "playwright test --config=playwright.aria.config.js --update-snapshots",
     "visibility": "node .screenshots/visibility.js",
     "contrast-ui": "node .screenshots/contrast-ui.js",
     "visual:update": "playwright test --config=playwright.config.js --update-snapshots",

@@ -5,6 +5,15 @@
 screen reader actually *says*. This checklist is the ~20-minute manual pass to
 run before launch. It targets the two core flows; the patterns generalize.
 
+**What's now automated (so this pass is shorter).** `npm run aria` snapshots the
+accessibility *tree* — the roles, accessible names, nesting and ORDER a screen
+reader walks — for Today, Discover (events + places), Profile, About, 404, and the
+venue/curator detail pages, at mobile (390) and desktop (1440) widths, and fails CI
+on any drift (`.screenshots/aria-baselines/`). That locks the *structural* half of
+rows 1–13 below — nav tab names, heading levels/order, the pick-as-link, the
+`@handle` link, control roles — leaving the human pass to confirm the part only ears
+catch: live announcements, focus movement, and whether the reading *flows*.
+
 ## Setup
 - **iOS/macOS VoiceOver** (the primary audience — mobile Safari): `⌘F5` to
   toggle on macOS; Settings → Accessibility → VoiceOver on iOS. Rotor: two-finger

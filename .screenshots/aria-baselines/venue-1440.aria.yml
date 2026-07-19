@@ -1,0 +1,88 @@
+- link "Skip to pick":
+  - /url: "#venue-main"
+- banner:
+  - link "WanderAlt home":
+    - /url: ./index.html
+    - text: ""
+  - button "TALLINN"
+- main:
+  - article "History of Suomenlinna Church Exhibition":
+    - link "Back to Today":
+      - /url: ./index.html
+    - button "Share this pick"
+    - text: Place Suomenlinna
+    - heading "History of Suomenlinna Church Exhibition" [level=1]
+    - blockquote:
+      - paragraph: Discover the history of Suomenlinna Church from the 18th century to the present day
+    - button "more"
+    - paragraph:
+      - text: —
+      - link "@helsinkievents":
+        - /url: curator.html?handle=%40helsinkievents
+      - text: · 4 picks
+    - text: When Open dates Where
+    - link "Suomenlinnan kirkko ↗":
+      - /url: https://maps.google.com/?q=Suomenlinnan%20kirkko%2C%20tallinn
+    - text: Getting in At the venue
+    - button "I’m going →"
+    - 'checkbox "Bookmark: History of Suomenlinna Church Exhibition"'
+    - link "Suomenlinnan kirkko on the map (opens in a new tab)":
+      - /url: https://maps.google.com/?q=Suomenlinnan%20kirkko%2C%20tallinn
+    - paragraph:
+      - link "indoors":
+        - /url: discover.html#mood=indoors
+      - link "sober":
+        - /url: discover.html#mood=sober
+      - link "solo":
+        - /url: discover.html#mood=solo
+    - region "Venue":
+      - img "Suomenlinnan kirkko"
+      - paragraph: Suomenlinnan kirkko
+      - paragraph: Suomenlinna
+    - separator
+    - region "More from @helsinkievents":
+      - paragraph:
+        - text: More from
+        - link "@helsinkievents":
+          - /url: curator.html?handle=%40helsinkievents
+      - list:
+        - listitem:
+          - paragraph:
+            - link "Vantaa Summer Stage Concerts":
+              - /url: venue.html?id=helsinkievents-3946-vantaan-kes-lava-concerts
+          - paragraph: Vantaa · gig
+          - paragraph:
+            - text: — Free summer concert program in Vantaa
+            - link "@helsinkievents":
+              - /url: curator.html?handle=%40helsinkievents
+        - listitem:
+          - paragraph:
+            - link "Free outdoor dance floor at Amos Rex":
+              - /url: venue.html?id=helsinkievents-3953-free-outdoor-dance-floor-at-am
+          - paragraph: Lasipalatsi · place
+          - paragraph:
+            - text: — Experience a unique outdoor dance floor with Bluetooth connection, where you can play your own music and dance for free.
+            - link "@helsinkievents":
+              - /url: curator.html?handle=%40helsinkievents
+        - listitem:
+          - paragraph:
+            - link "New exhibition on Helsinki's history":
+              - /url: venue.html?id=helsinkievents-3972
+          - paragraph: Kruununhaka · exhibition
+          - paragraph:
+            - text: — Discover Helsinki's hidden meanings and surprising history at this new exhibition. Explore the city's significant moments and residents' lives through the centuries.
+            - link "@helsinkievents":
+              - /url: curator.html?handle=%40helsinkievents
+    - paragraph:
+      - link "About":
+        - /url: ./about.html
+      - text: · WanderAlt · A curator vouched for every pick
+- navigation "Primary":
+  - link "Today":
+    - /url: ./index.html
+  - link "Discover":
+    - /url: ./discover.html
+  - link "Saved":
+    - /url: ./saved.html
+  - link "Profile":
+    - /url: ./profile.html
