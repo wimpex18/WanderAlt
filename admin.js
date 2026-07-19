@@ -924,7 +924,7 @@
         list.innerHTML = vlCache.map(v => {
           const meta   = [v.kind, v.neighborhood].filter(Boolean).join(' · ');
           const closed = v.status === 'possibly_closed'
-            ? ` <em style="opacity:.5">(possibly closed)</em>` : '';
+            ? ` <em>(possibly closed)</em>` : '';
           return `<li class="admin-pick-row">
             <span>${escAttr(v.name)}</span>
             <span class="meta">${escAttr(meta)}${closed}</span>
@@ -1256,11 +1256,11 @@
         const name = p.title || id;
         return `<li class="review-row" style="padding:var(--s-2) 0;border-bottom:1px solid var(--c-rule)">
           <p style="margin:0;font-weight:500">${escAttr(name)}</p>
-          <p class="meta" style="margin:2px 0 0;opacity:.7">
+          <p class="meta" style="margin:2px 0 0">
             ${escAttr(p.handle || '')} · 👍 ${t.likes} · 👎 ${t.dislikes}
           </p>
         </li>`;
-      }).join('') || '<li class="meta" style="opacity:.6">None.</li>';
+      }).join('') || '<li class="meta">None.</li>';
 
       const liked = [...tally.entries()]
         .filter(([, t]) => t.likes > 0)
@@ -1317,7 +1317,7 @@
           <li class="admin-pick-row">
             <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${escAttr(c.handle)}</span>
             <span class="meta">${escAttr([c.name, c.tagline].filter(Boolean).join(' — ') || '—')}
-              ${c.pick_count != null ? `<em style="opacity:.55"> · ${c.pick_count} picks</em>` : ''}</span>
+              ${c.pick_count != null ? `<em> · ${c.pick_count} picks</em>` : ''}</span>
             <button class="admin-btn--edit" data-curator-handle="${escAttr(c.handle)}"
                     aria-label="Edit ${escAttr(c.handle)}" title="Edit">&#9998;</button>
           </li>`
@@ -1439,7 +1439,7 @@
     const tbody = $('pipeline-log')?.querySelector('tbody');
     if (tbody) {
       if (!Array.isArray(logRows) || !logRows.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="meta" style="opacity:.5">No log entries yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="meta">No log entries yet.</td></tr>';
       } else {
         tbody.innerHTML = logRows.map(r => {
           const ts = r.finished_at

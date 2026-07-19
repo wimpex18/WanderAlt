@@ -38,16 +38,54 @@ const PAGES = [
 const KEYBOARD_PAGES = ['today', 'discover', 'profile'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* Derive real ids for the DETAIL pages (venue/curator/place) from whatever
+   catalog loads — same logic as audit.js/e2e.js. These are where users land
+   from shared links, yet the param-less PAGES list never reached them; the
+   Jul 2026 venue·day .answer__k contrast fail hid here until this was added.
+   Best-effort: if derivation fails (no catalog), the detail pages are skipped
+   and the static pages remain the hard gate. */
+async function deriveDetailPages(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { try { localStorage.setItem('wa:city', 'tallinn'); localStorage.setItem('wa:appearance', 'dusk'); } catch (_) {} });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/discover.html`, { waitUntil: 'domcontentloaded', timeout: 25000 }).catch(() => {});
+  await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 8000 }).catch(() => {});
+  await sleep(600);
+  const ids = await page.evaluate(() => {
+    const cat = (window.WA && (window.WA._catalogAll || window.WA.catalog)) || [];
+    const ven = (window.WA && (window.WA._venuesAll || window.WA.venues)) || [];
+    const byH = {}; cat.forEach((e) => { (byH[e.handle] = byH[e.handle] || []).push(e); });
+    const multi = Object.keys(byH).find((h) => byH[h].length > 1);
+    const names = new Set(cat.map((p) => (p.venue || '').trim().toLowerCase()));
+    const v = ven.find((x) => x.name && names.has(x.name.trim().toLowerCase()));
+    return {
+      pick: (multi && byH[multi][0].id) || (cat[0] && cat[0].id),
+      handle: multi || (cat[0] && cat[0].handle),
+      venue: v && v.id,
+    };
+  }).catch(() => ({}));
+  await page.close(); await context.close();
+  return [
+    ids.pick   && ['venue',   `/venue.html?id=${encodeURIComponent(ids.pick)}`],
+    ids.handle && ['curator', `/curator.html?handle=${encodeURIComponent(ids.handle)}`],
+    ids.venue  && ['place',   `/place.html?id=${encodeURIComponent(ids.venue)}`],
+  ].filter(Boolean);
+}
+
 (async () => {
   const server = spawn('npx', ['http-server', '.', '-p', String(PORT), '-c-1', '--silent'], { stdio: 'ignore' });
   await sleep(2000);
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 
+  const detailPages = await deriveDetailPages(browser);
+  if (detailPages.length < 3) console.log(`⚠ detail-page derivation incomplete (${detailPages.map((p) => p[0]).join(',') || 'none'}) — those skipped this run`);
+  const ALL_PAGES = [...PAGES, ...detailPages];
+
   let seriousTotal = 0;
   const summary = [];
 
   for (const skin of SKINS) {
-    for (const [name, url] of PAGES) {
+    for (const [name, url] of ALL_PAGES) {
       for (const width of WIDTHS) {
         const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 } });
         await context.addInitScript((s) => {
