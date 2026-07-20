@@ -124,6 +124,31 @@ const HEIGHT_TOLERANCE = 1; // sub-px rounding
           }
         }
 
+        // 1b. INSET — every floating glass panel should give its content a
+        // real gutter from its own rounded/bordered edge, not flush-zero.
+        // Catches "text/chips touching the panel border" (a fieldset
+        // <legend> ignoring an ancestor's padding, or an inherited
+        // padding:0 override) that per-element alignment checks miss,
+        // because flush-left content can still be internally "aligned".
+        const MIN_INSET = 8;
+        CONTENT_REGIONS.forEach((sel) => {
+          const panel = document.querySelector(sel);
+          if (!panel || !isVisible(panel)) return;
+          const pr = rectOf(panel);
+          const leaves = [...panel.querySelectorAll('*')].filter((el) => {
+            if (el.children.length > 0) return false; // only leaf nodes
+            const t = el.textContent && el.textContent.trim();
+            return t && isVisible(el);
+          });
+          if (!leaves.length) return;
+          const minLeft = Math.min(...leaves.map((el) => rectOf(el).left));
+          const inset = Math.round(minLeft - pr.left);
+          if (inset < MIN_INSET) {
+            const el = leaves.find((el) => Math.round(rectOf(el).left - pr.left) === inset);
+            out.alignment.push(`${sel}: content flush against panel edge (${inset}px inset, want >=${MIN_INSET}px) — e.g. "${el ? el.textContent.trim().slice(0, 30) : '?'}"`);
+          }
+        });
+
         // 2. ALIGNMENT — .eyebrow legends inside the filter rail should share one left edge.
         const eyebrows = [...document.querySelectorAll('.discover-sheet .eyebrow')].filter(isVisible);
         if (eyebrows.length > 1) {

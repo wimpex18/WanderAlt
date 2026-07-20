@@ -8487,7 +8487,15 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { backgrou
     border-radius: var(--radius-island);
     overflow-y: auto;
     box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
+    /* The June column layout set padding-left:0 (it butted against the
+       page's own left gutter, border-right as its only divider); Dusk's
+       rounded floating island has no outer gutter to lean on, so every
+       label/chip sat flush against the glass edge with no breathing
+       room (photo audit, Jul 2026). Give it a matching inset on both
+       sides. */
+    padding: 0 var(--s-5);
   }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__body { padding: var(--s-5) 0; }
   /* Masthead: the nav tabs overlay the island's left half — give the
      search composite a left offset so they never collide. */
   body[data-skin="dusk"][data-page="discover"] .discover-search { margin-left: 372px; }
