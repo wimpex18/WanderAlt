@@ -10,6 +10,7 @@
     "verify": "node .screenshots/verify.js",
     "e2e": "node .screenshots/e2e.js",
     "audit": "node .screenshots/audit.js",
+    "geometry": "node .screenshots/geometry-audit.js",
     "visual": "playwright test --config=playwright.config.js",
     "a11y": "node .screenshots/a11y.js",
     "aria": "playwright test --config=playwright.aria.config.js",

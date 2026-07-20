@@ -8055,7 +8055,14 @@ body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
   border-radius: 0;
 }
 body[data-skin="dusk"][data-page="discover"] .map-viewport,
-body[data-skin="dusk"][data-page="discover"] .map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+body[data-skin="dusk"][data-page="discover"] .map-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0;
+  /* .map-viewport's base rule paints an opaque --c-paper (white) fill —
+     left uncleared here it hides the dark --g-bg Scene set on the parent
+     .discover-pane--map, so Discover rendered as a blank white pane
+     instead of the dark MapLibre scene at every width. */
+  background: transparent;
+}
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
   background: var(--glass-deep);
   backdrop-filter: blur(24px) saturate(1.5);
@@ -8197,6 +8204,17 @@ body[data-skin="dusk"][data-page="discover"] .discover-scope {
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
   top: 42%;
   color: var(--g-mute);
+}
+/* Below 1024px the results pane is a draggable bottom sheet, not a side
+   rail — its resting "half" detent top is 50vh, and the deck's fixed
+   header (top:84px + 60px tall) ends at a constant 144px. Centering the
+   card at a flat 42% of the viewport ignores both, so on shorter phones
+   its bottom edge dropped 21px past the sheet's top edge (geometry
+   audit, 390×844). Center it in the actual band between them instead —
+   the midpoint of a constant (144px) and a vh-based value (50vh) is
+   itself linear in vh, so this stays centered at any viewport height. */
+@media (max-width: 1023px) {
+  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { top: calc(25vh + 72px); }
 }
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body strong { color: var(--g-text); }
@@ -8381,6 +8399,13 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+  /* Base .mood-chips is a full-bleed scroll rail (margin: 0 -gutter),
+     meant for the edge-to-edge strip elsewhere. Reused here inside the
+     filter rail/sheet, that negative margin bled it 32px past the panel
+     on each side (geometry audit: scrollWidth 274 vs clientWidth 242 at
+     1440) — reset to sit flush like every other facet's chip grid. */
+  margin: 0;
+  padding: 0;
 }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip,
@@ -8501,6 +8526,13 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { backgrou
     overscroll-behavior: contain;
   }
   body[data-skin="dusk"][data-page="discover"] .dsheet-grip { display: none; }
+  /* Empty-hint centers on the full viewport by default, which lands it
+     under the fixed 312–744px filter-rail + deck panels (their right
+     edge sits at 744px regardless of viewport width) — the card was
+     rendering half-clipped behind the list glass. Re-center within the
+     visible map strip to the right of the panels: center of [744, 100vw]
+     is 744 + (100vw − 744)/2, i.e. 50vw + 372px. */
+  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { left: calc(50vw + 372px); }
   /* Map chrome docks bottom-right, glass keys (locate above zoom). */
   body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { right: 24px; bottom: 24px; }
   body[data-skin="dusk"][data-page="discover"] .map-locate-fab { right: 24px; bottom: 196px; left: auto; top: auto; }
