@@ -24,7 +24,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
-    "lighthouse": "^13.4.0",
+    "lighthouse": "^13.4.1",
     "playwright": "^1.61.1",
     "png-to-ico": "^3.0.1",
     "puppeteer": "^25.3.0",
