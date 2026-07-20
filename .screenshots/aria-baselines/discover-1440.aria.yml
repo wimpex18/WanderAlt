@@ -48,17 +48,7 @@
         - button /\d+ min/
     - group "Mood":
       - text: ""
-      - navigation "Filter by mood":
-        - button "quiet"
-        - button "loud"
-        - button "indoors"
-        - button "outdoors"
-        - button "solo"
-        - button "social"
-        - button "drinks"
-        - button "sober"
-        - button "walk-up"
-        - button "ticketed"
+      - navigation "Filter by mood"
     - group "Sort":
       - text: ""
       - radiogroup "Sort":
