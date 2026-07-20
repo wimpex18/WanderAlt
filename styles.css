@@ -7886,8 +7886,11 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   [data-skin="dusk"] .digest-field { margin-top: 0; }
   /* The CTA is flex:1, which on desktop stretched it to ~348px beside two
      48px keys — same height, but a 7:1 width ratio that reads as lopsided.
-     Cap it: still unmistakably the primary action, no longer the whole row. */
-  [data-skin="dusk"] .scene-cta { max-width: 240px; }
+     Cap it: still unmistakably the primary action, no longer the whole row.
+     Scoped to .scene-actions (the pick-action row shared by Today, venue and
+     place) — NOT bare .scene-cta, which would also shrink Profile's "Sign in"
+     below the inputs it sits under, breaking the form-row width contract. */
+  [data-skin="dusk"] .scene-actions .scene-cta { max-width: 240px; }
   /* Pick detail on desktop: the card holds a column, long tail below. */
   [data-skin="dusk"] .scene--detail { padding: 120px 24px 48px; }
   [data-skin="dusk"] .scene--detail .scene__main { max-width: var(--masthead-w); }
