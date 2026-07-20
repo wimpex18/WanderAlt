@@ -2762,7 +2762,10 @@ a.auth-panel__submit { display: inline-block; }
 }
 .colophon__line {
   font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
+  /* 12px (--fs-meta) was too small for the one line that carries the
+     "a curator vouched for every pick" promise — 13px, still a quiet
+     mono footer line, but actually readable. */
+  font-size: 13px;
   color: var(--c-ink-mute);
   letter-spacing: 0.04em;
 }
@@ -6952,7 +6955,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --g-petrol-deep:#055959;                  /* filled keys: logo, ✦ send */
   --g-lime:#d2dc50; --g-ink-on-lime:#0a1011;
   --glass:rgba(16,24,25,.55);               /* panels + secondary controls */
-  --glass-deep:rgba(16,24,25,.82);          /* chrome: topbar, dock, sheets */
+  --glass-deep:rgba(16,24,25,.70);          /* chrome: topbar, dock, sheets — .82→.70 (liquid glass, Jul 2026) */
   --glass-active:rgba(60,184,178,.16);
   --glass-active-line:rgba(60,184,178,.4);  /* ring around the active tint */
   --glass-hair:rgba(255,255,255,.14);
@@ -6983,7 +6986,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --g-bg:#f4f1e8; --g-text:#101a1b;
   --g-mute:rgba(16,26,27,.72); --g-faint:rgba(16,26,27,.5);
   --g-petrol:#055959;                       /* CTA by day (lime fails on paper) */
-  --glass:rgba(255,255,255,.62); --glass-deep:rgba(255,255,255,.72);
+  --glass:rgba(255,255,255,.62); --glass-deep:rgba(255,255,255,.58); /* .72→.58 (liquid glass) */
   --glass-active:rgba(5,89,89,.10);
   --glass-active-line:rgba(5,89,89,.3);
   --glass-hair:rgba(16,26,27,.10);
@@ -7015,10 +7018,14 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   box-shadow: inset 0 1px 0 var(--glass-fill-line);
 }
 .island--deep {
-  /* chrome tier: topbar, dock, sheets */
+  /* chrome tier: topbar, dock, sheets.
+     Jul 2026: deeper blur + lower fill alpha (see --glass-deep) so the
+     chrome reads as true liquid glass — content stays legible THROUGH it
+     while scrolling instead of being hidden behind an near-opaque slab.
+     Blur does the legibility work, so the fill can afford to be thinner. */
   background: var(--glass-deep);
-  backdrop-filter: blur(28px) saturate(1.5);
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(36px) saturate(1.8);
+  -webkit-backdrop-filter: blur(36px) saturate(1.8);
 }
 .island--active {
   /* THE active state — tabs, segs, chips, dock, pins */
@@ -7858,12 +7865,29 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   [data-skin="dusk"] .scene .week { margin-top: var(--s-8); }
   [data-skin="dusk"] .week { display: flex; gap: var(--s-2); align-items: flex-end; }
   [data-skin="dusk"] .week__main { flex: 3; min-width: 0; }
-  [data-skin="dusk"] .week__rail { flex: 1; min-width: 264px; margin-top: 0; }
+  /* .thisweek carries 32px of bottom padding INSIDE the flex item, so the
+     flex-end-aligned rail landed 32px below the actual list row and the
+     digest read as floating off-line. Pull it back up by the same amount
+     so the two columns bottom-align on their content. */
+  [data-skin="dusk"] .week__rail { flex: 1; min-width: 264px; margin-top: 0; margin-bottom: var(--s-7); }
+  /* …and the empty-state's own 16px bottom margin would re-introduce the
+     same offset in the no-picks case (#picks-empty). Drop it in this row. */
+  [data-skin="dusk"] .week__main .picks-empty { margin-bottom: 0; }
   [data-skin="dusk"] .ticket { flex: 1 0 210px; max-width: 300px; }
-  [data-skin="dusk"] .digest-optin { height: 64px; box-sizing: border-box; display: flex; align-items: center; padding: 0 7px; border-radius: var(--radius); }
+  /* The digest used to be a bare 64px field: no label, no explanation —
+     just "your@email.com" and an arrow, which reads as ambiguously as a
+     login. Show what it actually is and what arrives. */
+  [data-skin="dusk"] .digest-optin { height: auto; box-sizing: border-box; display: block; padding: 12px 7px 7px; border-radius: var(--radius); }
   [data-skin="dusk"] .digest-optin form { flex: 1; min-width: 0; }
-  [data-skin="dusk"] .digest-optin__label { display: none; }
+  [data-skin="dusk"] .digest-optin__label { display: block; margin: 0 0 4px 5px; }
+  /* Inter, not the inherited .meta mono — this is a sentence, and mono
+     made a plain-English explanation read as machine output. */
+  [data-skin="dusk"] .digest-optin__desc { display: block; margin: 0 0 8px 5px; font-family: var(--ff-body); font-size: 12px; line-height: 1.35; letter-spacing: 0; text-transform: none; color: var(--g-mute); }
   [data-skin="dusk"] .digest-field { margin-top: 0; }
+  /* The CTA is flex:1, which on desktop stretched it to ~348px beside two
+     48px keys — same height, but a 7:1 width ratio that reads as lopsided.
+     Cap it: still unmistakably the primary action, no longer the whole row. */
+  [data-skin="dusk"] .scene-cta { max-width: 240px; }
   /* Pick detail on desktop: the card holds a column, long tail below. */
   [data-skin="dusk"] .scene--detail { padding: 120px 24px 48px; }
   [data-skin="dusk"] .scene--detail .scene__main { max-width: var(--masthead-w); }
