@@ -58,11 +58,17 @@ const targets = PAGES.length ? PAGES : DEFAULT_PAGES;
 
 /* The flags that make a live *.pages.dev reachable from a headless
    Chrome in this environment (see header comment). */
+const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
 const LAUNCH_ARGS = [
   '--no-sandbox',
   '--disable-quic',
   '--ignore-certificate-errors',
   '--disable-features=EncryptedClientHello,UseDnsHttpsSvcb,UseDnsHttpsSvcbAlpn',
+  /* Sandboxed CI/dev-container runs route outbound HTTPS through an
+     env-configured proxy (HTTPS_PROXY); Chromium doesn't honor that env
+     var itself, so without this flag it tries a direct connection that
+     the sandbox resets outright. No-op wherever no proxy is set. */
+  ...(proxyUrl ? [`--proxy-server=${proxyUrl}`] : []),
 ];
 
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'page';
