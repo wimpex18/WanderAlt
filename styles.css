@@ -4670,10 +4670,18 @@ a.handle:hover { color: var(--c-ink); }
 }
 .map-detail__foot {
   display: flex;
+  align-items: stretch;
   gap: var(--s-2);
   margin-top: var(--s-4);
 }
 .map-detail__cta { flex: 1; text-align: center; padding: 10px 0; font-size: 13px; }
+/* The Save control reuses .bookmark (the small icon-only toggle on list
+   rows), which carries a negative top/right margin and align-self:start
+   tuned for that context — combined with .btn-secondary here, it pulled
+   "Save" 8px up-and-right out of line with "I'm going" (owner photo
+   review, Jul 2026). Reset both so it behaves like a normal flex button
+   matching its sibling. */
+.map-detail__foot .bookmark { flex: 1; margin: 0; align-self: stretch; }
 
 /* Map → Search affordances under the pin detail. */
 .map-detail__more {
@@ -8472,78 +8480,93 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet__apply {
 }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { background: rgba(var(--scrim-rgb),.6); }
 
-/* ── Desktop: floating glass panels over the full-bleed map ── */
+/* ── Desktop: bounded list + map columns (Airbnb-style split), ONE
+   consolidated Filters trigger. Supersedes the "floating glass panels
+   over a full-bleed fixed map + always-open rail + scrolling quick-
+   pills row" system (owner photo review, Jul 2026: "we don't need the
+   map to take all the background"; "half the screen taken by two huge
+   filter blocks"; "leave only one [filter entry point] instead of
+   them"). Mobile keeps the draggable-sheet-over-map pattern untouched —
+   this block only fires ≥1024px. ── */
 @media (min-width: 1024px) {
-  body[data-skin="dusk"][data-page="discover"] { overflow: hidden; height: 100vh; }
-  body[data-skin="dusk"][data-page="discover"] .page { padding: 0; max-width: none; }
-  /* Filter rail — left panel. */
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
-    position: fixed;
-    left: 24px;
-    top: 104px;
-    bottom: 24px;
-    width: 264px;
-    z-index: 10;
-    border-radius: var(--radius-island);
-    overflow-y: auto;
-    box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
-    /* The June column layout set padding-left:0 (it butted against the
-       page's own left gutter, border-right as its only divider); Dusk's
-       rounded floating island has no outer gutter to lean on, so every
-       label/chip sat flush against the glass edge with no breathing
-       room (photo audit, Jul 2026). Give it a matching inset on both
-       sides. */
-    padding: 0 var(--s-5);
+  body[data-skin="dusk"][data-page="discover"] { overflow: visible; height: auto; }
+  /* .topbar is position:fixed (top:16px, 64px tall) — in-flow content
+     needs matching top clearance or it renders underneath it. */
+  body[data-skin="dusk"][data-page="discover"] .page { padding: 104px var(--gutter) var(--s-7); max-width: none; }
+
+  body[data-skin="dusk"][data-page="discover"] .discover-panes {
+    display: flex;
+    align-items: stretch;
+    gap: var(--s-6);
   }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__body { padding: var(--s-5) 0; }
-  /* Masthead: the nav tabs overlay the island's left half — give the
-     search composite a left offset so they never collide. */
-  body[data-skin="dusk"][data-page="discover"] .discover-search { margin-left: 372px; }
-  /* Deck rail + results — the second panel. */
+  /* Deck: scope tabs + the one Filters trigger, sitting as a normal
+     in-flow header above the list column (was a fixed floating panel
+     pinned to pixel offsets). */
   body[data-skin="dusk"][data-page="discover"] .deck {
-    left: 312px;
-    top: 104px;
-    right: auto;
-    width: 432px;
-    padding: 12px 16px 8px;
+    position: static;
+    width: 100%;
+    max-width: 620px;
+    padding: var(--s-4) var(--s-5);
+    margin: 0 0 var(--s-4);
     background: var(--glass-deep);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
     border: 1px solid var(--glass-hair);
-    border-bottom: 0;
-    border-radius: var(--radius-island) var(--radius-island) 0 0;
-    z-index: 11;
+    border-radius: var(--radius-island);
+    z-index: auto;
   }
+  /* One filter entry point: the quick pills (Tonight/This week/Free/…)
+     duplicate facets already in the Filters sheet and needed a
+     horizontal scroll to see them all ("filters too big, why do we
+     need to scroll" — photo review). Keep only "+ Filters" inline;
+     June's desktop rule hides it (the rail made a trigger redundant),
+     so re-show it here. */
+  body[data-skin="dusk"][data-page="discover"] .discover-pills .discover-pill:not(.discover-pill--more) { display: none; }
+  body[data-skin="dusk"][data-page="discover"] .discover-pill--more { display: inline-flex !important; }
+
   body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
     display: block;
-    position: fixed;
-    left: 312px;
-    top: 172px;
-    bottom: 24px;
-    width: 432px;
-    z-index: 10;
+    position: static;
+    flex: 1 1 480px;
+    max-width: 620px;
+    width: auto;
+    height: calc(100vh - 232px);
     background: var(--glass-deep);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
     border: 1px solid var(--glass-hair);
-    border-top: 0;
-    border-radius: 0 0 var(--radius-island) var(--radius-island);
+    border-radius: var(--radius-island);
     box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
-    padding: 8px 16px 16px;
+    padding: var(--s-4) var(--s-5) var(--s-6);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
   body[data-skin="dusk"][data-page="discover"] .dsheet-grip { display: none; }
-  /* Empty-hint centers on the full viewport by default, which lands it
-     under the fixed 312–744px filter-rail + deck panels (their right
-     edge sits at 744px regardless of viewport width) — the card was
-     rendering half-clipped behind the list glass. Re-center within the
-     visible map strip to the right of the panels: center of [744, 100vw]
-     is 744 + (100vw − 744)/2, i.e. 50vw + 372px. */
-  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { left: calc(50vw + 372px); }
-  /* Map chrome docks bottom-right, glass keys (locate above zoom). */
-  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { right: 24px; bottom: 24px; }
-  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { right: 24px; bottom: 196px; left: auto; top: auto; }
+
+  /* The map is now a bounded column, not a fixed full-viewport Scene —
+     every child below anchors to THIS pane instead of the viewport,
+     which is the whole point: the map reads as part of the page, not
+     as the page's background. */
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: calc(100vh - 152px);
+    width: auto;
+    inset: auto;
+    border: 1px solid var(--glass-hair);
+    border-radius: var(--radius-island);
+    overflow: hidden;
+  }
+  /* Bounded pane restores plain centering — the 50vw+372px hack only
+     compensated for the map filling the whole viewport behind fixed
+     side panels; the base rule's 50%/50% (relative to this pane, its
+     nearest positioned ancestor) is correct again on its own. */
+  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { left: 50%; }
+  /* Map chrome anchors to the bounded pane's own corner, not the
+     viewport's (was position:fixed to the window). */
+  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { position: absolute; right: 16px; bottom: 16px; }
+  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { position: absolute; right: 16px; bottom: 188px; left: auto; top: auto; }
   body[data-skin="dusk"][data-page="discover"] .map-zoom-btn,
   body[data-skin="dusk"][data-page="discover"] .map-locate-fab {
     background: var(--glass-deep);
@@ -8552,6 +8575,57 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { backgrou
     border: 1px solid var(--glass-hair);
     color: var(--g-text);
   }
+
+  /* Selecting a pin's full detail duplicated the same venue in the
+     list row right beside it ("two separate blocks for the same
+     venue" — photo review, re: Uus Laine). Hide the list column while
+     a detail is open; the map expands into the freed width. Close the
+     detail (×) to bring the list back. */
+  body.map-detail-open[data-skin="dusk"][data-page="discover"] .discover-pane--list,
+  body.map-detail-open[data-skin="dusk"][data-page="discover"] .deck {
+    display: none;
+  }
+
+  /* Filter sheet: a real modal again, not a permanently-open rail —
+     restore the chrome June's desktop rule force-hides for the rail
+     (close button, footer, backdrop; title too, non-!important there). */
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet[hidden] { display: none !important; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 48px));
+    max-height: min(720px, calc(100vh - 96px));
+    z-index: 80;
+    border-radius: var(--radius-island);
+    overflow-y: auto;
+    box-shadow: inset 0 1px 0 var(--glass-fill), 0 24px 64px rgba(0,0,0,.5);
+    padding: 0 var(--s-5);
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__body { padding: var(--s-5) 0; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__head {
+    justify-content: space-between;
+    border-bottom: 1px solid var(--glass-hair);
+    padding: var(--s-4) 0;
+    margin: 0;
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__title { display: block; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__close { display: inline-flex !important; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__foot { display: flex !important; padding: var(--s-4) 0; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop:not([hidden]) {
+    display: block !important;
+    background: rgba(var(--scrim-rgb),.6);
+  }
+
+  /* Masthead: the nav tabs overlay the island's left half — give the
+     search composite a left offset so they never collide. Zeroes the
+     inherited margin-bottom:16px too — the flex row centers the item's
+     MARGIN box, so that bottom margin alone pushed the visible search
+     box 8px above the topbar's true center (brand/city-selector sat
+     correctly centered at zero margin; the search box didn't). */
+  body[data-skin="dusk"][data-page="discover"] .discover-search { margin: 0 0 0 372px; }
 }
 
 /* Fallbacks for the discover glass surfaces. */
