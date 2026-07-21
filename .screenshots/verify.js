@@ -88,10 +88,19 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
     { stdio: 'ignore' });
   await waitForServer(`${BASE}/index.html`);
 
+  /* Sandboxed CI/dev-container runs route all outbound HTTPS through an
+     env-configured proxy (HTTPS_PROXY) — curl/Node honor that env var
+     automatically, but Chromium doesn't; without an explicit
+     --proxy-server flag it tries a direct connection to Supabase that
+     the sandbox never resolves (not rejected, just hangs), so
+     networkidle2 below waits the full 25s and times out on every page.
+     No-op wherever no proxy is configured (plain CI runners, local dev). */
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
-           '--ignore-certificate-errors'],
+           '--ignore-certificate-errors',
+           ...(proxyUrl ? [`--proxy-server=${proxyUrl}`] : [])],
     ignoreHTTPSErrors: true,
   });
 

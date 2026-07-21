@@ -64,10 +64,16 @@ const isNoise = (t) =>
     { stdio: 'ignore' });
   await waitForServer(`${BASE}/index.html`);
 
+  /* See the matching comment in verify.js — Chromium needs an explicit
+     --proxy-server flag to honor a sandbox's HTTPS_PROXY; without it,
+     Supabase connections hang instead of failing fast and networkidle2
+     never resolves. No-op when no proxy is configured. */
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
-           '--ignore-certificate-errors'],
+           '--ignore-certificate-errors',
+           ...(proxyUrl ? [`--proxy-server=${proxyUrl}`] : [])],
     ignoreHTTPSErrors: true,
   });
 
