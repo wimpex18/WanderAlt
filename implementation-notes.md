@@ -87,12 +87,16 @@ normal network before launch.
 
 ## Open findings, not fixed here
 
-- **Comments still cite `ROADMAP P0/P1/F-9`** in ten app files (`supabase.js`,
-  `discover.js`, `curator.js`, `saved.js`, `briefing.js`, `venue.js`,
-  `map-tiles.js`, `map-venues.js`, `ui-helpers.js`, `process-staging`). The
-  document is gone, so those are dangling citations, but each comment still
-  explains itself without it. Left alone deliberately: 13 comment-only edits
-  across the core app files is churn a cleanup PR shouldn't carry.
+- ~~Comments still cite deleted docs~~ — **done.** All ~130 citations to
+  `ROADMAP`, design-canvas boards, `F-nn`/`V-nn` finding ids and `BRAND.md`
+  are gone from 20 files. Comment text only: verified by diffing the
+  non-comment skeleton of every touched file against `HEAD`, plus
+  `node --check` on each script, balanced CSS braces and comment markers, and
+  a 10-page serve check. Where a citation carried the only meaning in a
+  phrase it was rewritten rather than dropped ("F-11 guard" became
+  "Duplicate-photo guard"), and 19 rough edges the automated pass left
+  (orphan colons, a swallowed `run()`, lost `*/` spacing) were repaired by
+  hand.
 - **`admin.html` loads `./local-secrets.js`, which is gitignored**, so the
   deployed admin page 404s that script on every load. Harmless and deliberate
   (it is the local-only key convenience), but it is a permanent console error

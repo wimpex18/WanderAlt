@@ -40,7 +40,7 @@
 
   /* ── Reading lately ────────────────────────────────────────
      The curator-column feature's home since July 2026 (retired from
-     Today's week__rail — see ROADMAP: it was published once in 16 tries
+     Today's week__rail — it was published once in 16 tries
      there, a per-city cadence nobody kept feeding). Per-curator instead:
      fetches this curator's own latest published columns row. Reuses the
      .column/.column__* markup+CSS the old Today rail used (kept for
@@ -173,7 +173,7 @@
 
       <article aria-label="Curator: ${curator.handle}">
 
-        <!-- Dusk board 4f: ONE glass head card — avatar · handle · mono
+        <!-- Dusk head: ONE glass head card — avatar · handle · mono
              ticker (picks · city · Telegram ↗) · motto quote. Handles
              match the Telegram slug, so the ↗ link derives from it. -->
         <header class="curator-card island">
@@ -276,7 +276,7 @@
 
   /* Document-level wiring — bound ONCE at module scope. These used to be
      bound inside render(), stacking a duplicate pair on every re-render
-     (ROADMAP P3 — restructure before adding the init guard, or the guard
+     (restructure before adding the init guard, or the guard
      makes the double-bind worse). Bookmarks availability is checked at
      event time, not bind time. */
   document.addEventListener('change', (e) => {
@@ -343,7 +343,7 @@
     renderReadingLately(curator);  /* async — doesn't block the sync render above */
   };
 
-  /* place.js-style guard (ROADMAP P3): when the static catalog is already
+  /* place.js-style guard: when the static catalog is already
      present (script ran after catalog.js — the normal defer order), render
      immediately instead of waiting for the live fetch; wa:catalog-ready
      re-renders with live data. render() is idempotent (innerHTML swap). */

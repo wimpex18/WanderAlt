@@ -51,8 +51,8 @@
         <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
         <span class="wordmark">WanderAlt</span>
       </a>
-      <!-- Search-or-ask lives INSIDE the topbar island on Discover
-           (board 3c): logo · search composite · city, one line. -->
+      <!-- Search-or-ask lives INSIDE the topbar island on Discover:
+           logo · search composite · city, one line. -->
       <section class="discover-search" aria-labelledby="discover-search-label" data-mode="search">
         <label id="discover-search-label" class="visually-hidden" for="discover-q">Search WanderAlt</label>
         <form role="search" data-no-submit>
@@ -110,7 +110,7 @@
 
     <p class="print-head" aria-hidden="true"></p>
 
-    <!-- Editorial lede (July 2026 board 1c) — eyebrow + short title;
+    <!-- Editorial lede — eyebrow + short title;
          desktop hides it entirely (the deck toolbar owns the chrome).
          city.js swaps the city name in .page-head__city. -->
     <header class="page-head page-head--discover">
@@ -155,8 +155,9 @@
       </button>
     </nav>
 
-    <!-- Mood chips folded into the Filters sheet (July 2026 board 1c) —
-         the deck stays scope · search · quick pills · applied row. -->
+    <!-- Mood chips folded into the Filters sheet — they are a facet,
+         not deck chrome. The deck stays scope · search · quick pills ·
+         applied row. -->
 
     <!-- Applied-filters overview — removable chips for the category /
          neighborhood filters hidden inside the sheet, so users can see
@@ -174,7 +175,7 @@
         <!-- Filters. Mobile: a bottom sheet opened by "+ Filters" (position
              fixed, so its place in the grid is irrelevant there).
              Desktop ≥1024px: a persistent left rail — the first column of
-             the 3-col split (board 1h), static, live-apply,
+             the 3-col split, static, live-apply,
              "+ Filters"/Apply hidden. -->
         <aside class="discover-sheet" id="discover-sheet" aria-label="Filters" hidden>
           <div class="discover-sheet__handle" aria-hidden="true"></div>
@@ -187,10 +188,10 @@
           </header>
           <div class="discover-sheet__body">
             <!-- Each field is a stacked group inside the mobile sheet and a
-                 facet dropdown-pill ≥1024px (F-15b): the .facet-pill button
+                 facet dropdown-pill ≥1024px: the .facet-pill button
                  (CSS-hidden on mobile) toggles [data-open] on the fieldset,
                  revealing .discover-sheet__panel as an anchored popover.
-                 ≥1024 the rail shows the fields open (board 1h). -->
+                 ≥1024 the rail shows the fields open. -->
             <!-- When — single-select chips mirroring the mobile quick pills
                  (events only; discover.js renders into #discover-when). -->
             <fieldset class="discover-sheet__field" data-facet="when" data-mode="events">
@@ -226,7 +227,7 @@
                 <p class="discover-within-note meta" id="discover-within-note" hidden>Location unavailable &mdash; showing all.</p>
               </div>
             </fieldset>
-            <!-- Mood chips — folded in from the deck (board 1c). mood-chips.js
+            <!-- Mood chips — folded in from the deck. mood-chips.js
                  renders chip buttons into every .mood-chips container. -->
             <fieldset class="discover-sheet__field" data-facet="mood" data-mode="events">
               <legend class="eyebrow">Mood</legend>
@@ -252,7 +253,7 @@
         </aside>
 
       <!-- List pane — on Dusk mobile this is the draggable glass sheet
-           over the map scene (detents peek / half / full, board 3c). The
+           over the map scene (detents peek / half / full). The
            grip is a real button so the detents stay keyboard-reachable. -->
       <div class="discover-pane discover-pane--list" data-pane="list">
         <button class="dsheet-grip" id="discover-grip" type="button"
@@ -417,7 +418,7 @@
   <div class="discover-sheet-backdrop" id="discover-sheet-backdrop" hidden></div>
 
   <nav class="nav" aria-label="Primary">
-    <!-- The List|Map seg is retired (Dusk Glass, board 3c): the map is
+    <!-- The List|Map seg is retired (Dusk Glass): the map is
          always the scene; the results sheet's detents replace the mode
          switch — dragging to peek IS "map view". -->
     <div class="nav__inner island island--deep">

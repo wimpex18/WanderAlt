@@ -1,10 +1,10 @@
 /* ============================================================
-   WanderAlt — ui-helpers.js (June 2026, ROADMAP P1)
+   WanderAlt — ui-helpers.js (June 2026)
    ------------------------------------------------------------
    The shared render helpers that used to be hand-copied into 5–6
    page scripts ("script-tag ordering is the module system, and
    nothing enforces it" — the copies drifted, and fixes like the
-   F-12 'other' guard had to be applied five times). One extra
+   'other' guard had to be applied five times). One extra
    <script defer> tag, no build step.
 
    Exposes window.WA.UI:
@@ -36,7 +36,7 @@
   const DAY_RANK = { Tonight: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
   const buildMeta = (e) => {
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    /* 'other' is a data bucket, not a place — never print it. */
     const nhood = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : null;
     const parts = [nhood, e.kind];
     if (e.day && e.day !== 'Tonight') parts.push(e.time ? `${e.day} ${e.time}` : e.day);
@@ -45,7 +45,7 @@
   };
 
   /* A pick whose quote merely echoes the curator's signature tagline adds
-     noise row after row (F-10) — render the quote only when it was written
+     noise row after row — render the quote only when it was written
      for the pick; otherwise attribute the row with a quiet "via @handle"
      (the Today list idiom). Empty quotes take the same path. */
   const isEchoQuote = (e) => {

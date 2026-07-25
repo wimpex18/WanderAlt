@@ -193,7 +193,7 @@
       return;
     }
     emptyState.hidden = true;
-    /* F-11 guard: consecutive rows sharing one photo read as a rendering
+    /* Duplicate-photo guard: consecutive rows sharing one photo read as a rendering
        bug — repeats drop to the initials tile (first occurrence keeps it). */
     let prevImg = null;
     const dupImg = new Set();
@@ -260,7 +260,7 @@
     suppressEntrance = false;
     if (!venues.length) { resultsList.innerHTML = ''; emptyState.hidden = false; return; }
     emptyState.hidden = true;
-    /* Same F-11 guard as the Events tab: consecutive rows sharing one
+    /* Same duplicate-photo guard as the Events tab: consecutive rows sharing one
        photo read as a rendering bug — drop repeats to the glyph tile. */
     let prevImg = null;
     const dupImg = new Set();
@@ -525,7 +525,7 @@
     updateFacetPills();
   };
 
-  /* ── Facet pills (desktop, F-15b) ────────────────────────────
+  /* ── Facet pills (desktop) ────────────────────────────
      Label each dropdown-pill with its current selection so the row is
      scannable without opening anything: "Category · 2", "≤ 15 min",
      "Sort: Soonest". CSS hides the pills on mobile (the sheet shows
@@ -638,7 +638,7 @@
     if (note) note.hidden = !(state.within > 0 && _locDenied);
   };
 
-  /* When — single-select chips in the filter rail/sheet (board 1h),
+  /* When — single-select chips in the filter rail/sheet,
      mirroring the mobile quick pills onto the one filter language. */
   const WHEN_OPTS = [['tonight', 'Tonight'], ['thisweek', 'This week'], ['all', 'All dates']];
   const renderWhenChips = () => {
@@ -651,7 +651,7 @@
   };
 
   /* Scope counts — the live catalog size per scope, rendered as the one
-     lime badge on the ACTIVE scope segment (board 1c/1h; signal-only). */
+     lime badge on the ACTIVE scope segment. */
   const updateScopeCounts = () => {
     const counts = {
       events: ((window.WA && window.WA.catalog) || []).length,
@@ -742,7 +742,7 @@
         resultsCount.textContent = base;
       }
     }
-    /* Curator voice, board 4f — never system voice in an empty state. */
+    /* Curator voice — never system voice in an empty state. */
     if (emptyState) {
       emptyState.textContent = state.q
         ? `Nothing answers to "${state.q}". Try fewer words.`
@@ -842,7 +842,7 @@
     }
   };
 
-  /* ── Dusk sheet detents (board 3c) ────────────────────
+  /* ── Dusk sheet detents ────────────────────
      The map is always the scene; the results list floats over it as a
      glass sheet with three stops — peek (88px of header above the dock),
      half, full. Peek IS the old "map view", so ?view=map deep links and
@@ -1246,7 +1246,7 @@
     document.getElementById('discover-sheet-close')?.addEventListener('click', closeSheet);
     sheetBackdrop?.addEventListener('click', closeSheet);
 
-    /* Facet dropdown-pills (desktop, F-15b): toggle the group's panel,
+    /* Facet dropdown-pills (desktop): toggle the group's panel,
        one open at a time; outside click / Escape closes. */
     document.querySelectorAll('.facet-pill[data-facet-toggle]').forEach(pill => {
       pill.addEventListener('click', () => {
@@ -1365,7 +1365,7 @@
     });
 
     /* Keyword input. */
-    /* Keystroke filtering is debounced 150ms (ROADMAP P2): run() does a
+    /* Keystroke filtering is debounced 150ms: run() does a
        full keywordFilter over the catalog + map sync, fine at ~1,000
        picks but the first thing to jank as cities multiply. 150ms is
        under the perception threshold for "instant". */

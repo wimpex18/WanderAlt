@@ -1,5 +1,5 @@
 /* ============================================================
-   WanderAlt — Dusk / Daybreak theme switch (board 4e)
+   WanderAlt — Dusk / Daybreak theme switch
    ------------------------------------------------------------
    Dusk (dark) is the default; Daybreak is the same DOM with the
    [data-theme="day"] token swap in styles.css. Loaded WITHOUT

@@ -110,7 +110,7 @@
   });
 
   /* Clear all mood tags — used by Discover's "Clear all" now that the
-     mood strip lives inside the Filters sheet (July 2026 board 1c). */
+     mood strip lives inside the Filters sheet. */
   const clearAll = () => {
     const empty = new Set();
     setHash(empty);

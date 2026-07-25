@@ -3,7 +3,7 @@
    until after the page has painted (June 2026 perf pass: parsing
    it at boot cost Discover ~340ms of main-thread blocking and 15
    Lighthouse performance points; the map pane can arrive a beat
-   later without hurting the journey — the V-11 elements are list-
+   later without hurting the journey — the elements are list-
    side). Injects the script + stylesheet on window 'load', then
    announces 'wa:maplibre-ready' so map-tiles.js can run its
    deferred init. admin.html keeps eager tags (desktop tool, the

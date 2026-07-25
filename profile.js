@@ -30,7 +30,7 @@
     }
   };
 
-  /* ── Auth gate (board 4c) ────────────────────────────────────
+  /* ── Auth gate ────────────────────────────────────
      Signed out, the page IS the invite: the glass welcome card over
      the dusk gradient, its lime CTA opening the one auth overlay.
      (Replaces the old redirect to index — a Profile tab that bounced
@@ -146,7 +146,7 @@
   const BASE = () => window.WA.BASE_URL || '';
   const KEY  = () => window.WA.ANON_KEY  || '';
 
-  /* Composite .digest-field (July 2026 board 1f): the account email with
+  /* Composite .digest-field: the account email with
      the petrol submit docked inside replaces the old checkbox toggle.
      Subscribed state lives on the button (aria-pressed + --on class);
      pressing it toggles the preference. */
@@ -393,7 +393,7 @@
     }
   });
 
-  /* ── Appearance (board 4b/4e) ────────────────────────────────
+  /* ── Appearance ────────────────────────────────
      One settings row; tap cycles AUTO → DUSK → DAYBREAK. AUTO's value
      line names tonight's switch time from theme.js's sun table. */
   const appearanceRow   = document.getElementById('appearance-row');

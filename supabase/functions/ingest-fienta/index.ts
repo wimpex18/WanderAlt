@@ -13,7 +13,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 //   feed events getting last_seen bumped; live events false-flagged by the
 //   absence reconcile). bumpSeen() now reports how many pick rows its
 //   PATCH matched, so "bumped" is ground truth, not an assumption. Also
-//   closes the low-yield blind spot from ROADMAP finding #3: a collapse
+//   closes the low-yield blind spot from finding #3: a collapse
 //   from fetched=13 to eligible=2 is now visible in the log row.
 // v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
 //   for wa_reconcile_absent_picks (silent-cancellation detection).

@@ -6,7 +6,7 @@
 //      (5 picks vs 2). Fixed to Põhja-Tallinn; existing rows merged by SQL.
 // v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
 //      Gemini text fallback retired via config flag (kept as last resort).
-// v39 changes vs v38 (ROADMAP P1):
+// v39 changes vs v38:
 //   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
 //     marked error with an actionable rejection) instead of silently
 //     classifying against the Tallinn context — that silent degrade

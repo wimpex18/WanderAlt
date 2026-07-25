@@ -157,7 +157,7 @@
     const cityName = (window.WA && window.WA.CITY) || 'tallinn';
     const mapsUrl  = `https://maps.google.com/?q=${encodeURIComponent(`${entry.venue}, ${cityName}`)}`;
 
-    /* Dusk Glass (board 3d): the photo is the scene; a probe img downgrades
+    /* Dusk Glass: the photo is the scene; a probe img downgrades
        a dead URL to the dusk-gradient fallback (never a gray box). */
     const heroUrl = entry.imageUrl ? WA.img(entry.imageUrl, 1080).replace(/'/g, '%27') : '';
     const sceneBg = entry.imageUrl
@@ -243,7 +243,7 @@
       <div class="page-below">
         ${moodChips}
 
-        <!-- Venue plate (board 1d): thumb + name + meta + ONE labelled
+        <!-- Venue plate: thumb + name + meta + ONE labelled
              "Venue →" link into the place page — answers the old
              place-page dead end without twin ambiguous map links. -->
         <section class="venue-block" aria-label="Venue">
@@ -317,7 +317,7 @@
       </article>
     `;
 
-    /* Quote clamps at 4 lines (board 4f); when it actually overflows,
+    /* Quote clamps at 4 lines; when it actually overflows,
        a quiet "more" un-clamps it in place. */
     const quoteP = main.querySelector('.answer .scene-quote p');
     if (quoteP && quoteP.scrollHeight > quoteP.clientHeight + 2) {
@@ -334,7 +334,7 @@
 
     /* If the scene photo URL is dead (Google Places URIs can 403 over
        time), drop to the dusk-gradient fallback — the voice and answer
-       card are separate layers, so nothing else moves (board 4f: never
+       card are separate layers, so nothing else moves (never
        a gray box). The probe shares the background's URL, so it errors
        in lockstep with the unpaintable CSS background. */
     const heroProbe = main.querySelector('.detail-hero__probe');
@@ -370,7 +370,7 @@
 
         /* Convert double newlines to paragraph breaks. context_md is
            lightly marked-down — render *emphasis* as <em> instead of
-           leaking literal asterisks (F-13), and escape everything else. */
+           leaking literal asterisks, and escape everything else. */
         const escCtx = (s) => s
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const emphasize = (s) => s
@@ -574,7 +574,7 @@
     }
   };
 
-  /* place.js-style guard (ROADMAP P3): render from the static catalog
+  /* place.js-style guard: render from the static catalog
      immediately when present; wa:catalog-ready re-renders with live data. */
   if (window.WA && (window.WA._catalogAll || window.WA.catalog)) init();
   document.addEventListener('wa:catalog-ready', init);

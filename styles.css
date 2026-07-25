@@ -162,7 +162,7 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   font-optical-sizing: auto;
-  padding-bottom: calc(var(--nav-h) + var(--s-6) + env(safe-area-inset-bottom, 0px));  /* + s-6 so the colophon scrolls clear of the glass nav (F-8) */
+  padding-bottom: calc(var(--nav-h) + var(--s-6) + env(safe-area-inset-bottom, 0px));  /* + s-6 so the colophon scrolls clear of the glass nav */
 }
 
 a {
@@ -264,7 +264,7 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* Logo mark — Beacon. Petrol squircle tile + lime diamond.
-   Proportions are canonical (see brand/BRAND.md §1):
+   Proportions are canonical:
      · tile rx       = 0.18 × side (iOS squircle ratio)
      · diamond side  = 0.20 × tile side
      · diamond rx    = 0.12 × diamond side
@@ -1107,7 +1107,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 .search-box__ai-btn:hover { color: var(--c-accent); }
 /* "Concierge" label — the standfirst promises a concierge; an unlabeled
-   sparkle was the one generic-AI tell (F-21). Icon-only below 768. */
+   sparkle was the one generic-AI tell. Icon-only below 768. */
 .search-box__ai-label {
   display: none;
   font-family: var(--ff-mono);
@@ -1170,7 +1170,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 }
 .search-input::placeholder {
   /* ink-mute, not faint: placeholders are text under strict WCAG
-     readings — faint (#a1a1aa, 2.6:1) stays decorative-glyph-only (F-7). */
+     readings — faint (#a1a1aa, 2.6:1) stays decorative-glyph-only. */
   color: var(--c-ink-mute);
   font-style: italic;
   opacity: 1;
@@ -1921,7 +1921,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
   position: absolute;
   inset: 0;
   z-index: -1;
-  /* Full-height ramp (F-1): a 3-line title + eyebrow + meta fills most
+  /* Full-height ramp: a 3-line title + eyebrow + meta fills most
      of the 280px mobile hero, so the ≥0.4-alpha zone must reach ~2/3 up
      and never hit zero — the old 75% stop left long titles' upper lines
      on near-raw photo (measured against the brightest catalog photos). */
@@ -1939,7 +1939,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 .eyebrow--onphoto { color: rgba(255, 255, 255, 0.82); margin-bottom: var(--s-2); }
 /* Compound selector on purpose: the base .venue-title rule is declared
    AFTER this modifier (same specificity), which silently painted the
-   hero title ink-on-photo — the real F-1 root cause. */
+   hero title ink-on-photo — the real root cause. */
 .venue-title.venue-title--onphoto { color: #fff; margin: 0 0 var(--s-2); }
 .meta--onphoto { color: rgba(255, 255, 255, 0.82); }
 @media (min-width: 768px) {
@@ -2140,12 +2140,12 @@ html.wa-taste-done .taste-onboarding { display: none; }
   line-height: var(--lh-body);
   color: var(--c-ink-soft);
   text-wrap: pretty;
-  max-width: 64ch;   /* reading measure inside the wide shell (was ~142ch at 1280 — F-18) */
+  max-width: 64ch;   /* reading measure inside the wide shell (was ~142ch at 1280) */
   margin: 0 0 var(--s-2);
 }
 
 /* Curator share — mono micro-action, 44px floor (was a 73×27 inline-styled
-   button invisible to the verify harness — F-19). */
+   button invisible to the verify harness). */
 /* Curator page-head action pair (share + calendar feed) — icon-only
    .action-icon buttons, same idiom as the venue action row (the old
    bordered labelled .curator-share forked the share pattern). */
@@ -2581,7 +2581,7 @@ a.auth-panel__submit { display: inline-block; }
 }
 .profile-actions--tight { margin-top: var(--s-4); }
 /* Phones: primary CTA full-width, pair stacks — the same rule Today and
-   the venue page already follow (F-5; Apple/Material phone pattern). */
+   the venue page already follow (Apple/Material phone pattern). */
 @media (max-width: 767px) {
   .profile-actions {
     flex-direction: column;
@@ -3434,7 +3434,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 }
 .mood-chips::-webkit-scrollbar { display: none; }
 /* Scroll affordance: fade the right edge of the strip where it scrolls
-   (mobile) so cut-off chips read as "more this way", not clipped (F-2). */
+   (mobile) so cut-off chips read as "more this way", not clipped. */
 @media (max-width: 767px) {
   .mood-chips,
   .discover-pills {
@@ -4632,7 +4632,7 @@ a.handle:hover { color: var(--c-ink); }
 .map-cluster {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 44px;    /* tap-target floor (was 42 — V-14 sweep) */
+  width: 44px;    /* tap-target floor (was 42) */
   height: 44px;
   border-radius: 50%;
   background: var(--cluster-bg, var(--c-ink));
@@ -5009,7 +5009,7 @@ a.handle:hover { color: var(--c-ink); }
   /* Discover shares the global --reading-max ladder (no bespoke width)
      so its topbar/nav chrome aligns with the content below it and with
      every other page. The list/map split lives inside that shared width. */
-  /* July 2026 board 1h: 3-col split — 236px filter rail (the hoisted
+  /* 3-col split — 236px filter rail (the hoisted
      .discover-sheet), then the editorial list (1fr), then the sticky
      map (1.15fr). */
   .discover-panes {
@@ -5069,7 +5069,7 @@ body.discover-places .mood-chips { display: none; }
    bottom-chrome accessories are the current pattern). One button,
    two state segments; the whole pill is the 44px tap target and it
    keeps the app's single sanctioned shadow. */
-/* July 2026 board 1c: the toggle docks INSIDE the bottom glass chrome,
+/* The toggle docks INSIDE the bottom glass chrome,
    centered above the tab row — one surface, no occlusion (the floating
    ink pill is retired). Light segmented control, same vocabulary as
    .discover-scope: paper-deep track, accent-soft active segment. */
@@ -5329,12 +5329,12 @@ body.discover-places .mood-chips { display: none; }
 body.discover-sheet-open { overflow: hidden; }
 
 /* ── Desktop split presentation ─────────────────────────────── */
-/* Facet pills (F-15b) — hidden on mobile (the sheet shows groups
+/* Facet pills — hidden on mobile (the sheet shows groups
    expanded); ≥1024px each becomes the dropdown trigger of its group. */
 .facet-pill { display: none; }
 
 @media (min-width: 1024px) {
-  /* July 2026 board 1h: the filter sheet becomes a persistent left RAIL,
+  /* The filter sheet becomes a persistent left RAIL,
      the first column of the 3-col split (rail | list | map). Groups sit
      open under mono eyebrow legends, split by hairline rules; no
      "+ Filters" trigger, no Apply (changes apply live via liveApply). */
@@ -5404,9 +5404,9 @@ body.discover-sheet-open { overflow: hidden; }
   /* Desktop never locks body scroll for the (now inline) filters. */
   body.discover-sheet-open { overflow: auto; }
 
-  /* ── Discover chrome compression (F-16 → July 2026 board 1h) ──
+  /* ── Discover chrome compression ──
      The working surface drops the editorial chrome: no page head —
-     the deck toolbar + rail + panes own the viewport, so V-11
+     the deck toolbar + rail + panes own the viewport, so the
      (count + row + pin after a filter tap) holds with room to spare. */
   body[data-page="discover"] .discover-lede { margin-bottom: var(--s-3); }
   body[data-page="discover"] .page-head--discover { display: none; }
@@ -5476,7 +5476,7 @@ body.discover-sheet-open { overflow: hidden; }
   white-space: nowrap;
 }
 /* Phones: the eyebrow shares the row and squeezed the standfirst to a
-   ~20ch measure with a dead right column (F-6) — stack instead. */
+   ~20ch measure with a dead right column — stack instead. */
 @media (max-width: 767px) {
   .discover-lede {
     flex-direction: column;
@@ -5544,7 +5544,7 @@ body[data-page="discover"] .discover-pills {
   align-items: center;
 }
 
-/* ── Discover: desktop rail (July 2026 board 1h) ──────────────
+/* ── Discover: desktop rail ──────────────
    The rail shows each group's legend as its mono eyebrow; the facet
    dropdown-pills are retired (see the rail block above). */
 
@@ -5840,7 +5840,7 @@ body[data-page="saved"] .seg-note {
 .btn--petrol:hover { background: var(--c-accent-deep); }
 .btn--sm { height: 44px; padding: 0 20px; font-size: 15px; }
 .btn .ic { width: 18px; height: 18px; }
-/* July 2026: petrol link mark (board 1d/1g) — the old lime underline
+/* July 2026: petrol link mark — the old lime underline
    broke the "lime is signal-only, never text decoration" rule. */
 .linkact { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--c-accent); padding: 10px 0; border-bottom: var(--rule-w) solid var(--c-accent); transition: color var(--t-fast), border-color var(--t-fast); }
 .linkact:hover { color: var(--c-ink); border-bottom-color: var(--c-ink); }
@@ -5965,7 +5965,7 @@ body[data-page="saved"] .seg-note {
 .tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
 .tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
 .tonight__kicker b{color:var(--c-ink);font-weight:500}
-/* July 2026 boards 1b/1g restore the voice-first hierarchy on Today:
+/* Restore the voice-first hierarchy on Today:
    the event title is quiet Inter body type and the curator quote is the
    loudest element on the screen (Fraunces italic, 29px → 42px). */
 .tonight__title{font-family:var(--ff-body);font-size:23px;line-height:1.25;font-weight:600;letter-spacing:-.01em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-5);display:block}
@@ -6074,7 +6074,7 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
   .tonight__photo{min-height:0;height:215px}
   .quote{padding-left:var(--s-4)}
   .quote__t{font-size:29px;line-height:1.15}
-  /* July 2026 board 1b: I'm going + Save share one row at equal width
+  /* I'm going + Save share one row at equal width
      (the third button left the row, so stacking is no longer needed). */
   .tonight__actions{flex-direction:row;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:nowrap}
   .tonight__actions .btn{flex:1;width:auto;min-width:0;padding:0 var(--s-4)}
@@ -6250,7 +6250,7 @@ body[data-page="about"] .about-cities__status--live{background:var(--c-lime);col
 body[data-page="about"] .about-cities__status--soon{border:var(--rule-w) solid var(--c-rule-strong);color:var(--c-ink-mute)}
 body[data-page="about"] .about-cities__dot{display:none}
 
-/* How-it-works → step plates (board omits the icons) */
+/* How-it-works → step plates */
 body[data-page="about"] .about-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-5);padding-top:var(--s-6)}
 body[data-page="about"] .about-steps__item{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper-deep);padding:var(--s-6)}
 body[data-page="about"] .about-steps__icon{display:none}
@@ -6555,7 +6555,7 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
    existing system. Grouped per page below.
    ════════════════════════════════════════════════════════════ */
 
-/* ── Saved (board 1e) ────────────────────────────────────────
+/* ── Saved ────────────────────────────────────────
    One date language across Saved and Today: the Going row's day
    cell reuses the tag atoms — lime only for the live TONIGHT
    signal, quiet 4px-radius tags for future days. */
@@ -6615,7 +6615,7 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 }
 .saved-foot__sub a { color: var(--c-accent); }
 
-/* ── Profile (board 1f) ──────────────────────────────────────
+/* ── Profile ──────────────────────────────────────
    Taste cue + Saturday digest are promoted to plates; the info
    links become quiet rule rows ("settings are rules, not plates"). */
 body[data-page="profile"] .profile-section.profile-plate {
@@ -6684,7 +6684,7 @@ body[data-page="profile"] .profile-plate .profile-actions .auth-panel__close {
 }
 .profile-rule:hover .profile-rule__label { color: var(--c-accent); }
 
-/* ── Pick detail (board 1d) ──────────────────────────────────
+/* ── Pick detail ──────────────────────────────────
    Actions sit directly under the curator quote: labelled petrol
    primary (52 form tier), then an icon-only 44 row (save /
    calendar / share / map). The venue plate follows with one
@@ -6732,7 +6732,7 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
 }
 
 /* Mobile bottom chrome: ONE glass surface for the docked List|Map
-   seg + the tab row (board 1c). The glass moves from .nav__inner to
+   seg + the tab row. The glass moves from .nav__inner to
    .nav so both rows sit on it. */
 @media (max-width: 767px) {
   body[data-page="discover"] .nav {
@@ -6766,8 +6766,8 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
   color: var(--c-ink);
 }
 
-/* Concierge ✦ — petrol at rest, docked in the field's end (board 1c);
-   the label shows on desktop, icon-only on phones (board 1c vs 1h). */
+/* Concierge ✦ — petrol at rest, docked in the field's end;
+   the label shows on desktop, icon-only on phones. */
 body[data-page="discover"] .discover-search .search-box__ai-btn {
   background: var(--c-accent);
   border-color: var(--c-accent);
@@ -6783,7 +6783,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 
 /* Desktop deck → one 44-tier toolbar row directly under the masthead
-   (board 1h: control weight proportional to use frequency — search is
+   (control weight proportional to use frequency — search is
    a 340px control in the chrome band, not a 1216px hero). */
 @media (min-width: 1024px) {
   body[data-page="discover"] .deck {
@@ -6821,7 +6821,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   body.discover-ai-mode .deck .discover-search { width: auto; margin: 0; }
 }
 
-/* ── Today mobile hero (board 1b) ────────────────────────────
+/* ── Today mobile hero ────────────────────────────
    The phone hero is voice-only: no photo block (it lives in the
    desktop right rail). Also retires a long-standing collapse bug —
    the photo anchor has no in-flow content, so at 390 it shrank to
@@ -6881,7 +6881,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --radius-tag:8px;       /* tags, date cells, count badges */
 }
 [data-theme="day"] {
-  /* DAYBREAK twin (board 4e) — same DOM, tokens only */
+  /* DAYBREAK twin — same DOM, tokens only */
   --g-bg:#f4f1e8; --g-text:#101a1b;
   --g-mute:rgba(16,26,27,.72); --g-faint:rgba(16,26,27,.5);
   --g-petrol:#055959;                       /* CTA by day (lime fails on paper) */
@@ -6901,7 +6901,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --scrim-detail: linear-gradient(rgba(244,241,232,.55), rgba(244,241,232,.25) 35%, rgba(244,241,232,.92) 72%, var(--g-bg));
   --scrim-desktop: linear-gradient(105deg, rgba(244,241,232,.95) 0%, rgba(244,241,232,.85) 34%, rgba(244,241,232,.4) 60%, rgba(244,241,232,.5) 100%),
                    linear-gradient(transparent 55%, var(--g-bg) 100%);
-  --cta:#055959;                            /* lime fails on paper (board 4e) */
+  --cta:#055959;                            /* lime fails on paper */
   --cta-ink:#fff;
   --cta-glow:rgba(5,89,89,.25);
   /* lime steps back to signal-only (live dots, TONIGHT tag) */
@@ -6934,7 +6934,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   .island { background: var(--glass-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
-/* ── Single-line law atoms (law 3, board 3a) ─────────────────
+/* ── Single-line law atoms (law 3) ─────────────────
    Control rows are one line at one height; meta lines never
    wrap — titles alone may take 2 lines (cards only). */
 .wa-row { display: flex; align-items: center; gap: 8px; height: var(--unit); }
@@ -6944,7 +6944,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
    DUSK GLASS — PAGE PASSES (scoped per page via body[data-skin=
    "dusk"] while the rollout is in flight; June pages keep the
    light system untouched until their pass lands). PR 2: Today
-   (boards 3b/3e) + pick detail (board 3d).
+    + pick detail.
    ════════════════════════════════════════════════════════════ */
 
 /* ── Base: the page rides a scene, not white paper ─────────── */
@@ -6964,7 +6964,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   padding: var(--s-7) var(--gutter) var(--s-8);
 }
 
-/* ── Chrome: floating topbar island (board 3b/3e) ──────────── */
+/* ── Chrome: floating topbar island ──────────── */
 [data-skin="dusk"] .topbar {
   position: fixed;
   top: 12px;
@@ -6985,7 +6985,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .wordmark:hover { color: var(--g-petrol); }
 [data-skin="dusk"] .logo-mark { width: 28px; height: 28px; border-radius: 8px; }
 [data-skin="dusk"] .topbar__brand { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; }
-/* About/Sign-in move behind the Profile tab on dusk pages (board 3e
+/* About/Sign-in move behind the Profile tab on dusk pages
    masthead is logo · tabs · search · city — auth lives on Profile).
    auth.js moves the city selector into .topbar__right, so hide only
    the two links, never the wrapper. */
@@ -7010,7 +7010,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .city-selector .city-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g-lime); }
 [data-skin="dusk"] .city-selector__chev svg { stroke: var(--g-mute); }
 
-/* Search-or-ask composite (desktop masthead only, board 3e). */
+/* Search-or-ask composite (desktop masthead only). */
 [data-skin="dusk"] .masthead-search { display: none; }
 @media (min-width: 1100px) {
   [data-skin="dusk"] .masthead-search {
@@ -7057,7 +7057,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   [data-skin="dusk"] .masthead-search__key .ic { width: 18px; height: 18px; stroke-width: 1.75; position: relative; z-index: 1; }
 }
 
-/* ── Chrome: the floating dock (mobile, board 3b) ──────────── */
+/* ── Chrome: the floating dock (mobile) ──────────── */
 [data-skin="dusk"] .nav {
   background: transparent;
   padding: 0 12px;
@@ -7151,7 +7151,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .scene__main,
 [data-skin="dusk"] .scene .week { position: relative; z-index: 2; }
 /* Board 3b: on Today the tag row pins to the scene's top while the
-   voice stays bottom-anchored (board 3d keeps venue tags with the
+   voice stays bottom-anchored (keeps venue tags with the
    title, so the pin is briefing-scoped). */
 [data-skin="dusk"][data-page="briefing"] .scene__main {
   flex: 1;
@@ -7161,7 +7161,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"][data-page="briefing"] .scene__main > .scene-tags { margin-bottom: auto; }
 
-/* Floating scene keys (venue back/share, board 3d). */
+/* Floating scene keys (venue back/share). */
 [data-skin="dusk"] .scene-float {
   position: absolute;
   top: 16px;
@@ -7179,7 +7179,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .scene-float--back { left: 16px; }
 @media (max-width: 767px) {
-  /* board 3d: no topbar on the pick detail — back + share float instead */
+  /* No topbar on the pick detail — back + share float instead */
   [data-skin="dusk"][data-page="venue"] .topbar { display: none; }
   [data-skin="dusk"][data-page="venue"] .scene--detail { padding-top: 16px; }
 }
@@ -7321,7 +7321,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .scene-key .bookmark__icon { width: 20px; height: 20px; color: inherit; }
 [data-skin="dusk"] .scene-key:has(.bookmark__check:checked) { color: var(--g-petrol); }
 
-/* ── This Week ticket rail (boards 3b/3e) ──────────────────── */
+/* ── This Week ticket rail ──────────────────── */
 [data-skin="dusk"] .scene .week { margin-top: var(--s-7); }
 [data-skin="dusk"] .sechead {
   display: flex;
@@ -7361,7 +7361,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  /* bleed to the right viewport edge (board 3b) */
+  /* bleed to the right viewport edge */
   margin-right: -16px;
   padding-right: 16px;
 }
@@ -7475,7 +7475,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .auth-panel__status { color: var(--g-mute); }
 [data-skin="dusk"] .auth-panel__status:empty { display: none; }
 
-/* ── Pick detail: the answer card (board 3d) ───────────────── */
+/* ── Pick detail: the answer card ───────────────── */
 [data-skin="dusk"] .scene--detail { padding: 80px 16px calc(88px + env(safe-area-inset-bottom, 0px)); }
 [data-skin="dusk"] .scene--detail .scene__scrim {
   background: var(--scrim-detail);
@@ -7595,7 +7595,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .taste-done { background: var(--g-petrol-deep); color: #fff; }
 [data-skin="dusk"] .taste-done:hover { background: var(--g-petrol-deep); filter: brightness(1.15); }
 
-/* Venue long-tail blocks (board 3d: scroll under the card). */
+/* Venue long-tail blocks. */
 [data-skin="dusk"] .venue-card { border-color: var(--glass-hair); background: var(--glass); }
 [data-skin="dusk"] .venue-card__name { color: var(--g-text); }
 [data-skin="dusk"] .venue-card__go { color: var(--g-petrol); }
@@ -7630,7 +7630,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .skeleton-pick__line { background: var(--glass-fill); }
 [data-skin="dusk"] .skeleton-pick { border-color: transparent; }
 
-/* ── Desktop (board 3e): one masthead island over the scene ── */
+/* ── Desktop: one masthead island over the scene ── */
 @media (min-width: 768px) {
   [data-skin="dusk"] {
     --masthead-w: min(1180px, calc(100vw - 48px));
@@ -7860,7 +7860,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 
 /* ════════════════════════════════════════════════════════════
-   DUSK GLASS — DISCOVER (boards 3c + 4d): the map is ALWAYS the
+   DUSK GLASS — DISCOVER: the map is ALWAYS the
    scene; results ride a draggable glass sheet (detents peek /
    half / full — peek IS the retired "map view"); filters are one
    horizontal 48 rail + the More+ sheet's 3-col grids. Desktop:
@@ -7906,7 +7906,7 @@ body[data-skin="dusk"][data-page="discover"] .map-detail {
   color: var(--g-text);
 }
 
-/* Topbar search composite (lives inside the island, board 3c). */
+/* Topbar search composite (lives inside the island). */
 body[data-skin="dusk"][data-page="discover"] .discover-search { flex: 1; min-width: 0; position: relative; }
 body[data-skin="dusk"][data-page="discover"] .discover-search form { margin: 0; }
 body[data-skin="dusk"][data-page="discover"] .search-box {
@@ -8154,7 +8154,7 @@ body[data-skin="dusk"][data-page="discover"] .list-row--active {
   border-radius: var(--radius);
 }
 
-/* ── Filter sheet → board 4d (3-col grids, Reset:Show = 1:2) ── */
+/* ── Filter sheet (3-col grids, Reset:Show = 1:2) ── */
 body[data-skin="dusk"][data-page="discover"] .discover-sheet {
   background: var(--glass-deep);
   backdrop-filter: blur(32px) saturate(1.4);
@@ -8323,7 +8323,7 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { backgrou
 }
 
 /* ════════════════════════════════════════════════════════════
-   DUSK GLASS — SAVED · PROFILE · CURATOR · 404 (boards 4a/4b/4f)
+   DUSK GLASS — SAVED · PROFILE · CURATOR · 404
    Utility pages ride the dusk-gradient scene (no photo); lists +
    summaries are glass sheets; empty states speak curator voice.
    ════════════════════════════════════════════════════════════ */
@@ -8352,7 +8352,7 @@ body[data-skin="dusk"][data-page="404"] .page {
   body[data-skin="dusk"][data-page="404"] .page { padding-top: 128px; }
 }
 
-/* ── Saved (board 4a) ──────────────────────────────────────── */
+/* ── Saved ──────────────────────────────────────── */
 body[data-skin="dusk"][data-page="saved"] .page-head {
   display: flex;
   align-items: baseline;
@@ -8476,7 +8476,7 @@ body[data-skin="dusk"][data-page="saved"] .list-row__changed {
   font-size: 10px;
   color: var(--g-lime);
 }
-/* Summary card in curator voice (board 4a). */
+/* Summary card in curator voice. */
 body[data-skin="dusk"][data-page="saved"] .saved-foot {
   margin: var(--s-4) 0 var(--s-2);
   padding: var(--s-4);
@@ -8503,7 +8503,7 @@ body[data-skin="dusk"][data-page="saved"] .list-row--gone .list-row__cancelled {
 body[data-skin="dusk"][data-page="saved"] .list-row__dismiss,
 body[data-skin="dusk"][data-page="saved"] .list-row__undo { color: var(--g-petrol); }
 
-/* ── Profile (board 4b) ────────────────────────────────────── */
+/* ── Profile ────────────────────────────────────── */
 body[data-skin="dusk"][data-page="profile"] .page-head--profile { border: 0; padding-bottom: var(--s-5); }
 body[data-skin="dusk"][data-page="profile"] .page-head__eyebrow { display: none; }
 body[data-skin="dusk"][data-page="profile"] .profile-avatar {
@@ -8556,7 +8556,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-delete-confirm__warning { c
 body[data-skin="dusk"][data-page="profile"] .field-pw { background: transparent; }
 body[data-skin="dusk"][data-page="profile"] .pw-toggle { color: var(--g-faint); }
 
-/* ── Curator head card (board 4f) ──────────────────────────── */
+/* ── Curator head card ──────────────────────────── */
 body[data-skin="dusk"][data-page="curator"] .curator-card {
   border-radius: var(--radius-island);
   padding: var(--s-4);
@@ -8622,7 +8622,7 @@ body[data-skin="dusk"][data-page="curator"] .m-chip--active {
 }
 body[data-skin="dusk"][data-page="curator"] .venue-back { color: var(--g-petrol); }
 
-/* ── 404 (board 4f) ────────────────────────────────────────── */
+/* ── 404 ────────────────────────────────────────── */
 body[data-skin="dusk"][data-page="404"] .not-found { padding-top: var(--s-8); }
 body[data-skin="dusk"][data-page="404"] .not-found__line {
   font-family: var(--ff-display);
@@ -8694,7 +8694,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-rule--btn {
   [data-skin="dusk"] .scene__scrim { display: none !important; }
 }
 
-/* ── Signed-out profile invite (board 4c) ──────────────────── */
+/* ── Signed-out profile invite ──────────────────── */
 body[data-skin="dusk"][data-page="profile"] .profile-welcome {
   border-radius: var(--radius-sheet);
   padding: var(--s-6) var(--s-5);
@@ -8728,7 +8728,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note {
 }
 body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: var(--g-petrol); }
 
-/* ── Quote "more" (board 4f: clamp 4 + more) ───────────────── */
+/* ── Quote "more" ───────────────── */
 [data-skin="dusk"] .scene-quote--open p {
   display: block;
   -webkit-line-clamp: unset;
@@ -8747,7 +8747,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: va
   cursor: pointer;
 }
 
-/* ── Today's desktop venue + desk card (board 3e right rail) ── */
+/* ── Today's desktop venue + desk card ── */
 [data-skin="dusk"] .scene-aside { display: none; }
 @media (min-width: 1100px) {
   [data-skin="dusk"] .scene-aside {
