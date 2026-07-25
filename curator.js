@@ -21,7 +21,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { buildMeta, bookmarkSVG } = window.WA.UI;
+  const { esc, buildMeta, bookmarkSVG } = window.WA.UI;
   const mediaHtml = window.WA.UI.rowMedia;
 
 
@@ -156,26 +156,26 @@
 
     const buildRows = (entries) => tasteOrder(entries).slice(0, MAX_SHOWN).map(e => {
       const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
-      return `<li class="list-row list-row--card list-row--bookmarkable" data-id="${e.id}">
+      return `<li class="list-row list-row--card list-row--bookmarkable" data-id="${esc(e.id)}">
                ${mediaHtml(e)}
                <div class="list-row__body">
                  <p class="list-row__title">
-                   <a href="venue.html?id=${e.id}">${e.title}</a>
+                   <a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a>
                  </p>
-                 <p class="list-row__meta">${buildMeta(e)}</p>
+                 <p class="list-row__meta">${esc(buildMeta(e))}</p>
                  ${e.quote && (!curator.tagline || e.quote.trim().toLowerCase() !== curator.tagline.trim().toLowerCase())
-                   ? `<p class="list-row__quote">&mdash; ${e.quote}</p>`
+                   ? `<p class="list-row__quote">&mdash; ${esc(e.quote)}</p>`
                    : ''}
                  ${e.moodTags && e.moodTags.length
                    ? `<p class="list-row__tags">${
                        e.moodTags.map(t =>
-                         `<a class="list-row__tag" href="discover.html#mood=${encodeURIComponent(t)}">${t}</a>`
+                         `<a class="list-row__tag" href="discover.html#mood=${encodeURIComponent(t)}">${esc(t)}</a>`
                        ).join('')}</p>`
                    : ''}
                </div>
                <label class="bookmark">
                  <input type="checkbox" class="bookmark__check" data-id="${e.id}"
-                        aria-label="Bookmark: ${e.title}" ${isMarked ? 'checked' : ''}>
+                        aria-label="Bookmark: ${esc(e.title)}" ${isMarked ? 'checked' : ''}>
                  ${bookmarkSVG()}
                </label>
              </li>`;
@@ -184,32 +184,32 @@
     main.innerHTML = `
       <a class="venue-back" href="${href}">${label}</a>
 
-      <article aria-label="Curator: ${curator.handle}">
+      <article aria-label="Curator: ${esc(curator.handle)}">
 
         <!-- Dusk head: ONE glass head card — avatar · handle · mono
              ticker (picks · city · Telegram ↗) · motto quote. Handles
              match the Telegram slug, so the ↗ link derives from it. -->
         <header class="curator-card island">
           <div class="curator-card__row">
-            <span class="curator-card__avatar" aria-hidden="true">${(curator.handle || '@?').replace('@', '').charAt(0).toUpperCase()}</span>
+            <span class="curator-card__avatar" aria-hidden="true">${esc((curator.handle || '@?').replace('@', '').charAt(0).toUpperCase())}</span>
             <div class="curator-card__id">
-              <h1 class="curator-card__handle">${curator.handle}</h1>
+              <h1 class="curator-card__handle">${esc(curator.handle)}</h1>
               <p class="curator-card__ticker one-line">${picks.length} PICK${picks.length !== 1 ? 'S' : ''} &middot; ${((window.WA && window.WA.CITY) || 'tallinn').toUpperCase()} &middot; <a href="https://t.me/${encodeURIComponent((curator.handle || '').replace('@', ''))}" target="_blank" rel="noopener noreferrer">TELEGRAM &nearr;</a></p>
             </div>
             <div class="curator-actions">
               <button type="button" id="curator-share-btn" class="action-icon" aria-label="Share this curator page" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg></button>
               <a class="action-icon" href="${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent((window.WA && window.WA.CITY) || 'tallinn')}&amp;handle=${encodeURIComponent(curator.handle)}"
-                 aria-label="Subscribe to ${curator.handle}'s picks in your calendar" title="Calendar feed (.ics)">
+                 aria-label="Subscribe to ${esc(curator.handle)}'s picks in your calendar" title="Calendar feed (.ics)">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4"/></svg>
               </a>
             </div>
           </div>
-          ${curator.tagline ? `<blockquote class="curator-card__motto"><p>&ldquo;${curator.tagline}&rdquo;</p></blockquote>` : ''}
+          ${curator.tagline ? `<blockquote class="curator-card__motto"><p>&ldquo;${esc(curator.tagline)}&rdquo;</p></blockquote>` : ''}
         </header>
 
         ${curator.bio ? `
         <hr class="rule" style="margin-bottom:var(--s-5)">
-        <p class="curator-profile__bio">${curator.bio}</p>
+        <p class="curator-profile__bio">${esc(curator.bio)}</p>
         ` : ''}
 
         <div id="curator-column-slot"></div>

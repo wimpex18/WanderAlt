@@ -57,6 +57,12 @@ Three things genuinely cannot be judged locally, so verify them on the Cloudflar
 
 Two things the deleted suite used to catch, worth checking by hand: no horizontal overflow at any width, and no console errors on load.
 
+## Rendering untrusted content
+
+Pick, venue and curator text is scraped from Telegram, RSS and venue pages, passed through an LLM, and interpolated into `innerHTML` via template literals. Treat every one of those fields as attacker-controlled: **wrap it in `WA.UI.esc()` at the interpolation site**, including inside `aria-label`, `title` and `data-*` attributes, and including values that arrive via `buildMeta()`. A stored-XSS probe in July 2026 found `venue.html` and `curator.html` executing injected `onerror` handlers because `title`, `quote`, `tagline` and `bio` were interpolated raw while neighbouring fields were escaped.
+
+URLs need more than escaping — `esc()` escapes quotes, not schemes, so a `javascript:` value survives it. Any DB-sourced URL going into an `href` or `src` goes through **`WA.UI.safeUrl()`**, which passes only http(s) and relative paths. The CSP blocks inline handlers in production, but that is the second line of defence, not the first: the local dev server sends no CSP at all.
+
 ## Voice
 
 Curator handles start with `@` and match the Telegram slug. Metadata reads `Neighborhood · type · day + time`. No em-dashes in headlines, no exclamation marks, never the word "discover" as a verb, no marketing register — it should read like the back page of a newsletter. No cookie banner, no analytics, no third-party scripts; `about.html` covers privacy and terms.

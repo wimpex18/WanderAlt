@@ -183,6 +183,21 @@
   };
   const SOCIAL_LABEL = { website: 'Website', facebook: 'Facebook', instagram: 'Instagram' };
 
+  /* Only http(s) URLs may become an href or an image source. Pick and venue
+     URLs come from scraped pages via an LLM, so a `javascript:` value is a
+     realistic input, and esc() would happily pass it through — it escapes
+     quotes, not schemes. Relative paths stay allowed; everything else is
+     dropped rather than rendered dead. */
+  const safeUrl = (u) => {
+    if (!u) return '';
+    const raw = String(u).trim();
+    if (/^[\\/][^\\/]/.test(raw) || raw.startsWith('./') || raw.startsWith('../')) return raw;
+    try {
+      const proto = new URL(raw, location.origin).protocol;
+      return (proto === 'http:' || proto === 'https:') ? raw : '';
+    } catch (_) { return ''; }
+  };
+
   const socialButtons = (obj) => {
     if (!obj) return '';
     const name = obj.name || 'This venue';
@@ -192,7 +207,9 @@
         const aria = k === 'website' ? `${name} website` : `${name} on ${SOCIAL_LABEL[k]}`;
         /* Both glyph variants ship in the markup; CSS shows the filled set on
            mobile and the outline set on desktop (.social-icon__g--* swap). */
-        return `<a class="social-icon" data-social="${k}" href="${esc(obj[k])}" ` +
+        const url = safeUrl(obj[k]);
+        if (!url) return '';
+        return `<a class="social-icon" data-social="${k}" href="${esc(url)}" ` +
                `target="_blank" rel="noopener noreferrer" aria-label="${esc(aria)}">` +
                `<span class="social-icon__g social-icon__g--fill">${SOCIAL_SVG[k]}</span>` +
                `<span class="social-icon__g social-icon__g--line">${SOCIAL_SVG_LINE[k]}</span>` +
@@ -247,5 +264,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
+  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
 })();

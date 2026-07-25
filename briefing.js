@@ -200,14 +200,14 @@
            const label = (isTonight ? 'Tonight' : (hero.day ? esc(hero.day) : 'This week')) + (hero.time ? ` &middot; ${esc(hero.time)}` : '');
            return `<span class="tag ${isTonight ? 'tag--live' : 'tag--scene'}">${label}</span>`;
          })()}
-         ${glassTag ? `<span class="tag tag--scene one-line">${glassTag}</span>` : ''}
+         ${glassTag ? `<span class="tag tag--scene one-line">${esc(glassTag)}</span>` : ''}
        </div>
-       <p class="scene-ticker one-line">${ticker}</p>
-       <a class="scene-title" href="venue.html?id=${hero.id}">${esc(hero.title)}</a>
+       <p class="scene-ticker one-line">${esc(ticker)}</p>
+       <a class="scene-title" href="venue.html?id=${encodeURIComponent(hero.id)}">${esc(hero.title)}</a>
        ${quote}
        <p class="scene-attr one-line">${attr}</p>
        <div class="scene-actions wa-row">
-         <a class="scene-cta" href="venue.html?id=${hero.id}">I&rsquo;m going &rarr;</a>
+         <a class="scene-cta" href="venue.html?id=${encodeURIComponent(hero.id)}">I&rsquo;m going &rarr;</a>
          <label class="bookmark scene-key" title="Save this pick">
            <input type="checkbox" class="bookmark__check" data-id="${hero.id}" aria-label="Save: ${esc(hero.title)}">
            ${bookmarkSVG()}

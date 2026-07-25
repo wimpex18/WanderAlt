@@ -50,7 +50,7 @@
   /* Shared render helpers — single implementation in ui-helpers.js (P1).
      (buildMeta stays local: Going rows carry the day in a separate time
      column, so Saved's meta line differs from the standard one.) */
-  const { isEchoQuote } = window.WA.UI;
+  const { esc, isEchoQuote } = window.WA.UI;
   const mediaHtml = window.WA.UI.rowMedia;
 
   /* ── Row builders ─────────────────────────────────────────── */
@@ -78,13 +78,13 @@
       `<span class="srow-date${live ? ' srow-date--live' : ''}">${live ? 'TONIGHT' : (entry.day || '').slice(0, 3).toUpperCase()}</span>
        <div class="list-row__body">
          <p class="list-row__title one-line">
-           <a href="${venueHref(entry.id)}">${entry.title}</a>${entry.__change ? ` <span class="list-row__changed">${entry.__change}</span>` : ''}
+           <a href="${venueHref(entry.id)}">${esc(entry.title)}</a>${entry.__change ? ` <span class="list-row__changed">${esc(entry.__change)}</span>` : ''}
          </p>
-         <p class="list-row__meta one-line">${meta}</p>
+         <p class="list-row__meta one-line">${esc(meta)}</p>
        </div>
        <label class="bookmark" title="Remove from Saved">
-         <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
-                aria-label="Saved: ${entry.title}" checked>
+         <input type="checkbox" class="bookmark__check" data-id="${esc(entry.id)}"
+                aria-label="Saved: ${esc(entry.title)}" checked>
          ${window.WA.UI.bookmarkSVG()}
        </label>`;
     return li;
@@ -120,9 +120,9 @@
       `${mediaHtml(entry)}
        <div class="list-row__body">
          <p class="list-row__title">
-           <a href="${venueHref(entry.id)}">${entry.title}</a>
+           <a href="${venueHref(entry.id)}">${esc(entry.title)}</a>
          </p>
-         <p class="list-row__meta">${buildMeta(entry)}</p>
+         <p class="list-row__meta">${esc(buildMeta(entry))}</p>
          ${isEchoQuote(entry)
            ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a></p>`
            : `<p class="list-row__quote">
@@ -180,7 +180,7 @@
     li.innerHTML =
       `<div class="list-row__body">
          <p class="list-row__title">${snap.title || 'Saved event'} <span class="list-row__cancelled">no longer listed</span></p>
-         <p class="list-row__meta">${buildMeta(snap)}</p>
+         <p class="list-row__meta">${esc(buildMeta(snap))}</p>
          <p class="list-row__quote">Pulled from the listings &mdash; it may have been cancelled or moved.
            <button type="button" class="list-row__dismiss" data-dismiss="${snap.id}">Dismiss</button>
          </p>

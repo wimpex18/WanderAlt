@@ -173,6 +173,55 @@ headless-environment limits (the MapLibre basemap never rasterises;
 677 `*/`. Identical before and after my pass, so I introduced nothing, but the
 stray terminator is still in there somewhere.
 
+## Sixth pass — security review of the render path
+
+Ran a review of the highest-risk area rather than a general one: pick/venue/
+curator text is scraped, LLM-processed, and interpolated into `innerHTML` via
+template literals, so markup in a source post is a realistic input, not a
+theoretical one.
+
+**Method.** Static scanning was too noisy to trust (162 "unguarded"
+interpolations, nearly all ternaries returning constants), so the question was
+settled empirically: replace the catalog with records whose every text field is
+an XSS payload, render every surface, and count what executed. Then a second
+pass poisoning **one field at a time** to localise each vector.
+
+**Result — stored XSS confirmed on two pages.** `venue.html` (`fired=5`) and
+`curator.html` (`fired=6`) executed injected `onerror` handlers; `place.html`
+and Discover's Places scope admitted `javascript:` hrefs. Vulnerable fields:
+`title`, `venue`, `neighborhood`, `kind`, `quote`, `imageUrl`, curator
+`tagline` and `bio`. The same files already used `esc()` on neighbouring
+fields, so this was inconsistent application, not a missing helper.
+
+Production CSP (`script-src 'self'`) would have blocked the execution — but the
+local dev server sends no CSP, the injected elements still entered the DOM, and
+defence-in-depth is not a fix.
+
+**Fixed.** Every DB-derived interpolation on `venue.js`, `curator.js`,
+`saved.js` and `briefing.js` now goes through `esc()`, including inside
+`aria-label` and `data-*`, and the four `buildMeta()` call sites that lacked it
+(three others already had it — the fix follows the existing majority pattern
+rather than changing the helper's contract). Added `WA.UI.safeUrl()`, which
+admits only http(s) and relative URLs, and routed `socialButtons`, the ticket
+CTA and the hero image through it: `esc()` escapes quotes, not schemes, so a
+`javascript:` value passed straight through before.
+
+Two mistakes caught mid-fix and worth recording: `curator.js` never imported
+`esc`, so the first version of the patch would have thrown at runtime; and the
+`admin.html` 404 fix initially used an inline `onerror` handler, which the
+strict CSP forbids and the repo's own rules ban.
+
+**Verified.** Both probes clean (`no field injected`, no surface admits
+markup), payloads now render as visible text, zero page errors, no
+double-escaped entities on real data, all ten pages 200, every script parses.
+
+**Also in this pass.** The CSS census was re-run as a regression check: the
+only remaining "dead" names are four comment artifacts (`user@domain.tld`,
+`.wa-chip`/`.wa-seg`/`.wa-seg__tab` mentioned in prose), so the prune is
+complete — three of those comments referenced components the prune deleted and
+were repaired. `admin.html`'s expected 404 on the gitignored `local-secrets.js`
+is now documented in place instead of looking like a fault.
+
 ## Open findings, not fixed here
 
 - ~~Comments still cite deleted docs~~ — **done.** All ~130 citations to
@@ -185,10 +234,8 @@ stray terminator is still in there somewhere.
   "Duplicate-photo guard"), and 19 rough edges the automated pass left
   (orphan colons, a swallowed `run()`, lost `*/` spacing) were repaired by
   hand.
-- **`admin.html` loads `./local-secrets.js`, which is gitignored**, so the
-  deployed admin page 404s that script on every load. Harmless and deliberate
-  (it is the local-only key convenience), but it is a permanent console error
-  in production.
+- ~~`admin.html`'s gitignored `local-secrets.js` 404~~ — documented in place;
+  the 404 is expected behaviour, not a fault.
 - **`img-src` is still `'self' data: https:`** — any HTTPS host. It could be
   narrowed to the Supabase storage bucket and the proxy origin, but a wrong
   guess silently blanks venue photos and there is no suite to catch it. Do it
