@@ -6,7 +6,7 @@
 //      (5 picks vs 2). Fixed to Põhja-Tallinn; existing rows merged by SQL.
 // v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
 //      Gemini text fallback retired via config flag (kept as last resort).
-// v39 changes vs v38 (ROADMAP P1):
+// v39 changes vs v38:
 //   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
 //     marked error with an actionable rejection) instead of silently
 //     classifying against the Tallinn context — that silent degrade
@@ -131,6 +131,9 @@ LANGUAGE (HARD REQUIREMENT — the app is English-only):
     named festivals and series. For films/plays use the international English title when one
     exists. Transliterate personal names to Latin script.
   - Quotes are punchy English curator voice, 1-2 sentences.
+  - No em-dashes. No exclamation marks. No "discover". No marketing language
+    ("must-visit", "vibrant", "hidden gem"). Do not paraphrase venue marketing
+    copy — say what the thing is and why someone would go.
 
 FIELD RULES:
   - venue: REQUIRED. Use the specific venue name. If unknown, use "Various venues".

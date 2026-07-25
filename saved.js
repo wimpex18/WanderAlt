@@ -33,7 +33,7 @@
 
   const buildMeta = (entry) => {
     const parts = [];
-    /* 'other' is a data bucket, not a place — never print it (F-12). */
+    /* 'other' is a data bucket, not a place — never print it. */
     const nhood = entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null;
     /* Going rows: show neighborhood · kind · time (day already in time-col) */
     if (entry.day) {
@@ -64,7 +64,7 @@
      Saved matches the Discover photo cards. Falls back to the initials
      tile when the entry has no image. Decorative supplementary link. */
 
-  /* Going row (Dusk board 4a): fixed date cell (lime = TONIGHT only) ·
+  /* Going row (Dusk): fixed date cell (lime = TONIGHT only) ·
      title + one-line `venue · time` meta · bookmark toggle. The photo
      and quote stay on the pick detail — this row must fit one line at
      390px beside the date cell and the bookmark. */
@@ -135,7 +135,7 @@
 
   /* Empty-state row shown when a dynamic segment has no items — the
      crafted .picks-empty card (city plate + title + sub), same canon as
-     Today and the place page; bare mono one-liners read as broken (F-4). */
+     Today and the place page; bare mono one-liners read as broken. */
   const emptyRow = (title, subHTML) => {
     const li = document.createElement('li');
     li.dataset.empty = 'true';
@@ -236,7 +236,7 @@
     /* Gone-detection ONLY against live data (WA.DATA_LIVE): the static
        fallback holds a fraction of the live catalog, so diffing against
        it would flag every live bookmark as "no longer listed" — with a
-       destructive Dismiss attached (ROADMAP P0). Time-changed badges
+       destructive Dismiss attached. Time-changed badges
        stay ungated (they compare snapshot-to-entry, not presence). */
     const gone = (window.WA && window.WA.DATA_LIVE)
       ? bookmarkedIds.filter(id => !present.has(id) && snaps[id]).map(id => snaps[id])
@@ -252,7 +252,7 @@
       gone.forEach(s => goingList.appendChild(goneRow(s)));
       if (goingEntries.length) {
         goingEntries.forEach(e => goingList.appendChild(goingRow(e)));
-        /* Calm summary plate under the dated rows (July 2026 board 1e):
+        /* Calm summary plate under the dated rows:
            states the lifecycle rule and bridges to Discover. data-empty
            opts it into the per-render cleanup above. */
         const n     = goingEntries.length;
@@ -314,7 +314,7 @@
        CSS keys the badge on :checked + :not(.seg-tab__count--zero). */
     const setCount = (el, n) => {
       if (!el) return;
-      el.textContent = n > 99 ? '99+' : String(n);   /* board 4f */
+      el.textContent = n > 99 ? '99+' : String(n);
       el.classList.toggle('seg-tab__count--zero', n === 0);
     };
     setCount(goingTab,   goingCount);
@@ -331,7 +331,7 @@
   /* Dismiss a "no longer listed" row → drop the bookmark (and its
      snapshot), but leave an Undo behind for ~8s — Dismiss is otherwise
      a one-tap destructive action on data the diff might have gotten
-     wrong (ROADMAP P0). Undo restores both bookmark and snapshot. */
+     wrong. Undo restores both bookmark and snapshot. */
   let undoStash = null;   /* { id, snap } of the last dismissal */
   document.addEventListener('click', (e) => {
     const undoBtn = e.target.closest('.list-row__undo');
@@ -371,7 +371,7 @@
     }
   });
 
-  /* Un-saving from a row (the bookmark toggle, board 4a): persist, then
+  /* Un-saving from a row (the bookmark toggle): persist, then
      re-render after a beat so the row doesn't vanish mid-tap. */
   document.addEventListener('change', (e) => {
     const cb = e.target.closest('.bookmark__check');

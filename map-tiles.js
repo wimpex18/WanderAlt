@@ -22,7 +22,7 @@
      these are coastal cities, so fitting a bounding box put half the
      frame in open water (Tallinn fit to its old bbox landed at zoom
      ~10.9 desktop / ~9.6 mobile with the Gulf of Finland filling the
-     pane — ROADMAP F-9). A fixed center/zoom also frames identically
+     pane). A fixed center/zoom also frames identically
      in the narrow mobile pane and the desktop split pane.
      EVERY live city in city.js MUST have an entry — a missing one is
      a loud console error (the silent fall-back-to-Tallinn class of
@@ -60,7 +60,7 @@
     }
 
     /* Dusk Glass pages get the dark twin of the editorial style —
-       the map IS the scene there (board 3c), not a paper inset. The
+       the map IS the scene there, not a paper inset. The
        Daybreak theme (theme.js) flips it back to the paper style. */
     const styleFor = () =>
       (document.body.dataset.skin === 'dusk' &&

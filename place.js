@@ -62,7 +62,7 @@
 
     const { href, label } = backLink();
     /* Kind already carries the eyebrow — repeating it here printed the
-       same word twice on venues with no neighborhood (F-20). */
+       same word twice on venues with no neighborhood. */
     const meta = venue.neighborhood || '';
 
     const social = socialButtons({

@@ -113,13 +113,13 @@
      hero's title, not the dominant element — rail cards drop the quote
      entirely (title + time/venue is enough for a peer-item glance; the
      full quote+CTA treatment is what makes the hero the hero). */
-  /* Dusk Glass (Jul 2026, board 3b/3e): the hero is the scene — tonight's
+  /* Dusk Glass (Jul 2026): the hero is the scene — tonight's
      photo fills the viewport, the voice floats over it. entries[0] is the
      flagship; the rest of the tonight set joins the This Week ticket rail
      (renderWeekPage prepends them) instead of a separate card rail. */
 
   /* Paint the scene background: the hero photo when it exists, else keep
-     the dusk-gradient fallback (never a gray box — board 4f). A probe img
+     the dusk-gradient fallback (never a gray box). A probe img
      downgrades to the gradient when a stale photo URL 403s. */
   const paintScene = (entry) => {
     const bg = document.getElementById('scene-bg');
@@ -166,7 +166,7 @@
       ? `<blockquote class="scene-quote"><p>${esc(hero.quote)}</p></blockquote>`
       : '';
 
-    /* Desktop right card (board 3e): THE VENUE (from the venues seed,
+    /* Desktop right card: THE VENUE (from the venues seed,
        matched by name — same rule as venue.js) + FROM THE DESK (the
        curator's own motto from the curators table; the true COLUMN
        block returns when draft-column wakes). Hidden < 1100 via CSS. */
@@ -270,7 +270,7 @@
   /* Empty Tonight hero — shown when the active city has no picks yet (e.g.
      a newly-unlocked city without a curator). Replaces the skeleton so the
      page never reads as a perpetual loading state. */
-  /* Empty Tonight (board 4f): fall back to the week's first pick with a
+  /* Empty Tonight: fall back to the week's first pick with a
      THIS WEEK tag; only a city with no picks at all gets the curator-voice
      quiet-night line over the dusk gradient — never a loading state. */
   const renderTonightEmpty = () => {
@@ -397,7 +397,7 @@
         `<a class="week-all" href="${bridge}">ALL ${total} &rarr;</a>`;
     }
 
-    /* Dusk Glass tickets (board 3b/3e): one snap-scroll rail of 64px glass
+    /* Dusk Glass tickets: one snap-scroll rail of 64px glass
        tickets — day cell · title · one-line mono meta. The rest of the
        tonight set rides in front with a lime TONIGHT cell (lime = live
        signal only). Single-line by construction, everything ellipsizes. */
@@ -458,7 +458,7 @@
   let _tickerTotal = 1;
 
   /* Surprise lives in the This Week section header (static markup in
-     index.html, July 2026 board 1b). The click is handled by ONE delegated
+     index.html). The click is handled by ONE delegated
      listener (bound once) so it keeps working across hero re-renders. */
   const wireSurprise = (catalog) => {
     _surpriseCatalog = catalog;
@@ -498,8 +498,8 @@
      Up to 3 candidates spanning different `kind`s. Prefers rows the
      backend explicitly flagged tonight=true; falls back to This Week
      items scheduled for today's weekday when a city has none (true for
-     3 of 4 cities right now — rotate-tonight's cron is frozen, see
-     ROADMAP), so Tonight is never just catalog[0]'s arbitrary first
+     3 of 4 cities right now — rotate-tonight's cron is frozen), so
+     Tonight is never just catalog[0]'s arbitrary first
      row. */
   const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const selectTonightSet = (catalog, max = 3) => {
@@ -643,7 +643,7 @@
     _initBound = true;
 
     wireBookmarks();
-    /* Hero share key (board 3b) — delegated so it survives re-renders.
+    /* Hero share key — delegated so it survives re-renders.
        Native share sheet with clipboard fallback via WA.Share. */
     document.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('.scene-share');

@@ -5,7 +5,7 @@
 window.WA = window.WA || {};
 
 /* Kind → category bucket. The ONE shared impl (was hand-copied into
-   discover.js and map.js "by convention" — ROADMAP §1). Loads before both
+   discover.js and map.js "by convention"). Loads before both
    consumers on discover.html. The last line is venue kinds (Places mode);
    events never carry them, so the superset is safe for both callers. */
 WA.KIND_MAP = {

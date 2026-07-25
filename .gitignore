@@ -6,32 +6,8 @@ local-secrets.js
 .claude/settings.local.json
 CLAUDE.local.md
 
-# Reference archive (wireframes, market research) — kept on disk, not synced
-# to the cloud repo to keep clones light.
-docs/archive/
-
 # Node / npx caches
 node_modules/
 
 # macOS
 .DS_Store
-
-# Local screenshots from the puppeteer smoke-test (keep shoot.js, drop PNGs).
-# Curated baseline lives at docs/screenshots/baseline/ (versioned).
-# NB .screenshots/visual-baselines/ is NOT ignored — those PNGs are the
-# committed pixel-diff baselines for `npm run visual`.
-.screenshots/*.png
-
-# Playwright test-runner artifacts (failure diffs, traces, reports).
-test-results/
-playwright-report/
-
-# Full Lighthouse reports (regenerated via `npm run lighthouse`). Keep
-# only the lightweight summary.json which captures the four scores per page.
-docs/lighthouse/*.json
-!docs/lighthouse/summary.json
-.screenshots/audit/
-
-# Local render helpers for the Jul26 design canvas (symlink + temp render copy)
-docs/redesign-jul26-v3/fonts
-docs/redesign-jul26-v3/.render-canvas.html
