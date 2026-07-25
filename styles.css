@@ -6100,23 +6100,14 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
    #tonight keeps the shared .tonight class (venue.js's own detail hero
    reuses .tonight/.tonight__* for its curator-quote section) so this
    ID-scoped rule only undoes the 2-col grid meant for that single-hero
-   shape on THIS page; .tonight-card/.tonight-rail are their own
-   components, unrelated to .tonight__* (leave those alone — still live
+   shape on THIS page; unrelated to .tonight__* (leave those alone — still live
    on venue.html + the Discover AI-match hero). */
 #tonight.tonight { display: block; padding-top: var(--s-8); padding-bottom: var(--s-7); }
 .tonight-set { display: flex; flex-direction: column; gap: var(--s-5); }
-.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-5) var(--s-6); }
-.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-3); }
-.tonight-card__kicker { font-family: var(--ff-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink-mute); }
-.tonight-card__kicker b { color: var(--c-ink); font-weight: 500; }
 /* Photo/glyph leads, title+quote-caption follow — title is the largest
    text on the card now; the quote reuses the app-wide .list-row__quote
    caption instead of standing alone as the dominant element. */
 .tonight-card__body { display: flex; gap: var(--s-4); align-items: flex-start; flex: 1; margin-bottom: var(--s-5); }
-.tonight-card__text { min-width: 0; max-width: 62ch; }
-.tonight-card__title { font-family: var(--ff-body); font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0; display: block; }
-a.tonight-card__title:hover { color: var(--c-accent); }
-.tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
 .tonight-card__actions .btn { flex: 1; }
 /* On a wide desktop hero the full-width CTA would stretch to ~900px+ —
    cap it to a sane button width instead of an edge-to-edge bar. */
@@ -6139,12 +6130,7 @@ a.tonight-card__title:hover { color: var(--c-accent); }
 
 /* Rail — the non-flagship Tonight picks. Fixed-height horizontal scroller
    (Summer 2026 hero+rail convention: Airbnb Explore / Apple News / Spotify
-   Home) instead of stacking more equal-weight cards, so 1 extra pick or 5
-   costs the same vertical space and the size gap vs the hero above IS the
-   hierarchy signal. Bleeds to the viewport edge on mobile so the first
-   card aligns with the reading column but the scroll affordance (next
-   card peeking in) is visible. */
-.tonight-rail {
+   Home) instead of stacking more equal-weight cards{
   display: flex;
   gap: var(--s-4);
   overflow-x: auto;
@@ -6154,27 +6140,7 @@ a.tonight-card__title:hover { color: var(--c-accent); }
   margin: 0 calc(-1 * var(--gutter));
   padding: 2px var(--gutter) var(--s-2);
 }
-.tonight-rail::-webkit-scrollbar { display: none; }
-.tonight-rail__card {
-  scroll-snap-align: start;
-  flex: 0 0 auto;
-  width: 168px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius-card);
-  background: var(--c-paper-deep);
-  padding: var(--s-4);
-  position: relative;
-}
-.tonight-rail__link { display: flex; flex-direction: column; gap: var(--s-3); text-decoration: none; color: inherit; }
 .tonight-rail__link .thumb { width: 100%; height: 96px; }
-.tonight-rail__title { font-family: var(--ff-body); font-size: 14.5px; font-weight: 700; line-height: 1.3; letter-spacing: -.005em; color: var(--c-ink); }
-.tonight-rail__link:hover .tonight-rail__title { color: var(--c-accent); }
-.tonight-rail__meta { font-family: var(--ff-mono); font-size: 11px; color: var(--c-ink-mute); }
-.tonight-rail__save { position: absolute; top: var(--s-2); right: var(--s-2); min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; background: var(--glass-bg, rgba(255,255,255,.75)); border-radius: var(--radius); }
-@media (min-width: 768px) { .tonight-rail__card { width: 200px; } }
 
 /* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
    dated This Week picks. Reuses .sechead + .picks/.list-row--card, so it

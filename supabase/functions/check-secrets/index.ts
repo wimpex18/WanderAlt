@@ -1,22 +1,5 @@
-// Diagnostic — lists which WanderAlt secrets are present WITHOUT exposing values.
-Deno.serve((_req) => {
-  const keys = [
-    "GEMINI_API_KEY",
-    "GROQ_API_KEY",
-    "UNSPLASH_ACCESS_KEY",
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "RESEND_API_KEY",
-    "DIGEST_FROM_EMAIL",
-    "OPENROUTER_API_KEY",
-    "CF_ACCOUNT_ID",
-    "CF_AI_TOKEN",
-  ];
-  const result: Record<string, boolean> = {};
-  for (const k of keys) {
-    const v = Deno.env.get(k);
-    result[k] = !!(v && v.trim().length > 0);
-  }
-  return new Response(JSON.stringify(result, null, 2),
-    { headers: { "Content-Type": "application/json" } });
-});
+// Retired diagnostic (Jul 2026). Listed which WanderAlt secrets were set —
+// names only, never values — but was deployed with verify_jwt:false, so
+// anyone could fingerprint the pipeline's provider set. The probe had done
+// its job; it is now a JWT-gated stub. Original body: git history.
+Deno.serve(() => new Response('gone — secret-presence diagnostic retired', { status: 410 }));

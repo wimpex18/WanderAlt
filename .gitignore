@@ -11,13 +11,3 @@ node_modules/
 
 # macOS
 .DS_Store
-
-# Ad-hoc captures from the harnesses. NB .screenshots/visual-baselines/ is
-# NOT ignored — those PNGs are the committed pixel-diff baselines that
-# `npm run visual` asserts against.
-.screenshots/*.png
-.screenshots/audit/
-
-# Playwright test-runner artifacts (failure diffs, traces, reports).
-test-results/
-playwright-report/

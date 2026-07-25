@@ -2,76 +2,71 @@
 
 Temporary log. Delete before or at merge.
 
-## Plan
+## What this PR did
 
-1. Delete dead files and folders (docs/ experiments, orphan harnesses, generated artefacts).
-2. Collapse the two browser engines to one (Playwright), drop `puppeteer`.
-3. Drop `lighthouse` from devDependencies; keep the capability via `npx`.
-4. Repair references that the doc deletion (previous turn) left dangling.
-5. Keep CLAUDE.md and README.md in step with all of the above.
+1. Deleted dead files and folders (docs/ experiments, orphan harnesses, generated artefacts).
+2. Regenerated `catalog.js`; its photo URLs had all expired.
+3. Self-hosted MapLibre, closing the last third-party script origin.
+4. Removed the entire test suite and CI, per owner instruction.
+5. Dropped every test dependency: `node_modules` 211 MB → 31 MB, 11 packages.
 
 ## Deviations from the plan
 
 **Regenerated `catalog.js`, which was not in the original plan.** The static
-offline fallback carried 39 Google place-photo URLs that all return 403 —
-they expired when Google Places was retired, and the live DB was migrated to
-the `pick-images` storage bucket without the fallback ever being regenerated.
-So the offline path had been rendering every card photo-less, and the `today`
-and `discover-week` pixel baselines had been failing on `main` for the same
-reason. `npm run catalog` fixed it: 0 dead URLs, 14 working storage URLs, and
-the fallback now carries 49 picks instead of a near-empty Tallinn set.
+offline fallback carried 39 Google place-photo URLs that all return 403 — they
+expired when Google Places was retired, and the live DB was migrated to the
+`pick-images` bucket without the fallback ever being regenerated. So the
+offline path had been rendering every card photo-less. `npm run catalog` fixed
+it: 0 dead URLs, 14 working storage URLs, 49 picks instead of a near-empty set.
 
-**Re-baselined 6 visual snapshots** as a consequence of the above (today and
-discover-week × 390/768/1440). The other 18 were byte-identical after
-`visual:update`, so the diff is exactly the pages whose data changed. This is
-the documented flow for an intentional change, but it is a data-driven
-re-baseline rather than a design one — worth a second look in review.
+**The CSS prune was attempted and reverted.** 152 of 671 classes in
+`styles.css` have no reference in any `.html` or `.js`, and an automated prune
+removed 28 KB. It broke 12 of 24 pixel shots. Cause: modifier classes are
+built by string concatenation (`ui-helpers.js` line 132 and friends build
+`class="${cls}"`), so a literal grep cannot prove a class is dead. Only two
+families were removed, both verified by reading `briefing.js`'s Dusk rewrite:
+`.tonight-card*` and `.tonight-rail*`, the July 2026 "hero + rail" components
+that the Dusk Glass pass replaced wholesale. That is 2.4 KB, and it was
+confirmed pixel-identical before the suite came out.
 
-**Deleted `smoke.js` and `scroll.js` rather than porting them.** Both were
-Puppeteer capture scripts superseded by `audit.js` (segment captures) and
-`visual.spec.js` (pixel diff), and `scroll.js` was doing exactly the fullPage
-capture that `audit.js` exists to avoid. Console-error coverage moved to
-`verify`, which already asserts it. The one capability genuinely lost is
-smoke's signed-in screenshots (dummy JWT) and its per-city map-framing probe;
-say the word and either can come back as a small Playwright script.
+The other ~150 candidates are listed by family in the PR body. They are worth
+clearing, but family by family with eyes on the page — not by script.
 
-**Mirrored two deployed edge functions into the repo** (`diag-providers`,
-`import-pick-photos`). Not planned, but the repo claims to mirror every
-deployed function and these two were missing.
+**One self-inflicted detour worth recording.** Vendoring MapLibre broke 9
+pixel shots, because `visual.spec.js` aborted `**/unpkg.com/**` to keep the
+map canvas deterministic and the bundle now came from `./vendor/`. I initially
+read those failures as prune damage and reverted a good prune. Fixed the route
+first, re-established 24/24 green, and only then judged the prune — which is
+the order it should have been done in.
+
+**`check-secrets` and `import-pick-photos` were stubbed, not deleted.** The
+Supabase MCP connector has no delete-function tool. Both are now JWT-gated 410
+stubs, verified returning 401 unauthenticated. To actually remove them, delete
+from the Supabase dashboard. Their original bodies are in git history.
 
 ## Deliberate non-deletions
 
-- **`brand/` masters, iOS/Android/social sets.** Unreferenced by the app, but
-  they are design source, not build output: the SVG masters are what
-  `npm run build:icons` rasterises from, and the platform sets are for future
-  native shells. Deleting them would destroy originals, not clean up.
-- **`sharp` + `png-to-ico`.** 26 MB, used only by the icon rasteriser, but
-  there is no `npx`-able equivalent, so dropping them would delete the
-  capability rather than defer it. Kept.
-- **`.scripts/regen-catalog.js`.** Had no npm script and read as orphaned, but
-  it is the documented way to rebuild the fallback catalog. Kept and wired up
-  as `npm run catalog` — which is what fixed the dead photos above.
-- **Retired edge-function sources** (`load-places-index`, `enrich-pick-images`,
-  `translate-picks`, `verify-venues`, `check-secrets`). Deleting a source does
-  not undeploy anything, and the repo mirror is what makes a redeploy possible.
-  Kept; see the PR notes on the two that should be undeployed.
+- **`brand/` masters, iOS/Android/social sets.** Design source, not build
+  output: the SVG masters are what `npm run build:icons` rasterises from.
+- **`sharp` + `png-to-ico`.** The only remaining devDependencies, and the only
+  way to regenerate icons. 31 MB total.
+- **`.scripts/regen-catalog.js`.** Read as orphaned (no npm script), but it is
+  the documented way to rebuild the fallback. Wired up as `npm run catalog`,
+  which is what fixed the dead photos.
+- **Retired edge-function sources.** Deleting a source does not undeploy
+  anything, and the repo mirror is what makes a redeploy possible.
+- **`workers/wikimedia-proxy`.** Referenced by `supabase.js`; live.
 
 ## Open findings, not fixed here
 
-- **`import-pick-photos` and `check-secrets` are deployed with
-  `verify_jwt: false`** — both publicly callable. `check-secrets` reports which
-  secrets exist (names only, no values); `import-pick-photos` writes to storage
-  and PATCHes `picks` with the service key when passed `{"dry_run": false}`.
-  Both are finished one-shots. Recommend deleting both deployments; that is a
-  production change and the owner's call, so nothing was touched.
-- **The pixel suite depends on live image URLs.** Now that photos come from our
-  own storage bucket it is stable, but any future URL rotation re-breaks the
-  same 6 shots. Blocking image hosts in `visual.spec.js` and baselining on the
-  glyph placeholder would make it self-contained.
-- **MapLibre loads from `unpkg.com`** — the only third-party script origin left
-  in the CSP, on a site that otherwise self-hosts everything (fonts were moved
-  in-house for exactly this reason). Vendoring it would close that gap.
-- **LLM-written copy is drifting from the voice rules.** The regenerated
-  catalog contains "Discover the vibrant works of Finnish street artist EGS…",
-  and "discover" as a verb is banned copy. The prompt in `generate-context`
-  is where that would be fixed.
+- **~150 unreferenced CSS classes** remain (see above for why they weren't
+  swept). `styles.css` is still 319 KB.
+- **`.claude/output-styles/designer.md` was deleted** along with the skills.
+  If you used that output style, it is in git history.
+- **LLM copy drift is fixed at the prompt, not in the data.** `process-staging`
+  now bans "discover", em-dashes, exclamation marks and marketing register in
+  quotes — `generate-context` already did. Rows written before this change
+  still carry the old copy ("Discover the vibrant works of…" is live in the
+  catalog right now). Regenerating them means re-running the pipeline.
+- **No tests, no CI.** Deliberate. Nothing enforces overflow, tap-target or
+  console-error regressions until the new suite exists.

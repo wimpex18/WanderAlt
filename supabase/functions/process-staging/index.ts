@@ -131,6 +131,9 @@ LANGUAGE (HARD REQUIREMENT — the app is English-only):
     named festivals and series. For films/plays use the international English title when one
     exists. Transliterate personal names to Latin script.
   - Quotes are punchy English curator voice, 1-2 sentences.
+  - No em-dashes. No exclamation marks. No "discover". No marketing language
+    ("must-visit", "vibrant", "hidden gem"). Do not paraphrase venue marketing
+    copy — say what the thing is and why someone would go.
 
 FIELD RULES:
   - venue: REQUIRED. Use the specific venue name. If unknown, use "Various venues".

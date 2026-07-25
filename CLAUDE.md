@@ -43,11 +43,13 @@ The July 2026 Dusk Glass reskin covers every public page (about.html stays paper
 
 Don't add CSS variables without asking. When you touch any pattern, check every other instance of it across pages rather than the one screen you have open — measure heights and gaps, don't eyeball. Screen-local fixes are the recurring failure mode here.
 
-## Gates
+## Checking your work
 
-Run `npm run verify` after any layout, CSS, or markup change, and `npm run e2e` after any behaviour change. `npm run visual` pixel-diffs against committed baselines; if a diff is intentional, re-baseline and commit the PNGs alongside the CSS change.
+There are no automated tests and no CI. The old Puppeteer/Playwright suite was removed in July 2026 — it never caught the failures that actually happen here (alignment, overlap, control sizes, overlays) and it is being rebuilt from scratch, so don't patch it back in piecemeal or add a test framework without being asked.
 
-Every harness runs on Playwright — one engine, one API. `npm run audit` captures viewport-sized segments rather than fullPage, because fullPage put fixed chrome over mid-page content and caught lazy rows empty; keep new captures segment-based for the same reason. Real photos and duotone only render on the Cloudflare PR preview, not locally.
+That puts the burden on looking. Run `npm start` and open the pages you touched at 390, 768 and 1440. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed, not just the screen in front of you — screen-local fixes are the recurring failure mode here. Real photos and duotone only render on the Cloudflare PR preview.
+
+Two things the deleted suite used to catch, worth checking by hand: no horizontal overflow at any width, and no console errors on load.
 
 ## Voice
 

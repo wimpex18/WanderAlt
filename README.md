@@ -16,21 +16,15 @@ npm start
 
 That serves the site at `http://localhost:5173`. `npm run admin` serves the admin panel at `:8080` (the admin panel needs a Supabase service-role key, which it keeps in localStorage on your machine).
 
-### Test harnesses
+### Maintenance scripts
 
-| Command | What it checks |
-|---|---|
-| `npm run verify` | Structural sweep: overflow, console errors, 44px tap targets, across every public page at 390/768/1440. Exits non-zero on failure and runs in CI on every PR. |
-| `npm run e2e` | Behaviour: photo cards, taste cue, view-transition tags, bookmark persistence. Also gates CI. |
-| `npm run visual` | Pixel diff against the committed baselines in `.screenshots/visual-baselines/`. `npm run visual:update` re-baselines. |
-| `npm run audit` | Scroll-hydrated viewport-segment captures plus an icon-size and overflow report, for eyeballing a change. |
-| `npm run preview <url>` | Captures a live Cloudflare deploy, where real photos actually load. |
+`npm run catalog` regenerates the static fallback `catalog.js` from live Supabase. `npm run build:icons` rasterises the PNG icon ladder from the SVG masters in `brand/` — the only reason `sharp` and `png-to-ico` are here.
 
-Everything runs on Playwright. If the browser is missing, `npx playwright install chromium`. Captures are viewport segments rather than fullPage, because fullPage floated the fixed chrome over mid-page content and caught lazy rows before they painted.
+### Testing
 
-Real venue photos only render on the Cloudflare PR preview, not against a local server. For a performance number, `npx lighthouse http://localhost:5173/index.html --view` against a running dev server — it isn't a dependency here, since a ~100 MB install for an occasional audit isn't worth carrying.
+There isn't any right now. A Puppeteer and Playwright suite (structural sweep, E2E, pixel diff, screenshot captures) was removed in July 2026: it cost two browser engines and ~180 MB of dependencies while reliably missing the things that actually go wrong here — alignment, overlap, control sizes, overlays. It will be rebuilt from scratch rather than patched.
 
-`npm run catalog` regenerates the static fallback `catalog.js` from live Supabase; `npm run build:icons` rasterises the PNG icon ladder from the SVG masters in `brand/`.
+Until then, checking a change means looking at it: `npm start`, then the page at 390 / 768 / 1440. Real venue photos and the duotone treatment only render on the Cloudflare PR preview, not against a local server. For a performance number, `npx lighthouse http://localhost:5173/index.html --view`.
 
 ## How it's put together
 
@@ -38,13 +32,15 @@ Every page is a plain `.html` file at the repo root with a matching `.js` render
 
 Data comes from Supabase through `supabase.js`, which falls back to the static `catalog.js` if the fetch fails, so the site never renders blank. `ui-helpers.js` holds the shared render helpers (`WA.UI`) that every page script reuses. Auth is email/password plus Google OAuth against the Supabase REST API with no SDK. Bookmarks are localStorage-first with cloud sync on sign-in. The map is MapLibre GL over OpenFreeMap vector tiles, no API key, lazy-loaded after first paint.
 
+MapLibre is self-hosted in `vendor/` rather than pulled from a CDN, which is why the CSP has no third-party script origin at all. Upgrading it means swapping the two files there and the pinned tags in `admin.html`.
+
 Canonical mobile width is 390px. Desktop shares one `--reading-max` ladder across every page so edges line up when you navigate: 1100 at ≥768, 1200 at ≥1100, 1280 at ≥1440, 1440 at ≥1680, 1600 at ≥1920. Below 768 the nav is a fixed bottom bar; above it becomes a masthead.
 
 Three self-hosted typefaces in `fonts/` (no Google Fonts request): Fraunces for display and curator quotes, Inter for body, Geist Mono for metadata. Brand assets and the icon masters live in `brand/`.
 
 ### localStorage
 
-The app writes `wa:appearance`, `wa:city`, `wa:saved-snapshots`, `wa-taste-*`, `wa-match-*`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file. The test harnesses set `wa:city` and `wanderalt:session:v1` directly, so renaming either means updating `.screenshots/*.js` in the same change.
+The app writes `wa:appearance`, `wa:city`, `wa:saved-snapshots`, `wa-taste-*`, `wa-match-*`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file.
 
 ## Deploying
 
@@ -109,7 +105,7 @@ Admin venue search queries a local `places_index` table (about 1,900 alt-culture
 
 ### Environment
 
-Cloud sessions and CI need these as environment variables, never in code: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy — the pipeline is gated off it and its billing account is deleted.
+Cloud sessions need these as environment variables, never in code: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy — the pipeline is gated off it and its billing account is deleted.
 
 ## Still open
 
