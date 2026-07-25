@@ -36,7 +36,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "sober", "solo"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZPsg08tUmiSvg3eI_vlQ1txI1S6MY1e3zyMFrllD15K-5zti9yd0H22FRbO5Ch0OtyxbNLAi52YiU7LmKjRohQC-FbV6swp937OKV6ONxC_S6tXEEgesyeqgvndrMnZ63hg2qhXuAU9_IBQlw=s4800-w800",
     pin:           null
   },
   {
@@ -54,7 +53,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["social", "loud", "outdoors", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZM80M4pJxQBcl56mvwBVKLtzKEgGK9G30hlUuMCk2zbpPLy8KR2uTMavnTpQzw51pflQCyunXM7wejGqGDdivJyqTCpDCIkM-gsr6zS7c0R9ZBugHkkxvi92eepdNQBLix5iMGz2TbvxTwvmw=s4800-w800",
     pin:           null
   },
   {
@@ -72,7 +70,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["social", "outdoors", "loud"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZPRqxr4Pego1Tj3DwprV-uTkY9AVZp86gQSoCG99-M53edDFVVkvPOH1KwUBV_Y9jt0HiyZDXAHMkDiiBFLBHI3d7I0Pg63osVxbvBUnrSAMb5M-Lpx3mJoPFJaKx1O8cBY0-ZtelpW4pZV7ys=s4800-w800",
     pin:           null
   },
   {
@@ -90,7 +87,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["outdoors", "social", "walk-up", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNiLzWLgGY1n-h-dvS2Xv7Ux1CKKhiC5xsGiqcbXz-kUWU9mRUBQZDdMbOZulks3SK9VckI7cH5PSIp5Wu9HHcmn7ZM7zXOL-4_VCmFrnWeJrUDtSI4oBT-GobTu7-VsHZxUPKYbRzxewNqKw=s4800-w800",
     pin:           null
   },
   {
@@ -108,7 +104,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "sober", "solo"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOn4OYIU0_fskhlGKVsP89osh5wA5kPcxC9V1k1e7b3kL46rv7SS5Q09pWQfyDYaWxqBtOgv4WFj_-g2SAfltRUiqH7VLkJHfbuxvHjubrt4gqlisXXq7WFZoO3K-P2LX7FLpyvBVn9gOiwjyo=s4800-w800",
     pin:           null
   },
   {
@@ -126,7 +121,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "solo", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZP3BJFsXybGgIAtUq0cxOm1PQqhwBCVA3a41sR2rmIAs_1ahtbC86bYtdF8g5qbwGY7WDGmk5eQutdMi9dXBp1Kgtrz6gkGRNVpysV4CmcbZCFqu5HmsAMUI17fu7RtaSmW9qgO2g5Vf0TG7H4=s4800-w800",
     pin:           null
   },
   {
@@ -144,7 +138,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZM5n97_Ko-0zgWYueHJ4ZZl845WhsyybumxqvYmPPldjZuR5soR2JzmtPcBtIIEE3VBsGFfaT9VOx7VB9e2_EDxOvQM5GM-aMDy7irCgUeE3Ycb1Y56RQx7lq5yZ3kHi0cqmVP5A6Qen8JehMo=s4800-w800",
     pin:           null
   },
   {
@@ -162,7 +155,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOVueSbQ6NLPkWCgKChLLiivi9nq0gOJjfs6SxmQRYGQAwasfQO2pfG-el1qneIBjMGF7qnqj69UrzBnWURRej3q_ihDLpCg7dLQrF7LazEEtjg0bqLbtjgc6-5asb5iwWMM11HsJ4Xok1iA3Q=s4800-w612",
     pin:           null
   },
   {
@@ -180,7 +172,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNVYCjOIbm4rqF2jHoM5b1MtALpSq-MsERP3UEAhnsvb-76a59w6zOy0bHLhPkCSVyb7MRml7au6zIP22QbrF3Y7db3kRcSc7G-WoqrBmfJiWbGHsn045cKrJ_yIQ1Hy6p51u8T9ad3KoTf3XEn8njLtA=s4800-w800",
     pin:           null
   },
   {
@@ -198,7 +189,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "social", "drinks", "ticketed", "indoors"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGZCAVdQQErwYjy67dloDKHHlCTIhNbfAgHpbaAUmqZ6bhM57SXjBgXYn45Dcnklqtg86dyz0Q_6IAW2CUcPiveT92UixGcqNc=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9abc5e4b36799e06.jpg",
     pin:           null
   },
   {
@@ -216,7 +207,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZN-uE924JyxlTiEKqW8jAZ5lXWAg4p84aLyAyACW2i947InqRglpxfIDZwUBW54psOmbpud0jyNKsBXIychwsef61N7-2UpuTol4yGt6jcHlInJOXkbWVXqCm811ZxtMC5pnsfllgyV8mlpa8swq2XrgQ=s4800-w800",
     pin:           null
   },
   {
@@ -234,7 +224,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMv_57GuoMz0_cepNI4LYN0CiMewXWZg2pXtm_53X8duwyDXNfOsjvqgnYsJj1jideXTJ3M00ixir7Xxa4R6y50Eb-p_y87KrbsxhacLsvkvwg8vsZximrPluWsuZ1TyAJYB_QTgnUtkcNBpQA=s4800-w800",
     pin:           null
   },
   {
@@ -269,7 +258,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "quiet", "solo"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZPwNE4ow8pHNFx8iJetrELbuHESx94BlqjskaQKc6IHW7lc8hVl-HAh0nSa2nGFAtHYyKqIiTK2J4SYA8Q6yFBgb7O6uGeI5pf_bu_DaLG1hXd5eGGyWAsq2_A3_OFmxBzTPnDxy0ktqpKGu3YUi8VreQ=s4800-w800",
     pin:           null
   },
   {
@@ -287,7 +275,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZN94etgsrzoRQ9IV4Dbk8kDjTKr274TBh-6UxoarpEfO6MNc5tKswUPqrLqVSkkVwrtbQ3lmpjEuCaKmx2yz9NnFqeYCH0YtnDxsHn_taK8k7vKgTAIfqKxj1stvX4AaYyTjBY3PhgEKho4698=s4800-w800",
     pin:           null
   },
   {
@@ -305,7 +292,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "quiet", "solo"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZP4s9GNVOyxwbLmZ6n0W8_W2FFHqg1TkpbjAmqSYB7CWVphqIWZMMSim-itDXre1oVx9ItTm1EHIkaNppfa_7B02cZkCA4xgW5yBXdbXLs1sXz5iCWsQFxR94FF9YgzH3sJrSt3ddpYPLXOdw=s4800-w640",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9fba754e48c41497.jpg",
     pin:           null
   },
   {
@@ -323,7 +310,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOPxH-cIb89jzJ2PhjXuvVlPq8kUpb9_eyHcnmrjozVVOgre2hfnEbcdKas1rLSmdSg4Rjl77g69zhIXT-_vO2AqsG2cuymHolxMB46jrLX59AbhBNbN9pe6tUXdSBPSuscL7-_tYU4w9uGtA=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/5c4e49e04ea26ac4.jpg",
     pin:           null
   },
   {
@@ -358,7 +345,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["quiet", "indoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqFcVOSyZg3ejZCFV6KaCHdvfzige_JwMI_KH8gGh2oe5vNezEGhlwPkxlDiV5oqw4Sits7e2S5IsPwBUlg0blYQ9WAX8Eo_fQI=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/797acae1ba16f24f.jpg",
     pin:           null
   },
   {
@@ -376,7 +363,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOWHU8TsHemehC274RtOH1Izs2qgvgdGz4NjbCRAz2AoSaCTJEJLuLW9ZCL8g0_n4GRNKAG-H9VnxXUdJkEAPMcnGzfC3q8ysPtbEINAXt40mDrnlAMkTm21pgLiYljLxwW9d98dbBReaajN5g=s4800-w800",
     pin:           null
   },
   {
@@ -391,10 +377,9 @@ window.WA._catalogAll = [
     quote:         "Community-built, community-run. Not a trend, a fact.",
     handle:        "@katestrelca",
     thumbInitials: "SK",
-    tonight:       false,
+    tonight:       true,
     thisWeek:      true,
     moodTags:      ["loud", "indoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNM2A14Apfau5RwdW2FytVfG06oH_SkETpjvj9MLhkNxWTSmX91houaxycCeK0nShnRc6_O2R79aoJa0zwero44NC9s9K0ci--BZcYBQOTfINxlGzFNoMuaEWVgXXnyQmXRL0mTErFzyvmQ5w=s4800-w800",
     pin:           null
   },
   {
@@ -430,7 +415,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      true,
     moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGM8ULFiIuI2BewIsbQljXdLeergMYIkVo7xtJEfQVz1R0jyXWf5dbWx6sLkPJiIY70nvmmRR0gUp7KI1VPuEvJuiUzf3U1IHY=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/69119d5625f4f003.png",
     pin:           null
   },
   {
@@ -448,7 +433,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOA3LHY3ssL0o0kUpdCs0chlLUSRZ56fy6dkqTIkWSH10Ye_hJ0OmPIH6_lPLPxjcsMrYv0oU_hHyVcLR8NTbXBk0Kw2vInFhJPoG7INkKKkmbVVHGqTcBVDwTpxAuJJVPHihDtmGbKOOLu=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/6045f0ca50f53dcc.jpg",
     lat:           59.4331739,
     lng:           24.7516185,
     address:       "Estonia pst 9, 10143 Tallinn, Estonia",
@@ -490,7 +475,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNqTFskv4ZSwYTygztLLAkz4Hy18Hj1CKOCT-wGR1O4JyHm2gG5lRNwvs6oIOYhtwExCcy2kdAbVgDPz4-Khzwwnpxok0AL1_zAlf5j6Y6ZiXnPqBMETBpS9M6WcBtAfNizY3j2WgsRV-LDlMU=s4800-w800",
     lat:           59.4387603,
     lng:           24.7581548,
     address:       "Rotermanni tn 2, 10111 Tallinn, Estonia",
@@ -511,7 +495,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "solo", "social", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMzjgrPUJ3kK59LDbft3hIutvWl6e84Z4xZYw2_jVGE2eI36Uw226JR_OUOom260jDLzZGsWnDdUtS5CfmhVNLBVSVkLCp8xDDssfEtzWUTKmMaxD-ZlV7W7Y_7WSW1jDR_-mgkTVIwFCZw=s4800-w800",
     pin:           null
   },
   {
@@ -529,7 +512,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
     address:       "Paavli 7, 10412, Tallinn",
@@ -550,7 +533,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
     address:       "Paavli 7, 10412, Tallinn",
@@ -571,7 +554,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
     address:       "Paavli 7, 10412, Tallinn",
@@ -592,7 +575,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
     address:       "Paavli 7, 10412, Tallinn",
@@ -613,7 +596,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqGcBRF0A399QyKRBV78aJ07OBVDftyuYeXeeXit5LL2yWKZl-7e6QJNYibz6mPabOW5mi5cqXyXCbnAJyCm0hMQv-MRBJ7x9Co=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
     address:       "Paavli 7, 10412, Tallinn",
@@ -634,7 +617,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "social", "ticketed", "loud"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMhEqjWu0jH2cU66hlOJjHW9bHAoVzWfjHlfmRdfSwst9nLvYy9QorNtsu8KAD5mTdwMjMJyWxhggJRQYlAVCB8J4l2H4VO1B9dEFyF8PY9PxN05scZnFY0OP8ENHXAlixwq0NCEYwwsk48GJ5xceVmnw=s4800-w800",
     lat:           59.4371803,
     lng:           24.7428101,
     address:       "Rataskaevu 10, 10123, Tallinn",
@@ -655,7 +637,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMhEqjWu0jH2cU66hlOJjHW9bHAoVzWfjHlfmRdfSwst9nLvYy9QorNtsu8KAD5mTdwMjMJyWxhggJRQYlAVCB8J4l2H4VO1B9dEFyF8PY9PxN05scZnFY0OP8ENHXAlixwq0NCEYwwsk48GJ5xceVmnw=s4800-w800",
     lat:           59.4371803,
     lng:           24.7428101,
     address:       "Rataskaevu 10, 10123, Tallinn",
@@ -676,7 +657,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["indoors", "social", "ticketed"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZMhEqjWu0jH2cU66hlOJjHW9bHAoVzWfjHlfmRdfSwst9nLvYy9QorNtsu8KAD5mTdwMjMJyWxhggJRQYlAVCB8J4l2H4VO1B9dEFyF8PY9PxN05scZnFY0OP8ENHXAlixwq0NCEYwwsk48GJ5xceVmnw=s4800-w800",
     lat:           59.4371803,
     lng:           24.7428101,
     address:       "Rataskaevu 10, 10123, Tallinn",
@@ -718,7 +698,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZME8_5mqStMFTDWmN-RFPSCjDEJXjX0B25xpzKUmrF0IxKnQIs5jn5Ylr4UCa65t3yHzbmzKIThiLVEmr7yPukxsUy2dx7jolExdu9Kb7fQPHNpMmNPE3xQ9AQtECVDSIEi2KB986FOC7Ptr2Y=s4800-w800",
     lat:           59.4280264,
     lng:           24.7440114,
     address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia",
@@ -739,7 +718,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZME8_5mqStMFTDWmN-RFPSCjDEJXjX0B25xpzKUmrF0IxKnQIs5jn5Ylr4UCa65t3yHzbmzKIThiLVEmr7yPukxsUy2dx7jolExdu9Kb7fQPHNpMmNPE3xQ9AQtECVDSIEi2KB986FOC7Ptr2Y=s4800-w800",
     lat:           59.4280264,
     lng:           24.7440114,
     address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia",
@@ -760,7 +738,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["outdoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOjCxoHHmaizeNkH9YHUQYuO4JB7i-Jh4w5eazPPl3KgBlj0ha9jJGG6xsOBVDbV87341YR6eEdJB5RQ6EnbRoKx0Ko9a5jtEZOW1LlxHCkTecUH1321sFOSGMnQs1cN-Goa3GDOhMFJgYZyA=s4800-w800",
     lat:           59.4475874,
     lng:           24.7049709,
     address:       "Paavli tn 7, 10412 Tallinn, Estonia",
@@ -781,7 +758,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["social", "drinks", "loud"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZO8ktqaZRYxCFs2PJQzT2jNTOgJhM6An9cqUyzkKamT1ux00yFXcTBk7M_bIWjcUvdsKSd-wxpXM1-Qveomu9jZ3OSlwCBJm6JZ_oz_s5RlyT1dln2LOEAup6ltZspNj9ZrAFgSAGA7Ilg5sA=s4800-w800",
     lat:           59.4382258,
     lng:           24.7519333,
     address:       "Inseneri tn 1, 10111 Tallinn, Estonia",
@@ -819,7 +795,6 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["loud", "indoors", "social", "drinks"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZNcPryVRhLWc3qjb9J8UzYGGuK9ea8VBLOucXCEq2cVmLjBFwtJCsfI3bsdy6sW1W4e3K4Wtn4fkNM-AMPhAFYhhlo2KFmr75-cwybk6UibSfAY0lndNU24zDU3ujnNt-4fB5dxSDdYQce-P1dOCRV9KQ=s4800-w800",
     lat:           59.4414205,
     lng:           24.7381887,
     address:       "Kopli 4, 10412, Tallinn",
@@ -840,7 +815,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "walk-up"],
-    imageUrl:      "https://lh3.googleusercontent.com/place-photos/AJRVUZOySM8zwS3zqhWqPH2dgDIzFWYjCRppqxBCiQbzrYX1FA2gh9wQ0FwWhHTCP7wMAL4XoiRcZ3TbdMEjSuGTKaQBNeUXWnoTucklbYb8zuFx9PqY90AefVLS4psOlMyMKHlhS4SFO5T4FPCW=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/c6f89f6ff9f59040.jpg",
     lat:           59.440257,
     lng:           24.7335355,
     address:       "Telliskivi tn 60/2, 10412 Tallinn, Estonia",
@@ -861,7 +836,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "walk-up"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqHNrqTi8puiI6u2_z03B3H2QJWbcnfGdAvz14CEo0x0wOKrFqwD5S_IKARcx-iQmaSqAxSRcH2LMByUbRkHdXl-G8h9dxq_LIE=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/d535f59e81ead136.jpg",
     lat:           59.4298591,
     lng:           24.7592864,
     address:       "Liivalaia tn 36, 10132 Tallinn, Estonia",
@@ -882,7 +857,7 @@ window.WA._catalogAll = [
     tonight:       false,
     thisWeek:      false,
     moodTags:      ["quiet", "indoors", "solo", "walk-up"],
-    imageUrl:      "https://lh3.googleusercontent.com/places/ANXAkqERJ6ZZBqVXn_Qo2EOervVacYLHixyXbT47hJNDhzz1gfE1xeuemtTivQ0TVcWA6Q00Xm2x1ajJWYi1qiF89_u_5OyT1NUy6hs=s4800-w800",
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/271235e92da8e174.jpg",
     lat:           59.4451815,
     lng:           24.7285136,
     address:       "Salme tn 19, 10413 Tallinn, Estonia",
@@ -965,7 +940,6 @@ window.WA._catalogAll = [
 /* Filter the all-cities list to the active city. supabase.js will
    replace this with live data once the network responds, but the
    filter ensures the offline fallback respects the city setting. */
-if (window.WA.when) window.WA.when.stampAll(window.WA._catalogAll);
 window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
 
 window.WA._curatorsAll = [

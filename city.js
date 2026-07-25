@@ -33,9 +33,8 @@
   };
 
   /* Each city has a static illustrated overview plate at /assets/
-     <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). All ship
-     under the city-plates-v2 brand bundle — see brand/BRAND.md § 5 for
-     the canonical two-mark rule (one national flag + one lime accent). */
+     <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). Two marks
+     per plate, no more: one national flag plus one lime accent. */
   const CITIES = [
     { id: 'tallinn',  label: 'TALLINN',  status: 'live',   thumb: './assets/tallinn-overview.svg'  },
     { id: 'helsinki', label: 'HELSINKI', status: 'live',   thumb: './assets/helsinki-overview.svg' },

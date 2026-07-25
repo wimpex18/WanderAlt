@@ -8,18 +8,16 @@
    It self-boots a static server, then for every public page at 3 widths
    (390 / 768 / 1440) asserts:
      1. No horizontal overflow (scrollWidth <= innerWidth).
-     2. No real console / page errors (same noise filter as smoke.js —
-        sandbox cert blocks + dummy-JWT 401/403 are ignored).
-     3. Interactive controls meet the 44px Apple-HIG tap-target floor
-        (only the selectors we committed to 44 in docs/layout-audit-2026-06;
-        chips ~32px, inline links, and the admin desktop tool are exempt
-        and not checked).
+     2. No real console / page errors (sandbox cert blocks and the
+        dummy-JWT 401/403 are ignored).
+     3. Interactive controls meet the 44px Apple-HIG tap-target floor.
+        Chips (~32px, Material spec), inline text links, and the admin
+        desktop tool are exempt and not checked.
 
-   Exits non-zero on any failure so it can gate CI / pre-push. Perf
-   (Lighthouse) stays a separate, slower command: npm run lighthouse.       */
+   Exits non-zero on any failure so it can gate CI / pre-push.              */
 
 const { spawn } = require('child_process');
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
 
 const PORT = 5179;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -38,10 +36,10 @@ const PAGES = [
   '/404.html',
 ];
 
-/* Controls we committed to a 44px hit area (docs/layout-audit-2026-06).
-   Checked only when present + visible. NOT listed (correctly exempt):
-   chips (.chip/.mood-chip/.venue-mood ~32px, Material chip spec) and inline
-   text links (.list-row__map, .colophon a, .handle — WCAG inline exception). */
+/* Controls we committed to a 44px hit area. Checked only when present +
+   visible. NOT listed (correctly exempt): chips (.chip/.mood-chip/
+   .venue-mood ~32px, Material chip spec) and inline text links
+   (.list-row__map, .colophon a, .handle — WCAG inline exception). */
 const TAP_SELECTORS = [
   '.btn-primary', '.btn-secondary', '.btn-going', '.btn-save',
   '.seg-tab', '.discover-scope__btn', '.nav__item',
@@ -82,25 +80,34 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
   throw new Error(`server at ${url} did not come up within ${timeoutMs}ms`);
 };
 
+/* Settle on a quiet network, but never fail because it stays busy — the
+   map tiles and the Supabase fetch can keep a connection open past the
+   deadline. The explicit wait below is what the assertions rely on. */
+const settle = async (page, url) => {
+  try {
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 25000 });
+  } catch (e) {
+    if (!/Timeout/i.test(String(e))) throw e;
+  }
+};
 
 (async () => {
   const server = spawn('npx', ['http-server', '.', '-p', String(PORT), '-c-1', '--silent'],
     { stdio: 'ignore' });
   await waitForServer(`${BASE}/index.html`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
+  const browser = await chromium.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--ignore-certificate-errors'],
-    ignoreHTTPSErrors: true,
   });
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
 
   const failures = [];
 
   for (const url of PAGES) {
     for (const width of WIDTHS) {
-      const page = await browser.newPage();
-      await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
+      const page = await context.newPage();
+      await page.setViewportSize({ width, height: 900 });
 
       const consoleMsgs = [];
       page.on('console',   (m) => consoleMsgs.push(`[${m.type()}] ${m.text()}`));
@@ -108,7 +115,7 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
 
       await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.evaluate(() => localStorage.setItem('wa:city', 'tallinn'));
-      await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+      await settle(page, `${BASE}${url}`);
       await sleep(1500);
 
       const where = `${url.split('?')[0]} @${width}`;
@@ -121,7 +128,7 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
         failures.push(`OVERFLOW  ${where}  (scrollWidth ${sw} > ${width})`);
       }
 
-      /* 2. errors (filtered, same as smoke.js) */
+      /* 2. errors (sandbox cert blocks + dummy-JWT 401/403 filtered) */
       const errs = consoleMsgs.filter((m) =>
         (m.startsWith('[error]') || m.startsWith('[PAGEERROR]')) &&
         !m.includes('ERR_CERT_AUTHORITY_INVALID') &&
@@ -130,7 +137,7 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
       for (const e of errs.slice(0, 2)) failures.push(`ERROR     ${where}  ${e}`);
 
       /* 3. tap-target floor */
-      const small = await page.evaluate((sels, floor) => {
+      const small = await page.evaluate(([sels, floor]) => {
         const out = [];
         for (const sel of sels) {
           for (const el of document.querySelectorAll(sel)) {
@@ -144,12 +151,12 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
           }
         }
         return [...new Set(out)];
-      }, TAP_SELECTORS, TAP_FLOOR);
+      }, [TAP_SELECTORS, TAP_FLOOR]);
       for (const s of small) failures.push(`TAPTARGET ${where}  ${s}`);
 
       /* 4. V-14 generic button sweep (catches controls missing from
             TAP_SELECTORS — see the constant's comment). */
-      const sweep = await page.evaluate((exempt, floor) => {
+      const sweep = await page.evaluate(([exempt, floor]) => {
         const out = [];
         for (const el of document.querySelectorAll('button')) {
           if (el.matches(exempt) || el.closest(exempt)) continue;
@@ -163,7 +170,7 @@ const waitForServer = async (url, timeoutMs = 30_000) => {
           }
         }
         return [...new Set(out)];
-      }, BUTTON_SWEEP_EXEMPT, TAP_FLOOR);
+      }, [BUTTON_SWEEP_EXEMPT, TAP_FLOOR]);
       for (const s of sweep) failures.push(`BTNSWEEP  ${where}  ${s}`);
 
       await page.close();

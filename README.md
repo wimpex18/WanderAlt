@@ -1,224 +1,120 @@
 # WanderAlt
 
-A static, mobile-first website for discovering **alternative / underground culture in European cities**: vinyl shops, art squats, small music venues, craft bars, experimental gigs, political talks. Every item is vouched for by a human curator — the curator's voice is the product.
+A static, mobile-first site for alternative and underground culture in European cities: vinyl shops, art squats, small venues, craft bars, experimental gigs, political talks. Every entry is vouched for by a named human curator, and the curator's voice is the product.
 
-Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing (Places populated; Events/Today pending a curator). First screen: **Briefing** (the default landing).
+Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing — venues are populated from OpenStreetMap, events run off an in-house editorial desk, and there is no resident curator voice yet.
 
-**Current version: v0.8.5** (11 Jul 2026) — the **Dusk Glass redesign**: every public page rides a scene (photo, dark map, or dusk gradient) under one `.island` glass recipe, with the Daybreak light twin auto-switching at each city's civil dusk (`theme.js`, Profile → Appearance). Design source: `docs/redesign-jul26-v3/`. Release notes: `ROADMAP.md` → v0.8.5 entry; stamp in `package.json`.
+**Current version: v0.8.5** (11 July 2026), the Dusk Glass redesign: every public page sits on a scene (a photo, a dark map, or a dusk gradient) under one glass panel recipe, with a Daybreak light twin that switches at each city's civil dusk. Version stamp lives in `package.json`.
 
----
+## Running it
 
-## Structure
+No build step. Open `index.html` in a browser, or:
 
-```
-.
-├── index.html            # Briefing — editorial landing page (Tonight + This Week). No filter UI.
-├── discover.html         # Discover — unified search + filter + map surface (replaces map + search)
-├── map.html              # Redirect stub → discover.html?view=map (preserves legacy ?id, ?day params)
-├── search.html           # Redirect stub → discover.html (preserves legacy ?q, ?mode=match params)
-├── saved.html            # Saved — Going / Reading / Past segments
-├── venue.html            # Pick (event) detail — curator quote hero, venue block, context, more from curator
-├── place.html            # Standalone Places (venue) detail — name, kind, neighborhood, socials, upcoming picks
-├── curator.html          # Curator profile — handle, tagline, bio, all picks
-├── profile.html          # User account — bookmarks, digest, export, delete account
-├── admin.html            # Admin panel — pick/venue CRUD, pipeline monitor, column approval
-├── about.html            # About / Curators / Venues / Privacy / Contact — one editorial page
-├── 404.html              # 404 page — matches site aesthetic
-├── styles.css            # All styles, CSS variables in :root for easy tuning
-├── catalog.js            # Static fallback catalog — used when Supabase is unreachable
-│                         #   (contract: ≤40 picks + ≤12 venues per city for new cities)
-├── ui-helpers.js         # Shared render helpers (WA.UI: esc/buildMeta/isEchoQuote/bookmarkSVG/thumb/rowMedia)
-├── supabase.js           # Live data layer — fetches from Supabase, fires wa:catalog-ready
-├── auth.js               # Email/password + Google OAuth + password reset
-├── bookmark.js           # Bookmark store — localStorage primary + Supabase cloud sync
-├── briefing.js           # Briefing renderer — Tonight hero + This Week list
-├── discover.js           # Discover orchestrator — URL state, filters, list render, AI mode, popstate
-├── discover-redirect.js  # Legacy URL mapper — loaded by the map/search redirect stubs
-├── map.js                # Pan/zoom map engine — exposes window.WA.MapView API; embedded in Discover
-├── map-venues.js         # Category definitions (WA.MAP_CATEGORIES) shared by map + discover
-├── map-tiles.js          # MapLibre GL basemap (WA.MapTiles API) — OpenFreeMap tiles + custom style
-├── maplibre-loader.js    # Lazy-loads the MapLibre bundle after first paint (Discover perf: 79 → 96)
-├── map-style.json        # Custom MapLibre style — newsprint land, muted petrol water, off-white roads
-├── saved.js              # Saved renderer — injects bookmarked rows from catalog
-├── venue.js              # Pick detail renderer — back-link returns to full Discover URL
-├── place.js              # Places detail renderer — reads ?id=, lists upcoming picks at the venue
-├── curator.js            # Curator profile renderer — reads ?handle=
-├── profile.js            # Profile renderer — stats, export, digest, delete account
-├── admin.js              # Admin panel logic
-├── taste.js              # Taste-profile onboarding (energy/company/money axes)
-├── city.js               # City switcher (multi-city scaffold)
-├── mood-chips.js         # Mood-tag filter chips; writes to #mood= hash
-├── assets/               # SVG icons / static assets
-├── brand/                # Beacon brand kit — tile + wordmark masters, favicons, PWA/iOS/Android icons,
-│                         #   social cards, BRAND.md (palette/type/lockup spec)
-├── manifest.webmanifest  # PWA web manifest — references brand/pwa/*.svg, theme color #055959
-├── supabase/             # Edge-function sources (full mirror of all 30 deployed) + migration journal
-├── docs/                 # db-schema.md, localstorage-registry.md, ux-audit, layout audits, screenshots/baseline
-├── docs/archive/         # Wireframes + market research (gitignored, local only)
-├── CLAUDE.md             # Claude Code instructions (file map, conventions, API keys, LLM policy)
-├── HANDOFF.md            # Engineering reference — tokens, components, state matrices
-└── README.md
+```bash
+npm start
 ```
 
-No build step. **Open `index.html` directly in a browser** to view, or run `npm start` for a local dev server at `http://localhost:5173`.
+That serves the site at `http://localhost:5173`. `npm run admin` serves the admin panel at `:8080` (the admin panel needs a Supabase service-role key, which it keeps in localStorage on your machine).
 
-Canonical mobile design width: **390px**. Responsive up to desktop on one shared `--reading-max` ladder applied uniformly to every page so edges line up across navigation — **1100px ≥768 · 1200 ≥1100 · 1280 ≥1440 · 1440 ≥1680 · 1600 ≥1920** (June 2026 widening; long-form text keeps per-block `ch` measures inside the wide shell).
+### Test harnesses
 
----
+| Command | What it checks |
+|---|---|
+| `npm run verify` | Structural sweep: overflow, console errors, 44px tap targets, across every public page at 390/768/1440. Exits non-zero on failure and runs in CI on every PR. |
+| `npm run e2e` | Behaviour: photo cards, taste cue, view-transition tags, bookmark persistence. Also gates CI. |
+| `npm run visual` | Pixel diff against the committed baselines in `.screenshots/visual-baselines/`. `npm run visual:update` re-baselines. |
+| `npm run audit` | Scroll-hydrated viewport-segment captures plus an icon-size and overflow report, for eyeballing a change. |
+| `npm run preview <url>` | Captures a live Cloudflare deploy, where real photos actually load. |
 
-## Voice-first hierarchy
+Everything runs on Playwright. If the browser is missing, `npx playwright install chromium`. Captures are viewport segments rather than fullPage, because fullPage floated the fixed chrome over mid-page content and caught lazy rows before they painted.
 
-Across every screen the **curator's quote is the loudest element** — larger than the venue name, larger than any photo. Everything else serves that voice:
+Real venue photos only render on the Cloudflare PR preview, not against a local server. For a performance number, `npx lighthouse http://localhost:5173/index.html --view` against a running dev server — it isn't a dependency here, since a ~100 MB install for an occasional audit isn't worth carrying.
 
-- The Tonight hero leads with a lime `TONIGHT` signal, a kind + neighborhood line and the title, then the curator quote in display italic with a lime rule. Actions (I'm going / Save) sit beneath.
-- Metadata (neighborhood · type · time · curator handle) is set in monospace to read as a "filing system" — deliberately quiet next to the serif quote.
-- Section dividers are **1px horizontal rules**, not background changes or gaps.
-- Strict left alignment. No centered text blocks. No shadows (except floating map controls). No gradients. Corners max ~12px.
+`npm run catalog` regenerates the static fallback `catalog.js` from live Supabase; `npm run build:icons` rasterises the PNG icon ladder from the SVG masters in `brand/`.
 
-The aesthetic reference is **a printed cultural weekly** (*The Gentlewoman*, *Apartamento*, a good city arts newspaper) translated into a web interface — not Airbnb, not Eventbrite.
+## How it's put together
 
----
+Every page is a plain `.html` file at the repo root with a matching `.js` renderer, all sharing one `styles.css` where every design decision is a `:root` custom property. Pages: Today (`index.html`), Discover (search + filter + map in one surface), Saved, pick detail, place detail, curator profile, profile, admin, about, 404. `map.html` and `search.html` are redirect stubs preserving legacy URLs.
 
-## Typography
+Data comes from Supabase through `supabase.js`, which falls back to the static `catalog.js` if the fetch fails, so the site never renders blank. `ui-helpers.js` holds the shared render helpers (`WA.UI`) that every page script reuses. Auth is email/password plus Google OAuth against the Supabase REST API with no SDK. Bookmarks are localStorage-first with cloud sync on sign-in. The map is MapLibre GL over OpenFreeMap vector tiles, no API key, lazy-loaded after first paint.
 
-Three typefaces, **self-hosted** as `woff2` in `fonts/` (no Google Fonts request — faster, privacy-clean, CSP-friendly):
+Canonical mobile width is 390px. Desktop shares one `--reading-max` ladder across every page so edges line up when you navigate: 1100 at ≥768, 1200 at ≥1100, 1280 at ≥1440, 1440 at ≥1680, 1600 at ≥1920. Below 768 the nav is a fixed bottom bar; above it becomes a masthead.
 
-| Family | Role | Why |
-|---|---|---|
-| **Fraunces** | Display — page titles + the curator pull-quote (the loudest element on screens that surface a pick) | A high-contrast editorial serif with a genuinely beautiful italic; gives the "printed cultural weekly" feel instantly. Self-hosted woff2, weights 600. |
-| **Inter** | Body — event names, headings, nav, buttons, running text | A clean, contemporary grotesque that stays quiet so the curator quote dominates. Loaded 400/500/600/700. |
-| **Geist Mono** | Metadata — neighborhood · type · time, curator handles, eyebrows, counts, pills | A modern monospace that reads as a filing system next to the body type — exactly the tension we want. Loaded 400/500. |
+Three self-hosted typefaces in `fonts/` (no Google Fonts request): Fraunces for display and curator quotes, Inter for body, Geist Mono for metadata. Brand assets and the icon masters live in `brand/`.
 
-The hero quote scales with `--fs-quote` (32px → 44px → 52px ≥1100px). Self-hosted weights are preloaded above the fold on Briefing and Discover to avoid layout shift.
+### localStorage
 
----
+The app writes `wa:appearance`, `wa:city`, `wa:saved-snapshots`, `wa-taste-*`, `wa-match-*`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file. The test harnesses set `wa:city` and `wanderalt:session:v1` directly, so renaming either means updating `.screenshots/*.js` in the same change.
 
-## CSS tokens
+## Deploying
 
-All design decisions live in `:root` in [`styles.css`](styles.css). The main groups:
+Cloudflare Pages, connected to the GitHub repo. Framework preset **None**, build command **empty**, output directory **`/`**. `_headers` (security headers and cache rules) and `_redirects` (apex/www, the `wanderalt.com` → `wanderalt.app` 301, and legacy aliases) are picked up automatically.
 
-- `--c-*` — color palette (paper white, deep ink, **Beacon** brand: petrol `#055959` accent + signal lime `#d2dc50`)
-- `--ff-*` — font families
-- `--fs-*` — type scale
-- `--lh-*` — leading
-- `--s-1` through `--s-10` — 4px-based space scale
-- `--gutter`, `--reading-max`, `--radius`, `--rule-w`, `--nav-h` — layout
+Everything lives on the single domain `wanderalt.app`; `wanderalt.com` is registered as brand defence and 301s across. Cloudflare was chosen over Vercel for unlimited free-tier bandwidth, a denser EU edge, and keeping hosting, DNS and email routing in one dashboard.
 
-Change the accent, the paper tone, or the quote size in one place and the whole screen re-tunes.
+`functions/_middleware.js` is a Pages Function that rewrites per-pick and per-curator Open Graph tags server-side, using the real venue photo where one exists and a generated card otherwise. It fails open and is inert under the local dev server.
 
----
+## Backend
 
-## Responsive behavior
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-central-1): Postgres, REST, Edge Functions, and pg_cron. The anon key in `supabase.js` is public by design — RLS allows SELECT only, plus INSERT on `bookmarks` and `digest_opt_ins`. Edge function sources are mirrored in `supabase/` alongside the migration journal; deploys go through the Supabase MCP tooling, never a CLI.
 
-- **< 768px (mobile, canonical 390px):** single column at full width with 20px gutter, bottom nav fixed at the viewport bottom with safe-area padding.
-- **≥ 768px (tablet / desktop):** content column caps at 1024px and centers (same value on every page so navigation feels continuous). Hero quote grows (`--fs-quote` goes from 32px → 44px → 52px at ≥1100px). **Bottom nav becomes a sticky top nav bar** under the wordmark — a thin row of masthead-style links. Rationale: a side rail would compete with the single-column editorial read; a persistent bottom bar on desktop feels too app-y; a masthead nav reinforces the "cultural weekly" metaphor.
-- **`prefers-reduced-motion`** respected. Cross-document View Transitions fade the body between pages; `.topbar` and `.nav` carry `view-transition-name` so chrome doesn't flicker. Primary surfaces (`.pick`, `.tonight`, `.match-card`, `.profile-section`, `.about-section`) enter via `@starting-style` fade-up over `--t-mid` (280ms). See CLAUDE.md § Motion conventions.
-- **Safe-area insets** handled on iOS (bottom nav, body padding).
+The app reads picks where `archived_at IS NULL`. A pick's id is `channel-message_id`.
 
----
+### Pipeline
 
-## Accessibility notes
+```
+ingest-* → staging_messages → process-staging → picks
+         → enrich-images → geocode-picks → enrich-venues
+         → classify-moods → embed-picks
+         → rotate-tonight → archive-stale → dedup → purge
+```
 
-- Landmarks: `<header role="banner">`, `<main>`, `<nav aria-label="Primary">`.
-- Skip link to `#tonight` for keyboard users.
-- Every link/button has a descriptive accessible name.
-- Active nav item uses `aria-current="page"` and a color contrast shift, not color alone.
-- Focus-visible outlines on interactive controls.
-- Color contrast for ink-on-paper passes WCAG 2.2 AA at all body and metadata sizes.
+Sources are rows in the `sources` table — Telegram channels, RSS feeds, Fienta org feeds, city event APIs, venue websites, and OpenStreetMap Overpass for venues. Adding a Telegram, RSS or Fienta source needs no code, just a row. Adding a city needs a `CITY_CONTEXT` entry in `process-staging`.
 
----
+Text generation goes Groq first, OpenRouter `:free` second, with a retired Gemini path still present behind the `pipeline_config.gemini_fallback_enabled` flag. Embeddings run on Cloudflare Workers AI. Google is no longer a live dependency anywhere in the pipeline; the Places API and its billing account are gone, after an uncapped-retry bug produced a surprise ~€45 charge. The functions that once hit it now stamp a cooldown column so an unresolvable row is skipped for 14 days instead of retried every tick.
 
-## Domain
+### Cron posture
 
-WanderAlt is a single-domain product. The whole site — Briefing,
-Discover, About, account, legal — lives at **`wanderalt.app`**.
+**Ingest, LLM, enrichment and digest crons are disabled on purpose.** The site is pre-release with no users, and cron-driven retry loops were what ran up that Google bill. The zero-cost lifecycle crons still run: archive-stale, reset-tonight, rotate-tonight, dedup, purge, and a monthly OSM ping that exists only to keep `last_seen_at` honest. Every disabled function still works when invoked by hand.
 
-The split-domain pattern (marketing-site + app-subdomain à la
-Stripe / Supabase) peaked around 2018–2022 and has reversed across
-the industry by 2024; single-domain wins on SEO consolidation,
-share-link continuity, and auth simplicity. WanderAlt is editorial
-in nature — the Briefing page itself is the marketing — so the
-classic argument for splitting (separate IA for buyers vs users)
-doesn't apply.
+To bring everything back at launch:
 
-`wanderalt.com` is also registered as brand-defense. The 301 redirect
-to `wanderalt.app` is configured in `_redirects` (the Cloudflare Pages
-config file at repo root) — when both domains are attached to the same
-Pages project, the rule fires automatically.
+```sql
+select cron.alter_job(jobid, active => true) from cron.job;
+```
 
-**Hosting target: Cloudflare Pages**, not Vercel. Cloudflare Pages was
-chosen over Vercel for this site because (a) bandwidth is unlimited on
-the free tier vs Vercel Hobby's 100 GB/mo cap, (b) the edge network is
-3-4× denser, which matters for our EU audience, and (c) using
-Cloudflare for hosting + DNS + email routing keeps the operational
-surface to one dashboard.
+Three jobs were also dialled down to a reduced cadence and need their schedules restored: `wa-process-staging` to `*/30 * * * *`, `embed-picks-auto` to `*/30 * * * *`, `wa-geocode-picks` to `20 * * * *`.
 
-## Deploying (Cloudflare Pages)
+```sql
+select cron.alter_job(jobid, schedule => '<schedule>')
+  from cron.job where jobname = '<name>';
+```
 
-1. Push this directory to a GitHub repo.
-2. In Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Select the repo. Build settings:
-   - **Framework preset:** None
-   - **Build command:** *(leave empty)*
-   - **Build output directory:** `/`
-4. Deploy. You get a `*.pages.dev` URL immediately; add a custom domain from the project settings.
+Events are worthless after they happen, so archived picks hard-delete after 14 days. Venues are stable for years, so absence from OpenStreetMap only counts after 90 days — a shorter window false-flags every venue between monthly pings.
 
-`_headers` (security headers + cache rules) and `_redirects` (apex/www + the `wanderalt.com → wanderalt.app` 301 + pretty-URL aliases) are read automatically by Pages.
+### Silent-cancellation archiver
 
----
+`wa_reconcile_absent_picks(p_enforce, p_grace_days)` archives future-dated picks whose `last_seen_at` has gone stale, meaning the source stopped listing them. It runs in enforce mode for web sources. Fienta is deliberately excluded: its scraper under-processes the feed, so a Fienta absence does not mean a cancellation. Don't re-enable it until a run bumps `last_seen_at` for roughly every active Fienta pick rather than a handful.
 
-## Roadmap
+Watch `ingest_log` where `fn='reconcile-absent'`. A spike in archived rows means a scraper broke, not that events were cancelled. The archival is reversible:
 
-**Built:**
-- **Content catalog** (`catalog.js`) — static fallback catalog (a small seed of Tallinn venues + past entries + fictional curator bios). Used only when the Supabase fetch fails; live data lives in the `picks`, `venues`, `curators` tables.
-- **Supabase data layer** (`supabase.js`) — live data from Supabase REST API with 2-second timeout and graceful `Promise.allSettled` fallback to `catalog.js`. Exposes `WA.BASE_URL` and `WA.ANON_KEY` for auth and bookmarks.
-- **Auth** (`auth.js`) — email/password + Google OAuth + password reset via Supabase REST (no SDK). JWT decoded client-side. Session stored in localStorage. Dispatches `wa:signed-in` / `wa:signed-out`.
-- **Cloud bookmarks** (`bookmark.js`) — localStorage primary store with Supabase `bookmarks` table sync on sign-in. `wa:bookmarks-synced` event triggers Briefing and Saved re-render.
-- **Briefing** — Tonight hero + This Week list rendered from catalog; bookmark toggles persist via `localStorage`; curator handles link to profile pages. Thumbnails show real `image_url` photos when available, CSS halftone placeholder otherwise.
-- **Map** — MapLibre GL basemap (`map-tiles.js` + custom `map-style.json`, OpenFreeMap vector tiles, no API key). Pins are projected from real `picks.lat/lng` via `WA.MapTiles.project()` and clustered; tapping one opens a detail panel. The `geocode-picks` cron backfills coordinates nightly. Embedded inside Discover's split view (`WA.MapView`), not a standalone page.
-- **Discover** (`discover.html`) — unified search + filter + map surface. Replaces the old standalone Search and Map pages. **Events | Places scope switch** at the top toggles between curated events (picks) and permanent venues (alt-culture places — record stores, bookshops, galleries, clubs, flea markets, arts centres, indie cinemas, community spaces). Mode-first, then filters narrow within it. Mobile-first (list default; a List|Map segmented control docked in the bottom glass chrome toggles — July 2026, the floating FAB is retired). Desktop ≥1024px is a 3-col split: persistent filter rail (When/Category/Neighborhood/Distance/Mood/Sort, live apply) · list · sticky map; both modes render pins. Mode-aware quick pills + bottom-sheet (same facets incl. the mood tags, which folded in from the old inline strip) with a live "Show N" apply count and a removable applied-filters row. Sort is trimmed and intent-based (Events: Relevance/Soonest · Places: Featured/Nearest). Venue cards/detail show website/Facebook/Instagram glyphs when present. AI concierge mode (Events only) — toggling it turns the search surface into an immersive solid-petrol panel while the filters and map collapse, so the matched curator quote owns the screen. `?type=` and `?id=` deep-link and survive back/forward. Legacy `map.html?…` and `search.html?…` URLs redirect via `discover-redirect.js`.
-- **Saved** — Going / Reading / Past segments via a compact segmented control (CSS-only `:checked` switching, accent-soft active with a lime count badge) that matches Discover's Events|Places toggle. Going rows carry a tag-style day cell (lime TONIGHT, quiet future days) and a calm summary plate closes the list. Going/Reading rows are photo-forward cards; the undated Reading list carries the taste nudge. Rows link to detail (events → `venue.html`); re-renders on `wa:bookmarks-synced`.
-- **Venue detail** (`venue.html`) — full pick detail: curator quote hero, venue block + bookmark, "More from @handle" section, expandable "Why this matters" context (auto-generated by `generate-context`, hidden until content exists). Action row carries **I'm going · Add to calendar · Share** — Add to calendar builds an `.ics` client-side for dated picks (no dependency), Share uses the native OS share sheet with a clipboard fallback (`share.js`). Linked from every result surface.
-- **Curator profiles** (`curator.html`) — handle, tagline, bio, and all picks by that curator (photo-forward cards + taste nudge). Linked from every handle across the site.
-- **Calendar feeds** (`calendar-feed` edge fn, July 2026) — subscribable ICS: per city (This Week header icon on Today) and per curator (icon next to Share on curator pages). Dated active picks as VEVENTs with the curator quote in the description; calendar apps refresh on their own TTL, so it's retention with zero pushes (the no-push stance holds).
-- **Places detail** (`place.html`) — standalone venue page: name, kind, neighborhood, social glyphs, map links, and an "Events here" list of picks at that venue (photo-forward cards).
-- **Photo-forward cards everywhere** — Discover events, Saved (Going/Reading), Curator picks, venue "more from curator", and place "Events here" all share one `.list-row--card` (full-colour venue photo · body), with the staggered entrance and the card→hero View Transition into a detail page's `.detail-hero`.
-- **On-device taste nudge** (`taste.js`) — a 3-question taste profile (energy/company/money) gently re-orders four surfaces (Today's This Week, Discover Relevance, Saved Reading, Curator picks) as a *secondary* stable-sort signal — curation stays primary, nothing leaves the device, no per-card badges. Surfaced as one quiet "· tuned to you" cue linking back to the taste check.
-- **CI structural gate** (`.github/workflows/verify.yml`) — `npm run verify` runs on every PR + push to main (no overflow / no console errors / 44px tap targets across every public page × 390/768/1440).
-- **404 page** (`404.html`) — matches site aesthetic; static, no JS.
-- **AI search: Match me** — natural-language pick finder powered by `match-pick` v10 (hybrid BM25 + vector retrieval, reranked by Groq, primary model `meta-llama/llama-4-scout-17b-16e-instruct`, fallback `llama-3.3-70b-versatile`; query embeddings on Cloudflare Workers AI `@cf/baai/bge-m3`). Always returns up to 5 ranked hits (`find_many`). Accessible via the "ask in plain English →" link on Discover.
-- **Link previews** — per-pick / per-curator Open Graph rewritten server-side by the Cloudflare Pages middleware (`functions/_middleware.js`): `og:image` is the real venue photo (`=w1200`) for picks with a photo, else the branded `og-image` card (1200×630, Satori + @resvg/resvg-wasm, cached 24 h).
-- **Curator's column** — weekly editorial draft auto-generated by `draft-column` (Groq `llama-4-scout` → OpenRouter `:free` → gated Gemini), approved in admin panel, rendered on Briefing page.
-- **Autonomous content pipeline** (Supabase Edge Functions + pg_cron) — Deno functions on cron schedules, no manual entry. **All 30 crons are currently disabled** (pre-release, no users yet; schedules preserved, re-enable is one SQL statement — see `docs/backend-and-pipeline.md`). Schedules below are what runs once re-enabled:
-  - `ingest-osm` — pulls cultural venues from OpenStreetMap Overpass into `venues`.
-  - `ingest-telegram` — nightly 02:15 UTC: fetches public-channel HTML, upserts into `staging_messages`.
-  - `process-staging` — synthesises staging into structured picks (Groq `llama-4-scout` primary → OpenRouter `:free` → Gemini, gated off by `pipeline_config.gemini_fallback_enabled=false`).
-  - `generate-context` — 2-paragraph curator-voice context into `picks.context_md`. Same 3-tier LLM chain.
-  - `classify-moods` — mood-tag backfill for untagged picks. Same 3-tier LLM chain.
-  - `enrich-venues` — Wikidata + Nominatim enrichment into `venue_details` (website, address, coords, short_desc), mirrors images to `venue_images`. Respects `manual_lock`. No LLM.
-  - `draft-column` — drafts curator's column pending admin approval. Same 3-tier LLM chain.
-  - `send-digest` — sends opted-in users a 5-pick briefing email via Resend (Gemini, low volume, has its own static-copy fallback).
-  - `match-pick` — real-time AI pick matching for Discover's AI concierge mode (hybrid retrieval + Groq rerank, synchronous).
-  - `discover-venues` — admin-triggered external venue search, now backed by a local Overture Maps index (`places_index`), not a paid API. No LLM.
-  - `og-image` — 1200×630 PNG fallback cards for picks/curators via Satori + @resvg/resvg-wasm. Cached 24 h. (Picks with a photo use the real venue image instead — see Link previews.)
-  - **LLM policy:** Groq-first across all text functions; OpenRouter `:free` (`openai/gpt-oss-120b:free`) is the live second lane; Gemini is retired (config-gated off, not deleted), no Search grounding. Embeddings moved off Gemini entirely, onto Cloudflare Workers AI `@cf/baai/bge-m3` — Google is no longer a live dependency anywhere in the pipeline. See CLAUDE.md → "LLM model policy".
-  - Schedules observable via `ingest_log`.
-- **Profile page** (`profile.html`) — bookmark count, export as JSON, change password, digest opt-in (see `send-digest` above), sign out, delete account (two-step confirmation).
-- **Admin panel** (`admin.html`) — paginated pick and venue CRUD; pipeline monitor (staging queue depth + ingest log); draft column approval; venue enrichment (Wikidata/Nominatim) with per-venue lock to protect manual edits. Requires a Supabase service role key.
+```sql
+update picks set archived_at = null, archive_reason = null
+ where archive_reason = 'source_absent';
+```
 
-**One-time setup remaining:**
-- **Supabase Auth redirect URL** — configure in Supabase Dashboard → Auth → URL Configuration to point to the deployed domain.
-- **Allow user account deletion** — Supabase Dashboard → Authentication → Settings → "Allow users to delete their own accounts".
-- **Vilnius public launch** — the city is unlocked for internal testing (`status: 'live'`). It now runs on WanderAlt's **in-house editorial desk**: Events/Today are populated from the `@ra_vilnius` + `@afishavilnius` feeds via `process-staging` (attributed per-feed, with an honest umbrella note on Today), and Places is populated from ~410 OSM venues. Still pending before a real public launch: a **resident curator voice** (no single-voice underground channel exists yet) and the **RA recurring cron** (deliberately unscheduled on ToS grounds — RA only ingests when invoked by hand). See CLAUDE.md → Vilnius notes.
+### The venue index
 
----
+Admin venue search queries a local `places_index` table (about 1,900 alt-culture venues across the four cities, extracted from the Overture Maps places theme and filtered to our kind vocabulary). No external calls, no keys. The one-shot loader that populated it is deployed as a 410 stub; the procedure for loading a newer Overture release is documented in its source under `supabase/functions/load-places-index/`.
 
-## Running in Claude Code
+### Environment
 
-The repo is cloud-ready:
+Cloud sessions and CI need these as environment variables, never in code: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy — the pipeline is gated off it and its billing account is deleted.
 
-- **Local:** open any HTML in a browser, or `npm start` for a dev server at `http://localhost:5173`. `npm run admin` serves the admin panel at `:8080`.
-- **Claude Code on the web:** push to GitHub and connect from [claude.ai/code](https://claude.ai/code). No setup script needed — sessions can run `npm start` directly. Set `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, and `RESEND_API_KEY` as environment variables in the cloud environment settings, not in code (`GEMINI_API_KEY` is legacy/optional — the pipeline is gated off it, see CLAUDE.md → LLM model policy).
-- **Conventions** for both: see [CLAUDE.md](CLAUDE.md) (token-efficient pipeline rules, LLM model policy, visual conventions).
+## Still open
 
-See [HANDOFF.md](HANDOFF.md) for the engineering reference.
+- **Supabase Auth redirect URL** needs pointing at the deployed domain (Dashboard → Auth → URL Configuration).
+- **Self-serve account deletion** needs enabling (Dashboard → Authentication → Settings).
+- **Vilnius public launch** is blocked on a resident curator voice. No single-voice underground Telegram channel exists for the city yet, and the Resident Advisor feed is hand-invoked only, never scheduled, on terms-of-service grounds.
+
+Conventions and constraints for AI coding sessions are in [CLAUDE.md](CLAUDE.md).

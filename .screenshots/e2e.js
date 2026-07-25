@@ -24,7 +24,7 @@
    ============================================================ */
 
 const { spawn } = require('child_process');
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
 
 const PORT = 5189;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -64,11 +64,9 @@ const isNoise = (t) =>
     { stdio: 'ignore' });
   await waitForServer(`${BASE}/index.html`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
+  const browser = await chromium.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--ignore-certificate-errors'],
-    ignoreHTTPSErrors: true,
   });
 
   const failures = [];
@@ -76,7 +74,8 @@ const isNoise = (t) =>
   let checks = 0;
   const did = () => { checks++; };
 
-  const page = await browser.newPage();
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
+  const page = await context.newPage();
 
   /* NOTE: Supabase is deliberately left untouched — the app always uses it for
      live data, with catalog.js as the offline fallback. This suite is robust to
@@ -93,7 +92,7 @@ const isNoise = (t) =>
 
   /* Seed a taste profile + the Tallinn city before every document so the
      taste surfaces are exercised deterministically. */
-  await page.evaluateOnNewDocument(() => {
+  await context.addInitScript(() => {
     try {
       localStorage.setItem('wa:city', 'tallinn');
       localStorage.setItem('wa-taste-prefs', JSON.stringify({ energy: 'quiet', company: 'solo', money: 'free' }));
@@ -106,29 +105,35 @@ const isNoise = (t) =>
     document.addEventListener('wa:catalog-ready', () => { window.__waCatReady = true; });
   });
 
+  /* Settle on a quiet network, but never fail because it stays busy — the
+     map tiles and the Supabase fetch can hold a connection past the
+     deadline. The explicit waits below are what the assertions rely on. */
+  const goto = (target, url) => target.goto(url, { waitUntil: 'networkidle', timeout: 25000 })
+    .catch((e) => { if (!/Timeout/i.test(String(e))) throw e; });
+
   const nav = async (url) => {
     errs = [];
     try {
-      await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+      await goto(page, `${BASE}${url}`);
     } catch (e) {
       /* net::ERR_ABORTED is a known headless-Chrome navigation flake
          (observed pre-existing, ~1 in 10 full runs; e2e gates CI, so a
          single transient abort must not fail the build). One retry. */
       if (!String(e).includes('ERR_ABORTED')) throw e;
       await sleep(500);
-      await page.goto(`${BASE}${url}`, { waitUntil: 'networkidle2', timeout: 25000 });
+      await goto(page, `${BASE}${url}`);
     }
     await sleep(800);
   };
 
   /* Detail pages (curator/venue/place) render on `wa:catalog-ready`, which
      supabase.js fires only after its live fetch resolves/times out (~2s in
-     the sandbox) — later than networkidle2. Wait for the actual content
+     the sandbox) — later than the network settling. Wait for the content
      selector so these checks aren't racing the async render. */
   const navFor = async (url, selector) => {
     await nav(url);
     /* Wait for the catalog-ready render, then for the specific content. */
-    await page.waitForFunction(() => window.__waCatReady === true, { timeout: 15000 }).catch(() => {});
+    await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 15000 }).catch(() => {});
     await page.waitForSelector(selector, { timeout: 8000 }).catch(() => {});
   };
 
@@ -174,7 +179,7 @@ const isNoise = (t) =>
      wa:catalog-ready risks picking an ID from one state while a detail page
      renders against the other. Wait for the ready signal first. */
   await nav('/discover.html');
-  await page.waitForFunction(() => window.__waCatReady === true, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => window.__waCatReady === true, null, { timeout: 15000 }).catch(() => {});
   await sleep(300);
   const ids = await page.evaluate(() => {
     const cat = (window.WA && (window.WA._catalogAll || window.WA.catalog)) || [];
@@ -221,7 +226,7 @@ const isNoise = (t) =>
     `/place.html?id=${encodeURIComponent(ids.venue)}`,
   ];
   for (const w of WIDTHS) {
-    await page.setViewport({ width: w, height: 900 });
+    await page.setViewportSize({ width: w, height: 900 });
     for (const u of PAGES) {
       await nav(u);
       did();
@@ -231,7 +236,7 @@ const isNoise = (t) =>
       if (ov > 1) fail(`OVERFLOW ${u} @${w} :: ${ov}px`);
     }
   }
-  await page.setViewport({ width: 390, height: 900 });
+  await page.setViewportSize({ width: 390, height: 900 });
 
   /* 2 · Photo cards on all five pick-list surfaces. */
   const cardCheck = async (url, sel, label, kind) => {
@@ -323,7 +328,7 @@ const isNoise = (t) =>
   ];
   for (const [u, sel, kind] of tapPages) {
     await navResilient(u, sel, kind);
-    const small = await page.evaluate((sels, floor) => {
+    const small = await page.evaluate(([sels, floor]) => {
       const out = [];
       document.querySelectorAll(sels.join(',')).forEach((el) => {
         const r = el.getBoundingClientRect();
@@ -331,7 +336,7 @@ const isNoise = (t) =>
         if (r.height < floor || r.width < floor) out.push(`${(el.className || '').toString().split(' ')[0]}:${Math.round(r.width)}x${Math.round(r.height)}`);
       });
       return out;
-    }, TAP_SELECTORS, TAP_FLOOR);
+    }, [TAP_SELECTORS, TAP_FLOOR]);
     did();
     if (small.length) fail(`TAP ${u} :: ${small.slice(0, 4).join(', ')}`);
   }
@@ -343,10 +348,10 @@ const isNoise = (t) =>
      second (duplicate) handler instantly unset it. The main page above
      seeds wa-taste-onboarded=1 and never renders the banner — which is
      exactly how that bug shipped unseen — so this section drives a
-     fresh page with NO taste keys and asserts a chip tap sticks. */
-  const page2 = await browser.newPage();
-  await page2.setViewport({ width: 390, height: 844 });
-  await page2.evaluateOnNewDocument(() => {
+     fresh page with NO taste keys and asserts a chip tap sticks.
+     Its own context, so the seeded storage above can't leak in. */
+  const freshCtx = await browser.newContext({ ignoreHTTPSErrors: true });
+  await freshCtx.addInitScript(() => {
     try {
       localStorage.setItem('wa:city', 'tallinn');
       localStorage.removeItem('wa-taste-prefs');
@@ -355,10 +360,12 @@ const isNoise = (t) =>
     window.__waCatReady = false;
     document.addEventListener('wa:catalog-ready', () => { window.__waCatReady = true; });
   });
-  await page2.goto(`${BASE}/index.html`, { waitUntil: 'networkidle2', timeout: 25000 });
+  const page2 = await freshCtx.newPage();
+  await page2.setViewportSize({ width: 390, height: 844 });
+  await goto(page2, `${BASE}/index.html`);
   /* The double-bind only manifested AFTER the second init (live catalog),
      so wait for wa:catalog-ready before tapping. */
-  await page2.waitForFunction(() => window.__waCatReady === true, { timeout: 15000 }).catch(() => {});
+  await page2.waitForFunction(() => window.__waCatReady === true, null, { timeout: 15000 }).catch(() => {});
   await sleep(800);
 
   const chipSel = '#taste-onboarding .taste-chip';
@@ -387,7 +394,7 @@ const isNoise = (t) =>
       fail(`TASTE-UNSEEDED second tap :: chip must deselect (pressed=${st2.pressed}, pref=${st2.val})`);
     }
   }
-  await page2.close();
+  await freshCtx.close();
 
   await browser.close();
   server.kill();

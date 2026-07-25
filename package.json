@@ -5,23 +5,19 @@
   "scripts": {
     "start": "npx http-server . -p 5173 -c-1 --cors",
     "admin": "npx http-server . -p 8080 -c-1 --cors",
-    "smoke": "node .screenshots/smoke.js",
-    "scroll": "node .screenshots/scroll.js",
     "verify": "node .screenshots/verify.js",
     "e2e": "node .screenshots/e2e.js",
     "audit": "node .screenshots/audit.js",
     "visual": "playwright test --config=playwright.config.js",
     "visual:update": "playwright test --config=playwright.config.js --update-snapshots",
     "preview": "node .screenshots/preview.js",
-    "build:icons": "node .scripts/rasterize-favicons.js",
-    "lighthouse": "node .scripts/lighthouse-audit.js"
+    "catalog": "node .scripts/regen-catalog.js",
+    "build:icons": "node .scripts/rasterize-favicons.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "lighthouse": "^13.4.0",
     "playwright": "^1.61.1",
     "png-to-ico": "^3.0.1",
-    "puppeteer": "^25.3.0",
     "sharp": "^0.35.3"
   }
 }

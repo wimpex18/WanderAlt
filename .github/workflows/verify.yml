@@ -33,14 +33,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22   # lighthouse 13.4 requires >=22.19, puppeteer 25 requires >=22.12
+          node-version: 22
           cache: npm
 
-      # Installs devDependencies (puppeteer downloads its pinned Chrome here).
       - name: Install dependencies
         run: npm ci
 
-      # verify.js spawns `npx http-server`; pre-fetch it so the run is
+      # Playwright ships no browser with the npm package — both sweeps
+      # drive this Chromium.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The harnesses spawn `npx http-server`; pre-fetch it so the run is
       # deterministic and never blocks on a first-use install prompt.
       - name: Pre-fetch http-server
         run: npx -y http-server --version
@@ -75,9 +79,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        env:
-          # Skip Puppeteer's Chrome download — this job only needs Playwright.
-          PUPPETEER_SKIP_DOWNLOAD: 'true'
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium

@@ -32,7 +32,7 @@
 
    Output: .screenshots/live-<page>-<city>-{fold,full}.png
    ============================================================ */
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
 const path = require('path');
 
 const BASE  = (process.argv[2] || '').replace(/\/+$/, '');
@@ -68,18 +68,22 @@ const LAUNCH_ARGS = [
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'page';
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: 'new', args: LAUNCH_ARGS });
+  const browser = await chromium.launch({ args: LAUNCH_ARGS });
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    ignoreHTTPSErrors: true,
+  });
+  await context.addInitScript((c) => localStorage.setItem('wa:city', c), CITY);
   let failures = 0;
 
   for (const target of targets) {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
-    await page.evaluateOnNewDocument((c) => localStorage.setItem('wa:city', c), CITY);
+    const page = await context.newPage();
 
     const url = `${BASE}/${target}`;
     const tag = `${slug(target)}-${CITY}`;
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
       /* Give live data (supabase.js) + image CDNs a beat to paint. */
       await new Promise((r) => setTimeout(r, 4000));
 
