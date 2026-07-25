@@ -21,7 +21,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
+  const { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, socialButtons } = window.WA.UI;
   const thumbEl = window.WA.UI.thumb;
 
   /* Standard "opens elsewhere" diagonal-arrow glyph (Tabler external-link),
@@ -39,7 +39,7 @@
     if (/(^|\.)t\.me$/.test(host) || /telegram/i.test(host)) return '';
     const isTickets = /fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(host);
     const label = isTickets ? 'Tickets' : 'Event page';
-    return `<a class="action-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${label} (opens in a new tab)">${label}${EXT_ICON}</a>`;
+    return `<a class="action-btn" href="${esc(safeUrl(url))}" target="_blank" rel="noopener noreferrer" aria-label="${label} (opens in a new tab)">${label}${EXT_ICON}</a>`;
   };
 
   /* The external-links row for a pick: the venue website + ticket/event page
@@ -162,7 +162,7 @@
 
     /* Dusk Glass: the photo is the scene; a probe img downgrades
        a dead URL to the dusk-gradient fallback (never a gray box). */
-    const heroUrl = entry.imageUrl ? WA.img(entry.imageUrl, 1080).replace(/'/g, '%27') : '';
+    const heroUrl = entry.imageUrl ? esc(safeUrl(WA.img(entry.imageUrl, 1080)).replace(/'/g, '%27')) : '';
     const sceneBg = entry.imageUrl
       ? `<div class="scene__bg" style="background-image:url('${heroUrl}')" aria-hidden="true"><img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true"></div>`
       : `<div class="scene__bg scene__bg--fallback" aria-hidden="true">${!entry.imageUrl ? `<span class="scene__glyph">${thumbEl({ ...entry, imageUrl: null }, true)}</span>` : ''}</div>`;
@@ -180,7 +180,7 @@
     let ticketHost = '';
     try { ticketHost = entry.permalink ? new URL(entry.permalink).host : ''; } catch (_) {}
     if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
-      inVal = `<a href="${esc(entry.permalink)}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
+      inVal = `<a href="${esc(safeUrl(entry.permalink))}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
     } else if ((entry.moodTags || []).includes('ticketed')) {
       inVal = 'Ticketed';
     } else if ((entry.moodTags || []).includes('walk-up')) {
@@ -194,7 +194,7 @@
     const tagClass = isTonight ? 'tag--live' : 'tag--scene';
 
     main.innerHTML = `
-      <article aria-label="${entry.title}">
+      <article aria-label="${esc(entry.title)}">
 
       <div class="scene scene--detail">
         ${sceneBg}
@@ -209,17 +209,17 @@
         <div class="scene__main">
           <div class="scene-tags">
             <span class="tag ${tagClass}">${esc(tagDay)}</span>
-            ${venueMeta ? `<span class="tag tag--scene one-line">${venueMeta}</span>` : (entry.kind ? `<span class="tag tag--scene one-line">${esc(entry.kind)}</span>` : '')}
+            ${venueMeta ? `<span class="tag tag--scene one-line">${esc(venueMeta)}</span>` : (entry.kind ? `<span class="tag tag--scene one-line">${esc(entry.kind)}</span>` : '')}
           </div>
-          <h1 class="scene-title scene-title--detail">${entry.title}</h1>
+          <h1 class="scene-title scene-title--detail">${esc(entry.title)}</h1>
 
           <!-- The whole answer is ONE glass card: quote → three equal
                56px info cells → one 48 action row. -->
           <div class="answer island island--deep">
-            <blockquote class="scene-quote scene-quote--card"><p>${entry.quote}</p></blockquote>
-            <p class="scene-attr one-line">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a>${moreAll.length ? ` &middot; ${moreAll.length + 1} picks` : ''}</p>
+            <blockquote class="scene-quote scene-quote--card"><p>${esc(entry.quote)}</p></blockquote>
+            <p class="scene-attr one-line">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>${moreAll.length ? ` &middot; ${moreAll.length + 1} picks` : ''}</p>
             <div class="answer__cells wa-row">
-              <span class="answer__cell"><span class="answer__k">When</span><span class="answer__v one-line">${whenVal}</span></span>
+              <span class="answer__cell"><span class="answer__k">When</span><span class="answer__v one-line">${esc(whenVal)}</span></span>
               <span class="answer__cell"><span class="answer__k">Where</span><span class="answer__v one-line">${whereVal}</span></span>
               <span class="answer__cell"><span class="answer__k">Getting in</span><span class="answer__v one-line">${inVal}</span></span>
             </div>
@@ -229,7 +229,7 @@
               </button>
               <label class="bookmark scene-key scene-key--incard" title="Save this pick">
                 <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
-                       aria-label="Bookmark: ${entry.title}" ${isMarked ? 'checked' : ''}>
+                       aria-label="Bookmark: ${esc(entry.title)}" ${isMarked ? 'checked' : ''}>
                 ${bookmarkSVG()}
               </label>
               ${entry.day ? `<button class="scene-key scene-key--incard venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
@@ -253,12 +253,12 @@
           <div class="venue-card">
             <span class="venue-card__media">${thumbEl(entry, true)}</span>
             <div class="venue-card__body">
-              <p class="venue-card__name">${entry.venue}</p>
-              ${venueMeta ? `<p class="list-row__meta">${venueMeta}</p>` : ''}
+              <p class="venue-card__name">${esc(entry.venue)}</p>
+              ${venueMeta ? `<p class="list-row__meta">${esc(venueMeta)}</p>` : ''}
             </div>
             ${matchedVenue ? `<a class="venue-card__go" href="place.html?id=${encodeURIComponent(matchedVenue.id)}">Venue &rarr;</a>` : ''}
           </div>
-          ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${entry.imageAttr}</p>` : ''}
+          ${entry.imageUrl && entry.imageAttr ? `<p class="photo-credit">${esc(entry.imageAttr)}</p>` : ''}
 
           <!-- Venue details — address / hours / short_desc; async-populated by fetchVenueDetails() -->
           <div id="venue-details" class="venue-details" hidden></div>
@@ -296,7 +296,7 @@
                    <p class="list-row__title">
                      <a href="venue.html?id=${e.id}">${e.title}</a>
                    </p>
-                   <p class="list-row__meta">${buildMeta(e)}</p>
+                   <p class="list-row__meta">${esc(buildMeta(e))}</p>
                    ${isEchoQuote(e)
                      ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>`
                      : `<p class="list-row__quote">&mdash; ${e.quote}

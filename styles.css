@@ -1722,7 +1722,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
   text-transform: uppercase;
   color: var(--c-ink-mute);
 }
-/* Joined equal-width pair (like .wa-seg, at the chip-height tier) — each
+/* Joined equal-width pair at the chip-height tier — each
    axis is a binary either/or, so both choices share one width instead of
    hugging their own text (was visibly lopsided: "Solo" vs "With people"). */
 .taste-q__choices {
@@ -2718,7 +2718,7 @@ a.auth-panel__submit { display: inline-block; }
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: calc(var(--radius) - 3px);   /* 5px — the app's inset-control radius (.wa-seg / view-fab seg); was off-scale 6px */
+  border-radius: calc(var(--radius) - 3px);   /* 5px — the app's inset-control radius for nested segments; was off-scale 6px */
   background: var(--c-accent);
   color: #fff;
   cursor: pointer;
@@ -5096,8 +5096,7 @@ body.discover-places .mood-chips { display: none; }
   align-items: center;
   gap: 7px;
   padding: 0 var(--s-5);
-  height: 44px;                               /* real tap target per segment,
-                                                 same as .wa-seg__tab */
+  height: 44px;                               /* real tap target per segment */
   border: 0;                                  /* real <button> segments now */
   background: none;
   cursor: pointer;

@@ -13,6 +13,10 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="./admin.css" />
 
+  <!-- Local-only convenience: sets the admin service key on this machine.
+       Gitignored, so it is absent on the deployed site by design — the
+       panel then asks for the key, and the console shows a 404 for this
+       file. That is expected, not a fault. -->
   <script src="./local-secrets.js"></script>
   <script defer src="./vendor/maplibre-gl.js"></script>
   <script defer src="./admin.js"></script>
