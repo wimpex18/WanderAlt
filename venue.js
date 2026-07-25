@@ -54,10 +54,13 @@
        fallback. */
     const ticket = sourceCta(permalink);
     if (ticket) parts.push(ticket);
-    if (sv.website) {
-      parts.push(`<a class="action-btn" href="${esc(sv.website)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(sv.name || 'Venue')} website (opens in a new tab)">Venue website${EXT_ICON}</a>`);
-    }
-    const social = socialButtons({ name: sv.name, facebook: sv.facebook, instagram: sv.instagram });
+    /* Website rides in the shared socialButtons icon row — place.html
+       already solved "website + socials" this way, and the icon-system
+       contract makes external links icon-only (the labeled "Venue
+       website" button was the one fork of this pattern; design-system
+       audit Jul 2026). The ticket link above stays labeled: it's the
+       event-specific action. */
+    const social = socialButtons({ name: sv.name, website: sv.website, facebook: sv.facebook, instagram: sv.instagram });
     if (social) parts.push(social);
     return parts.join('');
   };

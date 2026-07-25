@@ -34,7 +34,9 @@ The July 2026 Dusk Glass reskin covers every public page (about.html stays paper
 
 - **Use the tokens. Never hand-roll a colour, blur, or rgba literal** — a hard-coded value looks right at night and breaks Daybreak completely.
 - **Lime is signal only**: one CTA per screen, live dots, the TONIGHT tag, the selected pin. Never body text, borders, or icon colour. Petrol is the only accent, and by day the CTA goes petrol because lime fails on paper. There is no third colour.
-- **One control size** (`--unit`, 48px) and one radius vocabulary. Control rows are single-line and never wrap; siblings share a width. Meta lines ellipsize; only card titles take two lines.
+- **One control size** (`--unit`, 48px) and one radius vocabulary: 8 tags / 14 controls / 20 islands / 24 sheets. Control rows are single-line and never wrap; siblings share a width. Meta lines ellipsize; only card titles take two lines.
+- **Fully-rounded (999px) is sanctioned for exactly two shapes** (owner ruling, Jul 2026, settling the earlier "pill retired" contradiction): floating glass chrome capsules — the dock island, floating toggles, switch tracks — and badges, dots and counts at 24px or under, where the capsule *is* the shape. Tags stay at 8, chips at 14, and button controls stay off 999 entirely.
+- **Photo-text scrims use `--scrim-photo`**, which is deliberately theme-invariant dark: a photo needs a dark ramp under text in both themes. `--scrim-hero` and `--scrim-detail` are the scene scrims and do swap with the theme. Don't reach for the wrong one.
 - **Active state is a tint plus a mark**, never colour alone.
 - **Spacing comes from the `--s-*` scale**, and vertical gaps encode relationship: tighter within an item than between items, and a heading always gets more room below it than the gap between the things it introduces. A heading is never the tightest gap near it.
 - **A pick among peers leads with its photo and title; the quote is a caption.** Quote-as-hero is scoped to single-item detail views where there's no peer to compare against. When there's no photo, use the kind glyph placeholder, never a grey box.
@@ -49,7 +51,9 @@ Don't add CSS variables without asking. When you touch any pattern, check every 
 
 There are no automated tests and no CI. The old Puppeteer/Playwright suite was removed in July 2026 — it never caught the failures that actually happen here (alignment, overlap, control sizes, overlays) and it is being rebuilt from scratch, so don't patch it back in piecemeal or add a test framework without being asked.
 
-That puts the burden on looking. Run `npm start` and open the pages you touched at 390, 768 and 1440. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed, not just the screen in front of you — screen-local fixes are the recurring failure mode here. Real photos and duotone only render on the Cloudflare PR preview.
+That puts the burden on looking. Run `npm start` and open the pages you touched at 390, 768 and 1440. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed, not just the screen in front of you — screen-local fixes are the recurring failure mode here.
+
+Three things genuinely cannot be judged locally, so verify them on the Cloudflare PR preview rather than guessing a fix from a local render: real photos and the duotone treatment, the MapLibre vector basemap (it never rasterises in headless Chromium on this stack — tiles fetch and the WebGL context creates, but the canvas never paints, so markers are real and the basemap isn't), and `backdrop-filter` blur (it composites differently across GPUs, so glass-over-content can look sharp or overlapping in a capture while blurring correctly in a real browser).
 
 Two things the deleted suite used to catch, worth checking by hand: no horizontal overflow at any width, and no console errors on load.
 

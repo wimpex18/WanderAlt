@@ -63,8 +63,10 @@
 .admin-pick-row > span:first-child { flex:1; font-family:var(--ff-body); font-size:var(--fs-pick); }
 .admin-pick-row > .meta  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                            max-width:38%; flex-shrink:0; }
-.admin-pick-row__noPin   { opacity:.45; }
-.admin-pick-row__flags   { opacity:.55; }
+/* Muted annotations: use the AA-floor ink token, not opacity — opacity
+   blends toward the white bg and drops below 4.5:1 (axe serious). */
+.admin-pick-row__noPin   { color:var(--c-ink-mute); }
+.admin-pick-row__flags   { color:var(--c-ink-mute); }
 .admin-btn--rm           { border:none; background:none; color:var(--c-accent);
                            font-size:1.25rem; line-height:1; cursor:pointer;
                            padding:0 var(--s-1); flex-shrink:0; }
@@ -100,7 +102,9 @@
                            font-size:var(--fs-meta); font-family:var(--ff-mono); }
 .admin-result:hover,
 .admin-result:focus      { background:rgba(26,26,26,.06); outline:none; }
-.admin-empty             { padding:var(--s-3) 0; opacity:.5; }
+/* Empty-state text is class="meta …" (already --c-ink-mute, 6.4:1). No
+   opacity — opacity:.5 dropped it to ~2.4:1 (axe serious). */
+.admin-empty             { padding:var(--s-3) 0; }
 
 /* This Week filter bar */
 .tw-filter-bar           { display:flex; flex-wrap:wrap; align-items:center;
@@ -136,8 +140,10 @@
 .admin-pin-map__attr a   { color:inherit; text-decoration:underline; }
 
 /* Admin utility classes — replace common inline style patterns. */
-.a-hint                  { margin-bottom:var(--s-3); opacity:.7; }
-.a-status                { margin:var(--s-4) 0 var(--s-2); opacity:.65; }
+/* Hint/status lines are class="meta …" — rely on --c-ink-mute for AA,
+   not opacity (which blended them to ~3.2–3.4:1). */
+.a-hint                  { margin-bottom:var(--s-3); }
+.a-status                { margin:var(--s-4) 0 var(--s-2); }
 .a-list                  { list-style:none; margin:0; padding:0; }
 .a-row                   { display:flex; gap:var(--s-2); flex-wrap:wrap; }
 .a-mb-0                  { margin-bottom:0; }
@@ -146,7 +152,8 @@
 .a-mt-1                  { margin-top:var(--s-1); }
 .a-mt-2                  { margin-top:var(--s-2); }
 .a-mt-3                  { margin-top:var(--s-3); }
-.a-mute                  { opacity:.65; }
+/* .meta is already --c-ink-mute (6.4:1); opacity:.65 dropped it to ~3.2:1. */
+.a-mute                  { color:var(--c-ink-mute); }
 .a-w-full                { width:100%; }
 .a-accent                { color:var(--c-accent); }
 .a-stats-grid            { display:flex; flex-wrap:wrap; gap:var(--s-3); }
@@ -166,15 +173,16 @@
 .admin-mfield--rel       { position:relative; }
 .a-pin-coords-row        { display:flex; gap:var(--s-3); align-items:baseline;
                            margin-top:var(--s-2); flex-wrap:wrap; }
-.a-pin-coords-text       { opacity:.7; font-family:var(--ff-mono); font-size:11px; }
-.a-pin-address-text      { opacity:.7; font-family:var(--ff-mono); font-size:11px;
+/* Pin-editor helper text is class="meta …" (--c-ink-mute, AA); no opacity. */
+.a-pin-coords-text       { font-family:var(--ff-mono); font-size:11px; }
+.a-pin-address-text      { font-family:var(--ff-mono); font-size:11px;
                            flex:1; min-width:0; overflow:hidden;
                            text-overflow:ellipsis; white-space:nowrap; }
 .a-pin-lock-label        { font-family:var(--ff-mono); font-size:11px;
                            display:inline-flex; align-items:center; gap:6px; }
 .a-pin-reset-btn         { font-size:10px; }
-.a-pin-edit-hint         { margin-left:8px; opacity:.6; }
-.a-pin-coords-help       { margin-top:var(--s-1); opacity:.6; }
+.a-pin-edit-hint         { margin-left:8px; }
+.a-pin-coords-help       { margin-top:var(--s-1); }
 .a-enrichment-buttons    { display:flex; flex-wrap:wrap; gap:var(--s-2);
                            margin-bottom:var(--s-4); }
 .a-pipeline-actions      { margin:var(--s-2) 0 var(--s-4); display:flex;

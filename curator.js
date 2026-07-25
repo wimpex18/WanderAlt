@@ -83,6 +83,19 @@
       if (!rows || !rows.length || !rows[0].body_md) return;
 
       const col = rows[0];
+
+      /* Staleness gate (design-critique should-fix #14, Jul 2026): a
+         "cultural weekly" must not lead with a months-old "Edition No. 1".
+         The draft-column cron is frozen pre-launch, so every published
+         column is currently stale — better to show nothing than a stale
+         edition. Hide when the edition's week is older than STALE_DAYS.
+         Uses week_of (the edition's week); falls back to approved_at. */
+      const STALE_DAYS = 42; // 6 weeks — beyond this it isn't "lately"
+      const dateStr = col.week_of || col.approved_at;
+      if (dateStr) {
+        const ageDays = (Date.now() - new Date(dateStr).getTime()) / 86400000;
+        if (Number.isFinite(ageDays) && ageDays > STALE_DAYS) return;
+      }
       const dateLabel = col.approved_at
         ? new Date(col.approved_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
         : '';

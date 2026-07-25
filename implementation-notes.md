@@ -133,6 +133,46 @@ are worth recording:
 The remaining ~110 classes that a grep would call unused are all either
 runtime-composed or present in states the census reached. They stay.
 
+## Fifth pass — merging origin/main (my error)
+
+**The branch was cut from a stale base.** I branched from the local `main`,
+which was **50 commits behind `origin/main`**, and never checked. GitHub's
+conflict list looked like a `.screenshots` problem; it wasn't. The real risk was
+that `origin/main` had moved `styles.css` by +499/−144 lines (Discover redesign
+round 2, the filter-rail flush-edge fix, Today polish, liquid-glass chrome), and
+a careless resolution would have reverted all of it.
+
+**Resolution policy used:**
+- Test infrastructure and docs: my deletion wins, including the tools `main`
+  added after my base (`geometry-audit`, `a11y`, `visibility`, `contrast-ui`,
+  `aria.spec` + 16 aria baselines, `playwright.aria.config.js`, `@axe-core`) —
+  owner confirmed the clean-slate call after being shown what they do.
+- `styles.css` and every app script: took **theirs**, so none of the round-2
+  work is lost, then re-derived my two mechanical passes on top.
+- `package.json`, `import-pick-photos`, `CLAUDE.md`, `README.md`: mine.
+- `_headers`: mine (CSP tightening preserved; `main` had not touched it).
+
+**Re-derived, not merged.** Both of my CSS passes were recomputed against the
+newer stylesheet rather than merged line-by-line:
+- Citation strip: 58 sites in `main`'s newer CSS comments, plus the 7 orphan
+  colons the automated pass leaves behind, repaired by hand.
+- Dead-CSS prune: the census was re-run from scratch (476 classes observed;
+  671 defined) because round-2 changed the markup. It landed on the **same 19
+  dead classes and 31 rules**, which is a good independent signal that the
+  method is stable. Verified again through the browser's CSS parser: 1714 rules
+  → 1683.
+
+**Folded in from `main` so nothing non-derivable was lost:** the owner's Jul 2026
+ruling that fully-rounded 999px is sanctioned for exactly two shapes (glass
+chrome capsules; ≤24px badges/dots/counts) with tags at 8 and chips at 14, the
+`--scrim-photo` vs `--scrim-hero`/`--scrim-detail` distinction, and `DESIGN.md`'s
+headless-environment limits (the MapLibre basemap never rasterises;
+`backdrop-filter` blur varies by GPU) — all now in CLAUDE.md.
+
+**Pre-existing, not mine:** `styles.css` on `main` already has 676 `/*` against
+677 `*/`. Identical before and after my pass, so I introduced nothing, but the
+stray terminator is still in there somewhere.
+
 ## Open findings, not fixed here
 
 - ~~Comments still cite deleted docs~~ — **done.** All ~130 citations to

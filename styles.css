@@ -31,6 +31,18 @@
   --c-paper:        #ffffff;
   --c-paper-deep:   #fafaf9;
   --c-ink:          #0a0a0c;
+  /* Photo-text scrim — THEME-INVARIANT dark (owner ruling, Jul 2026):
+     white-on-photo needs a dark ramp in BOTH themes, so this deliberately
+     does not swap with --scrim-rgb (those are scene scrims). Stop math
+     A 3-line title + eyebrow + meta fills most of the 280px mobile
+     hero, so the ≥0.4-alpha zone must reach ~2/3 up and never hit zero —
+     a 75% stop left long titles' upper lines on near-raw photo (measured
+     against the brightest catalog photos). */
+  --scrim-photo: linear-gradient(to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.55) 38%,
+    rgba(0, 0, 0, 0.38) 68%,
+    rgba(0, 0, 0, 0.12) 100%);
   --c-ink-soft:     #1f1f23;
   /* Muted ink for meta/eyebrows. Darkened from #71717a (4.36:1, failed
      WCAG AA on newsprint) to #5c5c66 — 5.96:1 on #f6f3ec, 6.6:1 on
@@ -454,6 +466,12 @@ body[data-page="discover"] .discover-browse-section .eyebrow,
 body[data-page="discover"] #discover-results-section .eyebrow {
   color: var(--c-accent);
 }
+/* This pair outranks the generic dusk eyebrow override — dark petrol on the
+   dark sheet measured 1.53:1 (axe serious, a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .discover-browse-section .eyebrow,
+body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow {
+  color: var(--g-mute);
+}
 
 .rule {
   border: 0;
@@ -663,6 +681,18 @@ body[data-page="discover"] #discover-results-section .eyebrow {
    against each axis independently, stretching the glyph off-square. */
 .thumb__glyph { width: 22px; height: 22px; color: var(--c-accent-deep); flex-shrink: 0; }
 .thumb--lg .thumb__glyph { width: 30px; height: 30px; }
+/* Dusk tiles are dark — the paper-era deep-petrol glyph measured ~1.1:1 on
+   them (42 invisible placeholders on Places; visibility scan Jul 2026).
+   g-petrol swaps per theme, keeping the glyph legible on both. The tile
+   itself also goes to the glass fill: Today's rows kept the light paper
+   tile, which made the now-light glyph invisible the OTHER way (1.54:1) —
+   one tile treatment on dusk, per the "kind glyph on dusk gradient, never
+   a gray box" law. */
+[data-skin="dusk"] .thumb__glyph { color: var(--g-petrol); }
+[data-skin="dusk"] .thumb {
+  background: var(--glass-fill);
+  border-color: var(--glass-hair);
+}
 
 /* ============================================================
    This week — list of 4 picks
@@ -971,7 +1001,7 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   border-radius: 50%;
   border: 1px solid var(--c-accent);
   opacity: 0.5;
-  animation: wa-pulse 1.8s ease-out infinite;
+  animation: wa-ripple 1.8s ease-out infinite;
 }
 .map-sheet__body {
   flex: 1;
@@ -1057,6 +1087,9 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .search-box:focus-within {
   border-color: var(--c-accent);
   background: var(--c-paper);
+  /* Keyboard focus must be unmistakable, not a 1px border tint — the inner
+     input suppresses its own outline (a11y audit Jul 2026). */
+  box-shadow: 0 0 0 1px var(--c-accent);
 }
 .search-box__icon {
   color: var(--c-accent);
@@ -1524,7 +1557,7 @@ body[data-page="saved"] .colophon {
   display: inline-block;
   padding: 2px 8px;
   border: 1px solid var(--c-rule);
-  border-radius: 999px;
+  border-radius: var(--radius-tag);
   font-family: var(--ff-body);
   font-size: 11px;
   font-weight: 500;
@@ -1624,6 +1657,12 @@ body[data-page="saved"] .colophon {
   color: var(--c-ink-mute);
   text-transform: uppercase;
   white-space: nowrap;
+  /* 13px-tall link measured at 0px from the 44px bookmark toggle
+     (spacing probe, Jul 2026) — grow the hit area VERTICALLY only, no
+     layout shift; horizontal padding would overlap the toggle's box. */
+  padding: 12px 0;
+  margin-top: -12px;
+  margin-bottom: -12px;
   vertical-align: baseline;
 }
 .list-row__map:hover { color: var(--c-accent); }
@@ -1660,7 +1699,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
 }
 .taste-onboarding__intro {
   font-family: var(--ff-body);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--c-ink-mute);
   margin: 0;
@@ -1707,7 +1746,9 @@ html.wa-taste-done .taste-onboarding { display: none; }
   color: var(--c-ink-soft);
   background: transparent;
   border: 0;
-  border-radius: calc(var(--radius) - 3px);
+  /* Radius vocabulary is 8/14/20/24 — calc(14 - 3) minted an 11px radius
+     found nowhere else (control census, Jul 2026). */
+  border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;   /* flex:1 siblings will shrink-wrap text otherwise ("With people") */
   transition: color var(--t-fast), background var(--t-fast);
@@ -1898,15 +1939,9 @@ html.wa-taste-done .taste-onboarding { display: none; }
   position: absolute;
   inset: 0;
   z-index: -1;
-  /* Full-height ramp: a 3-line title + eyebrow + meta fills most
-     of the 280px mobile hero, so the ≥0.4-alpha zone must reach ~2/3 up
-     and never hit zero — the old 75% stop left long titles' upper lines
-     on near-raw photo (measured against the brightest catalog photos). */
-  background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.55) 38%,
-    rgba(0, 0, 0, 0.38) 68%,
-    rgba(0, 0, 0, 0.12) 100%);
+  /* Photo-text scrim — tokenized (--scrim-photo); intent + stop math
+     documented at the token definition. */
+  background: var(--scrim-photo);
 }
 .detail-hero__foot { display: block; }
 /* Invisible probe carrying the hero photo URL: a background image has no
@@ -1936,7 +1971,7 @@ html.wa-taste-done .taste-onboarding { display: none; }
   padding: 4px 12px;
   min-height: 32px;          /* Material chip height (chips are the 32px exception to the 44 floor) */
   border: 1px solid var(--c-rule);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--ff-body);
   font-size: 12px;
   font-weight: 500;
@@ -2150,10 +2185,20 @@ html.wa-taste-done .taste-onboarding { display: none; }
 
 a.handle {
   color: var(--c-accent);
-  text-decoration: none;
+  /* WCAG 1.4.1 (Use of Color): inline @handle links sit in prose and are
+     only 1.23:1 apart from surrounding text — color alone can't carry
+     "this is a link" (Lighthouse link-in-text-block; axe's tag-set missed
+     it). A thin, offset underline gives the non-color cue while keeping
+     the editorial restraint. Standalone handles (curator header <h1>) are
+     not <a>, so this scopes to real links only. */
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in oklch, currentColor 45%, transparent);
 }
 a.handle:hover {
   color: var(--c-ink);
+  text-decoration-color: currentColor;
 }
 
 /* ============================================================
@@ -2176,7 +2221,7 @@ a.handle:hover {
    bottom nav. */
 .auth-btn .ic, .topbar__about .ic { width: 18px; height: 18px; flex-shrink: 0; }
 /* .topbar__right ancestor → wins over the base .auth-btn/.topbar__about font */
-.topbar__right .auth-btn, .topbar__right .topbar__about { gap: 7px; font-size: 13.5px; }
+.topbar__right .auth-btn, .topbar__right .topbar__about { gap: 7px; font-size: 14px; }
 @media (max-width: 767px) {
   /* icon-only on mobile → matches the 22px icon-only tier (.action-icon/.social-icon) */
   .auth-btn .ic, .topbar__about .ic { width: 22px; height: 22px; }
@@ -2650,7 +2695,7 @@ a.auth-panel__submit { display: inline-block; }
   border-radius: var(--radius);
   transition: border-color var(--t-fast);
 }
-.digest-field:focus-within { border-color: var(--c-accent); }
+.digest-field:focus-within { border-color: var(--c-accent); box-shadow: 0 0 0 1px var(--c-accent); }
 .digest-field__email {
   flex: 1;
   min-width: 0;
@@ -2694,7 +2739,10 @@ a.auth-panel__submit { display: inline-block; }
 }
 .colophon__line {
   font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
+  /* 12px (--fs-meta) was too small for the one line that carries the
+     "a curator vouched for every pick" promise — 13px, still a quiet
+     mono footer line, but actually readable. */
+  font-size: 13px;
   color: var(--c-ink-mute);
   letter-spacing: 0.04em;
 }
@@ -3050,14 +3098,25 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   flex: 0 0 auto;
   padding: 0 16px;
 }
-/* Hide labels on inactive tabs — icon only */
-.nav__item .nav__label { display: none; }
+/* Hide labels on inactive tabs — icon only VISUALLY, but keep the text in
+   the accessible name: display:none empties it and every inactive dock tab
+   became a nameless link (axe link-name, serious — a11y audit Jul 2026). */
+.nav__item .nav__label {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 /* Show label only on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"] .nav__label,
 body[data-page="discover"] .nav__item[data-nav="discover"] .nav__label,
 body[data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
 body[data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
-  display: block;
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 /* Show label inline next to icon on active tab */
 body[data-page="briefing"] .nav__item[data-nav="briefing"],
@@ -3199,8 +3258,14 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
     color: var(--c-ink);
     background: var(--c-paper-deep);
   }
-  /* Show all labels on desktop */
-  .nav__item .nav__label { display: block; }
+  /* Show all labels on desktop — also undo the mobile visually-hidden clip */
+  .nav__item .nav__label {
+    display: block;
+    position: static;
+    width: auto; height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
   body[data-page="briefing"] .nav__item[data-nav="briefing"],
   body[data-page="discover"] .nav__item[data-nav="discover"],
   body[data-page="saved"]    .nav__item[data-nav="saved"],
@@ -4138,8 +4203,10 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 .handle, a.handle { color: var(--c-accent); }
 a.handle:hover { color: var(--c-ink); }
 
-/* ── wa-pulse animation for live dot ── */
-@keyframes wa-pulse {
+/* ── wa-ripple: expanding ping (was a DUPLICATE @keyframes wa-pulse that
+   silently overrode the breathing pulse for every consumer — ds audit
+   Jul 2026). Ring/ping consumers use this; dots breathe with wa-pulse. */
+@keyframes wa-ripple {
   0%   { opacity: 0.5; transform: scale(1); }
   100% { opacity: 0; transform: scale(2.5); }
 }
@@ -4210,11 +4277,13 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink-mute);
   margin: 2px 0 var(--s-3);
 }
-/* MapLibre attribution control — quieter than default, matches paper bg */
+/* MapLibre attribution control — quieter than default, matches paper bg.
+   Solid plate, not .85 alpha: the OSM attribution is a license requirement
+   and measured ~2:1 over map tiles (visibility scan, Jul 2026). */
 .maplibregl-ctrl-attrib {
   font-family: var(--ff-mono);
   font-size: 9px;
-  background: rgba(246, 243, 236, 0.85);
+  background: var(--c-cream);
 }
 .maplibregl-ctrl-attrib a { color: var(--c-ink-mute); }
 /* Hide MapLibre's default logo (we'll keep attribution but remove the badge) */
@@ -4241,7 +4310,7 @@ a.handle:hover { color: var(--c-ink); }
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
-  transition: filter 140ms ease, transform 140ms ease;
+  transition: filter var(--t-fast), transform var(--t-fast);
   z-index: 1;
 }
 .map-pin-new--active {
@@ -4386,7 +4455,7 @@ a.handle:hover { color: var(--c-ink); }
   max-height: 55vh;
   overflow-y: auto;
   transform: translateY(0);
-  transition: transform 220ms ease;
+  transition: transform var(--t-mid);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
   will-change: transform;
 }
@@ -4576,10 +4645,18 @@ a.handle:hover { color: var(--c-ink); }
 }
 .map-detail__foot {
   display: flex;
+  align-items: stretch;
   gap: var(--s-2);
   margin-top: var(--s-4);
 }
 .map-detail__cta { flex: 1; text-align: center; padding: 10px 0; font-size: 13px; }
+/* The Save control reuses .bookmark (the small icon-only toggle on list
+   rows), which carries a negative top/right margin and align-self:start
+   tuned for that context — combined with .btn-secondary here, it pulled
+   "Save" 8px up-and-right out of line with "I'm going" (owner photo
+   review, Jul 2026). Reset both so it behaves like a normal flex button
+   matching its sibling. */
+.map-detail__foot .bookmark { flex: 1; margin: 0; align-self: stretch; }
 
 /* Map → Search affordances under the pin detail. */
 .map-detail__more {
@@ -4607,7 +4684,7 @@ a.handle:hover { color: var(--c-ink); }
 .map-cluster {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 44px;    /* tap-target floor (was 42) */
+  width: 44px;    /* tap-target floor (was 42 — sweep) */
   height: 44px;
   border-radius: 50%;
   background: var(--cluster-bg, var(--c-ink));
@@ -4621,7 +4698,7 @@ a.handle:hover { color: var(--c-ink); }
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 1px 5px rgba(0,0,0,0.28);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
   z-index: 6;
 }
 .map-cluster:hover {
@@ -4812,7 +4889,7 @@ a.handle:hover { color: var(--c-ink); }
   color: var(--c-ink);
   background: var(--c-paper);
   border: 1px solid var(--c-rule-strong);
-  border-radius: 999px;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
@@ -4874,7 +4951,7 @@ a.handle:hover { color: var(--c-ink); }
   background: var(--c-accent-soft);
   color: var(--c-accent);
   border: var(--rule-w) solid var(--c-accent);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--ff-body);
   font-size: 12px;
   font-weight: 500;
@@ -5331,7 +5408,7 @@ body.discover-sheet-open { overflow: hidden; }
 
   /* ── Discover chrome compression ──
      The working surface drops the editorial chrome: no page head —
-     the deck toolbar + rail + panes own the viewport, so the
+     the deck toolbar + rail + panes own the viewport, so
      (count + row + pin after a filter tap) holds with room to spare. */
   body[data-page="discover"] .discover-lede { margin-bottom: var(--s-3); }
   body[data-page="discover"] .page-head--discover { display: none; }
@@ -5513,7 +5590,7 @@ body.discover-ai-mode .discover-ai-example {
   border: var(--rule-w) solid rgba(255, 255, 255, 0.32);
   background: rgba(255, 255, 255, 0.06);
   color: #eef5f3;
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 8px 14px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
 }
 body.discover-ai-mode .discover-ai-example:hover {
@@ -5734,9 +5811,7 @@ body[data-page="saved"] .seg-note {
    ════════════════════════════════════════════════════════════ */
 :root {
   --radius-tag:    4px;   /* the redesign's tag radius (alongside 8/12) */
-  --c-paper-sink:  #f4f3f0;
   --c-accent-deep: oklch(0.36 0.065 195);
-  --c-accent-line: oklch(0.88 0.02 195);
   --c-cream:       #f6f3ec;
 }
 
@@ -5770,9 +5845,9 @@ body[data-page="saved"] .seg-note {
 
 /* ── Chips · segmented control · fields ───────────────────────── */
 .field { display: flex; align-items: center; gap: 14px; height: 52px; min-width: 0; padding: 0 18px; background: var(--c-paper); border: 1.5px solid var(--c-rule-strong); border-radius: var(--radius); transition: border-color var(--t-fast); }
-.field:focus-within { border-color: var(--c-accent); }
+.field:focus-within { border-color: var(--c-accent); box-shadow: 0 0 0 1px var(--c-accent); }
 .field .ic { width: 18px; height: 18px; color: var(--c-faint); flex-shrink: 0; }
-.field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 16.5px; color: var(--c-ink); }
+.field__input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-family: var(--ff-body); font-size: 17px; color: var(--c-ink); }
 .field__input::placeholder { color: var(--c-ink-mute); font-style: italic; }
 .ic { display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
 
@@ -5843,7 +5918,7 @@ body[data-page="saved"] .seg-note {
 }
 
 /* ── Return bar — mobile About escape hatch (used Phase 3) ─────── */
-.returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 12.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
+.returnbar { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); background: var(--c-paper-deep); border-bottom: var(--rule-w) solid var(--c-rule); font-family: var(--ff-mono); font-size: 13px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink); }
 .returnbar .ic { width: 18px; height: 18px; color: var(--c-accent); }
 .returnbar:hover { color: var(--c-accent); }
 
@@ -5874,9 +5949,9 @@ body[data-page="saved"] .seg-note {
 .tonight > .tonight__actions{grid-column:1;grid-row:5}
 .tonight > .tonight__media{grid-column:2;grid-row:1 / 6}
 .tonight__signal{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-5)}
-.tonight__kicker{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
+.tonight__kicker{font-family:var(--ff-mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--c-ink-mute)}
 .tonight__kicker b{color:var(--c-ink);font-weight:500}
-/* Restore the voice-first hierarchy on Today:
+/*  restore the voice-first hierarchy on Today:
    the event title is quiet Inter body type and the curator quote is the
    loudest element on the screen (Fraunces italic, 29px → 42px). */
 .tonight__title{font-family:var(--ff-body);font-size:23px;line-height:1.25;font-weight:600;letter-spacing:-.01em;color:var(--c-ink);text-wrap:pretty;margin:0 0 var(--s-5);display:block}
@@ -5884,7 +5959,7 @@ a.tonight__title:hover{color:var(--c-accent)}
 .quote{border-left:3px solid var(--c-lime);padding-left:var(--s-6);margin:0 0 var(--s-4)}
 .quote__t{font-family:var(--ff-display);font-style:italic;font-size:42px;line-height:1.1;font-weight:400;color:var(--c-ink);text-wrap:pretty;margin:0}
 .quote__attr{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
-.quote__attr .handle{font-size:13.5px}
+.quote__attr .handle{font-size:14px}
 .tonight__actions{display:flex;align-items:stretch;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:wrap}
 .tonight__media{display:flex;flex-direction:column;gap:14px}
 .tonight__photo{position:relative;display:block;min-height:340px;border-radius:var(--radius-card);border:var(--rule-w) solid var(--c-rule);overflow:hidden;background:var(--c-paper-deep)}
@@ -5943,7 +6018,7 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .pick__title{font-family:var(--ff-display);font-size:19px;font-weight:600;letter-spacing:-.012em;line-height:1.2;color:var(--c-ink)}
 .pick__title-link:hover .pick__title{color:var(--c-accent)}
 .pick .meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-.pick .via{font-size:12.5px}
+.pick .via{font-size:13px}
 .pick__save,.pick .bookmark{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius);border:1px solid transparent;color:var(--c-ink-mute);align-self:center;margin:0;transition:border-color var(--t-fast),color var(--t-fast)}
 .pick__save:hover,.pick .bookmark:hover{border-color:var(--c-rule-strong);color:var(--c-ink)}
 .week__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);padding-top:var(--s-6);flex-wrap:wrap}
@@ -6011,14 +6086,23 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
    #tonight keeps the shared .tonight class (venue.js's own detail hero
    reuses .tonight/.tonight__* for its curator-quote section) so this
    ID-scoped rule only undoes the 2-col grid meant for that single-hero
-   shape on THIS page; unrelated to .tonight__* (leave those alone — still live
+   shape on THIS page; .tonight-card/.tonight-rail are their own
+   components, unrelated to .tonight__* (leave those alone — still live
    on venue.html + the Discover AI-match hero). */
 #tonight.tonight { display: block; padding-top: var(--s-8); padding-bottom: var(--s-7); }
 .tonight-set { display: flex; flex-direction: column; gap: var(--s-5); }
+.tonight-card { display: flex; flex-direction: column; border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); background: var(--c-paper-deep); padding: var(--s-5) var(--s-6); }
+.tonight-card__signal { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-3); }
+.tonight-card__kicker { font-family: var(--ff-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-ink-mute); }
+.tonight-card__kicker b { color: var(--c-ink); font-weight: 500; }
 /* Photo/glyph leads, title+quote-caption follow — title is the largest
    text on the card now; the quote reuses the app-wide .list-row__quote
    caption instead of standing alone as the dominant element. */
 .tonight-card__body { display: flex; gap: var(--s-4); align-items: flex-start; flex: 1; margin-bottom: var(--s-5); }
+.tonight-card__text { min-width: 0; max-width: 62ch; }
+.tonight-card__title { font-family: var(--ff-body); font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.01em; color: var(--c-ink); text-wrap: pretty; margin: 0; display: block; }
+a.tonight-card__title:hover { color: var(--c-accent); }
+.tonight-card__actions { display: flex; align-items: center; gap: var(--s-3); }
 .tonight-card__actions .btn { flex: 1; }
 /* On a wide desktop hero the full-width CTA would stretch to ~900px+ —
    cap it to a sane button width instead of an edge-to-edge bar. */
@@ -6041,7 +6125,12 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 
 /* Rail — the non-flagship Tonight picks. Fixed-height horizontal scroller
    (Summer 2026 hero+rail convention: Airbnb Explore / Apple News / Spotify
-   Home) instead of stacking more equal-weight cards{
+   Home) instead of stacking more equal-weight cards, so 1 extra pick or 5
+   costs the same vertical space and the size gap vs the hero above IS the
+   hierarchy signal. Bleeds to the viewport edge on mobile so the first
+   card aligns with the reading column but the scroll affordance (next
+   card peeking in) is visible. */
+.tonight-rail {
   display: flex;
   gap: var(--s-4);
   overflow-x: auto;
@@ -6051,7 +6140,27 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
   margin: 0 calc(-1 * var(--gutter));
   padding: 2px var(--gutter) var(--s-2);
 }
+.tonight-rail::-webkit-scrollbar { display: none; }
+.tonight-rail__card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  border: var(--rule-w) solid var(--c-rule);
+  border-radius: var(--radius-card);
+  background: var(--c-paper-deep);
+  padding: var(--s-4);
+  position: relative;
+}
+.tonight-rail__link { display: flex; flex-direction: column; gap: var(--s-3); text-decoration: none; color: inherit; }
 .tonight-rail__link .thumb { width: 100%; height: 96px; }
+.tonight-rail__title { font-family: var(--ff-body); font-size: 15px; font-weight: 700; line-height: 1.3; letter-spacing: -.005em; color: var(--c-ink); }
+.tonight-rail__link:hover .tonight-rail__title { color: var(--c-accent); }
+.tonight-rail__meta { font-family: var(--ff-mono); font-size: 11px; color: var(--c-ink-mute); }
+.tonight-rail__save { position: absolute; top: var(--s-2); right: var(--s-2); min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; background: var(--glass-bg, rgba(255,255,255,.75)); border-radius: var(--radius); }
+@media (min-width: 768px) { .tonight-rail__card { width: 200px; } }
 
 /* ── Worth a visit (July 2026) — a short evergreen-venue strip below the
    dated This Week picks. Reuses .sechead + .picks/.list-row--card, so it
@@ -6145,7 +6254,7 @@ body[data-page="about"] .about-head__lede{font-size:18px;line-height:1.65;color:
 body[data-page="about"] .about-section{padding-top:var(--s-7)}
 body[data-page="about"] .about-section .section-head{border-bottom:var(--rule-w) solid var(--c-rule);padding-bottom:var(--s-3);margin-bottom:var(--s-5)}
 body[data-page="about"] .about-section .section-title{font-family:var(--ff-display);font-size:32px;font-weight:600;letter-spacing:-.02em}
-body[data-page="about"] .about-section > p{font-size:16.5px;line-height:1.7;color:var(--c-ink-soft);max-width:62ch}
+body[data-page="about"] .about-section > p{font-size:17px;line-height:1.7;color:var(--c-ink-soft);max-width:62ch}
 body[data-page="about"] .about-section > p + p{margin-top:var(--s-3)}
 
 /* City strip → citycard plates */
@@ -6176,7 +6285,7 @@ body[data-page="about"] .about-links__icon{grid-column:1;grid-row:1 / span 2;ali
 body[data-page="about"] .about-links__label,body[data-page="about"] .about-links__sub{grid-column:2;min-width:0;overflow-wrap:anywhere}
 body[data-page="about"] .about-links__a:hover{border-color:var(--c-ink)}
 body[data-page="about"] .about-links__icon{display:grid;place-items:center;width:40px;height:40px;border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius);background:var(--c-paper-deep);color:var(--c-accent);flex-shrink:0}
-body[data-page="about"] .about-links__label{display:block;font-family:var(--ff-mono);font-size:13.5px;font-weight:500;margin-bottom:3px}
+body[data-page="about"] .about-links__label{display:block;font-family:var(--ff-mono);font-size:14px;font-weight:500;margin-bottom:3px}
 body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var(--c-ink-mute)}
 
 @media (max-width:767px){
@@ -6184,7 +6293,7 @@ body[data-page="about"] .about-links__sub{display:block;font-size:13px;color:var
   body[data-page="about"] .about-head__row{flex-direction:column;gap:0}
   body[data-page="about"] .about-head__mark{display:none}
   body[data-page="about"] .about-head__title{font-size:33px}
-  body[data-page="about"] .about-head__lede{font-size:16.5px}
+  body[data-page="about"] .about-head__lede{font-size:17px}
   body[data-page="about"] .about-cities__list,
   body[data-page="about"] .about-steps,
   body[data-page="about"] .about-links{grid-template-columns:1fr;gap:var(--s-4)}
@@ -6333,7 +6442,7 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   background: var(--c-paper);
   color: var(--c-ink-soft);
   font-family: var(--ff-body);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -6712,7 +6821,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   body[data-page="discover"] .deck .discover-scope { margin: 0; }
   body[data-page="discover"] .deck .discover-scope__btn {
     padding: 0 16px;
-    font-size: 13.5px;
+    font-size: 14px;
   }
   body[data-page="discover"] .deck .discover-search {
     width: 400px;
@@ -6765,7 +6874,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --g-petrol-deep:#055959;                  /* filled keys: logo, ✦ send */
   --g-lime:#d2dc50; --g-ink-on-lime:#0a1011;
   --glass:rgba(16,24,25,.55);               /* panels + secondary controls */
-  --glass-deep:rgba(16,24,25,.82);          /* chrome: topbar, dock, sheets */
+  --glass-deep:rgba(16,24,25,.70);          /* chrome: topbar, dock, sheets — .82→.70 (liquid glass, Jul 2026) */
   --glass-active:rgba(60,184,178,.16);
   --glass-active-line:rgba(60,184,178,.4);  /* ring around the active tint */
   --glass-hair:rgba(255,255,255,.14);
@@ -6796,7 +6905,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --g-bg:#f4f1e8; --g-text:#101a1b;
   --g-mute:rgba(16,26,27,.72); --g-faint:rgba(16,26,27,.5);
   --g-petrol:#055959;                       /* CTA by day (lime fails on paper) */
-  --glass:rgba(255,255,255,.62); --glass-deep:rgba(255,255,255,.72);
+  --glass:rgba(255,255,255,.62); --glass-deep:rgba(255,255,255,.58); /* .72→.58 (liquid glass) */
   --glass-active:rgba(5,89,89,.10);
   --glass-active-line:rgba(5,89,89,.3);
   --glass-hair:rgba(16,26,27,.10);
@@ -6828,10 +6937,14 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   box-shadow: inset 0 1px 0 var(--glass-fill-line);
 }
 .island--deep {
-  /* chrome tier: topbar, dock, sheets */
+  /* chrome tier: topbar, dock, sheets.
+     Jul 2026: deeper blur + lower fill alpha (see --glass-deep) so the
+     chrome reads as true liquid glass — content stays legible THROUGH it
+     while scrolling instead of being hidden behind an near-opaque slab.
+     Blur does the legibility work, so the fill can afford to be thinner. */
   background: var(--glass-deep);
-  backdrop-filter: blur(28px) saturate(1.5);
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(36px) saturate(1.8);
+  -webkit-backdrop-filter: blur(36px) saturate(1.8);
 }
 .island--active {
   /* THE active state — tabs, segs, chips, dock, pins */
@@ -6892,7 +7005,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   height: 56px;
   gap: 10px;
 }
-[data-skin="dusk"] .wordmark { color: var(--g-text); font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; }
+[data-skin="dusk"] .wordmark { color: var(--g-text); font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
 [data-skin="dusk"] .wordmark:hover { color: var(--g-petrol); }
 [data-skin="dusk"] .logo-mark { width: 28px; height: 28px; border-radius: 8px; }
 [data-skin="dusk"] .topbar__brand { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; }
@@ -6904,16 +7017,19 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .auth-btn { display: none; }
 [data-skin="dusk"] .topbar__right { display: flex; align-items: center; gap: var(--s-2); }
 [data-skin="dusk"] .city-selector {
-  height: 40px;
+  /* One unit + one radius everywhere — this was 40px/r12 on mobile while
+     the desktop rule used 48/r14, the only control rendering two sizes
+     (control census, Jul 2026). */
+  height: var(--unit);
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 0 14px;
   background: var(--glass-fill);
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 0;
   font-family: var(--ff-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: .06em;
   color: var(--g-text);
@@ -6935,6 +7051,12 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     border: 1px solid var(--glass-fill-line);
     border-radius: var(--radius);
   }
+  /* The inner input sets outline:0 — keyboard focus needs a visible ring
+     on the composite field (a11y audit Jul 2026). */
+  [data-skin="dusk"] .masthead-search:focus-within {
+    border-color: var(--g-petrol);
+    box-shadow: 0 0 0 1px var(--g-petrol);
+  }
   [data-skin="dusk"] .masthead-search__input {
     flex: 1;
     min-width: 0;
@@ -6942,20 +7064,22 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     outline: 0;
     background: none;
     font-family: var(--ff-body);
-    font-size: 13.5px;
+    font-size: 14px;
     color: var(--g-text);
   }
   [data-skin="dusk"] .masthead-search__input::placeholder { color: var(--g-faint); }
   /* 44px hit box around the 38px visual key — the tap floor and the
      "38 inside the 48 shell" law both hold. */
   [data-skin="dusk"] .masthead-search__key {
+    /* 44 tap box; the ::before inset renders the law's 38px visual plate.
+       Radius normalized to the vocabulary (was r10). */
     height: 44px;
     width: 44px;
     position: relative;
     display: grid;
     place-items: center;
     background: none;
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--g-lime);
   }
   [data-skin="dusk"] .masthead-search__key::before {
@@ -6963,7 +7087,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     position: absolute;
     inset: 3px;
     background: var(--g-petrol-deep);
-    border-radius: 10px;
+    border-radius: 8px;
   }
   [data-skin="dusk"] .masthead-search__key .ic { width: 18px; height: 18px; stroke-width: 1.75; position: relative; z-index: 1; }
 }
@@ -6993,8 +7117,18 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .nav__icon { width: 21px; height: 21px; stroke-width: 1.75; }
 [data-skin="dusk"] .nav__item:hover { color: var(--g-mute); }
 @media (max-width: 767px) {
-  /* idle tabs icon-only — the active pill alone expands with its label */
-  [data-skin="dusk"] .nav__item .nav__label { display: none; }
+  /* idle tabs icon-only VISUALLY — the active pill alone expands with its
+     label. display:none removed the text from the accessible name and made
+     every idle dock tab a nameless link (axe link-name, serious — a11y
+     audit Jul 2026); the clip pattern keeps the name. */
+  [data-skin="dusk"] .nav__item .nav__label {
+    display: block;
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 /* Active tab expands with its label — the ONE active state. */
 [data-skin="dusk"][data-page="briefing"] .nav__item[data-nav="briefing"],
@@ -7027,6 +7161,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"][data-page="saved"]    .nav__item[data-nav="saved"]    .nav__label,
 [data-skin="dusk"][data-page="profile"]  .nav__item[data-nav="profile"]  .nav__label {
   display: block;
+  position: static;
+  width: auto; height: auto;
+  overflow: visible;
+  clip-path: none;
   font-size: 12px;
   font-weight: 600;
 }
@@ -7102,7 +7240,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .tag--live {
   border-radius: var(--radius-tag);
   padding: 6px 11px;
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: .07em;
   box-shadow: 0 4px 16px rgba(210,220,80,.3);
 }
@@ -7116,7 +7254,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   border-radius: var(--radius-tag);
   padding: 6px 11px;
   font-family: var(--ff-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--g-text);
@@ -7166,7 +7304,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .scene-attr {
   margin: 10px 0 0;
   font-family: var(--ff-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--g-soft);
 }
 [data-skin="dusk"] .scene-attr .handle,
@@ -7248,7 +7386,9 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   font-weight: 500;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--g-soft);
+  /* g-mute, not g-soft: 11px section labels are text — g-soft (.6) measured
+     ~4.0:1 on day (axe serious); g-mute is the documented AA floor. */
+  color: var(--g-mute);
 }
 [data-skin="dusk"] .sechead { flex-wrap: nowrap; }
 [data-skin="dusk"] .sechead__t { flex: none; }
@@ -7316,7 +7456,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .ticket__meta {
   display: block;
   font-family: var(--ff-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--g-soft);
   margin-top: 2px;
 }
@@ -7333,7 +7473,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .digest-optin__label {
   font-family: var(--ff-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--g-faint);
@@ -7357,13 +7497,17 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   outline: 0;
   background: none;
   font-family: var(--ff-body);
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--g-text);
 }
 [data-skin="dusk"] .digest-field__email::placeholder { color: var(--g-faint); }
 [data-skin="dusk"] .digest-field__submit {
+  /* The law's "38px docked key" is the VISUAL plate (the ::before inset
+     below renders 44-3-3 = 38) — the button box stays 44 for the tap
+     floor (verify BTNSWEEP; mis-"unified" to 38 and reverted, Jul 2026). */
   width: 44px;
   height: 44px;
+  border-radius: 8px;
   flex: none;
   position: relative;
   right: auto;
@@ -7372,7 +7516,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   display: grid;
   place-items: center;
   background: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--g-lime);
 }
 [data-skin="dusk"] .digest-field__submit::before {
@@ -7380,7 +7524,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   position: absolute;
   inset: 3px;
   background: var(--g-petrol-deep);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 [data-skin="dusk"] .digest-field__submit .ic { width: 18px; height: 18px; position: relative; z-index: 1; }
 [data-skin="dusk"] .auth-panel__status { color: var(--g-mute); }
@@ -7423,7 +7567,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   font-weight: 500;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--g-faint);
+  /* --g-mute (AA floor), not --g-faint (decor .5): this is a real
+     content label ("NEIGHBORHOOD"/"TYPE"/"HOURS"). On Daybreak paper
+     --g-faint gave ~3.3:1 (axe serious on venue·day); --g-mute → ~6.6:1. */
+  color: var(--g-mute);
 }
 [data-skin="dusk"] .answer__v {
   font-family: var(--ff-body);
@@ -7454,7 +7601,9 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .picks-empty a,
 [data-skin="dusk"] .page-head__meta a { color: var(--g-petrol); }
 [data-skin="dusk"] .colophon { border-top: 1px solid var(--glass-hair); }
-[data-skin="dusk"] .colophon__line { color: var(--g-faint); }
+/* g-mute, not g-faint: the colophon is small running text — g-faint (.5)
+   measured ~3.5:1 on the day theme (axe serious, a11y audit Jul 2026). */
+[data-skin="dusk"] .colophon__line { color: var(--g-mute); }
 [data-skin="dusk"] .colophon__line a { color: var(--g-mute); }
 [data-skin="dusk"] .desk-note { color: var(--g-mute); }
 [data-skin="dusk"] .linkact { color: var(--g-petrol); border-bottom-color: var(--g-petrol); }
@@ -7472,6 +7621,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .picks-empty__title { color: var(--g-text); font-family: var(--ff-display); font-style: italic; }
 [data-skin="dusk"] .picks-empty__sub a { color: var(--g-petrol); }
 [data-skin="dusk"] .bookmark__icon { color: var(--g-mute); width: 20px; height: 20px; }
+/* List-row bookmarks carry a classless svg (older markup than .bookmark__icon)
+   and kept light-theme ink-soft on dusk rows — 1.17:1 (visibility scan). */
+[data-skin="dusk"] .bookmark > svg { color: var(--g-mute); }
+[data-skin="dusk"] .bookmark .bookmark__check:checked ~ svg { color: var(--g-petrol); }
 [data-skin="dusk"] .bookmark__check:checked + .bookmark__icon,
 [data-skin="dusk"] .bookmark__check:checked ~ .bookmark__icon { color: var(--g-petrol); }
 
@@ -7484,7 +7637,10 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 [data-skin="dusk"] .taste-onboarding__title { color: var(--g-text); }
 [data-skin="dusk"] .taste-onboarding__intro { color: var(--g-mute); }
-[data-skin="dusk"] .taste-q__prompt { color: var(--g-faint); }
+/* g-mute, not g-faint: 12px prompts are running text — g-faint (.5 alpha)
+   measured ~3.5:1 on the day theme (axe serious, a11y audit Jul 2026);
+   g-mute is the documented AA floor. */
+[data-skin="dusk"] .taste-q__prompt { color: var(--g-mute); }
 [data-skin="dusk"] .taste-q__choices {
   background: var(--glass-fill);
   border: 1px solid var(--glass-fill-line);
@@ -7564,7 +7720,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   [data-skin="dusk"] .topbar__inner { height: 64px; padding: 0 10px 0 18px; }
   [data-skin="dusk"] .wordmark { font-size: 16px; }
   [data-skin="dusk"] .logo-mark { width: 30px; height: 30px; border-radius: 9px; }
-  [data-skin="dusk"] .city-selector { height: var(--unit); border-radius: var(--radius); font-size: 11.5px; background: var(--glass-fill); border: 1px solid var(--glass-fill-line); }
+  [data-skin="dusk"] .city-selector { height: var(--unit); border-radius: var(--radius); font-size: 12px; background: var(--glass-fill); border: 1px solid var(--glass-fill-line); }
   [data-skin="dusk"] .nav {
     position: fixed;
     top: 16px;
@@ -7602,7 +7758,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     color: var(--g-mute);
   }
   [data-skin="dusk"] .nav__icon { display: none; }
-  [data-skin="dusk"] .nav__item .nav__label { display: block; font-size: 14px; font-weight: 500; }
+  [data-skin="dusk"] .nav__item .nav__label { display: block; position: static; width: auto; height: auto; overflow: visible; clip-path: none; font-size: 14px; font-weight: 500; }
   [data-skin="dusk"][data-page] .nav__item[data-nav] .nav__label { font-size: 14px; }
   /* Scene paddings clear the fixed masthead. */
   [data-skin="dusk"] .scene { padding: 120px 24px 40px; }
@@ -7628,12 +7784,32 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   [data-skin="dusk"] .scene .week { margin-top: var(--s-8); }
   [data-skin="dusk"] .week { display: flex; gap: var(--s-2); align-items: flex-end; }
   [data-skin="dusk"] .week__main { flex: 3; min-width: 0; }
-  [data-skin="dusk"] .week__rail { flex: 1; min-width: 264px; margin-top: 0; }
+  /* .thisweek carries 32px of bottom padding INSIDE the flex item, so the
+     flex-end-aligned rail landed 32px below the actual list row and the
+     digest read as floating off-line. Pull it back up by the same amount
+     so the two columns bottom-align on their content. */
+  [data-skin="dusk"] .week__rail { flex: 1; min-width: 264px; margin-top: 0; margin-bottom: var(--s-7); }
+  /* …and the empty-state's own 16px bottom margin would re-introduce the
+     same offset in the no-picks case (#picks-empty). Drop it in this row. */
+  [data-skin="dusk"] .week__main .picks-empty { margin-bottom: 0; }
   [data-skin="dusk"] .ticket { flex: 1 0 210px; max-width: 300px; }
-  [data-skin="dusk"] .digest-optin { height: 64px; box-sizing: border-box; display: flex; align-items: center; padding: 0 7px; border-radius: var(--radius); }
+  /* The digest used to be a bare 64px field: no label, no explanation —
+     just "your@email.com" and an arrow, which reads as ambiguously as a
+     login. Show what it actually is and what arrives. */
+  [data-skin="dusk"] .digest-optin { height: auto; box-sizing: border-box; display: block; padding: 12px 7px 7px; border-radius: var(--radius); }
   [data-skin="dusk"] .digest-optin form { flex: 1; min-width: 0; }
-  [data-skin="dusk"] .digest-optin__label { display: none; }
+  [data-skin="dusk"] .digest-optin__label { display: block; margin: 0 0 4px 5px; }
+  /* Inter, not the inherited .meta mono — this is a sentence, and mono
+     made a plain-English explanation read as machine output. */
+  [data-skin="dusk"] .digest-optin__desc { display: block; margin: 0 0 8px 5px; font-family: var(--ff-body); font-size: 12px; line-height: 1.35; letter-spacing: 0; text-transform: none; color: var(--g-mute); }
   [data-skin="dusk"] .digest-field { margin-top: 0; }
+  /* The CTA is flex:1, which on desktop stretched it to ~348px beside two
+     48px keys — same height, but a 7:1 width ratio that reads as lopsided.
+     Cap it: still unmistakably the primary action, no longer the whole row.
+     Scoped to .scene-actions (the pick-action row shared by Today, venue and
+     place) — NOT bare .scene-cta, which would also shrink Profile's "Sign in"
+     below the inputs it sits under, breaking the form-row width contract. */
+  [data-skin="dusk"] .scene-actions .scene-cta { max-width: 240px; }
   /* Pick detail on desktop: the card holds a column, long tail below. */
   [data-skin="dusk"] .scene--detail { padding: 120px 24px 48px; }
   [data-skin="dusk"] .scene--detail .scene__main { max-width: var(--masthead-w); }
@@ -7730,7 +7906,7 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 [data-skin="dusk"] .scene-meta {
   margin: 10px 0 0;
   font-family: var(--ff-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--g-soft);
@@ -7798,7 +7974,14 @@ body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
   border-radius: 0;
 }
 body[data-skin="dusk"][data-page="discover"] .map-viewport,
-body[data-skin="dusk"][data-page="discover"] .map-canvas { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+body[data-skin="dusk"][data-page="discover"] .map-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0;
+  /* .map-viewport's base rule paints an opaque --c-paper (white) fill —
+     left uncleared here it hides the dark --g-bg Scene set on the parent
+     .discover-pane--map, so Discover rendered as a blank white pane
+     instead of the dark MapLibre scene at every width. */
+  background: transparent;
+}
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
   background: var(--glass-deep);
   backdrop-filter: blur(24px) saturate(1.5);
@@ -7821,7 +8004,8 @@ body[data-skin="dusk"][data-page="discover"] .map-detail {
 body[data-skin="dusk"][data-page="discover"] .discover-search { flex: 1; min-width: 0; position: relative; }
 body[data-skin="dusk"][data-page="discover"] .discover-search form { margin: 0; }
 body[data-skin="dusk"][data-page="discover"] .search-box {
-  height: 40px;
+  /* One unit: was the only 40px control shell in the app (census, Jul 2026). */
+  height: var(--unit);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -7830,6 +8014,12 @@ body[data-skin="dusk"][data-page="discover"] .search-box {
   border: 1px solid var(--glass-fill-line);
   border-radius: 12px;
   box-shadow: none;
+}
+/* box-shadow:none above also erased the keyboard focus ring — the inner
+   input suppresses its own outline (a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .search-box:focus-within {
+  border-color: var(--g-petrol);
+  box-shadow: 0 0 0 1px var(--g-petrol);
 }
 body[data-skin="dusk"][data-page="discover"] .search-box__icon { color: var(--g-faint); display: grid; place-items: center; }
 body[data-skin="dusk"][data-page="discover"] .search-input {
@@ -7845,16 +8035,18 @@ body[data-skin="dusk"][data-page="discover"] .search-input {
 }
 body[data-skin="dusk"][data-page="discover"] .search-input::placeholder { color: var(--g-faint); font-style: normal; }
 body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn {
-  height: 32px;
+  /* 44 tap box per the floor (was 32 here vs 44 in the base rule — two
+     sizes for one control); radius normalized to the vocabulary (was r9). */
+  height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 0 10px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--g-petrol-deep);
   color: var(--g-lime);
   font-family: var(--ff-body);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn[aria-pressed="true"] { filter: brightness(1.25); }
@@ -7932,16 +8124,38 @@ body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
   top: 42%;
   color: var(--g-mute);
 }
+/* Below 1024px the results pane is a draggable bottom sheet, not a side
+   rail — its resting "half" detent top is 50vh, and the deck's fixed
+   header (top:84px + 60px tall) ends at a constant 144px. Centering the
+   card at a flat 42% of the viewport ignores both, so on shorter phones
+   its bottom edge dropped 21px past the sheet's top edge (geometry
+   audit, 390×844). Center it in the actual band between them instead —
+   the midpoint of a constant (144px) and a vh-based value (50vh) is
+   itself linear in vh, so this stays centered at any viewport height. */
+@media (max-width: 1023px) {
+  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { top: calc(25vh + 72px); }
+}
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body strong { color: var(--g-text); }
 /* MapLibre attribution rides the dusk scene quietly. */
 body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib {
-  background: rgba(16,24,25,.7) !important;
-  color: var(--g-faint);
+  /* Solid plate + AA-floor text — was .7 alpha with g-faint at ~2.8:1
+     (visibility scan, Jul 2026); the OSM credit must stay readable. */
+  background: rgb(16,24,25) !important;
+  color: var(--g-mute);
   border-radius: 8px;
   font-size: 10px;
 }
-body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-mute); }
+body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-text); }
+/* data-skin is static — on the DAY theme the dark plate above would show
+   dark-on-dark (1.01:1, visibility scan). Day swaps to the paper plate. */
+[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib,
+[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib {
+  background: rgb(246, 243, 236) !important;
+  color: var(--c-ink-mute);
+}
+[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a,
+[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--c-accent); }
 /* Rows in the sheet: flat hairline dividers, not plates. */
 body[data-skin="dusk"][data-page="discover"] .curator-row,
 body[data-skin="dusk"][data-page="discover"] .browse-row {
@@ -7974,7 +8188,7 @@ body[data-skin="dusk"][data-page="discover"] .discover-pill {
   border: 1px solid var(--glass-hair);
   border-radius: var(--radius);
   font-family: var(--ff-mono);
-  font-size: 12.5px;
+  font-size: 13px;
   letter-spacing: .02em;
   color: var(--g-text);
   white-space: nowrap;
@@ -7993,7 +8207,7 @@ body[data-skin="dusk"][data-page="discover"] .discover-scope__count {
   color: var(--g-ink-on-lime);
   border-radius: 6px;
   padding: 1px 6px;
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 /* ── The results sheet (mobile) ────────────────────────────── */
@@ -8052,12 +8266,20 @@ body[data-skin="dusk"][data-page="discover"] .dsheet-grip span {
 }
 
 /* Sheet innards go dark glass. */
-body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: var(--g-soft); }
+body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .curator-row,
 body[data-skin="dusk"][data-page="discover"] .browse-row { border-color: var(--glass-hair); color: var(--g-text); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__handle { color: var(--g-petrol); }
+/* The label kept light-theme solid ink on the dark sheet — 1.09:1, every
+   NEIGHBORHOODS / BY KIND row invisible on dusk (visibility scan Jul 2026;
+   the section read as blank space in renders). */
+body[data-skin="dusk"][data-page="discover"] .browse-row__label { color: var(--g-text); }
+body[data-skin="dusk"][data-page="discover"] .browse-row:hover .browse-row__label { color: var(--g-petrol); }
 body[data-skin="dusk"][data-page="discover"] .curator-row__tagline,
 body[data-skin="dusk"][data-page="discover"] .browse-row__count,
+/* __quote was missed by this override and kept the LIGHT-theme ink-mute on
+   dark glass — 2.7:1 (axe serious, a11y audit Jul 2026). */
+body[data-skin="dusk"][data-page="discover"] .curator-row__quote,
 body[data-skin="dusk"][data-page="discover"] .curator-row__count { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .skeleton-row__line { background: var(--glass-fill); }
 body[data-skin="dusk"][data-page="discover"] .list-row--active {
@@ -8065,7 +8287,7 @@ body[data-skin="dusk"][data-page="discover"] .list-row--active {
   border-radius: var(--radius);
 }
 
-/* ── Filter sheet (3-col grids, Reset:Show = 1:2) ── */
+/* ── Filter sheet → (3-col grids, Reset:Show = 1:2) ── */
 body[data-skin="dusk"][data-page="discover"] .discover-sheet {
   background: var(--glass-deep);
   backdrop-filter: blur(32px) saturate(1.4);
@@ -8080,12 +8302,29 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet__title {
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__close,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear-top { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet__field { border-color: var(--glass-hair); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-soft); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips,
+body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-mute); }
+/* Mood chips are short + uniform → the sanctioned repeat(3,1fr) grid.
+   Category/neighborhood labels ("Vinyl & books", "Põhja-Tallinn") are
+   wider than a 75px 3-col cell, so at 1440 the centered text overflowed
+   and clipped on BOTH sides ("nyl & boo" — should-fix #10). 2 columns
+   (~117px cells) fit them, still a grid (never a ragged wrap, per the
+   single-line law); the ellipsis guard below catches any outlier. */
+body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+  /* Base .mood-chips is a full-bleed scroll rail (margin: 0 -gutter),
+     meant for the edge-to-edge strip elsewhere. Reused here inside the
+     filter rail/sheet, that negative margin bled it 32px past the panel
+     on each side (geometry audit: scrollWidth 274 vs clientWidth 242 at
+     1440) — reset to sit flush like every other facet's chip grid. */
+  margin: 0;
+  padding: 0;
 }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip,
 body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip,
@@ -8094,6 +8333,12 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* min-width:0 + ellipsis so a too-long label degrades to a clean
+     one-sided ellipsis inside its cell, never a both-sides clip. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 0 10px;
   margin: 0;
   background: var(--glass-fill);
@@ -8146,63 +8391,93 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet__apply {
 }
 body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { background: rgba(var(--scrim-rgb),.6); }
 
-/* ── Desktop: floating glass panels over the full-bleed map ── */
+/* ── Desktop: bounded list + map columns (Airbnb-style split), ONE
+   consolidated Filters trigger. Supersedes the "floating glass panels
+   over a full-bleed fixed map + always-open rail + scrolling quick-
+   pills row" system (owner photo review, Jul 2026: "we don't need the
+   map to take all the background"; "half the screen taken by two huge
+   filter blocks"; "leave only one [filter entry point] instead of
+   them"). Mobile keeps the draggable-sheet-over-map pattern untouched —
+   this block only fires ≥1024px. ── */
 @media (min-width: 1024px) {
-  body[data-skin="dusk"][data-page="discover"] { overflow: hidden; height: 100vh; }
-  body[data-skin="dusk"][data-page="discover"] .page { padding: 0; max-width: none; }
-  /* Filter rail — left panel. */
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
-    position: fixed;
-    left: 24px;
-    top: 104px;
-    bottom: 24px;
-    width: 264px;
-    z-index: 10;
-    border-radius: var(--radius-island);
-    overflow-y: auto;
-    box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
+  body[data-skin="dusk"][data-page="discover"] { overflow: visible; height: auto; }
+  /* .topbar is position:fixed (top:16px, 64px tall) — in-flow content
+     needs matching top clearance or it renders underneath it. */
+  body[data-skin="dusk"][data-page="discover"] .page { padding: 104px var(--gutter) var(--s-7); max-width: none; }
+
+  body[data-skin="dusk"][data-page="discover"] .discover-panes {
+    display: flex;
+    align-items: stretch;
+    gap: var(--s-6);
   }
-  /* Masthead: the nav tabs overlay the island's left half — give the
-     search composite a left offset so they never collide. */
-  body[data-skin="dusk"][data-page="discover"] .discover-search { margin-left: 372px; }
-  /* Deck rail + results — the second panel. */
+  /* Deck: scope tabs + the one Filters trigger, sitting as a normal
+     in-flow header above the list column (was a fixed floating panel
+     pinned to pixel offsets). */
   body[data-skin="dusk"][data-page="discover"] .deck {
-    left: 312px;
-    top: 104px;
-    right: auto;
-    width: 432px;
-    padding: 12px 16px 8px;
+    position: static;
+    width: 100%;
+    max-width: 620px;
+    padding: var(--s-4) var(--s-5);
+    margin: 0 0 var(--s-4);
     background: var(--glass-deep);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
     border: 1px solid var(--glass-hair);
-    border-bottom: 0;
-    border-radius: var(--radius-island) var(--radius-island) 0 0;
-    z-index: 11;
+    border-radius: var(--radius-island);
+    z-index: auto;
   }
+  /* One filter entry point: the quick pills (Tonight/This week/Free/…)
+     duplicate facets already in the Filters sheet and needed a
+     horizontal scroll to see them all ("filters too big, why do we
+     need to scroll" — photo review). Keep only "+ Filters" inline;
+     June's desktop rule hides it (the rail made a trigger redundant),
+     so re-show it here. */
+  body[data-skin="dusk"][data-page="discover"] .discover-pills .discover-pill:not(.discover-pill--more) { display: none; }
+  body[data-skin="dusk"][data-page="discover"] .discover-pill--more { display: inline-flex !important; }
+
   body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
     display: block;
-    position: fixed;
-    left: 312px;
-    top: 172px;
-    bottom: 24px;
-    width: 432px;
-    z-index: 10;
+    position: static;
+    flex: 1 1 480px;
+    max-width: 620px;
+    width: auto;
+    height: calc(100vh - 232px);
     background: var(--glass-deep);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
     border: 1px solid var(--glass-hair);
-    border-top: 0;
-    border-radius: 0 0 var(--radius-island) var(--radius-island);
+    border-radius: var(--radius-island);
     box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
-    padding: 8px 16px 16px;
+    padding: var(--s-4) var(--s-5) var(--s-6);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
   body[data-skin="dusk"][data-page="discover"] .dsheet-grip { display: none; }
-  /* Map chrome docks bottom-right, glass keys (locate above zoom). */
-  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { right: 24px; bottom: 24px; }
-  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { right: 24px; bottom: 196px; left: auto; top: auto; }
+
+  /* The map is now a bounded column, not a fixed full-viewport Scene —
+     every child below anchors to THIS pane instead of the viewport,
+     which is the whole point: the map reads as part of the page, not
+     as the page's background. */
+  body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: calc(100vh - 152px);
+    width: auto;
+    inset: auto;
+    border: 1px solid var(--glass-hair);
+    border-radius: var(--radius-island);
+    overflow: hidden;
+  }
+  /* Bounded pane restores plain centering — the 50vw+372px hack only
+     compensated for the map filling the whole viewport behind fixed
+     side panels; the base rule's 50%/50% (relative to this pane, its
+     nearest positioned ancestor) is correct again on its own. */
+  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { left: 50%; }
+  /* Map chrome anchors to the bounded pane's own corner, not the
+     viewport's (was position:fixed to the window). */
+  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { position: absolute; right: 16px; bottom: 16px; }
+  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { position: absolute; right: 16px; bottom: 188px; left: auto; top: auto; }
   body[data-skin="dusk"][data-page="discover"] .map-zoom-btn,
   body[data-skin="dusk"][data-page="discover"] .map-locate-fab {
     background: var(--glass-deep);
@@ -8211,6 +8486,57 @@ body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { backgrou
     border: 1px solid var(--glass-hair);
     color: var(--g-text);
   }
+
+  /* Selecting a pin's full detail duplicated the same venue in the
+     list row right beside it ("two separate blocks for the same
+     venue" — photo review, re: Uus Laine). Hide the list column while
+     a detail is open; the map expands into the freed width. Close the
+     detail (×) to bring the list back. */
+  body.map-detail-open[data-skin="dusk"][data-page="discover"] .discover-pane--list,
+  body.map-detail-open[data-skin="dusk"][data-page="discover"] .deck {
+    display: none;
+  }
+
+  /* Filter sheet: a real modal again, not a permanently-open rail —
+     restore the chrome June's desktop rule force-hides for the rail
+     (close button, footer, backdrop; title too, non-!important there). */
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet[hidden] { display: none !important; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 48px));
+    max-height: min(720px, calc(100vh - 96px));
+    z-index: 80;
+    border-radius: var(--radius-island);
+    overflow-y: auto;
+    box-shadow: inset 0 1px 0 var(--glass-fill), 0 24px 64px rgba(0,0,0,.5);
+    padding: 0 var(--s-5);
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__body { padding: var(--s-5) 0; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__head {
+    justify-content: space-between;
+    border-bottom: 1px solid var(--glass-hair);
+    padding: var(--s-4) 0;
+    margin: 0;
+  }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__title { display: block; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__close { display: inline-flex !important; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet__foot { display: flex !important; padding: var(--s-4) 0; }
+  body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop:not([hidden]) {
+    display: block !important;
+    background: rgba(var(--scrim-rgb),.6);
+  }
+
+  /* Masthead: the nav tabs overlay the island's left half — give the
+     search composite a left offset so they never collide. Zeroes the
+     inherited margin-bottom:16px too — the flex row centers the item's
+     MARGIN box, so that bottom margin alone pushed the visible search
+     box 8px above the topbar's true center (brand/city-selector sat
+     correctly centered at zero margin; the search box didn't). */
+  body[data-skin="dusk"][data-page="discover"] .discover-search { margin: 0 0 0 372px; }
 }
 
 /* Fallbacks for the discover glass surfaces. */
@@ -8328,7 +8654,7 @@ body[data-skin="dusk"][data-page="saved"] #seg-past:checked    ~ .seg-tabs label
 }
 body[data-skin="dusk"][data-page="saved"] .seg-tab__count {
   font-family: var(--ff-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   padding: 1px 6px;
   border-radius: 6px;
   background: var(--glass-fill-line);
@@ -8343,7 +8669,9 @@ body[data-skin="dusk"][data-page="saved"] #seg-past:checked    ~ .seg-tabs label
 body[data-skin="dusk"][data-page="saved"] .seg-note {
   font-family: var(--ff-mono);
   font-size: 11px;
-  color: var(--g-dim);
+  /* g-mute, not g-dim: 11px mono over the day scene probed at luminance
+     range 14 — effectively invisible (visibility scan, Jul 2026). */
+  color: var(--g-mute);
 }
 /* Rows live on one glass sheet; 76px rows, hairline dividers. */
 body[data-skin="dusk"][data-page="saved"] .list-rows {
@@ -8404,7 +8732,7 @@ body[data-skin="dusk"][data-page="saved"] .saved-foot__line {
 }
 body[data-skin="dusk"][data-page="saved"] .saved-foot__sub {
   font-family: var(--ff-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--g-mute);
   margin: 0;
 }
@@ -8633,7 +8961,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__sub {
 body[data-skin="dusk"][data-page="profile"] .profile-welcome__cta { width: 100%; }
 body[data-skin="dusk"][data-page="profile"] .profile-welcome__note {
   font-family: var(--ff-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--g-dim);
   margin: var(--s-4) 0 0;
 }
@@ -8673,9 +9001,10 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: va
     padding: 18px;
   }
   [data-theme="day"] [data-skin="dusk"] .scene-aside { background: var(--glass-deep); }
+
   [data-skin="dusk"] .scene-aside__label {
     font-family: var(--ff-mono);
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 500;
     letter-spacing: .1em;
     text-transform: uppercase;
@@ -8691,7 +9020,7 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: va
   }
   [data-skin="dusk"] .scene-aside__meta {
     font-family: var(--ff-mono);
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--g-soft);
     margin: 4px 0 0;
   }
@@ -8751,17 +9080,69 @@ body[data-skin="dusk"][data-page="about"] .about-section { border-color: var(--g
 body[data-skin="dusk"][data-page="about"] .about-cities__item { border-color: var(--glass-hair); }
 body[data-skin="dusk"][data-page="about"] .about-cities__name { color: var(--g-text); }
 body[data-skin="dusk"][data-page="about"] .about-cities__status { color: var(--g-soft); }
-body[data-skin="dusk"][data-page="about"] .about-contact a,
-body[data-skin="dusk"][data-page="about"] .about-links a { color: var(--g-petrol); }
+/* The LIVE badge keeps its lime plate in every theme — 60%-alpha glass text
+   on lime was ~1.2:1 dusk / ~2.7:1 day (axe serious, a11y audit Jul 2026).
+   Solid ink on lime in both. */
+body[data-skin="dusk"][data-page="about"] .about-cities__status--live { color: var(--c-ink); }
+body[data-skin="dusk"][data-page="about"] .about-contact a { color: var(--g-petrol); }
+/* The "Built in the open" anchors sit on WHITE plates (About stays paper
+   by spec) — the global dusk `a { color: inherit }` cascaded cream text
+   onto them at 1.5:1 (axe serious, a11y audit Jul 2026). Pin solid ink. */
+body[data-skin="dusk"][data-page="about"] .about-links__a { color: var(--c-ink); }
+/* The returnbar IS the anchor (<a class="returnbar">) — the old
+   `.returnbar a` rule targeted a child that doesn't exist, so the global
+   dusk `a{color:inherit}` cascaded cream onto its light paper-deep plate
+   at 1.08:1 (axe serious, a11y audit Jul 2026). Pin ink on the element. */
+body[data-skin="dusk"][data-page="about"] a.returnbar { color: var(--c-ink); }
 body[data-skin="dusk"][data-page="about"] .returnbar { border-color: var(--glass-hair); }
-body[data-skin="dusk"][data-page="about"] .returnbar a { color: var(--g-petrol); }
 body[data-skin="dusk"][data-page="about"] .about-steps__item {
   background: var(--glass-fill);
   border-color: var(--glass-fill-line);
 }
 body[data-skin="dusk"][data-page="about"] .about-steps__icon svg { stroke: var(--g-petrol); }
-body[data-skin="dusk"][data-page="about"] .about-steps__num { color: var(--g-faint); }
+body[data-skin="dusk"][data-page="about"] .about-steps__num { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="about"] .about-steps__title { color: var(--g-text); }
 body[data-skin="dusk"][data-page="about"] .about-steps__body { color: var(--g-mute); }
 body[data-skin="dusk"][data-page="about"] .about-section strong,
 body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-text); }
+
+/* ── Daybreak scene policy (owner direction, Jul 2026) ──
+   By day the venue photo is NOT a page backdrop: Today's scene sits on
+   paper (the photo belongs to the venue page), and the venue page shows
+   its photo FRAMED at the top instead of full-bleed behind the text. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene__bg,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene__scrim {
+  display: none;
+}
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__bg {
+  position: relative;
+  inset: auto;
+  height: 240px;
+  margin: 0 var(--gutter) var(--s-5);
+  border-radius: var(--radius-island);
+  border: var(--rule-w) solid var(--glass-hair);
+  overflow: hidden;
+}
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__scrim { display: none; }
+/* Scene text now sits on paper by day — the over-photo glow reads as a
+   smudge there. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-title,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-title--detail,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-title {
+  text-shadow: none;
+}
+/* The mono ticker / attribution / week-bridge carry ALPHA (.45–.6) for
+   over-photo legibility — a night scrim backs them. On the day PAPER
+   scene (photo hidden above) that alpha drops them to ~2.3–3.3:1 → axe
+   serious (a11y gate, Jul 2026). Solid tokens on day: ink-mute ~6:1 for
+   the muted mono texts, petrol accent for the ALL→ link. */
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-ticker,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-attr,
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-aside__label,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-ticker,
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene-attr {
+  color: var(--c-ink-mute);
+}
+[data-theme="day"] [data-skin="dusk"][data-page="briefing"] .week-all {
+  color: var(--c-accent);
+}
