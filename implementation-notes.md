@@ -57,7 +57,53 @@ from the Supabase dashboard. Their original bodies are in git history.
   anything, and the repo mirror is what makes a redeploy possible.
 - **`workers/wikimedia-proxy`.** Referenced by `supabase.js`; live.
 
+## Third pass — branches, CSP, and a second sweep
+
+**Branches pruned.** 16 local and 4 remote deleted; `main` and
+`claude/project-refine-jul26` are all that remain in both places. Every deleted
+tip was already contained in `origin/main` except one commit on
+`claude/design-critique-fixes-jul16` ("CI visual: per-environment baselines"),
+which touched only `.github/workflows/verify.yml` and `playwright.config.js` —
+both files this PR deletes, so it was obsolete rather than lost work. Only one
+PR was open (#118, this one), so nothing was closed by the pruning.
+
+**CSP tightened again.** `connect-src` was granting `*.supabase.in`,
+`overpass-api.de` and `nominatim.openstreetmap.org`. All three are called only
+from edge functions — server-side Deno, where a browser CSP has no effect — so
+they were dead grants. Now `'self' https://*.supabase.co
+https://tiles.openfreemap.org` only.
+
+**Checked and found clean:** all 9 font files are referenced, all 4 city plate
+SVGs are referenced, the sitemap lists exactly the right five indexable pages
+(param and stub pages correctly excluded), `_redirects` entries all resolve to
+live targets, no empty directories, and the repo now mirrors all 34 deployed
+edge functions.
+
+**`workers/wikimedia-proxy` is live** — confirmed deployed in the Cloudflare
+account since 24 May 2026, so it is real infrastructure, not dead code. Its
+`wanderalt.app/img/wm/*` route could not be probed from here because
+`wanderalt.app` does not resolve in this environment; worth confirming from a
+normal network before launch.
+
 ## Open findings, not fixed here
+
+- **Comments still cite `ROADMAP P0/P1/F-9`** in ten app files (`supabase.js`,
+  `discover.js`, `curator.js`, `saved.js`, `briefing.js`, `venue.js`,
+  `map-tiles.js`, `map-venues.js`, `ui-helpers.js`, `process-staging`). The
+  document is gone, so those are dangling citations, but each comment still
+  explains itself without it. Left alone deliberately: 13 comment-only edits
+  across the core app files is churn a cleanup PR shouldn't carry.
+- **`admin.html` loads `./local-secrets.js`, which is gitignored**, so the
+  deployed admin page 404s that script on every load. Harmless and deliberate
+  (it is the local-only key convenience), but it is a permanent console error
+  in production.
+- **`img-src` is still `'self' data: https:`** — any HTTPS host. It could be
+  narrowed to the Supabase storage bucket and the proxy origin, but a wrong
+  guess silently blanks venue photos and there is no suite to catch it. Do it
+  when the new tests exist.
+- **`check-secrets` and `import-pick-photos` are stubs, not deleted.** The
+  Supabase MCP connector exposes only deploy/get/list for edge functions —
+  there is no delete. Removing them outright is a dashboard action.
 
 - **~150 unreferenced CSS classes** remain (see above for why they weren't
   swept). `styles.css` is still 319 KB.
