@@ -578,12 +578,6 @@ body[data-page="discover"] #discover-results-section .eyebrow {
   text-transform: uppercase;
   color: var(--c-ink-mute);
 }
-.tonight__transition .arrow {
-  font-family: var(--ff-body);
-  color: var(--c-accent);
-  font-size: 13px;
-  transform: translateY(1px);
-}
 
 .tonight__venue {
   display: grid;
@@ -881,29 +875,12 @@ body[data-page="discover"] #discover-results-section .eyebrow {
 .m-chip--on:hover { background: var(--c-accent-soft); color: var(--c-accent); }
 
 /* Teardrop pin — numbered, positioned by inline style (left%/top%). */
-.map-pin {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  width: 28px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  z-index: 1;
-  -webkit-tap-highlight-color: transparent;
-}
-.map-pin svg { display: block; }
 
 /* Pin colors are driven by `aria-pressed`, not by inline SVG fills,
    so map.js can swap selection by toggling one attribute. CSS wins
    over presentation attributes, so any leftover inline `fill` is
    overridden here. Selected pin gets the accent fill; the rest are
    paper on ink. */
-.map-pin svg path { fill: var(--c-paper); stroke: var(--c-ink); }
-.map-pin svg text { fill: var(--c-ink); }
-.map-pin[aria-pressed="true"] svg path { fill: var(--c-lime); stroke: var(--c-ink); }
-.map-pin[aria-pressed="true"] svg text { fill: var(--c-ink); }
 
 /* Peek bottom sheet — starts at natural (peek) height.
    Drag-expand is wired in map.js: drag the handle up to snap
@@ -3999,7 +3976,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   .discover-pills,
   .nav__viewrow,
   .digest-optin,
-  .deprecation-banner,
   .city-selector,
   .city-selector__chev,
   .tonight__actions,
@@ -4334,7 +4310,6 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* ── Category chip override (coloured active state) ─────── */
-.map-cat-chip { transition: background 140ms ease, color 140ms ease, border-color 140ms ease; }
 
 /* ── Zoom controls ─────────────────────────────────────────── */
 .map-zoom-ctrl {
@@ -4690,36 +4665,6 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* ── User location puck ─────────────────────────────────────── */
-.map-user-puck {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 7;
-  width: 30px;
-  height: 30px;
-}
-.map-user-puck__pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: oklch(0.62 0.18 245);
-  opacity: 0.32;
-  animation: wa-loc-pulse 2.2s ease-out infinite;
-}
-.map-user-puck__halo {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.9);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
-}
-.map-user-puck__dot {
-  position: absolute;
-  inset: 9px;
-  border-radius: 50%;
-  background: oklch(0.55 0.2 245);
-  border: 2px solid #fff;
-}
 @keyframes wa-loc-pulse {
   0%   { transform: scale(1);   opacity: 0.32; }
   70%  { transform: scale(2.5); opacity: 0; }
@@ -4946,26 +4891,6 @@ a.handle:hover { color: var(--c-ink); }
 }
 
 /* ── Deprecation banner (shown on legacy map/search pages) ─── */
-.deprecation-banner {
-  margin: var(--s-3) 0 var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  background: var(--c-paper);
-  border: 1px solid var(--c-rule-strong);
-  border-left: 3px solid var(--c-accent);
-}
-.deprecation-banner p {
-  margin: 0;
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
-  color: var(--c-ink);
-}
-.deprecation-banner a {
-  color: var(--c-accent);
-  font-weight: 500;
-}
-.deprecation-banner a:hover { text-decoration: underline; }
-@media print { .deprecation-banner { display: none !important; } }
 
 /* ── View panes (list / map) ─────────────────────────────────── */
 #discover-empty { padding: var(--s-4) 0; }
@@ -5819,14 +5744,11 @@ body[data-page="saved"] .seg-note {
 .shell { width: 100%; max-width: var(--reading-max); margin: 0 auto; padding: 0 var(--gutter); }
 
 /* ── Shared atoms ─────────────────────────────────────────────── */
-.wa-plate { background: var(--c-paper); border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius-card); }
-.wa-plate--sunk { background: var(--c-paper-deep); }
 .tag { display: inline-flex; align-items: center; gap: 7px; font-family: var(--ff-mono); font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; padding: 7px 12px; border-radius: var(--radius-tag); }
 .tag--live { background: var(--c-lime); color: var(--c-ink); }
 .tag--live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-ink); }
 .tag--ghost { border: var(--rule-w) solid var(--c-rule-strong); color: var(--c-ink-mute); background: var(--c-paper); }
 .tag--photo { border: 1px solid rgba(255,255,255,.45); color: #fff; background: rgba(10,10,12,.35); }
-.dotsep { color: var(--c-faint); }
 
 /* ── Buttons — ONE family, four weights, 8px radius, 52px tall ── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; height: 52px; padding: 0 28px; border-radius: var(--radius); font-family: var(--ff-body); font-size: 16px; font-weight: 600; letter-spacing: -.01em; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
@@ -5847,17 +5769,6 @@ body[data-page="saved"] .seg-note {
 .linkact .ic { width: 18px; height: 18px; }
 
 /* ── Chips · segmented control · fields ───────────────────────── */
-.wa-chip { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: var(--radius); border: var(--rule-w) solid var(--c-rule-strong); background: var(--c-paper); font-family: var(--ff-mono); font-size: 13px; letter-spacing: .03em; color: var(--c-ink-soft); white-space: nowrap; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast); }
-.wa-chip:hover { border-color: var(--c-ink); }
-.wa-chip--on { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-paper); }
-.wa-chip--on::before { content: "✓"; font-size: 11px; }
-.wa-chip--facet { gap: 10px; color: var(--c-ink); }
-.wa-chip--facet::after { content: ""; width: 7px; height: 7px; border-right: 1.4px solid var(--c-ink-mute); border-bottom: 1.4px solid var(--c-ink-mute); transform: rotate(45deg) translateY(-2px); }
-.wa-seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--c-paper-deep); border: var(--rule-w) solid var(--c-rule); border-radius: var(--radius); }
-.wa-seg__tab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 24px; border-radius: calc(var(--radius) - 3px); font-size: 15px; font-weight: 600; color: var(--c-ink-mute); transition: background var(--t-fast), color var(--t-fast); }
-.wa-seg__tab:hover { color: var(--c-ink); }
-.wa-seg__tab--on { background: var(--c-ink); color: var(--c-paper); }
-.wa-seg__count { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; opacity: .7; }
 .field { display: flex; align-items: center; gap: 14px; height: 52px; min-width: 0; padding: 0 18px; background: var(--c-paper); border: 1.5px solid var(--c-rule-strong); border-radius: var(--radius); transition: border-color var(--t-fast); }
 .field:focus-within { border-color: var(--c-accent); }
 .field .ic { width: 18px; height: 18px; color: var(--c-faint); flex-shrink: 0; }

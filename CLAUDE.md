@@ -43,6 +43,8 @@ The July 2026 Dusk Glass reskin covers every public page (about.html stays paper
 
 Don't add CSS variables without asking. When you touch any pattern, check every other instance of it across pages rather than the one screen you have open — measure heights and gaps, don't eyeball. Screen-local fixes are the recurring failure mode here.
 
+**Never decide a CSS class is unused by grepping for it.** `ui-helpers.js` and the page scripts compose class names at runtime (`class="${cls}"`, base + `--variant`), so a name that appears nowhere in the source can still be on a live element — which is exactly why PurgeCSS-style tools mis-fire on this repo. The only trustworthy signal is a DOM census: drive every page, width, skin and interaction state in a headless browser, collect every class that actually appears, and treat anything absent from both that census and the source as dead. Verify a deletion by diffing the rule set through the browser's own CSS parser, not by screenshots (font-load timing makes ~10% of shots differ run to run) and not by computed styles (those resolve to layout geometry, which is just as noisy).
+
 ## Checking your work
 
 There are no automated tests and no CI. The old Puppeteer/Playwright suite was removed in July 2026 — it never caught the failures that actually happen here (alignment, overlap, control sizes, overlays) and it is being rebuilt from scratch, so don't patch it back in piecemeal or add a test framework without being asked.

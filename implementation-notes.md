@@ -85,6 +85,54 @@ account since 24 May 2026, so it is real infrastructure, not dead code. Its
 `wanderalt.app` does not resolve in this environment; worth confirming from a
 normal network before launch.
 
+## Fourth pass — dead CSS, done properly
+
+**The ~150 figure was wrong.** It came from grepping, which cannot see a class
+this codebase composes at runtime. Measured properly, **19 classes are dead**,
+and 31 rules were removed (-3.7 KB).
+
+**Tool research.** PurgeCSS is the popular answer but its own docs warn against
+dynamically concatenated class strings — precisely what `ui-helpers.js` does —
+so it needs a safelist that would end up naming most of the file. UnCSS only
+sees load-time state and would delete every open-sheet, AI-mode and dropdown
+style. CDP `startRuleUsageTracking` is empirical but only credits states you
+exercise, so it over-deletes. None is safe here alone.
+
+**What was used instead — two independent signals, delete only what neither
+claims:**
+1. *Runtime DOM census.* A headless run over every page, 3 widths, both skins,
+   signed-in and signed-out, Vilnius (empty city), the bad-id detail states, and
+   the interaction states that only exist after a click (city dropdown, filter
+   sheet, concierge mode, Saved's three tabs, scope switch, map pin). **489
+   distinct classes observed.**
+2. *Greedy static extraction* over all JS/HTML, including quoted fragments and
+   BEM base names, so a class assembled as base + `--variant` counts as used.
+
+Of 662 classes in `styles.css`: 377 seen in the DOM, 133 named verbatim in
+source, 133 runtime-composable, **19 dead**. They are three retired
+components (`wa-seg*`, `wa-chip*`, `wa-plate*` — an abandoned `wa-` prefixed
+system), the previous-generation map layer (`map-pin`, `map-cat-chip`,
+`map-user-puck*` — superseded by `map-pin-new*`, which is untouched), the
+legacy `deprecation-banner`, and three orphan atoms (`arrow`, `dotsep`, plus
+`tld`, which turned out to be a false entry parsed out of the comment
+`user@domain.tld`).
+
+**How the deletion was verified** — three instruments, two of which failed and
+are worth recording:
+- *Screenshots (rejected).* 60 shots before/after showed 5 diffs, but a control
+  run with identical CSS showed 7 — font-load timing makes ~10% of shots
+  unstable, so pixels cannot resolve a 4 KB CSS change here.
+- *Computed-style diff (rejected).* Reported 98% of 40,820 element records as
+  changed, because `getComputedStyle` resolves to layout geometry, which
+  inherits the same timing noise.
+- *Rule-set diff through the browser's own CSS parser (used).* 1658 rules →
+  1627. Every removed selector belongs to the 19 verified-dead classes; the only
+  other change is one multi-selector rule that lost `.deprecation-banner` from
+  its list and kept its other 24 selectors. Nothing else moved.
+
+The remaining ~110 classes that a grep would call unused are all either
+runtime-composed or present in states the census reached. They stay.
+
 ## Open findings, not fixed here
 
 - ~~Comments still cite deleted docs~~ — **done.** All ~130 citations to
@@ -109,8 +157,8 @@ normal network before launch.
   Supabase MCP connector exposes only deploy/get/list for edge functions —
   there is no delete. Removing them outright is a dashboard action.
 
-- **~150 unreferenced CSS classes** remain (see above for why they weren't
-  swept). `styles.css` is still 319 KB.
+- ~~~150 unreferenced CSS classes~~ — **resolved, and the estimate was wrong.**
+  See "Fourth pass" below: only 19 classes are provably dead, not ~150.
 - **`.claude/output-styles/designer.md` was deleted** along with the skills.
   If you used that output style, it is in git history.
 - **LLM copy drift is fixed at the prompt, not in the data.** `process-staging`
