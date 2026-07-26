@@ -137,6 +137,20 @@
       <div class="scene__bg scene__bg--fallback" id="scene-bg" aria-hidden="true"></div>
       <div class="scene__scrim" aria-hidden="true"></div>
 
+      <!-- The edition line. This page is a dated edition of a briefing, so
+           it says so once, at the top, and that line is the h1. It replaces
+           three scattered things: the standfirst that used to sit ~900px
+           down (a heading arriving after the content it names), the date
+           printed under it, and the hero's own "SUN 26 JUL · PICK 1 OF 1"
+           ticker. briefing.js fills the date; city.js the city. -->
+      <h1 class="edition">
+        <span class="edition__label">The briefing</span>
+        <span class="edition__sep" aria-hidden="true">·</span>
+        <span class="edition__date" id="edition-date"></span>
+        <span class="edition__sep" aria-hidden="true">·</span>
+        <span class="edition__city page-head__city">Tallinn</span>
+      </h1>
+
       <!-- Tonight hero — populated by briefing.js from catalog.js.
            The skeleton reserves layout space against a CLS jolt. -->
       <section id="tonight" class="scene__main" aria-labelledby="tonight-label" aria-busy="true">
@@ -176,36 +190,11 @@
           </li>
         </ol>
        </div>
-       <aside class="week__rail">
-         <section class="digest-optin" id="digest-optin-wrap" aria-labelledby="digest-optin-label">
-           <p id="digest-optin-label" class="eyebrow digest-optin__label">Saturday digest</p>
-           <p class="meta digest-optin__desc">One email, Saturday 09:00. Next week&rsquo;s picks in your curator&rsquo;s words.</p>
-           <form id="digest-optin-form" data-no-submit>
-             <div class="digest-field">
-               <input type="email" class="digest-field__email" id="digest-optin-email"
-                      aria-label="Email address for the weekly digest"
-                      placeholder="your@email.com" autocomplete="email" required />
-               <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
-                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
-               </button>
-             </div>
-           </form>
-           <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
-         </section>
-       </aside>
       </section>
     </div>
 
     <!-- Below the scene: the editorial long tail. -->
     <div class="page-below">
-
-    <!-- Standfirst — one-line value statement so a first-time visitor
-         immediately understands what WanderAlt is. city.js swaps the
-         .page-head__city span to the active city. -->
-    <header class="page-head">
-      <h1 class="page-head__title">The alternative-culture briefing for <em class="page-head__city">your city</em>.</h1>
-      <p class="page-head__meta" id="standfirst-meta">The weekly briefing</p>
-    </header>
 
     <!-- Taste-profile onboarding — shown only when the user hasn't onboarded yet. -->
     <section class="taste-onboarding" id="taste-onboarding"
@@ -254,14 +243,41 @@
       <ul class="list-rows" id="worth-a-visit-list" role="list"></ul>
     </section>
 
-    <!-- Calendar-feed subscribe — it subscribes to the WHOLE week's feed,
-         so it keeps its own labelled row down here, not a per-pick icon. -->
-    <a class="linkact week__subscribe" id="calendar-feed-link"
-       href="https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn"
-       aria-label="Subscribe to this week in your calendar" title="Calendar feed (.ics)">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4" /></svg>
-      Subscribe to this week
-    </a>
+    <!-- Both ways to keep receiving the briefing, in one place. They used
+         to sit far apart and read as unrelated: the digest buried in the
+         scene beside This Week (and tucked under the dock at 390), the
+         calendar feed a lone underlined link floating between a list and
+         the footer. Same question, so: one block, asked once. -->
+    <section class="keep" id="digest-optin-wrap" aria-labelledby="keep-label">
+      <h2 id="keep-label" class="keep__title">Keep the briefing coming</h2>
+      <div class="keep__grid">
+        <div class="keep__col">
+          <p class="keep__eyebrow">Saturday digest</p>
+          <p class="keep__desc">One email, Saturday 09:00. Next week&rsquo;s picks in your curator&rsquo;s words.</p>
+          <form id="digest-optin-form" data-no-submit>
+            <div class="digest-field">
+              <input type="email" class="digest-field__email" id="digest-optin-email"
+                     aria-label="Email address for the weekly digest"
+                     placeholder="your@email.com" autocomplete="email" required />
+              <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+              </button>
+            </div>
+          </form>
+          <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
+        </div>
+        <div class="keep__col">
+          <p class="keep__eyebrow">Calendar feed</p>
+          <p class="keep__desc">This week&rsquo;s picks in your own calendar, updated as curators file them.</p>
+          <a class="keep__link" id="calendar-feed-link"
+             href="https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn"
+             aria-label="Subscribe to this week in your calendar" title="Calendar feed (.ics)">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4" /></svg>
+            Subscribe
+          </a>
+        </div>
+      </div>
+    </section>
 
     <footer class="colophon">
       <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>

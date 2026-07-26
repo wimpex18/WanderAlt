@@ -2671,12 +2671,6 @@ a.auth-panel__submit { display: inline-block; }
   .profile-head__email { font-size: 36px; }
 }
 
-/* ============================================================
-   Digest opt-in (briefing page footer section)
-   ============================================================ */
-.digest-optin__label { margin-bottom: var(--s-2); }
-.digest-optin__desc  { margin-bottom: var(--s-3); }
-
 /* Composite signup field (2026 pattern): the email input and its submit are
    one unit — an inline petrol icon-button docked at the end of the field,
    not a separate chunky button. Substack/Ghost-style. */
@@ -5225,7 +5219,6 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
    Used to also host the curator column (briefing.js renderColumn); retired
    July 2026, see index.html's comment above the digest markup. */
 .week__rail{margin-top:var(--s-8)}
-.week__rail>.digest-optin{margin-top:0}
 
 /* The Column — curator metadata plate. No longer injected on Today; lives
    on curator.html as "Reading lately" (July 2026) — curator.js's
@@ -5239,10 +5232,6 @@ body[data-page="briefing"] .tonight__venue{min-height:52px;padding-top:0;padding
 .column__body p+p{margin-top:var(--s-3)}
 .column__sig{display:flex;align-items:center;gap:12px;margin-top:var(--s-5)}
 .column__ava{width:34px;height:34px;border-radius:var(--radius);background:var(--c-accent);color:var(--c-lime);display:grid;place-items:center;font-family:var(--ff-mono);font-size:12px;flex-shrink:0}
-
-/* Digest plate (the signup field itself is .digest-field, above) */
-.digest-optin{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);padding:var(--s-6);margin-top:var(--s-5)}
-.digest-optin .rule{display:none}
 
 /* (Taste tuner styling is the redesigned block earlier in this file.) */
 
@@ -5366,10 +5355,6 @@ a.tonight-card__title:hover { color: var(--c-accent); }
    inherits their spacing/rhythm automatically — no new list component. */
 .worth-a-visit { margin-top: var(--s-8); }
 .worth-a-visit .sechead { margin-bottom: var(--s-3); }
-
-/* ── This-week calendar subscribe — its own labelled row (was an icon-
-   only button crammed next to the picks-count stats, ambiguous scope). */
-.week__subscribe { display: inline-flex; margin: var(--s-4) 0 var(--s-5); }
 
 /* ════════════════════════════════════════════════════════════
    PLATE & RULE — Phase 2: DISCOVER (discover.html + discover.js)
@@ -6609,23 +6594,6 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
 
 /* Digest as the week rail's 4th ticket (desktop) / an island below (mobile). */
 [data-skin="dusk"] .week__rail { margin-top: var(--s-3); }
-[data-skin="dusk"] .digest-optin {
-  border: 1px solid var(--glass-hair);
-  border-radius: var(--radius);
-  background: var(--glass);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  padding: var(--s-3) var(--s-3) var(--s-3);
-}
-[data-skin="dusk"] .digest-optin__label {
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--g-faint);
-  margin: 0;
-}
-[data-skin="dusk"] .digest-optin__desc { display: none; }
 [data-skin="dusk"] .digest-field {
   margin-top: var(--s-2);
   display: flex;
@@ -6939,15 +6907,6 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
      same offset in the no-picks case (#picks-empty). Drop it in this row. */
   [data-skin="dusk"] .week__main .picks-empty { margin-bottom: 0; }
   [data-skin="dusk"] .ticket { flex: 1 0 210px; max-width: 300px; }
-  /* The digest used to be a bare 64px field: no label, no explanation —
-     just "your@email.com" and an arrow, which reads as ambiguously as a
-     login. Show what it actually is and what arrives. */
-  [data-skin="dusk"] .digest-optin { height: auto; box-sizing: border-box; display: block; padding: 12px 7px 7px; border-radius: var(--radius); }
-  [data-skin="dusk"] .digest-optin form { flex: 1; min-width: 0; }
-  [data-skin="dusk"] .digest-optin__label { display: block; margin: 0 0 4px 5px; }
-  /* Inter, not the inherited .meta mono — this is a sentence, and mono
-     made a plain-English explanation read as machine output. */
-  [data-skin="dusk"] .digest-optin__desc { display: block; margin: 0 0 8px 5px; font-family: var(--ff-body); font-size: 12px; line-height: 1.35; letter-spacing: 0; text-transform: none; color: var(--g-mute); }
   [data-skin="dusk"] .digest-field { margin-top: 0; }
   /* The CTA is flex:1, which on desktop stretched it to ~348px beside two
      48px keys — same height, but a 7:1 width ratio that reads as lopsided.
@@ -8531,3 +8490,138 @@ body[data-surface="discover"].discover-places .disc-facet[data-facet="mood"] { d
   body[data-surface="discover"] .disc-map,
   body[data-surface="discover"] .disc-maptoggle { display: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   TODAY — the edition line + the one "keep it coming" block
+   ------------------------------------------------------------
+   Two structural repairs, no new visual language:
+
+   · The page's <h1> used to sit ~900px down, AFTER the hero and
+     This Week, repeating the date the hero ticker already
+     printed — a heading arriving after the content it names.
+     It is the edition line now: one mono rule at the top of the
+     scene saying what this is and when, absorbing the
+     standfirst, the orphaned date and the ticker's date half.
+   · The Saturday digest (buried in the scene, and tucked under
+     the dock at 390) and the calendar feed (a lone underlined
+     link between a list and the footer) asked the same question
+     in two far-apart places. One block now, asked once.
+   ════════════════════════════════════════════════════════════ */
+
+/* The scene is a flex column that bottom-aligns its stack. `margin-bottom:
+   auto` on this first child sends it to the TOP of the scene while the hero
+   and the week stay at the bottom — the masthead of a dated edition, in
+   flow, so nothing can print on top of anything else. (Positioning it
+   absolutely did exactly that: it landed on the tag row.) */
+[data-skin="dusk"][data-page="briefing"] .edition {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 auto;
+  /* The auto margin collapses to nothing on a full scene, which left the
+     line sitting flush on the tag row. Padding survives it, so the gap
+     below the heading is guaranteed at any viewport height. */
+  padding-bottom: var(--s-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+}
+[data-skin="dusk"][data-page="briefing"] .edition__sep { color: var(--g-dim); }
+[data-skin="dusk"][data-page="briefing"] .edition__city { color: var(--g-petrol); }
+@media (min-width: 768px) {
+  /* Line up with the masthead column the hero and week already use. */
+  [data-skin="dusk"][data-page="briefing"] .edition {
+    width: 100%;
+    max-width: var(--masthead-w);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ── Keep the briefing coming ─────────────────────────────── */
+[data-skin="dusk"][data-page="briefing"] .keep {
+  margin: var(--s-9) 0 var(--s-8);
+  padding-top: var(--s-6);
+  border-top: 1px solid var(--glass-hair);
+}
+[data-skin="dusk"][data-page="briefing"] .keep__title {
+  margin: 0 0 var(--s-5);
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  color: var(--g-text);
+}
+[data-skin="dusk"][data-page="briefing"] .keep__grid {
+  display: grid;
+  gap: var(--s-6);
+}
+@media (min-width: 768px) {
+  [data-skin="dusk"][data-page="briefing"] .keep__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-7);
+  }
+  [data-skin="dusk"][data-page="briefing"] .keep__title { font-size: 26px; }
+}
+[data-skin="dusk"][data-page="briefing"] .keep__eyebrow {
+  margin: 0 0 var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+}
+[data-skin="dusk"][data-page="briefing"] .keep__desc {
+  margin: 0 0 var(--s-4);
+  font-size: 14px;
+  line-height: var(--lh-body);
+  color: var(--g-mute);
+}
+/* The calendar link is a control, not body text — same 48 shell and
+   radius as every other control on the page. */
+[data-skin="dusk"][data-page="briefing"] .keep__link {
+  height: var(--unit);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 18px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--g-text);
+  text-decoration: none;
+}
+[data-skin="dusk"][data-page="briefing"] .keep__link:hover {
+  color: var(--g-petrol);
+  border-color: var(--g-petrol);
+}
+[data-skin="dusk"][data-page="briefing"] .keep__link .ic { width: 18px; height: 18px; }
+
+/* Worth a visit now prints the curator line, so its rows need the same
+   ellipsis discipline as every other pick row: the sentence shrinks, the
+   byline never does. */
+[data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__meta,
+[data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__quote {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+[data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__meta-text,
+[data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__quote-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__quote .handle { flex: none; }
