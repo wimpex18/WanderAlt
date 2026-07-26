@@ -154,10 +154,15 @@
     const hero = entries[0];
     paintScene(hero);
 
-    const glassTag = [esc(hero.kind), esc(hero.neighborhood && hero.neighborhood.toLowerCase() !== 'other' ? hero.neighborhood : hero.venue)]
-      .filter(Boolean).join(' &middot; ');
-    const ticker = `${tickerDate()} &middot; PICK 1 OF ${Math.max(_tickerTotal, 1)}` +
-      (navigator.onLine === false ? ' &middot; OFFLINE' : '');
+    /* Separator is the literal character, not "&middot;". These strings are
+       escaped again at their interpolation site (as they must be — the
+       parts are scraped), and esc() turned the entity's "&" into "&amp;",
+       so the masthead printed "CLUB &MIDDOT; PÕHJA-TALLINN". Escaping once,
+       at the interpolation, is the rule; the joiner must survive it. */
+    const glassTag = [hero.kind, hero.neighborhood && hero.neighborhood.toLowerCase() !== 'other' ? hero.neighborhood : hero.venue]
+      .filter(Boolean).join(' · ');
+    const ticker = `${tickerDate()} · PICK 1 OF ${Math.max(_tickerTotal, 1)}` +
+      (navigator.onLine === false ? ' · OFFLINE' : '');
     const attr = ['&mdash; ' +
       `<a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a>`,
       esc(hero.venue), hero.time ? `doors ${esc(hero.time)}` : null,
@@ -177,14 +182,14 @@
     const curator = ((window.WA && window.WA.curators) || [])
       .find(c => c.handle === hero.handle);
     const venueMetaLine = matchedVenue
-      ? [matchedVenue.neighborhood, matchedVenue.kind].filter(Boolean).join(' &middot; ')
+      ? [matchedVenue.neighborhood, matchedVenue.kind].filter(Boolean).join(' · ')
       : '';
     const aside = (matchedVenue || (curator && curator.tagline)) ? `
        <aside class="scene-aside island" aria-label="Venue and curator">
          ${matchedVenue ? `
          <p class="scene-aside__label">The venue</p>
          <p class="scene-aside__name">${esc(matchedVenue.name)}</p>
-         <p class="scene-aside__meta one-line">${venueMetaLine}${venueMetaLine ? ' &middot; ' : ''}<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">venue &nearr;</a></p>` : ''}
+         <p class="scene-aside__meta one-line">${esc(venueMetaLine)}${venueMetaLine ? ' &middot; ' : ''}<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">venue &nearr;</a></p>` : ''}
          ${matchedVenue && curator && curator.tagline ? '<hr class="scene-aside__rule">' : ''}
          ${curator && curator.tagline ? `
          <p class="scene-aside__label">From the desk</p>

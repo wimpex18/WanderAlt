@@ -12,7 +12,7 @@
      map.html?mood=X        → discover.html?cat=X&view=map
        (map.js's ?mood= was the *category* filter — Discover uses ?cat=)
      search.html?q=X        → discover.html?q=X
-     search.html?q=X&mode=match → discover.html?ai=X&mode=match
+     search.html?q=X&mode=match → discover.html?ai=X
    Hash (#mood=…) is preserved verbatim so mood-chips state survives.
    ============================================================ */
 (function () {
@@ -31,8 +31,9 @@
     if (src.has('id'))   dst.set('id',   src.get('id'));
     dst.set('view', 'map');
   } else if (isSearch) {
+    /* Discover no longer has an AI *mode* — ?ai= alone asks the concierge,
+       so the old &mode=match rides along as nothing. */
     if (src.get('mode') === 'match') {
-      dst.set('mode', 'match');
       if (src.has('q')) dst.set('ai', src.get('q'));
     } else if (src.has('q')) {
       dst.set('q', src.get('q'));

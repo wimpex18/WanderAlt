@@ -93,14 +93,23 @@
       }
     });
 
-    map.on('load', () => {
+    const markReady = () => {
+      if (ready) return;
       ready = true;
       /* Resize once the canvas is in a visible pane — MapLibre can boot at
-         0×0 inside a hidden discover-pane and never recover otherwise. */
+         0×0 inside a hidden pane and never recover otherwise. */
       requestAnimationFrame(() => map.resize());
       pending.forEach(fn => { try { fn(); } catch (_) {} });
       pending = [];
-    });
+    };
+    map.on('load', markReady);
+    /* 'load' fires at most once, and only for the style the map booted
+       with. theme.js resolves Dusk/Daybreak just after this module inits,
+       so on a Daybreak boot the handler above swaps the style before the
+       first one finished — 'load' never fired, `ready` never latched, and
+       the pin overlay stayed empty over a basemap that had visibly
+       rendered. 'styledata' covers the swapped-in style. */
+    map.on('styledata', markReady);
 
     /* Auto-resize whenever the container's box changes (pane toggles,
        desktop split-view, viewport rotation). */
