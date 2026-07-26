@@ -6166,8 +6166,25 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
 [data-skin="dusk"] .city-selector .city-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g-lime); }
 [data-skin="dusk"] .city-selector__chev svg { stroke: var(--g-mute); }
 
-/* Search-or-ask composite (desktop masthead only). */
+/* Search composite (wide masthead only) + the compact link that stands in
+   for it everywhere else. Exactly one of the two shows at any width. */
 [data-skin="dusk"] .masthead-search { display: none; }
+[data-skin="dusk"] .masthead-search__mini {
+  width: var(--unit);
+  height: var(--unit);
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  color: var(--g-text);
+}
+[data-skin="dusk"] .masthead-search__mini:hover { color: var(--g-petrol); border-color: var(--g-petrol); }
+[data-skin="dusk"] .masthead-search__mini .ic { width: 19px; height: 19px; }
+@media (min-width: 1100px) {
+  [data-skin="dusk"] .masthead-search__mini { display: none; }
+}
 @media (min-width: 1100px) {
   [data-skin="dusk"] .masthead-search {
     display: flex;
@@ -7835,7 +7852,35 @@ body[data-surface="discover"] .disc-suggest__example { color: var(--g-mute); }
 body[data-surface="discover"] .disc-suggest__example:hover { color: var(--g-text); }
 
 /* ── Concierge answer ─────────────────────────────────────── */
-body[data-surface="discover"] .match-wrap { margin: 0 0 var(--s-7); }
+body[data-surface="discover"] .match-wrap { margin: 0 0 var(--s-8); }
+/* The answer and the list are two different things stacked in one column,
+   so the answer closes on a rule. Without it the fifth pick of the answer
+   and the first pick of the list read as one run. */
+body[data-surface="discover"] .disc-answer__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: var(--s-4) 0 0;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--glass-hair);
+}
+body[data-surface="discover"] .match-again,
+body[data-surface="discover"] .match-copy-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .04em;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+body[data-surface="discover"] .match-again:hover,
+body[data-surface="discover"] .match-copy-link:hover { color: var(--g-text); }
 body[data-surface="discover"] .disc-answer__head {
   display: flex;
   align-items: baseline;
@@ -8286,8 +8331,11 @@ body[data-surface="discover"] .map-detail {
   border: 1px solid var(--glass-hair);
   color: var(--g-text);
 }
-/* The one lime on this page: the pin you are pointing at. */
-body[data-surface="discover"] .map-pin-new--hover {
+/* The one lime on this page: the pin you are pointing at. A pick at a busy
+   address has no pin of its own, so the cluster holding it takes the mark
+   instead — same signal, told where to look. */
+body[data-surface="discover"] .map-pin-new--hover,
+body[data-surface="discover"] .map-cluster--hover {
   z-index: 4;
   filter: drop-shadow(0 0 0 2px var(--g-lime)) drop-shadow(0 4px 10px rgba(0,0,0,.5));
 }

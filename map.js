@@ -49,9 +49,17 @@
   let placesMode  = false;
   let placeEntries = [];
 
+  /* An explicit set of picks to show instead of the filter result — the
+     Concierge answer. Without it the map kept showing whatever the keyword
+     filter matched while the answer listed five other picks, so the two
+     halves of the screen disagreed. null = back to filter-driven.
+     setFilters() clears it. */
+  let pinnedEntries = null;
+
   /* Resolve an entry by id from whichever layer is active. */
   function findEntry(id) {
-    const src = placesMode ? placeEntries : (window.WA?.catalog || []);
+    const src = placesMode ? placeEntries
+      : (pinnedEntries || window.WA?.catalog || []);
     return src.find(e => e.id === id);
   }
 
@@ -103,11 +111,32 @@
     return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
   }
 
+  /* Paint the hover mark for hoverId. A pick at a busy address has no pin
+     of its own — it is folded into a cluster — so hovering its row used to
+     light nothing at all. Fall back to the cluster that contains it. */
+  function markHover() {
+    if (!pinsEl) return;
+    pinsEl.querySelectorAll('.map-pin-new--hover, .map-cluster--hover')
+      .forEach(el => el.classList.remove('map-pin-new--hover', 'map-cluster--hover'));
+    if (!hoverId) return;
+    const pin = pinsEl.querySelector(`.map-pin-new[data-id="${CSS.escape(hoverId)}"]`);
+    if (pin) { pin.classList.add('map-pin-new--hover'); return; }
+    for (const [key, cl] of clustersByKey) {
+      if (!cl.entries?.some(e => e.id === hoverId)) continue;
+      const [lat, lng] = key.split(',');
+      pinsEl.querySelector(`.map-cluster[data-lat="${lat}"][data-lng="${lng}"]`)
+        ?.classList.add('map-cluster--hover');
+      return;
+    }
+  }
+
   function getVisibleEntries() {
     /* Places mode: discover.js already filtered the venues; show all of
        them that have coordinates. No "empty until filtered" gate — a
        finite venue set is scannable, unlike 100+ event pins. */
     if (placesMode) return placeEntries.filter(e => e.lat != null && e.lng != null);
+    /* An answer is up: pin exactly what it recommended, nothing else. */
+    if (pinnedEntries) return pinnedEntries.filter(e => e.lat != null && e.lng != null);
     /* No "empty until filtered" gate. It was meant to keep the map from
        looking cluttered, but with Discover now listing every pick on load
        it just left the map blank beside a full list — the one view that
@@ -241,7 +270,9 @@
     const clusters = computeClusters(visible);
 
     /* Re-index by centroid so the cluster-click handler can recover
-       the underlying entries (DOM only carries lat/lng on data-*). */
+       the underlying entries (DOM only carries lat/lng on data-*).
+       markHover() reads the same index to find the cluster a hovered
+       pick is folded into. */
     clustersByKey.clear();
     for (const cl of clusters) {
       if (!cl.single) clustersByKey.set(`${cl.lat},${cl.lng}`, cl);
@@ -254,10 +285,7 @@
 
     /* Re-mark whatever the list is currently hovering — renderPins()
        replaced the nodes that carried the class. */
-    if (hoverId) {
-      pinsEl.querySelector(`.map-pin-new[data-id="${CSS.escape(hoverId)}"]`)
-        ?.classList.add('map-pin-new--hover');
-    }
+    markHover();
 
     pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
@@ -629,6 +657,7 @@
   window.WA.MapView = {
     setFilters({ q, time, cats, mood, nhoods, within, userLoc: loc } = {}) {
       placesMode = false;          /* back to the events layer */
+      pinnedEntries = null;        /* and back to filter-driven pins */
       if (q      !== undefined) textQuery   = q;
       if (time   !== undefined) timeFilter  = time;
       if (cats   !== undefined) catFilters  = new Set(cats);
@@ -647,6 +676,12 @@
         isVenue: true,
       }));
     },
+    /* Pin an explicit set of picks (the Concierge answer) instead of the
+       filter result. Pass null to hand the map back to the filters. */
+    setPicks(entries) {
+      placesMode = false;
+      pinnedEntries = Array.isArray(entries) && entries.length ? entries : null;
+    },
     render:      () => renderPins(),
     fitView:     () => {
       const T = window.WA?.MapTiles;
@@ -659,11 +694,7 @@
     hoverPin: (id) => {
       if (!pinsEl || id === hoverId) return;
       hoverId = id || null;
-      pinsEl.querySelectorAll('.map-pin-new--hover').forEach(el =>
-        el.classList.remove('map-pin-new--hover'));
-      if (!hoverId) return;
-      pinsEl.querySelector(`.map-pin-new[data-id="${CSS.escape(hoverId)}"]`)
-        ?.classList.add('map-pin-new--hover');
+      markHover();
     },
     closeDetail: () => {
       closeDetail(); activeId = null; renderPins();
