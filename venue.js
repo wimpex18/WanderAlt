@@ -284,7 +284,7 @@
         <hr class="rule" style="margin-bottom:0">
         <section aria-labelledby="more-label">
           <header class="search-section-head">
-            <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
+            <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a></p>
           </header>
           <ol class="list-rows" role="list" data-animate>
             ${more.map(e =>
@@ -297,13 +297,13 @@
                  <a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">${thumbEl(e, true)}</a>
                  <div class="list-row__body">
                    <p class="list-row__title">
-                     <a href="venue.html?id=${e.id}">${e.title}</a>
+                     <a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a>
                    </p>
                    <p class="list-row__meta">${esc(buildMeta(e))}</p>
                    ${isEchoQuote(e)
-                     ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>`
-                     : `<p class="list-row__quote">&mdash; ${e.quote}
-                     <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
+                     ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
+                     : `<p class="list-row__quote">&mdash; ${esc(e.quote)}
+                     <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a>
                    </p>`}
                  </div>
                </li>`
@@ -446,14 +446,14 @@
           const mq = encodeURIComponent(vd.address + ', ' + city);
           parts.push(
             `<a class="venue-details__address" href="https://maps.google.com/?q=${mq}"` +
-            ` target="_blank" rel="noopener noreferrer">${vd.address} ↗</a>`
+            ` target="_blank" rel="noopener noreferrer">${esc(vd.address)} ↗</a>`
           );
         }
 
         // Phone
         if (vd.phone) {
           parts.push(
-            `<a class="venue-details__phone" href="tel:${vd.phone.replace(/\s/g, '')}">${vd.phone}</a>`
+            `<a class="venue-details__phone" href="tel:${esc(vd.phone.replace(/\s/g, ''))}">${esc(vd.phone)}</a>`
           );
         }
 
@@ -467,11 +467,11 @@
               const todayIdx = (new Date().getDay() + 6) % 7;
               const todayLine = hrs[todayIdx] || '';
               const allRows = hrs.map((line, i) =>
-                `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${line}</li>`
+                `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${esc(line)}</li>`
               ).join('');
               parts.push(
                 `<div class="venue-details__hours">` +
-                  `<p class="venue-details__hours-today">${todayLine}</p>` +
+                  `<p class="venue-details__hours-today">${esc(todayLine)}</p>` +
                   `<details class="venue-details__hours-disclosure">` +
                     `<summary class="venue-details__hours-summary">All hours</summary>` +
                     `<ol class="venue-details__hours-list">${allRows}</ol>` +
@@ -484,7 +484,7 @@
 
         // Short description (Wikidata)
         if (vd.short_desc) {
-          parts.push(`<p class="venue-details__desc">${vd.short_desc}</p>`);
+          parts.push(`<p class="venue-details__desc">${esc(vd.short_desc)}</p>`);
         }
 
         if (!parts.length) return;
