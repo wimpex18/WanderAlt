@@ -26,9 +26,15 @@
 (() => {
   window.WA = window.WA || {};
 
+  /* Escapes the single quote as well as the double, so this stays correct if
+     someone writes attr='${esc(x)}' — every site uses double quotes today,
+     which is the only reason the narrower version was never a live bug.
+     Reading a value back through .dataset or .textContent decodes the
+     entities, so nothing downstream sees &#39;. */
   const esc = s => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
   /* Week ordering for day-grouped lists (Tonight first, then Mon–Sun;
      unknown/absent days sink to the end). One shared table so This Week's
