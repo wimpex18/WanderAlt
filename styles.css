@@ -8625,3 +8625,57 @@ body[data-surface="discover"].discover-places .disc-facet[data-facet="mood"] { d
   white-space: nowrap;
 }
 [data-skin="dusk"][data-page="briefing"] #worth-a-visit .list-row__quote .handle { flex: none; }
+
+/* ════════════════════════════════════════════════════════════
+   CURATOR + PROFILE — three fixes found by looking
+   ════════════════════════════════════════════════════════════ */
+
+/* The identity ticker: count and city shrink, the Telegram link never
+   does. As one ellipsized line it printed "5 PICKS · TALLINN …" at 390
+   and dropped the only route to the curator themselves. */
+[data-skin="dusk"][data-page="curator"] .curator-card__ticker {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+[data-skin="dusk"][data-page="curator"] .curator-card__ticker-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-skin="dusk"][data-page="curator"] .curator-card__tg { flex: none; }
+
+/* Control rows are single-line and never wrap — these were spilling onto
+   a second row at 390. Bleed to the screen edge so the row reads as
+   scrollable rather than clipped. */
+[data-skin="dusk"][data-page="curator"] .curator-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter)) var(--s-4);
+  padding: 2px var(--gutter);
+}
+[data-skin="dusk"][data-page="curator"] .curator-chips::-webkit-scrollbar { display: none; }
+[data-skin="dusk"][data-page="curator"] .curator-chips .m-chip { flex: none; }
+
+/* Curator rows carry a quote but no byline (you are on the byline's own
+   page), so the sentence just ellipsizes. */
+[data-skin="dusk"][data-page="curator"] .list-row__quote-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A sign-in button stretched to the full column reads as a banner, not a
+   control. Cap it at a button's width and let it start the row. */
+@media (min-width: 768px) {
+  [data-skin="dusk"][data-page="profile"] .auth-cta,
+  [data-skin="dusk"][data-page="profile"] .signin-cta,
+  [data-skin="dusk"][data-page="profile"] .btn-primary { max-width: 320px; }
+}
