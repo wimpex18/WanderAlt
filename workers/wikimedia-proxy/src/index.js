@@ -32,6 +32,16 @@ const ALLOWED_HOSTS = new Set([
 
 const CACHE_TTL_SECONDS = 86400; // 24h — Wikimedia images don't move
 
+/* Raster types only. Commons accepts user-uploaded SVG, and an
+   image/svg+xml response served from wanderalt.app/img/wm/… is ACTIVE
+   content on our own origin: navigating straight to such a proxy URL would
+   run script that can read the reader's session out of localStorage. The
+   host allowlist above does not help — the attacker uploads to an allowed
+   host. Anything not on this list is refused rather than forwarded. */
+const ALLOWED_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+]);
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -82,6 +92,18 @@ export default {
       },
     });
 
+    /* A 304 carries no body or content-type — pass it through untouched.
+       Everything else must declare a raster image type we accept. */
+    if (upstream.status !== 304 && upstream.ok) {
+      const type = (upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+      if (!ALLOWED_TYPES.has(type)) {
+        return new Response('unsupported media type', {
+          status: 415,
+          headers: { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
+        });
+      }
+    }
+
     // Build a clean response: copy bytes + safe headers, drop cookies.
     const cleanHeaders = new Headers();
     const allowedOut = ['content-type', 'content-length', 'content-disposition',
@@ -97,6 +119,9 @@ export default {
       : 'no-store');
     cleanHeaders.set('x-content-type-options', 'nosniff');
     cleanHeaders.set('referrer-policy', 'no-referrer');
+    /* Belt to the content-type braces: even if something active slipped
+       through, it gets no capabilities and no origin to act on. */
+    cleanHeaders.set('content-security-policy', "default-src 'none'; sandbox");
     cleanHeaders.set('access-control-allow-origin', 'https://wanderalt.app');
 
     return new Response(upstream.body, {
