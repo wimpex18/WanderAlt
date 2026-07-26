@@ -185,6 +185,35 @@
 
       <div class="disc-col">
 
+        <!-- Concierge answer. Sits ABOVE the list rather than replacing the
+             page, and always carries its own exit — the old AI mode hid
+             every other control and left no way back except reloading.
+             It comes BEFORE the summary line so that line still reads as
+             the heading of the list it counts; with the answer in between,
+             "22 picks" appeared to label the five the concierge returned,
+             and nothing marked where the answer stopped. -->
+        <section class="match-wrap" id="discover-match-wrap" aria-label="Concierge answer" hidden>
+          <div class="disc-answer__head">
+            <p class="disc-answer__label">Concierge</p>
+            <p class="disc-answer__prompt" id="discover-match-prompt"></p>
+            <button class="disc-answer__back" id="discover-match-back" type="button">Back to all picks</button>
+          </div>
+          <div class="match-result" id="discover-match-result" aria-live="polite"></div>
+          <div class="disc-answer__foot">
+            <button class="match-again" id="discover-match-again" type="button" hidden>
+              Try again &rarr;
+            </button>
+            <button class="match-copy-link" id="discover-match-copy-link" type="button"
+                    aria-label="Copy link to these results" hidden>
+              <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L9.5 5.5"/>
+                <path d="M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1.5-1.5"/>
+              </svg>
+              Copy link
+            </button>
+          </div>
+        </section>
+
         <!-- The list's own header: what you're looking at, how it's
              ordered, and the one way out of every filter at once. -->
         <div class="disc-summary">
@@ -204,29 +233,6 @@
             <button class="disc-clear" id="discover-clear-filters" type="button" hidden>Clear filters</button>
           </div>
         </div>
-
-        <!-- Concierge answer. Sits ABOVE the list rather than replacing the
-             page, and always carries its own exit — the old AI mode hid
-             every other control and left no way back except reloading. -->
-        <section class="match-wrap" id="discover-match-wrap" aria-label="Concierge answer" hidden>
-          <div class="disc-answer__head">
-            <p class="disc-answer__label">Concierge</p>
-            <p class="disc-answer__prompt" id="discover-match-prompt"></p>
-            <button class="disc-answer__back" id="discover-match-back" type="button">Back to all picks</button>
-          </div>
-          <div class="match-result" id="discover-match-result" aria-live="polite"></div>
-          <button class="match-again" id="discover-match-again" type="button" hidden>
-            Try again &rarr;
-          </button>
-          <button class="match-copy-link" id="discover-match-copy-link" type="button"
-                  aria-label="Copy link to these results" hidden>
-            <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L9.5 5.5"/>
-              <path d="M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1.5-1.5"/>
-            </svg>
-            Copy link
-          </button>
-        </section>
 
         <!-- The picks. Rendered on load with the whole catalogue — there is
              no "filter first to see anything" gate. -->

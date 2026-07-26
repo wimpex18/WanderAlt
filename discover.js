@@ -698,6 +698,10 @@
 
   const renderSuggest = () => {
     if (!suggestEl || document.activeElement !== input) return;
+    /* match-pick searches curated picks, not the venue table, so in Places
+       scope the offer would promise an answer it can't give. The field
+       still filters places as you type. */
+    if (state.type === 'places') { closeSuggest(); return; }
     const q = input.value.trim();
     let html = '';
     if (q) {
@@ -748,7 +752,11 @@
      </li>`;
   };
 
-  const runMatch = async (prompt) => {
+  /* `retry` skips the server-side cache. match-pick keys answers by query
+     hash for 24h, so "Try again" on a cached prompt used to re-serve the
+     identical five picks — a button that promises another go and returns
+     the same one. */
+  const runMatch = async (prompt, { retry = false } = {}) => {
     if (!matchWrap || !matchResult) return;
     state.ai = prompt;
     matchWrap.hidden = false;
@@ -782,7 +790,11 @@
       const res = await fetch(`${base}/functions/v1/match-pick`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ city, prompt, mode: 'find_many', ...tasteParams }),
+        body:    JSON.stringify({
+          city, prompt, mode: 'find_many',
+          ...(retry ? { bypass_cache: true } : {}),
+          ...tasteParams,
+        }),
       });
       const data = await res.json();
       if (!data.ok) {
@@ -802,6 +814,18 @@
       }
       matchResult.innerHTML =
         `<ol class="list-rows" role="list">${hits.map(h => renderMatchRow(h.pick, h.why)).join('')}</ol>`;
+      /* Point the map at the answer. Left on the keyword filter it showed
+         one set of pins beside a list of five different picks — the two
+         halves of the screen disagreeing about what you were looking at.
+         match-pick's response carries no lat/lng, so resolve each hit
+         against the local catalogue for the coordinates (and the kind the
+         pin colours by); anything not in it simply doesn't plot. */
+      const mv = window.WA && window.WA.MapView;
+      if (mv && mv.setPicks) {
+        const byId = new Map(((window.WA && window.WA.catalog) || []).map(e => [e.id, e]));
+        mv.setPicks(hits.map(h => byId.get(h.pick.id)).filter(Boolean));
+        if (mv.isReady()) { mv.render(); mv.fitView(); }
+      }
       if (matchAgain)  matchAgain.hidden  = false;
       if (copyLinkBtn) copyLinkBtn.hidden = false;
       if (window.WA?.taste) {
@@ -817,7 +841,7 @@
      already had. */
   const askConcierge = (prompt) => {
     const p = (prompt || '').trim();
-    if (!p) return;
+    if (!p || state.type === 'places') return;   /* picks only — see renderSuggest */
     writeUrlState();
     runMatch(p).then(writeUrlState);
   };
@@ -830,6 +854,10 @@
     if (copyLinkBtn) copyLinkBtn.hidden = true;
     if (matchResult) matchResult.innerHTML = '';
     writeUrlState();
+    /* Hand the map back to the filters and refit to what the list shows. */
+    syncMap();
+    const mv = window.WA && window.WA.MapView;
+    if (mv && mv.isReady()) mv.fitView();
   };
 
   /* ── Clear ──────────────────────────────────────────────── */
@@ -1082,7 +1110,7 @@
     });
     matchAgain?.addEventListener('click', () => {
       const prompt = (state.ai || input.value).trim();
-      if (prompt) runMatch(prompt);
+      if (prompt) runMatch(prompt, { retry: true });
     });
 
     /* Share the current URL (which already carries ?ai=…) via

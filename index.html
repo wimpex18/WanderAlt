@@ -107,6 +107,12 @@
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/></svg>
         </button>
       </form>
+      <!-- Below 1100 the masthead has no room for the field, and Today had
+           no route to search at all — the only way in was the Discover tab.
+           A plain link to the field itself; no JS, CSP-clean. -->
+      <a class="masthead-search__mini" href="./discover.html" aria-label="Search picks and places">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/></svg>
+      </a>
       <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
         <span class="city-dot" aria-hidden="true"></span>
         <span class="city-selector__name">TALLINN</span>
