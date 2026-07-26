@@ -1,7 +1,13 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// match-pick  v8  —  hybrid AI search (find_many only)
+// match-pick  v9  —  hybrid AI search (find_many only)
+//
+// v9 (Jul 2026): rerank prompt rewritten. The 'why' is the line a reader
+// actually sees, and the old prompt allowed first person with no bar on
+// meta-commentary, so it returned "I think X is a great fit because it
+// matches the user's desire for ..." — an assistant narrating its own
+// match instead of a local describing a room. See rerankGroq().
 //
 // 4-stage pipeline:
 //   1. Cache check (match_cache, SWR semantics)
@@ -311,14 +317,30 @@ async function rerankGroq(
     (p.mood_tags?.length ? ` · [${p.mood_tags.join(', ')}]` : '')
   ).join('\n');
 
+  /* The 'why' is the line a reader actually sees, so it has to sound like
+     the column and not like a chatbot explaining its reasoning. The old
+     prompt allowed first person and never barred meta-commentary, so
+     llama-4-scout returned things like "I think Uus Laine is a great fit
+     because it matches the user's desire for late night dancing" — an
+     assistant narrating a match instead of a local describing a room. */
   const systemPrompt =
-    `You are an editorial curator for WanderAlt — a guide to alternative culture.\n` +
+    `You are an editorial curator for WanderAlt, a guide to alternative culture.\n` +
     `Voice: a thoughtful local writing a back-page newsletter. Precise. Warm. Unhurried.\n\n` +
-    `Pick up to ${topK} items from the candidate list that best match the user's wish.\n` +
-    `Rank by resonance, not safety — the most fitting first.\n` +
-    `Each item needs one sentence of 'why' in editorial voice. First person fine.\n` +
-    `Rules: no marketing speak, no em-dashes, no exclamation marks, no "discover".\n` +
-    `If fewer than ${topK} truly fit, return fewer — never pad.`;
+    `Pick up to ${topK} items from the candidate list that best fit what the reader asked for.\n` +
+    `Rank by resonance, not safety: the most fitting first.\n` +
+    `If fewer than ${topK} truly fit, return fewer. Never pad.\n\n` +
+    `Each item needs a 'why': ONE complete sentence of 8 to 18 words, describing ` +
+    `the PLACE or the NIGHT itself. Never describe the match, and never write a ` +
+    `bare adjective phrase.\n` +
+    `Name something concrete: the room, the sound, the crowd, the hour, what is ` +
+    `on the shelves, what it costs.\n` +
+    `Forbidden: "I think", "I'd", "great fit", "perfect for", "matches", "you asked", ` +
+    `"the user", "this pick", restating the request, marketing speak, em-dashes, ` +
+    `exclamation marks, and the word "discover".\n` +
+    `Good: "A narrow room with a loud rig and no lineup posted until you are inside."\n` +
+    `Good: "Cheap wine, low light, and a crowd that stays well past closing."\n` +
+    `Bad: "Wine and quiet atmosphere." (a fragment, not a sentence)\n` +
+    `Bad: "I think this is a great fit because it matches your desire for dancing."`;
 
   const userPrompt =
     `User wants: "${prompt}"` +

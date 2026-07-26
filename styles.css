@@ -880,7 +880,6 @@ body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow 
    Used by the Discover page map pane (discover.html).
    ============================================================ */
 
-
 .m-chip {
   flex: 0 0 auto;
   padding: 6px 12px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
@@ -1128,8 +1127,6 @@ body[data-skin="dusk"][data-page="discover"] #discover-results-section .eyebrow 
 @media (min-width: 768px) {
   .search-box__ai-label { display: inline; }
 }
-.discover-search[data-mode="match"] .search-box__ai-btn { color: var(--c-accent); }
-.discover-search[data-mode="match"] .search-box { border-color: var(--c-accent); }
 
 /* Clear (×) button — appears once the field has text (JS toggles
    [hidden]). Custom because appearance:none strips the native one. */
@@ -1777,7 +1774,6 @@ html.wa-taste-done .taste-onboarding { display: none; }
 @media (max-width: 767px) {
   .taste-onboarding__grid { grid-template-columns: 1fr; gap: var(--s-3); }
 }
-
 
 /* Curator-vouched toggle — small inline switch beside the Match-me link. */
 .curated-toggle {
@@ -3735,32 +3731,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   border-top: var(--rule-w) solid var(--c-rule);
 }
 
-/* Loading state */
-/* Match skeleton — static layout placeholder rendered during the AI fetch.
-   Mirrors the hero card structure (quote line + attr line + thumb + body)
-   so layout doesn't shift when the result arrives. No animation per the
-   restrained-motion brief (the fetch is fast enough; shimmer adds noise). */
-.match-skeleton { padding: var(--s-4) 0; }
-.match-skeleton__quote,
-.match-skeleton__attr,
-.match-skeleton__thumb-sq,
-.match-skeleton__name,
-.match-skeleton__sub {
-  background: var(--c-rule-strong);
-  border-radius: 2px;
-}
-.match-skeleton__quote { height: 22px; width: 75%; margin-bottom: var(--s-3); }
-.match-skeleton__attr  { height: 13px; width: 36%; margin-bottom: var(--s-4); }
-.match-skeleton__venue {
-  display: flex;
-  gap: var(--s-3);
-  align-items: center;
-}
-.match-skeleton__thumb-sq { width: 56px; height: 56px; flex-shrink: 0; border-radius: 0; }
-.match-skeleton__venue-text { flex: 1; min-width: 0; }
-.match-skeleton__name { height: 16px; width: 58%; margin-bottom: var(--s-2); }
-.match-skeleton__sub  { height: 13px; width: 44%; }
-
 .match-loading {
   font-family: var(--ff-mono);
   font-size: var(--fs-meta);
@@ -3776,44 +3746,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
   letter-spacing: 0.02em;
   color: var(--c-ink-mute);
   padding: var(--s-4) 0;
-}
-
-/* The matched pick — Tonight-hero-style layout.
-   .match-card reuses tonight__quote + tonight__attr + tonight__venue
-   tokens so no new variables are needed.                        */
-.match-card {
-  display: flex;
-  flex-direction: column;
-}
-.match-card__why {
-  font-family: var(--ff-display);
-  font-style: italic;
-  font-size: var(--fs-quote);
-  line-height: var(--lh-tight);
-  letter-spacing: -0.005em;
-  color: var(--c-ink);
-  text-indent: -0.22em;
-  text-wrap: balance;
-  margin: 0 0 var(--s-4);
-}
-.match-card__attr {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--c-accent);
-  margin-bottom: var(--s-5);
-  white-space: nowrap;
-}
-.match-card__attr-line {
-  display: inline-block;
-  width: 20px;
-  height: 1px;
-  background: var(--c-accent);
-  flex: 0 0 auto;
 }
 
 /* "Try again →" button */
@@ -3852,13 +3784,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"]::after {
 }
 .match-copy-link:hover { color: var(--c-accent); }
 .match-copy-link--copied { color: var(--c-accent); }
-
-@media (min-width: 768px) {
-  .match-card__why { font-size: 44px; }
-}
-@media (min-width: 1100px) {
-  .match-card__why { font-size: 52px; }
-}
 
 /* Secondary hits below the hero card — same .list-row markup, but separated
    from the hero by a single rule so it reads as one continuous result list. */
@@ -4229,43 +4154,6 @@ a.handle:hover { color: var(--c-ink); }
 .map-canvas {
   position: absolute;
   inset: 0;
-}
-
-/* Empty-state hint shown over the map when no filters are active.
-   Editorial panel — newsprint card centered over the map, not a modal.
-   Pointer-events disabled so map pan still works through it; the inner
-   panel re-enables them so its links could be tapped if we add any. */
-.map-empty-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 4;
-  pointer-events: none;
-  max-width: 320px;
-  background: var(--c-paper);
-  border: 1px solid var(--c-ink);
-  padding: var(--s-5) var(--s-5);
-  text-align: center;
-}
-.map-empty-hint__title {
-  font-family: var(--ff-display);
-  font-style: italic;
-  font-size: 20px;
-  line-height: 1.2;
-  color: var(--c-ink);
-  margin: 0 0 var(--s-3);
-}
-.map-empty-hint__body {
-  font-family: var(--ff-body);
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--c-ink-soft);
-  margin: 0;
-}
-.map-empty-hint__body strong {
-  font-weight: 500;
-  color: var(--c-ink);
 }
 
 /* Postal address line in the pick detail panel — sits below the meta
@@ -4766,98 +4654,6 @@ a.handle:hover { color: var(--c-ink); }
   }
 }
 
-/* ============================================================
-   Discover page — list-first surface that replaces Search in
-   the medium term. Phase 1a layout: search bar, filter pill row,
-   bottom-sheet "All filters", AI match results, browse sections.
-   ============================================================ */
-
-/* ── Search bar (compact, with AI sub-link) ─────────────────── */
-/* Events | Places scope switch — a segmented control at the top of
-   Discover. Two equal segments, ink fill on the active one. Reads as a
-   primary mode selector, distinct from the pill row's filter chips. */
-.discover-scope {
-  display: flex;
-  gap: 2px;
-  margin: var(--s-4) 0 0;
-  padding: 3px;
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius);
-}
-.discover-scope__btn {
-  flex: 1 1 50%;
-  /* inline-flex + min-height keeps the label centred while meeting the
-     44px Apple HIG tap target (padding alone left it at ~39px). */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  font-family: var(--ff-body);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--c-ink-mute);
-  cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast);
-}
-.discover-scope__btn:hover { color: var(--c-ink); }
-.discover-scope__btn--on {
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
-}
-.discover-scope__btn--on:hover { color: var(--c-accent); }
-
-.discover-search {
-  padding: var(--s-4) 0 var(--s-2);
-  border-bottom: var(--rule-w) solid var(--c-rule);
-}
-.discover-search__box { width: 100%; }
-/* Hide quick-filter pills + mood strip in AI mode — they have no effect
-   on match-pick results and would mislead the user into thinking they do. */
-.discover-ai-mode .discover-pills { display: none; }
-.discover-ai-mode .mood-chips     { display: none; }
-
-/* Example prompts — tappable query starters shown below the search box
-   when AI mode is active and the field is empty. Teach the natural-
-   language capability without blocking the interface. */
-.discover-ai-examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
-  padding: var(--s-2) 0 var(--s-1);
-}
-.discover-ai-example {
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  color: var(--c-accent);
-  background: none;
-  border: 1px solid var(--c-rule-strong);
-  border-radius: 2px;
-  padding: 5px 10px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
-  cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
-}
-.discover-ai-example:hover {
-  border-color: var(--c-accent);
-  background: var(--c-accent);
-  color: var(--c-paper);
-}
-/* Inline variant used in match-error copy. */
-.discover-ai-example--inline {
-  border: none;
-  padding: 0;
-  border-radius: 0;
-  font-family: inherit;
-  font-size: inherit;
-  text-decoration: underline;
-}
-.discover-ai-example--inline:hover { background: none; color: var(--c-ink); }
-
 /* Hint shown below the no-results error copy in AI mode. */
 .match-error-hint {
   font-size: var(--fs-meta);
@@ -4865,174 +4661,15 @@ a.handle:hover { color: var(--c-ink); }
   margin-top: var(--s-2);
 }
 
-/* ── Filter pill row (horizontally scrollable) ─────────────── */
-.discover-pills {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--s-2);
-  overflow-x: auto;
-  padding: var(--s-3) 0 var(--s-2);
-  margin-bottom: var(--s-2);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.discover-pills::-webkit-scrollbar { display: none; }
-.discover-pill {
-  position: relative;       /* anchor the invisible hit-area expander */
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 14px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
-  color: var(--c-ink);
-  background: var(--c-paper);
-  border: 1px solid var(--c-rule-strong);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
-}
-/* Expand the tap target to ~44px tall without inflating the visual pill
-   (Material 3 / Apple HIG min touch target). */
-.discover-pill::after {
-  content: "";
-  position: absolute;
-  inset: -8px 0;
-}
-.discover-pill:hover { border-color: var(--c-accent); color: var(--c-accent); }
-.discover-pill--on {
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
-  border-color: var(--c-accent);
-}
-.discover-pill--on:hover { color: var(--c-accent); }
-/* Active state must not rely on color alone (WCAG 1.4.1). A leading
-   checkmark marks selection in grayscale / for color-blind users. */
-.discover-pill--on::before {
-  content: "✓";
-  margin-right: var(--s-2);
-  font-size: 11px;
-  line-height: 1;
-}
-/* The "+ Filters" pill is a disclosure, not a selectable filter — no check. */
-.discover-pill--more::before { content: none; }
-.discover-pill--more {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.discover-pill__count {
-  display: inline-block;
-  min-width: 16px;
-  padding: 0 5px;
-  background: var(--c-accent);
-  color: #fff;
-  border-radius: 999px;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-}
-
-/* Applied-filters overview — removable chips below the pill row for
-   the sheet-set category/neighborhood filters. Petrol-tinted so they
-   read as "active", with an × affordance. */
-.discover-applied {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
-  margin: 0 0 var(--s-3);
-}
-.discover-applied__chip {
-  display: inline-flex;
-  align-items: center;
-    gap: var(--s-2);
-  padding: 4px 10px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
-  border: var(--rule-w) solid var(--c-accent);
-  border-radius: var(--radius);
-  font-family: var(--ff-body);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast);
-}
-.discover-applied__chip:hover {
-  background: var(--c-accent);
-  color: var(--c-paper);
-}
-.discover-applied__x {
-  font-size: 14px;
-  line-height: 1;
-}
-
 /* ── Deprecation banner (shown on legacy map/search pages) ─── */
 
 /* ── View panes (list / map) ─────────────────────────────────── */
 #discover-empty { padding: var(--s-4) 0; }
 
-.discover-panes {
-  position: relative;
-  margin-top: var(--s-2);
-}
-.discover-pane--list {
-  /* Default: visible. Hidden on mobile when view=map (see media query). */
-}
-.discover-pane--map {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 280px);  /* room for topbar + filter chrome + bottom nav */
-  min-height: 360px;
-  background: var(--c-paper);
-  overflow: hidden;
-}
-
 /* Mobile: one pane at a time, controlled by [data-view] on .discover-panes. */
 @media (max-width: 1023px) {
-  .discover-panes[data-view="list"] .discover-pane--map  { display: none; }
-  .discover-panes[data-view="map"]  .discover-pane--list { display: none; }
-  /* When map is the active pane, push it close to the bottom nav. */
-  .discover-panes[data-view="map"] .discover-pane--map {
-    height: calc(100vh - 240px);
-  }
   /* In map view, hide the browse sections (already inside the list pane,
      so they're hidden by the rule above — left here for clarity).      */
-}
-
-/* Desktop: split view, list left and map right. The map gets the
-   bigger share (Baymard split-view study: "list informs, map orients").
-   Discover also opts out of the editorial reading cap on wide screens
-   so the map has real horizontal room — a 480-wide map column inside
-   a 960-wide reading column reads as a sidebar, not a map. Bounded
-   height keeps it from stretching into a tall vertical strip on
-   16:9 monitors. */
-@media (min-width: 1024px) {
-  /* Discover shares the global --reading-max ladder (no bespoke width)
-     so its topbar/nav chrome aligns with the content below it and with
-     every other page. The list/map split lives inside that shared width. */
-  /* 3-col split — 236px filter rail (the hoisted
-     .discover-sheet), then the editorial list (1fr), then the sticky
-     map (1.15fr). */
-  .discover-panes {
-    display: grid;
-    grid-template-columns: 236px minmax(0, 1fr) minmax(0, 1.15fr);
-    gap: var(--s-7);
-    align-items: start;
-  }
-  .discover-pane--list { min-width: 0; }
-  .discover-pane--map {
-    position: sticky;
-    top: var(--s-5);
-    height: min(640px, calc(100vh - 150px));
-    min-height: 540px;
-  }
-}
-
-/* Hide the docked List|Map view row on desktop (both panes are always
-   visible in the split). */
-@media (min-width: 1024px) {
-  body[data-page="discover"] .nav__viewrow { display: none; }
 }
 
 /* Places reuses the list + map (venue pins via MapView.setPlaces), but
@@ -5064,77 +4701,6 @@ body.discover-places .mood-chips { display: none; }
 }
 .place-maplink:hover { color: var(--c-ink); }
 .place-no-events { margin-top: var(--s-4); color: var(--c-ink-mute); }
-
-/* ── View toggle (mobile) — docked segmented pill ─────────────
-   Sits centered, flush above the glass bottom nav (summer 2026: the
-   free-floating corner FAB was the last 2018-Material idiom; docked
-   bottom-chrome accessories are the current pattern). One button,
-   two state segments; the whole pill is the 44px tap target and it
-   keeps the app's single sanctioned shadow. */
-/* The toggle docks INSIDE the bottom glass chrome,
-   centered above the tab row — one surface, no occlusion (the floating
-   ink pill is retired). Light segmented control, same vocabulary as
-   .discover-scope: paper-deep track, accent-soft active segment. */
-.nav__viewrow {
-  display: flex;
-  justify-content: center;
-  padding: var(--s-2) var(--s-2) 0;
-}
-.discover-view-seg {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  min-height: 44px;
-  background: var(--c-paper-deep);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.discover-view-seg__seg {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 var(--s-5);
-  height: 44px;                               /* real tap target per segment */
-  border: 0;                                  /* real <button> segments now */
-  background: none;
-  cursor: pointer;
-  border-radius: calc(var(--radius) - 3px);   /* 5px inner — matches .wa-seg/.discover-scope seg */
-  line-height: 1;
-  font-family: var(--ff-body);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--c-ink-mute);
-  transition: background var(--t-fast), color var(--t-fast);
-}
-.discover-view-seg__seg--on {
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
-  font-weight: 600;
-}
-
-/* Tablet (768–1023): the nav is a top masthead, so the view toggle keeps
-   the old docked-above-the-fold position at the viewport bottom. */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .nav__viewrow {
-    position: fixed;
-    left: 50%;
-    bottom: var(--s-4);
-    transform: translateX(-50%);
-    z-index: 50;
-    padding: 0;
-  }
-  .discover-view-seg {
-    background: var(--c-paper);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  }
-}
-
-/* Keep tail room so the last rows scroll clear of the bottom chrome. */
-@media (max-width: 1023px) {
-  .discover-pane--list { padding-bottom: calc(var(--s-9) + var(--s-2)); }
-}
 /* The docked seg adds a row to the bottom chrome — give the page body
    the extra clearance on phones. */
 @media (max-width: 767px) {
@@ -5173,86 +4739,6 @@ body.discover-places .mood-chips { display: none; }
   bottom: 0;
   width: 3px;
   background: var(--c-accent);
-}
-
-/* ── Filter bottom sheet ────────────────────────────────────── */
-.discover-sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.32);
-  z-index: 70;
-}
-.discover-sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: 80vh;
-  /* Liquid Glass: the mobile filter sheet frosts over the list beneath. */
-  background: var(--glass-bg-deep);
-  backdrop-filter: var(--glass-blur-legacy);
-  -webkit-backdrop-filter: var(--glass-blur-legacy);
-  border-top: 1px solid var(--glass-hair-legacy);
-  display: flex;
-  flex-direction: column;
-  z-index: 71;
-  animation: discover-sheet-up 180ms ease-out;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .discover-sheet { background: var(--c-paper); }
-}
-@keyframes discover-sheet-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
-.discover-sheet__handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--c-rule-strong);
-  margin: var(--s-2) auto var(--s-1);
-}
-.discover-sheet__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: var(--s-2) var(--s-4) var(--s-3);
-  border-bottom: var(--rule-w) solid var(--c-rule);
-}
-.discover-sheet__title {
-  font-family: var(--ff-body);
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-.discover-sheet__close {
-  font-size: 22px;
-  background: none;
-  border: 0;
-  color: var(--c-ink);
-  cursor: pointer;
-  width: 44px;
-  height: 44px;          /* tap floor (compact tier) */
-  display: grid;
-  place-items: center;
-}
-.discover-sheet__body {
-  overflow-y: auto;
-  padding: var(--s-4);
-  flex: 1 1 auto;
-}
-.discover-sheet__field {
-  border: 0;
-  padding: 0;
-  margin: 0 0 var(--s-5);
-}
-.discover-sheet__field legend {
-  margin-bottom: var(--s-2);
-}
-.discover-sheet__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
 }
 .sheet-chip {
   display: inline-flex;
@@ -5309,134 +4795,9 @@ body.discover-places .mood-chips { display: none; }
   cursor: pointer;
 }
 .discover-sort__opt:hover .discover-sort__label { color: var(--c-accent); }
-.discover-sheet__foot {
-  display: flex;
-  gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  border-top: var(--rule-w) solid var(--c-rule);
-}
-.discover-sheet__clear {
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
-  color: var(--c-ink-mute);
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.discover-sheet__clear:hover { color: var(--c-accent); }
-.discover-sheet__apply { flex: 1; padding: var(--s-3) 0; }
-
-body.discover-sheet-open { overflow: hidden; }
-
-/* ── Desktop split presentation ─────────────────────────────── */
-/* Facet pills — hidden on mobile (the sheet shows groups
-   expanded); ≥1024px each becomes the dropdown trigger of its group. */
-.facet-pill { display: none; }
 
 @media (min-width: 1024px) {
-  /* The filter sheet becomes a persistent left RAIL,
-     the first column of the 3-col split (rail | list | map). Groups sit
-     open under mono eyebrow legends, split by hairline rules; no
-     "+ Filters" trigger, no Apply (changes apply live via liveApply). */
-  .discover-sheet {
-    position: static;
-    width: auto;
-    max-height: none;
-    display: block;
-    border: 0;
-    border-right: var(--rule-w) solid var(--c-rule);
-    border-radius: 0;
-    margin: 0;
-    padding: 0 var(--s-5) var(--s-6) 0;
-    animation: none;
-    z-index: auto;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-  .discover-sheet[hidden] { display: block !important; }   /* always visible */
-  .discover-sheet__body {
-    overflow: visible;
-    padding: 0;
-    display: block;
-  }
-  .discover-sheet__field {
-    position: static;
-    border: 0;
-    border-top: var(--rule-w) solid var(--c-rule);
-    margin: var(--s-5) 0 0;
-    padding: var(--s-5) 0 0;
-  }
-  .discover-sheet__field[hidden] { display: none; }
-  .discover-sheet__field:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
-  /* The legend is the group's mono eyebrow (the dropdown pill is gone). */
-  .discover-sheet__field legend.eyebrow { display: block; margin-bottom: var(--s-3); }
-  .facet-pill { display: none; }
-  /* Panels sit open in the rail — no popover. */
-  .discover-sheet__panel,
-  .discover-sheet__field[data-open] .discover-sheet__panel {
-    display: block;
-    position: static;
-    min-width: 0;
-    max-width: none;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    border-radius: 0;
-  }
-  .discover-sheet__chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-
-  .discover-sheet__head  { padding: 0 0 var(--s-2); border-bottom: 0; display: flex; justify-content: flex-end; }
-  .discover-sheet__title { display: none; }
-  .discover-sheet__handle,
-  .discover-sheet__close,
-  .discover-sheet__foot,
-  .discover-pill--more,
-  .discover-sheet-backdrop { display: none !important; }
-  /* Rail reset, shown only when a filter is active (calm at rest);
-     44px compact tier like every inline toolbar control. */
-  .discover-sheet__clear-top:not([hidden]) {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    color: var(--c-accent);
-  }
-  /* Desktop never locks body scroll for the (now inline) filters. */
-  body.discover-sheet-open { overflow: auto; }
-
-  /* ── Discover chrome compression ──
-     The working surface drops the editorial chrome: no page head —
-     the deck toolbar + rail + panes own the viewport, so
-     (count + row + pin after a filter tap) holds with room to spare. */
-  body[data-page="discover"] .discover-lede { margin-bottom: var(--s-3); }
   body[data-page="discover"] .page-head--discover { display: none; }
-  /* Quick pills fold away — the rail's When/Kind groups are the one
-     filter language on desktop. */
-  body[data-page="discover"] .discover-pills { display: none; }
-}
-/* Mobile never shows the header clear (the sheet footer has "Clear all"). */
-.discover-sheet__clear-top {
-  display: none;
-  background: none;
-  border: 0;
-  padding: 0;
-  font-family: var(--ff-mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.06em;
-  color: var(--c-ink-mute);
-  cursor: pointer;
-}
-.discover-sheet__clear-top:hover { color: var(--c-accent); }
-
-/* ── Print: hide all filter chrome and the map pane ────────── */
-@media print {
-  .discover-search,
-  .discover-pills,
-  .discover-pane--map,
-  .nav__viewrow,
-  .discover-sheet,
-  .discover-sheet-backdrop { display: none !important; }
 }
 
 /* ============================================================
@@ -5450,167 +4811,6 @@ body.discover-sheet-open { overflow: hidden; }
    --c-cream uses the literal oklch(0.95 0.025 78) already in use.
    Appended last so these win the cascade over the base rules.
    ============================================================ */
-
-/* ── Discover: editorial lede (sets the tone, like Today's standfirst) ── */
-.discover-lede {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s-4);
-  padding-bottom: var(--s-4);
-  margin: var(--s-3) 0 var(--s-5);
-  border-bottom: var(--rule-w) solid var(--c-rule);
-}
-.discover-lede__title {
-  font-size: 15px;
-  color: var(--c-ink-soft);
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-.discover-lede__title b { font-weight: 600; color: var(--c-ink); }
-.discover-lede__count {
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--c-ink-mute);   /* was --c-faint (2.56:1, failed WCAG AA) */
-  white-space: nowrap;
-}
-/* Phones: the eyebrow shares the row and squeezed the standfirst to a
-   ~20ch measure with a dead right column — stack instead. */
-@media (max-width: 767px) {
-  .discover-lede {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--s-2);
-  }
-  .discover-lede__count { order: -1; }
-}
-@media (min-width: 768px) { .discover-lede__title { font-size: 16px; } }
-/* Header is editorial chrome — drop it on the mobile map view + AI mode. */
-body.discover-map-view .page-head--discover { display: none; }
-body.discover-ai-mode  .page-head--discover { display: none; }
-
-/* ── Discover: compact inline scope toggle ── */
-body[data-page="discover"] .discover-scope {
-  display: inline-flex;
-  gap: 3px;
-  margin: 0 0 var(--s-5);
-}
-body[data-page="discover"] .discover-scope__btn {
-  flex: 0 0 auto;
-  padding: 9px 28px;
-  border-radius: 5px;
-}
-@media (max-width: 767px) {
-  body[data-page="discover"] .discover-scope { display: flex; width: 100%; }
-  body[data-page="discover"] .discover-scope__btn { flex: 1; padding: 9px 12px; }
-}
-
-/* ── Discover: taller, refined search field ── */
-body[data-page="discover"] .discover-search {
-  padding: 0;
-  margin: 0 0 var(--s-4);
-  border-bottom: 0;
-  transition: background var(--t-mid), padding var(--t-mid), border-radius var(--t-mid);
-}
-body[data-page="discover"] .discover-search .search-box {
-  height: 54px;
-  gap: var(--s-3);
-  padding: 0 var(--s-3) 0 var(--s-4);
-  background: var(--c-paper);
-  border: 1.5px solid var(--c-rule-strong);
-  border-radius: var(--radius);
-}
-body[data-page="discover"] .discover-search .search-box:focus-within { border-color: var(--c-accent); }
-body[data-page="discover"] .discover-search .search-input { font-size: 17px; letter-spacing: -0.01em; }
-body[data-page="discover"] .discover-search .search-box__icon { color: var(--c-faint); }
-body[data-page="discover"] .discover-search .search-box__ai-btn {
-  width: auto; min-width: 44px; min-height: 44px; margin: 0;
-  gap: var(--s-2);
-  padding: 0 var(--s-2);
-  border: var(--rule-w) solid var(--c-rule);
-  border-radius: var(--radius);
-  background: var(--c-paper-deep);
-}
-body[data-page="discover"] .discover-search .search-box__ai-btn:hover { color: var(--c-accent); border-color: var(--c-accent); }
-body[data-page="discover"] .discover-search .search-box__ai-btn[aria-pressed="true"] {
-  background: var(--c-accent); border-color: var(--c-accent); color: var(--c-lime);
-}
-
-/* ── Discover: pills wrap so the full Places venue-kind row fits ── */
-body[data-page="discover"] .discover-pills {
-  flex-wrap: wrap;
-  overflow: visible;
-  align-items: center;
-}
-
-/* ── Discover: desktop rail ──────────────
-   The rail shows each group's legend as its mono eyebrow; the facet
-   dropdown-pills are retired (see the rail block above). */
-
-/* ════════════════════════════════════════════════════════════
-   AI "MATCH" MODE — immersive, but flat & two-tone (solid petrol)
-   ════════════════════════════════════════════════════════════ */
-body.discover-ai-mode .discover-search {
-  background: var(--c-accent);
-  padding: var(--s-7);
-  border-radius: var(--radius-card);
-  margin-bottom: var(--s-7);
-  position: relative;
-}
-body.discover-ai-mode .discover-search::before {
-  content: "WanderAlt concierge";
-  display: block;
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--c-lime);
-  margin-bottom: var(--s-4);
-}
-body.discover-ai-mode .discover-search .search-box {
-  height: 62px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1.5px solid rgba(255, 255, 255, 0.24);
-}
-body.discover-ai-mode .discover-search .search-box:focus-within { border-color: var(--c-lime); }
-body.discover-ai-mode .discover-search .search-input { color: #fff; font-size: 19px; caret-color: var(--c-lime); }
-body.discover-ai-mode .discover-search .search-input::placeholder { color: rgba(255, 255, 255, 0.6); }
-body.discover-ai-mode .discover-search .search-box__icon { color: var(--c-lime); }
-body.discover-ai-mode .discover-search .search-box__ai-btn {
-  background: var(--c-lime); border-color: var(--c-lime); color: var(--c-accent);
-}
-body.discover-ai-mode .discover-search .search-box__clear { color: rgba(255, 255, 255, 0.72); }
-
-/* Example prompts sit on the petrol panel — invert them to read on dark. */
-body.discover-ai-mode .discover-ai-examples { margin-top: var(--s-4); }
-body.discover-ai-mode .discover-ai-example {
-  border: var(--rule-w) solid rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.06);
-  color: #eef5f3;
-  border-radius: var(--radius);
-  padding: 8px 14px;   /* chip spec — exempt from the s-grid (see CLAUDE.md tap-target exceptions) */
-}
-body.discover-ai-mode .discover-ai-example:hover {
-  background: var(--c-lime); border-color: var(--c-lime); color: var(--c-accent);
-}
-
-/* Collapse every keyword/filter affordance so the concierge has full focus. */
-body.discover-ai-mode .discover-pills,
-body.discover-ai-mode .mood-chips,
-body.discover-ai-mode .discover-applied,
-body.discover-ai-mode .discover-sheet,
-body.discover-ai-mode .discover-browse-section,
-body.discover-ai-mode .discover-pane--map,
-body.discover-ai-mode #discover-results-section { display: none !important; }
-body.discover-ai-mode .discover-scope { opacity: 0.45; pointer-events: none; }
-
-@media (min-width: 1024px) {
-  /* AI mode goes single column — the matched quote owns the page. */
-  body.discover-ai-mode .discover-panes { display: block; }
-  body.discover-ai-mode .discover-sheet[hidden] { display: none !important; }
-}
 
 /* Today: subtle hover lift on This Week picks (Phase 1 owns the rest). */
 @media (hover: hover) { body[data-page="briefing"] .pick:hover { transform: translateY(-1px); transition: transform var(--t-mid); } }
@@ -6181,17 +5381,6 @@ a.tonight-card__title:hover { color: var(--c-accent); }
    ════════════════════════════════════════════════════════════ */
 body[data-page="discover"] .deck{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);background:var(--c-paper);padding:var(--s-5);display:flex;flex-direction:column;gap:var(--s-4);margin:var(--s-3) 0 var(--s-5);box-shadow:0 1px 0 rgba(10,10,12,.02)}
 
-/* Scope → segmented control */
-body[data-page="discover"] .deck .discover-scope{display:inline-flex;gap:4px;padding:4px;width:auto;align-self:flex-start;margin:0;background:var(--c-paper-deep);border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius)}
-body[data-page="discover"] .deck .discover-scope__btn{min-height:44px;height:44px;padding:0 24px;border:0;border-radius:calc(var(--radius) - 3px);background:none;font-family:var(--ff-body);font-size:15px;font-weight:600;color:var(--c-ink-mute);transition:background var(--t-fast),color var(--t-fast)}
-body[data-page="discover"] .deck .discover-scope__btn:hover{color:var(--c-ink)}
-body[data-page="discover"] .deck .discover-scope__btn--on{background:var(--c-accent-soft);color:var(--c-accent)}
-
-/* Search → field */
-body[data-page="discover"] .deck .discover-search{margin:0}
-body[data-page="discover"] .deck .discover-search .search-box{height:52px;gap:14px;padding:0 18px;background:var(--c-paper);border:1.5px solid var(--c-rule-strong);border-radius:var(--radius)}
-body[data-page="discover"] .deck .discover-search .search-box:focus-within{border-color:var(--c-accent)}
-
 /* Quick pills + mood → unified chips (radius 8, mono; 999px retired) */
 body[data-page="discover"] .deck .discover-pills,
 body[data-page="discover"] .deck .mood-chips{margin:0;padding:0;gap:var(--s-2);flex-wrap:wrap;border:0}
@@ -6205,13 +5394,6 @@ body[data-page="discover"] .deck .discover-pill--on,
 body[data-page="discover"] .deck .m-chip--on,
 body[data-page="discover"] .deck .m-chip[aria-pressed="true"],
 body[data-page="curator"] .m-chip--active{background:var(--c-accent-soft);border-color:var(--c-accent);color:var(--c-accent)}
-body[data-page="discover"] .deck .discover-pill--more{border-style:dashed;color:var(--c-ink)}
-
-/* A hairline rule between the search row and the chip rows */
-body[data-page="discover"] .deck .discover-pills{padding-top:var(--s-4);border-top:var(--rule-w) solid var(--c-rule)}
-
-/* Map pane → framed plate (real MapLibre canvas inside) */
-body[data-page="discover"] .discover-pane--map{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius-card);overflow:hidden}
 /* Zoom control cluster → mapctl plate */
 body[data-page="discover"] .map-zoom-ctrl{border:var(--rule-w) solid var(--c-rule);border-radius:var(--radius);overflow:hidden;background:var(--c-paper);box-shadow:0 2px 10px rgba(10,10,12,.08)}
 body[data-page="discover"] .map-zoom-btn{border-radius:0}
@@ -6227,13 +5409,8 @@ body[data-page="discover"] .curator-rows > li:hover{border-color:var(--c-ink)}
 
 @media (max-width:767px){
   body[data-page="discover"] .deck{padding:var(--s-4);gap:var(--s-3)}
-  body[data-page="discover"] .deck .discover-scope{align-self:stretch}
-  body[data-page="discover"] .deck .discover-scope__btn{flex:1;justify-content:center;padding:0}
   body[data-page="discover"] .curator-rows{grid-template-columns:1fr}
 }
-
-/* Facet dropdown-pills unified to the radius-8 control shape (Phase 2). */
-body[data-page="discover"] .facet-pill{border-radius:var(--radius)}
 
 /* ════════════════════════════════════════════════════════════
    PLATE & RULE — Phase 3: ABOUT (about.html, static markup)
@@ -6422,7 +5599,6 @@ body[data-page="profile"]  .nav__item[data-nav="profile"] {
   .nav__inner { gap: 2px; }
 }
 
-
 /* ════════════════════════════════════════════════════════════
    ACTION BUTTONS — event page (venue.html)
    Compact icon+label buttons replacing the old full-width
@@ -6504,9 +5680,6 @@ a.auth-panel__submit { display: inline-flex; align-items: center; justify-conten
 .auth-panel__submit .ic, .auth-panel__close .ic {
   margin-right: 6px;
 }
-/* Active quick-pill already shows the leading "✓" (WCAG, not colour-only) —
-   hide the category glyph then so it isn't ✓ + icon + label. */
-.discover-pill--on .ic { display: none; }
 
 /* ════════════════════════════════════════════════════════════
    PAGE HEADER — one shared component for every page's top title
@@ -6769,34 +5942,6 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
     -webkit-backdrop-filter: none;
   }
 }
-
-/* Scope counts — the one lime badge, live-state only: visible on the
-   ACTIVE scope segment, quiet mono on the inactive one. */
-.discover-scope__count {
-  font-family: var(--ff-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--c-ink-mute);
-  padding: 2px 6px;
-  border-radius: var(--radius-tag);
-}
-.discover-scope__btn--on .discover-scope__count {
-  background: var(--c-lime);
-  color: var(--c-ink);
-}
-
-/* Concierge ✦ — petrol at rest, docked in the field's end;
-   the label shows on desktop, icon-only on phones. */
-body[data-page="discover"] .discover-search .search-box__ai-btn {
-  background: var(--c-accent);
-  border-color: var(--c-accent);
-  color: #fff;
-}
-body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
-  background: var(--c-accent-deep);
-  border-color: var(--c-accent-deep);
-  color: #fff;
-}
 @media (max-width: 767px) {
   .search-box__ai-label { display: none; }
 }
@@ -6817,27 +5962,6 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
     padding: 0 0 var(--s-4);
     margin: var(--s-3) 0 var(--s-6);
   }
-  body[data-page="discover"] .deck .discover-scope { margin: 0; }
-  body[data-page="discover"] .deck .discover-scope__btn {
-    padding: 0 16px;
-    font-size: 14px;
-  }
-  body[data-page="discover"] .deck .discover-search {
-    width: 400px;
-    margin: 0 0 0 auto;
-  }
-  body[data-page="discover"] .deck .discover-search .search-box {
-    height: 52px;
-    gap: var(--s-2);
-    padding: 0 5px 0 var(--s-3);
-  }
-  /* The retired facet dropdown-pills stay dead on desktop even though a
-     later shared icon rule sets them inline-flex. */
-  body[data-page="discover"] .facet-pill { display: none !important; }
-  body[data-page="discover"] .deck .discover-applied { flex-basis: 100%; }
-  /* AI mode: the concierge panel takes the full band width again. */
-  body.discover-ai-mode .deck { display: block; }
-  body.discover-ai-mode .deck .discover-search { width: auto; margin: 0; }
 }
 
 /* ── Today mobile hero ────────────────────────────
@@ -6877,8 +6001,14 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
   --glass-active:rgba(60,184,178,.16);
   --glass-active-line:rgba(60,184,178,.4);  /* ring around the active tint */
   --glass-hair:rgba(255,255,255,.14);
-  --glass-fill:var(--glass-fill);       /* in-card control fill */
-  --glass-fill-line:var(--glass-fill-line);  /* in-card control edge */
+  /* These two were declared as var(--glass-fill) / var(--glass-fill-line)
+     — self-referential, so both resolved to the guaranteed-invalid value
+     and every dusk control that used them rendered with no fill and no
+     edge (segment tracks, chip backgrounds, count badges, the search
+     shell). Daybreak defines them properly below; these are the dark
+     twins, ink-on-paper inverted, with the edge matching --glass-hair. */
+  --glass-fill:rgba(244,241,232,.06);        /* in-card control fill */
+  --glass-fill-line:rgba(244,241,232,.14);   /* in-card control edge */
   --glass-solid:#131b1c;                    /* no-blur / reduced-transparency */
   --g-soft:rgba(244,241,232,.6);     /* tickers, section labels */
   --g-dim:rgba(244,241,232,.45);     /* quiet links, grips */
@@ -7946,619 +7076,6 @@ body[data-page="discover"] .discover-search .search-box__ai-btn:hover {
 }
 
 /* ════════════════════════════════════════════════════════════
-   DUSK GLASS — DISCOVER: the map is ALWAYS the
-   scene; results ride a draggable glass sheet (detents peek /
-   half / full — peek IS the retired "map view"); filters are one
-   horizontal 48 rail + the More+ sheet's 3-col grids. Desktop:
-   floating glass panels over the full-bleed map.
-   ════════════════════════════════════════════════════════════ */
-body[data-skin="dusk"][data-page="discover"] .page-head--discover {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap;   /* h1 stays for AT/SEO */
-}
-
-/* The map pane is the scene — full-bleed, behind everything. */
-body[data-skin="dusk"][data-page="discover"] .discover-panes { display: block; }
-body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
-  display: block;
-  position: fixed;
-  inset: 0;
-  height: 100vh;      /* the June split-pane sets an explicit height */
-  height: 100svh;
-  min-height: 0;
-  width: 100%;
-  z-index: 0;
-  background: var(--g-bg);
-  border: 0;
-  border-radius: 0;
-}
-body[data-skin="dusk"][data-page="discover"] .map-viewport,
-body[data-skin="dusk"][data-page="discover"] .map-canvas {
-  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0;
-  /* .map-viewport's base rule paints an opaque --c-paper (white) fill —
-     left uncleared here it hides the dark --g-bg Scene set on the parent
-     .discover-pane--map, so Discover rendered as a blank white pane
-     instead of the dark MapLibre scene at every width. */
-  background: transparent;
-}
-body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
-  background: var(--glass-deep);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid var(--glass-hair);
-  border-radius: var(--radius);
-  color: var(--g-mute);
-}
-body[data-skin="dusk"][data-page="discover"] .map-empty-hint__title { color: var(--g-text); }
-body[data-skin="dusk"][data-page="discover"] .map-sheet,
-body[data-skin="dusk"][data-page="discover"] .map-detail {
-  background: var(--glass-deep);
-  backdrop-filter: blur(28px) saturate(1.5);
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid var(--glass-hair);
-  color: var(--g-text);
-}
-
-/* Topbar search composite (lives inside the island). */
-body[data-skin="dusk"][data-page="discover"] .discover-search { flex: 1; min-width: 0; position: relative; }
-body[data-skin="dusk"][data-page="discover"] .discover-search form { margin: 0; }
-body[data-skin="dusk"][data-page="discover"] .search-box {
-  /* One unit: was the only 40px control shell in the app (census, Jul 2026). */
-  height: var(--unit);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 4px 0 12px;
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-fill-line);
-  border-radius: 12px;
-  box-shadow: none;
-}
-/* box-shadow:none above also erased the keyboard focus ring — the inner
-   input suppresses its own outline (a11y audit Jul 2026). */
-body[data-skin="dusk"][data-page="discover"] .search-box:focus-within {
-  border-color: var(--g-petrol);
-  box-shadow: 0 0 0 1px var(--g-petrol);
-}
-body[data-skin="dusk"][data-page="discover"] .search-box__icon { color: var(--g-faint); display: grid; place-items: center; }
-body[data-skin="dusk"][data-page="discover"] .search-input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  border: 0;
-  outline: 0;
-  background: none;
-  font-family: var(--ff-body);
-  font-size: 14px;
-  color: var(--g-text);
-}
-body[data-skin="dusk"][data-page="discover"] .search-input::placeholder { color: var(--g-faint); font-style: normal; }
-body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn {
-  /* 44 tap box per the floor (was 32 here vs 44 in the base rule — two
-     sizes for one control); radius normalized to the vocabulary (was r9). */
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px;
-  border-radius: 8px;
-  background: var(--g-petrol-deep);
-  color: var(--g-lime);
-  font-family: var(--ff-body);
-  font-size: 12px;
-  font-weight: 600;
-}
-body[data-skin="dusk"][data-page="discover"] .search-box__ai-btn[aria-pressed="true"] { filter: brightness(1.25); }
-body[data-skin="dusk"][data-page="discover"] .search-box__clear { color: var(--g-faint); }
-body[data-skin="dusk"][data-page="discover"] .discover-ai-examples {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px;
-  background: var(--glass-deep);
-  backdrop-filter: blur(28px) saturate(1.5);
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid var(--glass-hair);
-  border-radius: var(--radius);
-  z-index: 40;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-ai-example {
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-fill-line);
-  border-radius: var(--radius-tag);
-  color: var(--g-mute);
-  padding: 8px 10px;
-  font-size: 12px;
-}
-
-/* The deck becomes the horizontal filter rail floating over the map. */
-body[data-skin="dusk"][data-page="discover"] .deck {
-  position: fixed;
-  top: 84px;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: row;   /* the June mobile deck is a column plate */
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 4px 16px 8px;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-body[data-skin="dusk"][data-page="discover"] .deck::-webkit-scrollbar { display: none; }
-body[data-skin="dusk"][data-page="discover"] .discover-applied { display: none; }
-/* The pills nav joins the deck rail as siblings — one line, no wrap. */
-body[data-skin="dusk"][data-page="discover"] .discover-pills { display: contents; }
-body[data-skin="dusk"][data-page="discover"] .discover-scope {
-  width: auto;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-/* Board 3c mobile topbar: logo tile · search · city — no wordmark.
-   The brand link keeps a 44px hit box around the 28px tile. */
-@media (max-width: 767px) {
-  body[data-skin="dusk"][data-page="discover"] .wordmark { display: none; }
-  body[data-skin="dusk"][data-page="discover"] .topbar__brand {
-    min-width: 44px;
-    min-height: 44px;
-    justify-content: center;
-    margin-right: 0;
-  }
-}
-body[data-skin="dusk"][data-page="discover"] .map-empty-hint {
-  top: 42%;
-  color: var(--g-mute);
-}
-/* Below 1024px the results pane is a draggable bottom sheet, not a side
-   rail — its resting "half" detent top is 50vh, and the deck's fixed
-   header (top:84px + 60px tall) ends at a constant 144px. Centering the
-   card at a flat 42% of the viewport ignores both, so on shorter phones
-   its bottom edge dropped 21px past the sheet's top edge (geometry
-   audit, 390×844). Center it in the actual band between them instead —
-   the midpoint of a constant (144px) and a vh-based value (50vh) is
-   itself linear in vh, so this stays centered at any viewport height. */
-@media (max-width: 1023px) {
-  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { top: calc(25vh + 72px); }
-}
-body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body { color: var(--g-mute); }
-body[data-skin="dusk"][data-page="discover"] .map-empty-hint__body strong { color: var(--g-text); }
-/* MapLibre attribution rides the dusk scene quietly. */
-body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib {
-  /* Solid plate + AA-floor text — was .7 alpha with g-faint at ~2.8:1
-     (visibility scan, Jul 2026); the OSM credit must stay readable. */
-  background: rgb(16,24,25) !important;
-  color: var(--g-mute);
-  border-radius: 8px;
-  font-size: 10px;
-}
-body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--g-text); }
-/* data-skin is static — on the DAY theme the dark plate above would show
-   dark-on-dark (1.01:1, visibility scan). Day swaps to the paper plate. */
-[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib,
-[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib {
-  background: rgb(246, 243, 236) !important;
-  color: var(--c-ink-mute);
-}
-[data-theme="day"] body[data-skin="dusk"][data-page="discover"] .maplibregl-ctrl-attrib a,
-[data-theme="day"][data-skin="dusk"] body[data-page="discover"] .maplibregl-ctrl-attrib a { color: var(--c-accent); }
-/* Rows in the sheet: flat hairline dividers, not plates. */
-body[data-skin="dusk"][data-page="discover"] .curator-row,
-body[data-skin="dusk"][data-page="discover"] .browse-row {
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--glass-hair);
-  border-radius: 0;
-  box-shadow: none;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-scope {
-  display: inline-flex;
-  flex: none;
-  gap: 4px;
-  padding: 0;
-  background: none;
-  border: 0;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
-body[data-skin="dusk"][data-page="discover"] .discover-pill {
-  flex: none;
-  height: var(--unit);
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 16px;
-  scroll-snap-align: start;
-  background: var(--glass);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  border: 1px solid var(--glass-hair);
-  border-radius: var(--radius);
-  font-family: var(--ff-mono);
-  font-size: 13px;
-  letter-spacing: .02em;
-  color: var(--g-text);
-  white-space: nowrap;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-scope__btn--on,
-body[data-skin="dusk"][data-page="discover"] .discover-pill[aria-pressed="true"],
-body[data-skin="dusk"][data-page="discover"] .discover-pill--on {
-  background: var(--glass-active);
-  border-color: var(--glass-active-line);
-  color: var(--g-petrol);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-pill .ic { width: 16px; height: 16px; }
-body[data-skin="dusk"][data-page="discover"] .discover-pill__count,
-body[data-skin="dusk"][data-page="discover"] .discover-scope__count {
-  background: var(--g-lime);
-  color: var(--g-ink-on-lime);
-  border-radius: 6px;
-  padding: 1px 6px;
-  font-size: 11px;
-}
-
-/* ── The results sheet (mobile) ────────────────────────────── */
-@media (max-width: 1023px) {
-  body[data-skin="dusk"][data-page="discover"] { overflow: hidden; height: 100svh; }
-  body[data-skin="dusk"][data-page="discover"] .page { padding: 0; }
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
-    display: block;
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 100svh;
-    z-index: 15;
-    transform: translateY(var(--sheet-y, 50svh));
-    transition: transform var(--t-mid);
-    background: var(--glass-deep);
-    backdrop-filter: blur(28px) saturate(1.5);
-    -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid var(--glass-hair);
-    border-bottom: 0;
-    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-    box-shadow: 0 -12px 48px rgba(0,0,0,.45);
-    padding: 6px 16px 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="peek"] .discover-pane--list { --sheet-y: calc(100svh - 180px); }
-  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="half"] .discover-pane--list { --sheet-y: 50svh; }
-  body[data-skin="dusk"][data-page="discover"] .discover-panes[data-detent="full"] .discover-pane--list { --sheet-y: 132px; }
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list.dsheet-dragging { transition: none; }
-  /* Sheet content clears the floating dock at every detent. */
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list > *:last-child { margin-bottom: 120px; }
-  /* No zoom / locate chrome over the mobile scene (pinch + the
-     Distance filter cover both). */
-  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl,
-  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { display: none; }
-}
-body[data-skin="dusk"][data-page="discover"] .dsheet-grip {
-  display: block;
-  width: 100%;
-  height: 44px;   /* tap floor — the visual is the 4px bar inside */
-  margin-top: -8px;
-  background: none;
-  border: 0;
-  cursor: grab;
-  touch-action: none;
-}
-body[data-skin="dusk"][data-page="discover"] .dsheet-grip span {
-  display: block;
-  width: 40px;
-  height: 4px;
-  margin: 0 auto;
-  border-radius: 4px;
-  background: var(--g-dim);
-}
-
-/* Sheet innards go dark glass. */
-body[data-skin="dusk"][data-page="discover"] .search-section-head .eyebrow { color: var(--g-mute); }
-body[data-skin="dusk"][data-page="discover"] .curator-row,
-body[data-skin="dusk"][data-page="discover"] .browse-row { border-color: var(--glass-hair); color: var(--g-text); }
-body[data-skin="dusk"][data-page="discover"] .curator-row__handle { color: var(--g-petrol); }
-/* The label kept light-theme solid ink on the dark sheet — 1.09:1, every
-   NEIGHBORHOODS / BY KIND row invisible on dusk (visibility scan Jul 2026;
-   the section read as blank space in renders). */
-body[data-skin="dusk"][data-page="discover"] .browse-row__label { color: var(--g-text); }
-body[data-skin="dusk"][data-page="discover"] .browse-row:hover .browse-row__label { color: var(--g-petrol); }
-body[data-skin="dusk"][data-page="discover"] .curator-row__tagline,
-body[data-skin="dusk"][data-page="discover"] .browse-row__count,
-/* __quote was missed by this override and kept the LIGHT-theme ink-mute on
-   dark glass — 2.7:1 (axe serious, a11y audit Jul 2026). */
-body[data-skin="dusk"][data-page="discover"] .curator-row__quote,
-body[data-skin="dusk"][data-page="discover"] .curator-row__count { color: var(--g-mute); }
-body[data-skin="dusk"][data-page="discover"] .skeleton-row__line { background: var(--glass-fill); }
-body[data-skin="dusk"][data-page="discover"] .list-row--active {
-  background: var(--glass-active);
-  border-radius: var(--radius);
-}
-
-/* ── Filter sheet → (3-col grids, Reset:Show = 1:2) ── */
-body[data-skin="dusk"][data-page="discover"] .discover-sheet {
-  background: var(--glass-deep);
-  backdrop-filter: blur(32px) saturate(1.4);
-  -webkit-backdrop-filter: blur(32px) saturate(1.4);
-  border: 1px solid var(--glass-hair);
-  color: var(--g-text);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__title {
-  font-family: var(--ff-display);
-  color: var(--g-text);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__close,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear-top { color: var(--g-mute); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__field { border-color: var(--glass-hair); }
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .eyebrow { color: var(--g-mute); }
-/* Mood chips are short + uniform → the sanctioned repeat(3,1fr) grid.
-   Category/neighborhood labels ("Vinyl & books", "Põhja-Tallinn") are
-   wider than a 75px 3-col cell, so at 1440 the centered text overflowed
-   and clipped on BOTH sides ("nyl & boo" — should-fix #10). 2 columns
-   (~117px cells) fit them, still a grid (never a ragged wrap, per the
-   single-line law); the ellipsis guard below catches any outlier. */
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__chips {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chips {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  /* Base .mood-chips is a full-bleed scroll rail (margin: 0 -gutter),
-     meant for the edge-to-edge strip elsewhere. Reused here inside the
-     filter rail/sheet, that negative margin bled it 32px past the panel
-     on each side (geometry audit: scrollWidth 274 vs clientWidth 242 at
-     1440) — reset to sit flush like every other facet's chip grid. */
-  margin: 0;
-  padding: 0;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip {
-  height: var(--unit);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* min-width:0 + ellipsis so a too-long label degrades to a clean
-     one-sided ellipsis inside its cell, never a both-sides clip. */
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0 10px;
-  margin: 0;
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-fill-line);
-  border-radius: var(--radius);
-  color: var(--g-text);
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip--on,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .sheet-chip--on,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip--on,
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .m-chip[aria-pressed="true"],
-body[data-skin="dusk"][data-page="discover"] .discover-sheet .mood-chip[aria-pressed="true"] {
-  background: var(--glass-active);
-  border-color: var(--glass-active-line);
-  color: var(--g-petrol);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sort,
-body[data-skin="dusk"][data-page="discover"] .discover-sort label { color: var(--g-text); }
-/* The desktop-only facet-pill toggles never render inside the dusk
-   mobile sheet (their fieldsets are already open groups there). */
-@media (max-width: 1023px) {
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet .facet-pill { display: none !important; }
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__foot {
-  display: flex;
-  gap: 8px;
-  border-top: 1px solid var(--glass-hair);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__clear {
-  flex: 1;
-  height: var(--unit);
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-fill-line);
-  border-radius: var(--radius);
-  color: var(--g-text);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet__apply {
-  flex: 2;
-  height: var(--unit);
-  background: var(--cta);
-  border: 0;
-  border-radius: var(--radius);
-  color: var(--cta-ink);
-  font-weight: 600;
-  box-shadow: 0 8px 24px var(--cta-glow);
-}
-body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop { background: rgba(var(--scrim-rgb),.6); }
-
-/* ── Desktop: bounded list + map columns (Airbnb-style split), ONE
-   consolidated Filters trigger. Supersedes the "floating glass panels
-   over a full-bleed fixed map + always-open rail + scrolling quick-
-   pills row" system (owner photo review, Jul 2026: "we don't need the
-   map to take all the background"; "half the screen taken by two huge
-   filter blocks"; "leave only one [filter entry point] instead of
-   them"). Mobile keeps the draggable-sheet-over-map pattern untouched —
-   this block only fires ≥1024px. ── */
-@media (min-width: 1024px) {
-  body[data-skin="dusk"][data-page="discover"] { overflow: visible; height: auto; }
-  /* .topbar is position:fixed (top:16px, 64px tall) — in-flow content
-     needs matching top clearance or it renders underneath it. */
-  body[data-skin="dusk"][data-page="discover"] .page { padding: 104px var(--gutter) var(--s-7); max-width: none; }
-
-  body[data-skin="dusk"][data-page="discover"] .discover-panes {
-    display: flex;
-    align-items: stretch;
-    gap: var(--s-6);
-  }
-  /* Deck: scope tabs + the one Filters trigger, sitting as a normal
-     in-flow header above the list column (was a fixed floating panel
-     pinned to pixel offsets). */
-  body[data-skin="dusk"][data-page="discover"] .deck {
-    position: static;
-    width: 100%;
-    max-width: 620px;
-    padding: var(--s-4) var(--s-5);
-    margin: 0 0 var(--s-4);
-    background: var(--glass-deep);
-    backdrop-filter: blur(28px) saturate(1.5);
-    -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid var(--glass-hair);
-    border-radius: var(--radius-island);
-    z-index: auto;
-  }
-  /* One filter entry point: the quick pills (Tonight/This week/Free/…)
-     duplicate facets already in the Filters sheet and needed a
-     horizontal scroll to see them all ("filters too big, why do we
-     need to scroll" — photo review). Keep only "+ Filters" inline;
-     June's desktop rule hides it (the rail made a trigger redundant),
-     so re-show it here. */
-  body[data-skin="dusk"][data-page="discover"] .discover-pills .discover-pill:not(.discover-pill--more) { display: none; }
-  body[data-skin="dusk"][data-page="discover"] .discover-pill--more { display: inline-flex !important; }
-
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list {
-    display: block;
-    position: static;
-    flex: 1 1 480px;
-    max-width: 620px;
-    width: auto;
-    height: calc(100vh - 232px);
-    background: var(--glass-deep);
-    backdrop-filter: blur(28px) saturate(1.5);
-    -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid var(--glass-hair);
-    border-radius: var(--radius-island);
-    box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.4);
-    padding: var(--s-4) var(--s-5) var(--s-6);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  body[data-skin="dusk"][data-page="discover"] .dsheet-grip { display: none; }
-
-  /* The map is now a bounded column, not a fixed full-viewport Scene —
-     every child below anchors to THIS pane instead of the viewport,
-     which is the whole point: the map reads as part of the page, not
-     as the page's background. */
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--map {
-    position: relative;
-    flex: 1 1 auto;
-    min-width: 0;
-    height: calc(100vh - 152px);
-    width: auto;
-    inset: auto;
-    border: 1px solid var(--glass-hair);
-    border-radius: var(--radius-island);
-    overflow: hidden;
-  }
-  /* Bounded pane restores plain centering — the 50vw+372px hack only
-     compensated for the map filling the whole viewport behind fixed
-     side panels; the base rule's 50%/50% (relative to this pane, its
-     nearest positioned ancestor) is correct again on its own. */
-  body[data-skin="dusk"][data-page="discover"] .map-empty-hint { left: 50%; }
-  /* Map chrome anchors to the bounded pane's own corner, not the
-     viewport's (was position:fixed to the window). */
-  body[data-skin="dusk"][data-page="discover"] .map-zoom-ctrl { position: absolute; right: 16px; bottom: 16px; }
-  body[data-skin="dusk"][data-page="discover"] .map-locate-fab { position: absolute; right: 16px; bottom: 188px; left: auto; top: auto; }
-  body[data-skin="dusk"][data-page="discover"] .map-zoom-btn,
-  body[data-skin="dusk"][data-page="discover"] .map-locate-fab {
-    background: var(--glass-deep);
-    backdrop-filter: blur(24px) saturate(1.5);
-    -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    border: 1px solid var(--glass-hair);
-    color: var(--g-text);
-  }
-
-  /* Selecting a pin's full detail duplicated the same venue in the
-     list row right beside it ("two separate blocks for the same
-     venue" — photo review, re: Uus Laine). Hide the list column while
-     a detail is open; the map expands into the freed width. Close the
-     detail (×) to bring the list back. */
-  body.map-detail-open[data-skin="dusk"][data-page="discover"] .discover-pane--list,
-  body.map-detail-open[data-skin="dusk"][data-page="discover"] .deck {
-    display: none;
-  }
-
-  /* Filter sheet: a real modal again, not a permanently-open rail —
-     restore the chrome June's desktop rule force-hides for the rail
-     (close button, footer, backdrop; title too, non-!important there). */
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet[hidden] { display: none !important; }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    bottom: auto;
-    transform: translate(-50%, -50%);
-    width: min(560px, calc(100vw - 48px));
-    max-height: min(720px, calc(100vh - 96px));
-    z-index: 80;
-    border-radius: var(--radius-island);
-    overflow-y: auto;
-    box-shadow: inset 0 1px 0 var(--glass-fill), 0 24px 64px rgba(0,0,0,.5);
-    padding: 0 var(--s-5);
-  }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__body { padding: var(--s-5) 0; }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__head {
-    justify-content: space-between;
-    border-bottom: 1px solid var(--glass-hair);
-    padding: var(--s-4) 0;
-    margin: 0;
-  }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__title { display: block; }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__close { display: inline-flex !important; }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet__foot { display: flex !important; padding: var(--s-4) 0; }
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet-backdrop:not([hidden]) {
-    display: block !important;
-    background: rgba(var(--scrim-rgb),.6);
-  }
-
-  /* Masthead: the nav tabs overlay the island's left half — give the
-     search composite a left offset so they never collide. Zeroes the
-     inherited margin-bottom:16px too — the flex row centers the item's
-     MARGIN box, so that bottom margin alone pushed the visible search
-     box 8px above the topbar's true center (brand/city-selector sat
-     correctly centered at zero margin; the search box didn't). */
-  body[data-skin="dusk"][data-page="discover"] .discover-search { margin: 0 0 0 372px; }
-}
-
-/* Fallbacks for the discover glass surfaces. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list,
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet,
-  body[data-skin="dusk"][data-page="discover"] .deck,
-  body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
-  body[data-skin="dusk"][data-page="discover"] .discover-pill { background: var(--glass-solid); }
-}
-@media (prefers-reduced-transparency: reduce) {
-  body[data-skin="dusk"][data-page="discover"] .discover-pane--list,
-  body[data-skin="dusk"][data-page="discover"] .discover-sheet,
-  body[data-skin="dusk"][data-page="discover"] .deck,
-  body[data-skin="dusk"][data-page="discover"] .discover-scope__btn,
-  body[data-skin="dusk"][data-page="discover"] .discover-pill {
-    background: var(--glass-solid) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
-/* ════════════════════════════════════════════════════════════
    DUSK GLASS — SAVED · PROFILE · CURATOR · 404
    Utility pages ride the dusk-gradient scene (no photo); lists +
    summaries are glass sheets; empty states speak curator voice.
@@ -9144,4 +7661,825 @@ body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-tex
 }
 [data-theme="day"] [data-skin="dusk"][data-page="briefing"] .week-all {
   color: var(--c-accent);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DUSK GLASS — DISCOVER (Jul 2026 redesign)
+   ------------------------------------------------------------
+   Replaces three stacked generations of Discover chrome (the June
+   split-pane, the Plate & Rule deck, the map-as-scene sheet). One
+   idea, one filter language:
+
+     · The list is the page — it renders every pick on load and
+       scrolls with the document. No nested scroller, no "filter
+       first to see anything" gate.
+     · Every facet is a button that opens its own anchored menu.
+       No quick-pill row duplicating the facets, no modal.
+     · The map answers "where", so it is a companion: a sticky
+       column NARROWER than the list from 1024px up, an overlay
+       you summon below that.
+
+   Scoped to [data-surface] — place.html also carries
+   data-page="discover" (for the nav highlight) and must not
+   inherit any of this.
+   ════════════════════════════════════════════════════════════ */
+
+body[data-surface="discover"] {
+  /* Clearance under the fixed topbar island, and above the dock. */
+  --disc-top: 84px;
+  --disc-shell: min(1180px, calc(100vw - 2 * var(--gutter)));
+  background: var(--g-bg);
+}
+@media (min-width: 768px) {
+  body[data-surface="discover"] { --disc-top: 104px; }
+}
+
+body[data-surface="discover"] .disc {
+  width: var(--disc-shell);
+  margin: 0 auto;
+  /* Clears the dock AND the Map capsule floating above it. */
+  padding: var(--disc-top) 0 calc(var(--nav-h) + var(--s-10));
+}
+
+/* ── Lede ─────────────────────────────────────────────────── */
+body[data-surface="discover"] .disc-head { margin: 0 0 var(--s-6); }
+body[data-surface="discover"] .disc-head__eyebrow {
+  margin: 0 0 var(--s-2);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+}
+body[data-surface="discover"] .disc-head__title {
+  margin: 0;
+  font-family: var(--ff-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: -.01em;
+  color: var(--g-title);
+}
+body[data-surface="discover"] .disc-head__title b { font-weight: 600; color: var(--g-petrol); }
+@media (min-width: 768px) {
+  body[data-surface="discover"] .disc-head__title { font-size: 34px; }
+}
+
+/* ── Search (rides the topbar island) ─────────────────────── */
+body[data-surface="discover"] .disc-search { flex: 1; min-width: 0; }
+body[data-surface="discover"] .disc-search form { margin: 0; }
+body[data-surface="discover"] .disc-search__box {
+  height: var(--unit);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 4px 0 12px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius);
+}
+body[data-surface="discover"] .disc-search__box:focus-within {
+  border-color: var(--g-petrol);
+  box-shadow: 0 0 0 1px var(--g-petrol);
+}
+body[data-surface="discover"] .disc-search__icon {
+  display: grid; place-items: center; color: var(--g-faint); flex: none;
+}
+body[data-surface="discover"] .disc-search__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--g-text);
+}
+body[data-surface="discover"] .disc-search__input::placeholder { color: var(--g-faint); }
+/* type="search" draws its own clear glyph in WebKit, which sat beside ours
+   — two × in one field. Ours stays: it is the one wired to the state. */
+body[data-surface="discover"] .disc-search__input::-webkit-search-cancel-button,
+body[data-surface="discover"] .disc-search__input::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+}
+body[data-surface="discover"] .disc-search__clear {
+  flex: none;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border: 0; background: none; cursor: pointer;
+  color: var(--g-faint);
+}
+body[data-surface="discover"] .disc-search__clear:hover { color: var(--g-text); }
+/* The wordmark is what gives when the masthead gets tight — the field is
+   the reason to be on this page. */
+@media (max-width: 519px) {
+  body[data-surface="discover"] .wordmark { display: none; }
+  body[data-surface="discover"] .topbar__brand { margin-right: 0; }
+}
+
+/* ── Search suggestions ───────────────────────────────────── */
+body[data-surface="discover"] .disc-search { position: relative; }
+body[data-surface="discover"] .disc-suggest {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  padding: var(--s-2);
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius-island);
+  box-shadow: inset 0 1px 0 var(--glass-fill), 0 16px 48px rgba(0,0,0,.45);
+}
+body[data-surface="discover"] .disc-suggest__ask,
+body[data-surface="discover"] .disc-suggest__example {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-tag);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  text-align: left;
+  color: var(--g-text);
+  cursor: pointer;
+}
+body[data-surface="discover"] .disc-suggest__ask:hover,
+body[data-surface="discover"] .disc-suggest__example:hover { background: var(--glass-fill); }
+body[data-surface="discover"] .disc-suggest__ask svg { flex: none; color: var(--g-petrol); }
+body[data-surface="discover"] .disc-suggest__ask-text {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-suggest__ask-text b { font-weight: 600; color: var(--g-text); }
+body[data-surface="discover"] .disc-suggest__key { flex: none; color: var(--g-faint); font-size: 13px; }
+body[data-surface="discover"] .disc-suggest__hint {
+  margin: 0;
+  padding: var(--s-2) 10px var(--s-1);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+}
+body[data-surface="discover"] .disc-suggest__example { color: var(--g-mute); }
+body[data-surface="discover"] .disc-suggest__example:hover { color: var(--g-text); }
+
+/* ── Concierge answer ─────────────────────────────────────── */
+body[data-surface="discover"] .match-wrap { margin: 0 0 var(--s-7); }
+body[data-surface="discover"] .disc-answer__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--glass-hair);
+}
+body[data-surface="discover"] .disc-answer__label {
+  margin: 0;
+  flex: none;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-petrol);
+}
+body[data-surface="discover"] .disc-answer__prompt {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-answer__back {
+  flex: none;
+  height: 44px;
+  padding: 0 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-tag);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .04em;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+body[data-surface="discover"] .disc-answer__back:hover { border-color: var(--glass-hair); }
+body[data-surface="discover"] .disc-ask-inline {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  font: inherit;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+
+/* ── Controls row: scope + facets ─────────────────────────── */
+body[data-surface="discover"] .disc-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-6);
+  flex-wrap: nowrap;
+}
+body[data-surface="discover"] .disc-scope {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+  padding: 3px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius);
+}
+body[data-surface="discover"] .disc-scope__btn {
+  height: calc(var(--unit) - 6px);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: calc(var(--radius) - 3px);
+  background: none;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--g-mute);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+body[data-surface="discover"] .disc-scope__btn:hover { color: var(--g-text); }
+body[data-surface="discover"] .disc-scope__btn--on {
+  background: var(--glass-active);
+  color: var(--g-petrol);
+}
+/* A count badge under 24px is one of the two shapes cleared for 999. */
+body[data-surface="discover"] .disc-scope__count {
+  min-width: 22px; height: 20px;
+  display: inline-grid; place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--glass-fill);
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-scope__btn--on .disc-scope__count { color: var(--g-petrol); }
+
+body[data-surface="discover"] .disc-facets {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+body[data-surface="discover"] .disc-facet { position: relative; flex: none; }
+body[data-surface="discover"] .disc-facet__btn {
+  height: var(--unit);
+  max-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--g-text);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+body[data-surface="discover"] .disc-facet__btn:hover { border-color: var(--g-petrol); }
+/* Control rows are single-line and never wrap; a long selection
+   ellipsizes rather than growing the button. */
+body[data-surface="discover"] .disc-facet__label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body[data-surface="discover"] .disc-facet__chev {
+  width: 10px; height: 10px; flex: none; color: var(--g-faint);
+  transition: transform var(--t-fast);
+}
+body[data-surface="discover"] .disc-facet[data-open] .disc-facet__chev { transform: rotate(180deg); }
+/* Active state is a tint plus a mark — the tint here, the mark being the
+   label itself, which names the current selection. */
+body[data-surface="discover"] .disc-facet--on .disc-facet__btn {
+  background: var(--glass-active);
+  border-color: var(--glass-active-line);
+  color: var(--g-petrol);
+}
+body[data-surface="discover"] .disc-facet--on .disc-facet__chev { color: var(--g-petrol); }
+body[data-surface="discover"] .disc-facet--quiet .disc-facet__btn {
+  height: 44px;   /* public-page tap floor */
+  padding: 0 10px;
+  background: none;
+  border-color: transparent;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .04em;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-facet--quiet .disc-facet__btn:hover { color: var(--g-text); border-color: var(--glass-hair); }
+
+body[data-surface="discover"] .disc-facet__menu {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 2 * var(--gutter)));
+  padding: var(--s-4);
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius-island);
+  box-shadow: inset 0 1px 0 var(--glass-fill), 0 16px 48px rgba(0,0,0,.45);
+}
+body[data-surface="discover"] .disc-facet__menu--end { left: auto; right: 0; }
+body[data-surface="discover"] .disc-facet__note { margin: var(--s-3) 0 0; color: var(--g-mute); }
+
+body[data-surface="discover"] .disc-chips,
+body[data-surface="discover"] .disc-facet__menu .mood-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+body[data-surface="discover"] .sheet-chip,
+body[data-surface="discover"] .disc-facet__menu .m-chip {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius-tag);
+  box-shadow: none;
+  font-family: var(--ff-body);
+  font-size: 13px;
+  color: var(--g-text);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+body[data-surface="discover"] .sheet-chip:hover,
+body[data-surface="discover"] .disc-facet__menu .m-chip:hover { border-color: var(--g-petrol); }
+body[data-surface="discover"] .sheet-chip--on,
+body[data-surface="discover"] .disc-facet__menu .m-chip--on {
+  background: var(--glass-active);
+  border-color: var(--glass-active-line);
+  color: var(--g-petrol);
+}
+/* Tint plus a mark. */
+body[data-surface="discover"] .sheet-chip--on::before,
+body[data-surface="discover"] .disc-facet__menu .m-chip--on::before {
+  content: "✓";
+  font-size: 11px;
+  line-height: 1;
+}
+body[data-surface="discover"] .sheet-chip .ic { width: 15px; height: 15px; flex: none; }
+
+body[data-surface="discover"] .disc-sort { display: flex; flex-direction: column; gap: 2px; }
+body[data-surface="discover"] .disc-sort__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 40px;
+  padding: 0 var(--s-2);
+  border-radius: var(--radius-tag);
+  font-size: 14px;
+  color: var(--g-text);
+  cursor: pointer;
+}
+body[data-surface="discover"] .disc-sort__opt:hover { background: var(--glass-fill); }
+body[data-surface="discover"] .disc-sort__opt input { accent-color: var(--g-petrol); }
+
+/* ── Layout ───────────────────────────────────────────────── */
+body[data-surface="discover"] .disc-layout { display: block; }
+body[data-surface="discover"] .disc-col { min-width: 0; }
+
+body[data-surface="discover"] .disc-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 36px;
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--glass-hair);
+}
+body[data-surface="discover"] .disc-summary__count {
+  margin: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-surface="discover"] .disc-summary__tools {
+  display: flex; align-items: center; gap: var(--s-1); flex: none;
+}
+body[data-surface="discover"] .disc-clear {
+  height: 44px;   /* public-page tap floor */
+  padding: 0 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-tag);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .04em;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+body[data-surface="discover"] .disc-clear:hover { border-color: var(--glass-hair); }
+
+body[data-surface="discover"] .list-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Meta and quote each give their text the shrinking job and keep the
+   byline / map link at fixed size, so truncation eats the sentence rather
+   than the attribution. */
+body[data-surface="discover"] .list-row__meta,
+body[data-surface="discover"] .list-row__quote {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+body[data-surface="discover"] .list-row__meta-text,
+body[data-surface="discover"] .list-row__quote-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body[data-surface="discover"] .list-row__quote .handle,
+body[data-surface="discover"] .list-row__meta .list-row__map { flex: none; }
+/* Only card titles take two lines. The shared row sets nowrap, which
+   single-line-clipped every title here and left the anchor box hanging
+   past the row; the clamp needs normal wrapping to do its job. */
+body[data-surface="discover"] .list-row__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+body[data-surface="discover"] .list-row__title a { display: inline; }
+
+/* The hovered row and its pin light together — see WA.MapView.hoverPin. */
+body[data-surface="discover"] .list-row--hover {
+  border-color: var(--glass-active-line);
+  background: var(--glass-active);
+}
+
+body[data-surface="discover"] .disc-empty {
+  padding: var(--s-7) 0;
+  text-align: center;
+}
+body[data-surface="discover"] .disc-empty__line {
+  margin: 0 0 var(--s-2);
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-style: italic;
+  line-height: var(--lh-snug);
+  color: var(--g-text);
+}
+body[data-surface="discover"] .disc-empty__hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-empty__btn {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  font: inherit;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+
+/* ── Curators (browse aid, after the picks) ───────────────── */
+body[data-surface="discover"] .disc-browse { margin: var(--s-9) 0 0; }
+body[data-surface="discover"] .disc-browse__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--glass-hair);
+}
+body[data-surface="discover"] .disc-browse__eyebrow,
+body[data-surface="discover"] .disc-browse__meta {
+  margin: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--g-soft);
+}
+body[data-surface="discover"] .disc-browse__rows { margin: 0; padding: 0; list-style: none; }
+body[data-surface="discover"] .disc-curator {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  min-height: 48px;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--glass-hair);
+  text-decoration: none;
+}
+body[data-surface="discover"] .disc-curator__handle {
+  flex: none;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--g-petrol);
+}
+body[data-surface="discover"] .disc-curator__tagline {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--ff-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-curator__count {
+  flex: none;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  color: var(--g-dim);
+}
+body[data-surface="discover"] .disc-curator:hover .disc-curator__tagline { color: var(--g-text); }
+
+/* ── Map ──────────────────────────────────────────────────── */
+body[data-surface="discover"] .disc-map {
+  position: relative;
+  background: var(--g-bg);
+  border: 1px solid var(--glass-hair);
+  border-radius: var(--radius-island);
+  overflow: hidden;
+}
+body[data-surface="discover"] .map-viewport,
+body[data-surface="discover"] .map-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; border-radius: 0;
+  /* .map-viewport's base rule paints an opaque --c-paper fill, which would
+     hide the dusk scene behind the tiles. */
+  background: transparent;
+}
+body[data-surface="discover"] .map-zoom-btn,
+body[data-surface="discover"] .map-locate-fab,
+body[data-surface="discover"] .disc-map__close {
+  background: var(--glass-deep);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  color: var(--g-text);
+}
+/* The zoom stack is three 44px buttons (136px tall); locate clears it by
+   12px rather than sitting on top of the middle button. */
+body[data-surface="discover"] .map-zoom-ctrl { position: absolute; right: 12px; bottom: 12px; top: auto; left: auto; }
+body[data-surface="discover"] .map-locate-fab { position: absolute; right: 12px; bottom: 160px; top: auto; left: auto; }
+body[data-surface="discover"] .disc-map__close {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 5;
+  width: var(--unit); height: var(--unit);
+  display: none;
+  place-items: center;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+body[data-surface="discover"] .map-sheet,
+body[data-surface="discover"] .map-detail {
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  color: var(--g-text);
+}
+/* The one lime on this page: the pin you are pointing at. */
+body[data-surface="discover"] .map-pin-new--hover {
+  z-index: 4;
+  filter: drop-shadow(0 0 0 2px var(--g-lime)) drop-shadow(0 4px 10px rgba(0,0,0,.5));
+}
+
+/* ── Map summon capsule (below 1024) ──────────────────────── */
+body[data-surface="discover"] .disc-maptoggle {
+  position: fixed;
+  z-index: 25;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + 22px + env(safe-area-inset-bottom, 0px));
+  height: var(--unit);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 20px;
+  /* A floating glass chrome capsule — one of the two sanctioned 999s. */
+  border-radius: 999px;
+  background: var(--glass-deep);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--glass-hair);
+  box-shadow: inset 0 1px 0 var(--glass-fill), 0 10px 32px rgba(0,0,0,.45);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--g-text);
+  cursor: pointer;
+}
+body[data-surface="discover"] .disc-maptoggle svg { color: var(--g-petrol); }
+
+/* ── Phone: one control per line, menus dock to the bottom ──
+   The facet row scrolls sideways rather than wrapping (control rows are
+   single-line), which would clip an anchored dropdown — so below 768 the
+   SAME menu docks to the bottom of the viewport instead. Still live-apply,
+   still dismissed by the button, an outside tap, or Escape; there is no
+   Apply step and nothing to back out of. */
+@media (max-width: 767px) {
+  body[data-surface="discover"] .disc-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-3);
+  }
+  body[data-surface="discover"] .disc-scope { display: flex; width: 100%; }
+  body[data-surface="discover"] .disc-scope__btn { flex: 1; justify-content: center; }
+  /* Bleed to the screen edges so the row reads as scrollable. */
+  body[data-surface="discover"] .disc-facets {
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 2px var(--gutter);
+  }
+  body[data-surface="discover"] .disc-facets::-webkit-scrollbar { display: none; }
+
+  body[data-surface="discover"] .disc-facet__menu {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    width: auto;
+    max-width: none;
+    max-height: 70svh;
+    overflow-y: auto;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    padding: var(--s-5) var(--gutter) calc(var(--s-5) + env(safe-area-inset-bottom, 0px));
+    /* The spread shadow paints the scrim — no extra backdrop element, and
+       a tap on it still reaches the document handler that closes menus. */
+    box-shadow: inset 0 1px 0 var(--glass-fill), 0 0 0 100vmax rgba(var(--scrim-rgb), .55);
+  }
+}
+
+/* ── Below 1024: map is an overlay, list owns the page ─────── */
+@media (max-width: 1023px) {
+  /* A plain display toggle, not a fade: MapLibre has to remeasure the
+     moment this becomes visible (setView calls resize()), and sizing a
+     canvas mid-transition is how it ends up stuck at the wrong box. */
+  body[data-surface="discover"] .disc-map {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    border: 0;
+    border-radius: 0;
+  }
+  body[data-surface="discover"].disc-map-open .disc-map { display: block; }
+  body[data-surface="discover"].disc-map-open { overflow: hidden; }
+  body[data-surface="discover"].disc-map-open .disc-maptoggle,
+  body[data-surface="discover"].disc-map-open .topbar { display: none; }
+  body[data-surface="discover"] .disc-map__close { display: grid; }
+  body[data-surface="discover"] .map-zoom-ctrl  { bottom: calc(var(--nav-h) + 16px); }
+  body[data-surface="discover"] .map-locate-fab { bottom: calc(var(--nav-h) + 164px); }
+}
+
+/* Tablet: the masthead can't hold logo + tabs + search + city on one
+   line — at 768 the tabs printed straight through "Search or ask". The
+   tabs drop back to the bottom dock (where they already are on a phone)
+   and the search keeps the island. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  body[data-surface="discover"] .nav {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: auto;
+    transform: none;
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    pointer-events: auto;
+  }
+  body[data-surface="discover"] .nav__inner {
+    max-width: 420px;
+    height: 64px;
+    margin: 0 auto;
+    padding: 0 8px;
+    justify-content: space-around;
+    background: var(--glass-deep);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--glass-hair);
+    border-radius: var(--radius-island);
+    box-shadow: inset 0 1px 0 var(--glass-fill), 0 12px 40px rgba(0,0,0,.45);
+  }
+  body[data-surface="discover"] .nav__item {
+    width: var(--unit);
+    height: var(--unit);
+    padding: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+  body[data-surface="discover"] .nav__icon { display: block; }
+  body[data-surface="discover"] .nav__item .nav__label { font-size: 10px; }
+}
+
+/* ── 1024+: list beside a sticky, bounded map ──────────────── */
+@media (min-width: 1024px) {
+  body[data-surface="discover"] .disc {
+    padding-bottom: var(--s-9);
+  }
+  body[data-surface="discover"] .disc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: var(--s-7);
+    align-items: start;
+  }
+  /* Narrower than the list on purpose: it answers "where", not "what". */
+  body[data-surface="discover"] .disc-map {
+    position: sticky;
+    top: var(--disc-top);
+    height: min(calc(100svh - var(--disc-top) - var(--s-7)), 620px);
+  }
+  body[data-surface="discover"] .disc-maptoggle { display: none; }
+  /* The nav tabs are a transparent overlay across the masthead's left
+     half (padding-left:176px + ~331px of tabs). The search has to start
+     clear of them or the two print on top of each other. */
+  body[data-surface="discover"] .disc-search { margin-left: 380px; }
+  /* The controls row sits over the list column only, so the facet menus
+     open against the text they filter. */
+  body[data-surface="discover"] .disc-controls { flex-wrap: nowrap; }
+}
+
+@media (min-width: 1280px) {
+  body[data-surface="discover"] .disc-layout { grid-template-columns: minmax(0, 1fr) 440px; }
+}
+
+/* Places carry no mood tags, so the strip has nothing to say there. */
+body[data-surface="discover"].discover-places .disc-facet[data-facet="mood"] { display: none; }
+
+/* ── Fallbacks ────────────────────────────────────────────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body[data-surface="discover"] .disc-facet__menu,
+  body[data-surface="discover"] .disc-maptoggle,
+  body[data-surface="discover"] .map-sheet,
+  body[data-surface="discover"] .map-detail { background: var(--glass-solid); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body[data-surface="discover"] .disc-facet__menu,
+  body[data-surface="discover"] .disc-maptoggle,
+  body[data-surface="discover"] .map-sheet,
+  body[data-surface="discover"] .map-detail {
+    background: var(--glass-solid) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+@media print {
+  body[data-surface="discover"] .disc-search,
+  body[data-surface="discover"] .disc-suggest,
+  body[data-surface="discover"] .disc-controls,
+  body[data-surface="discover"] .disc-summary,
+  body[data-surface="discover"] .disc-map,
+  body[data-surface="discover"] .disc-maptoggle { display: none !important; }
 }

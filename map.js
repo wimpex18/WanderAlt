@@ -26,6 +26,7 @@
 
   // ── State ─────────────────────────────────────────────────────
   let activeId   = null;
+  let hoverId    = null;   /* pin marked by the hovered Discover list row */
   let timeFilter = 'all';       /* all | tonight | thisweek | places */
   let catFilters = new Set();   /* set of category ids; empty = show all */
   let moodFilter = [];          /* mood tags; empty = no mood filter */
@@ -102,25 +103,16 @@
     return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
   }
 
-  /* True when any filter dimension is active. The map renders no pins
-     until the user filters — showing 100+ pins by default is cluttered
-     and unscanable. The hint overlay in #map-empty-hint communicates
-     this state. */
-  function isAnyFilterActive() {
-    return !!textQuery
-        || timeFilter !== 'all'
-        || catFilters.size > 0
-        || moodFilter.length > 0
-        || nhoodFilter.size > 0
-        || (withinMin > 0 && !!userLoc);
-  }
-
   function getVisibleEntries() {
     /* Places mode: discover.js already filtered the venues; show all of
        them that have coordinates. No "empty until filtered" gate — a
        finite venue set is scannable, unlike 100+ event pins. */
     if (placesMode) return placeEntries.filter(e => e.lat != null && e.lng != null);
-    if (!isAnyFilterActive()) return [];
+    /* No "empty until filtered" gate. It was meant to keep the map from
+       looking cluttered, but with Discover now listing every pick on load
+       it just left the map blank beside a full list — the one view that
+       could answer "where is all this?" answered nothing. A city's picks
+       cluster fine at the default zoom. */
     const q = textQuery.toLowerCase();
     const catalog = window.WA?.catalog || [];
     const kindFilters = new Set([...catFilters].filter(id => id !== 'free'));
@@ -255,18 +247,30 @@
       if (!cl.single) clustersByKey.set(`${cl.lat},${cl.lng}`, cl);
     }
 
-    /* Toggle the empty-state hint: shown when no filters are active so
-       users understand why the map is bare. */
-    const hint = document.getElementById('map-empty-hint');
-    if (hint) hint.hidden = placesMode || isAnyFilterActive();
-
     pinsEl.innerHTML = clusters.map(cl =>
       cl.single ? pinHTML(cl.entries[0]) : clusterPinHTML(cl)
     ).join('');
     positionPins();
 
+    /* Re-mark whatever the list is currently hovering — renderPins()
+       replaced the nodes that carried the class. */
+    if (hoverId) {
+      pinsEl.querySelector(`.map-pin-new[data-id="${CSS.escape(hoverId)}"]`)
+        ?.classList.add('map-pin-new--hover');
+    }
+
     pinsEl.querySelectorAll('.map-pin-new').forEach(btn => {
       btn.addEventListener('pointerdown', e => e.stopPropagation());
+      /* The other half of the row↔pin link: hovering a pin highlights its
+         list row. Fires on the map's own hover, never on the list's, so
+         the two can't feed each other. */
+      btn.addEventListener('pointerenter', () => {
+        document.dispatchEvent(new CustomEvent('wa:map-pin-hover',
+          { detail: { id: btn.dataset.id } }));
+      });
+      btn.addEventListener('pointerleave', () => {
+        document.dispatchEvent(new CustomEvent('wa:map-pin-hover', { detail: { id: '' } }));
+      });
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         activeId = (activeId === id) ? null : id;
@@ -649,6 +653,18 @@
       if (T) T.fitToPicks(getVisibleEntries());
     },
     focusPin,
+    /* Row↔pin link: Discover marks the hovered list row's pin (and the
+       reverse, via wa:map-pin-hover). Toggling a class beats re-rendering
+       the pin layer on every pointermove. */
+    hoverPin: (id) => {
+      if (!pinsEl || id === hoverId) return;
+      hoverId = id || null;
+      pinsEl.querySelectorAll('.map-pin-new--hover').forEach(el =>
+        el.classList.remove('map-pin-new--hover'));
+      if (!hoverId) return;
+      pinsEl.querySelector(`.map-pin-new[data-id="${CSS.escape(hoverId)}"]`)
+        ?.classList.add('map-pin-new--hover');
+    },
     closeDetail: () => {
       closeDetail(); activeId = null; renderPins();
       document.dispatchEvent(new CustomEvent('wa:map-pin-changed', { detail: { id: '' } }));

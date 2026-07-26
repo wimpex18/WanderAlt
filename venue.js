@@ -139,7 +139,10 @@
       (matchedVenue && matchedVenue.neighborhood) ||
         (entry.neighborhood && entry.neighborhood.toLowerCase() !== 'other' ? entry.neighborhood : null),
       (matchedVenue && matchedVenue.kind) || null,
-    ].filter(Boolean).join(' &middot; ');
+      /* Literal separator, not "&middot;" — venueMeta is esc()'d at both of
+         its interpolation sites (correctly; the parts are scraped), which
+         turned the entity's "&" into "&amp;" and printed the raw entity. */
+    ].filter(Boolean).join(' · ');
 
     /* Other picks by the same curator (excludes current entry); cap at 5. */
     const moreAll  = catalog.filter(e => e.handle === entry.handle && e.id !== entry.id);

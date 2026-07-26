@@ -93,13 +93,18 @@
         <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
         <span class="wordmark">WanderAlt</span>
       </a>
-      <!-- Search-or-ask (desktop masthead only): a plain GET form
-           into Discover — no JS, CSP-clean. The ✦ key is the submit. -->
+      <!-- Search (desktop masthead only): a plain GET form into Discover —
+           no JS, CSP-clean. It hands the query to Discover, which is where
+           results live; Discover then offers the concierge on that same
+           text. The key used to wear the ✦ sparkle, which promised the AI
+           concierge and delivered a keyword search on another page — one
+           glyph, two meanings. It is a magnifier now, because that is what
+           it does. -->
       <form class="masthead-search" action="./discover.html" method="get" role="search">
         <input class="masthead-search__input one-line" type="search" name="q"
-               placeholder="Search or ask" aria-label="Search or ask" />
+               placeholder="Search picks and places" aria-label="Search picks and places" />
         <button class="masthead-search__key" type="submit" aria-label="Search">
-          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/></svg>
         </button>
       </form>
       <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">

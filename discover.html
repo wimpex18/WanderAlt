@@ -41,9 +41,12 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./discover.js"></script>
 </head>
-<body data-page="discover" data-skin="dusk">
+<!-- data-surface scopes the Discover layout CSS. place.html also carries
+     data-page="discover" (for the nav highlight) but must NOT inherit this
+     page's grid, so every layout rule keys off data-surface, not data-page. -->
+<body data-page="discover" data-surface="discover" data-skin="dusk">
 
-  <a class="skip-link" href="#discover-main">Skip to results</a>
+  <a class="skip-link" href="#discover-main">Skip to picks</a>
 
   <header class="topbar island island--deep" role="banner">
     <div class="topbar__inner">
@@ -51,50 +54,48 @@
         <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
         <span class="wordmark">WanderAlt</span>
       </a>
-      <!-- Search-or-ask lives INSIDE the topbar island on Discover:
-           logo · search composite · city, one line. -->
-      <section class="discover-search" aria-labelledby="discover-search-label" data-mode="search">
-        <label id="discover-search-label" class="visually-hidden" for="discover-q">Search WanderAlt</label>
+      <!-- One search field, one behaviour. Typing filters the list live;
+           the concierge is an ACTION offered on what you typed, not a
+           second mode hidden behind a toggle — the old ✦ switched the
+           field between keyword and AI with nothing but a placeholder to
+           tell you which one you were in.
+           It rides the topbar island at every width. Below 1024px the
+           masthead nav tabs step aside for it (the bottom dock already
+           carries navigation there) — at 768 the two used to overlap,
+           with "Search or ask" printing underneath "Discover". -->
+      <section class="disc-search" aria-label="Search WanderAlt">
         <form role="search" data-no-submit>
-          <div class="search-box discover-search__box">
-            <span class="search-box__icon search-box__icon--search" aria-hidden="true">
+          <div class="disc-search__box">
+            <span class="disc-search__icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                 <circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/>
               </svg>
             </span>
             <input
               id="discover-q"
-              class="search-input"
+              class="disc-search__input"
               type="search"
               name="q"
-              placeholder="Search or ask&hellip;"
+              placeholder="Search, or ask for what you want"
+              aria-label="Search WanderAlt, or ask the concierge"
               autocomplete="off"
               spellcheck="false"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="disc-suggest"
               enterkeyhint="search" />
-            <!-- AI toggle ✦ — muted in keyword mode, petrol key when AI
-                 mode is active. Tap to toggle. -->
-            <button class="search-box__ai-btn" id="discover-match-toggle" type="button"
-                    aria-label="Concierge — describe what you want" aria-pressed="false">
-              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 2.5l1.4 3.6L14 7.5l-3.6 1.4L9 12.5 7.6 8.9 4 7.5l3.6-1.4z"/>
-                <path d="M15 12l.7 1.8L17.5 14.5l-1.8.7L15 17l-.7-1.8L12.5 14.5l1.8-.7z"/>
-              </svg>
-              <span class="search-box__ai-label">Concierge</span>
-            </button>
-            <button class="search-box__clear" id="discover-clear" type="button" aria-label="Clear search" hidden>
+            <button class="disc-search__clear" id="discover-clear" type="button" aria-label="Clear search" hidden>
               <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
                 <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
               </svg>
             </button>
           </div>
         </form>
-        <!-- Example prompts — AI mode + empty field only; anchored as a
-             dropdown under the island. -->
-        <div class="discover-ai-examples" id="discover-ai-examples" hidden>
-          <button type="button" class="discover-ai-example" data-prompt="quiet wine bar tonight">quiet wine bar tonight</button>
-          <button type="button" class="discover-ai-example" data-prompt="vinyl and late night dancing">vinyl &amp; dancing</button>
-          <button type="button" class="discover-ai-example" data-prompt="something free this week">something free</button>
-        </div>
+        <!-- Offers the concierge on whatever is in the field (and example
+             phrasings while it is empty). Closes on Escape, on blur, on
+             clear, and on picking something — the old examples popup had
+             no way out at all. discover.js fills it. -->
+        <div class="disc-suggest" id="disc-suggest" role="listbox" aria-label="Search suggestions" hidden></div>
       </section>
       <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
         <span class="city-dot" aria-hidden="true"></span>
@@ -106,163 +107,114 @@
     </div>
   </header>
 
-  <main id="discover-main" class="page" role="main">
+  <main id="discover-main" class="disc" role="main">
 
     <p class="print-head" aria-hidden="true"></p>
 
-    <!-- Editorial lede — eyebrow + short title;
-         desktop hides it entirely (the deck toolbar owns the chrome).
+    <!-- Editorial lede — the same eyebrow + Fraunces line Today opens with,
+         so Discover reads as the same publication rather than a map tool.
          city.js swaps the city name in .page-head__city. -->
-    <header class="page-head page-head--discover">
-      <p class="page-head__eyebrow">Vouched by humans</p>
-      <h1 class="page-head__title">Every pick in <b class="page-head__city">Tallinn</b>.</h1>
+    <header class="disc-head">
+      <p class="disc-head__eyebrow">Vouched by humans</p>
+      <h1 class="disc-head__title">Every pick in <b class="page-head__city">Tallinn</b>.</h1>
     </header>
 
-    <!-- Events | Places scope switch. The permanent thing (a venue) and
-         the dated thing (an event) are different objects, so this is a
-         scoped toggle, not a filter facet (RA / Google Maps pattern).
-         It sits above search because it scopes everything below it.
-         discover.js reads/writes &type=events|places. -->
-    <!-- Control deck — scope · search · quick filters · mood, grouped in
-         one Plate & Rule plate (Phase 2). discover.js logic unchanged. -->
-    <div class="deck">
-    <div class="discover-scope" role="tablist" aria-label="Browse events or places">
-      <button class="discover-scope__btn discover-scope__btn--on" type="button"
-              role="tab" aria-selected="true" data-type="events">Events <span class="discover-scope__count" data-count="events" hidden>0</span></button>
-      <button class="discover-scope__btn" type="button"
-              role="tab" aria-selected="false" data-type="places">Places <span class="discover-scope__count" data-count="places" hidden>0</span></button>
+    <!-- Controls: scope + facets on ONE line. A venue is a permanent thing
+         and an event is a dated thing, so Events|Places is a scope switch
+         (RA / Google Maps pattern), not a filter facet — it reads as a
+         segmented control and everything to its right filters within it. -->
+    <div class="disc-controls">
+      <div class="disc-scope" role="tablist" aria-label="Browse events or places">
+        <button class="disc-scope__btn disc-scope__btn--on" type="button"
+                role="tab" aria-selected="true" data-type="events">Events <span class="disc-scope__count" data-count="events" hidden>0</span></button>
+        <button class="disc-scope__btn" type="button"
+                role="tab" aria-selected="false" data-type="places">Places <span class="disc-scope__count" data-count="places" hidden>0</span></button>
+      </div>
+
+      <!-- One filter language at every width: each facet is a button that
+           opens its own anchored menu. No quick-pill row duplicating the
+           facets, no full-screen modal to back out of — click the button
+           again, click away, or press Escape. -->
+      <div class="disc-facets" id="disc-facets" role="group" aria-label="Filters">
+        <div class="disc-facet" data-facet="when" data-mode="events">
+          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
+            <span class="disc-facet__label">When</span>
+            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="disc-facet__menu" hidden>
+            <div class="disc-chips" id="discover-when" role="group" aria-label="When"></div>
+          </div>
+        </div>
+
+        <div class="disc-facet" data-facet="cat">
+          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
+            <span class="disc-facet__label">Category</span>
+            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="disc-facet__menu" hidden>
+            <div class="disc-chips" id="discover-cat-chips" role="group" aria-label="Category"></div>
+          </div>
+        </div>
+
+        <!-- Area answers "where", and so does walking distance — one menu,
+             one question. "Near me" asks for location only when tapped. -->
+        <div class="disc-facet" data-facet="area">
+          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
+            <span class="disc-facet__label">Area</span>
+            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="disc-facet__menu" hidden>
+            <div class="disc-chips" id="discover-area-chips" role="group" aria-label="Area"></div>
+            <p class="disc-facet__note meta" id="discover-within-note" hidden>Couldn&rsquo;t place you &mdash; showing every area.</p>
+          </div>
+        </div>
+
+        <div class="disc-facet" data-facet="mood" data-mode="events">
+          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
+            <span class="disc-facet__label">Mood</span>
+            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="disc-facet__menu" hidden>
+            <nav class="mood-chips" aria-label="Filter by mood"></nav>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Quick-filter pills. Mode-aware: Events shows time/free shortcuts,
-         Places shows the 4 most common venue-kind shortcuts. discover.js
-         toggles [data-mode] visibility. + Filters is shared. Minimalist deck
-         (Revolut/Lightyear pattern): only a few categories sit inline; the
-         full set lives in the Filters sheet (Category facet renders every
-         WA.VENUE_KIND), so nothing is lost — just one tap away. -->
-    <nav class="discover-pills" aria-label="Quick filters">
-      <button class="discover-pill" type="button" data-pill="tonight"  data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008" /></svg>Tonight</button>
-      <button class="discover-pill" type="button" data-pill="thisweek" data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" /></svg>This week</button>
-      <button class="discover-pill" type="button" data-pill="free"     data-mode="events"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3" /></svg>Free</button>
-      <button class="discover-pill" type="button" data-pill="kind:record store" data-mode="places" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.2" /><circle cx="12" cy="12" r="0.8" fill="currentColor" /></svg>Record stores</button>
-      <button class="discover-pill" type="button" data-pill="kind:bookshop"     data-mode="places" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.3v13c3-.7 6-.2 8 1.3 2-1.5 5-2 8-1.3v-13c-3-.7-6-.2-8 1.3z" /><path d="M12 6v13" /></svg>Bookshops</button>
-      <button class="discover-pill" type="button" data-pill="kind:gallery"      data-mode="places" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 6.4 15.4c.8-.8.3-2.2-.8-2.4h-1.3a2.7 2.7 0 0 1-2-4.5A9 9 0 0 0 12 3z" /><circle cx="7.5" cy="11" r="1.1" /><circle cx="11.5" cy="7.5" r="1.1" /><circle cx="15.8" cy="9.5" r="1.1" /></svg>Galleries</button>
-      <button class="discover-pill" type="button" data-pill="kind:club"         data-mode="places" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" /><circle cx="7" cy="18" r="2.4" /><circle cx="17" cy="16" r="2.4" /></svg>Clubs</button>
-      <!-- Thrift / Arts centres / Cinemas / Community live in the Filters sheet
-           (Category facet) to keep the inline deck short — see comment above. -->
-      <button class="discover-pill discover-pill--more" type="button" id="discover-filters-btn">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>Filters
-        <span class="discover-pill__count" id="discover-filter-count" hidden>0</span>
-      </button>
-    </nav>
+    <div class="disc-layout">
 
-    <!-- Mood chips folded into the Filters sheet — they are a facet,
-         not deck chrome. The deck stays scope · search · quick pills ·
-         applied row. -->
+      <div class="disc-col">
 
-    <!-- Applied-filters overview — removable chips for the category /
-         neighborhood filters hidden inside the sheet, so users can see
-         and clear them without reopening it (Baymard: cheapest
-         orientation win). Hidden when no sheet filters are active;
-         discover.js renders it. -->
-    <div class="discover-applied" id="discover-applied" aria-label="Active filters" hidden></div>
-    </div><!-- /.deck -->
-
-    <!-- View panes: list (default) and map. Mobile shows one at a time
-         via the docked List|Map seg in the bottom chrome; desktop ≥1024px
-         shows rail + list + map side-by-side. -->
-    <div class="discover-panes" id="discover-panes" data-view="list">
-
-        <!-- Filters. Mobile: a bottom sheet opened by "+ Filters" (position
-             fixed, so its place in the grid is irrelevant there).
-             Desktop ≥1024px: a persistent left rail — the first column of
-             the 3-col split, static, live-apply,
-             "+ Filters"/Apply hidden. -->
-        <aside class="discover-sheet" id="discover-sheet" aria-label="Filters" hidden>
-          <div class="discover-sheet__handle" aria-hidden="true"></div>
-          <header class="discover-sheet__head">
-            <h2 class="discover-sheet__title">Filters</h2>
-            <!-- Desktop rail's reset (the footer Clear is hidden there).
-                 Shown only on desktop and only when a filter is active. -->
-            <button class="discover-sheet__clear-top" id="discover-rail-clear" type="button" hidden>Clear</button>
-            <button class="discover-sheet__close" id="discover-sheet-close" type="button" aria-label="Close">&times;</button>
-          </header>
-          <div class="discover-sheet__body">
-            <!-- Each field is a stacked group inside the mobile sheet and a
-                 facet dropdown-pill ≥1024px: the .facet-pill button
-                 (CSS-hidden on mobile) toggles [data-open] on the fieldset,
-                 revealing .discover-sheet__panel as an anchored popover.
-                 ≥1024 the rail shows the fields open. -->
-            <!-- When — single-select chips mirroring the mobile quick pills
-                 (events only; discover.js renders into #discover-when). -->
-            <fieldset class="discover-sheet__field" data-facet="when" data-mode="events">
-              <legend class="eyebrow">When</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /></svg>When</button>
-              <div class="discover-sheet__panel">
-                <div class="discover-sheet__chips" id="discover-when" role="group" aria-label="When"></div>
+        <!-- The list's own header: what you're looking at, how it's
+             ordered, and the one way out of every filter at once. -->
+        <div class="disc-summary">
+          <p class="disc-summary__count" id="discover-results-count" aria-live="polite"></p>
+          <div class="disc-summary__tools">
+            <div class="disc-facet disc-facet--quiet" data-facet="sort">
+              <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
+                <span class="disc-facet__label">Sort</span>
+                <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              </button>
+              <div class="disc-facet__menu disc-facet__menu--end" hidden>
+                <!-- Radio list, not a <select> (Baymard: visible options beat
+                     a dropdown under ~5 choices). Populated per scope. -->
+                <div class="disc-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
               </div>
-            </fieldset>
-            <fieldset class="discover-sheet__field" data-facet="cat">
-              <legend class="eyebrow">Category</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6h-6l0 -6" /><path d="M14 4h6v6h-6l0 -6" /><path d="M4 14h6v6h-6l0 -6" /><path d="M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>Category</button>
-              <div class="discover-sheet__panel">
-                <div class="discover-sheet__chips" id="discover-cat-chips"></div>
-              </div>
-            </fieldset>
-            <fieldset class="discover-sheet__field" data-facet="nhood">
-              <legend class="eyebrow">Neighborhood</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0" /></svg>Neighborhood</button>
-              <div class="discover-sheet__panel">
-                <div class="discover-sheet__chips" id="discover-nhood-chips"></div>
-              </div>
-            </fieldset>
-            <!-- Walking-radius filter. Single-select chips (Any / 5 / 15 /
-                 30 min walk). Picking one requests the visitor's location
-                 and filters list + map pins by haversine distance.
-                 discover.js renders the chips into #discover-within. -->
-            <fieldset class="discover-sheet__field" data-facet="within">
-              <legend class="eyebrow">Distance</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M7 21l3 -4" /><path d="M16 21l-2 -4l-3 -3l1 -6" /><path d="M6 12l2 -3l4 -1l3 3l3 1" /></svg>Distance</button>
-              <div class="discover-sheet__panel">
-                <div class="discover-sheet__chips" id="discover-within" role="group" aria-label="Walking distance"></div>
-                <p class="discover-within-note meta" id="discover-within-note" hidden>Location unavailable &mdash; showing all.</p>
-              </div>
-            </fieldset>
-            <!-- Mood chips — folded in from the deck. mood-chips.js
-                 renders chip buttons into every .mood-chips container. -->
-            <fieldset class="discover-sheet__field" data-facet="mood" data-mode="events">
-              <legend class="eyebrow">Mood</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9 10h.01M15 10h.01" /><path d="M9.5 15a3.5 3.5 0 0 0 5 0" /></svg>Mood</button>
-              <div class="discover-sheet__panel">
-                <nav class="mood-chips" aria-label="Filter by mood"></nav>
-              </div>
-            </fieldset>
-            <fieldset class="discover-sheet__field discover-sheet__field--sort" data-facet="sort">
-              <legend class="eyebrow">Sort</legend>
-              <button type="button" class="facet-pill" data-facet-toggle aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l4 -4l4 4m-4 -4v14" /><path d="M21 15l-4 4l-4 -4m4 4v-14" /></svg>Sort</button>
-              <div class="discover-sheet__panel">
-                <!-- Radio list, not a <select> (Baymard: visible options beat a
-                     dropdown under ~5 choices). Options populated per mode. -->
-                <div class="discover-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
-              </div>
-            </fieldset>
+            </div>
+            <button class="disc-clear" id="discover-clear-filters" type="button" hidden>Clear filters</button>
           </div>
-          <footer class="discover-sheet__foot">
-            <button class="discover-sheet__clear" id="discover-sheet-clear" type="button">Clear all</button>
-            <button class="btn-primary discover-sheet__apply" id="discover-sheet-apply" type="button">Apply</button>
-          </footer>
-        </aside>
+        </div>
 
-      <!-- List pane — on Dusk mobile this is the draggable glass sheet
-           over the map scene (detents peek / half / full). The
-           grip is a real button so the detents stay keyboard-reachable. -->
-      <div class="discover-pane discover-pane--list" data-pane="list">
-        <button class="dsheet-grip" id="discover-grip" type="button"
-                aria-label="Expand or collapse the results sheet"><span aria-hidden="true"></span></button>
-
-        <!-- AI match results — populated by discover.js when AI mode is active. -->
-        <section class="match-wrap" id="discover-match-wrap" aria-label="AI match results" hidden>
+        <!-- Concierge answer. Sits ABOVE the list rather than replacing the
+             page, and always carries its own exit — the old AI mode hid
+             every other control and left no way back except reloading. -->
+        <section class="match-wrap" id="discover-match-wrap" aria-label="Concierge answer" hidden>
+          <div class="disc-answer__head">
+            <p class="disc-answer__label">Concierge</p>
+            <p class="disc-answer__prompt" id="discover-match-prompt"></p>
+            <button class="disc-answer__back" id="discover-match-back" type="button">Back to all picks</button>
+          </div>
           <div class="match-result" id="discover-match-result" aria-live="polite"></div>
-          <!-- Action row: retry + copy-link. Both shown/hidden together by JS. -->
           <button class="match-again" id="discover-match-again" type="button" hidden>
             Try again &rarr;
           </button>
@@ -276,29 +228,10 @@
           </button>
         </section>
 
-        <!-- Keyword / filter results — shown when input has a value or any filter is active. -->
-        <section id="discover-results-section" aria-label="Results" hidden>
-          <header class="search-section-head search-section-head--sort">
-            <div>
-              <p class="eyebrow">Results</p>
-              <p class="meta" id="discover-results-count" aria-live="polite"></p>
-            </div>
-          </header>
-          <ol class="list-rows" id="discover-results" role="list"></ol>
-          <p class="meta" id="discover-empty" hidden></p>
-        </section>
-
-        <!-- Browse sections — hidden when filters are active.
-             Each <ul> ships with skeleton rows so the layout settles
-             on first paint instead of jolting in once discover.js
-             finishes populateBrowse(). populateBrowse() replaces the
-             skeletons via innerHTML when the catalog is ready.       -->
-        <section class="discover-browse-section search-browse-section" aria-labelledby="curators-label">
-          <header class="search-section-head">
-            <p id="curators-label" class="eyebrow">Curators</p>
-            <p class="meta">&nbsp;</p>
-          </header>
-          <ul class="curator-rows" aria-busy="true">
+        <!-- The picks. Rendered on load with the whole catalogue — there is
+             no "filter first to see anything" gate. -->
+        <section id="discover-results-section" aria-label="Picks">
+          <ol class="list-rows" id="discover-results" role="list">
             <li class="skeleton-row" aria-hidden="true">
               <span class="skeleton-row__line skeleton-row__line--label"></span>
               <span class="skeleton-row__line skeleton-row__line--tagline"></span>
@@ -314,79 +247,42 @@
               <span class="skeleton-row__line skeleton-row__line--tagline"></span>
               <span class="skeleton-row__line skeleton-row__line--count"></span>
             </li>
-          </ul>
+          </ol>
+          <div class="disc-empty" id="discover-empty" hidden></div>
         </section>
 
-        <section class="discover-browse-section search-browse-section" aria-labelledby="neighborhoods-label">
-          <header class="search-section-head">
-            <p id="neighborhoods-label" class="eyebrow">Neighborhoods</p>
-            <p class="meta">&nbsp;</p>
+        <!-- Curators sit AFTER the picks: the people are worth browsing,
+             but not before the thing they wrote about. Neighborhood and
+             kind lists are gone — the Area and Category menus are the
+             same lists, one tap away and always in view. -->
+        <section class="disc-browse" id="discover-curators" aria-labelledby="curators-label" hidden>
+          <header class="disc-browse__head">
+            <p id="curators-label" class="disc-browse__eyebrow">Curators</p>
+            <p class="disc-browse__meta"></p>
           </header>
-          <ul class="browse-rows" aria-busy="true">
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-          </ul>
+          <ul class="disc-browse__rows"></ul>
         </section>
 
-        <section class="discover-browse-section search-browse-section" aria-labelledby="kinds-label">
-          <header class="search-section-head">
-            <p id="kinds-label" class="eyebrow">By kind</p>
-            <p class="meta">&nbsp;</p>
-          </header>
-          <ul class="browse-rows" aria-busy="true">
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row skeleton-row--simple" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Colophon — lives at the foot of the scrolling list pane (not
-             after </main>, which would land in the list/map grid). Gives
-             every Discover visitor a path to About/Contact. -->
         <footer class="colophon">
           <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
         </footer>
       </div>
 
-      <!-- Map pane -------------------------------------------------- -->
-      <!-- map.js binds to these DOM IDs for the pin/cluster layer;
-           map-tiles.js mounts the MapLibre basemap into #map-canvas.
-           Discover drives both via WA.MapView (events) and
-           WA.MapView.setPlaces() (venue pins in Places mode).           -->
-      <div class="discover-pane discover-pane--map" data-pane="map">
+      <!-- Map. From 1024px up it is a sticky companion column beside the
+           list — narrower than the list, because it answers "where", not
+           "what". Below that it is an overlay you summon from the Map
+           button, so the picks own the phone screen. -->
+      <div class="disc-map" id="disc-map" aria-label="Map">
         <div class="map-viewport" id="map-viewport">
           <div id="map-canvas" class="map-canvas"></div>
           <div id="map-pins" class="map-pins" aria-live="polite"></div>
-          <!-- Empty-state hint — visible when no filters are active. The
-               default map view shows no pins to avoid clutter; pick a
-               filter and the matching set appears. -->
-          <div id="map-empty-hint" class="map-empty-hint" aria-live="polite">
-            <p class="map-empty-hint__title">Filter to see picks on the map</p>
-            <p class="map-empty-hint__body">
-              Use a <strong>quick filter</strong> above, or open <strong>Filters</strong>
-              for category or neighborhood.
-            </p>
-          </div>
         </div>
+
+        <button class="disc-map__close" id="disc-map-close" type="button" aria-label="Close map">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
+          </svg>
+        </button>
 
         <div class="map-zoom-ctrl" role="group" aria-label="Zoom controls">
           <button class="map-zoom-btn" id="btn-zoom-in"  aria-label="Zoom in">+</button>
@@ -413,14 +309,16 @@
 
   </main>
 
-  <!-- Mobile filter sheet backdrop (the sheet itself lives inside the
-       list pane so it can become a persistent left-rail on desktop). -->
-  <div class="discover-sheet-backdrop" id="discover-sheet-backdrop" hidden></div>
+  <!-- Summons the map below 1024px. A floating glass capsule is one of the
+       two shapes cleared for the 999px radius. -->
+  <button class="disc-maptoggle" id="disc-map-open" type="button">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/>
+    </svg>
+    Map
+  </button>
 
   <nav class="nav" aria-label="Primary">
-    <!-- The List|Map seg is retired (Dusk Glass): the map is
-         always the scene; the results sheet's detents replace the mode
-         switch — dragging to peek IS "map view". -->
     <div class="nav__inner island island--deep">
       <a class="nav__item" data-nav="briefing" href="./index.html">
         <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
