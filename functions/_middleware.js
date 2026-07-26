@@ -25,6 +25,14 @@ const SB_BASE = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 /* Public anon key — same one shipped in supabase.js (RLS is SELECT-only). */
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
 
+/* A curator handle is a Telegram slug: @ plus word characters and dots.
+   The value below is reflected into <title> and og:description when no
+   curator row matches, so an unvalidated one lets anyone mint a
+   wanderalt.app link whose social preview reads whatever they like.
+   HTMLRewriter escapes it, so this is preview spoofing rather than XSS —
+   but the domain is the whole point of the trick. */
+const VALID_HANDLE = /^@?[A-Za-z0-9_.]{1,40}$/;
+
 const sbGet = async (path) => {
   const r = await fetch(`${SB_BASE}/rest/v1/${path}`, {
     headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
@@ -106,9 +114,16 @@ export async function onRequest(context) {
     const rows = await sbGet(
       `curators?handle=eq.${encodeURIComponent(handle)}&select=name,tagline&limit=1`);
     const c = rows[0];
+    /* Only echo the requested handle back when it looks like a real one.
+       With no row AND nothing safe to show, leave the default card alone —
+       never let an arbitrary query string author the preview. */
+    const shown = VALID_HANDLE.test(handle) ? handle : null;
+    if (!c && !shown) return res;
+    const name = c?.name || shown;
     return rewrite(res, {
-      title:       c?.name ? `${c.name} · WanderAlt` : `${handle} · WanderAlt`,
-      description: c?.tagline || `Curated picks by ${handle} on WanderAlt.`,
+      title:       name ? `${name} · WanderAlt` : 'WanderAlt',
+      description: c?.tagline
+        || (shown ? `Curated picks by ${shown} on WanderAlt.` : 'Curated picks on WanderAlt.'),
       image:       `${SB_BASE}/functions/v1/og-image?handle=${encodeURIComponent(handle)}`,
       photo:       false,
     });

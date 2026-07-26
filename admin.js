@@ -385,8 +385,12 @@
 
     const preview = $('mf-image-preview');
     if (preview) {
+      /* escAttr, not raw: image_url is partly attacker-influenced (Wikidata /
+         Wikimedia values arrive via enrich-images), and this panel's
+         localStorage holds the service-role key — an attribute break-out here
+         would hand over the whole database. */
       preview.innerHTML = pick?.image_url
-        ? `<img src="${pick.image_url}" alt="Current image" />`
+        ? `<img src="${escAttr(pick.image_url)}" alt="Current image" />`
         : '';
     }
 
