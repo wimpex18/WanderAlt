@@ -19,9 +19,13 @@
      from external sources, and this panel runs with the service-role
      key in localStorage — a stored payload rendered unescaped here
      would execute with that key in reach. */
+  /* Mirrors WA.UI.esc, including the single quote — admin builds attributes
+     from DB values and this panel holds the service-role key, so it gets the
+     same escaping contract as the public pages rather than a weaker one. */
   const escAttr = (s) => String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
   /* ── Service role key (localStorage) ────────────────────── */
   const getKey  = ()  => localStorage.getItem('wa-admin-key') || '';
