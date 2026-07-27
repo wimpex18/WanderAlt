@@ -15,6 +15,16 @@
         retiring the last stray oxblood #8a2a1a in the codebase.
    ============================================================ */
 
+/* Pick titles, quotes, handles and venue names are scraped and
+   LLM-processed, and this function drops them straight into an HTML email.
+   Unescaped, a crafted title closes the surrounding tag and injects its own
+   markup into every subscriber's inbox — a link in a mail that genuinely
+   comes from WanderAlt. Same contract as WA.UI.esc on the site. */
+const esc = (s: unknown) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND  = Deno.env.get('RESEND_API_KEY') ?? '';
@@ -172,11 +182,11 @@ const renderPickRow = (p: Pick) => {
     : '';
   return `<tr><td style="padding:14px 0;border-top:1px solid #e8e3da;">
     <p style="margin:0 0 5px;font-family:'Georgia',serif;font-size:16px;line-height:1.3;color:#1a1a1a;">
-      ${tonightBadge}<a href="${BASE_URL}/venue.html?id=${p.id}" style="color:#1a1a1a;text-decoration:none;">${p.title}</a></p>
-    <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;color:#888;letter-spacing:0.05em;">${buildMeta(p)}</p>
+      ${tonightBadge}<a href="${BASE_URL}/venue.html?id=${encodeURIComponent(p.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(p.title)}</a></p>
+    <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;color:#888;letter-spacing:0.05em;">${esc(buildMeta(p))}</p>
     <p style="margin:0;font-family:'Georgia',serif;font-size:15px;line-height:1.6;color:#444;font-style:italic;">
-      &ldquo;${p.quote}&rdquo;
-      <span style="font-style:normal;font-family:'Courier New',monospace;font-size:11px;color:#055959;white-space:nowrap;"> — ${p.handle}</span></p>
+      &ldquo;${esc(p.quote)}&rdquo;
+      <span style="font-style:normal;font-family:'Courier New',monospace;font-size:11px;color:#055959;white-space:nowrap;"> — ${esc(p.handle)}</span></p>
   </td></tr>`;
 };
 
@@ -186,13 +196,13 @@ const renderSavedChangesHtml = (sc: SavedChanges | null) => {
     ...sc.changed.map(c =>
       `<tr><td style="padding:10px 0;border-top:1px solid #e8e3da;">
         <p style="margin:0;font-family:'Georgia',serif;font-size:15px;color:#1a1a1a;">
-          <a href="${BASE_URL}/venue.html?id=${c.id}" style="color:#1a1a1a;text-decoration:none;">${c.title}</a></p>
-        <p style="margin:3px 0 0;font-family:'Courier New',monospace;font-size:11px;color:#055959;letter-spacing:0.04em;">now ${c.to} &middot; was ${c.from}</p>
+          <a href="${BASE_URL}/venue.html?id=${encodeURIComponent(c.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(c.title)}</a></p>
+        <p style="margin:3px 0 0;font-family:'Courier New',monospace;font-size:11px;color:#055959;letter-spacing:0.04em;">now ${esc(c.to)} &middot; was ${esc(c.from)}</p>
       </td></tr>`),
     ...sc.gone.map(g =>
       `<tr><td style="padding:10px 0;border-top:1px solid #e8e3da;">
-        <p style="margin:0;font-family:'Georgia',serif;font-size:15px;color:#1a1a1a;">${g.title}</p>
-        <p style="margin:3px 0 0;font-family:'Courier New',monospace;font-size:11px;color:#8a5a00;letter-spacing:0.04em;">no longer listed &middot; ${g.venue}</p>
+        <p style="margin:0;font-family:'Georgia',serif;font-size:15px;color:#1a1a1a;">${esc(g.title)}</p>
+        <p style="margin:3px 0 0;font-family:'Courier New',monospace;font-size:11px;color:#8a5a00;letter-spacing:0.04em;">no longer listed &middot; ${esc(g.venue)}</p>
       </td></tr>`),
   ].join('');
   return `<p style="margin:26px 0 6px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#055959;">Your saved events changed</p>
@@ -203,19 +213,19 @@ const renderHtml = (intro: string, picks: Pick[], city: string, unsubUrl: string
   const cityTitle = city.charAt(0).toUpperCase() + city.slice(1);
   const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WanderAlt &middot; ${cityTitle}</title></head>
+  <title>WanderAlt &middot; ${esc(cityTitle)}</title></head>
   <body style="margin:0;padding:0;background:#f6f3ec;font-family:'Georgia',serif;">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="background:#f6f3ec;padding:32px 16px;">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;background:#f6f3ec;"><tr><td>
     <p style="margin:0 0 2px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#999;">WanderAlt</p>
-    <h1 style="margin:0 0 4px;font-family:'Georgia',serif;font-size:28px;font-weight:400;color:#1a1a1a;">This week in ${cityTitle}</h1>
+    <h1 style="margin:0 0 4px;font-family:'Georgia',serif;font-size:28px;font-weight:400;color:#1a1a1a;">This week in ${esc(cityTitle)}</h1>
     <p style="margin:0 0 20px;font-family:'Courier New',monospace;font-size:11px;color:#aaa;letter-spacing:0.04em;border-bottom:1px solid #d8d3ca;padding-bottom:16px;">${dateStr}</p>
-    <p style="margin:0 0 24px;font-family:'Georgia',serif;font-size:16px;line-height:1.7;color:#2a2a2a;">${intro}</p>
+    <p style="margin:0 0 24px;font-family:'Georgia',serif;font-size:16px;line-height:1.7;color:#2a2a2a;">${esc(intro)}</p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">${picks.map(renderPickRow).join('')}<tr><td style="padding-top:4px;border-top:1px solid #e8e3da;"></td></tr></table>
     ${savedHtml}
     <p style="margin:28px 0 0;font-family:'Courier New',monospace;font-size:10px;color:#bbb;letter-spacing:0.06em;line-height:2;">
       WanderAlt &middot; Curated by humans, not algorithms.<br>
-      <a href="${unsubUrl}" style="color:#999;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="${BASE_URL}" style="color:#999;text-decoration:underline;">${BASE_URL.replace(/^https?:\/\//, '')}</a></p>
+      <a href="${esc(unsubUrl)}" style="color:#999;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="${BASE_URL}" style="color:#999;text-decoration:underline;">${BASE_URL.replace(/^https?:\/\//, '')}</a></p>
   </td></tr></table>
   </td></tr></table></body></html>`;
 };
