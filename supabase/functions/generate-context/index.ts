@@ -1,4 +1,8 @@
-/* generate-context v11 — Groq-primary, Gemini fallback
+/* generate-context v12 — Groq-primary, Gemini fallback
+
+   v12 (Jul 2026): GROQ_MODEL repointed. llama-4-scout is decommissioned
+   at Groq — absent from /v1/models and 404 on completion (verified by
+   probe, not recalled). Six functions pinned the dead id; see CLAUDE.md.
 
    v11 (cost policy): Groq llama-4-scout is now PRIMARY; Gemini
    gemini-2.5-flash-lite is the FALLBACK only when Groq is
