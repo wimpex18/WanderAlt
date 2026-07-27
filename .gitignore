@@ -11,3 +11,6 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Supabase CLI link state (machine-local, written by `npx supabase`)
+supabase/.temp/

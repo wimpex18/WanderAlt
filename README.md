@@ -56,6 +56,16 @@ Cloudflare Pages, connected to the GitHub repo. Framework preset **None**, build
 
 Everything lives on the single domain `wanderalt.app`; `wanderalt.com` is registered as brand defence and 301s across. Cloudflare was chosen over Vercel for unlimited free-tier bandwidth, a denser EU edge, and keeping hosting, DNS and email routing in one dashboard.
 
+### Edge functions currently behind the repo
+
+Eight functions are committed but not yet redeployed, so `supabase/functions/` is ahead of what runs. None of them is broken — all are frozen (cron disabled), so a stale copy changes nothing today. Deploy order matters for one:
+
+**`process-staging` first.** It is the only one that must land before the queue is drained: there are staging rows carrying `payload`, and the older deployed copy ignores that column and marks them `processed`, so their facts would be lost. Its cron is off, so this only bites on a manual run.
+
+Then, in rough priority: `match-pick` (Groq model fix; the only one with live user impact — a wasted 404 round-trip per Concierge query), `ingest-fienta`, `ingest-ra`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong` (all payload), and `classify-moods` / `draft-column` (model fix only).
+
+Deploy through the Supabase dashboard or `npx supabase functions deploy <name> --project-ref aqnsmmbrspkbfcvougeh`, and **preserve each function's existing `verify_jwt`** — it is not uniform, and a `verify_jwt: true` function called by a cron through raw `net.http_post` returns 401, which is why healthy crons go through `public.invoke_wa_fn(fn)`.
+
 `functions/_middleware.js` is a Pages Function that rewrites per-pick and per-curator Open Graph tags server-side, using the real venue photo where one exists and a generated card otherwise. It fails open and is inert under the local dev server.
 
 ## Backend
