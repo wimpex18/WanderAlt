@@ -40,7 +40,10 @@ const CF_TOKEN     = Deno.env.get('CF_AI_TOKEN') ?? '';
 // key was revoked; must match embed-picks' document model + 1024 dims).
 const EMBED_MODEL  = '@cf/baai/bge-m3';
 const GROQ_MODELS  = [
-  'meta-llama/llama-4-scout-17b-16e-instruct',
+  /* llama-4-scout removed Jul 2026 — decommissioned at Groq (absent from
+     /v1/models, 404 on completion, verified by probe). It sat first in
+     this list, so every live Concierge query paid a wasted 404 round-trip
+     before falling through to the model below. */
   'llama-3.3-70b-versatile',
 ];
 

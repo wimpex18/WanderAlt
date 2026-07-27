@@ -1,5 +1,7 @@
 // ============================================================
-// ingest-splendidpalace  v3
+// ingest-splendidpalace  v4
+// v4 (Jul 2026): writes staging_messages.payload — the structured half
+//   of the row. See the payload contract in process-staging.
 // v3 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings 409'd instead
 //   of being silently ignored.

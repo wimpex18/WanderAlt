@@ -1,6 +1,10 @@
 // ============================================================
-// WanderAlt — translate-picks  (v2, June 2026)
+// WanderAlt — translate-picks  (v3, July 2026)
 // One-shot backfill + safety net for the English-only app rule.
+// v3 (Jul 2026): also reviews picks.description — the promoter's own
+// listing copy, carried through from the source by the staging payload
+// contract. It arrives in the venue's language, and this is an
+// English-only guide.
 // v2 vs v1: detection covers BOTH title and quote (v1 keyed on the
 // title only, so picks with an English title but a Cyrillic quote
 // were skipped — 11 such quotes survived the first drain), and
@@ -17,7 +21,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_KEY     = Deno.env.get("GROQ_API_KEY");
-const GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct";
+/* llama-4-scout was decommissioned at Groq — /v1/models no longer lists
+   it and a completion returns 404 (verified Jul 2026, not recalled).
+   llama-3.3-70b-versatile was already this repo's documented fallback and
+   probes 200, so it is the minimal verified replacement. Six functions
+   pinned the dead id; see the note in CLAUDE.md. */
+const GROQ_MODEL   = "llama-3.3-70b-versatile";
 const TIME_CAP_MS  = 110_000;
 
 const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));

@@ -29,7 +29,11 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY   = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GROQ_KEY     = Deno.env.get("GROQ_API_KEY");
-const GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct";
+/* llama-4-scout was decommissioned at Groq — absent from /v1/models and
+   404 on completion (verified by probe, Jul 2026; not recalled from
+   memory). llama-3.3-70b-versatile was already this repo's documented
+   fallback and probes 200, so it is the minimal verified replacement. */
+const GROQ_MODEL   = "llama-3.3-70b-versatile";
 const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-oss-120b:free";
 const BATCH_SIZE   = 20;   // picks per LLM call
