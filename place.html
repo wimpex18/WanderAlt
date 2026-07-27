@@ -28,7 +28,9 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./place.js"></script>
 </head>
-<body data-page="discover" data-skin="dusk">
+<!-- data-page="discover" lights the nav; data-surface="place" is what the
+     styles key off, since discover.html must not inherit detail rules. -->
+<body data-page="discover" data-surface="place" data-skin="dusk">
 
   <a class="skip-link" href="#place-main">Skip to place</a>
 

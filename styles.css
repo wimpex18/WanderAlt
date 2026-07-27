@@ -6374,9 +6374,13 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
 }
 [data-skin="dusk"] .scene-float--back { left: 16px; }
 @media (max-width: 767px) {
-  /* No topbar on the pick detail — back + share float instead */
-  [data-skin="dusk"][data-page="venue"] .topbar { display: none; }
-  [data-skin="dusk"][data-page="venue"] .scene--detail { padding-top: 16px; }
+  /* No topbar on a detail page — the floating back key is the affordance.
+     The place page kept its topbar, so the puck (top:16) landed inside the
+     topbar island (top:12, 58 tall) and the two overlapped. */
+  [data-skin="dusk"][data-page="venue"] .topbar,
+  [data-skin="dusk"][data-surface="place"] .topbar { display: none; }
+  [data-skin="dusk"][data-page="venue"] .scene--detail,
+  [data-skin="dusk"][data-surface="place"] .scene--detail { padding-top: 16px; }
 }
 [data-skin="dusk"] .scene-float--share { right: 16px; }
 [data-skin="dusk"] .scene-float .ic { width: 20px; height: 20px; stroke-width: 1.75; }
@@ -7583,9 +7587,12 @@ body[data-skin="dusk"][data-page="profile"] .profile-welcome__note a { color: va
     text-transform: uppercase;
     color: var(--g-petrol);
   }
-  /* Keep the headline column clear of the card. */
-  [data-skin="dusk"] .scene-title,
-  [data-skin="dusk"] .scene-quote { max-width: min(640px, calc(100% - 340px)); }
+  /* Keep the headline column clear of the card. Page-scoped: .scene-aside
+     only ever renders on Today, and unscoped this reserved 340px inside the
+     venue page's 520px answer card too — squeezing the pick's quote, the
+     card's whole point, into a ~180px ribbon from 1100px up. */
+  [data-skin="dusk"][data-page="briefing"] .scene-title,
+  [data-skin="dusk"][data-page="briefing"] .scene-quote { max-width: min(640px, calc(100% - 340px)); }
 }
 
 /* ── About joins the system (prose on the dusk gradient) ───── */
@@ -7647,16 +7654,141 @@ body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-tex
 [data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene__scrim {
   display: none;
 }
-[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__bg {
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__bg,
+[data-theme="day"] [data-skin="dusk"][data-surface="place"] .scene__bg {
   position: relative;
   inset: auto;
-  height: 240px;
-  margin: 0 var(--gutter) var(--s-5);
+  width: var(--detail-w);
+  height: clamp(220px, 26vw, 360px);
+  margin: 0 auto var(--s-5);
   border-radius: var(--radius-island);
   border: var(--rule-w) solid var(--glass-hair);
   overflow: hidden;
 }
-[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__scrim { display: none; }
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene__scrim,
+[data-theme="day"] [data-skin="dusk"][data-surface="place"] .scene__scrim { display: none; }
+/* The framed photo is content, not a backdrop — the scene stops claiming
+   a full viewport, so the tags sit under the photo instead of being
+   pushed down by justify-content:flex-end's leftover space. */
+[data-theme="day"] [data-skin="dusk"][data-page="venue"] .scene--detail,
+[data-theme="day"] [data-skin="dusk"][data-surface="place"] .scene--detail {
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PICK DETAIL — ONE COLUMN, ONE LEFT EDGE (Jul 2026)
+   ------------------------------------------------------------
+   Three shells used to disagree on this page. The Daybreak photo
+   rode --gutter (100vw - 2×20), .scene__main rode --masthead-w,
+   and .page-below rode --reading-max. Measured at 1512 that
+   printed THREE left edges — 56 / 116 / 166 — which is what the
+   page read as: chaotic margins, no spine.
+
+   Everything on the pick now shares --detail-w, the same band the
+   topbar island occupies, so the photo lines up with the chrome
+   above it. Inside that band the long tail caps at --detail-read
+   (the title's own measure) and stays LEFT-aligned rather than
+   re-centering, so one rag runs top to bottom.
+   ════════════════════════════════════════════════════════════ */
+[data-skin="dusk"][data-page="venue"],
+[data-skin="dusk"][data-surface="place"] {
+  --detail-w: min(1180px, calc(100vw - 32px));
+  --detail-read: 640px;
+}
+@media (min-width: 768px) {
+  [data-skin="dusk"][data-page="venue"],
+  [data-skin="dusk"][data-surface="place"] { --detail-w: var(--masthead-w); }
+}
+[data-skin="dusk"][data-page="venue"] .page-below,
+[data-skin="dusk"][data-surface="place"] .page-below {
+  width: var(--detail-w);
+  max-width: none;
+  margin: 0 auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+/* No photo: the scene stops reserving a full viewport for an image that
+   isn't there. Photoless places were printing the kind glyph adrift in
+   ~500px of empty gradient before the title even started. */
+[data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) { min-height: 0; }
+/* …and the placeholder takes the photo's slot rather than stretching
+   behind the text, so the kind glyph reads as "no photo here" instead of
+   floating beside the title. Same frame as the Daybreak photo. */
+[data-skin="dusk"] .scene--detail .scene__bg--fallback {
+  position: relative;
+  inset: auto;
+  width: var(--detail-w);
+  height: clamp(150px, 16vw, 220px);
+  margin: 0 auto var(--s-5);
+  border-radius: var(--radius-island);
+  border: var(--rule-w) solid var(--glass-hair);
+  overflow: hidden;
+}
+[data-skin="dusk"] .scene--detail .scene__bg--fallback .scene__glyph {
+  display: grid;
+  position: absolute;
+  inset: 0;
+  place-items: center;
+}
+[data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene__scrim { display: none; }
+
+/* The not-found state has no scene above it, so it clears the fixed
+   topbar itself. */
+[data-skin="dusk"] .page-below--notfound { padding-top: 96px; }
+@media (min-width: 768px) {
+  [data-skin="dusk"] .page-below--notfound { padding-top: 112px; }
+}
+
+/* Prose measure, left rag — the divider included, so the rule ends where
+   the text it separates ends. */
+[data-skin="dusk"][data-page="venue"] .page-below > *,
+[data-skin="dusk"][data-surface="place"] .page-below > * {
+  max-width: var(--detail-read);
+}
+
+/* ── Back: a puck only when there is a photo to float over ──
+   The floating glass key earns its place on a full-bleed photo — that is
+   the whole Dusk detail scene, and there the label is redundant. It stops
+   earning it the moment the photo is a framed card (Daybreak) or missing
+   (--fallback): then it is a sticker on a corner, or a puck adrift in a
+   gradient overlapping the tag row. In both of those cases the same
+   element goes into the flow above the content (order:-1), picks up its
+   label, and aligns to the column with the same centering maths as
+   --detail-w. .scene--detail is exactly venue + place, so no page scoping
+   is needed here. */
+[data-skin="dusk"] .scene-float__label { display: none; }
+[data-theme="day"] [data-skin="dusk"] .scene--detail .scene-float--back,
+[data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene-float--back {
+  position: static;
+  order: -1;
+  align-self: flex-start;
+  margin-left: calc((100% - var(--detail-w)) / 2);
+  margin-bottom: var(--s-2);
+  width: auto;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px 0 6px;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 0;
+  /* --g-mute, not --c-ink-mute: this now also renders on the Dusk
+     gradient (photoless scene), where the paper ink token is invisible. */
+  color: var(--g-mute);
+}
+[data-theme="day"] [data-skin="dusk"] .scene--detail .scene-float--back:hover,
+[data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene-float--back:hover { color: var(--c-accent); }
+[data-theme="day"] [data-skin="dusk"] .scene--detail .scene-float__label,
+[data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene-float__label {
+  display: inline;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 /* Scene text now sits on paper by day — the over-photo glow reads as a
    smudge there. */
 [data-theme="day"] [data-skin="dusk"][data-page="briefing"] .scene-title,

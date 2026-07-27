@@ -204,10 +204,8 @@
         <div class="scene__scrim" aria-hidden="true"></div>
         <a class="scene-float scene-float--back" href="${href}" aria-label="${label.replace('&larr; ', 'Back to ')}">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          <span class="scene-float__label">${label.replace('&larr; ', '')}</span>
         </a>
-        <button class="scene-float scene-float--share venue-share-btn" type="button" aria-label="Share this pick" title="Share">
-          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
-        </button>
 
         <div class="scene__main">
           <div class="scene-tags">
@@ -238,9 +236,12 @@
               ${entry.day ? `<button class="scene-key scene-key--incard venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="15" rx="2"/><path d="M4 11h16M8 3v5M16 3v5"/></svg>
               </button>` : ''}
-              <a class="scene-key scene-key--incard" href="${mapsUrl}" target="_blank" rel="noopener noreferrer" aria-label="${esc(entry.venue)} on the map (opens in a new tab)" title="On the map">
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
-              </a>
+              <!-- Share lives here, not floating over the photo: this row IS
+                   the pick's action set. It replaces the old map key, which
+                   only repeated the WHERE cell's link two lines above. -->
+              <button class="scene-key scene-key--incard venue-share-btn" type="button" aria-label="Share this pick" title="Share">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
+              </button>
             </div>
           </div>
         </div>
@@ -545,11 +546,14 @@
     const main = document.getElementById('venue-main');
     if (!main) return;
     const { href, label } = backLink();
+    /* .page-below carries the detail column — without it the empty state
+       spanned the viewport while the topbar sat in a 1180 band. */
     main.innerHTML = `
-      <a class="venue-back" href="${href}">${label}</a>
-      ${window.WA.UI.emptyState('Not in the catalog',
-        'This pick may have moved or expired. <a href="discover.html">Browse this week &rarr;</a>')}
-    `;
+      <div class="page-below page-below--notfound">
+        <a class="venue-back" href="${href}">${label}</a>
+        ${window.WA.UI.emptyState('Not in the catalog',
+          'This pick may have moved or expired. <a href="discover.html">Browse this week &rarr;</a>')}
+      </div>`;
   };
 
   const init = () => {

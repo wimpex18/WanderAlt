@@ -145,6 +145,7 @@
         <div class="scene__scrim" aria-hidden="true"></div>
         <a class="scene-float scene-float--back" href="${href}" aria-label="Back to Discover">
           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          <span class="scene-float__label">${label.replace('&larr; ', '')}</span>
         </a>
 
         <div class="scene__main">
@@ -192,11 +193,13 @@
     const main = document.getElementById('place-main');
     if (!main) return;
     const { href, label } = backLink();
+    /* .page-below carries the detail column — see venue.js. */
     main.innerHTML = `
-      <a class="venue-back" href="${href}">${label}</a>
-      ${window.WA.UI.emptyState('Not in the catalog',
-        'This place may have closed or moved. <a href="discover.html?type=places">Browse places &rarr;</a>')}
-    `;
+      <div class="page-below page-below--notfound">
+        <a class="venue-back" href="${href}">${label}</a>
+        ${window.WA.UI.emptyState('Not in the catalog',
+          'This place may have closed or moved. <a href="discover.html?type=places">Browse places &rarr;</a>')}
+      </div>`;
   };
 
   const init = () => {
