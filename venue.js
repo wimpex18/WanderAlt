@@ -68,6 +68,28 @@
 
 
 
+  /* The source blurb as paragraphs. Escaped first, then split on blank
+     lines — scraped promoter copy is attacker-controlled and arrives with
+     its own line breaks. Capped: a 4000-char press release is not a
+     detail page, and the source link is right there. */
+  const blurbHtml = (text) => {
+    /* Promoters paste their own link list into the blurb ("… Napalm Death
+       https://napalmdeath.org/ https://instagram.com/…"). Those are the
+       exact links the chips below already carry, and inline they read as
+       a broken paragraph — strip bare URLs before anything else. */
+    const t = String(text || '')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+    if (!t) return '';
+    const clipped = t.length > 900 ? t.slice(0, 900).replace(/\s+\S*$/, '') + '…' : t;
+    return clipped.split(/\n\s*\n+/)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(p => `<p>${esc(p)}</p>`)
+      .join('');
+  };
+
   /* Infer a labelled back link from the previous page.
      For Discover and curator pages we preserve the full referrer URL so
      the user lands back in exactly the state they left.                 */
@@ -179,10 +201,22 @@
     const whereVal = matchedVenue
       ? `<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">${esc(entry.venue)} &nearr;</a>`
       : `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">${esc(entry.venue)} &nearr;</a>`;
+    /* GETTING IN, best available answer first. A stated price beats every
+       heuristic below it — those existed only because no price was ever
+       stored. Mood tags stay as the last resort for picks whose source
+       never said anything (a Telegram post, mostly). */
+    const price     = window.WA.UI.priceLabel(entry);
+    const ticketUrl = safeUrl(entry.ticketUrl || '') || '';
     let inVal = 'At the venue';
     let ticketHost = '';
     try { ticketHost = entry.permalink ? new URL(entry.permalink).host : ''; } catch (_) {}
-    if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
+    if (price && ticketUrl) {
+      inVal = `<a href="${esc(ticketUrl)}" target="_blank" rel="noopener noreferrer">${esc(price)} &nearr;</a>`;
+    } else if (price) {
+      inVal = esc(price);
+    } else if (ticketUrl) {
+      inVal = `<a href="${esc(ticketUrl)}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
+    } else if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
       inVal = `<a href="${esc(safeUrl(entry.permalink))}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
     } else if ((entry.moodTags || []).includes('ticketed')) {
       inVal = 'Ticketed';
@@ -259,6 +293,19 @@
 
       <div class="page-below">
         ${moodChips}
+
+        <!-- What the source itself says. This is picks.description — the
+             venue's or promoter's own blurb, carried through the pipeline
+             verbatim. Distinct from "About this event" below, which is
+             LLM-written context. Escaped: it is scraped text. -->
+        ${entry.description ? `
+        <section class="pick-blurb" aria-label="About">
+          <p class="eyebrow">The listing</p>
+          <div class="pick-blurb__body">${blurbHtml(entry.description)}</div>
+        </section>` : ''}
+
+        <!-- Artist / film / author links from resolve-links. -->
+        ${window.WA.UI.pickLinks(entry.links, entry.kind)}
 
         <!-- Venue plate: thumb + name + meta + ONE labelled
              "Venue →" link into the place page — answers the old

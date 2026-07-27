@@ -1,5 +1,7 @@
 // ============================================================
-// ingest-splendidpalace  v3
+// ingest-splendidpalace  v4
+// v4 (Jul 2026): writes staging_messages.payload — the structured half
+//   of the row. See the payload contract in process-staging.
 // v3 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings 409'd instead
 //   of being silently ignored.
@@ -130,6 +132,13 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: e.slug,
     text:       composeText(e),
+    /* Also a cinema — the title is the film. */
+    payload: {
+      source:     'splendidpalace',
+      starts_at:  e.dateIso || null,
+      ticket_url: e.url,
+      entities:   [{ name: e.title, role: 'film' }],
+    },
     posted_at:  e.dateIso || new Date().toISOString(),
     permalink:  e.url,
     status:     'new',

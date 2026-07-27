@@ -43,7 +43,11 @@ const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
 const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-oss-120b:free";
 const GEMINI_MODEL  = "gemini-2.5-flash";
-const GROQ_MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
+/* llama-4-scout was decommissioned at Groq — absent from /v1/models and
+   404 on completion (verified by probe, Jul 2026; not recalled from
+   memory). llama-3.3-70b-versatile was already this repo's documented
+   fallback and probes 200, so it is the minimal verified replacement. */
+const GROQ_MODEL    = "llama-3.3-70b-versatile";
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
 
@@ -401,6 +405,51 @@ async function processOne(
   // v38: guarantee English before anything is written.
   validPicks = await fixNonEnglish(validPicks);
 
+  /* ── The staging payload contract ────────────────────────────────
+     Ingest functions write staging_messages.payload alongside the prose
+     they hand the model. Facts come from HERE, verbatim; the model is
+     asked only for what it alone can do — an English title, the curator
+     quote, the kind, the mood tags. Nothing below is model output.
+
+       source       string  the ingest that produced the row
+       description  string  the blurb as the source wrote it
+       starts_at    ISO     real instant, not the day/time display pair
+       ends_at      ISO
+       venue        string
+       address      string
+       ticket_url   string  where you actually buy or RSVP
+       image_url    string
+       is_free      bool    only when the source states it
+       price_min/max number  price_text string  currency string
+       categories   string[]
+       entities     [{name, role}]  artist | author | film | organiser
+
+     Every field is optional — a Telegram post carries none of it, and a
+     scraped listing page carries two or three. A missing field must never
+     be inferred here; that is what left the pages empty in the first
+     place, and a guessed price is worse than no price. */
+  const pay = (m.payload ?? {}) as Record<string, unknown>;
+  const payStr = (k: string): string | null => {
+    const v = pay[k];
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  };
+  const payNum = (k: string): number | null => {
+    const v = pay[k];
+    return typeof v === "number" && Number.isFinite(v) ? v : null;
+  };
+  const payIso = (k: string): string | null => {
+    const v = payStr(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  const entities = Array.isArray(pay.entities)
+    ? (pay.entities as Record<string, unknown>[])
+        .filter(e => e && typeof e.name === "string" && (e.name as string).trim())
+        .map(e => ({ name: String(e.name).trim(), role: String(e.role ?? "artist") }))
+        .slice(0, 12)
+    : null;
+
   const inserted: { id: string; title: string }[] = [];
   for (const p of validPicks) {
     const title = String(p.title);
@@ -437,6 +486,20 @@ async function processOne(
       source_url: (typeof m.permalink === "string"
         && /^https?:\/\//i.test(m.permalink)
         && !/(\/\/(www\.)?t\.me\/|telegram)/i.test(m.permalink)) ? m.permalink : null,
+
+      /* Facts, straight from the source. Only written when the payload
+         actually carried them — undefined keys are omitted from the upsert
+         so a re-process never nulls a column another pass filled in. */
+      ...(payStr("description") ? { description: payStr("description") } : {}),
+      ...(payIso("starts_at")   ? { starts_at:   payIso("starts_at") }   : {}),
+      ...(payIso("ends_at")     ? { ends_at:     payIso("ends_at") }     : {}),
+      ...(payStr("ticket_url")  ? { ticket_url:  payStr("ticket_url") }  : {}),
+      ...(typeof pay.is_free === "boolean" ? { is_free: pay.is_free }    : {}),
+      ...(payNum("price_min") !== null ? { price_min: payNum("price_min") } : {}),
+      ...(payNum("price_max") !== null ? { price_max: payNum("price_max") } : {}),
+      ...(payStr("currency")   ? { currency: payStr("currency") }        : {}),
+      ...(entities && entities.length ? { entities } : {}),
+
       valid_until: validUntil(day),
       archived_at: null,
       ...(p.title_original ? { title_original: String(p.title_original) } : {}),

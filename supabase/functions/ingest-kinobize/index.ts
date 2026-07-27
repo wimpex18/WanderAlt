@@ -1,5 +1,7 @@
 // ============================================================
-// ingest-kinobize  v3
+// ingest-kinobize  v4
+// v4 (Jul 2026): writes staging_messages.payload — the structured half
+//   of the row. See the payload contract in process-staging.
 // v3 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings 409'd instead
 //   of being silently ignored.
@@ -151,6 +153,15 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: e.slug,
     text:       composeText(e),
+    /* A cinema listing: the title IS a film, which is what resolve-links
+       looks up on Wikidata (and through it IMDb/TMDB). */
+    payload: {
+      source:     'kinobize',
+      starts_at:  e.dateIso || null,
+      ticket_url: e.url,
+      categories: e.category ? [e.category] : null,
+      entities:   [{ name: e.title, role: 'film' }],
+    },
     posted_at:  e.dateIso || new Date().toISOString(),
     permalink:  e.url,
     status:     'new',

@@ -24,6 +24,9 @@
                         `skip` drops fields the page shows elsewhere
      hoursToday(openingHours)
                         today's line out of the opening_hours column
+     pickLinks(links, kind)
+                        the pick's artist/film/author links, kind-ordered
+     priceLabel(pick)   "Free" / "€12" / "€24–75", or '' when unknown
 
    Load order: any page script using WA.UI must load AFTER this file
    (all pages use <script defer>, so document order is the contract).
@@ -266,6 +269,78 @@
     }, 1600);
   };
 
+  /* ── The pick's own links ───────────────────────────────────────
+     picks.links is written by resolve-links, which asks MusicBrainz /
+     Open Library / Wikidata what a named artist, author or film links
+     to. Thirteen platforms can come back for one band; showing all
+     thirteen is noise, so each kind gets an ordered shortlist and the
+     row caps at five.
+
+     Named chips, not icons: the venue's website/socials are icon-only
+     because there are three of them and everyone knows the marks. Here
+     the set is open-ended and mixed (Bandcamp next to Letterboxd next
+     to Open Library), and a row of unfamiliar glyphs is a guessing
+     game. wikidata/musicbrainz are deliberately never shown — they are
+     how we found the rest, not somewhere a reader wants to go. */
+  const LINK_LABEL = {
+    spotify: 'Spotify', soundcloud: 'SoundCloud', bandcamp: 'Bandcamp',
+    mixcloud: 'Mixcloud', discogs: 'Discogs', residentadvisor: 'Resident Advisor',
+    youtube: 'YouTube', lastfm: 'Last.fm', imdb: 'IMDb', letterboxd: 'Letterboxd',
+    openlibrary: 'Open Library', website: 'Official site',
+    instagram: 'Instagram', facebook: 'Facebook', twitter: 'X', bluesky: 'Bluesky',
+  };
+  const LINK_ORDER = {
+    music: ['spotify', 'bandcamp', 'soundcloud', 'mixcloud', 'youtube', 'discogs', 'residentadvisor', 'lastfm', 'website', 'instagram'],
+    film:  ['letterboxd', 'imdb', 'youtube', 'website'],
+    book:  ['openlibrary', 'website', 'instagram'],
+    other: ['website', 'instagram', 'facebook', 'youtube'],
+  };
+  const LINK_FAMILY = (kind) => {
+    const k = String(kind || '').toLowerCase();
+    if (['gig', 'club', 'concert', 'festival'].includes(k)) return 'music';
+    if (['cinema', 'film'].includes(k))                     return 'film';
+    if (['talk', 'lecture', 'reading', 'bookshop'].includes(k)) return 'book';
+    return 'other';
+  };
+  const LINK_EYEBROW = {
+    music: 'Hear them first', film: 'About the film',
+    book: 'About the author', other: 'More about this',
+  };
+
+  const pickLinks = (links, kind) => {
+    if (!links || typeof links !== 'object') return '';
+    const family = LINK_FAMILY(kind);
+    const chips = LINK_ORDER[family]
+      .filter(k => links[k])
+      .slice(0, 5)
+      .map(k => {
+        const url = safeUrl(links[k]);
+        if (!url) return '';
+        const label = LINK_LABEL[k] || k;
+        return `<a class="pick-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer"` +
+               ` aria-label="${esc(label)} (opens in a new tab)">${esc(label)}` +
+               `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>`;
+      })
+      .join('');
+    if (!chips) return '';
+    return `<section class="pick-links" aria-label="${esc(LINK_EYEBROW[family])}">` +
+           `<p class="eyebrow">${esc(LINK_EYEBROW[family])}</p>` +
+           `<div class="pick-links__row">${chips}</div></section>`;
+  };
+
+  /* "Free" / "€12" / "€24–75". Only ever from a stated source value —
+     picks with no price data print nothing, never "price TBC". */
+  const priceLabel = (p) => {
+    if (!p) return '';
+    if (p.isFree) return 'Free';
+    if (p.priceMin == null) return '';
+    const sym = p.currency === 'EUR' ? '€' : (p.currency ? p.currency + ' ' : '');
+    const n = (v) => (Number(v) % 1 === 0 ? String(Number(v)) : Number(v).toFixed(2));
+    return (p.priceMax != null && Number(p.priceMax) !== Number(p.priceMin))
+      ? `${sym}${n(p.priceMin)}–${n(p.priceMax)}`
+      : `${sym}${n(p.priceMin)}`;
+  };
+
   /* ── venue_details: one lane, one renderer ──────────────────────
      Wikidata + Google Places enrichment, keyed by (city, lowercased
      venue name). venue.html has read this table since June; place.html
@@ -390,5 +465,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday };
+  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday, pickLinks, priceLabel };
 })();

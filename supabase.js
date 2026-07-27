@@ -116,6 +116,18 @@
     coordsSource: r.coords_source ?? null,
     coordsLocked: !!r.coords_locked,
     permalink: r.source_url || null,   /* external event/ticket page (picks.source_url, sourced from staging_messages.permalink) */
+    /* Source-authored facts. description is the venue's own blurb (never
+       LLM-written — that's context_md); links is written by resolve-links. */
+    description: r.description || null,
+    startsAt:    r.starts_at   || null,
+    endsAt:      r.ends_at     || null,
+    ticketUrl:   r.ticket_url  || null,
+    isFree:      typeof r.is_free === 'boolean' ? r.is_free : null,
+    priceMin:    r.price_min   ?? null,
+    priceMax:    r.price_max   ?? null,
+    currency:    r.currency    || null,
+    links:       r.links       || null,
+    entities:    r.entities    || null,
     /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });
@@ -173,7 +185,10 @@
         `archived_at=is.null` +
         `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
-                `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked` +
+                `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked,` +
+                /* Facts the sources stated about themselves (Jul 2026) —
+                   see the staging payload contract in process-staging. */
+                `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),
