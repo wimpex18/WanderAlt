@@ -1,5 +1,12 @@
 // ============================================================
-// ingest-telliskivi  v4
+// ingest-telliskivi  v6
+// v6 (Jul 2026): THE FIX — message_id is now cyrb53(slug), not the slug
+//   itself. staging_messages.message_id is BIGINT, so only events whose
+//   slug happened to be purely numeric ever landed (3 rows in 49 runs);
+//   every other upsert was rejected, returned 'error', and fell through
+//   both counters. Errors are counted now and a zero-yield run warns.
+// v5 (Jul 2026): writes staging_messages.payload — the structured half
+//   of the row. See the payload contract in process-staging.
 // v4 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings 409'd instead
 //   of being silently ignored.
@@ -10,7 +17,7 @@
 // pushes events to staging_messages for process-staging.
 //
 // Source: https://telliskivi.cc/en/events/
-// Dedup key: (channel, message_id) where message_id = URL slug.
+// Dedup key: (channel, message_id) where message_id = cyrb53(URL slug).
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
