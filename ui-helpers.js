@@ -17,6 +17,13 @@
      rowMedia(e)        the .list-row__media link wrapping a --lg thumb
      socialButtons(v)   web/social link buttons for a venue/place
                         ({ name, website, facebook, instagram })
+     fetchVenueDetails(city, venueName)
+                        the venue_details enrichment row, or null
+     venueFacts(vd, city, {skip})
+                        address / phone / hours / description markup;
+                        `skip` drops fields the page shows elsewhere
+     hoursToday(openingHours)
+                        today's line out of the opening_hours column
 
    Load order: any page script using WA.UI must load AFTER this file
    (all pages use <script defer>, so document order is the contract).
@@ -241,11 +248,124 @@
      row and the curator share button (was two hand-copies). */
   const flashDone = (el) => {
     if (!el || el.dataset.flashing) return;
-    const orig = el.innerHTML;
+    /* Swap only the glyph when the control carries a label — replacing the
+       whole subtree would blank "Share"/"Add date" for the 1.6s flash. */
+    const target = el.querySelector('.scene-key__label') ? el.querySelector('svg') : el;
+    if (!target) return;
+    const orig = target.outerHTML === undefined ? target.innerHTML : target.outerHTML;
+    const labelled = target !== el;
     el.dataset.flashing = '1';
     el.classList.add('action-icon--done');
-    el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-    setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+    const check = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+    if (labelled) target.outerHTML = check; else el.innerHTML = check;
+    setTimeout(() => {
+      if (labelled) { const cur = el.querySelector('svg'); if (cur) cur.outerHTML = orig; }
+      else el.innerHTML = orig;
+      el.classList.remove('action-icon--done');
+      delete el.dataset.flashing;
+    }, 1600);
+  };
+
+  /* ── venue_details: one lane, one renderer ──────────────────────
+     Wikidata + Google Places enrichment, keyed by (city, lowercased
+     venue name). venue.html has read this table since June; place.html
+     — the page literally about a venue — rendered without an address,
+     hours or phone while the same row sat in the table. Both pages now
+     share this fetch and the markup below.
+
+     Fill is partial by design (188 rows for 2573 venues, and hours on
+     58 of those), so every field is optional and the block hides itself
+     when nothing came back. */
+  const fetchVenueDetails = async (city, venueName) => {
+    const base = window.WA && window.WA.BASE_URL;
+    const key  = window.WA && window.WA.ANON_KEY;
+    if (!base || !key || !venueName) return null;
+    try {
+      const r = await fetch(
+        `${base}/rest/v1/venue_details` +
+        `?city=eq.${encodeURIComponent(city || 'tallinn')}` +
+        `&venue_key=eq.${encodeURIComponent(String(venueName).toLowerCase())}` +
+        `&select=website,facebook,instagram,address,short_desc,opening_hours,phone,business_status&limit=1`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+      );
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return rows[0] || null;
+    } catch (_) { return null; }
+  };
+
+  /* Today's opening line out of Google's weekdayDescriptions array
+     (index 0 = Monday; JS getDay() is 0 = Sunday). Returns '' when the
+     column is absent or unparseable — callers treat that as "unknown". */
+  const hoursToday = (openingHours) => {
+    if (!openingHours) return '';
+    try {
+      const hrs = JSON.parse(openingHours);
+      if (!Array.isArray(hrs) || !hrs.length) return '';
+      return hrs[(new Date().getDay() + 6) % 7] || '';
+    } catch (_) { return ''; }
+  };
+
+  /* The facts block: closure status, address, phone, hours, description.
+     Every value here is scraped or third-party, so every one is esc()'d.
+     Returns '' when the row carries nothing worth printing. */
+  const venueFacts = (vd, city, opts) => {
+    if (!vd) return '';
+    /* opts.skip: field names already shown elsewhere on the page. */
+    const skip = (opts && opts.skip) || [];
+    const parts = [];
+
+    if (vd.business_status === 'CLOSED_PERMANENTLY') {
+      parts.push('<p class="venue-details__status venue-details__status--perm">Permanently closed</p>');
+    } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
+      parts.push('<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>');
+    }
+
+    /* place.html promotes the address into its WHERE cell and the phone
+       into the third cell, so repeating them here is the same redundancy
+       the old duplicate map key was. venue.html's cells hold the pick's
+       own when/where/getting-in, so it keeps every line. */
+    if (vd.address && !skip.includes('address')) {
+      const mq = encodeURIComponent(`${vd.address}, ${city || 'tallinn'}`);
+      parts.push(
+        `<a class="venue-details__address" href="https://maps.google.com/?q=${mq}"` +
+        ` target="_blank" rel="noopener noreferrer">${esc(vd.address)} &nearr;</a>`
+      );
+    }
+
+    if (vd.phone && !skip.includes('phone')) {
+      parts.push(
+        `<a class="venue-details__phone" href="tel:${esc(vd.phone.replace(/\s/g, ''))}">${esc(vd.phone)}</a>`
+      );
+    }
+
+    if (vd.opening_hours && !skip.includes('hours')) {
+      try {
+        const hrs = JSON.parse(vd.opening_hours);
+        if (Array.isArray(hrs) && hrs.length) {
+          const todayIdx  = (new Date().getDay() + 6) % 7;
+          const todayLine = hrs[todayIdx] || '';
+          const allRows   = hrs.map((line, i) =>
+            `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${esc(line)}</li>`
+          ).join('');
+          /* 'hours-today' keeps the full-week disclosure while dropping the
+             today line, for pages that already show today in a cell. */
+          parts.push(
+            '<div class="venue-details__hours">' +
+              (skip.includes('hours-today') ? '' : `<p class="venue-details__hours-today">${esc(todayLine)}</p>`) +
+              '<details class="venue-details__hours-disclosure">' +
+                '<summary class="venue-details__hours-summary">All hours</summary>' +
+                `<ol class="venue-details__hours-list">${allRows}</ol>` +
+              '</details>' +
+            '</div>'
+          );
+        }
+      } catch (_) { /* unparseable column — skip the block */ }
+    }
+
+    if (vd.short_desc) parts.push(`<p class="venue-details__desc">${esc(vd.short_desc)}</p>`);
+
+    return parts.join('\n');
   };
 
   document.addEventListener('click', (e) => {
@@ -270,5 +390,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
+  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday };
 })();

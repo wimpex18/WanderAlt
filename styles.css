@@ -6515,6 +6515,30 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
   -webkit-backdrop-filter: none;
   border-color: var(--glass-fill-line);
 }
+/* Labelled key: same --unit height and radius as the icon-only key, but
+   it says what it does. Siblings flex to a shared width and the row never
+   wraps — the label ellipsizes instead. Used for the secondary action row
+   on the pick and place details. */
+[data-skin="dusk"] .scene-key--wide {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+[data-skin="dusk"] .scene-key__label {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-skin="dusk"] .scene-actions--keys { margin-top: 8px; }
+
 /* Bookmark checkbox inside a scene key. */
 [data-skin="dusk"] .scene-key .bookmark__check { position: absolute; opacity: 0; pointer-events: none; }
 [data-skin="dusk"] .scene-key .bookmark__icon { width: 20px; height: 20px; color: inherit; }
@@ -7732,6 +7756,11 @@ body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-tex
   place-items: center;
 }
 [data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene__scrim { display: none; }
+/* Beats the Daybreak photo frame above (same specificity, later): a
+   placeholder doesn't earn a photo's height in either theme. */
+[data-theme="day"] [data-skin="dusk"] .scene--detail .scene__bg--fallback {
+  height: clamp(150px, 16vw, 220px);
+}
 
 /* The not-found state has no scene above it, so it clears the fixed
    topbar itself. */

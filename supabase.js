@@ -36,6 +36,23 @@
         return r.json();
       });
 
+  /* Same as get(), but walks PostgREST's 1000-row ceiling with
+     offset/limit until a short page comes back. Only the venues table
+     needs it today; a 2000-row cap on the loop is a runaway guard, and
+     it logs when it trips rather than truncating silently. */
+  const PAGE = 1000;
+  const getAllPages = async (table, qs, signal) => {
+    const out = [];
+    for (let offset = 0; offset < 20000; offset += PAGE) {
+      const page = await get(table, `${qs}&offset=${offset}&limit=${PAGE}`, signal);
+      if (!Array.isArray(page)) break;
+      out.push(...page);
+      if (page.length < PAGE) return out;
+    }
+    console.warn(`[WanderAlt] ${table} paging hit the loop guard — result may be short.`);
+    return out;
+  };
+
   /* Route Wikimedia thumbnail URLs through our edge proxy so Wikipedia
      doesn't set a third-party cookie on every visitor (Lighthouse
      Best-Practice failure + a direct contradiction of the About page's
@@ -167,11 +184,21 @@
         `&select=venue_key,is_closed,business_status`,
         abort.signal
       ),
-      /* Places: active alt-culture venues with coordinates. Filtered to
-         the whitelist client-side so the kind set lives in one place. */
-      get(
+      /* Places: active alt-culture venues with coordinates.
+
+         The kind whitelist is applied SERVER-side (built from the same
+         VENUE_KINDS set, so it still lives in one place) and the request
+         is paged. Neither is cosmetic: PostgREST caps a response at 1000
+         rows, and this asked for all 2555 active venues ordered by name
+         across all four cities. The cap silently sliced the alphabet —
+         the last row that ever reached the browser was "Kierrätyskeskus
+         Malmi", so every venue sorting after roughly "Ki" was invisible
+         on Discover's Places scope and unreachable on place.html. Tallinn
+         saw 42 of its 447. */
+      getAllPages(
         `venues`,
         `status=eq.active` +
+        `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
         `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram` +
         `&order=name.asc`,
         abort.signal
