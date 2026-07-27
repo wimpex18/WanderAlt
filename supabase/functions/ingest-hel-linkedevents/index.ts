@@ -171,11 +171,29 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: mid,
     text:       composeText(e),
+    /* LinkedEvents is the one source that states admission: offers[].is_free
+       is authoritative, and info_url is the organiser's own ticket page.
+       composeText() reduced both to the string "Free admission." */
+    payload: {
+      source:      "linkedevents",
+      description: stripTags(pickLocalized(e.description) || pickLocalized(e.short_description) || "") || null,
+      starts_at:   e.start_time ?? null,
+      ends_at:     e.end_time   ?? null,
+      venue:       e.location ? pickLocalized(e.location.name) || null : null,
+      address:     e.location ? pickLocalized(e.location.street_address) || null : null,
+      ticket_url:  pickLocalized(e.info_url) || null,
+      is_free:     e.offers?.length ? e.offers.some(o => o.is_free) : null,
+    },
     posted_at:  e.start_time ?? new Date().toISOString(),
     permalink:  `https://tapahtumat.hel.fi/en/${e.id}`,
     status:     "new",
   };
-  const res = await rest("staging_messages", {
+  /* on_conflict=channel,message_id is load-bearing — without it PostgREST
+     resolves ON CONFLICT against the PK, so every re-crawled event 409s
+     instead of skipping and bumpSeen never runs. This function was the one
+     ingest still missing it (the same bug fixed in fienta v5 and, before
+     that, in telegram). */
+  const res = await rest("staging_messages?on_conflict=channel,message_id", {
     method:  "POST",
     headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
     body:    JSON.stringify(row),

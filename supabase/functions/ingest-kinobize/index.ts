@@ -151,6 +151,15 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: e.slug,
     text:       composeText(e),
+    /* A cinema listing: the title IS a film, which is what resolve-links
+       looks up on Wikidata (and through it IMDb/TMDB). */
+    payload: {
+      source:     'kinobize',
+      starts_at:  e.dateIso || null,
+      ticket_url: e.url,
+      categories: e.category ? [e.category] : null,
+      entities:   [{ name: e.title, role: 'film' }],
+    },
     posted_at:  e.dateIso || new Date().toISOString(),
     permalink:  e.url,
     status:     'new',

@@ -130,6 +130,13 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: e.slug,
     text:       composeText(e),
+    /* Also a cinema — the title is the film. */
+    payload: {
+      source:     'splendidpalace',
+      starts_at:  e.dateIso || null,
+      ticket_url: e.url,
+      entities:   [{ name: e.title, role: 'film' }],
+    },
     posted_at:  e.dateIso || new Date().toISOString(),
     permalink:  e.url,
     status:     'new',

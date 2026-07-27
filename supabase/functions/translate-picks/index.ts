@@ -23,13 +23,16 @@ const TIME_CAP_MS  = 110_000;
 const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));
 
 const SYS = `You review event listings for an ENGLISH-ONLY city guide covering the Baltics and Finland.
-Input: JSON {"items":[{"id":"...","title":"...","quote":"..."}]}.
-For EACH item check BOTH fields: is the title natural English? is the quote natural English?
+Input: JSON {"items":[{"id":"...","title":"...","quote":"...","description":"..."}]}.
+For EACH item check ALL THREE fields: is the title natural English? the quote? the description?
 Return ONLY the items where at least one field is NOT English:
-{"items":[{"id":"...","lang":"ru|et|lv|lt|pl|fi|uk|mixed","title":"natural English title, max 70 chars","quote":"natural English quote"}]}
+{"items":[{"id":"...","lang":"ru|et|lv|lt|pl|fi|uk|mixed","title":"natural English title, max 70 chars","quote":"natural English quote","description":"natural English description"}]}
 Rules:
-- Always return BOTH fields for a returned item (translate the non-English one; copy the
-  already-English one through unchanged).
+- Always return ALL THREE fields for a returned item (translate the non-English ones; copy the
+  already-English ones through unchanged).
+- description is the promoter's own listing copy. TRANSLATE it faithfully — do not summarise,
+  do not add, do not adopt a marketing register. It is a record of what the source said.
+  Return "" for description if the item has none.
 - Event titles are descriptions — translate them. PRESERVE proper nouns: venue names,
   artist and band names, named festivals/series. For films and plays use the international
   English title when one exists. Transliterate personal names to Latin script.
@@ -52,7 +55,7 @@ export default {
     const dryRun = body.dry_run === true;
 
     const { data: picks, error } = await sb.from("picks")
-      .select("id, title, quote, title_original")
+      .select("id, title, quote, title_original, description")
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -66,7 +69,16 @@ export default {
     for (let off = 0; off < (picks ?? []).length; off += batch) {
       if (Date.now() - start > TIME_CAP_MS) break;
       const chunk = (picks ?? []).slice(off, off + batch);
-      const items = chunk.map(p => ({ id: p.id, title: p.title, quote: p.quote ?? "" }));
+      /* description is the promoter blurb carried through from the source
+         (Jul 2026). It arrives in the venue's language, and this is an
+         English-only guide — so it is reviewed here alongside title and
+         quote rather than shipping Estonian prose to an English page.
+         Truncated into the prompt: a 4000-char press release would blow
+         the batch budget, and 1200 chars is past what the page renders. */
+      const items = chunk.map(p => ({
+        id: p.id, title: p.title, quote: p.quote ?? "",
+        description: String(p.description ?? "").slice(0, 1200),
+      }));
 
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -82,7 +94,7 @@ export default {
       if (!res.ok) { errors.push(`groq ${res.status}`); continue; }
       scanned += chunk.length;
 
-      let out: { items?: { id: string; lang?: string; title?: string; quote?: string }[] };
+      let out: { items?: { id: string; lang?: string; title?: string; quote?: string; description?: string }[] };
       try { out = JSON.parse((await res.json())?.choices?.[0]?.message?.content ?? "{}"); }
       catch (_) { errors.push("unparseable batch"); continue; }
 
@@ -102,6 +114,13 @@ export default {
         // — quotes are LLM-generated English elsewhere and must not be restyled.
         if (item.quote && hasCyrillic(orig.quote) && !hasCyrillic(item.quote)) {
           update.quote = String(item.quote).trim();
+        }
+        /* Description: replace only when the source actually had one and the
+           model returned something different — copying an unchanged English
+           blurb back would rewrite the source's own words for no reason. */
+        if (item.description && orig.description
+            && item.description.trim() !== String(orig.description).trim()) {
+          update.description = item.description.trim().slice(0, 4000);
         }
         if (!Object.keys(update).length) continue;
 

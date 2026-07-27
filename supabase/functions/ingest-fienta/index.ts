@@ -147,12 +147,43 @@ async function fetchSourceEvents(source: Source): Promise<{ fetched: number; eve
   return { fetched: all.length, events };
 }
 
+/* The structured half of the row (v6, Jul 2026). composeText() above
+   flattens this event into prose for the LLM, and until now that prose was
+   ALL that survived — a 600-char description excerpt, and a start time the
+   model then had to re-parse. Everything factual is copied verbatim from
+   here by process-staging instead; the model is only asked for voice.
+   Shape is the shared staging payload contract documented in
+   process-staging. */
+function composePayload(e: FientaEvent) {
+  const iso = (s?: string) => {
+    if (!s) return null;
+    const d = new Date(s.replace(' ', 'T') + '+02:00');
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  return {
+    source:      'fienta',
+    description: plain(e.description, 4000) || null,
+    starts_at:   iso(e.starts_at),
+    ends_at:     iso(e.ends_at),
+    venue:       e.venue ?? null,
+    address:     e.address ?? null,
+    ticket_url:  e.url ?? null,
+    image_url:   e.image_url ?? null,
+    categories:  e.categories ?? null,
+    /* Fienta's public feed carries no price — sale_status is the only
+       commercial signal, and "free" is not one of its values. Left null
+       rather than guessed. */
+    entities:    e.organizer_name ? [{ name: e.organizer_name, role: 'organiser' }] : null,
+  };
+}
+
 async function upsertEvent(source: Source, e: FientaEvent): Promise<{ r: 'inserted'|'skipped'|'error'; bumped: number }> {
   const row = {
     source_id:  source.id,
     channel:    source.channel,
     message_id: e.id,
     text:       composeText(e),
+    payload:    composePayload(e),
     posted_at:  new Date(e.starts_at.replace(' ', 'T') + '+02:00').toISOString(),
     permalink:  e.url ?? `https://fienta.com/o/${source.channel}`,
     status:     'new',

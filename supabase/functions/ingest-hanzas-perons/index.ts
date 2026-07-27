@@ -83,6 +83,27 @@ type HanzasEvent = {
   price: string;
 };
 
+/* "15 EUR" / "no 10 €" / "10-15 EUR" / "Bezmaksas" → structured price.
+   Latvian: "bezmaksas" = free, "no" = from. Anything unparseable keeps
+   price_text so the page can print what the venue actually wrote. */
+function parsePrice(raw: string): Record<string, unknown> {
+  const text = (raw || '').trim();
+  if (!text) return {};
+  if (/bezmaksas|free|бесплатно/i.test(text)) return { is_free: true, price_text: text };
+  const nums = [...text.matchAll(/(\d+(?:[.,]\d{1,2})?)/g)]
+    .map(m => Number(m[1].replace(',', '.')))
+    .filter(n => Number.isFinite(n));
+  if (!nums.length) return { price_text: text };
+  const currency = /€|eur/i.test(text) ? 'EUR' : null;
+  return {
+    price_min: Math.min(...nums),
+    price_max: nums.length > 1 ? Math.max(...nums) : null,
+    currency,
+    price_text: text,
+    is_free: false,
+  };
+}
+
 function parseListingPage(html: string): HanzasEvent[] {
   const sortStart = html.indexOf('events-sort__items');
   if (sortStart < 0) return [];
@@ -186,7 +207,17 @@ async function upsertEvent(
     source_id:  sourceId,
     channel:    CHANNEL,
     message_id: mid,
-    text:       composeText(e, when),
+    /* The only source in the fleet that publishes a price. It arrives as a
+       display string ("15 EUR", "no 10 €", "Bezmaksas"), so parsePrice
+       below keeps the raw text too — a number we could not parse is worth
+       showing verbatim rather than dropping. */
+    payload: {
+      source:     'hanzasperons',
+      starts_at:  (when ?? null)?.toISOString() ?? null,
+      ticket_url: e.url,
+      image_url:  e.imageUrl || null,
+      ...parsePrice(e.price),
+    },
     posted_at:  (when ?? new Date()).toISOString(),
     permalink:  e.url,
     status:     'new',

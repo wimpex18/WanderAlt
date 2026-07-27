@@ -163,6 +163,16 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: e.slug,
     text:       composeText(e),
+    /* Structured half (Jul 2026) — see the payload contract in
+       process-staging. The listing page gives no blurb, so description
+       stays null rather than echoing the title. */
+    payload: {
+      source:     'telliskivi',
+      starts_at:  parseEventDate(e.date)?.toISOString() ?? null,
+      venue:      e.venue || null,
+      ticket_url: e.url,
+      categories: e.category ? [e.category] : null,
+    },
     posted_at:  parseEventDate(e.date)?.toISOString() ?? new Date().toISOString(),
     permalink:  e.url,
     status:     'new',
