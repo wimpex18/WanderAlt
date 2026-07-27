@@ -68,6 +68,28 @@
 
 
 
+  /* The source blurb as paragraphs. Escaped first, then split on blank
+     lines — scraped promoter copy is attacker-controlled and arrives with
+     its own line breaks. Capped: a 4000-char press release is not a
+     detail page, and the source link is right there. */
+  const blurbHtml = (text) => {
+    /* Promoters paste their own link list into the blurb ("… Napalm Death
+       https://napalmdeath.org/ https://instagram.com/…"). Those are the
+       exact links the chips below already carry, and inline they read as
+       a broken paragraph — strip bare URLs before anything else. */
+    const t = String(text || '')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+    if (!t) return '';
+    const clipped = t.length > 900 ? t.slice(0, 900).replace(/\s+\S*$/, '') + '…' : t;
+    return clipped.split(/\n\s*\n+/)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(p => `<p>${esc(p)}</p>`)
+      .join('');
+  };
+
   /* Infer a labelled back link from the previous page.
      For Discover and curator pages we preserve the full referrer URL so
      the user lands back in exactly the state they left.                 */
@@ -179,10 +201,22 @@
     const whereVal = matchedVenue
       ? `<a href="place.html?id=${encodeURIComponent(matchedVenue.id)}">${esc(entry.venue)} &nearr;</a>`
       : `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">${esc(entry.venue)} &nearr;</a>`;
+    /* GETTING IN, best available answer first. A stated price beats every
+       heuristic below it — those existed only because no price was ever
+       stored. Mood tags stay as the last resort for picks whose source
+       never said anything (a Telegram post, mostly). */
+    const price     = window.WA.UI.priceLabel(entry);
+    const ticketUrl = safeUrl(entry.ticketUrl || '') || '';
     let inVal = 'At the venue';
     let ticketHost = '';
     try { ticketHost = entry.permalink ? new URL(entry.permalink).host : ''; } catch (_) {}
-    if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
+    if (price && ticketUrl) {
+      inVal = `<a href="${esc(ticketUrl)}" target="_blank" rel="noopener noreferrer">${esc(price)} &nearr;</a>`;
+    } else if (price) {
+      inVal = esc(price);
+    } else if (ticketUrl) {
+      inVal = `<a href="${esc(ticketUrl)}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
+    } else if (/fienta\.|ra\.co|residentadvisor|piletilevi|tiketti|ticketmaster|eventbrite/i.test(ticketHost)) {
       inVal = `<a href="${esc(safeUrl(entry.permalink))}" target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>`;
     } else if ((entry.moodTags || []).includes('ticketed')) {
       inVal = 'Ticketed';
@@ -220,7 +254,7 @@
             <blockquote class="scene-quote scene-quote--card"><p>${esc(entry.quote)}</p></blockquote>
             <p class="scene-attr one-line">&mdash; <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a>${moreAll.length ? ` &middot; ${moreAll.length + 1} picks` : ''}</p>
             <div class="answer__cells wa-row">
-              <span class="answer__cell"><span class="answer__k">When</span><span class="answer__v one-line">${esc(whenVal)}</span></span>
+              <span class="answer__cell"><span class="answer__k">When</span><span class="answer__v one-line" data-cell="when">${esc(whenVal)}</span></span>
               <span class="answer__cell"><span class="answer__k">Where</span><span class="answer__v one-line">${whereVal}</span></span>
               <span class="answer__cell"><span class="answer__k">Getting in</span><span class="answer__v one-line">${inVal}</span></span>
             </div>
@@ -228,19 +262,29 @@
               <button class="scene-cta venue-going-btn" type="button">
                 <span class="action-btn__label">I&rsquo;m going &rarr;</span>
               </button>
-              <label class="bookmark scene-key scene-key--incard" title="Save this pick">
+            </div>
+            <!-- Two rows, not one. The icon-only keys met the 44px tap floor
+                 but read as unlabelled specks beside a lime button — the
+                 "buttons are too small" complaint is really "I can't tell
+                 what they are". Same --unit height, siblings share a width,
+                 neither row wraps. -->
+            <div class="scene-actions scene-actions--keys wa-row">
+              <label class="bookmark scene-key scene-key--incard scene-key--wide" title="Save this pick">
                 <input type="checkbox" class="bookmark__check" data-id="${entry.id}"
                        aria-label="Bookmark: ${esc(entry.title)}" ${isMarked ? 'checked' : ''}>
                 ${bookmarkSVG()}
+                <span class="scene-key__label">Save</span>
               </label>
-              ${entry.day ? `<button class="scene-key scene-key--incard venue-cal-btn" type="button" aria-label="Add to calendar" title="Add to calendar">
+              ${entry.day ? `<button class="scene-key scene-key--incard scene-key--wide venue-cal-btn" type="button" aria-label="Add to calendar">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="15" rx="2"/><path d="M4 11h16M8 3v5M16 3v5"/></svg>
+                <span class="scene-key__label">Add date</span>
               </button>` : ''}
               <!-- Share lives here, not floating over the photo: this row IS
                    the pick's action set. It replaces the old map key, which
                    only repeated the WHERE cell's link two lines above. -->
-              <button class="scene-key scene-key--incard venue-share-btn" type="button" aria-label="Share this pick" title="Share">
+              <button class="scene-key scene-key--incard scene-key--wide venue-share-btn" type="button" aria-label="Share this pick">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4"/><path d="M5 12v8h14v-8"/></svg>
+                <span class="scene-key__label">Share</span>
               </button>
             </div>
           </div>
@@ -249,6 +293,19 @@
 
       <div class="page-below">
         ${moodChips}
+
+        <!-- What the source itself says. This is picks.description — the
+             venue's or promoter's own blurb, carried through the pipeline
+             verbatim. Distinct from "About this event" below, which is
+             LLM-written context. Escaped: it is scraped text. -->
+        ${entry.description ? `
+        <section class="pick-blurb" aria-label="About">
+          <p class="eyebrow">The listing</p>
+          <div class="pick-blurb__body">${blurbHtml(entry.description)}</div>
+        </section>` : ''}
+
+        <!-- Artist / film / author links from resolve-links. -->
+        ${window.WA.UI.pickLinks(entry.links, entry.kind)}
 
         <!-- Venue plate: thumb + name + meta + ONE labelled
              "Venue →" link into the place page — answers the old
@@ -397,101 +454,39 @@
 
     /* Async fetch enrichment data from venue_details (Wikidata + Google Places). */
     const fetchVenueDetails = async () => {
-      const base = window.WA && window.WA.BASE_URL;
-      const key  = window.WA && window.WA.ANON_KEY;
-      if (!base || !key) return;
+      const city = 'tallinn'; // multi-city: entry.city when available
+      const vd = await window.WA.UI.fetchVenueDetails(city, entry.venue);
+      if (!vd) return;
 
-      const city     = 'tallinn'; // multi-city: entry.city when available
-      const venueKey = entry.venue.toLowerCase();
+      /* Website/Facebook/Instagram show in the external-links row (#venue-ext).
+         The venues table seeds them synchronously; venue_details (Wikidata +
+         Google + homepage scrape) fills any the venues row was missing, then
+         we re-render the row so they still appear. */
+      let extChanged = false;
+      for (const k of ['website', 'facebook', 'instagram']) {
+        if (vd[k] && !socialObj[k]) { socialObj[k] = vd[k]; extChanged = true; }
+      }
+      if (extChanged) {
+        const ext = document.getElementById('venue-ext');
+        if (ext) ext.innerHTML = renderExt(socialObj, entry.permalink);
+      }
 
-      try {
-        const r = await fetch(
-          `${base}/rest/v1/venue_details` +
-          `?city=eq.${encodeURIComponent(city)}` +
-          `&venue_key=eq.${encodeURIComponent(venueKey)}` +
-          `&select=website,facebook,instagram,address,short_desc,opening_hours,phone,business_status&limit=1`,
-          { headers: { apikey: key, Authorization: `Bearer ${key}` } }
-        );
-        if (!r.ok) return;
-        const rows = await r.json();
-        const vd   = rows[0];
-        if (!vd) return;
+      /* Today's opening line is an answer to "can I go now" — it belongs in
+         the WHEN cell for an undated pick, where the card already promised
+         one. The full facts block stays in the long tail. */
+      const today = window.WA.UI.hoursToday(vd.opening_hours);
+      const whenCell = main.querySelector('[data-cell="when"]');
+      const promoted = today && whenCell && !entry.day && !entry.time;
+      if (promoted) whenCell.textContent = today;
 
-        /* Website/Facebook/Instagram show in the external-links row (#venue-ext).
-           The venues table seeds them synchronously; venue_details (Wikidata +
-           Google + homepage scrape) fills any the venues row was missing, then
-           we re-render the row so they still appear. */
-        let extChanged = false;
-        for (const k of ['website', 'facebook', 'instagram']) {
-          if (vd[k] && !socialObj[k]) { socialObj[k] = vd[k]; extChanged = true; }
-        }
-        if (extChanged) {
-          const ext = document.getElementById('venue-ext');
-          if (ext) ext.innerHTML = renderExt(socialObj, entry.permalink);
-        }
-
-        const el = document.getElementById('venue-details');
-        if (!el) return;
-
-        const parts = [];
-
-        // Closure status — only render when not operational
-        if (vd.business_status === 'CLOSED_PERMANENTLY') {
-          parts.push(`<p class="venue-details__status venue-details__status--perm">Permanently closed</p>`);
-        } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
-          parts.push(`<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>`);
-        }
-
-        // Address → Google Maps deep link
-        if (vd.address) {
-          const mq = encodeURIComponent(vd.address + ', ' + city);
-          parts.push(
-            `<a class="venue-details__address" href="https://maps.google.com/?q=${mq}"` +
-            ` target="_blank" rel="noopener noreferrer">${vd.address} ↗</a>`
-          );
-        }
-
-        // Phone
-        if (vd.phone) {
-          parts.push(
-            `<a class="venue-details__phone" href="tel:${vd.phone.replace(/\s/g, '')}">${vd.phone}</a>`
-          );
-        }
-
-        // Opening hours — today's line prominent, full schedule under disclosure
-        if (vd.opening_hours) {
-          try {
-            const hrs = JSON.parse(vd.opening_hours);
-            if (Array.isArray(hrs) && hrs.length) {
-              // Google weekdayDescriptions: index 0 = Monday
-              // JS getDay(): 0 = Sunday → shift so Monday = 0
-              const todayIdx = (new Date().getDay() + 6) % 7;
-              const todayLine = hrs[todayIdx] || '';
-              const allRows = hrs.map((line, i) =>
-                `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${line}</li>`
-              ).join('');
-              parts.push(
-                `<div class="venue-details__hours">` +
-                  `<p class="venue-details__hours-today">${todayLine}</p>` +
-                  `<details class="venue-details__hours-disclosure">` +
-                    `<summary class="venue-details__hours-summary">All hours</summary>` +
-                    `<ol class="venue-details__hours-list">${allRows}</ol>` +
-                  `</details>` +
-                `</div>`
-              );
-            }
-          } catch (_) {}
-        }
-
-        // Short description (Wikidata)
-        if (vd.short_desc) {
-          parts.push(`<p class="venue-details__desc">${vd.short_desc}</p>`);
-        }
-
-        if (!parts.length) return;
-        el.innerHTML = parts.join('\n');
-        el.hidden = false;
-      } catch (_) { /* gracefully absent */ }
+      const el = document.getElementById('venue-details');
+      if (!el) return;
+      /* The full-week disclosure stays either way; only today's duplicate
+         line drops when the cell above already carries it. */
+      const html = window.WA.UI.venueFacts(vd, city, { skip: promoted ? ['hours-today'] : [] });
+      if (!html) return;
+      el.innerHTML = html;
+      el.hidden = false;
     };
 
     fetchVenueDetails();

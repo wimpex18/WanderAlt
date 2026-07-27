@@ -17,6 +17,16 @@
      rowMedia(e)        the .list-row__media link wrapping a --lg thumb
      socialButtons(v)   web/social link buttons for a venue/place
                         ({ name, website, facebook, instagram })
+     fetchVenueDetails(city, venueName)
+                        the venue_details enrichment row, or null
+     venueFacts(vd, city, {skip})
+                        address / phone / hours / description markup;
+                        `skip` drops fields the page shows elsewhere
+     hoursToday(openingHours)
+                        today's line out of the opening_hours column
+     pickLinks(links, kind)
+                        the pick's artist/film/author links, kind-ordered
+     priceLabel(pick)   "Free" / "€12" / "€24–75", or '' when unknown
 
    Load order: any page script using WA.UI must load AFTER this file
    (all pages use <script defer>, so document order is the contract).
@@ -241,11 +251,196 @@
      row and the curator share button (was two hand-copies). */
   const flashDone = (el) => {
     if (!el || el.dataset.flashing) return;
-    const orig = el.innerHTML;
+    /* Swap only the glyph when the control carries a label — replacing the
+       whole subtree would blank "Share"/"Add date" for the 1.6s flash. */
+    const target = el.querySelector('.scene-key__label') ? el.querySelector('svg') : el;
+    if (!target) return;
+    const orig = target.outerHTML === undefined ? target.innerHTML : target.outerHTML;
+    const labelled = target !== el;
     el.dataset.flashing = '1';
     el.classList.add('action-icon--done');
-    el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
-    setTimeout(() => { el.innerHTML = orig; el.classList.remove('action-icon--done'); delete el.dataset.flashing; }, 1600);
+    const check = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+    if (labelled) target.outerHTML = check; else el.innerHTML = check;
+    setTimeout(() => {
+      if (labelled) { const cur = el.querySelector('svg'); if (cur) cur.outerHTML = orig; }
+      else el.innerHTML = orig;
+      el.classList.remove('action-icon--done');
+      delete el.dataset.flashing;
+    }, 1600);
+  };
+
+  /* ── The pick's own links ───────────────────────────────────────
+     picks.links is written by resolve-links, which asks MusicBrainz /
+     Open Library / Wikidata what a named artist, author or film links
+     to. Thirteen platforms can come back for one band; showing all
+     thirteen is noise, so each kind gets an ordered shortlist and the
+     row caps at five.
+
+     Named chips, not icons: the venue's website/socials are icon-only
+     because there are three of them and everyone knows the marks. Here
+     the set is open-ended and mixed (Bandcamp next to Letterboxd next
+     to Open Library), and a row of unfamiliar glyphs is a guessing
+     game. wikidata/musicbrainz are deliberately never shown — they are
+     how we found the rest, not somewhere a reader wants to go. */
+  const LINK_LABEL = {
+    spotify: 'Spotify', soundcloud: 'SoundCloud', bandcamp: 'Bandcamp',
+    mixcloud: 'Mixcloud', discogs: 'Discogs', residentadvisor: 'Resident Advisor',
+    youtube: 'YouTube', lastfm: 'Last.fm', imdb: 'IMDb', letterboxd: 'Letterboxd',
+    openlibrary: 'Open Library', website: 'Official site',
+    instagram: 'Instagram', facebook: 'Facebook', twitter: 'X', bluesky: 'Bluesky',
+  };
+  const LINK_ORDER = {
+    music: ['spotify', 'bandcamp', 'soundcloud', 'mixcloud', 'youtube', 'discogs', 'residentadvisor', 'lastfm', 'website', 'instagram'],
+    film:  ['letterboxd', 'imdb', 'youtube', 'website'],
+    book:  ['openlibrary', 'website', 'instagram'],
+    other: ['website', 'instagram', 'facebook', 'youtube'],
+  };
+  const LINK_FAMILY = (kind) => {
+    const k = String(kind || '').toLowerCase();
+    if (['gig', 'club', 'concert', 'festival'].includes(k)) return 'music';
+    if (['cinema', 'film'].includes(k))                     return 'film';
+    if (['talk', 'lecture', 'reading', 'bookshop'].includes(k)) return 'book';
+    return 'other';
+  };
+  const LINK_EYEBROW = {
+    music: 'Hear them first', film: 'About the film',
+    book: 'About the author', other: 'More about this',
+  };
+
+  const pickLinks = (links, kind) => {
+    if (!links || typeof links !== 'object') return '';
+    const family = LINK_FAMILY(kind);
+    const chips = LINK_ORDER[family]
+      .filter(k => links[k])
+      .slice(0, 5)
+      .map(k => {
+        const url = safeUrl(links[k]);
+        if (!url) return '';
+        const label = LINK_LABEL[k] || k;
+        return `<a class="pick-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer"` +
+               ` aria-label="${esc(label)} (opens in a new tab)">${esc(label)}` +
+               `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg></a>`;
+      })
+      .join('');
+    if (!chips) return '';
+    return `<section class="pick-links" aria-label="${esc(LINK_EYEBROW[family])}">` +
+           `<p class="eyebrow">${esc(LINK_EYEBROW[family])}</p>` +
+           `<div class="pick-links__row">${chips}</div></section>`;
+  };
+
+  /* "Free" / "€12" / "€24–75". Only ever from a stated source value —
+     picks with no price data print nothing, never "price TBC". */
+  const priceLabel = (p) => {
+    if (!p) return '';
+    if (p.isFree) return 'Free';
+    if (p.priceMin == null) return '';
+    const sym = p.currency === 'EUR' ? '€' : (p.currency ? p.currency + ' ' : '');
+    const n = (v) => (Number(v) % 1 === 0 ? String(Number(v)) : Number(v).toFixed(2));
+    return (p.priceMax != null && Number(p.priceMax) !== Number(p.priceMin))
+      ? `${sym}${n(p.priceMin)}–${n(p.priceMax)}`
+      : `${sym}${n(p.priceMin)}`;
+  };
+
+  /* ── venue_details: one lane, one renderer ──────────────────────
+     Wikidata + Google Places enrichment, keyed by (city, lowercased
+     venue name). venue.html has read this table since June; place.html
+     — the page literally about a venue — rendered without an address,
+     hours or phone while the same row sat in the table. Both pages now
+     share this fetch and the markup below.
+
+     Fill is partial by design (188 rows for 2573 venues, and hours on
+     58 of those), so every field is optional and the block hides itself
+     when nothing came back. */
+  const fetchVenueDetails = async (city, venueName) => {
+    const base = window.WA && window.WA.BASE_URL;
+    const key  = window.WA && window.WA.ANON_KEY;
+    if (!base || !key || !venueName) return null;
+    try {
+      const r = await fetch(
+        `${base}/rest/v1/venue_details` +
+        `?city=eq.${encodeURIComponent(city || 'tallinn')}` +
+        `&venue_key=eq.${encodeURIComponent(String(venueName).toLowerCase())}` +
+        `&select=website,facebook,instagram,address,short_desc,opening_hours,phone,business_status&limit=1`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+      );
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return rows[0] || null;
+    } catch (_) { return null; }
+  };
+
+  /* Today's opening line out of Google's weekdayDescriptions array
+     (index 0 = Monday; JS getDay() is 0 = Sunday). Returns '' when the
+     column is absent or unparseable — callers treat that as "unknown". */
+  const hoursToday = (openingHours) => {
+    if (!openingHours) return '';
+    try {
+      const hrs = JSON.parse(openingHours);
+      if (!Array.isArray(hrs) || !hrs.length) return '';
+      return hrs[(new Date().getDay() + 6) % 7] || '';
+    } catch (_) { return ''; }
+  };
+
+  /* The facts block: closure status, address, phone, hours, description.
+     Every value here is scraped or third-party, so every one is esc()'d.
+     Returns '' when the row carries nothing worth printing. */
+  const venueFacts = (vd, city, opts) => {
+    if (!vd) return '';
+    /* opts.skip: field names already shown elsewhere on the page. */
+    const skip = (opts && opts.skip) || [];
+    const parts = [];
+
+    if (vd.business_status === 'CLOSED_PERMANENTLY') {
+      parts.push('<p class="venue-details__status venue-details__status--perm">Permanently closed</p>');
+    } else if (vd.business_status === 'CLOSED_TEMPORARILY') {
+      parts.push('<p class="venue-details__status venue-details__status--temp">Temporarily closed</p>');
+    }
+
+    /* place.html promotes the address into its WHERE cell and the phone
+       into the third cell, so repeating them here is the same redundancy
+       the old duplicate map key was. venue.html's cells hold the pick's
+       own when/where/getting-in, so it keeps every line. */
+    if (vd.address && !skip.includes('address')) {
+      const mq = encodeURIComponent(`${vd.address}, ${city || 'tallinn'}`);
+      parts.push(
+        `<a class="venue-details__address" href="https://maps.google.com/?q=${mq}"` +
+        ` target="_blank" rel="noopener noreferrer">${esc(vd.address)} &nearr;</a>`
+      );
+    }
+
+    if (vd.phone && !skip.includes('phone')) {
+      parts.push(
+        `<a class="venue-details__phone" href="tel:${esc(vd.phone.replace(/\s/g, ''))}">${esc(vd.phone)}</a>`
+      );
+    }
+
+    if (vd.opening_hours && !skip.includes('hours')) {
+      try {
+        const hrs = JSON.parse(vd.opening_hours);
+        if (Array.isArray(hrs) && hrs.length) {
+          const todayIdx  = (new Date().getDay() + 6) % 7;
+          const todayLine = hrs[todayIdx] || '';
+          const allRows   = hrs.map((line, i) =>
+            `<li class="venue-details__hours-row${i === todayIdx ? ' venue-details__hours-row--today' : ''}">${esc(line)}</li>`
+          ).join('');
+          /* 'hours-today' keeps the full-week disclosure while dropping the
+             today line, for pages that already show today in a cell. */
+          parts.push(
+            '<div class="venue-details__hours">' +
+              (skip.includes('hours-today') ? '' : `<p class="venue-details__hours-today">${esc(todayLine)}</p>`) +
+              '<details class="venue-details__hours-disclosure">' +
+                '<summary class="venue-details__hours-summary">All hours</summary>' +
+                `<ol class="venue-details__hours-list">${allRows}</ol>` +
+              '</details>' +
+            '</div>'
+          );
+        }
+      } catch (_) { /* unparseable column — skip the block */ }
+    }
+
+    if (vd.short_desc) parts.push(`<p class="venue-details__desc">${esc(vd.short_desc)}</p>`);
+
+    return parts.join('\n');
   };
 
   document.addEventListener('click', (e) => {
@@ -270,5 +465,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone };
+  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday, pickLinks, priceLabel };
 })();

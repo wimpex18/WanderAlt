@@ -6515,6 +6515,30 @@ body[data-page="venue"] .venue-actions .btn--primary { width: 100%; }
   -webkit-backdrop-filter: none;
   border-color: var(--glass-fill-line);
 }
+/* Labelled key: same --unit height and radius as the icon-only key, but
+   it says what it does. Siblings flex to a shared width and the row never
+   wraps — the label ellipsizes instead. Used for the secondary action row
+   on the pick and place details. */
+[data-skin="dusk"] .scene-key--wide {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+[data-skin="dusk"] .scene-key__label {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-skin="dusk"] .scene-actions--keys { margin-top: 8px; }
+
 /* Bookmark checkbox inside a scene key. */
 [data-skin="dusk"] .scene-key .bookmark__check { position: absolute; opacity: 0; pointer-events: none; }
 [data-skin="dusk"] .scene-key .bookmark__icon { width: 20px; height: 20px; color: inherit; }
@@ -7732,6 +7756,55 @@ body[data-skin="dusk"][data-page="about"] .about-section em { color: var(--g-tex
   place-items: center;
 }
 [data-skin="dusk"] .scene--detail:has(.scene__bg--fallback) .scene__scrim { display: none; }
+/* Beats the Daybreak photo frame above (same specificity, later): a
+   placeholder doesn't earn a photo's height in either theme. */
+[data-theme="day"] [data-skin="dusk"] .scene--detail .scene__bg--fallback {
+  height: clamp(150px, 16vw, 220px);
+}
+
+/* ── The listing + the pick's own links (Jul 2026) ──
+   picks.description is the source's own blurb, and picks.links is what
+   resolve-links found for the artist / film / author. Both sit in the
+   detail column and inherit its --detail-read measure. */
+[data-skin="dusk"] .pick-blurb { margin: var(--s-5) 0; }
+[data-skin="dusk"] .pick-blurb > .eyebrow { margin-bottom: var(--s-3); }
+[data-skin="dusk"] .pick-blurb__body {
+  font-family: var(--ff-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--g-mute);
+}
+[data-skin="dusk"] .pick-blurb__body p { margin: 0 0 var(--s-3); }
+[data-skin="dusk"] .pick-blurb__body p:last-child { margin-bottom: 0; }
+
+[data-skin="dusk"] .pick-links { margin: var(--s-5) 0; }
+[data-skin="dusk"] .pick-links > .eyebrow { margin-bottom: var(--s-3); }
+/* Chips, so they may wrap — this is a tag-like set, not a control row.
+   14px is the chip radius; 8 is for tags and these are not tags. */
+[data-skin="dusk"] .pick-links__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+[data-skin="dusk"] .pick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;            /* public-page tap floor */
+  padding: 0 14px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--g-text);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+[data-skin="dusk"] .pick-link:hover { border-color: var(--g-petrol); color: var(--g-petrol); }
+[data-skin="dusk"] .pick-link .ic { width: 14px; height: 14px; opacity: .55; flex: none; }
 
 /* The not-found state has no scene above it, so it clears the fixed
    topbar itself. */

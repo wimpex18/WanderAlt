@@ -29,7 +29,7 @@
    ============================================================ */
 (() => {
   /* Shared render helpers — single implementation in ui-helpers.js (P1). */
-  const { esc, buildMeta, isEchoQuote, socialButtons, bookmarkSVG } = window.WA.UI;
+  const { esc, safeUrl, buildMeta, isEchoQuote, socialButtons, bookmarkSVG } = window.WA.UI;
   const mediaHtml = window.WA.UI.rowMedia;
 
   const KIND_LABELS = {
@@ -64,6 +64,12 @@
     /* Kind already carries the eyebrow — repeating it here printed the
        same word twice on venues with no neighborhood. */
     const meta = venue.neighborhood || '';
+    /* venues.city holds the slug ("tallinn"), so it can't be printed raw.
+       It is also the only WHERE most places have: venues.neighborhood is
+       empty across the whole table, and the address only arrives if that
+       venue has a venue_details row. */
+    const citySlug  = venue.city || (window.WA && window.WA.CITY) || 'tallinn';
+    const cityLabel = citySlug.charAt(0).toUpperCase() + citySlug.slice(1);
 
     const social = socialButtons({
       name:      venue.name,
@@ -73,9 +79,10 @@
     });
 
     const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[venue.id]);
-    const saveToggle = `<label class="bookmark scene-key scene-key--incard place-save" title="Save this place">
+    const saveToggle = `<label class="bookmark scene-key scene-key--incard scene-key--wide place-save" title="Save this place">
       <input type="checkbox" class="bookmark__check" data-id="${esc(venue.id)}" aria-label="Save: ${esc(venue.name)}"${isMarked ? ' checked' : ''}>
       ${bookmarkSVG()}
+      <span class="scene-key__label">Save</span>
     </label>`;
 
     /* Events here — picks whose venue name matches this place. */
@@ -126,14 +133,30 @@
         </div>
       </div>`;
 
-    /* Map keys: Google-Maps deep link + the place on Discover's map —
-       icon keys in the one 48 action row (geocoded venues only). */
-    const mapKeys = (venue.lat != null && venue.lng != null)
-      ? `<a class="scene-key scene-key--incard" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer" aria-label="Open in Google Maps (opens in a new tab)" title="Open in Google Maps">
-           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
-         </a>
-         <a class="scene-key scene-key--incard" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}" aria-label="See on the city map" title="See on the city map">
+    /* Actions, in the same two-row shape as the pick detail: one primary
+       CTA on its own line, then labelled keys. Four unlabelled 48px icons
+       were the whole action set here — they met the tap floor and told you
+       nothing. Directions is the primary because it is what a place page is
+       for; the icon set for Facebook/Instagram moves to the long tail,
+       where venue.html already puts it. */
+    const geocoded = venue.lat != null && venue.lng != null;
+    const ctaRow = geocoded
+      ? `<div class="scene-actions wa-row">
+           <a class="scene-cta" href="https://maps.google.com/?q=${venue.lat},${venue.lng}" target="_blank" rel="noopener noreferrer">
+             <span class="action-btn__label">Directions &rarr;</span>
+           </a>
+         </div>`
+      : '';
+    const mapKey = geocoded
+      ? `<a class="scene-key scene-key--incard scene-key--wide" href="./discover.html?type=places&amp;view=map&amp;id=${encodeURIComponent(venue.id)}" aria-label="See ${esc(venue.name)} on the city map">
            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+           <span class="scene-key__label">Map</span>
+         </a>`
+      : '';
+    const siteKey = venue.website
+      ? `<a class="scene-key scene-key--incard scene-key--wide" href="${esc(safeUrl(venue.website))}" target="_blank" rel="noopener noreferrer" aria-label="${esc(venue.name)} website (opens in a new tab)">
+           <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+           <span class="scene-key__label">Website</span>
          </a>`
       : '';
 
@@ -159,16 +182,31 @@
             <p class="scene-meta one-line">${here.length
               ? `${here.length} pick${here.length !== 1 ? 's' : ''} here`
               : 'Nothing on right now'}</p>
-            <div class="scene-actions scene-actions--place wa-row">
+            <!-- The same three-cell answer the pick detail gives. WHERE and
+                 HOURS fill in from venue_details once it lands; a place with
+                 no enrichment row keeps the honest em-dash rather than a
+                 cell that never appears. -->
+            <div class="answer__cells wa-row" id="place-cells">
+              <span class="answer__cell"><span class="answer__k">Type</span><span class="answer__v one-line">${esc(kindLabel(venue.kind))}</span></span>
+              <span class="answer__cell"><span class="answer__k">Where</span><span class="answer__v one-line" data-cell="where">${esc(meta || cityLabel)}</span></span>
+            </div>
+            ${ctaRow}
+            <div class="scene-actions scene-actions--keys wa-row">
               ${saveToggle}
-              ${mapKeys}
-              ${social}
+              ${mapKey}
+              ${siteKey}
             </div>
           </div>
         </div>
       </div>
 
       <div class="page-below">
+        <!-- Address / phone / full opening hours / description, from the
+             same venue_details lane venue.html reads. This page rendered
+             without any of it while the rows sat in the table. -->
+        <div id="venue-details" class="venue-details" hidden></div>
+        <div id="venue-ext" class="venue-ext">${social}</div>
+
         ${eventsSection}
 
       <footer class="colophon">
@@ -177,6 +215,53 @@
       </div><!-- /.page-below -->
       </article>
     `;
+
+    /* venue_details enrichment — the shared lane in ui-helpers. Fill is
+       partial across the table (address on 80 of 188 rows, hours on 58),
+       so every consumer here is guarded and the block stays hidden when
+       nothing came back. */
+    (async () => {
+      const city = venue.city || (window.WA && window.WA.CITY) || 'tallinn';
+      const vd = await window.WA.UI.fetchVenueDetails(city, venue.name);
+      if (!vd) return;
+
+      /* The address is a better WHERE than the neighborhood once we have
+         it — it is the thing you actually navigate by. */
+      const whereCell = main.querySelector('[data-cell="where"]');
+      if (vd.address && whereCell) whereCell.textContent = vd.address;
+
+      /* The third cell is added only once there's an answer for it, best
+         available first. Rendering an empty HOURS cell up front printed a
+         dead em-dash on the ~70% of enriched venues that have no hours. */
+      const today = window.WA.UI.hoursToday(vd.opening_hours);
+      const third = today ? ['Hours', today] : (vd.phone ? ['Phone', vd.phone] : null);
+      const cells = document.getElementById('place-cells');
+      if (third && cells) {
+        cells.insertAdjacentHTML('beforeend',
+          `<span class="answer__cell"><span class="answer__k">${third[0]}</span>` +
+          `<span class="answer__v one-line">${esc(third[1])}</span></span>`);
+      }
+
+      /* venues seeds the socials; venue_details fills what OSM missed. */
+      let extChanged = false;
+      const sv = { name: venue.name, website: venue.website, facebook: venue.facebook, instagram: venue.instagram };
+      for (const k of ['website', 'facebook', 'instagram']) {
+        if (vd[k] && !sv[k]) { sv[k] = vd[k]; extChanged = true; }
+      }
+      if (extChanged) {
+        const ext = document.getElementById('venue-ext');
+        if (ext) ext.innerHTML = socialButtons(sv);
+      }
+
+      const el = document.getElementById('venue-details');
+      const skip = ['address'];
+      /* Today's line moved to the cell, but the full week stays in the tail
+         — that disclosure is the reason the block exists. */
+      if (third && third[0] === 'Hours') skip.push('hours-today');
+      if (third && third[0] === 'Phone') skip.push('phone');
+      const html = window.WA.UI.venueFacts(vd, city, { skip });
+      if (el && html) { el.innerHTML = html; el.hidden = false; }
+    })();
 
     /* Photo probe: a dead pick-photo URL drops the scene to the dusk
        gradient (never a gray box). */

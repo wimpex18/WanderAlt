@@ -142,6 +142,22 @@ async function upsertEvent(
     channel,
     message_id: messageId,
     text:       composeText(e),
+    /* The lineup is the reason this payload matters: artist names are the
+       lookup key resolve-links feeds to MusicBrainz, which hands back
+       Spotify / SoundCloud / Bandcamp / Mixcloud / Discogs in one call.
+       composeText() buried them in a "Lineup:" prose line. */
+    payload: {
+      source:      'residentadvisor',
+      description: (ev.content ?? '').replace(/\s+/g, ' ').trim() || null,
+      starts_at:   ev.startTime || null,
+      ends_at:     ev.endTime   || null,
+      venue:       ev.venue?.name ?? null,
+      ticket_url:  `https://ra.co${ev.contentUrl}`,
+      entities:    (ev.artists ?? [])
+        .map(a => a.name)
+        .filter(Boolean)
+        .map(name => ({ name, role: 'artist' })),
+    },
     posted_at:  ev.startTime || e.listingDate || new Date().toISOString(),
     permalink:  `https://ra.co${ev.contentUrl}`,
     status:     'new',
