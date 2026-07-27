@@ -154,6 +154,12 @@
     const MAX_SHOWN = 30;
     const allTags   = [...new Set(picks.flatMap(e => e.moodTags || []))].sort();
 
+    /* Rows carry no mood tags. One curator's picks share almost the same
+       set — four of @paavli's five are identical — so per-row they were
+       ~24 near-identical chips saying nothing about any individual pick,
+       in the same vocabulary as the filter chips directly above them. The
+       filter is where those tags do work; every other pick list on the
+       site prints none. */
     const buildRows = (entries) => tasteOrder(entries).slice(0, MAX_SHOWN).map(e => {
       const isMarked = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
       return `<li class="list-row list-row--card list-row--bookmarkable" data-id="${esc(e.id)}">
@@ -164,13 +170,7 @@
                  </p>
                  <p class="list-row__meta">${esc(buildMeta(e))}</p>
                  ${e.quote && (!curator.tagline || e.quote.trim().toLowerCase() !== curator.tagline.trim().toLowerCase())
-                   ? `<p class="list-row__quote">&mdash; ${esc(e.quote)}</p>`
-                   : ''}
-                 ${e.moodTags && e.moodTags.length
-                   ? `<p class="list-row__tags">${
-                       e.moodTags.map(t =>
-                         `<a class="list-row__tag" href="discover.html#mood=${encodeURIComponent(t)}">${esc(t)}</a>`
-                       ).join('')}</p>`
+                   ? `<p class="list-row__quote"><span class="list-row__quote-text">&mdash; ${esc(e.quote)}</span></p>`
                    : ''}
                </div>
                <label class="bookmark">
@@ -194,7 +194,11 @@
             <span class="curator-card__avatar" aria-hidden="true">${esc((curator.handle || '@?').replace('@', '').charAt(0).toUpperCase())}</span>
             <div class="curator-card__id">
               <h1 class="curator-card__handle">${esc(curator.handle)}</h1>
-              <p class="curator-card__ticker one-line">${picks.length} PICK${picks.length !== 1 ? 'S' : ''} &middot; ${((window.WA && window.WA.CITY) || 'tallinn').toUpperCase()} &middot; <a href="https://t.me/${encodeURIComponent((curator.handle || '').replace('@', ''))}" target="_blank" rel="noopener noreferrer">TELEGRAM &nearr;</a></p>
+              <!-- The count and city shrink; the Telegram link does not.
+                   As one ellipsized line it read "5 PICKS · TALLINN …" at
+                   390 and the link — the only way off this page to the
+                   curator themselves — was the first thing cut. -->
+              <p class="curator-card__ticker"><span class="curator-card__ticker-text">${picks.length} PICK${picks.length !== 1 ? 'S' : ''} &middot; ${((window.WA && window.WA.CITY) || 'tallinn').toUpperCase()}</span> <a class="curator-card__tg" href="https://t.me/${encodeURIComponent((curator.handle || '').replace('@', ''))}" target="_blank" rel="noopener noreferrer">TELEGRAM &nearr;</a></p>
             </div>
             <div class="curator-actions">
               <button type="button" id="curator-share-btn" class="action-icon" aria-label="Share this curator page" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1" /><path d="M12 14v-11" /><path d="M9 6l3 -3l3 3" /></svg></button>
@@ -229,9 +233,9 @@
                 : ''}</p>
           </header>
           ${allTags.length >= 2 ? `
-          <div class="m-chips" id="curator-chips" style="margin-bottom:var(--s-4);">
+          <div class="m-chips curator-chips" id="curator-chips">
             <button class="m-chip m-chip--active" type="button" data-tag="">All</button>
-            ${allTags.map(t => `<button class="m-chip" type="button" data-tag="${t}">${t}</button>`).join('')}
+            ${allTags.map(t => `<button class="m-chip" type="button" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}
           </div>` : ''}
           <ol class="list-rows" role="list" id="curator-picks-list" data-animate>
             ${buildRows(picks)}

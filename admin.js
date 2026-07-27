@@ -1437,8 +1437,11 @@
       } else {
         const counts = {};
         queueRows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+        /* `s` is staging_messages.status straight from the DB and lands in
+           BOTH a class attribute and the text — escaped in both, same as
+           every other DB value in this panel. */
         queueEl.innerHTML = Object.entries(counts)
-          .map(([s, n]) => `<span class="admin-pipeline-badge admin-pipeline-badge--${s}">${s}: ${n}</span>`)
+          .map(([s, n]) => `<span class="admin-pipeline-badge admin-pipeline-badge--${escAttr(s)}">${escAttr(s)}: ${escAttr(n)}</span>`)
           .join('');
       }
     }
@@ -1454,11 +1457,14 @@
             ? new Date(r.finished_at).toLocaleString('en-GB', { dateStyle:'short', timeStyle:'short' })
             : '—';
           const errCls = r.error ? 'pipeline-status-err' : 'pipeline-status-ok';
+          /* Every cell here is an ingest_log row — DB values, escaped like
+             the rest of the panel. `ts` is a formatted Date, so it is safe
+             by construction. */
           return `<tr>
-            <td>${r.fn || '—'}</td>
-            <td class="${errCls}">${r.status || '—'}</td>
-            <td>${r.inserted ?? '—'}</td>
-            <td>${r.rejected ?? '—'}</td>
+            <td>${escAttr(r.fn || '—')}</td>
+            <td class="${errCls}">${escAttr(r.status || '—')}</td>
+            <td>${escAttr(r.inserted ?? '—')}</td>
+            <td>${escAttr(r.rejected ?? '—')}</td>
             <td>${ts}</td>
           </tr>`;
         }).join('');
@@ -1510,7 +1516,7 @@
         ? new Date(col.week_of + 'T00:00:00').toLocaleDateString('en-GB',
             { day: 'numeric', month: 'short', year: 'numeric' })
         : '';
-      const issueLabel = col.issue_num ? ` · Issue ${col.issue_num}` : '';
+      const issueLabel = col.issue_num ? ` · Issue ${escAttr(col.issue_num)}` : '';
       const preview    = (col.body_md || '').slice(0, 200).replace(/\n/g, ' ');
       const isDraft    = col.status === 'draft';
 

@@ -342,7 +342,7 @@
         <hr class="rule" style="margin-bottom:0">
         <section aria-labelledby="more-label">
           <header class="search-section-head">
-            <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${entry.handle}</a></p>
+            <p id="more-label" class="eyebrow">More from <a class="handle" href="curator.html?handle=${encodeURIComponent(entry.handle)}">${esc(entry.handle)}</a></p>
           </header>
           <ol class="list-rows" role="list" data-animate>
             ${more.map(e =>
@@ -351,17 +351,17 @@
                  supplementary link; the title link is the keyboard tab stop
                  and the quote handle is a sibling <a> (nesting links is
                  invalid — browsers eject the inner one). */
-              `<li class="list-row list-row--card" data-id="${e.id}">
-                 <a class="list-row__media" href="venue.html?id=${e.id}" tabindex="-1" aria-hidden="true">${thumbEl(e, true)}</a>
+              `<li class="list-row list-row--card" data-id="${esc(e.id)}">
+                 <a class="list-row__media" href="venue.html?id=${encodeURIComponent(e.id)}" tabindex="-1" aria-hidden="true">${thumbEl(e, true)}</a>
                  <div class="list-row__body">
                    <p class="list-row__title">
-                     <a href="venue.html?id=${e.id}">${e.title}</a>
+                     <a href="venue.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a>
                    </p>
                    <p class="list-row__meta">${esc(buildMeta(e))}</p>
                    ${isEchoQuote(e)
-                     ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a></p>`
-                     : `<p class="list-row__quote">&mdash; ${e.quote}
-                     <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${e.handle}</a>
+                     ? `<p class="list-row__quote">via <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a></p>`
+                     : `<p class="list-row__quote">&mdash; ${esc(e.quote)}
+                     <a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a>
                    </p>`}
                  </div>
                </li>`

@@ -1,5 +1,12 @@
 // ============================================================
-// ingest-telliskivi  v4
+// ingest-telliskivi  v6
+// v6 (Jul 2026): THE FIX — message_id is now cyrb53(slug), not the slug
+//   itself. staging_messages.message_id is BIGINT, so only events whose
+//   slug happened to be purely numeric ever landed (3 rows in 49 runs);
+//   every other upsert was rejected, returned 'error', and fell through
+//   both counters. Errors are counted now and a zero-yield run warns.
+// v5 (Jul 2026): writes staging_messages.payload — the structured half
+//   of the row. See the payload contract in process-staging.
 // v4 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings 409'd instead
 //   of being silently ignored.
@@ -10,7 +17,7 @@
 // pushes events to staging_messages for process-staging.
 //
 // Source: https://telliskivi.cc/en/events/
-// Dedup key: (channel, message_id) where message_id = URL slug.
+// Dedup key: (channel, message_id) where message_id = cyrb53(URL slug).
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -20,6 +27,24 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const EVENTS_URL   = 'https://telliskivi.cc/en/events/';
 const CHANNEL      = 'telliskivi';
 const SOURCE_CITY  = 'tallinn';
+
+/* Slug -> bigint. staging_messages.message_id is a BIGINT column, and this
+   function used to pass the URL slug (a string) straight into it. PostgREST
+   rejected every non-numeric slug, upsertEvent returned 'error', and the
+   run loop counted only 'inserted' and 'skipped' — so the function reported
+   ok with zeros, forever. Same hash hel-linkedevents already uses; keeping
+   one implementation rather than inventing a second. */
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
 
 const rest = (path: string, init: RequestInit = {}) =>
   fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -161,7 +186,7 @@ async function upsertEvent(
   const row = {
     source_id:  sourceId,
     channel:    CHANNEL,
-    message_id: e.slug,
+    message_id: cyrb53(e.slug),
     text:       composeText(e),
     /* Structured half (Jul 2026) — see the payload contract in
        process-staging. The listing page gives no blurb, so description
@@ -187,7 +212,7 @@ async function upsertEvent(
     return 'error';
   }
   const body = await res.json().catch(() => []);
-  await bumpSeen(e.slug);
+  await bumpSeen(String(cyrb53(e.slug)));
   return Array.isArray(body) && body.length ? 'inserted' : 'skipped';
 }
 
@@ -216,6 +241,7 @@ Deno.serve(async () => {
   const t0 = Date.now();
   let totalInserted = 0;
   let totalSkipped  = 0;
+  let totalErrors   = 0;
   let runError: string | null = null;
 
   try {
@@ -241,6 +267,9 @@ Deno.serve(async () => {
       const r = await upsertEvent(sourceId, e);
       if (r === 'inserted') totalInserted++;
       else if (r === 'skipped') totalSkipped++;
+      /* 'error' used to fall through both branches, which is how a fully
+         broken ingest reported ok with zeros for 47 consecutive runs. */
+      else totalErrors++;
     }
 
     await markSource(sourceId);
@@ -249,12 +278,23 @@ Deno.serve(async () => {
     console.error('[telliskivi]', runError);
   }
 
-  await logRun({ inserted: totalInserted, skipped: totalSkipped, error: runError });
+  /* Zero yield with events on the page is a failure, not a quiet success —
+     it is exactly what hid the bigint/slug bug. Report it as 'warn' so
+     wa_ingest_zero_yield_check and a human both see it. */
+  const zeroYield = !runError && totalInserted === 0 && totalSkipped === 0;
+  await logRun({
+    inserted: totalInserted,
+    skipped:  totalSkipped,
+    error:    runError ?? (totalErrors ? `${totalErrors} staging upserts failed` :
+                          (zeroYield ? 'zero yield: nothing parsed or nothing accepted' : null)),
+  });
 
   return new Response(JSON.stringify({
-    ok:         !runError,
+    ok:         !runError && !totalErrors,
     inserted:   totalInserted,
     skipped:    totalSkipped,
+    errors:     totalErrors,
+    zero_yield: zeroYield,
     error:      runError,
     latency_ms: Date.now() - t0,
   }), {

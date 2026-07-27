@@ -161,8 +161,14 @@
        at the interpolation, is the rule; the joiner must survive it. */
     const glassTag = [hero.kind, hero.neighborhood && hero.neighborhood.toLowerCase() !== 'other' ? hero.neighborhood : hero.venue]
       .filter(Boolean).join(' · ');
-    const ticker = `${tickerDate()} · PICK 1 OF ${Math.max(_tickerTotal, 1)}` +
-      (navigator.onLine === false ? ' · OFFLINE' : '');
+    /* The date moved to the edition line at the top of the page, so this
+       row only carries what that line can't: how many picks are behind
+       this one, and whether we're serving from cache. "PICK 1 OF 1" said
+       nothing, so it only appears when there is in fact more than one. */
+    const ticker = [
+      _tickerTotal > 1 ? `PICK 1 OF ${_tickerTotal}` : '',
+      navigator.onLine === false ? 'OFFLINE' : '',
+    ].filter(Boolean).join(' · ');
     const attr = ['&mdash; ' +
       `<a class="handle" href="curator.html?handle=${encodeURIComponent(hero.handle)}">${esc(hero.handle)}</a>`,
       esc(hero.venue), hero.time ? `doors ${esc(hero.time)}` : null,
@@ -207,7 +213,7 @@
          })()}
          ${glassTag ? `<span class="tag tag--scene one-line">${esc(glassTag)}</span>` : ''}
        </div>
-       <p class="scene-ticker one-line">${esc(ticker)}</p>
+       ${ticker ? `<p class="scene-ticker one-line">${esc(ticker)}</p>` : ''}
        <a class="scene-title" href="venue.html?id=${encodeURIComponent(hero.id)}">${esc(hero.title)}</a>
        ${quote}
        <p class="scene-attr one-line">${attr}</p>
@@ -542,7 +548,12 @@
      see renderThisWeek) — a pointer into Discover, not a second feed. */
   const WORTH_A_VISIT_MAX = 3;
   const selectWorthAVisit = (catalog, excludeIds, max = WORTH_A_VISIT_MAX) => {
-    const venues = catalog.filter(e => e.day === null && !excludeIds.has(e.id));
+    /* Dateless AND timeless. `day === null` alone let dated things through
+       — half the dateless picks still carry a time, which is how a 23:00
+       club night ended up filed under "worth a visit". Those belong to
+       This Week; this section is for places that are simply open. */
+    const venues = catalog.filter(e =>
+      e.day === null && !e.time && !excludeIds.has(e.id));
     /* Photo-bearing venues first (reads better in the card row), then the rest. */
     const withPhoto = venues.filter(e => e.imageUrl);
     const withoutPhoto = venues.filter(e => !e.imageUrl);
@@ -557,21 +568,33 @@
     section.hidden = false;
 
     const esc = window.WA.UI.esc;
-    const { rowMedia, buildMeta, bookmarkSVG: bmSVG } = window.WA.UI;
+    const { rowMedia, buildMeta, isEchoQuote, bookmarkSVG: bmSVG } = window.WA.UI;
     const saved = window.WA?.Bookmarks?.get() || {};
-    list.innerHTML = entries.map(e => `
+    /* These rows carried no curator line at all — on the one page whose
+       whole premise is that a named human vouched for each pick. Every
+       entry here has a quote and a handle; the row just wasn't printing
+       them. Same caption shape as every other pick row on the site, with
+       the byline held out of the shrinking text so truncation can't eat
+       the attribution. */
+    list.innerHTML = entries.map(e => {
+      const handleA = `<a class="handle" href="curator.html?handle=${encodeURIComponent(e.handle)}">${esc(e.handle)}</a>`;
+      return `
       <li class="list-row list-row--card list-row--bookmarkable" data-id="${esc(e.id)}">
         ${rowMedia(e)}
         <div class="list-row__body">
           <p class="list-row__title"><a href="venue.html?id=${esc(e.id)}">${esc(e.title)}</a></p>
-          <p class="list-row__meta">${esc(buildMeta(e))}</p>
+          <p class="list-row__meta"><span class="list-row__meta-text">${esc(buildMeta(e))}</span></p>
+          ${isEchoQuote(e)
+            ? `<p class="list-row__quote"><span class="list-row__quote-text">via</span> ${handleA}</p>`
+            : `<p class="list-row__quote"><span class="list-row__quote-text">&mdash; ${esc(e.quote)}</span> ${handleA}</p>`}
         </div>
         <label class="bookmark">
           <input type="checkbox" class="bookmark__check" data-id="${esc(e.id)}"
                  aria-label="Bookmark: ${esc(e.title)}" ${saved[e.id] ? 'checked' : ''}>
           ${bmSVG()}
         </label>
-      </li>`).join('');
+      </li>`;
+    }).join('');
   };
 
   /* ── Init ──────────────────────────────────────────────── */
@@ -609,8 +632,8 @@
     _surpriseExcludeIds = tonightIds;
 
     renderEditorialDeskNote();
-    const sfMeta = document.getElementById('standfirst-meta');
-    if (sfMeta) sfMeta.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const edDate = document.getElementById('edition-date');
+    if (edDate) edDate.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     _tonightExtras = tonightSet.slice(1);
     _tickerTotal = weekSrc.length + tonightSet.length;
     /* Board 4f: with no tonight candidates the hero falls back to the

@@ -104,9 +104,9 @@
       `<a class="list-row__media" href="place.html?id=${encodeURIComponent(place.id)}" tabindex="-1" aria-hidden="true">${window.WA.UI.thumb(place, true)}</a>
        <div class="list-row__body">
          <p class="list-row__title">
-           <a href="place.html?id=${encodeURIComponent(place.id)}">${place.name}</a>
+           <a href="place.html?id=${encodeURIComponent(place.id)}">${esc(place.name)}</a>
          </p>
-         <p class="list-row__meta">${meta}</p>
+         <p class="list-row__meta">${esc(meta)}</p>
        </div>`;
     return li;
   };
@@ -124,10 +124,10 @@
          </p>
          <p class="list-row__meta">${esc(buildMeta(entry))}</p>
          ${isEchoQuote(entry)
-           ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a></p>`
+           ? `<p class="list-row__quote">via <a class="handle" href="${curatorHref(entry.handle)}">${esc(entry.handle)}</a></p>`
            : `<p class="list-row__quote">
-           &mdash; ${entry.quote}
-           <a class="handle" href="${curatorHref(entry.handle)}">${entry.handle}</a>
+           &mdash; ${esc(entry.quote)}
+           <a class="handle" href="${curatorHref(entry.handle)}">${esc(entry.handle)}</a>
          </p>`}
        </div>`;
     return li;
@@ -179,10 +179,10 @@
     li.dataset.catalogId = snap.id;
     li.innerHTML =
       `<div class="list-row__body">
-         <p class="list-row__title">${snap.title || 'Saved event'} <span class="list-row__cancelled">no longer listed</span></p>
+         <p class="list-row__title">${esc(snap.title || 'Saved event')} <span class="list-row__cancelled">no longer listed</span></p>
          <p class="list-row__meta">${esc(buildMeta(snap))}</p>
          <p class="list-row__quote">Pulled from the listings &mdash; it may have been cancelled or moved.
-           <button type="button" class="list-row__dismiss" data-dismiss="${snap.id}">Dismiss</button>
+           <button type="button" class="list-row__dismiss" data-dismiss="${esc(snap.id)}">Dismiss</button>
          </p>
        </div>`;
     return li;

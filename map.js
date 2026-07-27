@@ -67,6 +67,18 @@
   let viewport, pinsEl, sheetEl, detailEl;
   let _reclusterTimer = null;
 
+  /* Pin labels and the detail sheet interpolate scraped pick/venue fields
+     straight into innerHTML, so they need the shared escaper — and DB URLs
+     need safeUrl(), because esc() escapes quotes, not schemes, and a
+     javascript: value survives it. Resolved lazily: ui-helpers.js is a
+     defer script like this one and ordering between them isn't guaranteed
+     at module-evaluation time. */
+  const esc = (s) => (window.WA?.UI?.esc
+    ? window.WA.UI.esc(s)
+    : String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
+        ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])));
+  const safeUrl = (u) => (window.WA?.UI?.safeUrl ? window.WA.UI.safeUrl(u) : '');
+
   // ── Categories / icons ────────────────────────────────────────
   /* Shared impl in map-venues.js (loads first) — one kind→bucket map for
      the pins here and discover.js' category chips. */
@@ -182,9 +194,9 @@
     const icon = (entry.isVenue && VENUE_PIN_ICONS[entry.kind])
       || PIN_ICONS[kind] || PIN_ICONS.default;
     return `<button class="${cls}"
-      data-id="${entry.id}" type="button"
-      aria-label="${ariaLbl}" aria-pressed="${active}"
-      style="left:0;top:0;--pin-bg:${c.bg};--pin-fg:${c.fg}">
+      data-id="${esc(entry.id)}" type="button"
+      aria-label="${esc(ariaLbl)}" aria-pressed="${active}"
+      style="left:0;top:0;--pin-bg:${esc(c.bg)};--pin-fg:${esc(c.fg)}">
       <span class="map-pin-new__tail"></span>
       <span class="map-pin-new__circle">
         <span class="map-pin-new__icon">${icon}</span>
@@ -370,11 +382,11 @@
     const meta = [entry.neighborhood, entry.kind].filter(Boolean).join(' · ');
     const social = window.WA.UI.socialButtons({ name: entry.title, website: entry.website, facebook: entry.facebook, instagram: entry.instagram });
     return `<div class="map-detail__head">
-        <span class="map-detail__eyebrow">${c.label || entry.kind}</span>
+        <span class="map-detail__eyebrow">${esc(c.label || entry.kind)}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
-      <h2 class="map-detail__title"><a href="place.html?id=${encodeURIComponent(entry.id)}">${entry.title}</a></h2>
-      <p class="meta">${meta}</p>
+      <h2 class="map-detail__title"><a href="place.html?id=${encodeURIComponent(entry.id)}">${esc(entry.title)}</a></h2>
+      <p class="meta">${esc(meta)}</p>
       ${social}
       <nav class="map-detail__more" aria-label="Place">
         <a class="map-detail__more-link map-detail__more-link--list" href="place.html?id=${encodeURIComponent(entry.id)}">View place &rarr;</a>
@@ -386,7 +398,7 @@
     const kind = normaliseKind(entry.kind);
     const catC = window.WA?.MAP_CAT || {};
     const c = catC[kind] || { bg:'#444', fg:'#fff', label: entry.kind };
-    const baseEyebrow = entry.pin?.eyebrow || c.label || '';
+    const baseEyebrow = esc(entry.pin?.eyebrow || c.label || '');
     const eyebrow = entry.isClosed
       ? `<span class="map-detail__closed">closed</span> ${baseEyebrow}`
       : baseEyebrow;
@@ -395,14 +407,16 @@
     const priceBadge = isFree ? `<span class="map-detail__price-badge">Free</span>` : '';
 
     const meta = [entry.neighborhood, entry.kind, entry.time].filter(Boolean).join(' · ');
-    const img = entry.imageUrl
-      ? `<img src="${entry.imageUrl}" alt="" class="map-detail__img" loading="lazy"/>`
-      : `<div class="map-detail__img-ph" style="--ph-bg:${c.bg}"><span class="map-detail__img-ph-init">${entry.thumbInitials || ''}</span></div>`;
+    const imgSrc = safeUrl(entry.imageUrl);
+    const img = imgSrc
+      ? `<img src="${esc(imgSrc)}" alt="" class="map-detail__img" loading="lazy"/>`
+      : `<div class="map-detail__img-ph" style="--ph-bg:${esc(c.bg)}"><span class="map-detail__img-ph-init">${esc(entry.thumbInitials || '')}</span></div>`;
     const q = entry.quote
-      ? `<blockquote class="map-detail__quote">&ldquo;${entry.quote}&rdquo;<br><cite class="handle">— ${entry.handle}</cite></blockquote>`
+      ? `<blockquote class="map-detail__quote">&ldquo;${esc(entry.quote)}&rdquo;<br><cite class="handle">— ${esc(entry.handle)}</cite></blockquote>`
       : '';
-    const extLink = entry.permalink
-      ? `<a class="map-detail__ext-link" href="${entry.permalink}" target="_blank" rel="noopener noreferrer">See event page &rarr;</a>`
+    const permalink = safeUrl(entry.permalink);
+    const extLink = permalink
+      ? `<a class="map-detail__ext-link" href="${esc(permalink)}" target="_blank" rel="noopener noreferrer">See event page &rarr;</a>`
       : '';
 
     const listVisible = getVisibleEntries();
@@ -415,26 +429,26 @@
     const moreLinks = `<nav class="map-detail__more" aria-label="Related searches">
         ${extLink ? `<span class="map-detail__more-link map-detail__more-link--ext">${extLink}</span>` : ''}
         <a class="map-detail__more-link map-detail__more-link--list" href="${listHref}">${listLabel}</a>
-        <a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.handle)}">More by ${entry.handle}</a>
+        <a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.handle)}">More by ${esc(entry.handle)}</a>
         ${entry.kind ? `<a class="map-detail__more-link" href="discover.html?q=${encodeURIComponent(entry.kind)}">More like this</a>` : ''}
       </nav>`;
     const addressLine = entry.address
-      ? `<p class="map-detail__address">${entry.address}</p>`
+      ? `<p class="map-detail__address">${esc(entry.address)}</p>`
       : '';
 
     return `<div class="map-detail__head">
         <span class="map-detail__eyebrow">${eyebrow}${priceBadge}</span>
         <button class="map-detail__close" id="detail-close" aria-label="Close">&times;</button>
       </div>
-      <h2 class="map-detail__title"><a href="venue.html?id=${entry.id}">${entry.title}</a></h2>
-      <p class="meta">${meta}</p>
+      <h2 class="map-detail__title"><a href="venue.html?id=${encodeURIComponent(entry.id)}">${esc(entry.title)}</a></h2>
+      <p class="meta">${esc(meta)}</p>
       ${addressLine}
       <div class="map-detail__media">${img}</div>
       ${q}
       <div class="map-detail__foot">
-        <a class="btn-primary map-detail__cta" href="venue.html?id=${entry.id}">I&rsquo;m going &rarr;</a>
+        <a class="btn-primary map-detail__cta" href="venue.html?id=${encodeURIComponent(entry.id)}">I&rsquo;m going &rarr;</a>
         <label class="btn-secondary bookmark">
-          <input type="checkbox" class="bookmark__check" data-id="${entry.id}" aria-label="Save"/>
+          <input type="checkbox" class="bookmark__check" data-id="${esc(entry.id)}" aria-label="Save"/>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>
           Save
         </label>
@@ -501,11 +515,11 @@
       const c     = catC[kind] || { bg: '#444' };
       const meta  = [e.neighborhood, e.kind, e.time].filter(Boolean).join(' · ');
       return `<li>
-        <button class="map-cluster-list__row" type="button" data-id="${e.id}">
-          <span class="map-cluster-list__dot" style="background:${c.bg}" aria-hidden="true"></span>
+        <button class="map-cluster-list__row" type="button" data-id="${esc(e.id)}">
+          <span class="map-cluster-list__dot" style="background:${esc(c.bg)}" aria-hidden="true"></span>
           <span class="map-cluster-list__body">
-            <span class="map-cluster-list__title">${e.title}</span>
-            <span class="map-cluster-list__meta">${meta}</span>
+            <span class="map-cluster-list__title">${esc(e.title)}</span>
+            <span class="map-cluster-list__meta">${esc(meta)}</span>
           </span>
         </button>
       </li>`;
