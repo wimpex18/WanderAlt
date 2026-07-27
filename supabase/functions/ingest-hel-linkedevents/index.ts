@@ -1,6 +1,10 @@
 // ============================================================
-// WanderAlt — ingest-hel-linkedevents (v5)
-// ------------------------------------------------------------
+// WanderAlt — ingest-hel-linkedevents (v6)
+// v6 (Jul 2026): staging_messages POST was missing
+//   ?on_conflict=channel,message_id — the third appearance of a bug
+//   CLAUDE.md already records twice. Also writes staging_messages.payload
+//   (see the payload contract in process-staging); LinkedEvents is the
+//   only source that states admission, via offers[].is_free.
 // v5 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
 //   for wa_reconcile_absent_picks (silent-cancellation detection).
 // Pulls events from the official City of Helsinki Linked Events API.
