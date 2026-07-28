@@ -187,10 +187,14 @@
 
     /* Dusk Glass: the photo is the scene; a probe img downgrades
        a dead URL to the dusk-gradient fallback (never a gray box). */
-    const heroUrl = entry.imageUrl ? esc(safeUrl(WA.img(entry.imageUrl, 1080)).replace(/'/g, '%27')) : '';
-    const sceneBg = entry.imageUrl
+    /* Branch on the SANITISED url, not on entry.imageUrl: a photo whose
+       scheme safeUrl drops leaves heroUrl empty, and the old condition
+       would still take the photo arm and paint url('') / src="" — an
+       empty scene rather than the gradient the fallback exists for. */
+    const heroUrl = WA.UI.heroUrl(entry.imageUrl, 1080);
+    const sceneBg = heroUrl
       ? `<div class="scene__bg" style="background-image:url('${heroUrl}')" aria-hidden="true"><img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true"></div>`
-      : `<div class="scene__bg scene__bg--fallback" aria-hidden="true">${!entry.imageUrl ? `<span class="scene__glyph">${thumbEl({ ...entry, imageUrl: null }, true)}</span>` : ''}</div>`;
+      : `<div class="scene__bg scene__bg--fallback" aria-hidden="true"><span class="scene__glyph">${thumbEl({ ...entry, imageUrl: null }, true)}</span></div>`;
 
     /* The three answer cells (WHEN / WHERE / GETTING IN) — 12px values,
        single-line. GETTING IN reads the honest best source we have:
