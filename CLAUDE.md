@@ -53,7 +53,15 @@ There are no automated tests and no CI. The old Puppeteer/Playwright suite was r
 
 That puts the burden on looking. Run `npm start` and open the pages you touched at 390, 768 and 1440. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed, not just the screen in front of you — screen-local fixes are the recurring failure mode here.
 
-Three things genuinely cannot be judged locally, so verify them on the Cloudflare PR preview rather than guessing a fix from a local render: real photos and the duotone treatment, the MapLibre vector basemap (it never rasterises in headless Chromium on this stack — tiles fetch and the WebGL context creates, but the canvas never paints, so markers are real and the basemap isn't), and `backdrop-filter` blur (it composites differently across GPUs, so glass-over-content can look sharp or overlapping in a capture while blurring correctly in a real browser).
+**All of it can be judged locally now** — the paragraph that used to live here sent you to the Cloudflare preview for photos, the basemap and `backdrop-filter`, and all three of those claims were about the headless Chromium the deleted Puppeteer suite drove. The Claude Code browser pane is not that: it is a real Chrome (148 at time of writing, in Electron) on the hardware GPU — `ANGLE Metal Renderer: Apple M5`, not SwiftShader — at dpr 2. Re-verified Jul 2026 by probing it rather than trusting this file:
+
+- **`backdrop-filter` composites and captures correctly.** A `blur(12px)` band over 3px stripes dissolves them to flat grey while an unfiltered control band beside it stays crisp. Glass-over-content is safe to judge from a local capture.
+- **The MapLibre vector basemap does rasterise.** The real caveat is different and worth knowing: MapLibre's render loop is `requestAnimationFrame`-driven, and rAF is throttled while the pane's tab is not fronted — so a capture can show a *stale frame* (or an empty canvas) even though `isStyleLoaded()` and `areTilesLoaded()` are true. `map.loaded()` stuck at `false` is the tell. Front the tab before capturing anything map-related. Note the trade: unfronted, captures come back at exactly the CSS viewport you set; fronted, they follow the real pane geometry, so set the width again after fronting.
+- **Photos load locally** from the Supabase bucket and Wikimedia at full resolution. There is no duotone to check — that overlay was retired in June 2026 (see the note by `.photo-credit`); photos are deliberately full-colour now, `filter: none`.
+
+The Dusk basemap looks blank at a glance because it genuinely is near-black by design (`#0e1516` ground, `#0a1418` water, `#243132` roads). Before concluding it failed to paint, force a bright `background-color` through `WA.MapTiles.getMap().setPaintProperty()` and re-capture — if the canvas turns that colour, it was painting all along.
+
+The PR preview is still the honest last check for anything CDN- or header-dependent, since the dev server sends no CSP.
 
 Two things the deleted suite used to catch, worth checking by hand: no horizontal overflow at any width, and no console errors on load.
 
