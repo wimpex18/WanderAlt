@@ -1760,6 +1760,44 @@ html.wa-taste-done .taste-onboarding { display: none; }
   transition: color var(--t-fast), background var(--t-fast);
 }
 .taste-chip:hover { color: var(--c-ink); }
+
+/* ── Segment hit areas ─────────────────────────────────────
+   A segment inside a segmented control renders ~40px tall: the track is
+   one control unit (48) and the inset look costs a border plus 3px of
+   padding at each end. Growing the button to 44 would eat that inset and
+   the control stops reading as segmented; growing the track past 48 puts
+   it out of step with every control beside it.
+
+   Neither is necessary — the tappable region does not have to be the
+   visible region, which is how both major systems handle exactly this.
+   Material 3 sizes a 24dp icon inside a full 48dp touch target, and
+   Apple's HIG is explicit that the tappable region should be at least
+   44pt "but the visible part of it could be smaller". So the visual keeps
+   its 40px inset and a transparent overlay carries the real target at
+   48px — Material's figure, and above Apple's 44 and WCAG 2.5.5 (AAA).
+
+   Because the overlay is centred on a 40px button inside a 48px track, it
+   lands exactly on the track's bounds: the 4px gutter above and below each
+   segment stops being dead space. The ±1.5px horizontal reach closes the
+   3px channel between the two segments the same way, meeting in the middle
+   rather than overlapping, so neither segment can steal the other's taps.
+
+   The overlay is a child of the button, so a press on it dispatches to the
+   button; it carries no paint, so nothing about the control changes on
+   screen. */
+.taste-q__choices .taste-chip,
+body[data-surface="discover"] .disc-scope__btn { position: relative; }
+.taste-q__choices .taste-chip::after,
+body[data-surface="discover"] .disc-scope__btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -1.5px;
+  right: -1.5px;
+  height: 48px;
+  transform: translateY(-50%);
+  /* Paints nothing — it exists only to be pressed. */
+}
 /* Active state is a tint plus a mark, never colour alone — the tint alone
    read as "slightly different grey" on the day theme. */
 .taste-chip--on { background: var(--c-accent-soft); color: var(--c-accent); }
