@@ -214,6 +214,26 @@
     } catch (_) { return ''; }
   };
 
+  /* A scraped photo URL, made safe for BOTH halves of the scene backdrop:
+     the `url('…')` inside a style attribute and the probe `<img src>` next
+     to it. Three separate jobs, which is exactly why hand-rolling it twice
+     went wrong — safeUrl() drops non-http(s) schemes, the quote is
+     percent-encoded so it cannot close the CSS string, and esc() stops it
+     closing the HTML attribute.
+
+     Both detail pages built this inline and only venue.js carried all
+     three steps; place.js shipped with none of them, so a pick photo
+     containing a double quote broke out of src="…" and the parser
+     attached whatever attribute followed (onerror included). Same bug
+     class as the Jul 2026 stored-XSS probe, one file it missed. One
+     implementation now — call it, don't re-derive it. */
+  const heroUrl = (rawUrl, width = 1080) => {
+    if (!rawUrl) return '';
+    const sized = window.WA.img ? window.WA.img(String(rawUrl), width) : String(rawUrl);
+    const safe  = safeUrl(sized);
+    return safe ? esc(safe.replace(/'/g, '%27')) : '';
+  };
+
   const socialButtons = (obj) => {
     if (!obj) return '';
     const name = obj.name || 'This venue';
@@ -465,5 +485,5 @@
     if (t && t.classList && t.classList.contains('thumb__img')) t.remove();
   }, true);
 
-  window.WA.UI = { esc, safeUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday, pickLinks, priceLabel };
+  window.WA.UI = { esc, safeUrl, heroUrl, buildMeta, isEchoQuote, bookmarkSVG, thumb, rowMedia, kindIconSvg, socialButtons, passwordField, DAY_RANK, emptyState, flashDone, fetchVenueDetails, venueFacts, hoursToday, pickLinks, priceLabel };
 })();

@@ -94,8 +94,7 @@
        image_url of their own); the fallback is the kind glyph on the
        dusk gradient, never a gray box. */
     const photoPick = here.find(p => p.imageUrl);
-    const heroUrl = photoPick
-      ? window.WA.img(photoPick.imageUrl, 1080).replace(/'/g, '%27') : '';
+    const heroUrl = photoPick ? window.WA.UI.heroUrl(photoPick.imageUrl, 1080) : '';
     const sceneBg = heroUrl
       ? `<div class="scene__bg" style="background-image:url('${heroUrl}')" aria-hidden="true"><img class="detail-hero__probe" src="${heroUrl}" alt="" aria-hidden="true"></div>`
       : `<div class="scene__bg scene__bg--fallback" aria-hidden="true"><span class="scene__glyph">${window.WA.UI.thumb({ ...venue, imageUrl: null, title: venue.name }, true)}</span></div>`;
