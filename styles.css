@@ -1719,11 +1719,21 @@ html.wa-taste-done .taste-onboarding { display: none; }
   text-transform: uppercase;
   color: var(--c-ink-mute);
 }
-/* Joined equal-width pair at the chip-height tier — each
-   axis is a binary either/or, so both choices share one width instead of
-   hugging their own text (was visibly lopsided: "Solo" vs "With people"). */
+/* Joined equal-width pair — each axis is a binary either/or, so both
+   choices share one width instead of hugging their own text (was visibly
+   lopsided: "Solo" vs "With people").
+   This is the same segmented-control shape as Discover's Events|Places
+   switch, so it measures the same: --unit on the track, the buttons
+   filling it. It used to compute to 46px against that row's 48. */
 .taste-q__choices {
-  display: flex;
+  height: var(--unit);
+  /* Grid, not flex. `flex: 1` never delivered the equal widths the note
+     above claims: flex items floor at min-width:auto, which for nowrap
+     text is the text itself, so "Solo" sat at 54px against "With people"
+     at 105. Equal auto-columns size both to the wider label. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 3px;
   padding: 3px;
   background: var(--c-paper-deep);
@@ -1731,11 +1741,10 @@ html.wa-taste-done .taste-onboarding { display: none; }
   border-radius: var(--radius);
 }
 .taste-chip {
-  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;   /* chip tier — matches .wa-chip / .m-chip / .discover-pill (was 44, out of step) */
+  height: 100%;
   padding: 0 var(--s-3);
   font-family: var(--ff-body);
   font-size: 14px;
@@ -1751,7 +1760,15 @@ html.wa-taste-done .taste-onboarding { display: none; }
   transition: color var(--t-fast), background var(--t-fast);
 }
 .taste-chip:hover { color: var(--c-ink); }
+/* Active state is a tint plus a mark, never colour alone — the tint alone
+   read as "slightly different grey" on the day theme. */
 .taste-chip--on { background: var(--c-accent-soft); color: var(--c-accent); }
+.taste-chip--on::before {
+  content: "✓";
+  margin-right: 6px;
+  font-size: 11px;
+  line-height: 1;
+}
 .taste-onboarding__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-5); }
 .taste-skip, .taste-reset {
   display: inline-flex; align-items: center; justify-content: center;
@@ -8097,14 +8114,23 @@ body[data-surface="discover"] .disc-ask-inline {
 }
 
 /* ── Controls row: scope + facets ─────────────────────────── */
+/* The scope switch and the facet buttons are the same control tier, so
+   they must measure the same. The track used to compute to 50px against
+   the facets' 48 (3px pad + 42px button + 2 borders) and overhung the row
+   by 1px top and bottom; height on the track, not the button, is what
+   keeps the two in step whatever the inner padding does. One gap governs
+   the row — the scope is a different question from the filters, so it
+   keeps a wider one, but wide enough to read as a group break (--s-4)
+   rather than the old almost-the-same 12-against-8. */
 body[data-surface="discover"] .disc-controls {
   display: flex;
   align-items: center;
-  gap: var(--s-3);
+  gap: var(--s-4);
   margin: 0 0 var(--s-6);
   flex-wrap: nowrap;
 }
 body[data-surface="discover"] .disc-scope {
+  height: var(--unit);
   display: inline-flex;
   flex: none;
   gap: 3px;
@@ -8114,13 +8140,15 @@ body[data-surface="discover"] .disc-scope {
   border-radius: var(--radius);
 }
 body[data-surface="discover"] .disc-scope__btn {
-  height: calc(var(--unit) - 6px);
+  height: 100%;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 0 16px;
   border: 0;
-  border-radius: calc(var(--radius) - 3px);
+  /* 8 is the tag step. calc(var(--radius) - 3) minted an 11px radius found
+     nowhere else in the vocabulary (8 / 14 / 20 / 24). */
+  border-radius: var(--radius-tag);
   background: none;
   font-family: var(--ff-body);
   font-size: 14px;
@@ -8221,6 +8249,135 @@ body[data-surface="discover"] .disc-facet__menu {
 body[data-surface="discover"] .disc-facet__menu--end { left: auto; right: 0; }
 body[data-surface="discover"] .disc-facet__note { margin: var(--s-3) 0 0; color: var(--g-mute); }
 
+/* Menu head. On a phone the menu docks as a bottom sheet, where an
+   untitled cloud of chips arrives with nothing naming the question it
+   answers; the head is also where undoing ONE facet lives, which
+   previously cost you all four via "Clear filters".
+   A heading gets more room below it than the gap between the things it
+   introduces (chips sit at --s-2), so --s-3. */
+body[data-surface="discover"] .disc-facet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+}
+body[data-surface="discover"] .disc-facet__title {
+  margin: 0;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-facet__clear {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .04em;
+  color: var(--g-petrol);
+  cursor: pointer;
+}
+
+/* ── Single-select option list (When, Sort) ────────────────
+   Chips are this page's multi-select shape. An either/or question gets a
+   list with one mark, which is also what lets each row carry its count
+   and a disabled state without the width games a chip would need. */
+body[data-surface="discover"] .disc-opts { display: flex; flex-direction: column; gap: 2px; }
+body[data-surface="discover"] .disc-opt {
+  min-height: 44px;   /* public-page tap floor */
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: 0 var(--s-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-tag);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  text-align: left;
+  color: var(--g-text);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+body[data-surface="discover"] .disc-opt:hover:not(:disabled) { background: var(--glass-fill); }
+/* Active state is a tint plus a mark. */
+body[data-surface="discover"] .disc-opt--on {
+  background: var(--glass-active);
+  color: var(--g-petrol);
+}
+body[data-surface="discover"] .disc-opt__mark {
+  width: 16px; height: 16px; flex: none;
+  display: grid; place-items: center;
+}
+body[data-surface="discover"] .disc-opt--on .disc-opt__mark::before {
+  content: "✓";
+  font-size: 12px;
+  line-height: 1;
+}
+body[data-surface="discover"] .disc-opt__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A count badge at 20px is one of the two shapes cleared for 999. */
+body[data-surface="discover"] .disc-opt__count {
+  min-width: 22px; height: 20px; flex: none;
+  display: inline-grid; place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--glass-fill);
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--g-mute);
+}
+body[data-surface="discover"] .disc-opt--on .disc-opt__count { color: var(--g-petrol); }
+/* Nothing to show behind it, so it says so and stops taking taps rather
+   than blanking the list. Not colour alone: the count reads 0. */
+body[data-surface="discover"] .disc-opt:disabled {
+  color: var(--g-faint);
+  cursor: default;
+}
+body[data-surface="discover"] .disc-opt:disabled .disc-opt__count { opacity: .6; }
+
+/* Pick a date — under the presets, because a preset answers the question
+   for most readers and a calendar is the escape hatch for the rest. */
+body[data-surface="discover"] .disc-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--glass-hair);
+}
+body[data-surface="discover"] .disc-date__label {
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--g-text);
+  white-space: nowrap;
+}
+body[data-surface="discover"] .disc-date__input {
+  height: 40px;
+  min-width: 0;
+  padding: 0 var(--s-2);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-fill-line);
+  border-radius: var(--radius-tag);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  color: var(--g-text);
+  cursor: pointer;
+}
+/* Tells the native calendar which way round to paint itself; without it
+   the picker keeps the OS theme and can arrive white-on-white in Dusk. */
+body[data-surface="discover"] .disc-date__input { color-scheme: dark; }
+[data-theme="day"] body[data-surface="discover"] .disc-date__input { color-scheme: light; }
+
 body[data-surface="discover"] .disc-chips,
 body[data-surface="discover"] .disc-facet__menu .mood-chips {
   display: flex;
@@ -8264,21 +8421,29 @@ body[data-surface="discover"] .disc-facet__menu .m-chip--on::before {
   line-height: 1;
 }
 body[data-surface="discover"] .sheet-chip .ic { width: 15px; height: 15px; flex: none; }
-
-body[data-surface="discover"] .disc-sort { display: flex; flex-direction: column; gap: 2px; }
-body[data-surface="discover"] .disc-sort__opt {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  min-height: 40px;
-  padding: 0 var(--s-2);
-  border-radius: var(--radius-tag);
-  font-size: 14px;
-  color: var(--g-text);
-  cursor: pointer;
+/* What this chip would return under the other facets — the same count
+   badge the scope switch and the option rows use. Under 24px, so 999 is
+   the sanctioned shape. */
+body[data-surface="discover"] .sheet-chip__count {
+  min-width: 20px; height: 18px; flex: none;
+  display: inline-grid; place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--glass-fill-line);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--g-mute);
 }
-body[data-surface="discover"] .disc-sort__opt:hover { background: var(--glass-fill); }
-body[data-surface="discover"] .disc-sort__opt input { accent-color: var(--g-petrol); }
+body[data-surface="discover"] .sheet-chip--on .sheet-chip__count { color: var(--g-petrol); }
+/* Nothing behind it under the other facets, so it stops taking taps
+   instead of emptying the list. The count reads 0 — not colour alone. */
+body[data-surface="discover"] .sheet-chip:disabled {
+  color: var(--g-faint);
+  border-color: var(--glass-fill-line);
+  cursor: default;
+}
+body[data-surface="discover"] .sheet-chip:disabled:hover { border-color: var(--glass-fill-line); }
+body[data-surface="discover"] .sheet-chip:disabled .sheet-chip__count { opacity: .6; }
 
 /* ── Layout ───────────────────────────────────────────────── */
 body[data-surface="discover"] .disc-layout { display: block; }
@@ -8308,6 +8473,19 @@ body[data-surface="discover"] .disc-summary__count {
 body[data-surface="discover"] .disc-summary__tools {
   display: flex; align-items: center; gap: var(--s-1); flex: none;
 }
+/* On a phone the count, Sort and Clear filters fought over one line and
+   the count lost — "22 picks · tuned to you" ellipsised to "22 picks · T…".
+   The tools take their own line. Not a wrapping control row: the controls
+   stay on one line together, the heading moves above them. */
+@media (max-width: 767px) {
+  body[data-surface="discover"] .disc-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-2);
+  }
+  body[data-surface="discover"] .disc-summary__count { white-space: normal; }
+  body[data-surface="discover"] .disc-summary__tools { justify-content: flex-start; }
+}
 body[data-surface="discover"] .disc-clear {
   height: 44px;   /* public-page tap floor */
   padding: 0 10px;
@@ -8321,6 +8499,11 @@ body[data-surface="discover"] .disc-clear {
   cursor: pointer;
 }
 body[data-surface="discover"] .disc-clear:hover { border-color: var(--glass-hair); }
+/* Both summary tools carry a resting hairline. "Relevance ⌄" with no box
+   around it read as a line of text rather than the control it is — the
+   chevron was doing all the work of saying "this opens". */
+body[data-surface="discover"] .disc-facet--quiet .disc-facet__btn,
+body[data-surface="discover"] .disc-clear { border-color: var(--glass-fill-line); }
 
 body[data-surface="discover"] .list-rows {
   display: flex;
@@ -8531,13 +8714,19 @@ body[data-surface="discover"] .disc-maptoggle {
 }
 body[data-surface="discover"] .disc-maptoggle svg { color: var(--g-petrol); }
 
-/* ── Phone: one control per line, menus dock to the bottom ──
+/* ── Phone and tablet: one control per line, menus dock to the bottom ──
    The facet row scrolls sideways rather than wrapping (control rows are
-   single-line), which would clip an anchored dropdown — so below 768 the
-   SAME menu docks to the bottom of the viewport instead. Still live-apply,
-   still dismissed by the button, an outside tap, or Escape; there is no
-   Apply step and nothing to back out of. */
-@media (max-width: 767px) {
+   single-line), which would clip an anchored dropdown — so the SAME menu
+   docks to the bottom of the viewport instead. Still live-apply, still
+   dismissed by the button, an outside tap, or Escape; there is no Apply
+   step and nothing to back out of.
+
+   This runs to 1023, not 767. Between the two the row was neither
+   scrollable nor stacked, so a facet labelled with its selection
+   ("Cultural space", "Kalamaja") pushed the row past the viewport with no
+   way to reach what it pushed off. 768–1023 is already phone-shaped here
+   anyway — the nav is a bottom dock and the map is an overlay. */
+@media (max-width: 1023px) {
   body[data-surface="discover"] .disc-controls {
     flex-direction: column;
     align-items: stretch;
@@ -8553,6 +8742,11 @@ body[data-surface="discover"] .disc-maptoggle svg { color: var(--g-petrol); }
     padding: 2px var(--gutter);
   }
   body[data-surface="discover"] .disc-facets::-webkit-scrollbar { display: none; }
+  /* Applied filters have to stay visible, and in a row that scrolls the
+     one you set can sit off-screen with nothing saying so. Active facets
+     sort to the head of the row, so resting scroll position always shows
+     what is narrowing the list. */
+  body[data-surface="discover"] .disc-facet--on { order: -1; }
 
   body[data-surface="discover"] .disc-facet__menu {
     position: fixed;

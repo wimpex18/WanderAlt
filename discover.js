@@ -25,7 +25,8 @@
   const state = {
     type:   'events',    /* 'events' (picks) | 'places' (venues) — scope switch */
     q:      '',          /* keyword query */
-    time:   'all',       /* all | tonight | thisweek */
+    /* all | tonight | tomorrow | weekend | thisweek | date:YYYY-MM-DD */
+    time:   'all',
     cats:   new Set(),   /* Events: WA.MAP_CATEGORIES ids (+ 'free'). Places: venue kinds. */
     nhoods: new Set(),   /* neighborhood names */
     mood:   [],          /* mood tag ids from mood-chips */
@@ -91,17 +92,29 @@
      category chips can never drift apart again. */
   const normaliseKind = window.WA?.normaliseKind || ((k) => k);
 
-  /* Apply time / category / free / neighborhood / mood filters. */
-  const applyStructuredFilters = (entries) => {
+  /* ── "When" ─────────────────────────────────────────────────
+     The predicate itself lives in when.js, which map.js reads too — the
+     list and the map holding one switch each is how they last drifted
+     apart. Here we only name the value and ask. */
+  const W = () => window.WA?.when;
+  const dateKeyOf = (time) => (String(time || '').startsWith('date:') ? time.slice(5) : '');
+  const matchesTime = (e, time) => W()?.matches(e, time) ?? true;
+
+  /* Apply time / category / free / neighborhood / mood filters.
+     `skip` names one dimension to leave out, so a facet can count what its
+     own options WOULD return without counting itself. */
+  const applyStructuredFilters = (entries, skip) => {
     const kindCats = new Set([...state.cats].filter(id => id !== 'free'));
     const wantFree = state.cats.has('free');
     return entries.filter(e => {
-      if (state.time === 'tonight'  && !e.tonight) return false;
-      if (state.time === 'thisweek' && !e.thisWeek && !e.tonight) return false;
-      if (kindCats.size > 0 && !kindCats.has(normaliseKind(e.kind))) return false;
-      if (wantFree && !(e.moodTags || []).includes('free')) return false;
-      if (state.nhoods.size > 0 && !state.nhoods.has(e.neighborhood)) return false;
-      if (state.mood.length > 0 && !state.mood.every(t => (e.moodTags || []).includes(t))) return false;
+      if (skip !== 'time' && !matchesTime(e, state.time)) return false;
+      if (skip !== 'cat') {
+        if (kindCats.size > 0 && !kindCats.has(normaliseKind(e.kind))) return false;
+        if (wantFree && !(e.moodTags || []).includes('free')) return false;
+      }
+      if (skip !== 'area' && state.nhoods.size > 0 && !state.nhoods.has(e.neighborhood)) return false;
+      if (skip !== 'mood' && state.mood.length > 0 &&
+          !state.mood.every(t => (e.moodTags || []).includes(t))) return false;
       return true;
     });
   };
@@ -300,10 +313,12 @@
     return arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   };
 
-  const filteredPlaces = () => {
+  /* `skip` leaves one dimension out so a facet can count what its own
+     options would return — same contract as applyStructuredFilters. */
+  const filteredPlaces = (skip) => {
     let list = ((window.WA && window.WA.venues) || []).slice();
-    if (state.cats.size)   list = list.filter(v => state.cats.has(v.kind));
-    if (state.nhoods.size) list = list.filter(v => state.nhoods.has(v.neighborhood));
+    if (skip !== 'cat'  && state.cats.size)   list = list.filter(v => state.cats.has(v.kind));
+    if (skip !== 'area' && state.nhoods.size) list = list.filter(v => state.nhoods.has(v.neighborhood));
     if (state.q) {
       const t = state.q.toLowerCase();
       list = list.filter(v => `${v.name} ${v.neighborhood} ${venueKindLabel(v.kind)}`.toLowerCase().includes(t));
@@ -394,8 +409,43 @@
     const cats = (window.WA && window.WA.MAP_CATEGORIES) || [];
     return (cats.find(c => c.id === id) || {}).label || id;
   };
-  const WHEN_LABELS = { tonight: 'Tonight', thisweek: 'This week' };
+  const WHEN_LABELS = {
+    tonight:  'Tonight',
+    tomorrow: 'Tomorrow',
+    weekend:  'This weekend',
+    thisweek: 'This week',
+  };
 
+  /* A chosen date reads as "Fri 31 Jul" on the button — the calendar key is
+     for the URL, not for the reader. */
+  const dateLabel = (key) => {
+    const d = new Date(`${key}T12:00:00Z`);
+    if (isNaN(d)) return 'Date';
+    try {
+      return new Intl.DateTimeFormat('en-GB',
+        { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
+    } catch { return key; }
+  };
+  const whenLabel = (time) => {
+    const key = dateKeyOf(time);
+    if (key) return dateLabel(key);
+    return WHEN_LABELS[time] || 'When';
+  };
+
+  /* Every count is conditioned on the other facets, so one tap invalidates
+     all four menus — redrawing only the menu that was clicked left the
+     others quoting numbers from the previous state. */
+  const renderFacetMenus = () => {
+    renderWhenChips();
+    renderCatChips();
+    renderAreaChips();
+  };
+
+  /* Labels and clear-button visibility only — cheap, and safe to run on
+     every keystroke. The menu bodies are NOT redrawn here: their counts
+     scan the corpus per option, which is heavier than the run() this file
+     already debounces, so the typing path defers them (see the input
+     handler). Everything else reaches them through apply(). */
   const reflectFacets = () => {
     const set = (facet, text, on) => {
       const el = document.querySelector(`.disc-facet[data-facet="${facet}"]`);
@@ -403,9 +453,13 @@
       const label = el.querySelector('.disc-facet__label');
       if (label) label.textContent = text;
       el.classList.toggle('disc-facet--on', !!on);
+      /* Per-facet clear: undoing one dimension shouldn't cost you the
+         other three, which "Clear filters" always did. */
+      const clr = el.querySelector('.disc-facet__clear');
+      if (clr) clr.hidden = !on;
     };
 
-    set('when', WHEN_LABELS[state.time] || 'When', state.time !== 'all');
+    set('when', whenLabel(state.time), state.time !== 'all');
 
     const nCat = state.cats.size;
     set('cat', nCat === 1 ? catLabel([...state.cats][0]) : nCat ? `Category · ${nCat}` : 'Category', nCat);
@@ -429,15 +483,97 @@
   };
 
   /* ── Chip rendering ─────────────────────────────────────── */
-  const chip = (attr, val, label, on, icon) =>
-    `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" ${attr}="${esc(val)}" aria-pressed="${on}">${icon || ''}${esc(label)}</button>`;
 
-  const WHEN_OPTS = [['all', 'Any time'], ['tonight', 'Tonight'], ['thisweek', 'This week']];
+  /* What the facet menus count against: everything the reader has already
+     narrowed to by scope, query and walking radius, but before any facet
+     applies. Each facet then subtracts its own dimension (see the `skip`
+     argument on applyStructuredFilters) so its numbers describe the tap,
+     not the current result. */
+  const baseCorpus = () => {
+    if (state.type === 'places') return ((window.WA && window.WA.venues) || []).slice();
+    const catalog = withinFilter((window.WA && window.WA.catalog) || []);
+    return state.q ? keywordFilter(catalog, state.q) : catalog;
+  };
+
+  /* The two scopes narrow through different predicates — a venue matches
+     its kind raw, a pick through normaliseKind, and Places never sees the
+     time or mood dimensions at all. A count that ran the wrong one would
+     promise a number the list then refuses to deliver, so each scope
+     counts through the very filter that will produce the list. */
+  const facetCorpus = (skip) => state.type === 'places'
+    ? filteredPlaces(skip)
+    : applyStructuredFilters(baseCorpus(), skip);
+
+  /* A chip with nothing behind it goes inert rather than offering a tap
+     that empties the list — same rule as the When options. A SELECTED chip
+     never disables, or an active filter could not be undone. */
+  const chip = (attr, val, label, on, icon, count) => {
+    const dead = count === 0 && !on;
+    return `<button type="button" class="sheet-chip${on ? ' sheet-chip--on' : ''}" ${attr}="${esc(val)}" aria-pressed="${on}"${dead ? ' disabled' : ''}>${icon || ''}${esc(label)}${
+      count == null ? '' : `<span class="sheet-chip__count">${count}</span>`}</button>`;
+  };
+
+  /* One row of the single-select list shape shared by When and Sort.
+     aria-pressed, not role="radio": a radiogroup promises arrow-key
+     navigation over a roving tabindex, which the native radio inputs Sort
+     used to carry got for free and these buttons do not. Tab reaches every
+     option, which is what a group of buttons is expected to do — and it is
+     the same contract the chips next door already use. */
+  const opt = (attr, val, label, on, { count = null, disabled = false } = {}) =>
+    `<button type="button" aria-pressed="${on}"
+             class="disc-opt${on ? ' disc-opt--on' : ''}"
+             ${attr}="${esc(val)}"${disabled ? ' disabled' : ''}>
+       <span class="disc-opt__mark" aria-hidden="true"></span>
+       <span class="disc-opt__label">${esc(label)}</span>
+       ${count == null ? '' : `<span class="disc-opt__count">${count}</span>`}
+     </button>`;
+
+  /* Ordered nearest-first, which is the order people ask the question in.
+     "This week" trails the specific days because it is the widest net. */
+  const WHEN_OPTS = [
+    ['all',      'Any time'],
+    ['tonight',  'Tonight'],
+    ['tomorrow', 'Tomorrow'],
+    ['weekend',  'This weekend'],
+    ['thisweek', 'This week'],
+  ];
+
+  /* Counts come from the corpus with every OTHER facet applied but the time
+     dimension left out, so each number is exactly what that tap would
+     return. Zero-count options are disabled rather than removed: the list
+     keeps its shape while you work down it, and no option can dead-end.
+     The currently-selected option always stays enabled so it is clearable
+     even when the rest of the state has starved it to nothing. */
   const renderWhenChips = () => {
     if (!whenEl) return;
-    whenEl.innerHTML = WHEN_OPTS
-      .map(([v, label]) => chip('data-when', v, label, state.time === v || (v === 'all' && !state.time)))
-      .join('');
+    const corpus = facetCorpus('time');
+    const n = (time) => corpus.reduce((c, e) => c + (matchesTime(e, time) ? 1 : 0), 0);
+    const selKey = dateKeyOf(state.time);
+
+    let html = WHEN_OPTS.map(([v, label]) => {
+      const count = n(v);
+      return opt('data-when', v, label, state.time === v,
+                 { count, disabled: count === 0 && state.time !== v });
+    }).join('');
+
+    /* A date the reader picked is its own row, so the choice stays visible
+       (and undoable) without reopening the calendar. */
+    if (selKey) {
+      html += opt('data-when', state.time, dateLabel(selKey), true, { count: n(state.time) });
+    }
+    whenEl.innerHTML = html;
+
+    /* The calendar is offered only when something in view carries a date —
+       otherwise every day the reader could pick would come back empty. */
+    const dated = corpus.map(e => W()?.resolveKey(e)).filter(Boolean).sort();
+    const row   = document.getElementById('discover-date-row');
+    const input = document.getElementById('discover-date');
+    if (row) row.hidden = dated.length === 0;
+    if (input && dated.length) {
+      input.min   = W()?.todayKey() || dated[0];
+      input.max   = dated[dated.length - 1];
+      input.value = selKey || '';
+    }
   };
 
   /* Category chips are scope-aware: Events uses WA.MAP_CATEGORIES, Places
@@ -459,11 +595,24 @@
     const present   = state.type === 'places' ? hasKind : hasCat;
     const dataReady = state.type === 'places' ? venues.length > 0 : catalog.length > 0;
     if (dataReady) pairs = pairs.filter(([id]) => present(id) || state.cats.has(id));
+
+    /* Each chip carries what it would return under the OTHER facets, so a
+       reader narrowed to Tonight can see which categories survive it
+       instead of finding out one tap at a time. */
+    const corpus = facetCorpus('cat');
+    const countOf = (id) => {
+      if (state.type === 'places') return corpus.reduce((c, v) => c + (v.kind === id ? 1 : 0), 0);
+      return id === 'free'
+        ? corpus.reduce((c, e) => c + ((e.moodTags || []).includes('free') ? 1 : 0), 0)
+        : corpus.reduce((c, e) => c + (normaliseKind(e.kind) === id ? 1 : 0), 0);
+    };
+
     /* A venue kind is a recognisable shape at a glance, so Places chips
        carry an icon; Events categories stay text-only. */
     catChipsEl.innerHTML = pairs.map(([id, label]) =>
       chip('data-cat', id, label, state.cats.has(id),
-           state.type === 'places' ? kindIconSvg(id) : '')).join('');
+           state.type === 'places' ? kindIconSvg(id) : '',
+           countOf(id))).join('');
   };
 
   /* Area and walking distance both answer "where", so they share one menu:
@@ -474,9 +623,13 @@
       ? ((window.WA && window.WA.venues) || []).map(v => ({ neighborhood: v.neighborhood }))
       : ((window.WA && window.WA.catalog) || []);
     const nhoods = topN(source, e => e.neighborhood, 12);
+    const corpus = facetCorpus('area');
+    const countOf = (name) =>
+      corpus.reduce((c, e) => c + (e.neighborhood === name ? 1 : 0), 0);
     const near = chip('data-within', String(WALK_MIN), `Near me · ${WALK_MIN} min walk`, state.within > 0);
     areaChipsEl.innerHTML = near +
-      nhoods.map(([name]) => chip('data-nhood', name, name, state.nhoods.has(name))).join('');
+      nhoods.map(([name]) =>
+        chip('data-nhood', name, name, state.nhoods.has(name), '', countOf(name))).join('');
     const note = document.getElementById('discover-within-note');
     if (note) note.hidden = !(state.within > 0 && _locDenied);
   };
@@ -485,11 +638,11 @@
     if (!sortEl) return;
     const opts = SORT_OPTS[state.type] || SORT_OPTS.events;
     if (!opts.some(([v]) => v === state.sort)) state.sort = DEFAULT_SORT[state.type];
+    /* Same .disc-opt row as When — one implementation for "pick one of
+       these". The bespoke radio-input list was the only place on the page
+       where a native control carried the selected state. */
     sortEl.innerHTML = opts.map(([v, label]) =>
-      `<label class="disc-sort__opt">
-         <input type="radio" name="discover-sort-radio" value="${v}"${v === state.sort ? ' checked' : ''}>
-         <span class="disc-sort__label">${esc(label)}</span>
-       </label>`).join('');
+      opt('data-sort', v, label, v === state.sort)).join('');
   };
 
   const updateScopeCounts = () => {
@@ -526,7 +679,12 @@
     const sp = new URLSearchParams(window.location.search);
     state.type   = sp.get('type') === 'places' ? 'places' : 'events';
     state.q      = sp.get('q')     || '';
-    state.time   = sp.get('time')  || 'all';
+    /* A time value this build doesn't know widens to Any time — and is
+       normalised here rather than carried, or the facet would sit tinted
+       and "Clear filters" would offer to undo a filter doing nothing. */
+    const t = sp.get('time') || 'all';
+    state.time = (WHEN_OPTS.some(([v]) => v === t) || /^date:\d{4}-\d{2}-\d{2}$/.test(t))
+      ? t : 'all';
     state.cats   = new Set((sp.get('cat')   || '').split(',').filter(Boolean));
     state.nhoods = new Set((sp.get('nhood') || '').split(',').filter(Boolean));
     /* Legacy links carried 5 / 15 / 30; they all mean "near me" now. */
@@ -557,9 +715,7 @@
         : 'Search, or ask for what you want';
     }
     document.body.classList.toggle('discover-places', places);
-    renderCatChips();
-    renderAreaChips();
-    renderWhenChips();
+    renderFacetMenus();
     buildSortOptions();
   };
 
@@ -568,6 +724,7 @@
   /* Every control applies immediately. */
   const apply = () => {
     reflectFacets();
+    renderFacetMenus();
     writeUrlState();
     if (needsLocation()) ensureLocation(run);
     else run();
@@ -870,9 +1027,6 @@
     /* Mood lives in the URL hash; clearing fires wa:mood-changed, which
        sets state.mood and re-runs — the guard keeps this single-run. */
     if (state.mood.length) window.WA.MoodChips?.clear?.();
-    renderCatChips();
-    renderAreaChips();
-    renderWhenChips();
     buildSortOptions();
     apply();
   };
@@ -888,10 +1042,9 @@
 
   const renderAll = () => {
     updateScopeCounts();
-    renderCatChips();
-    renderAreaChips();
+    renderFacetMenus();
     populateCurators((window.WA && window.WA.catalog) || []);
-    if (needsLocation()) ensureLocation(() => { renderAreaChips(); run(); });
+    if (needsLocation()) ensureLocation(() => { renderFacetMenus(); run(); });
     else run();
     /* A shared ?ai= link re-asks the same question over the live list. */
     if (state.ai) runMatch(state.ai);
@@ -951,6 +1104,17 @@
         state.cats.clear();
         state.time = 'all';
         state.sort = DEFAULT_SORT[t];
+        /* The neighborhood is meant to carry over, but only where the new
+           scope can honour it. Venues carry no neighborhood at all today,
+           so crossing into Places with an area set zeroed the list AND hid
+           the reason: the Places area menu lists no neighborhoods, leaving
+           an active filter with no chip to switch off. Drop the ones the
+           target scope has nothing under. */
+        const reachable = new Set(
+          (t === 'places' ? (window.WA && window.WA.venues) || []
+                          : (window.WA && window.WA.catalog) || [])
+            .map(e => e.neighborhood).filter(Boolean));
+        [...state.nhoods].forEach(n => { if (!reachable.has(n)) state.nhoods.delete(n); });
         /* The answer was about picks; it doesn't survive a scope change. */
         dismissConcierge();
         reflectType();
@@ -975,12 +1139,24 @@
       if (document.body.classList.contains('disc-map-open')) setView('list');
     });
 
-    /* When — single-select. */
+    /* When — single-select, so the menu closes on the answer the way Sort
+       does. Disabled options are inert: a zero-count row must not blank the
+       list out from under the reader. */
     whenEl?.addEventListener('click', (e) => {
       const c = e.target.closest('[data-when]');
-      if (!c) return;
+      if (!c || c.disabled) return;
       state.time = c.dataset.when || 'all';
-      renderWhenChips();
+      closeMenus();
+      apply();
+    });
+
+    /* Pick a date — the escape hatch under the presets, not a replacement
+       for them. Clearing the field falls back to Any time rather than
+       leaving the facet stuck on a date the reader just erased. */
+    document.getElementById('discover-date')?.addEventListener('change', (e) => {
+      const v = e.target.value;
+      state.time = v ? `date:${v}` : 'all';
+      closeMenus();
       apply();
     });
 
@@ -990,7 +1166,6 @@
       if (!c) return;
       const id = c.dataset.cat;
       if (state.cats.has(id)) state.cats.delete(id); else state.cats.add(id);
-      renderCatChips();
       apply();
     });
 
@@ -1000,8 +1175,7 @@
       const near = e.target.closest('[data-within]');
       if (near) {
         state.within = state.within ? 0 : WALK_MIN;
-        renderAreaChips();
-        if (state.within) ensureLocation(() => { renderAreaChips(); apply(); });
+        if (state.within) ensureLocation(apply);
         else apply();
         return;
       }
@@ -1009,17 +1183,36 @@
       if (!nh) return;
       const name = nh.dataset.nhood;
       if (state.nhoods.has(name)) state.nhoods.delete(name); else state.nhoods.add(name);
-      renderAreaChips();
       apply();
     });
 
     /* Sort — applies immediately, then closes its menu (a radio group has
        exactly one answer, so there is nothing left to do in there). */
-    sortEl?.addEventListener('change', () => {
-      const sel = sortEl.querySelector('input[name="discover-sort-radio"]:checked');
-      state.sort = sel ? sel.value : DEFAULT_SORT[state.type];
+    sortEl?.addEventListener('click', (e) => {
+      const o = e.target.closest('[data-sort]');
+      if (!o || o.disabled) return;
+      state.sort = o.dataset.sort || DEFAULT_SORT[state.type];
+      buildSortOptions();
       closeMenus();
       apply();
+    });
+
+    /* Per-facet clear, inside the menu it belongs to. "Clear filters"
+       still resets everything; this resets the one dimension you opened. */
+    document.querySelectorAll('.disc-facet__clear').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        switch (btn.dataset.clear) {
+          case 'when': state.time = 'all'; break;
+          case 'cat':  state.cats.clear(); break;
+          case 'area': state.nhoods.clear(); state.within = 0; break;
+          /* MoodChips owns the hash and fires wa:mood-changed, which this
+             page already listens for — calling apply() here too would run
+             the filter twice for one tap. */
+          case 'mood': window.WA?.MoodChips?.clear?.(); return;
+        }
+        apply();
+      });
     });
 
     clearBtn?.addEventListener('click', clearFilters);
@@ -1061,7 +1254,9 @@
       writeUrlState();
       suppressEntrance = true;
       clearTimeout(typeTimer);
-      typeTimer = setTimeout(run, 150);
+      /* The menus count against the query too, so they ride the same
+         debounce rather than rescanning the corpus per option per key. */
+      typeTimer = setTimeout(() => { renderFacetMenus(); run(); }, 150);
     });
     /* The list already filters as you type, so Enter has one job left:
        hand the words to the concierge — unless the reader has arrowed onto

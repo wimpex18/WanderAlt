@@ -136,13 +136,30 @@
            facets, no full-screen modal to back out of — click the button
            again, click away, or press Escape. -->
       <div class="disc-facets" id="disc-facets" role="group" aria-label="Filters">
+        <!-- When is single-select, so it reads as an option list with counts
+             rather than a chip cloud: chips are the multi-select shape on
+             this page (Category / Area / Mood) and using them for an
+             either/or question was the one place two patterns overlapped.
+             Options that match nothing disable themselves instead of
+             disappearing, so the list never jumps under the cursor and no
+             tap can dead-end. -->
         <div class="disc-facet" data-facet="when" data-mode="events">
           <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
             <span class="disc-facet__label">When</span>
             <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           </button>
           <div class="disc-facet__menu" hidden>
-            <div class="disc-chips" id="discover-when" role="group" aria-label="When"></div>
+            <div class="disc-facet__head">
+              <p class="disc-facet__title">When</p>
+              <button class="disc-facet__clear" type="button" data-clear="when" hidden>Clear</button>
+            </div>
+            <div class="disc-opts" id="discover-when" role="group" aria-label="When"></div>
+            <!-- Only rendered when some pick in view actually resolves to a
+                 date — an empty calendar is a promise the data can't keep. -->
+            <div class="disc-date" id="discover-date-row" hidden>
+              <label class="disc-date__label" for="discover-date">Pick a date</label>
+              <input class="disc-date__input" id="discover-date" type="date">
+            </div>
           </div>
         </div>
 
@@ -152,6 +169,10 @@
             <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           </button>
           <div class="disc-facet__menu" hidden>
+            <div class="disc-facet__head">
+              <p class="disc-facet__title">Category</p>
+              <button class="disc-facet__clear" type="button" data-clear="cat" hidden>Clear</button>
+            </div>
             <div class="disc-chips" id="discover-cat-chips" role="group" aria-label="Category"></div>
           </div>
         </div>
@@ -164,6 +185,10 @@
             <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           </button>
           <div class="disc-facet__menu" hidden>
+            <div class="disc-facet__head">
+              <p class="disc-facet__title">Area</p>
+              <button class="disc-facet__clear" type="button" data-clear="area" hidden>Clear</button>
+            </div>
             <div class="disc-chips" id="discover-area-chips" role="group" aria-label="Area"></div>
             <p class="disc-facet__note meta" id="discover-within-note" hidden>Couldn&rsquo;t place you &mdash; showing every area.</p>
           </div>
@@ -175,6 +200,10 @@
             <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           </button>
           <div class="disc-facet__menu" hidden>
+            <div class="disc-facet__head">
+              <p class="disc-facet__title">Mood</p>
+              <button class="disc-facet__clear" type="button" data-clear="mood" hidden>Clear</button>
+            </div>
             <nav class="mood-chips" aria-label="Filter by mood"></nav>
           </div>
         </div>
@@ -225,9 +254,13 @@
                 <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
               </button>
               <div class="disc-facet__menu disc-facet__menu--end" hidden>
+                <div class="disc-facet__head">
+                  <p class="disc-facet__title">Sort by</p>
+                </div>
                 <!-- Radio list, not a <select> (Baymard: visible options beat
-                     a dropdown under ~5 choices). Populated per scope. -->
-                <div class="disc-sort" id="discover-sort" role="radiogroup" aria-label="Sort"></div>
+                     a dropdown under ~5 choices). Populated per scope.
+                     Same .disc-opts shape as When — both are single-select. -->
+                <div class="disc-opts" id="discover-sort" role="group" aria-label="Sort"></div>
               </div>
             </div>
             <button class="disc-clear" id="discover-clear-filters" type="button" hidden>Clear filters</button>
