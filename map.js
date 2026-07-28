@@ -161,9 +161,14 @@
     return catalog.filter(e => {
       /* Geocoded entries only — entries without lat/lng don't render. */
       if (e.lat == null || e.lng == null) return false;
-      if (timeFilter === 'tonight'  && !e.tonight) return false;
-      if (timeFilter === 'thisweek' && !e.thisWeek && !e.tonight) return false;
-      if (timeFilter === 'places'   && e.day) return false;
+      /* 'places' is this layer's own value (venues carry no day); every
+         other value is read by WA.when so the pins and Discover's list
+         answer "when" identically. This used to be a private copy of the
+         switch that knew only tonight/thisweek, so a newer value — a
+         weekend, a tomorrow, a picked date — filtered the list while the
+         map quietly kept showing everything. */
+      if (timeFilter === 'places') { if (e.day) return false; }
+      else if (!(window.WA?.when?.matches(e, timeFilter) ?? true)) return false;
       if (kindFilters.size > 0 && !kindFilters.has(normaliseKind(e.kind))) return false;
       if (wantFree && !(e.moodTags || []).includes('free')) return false;
       if (nhoodFilter.size > 0 && !nhoodFilter.has(e.neighborhood)) return false;
