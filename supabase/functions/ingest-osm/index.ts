@@ -1,5 +1,15 @@
 // ============================================================
-// WanderAlt — ingest-osm  (v12)
+// WanderAlt — ingest-osm  (v13)
+// v13 (Aug 2026, redesign step 0): capture opening_hours.
+//   The Overpass query already ends `out center tags;`, so every element
+//   has always arrived with its full tag set — the row mapping just never
+//   read t.opening_hours. Result: the catalogue carried opening hours on
+//   1 of 937 public venues while the answer sat unread in every response.
+//   Measured OSM coverage for the Places-whitelist kinds: tallinn 55%,
+//   riga 44%, helsinki 47%, vilnius 57%. Under the 70% floor Walks needed
+//   (so Walks was cut), but it is the difference between "open now" being
+//   a real field and a decorative one. Stored as raw OSM syntax; hours.js
+//   parses it, and also the Google weekday_text shape in venue_details.
 // v12 (Jul 2026, design-critique should-fix): two curation guards.
 //   • Chain blocklist: pipeline_config.venue_chain_blocklist (string[],
 //     word-prefix match on the venue name, case-insensitive) skips
@@ -96,7 +106,7 @@ async function ingestCity(
   bbox: string,
   now: string,
   blocklist: RegExp[],
-): Promise<{ upserted: number; total: number; blocked: number }> {
+): Promise<{ upserted: number; total: number; blocked: number; withHours: number }> {
   const res = await fetch(OVERPASS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8",
@@ -114,7 +124,8 @@ async function ingestCity(
   }>;
 
   const rows: Record<string, unknown>[] = [];
-  let blocked = 0;
+  let blocked   = 0;
+  let withHours = 0;
 
   for (const el of elements) {
     const t    = el.tags ?? {};
@@ -128,6 +139,9 @@ async function ingestCity(
     /* v12: mainstream chains never enter the catalog. */
     if (blocklist.some((re) => re.test(name))) { blocked++; continue; }
 
+    const hours = t.opening_hours || null;
+    if (hours) withHours++;
+
     rows.push({
       id:           slugify(name) + "-" + el.id,
       city,
@@ -135,6 +149,12 @@ async function ingestCity(
       neighborhood: t["addr:suburb"] || t["addr:city_district"] || null,
       kind, lat, lng,
       osm_id:       el.id,
+      /* v13: raw OSM syntax ("Tu-Sa 12:00-19:00; Su,Mo off"), stored
+         verbatim — hours.js parses it client-side. Writing null when OSM
+         has no tag is correct: this column has exactly one writer, and a
+         venue that drops the tag upstream should stop claiming hours.
+         Hand-edited hours live in venue_details, which this never touches. */
+      opening_hours: hours,
       website:      t.website || t["contact:website"] || null,
       facebook:     normSocial(t["contact:facebook"]  || t.facebook,  "https://facebook.com/"),
       instagram:    normSocial(t["contact:instagram"] || t.instagram, "https://instagram.com/"),
@@ -154,7 +174,7 @@ async function ingestCity(
     upserted += Math.min(CHUNK, rows.length - i);
   }
 
-  return { upserted, total: elements.length, blocked };
+  return { upserted, total: elements.length, blocked, withHours };
 }
 
 export default {
@@ -185,14 +205,14 @@ export default {
 
     const blocklist = await loadChainBlocklist(sb);
 
-    const perCity: Record<string, { upserted?: number; total?: number; blocked?: number; error?: string }> = {};
+    const perCity: Record<string, { upserted?: number; total?: number; blocked?: number; withHours?: number; error?: string }> = {};
     let totalUpserted = 0;
     const errors: string[] = [];
 
     for (const [city, bbox] of cities) {
       try {
         const out = await ingestCity(sb, city, bbox, now, blocklist);
-        perCity[city]  = { upserted: out.upserted, total: out.total, blocked: out.blocked };
+        perCity[city]  = { upserted: out.upserted, total: out.total, blocked: out.blocked, withHours: out.withHours };
         totalUpserted += out.upserted;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

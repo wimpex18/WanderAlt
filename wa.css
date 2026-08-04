@@ -1,0 +1,1350 @@
+/* ============================================================
+   wa.css — the whole design system.
+   ------------------------------------------------------------
+   Replaces styles.css (9,118 lines) wholesale. That file was not
+   patchable: its [data-skin="dusk"] [data-page="…"] override layers
+   meant every screen-local fix fought three others, which is why the
+   same overlap and alignment bugs kept coming back.
+
+   This file is deliberately small enough to hold in your head:
+   about thirty tokens, twelve components, two themes. If a screen
+   needs something that isn't here, the answer is almost always that
+   one of the twelve should grow a modifier — not that the screen
+   should grow a rule.
+
+   MATERIAL: flat opaque paper. Ink on cream by day, ink on near-black
+   at night. There is no scene under glass any more.
+
+   GLASS: exactly two elements — the sticky top bar and the bottom tab
+   bar. Both are chrome, both float over content the reader has already
+   passed, both are ≥92% opaque in the page's own ground colour. Nothing
+   else in the product is translucent: not cards, not sheets, not map
+   pins, not badges over photos. Never nest it.
+
+   Theme is driven by data-theme on <html>, set pre-paint by theme.js.
+   ============================================================ */
+
+/* ============================================================
+   1 · FONTS
+   ============================================================ */
+
+/* Fraunces — the catalogue voice. Only where a human wrote something:
+   pick titles, page headlines, the Saturday email. Never below 17px;
+   below that it muddies and it is why the old cards read cramped. */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('fonts/fraunces-600.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+
+/* Geist Mono — facts. Times, distances, counts, labels. */
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/geist-mono-400.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/geist-mono-500.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+
+/* The interface face. The direction (6a, option C) specifies Plus
+   Jakarta Sans 600/700 — geometric skeleton, humanist warmth, and it
+   holds at 10–11px in the tab bar where Fraunces does not.
+
+   The two woff2 files are not in the repo yet, so --ff-ui names Jakarta
+   first and falls through to Inter, which is already self-hosted below.
+   Declaring @font-face for files that don't exist would 404 on every
+   page load, and "no console errors on load" is one of the two things
+   worth checking by hand here.
+
+   TO LAND THE REAL FACE: drop plus-jakarta-sans-600.woff2 and -700.woff2
+   into fonts/, uncomment the two blocks below, and delete the four Inter
+   files and their @font-face rules. Nothing else changes — every layout
+   in the direction survives the swap untouched. */
+
+/*
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/plus-jakarta-sans-600.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/plus-jakarta-sans-700.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+*/
+
+/* Interim only — retired from the token set the moment Jakarta lands. */
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-400.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-500.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-600.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-700.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* ============================================================
+   2 · TOKENS
+   Thirty-odd values. Do not hand-roll a colour, blur or rgba
+   literal anywhere else in the product — a hard-coded value looks
+   right in one theme and breaks completely in the other.
+   ============================================================ */
+
+:root {
+  /* ---- Paper (day is the default; most deciding happens in daylight,
+          and outdoors in daylight paper beats glass) ---- */
+  --ground:       #f2efe6;
+  --card:         #fffdf8;
+  --ink:          #0a1011;
+  --ink-mute:     #5c6b62;   /* meta lines, secondary facts */
+  --ink-soft:     #48564f;   /* body copy under a title */
+  --rule:         rgba(10, 16, 17, .12);
+  --rule-strong:  rgba(10, 16, 17, .22);
+
+  /* ---- Accent. Petrol is the only one. ---- */
+  --petrol:       #055959;
+  --petrol-ink:   #ffffff;   /* text on a petrol fill */
+  --petrol-tint:  rgba(5, 89, 89, .09);   /* the mark well, active chips */
+
+  /* ---- Signal. Lime is NOT a colour, it is an alarm: live dots,
+          "now", the TONIGHT tag, one CTA per screen. Never body text,
+          never borders, never an icon. By day the CTA goes petrol
+          because lime fails on paper. ---- */
+  --signal:       #d2dc50;
+  --signal-ink:   #0a1011;
+
+  /* ---- The one warning colour, for expired and gone-away rows. ---- */
+  --warn:         #8a3a2a;
+
+  /* ---- Glass. Two elements. ---- */
+  --glass:        rgba(242, 239, 230, .92);
+  --glass-blur:   blur(16px);
+  --glass-hair:   rgba(10, 16, 17, .14);
+
+  /* ---- Photo scrim. Deliberately theme-invariant dark: a photograph
+          needs a dark ramp under text in both themes. ---- */
+  --scrim-photo:  linear-gradient(to top, rgba(6, 10, 11, .82) 0%, rgba(6, 10, 11, .38) 46%, rgba(6, 10, 11, 0) 100%);
+
+  /* ---- Type ---- */
+  --ff-ui:      'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif;
+  --ff-display: 'Fraunces', Georgia, serif;
+  --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-mono:      11px;   /* the fact line, uppercase, tracked */
+  --fs-meta:      12px;
+  --fs-body:      14px;
+  --fs-card:      15px;   /* card title, --ff-ui 600 */
+  --fs-title:     17px;   /* the Fraunces floor. Never go under it. */
+  --fs-headline:  26px;
+  --fs-display:   34px;
+
+  /* ---- Space. Vertical gaps encode relationship: tighter within an
+          item than between items, and a heading always gets more room
+          below it than the gap between the things it introduces. ---- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 48px;
+  --gutter: 20px;
+
+  /* ---- Radii. Four steps, and 999 is only for chips and badges. ---- */
+  --r-pill:    999px;
+  --r-control:  12px;
+  --r-card:     14px;
+  --r-card-lg:  16px;
+  --r-sheet:    20px;
+
+  /* ---- Chrome. Both bars reserve real layout height — the old
+          floating island was positioned and reserved nothing, which is
+          the whole overlap bug. ---- */
+  --topbar-h:  56px;
+  --tabbar-h:  60px;
+  --control-h: 48px;
+  --tap-min:   44px;   /* hard floor on public pages */
+
+  /* ---- Width ladder. Carried over from the old system unchanged;
+          only the components inside it are new. ---- */
+  --reading-max: 1024px;
+
+  /* ---- Motion. These two and nothing new. ---- */
+  --t-fast: 120ms ease;
+  --t-mid:  280ms cubic-bezier(.2, .8, .2, 1);
+}
+
+[data-theme="dusk"] {
+  --ground:      #0a1011;
+  --card:        #141c1d;
+  --ink:         #f4f1e8;
+  --ink-mute:    #8fa199;
+  --ink-soft:    #b9c4bd;
+  --rule:        rgba(244, 241, 232, .14);
+  --rule-strong: rgba(244, 241, 232, .26);
+
+  --petrol:      #7adcd6;
+  --petrol-ink:  #05201f;
+  --petrol-tint: rgba(122, 220, 214, .12);
+
+  --warn:        #e0836d;
+
+  --glass:       rgba(16, 24, 25, .94);
+  --glass-hair:  rgba(244, 241, 232, .16);
+}
+
+@media (min-width: 768px)  { :root { --reading-max: 1100px; } }
+@media (min-width: 1100px) { :root { --reading-max: 1200px; } }
+@media (min-width: 1440px) { :root { --reading-max: 1280px; } }
+@media (min-width: 1680px) { :root { --reading-max: 1440px; } }
+@media (min-width: 1920px) { :root { --reading-max: 1600px; } }
+
+/* ============================================================
+   3 · BASE
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--ground);
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--fs-body)/1.55 var(--ff-ui);
+  -webkit-font-smoothing: antialiased;
+  /* Reserve the tab bar. The bar itself is fixed so it can be glass over
+     scrolled content; the page still owns the space so nothing is ever
+     covered at the end of a list. */
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  /* No horizontal overflow, at any width. Checked by hand every pass. */
+  overflow-x: hidden;
+}
+
+body[data-nav="none"] { padding-bottom: 0; }
+
+img, svg, video { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--petrol); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--petrol);
+  outline-offset: 2px;
+  border-radius: var(--s-1);
+}
+
+.wa-shell {
+  width: 100%;
+  max-width: var(--reading-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Screen-reader-only, for the labels a sighted reader gets from layout. */
+.wa-sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   4 · TYPE HELPERS
+   The rule, stated once: chrome, counts, section titles, card titles,
+   buttons and nav are --ff-ui. Pick and venue titles, page headlines
+   and the email are Fraunces 600, never under 17px. Facts are mono.
+   ============================================================ */
+
+.wa-display {
+  font: 600 var(--fs-display)/1.12 var(--ff-display);
+  letter-spacing: -.015em;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.wa-headline {
+  font: 600 var(--fs-headline)/1.2 var(--ff-display);
+  letter-spacing: -.01em;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* Section titles are interface, not catalogue — they name a shelf. */
+.wa-section-title {
+  font: 700 var(--fs-title)/1.25 var(--ff-ui);
+  letter-spacing: -.01em;
+  margin: 0;
+}
+
+.wa-section-sub {
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .04em;
+  color: var(--ink-mute);
+  margin: var(--s-1) 0 0;
+}
+
+/* A heading always gets more room below it than the gap between the
+   things it introduces, and it is never the tightest gap near it.
+   The subtitle belongs TO the title, so it sits tight against it; the
+   content the pair introduces gets the wide gap. Encoding it here means
+   no screen has to remember it. */
+.wa-section { margin-top: var(--s-8); }
+
+/* Scoped to a direct child and given two classes deliberately: the list
+   components below reset `margin: 0`, which is the same specificity and
+   sits later in the file, so a one-class rule here loses to them
+   silently — which is exactly how "the heading is the tightest gap"
+   keeps coming back. */
+.wa-section > .wa-section-title + *:not(.wa-section-sub),
+.wa-section > .wa-section-sub + * {
+  margin-top: var(--s-5);
+}
+
+.wa-fact {
+  font: 500 var(--fs-mono)/1.35 var(--ff-mono);
+  letter-spacing: .06em;
+  color: var(--ink-mute);
+}
+
+.wa-fact--strong { color: var(--ink); }
+
+/* Meta lines may ellipsize. Titles never do. */
+.wa-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   5 · COMPONENT — top bar (glass 1 of 2)
+   Sticky, in normal flow, so it occupies real layout height and
+   content scrolls under a known offset.
+   ============================================================ */
+
+.wa-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-inline: var(--gutter);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  /* The hairline sits on the content-facing edge. That line, not the
+     blur, is what reads as "this floats". */
+  border-bottom: 1px solid var(--glass-hair);
+}
+
+/* Where backdrop-filter is missing the bar goes fully opaque rather
+   than translucent-and-unreadable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .wa-topbar, .wa-tabbar { background: var(--ground); }
+}
+
+.wa-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  /* The home link is a tap target like any other — the 26px mark is the
+     icon, not the hit area. */
+  min-height: var(--tap-min);
+  font: 700 var(--fs-card)/1 var(--ff-ui);
+  letter-spacing: -.01em;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.wa-topbar__mark { width: 26px; height: 26px; border-radius: 6px; }
+
+.wa-topbar__title {
+  font: 700 var(--fs-card)/1 var(--ff-ui);
+  margin: 0 auto 0 0;
+}
+
+/* ============================================================
+   6 · COMPONENT — tab bar (glass 2 of 2)
+   Four items, labels always visible. Tonight earns a permanent tab
+   because it is the only nav item with an expiry.
+   ============================================================ */
+
+.wa-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 50;
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-hair);
+}
+
+.wa-tabbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--tap-min);
+  text-decoration: none;
+  color: var(--ink-mute);
+  font: 600 10px/1 var(--ff-ui);
+  letter-spacing: .01em;
+  transition: color var(--t-fast);
+}
+
+.wa-tabbar__item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* Active state is a tint plus a mark, never colour alone — here the
+   mark is the filled dot under the label. */
+.wa-tabbar__item[aria-current="page"] { color: var(--ink); }
+.wa-tabbar__item[aria-current="page"]::after {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--petrol);
+}
+
+/* ============================================================
+   7 · COMPONENT — search capsule
+   One capsule for Where / When / What. It absorbs the whole filter
+   model, so there is exactly one place to change what you're looking
+   at. On phone it collapses to a single search key.
+   ============================================================ */
+
+.wa-capsule {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--control-h);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  box-shadow: 0 1px 2px rgba(10, 16, 17, .05);
+  overflow: hidden;
+}
+
+.wa-capsule__slot {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: var(--s-2) var(--s-5);
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--rule);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.wa-capsule__slot:last-of-type { border-right: 0; }
+.wa-capsule__slot:hover { background: var(--petrol-tint); }
+
+.wa-capsule__label {
+  font: 700 10px/1 var(--ff-ui);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.wa-capsule__value {
+  font: 600 var(--fs-body)/1.3 var(--ff-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inset by 2px, not 4 — at 4 the key came out 38px tall inside a 48px
+   capsule, under the 44 floor. */
+.wa-capsule__go {
+  flex: 0 0 auto;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin-inline: 2px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--petrol);
+  color: var(--petrol-ink);
+  cursor: pointer;
+}
+
+.wa-capsule__go svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* Phone: one key, not three slots. Three slots do not fit at 390 — the
+   What value truncates to "Anyth…", which is worse than not showing it.
+   Done here rather than with a class so no page can get it wrong; the
+   parked values still appear inside the search sheet. */
+@media (max-width: 767px) {
+  .wa-capsule__slot { border-right: 0; }
+  .wa-capsule__slot:not(:first-of-type) { display: none; }
+}
+
+/* ============================================================
+   8 · COMPONENT — scope chips / tabs
+   All / Tonight / Places. One row of three changes the whole page
+   identity. Icon-over-label from 768 up, underline on the active one.
+   ============================================================ */
+
+.wa-scope {
+  display: flex;
+  gap: var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--s-1) 0;
+  margin: 0;
+  list-style: none;
+}
+.wa-scope::-webkit-scrollbar { display: none; }
+
+.wa-scope__chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink-mute);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+
+.wa-scope__chip svg { width: 18px; height: 18px; }
+
+/* Tint plus a mark: the border thickens and the fill tints. */
+.wa-scope__chip[aria-selected="true"],
+.wa-scope__chip[aria-current="true"] {
+  background: var(--petrol-tint);
+  border-color: var(--petrol);
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .wa-scope { gap: var(--s-6); }
+  .wa-scope__chip {
+    flex-direction: column;
+    gap: var(--s-1);
+    padding: var(--s-2) var(--s-2) var(--s-3);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    font-size: var(--fs-meta);
+  }
+  .wa-scope__chip svg { width: 22px; height: 22px; }
+  .wa-scope__chip[aria-selected="true"],
+  .wa-scope__chip[aria-current="true"] {
+    background: none;
+    border-bottom-color: var(--petrol);
+  }
+}
+
+/* ============================================================
+   9 · COMPONENT — category mark
+   No photo is the normal case. A photoless card is filled by its
+   category mark on a 9%-petrol ground — a labelled object, not a
+   failure. Never a grey box.
+   ============================================================ */
+
+.wa-mark {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--petrol-tint);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.wa-mark svg,
+.wa-mark use {
+  width: 46%;
+  height: 46%;
+  stroke: var(--petrol);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wa-mark--sm { width: 20px; height: 20px; border-radius: 6px; }
+.wa-mark--sm svg, .wa-mark--sm use { width: 15px; height: 15px; }
+
+.wa-mark__photo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* ============================================================
+   10 · COMPONENT — card
+   1 square well (photo, else the mark) · 2 one badge top-left ·
+   3 save top-right · 4 title, two lines, never truncated ·
+   5 two mono lines in fixed order so a row of eight scans.
+   ============================================================ */
+
+.wa-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+  background: none;   /* the card is the well plus text, not a panel */
+  text-decoration: none;
+  color: inherit;
+}
+
+.wa-card__well {
+  position: relative;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--petrol-tint);
+}
+
+/* One badge, top left — the single most decision-changing fact.
+   Never two. Over a photo it is 94% opaque and never blurred. */
+.wa-card__badge {
+  position: absolute;
+  top: var(--s-2);
+  left: var(--s-2);
+  z-index: 2;
+  padding: 5px var(--s-2);
+  border-radius: var(--r-pill);
+  background: rgba(255, 253, 248, .94);
+  color: var(--ink);
+  font: 500 var(--fs-mono)/1 var(--ff-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+[data-theme="dusk"] .wa-card__badge { background: rgba(20, 28, 29, .94); }
+
+/* The one lime use on a card: something is live or starting now. */
+.wa-card__badge--now {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.wa-card__save {
+  position: absolute;
+  top: var(--s-1);
+  right: var(--s-1);
+  z-index: 2;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: #fffdf8;
+}
+
+.wa-card__save svg {
+  width: 20px; height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 1px 2px rgba(6, 10, 11, .5));
+}
+
+/* A bookmark, not a heart. You are not collecting favourites, you are
+   keeping a shortlist. Filled state is the mark; the tint is the well. */
+.wa-card__save[aria-pressed="true"] svg { fill: currentColor; }
+
+/* Photoless wells put the save on ink, not on white. */
+.wa-card__well:not(:has(.wa-card__photo)) .wa-card__save { color: var(--petrol); }
+.wa-card__well:not(:has(.wa-card__photo)) .wa-card__save svg { filter: none; }
+
+.wa-card__photo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.wa-card__body { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+
+/* Two lines, wraps, NEVER truncated. A 60-character gig title is the
+   most load-bearing string on the screen. */
+.wa-card__title {
+  font: 600 var(--fs-card)/1.32 var(--ff-ui);
+  color: var(--ink);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Fixed order: distance · area, then kind · time or price. */
+.wa-card__meta {
+  font: 400 var(--fs-mono)/1.45 var(--ff-mono);
+  letter-spacing: .03em;
+  color: var(--ink-mute);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wa-card__meta strong { color: var(--ink); font-weight: 500; }
+
+/* ============================================================
+   11 · COMPONENT — timetable row
+   The dense list. Time and distance own a fixed left rail that always
+   prints something: a clock time, NOW, or →02 for a place open until
+   two. That single column is what makes the missing-date and
+   missing-photo cases boring instead of broken.
+   ============================================================ */
+
+.wa-rows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+
+.wa-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  color: inherit;
+}
+
+.wa-row:last-child { border-bottom: 0; }
+
+.wa-row__rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font: 500 var(--fs-mono)/1.2 var(--ff-mono);
+  letter-spacing: .04em;
+}
+
+.wa-row__time { color: var(--ink); font-size: var(--fs-meta); }
+.wa-row__dist { color: var(--ink-mute); }
+
+/* NOW is one of the sanctioned lime uses. */
+.wa-row__time--now {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-radius: var(--r-pill);
+  padding: 2px var(--s-2);
+  align-self: flex-start;
+}
+
+[data-theme="dusk"] .wa-row__time--now { color: var(--signal-ink); }
+
+.wa-row__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+
+/* Pick titles are catalogue voice — Fraunces, at the 17px floor. */
+.wa-row__title {
+  font: 600 var(--fs-title)/1.28 var(--ff-display);
+  color: var(--ink);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.wa-row__desc {
+  font: 400 var(--fs-body)/1.5 var(--ff-ui);
+  color: var(--ink-soft);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wa-row__meta {
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .03em;
+  color: var(--ink-mute);
+  margin: 0;
+}
+
+.wa-row__media {
+  display: none;
+  width: 96px;
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+/* The wider desktop row earns a photo; the phone row has no photo
+   region at all, so nothing collapses when a photo is missing. */
+@media (min-width: 1024px) {
+  .wa-row { grid-template-columns: 52px minmax(0, 1fr) 96px; }
+  .wa-row__media { display: block; }
+}
+
+/* ============================================================
+   12 · COMPONENT — sheet
+   One question expanded at a time. The other slots sit below as
+   collapsed rows showing their current value, so you always know what
+   the other answers are and can never get lost inside a filter.
+   ============================================================ */
+
+.wa-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: rgba(6, 10, 11, .44);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+}
+
+.wa-sheet::backdrop { background: rgba(6, 10, 11, .44); }
+
+.wa-sheet__panel {
+  background: var(--card);        /* opaque. Sheets are never glass. */
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wa-sheet__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--gutter) var(--s-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wa-sheet__title { font: 700 var(--fs-title)/1.2 var(--ff-ui); margin: 0 auto 0 0; }
+
+.wa-sheet__close {
+  width: var(--tap-min); height: var(--tap-min);
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--r-pill);
+  background: var(--petrol-tint); color: var(--ink);
+  cursor: pointer;
+}
+
+.wa-sheet__body { padding: var(--s-5) var(--gutter); overflow-y: auto; flex: 1; }
+
+.wa-sheet__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--gutter);
+  padding-bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--rule);
+  background: var(--card);
+}
+
+/* A collapsed slot: the question, and its current answer. */
+.wa-sheet__parked {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--s-4);
+  gap: var(--s-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wa-sheet__parked-label { font: 600 var(--fs-body)/1 var(--ff-ui); }
+.wa-sheet__parked-value { margin-left: auto; font: 400 var(--fs-meta)/1 var(--ff-mono); color: var(--ink-mute); }
+
+@media (min-width: 768px) {
+  .wa-sheet { justify-content: center; align-items: center; }
+  .wa-sheet__panel {
+    width: min(560px, 100% - var(--s-8));
+    border-radius: var(--r-sheet);
+    max-height: 82vh;
+  }
+}
+
+/* ============================================================
+   13 · COMPONENT — filter control set
+   Every toggle carries its consequence. The primary key says the
+   outcome, not the verb: "Show 5 gigs".
+   ============================================================ */
+
+.wa-field { display: block; margin-bottom: var(--s-7); }
+
+.wa-field__label {
+  display: block;
+  font: 700 var(--fs-body)/1.2 var(--ff-ui);
+  margin-bottom: var(--s-3);
+}
+
+/* The consequence line. Always present, always mono, always true. */
+.wa-field__consequence {
+  display: block;
+  font: 400 var(--fs-meta)/1.4 var(--ff-mono);
+  color: var(--ink-mute);
+  margin-top: var(--s-2);
+}
+
+.wa-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+.wa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--ink);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.wa-chip__count { font: 400 var(--fs-mono)/1 var(--ff-mono); color: var(--ink-mute); }
+
+.wa-chip[aria-pressed="true"] {
+  background: var(--petrol-tint);
+  border-color: var(--petrol);
+}
+
+/* A zero-count option is shown, not hidden — "Market 0" tells the
+   reader the filter exists and is empty, which a missing chip doesn't. */
+.wa-chip[data-count="0"] { opacity: .5; }
+
+.wa-chip:disabled { cursor: default; }
+
+/* Segmented control — Doors after: now / 21:00 / 23:00 / any */
+.wa-segment {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+.wa-segment__opt {
+  flex: 1;
+  min-height: var(--tap-min);
+  border: 0;
+  border-right: 1px solid var(--rule);
+  background: none;
+  color: var(--ink-mute);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  cursor: pointer;
+}
+
+.wa-segment__opt:last-child { border-right: 0; }
+
+.wa-segment__opt[aria-pressed="true"] {
+  background: var(--petrol-tint);
+  color: var(--ink);
+}
+
+/* Range — How far you'll walk, in minutes AND metres. */
+.wa-range { width: 100%; accent-color: var(--petrol); height: var(--tap-min); }
+
+.wa-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: var(--control-h);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wa-switch__text { flex: 1; min-width: 0; }
+.wa-switch__title { font: 600 var(--fs-body)/1.3 var(--ff-ui); }
+.wa-switch__sub { font: 400 var(--fs-meta)/1.4 var(--ff-mono); color: var(--ink-mute); }
+
+.wa-switch__track {
+  flex: 0 0 auto;
+  width: 46px; height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--rule-strong);
+  padding: 3px;
+  transition: background var(--t-fast);
+}
+
+.wa-switch__thumb {
+  width: 22px; height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(10, 16, 17, .3);
+  transition: transform var(--t-fast);
+}
+
+.wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--petrol); }
+.wa-switch[aria-pressed="true"] .wa-switch__thumb { transform: translateX(18px); }
+
+/* ---- Buttons. One control size, one radius. ---- */
+
+.wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--control-h);
+  padding: 0 var(--s-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: var(--card);
+  color: var(--ink);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+/* One CTA per screen. By day it is petrol — lime fails on paper. */
+.wa-btn--primary {
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: var(--petrol-ink);
+}
+
+/* At night the one CTA may take the signal colour. Still one per screen. */
+[data-theme="dusk"] .wa-btn--signal {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+}
+
+.wa-btn--quiet { background: none; border-color: transparent; color: var(--ink-mute); }
+
+.wa-btn:disabled { opacity: .45; cursor: default; }
+
+/* Sibling controls in a row share a width and never wrap. */
+.wa-btn-row { display: flex; gap: var(--s-3); align-items: stretch; }
+.wa-btn-row > .wa-btn { flex: 1 1 0; min-width: 0; }
+
+/* ============================================================
+   14 · COMPONENT — map pin
+   Pins carry all the signal, so the basemap stays quiet enough to read
+   forty labels on top of it. A pin is a time and a distance.
+   ============================================================ */
+
+.wa-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 4px var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
+  box-shadow: 0 1px 3px rgba(6, 10, 11, .28);
+  font: 500 var(--fs-mono)/1 var(--ff-mono);
+  letter-spacing: .04em;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+
+.wa-pin__dist { color: var(--ink-mute); }
+
+/* The selected pin is one of the sanctioned lime uses. */
+.wa-pin[aria-current="true"] {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  transform: scale(1.06);
+}
+
+.wa-pin[aria-current="true"] .wa-pin__dist { color: var(--signal-ink); }
+
+.wa-pin--now::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--signal);
+}
+
+/* "Search this area" floats over the canvas — a control, not chrome,
+   so it is opaque. */
+.wa-map-refresh {
+  position: absolute;
+  top: var(--s-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+/* ============================================================
+   15 · COMPONENT — empty state
+   Carries the next-best answer and names the filter that emptied the
+   list. "No results found" is banned copy.
+   ============================================================ */
+
+.wa-empty {
+  padding: var(--s-8) 0;
+  max-width: 46ch;
+}
+
+.wa-empty__title {
+  font: 600 var(--fs-title)/1.3 var(--ff-display);
+  margin: 0 0 var(--s-3);
+  text-wrap: pretty;
+}
+
+.wa-empty__body {
+  font: 400 var(--fs-body)/1.55 var(--ff-ui);
+  color: var(--ink-soft);
+  margin: 0 0 var(--s-5);
+  text-wrap: pretty;
+}
+
+.wa-empty__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+
+/* The expired / gone-away note. The fastest way to lose trust in an
+   automated catalogue is a saved row that quietly died. */
+.wa-note {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r-control);
+  background: var(--card);
+  font: 400 var(--fs-body)/1.5 var(--ff-ui);
+  color: var(--ink-soft);
+}
+
+/* ============================================================
+   16 · COMPONENT — toast
+   One at a time, above the tab bar, 4s, always with the reverse
+   action. Never a toast for a navigation.
+   ============================================================ */
+
+.wa-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--s-3));
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: min(420px, calc(100% - var(--s-7)));
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-control);
+  background: var(--ink);
+  color: var(--ground);
+  font: 600 var(--fs-body)/1.3 var(--ff-ui);
+  box-shadow: 0 4px 16px rgba(6, 10, 11, .3);
+  animation: wa-toast-in var(--t-mid) both;
+}
+
+.wa-toast__text { flex: 1; min-width: 0; }
+
+.wa-toast__undo {
+  flex: 0 0 auto;
+  min-height: var(--tap-min);
+  padding: 0 var(--s-2);
+  background: none;
+  border: 0;
+  color: var(--ground);
+  font: 700 var(--fs-body)/1 var(--ff-ui);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@keyframes wa-toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ============================================================
+   17 · COMPONENT — skeleton
+   Matches the row grid exactly. No spinner, and no layout jump when
+   the data lands.
+   ============================================================ */
+
+.wa-skel {
+  background: linear-gradient(90deg, var(--rule) 25%, var(--petrol-tint) 37%, var(--rule) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--s-1);
+  animation: wa-skel 1.4s ease infinite;
+}
+
+.wa-skel--rail  { width: 44px; height: 12px; }
+.wa-skel--title { width: 80%;  height: 18px; }
+.wa-skel--line  { width: 60%;  height: 12px; }
+.wa-skel--well  { width: 100%; aspect-ratio: 1; border-radius: var(--r-card); }
+
+@keyframes wa-skel {
+  from { background-position: 100% 50%; }
+  to   { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-skel { animation: none; background: var(--rule); }
+}
+
+/* ============================================================
+   18 · LAYOUT — carousels and grids
+   Explore is carousels; Tonight is the dense list. Browsing and
+   deciding are different modes.
+   ============================================================ */
+
+.wa-carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, calc(50% - var(--s-3) / 2));
+  gap: var(--s-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* Bleed to the screen edge so the row reads as continuing. */
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+  padding-bottom: var(--s-2);
+}
+
+.wa-carousel::-webkit-scrollbar { display: none; }
+.wa-carousel > * { scroll-snap-align: start; }
+
+@media (min-width: 768px)  { .wa-carousel { grid-auto-columns: minmax(0, calc(33.333% - var(--s-3))); } }
+@media (min-width: 1280px) { .wa-carousel { grid-auto-columns: minmax(0, calc(16.666% - var(--s-3))); } }
+
+.wa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5) var(--s-3);
+}
+
+@media (min-width: 768px)  { .wa-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .wa-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* The last cell of an Explore row is the bridge to the dense list —
+   a visible object, not a tab you have to remember. */
+.wa-seeall {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 100%;
+  padding: var(--s-4);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-card);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.wa-seeall__label { font: 700 var(--fs-body)/1.3 var(--ff-ui); }
+.wa-seeall__sub { font: 400 var(--fs-mono)/1.3 var(--ff-mono); color: var(--ink-mute); }
+
+/* ============================================================
+   19 · The Saturday email card
+   Sits at the foot of Explore and as a row in You. Not a block
+   interrupting the list, which is what it does today.
+   ============================================================ */
+
+.wa-digest {
+  margin: var(--s-8) 0 var(--s-7);
+  padding: var(--s-6);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card-lg);
+}
+
+.wa-digest__title {
+  font: 600 var(--fs-title)/1.3 var(--ff-display);
+  margin: 0 0 var(--s-2);
+}
+
+.wa-digest__body {
+  font: 400 var(--fs-body)/1.55 var(--ff-ui);
+  color: var(--ink-soft);
+  margin: 0 0 var(--s-5);
+  max-width: 52ch;
+}
+
+.wa-digest__form { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+
+.wa-input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: var(--control-h);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.wa-input::placeholder { color: var(--ink-mute); }
+
+.wa-digest__fine {
+  font: 400 var(--fs-meta)/1.5 var(--ff-mono);
+  color: var(--ink-mute);
+  margin: var(--s-3) 0 0;
+}
+
+/* ============================================================
+   20 · Live dot — the last sanctioned lime use.
+   ============================================================ */
+
+.wa-live {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--signal);
+  vertical-align: middle;
+}

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <!-- ============================================================
+       WanderAlt category marks — one monoline set, two jobs.
+       ------------------------------------------------------------
+       No photo is the normal case in this catalogue, and a photoless
+       card must read as a labelled object rather than a failure. These
+       eight cover roughly 90% of the Tallinn catalogue.
+
+       Drawn on a 48px grid, 1.5px stroke, round caps and joins, no
+       fill. Stroke and size are inherited from .wa-mark in wa.css, so
+       the same asset rides at 15px inside a chip and at 44–62px as the
+       card well. Never restate the stroke colour at the use site —
+       petrol by day, pale teal at night, both from the token.
+
+       Referenced as <svg><use href="marks.svg#wa-mark-gig"></use></svg>.
+       ============================================================ -->
+
+  <!-- gig — a microphone on its stand -->
+  <symbol id="wa-mark-gig" viewBox="0 0 48 48">
+    <rect x="19" y="7" width="10" height="19" rx="5"/>
+    <path d="M14 22a10 10 0 0 0 20 0"/>
+    <path d="M24 32v9M18 41h12"/>
+  </symbol>
+
+  <!-- club — a mirrorball over a beam -->
+  <symbol id="wa-mark-club" viewBox="0 0 48 48">
+    <circle cx="24" cy="19" r="11"/>
+    <path d="M13 19h22M24 8v22"/>
+    <path d="M16.5 11.5 31.5 26.5M31.5 11.5 16.5 26.5"/>
+    <path d="M17 36h14l4 6H13z"/>
+  </symbol>
+
+  <!-- records — a disc, sleeve corner behind it -->
+  <symbol id="wa-mark-records" viewBox="0 0 48 48">
+    <circle cx="21" cy="27" r="14"/>
+    <circle cx="21" cy="27" r="3.5"/>
+    <path d="M31 13h10v10"/>
+    <path d="M41 13 31.5 22.5"/>
+  </symbol>
+
+  <!-- gallery — a framed picture with a horizon -->
+  <symbol id="wa-mark-gallery" viewBox="0 0 48 48">
+    <rect x="8" y="9" width="32" height="26" rx="2"/>
+    <path d="M8 28l8-7 6 5 7-8 11 10"/>
+    <circle cx="17" cy="17" r="2.5"/>
+    <path d="M18 35v5M30 35v5"/>
+  </symbol>
+
+  <!-- film — a strip of frames -->
+  <symbol id="wa-mark-film" viewBox="0 0 48 48">
+    <rect x="7" y="12" width="34" height="24" rx="3"/>
+    <path d="M15 12v24M33 12v24"/>
+    <path d="M7 20h8M7 28h8M33 20h8M33 28h8"/>
+    <path d="M15 24h18"/>
+  </symbol>
+
+  <!-- market — an awning over a table -->
+  <symbol id="wa-mark-market" viewBox="0 0 48 48">
+    <path d="M8 19h32l-4-9H12z"/>
+    <path d="M8 19a5 5 0 0 0 8 0 5 5 0 0 0 8 0 5 5 0 0 0 8 0 5 5 0 0 0 8 0"/>
+    <path d="M12 24v16h24V24"/>
+    <path d="M12 33h24"/>
+  </symbol>
+
+  <!-- bar — a stemmed glass -->
+  <symbol id="wa-mark-bar" viewBox="0 0 48 48">
+    <path d="M12 10h24l-12 15z"/>
+    <path d="M14.5 16h19"/>
+    <path d="M24 25v13M17 38h14"/>
+  </symbol>
+
+  <!-- books — two spines and a leaning third -->
+  <symbol id="wa-mark-books" viewBox="0 0 48 48">
+    <rect x="9" y="12" width="8" height="26" rx="1.5"/>
+    <rect x="20" y="12" width="8" height="26" rx="1.5"/>
+    <path d="M32.5 15.5l7 1.8-5.3 21-7-1.8z"/>
+    <path d="M9 31h8M20 31h8"/>
+  </symbol>
+
+  <!-- Fallback when a kind maps to none of the eight: a plain pin.
+       Deliberately not a grey box, and deliberately not a question mark. -->
+  <symbol id="wa-mark-place" viewBox="0 0 48 48">
+    <path d="M24 41s13-11.5 13-21a13 13 0 1 0-26 0c0 9.5 13 21 13 21z"/>
+    <circle cx="24" cy="20" r="4.5"/>
+  </symbol>
+</svg>

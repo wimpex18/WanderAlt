@@ -1,16 +1,28 @@
 /* ============================================================
-   WanderAlt — Dusk / Daybreak theme switch
+   WanderAlt — appearance: Day / Night / Dusk
    ------------------------------------------------------------
-   Dusk (dark) is the default; Daybreak is the same DOM with the
-   [data-theme="day"] token swap in styles.css. Loaded WITHOUT
-   defer (like taste-flag.js) so the attribute lands before first
-   paint — no flash of the wrong theme. CSP-clean external file.
+   Day is the default now, not Night. Most deciding happens in
+   daylight, and outdoors in daylight paper beats glass; Night
+   arrives at dusk. Loaded WITHOUT defer so the attribute lands
+   before first paint — no flash of the wrong theme. CSP-clean.
 
-   Appearance preference (localStorage `wa:appearance`):
-     auto — follow the sun: Daybreak between civil dawn and civil
-            dusk in the active city, Dusk otherwise. An explicit
-            OS dark preference wins while on auto.
-     dusk / day — manual override from Profile → Appearance.
+   Three explicit options, persisted (localStorage `wa:appearance`).
+   The automation survives as one of the three rather than as an
+   invisible rule, which is both what the direction asked for and
+   what accessibility needs — a reader in bright sun and a reader in
+   a dark bar both have to be able to override us.
+
+     'day'   → Day    — always the paper theme
+     'dusk'  → Night  — always the near-black theme
+     'auto'  → Dusk   — follow the sun in the active city
+
+   The stored VALUES are unchanged from the previous two-plus-auto
+   scheme on purpose: everyone who already set a preference keeps it.
+   Only the labels are new, and WA.Theme.OPTIONS owns the mapping so
+   no page hand-writes it.
+
+   The DOM attribute stays data-theme="day" | "dusk" — wa.css keys
+   its night block off exactly that.
 
    The sun table is PRECOMPUTED (no API — the €45 lesson): civil
    dawn/dusk as fractional local hours, mid-month, per city. ±15
@@ -57,12 +69,21 @@
     const mode = resolve();
     document.documentElement.dataset.theme = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = mode === 'day' ? '#f4f1e8' : '#0a1011';
+    /* The two ground values from wa.css. Kept in sync by hand — there is
+       no way to read a custom property before first paint. */
+    if (meta) meta.content = mode === 'day' ? '#f2efe6' : '#0a1011';
     document.dispatchEvent(new CustomEvent('wa:theme-changed', { detail: { theme: mode } }));
   };
 
   window.WA = window.WA || {};
   window.WA.Theme = {
+    /* The Appearance control renders straight from this, so the label
+       and the stored value can never drift apart. */
+    OPTIONS: [
+      { value: 'day',  label: 'Day' },
+      { value: 'dusk', label: 'Night' },
+      { value: 'auto', label: 'Dusk' },
+    ],
     apply,
     resolve,
     get: pref,

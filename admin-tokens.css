@@ -1,0 +1,201 @@
+/* ============================================================
+   admin-tokens.css — the 19 names admin.css needs, and nothing else.
+   ------------------------------------------------------------
+   The Aug 2026 redesign deletes styles.css wholesale. admin.html is
+   explicitly out of scope for that redesign (6e: "keep — internal. Not
+   redesigned"), but admin.css had 189 var() references resolving
+   against tokens that lived in styles.css, so deleting it would have
+   silently unstyled the whole review queue.
+
+   These are admin's own values, lifted verbatim from styles.css before
+   it went: desktop-light, white paper, near-black ink — a different
+   surface from the public product, which is why they never needed to
+   agree and why copying rather than aliasing is right. Admin is now
+   fully decoupled: nothing in wa.css can move it, and nothing here
+   affects a public page.
+
+   Load order in admin.html: this file, then admin.css.
+   ============================================================ */
+
+:root {
+  /* ---- Colour ---- */
+  --c-accent:      oklch(0.42 0.07 195);
+  --c-ink:         #0a0a0c;
+  --c-ink-soft:    #1f1f23;
+  --c-ink-mute:    #5c5c66;
+  --c-paper:       #ffffff;
+  --c-paper-deep:  #fafaf9;
+  --c-rule:        #e7e5e4;
+  --c-rule-strong: #d4d4d4;
+
+  /* ---- Type ---- */
+  --ff-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --ff-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --fs-meta: 12px;
+  --fs-pick: 18px;
+
+  --fs-eyebrow: 11px;
+
+  /* ---- Space ---- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+
+  /* ---- Layout ---- */
+  --gutter:      20px;
+  --reading-max: 1024px;
+  --rule-w:      1px;
+
+  /* The lime is brand, not signal, here — it is the diamond in the mark. */
+  --c-lime: oklch(0.86 0.16 113);
+}
+
+@media (min-width: 768px)  { :root { --reading-max: 1100px; } }
+@media (min-width: 1100px) { :root { --reading-max: 1200px; } }
+@media (min-width: 1440px) { :root { --reading-max: 1280px; } }
+
+/* styles.css also carried the base reset and the font faces. admin.css
+   assumes both, so they are restated here rather than pulled from
+   wa.css — admin must not inherit the public product's paper. */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-400.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-500.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-600.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-700.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/geist-mono-400.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/geist-mono-500.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--c-paper-deep);
+  color: var(--c-ink);
+  font: 400 15px/1.55 var(--ff-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg { max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--c-accent); }
+
+/* ============================================================
+   The nine shell classes admin.html borrows from the old stylesheet.
+   Copied at their pre-deletion values, minus the [data-skin="dusk"]
+   overrides — admin.html carries no data-skin, so those never applied
+   to it and carrying them across would have been the exact override
+   layering this redesign is removing.
+   ============================================================ */
+
+.skip-link { position: absolute; left: -9999px; top: auto; }
+
+.skip-link:focus {
+  left: var(--gutter);
+  top: var(--s-2);
+  background: var(--c-ink);
+  color: var(--c-paper);
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-meta);
+  z-index: 100;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.66);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: var(--rule-w) solid rgba(20, 30, 30, 0.10);
+}
+
+.topbar__inner {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: var(--s-3) var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--c-ink);
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  background: var(--c-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-mark__diamond {
+  width: 7px; height: 7px;
+  border-radius: 1.5px;
+  background: var(--c-lime);
+  transform: rotate(45deg);
+}
+
+.wordmark {
+  font-family: var(--ff-body);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1;
+  color: var(--c-ink);
+}
+
+.wordmark:hover { color: var(--c-accent); }
+
+.page {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.eyebrow {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-ink-mute);
+  margin: 0;
+}

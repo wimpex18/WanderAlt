@@ -10,7 +10,12 @@
 
 
   <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <!-- Admin is out of scope for the Aug 2026 redesign and keeps its own
+       desktop-light surface. admin-tokens.css carries the tokens and the
+       nine shell classes it used to inherit from styles.css, so this page
+       is unchanged by that file's deletion and fully decoupled from the
+       public product's paper. -->
+  <link rel="stylesheet" href="./admin-tokens.css" />
   <link rel="stylesheet" href="./admin.css" />
 
   <!-- Local-only convenience: sets the admin service key on this machine.
