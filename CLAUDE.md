@@ -20,7 +20,11 @@ Plain HTML/CSS/vanilla JS at the repo root, Supabase behind it, Cloudflare Pages
 
 **Any new city needs a `CITY_CONTEXT` entry in `process-staging`**, or it silently degrades to the Tallinn context and the messages are lost.
 
-**Ingest and LLM crons are deliberately disabled** (owner decision, pre-release, no users). The zero-cost lifecycle crons run. Every frozen function still works when invoked by hand. Don't re-enable anything without being asked — README covers how.
+**The pipeline crons run again** (owner decision, Aug 2026 — they had been frozen pre-release). 29 of 31 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set, and the lifecycle housekeeping. Freezing them is what produced the empty Tonight list — nothing reached `picks` between 2 Jul and 4 Aug while 49 staging rows sat unprocessed. Cost surface: ingests are HTTP only; the LLM lane is Groq free tier then OpenRouter `:free`, with Gemini still gated off by `pipeline_config.gemini_fallback_enabled`; embeddings are Cloudflare's free tier; Nominatim calls are staggered so no two run at once.
+
+Two jobs stay off, and neither is an oversight: **`send-digest-saturday`** until its function is deployed (production predates the XSS escaping fix — scraped pick titles go unescaped into subscriber inboxes), and **`draft-column-weekly`** until its function is deployed (still pinned to the decommissioned `llama-4-scout`, so every run 404s through to a hard failure).
+
+**Deploying is a separate act from committing.** There is no CI and no `supabase` CLI, so an edge function only changes when somebody deploys it by hand — and nothing warns you when that is skipped. Three commits sat undeployed for a month and one of them caused the empty Tonight list. Change a function, deploy it in the same session, preserve its `verify_jwt`, and say so in the commit. `supabase/functions/DEPLOY-DRIFT.md` carries the drift check as a one-line shell loop.
 
 ## LLM policy
 

@@ -58,13 +58,21 @@ Everything lives on the single domain `wanderalt.app`; `wanderalt.com` is regist
 
 ### Edge functions currently behind the repo
 
-Eight functions are committed but not yet redeployed, so `supabase/functions/` is ahead of what runs. None of them is broken — all are frozen (cron disabled), so a stale copy changes nothing today. Deploy order matters for one:
+This section used to say the drift was harmless — *"None of them is broken — all are frozen (cron disabled), so a stale copy changes nothing today."* **That was wrong, and the wrong reassurance is why nobody chased it for a month.** `ingest-fienta` was on that list. Its undeployed commit was the reason the Tonight list was empty: production had no `staging_messages.payload`, so every event arrived with its date only in prose and `process-staging` had no `starts_at` to copy. A frozen cron does not make a stale deploy safe — it only delays the moment you find out.
 
-**`process-staging` first.** It is the only one that must land before the queue is drained: there are staging rows carrying `payload`, and the older deployed copy ignores that column and marks them `processed`, so their facts would be lost. Its cron is off, so this only bites on a manual run.
+Deployed during the Aug 2026 audit: `ingest-fienta`, `ingest-ra`, `ingest-kinobize`, `ingest-splendidpalace`, `ingest-osm`.
 
-Then, in rough priority: `match-pick` (Groq model fix; the only one with live user impact — a wasted 404 round-trip per Concierge query), `ingest-fienta`, `ingest-ra`, `ingest-hanzas-perons`, `ingest-echo-gone-wrong` (all payload), and `classify-moods` / `draft-column` (model fix only).
+**Still behind, with severity, in `supabase/functions/DEPLOY-DRIFT.md`** — which also carries the drift check as a shell loop, so this list can be regenerated instead of trusted:
 
-Deploy through the Supabase dashboard or `npx supabase functions deploy <name> --project-ref aqnsmmbrspkbfcvougeh`, and **preserve each function's existing `verify_jwt`** — it is not uniform, and a `verify_jwt: true` function called by a cron through raw `net.http_post` returns 401, which is why healthy crons go through `public.invoke_wa_fn(fn)`.
+| function | missing | why it matters |
+| --- | --- | --- |
+| `send-digest` | XSS escaping (`f3ed3bf`) | scraped titles unescaped into subscriber inboxes; **its cron is held off until this lands** |
+| `ingest-hanzas-perons` | payload contract | Riga events land without a timestamp |
+| `draft-column` | Groq model repoint | still pinned to the decommissioned `llama-4-scout`; **cron held off** |
+| `classify-moods` | Groq model repoint | serves Mood, which the redesign deletes |
+| `match-pick` | Groq model repoint | serves the Concierge, which the redesign deletes |
+
+Deploy through the Supabase MCP `deploy_edge_function` tool — there is no `supabase` CLI here — and **preserve each function's existing `verify_jwt`**. It is not uniform, and a `verify_jwt: true` function called by a cron through raw `net.http_post` returns 401, which is why healthy crons go through `public.invoke_wa_fn(fn)`.
 
 `functions/_middleware.js` is a Pages Function that rewrites per-pick and per-curator Open Graph tags server-side, using the real venue photo where one exists and a generated card otherwise. It fails open and is inert under the local dev server.
 
@@ -97,13 +105,27 @@ Text generation goes Groq first, OpenRouter `:free` second, with a retired Gemin
 
 ### Cron posture
 
-**Ingest, LLM, enrichment and digest crons are disabled on purpose.** The site is pre-release with no users, and cron-driven retry loops were what ran up that Google bill. The zero-cost lifecycle crons still run: archive-stale, reset-tonight, rotate-tonight, dedup, purge, and a monthly OSM ping that exists only to keep `last_seen_at` honest. Every disabled function still works when invoked by hand.
+**The pipeline runs again (Aug 2026).** 29 of 31 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set, and the lifecycle housekeeping.
 
-To bring everything back at launch:
+They had been frozen pre-release — no users, and cron-driven retry loops were what ran up the Google bill. The freeze did its job on spend and then quietly became the problem: nothing reached `picks` between 2 Jul and 4 Aug, 49 staging rows sat unprocessed, and Tonight was empty because the catalogue had stopped moving.
+
+Cost surface now, stated rather than assumed: ingests are HTTP scrapes only; the LLM lane is Groq's free tier then OpenRouter `:free`, with Gemini still gated off by `pipeline_config.gemini_fallback_enabled`; embeddings are Cloudflare's free tier; Nominatim callers are staggered so no two run at once, which keeps us inside its usage policy. The uncapped-retry shape that caused the €45 charge is gone — the functions that once hit Google stamp a cooldown column instead.
+
+**Two jobs stay off, and neither is an oversight.** Both are blocked on a deploy, not a decision:
+
+| job | blocked on |
+| --- | --- |
+| `send-digest-saturday` | `send-digest` predates the XSS escaping fix — scraped pick titles would go unescaped into subscriber inboxes |
+| `draft-column-weekly` | `draft-column` still pins the decommissioned `llama-4-scout`; every run would 404 through to a hard failure |
+
+Turn either on once its function is deployed:
 
 ```sql
-select cron.alter_job(jobid, active => true) from cron.job;
+select cron.alter_job(jobid, active => true)
+  from cron.job where jobname = 'send-digest-saturday';
 ```
+
+Watch it rather than poll it — one-shot SQL against `staging_messages` status counts, `picks where archived_at is null`, and the tail of `ingest_log`.
 
 Three jobs were also dialled down to a reduced cadence and need their schedules restored: `wa-process-staging` to `*/30 * * * *`, `embed-picks-auto` to `*/30 * * * *`, `wa-geocode-picks` to `20 * * * *`.
 
