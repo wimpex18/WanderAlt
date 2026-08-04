@@ -55,13 +55,28 @@ Three commits had landed in the repo without reaching production.
 | `ingest-kinobize` | — | also fixed the fabricated `new Date()` event time |
 | `ingest-splendidpalace` | — | same fabricated-time fix |
 | `ingest-osm` | v12 | new: captures `opening_hours` |
+| `ingest-ra` | v2, Jul | no `payload.starts_at` → Vilnius events undated |
+| `ingest-splendidpalace` | v6 → **v7** | parser rewritten: titles were arriving as URL slugs |
+| `ingest-kinobize` | v5 → **v6** | parser rewritten: day-grouped schedule, dates were empty |
+
+### Known drift introduced 4 Aug 2026 — deploy these two next
+
+`ingest-splendidpalace` and `ingest-kinobize` are deployed at the
+rewritten parsers (v7 / v6, verified live: real titles, real dates), but
+**one commit later than production**: `fec9253`, which decodes numeric
+HTML entities in `stripTags`. Both listings carry them — "Candlelight:
+Vivaldi&#039;s Four Seasons" staged exactly like that.
+
+Recorded here rather than left silent because that is what the rule at
+the foot of this file requires. It is cosmetic and low-risk: the title
+passes through `process-staging`'s LLM rewrite before it reaches a pick,
+which usually normalises it. Deploy both on the next pass.
 
 ### Still behind — deploy from this repo when you're ready
 
 | function | deployed | missing | severity |
 | --- | --- | --- | --- |
 | `send-digest` | 8 Jun | `f3ed3bf` XSS escaping in the digest email | **security**; cron is frozen so it isn't sending |
-| `ingest-ra` | 3 Jul | `3190013` payload contract | Vilnius events land without a timestamp |
 | `ingest-hanzas-perons` | 3 Jul | `3190013` payload contract | Riga events land without a timestamp |
 | `classify-moods` | 3 Jul | `df25819` model repoint | **confirmed** still pinned to `meta-llama/llama-4-scout-17b-16e-instruct`, which 404s at Groq — the function cannot succeed |
 | `draft-column` | 15 Jul | `df25819` model repoint | same dead model |
@@ -69,7 +84,7 @@ Three commits had landed in the repo without reaching production.
 
 `classify-moods` and `match-pick` serve Mood and the Concierge, both of
 which the Aug 2026 redesign deletes — so those two may not be worth a
-deploy at all. `send-digest` and the two ingests are.
+deploy at all. `send-digest` and `ingest-hanzas-perons` are.
 
 ## The rule
 

@@ -29,7 +29,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const EVENTS_URL   = 'https://splendidpalace.lv/lv/pasakumi';
+const EVENTS_URL   = 'https://www.splendidpalace.lv/lv/pasakumi';
 const CHANNEL      = 'splendidpalace';
 const SOURCE_CITY  = 'riga';
 
@@ -81,6 +81,11 @@ function stripTags(html: string): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ')
+    /* Numeric entities too: the listings carry &#039; in titles like
+       "Vivaldi&#039;s Four Seasons", and a half-decoded title is visible
+       in the product. */
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCharCode(parseInt(h, 16)))
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -118,32 +123,49 @@ function parseDateDMY(dateText: string, timeText: string): string | null {
   return new Date(`${year}-${month}-${day}T${hour}:${min}:00+03:00`).toISOString();
 }
 
+/* v7: rewritten against the site's current markup.
+   The old parser walked every /lv/pasakumi/ href and read a window of
+   ±300 chars around it, looking for <h3> for the title. The site has
+   since moved to a card component and emits NO <h3> at all, so every
+   title fell back to the URL slug — picks were landing titled
+   "nopietna-komedija-uz-visu-banku-242-316" — and the date regex was
+   picking up whatever happened to be in the window.
+
+   The card is self-delimiting, so split on it and read named fields:
+     <div class="movie-card">
+       data-event-card="/lv/pasakumi/<slug>"
+       <div class="… movie-card__title">Title</div>
+       Datums:</span><span> 17.09.2026</span>
+       …<br> 19:00
+   Verified against the live page: 10 events, 0 slug-titles, 0 missing
+   dates. */
 function parseListing(html: string): SplendidEvent[] {
   const events: SplendidEvent[] = [];
   const seen = new Set<string>();
 
-  const linkRx = /href="(\/lv\/pasakumi\/([^"]+))"/g;
-  let match;
-  while ((match = linkRx.exec(html)) !== null) {
-    const [, href, slug] = match;
-    if (!slug || seen.has(slug)) continue;
+  for (const seg of html.split(/<div class="movie-card">/).slice(1)) {
+    const slugM = seg.match(/data-event-card="\/lv\/pasakumi\/([^"]+)"/)
+               || seg.match(/href="\/lv\/pasakumi\/([^"#]+)"/);
+    if (!slugM) continue;
+    const slug = slugM[1];
+    if (seen.has(slug)) continue;
     seen.add(slug);
 
-    const from = Math.max(0, match.index - 300);
-    const section = html.slice(from, match.index + 600);
+    const titleM = seg.match(/class="[^"]*movie-card__title[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    const title  = titleM ? stripTags(titleM[1]) : slug;
 
-    const h3m = section.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
-    const title = h3m ? stripTags(h3m[1]) : slug;
+    /* The labelled "Datums:" field first — the bare date also appears in
+       the hover overlay, and reading the label keeps us on the real one. */
+    const dateM = seg.match(/Datums:<\/span><span>\s*(\d{2}\.\d{2}\.\d{4})/)
+               || seg.match(/(\d{2}\.\d{2}\.\d{4})/);
+    const dateText = dateM ? dateM[1] : '';
 
-    const dateM = section.match(/\d{2}\.\d{2}\.\d{4}/);
-    const dateText = dateM ? dateM[0] : '';
-
-    const timeM = section.match(/\b\d{1,2}:\d{2}\b/);
-    const timeText = timeM ? timeM[0] : '';
+    const timeM = seg.match(/<br>\s*(\d{1,2}:\d{2})/) || seg.match(/\b(\d{1,2}:\d{2})\b/);
+    const timeText = timeM ? timeM[1] : '';
 
     events.push({
       slug,
-      url: `https://splendidpalace.lv${href}`,
+      url: `https://www.splendidpalace.lv/lv/pasakumi/${slug}`,
       title,
       dateText,
       timeText,
