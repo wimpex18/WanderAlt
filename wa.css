@@ -269,6 +269,27 @@ button, input, select, textarea { font: inherit; color: inherit; }
   clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* …except when it is focusable. A skip link that stays hidden while
+   focused is invisible to exactly the keyboard user it exists for. */
+a.wa-sr:focus {
+  position: fixed;
+  top: var(--s-2);
+  left: var(--s-2);
+  z-index: 80;
+  width: auto; height: auto;
+  min-height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--s-4);
+  margin: 0;
+  clip: auto;
+  border-radius: var(--r-control);
+  background: var(--ink);
+  color: var(--ground);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  text-decoration: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
@@ -401,6 +422,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
    because it is the only nav item with an expiry.
    ============================================================ */
 
+/* ONE set of nav links at every width — a phone copy and a desktop copy
+   drift apart, and this is the component the whole product navigates by.
+
+   It is a sibling of the top bar, NOT a child of it. That is load-bearing:
+   .wa-topbar carries backdrop-filter, and any element with a backdrop
+   filter becomes the containing block for its fixed-position descendants.
+   Nested inside, this bar's `bottom: 0` resolved against the 56px header
+   and pinned the nav to the TOP of the page on phones. Below 1024 it is
+   fixed to the bottom of the viewport; at 1024 it is fixed to the top and
+   centred in the masthead band (6f), which needs it outside either way. */
 .wa-tabbar {
   position: fixed;
   inset-inline: 0;
@@ -415,6 +446,53 @@ button, input, select, textarea { font: inherit; color: inherit; }
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--glass-hair);
+}
+
+@media (min-width: 1024px) {
+  /* Into the masthead: same band as the top bar, centred between the
+     brand and the account key. Fixed to the top rather than laid out
+     inside the header, because it cannot BE inside the header — see the
+     containing-block note above. */
+  .wa-tabbar {
+    inset-inline: auto;
+    top: 0;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 41;
+    height: var(--topbar-h);
+    padding-bottom: 0;
+    grid-auto-columns: auto;
+    gap: var(--s-6);
+    align-items: center;
+    /* Never glass on glass — one layer per screen. Over the masthead the
+       nav is just links on a bar that is already glass. */
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-top: 0;
+  }
+
+  .wa-tabbar__item {
+    flex-direction: row;
+    gap: var(--s-2);
+    min-height: var(--tap-min);
+    font-size: var(--fs-body);
+  }
+
+  .wa-tabbar__item svg { width: 18px; height: 18px; }
+
+  /* The active mark becomes an underline in a horizontal row — a dot
+     under an inline label reads as a bullet, not a state. */
+  .wa-tabbar__item[aria-current="page"]::after {
+    content: none;
+  }
+  .wa-tabbar__item[aria-current="page"] {
+    box-shadow: inset 0 -2px 0 var(--petrol);
+  }
+
+  /* Nothing to reserve once the bar is in the masthead. */
+  body { padding-bottom: 0; }
 }
 
 .wa-tabbar__item {
@@ -831,11 +909,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
    the other answers are and can never get lost inside a filter.
    ============================================================ */
 
+/* A <dialog> is display:none until it is open — but only via the UA
+   stylesheet, which any display declaration here overrides. Without the
+   [open] guard the sheet renders inline at the top of every page, which
+   is exactly what it did the first time this shipped. */
 .wa-sheet {
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: flex-end;
   background: rgba(6, 10, 11, .44);
@@ -843,9 +925,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 0;
   margin: 0;
   width: 100%;
+  height: 100%;
   max-width: none;
   max-height: none;
 }
+
+.wa-sheet[open] { display: flex; }
 
 .wa-sheet::backdrop { background: rgba(6, 10, 11, .44); }
 
@@ -1132,8 +1217,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
    list. "No results found" is banned copy.
    ============================================================ */
 
+/* No top padding: the section's own heading gap already opened the
+   space, and doubling it left a thin section reading as a hole — which
+   is the specific thing a short row is meant to avoid. */
 .wa-empty {
-  padding: var(--s-8) 0;
+  padding: 0 0 var(--s-4);
   max-width: 46ch;
 }
 
@@ -1243,10 +1331,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
    deciding are different modes.
    ============================================================ */
 
+/* Tracks are a FIXED width, not minmax(0, …). With a min of 0 the grid
+   satisfies thirteen tracks by shrinking them all to nothing inside the
+   390px container instead of overflowing it, and the row renders as a
+   line of 16px slivers. A carousel must overflow — that is the whole
+   mechanism. */
 .wa-carousel {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, calc(50% - var(--s-3) / 2));
+  grid-auto-columns: calc(50% - var(--s-3) / 2);
   gap: var(--s-3);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -1260,8 +1353,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wa-carousel::-webkit-scrollbar { display: none; }
 .wa-carousel > * { scroll-snap-align: start; }
 
-@media (min-width: 768px)  { .wa-carousel { grid-auto-columns: minmax(0, calc(33.333% - var(--s-3))); } }
-@media (min-width: 1280px) { .wa-carousel { grid-auto-columns: minmax(0, calc(16.666% - var(--s-3))); } }
+@media (min-width: 768px)  { .wa-carousel { grid-auto-columns: calc(33.333% - var(--s-3)); } }
+@media (min-width: 1280px) { .wa-carousel { grid-auto-columns: calc(16.666% - var(--s-3)); } }
 
 .wa-grid {
   display: grid;
@@ -1289,6 +1382,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .wa-seeall__label { font: 700 var(--fs-body)/1.3 var(--ff-ui); }
 .wa-seeall__sub { font: 400 var(--fs-mono)/1.3 var(--ff-mono); color: var(--ink-mute); }
+
+/* Explore's two chrome slots. The capsule clears the top bar; the scope
+   row sits tight under it because the two are one control group, and
+   the first section's own --s-8 opens the gap to content. */
+.explore-capsule { margin-top: var(--s-5); }
+.explore-scope   { margin-top: var(--s-4); }
 
 /* ============================================================
    19 · The Saturday email card
