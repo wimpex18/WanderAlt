@@ -56,6 +56,19 @@ Three commits had landed in the repo without reaching production.
 | `ingest-splendidpalace` | — | same fabricated-time fix |
 | `ingest-osm` | v12 | new: captures `opening_hours` |
 
+### Known drift introduced 4 Aug 2026 — deploy these two next
+
+`ingest-splendidpalace` and `ingest-kinobize` are deployed at the
+rewritten parsers (v7 / v6, verified live: real titles, real dates), but
+**one commit later than production**: `fec9253`, which decodes numeric
+HTML entities in `stripTags`. Both listings carry them — "Candlelight:
+Vivaldi&#039;s Four Seasons" staged exactly like that.
+
+Recorded here rather than left silent because that is what the rule at
+the foot of this file requires. It is cosmetic and low-risk: the title
+passes through `process-staging`'s LLM rewrite before it reaches a pick,
+which usually normalises it. Deploy both on the next pass.
+
 ### Still behind — deploy from this repo when you're ready
 
 | function | deployed | missing | severity |
