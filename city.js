@@ -35,25 +35,37 @@
   /* Each city has a static illustrated overview plate at /assets/
      <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). Two marks
      per plate, no more: one national flag plus one lime accent. */
+  /* Vilnius is internal testing, not live — README and the Where sheet
+     both say so, and printing coverage before the tap is the kindest way
+     to ship a four-city product that is thin in one of them. It stays
+     selectable; it just stops claiming parity. */
   const CITIES = [
-    { id: 'tallinn',  label: 'TALLINN',  status: 'live',   thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'live',   thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'live',   thumb: './assets/riga-overview.svg'     },
-    { id: 'vilnius',  label: 'VILNIUS',  status: 'live',   thumb: './assets/vilnius-overview.svg'  },
+    { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg'  },
+    { id: 'helsinki', label: 'HELSINKI', status: 'live',     thumb: './assets/helsinki-overview.svg' },
+    { id: 'riga',     label: 'RIGA',     status: 'live',     thumb: './assets/riga-overview.svg'     },
+    { id: 'vilnius',  label: 'VILNIUS',  status: 'internal', thumb: './assets/vilnius-overview.svg'  },
   ];
 
   const LS_KEY  = 'wa:city';
   const DEFAULT = 'tallinn';
 
-  /* Expose for supabase.js and any page script that needs it. */
-  window.WA       = window.WA || {};
-  window.WA.CITY  = localStorage.getItem(LS_KEY) || DEFAULT;
+  /* Expose for supabase.js and any page script that needs it. The list
+     itself is exposed too — the Where sheet renders city rows with their
+     plates and coverage, and hand-copying this table into a page script
+     is how the statuses drift. */
+  window.WA        = window.WA || {};
+  window.WA.CITY   = localStorage.getItem(LS_KEY) || DEFAULT;
+  window.WA.CITIES = CITIES.map(c => ({ ...c }));
 
   const setCity = (id) => {
     localStorage.setItem(LS_KEY, id);
     window.WA.CITY = id;
     window.location.reload();
   };
+
+  /* The Where sheet replaces the old dropdown but must switch cities the
+     same way — one writer for the stored key. */
+  window.WA.setCity = setCity;
 
   /* ── DOM wiring (runs after DOMContentLoaded) ────────────── */
   const init = () => {

@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt — Briefing · Tallinn</title>
-  <meta name="description" content="WanderAlt — alternative culture in European cities, vouched for by human curators. Tonight in Tallinn." />
-  <meta name="theme-color" content="#0a1011" />
+  <title>WanderAlt — Explore · Tallinn</title>
+  <meta name="description" content="What's actually on in Tallinn, Riga and Helsinki tonight — gigs, club nights, screenings, markets, and the places that stay open late. A time and a walking distance on every one." />
+  <meta name="theme-color" content="#f2efe6" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
@@ -13,30 +13,27 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="canonical" href="https://wanderalt.app/" />
 
-  <!-- Open Graph / Twitter — default cards using the new brand. -->
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
   <meta property="og:title"       content="WanderAlt — Tallinn" />
-  <meta property="og:description" content="Alternative culture in European cities, vouched for by human curators." />
+  <meta property="og:description" content="What's on tonight, with a time and a walking distance on every row." />
   <meta property="og:image"       content="./brand/social/og-default.png" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card"       content="summary_large_image" />
   <meta name="twitter:image"      content="./brand/social/twitter-default.png" />
 
-  <!-- JSON-LD Organization for Google's Knowledge Graph + AI overviews.
-       Stays minimal: name, URL, logo, founding location. Curator
-       handles aren't listed here because they shift weekly — they're
-       linked from /about.html instead.                                  -->
+  <!-- JSON-LD Organization. Curators are gone from the product, so the
+       description no longer claims them. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "WanderAlt",
-    "alternateName": "WanderAlt — a curated guide to the other city",
+    "alternateName": "WanderAlt — what's on in the other city",
     "url": "https://wanderalt.app",
     "logo": "https://wanderalt.app/brand/favicon/favicon.svg",
-    "description": "Alternative culture in European cities, vouched for by human curators.",
+    "description": "What's actually on in Baltic and Nordic cities, with a time and a walking distance on every listing.",
     "foundingLocation": { "@type": "City", "name": "Tallinn" },
     "areaServed": [
       { "@type": "City", "name": "Tallinn", "containedInPlace": { "@type": "Country", "name": "Estonia" } },
@@ -51,274 +48,140 @@
   }
   </script>
 
-
-  <!-- Preload the above-the-fold faces now that fonts are self-hosted:
-       titles + the Tonight quote (Fraunces) and body (Inter). crossorigin
-       is required even same-origin — fonts fetch anonymously. -->
-  <!-- Warm the Google-Places photo CDN connection early (LCP hero + cards). -->
-  <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
+  <!-- Above-the-fold faces. Fraunces carries the catalogue voice; Inter
+       stands in for Plus Jakarta Sans until the two woff2 files land
+       (see the note at the top of wa.css). crossorigin is required even
+       same-origin — fonts fetch anonymously. -->
   <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-400-italic.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-400.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-600.woff2" crossorigin />
 
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <link rel="stylesheet" href="wa.css" />
+  <!-- Day / Night / Dusk — pre-paint, so there is no flash of the wrong
+       theme. Non-defer on purpose; CSP-clean external file. -->
   <script src="./theme.js"></script>
-  <!-- Anti-CLS: hide the taste banner before first paint for onboarded
-       users (see taste-flag.js). Non-defer so it runs before body render;
-       externalised so the strict CSP (script-src 'self') allows it. -->
-  <script src="./taste-flag.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./catalog.js"></script>
+  <script defer src="./geo.js"></script>
+  <script defer src="./hours.js"></script>
+  <script defer src="./marks.js"></script>
   <script defer src="./share.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
-  <script defer src="./taste.js"></script>
   <script defer src="./view-transition.js"></script>
-  <script defer src="./briefing.js"></script>
+  <script defer src="./explore.js"></script>
 </head>
-<body data-page="briefing" data-skin="dusk">
+<body data-page="explore">
 
-  <a class="skip-link" href="#tonight">Skip to tonight</a>
+  <a class="wa-sr" href="#main">Skip to content</a>
 
-  <!-- Top bar — Dusk Glass floating island.
-       On desktop the fixed .nav overlays this island's middle so the whole
-       band reads as ONE masthead: logo · tabs · search-or-ask · city. -->
-  <header class="topbar island island--deep" role="banner">
-    <div class="topbar__inner">
-      <a href="#" class="topbar__brand" aria-label="WanderAlt home">
-        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
-        <span class="wordmark">WanderAlt</span>
-      </a>
-      <!-- Search (desktop masthead only): a plain GET form into Discover —
-           no JS, CSP-clean. It hands the query to Discover, which is where
-           results live; Discover then offers the concierge on that same
-           text. The key used to wear the ✦ sparkle, which promised the AI
-           concierge and delivered a keyword search on another page — one
-           glyph, two meanings. It is a magnifier now, because that is what
-           it does. -->
-      <form class="masthead-search" action="./discover.html" method="get" role="search">
-        <input class="masthead-search__input one-line" type="search" name="q"
-               placeholder="Search picks and places" aria-label="Search picks and places" />
-        <button class="masthead-search__key" type="submit" aria-label="Search">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/></svg>
-        </button>
-      </form>
-      <!-- Below 1100 the masthead has no room for the field, and Today had
-           no route to search at all — the only way in was the Discover tab.
-           A plain link to the field itself; no JS, CSP-clean. -->
-      <a class="masthead-search__mini" href="./discover.html" aria-label="Search picks and places">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/></svg>
-      </a>
-      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
-        <span class="city-dot" aria-hidden="true"></span>
-        <span class="city-selector__name">TALLINN</span>
-        <span class="city-selector__chev" aria-hidden="true">
-          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
-        </span>
-      </button>
-    </div>
+  <!-- Glass 1 of 2. Sticky and in normal flow, so it occupies real
+       layout height and content scrolls under a known offset. -->
+  <header class="wa-topbar" role="banner">
+    <a class="wa-topbar__brand" href="./index.html">
+      <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
+      <span>WanderAlt</span>
+    </a>
+
+    <a class="wa-btn wa-btn--quiet" href="./profile.html" id="explore-account">Sign in</a>
   </header>
 
-  <main class="page" role="main">
+  <main class="wa-shell" id="main">
 
-    <!-- Print masthead: hidden on screen, shown in @media print.
-         city.js populates this with "WanderAlt · CITY · Date". -->
-    <p class="print-head" aria-hidden="true"></p>
+    <h1 class="wa-sr">Explore WanderAlt</h1>
 
-    <!-- Dusk Glass scene: tonight's photo is the whole
-         viewport; the hero voice + the This Week ticket rail float over
-         it. briefing.js paints #scene-bg (photo or the dusk-gradient
-         fallback — never a gray box). -->
-    <div class="scene" id="scene">
-      <div class="scene__bg scene__bg--fallback" id="scene-bg" aria-hidden="true"></div>
-      <div class="scene__scrim" aria-hidden="true"></div>
-
-      <!-- The edition line. This page is a dated edition of a briefing, so
-           it says so once, at the top, and that line is the h1. It replaces
-           three scattered things: the standfirst that used to sit ~900px
-           down (a heading arriving after the content it names), the date
-           printed under it, and the hero's own "SUN 26 JUL · PICK 1 OF 1"
-           ticker. briefing.js fills the date; city.js the city. -->
-      <h1 class="edition">
-        <span class="edition__label">The briefing</span>
-        <span class="edition__sep" aria-hidden="true">·</span>
-        <span class="edition__date" id="edition-date"></span>
-        <span class="edition__sep" aria-hidden="true">·</span>
-        <span class="edition__city page-head__city">Tallinn</span>
-      </h1>
-
-      <!-- Tonight hero — populated by briefing.js from catalog.js.
-           The skeleton reserves layout space against a CLS jolt. -->
-      <section id="tonight" class="scene__main" aria-labelledby="tonight-label" aria-busy="true">
-        <div class="skeleton-tonight" aria-hidden="true">
-          <span class="skeleton-tonight__line skeleton-tonight__line--quote"></span>
-          <span class="skeleton-tonight__line skeleton-tonight__line--quote2"></span>
-          <span class="skeleton-tonight__line skeleton-tonight__line--attr"></span>
-          <span class="skeleton-tonight__actions"></span>
-        </div>
-      </section>
-
-      <!-- This week — a snap-scroll rail of 64px glass tickets (mobile),
-           4 equal tickets with the digest as the 4th (desktop ≥1100). -->
-      <section class="week">
-       <div class="thisweek week__main" aria-labelledby="thisweek-label">
-        <header class="sechead">
-          <h2 id="thisweek-label" class="sechead__t">This week</h2>
-          <div class="sechead__side">
-            <p class="section-sub meta">4 picks &middot; 4 curators</p>
-            <button class="action-icon" id="surprise-btn" type="button" aria-label="Show a surprise pick" title="Surprise me">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l10 10h4M21 17l-3 3M21 17l-3-3M3 17h4l3-3M14 7h7M21 7l-3 3M21 7l-3-3" /></svg>
-            </button>
-          </div>
-        </header>
-        <ol class="picks" role="list" aria-busy="true" aria-live="polite">
-          <li class="skeleton-pick" aria-hidden="true">
-            <span class="skeleton-pick__thumb"></span>
-            <span class="skeleton-pick__lines">
-              <span class="skeleton-pick__line skeleton-pick__line--title"></span>
-            </span>
-          </li>
-          <li class="skeleton-pick" aria-hidden="true">
-            <span class="skeleton-pick__thumb"></span>
-            <span class="skeleton-pick__lines">
-              <span class="skeleton-pick__line skeleton-pick__line--title"></span>
-            </span>
-          </li>
-        </ol>
-       </div>
-      </section>
+    <!-- One capsule for Where / When / What. It absorbs the whole filter
+         model, so there is exactly one place to change what you're
+         looking at. Collapses to a single key below 768. -->
+    <div class="explore-capsule">
+      <div class="wa-capsule" id="capsule">
+        <button class="wa-capsule__slot" type="button" data-slot="where">
+          <span class="wa-capsule__label">Where</span>
+          <span class="wa-capsule__value" id="cap-where">Tallinn</span>
+        </button>
+        <button class="wa-capsule__slot" type="button" data-slot="when">
+          <span class="wa-capsule__label">When</span>
+          <span class="wa-capsule__value" id="cap-when">Tonight</span>
+        </button>
+        <button class="wa-capsule__slot" type="button" data-slot="what">
+          <span class="wa-capsule__label">What</span>
+          <span class="wa-capsule__value" id="cap-what">Anything</span>
+        </button>
+        <button class="wa-capsule__go" type="button" id="cap-go" aria-label="Search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Below the scene: the editorial long tail. -->
-    <div class="page-below">
+    <!-- Three scope chips. Walks was cut this cycle: opening-hours
+         coverage came in around 48%, under the ~70% that the "every door
+         is open when you reach it" promise needs. -->
+    <div class="wa-scope explore-scope" role="tablist" aria-label="Scope" id="scope">
+      <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">All</button>
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="tonight">Tonight</button>
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">Places</button>
+    </div>
 
-    <!-- Taste-profile onboarding — shown only when the user hasn't onboarded yet. -->
-    <section class="taste-onboarding" id="taste-onboarding"
-             aria-labelledby="taste-onboarding-label">
-      <div class="taste-onboarding__head">
-        <h2 id="taste-onboarding-label" class="taste-onboarding__title">Tune tonight&rsquo;s briefing</h2>
-        <p class="taste-onboarding__intro">Three taps &mdash; we bias your picks to the night you want. Nothing leaves this device.</p>
-      </div>
-      <div class="taste-onboarding__grid">
-        <div class="taste-q">
-          <span class="taste-q__prompt">Energy</span>
-          <div class="taste-q__choices">
-            <button type="button" class="taste-chip" data-axis="energy" data-choice="loud"  aria-pressed="false">Loud</button>
-            <button type="button" class="taste-chip" data-axis="energy" data-choice="quiet" aria-pressed="false">Quiet</button>
-          </div>
-        </div>
-        <div class="taste-q">
-          <span class="taste-q__prompt">Company</span>
-          <div class="taste-q__choices">
-            <button type="button" class="taste-chip" data-axis="company" data-choice="solo"   aria-pressed="false">Solo</button>
-            <button type="button" class="taste-chip" data-axis="company" data-choice="social" aria-pressed="false">With people</button>
-          </div>
-        </div>
-        <div class="taste-q">
-          <span class="taste-q__prompt">Budget</span>
-          <div class="taste-q__choices">
-            <button type="button" class="taste-chip" data-axis="money" data-choice="free"     aria-pressed="false">Free</button>
-            <button type="button" class="taste-chip" data-axis="money" data-choice="ticketed" aria-pressed="false">Ticketed</button>
-          </div>
-        </div>
-      </div>
-      <div class="taste-onboarding__foot">
-        <button type="button" class="taste-skip" id="taste-skip">Skip</button>
-        <button type="button" class="taste-done" id="taste-done" hidden>Done &rarr;</button>
-        <button type="button" class="taste-reset" id="taste-reset" hidden>Reset</button>
-      </div>
+    <!-- Named carousels, each with a count in its subtitle so a thin
+         section reads as a short row rather than a hole. -->
+    <div id="sections"></div>
+
+    <!-- The Saturday email, at the foot of Explore rather than
+         interrupting the list. digest_opt_ins and the Resend key
+         already exist, so this surface is real. -->
+    <section class="wa-digest" aria-labelledby="digest-title">
+      <h2 class="wa-digest__title" id="digest-title">One email on Saturdays.</h2>
+      <p class="wa-digest__body">What's on in <span id="digest-city">Tallinn</span> next week, in the same six-row shape as Tonight. Or take the whole thing as a calendar feed and never open the app.</p>
+      <form class="wa-digest__form" data-no-submit id="digest-form">
+        <label class="wa-sr" for="digest-email">Your email address</label>
+        <input class="wa-input" type="email" id="digest-email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        <button class="wa-btn wa-btn--primary" type="submit" style="flex:0 0 auto">Send it to me</button>
+        <a class="wa-btn" href="./about.html#calendar" id="digest-ics" style="flex:0 0 auto">.ics</a>
+      </form>
+      <p class="wa-digest__fine" id="digest-note">No account needed. One unsubscribe link, no other mail, ever.</p>
     </section>
-
-    <!-- Worth a visit: a short strip of evergreen venues — underground
-         spots worth knowing about, not only scheduled events. Populated
-         by briefing.js renderWorthAVisit; hidden when empty. -->
-    <section class="worth-a-visit" id="worth-a-visit" aria-labelledby="worth-a-visit-label" hidden>
-      <header class="sechead">
-        <h2 id="worth-a-visit-label" class="sechead__t">Worth a visit</h2>
-      </header>
-      <ul class="list-rows" id="worth-a-visit-list" role="list"></ul>
-    </section>
-
-    <!-- Both ways to keep receiving the briefing, in one place. They used
-         to sit far apart and read as unrelated: the digest buried in the
-         scene beside This Week (and tucked under the dock at 390), the
-         calendar feed a lone underlined link floating between a list and
-         the footer. Same question, so: one block, asked once. -->
-    <section class="keep" id="digest-optin-wrap" aria-labelledby="keep-label">
-      <h2 id="keep-label" class="keep__title">Keep the briefing coming</h2>
-      <div class="keep__grid">
-        <div class="keep__col">
-          <p class="keep__eyebrow">Saturday digest</p>
-          <p class="keep__desc">One email, Saturday 09:00. Next week&rsquo;s picks in your curator&rsquo;s words.</p>
-          <form id="digest-optin-form" data-no-submit>
-            <div class="digest-field">
-              <input type="email" class="digest-field__email" id="digest-optin-email"
-                     aria-label="Email address for the weekly digest"
-                     placeholder="your@email.com" autocomplete="email" required />
-              <button type="submit" class="digest-field__submit" id="digest-optin-submit" aria-label="Subscribe to the weekly digest">
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
-              </button>
-            </div>
-          </form>
-          <p class="auth-panel__status" id="digest-optin-status" aria-live="polite"></p>
-        </div>
-        <div class="keep__col">
-          <p class="keep__eyebrow">Calendar feed</p>
-          <p class="keep__desc">This week&rsquo;s picks in your own calendar, updated as curators file them.</p>
-          <a class="keep__link" id="calendar-feed-link"
-             href="https://aqnsmmbrspkbfcvougeh.supabase.co/functions/v1/calendar-feed?city=tallinn"
-             aria-label="Subscribe to this week in your calendar" title="Calendar feed (.ics)">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M12 13.5v4M10 15.5h4" /></svg>
-            Subscribe
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <footer class="colophon">
-      <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
-    </footer>
-
-    </div><!-- /.page-below -->
 
   </main>
 
-  <!-- Bottom nav (mobile) / top masthead (desktop).
-       Active state is driven by `body[data-page="…"]` matching
-       `.nav__item[data-nav="…"]` — no JS needed. -->
-  <nav class="nav" aria-label="Primary">
-    <div class="nav__inner island island--deep">      <a class="nav__item" data-nav="briefing" href="./index.html" aria-current="page">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M5 3h11l3 3v15H5V3z" />
-          <path d="M8 8h8M8 12h8M8 16h5" />
-        </svg>
-        <span class="nav__label">Today</span>
-      </a>
-      <a class="nav__item" data-nav="discover" href="./discover.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" />
-          <path d="M20 20l-4.5-4.5" />
-        </svg>
-        <span class="nav__label">Discover</span>
-      </a>
-      <a class="nav__item" data-nav="saved" href="./saved.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M6 3h12v18l-6-4-6 4V3z" />
-        </svg>
-        <span class="nav__label">Saved</span>
-      </a>
-      <a class="nav__item" data-nav="profile" href="./profile.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M5 20c0-4 3.1-7 7-7s7 3 7 7" />
-        </svg>
-        <span class="nav__label">Profile</span>
-      </a>    </div>
+    <!-- Glass 2 of 2, and the only set of nav links there is. Below 1024
+       it is pinned to the bottom of the viewport as the tab bar and
+       body reserves its height; at 1024 it stops being fixed and lays
+       out here in the masthead (6f). One DOM node either way, so a
+       phone copy and a desktop copy cannot drift apart. Tonight earns
+       a permanent tab because it is the one screen with an expiry. -->
+  <nav class="wa-tabbar" aria-label="Primary">
+    <a class="wa-tabbar__item" href="./index.html" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore
+    </a>
+    <a class="wa-tabbar__item" href="./discover.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
+    </a>
+    <a class="wa-tabbar__item" href="./saved.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved
+    </a>
+    <a class="wa-tabbar__item" href="./profile.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
+    </a>
   </nav>
+
+
+  <!-- One question expanded at a time; the other two park below showing
+       their current value, so you always know the other answers and can
+       never get lost inside a filter. -->
+  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="wa-sheet__panel">
+      <div class="wa-sheet__head">
+        <h2 class="wa-sheet__title" id="sheet-title">Where?</h2>
+        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="wa-sheet__body" id="sheet-body"></div>
+      <div class="wa-sheet__foot" id="sheet-foot"></div>
+    </div>
+  </dialog>
 
 </body>
 </html>
