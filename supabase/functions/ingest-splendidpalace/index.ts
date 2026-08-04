@@ -1,5 +1,13 @@
 // ============================================================
-// ingest-splendidpalace  v5
+// ingest-splendidpalace  v6
+// v6 (Aug 2026): parseDateDMY returns null when the date text cannot be
+//   read. It used to fall back to new Date().toISOString() — the moment
+//   of the scrape — so an unparseable date silently became "starts right
+//   now". Three picks shared a starts_at of 2026-07-27 14:55:09.43, to
+//   the millisecond, because that is when this ran. Harmless while
+//   nothing read the field; when.js now derives "on tonight" from
+//   starts_at, so a fabricated one would put an event on the Tonight
+//   list on its scrape day and send someone out to it.
 // v5 (Jul 2026): THE FIX — message_id is now cyrb53(slug), not the slug
 //   itself. staging_messages.message_id is a BIGINT, so every non-numeric
 //   slug was rejected by PostgREST; upsertEvent returned 'error' and the
@@ -82,12 +90,27 @@ type SplendidEvent = {
   title: string;
   dateText: string;
   timeText: string;
-  dateIso: string;
+  /* null when the source's date text could not be parsed. */
+  dateIso: string | null;
 };
 
-function parseDateDMY(dateText: string, timeText: string): string {
+/* Returns null when the listing's date cannot be read.
+   This used to fall back to `new Date().toISOString()` — the moment of
+   the scrape — which meant an unparseable date silently became "starts
+   right now". Three picks in the live catalogue shared a starts_at of
+   2026-07-27 14:55:09.43, to the millisecond, because that is when the
+   scraper ran.
+
+   Harmless while nothing read the field; not harmless now that
+   when.js derives "on tonight" from starts_at. A fabricated timestamp
+   would put an event on the Tonight list on the day it was scraped and
+   tell someone standing in the street to walk to it. An unknown date
+   has to stay unknown — the row still lands, it just doesn't claim a
+   time. (posted_at keeps its own now() fallback: that one really is a
+   scrape-adjacent field.) */
+function parseDateDMY(dateText: string, timeText: string): string | null {
   const dm = dateText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-  if (!dm) return new Date().toISOString();
+  if (!dm) return null;
   const [, day, month, year] = dm;
   const tm = timeText.match(/(\d{1,2}):(\d{2})/);
   const hour = tm ? tm[1].padStart(2, '0') : '00';
