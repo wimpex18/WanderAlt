@@ -75,6 +75,11 @@ function stripTags(html: string): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ')
+    /* Numeric entities too: the listings carry &#039; in titles like
+       "Vivaldi&#039;s Four Seasons", and a half-decoded title is visible
+       in the product. */
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCharCode(parseInt(h, 16)))
     .replace(/\s+/g, ' ').trim();
 }
 
