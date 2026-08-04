@@ -242,7 +242,7 @@
     const rail = railFor(e);
     const dist = window.WA.Geo.distanceLabel(e);
     const desc = e.description || e.quote || '';
-    return `<li><a class="wa-row" href="venue.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+    return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">
         <span class="wa-row__time${rail.now ? ' wa-row__time--now' : ''}">${esc(rail.time)}</span>
         <span class="wa-row__dist">${esc(dist)}</span>

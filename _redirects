@@ -28,3 +28,16 @@ https://www.wanderalt.app/* https://wanderalt.app/:splat   301
 # that used to live here were removed June 2026 after the loop was
 # found on the live preview; verified /curator and /venue (which never
 # had rules) already serve 200 on their own.
+
+# Aug 2026 redesign: venue.html + place.html merged into one detail.html
+# (6c — one layout, two data shapes), and the curator page became a
+# source page (3b — a venue or a feed, not a person). Both keep ?id=,
+# so the query string carries across untouched. Shared links from the
+# current site are in the wild and must land on the real thing rather
+# than a 404.
+/venue.html    /detail.html    301
+/place.html    /detail.html    301
+/curator.html  /source.html    301
+/venue         /detail.html    301
+/place         /detail.html    301
+/curator       /source.html    301

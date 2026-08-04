@@ -100,9 +100,9 @@
     return [line1, line2];
   };
 
-  const hrefFor = (e) => e.__place
-    ? `place.html?id=${encodeURIComponent(e.id)}`
-    : `venue.html?id=${encodeURIComponent(e.id)}`;
+  /* One template for both shapes now (6c), so both go to the same page
+     and detail.js resolves the id against picks then venues. */
+  const hrefFor = (e) => `detail.html?id=${encodeURIComponent(e.id)}`;
 
   /* ── Card ────────────────────────────────────────────────────
      1 square well (photo, else the category mark) · 2 one badge top

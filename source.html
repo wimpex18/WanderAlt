@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WanderAlt</title>
+  <meta name="description" content="" />
+  <meta name="theme-color" content="#f2efe6" />
+  <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
+  <link rel="mask-icon" href="./brand/favicon/safari-pinned-tab.svg" color="#055959" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <meta property="og:type"        content="article" />
+  <meta property="og:site_name"   content="WanderAlt" />
+  <meta property="og:title"       content="WanderAlt" />
+  <meta property="og:description" content="" />
+  <meta name="twitter:card"       content="summary_large_image" />
+
+  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-600.woff2" crossorigin />
+
+  <link rel="stylesheet" href="wa.css" />
+  <script src="./theme.js"></script>
+  <script defer src="./when.js"></script>
+  <script defer src="./catalog.js"></script>
+  <script defer src="./geo.js"></script>
+  <script defer src="./hours.js"></script>
+  <script defer src="./marks.js"></script>
+  <script defer src="./seen.js"></script>
+  <script defer src="./share.js"></script>
+  <script defer src="./ui-helpers.js"></script>
+  <script defer src="./city.js"></script>
+  <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+  <script defer src="./bookmark.js"></script>
+  <script defer src="./follow.js"></script>
+  <script defer src="./view-transition.js"></script>
+  <script defer src="./source.js"></script>
+</head>
+<body data-page="source">
+
+  <a class="wa-sr" href="#main">Skip to content</a>
+
+  <header class="wa-topbar" role="banner">
+    <a class="wa-topbar__brand" href="./index.html">
+      <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
+      <span>WanderAlt</span>
+    </a>
+    <button class="wa-btn wa-btn--quiet" type="button" id="follow" aria-pressed="false">Follow</button>
+  </header>
+
+  <!-- The curator page became a source page (3b): same shape, honest
+       subject. A venue, a feed, a channel — not a person. Following a
+       venue is a stronger habit than following a stranger, and it is the
+       seed of personalisation earned from behaviour rather than a quiz. -->
+  <main class="wa-shell wa-source" id="main"></main>
+
+  <nav class="wa-tabbar" aria-label="Primary">
+    <a class="wa-tabbar__item" href="./index.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore
+    </a>
+    <a class="wa-tabbar__item" href="./discover.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
+    </a>
+    <a class="wa-tabbar__item" href="./saved.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved
+    </a>
+    <a class="wa-tabbar__item" href="./profile.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
+    </a>
+  </nav>
+
+</body>
+</html>
