@@ -38,13 +38,9 @@
 
   const norm = (d) => String(d || '').trim().slice(0, 3).toLowerCase();
 
-  const isTonight = (e) => {
-    if (e.tonight === true) return true;
-    const d = norm(e.day);
-    return d !== '' && (d === 'ton' || d === norm(todayAbbrev()));
-  };
-
-  const isThisWeek = (e) => e.thisWeek === true || String(e.day || '').trim() !== '';
+  /* isTonight / isThisWeek are defined AFTER resolveKey below — they
+     depend on it, and putting them here (where they used to live) is
+     what let them drift into being day-only. */
 
   /* ── Calendar days ───────────────────────────────────────────
      "Tomorrow" and "pick a date" need an actual day, not a flag, so the
@@ -105,6 +101,54 @@
     const today = todayKey();
     const ahead = (want - keyWeekday(today) + 7) % 7;   /* 0 = today */
     return ahead === 0 ? today : keyPlus(ahead);
+  };
+
+  /* ── Tonight / this week ─────────────────────────────────────
+     These used to read `day` and nothing else:
+
+       isTonight  = tonight flag OR day === 'Tonight' OR day === today
+       isThisWeek = thisWeek flag OR the pick carried any day at all
+
+     That was correct when a weekday abbreviation was the only date a
+     pick had. It stopped being correct when process-staging started
+     writing real timestamps: it takes `day` from the LLM, which returns
+     null whenever a listing doesn't state a weekday, while `starts_at`
+     comes straight from the source and is the more reliable of the two.
+     Such a pick lands with day = null, tonight = false, this_week =
+     false and a perfectly good starts_at — and was therefore invisible
+     to Tonight ON THE NIGHT IT HAPPENED. Both dated picks in the live
+     catalogue look exactly like that.
+
+     The flags themselves cannot cover for it either: rotate-tonight
+     maintains picks.tonight and is one of the frozen crons, so it ages
+     to false and stays there.
+
+     Both now go through resolveKey(), which already prefers starts_at
+     and falls back to projecting the weekday. Explicit true flags are
+     still respected — derivation only ever widens. */
+
+  const isTonight = (e) => {
+    if (!e) return false;
+    if (e.tonight === true) return true;
+    if (norm(e.day) === 'ton') return true;
+    return resolveKey(e) === todayKey();
+  };
+
+  /* "This week" is now the coming seven days rather than "has a date at
+     all". With only weekday abbreviations those meant the same thing —
+     a 'Fri' is always within seven days — but a real timestamp three
+     months out would otherwise have counted as this week. */
+  const isThisWeek = (e) => {
+    if (!e) return false;
+    if (e.thisWeek === true) return true;
+    /* Anything on tonight is trivially in the coming week. matches()
+       used to bolt this on at the call site, which meant isThisWeek was
+       wrong on its own terms for a pick carrying only the tonight flag —
+       and every other caller inherited that. */
+    if (isTonight(e)) return true;
+    const k = resolveKey(e);
+    if (k == null) return false;
+    return k >= todayKey() && k <= keyPlus(6);
   };
 
   const isTomorrow = (e) => resolveKey(e) === keyPlus(1);

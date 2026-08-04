@@ -1,5 +1,12 @@
 // ============================================================
-// ingest-kinobize  v4
+// ingest-kinobize  v5
+// v5 (Aug 2026): parseDateText returns null when the date text cannot be
+//   read. The old tail was `return now.toISOString()`, so any
+//   unrecognised date string became "starts right now" — six picks
+//   landed sharing a starts_at of 2026-07-27 14:56:34.766 because that
+//   is when this ran. when.js now derives "on tonight" from starts_at,
+//   so a fabricated one would put a film on the Tonight list on its
+//   scrape day. Unknown stays unknown.
 // v4 (Jul 2026): writes staging_messages.payload — the structured half
 //   of the row. See the payload contract in process-staging.
 // v3 (Jul 2026): staging_messages POST was missing
@@ -78,10 +85,18 @@ type KinoBizeEvent = {
   title: string;
   category: string;
   dateText: string;
-  dateIso: string;
+  /* null when the source's date text could not be parsed. */
+  dateIso: string | null;
 };
 
-function parseDateText(dateText: string): string {
+/* Returns null when the listing's date cannot be read — see the same
+   fix in ingest-splendidpalace. The old tail was `return now.toISOString()`,
+   so any unrecognised date string became "starts right now", and two
+   picks landed sharing a starts_at of 2026-07-27 14:56:34.766 because
+   that is when the scraper ran. when.js now derives "on tonight" from
+   starts_at, so a fabricated one would put an event on the Tonight list
+   on its scrape day. Unknown stays unknown. */
+function parseDateText(dateText: string): string | null {
   const now = new Date();
 
   const tomorrowM = dateText.match(/^Tomorrow\s+(\d+):(\d+)/i);
@@ -106,7 +121,7 @@ function parseDateText(dateText: string): string {
     return new Date(iso).toISOString();
   }
 
-  return now.toISOString();
+  return null;
 }
 
 function parseListing(html: string): KinoBizeEvent[] {

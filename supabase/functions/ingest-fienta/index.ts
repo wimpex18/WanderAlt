@@ -1,7 +1,15 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// ingest-fienta  v5
+// ingest-fienta  v6
+// v6 (Jul 2026, DEPLOYED Aug 2026): writes staging_messages.payload.
+//   This was committed in July and never deployed — the running function
+//   stayed on v5 for a month. Consequence: every Fienta event reached
+//   staging with its date only inside the prose `text` ("When: 2026-10-03
+//   · 19:00") and no structured payload, so process-staging had no
+//   starts_at to copy and fell back to asking the LLM for a weekday
+//   abbreviation, which returns null for an ISO date. Every Tallinn pick
+//   therefore landed undated and could never appear on Tonight.
 // v5 (Jun 2026): THE FIX — staging upsert now targets on_conflict=
 //   channel,message_id. Without it PostgREST resolved ON CONFLICT against
 //   the PK, so every re-crawled duplicate 409'd ('error', not 'skipped')
