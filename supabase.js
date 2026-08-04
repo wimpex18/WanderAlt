@@ -161,6 +161,10 @@
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
+    /* Raw OSM opening_hours, captured by ingest-osm since Aug 2026.
+       WA.Hours parses it; null on roughly half the table, and a null
+       must render as "hours not filed", never as "closed". */
+    openingHours: r.opening_hours || null,
   });
 
   const dispatch = () =>
@@ -214,7 +218,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram,opening_hours` +
         `&order=name.asc`,
         abort.signal
       ),
