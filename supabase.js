@@ -128,6 +128,11 @@
     currency:    r.currency    || null,
     links:       r.links       || null,
     entities:    r.entities    || null,
+    /* Provenance freshness: the detail page prints "read N ago", which
+       is the line that replaced the curator byline as the reason to
+       believe a listing. Without these it silently printed nothing. */
+    lastSeenAt: r.last_seen_at || null,
+    createdAt:  r.created_at   || null,
     /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });
@@ -192,7 +197,9 @@
                 `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked,` +
                 /* Facts the sources stated about themselves (Jul 2026) —
                    see the staging payload contract in process-staging. */
-                `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities` +
+                `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
+                /* Provenance freshness for the detail page's "read N ago". */
+                `last_seen_at,created_at` +
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),

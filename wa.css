@@ -1404,6 +1404,149 @@ a.wa-sr:focus {
 .explore-scope   { margin-top: var(--s-4); }
 
 /* ============================================================
+   Detail + Source (6c, 3b) — one template, two data shapes.
+   ============================================================ */
+
+.wa-detail, .wa-source { padding-bottom: var(--s-8); }
+
+/* Detail is the one place a photo earns full bleed: a single item, no
+   peers to compare against, and a reason for atmosphere. */
+.wa-detail__well {
+  position: relative;
+  margin: var(--s-5) calc(var(--gutter) * -1) 0;
+  background: var(--petrol-tint);
+  overflow: hidden;
+}
+
+.wa-detail__photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+
+.wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
+.wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
+
+.wa-detail__credit {
+  margin: 0;
+  padding: var(--s-2) var(--gutter);
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  color: var(--ink-mute);
+}
+
+.wa-detail__well--mark .wa-detail__credit {
+  position: absolute; inset-inline: 0; bottom: 0; text-align: center;
+}
+
+.wa-detail__eyebrow {
+  margin: var(--s-5) 0 0;
+  font: 500 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.wa-detail__title { margin-top: var(--s-2); }
+
+.wa-detail__meta {
+  margin: var(--s-2) 0 0;
+  font: 400 var(--fs-mono)/1.5 var(--ff-mono);
+  color: var(--ink-mute);
+}
+
+.wa-detail__desc,
+.wa-detail__note {
+  margin: var(--s-4) 0 0;
+  font: 400 var(--fs-body)/1.6 var(--ff-ui);
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+.wa-detail__note { margin-top: var(--s-3); }
+
+/* 3a: a long description stops at three lines with an inline "more" that
+   expands in place. Navigating to read a sentence is the thing that rule
+   exists to prevent — and these run to 1,200 characters of scraped
+   press copy. */
+.wa-detail__desc--clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wa-detail__more {
+  margin-top: var(--s-2);
+  padding: 0;
+  min-height: var(--tap-min);
+  background: none;
+  border: 0;
+  color: var(--petrol);
+  font: 600 var(--fs-body)/1 var(--ff-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Three cells answer the only three questions a person on the street
+   has: when, how much, how far. A cell with no answer is not rendered —
+   a placeholder here is the dead-value problem in a louder position. */
+.wa-cells {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wa-cell { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+
+.wa-cell__label {
+  font: 700 10px/1 var(--ff-ui);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.wa-cell__value {
+  font: 500 var(--fs-card)/1.3 var(--ff-mono);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The primary action is "Walk me there", not "I'm going": the reader has
+   already decided; what they need is the route. */
+.wa-detail__actions { margin-top: var(--s-5); }
+
+/* The week strip is the same object as the density strip — a row per
+   day, value on the right. Reusing it is what makes the app feel
+   designed rather than assembled. */
+.wa-week { margin: 0; padding: 0; list-style: none; }
+
+.wa-week__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--rule);
+  font: 400 var(--fs-meta)/1.5 var(--ff-mono);
+  color: var(--ink-mute);
+}
+
+.wa-week__row:last-child { border-bottom: 0; }
+.wa-week__day { width: 3.5em; letter-spacing: .06em; }
+.wa-week__val { margin-left: auto; }
+
+.wa-week__row--today { color: var(--ink); }
+.wa-week__row--today .wa-week__day { font-weight: 500; }
+
+@media (min-width: 768px) {
+  .wa-detail__well { margin-inline: 0; border-radius: var(--r-card-lg); }
+  .wa-detail__photo,
+  .wa-detail__well--mark { aspect-ratio: 16 / 9; }
+}
+
+/* ============================================================
    Tonight (5d) — the dense list, and the map as a mode.
    ============================================================ */
 
