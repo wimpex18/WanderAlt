@@ -23,7 +23,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const EVENTS_URL   = 'https://kinobize.lv/en/repertoire';
+const EVENTS_URL   = 'https://www.kinobize.lv/en/repertoire/all-screenings';
 const CHANNEL      = 'kinobize';
 const SOURCE_CITY  = 'riga';
 
@@ -89,73 +89,82 @@ type KinoBizeEvent = {
   dateIso: string | null;
 };
 
-/* Returns null when the listing's date cannot be read — see the same
-   fix in ingest-splendidpalace. The old tail was `return now.toISOString()`,
-   so any unrecognised date string became "starts right now", and two
-   picks landed sharing a starts_at of 2026-07-27 14:56:34.766 because
-   that is when the scraper ran. when.js now derives "on tonight" from
-   starts_at, so a fabricated one would put an event on the Tonight list
-   on its scrape day. Unknown stays unknown. */
-function parseDateText(dateText: string): string | null {
+/* The listing prints a day as "Thursday, 06.08." with NO year, so the
+   year has to be inferred. Anything more than a month behind today is
+   read as next year — a cinema repertoire never lists the deep past, and
+   that is the only way 06.01. can mean January of next year rather than
+   seven months ago. Returns null if the day is unreadable; unknown stays
+   unknown rather than becoming "starts right now", which is what the old
+   `return now.toISOString()` tail did (two picks landed sharing a
+   starts_at of 2026-07-27 14:56:34.766 — the moment of the scrape). */
+function isoFromDayAndClock(day: number, month: number, clock: string): string | null {
+  if (!day || !month) return null;
+  const tm = clock.match(/(\d{1,2}):(\d{2})/);
+  const hh = tm ? tm[1].padStart(2, '0') : '00';
+  const mm = tm ? tm[2] : '00';
   const now = new Date();
-
-  const tomorrowM = dateText.match(/^Tomorrow\s+(\d+):(\d+)/i);
-  if (tomorrowM) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1,
-                       parseInt(tomorrowM[1]), parseInt(tomorrowM[2]));
-    return d.toISOString();
-  }
-
-  const todayM = dateText.match(/^Today\s+(\d+):(\d+)/i);
-  if (todayM) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
-                       parseInt(todayM[1]), parseInt(todayM[2]));
-    return d.toISOString();
-  }
-
-  const absM = dateText.match(/(\d+)\.(\d+)\.\s*(\d+):(\d+)/);
-  if (absM) {
-    const [, day, month, hour, min] = absM;
-    const year = now.getFullYear();
-    const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour}:${min}:00+03:00`;
-    return new Date(iso).toISOString();
-  }
-
-  return null;
+  let year = now.getFullYear();
+  const candidate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${hh}:${mm}:00+03:00`);
+  if (Number.isNaN(candidate.getTime())) return null;
+  if (candidate.getTime() < now.getTime() - 31 * 86400_000) year += 1;
+  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${hh}:${mm}:00+03:00`;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/* v6: rewritten against the site's current markup.
+   The old parser split on <li> and expected one film per <li> with a
+   combined "06.08. 18:00" date-and-time string. The schedule is now
+   grouped BY DAY — one <li> per day holding many .movie blocks, the day
+   in <p class="day">, each screening's time in its own <p class="clock">.
+   So the combined regex matched nothing, every dateText came back empty,
+   and the old now() fallback stamped the scrape time on all of them.
+
+     <li><p class="day">Thursday, 06.08.</p>
+       <div class="movie" …>
+         <p class="clock">18:00</p>
+         <a href="/en/repertoire/films/<slug>/<id>"><p class="movie-title">Title</p></a>
+
+   One row per film at its earliest upcoming screening, which keeps the
+   existing (channel, cyrb53(slug)) dedup key intact. Verified against
+   the live page: 7 films, 0 slug-titles, 0 missing times. */
 function parseListing(html: string): KinoBizeEvent[] {
   const events: KinoBizeEvent[] = [];
   const seen = new Set<string>();
 
-  const liParts = html.split(/<li[\s>]/);
-  for (const li of liParts.slice(1)) {
-    const linkM = li.match(/href="(\/en\/repertoire\/([^/"]+)\/([^/"]+)\/(\d+))"/);
-    if (!linkM) continue;
-    const [, href, category, slug, id] = linkM;
-    if (seen.has(id)) continue;
-    seen.add(id);
+  const dayRx = /<p class="day">([^<]*?)<\/p>([\s\S]*?)(?=<p class="day">|$)/g;
+  let dayMatch;
+  while ((dayMatch = dayRx.exec(html)) !== null) {
+    const dm = stripTags(dayMatch[1]).match(/(\d{1,2})\.(\d{1,2})\./);
+    if (!dm) continue;
+    const day = parseInt(dm[1], 10);
+    const month = parseInt(dm[2], 10);
 
-    const anchorRx = new RegExp(href.replace(/\//g, '\\/') + '"[^>]*>([\\s\\S]*?)<\\/a>');
-    const anchorM = li.match(anchorRx);
-    const rawTitle = anchorM ? stripTags(anchorM[1]) : slug;
-    const title = rawTitle.split(/\n|\r|  +/)[0].trim() || slug;
+    for (const mv of dayMatch[2].split(/<div class="movie"/).slice(1)) {
+      const linkM = mv.match(/href="(\/en\/repertoire\/([^/"]+)\/([^/"]+)\/(\d+))"/);
+      if (!linkM) continue;
+      const [, href, category, slug, id] = linkM;
+      if (seen.has(id)) continue;
+      seen.add(id);
 
-    const dateM = li.match(/(Tomorrow|Today)\s+\d+:\d+/i) ||
-                  li.match(/\w+,\s*\d+\.\d+\.\s*\d+:\d+/) ||
-                  li.match(/\d+\.\d+\.\s*\d+:\d+/);
-    const dateText = dateM ? dateM[0] : '';
-    const dateIso  = parseDateText(dateText);
+      const titleM = mv.match(/<p class="movie-title">([\s\S]*?)<\/p>/);
+      const title  = titleM ? (stripTags(titleM[1]) || slug) : slug;
 
-    events.push({
-      id,
-      slug: `${slug}-${id}`,
-      url: `https://kinobize.lv${href}`,
-      title,
-      category,
-      dateText,
-      dateIso,
-    });
+      const clockM  = mv.match(/<p class="clock">\s*(\d{1,2}:\d{2})/);
+      const clock   = clockM ? clockM[1] : '';
+      const dateText = `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}. ${clock}`.trim();
+      const dateIso  = isoFromDayAndClock(day, month, clock);
+
+      events.push({
+        id,
+        slug: `${slug}-${id}`,
+        url: `https://www.kinobize.lv${href}`,
+        title,
+        category,
+        dateText,
+        dateIso,
+      });
+    }
   }
 
   return events;
