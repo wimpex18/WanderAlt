@@ -39,6 +39,10 @@
     sort:   'soonest',
     q:      '',
     map:    false,
+    /* Set by "Search this area": a LngLatBounds the results are clipped
+       to. Cleared by any other filter change, because a stale viewport
+       silently narrowing a fresh search is the worst kind of empty. */
+    bounds: null,
   };
 
   const WHEN_LABEL = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Anytime' };
@@ -117,6 +121,22 @@
     if (skip !== 'doors')                   out = out.filter(doorsPass);
     if (skip !== 'within' && state.within)  out = geo.withinFilter(out, state.within);
     if (skip !== 'seen' && state.hideSeen)  out = window.WA.Seen.filter(out);
+    if (skip !== 'bounds' && state.bounds) {
+      const b = state.bounds;
+      /* Unplaceable entries ARE dropped here. The first cut kept them, on
+         the reasoning that "no coordinate" is not "elsewhere" — but the
+         reader has just pressed a button on a map asking what is in this
+         area, and answering with 157 rows that are not on the map is the
+         control not doing what it says. Matching the map is the whole
+         point of the action. The map bar prints "1 of 158 placed" and the
+         empty state offers "Search everywhere", so the coverage gap is
+         stated rather than hidden. */
+      out = out.filter((e) => {
+        const c = geo.coordsFor(e);
+        if (!c) return false;
+        return c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
+      });
+    }
     if (state.q) {
       const q = state.q.toLowerCase();
       out = out.filter(e => `${e.title} ${e.venue} ${e.neighborhood} ${e.kind}`.toLowerCase().includes(q));
@@ -248,6 +268,7 @@
     if (state.free)       drops.push({ label: 'Include paid', act: 'clear-free', n: sorted(applyFilters(picks(), 'free')).length });
     if (state.doors !== 'any') drops.push({ label: 'Any door time', act: 'clear-doors', n: sorted(applyFilters(picks(), 'doors')).length });
     if (state.hideSeen)   drops.push({ label: 'Include seen', act: 'clear-seen', n: sorted(applyFilters(picks(), 'seen')).length });
+    if (state.bounds)     drops.push({ label: 'Search everywhere', act: 'clear-bounds', n: sorted(applyFilters(picks(), 'bounds')).length });
     drops.sort((a, b) => b.n - a.n);
     const best = drops.find(d => d.n > 0);
 
@@ -296,6 +317,10 @@
       const mins = window.WA.Geo.walkMinutes(state.within);
       bits.push(`Within ${window.WA.Geo.format(state.within)} of you (${mins} min)`);
     }
+    /* A viewport clip is a filter the reader cannot see in the chip row,
+       so it has to be named here — an invisible filter is how a list
+       goes quietly wrong. */
+    if (state.bounds) bits.push('in this map area');
     bits.push(state.sort === 'nearest' ? 'nearest first' : 'soonest first');
     if (!n) bits.length = 0;
     return bits.join(' · ').toUpperCase();
@@ -327,6 +352,12 @@
     badge.hidden = !fc;
     badge.textContent = fc ? String(fc) : '';
 
+    /* The key doubles as the way out of a viewport clip, so it has to say
+       which job it is doing, and it stays visible while a clip is active. */
+    const area = $('search-area');
+    if (state.bounds) { area.hidden = false; area.textContent = 'Search everywhere'; }
+    else if (area.textContent !== 'Search this area') { area.textContent = 'Search this area'; }
+
     writeParams();
     Pins.sync(list);
   };
@@ -354,12 +385,14 @@
     const place = () => {
       const t = T();
       if (!t || !t.isReady || !t.isReady()) return;
-      const host = $('map-canvas');
-      let layer = host.querySelector('.tonight-map__pins');
+      /* Mounted on the PANE, not inside the canvas host: MapLibre owns
+         that subtree and rewrites it. */
+      const pane = $('map-pane');
+      let layer = pane.querySelector('.tonight-map__pins');
       if (!layer) {
         layer = document.createElement('div');
         layer.className = 'tonight-map__pins';
-        host.appendChild(layer);
+        pane.appendChild(layer);
       }
       layer.innerHTML = entries.map((e) => {
         const p = t.project(e.lng, e.lat);
@@ -438,6 +471,29 @@
     const mins = state.within ? window.WA.Geo.walkMinutes(state.within) : null;
 
     return `
+      <div class="wa-field">
+        <label class="wa-field__label" for="q">Search</label>
+        <input class="wa-input" type="search" id="q" value="${esc(state.q)}"
+               placeholder="Title, venue or area" autocomplete="off" spellcheck="false"
+               style="width:100%" />
+        <span class="wa-field__consequence" id="q-note">${
+          state.q ? `${applyFilters(picks(), null).length} match “${esc(state.q)}”`
+                  : 'Filters the list as you type'
+        }</span>
+      </div>
+
+      <div class="wa-field">
+        <span class="wa-field__label">Order</span>
+        <div class="wa-segment">
+          ${[['soonest', 'Soonest first'], ['nearest', 'Nearest first']].map(([v, label]) =>
+            `<button class="wa-segment__opt" type="button" data-sort="${esc(v)}"
+               aria-pressed="${state.sort === v}">${esc(label)}</button>`).join('')}
+        </div>
+        ${state.sort === 'nearest' && !window.WA.Geo.currentLoc()
+          ? '<span class="wa-field__consequence">Needs your location — falls back to soonest until you allow it.</span>'
+          : ''}
+      </div>
+
       <div class="wa-field">
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
@@ -562,7 +618,29 @@
 
     if (hit('#toggle-map'))  { setMap(!state.map); return; }
     if (hit('#show-list'))   { setMap(false); return; }
-    if (hit('#search-area')) { $('search-area').hidden = true; Pins.refit(); return; }
+
+    /* "Search this area" clips the results to what the reader is looking
+       at, which is the only reason to pan a map on a results screen. The
+       same key releases it again — a filter with no visible way off is a
+       trap, and once the clipped list is non-empty the empty state's
+       "Search everywhere" never appears to offer one. */
+    if (hit('#search-area')) {
+      if (state.bounds) {
+        state.bounds = null;
+      } else {
+        const m = window.WA.MapTiles && window.WA.MapTiles.getMap && window.WA.MapTiles.getMap();
+        if (m) {
+          const b = m.getBounds();
+          state.bounds = { west: b.getWest(), east: b.getEast(), south: b.getSouth(), north: b.getNorth() };
+        }
+      }
+      render();
+      return;
+    }
+    if (hit('[data-act="clear-bounds"]')) { state.bounds = null; render(); return; }
+
+    const sortBtn = hit('[data-sort]');
+    if (sortBtn) { state.sort = sortBtn.dataset.sort; refreshSheet(); render(); return; }
 
     const cityBtn = hit('[data-city]');
     if (cityBtn) { window.WA.setCity(cityBtn.dataset.city); return; }
@@ -590,6 +668,10 @@
     if (hit('#sheet-clear')) {
       state.kinds.clear(); state.within = 0; state.free = false;
       state.doors = 'any'; state.hideSeen = false;
+      state.q = ''; state.bounds = null;
+      /* Order lives in this sheet too, so "Clear all" resets it — it is
+         not a filter, but leaving it set after a clear is a surprise. */
+      state.sort = 'soonest';
       refreshSheet(); render(); return;
     }
 
@@ -619,6 +701,21 @@
   });
 
   document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'q') {
+      state.q = e.target.value.trim();
+      /* A viewport clip plus a fresh query is how you get a confusing
+         empty list, so searching releases the map bounds. */
+      state.bounds = null;
+      const note = $('q-note');
+      if (note) {
+        note.textContent = state.q
+          ? `${applyFilters(picks(), null).length} match “${state.q}”`
+          : 'Filters the list as you type';
+      }
+      $('sheet-foot').innerHTML = sheetFoot();
+      render();
+      return;
+    }
     if (e.target && e.target.id === 'within') {
       state.within = parseInt(e.target.value, 10) || 0;
       const mins = state.within ? window.WA.Geo.walkMinutes(state.within) : null;

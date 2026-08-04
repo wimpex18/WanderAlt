@@ -59,12 +59,15 @@
       view = CITY_VIEWS.tallinn;
     }
 
-    /* Dusk Glass pages get the dark twin of the editorial style —
-       the map IS the scene there, not a paper inset. The
-       Daybreak theme (theme.js) flips it back to the paper style. */
+    /* The basemap follows the theme, and ONLY the theme.
+       This used to also require body[data-skin="dusk"], which was the
+       Dusk Glass system's marker. The Aug 2026 pages don't carry
+       data-skin at all, so the condition was never true and the night
+       map silently loaded the paper style — a cream basemap under dark
+       chrome. theme.js owns data-theme on <html>; that is the single
+       signal now. */
     const styleFor = () =>
-      (document.body.dataset.skin === 'dusk' &&
-       document.documentElement.dataset.theme !== 'day')
+      document.documentElement.dataset.theme === 'dusk'
         ? './map-style-dusk.json' : './map-style.json';
     map = new maplibregl.Map({
       container:   containerId,

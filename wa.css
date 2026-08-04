@@ -1166,6 +1166,7 @@ a.wa-sr:focus {
    ============================================================ */
 
 .wa-pin {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -1180,6 +1181,19 @@ a.wa-sr:focus {
   white-space: nowrap;
   cursor: pointer;
   transition: transform var(--t-fast);
+}
+
+/* A pin is a 21px label by design (5d) — it has to stay small enough to
+   read forty of them on one screen. The TAP target is a different thing
+   from the drawn one, so it is grown to the 44px floor with a
+   pseudo-element instead of by inflating the label. */
+.wa-pin::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  transform: translate(-50%, -50%);
 }
 
 .wa-pin__dist { color: var(--ink-mute); }
@@ -1424,14 +1438,22 @@ a.wa-sr:focus {
 
 .tonight-split--map .tonight-list { display: none; }
 
-.tonight-map__canvas { position: absolute; inset: 0; }
+/* MapLibre sets `position: relative` INLINE on its container, which beats
+   any position declared here — so `position: absolute; inset: 0` left the
+   element at height 0 and nothing painted. Give it plain width/height
+   instead and let the sized, relatively-positioned .tonight-map be the
+   containing block. Don't fight the library for the property it owns. */
+.tonight-map__canvas { width: 100%; height: 100%; }
 
-/* Pins are positioned in projected pixel space by tonight.js. The layer
-   ignores pointer events so map drags pass through; each pin takes them
-   back. */
+/* Pins are positioned in projected pixel space by tonight.js. The layer is
+   a SIBLING of the canvas host, not a child: MapLibre rewrites its
+   container's subtree, and an overlay living inside it is at the mercy of
+   that. The layer ignores pointer events so map drags pass through; each
+   pin takes them back. */
 .tonight-map__pins {
   position: absolute;
   inset: 0;
+  z-index: 2;
   pointer-events: none;
 }
 
