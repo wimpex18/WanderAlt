@@ -15,15 +15,21 @@
    references are live, so marks already on the page fill in the moment
    the symbols land.
 
-   Same-origin fetch, so CSP connect-src 'self' covers it. Cached in
-   sessionStorage because it is a few hundred bytes fetched on every
-   navigation of a no-build static site.
+   Same-origin fetch, so CSP connect-src 'self' covers it.
+
+   NOT cached in sessionStorage. It was, to avoid re-fetching a few
+   hundred bytes on every navigation — but that put a copy of the sprite
+   somewhere with no expiry, so editing marks.svg showed nothing until
+   the reader opened a new tab, and a half-written sprite would have
+   pinned itself for the session. The HTTP cache already does this job
+   properly: /*.svg falls under the _headers /* rule, the browser
+   revalidates, and a changed file wins. One cache, and it is the one
+   with invalidation.
    ============================================================ */
 (() => {
   'use strict';
   window.WA = window.WA || {};
 
-  const KEY = 'wa:marks-sprite';
   const KINDS = new Set(['gig', 'club', 'records', 'gallery', 'film', 'market', 'bar', 'books']);
 
   /* Catalogue kinds are messier than eight names. This is the one place
@@ -58,19 +64,19 @@
     document.body.appendChild(host);
   };
 
-  const load = () => {
-    let cached = null;
-    try { cached = sessionStorage.getItem(KEY); } catch (_) { /* storage blocked */ }
-    if (cached) { inject(cached); return Promise.resolve(); }
+  /* Guard against a second call racing the first — inject() is
+     idempotent by id, but two in-flight fetches are pure waste. */
+  let pending = null;
 
-    return fetch('marks.svg')
+  const load = () => {
+    if (document.getElementById('wa-marks-sprite')) return Promise.resolve();
+    if (pending) return pending;
+    pending = fetch('marks.svg')
       .then(r => (r.ok ? r.text() : ''))
-      .then((text) => {
-        if (!text) return;
-        try { sessionStorage.setItem(KEY, text); } catch (_) { /* quota / blocked */ }
-        inject(text);
-      })
-      .catch(() => { /* offline: wells stay tinted, which still reads as an object */ });
+      .then((text) => { if (text) inject(text); })
+      .catch(() => { /* offline: wells stay tinted, which still reads as an object */ })
+      .finally(() => { pending = null; });
+    return pending;
   };
 
   if (document.body) load();

@@ -1,5 +1,11 @@
 // ============================================================
-// ingest-ra  v2
+// ingest-ra  v3
+// v3 (Jul 2026, DEPLOYED Aug 2026): writes staging_messages.payload.
+//   Committed in 3190013 and never deployed — production stayed on v2,
+//   so every Vilnius event reached staging with its start time only in
+//   the prose text and no structured payload. process-staging copies
+//   starts_at from the payload and nowhere else, so the picks landed
+//   with a weekday at best and no timestamp.
 // v2 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so repeat listings would 409
 //   instead of being silently ignored.

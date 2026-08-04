@@ -65,14 +65,53 @@
     return isDayNow() ? 'day' : 'dusk';
   };
 
+  /* The browser chrome colour has to match the ground the page actually
+     paints, and two grounds exist during the migration: wa.css uses
+     #f2efe6 by day, the pages still on styles.css use #f4f1e8. Hard-
+     coding either mis-tints half the product, and would rot again the
+     next time a ground value moves.
+
+     Ask the page rather than guess. --ground is wa.css's token; if it is
+     absent this is an un-migrated page, and the honest answer is what
+     <body> actually paints. Reading the old stylesheet's token instead
+     was the first attempt and it was wrong — --c-paper is that system's
+     CARD colour (#ffffff), not its ground (#f4f1e8), so the chrome came
+     out white against cream.
+
+     <body> does not exist yet on the pre-paint call, which is why the
+     literal fallback stays and why settle() runs once the DOM is up. */
+  const rgbToHex = (v) => {
+    const m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(v || '');
+    if (!m) return '';
+    return '#' + [1, 2, 3].map(i => (+m[i]).toString(16).padStart(2, '0')).join('');
+  };
+
+  const groundColour = (mode) => {
+    try {
+      const token = getComputedStyle(document.documentElement)
+        .getPropertyValue('--ground').trim();
+      if (token) return token;
+      if (document.body) {
+        const painted = rgbToHex(getComputedStyle(document.body).backgroundColor);
+        if (painted) return painted;
+      }
+    } catch (_) { /* an engine that dislikes this pre-paint — fall through */ }
+    return mode === 'day' ? '#f2efe6' : '#0a1011';
+  };
+
   const apply = () => {
     const mode = resolve();
     document.documentElement.dataset.theme = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-    /* The two ground values from wa.css. Kept in sync by hand — there is
-       no way to read a custom property before first paint. */
-    if (meta) meta.content = mode === 'day' ? '#f2efe6' : '#0a1011';
+    if (meta) meta.content = groundColour(mode);
     document.dispatchEvent(new CustomEvent('wa:theme-changed', { detail: { theme: mode } }));
+  };
+
+  /* Second pass once <body> exists, so un-migrated pages — which have no
+     --ground to read pre-paint — end up with the colour they really are. */
+  const settle = () => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = groundColour(resolve());
   };
 
   window.WA = window.WA || {};
@@ -101,6 +140,12 @@
   };
 
   apply();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', settle, { once: true });
+  } else {
+    settle();
+  }
+
   /* Re-resolve when the OS scheme flips while on auto. */
   if (window.matchMedia) {
     try {

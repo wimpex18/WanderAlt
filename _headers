@@ -43,10 +43,16 @@
 /*.html
   Cache-Control: public, max-age=300, must-revalidate
 
-# Hashed/versioned assets: long cache. styles.css doesn't have a hash so
-# stays on the conservative 5-minute cache via the /* rule above; static
-# brand assets are immutable by design (they only change with a version
-# bump that triggers a filename change).
+# Hashed/versioned assets: long cache. The stylesheets carry no content
+# hash, so they stay on the conservative 5-minute cache via the /* rule
+# above — that applies to wa.css (the Aug 2026 design system), to
+# admin-tokens.css, and to styles.css for as long as the un-migrated
+# pages still load it. marks.svg is deliberately in the same bucket
+# rather than under /assets/: marks.js fetches it at runtime and injects
+# it, so it has to be able to change without a filename bump.
+#
+# Static brand assets below are immutable by design (they only change
+# with a version bump that triggers a filename change).
 /brand/*
   Cache-Control: public, max-age=2592000, immutable
 
