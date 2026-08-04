@@ -1166,6 +1166,7 @@ a.wa-sr:focus {
    ============================================================ */
 
 .wa-pin {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -1180,6 +1181,19 @@ a.wa-sr:focus {
   white-space: nowrap;
   cursor: pointer;
   transition: transform var(--t-fast);
+}
+
+/* A pin is a 21px label by design (5d) — it has to stay small enough to
+   read forty of them on one screen. The TAP target is a different thing
+   from the drawn one, so it is grown to the 44px floor with a
+   pseudo-element instead of by inflating the label. */
+.wa-pin::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  transform: translate(-50%, -50%);
 }
 
 .wa-pin__dist { color: var(--ink-mute); }
@@ -1388,6 +1402,107 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 .explore-scope   { margin-top: var(--s-4); }
+
+/* ============================================================
+   Tonight (5d) — the dense list, and the map as a mode.
+   ============================================================ */
+
+.tonight-scope { margin-top: var(--s-5); }
+
+.tonight-controls {
+  display: flex;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+/* The count headline and its subtitle are one unit, so they sit tight
+   together and the list takes the wider gap below. */
+#results-title { margin-top: var(--s-7); }
+#results-sub   { margin-top: var(--s-2); }
+
+.tonight-split { margin-top: var(--s-5); }
+
+.tonight-list { min-width: 0; }
+
+/* Below 1024 the map REPLACES the list — it is a mode, not a companion
+   doing triage the rows do better. The list is hidden rather than
+   unmounted so scroll position and the row↔pin pairing survive the
+   toggle. */
+.tonight-map {
+  position: relative;
+  border-radius: var(--r-card-lg);
+  overflow: hidden;
+  background: var(--petrol-tint);
+  height: clamp(360px, 62vh, 680px);
+}
+
+.tonight-split--map .tonight-list { display: none; }
+
+/* MapLibre sets `position: relative` INLINE on its container, which beats
+   any position declared here — so `position: absolute; inset: 0` left the
+   element at height 0 and nothing painted. Give it plain width/height
+   instead and let the sized, relatively-positioned .tonight-map be the
+   containing block. Don't fight the library for the property it owns. */
+.tonight-map__canvas { width: 100%; height: 100%; }
+
+/* Pins are positioned in projected pixel space by tonight.js. The layer is
+   a SIBLING of the canvas host, not a child: MapLibre rewrites its
+   container's subtree, and an overlay living inside it is at the mercy of
+   that. The layer ignores pointer events so map drags pass through; each
+   pin takes them back. */
+.tonight-map__pins {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tonight-map__pins .wa-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.tonight-map__pins .wa-pin[aria-current="true"] {
+  transform: translate(-50%, -50%) scale(1.06);
+  z-index: 2;
+}
+
+/* One glass layer per screen is already spent on the chrome, so this bar
+   is opaque. */
+.tonight-map__bar {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--card);
+  border-top: 1px solid var(--rule);
+}
+
+.tonight-map__bar .wa-fact { margin-right: auto; }
+
+@media (min-width: 1024px) {
+  /* The companion column appears on results only (6f). The map sticks
+     while the list scrolls past it. */
+  .tonight-split--map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    gap: var(--s-6);
+    align-items: start;
+  }
+  .tonight-split--map .tonight-list { display: block; }
+  .tonight-split--map .tonight-map {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--s-4));
+    height: calc(100vh - var(--topbar-h) - var(--s-8));
+  }
+  /* With the list beside it, "Show list" has nothing to do. */
+  .tonight-split--map #show-list { display: none; }
+}
 
 /* ============================================================
    19 · The Saturday email card

@@ -16,7 +16,7 @@
     {
       "id": "background",
       "type": "background",
-      "paint": { "background-color": "#f6f3ec" }
+      "paint": { "background-color": "#dfe3dd" }
     },
     {
       "id": "park",
