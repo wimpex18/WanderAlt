@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt — Discover · Tallinn</title>
-  <meta name="description" content="Browse, filter and search every curated pick in WanderAlt." />
-  <meta name="theme-color" content="#0a1011" />
+  <title>WanderAlt — Tonight · Tallinn</title>
+  <meta name="description" content="What's on tonight in Tallinn, soonest first, with a walking distance on every row." />
+  <meta name="theme-color" content="#f2efe6" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
@@ -13,378 +13,123 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="canonical" href="https://wanderalt.app/discover.html" />
 
-  <!-- Preload Discover's above-the-fold faces (Inter body + Fraunces for
-       titles). crossorigin required even same-origin. -->
-  <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-400.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="WanderAlt" />
+  <meta property="og:title"       content="WanderAlt — Tonight" />
+  <meta property="og:description" content="What's on tonight, soonest first, with a walking distance on every row." />
+  <meta property="og:image"       content="./brand/social/og-default.png" />
+  <meta name="twitter:card"       content="summary_large_image" />
 
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Dusk/Daybreak switch — pre-paint, like taste-flag.js (no FOUC). -->
+  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-600.woff2" crossorigin />
+
+  <link rel="stylesheet" href="wa.css" />
+  <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
   <script src="./theme.js"></script>
-  <!-- MapLibre is lazy-loaded after first paint by maplibre-loader.js
-       (June 2026 perf pass: eager parse cost ~340ms TBT on this page). -->
-  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./catalog.js"></script>
+  <script defer src="./geo.js"></script>
+  <script defer src="./hours.js"></script>
+  <script defer src="./marks.js"></script>
+  <script defer src="./seen.js"></script>
+  <script defer src="./share.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
-  <script defer src="./taste.js"></script>
-  <script defer src="./mood-chips.js"></script>
-  <script defer src="./map-venues.js"></script>
+  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
-  <script defer src="./map.js"></script>
-  <script defer src="./share.js"></script>
   <script defer src="./view-transition.js"></script>
-  <script defer src="./discover.js"></script>
+  <script defer src="./tonight.js"></script>
 </head>
-<!-- data-surface scopes the Discover layout CSS. place.html also carries
-     data-page="discover" (for the nav highlight) but must NOT inherit this
-     page's grid, so every layout rule keys off data-surface, not data-page. -->
-<body data-page="discover" data-surface="discover" data-skin="dusk">
+<body data-page="tonight">
 
-  <a class="skip-link" href="#discover-main">Skip to picks</a>
+  <a class="wa-sr" href="#main">Skip to content</a>
 
-  <header class="topbar island island--deep" role="banner">
-    <div class="topbar__inner">
-      <a href="./index.html" class="topbar__brand" aria-label="WanderAlt home">
-        <span class="logo-mark" aria-hidden="true"><span class="logo-mark__diamond"></span></span>
-        <span class="wordmark">WanderAlt</span>
-      </a>
-      <!-- One search field, one behaviour. Typing filters the list live;
-           the concierge is an ACTION offered on what you typed, not a
-           second mode hidden behind a toggle — the old ✦ switched the
-           field between keyword and AI with nothing but a placeholder to
-           tell you which one you were in.
-           It rides the topbar island at every width. Below 1024px the
-           masthead nav tabs step aside for it (the bottom dock already
-           carries navigation there) — at 768 the two used to overlap,
-           with "Search or ask" printing underneath "Discover". -->
-      <section class="disc-search" aria-label="Search WanderAlt">
-        <form role="search" data-no-submit>
-          <div class="disc-search__box">
-            <span class="disc-search__icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                <circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/>
-              </svg>
-            </span>
-            <input
-              id="discover-q"
-              class="disc-search__input"
-              type="search"
-              name="q"
-              placeholder="Search, or ask for what you want"
-              aria-label="Search WanderAlt, or ask the concierge"
-              autocomplete="off"
-              spellcheck="false"
-              role="combobox"
-              aria-expanded="false"
-              aria-controls="disc-suggest"
-              enterkeyhint="search" />
-            <button class="disc-search__clear" id="discover-clear" type="button" aria-label="Clear search" hidden>
-              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-                <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
-              </svg>
-            </button>
-          </div>
-        </form>
-        <!-- Offers the concierge on whatever is in the field (and example
-             phrasings while it is empty). Closes on Escape, on blur, on
-             clear, and on picking something — the old examples popup had
-             no way out at all. discover.js fills it. -->
-        <div class="disc-suggest" id="disc-suggest" role="listbox" aria-label="Search suggestions" hidden></div>
-      </section>
-      <button class="city-selector" type="button" aria-haspopup="listbox" aria-expanded="false">
-        <span class="city-dot" aria-hidden="true"></span>
-        <span class="city-selector__name">TALLINN</span>
-        <span class="city-selector__chev" aria-hidden="true">
-          <svg viewBox="0 0 10 10"><path d="M1.5 3.5 L5 7 L8.5 3.5" /></svg>
-        </span>
-      </button>
-    </div>
+  <header class="wa-topbar" role="banner">
+    <a class="wa-topbar__brand" href="./index.html">
+      <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
+      <span>WanderAlt</span>
+    </a>
+    <a class="wa-btn wa-btn--quiet" href="./profile.html" id="tonight-account">Sign in</a>
   </header>
 
-  <main id="discover-main" class="disc" role="main">
+  <main class="wa-shell" id="main">
 
-    <p class="print-head" aria-hidden="true"></p>
-
-    <!-- Editorial lede — the same eyebrow + Fraunces line Today opens with,
-         so Discover reads as the same publication rather than a map tool.
-         city.js swaps the city name in .page-head__city. -->
-    <header class="disc-head">
-      <p class="disc-head__eyebrow">Vouched by humans</p>
-      <h1 class="disc-head__title">Every pick in <b class="page-head__city">Tallinn</b>.</h1>
-    </header>
-
-    <!-- Controls: scope + facets on ONE line. A venue is a permanent thing
-         and an event is a dated thing, so Events|Places is a scope switch
-         (RA / Google Maps pattern), not a filter facet — it reads as a
-         segmented control and everything to its right filters within it. -->
-    <div class="disc-controls">
-      <div class="disc-scope" role="tablist" aria-label="Browse events or places">
-        <button class="disc-scope__btn disc-scope__btn--on" type="button"
-                role="tab" aria-selected="true" data-type="events">Events <span class="disc-scope__count" data-count="events" hidden>0</span></button>
-        <button class="disc-scope__btn" type="button"
-                role="tab" aria-selected="false" data-type="places">Places <span class="disc-scope__count" data-count="places" hidden>0</span></button>
-      </div>
-
-      <!-- One filter language at every width: each facet is a button that
-           opens its own anchored menu. No quick-pill row duplicating the
-           facets, no full-screen modal to back out of — click the button
-           again, click away, or press Escape. -->
-      <div class="disc-facets" id="disc-facets" role="group" aria-label="Filters">
-        <!-- When is single-select, so it reads as an option list with counts
-             rather than a chip cloud: chips are the multi-select shape on
-             this page (Category / Area / Mood) and using them for an
-             either/or question was the one place two patterns overlapped.
-             Options that match nothing disable themselves instead of
-             disappearing, so the list never jumps under the cursor and no
-             tap can dead-end. -->
-        <div class="disc-facet" data-facet="when" data-mode="events">
-          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
-            <span class="disc-facet__label">When</span>
-            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </button>
-          <div class="disc-facet__menu" hidden>
-            <div class="disc-facet__head">
-              <p class="disc-facet__title">When</p>
-              <button class="disc-facet__clear" type="button" data-clear="when" hidden>Clear</button>
-            </div>
-            <div class="disc-opts" id="discover-when" role="group" aria-label="When"></div>
-            <!-- Only rendered when some pick in view actually resolves to a
-                 date — an empty calendar is a promise the data can't keep. -->
-            <div class="disc-date" id="discover-date-row" hidden>
-              <label class="disc-date__label" for="discover-date">Pick a date</label>
-              <input class="disc-date__input" id="discover-date" type="date">
-            </div>
-          </div>
-        </div>
-
-        <div class="disc-facet" data-facet="cat">
-          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
-            <span class="disc-facet__label">Category</span>
-            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </button>
-          <div class="disc-facet__menu" hidden>
-            <div class="disc-facet__head">
-              <p class="disc-facet__title">Category</p>
-              <button class="disc-facet__clear" type="button" data-clear="cat" hidden>Clear</button>
-            </div>
-            <div class="disc-chips" id="discover-cat-chips" role="group" aria-label="Category"></div>
-          </div>
-        </div>
-
-        <!-- Area answers "where", and so does walking distance — one menu,
-             one question. "Near me" asks for location only when tapped. -->
-        <div class="disc-facet" data-facet="area">
-          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
-            <span class="disc-facet__label">Area</span>
-            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </button>
-          <div class="disc-facet__menu" hidden>
-            <div class="disc-facet__head">
-              <p class="disc-facet__title">Area</p>
-              <button class="disc-facet__clear" type="button" data-clear="area" hidden>Clear</button>
-            </div>
-            <div class="disc-chips" id="discover-area-chips" role="group" aria-label="Area"></div>
-            <p class="disc-facet__note meta" id="discover-within-note" hidden>Couldn&rsquo;t place you &mdash; showing every area.</p>
-          </div>
-        </div>
-
-        <div class="disc-facet" data-facet="mood" data-mode="events">
-          <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
-            <span class="disc-facet__label">Mood</span>
-            <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </button>
-          <div class="disc-facet__menu" hidden>
-            <div class="disc-facet__head">
-              <p class="disc-facet__title">Mood</p>
-              <button class="disc-facet__clear" type="button" data-clear="mood" hidden>Clear</button>
-            </div>
-            <nav class="mood-chips" aria-label="Filter by mood"></nav>
-          </div>
-        </div>
-      </div>
+    <!-- The capsule collapses here to the current answers as chips.
+         Tapping any of them opens the sheet on that question — same model
+         as Explore, so there is still exactly one place to change what
+         you are looking at. -->
+    <div class="wa-scope tonight-scope" id="scope" aria-label="Current filters">
+      <button class="wa-scope__chip" type="button" data-slot="where" id="chip-where">Tallinn</button>
+      <button class="wa-scope__chip" type="button" data-slot="when"  id="chip-when">Tonight</button>
+      <button class="wa-scope__chip" type="button" data-slot="what"  id="chip-what">Anything</button>
     </div>
 
-    <div class="disc-layout">
+    <div class="tonight-controls">
+      <button class="wa-btn" type="button" id="open-filters">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filters<span class="wa-chip__count" id="filter-count" hidden></span>
+      </button>
+      <button class="wa-btn" type="button" id="toggle-map" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 4 6 2 5-2v14l-5 2-6-2-5 2V6z"/><path d="M9 4v14M15 6v14"/></svg>
+        <span id="toggle-map-label">Map</span>
+      </button>
+    </div>
 
-      <div class="disc-col">
+    <!-- The headline is a count, not a title. It answers the question the
+         reader arrived with, and it is generated, so it never leaves a
+         hole when a photo or a hero pick is missing. -->
+    <h1 class="wa-headline" id="results-title">Reading the sources</h1>
+    <p class="wa-section-sub" id="results-sub">ONE MOMENT</p>
 
-        <!-- Concierge answer. Sits ABOVE the list rather than replacing the
-             page, and always carries its own exit — the old AI mode hid
-             every other control and left no way back except reloading.
-             It comes BEFORE the summary line so that line still reads as
-             the heading of the list it counts; with the answer in between,
-             "22 picks" appeared to label the five the concierge returned,
-             and nothing marked where the answer stopped. -->
-        <section class="match-wrap" id="discover-match-wrap" aria-label="Concierge answer" hidden>
-          <div class="disc-answer__head">
-            <p class="disc-answer__label">Concierge</p>
-            <p class="disc-answer__prompt" id="discover-match-prompt"></p>
-            <button class="disc-answer__back" id="discover-match-back" type="button">Back to all picks</button>
-          </div>
-          <div class="match-result" id="discover-match-result" aria-live="polite"></div>
-          <div class="disc-answer__foot">
-            <button class="match-again" id="discover-match-again" type="button" hidden>
-              Try again &rarr;
-            </button>
-            <button class="match-copy-link" id="discover-match-copy-link" type="button"
-                    aria-label="Copy link to these results" hidden>
-              <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L9.5 5.5"/>
-                <path d="M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1.5-1.5"/>
-              </svg>
-              Copy link
-            </button>
-          </div>
-        </section>
-
-        <!-- The list's own header: what you're looking at, how it's
-             ordered, and the one way out of every filter at once. -->
-        <div class="disc-summary">
-          <p class="disc-summary__count" id="discover-results-count" aria-live="polite"></p>
-          <div class="disc-summary__tools">
-            <div class="disc-facet disc-facet--quiet" data-facet="sort">
-              <button class="disc-facet__btn" type="button" aria-expanded="false" aria-haspopup="true">
-                <span class="disc-facet__label">Sort</span>
-                <svg class="disc-facet__chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-              </button>
-              <div class="disc-facet__menu disc-facet__menu--end" hidden>
-                <div class="disc-facet__head">
-                  <p class="disc-facet__title">Sort by</p>
-                </div>
-                <!-- Radio list, not a <select> (Baymard: visible options beat
-                     a dropdown under ~5 choices). Populated per scope.
-                     Same .disc-opts shape as When — both are single-select. -->
-                <div class="disc-opts" id="discover-sort" role="group" aria-label="Sort"></div>
-              </div>
-            </div>
-            <button class="disc-clear" id="discover-clear-filters" type="button" hidden>Clear filters</button>
-          </div>
-        </div>
-
-        <!-- The picks. Rendered on load with the whole catalogue — there is
-             no "filter first to see anything" gate. -->
-        <section id="discover-results-section" aria-label="Picks">
-          <ol class="list-rows" id="discover-results" role="list">
-            <li class="skeleton-row" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-            <li class="skeleton-row" aria-hidden="true">
-              <span class="skeleton-row__line skeleton-row__line--label"></span>
-              <span class="skeleton-row__line skeleton-row__line--tagline"></span>
-              <span class="skeleton-row__line skeleton-row__line--count"></span>
-            </li>
-          </ol>
-          <div class="disc-empty" id="discover-empty" hidden></div>
-        </section>
-
-        <!-- Curators sit AFTER the picks: the people are worth browsing,
-             but not before the thing they wrote about. Neighborhood and
-             kind lists are gone — the Area and Category menus are the
-             same lists, one tap away and always in view. -->
-        <section class="disc-browse" id="discover-curators" aria-labelledby="curators-label" hidden>
-          <header class="disc-browse__head">
-            <p id="curators-label" class="disc-browse__eyebrow">Curators</p>
-            <p class="disc-browse__meta"></p>
-          </header>
-          <ul class="disc-browse__rows"></ul>
-        </section>
-
-        <footer class="colophon">
-          <p class="colophon__line"><a href="./about.html">About</a> &middot; WanderAlt &middot; A curator vouched for every pick</p>
-        </footer>
+    <div class="tonight-split" id="split">
+      <div class="tonight-list" id="list-pane">
+        <ul class="wa-rows" id="rows"></ul>
       </div>
 
-      <!-- Map. From 1024px up it is a sticky companion column beside the
-           list — narrower than the list, because it answers "where", not
-           "what". Below that it is an overlay you summon from the Map
-           button, so the picks own the phone screen. -->
-      <div class="disc-map" id="disc-map" aria-label="Map">
-        <div class="map-viewport" id="map-viewport">
-          <div id="map-canvas" class="map-canvas"></div>
-          <div id="map-pins" class="map-pins" aria-live="polite"></div>
+      <!-- Companion column from 1024 up (6f); a full-screen mode below
+           that. One map either way, never two implementations. -->
+      <div class="tonight-map" id="map-pane" hidden>
+        <div class="tonight-map__canvas" id="map-canvas"></div>
+        <button class="wa-btn wa-map-refresh" type="button" id="search-area" hidden>Search this area</button>
+        <div class="tonight-map__bar" id="map-bar">
+          <span class="wa-fact wa-fact--strong" id="map-count"></span>
+          <button class="wa-btn wa-btn--quiet" type="button" id="show-list">Show list</button>
         </div>
-
-        <button class="disc-map__close" id="disc-map-close" type="button" aria-label="Close map">
-          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
-            <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
-          </svg>
-        </button>
-
-        <div class="map-zoom-ctrl" role="group" aria-label="Zoom controls">
-          <button class="map-zoom-btn" id="btn-zoom-in"  aria-label="Zoom in">+</button>
-          <button class="map-zoom-btn" id="btn-zoom-out" aria-label="Zoom out">&#8722;</button>
-          <button class="map-zoom-btn map-zoom-btn--fit" id="btn-zoom-fit" aria-label="Fit map">&#8859;</button>
-        </div>
-
-        <button class="map-locate-fab" id="btn-locate" aria-label="Show my location">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
-            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/>
-            <line x1="10" y1="1.5" x2="10" y2="4"    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="10" y1="16"  x2="10" y2="18.5"  stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="1.5" y1="10" x2="4"   y2="10"   stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="16"  y1="10" x2="18.5" y2="10"  stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </button>
-
-        <aside class="map-sheet" id="map-sheet" aria-label="Selected pin details" hidden></aside>
-        <aside class="map-detail" id="map-detail" aria-label="Pin details" hidden></aside>
       </div>
-
     </div>
 
   </main>
 
-  <!-- Summons the map below 1024px. A floating glass capsule is one of the
-       two shapes cleared for the 999px radius. -->
-  <button class="disc-maptoggle" id="disc-map-open" type="button">
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/>
-    </svg>
-    Map
-  </button>
-
-  <nav class="nav" aria-label="Primary">
-    <div class="nav__inner island island--deep">
-      <a class="nav__item" data-nav="briefing" href="./index.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M5 3h11l3 3v15H5V3z"/><path d="M8 8h8M8 12h8M8 16h5"/>
-        </svg>
-        <span class="nav__label">Today</span>
-      </a>
-      <a class="nav__item" data-nav="discover" href="./discover.html" aria-current="page">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>
-        </svg>
-        <span class="nav__label">Discover</span>
-      </a>
-      <a class="nav__item" data-nav="saved" href="./saved.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <path d="M6 3h12v18l-6-4-6 4V3z"/>
-        </svg>
-        <span class="nav__label">Saved</span>
-      </a>
-      <a class="nav__item" data-nav="profile" href="./profile.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3.1-7 7-7s7 3 7 7"/>
-        </svg>
-        <span class="nav__label">Profile</span>
-      </a>
-    </div>
+  <nav class="wa-tabbar" aria-label="Primary">
+    <a class="wa-tabbar__item" href="./index.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore
+    </a>
+    <a class="wa-tabbar__item" href="./discover.html" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
+    </a>
+    <a class="wa-tabbar__item" href="./saved.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved
+    </a>
+    <a class="wa-tabbar__item" href="./profile.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
+    </a>
   </nav>
+
+  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="wa-sheet__panel">
+      <div class="wa-sheet__head">
+        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
+        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="wa-sheet__body" id="sheet-body"></div>
+      <div class="wa-sheet__foot" id="sheet-foot"></div>
+    </div>
+  </dialog>
 
 </body>
 </html>
