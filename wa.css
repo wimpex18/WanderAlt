@@ -1853,12 +1853,6 @@ a.wa-sr:focus {
 }
 
 .wa-row__drop {
-    grid-column: 3;
-    align-self: start;
-  }
-}
-
-.wa-row__drop {
   align-self: center;
   width: var(--tap-min);
   height: var(--tap-min);

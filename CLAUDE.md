@@ -79,6 +79,13 @@ Don't add CSS variables without asking. When you touch any pattern, check every 
 
 A census is also how you find the *opposite* bug. Aug 2026 turned up 23 unreached classes; five were genuinely dead, but `.wa-row__media` was a reserved-and-never-filled 96px column costing every desktop row 112px of dead space, and `.wa-skel--rail` was orphaned because the row skeleton the design specified had never been built. **An unused rule is as often an unfinished feature as it is dead weight** — read what it was for before deleting it.
 
+**The service worker will serve you a stale file while you are debugging.** Static assets are stale-while-revalidate, so an edit to `wa.css` or a page script can be invisible on the next load — you will measure the old rule and conclude your fix did not work. Aug 2026 cost real time to exactly this: a computed style kept reporting a CSS fragment that had already been deleted from disk. Clear it before trusting a measurement:
+
+```js
+caches.keys().then(k => Promise.all(k.map(x => caches.delete(x))));
+navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
+```
+
 ## Checking your work
 
 There are no automated tests and no CI. The old Puppeteer/Playwright suite was removed in July 2026 — it never caught the failures that actually happen here (alignment, overlap, control sizes, overlays) and it is being rebuilt from scratch, so don't patch it back in piecemeal or add a test framework without being asked.
