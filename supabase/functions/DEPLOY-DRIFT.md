@@ -68,8 +68,21 @@ Three commits had landed in the repo without reaching production.
 `classify-moods` and `match-pick` were **retired**, not deployed. See the
 tombstone note below.
 
-`ingest-hanzas-perons` cleared itself: it is deployed and its 03:50 cron
-inserted 3 rows on 5 Aug, so the payload contract is live.
+**`ingest-hanzas-perons` did not clear itself, and the way I first
+concluded it had is the point.** I saw its 03:50 cron insert 3 rows and
+read that as "the payload contract is live". Inserting rows only proves
+the scraper runs. The rows themselves had `payload = NULL`, so every
+Riga event was landing undated — the same failure the Fienta bug caused,
+sitting in plain sight behind a green log line. **Check the artefact, not
+the exit code.**
+
+Deploying it then exposed a second bug, in the repo rather than in
+production: commit `3190013` added `payload` and in doing so dropped
+`text`, leaving `composeText()` defined and never called. The committed
+file would have staged Riga rows with no prose for `process-staging` to
+read. Only the *older deployed* version still set it, which is the only
+reason nothing looked broken. Fixed as v7 and verified end to end: all
+three rows now carry `starts_at`, `ticket_url` and `text`.
 
 ### Cleared 5 Aug 2026
 
@@ -79,6 +92,7 @@ inserted 3 rows on 5 Aug, so the payload contract is live.
 | `geocode-picks` | **v11** | multi-city sweep; the cron could only ever reach Tallinn |
 | `classify-moods` | **v9**, tombstone, `verify_jwt` → **true** | Mood is deleted; nothing calls it |
 | `match-pick` | **v16**, tombstone, `verify_jwt` → **true** | the Concierge is deleted; nothing calls it |
+| `ingest-hanzas-perons` | **v10**, `verify_jwt` false → **true** | payload contract; Riga events were landing undated |
 
 ### Retiring a function is not the same as deleting its directory
 
