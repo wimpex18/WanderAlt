@@ -1707,6 +1707,16 @@ a.wa-sr:focus {
   font: 600 var(--fs-meta)/1.4 var(--ff-ui);
 }
 
+/* How stale the cached list is. Quieter than the claim it qualifies,
+   but present -- 6d prints it because an offline list that does not say
+   its age is implying it is tonight's. */
+.wa-offline__age {
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .03em;
+  opacity: .8;
+  white-space: nowrap;
+}
+
 .wa-offline__dot {
   flex: 0 0 auto;
   width: 7px; height: 7px;
