@@ -63,15 +63,59 @@ Three commits had landed in the repo without reaching production.
 
 | function | deployed | missing | severity |
 | --- | --- | --- | --- |
-| `send-digest` | 8 Jun | `f3ed3bf` XSS escaping in the digest email | **security**; cron is frozen so it isn't sending |
-| `ingest-hanzas-perons` | 3 Jul | `3190013` payload contract | Riga events land without a timestamp |
-| `classify-moods` | 3 Jul | `df25819` model repoint | **confirmed** still pinned to `meta-llama/llama-4-scout-17b-16e-instruct`, which 404s at Groq — the function cannot succeed |
-| `draft-column` | 15 Jul | `df25819` model repoint | same dead model |
-| `match-pick` | 26 Jul | `df25819` model repoint | same dead model |
+| `classify-moods` | 3 Jul | `df25819` model repoint | dead model, but it served Mood, which the redesign **deleted**. Nothing calls it. Retire rather than deploy. |
+| `draft-column` | 15 Jul | `df25819` model repoint | same dead model; `draft-column-weekly` stays off until it is repointed |
+| `match-pick` | 26 Jul | `df25819` model repoint | dead model, served the Concierge, which the redesign **deleted**. Nothing calls it. Retire rather than deploy. |
 
-`classify-moods` and `match-pick` serve Mood and the Concierge, both of
-which the Aug 2026 redesign deletes — so those two may not be worth a
-deploy at all. `send-digest` and `ingest-hanzas-perons` are.
+`ingest-hanzas-perons` cleared itself: it is deployed and its 03:50 cron
+inserted 3 rows on 5 Aug, so the payload contract is live.
+
+### Cleared 5 Aug 2026
+
+| function | to | why |
+| --- | --- | --- |
+| `send-digest` | **v16**, `verify_jwt` false → **true** | the XSS escaping fix, plus the redesign catch-up and a live open-relay fix (below) |
+| `geocode-picks` | **v11** | multi-city sweep; the cron could only ever reach Tallinn |
+
+## The open relay, and what it says about `verify_jwt`
+
+`send-digest` sat at `verify_jwt:false` and took its recipient straight
+from the request body. This, with **no `Authorization` header at all**,
+returned `{"ok":true,"sent":1}` against production:
+
+```
+POST /functions/v1/send-digest   {"dry_run":true,"email":"anyone@example.com"}
+```
+
+Outside dry-run that is a real message from the WanderAlt domain, on our
+Resend quota and our sending reputation, to any address on the internet.
+
+Two layers closed it. The recipient override now requires the **service
+role key** — the one credential that is never published — and that is
+the actual control. `verify_jwt` also went true, which rejects
+unauthenticated callers at the platform edge; the Saturday cron was
+repointed through `public.invoke_wa_fn()` first, because its old command
+sent only a `Content-Type` header and would have started 401ing silently.
+
+The lesson is the one the audit rule above missed: **"preserve the
+existing `verify_jwt`" protects the caller, it does not vouch for the
+setting.** And `verify_jwt:true` is not by itself a security boundary
+here, because the anon key is public by design — it raises the bar from
+"anyone" to "anyone who reads `supabase.js`". Anything outward-facing
+needs a service-key check in code.
+
+Audited at the same time, no action needed: `resolve-links` and
+`backfill-pick-facts` fetch URLs from the **database**, not the request
+body, and both pass them through `safeUrl()`, so neither is an SSRF
+vector; `discover-venues` takes a body prompt but only regex-matches it
+against a local index and makes no LLM call. The remaining
+`verify_jwt:false` functions expose resource and free-tier quota abuse
+(triggering a scrape, an embedding run, a Nominatim sweep), not
+impersonation or data exfiltration. Tightening them is worthwhile
+defence in depth, but four of their crons send `apikey` only, or no auth
+header at all, so those commands have to move to `invoke_wa_fn` **before**
+any function is flipped — otherwise they fail silently, which
+`cron.job_run_details` will happily report as `succeeded`.
 
 ## The rule
 

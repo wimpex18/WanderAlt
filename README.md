@@ -70,7 +70,7 @@ Deployed during the Aug 2026 audit: `ingest-fienta`, `ingest-ra`, `ingest-kinobi
 
 | function | missing | why it matters |
 | --- | --- | --- |
-| `send-digest` | XSS escaping (`f3ed3bf`) | scraped titles unescaped into subscriber inboxes; **its cron is held off until this lands** |
+| ~~`send-digest`~~ | — | **cleared 5 Aug 2026**: deployed at v16 with the XSS fix, the redesign catch-up, and an open-relay fix. Cron is live. |
 | `ingest-hanzas-perons` | payload contract | Riga events land without a timestamp |
 | `draft-column` | Groq model repoint | still pinned to the decommissioned `llama-4-scout`; **cron held off** |
 | `classify-moods` | none — retire it | served Mood, which the redesign deleted. Nothing calls it. |
@@ -111,25 +111,28 @@ Text generation goes Groq first, OpenRouter `:free` second, with a retired Gemin
 
 ### Cron posture
 
-**The pipeline runs again (Aug 2026).** 29 of 31 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set, and the lifecycle housekeeping.
+**The pipeline runs again (Aug 2026).** 30 of 31 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set, the lifecycle housekeeping, and the Saturday digest.
 
 They had been frozen pre-release — no users, and cron-driven retry loops were what ran up the Google bill. The freeze did its job on spend and then quietly became the problem: nothing reached `picks` between 2 Jul and 4 Aug, 49 staging rows sat unprocessed, and Tonight was empty because the catalogue had stopped moving.
 
 Cost surface now, stated rather than assumed: ingests are HTTP scrapes only; the LLM lane is Groq's free tier then OpenRouter `:free`, with Gemini still gated off by `pipeline_config.gemini_fallback_enabled`; embeddings are Cloudflare's free tier; Nominatim callers are staggered so no two run at once, which keeps us inside its usage policy. The uncapped-retry shape that caused the €45 charge is gone — the functions that once hit Google stamp a cooldown column instead.
 
-**Two jobs stay off, and neither is an oversight.** Both are blocked on a deploy, not a decision:
+**30 of 31 jobs are active.** `send-digest-saturday` was turned on 5 Aug 2026 once `send-digest` was deployed (see below). One stays off, and it is not an oversight:
 
 | job | blocked on |
 | --- | --- |
-| `send-digest-saturday` | `send-digest` predates the XSS escaping fix — scraped pick titles would go unescaped into subscriber inboxes |
 | `draft-column-weekly` | `draft-column` still pins the decommissioned `llama-4-scout`; every run would 404 through to a hard failure |
 
-Turn either on once its function is deployed:
+Turn it on once its function is deployed:
 
 ```sql
 select cron.alter_job(jobid, active => true)
-  from cron.job where jobname = 'send-digest-saturday';
+  from cron.job where jobname = 'draft-column-weekly';
 ```
+
+**A cron's command must send an `Authorization` header if its function is `verify_jwt:true`.** `public.invoke_wa_fn(fn)` does; a raw `net.http_post` with only `Content-Type`, or only `apikey`, does not, and gets a silent 401. `send-digest-saturday` was in exactly that state and had to be repointed through `invoke_wa_fn` before it could be enabled. Four jobs still post raw — `enrich-images-auto`, `rotate-tonight-daily`, `draft-column-weekly`, and the `wa-enrich-venues-*` set — which is fine only because their functions are still `verify_jwt:false`.
+
+**Checking a cron actually worked is not `cron.job_run_details`.** That table records that the SQL ran, and `net.http_post` returns a request id instantly, so a job reads `succeeded` while every call 401s. Use `net._http_response` (`status_code`, `timed_out`, `error_msg`). Note pg_net gives up at 60s while the function keeps running: `ingest-hel-linkedevents` times out nightly and still inserts ~1,650 rows, so that timeout is a lost response, not lost work.
 
 Watch it rather than poll it — one-shot SQL against `staging_messages` status counts, `picks where archived_at is null`, and the tail of `ingest_log`.
 
