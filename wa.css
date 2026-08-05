@@ -1173,6 +1173,113 @@ a.wa-sr:focus {
 .wa-list-card__sub em { font-style: normal; color: var(--warn); }
 
 /* ============================================================
+   COMPONENT — walk (6b)
+
+   A numbered route and the walk-in-progress state. Deliberately thin:
+   6b is a two-week test with three hand-written routes, and the point
+   is to learn whether anyone reaches stop three, not to build a
+   product. If the number comes back under 10% this whole block is
+   deleted, which is why it borrows the existing row and cell components
+   rather than inventing a vocabulary of its own.
+   ============================================================ */
+
+.wa-walk__stops {
+  list-style: none;
+  margin: var(--s-5) 0 0;
+  padding: 0;
+}
+
+.wa-walk__stop {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wa-walk__stop:last-child { border-bottom: 0; }
+
+/* The number IS the route -- it is the only thing that says these are
+   ordered rather than a list of nearby places. */
+.wa-walk__num {
+  display: grid;
+  place-items: center;
+  width: 28px; height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--petrol);
+  color: var(--petrol-ink);
+  font: 500 var(--fs-mono)/1 var(--ff-mono);
+}
+
+.wa-walk__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+
+.wa-walk__name {
+  font: 600 var(--fs-title)/1.28 var(--ff-display);
+  color: var(--ink);
+  text-decoration: none;
+  text-wrap: pretty;
+}
+
+.wa-walk__name:hover { text-decoration: underline; }
+
+.wa-walk__note { font: 400 var(--fs-body)/1.5 var(--ff-ui); color: var(--ink-soft); }
+
+.wa-walk__facts {
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .03em;
+  color: var(--ink-mute);
+}
+
+.wa-walk__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-5);
+}
+
+.wa-walk__bar .wa-fact { margin-right: auto; }
+
+/* The status line carries the promise, so it is the one place a walk
+   uses the warning colour: "this route cannot promise every door is
+   open" has to look different from "good to start now". */
+.wa-note--warn { color: var(--warn); }
+.wa-note--ok   { color: var(--ink); }
+
+/* The full-width route card 5a puts on Explore, above the fold. */
+.wa-walkcard {
+  display: block;
+  padding: var(--s-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card-lg);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: var(--s-6);
+}
+
+.wa-walkcard:hover { border-color: var(--rule-strong); }
+.wa-walkcard__eyebrow {
+  font: 400 var(--fs-mono)/1 var(--ff-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--petrol);
+}
+.wa-walkcard__title {
+  font: 600 var(--fs-headline)/1.15 var(--ff-display);
+  color: var(--ink);
+  margin: var(--s-3) 0 var(--s-2);
+  text-wrap: pretty;
+}
+.wa-walkcard__blurb { font: 400 var(--fs-body)/1.5 var(--ff-ui); color: var(--ink-soft); margin: 0; }
+.wa-walkcard__facts {
+  display: block;
+  margin-top: var(--s-3);
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .03em;
+  color: var(--ink-mute);
+}
+
+/* ============================================================
    12 · COMPONENT — sheet
    One question expanded at a time. The other slots sit below as
    collapsed rows showing their current value, so you always know what

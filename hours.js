@@ -92,7 +92,31 @@
       return week;
     }
 
-    for (const rule of src.split(';')) {
+    /* OSM's separator is ';', but 10% of the venues we hold (149 of
+       1,467) write their rules comma-separated with no semicolon at all:
+       "We,Th 12:00-23:00, Fr,Sa 12:00-01:00, Su 12:00-18:00". Splitting
+       on ';' alone left those unparsed, so their rail fell back to OPEN
+       and a route could not promise anything about them.
+
+       A comma cannot just be treated as a separator: it also joins days
+       inside one rule ("Mo,We,Fr 09:00-17:00"), and it joins two ranges
+       on one day ("10:00-12:00,14:00-18:00"). Both of those must survive.
+
+       What tells a rule boundary apart is BOTH sides of the comma: it is
+       preceded by a time (or off/closed) and followed by day letters
+       carrying their own time. Keying on the lookahead alone split
+       "Mo,We,Fr 09:00-17:00" after "Mo" -- caught by testing a plain day
+       list, which is why that case is in the list below.
+
+       Written with a capture rather than a lookbehind: lookbehind is
+       still a parse-time syntax error on older Safari, and one bad regex
+       would take the whole file down rather than one venue's hours. */
+    const normalised = src.replace(
+      /(\d{1,2}:\d{2}|off|closed)\s*,\s*(?=[A-Za-z]{2,3}(?:\s*-\s*[A-Za-z]{2,3})?(?:\s*,\s*[A-Za-z]{2,3}(?:\s*-\s*[A-Za-z]{2,3})?)*\s+(?:\d{1,2}:\d{2}|off|closed))/gi,
+      '$1;'
+    );
+
+    for (const rule of normalised.split(';')) {
       const r = rule.trim();
       if (!r) continue;
 

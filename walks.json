@@ -1,0 +1,71 @@
+{
+  "_comment": [
+    "Three hand-written Tallinn routes — 6b's test, exactly as it specifies:",
+    "'No generator, no opening-hours pipeline, no route solver — three JSON",
+    "objects with an ordered list of existing pick ids, a title and a sentence.'",
+    "",
+    "Every stop here was chosen because venues.opening_hours is FILED for it.",
+    "That is the whole reason these are hand-written. 6b's risk flag is that",
+    "'the whole promise is every door is open when you reach it', and hours",
+    "are missing on half the Tallinn catalogue — a generator would pick blind",
+    "and the walk-in-progress screen would lie to someone standing outdoors.",
+    "A human curating around the gap is what makes the test honest at 2% of",
+    "the cost of building it properly.",
+    "",
+    "Stop ids are venues.id. If a venue is delisted its stop is dropped at",
+    "render time and the route re-times itself, rather than 404ing a walk.",
+    "",
+    "The number that decides this: third-stop opens. >=25% build the",
+    "generator; <10% delete it. Not opens — anyone taps a pretty card once."
+  ],
+  "routes": [
+    {
+      "id": "telliskivi-record-crawl",
+      "city": "tallinn",
+      "title": "The Telliskivi record crawl",
+      "blurb": "Ordered so every door is open when you reach it. Two record shops, a bookshop with a kitchen, and the photography centre behind them.",
+      "stops": [
+        { "id": "terminal-9799438651",
+          "note": "Start here — listening deck by the window, and they open earliest." },
+        { "id": "rahva-raamatu-resto-ja-pood-6410201352",
+          "note": "Books and a kitchen in one room. The long stop of the four." },
+        { "id": "telliskivi-kirbukas-12990956301",
+          "note": "Flea market proper. Closes earliest, so it sits third, not last." },
+        { "id": "juhan-kuus-documentary-photography-centre-6171164356",
+          "note": "Documentary photography, one room, worth the detour." }
+      ]
+    },
+    {
+      "id": "vanalinn-gallery-hour",
+      "city": "tallinn",
+      "title": "An hour of old town galleries",
+      "blurb": "Four small rooms within nine minutes of each other. All free, all quiet, none of them takes longer than fifteen minutes.",
+      "stops": [
+        { "id": "luhikese-jala-galerii-4766449656",
+          "note": "On the stairs between the upper and lower town." },
+        { "id": "navitrolla-galerii-4766432379",
+          "note": "One painter, one room. Closed Sundays." },
+        { "id": "okapi-galerii-4805720237",
+          "note": "Wednesday to Saturday only — the constraint that sets this route's days." },
+        { "id": "haus-galerii-4807369905",
+          "note": "Ends the walk near Pikk, where there is somewhere to sit." }
+      ]
+    },
+    {
+      "id": "books-and-prints",
+      "city": "tallinn",
+      "title": "Books and prints, north end",
+      "blurb": "A bookshop that keeps late hours, two galleries, and a second-hand room. Walkable in twenty minutes if you do not stop.",
+      "stops": [
+        { "id": "slothrops-640445920",
+          "note": "Open every day until seven, which is why it leads." },
+        { "id": "pikk-36-10049030459",
+          "note": "Small print gallery on Pikk." },
+        { "id": "a-galerii-640445941",
+          "note": "Estonian jewellery and object design." },
+        { "id": "raamatukoi-599674147",
+          "note": "Second-hand, and the only one open at the weekend." }
+      ]
+    }
+  ]
+}
