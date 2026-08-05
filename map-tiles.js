@@ -5,10 +5,11 @@
    zoomable vector basemap. Free tiles from OpenFreeMap (OpenStreetMap
    data, no API key, no rate limit).
 
-   Exposes window.WA.MapTiles — a thin façade so map.js doesn't need
-   to know MapLibre exists. Pin overlay (map.js) calls
-   .project(lng, lat) to convert real-world coords into container
-   pixels and positions absolute-pinned DOM nodes on top.
+   Exposes window.WA.MapTiles — a thin façade so the page scripts don't
+   need to know MapLibre exists. The pin overlay (tonight.js, since the
+   Aug 2026 redesign replaced map.js) calls .project(lng, lat) to convert
+   real-world coords into container pixels and positions absolute-pinned
+   DOM nodes on top.
 
    Style: a custom editorial style file matching WanderAlt tokens
    (cream paper, muted petrol sea, off-white roads, mono labels).

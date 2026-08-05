@@ -262,6 +262,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding-inline: var(--gutter);
 }
 
+/* Content clears the sticky bar here rather than in each page's first
+   element. Explore and Tonight had their own margin on the capsule and
+   the chip row; Saved, You, About and 404 start with a heading and had
+   nothing, so the title sat flush against the bar with a measured 0px
+   gap. One rule, and no page has to remember. Pages that open with a
+   full-bleed well opt out — the photo is meant to touch the chrome. */
+.wa-shell > :first-child { margin-top: var(--s-6); }
+.wa-shell > .wa-detail__well:first-child,
+.wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
+
 /* Screen-reader-only, for the labels a sighted reader gets from layout. */
 .wa-sr {
   position: absolute; width: 1px; height: 1px;
@@ -1312,6 +1322,30 @@ a.wa-sr:focus {
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* The offline banner. Sits under the top bar rather than over the tab
+   bar, because the toast owns that slot and only one thing may occupy
+   it — two transient bars stacked is the failure this system exists to
+   avoid. Opaque: the glass budget is already spent on the two bars. */
+.wa-offline {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 39;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--gutter);
+  background: var(--warn);
+  color: #fffdf8;
+  font: 600 var(--fs-meta)/1.4 var(--ff-ui);
+}
+
+.wa-offline__dot {
+  flex: 0 0 auto;
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+}
+
 /* ============================================================
    17 · COMPONENT — skeleton
    Matches the row grid exactly. No spinner, and no layout jump when
@@ -1402,6 +1436,51 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 .explore-scope   { margin-top: var(--s-4); }
+
+/* ============================================================
+   Saved + You (5f) — small shared pieces.
+   ============================================================ */
+
+/* A text-weight button. "Reset what you've learned about me" is an
+   action, not a link, but it should read like prose rather than sit in a
+   control row shouting for attention. */
+.wa-linkbtn {
+  padding: 0;
+  min-height: var(--tap-min);
+  background: none;
+  border: 0;
+  color: var(--petrol);
+  font: 600 var(--fs-body)/1.5 var(--ff-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Removing a save lives ON the row, so the row needs a third column and
+   the drop key needs its own hit area inside a link. */
+.wa-rows .wa-row:has(.wa-row__drop) {
+  grid-template-columns: 52px minmax(0, 1fr) var(--tap-min);
+}
+
+.wa-row__drop {
+  align-self: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+
+.wa-row__drop:hover { background: var(--petrol-tint); color: var(--ink); }
+
+/* The gone-away note carries a Remove inline, so the button sits in the
+   text rather than below it. */
+.wa-note .wa-linkbtn { font-size: inherit; min-height: 0; }
 
 /* ============================================================
    Detail + Source (6c, 3b) — one template, two data shapes.

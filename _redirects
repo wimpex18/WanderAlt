@@ -16,8 +16,13 @@ https://www.wanderalt.app/* https://wanderalt.app/:splat   301
 # DIFFERENT target (discover.html, one with a query param), so they
 # are genuine redirects Cloudflare can't infer on its own. The HTML
 # stubs still ship with redirect-on-load JS as a fallback.
-/map     /discover.html?view=map    301
-/search  /discover.html             301
+/map          /discover.html?view=map    301
+/search       /discover.html             301
+# The HTML stubs behind those two are gone (Aug 2026) — Search is a
+# sheet and the map is a mode, so neither is a page any more. The
+# extension-ful forms need their own rules now that no file answers them.
+/map.html     /discover.html?view=map    301
+/search.html  /discover.html             301
 
 # NOTE: do NOT add bare-name → *.html rules for /about, /discover,
 # /saved, /profile, /curator, /venue, /place. Cloudflare Pages already
