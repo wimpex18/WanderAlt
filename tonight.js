@@ -340,8 +340,15 @@
       title = `Nothing filed for ${WHEN_LABEL[state.when].toLowerCase()} in ${city}.`;
       body  = `The sources went quiet, which happens. ${anytime} ${anytime === 1 ? 'thing is' : 'things are'} listed across other days.`;
     } else {
-      title = `${city} has nothing listed yet.`;
-      body  = `We read the sources hourly. Places are open regardless — Explore has them.`;
+      /* 3a's thin-city case, which it calls "the normal case as you
+         expand": admit the coverage gap and fall back to places, which
+         is the whole reason Places is a first-class scope rather than a
+         filter. Naming the number is the honest part. */
+      const placeCount = (window.WA.venues || []).length;
+      title = `${city} has no listings tonight.`;
+      body  = placeCount
+        ? `We read the sources hourly and none of them filed anything. ${placeCount} places are open regardless.`
+        : `We read the sources hourly. Nothing has come in for this city yet.`;
     }
 
     return `<div class="wa-empty">
@@ -350,7 +357,10 @@
       <div class="wa-empty__actions">
         ${best ? `<button class="wa-btn wa-btn--primary" type="button" data-act="${esc(best.act)}">${esc(best.label)}</button>` : ''}
         ${state.when !== 'all' ? `<button class="wa-btn" type="button" data-act="when-all">Any time</button>` : ''}
-        <a class="wa-btn" href="./index.html">Explore</a>
+        <!-- The two 3a names them: somewhere else to look, and another
+             city. "Explore" alone made the reader go and find Places. -->
+        <a class="wa-btn${best ? '' : ' wa-btn--primary'}" href="./index.html?scope=places">Show places</a>
+        <button class="wa-btn" type="button" data-act="change-city">Change city</button>
       </div>
     </div>`;
   };
@@ -747,7 +757,7 @@
     if (hit('#sheet-clear')) {
       state.kinds.clear(); state.within = 0; state.free = false;
       state.doors = 'any'; state.hideSeen = false;
-      state.q = ''; state.bounds = null;
+      state.q = ''; state.bounds = null; state.day = '';
       /* Order lives in this sheet too, so "Clear all" resets it — it is
          not a filter, but leaving it set after a clear is a surprise. */
       state.sort = 'soonest';
@@ -763,6 +773,12 @@
       if (a === 'clear-doors')  state.doors = 'any';
       if (a === 'clear-seen')   state.hideSeen = false;
       if (a === 'when-all')     state.when = 'all';
+      /* Not a filter reset -- it reopens the Where sheet, which is the
+         one control that can actually change city. */
+      if (a === 'change-city')  { openSheet('where'); return; }
+      /* A picked day is a filter too; clearing filters must clear it or
+         the empty state offers escapes that cannot fire. */
+      if (a === 'clear-day')    state.day = '';
       render(); return;
     }
 

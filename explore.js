@@ -53,6 +53,19 @@
     _places = (window.WA.venues || []).map(v => Object.assign({ __place: true }, v));
     return _places;
   };
+  /* ?scope= so another screen can hand the reader straight to a scope.
+     3a's thin-city empty state says "166 places are open regardless" and
+     offers Show places; without this the button could only drop them on
+     Explore's default tab and leave them to find Places themselves. */
+  const readScope = () => {
+    const want = new URLSearchParams(location.search).get('scope');
+    if (!['all', 'tonight', 'places'].includes(want)) return;
+    state.scope = want;
+    document.querySelectorAll('#scope [data-scope]').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.scope === want)));
+  };
+  readScope();
+
   document.addEventListener('wa:catalog-ready', () => { _places = null; });
 
   const isFreeish = (e) => e.isFree === true ||
