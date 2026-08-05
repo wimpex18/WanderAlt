@@ -16,6 +16,14 @@
 (() => {
   'use strict';
 
+  /* Guarded: detail.html shipped without toast.js and the unguarded call
+     threw, aborting the handler it sat in -- so the list toggled, the
+     label never refreshed, and nothing said why. A missing optional
+     module must degrade, not break the interaction around it. */
+  const toast = (msg, label, undo) => {
+    if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
+  };
+
   const $   = (id) => document.getElementById(id);
   const UI  = () => window.WA.UI;
   const esc = (s) => UI().esc(s);
@@ -180,7 +188,7 @@
       const had = window.WA.Seen.ids().slice();
       window.WA.Seen.clear();
       render();
-      window.WA.Toast.show('Cleared what we had learned', 'Undo', () => {
+      toast('Cleared what we had learned', 'Undo', () => {
         had.forEach(id => window.WA.Seen.mark(id));
         render();
       });

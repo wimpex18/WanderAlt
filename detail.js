@@ -29,6 +29,14 @@
 (() => {
   'use strict';
 
+  /* Guarded: detail.html shipped without toast.js and the unguarded call
+     threw, aborting the handler it sat in -- so the list toggled, the
+     label never refreshed, and nothing said why. A missing optional
+     module must degrade, not break the interaction around it. */
+  const toast = (msg, label, undo) => {
+    if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
+  };
+
   const UI  = () => window.WA.UI;
   const esc = (s) => UI().esc(s);
   const url = (u) => UI().safeUrl(u);
@@ -188,6 +196,18 @@
   };
 
   /* ── Render ──────────────────────────────────────────────────── */
+  /* Says where the pick already is, not just what the button does --
+     "In Kalamaja day off" is the answer to the question the reader
+     actually has when they come back to a pick they saved. */
+  const listLabel = (id) => {
+    const L = window.WA.Lists;
+    if (!L) return 'Add to a list';
+    const ls = L.listsFor(id);
+    if (!ls.length) return 'Add to a list';
+    if (ls.length === 1) return `In ${ls[0].name}`;
+    return `In ${ls.length} lists`;
+  };
+
   const render = () => {
     const hit = resolve();
 
@@ -253,6 +273,11 @@
         <button class="wa-btn" type="button" id="save" aria-pressed="${saved}">
           ${saved ? 'Saved' : 'Save'}
         </button>
+        <!-- 5f's lists live here rather than on a Saved row: 5f draws no
+             per-row control, and adding one cost the title 44px and
+             pushed long picks to a third line. This is the screen where
+             the reader is already deciding about one thing. -->
+        <button class="wa-btn" type="button" id="addlist">${listLabel(e.id)}</button>
       </div>
 
       ${real(e.address) ? `<section class="wa-section">
@@ -277,7 +302,71 @@
     `;
   };
 
-  document.addEventListener('click', (e) => {
+  /* ── The add-to-list sheet ──────────────────────────────────
+   Same shape as everywhere else: the lists this pick is already in,
+   checked, then one field to name a new one. */
+const listSheet = (pickId) => {
+  const d = document.getElementById('sheet');
+  const L = window.WA.Lists;
+  if (!d || !L) return;
+  const esc2 = window.WA.UI.esc;
+  const lists = L.forCity(window.WA.CITY);
+  const inThem = new Set(L.listsFor(pickId).map(l => l.id));
+
+  document.getElementById('sheet-body').innerHTML = `
+    ${lists.length ? `<div class="wa-chips">${lists.map(l => `
+      <button class="wa-chip" type="button" data-toggle-list="${esc2(l.id)}"
+              aria-pressed="${inThem.has(l.id)}">${esc2(l.name)}</button>`).join('')}</div>`
+      : `<p class="wa-detail__note">No lists yet. Name one and this goes straight into it.</p>`}
+    <div class="wa-field" style="margin-top:var(--s-5)">
+      <label class="wa-field__label" for="list-name">New list</label>
+      <input class="wa-input" id="list-name" type="text" maxlength="60"
+             placeholder="Kalamaja day off" autocomplete="off">
+    </div>`;
+  document.getElementById('sheet-foot').innerHTML =
+    `<button class="wa-btn wa-btn--primary" type="button" id="list-create" style="flex:1">Create and add</button>`;
+  d.showModal();
+};
+
+document.addEventListener('click', (e) => {
+  const L = window.WA.Lists;
+  const id = new URLSearchParams(location.search).get('id') || '';
+
+  if (e.target.closest && e.target.closest('#sheet-close')) {
+    const d = document.getElementById('sheet'); if (d && d.open) d.close();
+    return;
+  }
+  if (e.target.closest && e.target.closest('#addlist')) { listSheet(id); return; }
+
+  const tog = e.target.closest && e.target.closest('[data-toggle-list]');
+  if (tog && L) {
+    const listId = tog.dataset.toggleList;
+    const on = tog.getAttribute('aria-pressed') === 'true';
+    if (on) L.removeItem(listId, id); else L.add(listId, id);
+    tog.setAttribute('aria-pressed', String(!on));
+    const l = L.byId(listId);
+    if (!on && l) toast(`Saved to ${l.name}`, 'Undo', () => {
+      L.removeItem(listId, id); render();
+    });
+    render();
+    return;
+  }
+
+  if (e.target.closest && e.target.closest('#list-create') && L) {
+    const input = document.getElementById('list-name');
+    const newId = L.create(input ? input.value : '');
+    if (!newId) { if (input) input.focus(); return; }
+    L.add(newId, id);
+    const d = document.getElementById('sheet'); if (d && d.open) d.close();
+    render();
+    toast(`Saved to ${L.byId(newId).name}`, 'Undo', () => {
+      L.remove(newId); render();
+    });
+    return;
+  }
+});
+
+document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('#save');
     if (b) {
       const hit = resolve();

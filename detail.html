@@ -36,6 +36,8 @@
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
+  <script defer src="./lists.js"></script>
+  <script defer src="./toast.js"></script>
   <script defer src="./follow.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./detail.js"></script>
@@ -72,6 +74,20 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
     </a>
   </nav>
+
+  <!-- Add-to-list. Same sheet component as every other screen. -->
+  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="wa-sheet__panel">
+      <div class="wa-sheet__head">
+        <h2 class="wa-sheet__title" id="sheet-title">Add to a list</h2>
+        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="wa-sheet__body" id="sheet-body"></div>
+      <div class="wa-sheet__foot" id="sheet-foot"></div>
+    </div>
+  </dialog>
 
 </body>
 </html>
