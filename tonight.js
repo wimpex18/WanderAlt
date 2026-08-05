@@ -208,12 +208,25 @@
     return !isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0;
   };
 
+  /* A rail prints a clock ONLY when a clock can actually be parsed.
+     Trusting the string instead put "00:00" on a record store whose time
+     field reads "open daily", a thrift shop reading "Wed-Sun" and a
+     gallery reading "ongoing" -- prose the parser returns null for,
+     which the formatter then rendered as midnight. Places do not have a
+     start time at all; they have opening hours, and 3a says such a row
+     prints OPEN.
+
+     Midnight is also treated as absent. "00:00" is the pipeline's null
+     wearing the display field's clothes, and a timestamp landing exactly
+     on midnight UTC is a date the source gave without a time -- that is
+     what had eleven exhibitions claiming to start at three in the
+     morning. A genuine midnight start loses its clock and shows the day
+     instead, which is much cheaper than a shop that opens at 00:00. */
   const hasStatedTime = (e) => {
-    if (real(e.time)) return true;
-    if (!e.startsAt) return false;
-    if (isMidnightUTC(e.startsAt)) return false;
     const m = doorsMinutes(e);
-    return m != null && m !== 0;
+    if (m == null || m === 0) return false;
+    if (e.startsAt && isMidnightUTC(e.startsAt)) return false;
+    return true;
   };
 
   const railFor = (e) => {
@@ -231,7 +244,12 @@
     if (isToday) return { time: 'TON', now: true };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
-    return { time: '', now: false };
+    /* No time and no date at all -- a run-until-October exhibition, or a
+       place. 3a: "The rail prints OPEN and the row sorts into an Anytime
+       group. It never claims a time we don't have." It used to print an
+       empty string, which left the loudest column on the row blank on
+       exactly the entries that most needed orienting. */
+    return { time: 'OPEN', now: false };
   };
 
   /* The pipeline writes literal placeholders when the LLM could not read
@@ -245,12 +263,15 @@
     return s && !PLACEHOLDER.test(s) ? s : '';
   };
 
-  const metaFor = (e) => {
+  /* `areaInRail` is set when the rail has already taken the
+     neighbourhood as its distance fallback, so the meta line drops it
+     rather than printing the same word twice on one row. */
+  const metaFor = (e, areaInRail) => {
     const venue = real(e.venue);
     const area  = real(e.neighborhood);
     const price = UI().priceLabel ? UI().priceLabel(e) : '';
     const where = venue || (area ? '' : 'venue not yet named');
-    return [real(e.kind), where, area, price].filter(Boolean).join(' · ');
+    return [real(e.kind), where, areaInRail ? '' : area, price].filter(Boolean).join(' · ');
   };
 
   /* The optional far-right photo, desktop only (CSS hides it below
@@ -268,7 +289,15 @@
 
   const row = (e) => {
     const rail = railFor(e);
-    const dist = window.WA.Geo.distanceLabel(e);
+    /* 3a, location refused: "the distance slot degrades to the street
+       name -- still an orientation aid, still one line, no layout shift
+       when permission is granted later." We hold a neighbourhood rather
+       than a street, so that is what stands in. The slot is never empty,
+       which is what keeps the rail from collapsing to one line and
+       reflowing the moment permission arrives. */
+    const measured = window.WA.Geo.distanceLabel(e);
+    const area     = real(e.neighborhood);
+    const dist     = measured || area;
     const desc = e.description || e.quote || '';
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">
@@ -278,7 +307,7 @@
       <span class="wa-row__body">
         <span class="wa-row__title">${esc(e.title || '')}</span>
         ${desc ? `<span class="wa-row__desc">${esc(desc)}</span>` : ''}
-        <span class="wa-row__meta">${esc(metaFor(e))}</span>
+        <span class="wa-row__meta">${esc(metaFor(e, !measured && !!area))}</span>
       </span>
       ${media(e)}
     </a></li>`;

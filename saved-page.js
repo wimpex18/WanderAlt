@@ -82,18 +82,32 @@
      "will I still be here" rather than "what time". */
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
+  /* OPEN, not ANY, and never an empty rail. 3a's rule is
+     page-independent: a row with no date prints OPEN rather than
+     claiming a time we do not have. Saved used to say ANY for places and
+     nothing at all for undated events -- two words and a blank for one
+     idea, on the screen where the reader is comparing rows most
+     directly. */
   const railFor = (e) => {
-    if (e.__place) return 'ANY';
+    if (e.__place) return 'OPEN';
     if (window.WA.when.isTonight(e)) return 'TON';
     const k = window.WA.when.resolveKey(e);
-    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : '';
+    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
   };
 
   const row = (e) => {
     const title = e.__place ? (e.name || '') : (e.title || '');
-    const dist  = window.WA.Geo.distanceLabel(e);
-    const meta  = [real(e.kind), e.__place ? real(e.neighborhood) : real(e.venue), real(e.time)]
-      .filter(Boolean).join(' · ');
+    /* Same degradation as Tonight: with no permission the distance slot
+       falls back to the area so the rail keeps its second line and does
+       not reflow when permission arrives later. */
+    const measured = window.WA.Geo.distanceLabel(e);
+    const area     = real(e.neighborhood);
+    const dist     = measured || area;
+    const meta  = [
+      real(e.kind),
+      e.__place ? (measured ? real(e.neighborhood) : '') : real(e.venue),
+      real(e.time),
+    ].filter(Boolean).join(' · ');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
       <span class="wa-row__rail">
         <span class="wa-row__time${window.WA.when.isTonight(e) ? ' wa-row__time--now' : ''}">${esc(railFor(e))}</span>
