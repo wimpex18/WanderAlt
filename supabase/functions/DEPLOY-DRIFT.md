@@ -63,9 +63,10 @@ Three commits had landed in the repo without reaching production.
 
 | function | deployed | missing | severity |
 | --- | --- | --- | --- |
-| `classify-moods` | 3 Jul | `df25819` model repoint | dead model, but it served Mood, which the redesign **deleted**. Nothing calls it. Retire rather than deploy. |
-| `draft-column` | 15 Jul | `df25819` model repoint | same dead model; `draft-column-weekly` stays off until it is repointed |
-| `match-pick` | 26 Jul | `df25819` model repoint | dead model, served the Concierge, which the redesign **deleted**. Nothing calls it. Retire rather than deploy. |
+| `draft-column` | 15 Jul | `df25819` model repoint | dead Groq model; still called from `admin.js`, so it is a live admin feature. `draft-column-weekly` stays off until it is repointed. **The only real drift left.** |
+
+`classify-moods` and `match-pick` were **retired**, not deployed. See the
+tombstone note below.
 
 `ingest-hanzas-perons` cleared itself: it is deployed and its 03:50 cron
 inserted 3 rows on 5 Aug, so the payload contract is live.
@@ -76,6 +77,27 @@ inserted 3 rows on 5 Aug, so the payload contract is live.
 | --- | --- | --- |
 | `send-digest` | **v16**, `verify_jwt` false → **true** | the XSS escaping fix, plus the redesign catch-up and a live open-relay fix (below) |
 | `geocode-picks` | **v11** | multi-city sweep; the cron could only ever reach Tallinn |
+| `classify-moods` | **v9**, tombstone, `verify_jwt` → **true** | Mood is deleted; nothing calls it |
+| `match-pick` | **v16**, tombstone, `verify_jwt` → **true** | the Concierge is deleted; nothing calls it |
+
+### Retiring a function is not the same as deleting its directory
+
+`classify-moods` and `match-pick` served Mood and the Concierge, both of
+which the redesign deleted. Nothing calls either one — no page script, no
+cron, no other function. The instinct is to `rm -rf` the directory, and
+that would have been the wrong move: **deleting the source does not
+undeploy anything.** Both would have kept answering on their public URLs
+at `verify_jwt:false` — unauthenticated, LLM-calling endpoints spending
+free-tier quota for features that no longer exist.
+
+So each is now a ~30-line tombstone that returns 410 and costs nothing,
+deployed at `verify_jwt:true`, with the real implementation left in git
+history. Verified: unauthenticated → 401 at the edge, anon key → 410 with
+a body naming the feature and the date.
+
+The MCP tool set has `deploy` / `get` / `list` but **no delete**, so
+removing them for good is a dashboard action. Do that, then delete the
+two directories.
 
 ## The open relay, and what it says about `verify_jwt`
 

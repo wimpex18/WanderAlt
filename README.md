@@ -73,8 +73,8 @@ Deployed during the Aug 2026 audit: `ingest-fienta`, `ingest-ra`, `ingest-kinobi
 | ~~`send-digest`~~ | — | **cleared 5 Aug 2026**: deployed at v16 with the XSS fix, the redesign catch-up, and an open-relay fix. Cron is live. |
 | `ingest-hanzas-perons` | payload contract | Riga events land without a timestamp |
 | `draft-column` | Groq model repoint | still pinned to the decommissioned `llama-4-scout`; **cron held off** |
-| `classify-moods` | none — retire it | served Mood, which the redesign deleted. Nothing calls it. |
-| `match-pick` | none — retire it | served the Concierge, which the redesign deleted. Nothing calls it. |
+| ~~`classify-moods`~~ | — | **retired 5 Aug 2026**: 410 tombstone, `verify_jwt:true`. Delete in the dashboard to finish the job. |
+| ~~`match-pick`~~ | — | **retired 5 Aug 2026**: 410 tombstone, `verify_jwt:true`. Delete in the dashboard to finish the job. |
 
 Deploy through the Supabase MCP `deploy_edge_function` tool — there is no `supabase` CLI here — and **preserve each function's existing `verify_jwt`**. It is not uniform, and a `verify_jwt: true` function called by a cron through raw `net.http_post` returns 401, which is why healthy crons go through `public.invoke_wa_fn(fn)`.
 
