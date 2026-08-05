@@ -1305,7 +1305,15 @@ a.wa-sr:focus {
    reader the filter exists and is empty, which a missing chip doesn't. */
 .wa-chip[data-count="0"] { opacity: .5; }
 
-.wa-chip:disabled { cursor: default; }
+/* 2a: zeroes are disabled, not hidden. Dimmed rather than removed so a
+   reader can see that the kind exists and simply has nothing in this
+   window -- "nothing tonight", not "no such thing". */
+.wa-chip:disabled {
+  cursor: default;
+  opacity: .45;
+  border-style: dashed;
+}
+.wa-chip:disabled:hover { background: none; }
 
 /* Segmented control — Doors after: now / 21:00 / 23:00 / any */
 .wa-segment {
@@ -1954,6 +1962,31 @@ a.wa-sr:focus {
 
 /* One glass layer per screen is already spent on the chrome, so this bar
    is opaque. */
+/* The drawer 2a asks for: the picks currently in view, under the bar.
+   "A mode is never empty" -- a map with pins and no names is a puzzle,
+   and this is what makes tapping a pin optional rather than required.
+   Capped in height so the map itself stays the larger half. */
+.tonight-map__drawer {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 3;
+  max-height: 42%;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 var(--gutter) var(--s-3);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-hair);
+}
+
+.tonight-map__drawer:empty { display: none; }
+
+/* Rows inside the drawer are the same component, just tighter -- the
+   drawer is a peek, not a second list. */
+.tonight-map__drawer .wa-row { padding: var(--s-3) 0; }
+.tonight-map__drawer .wa-row__desc { display: none; }
+
 .tonight-map__bar {
   position: absolute;
   inset-inline: 0;

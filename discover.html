@@ -102,10 +102,14 @@
       <div class="tonight-map" id="map-pane" hidden>
         <div class="tonight-map__canvas" id="map-canvas"></div>
         <button class="wa-btn wa-map-refresh" type="button" id="search-area" hidden>Search this area</button>
+        <!-- 2a: "a mode is never empty" -- the map carries a way out, a
+             way to re-query what you can see, and a DRAWER with the
+             picks in view. 5d draws that drawer with real rows. -->
         <div class="tonight-map__bar" id="map-bar">
           <span class="wa-fact wa-fact--strong" id="map-count"></span>
           <button class="wa-btn wa-btn--quiet" type="button" id="show-list">Show list</button>
         </div>
+        <ul class="tonight-map__drawer wa-rows" id="map-drawer" aria-label="In view"></ul>
       </div>
     </div>
 

@@ -281,7 +281,12 @@
     const area  = real(e.neighborhood);
     const price = UI().priceLabel ? UI().priceLabel(e) : '';
     const where = venue || (area ? '' : 'venue not yet named');
-    return [real(e.kind), where, areaInRail ? '' : area, price].filter(Boolean).join(' · ');
+    /* 1b and 2b both close the desktop metadata line with a provenance
+       token -- "via fienta". Provenance replaced personality when
+       curators went, so the row has to say where it read this. The
+       handle names a feed, not a person. */
+    const via = real(e.handle) ? `via ${real(e.handle).replace(/^@/, '')}` : '';
+    return [real(e.kind), where, areaInRail ? '' : area, price, via].filter(Boolean).join(' · ');
   };
 
   /* The optional far-right photo, desktop only (CSS hides it below
@@ -308,7 +313,15 @@
     const measured = window.WA.Geo.distanceLabel(e);
     const area     = real(e.neighborhood);
     const dist     = measured || area;
-    const desc = e.description || e.quote || '';
+    /* 2b: "A missing description gets a sentence, not blank space. Row
+       two says, in the product's own voice, that the venue filed one
+       line. That is a real editorial position for an automated
+       catalogue: say what we know and what we don't, in the same
+       register." Blank was the one thing it must not be. */
+    const venueWord = real(e.venue);
+    const desc = e.description || e.quote ||
+      (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
+                 : 'No description filed by the source.');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">
         <span class="wa-row__time${rail.now ? ' wa-row__time--now' : ''}">${esc(rail.time)}</span>
@@ -514,6 +527,27 @@
       $('map-count').textContent = n === total
         ? `${n} ${n === 1 ? 'pin' : 'pins'}`
         : `${n} of ${total} placed`;
+
+      /* The drawer (2a: "a mode is never empty"; 5d draws it with real
+         rows). Same row component as the list, so a pin is never the
+         only way to learn what something is. Clipped to what the
+         viewport actually holds when the map has been moved, because
+         the bar above already says how many that is. */
+      const drawer = $('map-drawer');
+      if (drawer) {
+        /* Same source "search this area" reads, so the drawer and that
+           button can never disagree about what "in view" means. */
+        const m = t.getMap && t.getMap();
+        const mb = m && m.getBounds && m.getBounds();
+        const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
+        const inView = b
+          ? entries.filter(e => {
+              const c = window.WA.Geo.coordsFor(e);
+              return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
+            })
+          : entries;
+        drawer.innerHTML = inView.slice(0, 12).map(row).join('');
+      }
     };
 
     const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries); };
@@ -553,12 +587,21 @@
   const kindOptions = () => {
     const base = applyFilters(picks(), 'kind');
     const map = new Map();
+
+    /* 2a: "Counts on every option, zeroes disabled not hidden." Every
+       kind the city has appears, whatever the current window returns --
+       a kind that vanishes from the sheet cannot be reasoned about, and
+       the reader is left wondering whether they imagined it. The zeroes
+       come back disabled below, which says "nothing tonight" rather
+       than "no such thing". */
+    for (const e of picks()) {
+      const k = String(e.kind || '').toLowerCase();
+      if (k) map.set(k, 0);
+    }
     for (const e of base) {
       const k = String(e.kind || '').toLowerCase();
       if (k) map.set(k, (map.get(k) || 0) + 1);
     }
-    /* A zero-count kind that is currently selected still shows, so you
-       can see why the list is empty and turn it off. */
     for (const k of state.kinds) if (!map.has(k)) map.set(k, 0);
     return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   };
@@ -598,7 +641,8 @@
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
           ${kinds.map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}"
-             aria-pressed="${state.kinds.has(k)}" data-count="${n}">${esc(k)}
+             aria-pressed="${state.kinds.has(k)}" data-count="${n}"
+             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}>${esc(k)}
              <span class="wa-chip__count">${n}</span></button>`).join('')
            || '<span class="wa-field__consequence">Nothing filed for this window.</span>'}
         </div>
@@ -693,7 +737,7 @@
     $('sheet-body').innerHTML = `<div class="wa-field"><span class="wa-field__label">When</span><div class="wa-chips">${
       opts.map(v => {
         const n = picks().filter(e => window.WA.when.matches(e, v)).length;
-        return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}" data-count="${n}">${esc(WHEN_LABEL[v])} <span class="wa-chip__count">${n}</span></button>`;
+        return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}" data-count="${n}"${n === 0 && state.when !== v ? ' disabled aria-disabled="true"' : ''}>${esc(WHEN_LABEL[v])} <span class="wa-chip__count">${n}</span></button>`;
       }).join('')}</div></div>`;
     $('sheet-foot').innerHTML = sheetFoot();
     if (!sheet.open) sheet.showModal();
