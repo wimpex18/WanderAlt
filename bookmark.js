@@ -88,6 +88,11 @@ window.WA.Bookmarks = (() => {
     else delete store[id];
     _save(store);
 
+    /* Unsaving has to drop the pick from every list too, or Saved shows
+       a list containing something the reader has just unsaved. Guarded
+       because bookmark.js loads on pages that do not carry lists.js. */
+    if (!val && window.WA.Lists) window.WA.Lists.purge(id);
+
     /* Fire and forget cloud sync. */
     if (val) upsertCloud(id);
     else     deleteCloud(id);

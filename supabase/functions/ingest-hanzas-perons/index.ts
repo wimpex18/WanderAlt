@@ -1,5 +1,10 @@
 // ============================================================
-// ingest-hanzas-perons  v6
+// ingest-hanzas-perons  v7
+// v7 (Aug 2026): restore `text` on the staging row. The v6 payload work
+//   removed it and left composeText() orphaned, so this file as committed
+//   would have staged rows with no prose for process-staging to read.
+//   The deployed v9 predated that change and still set it, which is why
+//   nothing looked wrong until this was deployed.
 // v6 (Jul 2026): staging_messages POST was missing
 //   ?on_conflict=channel,message_id, so PostgREST couldn't resolve
 //   repeat-event conflicts and returned raw 409s (logged as errors on
@@ -207,6 +212,13 @@ async function upsertEvent(
     source_id:  sourceId,
     channel:    CHANNEL,
     message_id: mid,
+    /* The prose process-staging hands the model. Adding `payload` in
+       3190013 dropped this line, leaving composeText() defined and
+       never called -- so the repo version would have staged Riga rows
+       with a null text and nothing for the LLM to read. Caught on
+       deploy, Aug 2026: the live v9 still set it, which is the only
+       reason Riga ingestion was not already broken. */
+    text:       composeText(e, when),
     /* The only source in the fleet that publishes a price. It arrives as a
        display string ("15 EUR", "no 10 €", "Bezmaksas"), so parsePrice
        below keeps the raw text too — a number we could not parse is worth

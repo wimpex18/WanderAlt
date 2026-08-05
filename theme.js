@@ -66,10 +66,11 @@
   };
 
   /* The browser chrome colour has to match the ground the page actually
-     paints, and two grounds exist during the migration: wa.css uses
-     #f2efe6 by day, the pages still on styles.css use #f4f1e8. Hard-
-     coding either mis-tints half the product, and would rot again the
-     next time a ground value moves.
+     paints. wa.css uses #f2efe6 by day and #0a1011 at night, but hard-
+     coding either mis-tints anything that does not, and rots the next
+     time a ground value moves — which is exactly what happened during
+     the migration, when half the pages were still on a stylesheet with
+     a different cream.
 
      Ask the page rather than guess. --ground is wa.css's token; if it is
      absent this is an un-migrated page, and the honest answer is what

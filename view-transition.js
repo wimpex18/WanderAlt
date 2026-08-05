@@ -1,20 +1,39 @@
 /* ============================================================
-   WanderAlt — card → venue-hero View Transition (cross-document)
+   WanderAlt — card → detail hero View Transition (cross-document)
    ------------------------------------------------------------
-   View Transitions are enabled globally (@view-transition in styles.css);
-   the topbar + nav already carry view-transition-names so chrome morphs.
-   This adds a SHARED-ELEMENT morph: clicking a photo card (or the Tonight
-   hero) that navigates to venue.html tags the source photo with
-   `view-transition-name: venue-hero`, which pairs with venue.html's
-   `.detail-hero` (same name) — so the photo expands into the detail hero.
+   Cross-document transitions are enabled globally by @view-transition
+   in wa.css, where the top bar and tab bar also carry stable
+   view-transition-names so the chrome morphs instead of cross-fading.
 
-   Only one element is ever tagged (we clear any prior first), modifier-
-   click / new-tab is ignored, reduced-motion skips tagging entirely, and
-   on unsupported browsers setting the property is a harmless no-op (the
-   navigation just happens instantly). Load on the source pages
-   (index / discover / saved) only — venue.html just needs the CSS name.
+   This file adds the SHARED-ELEMENT half: clicking a card that
+   navigates to detail.html tags that card's photo with
+   `view-transition-name: venue-hero`, which pairs with the same name on
+   detail.html's `.wa-detail__photo` — so the photo expands into the
+   hero rather than the page fading.
+
+   Rewritten Aug 2026, because every line of it had rotted quietly. It
+   targeted `a[href*="venue.html"]` (a page the redesign merged into
+   detail.html), read a rule from styles.css (deleted in the cutover),
+   and hunted for `.pick`, `.list-row--card`, `.thumb`, `.tonight__hero`
+   and `.tonight__photo` — five Dusk Glass class names, none of which
+   any module emits any more. The file still loaded on six pages and did
+   nothing at all. Nothing surfaces a dead listener, which is exactly
+   why it survived the reskin.
+
+   The new markup is simpler: `.wa-card` IS the anchor, so the photo is
+   just a descendant of the clicked link. Cards without a photo render a
+   `.wa-mark` glyph instead and are deliberately left untagged — morphing
+   a category glyph into a photograph reads as a glitch, so those fall
+   through to the default cross-fade.
+
+   Only one element is ever tagged (any prior is cleared first), modifier
+   and middle clicks are ignored, reduced-motion skips tagging, and on
+   browsers without the API setting the property is a harmless no-op —
+   the navigation just happens instantly.
    ============================================================ */
 (() => {
+  'use strict';
+
   const NAME = 'venue-hero';
 
   const clearAll = () =>
@@ -25,26 +44,19 @@
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
 
-    const link = e.target.closest('a[href*="venue.html"]');
+    const link = e.target.closest('a[href*="detail.html"]');
     if (!link || link.target === '_blank') return;
 
-    /* Source = the Tonight hero itself, else the photo .thumb of the
-       clicked card. Plain list rows (e.g. venue "more from") have no
-       .thumb, so they fall through to a default cross-fade. */
-    let source = null;
-    if (link.classList.contains('tonight__hero') || link.classList.contains('tonight__photo')) {
-      source = link;
-    } else {
-      const card = link.closest('.pick, .list-row--card');
-      source = card && card.querySelector('.thumb');
-    }
-    if (source) {
-      clearAll();
-      source.style.viewTransitionName = NAME;
-    }
+    /* The card is the anchor, so the photo is inside the link itself.
+       Rows and photoless cards return null and cross-fade instead. */
+    const source = link.querySelector('.wa-card__photo');
+    if (!source) return;
+
+    clearAll();
+    source.style.viewTransitionName = NAME;
   }, true);   /* capture, so the name is set before the navigation snapshot */
 
   /* Back/forward (bfcache) restore: drop any leftover inline name so the
-     next click can't collide with a stale one. */
+     next click cannot collide with a stale one. */
   window.addEventListener('pageshow', clearAll);
 })();

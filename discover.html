@@ -33,11 +33,13 @@
   <script defer src="./marks.js"></script>
   <script defer src="./seen.js"></script>
   <script defer src="./share.js"></script>
+  <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
+  <script defer src="./lists.js"></script>
   <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
   <script defer src="./view-transition.js"></script>
@@ -81,6 +83,12 @@
     <!-- The headline is a count, not a title. It answers the question the
          reader arrived with, and it is generated, so it never leaves a
          hole when a photo or a hero pick is missing. -->
+    <!-- The seven-day density strip (1b, re-housed as Tonight's header
+         by 5b). It says what a list cannot: which nights are worth
+         waiting for. Renders above the headline because it frames the
+         count rather than annotating it. -->
+    <ul class="wa-density" id="density" aria-label="The next seven days"></ul>
+
     <h1 class="wa-headline" id="results-title">Reading the sources</h1>
     <p class="wa-section-sub" id="results-sub">ONE MOMENT</p>
 
@@ -94,10 +102,14 @@
       <div class="tonight-map" id="map-pane" hidden>
         <div class="tonight-map__canvas" id="map-canvas"></div>
         <button class="wa-btn wa-map-refresh" type="button" id="search-area" hidden>Search this area</button>
+        <!-- 2a: "a mode is never empty" -- the map carries a way out, a
+             way to re-query what you can see, and a DRAWER with the
+             picks in view. 5d draws that drawer with real rows. -->
         <div class="tonight-map__bar" id="map-bar">
           <span class="wa-fact wa-fact--strong" id="map-count"></span>
           <button class="wa-btn wa-btn--quiet" type="button" id="show-list">Show list</button>
         </div>
+        <ul class="tonight-map__drawer wa-rows" id="map-drawer" aria-label="In view"></ul>
       </div>
     </div>
 

@@ -30,6 +30,10 @@
      same thing on both screens. `within` is metres (the new contract). */
   const state = {
     when:   'tonight',
+    /* An exact YYYY-MM-DD from the density strip. When set it overrides
+       `when`, because "Thursday" is a more specific answer than "this
+       week" and the reader picked it deliberately. */
+    day:    '',
     what:   'all',
     kinds:  new Set(),
     within: 0,
@@ -62,6 +66,7 @@
   const readParams = () => {
     const sp = new URLSearchParams(location.search);
 
+    if (sp.get('date') && /^\d{4}-\d{2}-\d{2}$/.test(sp.get('date'))) state.day = sp.get('date');
     if (sp.get('time'))  state.when   = sp.get('time');
     if (sp.get('q'))     state.q      = sp.get('q');
     if (sp.get('sort'))  state.sort   = sp.get('sort');
@@ -78,7 +83,11 @@
 
   const writeParams = () => {
     const sp = new URLSearchParams();
-    if (state.when !== 'tonight') sp.set('time', state.when);
+    /* A picked day is a filter, so it round-trips like one. Without this
+       the strip was the only control on the page whose state a shared
+       link silently dropped. */
+    if (state.day)                sp.set('date', state.day);
+    else if (state.when !== 'tonight') sp.set('time', state.when);
     if (state.q)                  sp.set('q', state.q);
     if (state.sort !== 'soonest') sp.set('sort', state.sort);
     if (state.kinds.size)         sp.set('cat', [...state.kinds].join(','));
@@ -113,7 +122,13 @@
      `skip` lets a facet exclude itself when counting its own options. */
   const applyFilters = (list, skip) => {
     const geo = window.WA.Geo;
-    let out = list.filter(e => window.WA.when.matches(e, state.when));
+    /* skip === 'when' is what the density strip passes: it needs the
+       whole week under the OTHER filters, then counts each day itself. */
+    let out = skip === 'when'
+      ? list.slice()
+      : state.day
+        ? list.filter(e => window.WA.when.isOnDate(e, state.day))
+        : list.filter(e => window.WA.when.matches(e, state.when));
     if (skip !== 'kind' && state.kinds.size) {
       out = out.filter(e => state.kinds.has(String(e.kind || '').toLowerCase()));
     }
@@ -193,12 +208,25 @@
     return !isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0;
   };
 
+  /* A rail prints a clock ONLY when a clock can actually be parsed.
+     Trusting the string instead put "00:00" on a record store whose time
+     field reads "open daily", a thrift shop reading "Wed-Sun" and a
+     gallery reading "ongoing" -- prose the parser returns null for,
+     which the formatter then rendered as midnight. Places do not have a
+     start time at all; they have opening hours, and 3a says such a row
+     prints OPEN.
+
+     Midnight is also treated as absent. "00:00" is the pipeline's null
+     wearing the display field's clothes, and a timestamp landing exactly
+     on midnight UTC is a date the source gave without a time -- that is
+     what had eleven exhibitions claiming to start at three in the
+     morning. A genuine midnight start loses its clock and shows the day
+     instead, which is much cheaper than a shop that opens at 00:00. */
   const hasStatedTime = (e) => {
-    if (real(e.time)) return true;
-    if (!e.startsAt) return false;
-    if (isMidnightUTC(e.startsAt)) return false;
     const m = doorsMinutes(e);
-    return m != null && m !== 0;
+    if (m == null || m === 0) return false;
+    if (e.startsAt && isMidnightUTC(e.startsAt)) return false;
+    return true;
   };
 
   const railFor = (e) => {
@@ -216,7 +244,22 @@
     if (isToday) return { time: 'TON', now: true };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
-    return { time: '', now: false };
+    /* A place with filed hours gets the arrow form 1a specifies: "→02
+       for a place open until two". That is the fact that decides whether
+       it is worth walking there, so it outranks the generic word. SHUT
+       when the hours are known and it is closed -- printing OPEN over a
+       closed shop is the same class of lie as printing a time we do not
+       have. */
+    const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
+    if (h) return { time: h, now: h === '24H' || h.charAt(0) === '\u2192' };
+
+    /* No hours filed, no time, no date -- a run-until-October
+       exhibition, or a place we know nothing about. 3a: "The rail prints
+       OPEN and the row sorts into an Anytime group. It never claims a
+       time we don't have." OPEN here means ongoing, not open right now.
+       It used to print an empty string, which left the loudest column on
+       the row blank on exactly the entries that most needed orienting. */
+    return { time: 'OPEN', now: false };
   };
 
   /* The pipeline writes literal placeholders when the LLM could not read
@@ -230,18 +273,55 @@
     return s && !PLACEHOLDER.test(s) ? s : '';
   };
 
-  const metaFor = (e) => {
+  /* `areaInRail` is set when the rail has already taken the
+     neighbourhood as its distance fallback, so the meta line drops it
+     rather than printing the same word twice on one row. */
+  const metaFor = (e, areaInRail) => {
     const venue = real(e.venue);
     const area  = real(e.neighborhood);
     const price = UI().priceLabel ? UI().priceLabel(e) : '';
     const where = venue || (area ? '' : 'venue not yet named');
-    return [real(e.kind), where, area, price].filter(Boolean).join(' · ');
+    /* 1b and 2b both close the desktop metadata line with a provenance
+       token -- "via fienta". Provenance replaced personality when
+       curators went, so the row has to say where it read this. The
+       handle names a feed, not a person. */
+    const via = real(e.handle) ? `via ${real(e.handle).replace(/^@/, '')}` : '';
+    return [real(e.kind), where, areaInRail ? '' : area, price, via].filter(Boolean).join(' · ');
+  };
+
+  /* The optional far-right photo, desktop only (CSS hides it below
+     1024). Emitted only when there is a real image — no element means
+     no third grid cell, so a photoless row reads as "no photo" rather
+     than leaving a gap. Never a placeholder here: a 96px glyph on every
+     row of a timetable is noise, and the rail already carries the kind. */
+  const media = (e) => {
+    const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
+    if (!src) return '';
+    return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
+      loading="lazy" decoding="async"
+      src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
   };
 
   const row = (e) => {
     const rail = railFor(e);
-    const dist = window.WA.Geo.distanceLabel(e);
-    const desc = e.description || e.quote || '';
+    /* 3a, location refused: "the distance slot degrades to the street
+       name -- still an orientation aid, still one line, no layout shift
+       when permission is granted later." We hold a neighbourhood rather
+       than a street, so that is what stands in. The slot is never empty,
+       which is what keeps the rail from collapsing to one line and
+       reflowing the moment permission arrives. */
+    const measured = window.WA.Geo.distanceLabel(e);
+    const area     = real(e.neighborhood);
+    const dist     = measured || area;
+    /* 2b: "A missing description gets a sentence, not blank space. Row
+       two says, in the product's own voice, that the venue filed one
+       line. That is a real editorial position for an automated
+       catalogue: say what we know and what we don't, in the same
+       register." Blank was the one thing it must not be. */
+    const venueWord = real(e.venue);
+    const desc = e.description || e.quote ||
+      (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
+                 : 'No description filed by the source.');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">
         <span class="wa-row__time${rail.now ? ' wa-row__time--now' : ''}">${esc(rail.time)}</span>
@@ -249,9 +329,11 @@
       </span>
       <span class="wa-row__body">
         <span class="wa-row__title">${esc(e.title || '')}</span>
-        ${desc ? `<span class="wa-row__desc">${esc(desc)}</span>` : ''}
-        <span class="wa-row__meta">${esc(metaFor(e))}</span>
+        ${desc ? `<span class="wa-row__desc" data-desc>${esc(desc)}</span>` : ''}
+        ${desc.length > 150 ? `<button class="wa-row__more" type="button" data-more>more</button>` : ''}
+        <span class="wa-row__meta">${esc(metaFor(e, !measured && !!area))}</span>
       </span>
+      ${media(e)}
     </a></li>`;
   };
 
@@ -282,8 +364,15 @@
       title = `Nothing filed for ${WHEN_LABEL[state.when].toLowerCase()} in ${city}.`;
       body  = `The sources went quiet, which happens. ${anytime} ${anytime === 1 ? 'thing is' : 'things are'} listed across other days.`;
     } else {
-      title = `${city} has nothing listed yet.`;
-      body  = `We read the sources hourly. Places are open regardless — Explore has them.`;
+      /* 3a's thin-city case, which it calls "the normal case as you
+         expand": admit the coverage gap and fall back to places, which
+         is the whole reason Places is a first-class scope rather than a
+         filter. Naming the number is the honest part. */
+      const placeCount = (window.WA.venues || []).length;
+      title = `${city} has no listings tonight.`;
+      body  = placeCount
+        ? `We read the sources hourly and none of them filed anything. ${placeCount} places are open regardless.`
+        : `We read the sources hourly. Nothing has come in for this city yet.`;
     }
 
     return `<div class="wa-empty">
@@ -292,7 +381,10 @@
       <div class="wa-empty__actions">
         ${best ? `<button class="wa-btn wa-btn--primary" type="button" data-act="${esc(best.act)}">${esc(best.label)}</button>` : ''}
         ${state.when !== 'all' ? `<button class="wa-btn" type="button" data-act="when-all">Any time</button>` : ''}
-        <a class="wa-btn" href="./index.html">Explore</a>
+        <!-- The two 3a names them: somewhere else to look, and another
+             city. "Explore" alone made the reader go and find Places. -->
+        <a class="wa-btn${best ? '' : ' wa-btn--primary'}" href="./index.html?scope=places">Show places</a>
+        <button class="wa-btn" type="button" data-act="change-city">Change city</button>
       </div>
     </div>`;
   };
@@ -302,12 +394,30 @@
     (state.kinds.size ? 1 : 0) + (state.within ? 1 : 0) +
     (state.free ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) + (state.hideSeen ? 1 : 0);
 
+  /* "Friday" reads better than a date, and "tomorrow" better than
+     either when it is in fact tomorrow. */
+  const DAY_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayWord = (key) => {
+    const when = window.WA.when;
+    if (key === when.todayKey()) return 'tonight';
+    if (key === when.keyPlus(1))  return 'tomorrow';
+    return DAY_FULL[new Date(`${key}T12:00:00Z`).getUTCDay()];
+  };
+
   const headline = (n) => {
     const kinds = [...state.kinds];
     const noun = kinds.length === 1 ? `${kinds[0]}${n === 1 ? '' : 's'}`
                : kinds.length > 1  ? kinds.join(' and ')
                : (n === 1 ? 'thing' : 'things');
-    const whenWord = state.when === 'all' ? '' : ` ${WHEN_LABEL[state.when].toLowerCase()}`;
+    /* An exact day from the density strip outranks the When window --
+       printing "52 things tonight" over Friday's rows was the header
+       lying about the list directly beneath it. */
+    /* "on Friday" but "tomorrow" -- the preposition belongs before a
+       weekday name and nowhere else. */
+    const w = state.day ? dayWord(state.day) : '';
+    const whenWord = state.day
+      ? (w === 'tonight' || w === 'tomorrow' ? ` ${w}` : ` on ${w}`)
+      : state.when === 'all' ? '' : ` ${WHEN_LABEL[state.when].toLowerCase()}`;
     return `${n} ${noun}${whenWord}`;
   };
 
@@ -331,6 +441,7 @@
   const render = () => {
     const list = results();
     lastResults = list;
+    renderDensity();
 
     $('results-title').textContent = list.length ? headline(list.length) : 'Nothing matches';
     $('results-sub').textContent   = subline(list.length);
@@ -342,7 +453,9 @@
     if (!list.length) pane.insertAdjacentHTML('beforeend', emptyState());
 
     $('chip-where').textContent = CITY_LABEL();
-    $('chip-when').textContent  = WHEN_LABEL[state.when] || 'Anytime';
+    $('chip-when').textContent  = state.day
+      ? dayWord(state.day).replace(/^./, c => c.toUpperCase())
+      : (WHEN_LABEL[state.when] || 'Anytime');
     $('chip-what').textContent  = state.kinds.size ? [...state.kinds].join(', ') : 'Anything';
     [...document.querySelectorAll('#scope [data-slot]')].forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.slot === 'what' ? state.kinds.size > 0 : false)));
@@ -414,6 +527,27 @@
       $('map-count').textContent = n === total
         ? `${n} ${n === 1 ? 'pin' : 'pins'}`
         : `${n} of ${total} placed`;
+
+      /* The drawer (2a: "a mode is never empty"; 5d draws it with real
+         rows). Same row component as the list, so a pin is never the
+         only way to learn what something is. Clipped to what the
+         viewport actually holds when the map has been moved, because
+         the bar above already says how many that is. */
+      const drawer = $('map-drawer');
+      if (drawer) {
+        /* Same source "search this area" reads, so the drawer and that
+           button can never disagree about what "in view" means. */
+        const m = t.getMap && t.getMap();
+        const mb = m && m.getBounds && m.getBounds();
+        const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
+        const inView = b
+          ? entries.filter(e => {
+              const c = window.WA.Geo.coordsFor(e);
+              return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
+            })
+          : entries;
+        drawer.innerHTML = inView.slice(0, 12).map(row).join('');
+      }
     };
 
     const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries); };
@@ -453,12 +587,21 @@
   const kindOptions = () => {
     const base = applyFilters(picks(), 'kind');
     const map = new Map();
+
+    /* 2a: "Counts on every option, zeroes disabled not hidden." Every
+       kind the city has appears, whatever the current window returns --
+       a kind that vanishes from the sheet cannot be reasoned about, and
+       the reader is left wondering whether they imagined it. The zeroes
+       come back disabled below, which says "nothing tonight" rather
+       than "no such thing". */
+    for (const e of picks()) {
+      const k = String(e.kind || '').toLowerCase();
+      if (k) map.set(k, 0);
+    }
     for (const e of base) {
       const k = String(e.kind || '').toLowerCase();
       if (k) map.set(k, (map.get(k) || 0) + 1);
     }
-    /* A zero-count kind that is currently selected still shows, so you
-       can see why the list is empty and turn it off. */
     for (const k of state.kinds) if (!map.has(k)) map.set(k, 0);
     return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   };
@@ -498,7 +641,8 @@
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
           ${kinds.map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}"
-             aria-pressed="${state.kinds.has(k)}" data-count="${n}">${esc(k)}
+             aria-pressed="${state.kinds.has(k)}" data-count="${n}"
+             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}>${esc(k)}
              <span class="wa-chip__count">${n}</span></button>`).join('')
            || '<span class="wa-field__consequence">Nothing filed for this window.</span>'}
         </div>
@@ -593,7 +737,7 @@
     $('sheet-body').innerHTML = `<div class="wa-field"><span class="wa-field__label">When</span><div class="wa-chips">${
       opts.map(v => {
         const n = picks().filter(e => window.WA.when.matches(e, v)).length;
-        return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}" data-count="${n}">${esc(WHEN_LABEL[v])} <span class="wa-chip__count">${n}</span></button>`;
+        return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}" data-count="${n}"${n === 0 && state.when !== v ? ' disabled aria-disabled="true"' : ''}>${esc(WHEN_LABEL[v])} <span class="wa-chip__count">${n}</span></button>`;
       }).join('')}</div></div>`;
     $('sheet-foot').innerHTML = sheetFoot();
     if (!sheet.open) sheet.showModal();
@@ -668,7 +812,7 @@
     if (hit('#sheet-clear')) {
       state.kinds.clear(); state.within = 0; state.free = false;
       state.doors = 'any'; state.hideSeen = false;
-      state.q = ''; state.bounds = null;
+      state.q = ''; state.bounds = null; state.day = '';
       /* Order lives in this sheet too, so "Clear all" resets it — it is
          not a filter, but leaving it set after a clear is a surprise. */
       state.sort = 'soonest';
@@ -684,7 +828,30 @@
       if (a === 'clear-doors')  state.doors = 'any';
       if (a === 'clear-seen')   state.hideSeen = false;
       if (a === 'when-all')     state.when = 'all';
+      /* Not a filter reset -- it reopens the Where sheet, which is the
+         one control that can actually change city. */
+      if (a === 'change-city')  { openSheet('where'); return; }
+      /* A picked day is a filter too; clearing filters must clear it or
+         the empty state offers escapes that cannot fire. */
+      if (a === 'clear-day')    state.day = '';
       render(); return;
+    }
+
+    /* 3a wants the sentence readable without leaving the list, and the
+       row is an <a>, so this has to stop the navigation it sits inside.
+       Toggling back to "more" matters: an expanded row that cannot be
+       re-collapsed pushes every row below it down for the rest of the
+       session. */
+    const more = hit('[data-more]');
+    if (more) {
+      e.preventDefault();
+      e.stopPropagation();
+      const d = more.parentElement.querySelector('[data-desc]');
+      if (d) {
+        const open = d.classList.toggle('wa-row__desc--open');
+        more.textContent = open ? 'less' : 'more';
+      }
+      return;
     }
 
     const pin = hit('[data-pin]');
@@ -731,12 +898,104 @@
     }
   });
 
+  /* The strip is a filter as well as a picture. Clicking the selected
+     day again clears back to the current When rather than stranding the
+     reader on a single date with no visible way out. */
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-day]');
+    if (!b) return;
+    const key = b.dataset.day;
+    /* Today is the "tonight" window rather than a date, so selecting it
+       clears the exact-date filter instead of setting one. Otherwise the
+       strip and the headline would count today two different ways. */
+    if (b.classList.contains('wa-density__day--today')) {
+      state.day = '';
+      state.when = 'tonight';
+    } else {
+      state.day = (state.day === key) ? '' : key;
+    }
+    state.bounds = null;
+    writeParams();
+    render();
+    if (state.map) mapMode.sync(lastResults);
+  });
+
   /* Row → pin pairing, the cheap direction: hovering a row marks its pin
      without re-rendering the layer. */
   document.addEventListener('pointerover', (e) => {
     const r = e.target.closest && e.target.closest('[data-row]');
     if (r && state.map) Pins.focus(r.dataset.row);
   });
+
+  /* ── The seven-day density strip (1b, re-housed here by 5b) ──
+     5b traded it out of Explore and recommended it become the header of
+     Tonight: "where the reader is already thinking about time". It says
+     the one thing a list cannot — Monday is dead, wait for Friday — and
+     without it a reader who filters to a quiet night concludes the
+     product is empty rather than the night.
+
+     Counts come from the SAME applyFilters chain the list uses, minus
+     the time facet, so a bar can never disagree with the rows it sits
+     above. Clicking a day sets an exact-date filter; clicking the
+     selected day again clears it back to the current When. */
+  const densityDays = () => {
+    const when = window.WA.when;
+    const base = applyFilters(picks(), 'when');
+    const today = when.todayKey();
+    return Array.from({ length: 7 }, (_, i) => {
+      const key = i === 0 ? today : when.keyPlus(i);
+      /* TODAY counts with the SAME predicate the list uses for
+         "tonight", not by date. A pick flagged tonight that carries no
+         resolvable date is real and is in the list; counting it by date
+         alone printed 22 over a headline reading 23, and a header that
+         disagrees with the rows beneath it is worse than no header. */
+      const n = i === 0
+        ? base.filter(e => when.matches(e, 'tonight')).length
+        : base.filter(e => when.isOnDate(e, key)).length;
+      return {
+        key, n, isToday: i === 0,
+        label: i === 0 ? 'TODAY' : DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()],
+      };
+    });
+  };
+
+  const renderDensity = () => {
+    const host = $('density');
+    if (!host) return;
+    const days = densityDays();
+    const peak = Math.max(...days.map(d => d.n), 1);
+    /* 4px floor so one event reads as one event, not as none. A true
+       zero gets no bar — that is the signal, not a rendering gap. */
+    const H = 34;
+    host.innerHTML = days.map(d => `
+      <li><button class="wa-density__day${d.isToday ? ' wa-density__day--today' : ''}${d.n ? '' : ' wa-density__day--empty'}"
+              type="button" data-day="${esc(d.key)}"
+              aria-pressed="${d.isToday ? (!state.day && state.when === 'tonight') : state.day === d.key}"
+              aria-label="${esc(`${d.n} on ${d.label.toLowerCase()}`)}">
+        <span class="wa-density__count">${d.n}</span>
+        <span class="wa-density__bar" style="height:${d.n ? Math.max(4, Math.round((d.n / peak) * H)) : 0}px"></span>
+        <span class="wa-density__label">${esc(d.label)}</span>
+      </button></li>`).join('');
+  };
+
+  /* ── Loading ─────────────────────────────────────────────────
+     "Skeleton matches the row grid exactly — no spinner, no layout
+     jump when data lands." Until this, #rows sat empty until
+     wa:catalog-ready and the whole list appeared at once, which is the
+     jump the spec exists to prevent. The shape is the real row — 52px
+     rail, then body — so the swap to live rows moves nothing.
+
+     Six, because that is what fits above the fold on a phone; more
+     would animate off-screen for nothing. */
+  const skeleton = () =>
+    Array.from({ length: 6 }, () => `<li><span class="wa-row" aria-hidden="true">
+      <span class="wa-row__rail"><span class="wa-skel wa-skel--rail"></span></span>
+      <span class="wa-row__body">
+        <span class="wa-skel wa-skel--title"></span>
+        <span class="wa-skel wa-skel--line"></span>
+        <span class="wa-skel wa-skel--line"></span>
+      </span>
+    </span></li>`).join('');
 
   /* ── Boot ────────────────────────────────────────────────────── */
   readParams();
@@ -749,5 +1008,10 @@
 
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
-  if (window.WA && window.WA.catalog && window.WA.catalog.length) boot();
+  if (window.WA && window.WA.catalog && window.WA.catalog.length) {
+    boot();
+  } else {
+    /* Nothing to show yet, and the list is the whole page. */
+    $('rows').innerHTML = skeleton();
+  }
 })();

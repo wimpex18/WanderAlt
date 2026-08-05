@@ -69,11 +69,25 @@
 
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
+  /* OPEN rather than an empty rail -- 3a's rule, same as Tonight and
+     Saved. A source page is mostly exhibitions and runs, so the undated
+     case is the common one here, not the edge. */
   const railFor = (e) => {
     if (window.WA.when.isTonight(e)) return 'TON';
     const k = window.WA.when.resolveKey(e);
     if (k) return DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()];
-    return '';
+    return 'OPEN';
+  };
+
+  /* Desktop-only far-right photo; absent element means absent cell, so
+     a photoless row runs wider instead of leaving a gap. Same rule as
+     the Tonight row — one implementation per pattern. */
+  const media = (e) => {
+    const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
+    if (!src) return '';
+    return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
+      loading="lazy" decoding="async"
+      src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
   };
 
   const row = (e) => {
@@ -87,6 +101,7 @@
         <span class="wa-row__title">${esc(e.title || '')}</span>
         <span class="wa-row__meta">${esc([real(e.kind), real(e.neighborhood)].filter(Boolean).join(' · '))}</span>
       </span>
+      ${media(e)}
     </a></li>`;
   };
 

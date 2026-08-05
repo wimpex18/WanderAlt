@@ -1,5 +1,48 @@
 /* ============================================================
-   WanderAlt — send-digest edge function v11
+   WanderAlt — send-digest edge function v13
+   v13: SECURITY — this was an open email relay. verify_jwt was false and
+        the handler took the recipient straight from the request body:
+
+          POST /functions/v1/send-digest  {"email":"anyone@example.com"}
+
+        with no Authorization header at all returned {"ok":true,"sent":1}
+        and, outside dry-run, put a real message from the WanderAlt
+        domain in an arbitrary stranger's inbox. Verified against
+        production before the fix. Anyone who found the URL could send
+        mail as us, at our Resend quota and our sending reputation.
+
+        Two layers now. The recipient override requires the SERVICE ROLE
+        key in the Authorization header -- that is the actual control,
+        because it is the one credential that is never published.
+        verify_jwt also goes true, which blocks unauthenticated callers
+        at the platform edge before this code runs; the Saturday cron is
+        unaffected because public.invoke_wa_fn() sends the anon key,
+        which is a valid JWT (the same reason ingest-osm and
+        process-staging already run fine at verify_jwt:true).
+
+        Note what verify_jwt alone would NOT have fixed: the anon key is
+        public by design, committed in supabase.js. Turning the gate on
+        raises the bar from "anyone" to "anyone who reads one JS file".
+        The service-key check is what actually closes this.
+   v12: caught up with the Aug 2026 redesign, which this function
+        predated in three ways that would each have shipped to an inbox.
+        (a) Every link pointed at venue.html, a page that no longer
+            exists. The 301 would have carried it, but an email outlives
+            a redirect rule -- same reason share.js's .ics was repointed.
+        (b) The pick row was quote-as-hero with a curator byline
+            ("<quote>" -- @handle). The redesign removed curators: the
+            line is a description now and the handle is provenance, so
+            it reads "via @handle" under the row rather than as a person
+            recommending. The footer's "Curated by humans, not
+            algorithms" and the fallback intro's "from the humans who
+            know it best" were making the same retired claim.
+        (c) The intro called Gemini DIRECTLY and ungated, which breaks
+            the LLM policy twice over: Groq is the documented primary
+            for every text-generation function, and the Gemini path is
+            retired behind pipeline_config.gemini_fallback_enabled with
+            its Google billing deleted -- so this silently fell back to
+            static copy on every send. Now Groq first, OpenRouter :free
+            second, same ladder as process-staging.
    v11: per-recipient "Your saved events changed" block — the digest is
         the brand's ONE sanctioned change-notification channel (no
         push). For recipients linked to an account (profiles toggle, or
@@ -8,8 +51,9 @@
         in the last 7 days (from the pick_changes journal) and those
         archived in the window ("no longer listed"). Anonymous opt-ins
         get the unchanged digest.
-   v11 also fixes GEMINI_MODEL to gemini-2.5-flash (was the
-        nonexistent 3.5 — intros silently fell back to static copy).
+   v11 also fixed GEMINI_MODEL to gemini-2.5-flash (was the nonexistent
+        3.5 — intros silently fell back to static copy). Superseded by
+        v12(c): the whole Gemini lane is gone.
    v9:  gemini for email intro generation.
    v10: curator handle in the email uses petrol (--c-accent #055959),
         retiring the last stray oxblood #8a2a1a in the codebase.
@@ -28,10 +72,24 @@ const esc = (s: unknown) => String(s ?? '')
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND  = Deno.env.get('RESEND_API_KEY') ?? '';
-const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
+const GROQ_KEY        = Deno.env.get('GROQ_API_KEY') ?? '';
+const GROQ_MODEL      = 'llama-3.3-70b-versatile';
+const OPENROUTER_KEY  = Deno.env.get('OPENROUTER_API_KEY') ?? '';
+const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'openai/gpt-oss-120b:free';
 const FROM    = Deno.env.get('DIGEST_FROM_EMAIL') ?? 'WanderAlt <onboarding@resend.dev>';
-const BASE_URL = Deno.env.get('SITE_URL') ?? 'https://wanderalt.com';
-const GEMINI_MODEL = 'gemini-2.5-flash';   // v11: was the nonexistent 'gemini-3.5-flash' (the documented doc-drift ghost) — every weekly intro silently 404'd to the static fallback
+/* wanderalt.app is the canonical domain; wanderalt.com is brand defence
+   and 301s across. The old default was the .com, so an unset SITE_URL put
+   a redirect-dependent host in every link of every email -- and an email
+   outlives a redirect rule. */
+const BASE_URL = Deno.env.get('SITE_URL') ?? 'https://wanderalt.app';
+/* Gemini is gone from this function. It was called directly and ungated,
+   which broke the LLM policy twice: Groq is the documented primary for
+   every text-generation function, and the Gemini path is retired behind
+   pipeline_config.gemini_fallback_enabled with its Google billing
+   deleted. So the "fix" in v11 -- repointing GEMINI_MODEL at a model id
+   that does exist -- bought nothing: the key no longer authenticates and
+   every intro still fell through to the static fallback, just one HTTP
+   round trip later. The ladder below is the one process-staging uses. */
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
   fetch(`${SB_URL}${path}`, {
@@ -143,9 +201,8 @@ const fetchSavedChanges = async (userId: string): Promise<SavedChanges | null> =
 };
 
 const generateIntro = async (picks: Pick[], city: string): Promise<string> => {
-  const fallback = `This week in ${city}: five picks from the humans who know it best.`;
-  if (!GEMINI) return fallback;
-  const manifest = picks.map(p => `- "${p.quote}" — ${p.handle} recommends ${p.venue} (${p.neighborhood})`).join('\n');
+  const fallback = `This week in ${city}: what's on, where, and how far to walk.`;
+  const manifest = picks.map(p => `- ${p.title} at ${p.venue} (${p.neighborhood}): ${p.quote}`).join('\n');
   const prompt = [
     `Write a 60-80 word editorial intro for WanderAlt's weekly briefing email.`,
     `City: ${city}.`,
@@ -154,19 +211,39 @@ const generateIntro = async (picks: Pick[], city: string): Promise<string> => {
     ``,
     `Tone: a thoughtful local writing a back-page newsletter.`,
     `No em-dashes. No exclamation marks. No "discover". No marketing voice.`,
+    `Do not claim a person recommended anything -- these are listings, not endorsements.`,
     `Reference one or two of the picks by name. End with a complete sentence.`,
     `Return only the intro text, no subject line, no sign-off.`,
   ].join('\n');
+
+  /* OpenAI-shaped, so one call site serves both lanes. */
+  const chat = async (url: string, key: string, model: string) => {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 220,
+      }),
+    });
+    if (!res.ok) return '';
+    const j = await res.json();
+    return String(j?.choices?.[0]?.message?.content ?? '').trim();
+  };
+
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 200 } }) }
-    );
-    if (!res.ok) return fallback;
-    const d = await res.json();
-    return d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? fallback;
-  } catch { return fallback; }
+    if (GROQ_KEY) {
+      const out = await chat('https://api.groq.com/openai/v1/chat/completions', GROQ_KEY, GROQ_MODEL);
+      if (out) return out;
+    }
+    if (OPENROUTER_KEY) {
+      const out = await chat('https://openrouter.ai/api/v1/chat/completions', OPENROUTER_KEY, OPENROUTER_MODEL);
+      if (out) return out;
+    }
+  } catch { /* fall through to the static intro */ }
+  return fallback;
 };
 
 const buildMeta = (p: Pick) => {
@@ -176,17 +253,20 @@ const buildMeta = (p: Pick) => {
   return parts.filter(Boolean).join(' · ');
 };
 
+/* An email cannot read CSS variables, so these hexes are copies. Keep
+   them in step with wa.css: #d2dc50 is --signal and #0a1011 is
+   --signal-ink. The badge was still on an older lime (#c8f56a) that no
+   longer appears anywhere in the product. */
 const renderPickRow = (p: Pick) => {
   const tonightBadge = p.tonight
-    ? `<span style="display:inline-block;background:#c8f56a;color:#1a1a1a;font-family:'Courier New',monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;margin-right:8px;text-transform:uppercase;">Tonight</span>`
+    ? `<span style="display:inline-block;background:#d2dc50;color:#0a1011;font-family:'Courier New',monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;margin-right:8px;text-transform:uppercase;">Tonight</span>`
     : '';
   return `<tr><td style="padding:14px 0;border-top:1px solid #e8e3da;">
     <p style="margin:0 0 5px;font-family:'Georgia',serif;font-size:16px;line-height:1.3;color:#1a1a1a;">
-      ${tonightBadge}<a href="${BASE_URL}/venue.html?id=${encodeURIComponent(p.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(p.title)}</a></p>
+      ${tonightBadge}<a href="${BASE_URL}/detail.html?id=${encodeURIComponent(p.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(p.title)}</a></p>
     <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;color:#888;letter-spacing:0.05em;">${esc(buildMeta(p))}</p>
-    <p style="margin:0;font-family:'Georgia',serif;font-size:15px;line-height:1.6;color:#444;font-style:italic;">
-      &ldquo;${esc(p.quote)}&rdquo;
-      <span style="font-style:normal;font-family:'Courier New',monospace;font-size:11px;color:#055959;white-space:nowrap;"> — ${esc(p.handle)}</span></p>
+    <p style="margin:0 0 6px;font-family:'Georgia',serif;font-size:15px;line-height:1.6;color:#444;">${esc(p.quote)}</p>
+    <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;color:#055959;letter-spacing:0.04em;">via ${esc(p.handle)}</p>
   </td></tr>`;
 };
 
@@ -196,7 +276,7 @@ const renderSavedChangesHtml = (sc: SavedChanges | null) => {
     ...sc.changed.map(c =>
       `<tr><td style="padding:10px 0;border-top:1px solid #e8e3da;">
         <p style="margin:0;font-family:'Georgia',serif;font-size:15px;color:#1a1a1a;">
-          <a href="${BASE_URL}/venue.html?id=${encodeURIComponent(c.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(c.title)}</a></p>
+          <a href="${BASE_URL}/detail.html?id=${encodeURIComponent(c.id)}" style="color:#1a1a1a;text-decoration:none;">${esc(c.title)}</a></p>
         <p style="margin:3px 0 0;font-family:'Courier New',monospace;font-size:11px;color:#055959;letter-spacing:0.04em;">now ${esc(c.to)} &middot; was ${esc(c.from)}</p>
       </td></tr>`),
     ...sc.gone.map(g =>
@@ -224,7 +304,7 @@ const renderHtml = (intro: string, picks: Pick[], city: string, unsubUrl: string
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">${picks.map(renderPickRow).join('')}<tr><td style="padding-top:4px;border-top:1px solid #e8e3da;"></td></tr></table>
     ${savedHtml}
     <p style="margin:28px 0 0;font-family:'Courier New',monospace;font-size:10px;color:#bbb;letter-spacing:0.06em;line-height:2;">
-      WanderAlt &middot; Curated by humans, not algorithms.<br>
+      WanderAlt &middot; What&rsquo;s on, and how far.<br>
       <a href="${esc(unsubUrl)}" style="color:#999;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="${BASE_URL}" style="color:#999;text-decoration:underline;">${BASE_URL.replace(/^https?:\/\//, '')}</a></p>
   </td></tr></table>
   </td></tr></table></body></html>`;
@@ -241,12 +321,12 @@ const renderText = (intro: string, picks: Pick[], city: string, unsubUrl: string
   '-'.repeat(40),
   ...picks.flatMap(p => [
     (p.tonight ? '[TONIGHT] ' : '') + p.title,
-    buildMeta(p), `"${p.quote}" — ${p.handle}`,
-    `${BASE_URL}/venue.html?id=${p.id}`, ''
+    buildMeta(p), p.quote, `via ${p.handle}`,
+    `${BASE_URL}/detail.html?id=${p.id}`, ''
   ]),
   '-'.repeat(40),
   ...savedLines,
-  `WanderAlt · Curated by humans, not algorithms.`,
+  `WanderAlt · What's on, and how far.`,
   `Unsubscribe: ${unsubUrl}`,
 ].join('\n');
 
@@ -274,6 +354,18 @@ Deno.serve(async (req: Request) => {
   const dryRun     = body.dry_run === true;
   const targetMail = body.email as string|undefined;
   const city       = (body.city as string|undefined) ?? 'tallinn';
+
+  /* The recipient override addresses an arbitrary mailbox, so it is
+     operator-only and gated on the service role key -- the one
+     credential that is never published. The anon key cannot stand in
+     here: it ships in supabase.js on every page load. */
+  const isOperator = (req.headers.get('Authorization') ?? '') === `Bearer ${SB_SRV}`;
+  if (targetMail && !isOperator) {
+    return new Response(
+      JSON.stringify({ ok: false, error: 'recipient override requires the service role key' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
 
   let recipients: Recipient[];
   if (targetMail) {

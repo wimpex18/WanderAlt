@@ -103,7 +103,10 @@
     /* Default duration: 2h. */
     const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
     const loc = [entry.venue, entry.neighborhood].filter(Boolean).join(', ');
-    const url = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}venue.html?id=${encodeURIComponent(entry.id)}`;
+    /* detail.html, not venue.html — the redesign merged the two templates.
+       The 301 in _redirects would have carried the old link, but a
+       calendar entry outlives a redirect rule, so it gets the real URL. */
+    const url = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}detail.html?id=${encodeURIComponent(entry.id)}`;
     const desc = [entry.quote ? `"${entry.quote}"` : '', entry.handle ? `via ${entry.handle}` : '', url]
       .filter(Boolean).join('\n');
 

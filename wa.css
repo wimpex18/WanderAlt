@@ -7,10 +7,13 @@
    same overlap and alignment bugs kept coming back.
 
    This file is deliberately small enough to hold in your head:
-   about thirty tokens, twelve components, two themes. If a screen
-   needs something that isn't here, the answer is almost always that
-   one of the twelve should grow a modifier — not that the screen
-   should grow a rule.
+   48 tokens, 13 components, two themes. If a screen needs something
+   that isn't here, the answer is almost always that one of the
+   thirteen should grow a modifier — not that the screen should grow
+   a rule. (The direction asked for "roughly thirty tokens, twelve
+   components". Those were targets; these are the counts. If you
+   change the shape of this file, recount rather than copying the
+   sentence forward.)
 
    MATERIAL: flat opaque paper. Ink on cream by day, ink on near-black
    at night. There is no scene under glass any more.
@@ -101,7 +104,7 @@
 
 /* ============================================================
    2 · TOKENS
-   Thirty-odd values. Do not hand-roll a colour, blur or rgba
+   Forty-eight values. Do not hand-roll a colour, blur or rgba
    literal anywhere else in the product — a hard-coded value looks
    right in one theme and breaks completely in the other.
    ============================================================ */
@@ -122,10 +125,13 @@
   --petrol-ink:   #ffffff;   /* text on a petrol fill */
   --petrol-tint:  rgba(5, 89, 89, .09);   /* the mark well, active chips */
 
-  /* ---- Signal. Lime is NOT a colour, it is an alarm: live dots,
-          "now", the TONIGHT tag, one CTA per screen. Never body text,
-          never borders, never an icon. By day the CTA goes petrol
-          because lime fails on paper. ---- */
+  /* ---- Signal. Lime is NOT a colour, it is an alarm, and in this
+          system it has exactly one job: "now". That means the NOW pill
+          on a row's time rail and the selected/now map pin — nothing
+          else. Never body text, never borders, never an icon, and not
+          the CTA: the primary key is petrol in both themes, because
+          lime fails on paper by day and there is no second rule at
+          night worth the inconsistency. ---- */
   --signal:       #d2dc50;
   --signal-ink:   #0a1011;
 
@@ -220,6 +226,26 @@
    3 · BASE
    ============================================================ */
 
+/* Cross-document View Transitions. This lived in styles.css and went
+   with it — view-transition.js was left tagging elements for a feature
+   no stylesheet enabled any more, which is a silent regression rather
+   than a deliberate removal. The chrome carries stable names so the bars
+   morph instead of cross-fading; the shared-element pair is set up in
+   view-transition.js. Unsupported browsers just navigate instantly. */
+@view-transition { navigation: auto; }
+
+.wa-topbar { view-transition-name: wa-topbar; }
+.wa-tabbar { view-transition-name: wa-tabbar; }
+
+/* Reduced motion kills the animation, not the transition — nesting
+   @view-transition inside @media is thinly supported, but zeroing the
+   pseudo-elements is the documented pattern and lands everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
@@ -261,6 +287,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
+
+/* Content clears the sticky bar here rather than in each page's first
+   element. Explore and Tonight had their own margin on the capsule and
+   the chip row; Saved, You, About and 404 start with a heading and had
+   nothing, so the title sat flush against the bar with a measured 0px
+   gap. One rule, and no page has to remember. Pages that open with a
+   full-bleed well opt out — the photo is meant to touch the chrome. */
+.wa-shell > :first-child { margin-top: var(--s-6); }
+.wa-shell > .wa-detail__well:first-child,
+.wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
 
 /* Screen-reader-only, for the labels a sighted reader gets from layout. */
 .wa-sr {
@@ -359,13 +395,6 @@ a.wa-sr:focus {
 
 .wa-fact--strong { color: var(--ink); }
 
-/* Meta lines may ellipsize. Titles never do. */
-.wa-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ============================================================
    5 · COMPONENT — top bar (glass 1 of 2)
    Sticky, in normal flow, so it occupies real layout height and
@@ -410,11 +439,6 @@ a.wa-sr:focus {
 }
 
 .wa-topbar__mark { width: 26px; height: 26px; border-radius: 6px; }
-
-.wa-topbar__title {
-  font: 700 var(--fs-card)/1 var(--ff-ui);
-  margin: 0 auto 0 0;
-}
 
 /* ============================================================
    6 · COMPONENT — tab bar (glass 2 of 2)
@@ -695,9 +719,6 @@ a.wa-sr:focus {
   stroke-linejoin: round;
 }
 
-.wa-mark--sm { width: 20px; height: 20px; border-radius: 6px; }
-.wa-mark--sm svg, .wa-mark--sm use { width: 15px; height: 15px; }
-
 .wa-mark__photo {
   width: 100%; height: 100%;
   object-fit: cover;
@@ -881,6 +902,38 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
+/* 3a: "The description stops at three lines with an inline more that
+   expands in place — no navigation to read a sentence." Expanding is
+   just dropping the clamp. */
+.wa-row__desc--open {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
+/* Sits in the text, not beside it, so it reads as the end of the
+   sentence rather than as a control. It still has to clear the 44px
+   floor, which the negative margins buy back so it does not push the
+   meta line down. */
+.wa-row__more {
+  border: 0;
+  background: none;
+  /* Vertical padding buys the 44px height and the negative vertical
+     margin gives it back so the meta line does not shift. The LEFT edge
+     stays flush with the title and description above it -- padding it
+     for a bigger hit area pushed the word 8px out of the text column,
+     which is visible on every long row. */
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  margin: calc(var(--s-3) * -1) 0;
+  min-height: var(--tap-min);
+  color: var(--petrol);
+  font: 600 var(--fs-body)/1.5 var(--ff-ui);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.wa-row__more:hover { text-decoration: underline; }
+
 .wa-row__meta {
   font: 400 var(--fs-mono)/1.4 var(--ff-mono);
   letter-spacing: .03em;
@@ -888,19 +941,221 @@ a.wa-sr:focus {
   margin: 0;
 }
 
+/* Fixed shape and centred, because a grid item stretches by default —
+   left to itself this would grow to the full height of a three-line
+   description and turn the timetable into a picture list. */
 .wa-row__media {
   display: none;
   width: 96px;
+  aspect-ratio: 3 / 2;
+  align-self: center;
   border-radius: var(--r-control);
   overflow: hidden;
+  background: var(--petrol-tint);
 }
 
 /* The wider desktop row earns a photo; the phone row has no photo
-   region at all, so nothing collapses when a photo is missing. */
+   region at all, so nothing collapses when a photo is missing.
+
+   The third track is `auto`, not a fixed 96px, and that is the whole
+   point: only ~6% of picks carry an image, so a reserved column would
+   be empty on almost every row — which is exactly the "hole in the
+   layout" the direction warns against ("the optional photo sits at the
+   far right where its absence reads as 'no photo', not as a hole").
+   With `auto` a row with no media element has no third cell at all and
+   the body simply runs wider; rows that do have one still align their
+   photo to the shared right edge.
+
+   This shipped broken: the fixed track was declared and .wa-row__media
+   was never emitted by any module, so every Tonight and Source row
+   carried 112px of dead space at 1024+. Found by DOM census, Aug 2026. */
 @media (min-width: 1024px) {
-  .wa-row { grid-template-columns: 52px minmax(0, 1fr) 96px; }
+  /* The track is added only when the row HAS media. A collapsed-to-zero
+     third track is not good enough — the column gap still applies to an
+     empty track, which left 16px hanging off the right of every
+     photoless row. Same :has() shape the saved row already uses. */
+  .wa-row:has(.wa-row__media) {
+    grid-template-columns: 52px minmax(0, 1fr) 96px;
+  }
   .wa-row__media { display: block; }
 }
+
+/* ============================================================
+   COMPONENT — seven-day density strip
+
+   From 1b, where it was the best idea of that round. 5b traded it out of
+   Explore ("it does not survive a single-column browsing layout") with an
+   explicit recommendation: it becomes the header of the Tonight tab,
+   where the reader is already thinking about time.
+
+   It says the one thing a rail of identical tickets cannot: Monday is
+   dead, wait for Friday. That is worth a header because the alternative
+   is a reader filtering to Monday, finding nothing, and concluding the
+   product is empty rather than the night is.
+
+   Bars are proportional to the busiest day, with a floor so a day with
+   one thing still reads as one thing rather than as nothing. A genuinely
+   empty day gets no bar at all — that is the honest signal, and it is
+   the whole point of the component.
+   ============================================================ */
+
+.wa-density {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s-1);
+  align-items: end;
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  list-style: none;
+}
+
+/* The <li> is the grid item; without this the button shrinks to its
+   label and the tap target comes out 22px wide on a phone -- vertically
+   over the 44px floor, horizontally well under it. */
+.wa-density > li { display: flex; }
+
+.wa-density__day {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-2) 0 var(--s-1);
+  border: 0;
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--ink-mute);
+  font: 400 var(--fs-mono)/1 var(--ff-mono);
+  letter-spacing: .06em;
+  cursor: pointer;
+  min-height: var(--tap-min);
+  justify-content: flex-end;
+}
+
+.wa-density__day:hover { background: var(--petrol-tint); }
+
+/* The bar itself. Height is set inline per day because it is data, not
+   design — the only inline style in the component. */
+.wa-density__bar {
+  width: 100%;
+  max-width: 28px;
+  border-radius: 3px;
+  background: var(--petrol);
+  opacity: .55;
+}
+
+.wa-density__count { color: var(--ink); font-size: var(--fs-meta); }
+.wa-density__label { text-transform: uppercase; }
+
+/* Today is where the reader is standing. Selected is what they asked
+   for. Both are a tint plus a mark, never colour alone. */
+.wa-density__day--today .wa-density__label { color: var(--ink); }
+
+.wa-density__day[aria-pressed="true"] {
+  background: var(--petrol-tint);
+  box-shadow: inset 0 -2px 0 var(--petrol);
+}
+.wa-density__day[aria-pressed="true"] .wa-density__bar { opacity: 1; }
+.wa-density__day[aria-pressed="true"] .wa-density__label { color: var(--ink); }
+
+/* Nothing on. No bar, and the count greys out rather than printing a
+   confident zero in the same weight as a five. */
+.wa-density__day--empty .wa-density__count { color: var(--ink-mute); opacity: .55; }
+
+/* ============================================================
+   COMPONENT — list card (5f, "lists as four-up mosaics")
+
+   The mosaic is four tiles from the list's own contents, so a list is
+   recognisable by what is in it rather than by a name you have to read.
+   With photo coverage around 6% most tiles are the category mark on the
+   petrol tint, which is the sanctioned no-photo treatment — never a
+   grey box. Fewer than four items simply means fewer tiles; the grid
+   does not pad with blanks, because an empty tile reads as a missing
+   image rather than as a short list.
+   ============================================================ */
+
+.wa-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) { .wa-lists { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .wa-lists { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.wa-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-height: var(--tap-min);
+}
+
+.wa-list-card:hover { border-color: var(--rule-strong); }
+
+.wa-list-card[aria-pressed="true"] {
+  border-color: var(--petrol);
+  box-shadow: inset 0 0 0 1px var(--petrol);
+}
+
+.wa-list-card__mosaic {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  aspect-ratio: 1;
+  border-radius: var(--r-control);
+  overflow: hidden;
+  background: var(--petrol-tint);
+}
+
+/* One item fills the square, two split it, three or four tile it. The
+   list should look like its contents at a glance. */
+.wa-list-card__mosaic:has(> :only-child) { grid-template-columns: 1fr; }
+
+.wa-list-card__tile {
+  display: grid;
+  place-items: center;
+  background: var(--petrol-tint);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wa-list-card__tile img { width: 100%; height: 100%; object-fit: cover; }
+
+.wa-list-card__tile svg {
+  width: 40%; height: 40%;
+  stroke: var(--petrol);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wa-list-card__name {
+  font: 600 var(--fs-card)/1.25 var(--ff-ui);
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.wa-list-card__sub {
+  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
+  letter-spacing: .03em;
+  color: var(--ink-mute);
+}
+
+/* An expired count is the one thing in a list card worth warning about
+   — it is the "lost trust in an automated catalogue" case from 5f. */
+.wa-list-card__sub em { font-style: normal; color: var(--warn); }
 
 /* ============================================================
    12 · COMPONENT — sheet
@@ -1050,7 +1305,15 @@ a.wa-sr:focus {
    reader the filter exists and is empty, which a missing chip doesn't. */
 .wa-chip[data-count="0"] { opacity: .5; }
 
-.wa-chip:disabled { cursor: default; }
+/* 2a: zeroes are disabled, not hidden. Dimmed rather than removed so a
+   reader can see that the kind exists and simply has nothing in this
+   window -- "nothing tonight", not "no such thing". */
+.wa-chip:disabled {
+  cursor: default;
+  opacity: .45;
+  border-style: dashed;
+}
+.wa-chip:disabled:hover { background: none; }
 
 /* Segmented control — Doors after: now / 21:00 / 23:00 / any */
 .wa-segment {
@@ -1142,13 +1405,6 @@ a.wa-sr:focus {
   background: var(--petrol);
   border-color: var(--petrol);
   color: var(--petrol-ink);
-}
-
-/* At night the one CTA may take the signal colour. Still one per screen. */
-[data-theme="dusk"] .wa-btn--signal {
-  background: var(--signal);
-  border-color: var(--signal);
-  color: var(--signal-ink);
 }
 
 .wa-btn--quiet { background: none; border-color: transparent; color: var(--ink-mute); }
@@ -1312,6 +1568,30 @@ a.wa-sr:focus {
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* The offline banner. Sits under the top bar rather than over the tab
+   bar, because the toast owns that slot and only one thing may occupy
+   it — two transient bars stacked is the failure this system exists to
+   avoid. Opaque: the glass budget is already spent on the two bars. */
+.wa-offline {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 39;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--gutter);
+  background: var(--warn);
+  color: #fffdf8;
+  font: 600 var(--fs-meta)/1.4 var(--ff-ui);
+}
+
+.wa-offline__dot {
+  flex: 0 0 auto;
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+}
+
 /* ============================================================
    17 · COMPONENT — skeleton
    Matches the row grid exactly. No spinner, and no layout jump when
@@ -1329,6 +1609,17 @@ a.wa-sr:focus {
 .wa-skel--title { width: 80%;  height: 18px; }
 .wa-skel--line  { width: 60%;  height: 12px; }
 .wa-skel--well  { width: 100%; aspect-ratio: 1; border-radius: var(--r-card); }
+
+/* Inside a row the blocks stand in for specific strings, so they take
+   those strings' line boxes — title 22, description 21, meta 15, which
+   with the 8px body gap lands a skeleton row on the same 114px as a
+   real one. The generic sizes above are tuned for the card well and
+   leave a 36px step per row here, and a skeleton that changes height
+   when data arrives is just a slower version of the jump it exists to
+   prevent. */
+.wa-row .wa-skel--title { width: 72%;  height: 22px; }
+.wa-row .wa-skel--line  { width: 100%; height: 21px; }
+.wa-row .wa-skel--line ~ .wa-skel--line { width: 40%; height: 15px; }
 
 @keyframes wa-skel {
   from { background-position: 100% 50%; }
@@ -1404,6 +1695,57 @@ a.wa-sr:focus {
 .explore-scope   { margin-top: var(--s-4); }
 
 /* ============================================================
+   Saved + You (5f) — small shared pieces.
+   ============================================================ */
+
+/* A text-weight button. "Reset what you've learned about me" is an
+   action, not a link, but it should read like prose rather than sit in a
+   control row shouting for attention. */
+.wa-linkbtn {
+  padding: 0;
+  min-height: var(--tap-min);
+  background: none;
+  border: 0;
+  color: var(--petrol);
+  font: 600 var(--fs-body)/1.5 var(--ff-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Removing a save lives ON the row, so the row needs a third column and
+   the drop key needs its own hit area inside a link. */
+.wa-rows .wa-row:has(.wa-row__drop) {
+  grid-template-columns: 52px minmax(0, 1fr) var(--tap-min);
+}
+
+.wa-row__drop {
+    grid-column: 3;
+    align-self: start;
+  }
+}
+
+.wa-row__drop {
+  align-self: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+
+.wa-row__drop:hover { background: var(--petrol-tint); color: var(--ink); }
+
+/* The gone-away note carries a Remove inline, so the button sits in the
+   text rather than below it. */
+.wa-note .wa-linkbtn { font-size: inherit; min-height: 0; }
+
+/* ============================================================
    Detail + Source (6c, 3b) — one template, two data shapes.
    ============================================================ */
 
@@ -1418,7 +1760,14 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
-.wa-detail__photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+.wa-detail__photo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  /* Pairs with the card photo tagged by view-transition.js, so a card
+     expands into the detail hero rather than the page cross-fading. */
+  view-transition-name: venue-hero;
+}
 
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
 .wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
@@ -1613,6 +1962,31 @@ a.wa-sr:focus {
 
 /* One glass layer per screen is already spent on the chrome, so this bar
    is opaque. */
+/* The drawer 2a asks for: the picks currently in view, under the bar.
+   "A mode is never empty" -- a map with pins and no names is a puzzle,
+   and this is what makes tapping a pin optional rather than required.
+   Capped in height so the map itself stays the larger half. */
+.tonight-map__drawer {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 3;
+  max-height: 42%;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 var(--gutter) var(--s-3);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-hair);
+}
+
+.tonight-map__drawer:empty { display: none; }
+
+/* Rows inside the drawer are the same component, just tighter -- the
+   drawer is a peek, not a second list. */
+.tonight-map__drawer .wa-row { padding: var(--s-3) 0; }
+.tonight-map__drawer .wa-row__desc { display: none; }
+
 .tonight-map__bar {
   position: absolute;
   inset-inline: 0;
@@ -1694,14 +2068,3 @@ a.wa-sr:focus {
   margin: var(--s-3) 0 0;
 }
 
-/* ============================================================
-   20 · Live dot — the last sanctioned lime use.
-   ============================================================ */
-
-.wa-live {
-  display: inline-block;
-  width: 7px; height: 7px;
-  border-radius: var(--r-pill);
-  background: var(--signal);
-  vertical-align: middle;
-}

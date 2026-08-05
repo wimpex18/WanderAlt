@@ -145,8 +145,8 @@
      centres, independent cinemas, community/experimental spaces.
      Generic bars / museums / libraries are intentionally excluded
      (they'd dilute the curated identity; craft bars still surface as
-     event venues on picks). Keep this set in sync with the Places
-     category chips in discover.js (WA.VENUE_KINDS). */
+     event venues on picks). Exposed as WA.VENUE_KINDS for any surface
+     that needs to name the same set. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club',
     'thrift', 'arts centre', 'cinema', 'community',
