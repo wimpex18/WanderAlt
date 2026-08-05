@@ -127,6 +127,23 @@
         </div>
       </section>
 
+      <!-- 5f draws the Saturday email and "Add to my calendar" as rows
+           in You, not only at the foot of Explore. The digest_opt_ins
+           table, the Resend key and the calendar-feed function all
+           already exist; this surface was the one 5f asked for and the
+           only one that had not been built. -->
+      <section class="wa-section">
+        <h2 class="wa-section-title">Saturday email</h2>
+        <p class="wa-detail__note">One email a week: what's on next week in ${esc(cityLabel(window.WA.CITY))}, in the same shape as Tonight. No account needed, one unsubscribe link, no other mail.</p>
+        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./index.html#digest-title">Sign up &rsaquo;</a></p>
+      </section>
+
+      <section class="wa-section">
+        <h2 class="wa-section-title">Add to my calendar</h2>
+        <p class="wa-detail__note">Take the week as a calendar feed and never open the app.</p>
+        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar">How it works &rsaquo;</a></p>
+      </section>
+
       ${follows.length ? `<section class="wa-section">
         <h2 class="wa-section-title">Following</h2>
         <p class="wa-section-sub">${esc(`${follows.length} ${follows.length === 1 ? 'venue' : 'venues'}`)}</p>
