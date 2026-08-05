@@ -52,7 +52,7 @@ Self-hosted typefaces in `fonts/` (no Google Fonts request): Plus Jakarta Sans f
 
 ### localStorage
 
-The app writes `wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. `wa-taste-*` and `wa-match-*` went with the taste quiz and the Concierge; `wa:saved-snapshots` went with the old Saved page. (`wa:follows` predates the `:v1` convention below and is the one key that does not follow it.) New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file.
+The app writes `wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wa:lists:v1`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. `wa-taste-*` and `wa-match-*` went with the taste quiz and the Concierge; `wa:saved-snapshots` went with the old Saved page. (`wa:follows` predates the `:v1` convention below and is the one key that does not follow it.) New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file.
 
 ## Deploying
 
