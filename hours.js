@@ -245,11 +245,24 @@
   /* The left-rail string the timetable row prints for a place.
      "NOW" while open, "→02" for a place open until two, '' when unknown
      — the rail must never invent a time we don't have. */
+  /* The place rail, exactly as 1a defines it: "a clock time for an
+     event, NOW when it has already started, →02 for a place open until
+     two." So the arrow carries the CLOSING hour — the fact that decides
+     whether it is worth walking there — not the opening one.
+
+     This function had no callers and the opposite semantics: it printed
+     NOW when open and the OPENING hour when shut, which is the one
+     reading 1a rules out. Returns:
+       →HH  open now, closing at HH
+       24H  open with no closing time worth printing
+       SHUT hours are known and it is closed
+       ''   hours not filed, so the caller says something honest instead */
   const rail = (raw, at) => {
     const s = state(raw, at);
     if (!s.known) return '';
-    if (s.open) return 'NOW';
-    return s.opensAt == null ? '' : `→${pad(Math.floor(s.opensAt / 60))}`;
+    if (!s.open)  return 'SHUT';
+    if (s.allDay || s.closesAt == null) return '24H';
+    return `→${pad(Math.floor(s.closesAt / 60))}`;
   };
 
   /* The human line: "Open now · closes 02:00", "Opens 18:00",

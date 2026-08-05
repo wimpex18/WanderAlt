@@ -244,11 +244,21 @@
     if (isToday) return { time: 'TON', now: true };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
-    /* No time and no date at all -- a run-until-October exhibition, or a
-       place. 3a: "The rail prints OPEN and the row sorts into an Anytime
-       group. It never claims a time we don't have." It used to print an
-       empty string, which left the loudest column on the row blank on
-       exactly the entries that most needed orienting. */
+    /* A place with filed hours gets the arrow form 1a specifies: "→02
+       for a place open until two". That is the fact that decides whether
+       it is worth walking there, so it outranks the generic word. SHUT
+       when the hours are known and it is closed -- printing OPEN over a
+       closed shop is the same class of lie as printing a time we do not
+       have. */
+    const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
+    if (h) return { time: h, now: h === '24H' || h.charAt(0) === '\u2192' };
+
+    /* No hours filed, no time, no date -- a run-until-October
+       exhibition, or a place we know nothing about. 3a: "The rail prints
+       OPEN and the row sorts into an Anytime group. It never claims a
+       time we don't have." OPEN here means ongoing, not open right now.
+       It used to print an empty string, which left the loudest column on
+       the row blank on exactly the entries that most needed orienting. */
     return { time: 'OPEN', now: false };
   };
 

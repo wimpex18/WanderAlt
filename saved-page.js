@@ -117,7 +117,11 @@
      idea, on the screen where the reader is comparing rows most
      directly. */
   const railFor = (e) => {
-    if (e.__place) return 'OPEN';
+    /* Same arrow form as Tonight (1a): a place says when it shuts. */
+    if (e.__place || e.openingHours) {
+      const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
+      return h || 'OPEN';
+    }
     if (window.WA.when.isTonight(e)) return 'TON';
     const k = window.WA.when.resolveKey(e);
     return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
