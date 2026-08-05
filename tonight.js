@@ -30,6 +30,10 @@
      same thing on both screens. `within` is metres (the new contract). */
   const state = {
     when:   'tonight',
+    /* An exact YYYY-MM-DD from the density strip. When set it overrides
+       `when`, because "Thursday" is a more specific answer than "this
+       week" and the reader picked it deliberately. */
+    day:    '',
     what:   'all',
     kinds:  new Set(),
     within: 0,
@@ -62,6 +66,7 @@
   const readParams = () => {
     const sp = new URLSearchParams(location.search);
 
+    if (sp.get('date') && /^\d{4}-\d{2}-\d{2}$/.test(sp.get('date'))) state.day = sp.get('date');
     if (sp.get('time'))  state.when   = sp.get('time');
     if (sp.get('q'))     state.q      = sp.get('q');
     if (sp.get('sort'))  state.sort   = sp.get('sort');
@@ -78,7 +83,11 @@
 
   const writeParams = () => {
     const sp = new URLSearchParams();
-    if (state.when !== 'tonight') sp.set('time', state.when);
+    /* A picked day is a filter, so it round-trips like one. Without this
+       the strip was the only control on the page whose state a shared
+       link silently dropped. */
+    if (state.day)                sp.set('date', state.day);
+    else if (state.when !== 'tonight') sp.set('time', state.when);
     if (state.q)                  sp.set('q', state.q);
     if (state.sort !== 'soonest') sp.set('sort', state.sort);
     if (state.kinds.size)         sp.set('cat', [...state.kinds].join(','));
@@ -113,7 +122,13 @@
      `skip` lets a facet exclude itself when counting its own options. */
   const applyFilters = (list, skip) => {
     const geo = window.WA.Geo;
-    let out = list.filter(e => window.WA.when.matches(e, state.when));
+    /* skip === 'when' is what the density strip passes: it needs the
+       whole week under the OTHER filters, then counts each day itself. */
+    let out = skip === 'when'
+      ? list.slice()
+      : state.day
+        ? list.filter(e => window.WA.when.isOnDate(e, state.day))
+        : list.filter(e => window.WA.when.matches(e, state.when));
     if (skip !== 'kind' && state.kinds.size) {
       out = out.filter(e => state.kinds.has(String(e.kind || '').toLowerCase()));
     }
@@ -316,12 +331,30 @@
     (state.kinds.size ? 1 : 0) + (state.within ? 1 : 0) +
     (state.free ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) + (state.hideSeen ? 1 : 0);
 
+  /* "Friday" reads better than a date, and "tomorrow" better than
+     either when it is in fact tomorrow. */
+  const DAY_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayWord = (key) => {
+    const when = window.WA.when;
+    if (key === when.todayKey()) return 'tonight';
+    if (key === when.keyPlus(1))  return 'tomorrow';
+    return DAY_FULL[new Date(`${key}T12:00:00Z`).getUTCDay()];
+  };
+
   const headline = (n) => {
     const kinds = [...state.kinds];
     const noun = kinds.length === 1 ? `${kinds[0]}${n === 1 ? '' : 's'}`
                : kinds.length > 1  ? kinds.join(' and ')
                : (n === 1 ? 'thing' : 'things');
-    const whenWord = state.when === 'all' ? '' : ` ${WHEN_LABEL[state.when].toLowerCase()}`;
+    /* An exact day from the density strip outranks the When window --
+       printing "52 things tonight" over Friday's rows was the header
+       lying about the list directly beneath it. */
+    /* "on Friday" but "tomorrow" -- the preposition belongs before a
+       weekday name and nowhere else. */
+    const w = state.day ? dayWord(state.day) : '';
+    const whenWord = state.day
+      ? (w === 'tonight' || w === 'tomorrow' ? ` ${w}` : ` on ${w}`)
+      : state.when === 'all' ? '' : ` ${WHEN_LABEL[state.when].toLowerCase()}`;
     return `${n} ${noun}${whenWord}`;
   };
 
@@ -345,6 +378,7 @@
   const render = () => {
     const list = results();
     lastResults = list;
+    renderDensity();
 
     $('results-title').textContent = list.length ? headline(list.length) : 'Nothing matches';
     $('results-sub').textContent   = subline(list.length);
@@ -356,7 +390,9 @@
     if (!list.length) pane.insertAdjacentHTML('beforeend', emptyState());
 
     $('chip-where').textContent = CITY_LABEL();
-    $('chip-when').textContent  = WHEN_LABEL[state.when] || 'Anytime';
+    $('chip-when').textContent  = state.day
+      ? dayWord(state.day).replace(/^./, c => c.toUpperCase())
+      : (WHEN_LABEL[state.when] || 'Anytime');
     $('chip-what').textContent  = state.kinds.size ? [...state.kinds].join(', ') : 'Anything';
     [...document.querySelectorAll('#scope [data-slot]')].forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.slot === 'what' ? state.kinds.size > 0 : false)));
@@ -745,12 +781,85 @@
     }
   });
 
+  /* The strip is a filter as well as a picture. Clicking the selected
+     day again clears back to the current When rather than stranding the
+     reader on a single date with no visible way out. */
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-day]');
+    if (!b) return;
+    const key = b.dataset.day;
+    /* Today is the "tonight" window rather than a date, so selecting it
+       clears the exact-date filter instead of setting one. Otherwise the
+       strip and the headline would count today two different ways. */
+    if (b.classList.contains('wa-density__day--today')) {
+      state.day = '';
+      state.when = 'tonight';
+    } else {
+      state.day = (state.day === key) ? '' : key;
+    }
+    state.bounds = null;
+    writeParams();
+    render();
+    if (state.map) mapMode.sync(lastResults);
+  });
+
   /* Row → pin pairing, the cheap direction: hovering a row marks its pin
      without re-rendering the layer. */
   document.addEventListener('pointerover', (e) => {
     const r = e.target.closest && e.target.closest('[data-row]');
     if (r && state.map) Pins.focus(r.dataset.row);
   });
+
+  /* ── The seven-day density strip (1b, re-housed here by 5b) ──
+     5b traded it out of Explore and recommended it become the header of
+     Tonight: "where the reader is already thinking about time". It says
+     the one thing a list cannot — Monday is dead, wait for Friday — and
+     without it a reader who filters to a quiet night concludes the
+     product is empty rather than the night.
+
+     Counts come from the SAME applyFilters chain the list uses, minus
+     the time facet, so a bar can never disagree with the rows it sits
+     above. Clicking a day sets an exact-date filter; clicking the
+     selected day again clears it back to the current When. */
+  const densityDays = () => {
+    const when = window.WA.when;
+    const base = applyFilters(picks(), 'when');
+    const today = when.todayKey();
+    return Array.from({ length: 7 }, (_, i) => {
+      const key = i === 0 ? today : when.keyPlus(i);
+      /* TODAY counts with the SAME predicate the list uses for
+         "tonight", not by date. A pick flagged tonight that carries no
+         resolvable date is real and is in the list; counting it by date
+         alone printed 22 over a headline reading 23, and a header that
+         disagrees with the rows beneath it is worse than no header. */
+      const n = i === 0
+        ? base.filter(e => when.matches(e, 'tonight')).length
+        : base.filter(e => when.isOnDate(e, key)).length;
+      return {
+        key, n, isToday: i === 0,
+        label: i === 0 ? 'TODAY' : DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()],
+      };
+    });
+  };
+
+  const renderDensity = () => {
+    const host = $('density');
+    if (!host) return;
+    const days = densityDays();
+    const peak = Math.max(...days.map(d => d.n), 1);
+    /* 4px floor so one event reads as one event, not as none. A true
+       zero gets no bar — that is the signal, not a rendering gap. */
+    const H = 34;
+    host.innerHTML = days.map(d => `
+      <li><button class="wa-density__day${d.isToday ? ' wa-density__day--today' : ''}${d.n ? '' : ' wa-density__day--empty'}"
+              type="button" data-day="${esc(d.key)}"
+              aria-pressed="${d.isToday ? (!state.day && state.when === 'tonight') : state.day === d.key}"
+              aria-label="${esc(`${d.n} on ${d.label.toLowerCase()}`)}">
+        <span class="wa-density__count">${d.n}</span>
+        <span class="wa-density__bar" style="height:${d.n ? Math.max(4, Math.round((d.n / peak) * H)) : 0}px"></span>
+        <span class="wa-density__label">${esc(d.label)}</span>
+      </button></li>`).join('');
+  };
 
   /* ── Loading ─────────────────────────────────────────────────
      "Skeleton matches the row grid exactly — no spinner, no layout

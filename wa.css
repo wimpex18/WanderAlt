@@ -949,6 +949,88 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
+   COMPONENT — seven-day density strip
+
+   From 1b, where it was the best idea of that round. 5b traded it out of
+   Explore ("it does not survive a single-column browsing layout") with an
+   explicit recommendation: it becomes the header of the Tonight tab,
+   where the reader is already thinking about time.
+
+   It says the one thing a rail of identical tickets cannot: Monday is
+   dead, wait for Friday. That is worth a header because the alternative
+   is a reader filtering to Monday, finding nothing, and concluding the
+   product is empty rather than the night is.
+
+   Bars are proportional to the busiest day, with a floor so a day with
+   one thing still reads as one thing rather than as nothing. A genuinely
+   empty day gets no bar at all — that is the honest signal, and it is
+   the whole point of the component.
+   ============================================================ */
+
+.wa-density {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s-1);
+  align-items: end;
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  list-style: none;
+}
+
+/* The <li> is the grid item; without this the button shrinks to its
+   label and the tap target comes out 22px wide on a phone -- vertically
+   over the 44px floor, horizontally well under it. */
+.wa-density > li { display: flex; }
+
+.wa-density__day {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-2) 0 var(--s-1);
+  border: 0;
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--ink-mute);
+  font: 400 var(--fs-mono)/1 var(--ff-mono);
+  letter-spacing: .06em;
+  cursor: pointer;
+  min-height: var(--tap-min);
+  justify-content: flex-end;
+}
+
+.wa-density__day:hover { background: var(--petrol-tint); }
+
+/* The bar itself. Height is set inline per day because it is data, not
+   design — the only inline style in the component. */
+.wa-density__bar {
+  width: 100%;
+  max-width: 28px;
+  border-radius: 3px;
+  background: var(--petrol);
+  opacity: .55;
+}
+
+.wa-density__count { color: var(--ink); font-size: var(--fs-meta); }
+.wa-density__label { text-transform: uppercase; }
+
+/* Today is where the reader is standing. Selected is what they asked
+   for. Both are a tint plus a mark, never colour alone. */
+.wa-density__day--today .wa-density__label { color: var(--ink); }
+
+.wa-density__day[aria-pressed="true"] {
+  background: var(--petrol-tint);
+  box-shadow: inset 0 -2px 0 var(--petrol);
+}
+.wa-density__day[aria-pressed="true"] .wa-density__bar { opacity: 1; }
+.wa-density__day[aria-pressed="true"] .wa-density__label { color: var(--ink); }
+
+/* Nothing on. No bar, and the count greys out rather than printing a
+   confident zero in the same weight as a five. */
+.wa-density__day--empty .wa-density__count { color: var(--ink-mute); opacity: .55; }
+
+/* ============================================================
    12 · COMPONENT — sheet
    One question expanded at a time. The other slots sit below as
    collapsed rows showing their current value, so you always know what

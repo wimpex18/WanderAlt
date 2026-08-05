@@ -74,6 +74,11 @@
   window.WA      = window.WA || {};
   window.WA.Auth = {
     session:         null,
+    /* Exported so the You page can offer Google beside email without
+       owning a second copy of the redirect URL. 6c draws both on the
+       sign-in screen; before this only the modal overlay had it, so the
+       page that IS the signed-out state offered one of the two. */
+    googleHref:      () => googleHref(),
     recoverySession: null,   /* set when hash type=recovery; cleared after password update */
     isSignedIn:      () => !!(window.WA.Auth.session),
     getAuthHeaders:  () => {

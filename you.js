@@ -61,7 +61,13 @@
       <p class="wa-digest__body">Everything works signed out. An account only carries your saves and the Saturday email between your phone and your laptop.</p>
       <div class="wa-btn-row" style="flex-wrap:wrap">
         <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
+        <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
       </div>
+      <!-- 6c draws Apple as a third option. It is deliberately absent
+           rather than drawn-and-broken: Apple sign-in needs a Service ID
+           and key configured in Supabase, and a button that 400s on tap
+           is worse than one option fewer. Add the button here the day
+           the provider is configured. -->
       <p class="wa-digest__fine">By continuing you agree to the terms. We'll email you once a week at most, and only if you ask.</p>
     </section>
 
