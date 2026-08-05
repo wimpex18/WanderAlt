@@ -708,6 +708,21 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
+/* 5e: "Petrol on a 9%-petrol ground by day; pale teal on a 6%-cream
+   ground at night." The day half is --petrol-tint. The night half is
+   NOT the accent tint -- a teal wash on near-black reads as a colour
+   cast behind a teal glyph, which is why the spec switches the ground
+   to cream there. Scoped to the mark surfaces rather than changing
+   --petrol-tint, because active chips and capsule hover do want the
+   accent at night. */
+[data-theme="dusk"] .wa-mark,
+[data-theme="dusk"] .wa-list-card__mosaic,
+[data-theme="dusk"] .wa-list-card__tile,
+[data-theme="dusk"] .wa-row__media,
+[data-theme="dusk"] .wa-detail__well--mark {
+  background: rgba(244, 241, 232, .06);
+}
+
 .wa-mark svg,
 .wa-mark use {
   width: 46%;
