@@ -143,11 +143,18 @@
 
     const sorted = s.picks.slice().sort(window.WA.Geo.bySoonestThenDistance());
     const v = s.venue;
+    const blurb = window.WA.venueBlurb ? window.WA.venueBlurb(s.name) : '';
 
     main().innerHTML = `
       <p class="wa-detail__eyebrow">${esc(s.via === 'handle' && !v ? 'Feed' : 'Venue · programme feed')}</p>
       <h1 class="wa-display wa-detail__title">${esc(s.name)}</h1>
       ${v && real(v.neighborhood) ? `<p class="wa-detail__meta">${esc([real(v.kind), real(v.neighborhood)].filter(Boolean).join(' · '))}</p>` : ''}
+
+      <!-- 3b draws a blurb under the source title ("Former industrial
+           hall in Põhja-Tallinn…"). venue_details.short_desc carries it
+           on 3 of 224 rows today, so this renders when there is one and
+           is absent otherwise rather than printing an empty frame. -->
+      ${blurb ? `<p class="wa-detail__desc" style="margin-top:var(--s-4)">${esc(blurb)}</p>` : ''}
 
       <div class="wa-cells">
         <!-- The label follows the number. Falling back to the total under

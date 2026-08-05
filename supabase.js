@@ -204,10 +204,14 @@
         abort.signal
       ),
       get(`past`, `order=created_at.asc`, abort.signal),
+      /* Widened Aug 2026: short_desc is the venue blurb 3b draws on the
+         source page ("Former industrial hall in Põhja-Tallinn…"). It
+         only lands on 3 of 224 rows today, so the section renders when
+         there is one and is simply absent otherwise — the enrichment
+         lane can fill it later without another code change. */
       get(
         `venue_details`,
-        `or=(is_closed.eq.true,business_status.in.("CLOSED_PERMANENTLY","CLOSED_TEMPORARILY"))` +
-        `&select=venue_key,is_closed,business_status`,
+        `select=venue_key,is_closed,business_status,short_desc`,
         abort.signal
       ),
       /* Places: active alt-culture venues with coordinates.
@@ -233,15 +237,21 @@
 
     clearTimeout(timer);
 
-    /* Build a closure map keyed on lower(venue_key) for the merge below. */
+    /* Build a closure map keyed on lower(venue_key) for the merge below,
+       and the venue blurbs the source page prints when it has one. */
     const closedSet = new Set();
+    const blurbs = new Map();
     if (vdResult.status === 'fulfilled' && Array.isArray(vdResult.value)) {
       for (const v of vdResult.value) {
+        const key = v.venue_key ? String(v.venue_key).toLowerCase().trim() : '';
         if (v.is_closed || v.business_status === 'CLOSED_PERMANENTLY' || v.business_status === 'CLOSED_TEMPORARILY') {
-          if (v.venue_key) closedSet.add(String(v.venue_key).toLowerCase().trim());
+          if (key) closedSet.add(key);
         }
+        if (key && v.short_desc) blurbs.set(key, v.short_desc);
       }
     }
+    window.WA = window.WA || {};
+    window.WA.venueBlurb = (name) => blurbs.get(String(name || '').toLowerCase().trim()) || '';
 
     window.WA = window.WA || {};
 
@@ -271,7 +281,12 @@
     }
 
     if (pastResult.status === 'fulfilled') {
-      const allPast = pastResult.value.map(r => ({ id: r.id, title: r.title, date: r.date, city: r.city }));
+      /* created_at is when the row was archived, which is what 3b's
+         "the source stopped listing it four days ago" is measuring.
+         It was fetched and then dropped by this mapper. */
+      const allPast = pastResult.value.map(r => ({
+        id: r.id, title: r.title, date: r.date, city: r.city, archivedAt: r.created_at,
+      }));
       window.WA._pastAll = allPast;
       window.WA.past     = allPast.filter(e => !e.city || e.city === CITY);
     } else {

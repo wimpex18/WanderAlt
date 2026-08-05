@@ -67,17 +67,39 @@
       /* Not in either live table. The past table knows why, when it
          has the row; otherwise we say the honest minimum. */
       const dead = past.find(p => p.id === id);
+      /* 3b prints how long ago and then says the plain thing: "the
+         source stopped listing it four days ago. Probably cancelled."
+         The elapsed part is real -- past.created_at is when we archived
+         it -- and "probably" is the hedge the design chose, because a
+         Fienta absence is under-processing rather than a cancellation
+         (see the reconcile-absent note in CLAUDE.md). */
+      const ago = dead && dead.archivedAt ? agoWords(dead.archivedAt) : '';
       out.gone.push({
         id,
         title: dead ? (dead.title || id) : id,
         venue: dead ? dead.venue : '',
         city: dead ? dead.city : '',
-        __why: 'the source stopped listing it',
+        __why: ago ? `the source stopped listing it ${ago}` : 'the source stopped listing it',
+        __guess: ago ? 'Probably cancelled.' : '',
       });
     }
 
     out.dated.sort(window.WA.Geo.bySoonestThenDistance());
     return out;
+  };
+
+  /* "four days ago" -- plain words, no clock. Anything inside a day is
+     "today", because "3 hours ago" invites a precision we do not have:
+     the archiver runs on a schedule, not at the moment a listing died. */
+  const agoWords = (iso) => {
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!isFinite(ms) || ms < 0) return '';
+    const d = Math.floor(ms / 86400000);
+    if (d < 1)  return 'today';
+    if (d === 1) return 'yesterday';
+    if (d < 14) return `${d} days ago`;
+    if (d < 60) return `${Math.round(d / 7)} weeks ago`;
+    return `${Math.round(d / 30)} months ago`;
   };
 
   const cityOf = (e) => e.city || window.WA.CITY;
@@ -168,7 +190,7 @@
       <h2 class="wa-section-title">Gone since you saved it</h2>
       <p class="wa-section-sub">${esc(`${items.length} no longer listed`)}</p>
       ${items.map(e => `<p class="wa-note" style="margin-top:var(--s-3)">
-        <span>${esc(e.title || e.id)} — ${esc(e.__why)}.
+        <span>${esc(e.title || e.id)} — ${esc(e.__why)}.${e.__guess ? ` ${esc(e.__guess)}` : ''}
         <button class="wa-linkbtn" type="button" data-unsave="${esc(e.id)}">Remove</button></span>
       </p>`).join('')}
     </section>` : '';
