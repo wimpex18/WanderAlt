@@ -122,10 +122,13 @@
   --petrol-ink:   #ffffff;   /* text on a petrol fill */
   --petrol-tint:  rgba(5, 89, 89, .09);   /* the mark well, active chips */
 
-  /* ---- Signal. Lime is NOT a colour, it is an alarm: live dots,
-          "now", the TONIGHT tag, one CTA per screen. Never body text,
-          never borders, never an icon. By day the CTA goes petrol
-          because lime fails on paper. ---- */
+  /* ---- Signal. Lime is NOT a colour, it is an alarm, and in this
+          system it has exactly one job: "now". That means the NOW pill
+          on a row's time rail and the selected/now map pin — nothing
+          else. Never body text, never borders, never an icon, and not
+          the CTA: the primary key is petrol in both themes, because
+          lime fails on paper by day and there is no second rule at
+          night worth the inconsistency. ---- */
   --signal:       #d2dc50;
   --signal-ink:   #0a1011;
 
@@ -219,6 +222,26 @@
 /* ============================================================
    3 · BASE
    ============================================================ */
+
+/* Cross-document View Transitions. This lived in styles.css and went
+   with it — view-transition.js was left tagging elements for a feature
+   no stylesheet enabled any more, which is a silent regression rather
+   than a deliberate removal. The chrome carries stable names so the bars
+   morph instead of cross-fading; the shared-element pair is set up in
+   view-transition.js. Unsupported browsers just navigate instantly. */
+@view-transition { navigation: auto; }
+
+.wa-topbar { view-transition-name: wa-topbar; }
+.wa-tabbar { view-transition-name: wa-tabbar; }
+
+/* Reduced motion kills the animation, not the transition — nesting
+   @view-transition inside @media is thinly supported, but zeroing the
+   pseudo-elements is the documented pattern and lands everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -369,13 +392,6 @@ a.wa-sr:focus {
 
 .wa-fact--strong { color: var(--ink); }
 
-/* Meta lines may ellipsize. Titles never do. */
-.wa-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ============================================================
    5 · COMPONENT — top bar (glass 1 of 2)
    Sticky, in normal flow, so it occupies real layout height and
@@ -420,11 +436,6 @@ a.wa-sr:focus {
 }
 
 .wa-topbar__mark { width: 26px; height: 26px; border-radius: 6px; }
-
-.wa-topbar__title {
-  font: 700 var(--fs-card)/1 var(--ff-ui);
-  margin: 0 auto 0 0;
-}
 
 /* ============================================================
    6 · COMPONENT — tab bar (glass 2 of 2)
@@ -705,9 +716,6 @@ a.wa-sr:focus {
   stroke-linejoin: round;
 }
 
-.wa-mark--sm { width: 20px; height: 20px; border-radius: 6px; }
-.wa-mark--sm svg, .wa-mark--sm use { width: 15px; height: 15px; }
-
 .wa-mark__photo {
   width: 100%; height: 100%;
   object-fit: cover;
@@ -898,17 +906,42 @@ a.wa-sr:focus {
   margin: 0;
 }
 
+/* Fixed shape and centred, because a grid item stretches by default —
+   left to itself this would grow to the full height of a three-line
+   description and turn the timetable into a picture list. */
 .wa-row__media {
   display: none;
   width: 96px;
+  aspect-ratio: 3 / 2;
+  align-self: center;
   border-radius: var(--r-control);
   overflow: hidden;
+  background: var(--petrol-tint);
 }
 
 /* The wider desktop row earns a photo; the phone row has no photo
-   region at all, so nothing collapses when a photo is missing. */
+   region at all, so nothing collapses when a photo is missing.
+
+   The third track is `auto`, not a fixed 96px, and that is the whole
+   point: only ~6% of picks carry an image, so a reserved column would
+   be empty on almost every row — which is exactly the "hole in the
+   layout" the direction warns against ("the optional photo sits at the
+   far right where its absence reads as 'no photo', not as a hole").
+   With `auto` a row with no media element has no third cell at all and
+   the body simply runs wider; rows that do have one still align their
+   photo to the shared right edge.
+
+   This shipped broken: the fixed track was declared and .wa-row__media
+   was never emitted by any module, so every Tonight and Source row
+   carried 112px of dead space at 1024+. Found by DOM census, Aug 2026. */
 @media (min-width: 1024px) {
-  .wa-row { grid-template-columns: 52px minmax(0, 1fr) 96px; }
+  /* The track is added only when the row HAS media. A collapsed-to-zero
+     third track is not good enough — the column gap still applies to an
+     empty track, which left 16px hanging off the right of every
+     photoless row. Same :has() shape the saved row already uses. */
+  .wa-row:has(.wa-row__media) {
+    grid-template-columns: 52px minmax(0, 1fr) 96px;
+  }
   .wa-row__media { display: block; }
 }
 
@@ -1154,13 +1187,6 @@ a.wa-sr:focus {
   color: var(--petrol-ink);
 }
 
-/* At night the one CTA may take the signal colour. Still one per screen. */
-[data-theme="dusk"] .wa-btn--signal {
-  background: var(--signal);
-  border-color: var(--signal);
-  color: var(--signal-ink);
-}
-
 .wa-btn--quiet { background: none; border-color: transparent; color: var(--ink-mute); }
 
 .wa-btn:disabled { opacity: .45; cursor: default; }
@@ -1364,6 +1390,17 @@ a.wa-sr:focus {
 .wa-skel--line  { width: 60%;  height: 12px; }
 .wa-skel--well  { width: 100%; aspect-ratio: 1; border-radius: var(--r-card); }
 
+/* Inside a row the blocks stand in for specific strings, so they take
+   those strings' line boxes — title 22, description 21, meta 15, which
+   with the 8px body gap lands a skeleton row on the same 114px as a
+   real one. The generic sizes above are tuned for the card well and
+   leave a 36px step per row here, and a skeleton that changes height
+   when data arrives is just a slower version of the jump it exists to
+   prevent. */
+.wa-row .wa-skel--title { width: 72%;  height: 22px; }
+.wa-row .wa-skel--line  { width: 100%; height: 21px; }
+.wa-row .wa-skel--line ~ .wa-skel--line { width: 40%; height: 15px; }
+
 @keyframes wa-skel {
   from { background-position: 100% 50%; }
   to   { background-position: 0 50%; }
@@ -1497,7 +1534,14 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
-.wa-detail__photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+.wa-detail__photo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  /* Pairs with the card photo tagged by view-transition.js, so a card
+     expands into the detail hero rather than the page cross-fading. */
+  view-transition-name: venue-hero;
+}
 
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
 .wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
@@ -1773,14 +1817,3 @@ a.wa-sr:focus {
   margin: var(--s-3) 0 0;
 }
 
-/* ============================================================
-   20 · Live dot — the last sanctioned lime use.
-   ============================================================ */
-
-.wa-live {
-  display: inline-block;
-  width: 7px; height: 7px;
-  border-radius: var(--r-pill);
-  background: var(--signal);
-  vertical-align: middle;
-}

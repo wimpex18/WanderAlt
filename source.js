@@ -76,6 +76,17 @@
     return '';
   };
 
+  /* Desktop-only far-right photo; absent element means absent cell, so
+     a photoless row runs wider instead of leaving a gap. Same rule as
+     the Tonight row — one implementation per pattern. */
+  const media = (e) => {
+    const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
+    if (!src) return '';
+    return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
+      loading="lazy" decoding="async"
+      src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
+  };
+
   const row = (e) => {
     const t = real(e.time);
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
@@ -87,6 +98,7 @@
         <span class="wa-row__title">${esc(e.title || '')}</span>
         <span class="wa-row__meta">${esc([real(e.kind), real(e.neighborhood)].filter(Boolean).join(' · '))}</span>
       </span>
+      ${media(e)}
     </a></li>`;
   };
 

@@ -238,6 +238,19 @@
     return [real(e.kind), where, area, price].filter(Boolean).join(' · ');
   };
 
+  /* The optional far-right photo, desktop only (CSS hides it below
+     1024). Emitted only when there is a real image — no element means
+     no third grid cell, so a photoless row reads as "no photo" rather
+     than leaving a gap. Never a placeholder here: a 96px glyph on every
+     row of a timetable is noise, and the rail already carries the kind. */
+  const media = (e) => {
+    const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
+    if (!src) return '';
+    return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
+      loading="lazy" decoding="async"
+      src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
+  };
+
   const row = (e) => {
     const rail = railFor(e);
     const dist = window.WA.Geo.distanceLabel(e);
@@ -252,6 +265,7 @@
         ${desc ? `<span class="wa-row__desc">${esc(desc)}</span>` : ''}
         <span class="wa-row__meta">${esc(metaFor(e))}</span>
       </span>
+      ${media(e)}
     </a></li>`;
   };
 
@@ -738,6 +752,25 @@
     if (r && state.map) Pins.focus(r.dataset.row);
   });
 
+  /* ── Loading ─────────────────────────────────────────────────
+     "Skeleton matches the row grid exactly — no spinner, no layout
+     jump when data lands." Until this, #rows sat empty until
+     wa:catalog-ready and the whole list appeared at once, which is the
+     jump the spec exists to prevent. The shape is the real row — 52px
+     rail, then body — so the swap to live rows moves nothing.
+
+     Six, because that is what fits above the fold on a phone; more
+     would animate off-screen for nothing. */
+  const skeleton = () =>
+    Array.from({ length: 6 }, () => `<li><span class="wa-row" aria-hidden="true">
+      <span class="wa-row__rail"><span class="wa-skel wa-skel--rail"></span></span>
+      <span class="wa-row__body">
+        <span class="wa-skel wa-skel--title"></span>
+        <span class="wa-skel wa-skel--line"></span>
+        <span class="wa-skel wa-skel--line"></span>
+      </span>
+    </span></li>`).join('');
+
   /* ── Boot ────────────────────────────────────────────────────── */
   readParams();
 
@@ -749,5 +782,10 @@
 
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
-  if (window.WA && window.WA.catalog && window.WA.catalog.length) boot();
+  if (window.WA && window.WA.catalog && window.WA.catalog.length) {
+    boot();
+  } else {
+    /* Nothing to show yet, and the list is the whole page. */
+    $('rows').innerHTML = skeleton();
+  }
 })();
