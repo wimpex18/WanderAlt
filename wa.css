@@ -7,10 +7,13 @@
    same overlap and alignment bugs kept coming back.
 
    This file is deliberately small enough to hold in your head:
-   about thirty tokens, twelve components, two themes. If a screen
-   needs something that isn't here, the answer is almost always that
-   one of the twelve should grow a modifier — not that the screen
-   should grow a rule.
+   48 tokens, 13 components, two themes. If a screen needs something
+   that isn't here, the answer is almost always that one of the
+   thirteen should grow a modifier — not that the screen should grow
+   a rule. (The direction asked for "roughly thirty tokens, twelve
+   components". Those were targets; these are the counts. If you
+   change the shape of this file, recount rather than copying the
+   sentence forward.)
 
    MATERIAL: flat opaque paper. Ink on cream by day, ink on near-black
    at night. There is no scene under glass any more.
@@ -101,7 +104,7 @@
 
 /* ============================================================
    2 · TOKENS
-   Thirty-odd values. Do not hand-roll a colour, blur or rgba
+   Forty-eight values. Do not hand-roll a colour, blur or rgba
    literal anywhere else in the product — a hard-coded value looks
    right in one theme and breaks completely in the other.
    ============================================================ */

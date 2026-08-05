@@ -1,6 +1,8 @@
 # WanderAlt
 
-Static site for underground culture in European cities. Tallinn, Helsinki and Riga are live; Vilnius is unlocked for internal testing. Every pick carries a named human curator's voice — that's the product, not a ranked feed.
+Static site for underground culture in European cities. Tallinn, Helsinki and Riga are live; Vilnius is unlocked for internal testing.
+
+The product is a decision, not a publication: **a time and a walking distance on every row**, and provenance instead of personality. The Aug 2026 redesign removed curators — there is no named human voice on a pick any more, and `source.html` names the venue or feed a listing came from instead. Dropping curators also removed the documented blocker on the Vilnius public launch.
 
 Plain HTML/CSS/vanilla JS at the repo root, Supabase behind it, Cloudflare Pages in front. Read the code for structure; what follows is only what the code won't tell you.
 
@@ -34,22 +36,32 @@ Pin models by exact id, and verify the id exists in the provider's console befor
 
 ## Design system
 
-The July 2026 Dusk Glass reskin covers every public page (about.html stays paper by spec, admin stays desktop-light). Dusk is the default; Daybreak is the same DOM with `[data-theme="day"]` swapping tokens, driven pre-paint by `theme.js` off a precomputed per-city sun table, never an API.
+`wa.css` is the whole system: 48 tokens, 13 components, two themes, ~1,820 lines. It replaced `styles.css` (9,118 lines) outright in the Aug 2026 redesign — that file was not patchable, because its `[data-skin="dusk"] [data-page="…"]` override layers meant every screen-local fix fought three others, which is why the same overlap and alignment bugs kept coming back. If a screen needs something that isn't in the thirteen, the answer is almost always that one of them should grow a modifier, not that the screen should grow a rule. (The direction specified "roughly thirty tokens, twelve components"; those were targets, and the counts here are what actually shipped. Prefer counting to quoting.)
 
-- **Use the tokens. Never hand-roll a colour, blur, or rgba literal** — a hard-coded value looks right at night and breaks Daybreak completely.
-- **Lime is signal only**: one CTA per screen, live dots, the TONIGHT tag, the selected pin. Never body text, borders, or icon colour. Petrol is the only accent, and by day the CTA goes petrol because lime fails on paper. There is no third colour.
-- **One control size** (`--unit`, 48px) and one radius vocabulary: 8 tags / 14 controls / 20 islands / 24 sheets. Control rows are single-line and never wrap; siblings share a width. Meta lines ellipsize; only card titles take two lines.
-- **Fully-rounded (999px) is sanctioned for exactly two shapes** (owner ruling, Jul 2026, settling the earlier "pill retired" contradiction): floating glass chrome capsules — the dock island, floating toggles, switch tracks — and badges, dots and counts at 24px or under, where the capsule *is* the shape. Tags stay at 8, chips at 14, and button controls stay off 999 entirely.
-- **Photo-text scrims use `--scrim-photo`**, which is deliberately theme-invariant dark: a photo needs a dark ramp under text in both themes. `--scrim-hero` and `--scrim-detail` are the scene scrims and do swap with the theme. Don't reach for the wrong one.
+**The material is flat opaque paper.** Ink on cream by day, ink on near-black at night. There is no scene under glass any more. **Day is the default**, because most deciding happens in daylight and outdoors in daylight paper beats glass; `theme.js` still drives the swap pre-paint off a precomputed per-city sun table, never an API, and the DOM attribute is still `data-theme="day" | "dusk"`.
+
+- **Use the tokens. Never hand-roll a colour, blur, or rgba literal** — a hard-coded value looks right in one theme and breaks the other completely.
+- **Glass is exactly two elements**: the sticky top bar and the bottom tab bar. Both are ≥92% opaque in the page's own ground, both are chrome, and **both reserve real layout height** — the old positioned floating island reserved nothing, and that was the entire overlap bug. Never nest glass, and never put the tab bar inside the top bar: `backdrop-filter` makes an element the containing block for its fixed-position descendants, which pinned the nav to the top of the page on phones. They are siblings for that reason.
+- **Petrol is the only accent. Lime is not a colour, it is an alarm, and it has exactly one job: "now"** — the NOW pill on a row's time rail, and the selected/now map pin. Not body text, not borders, not an icon, and **not the CTA**: the primary key is petrol in both themes. There is no third colour.
+- **Radii**: 999 pills (chips, badges, dots) / 12 controls / 14–16 cards / 18–20 sheets. `--tap-min` is 44px and is a hard floor on public pages.
+- **Type**: Plus Jakarta Sans 600/700 for chrome — titles, buttons, nav; Fraunces 600 for catalogue voice — pick titles, page headlines, the email, **never under 17px**; Geist Mono for facts — times, distances, counts. Inter is retired from the token set but its woff2 files are still on disk as the interim face until the two Jakarta files land; `--ff-ui` names Jakarta first and falls through. Dropping the files in and uncommenting the two `@font-face` blocks changes the product's face with no code edit.
+- **Time and walking distance are the loudest things on every row.** That is the product. A row leads with its rail (time, then distance), never with a photo.
+- **Photos are optional and mostly absent** — about 6% of picks carry one. The phone row has no photo region at all, so nothing collapses when there isn't one; the wider desktop row gets an optional photo at the far right, and the third grid track is added by `:has(.wa-row__media)` so a photoless row runs full width instead of leaving a hole. When a card or a detail view has no photo, use the kind glyph on the 9% petrol tint, **never a grey box**.
+- **Photo-text scrims use `--scrim-photo`**, which is deliberately theme-invariant dark: a photograph needs a dark ramp under text in both themes.
 - **Active state is a tint plus a mark**, never colour alone.
 - **Spacing comes from the `--s-*` scale**, and vertical gaps encode relationship: tighter within an item than between items, and a heading always gets more room below it than the gap between the things it introduces. A heading is never the tightest gap near it.
-- **A pick among peers leads with its photo and title; the quote is a caption.** Quote-as-hero is scoped to single-item detail views where there's no peer to compare against. When there's no photo, use the kind glyph placeholder, never a grey box.
-- **One implementation per pattern.** Reuse the `WA.UI` helpers rather than hand-copying a row, a thumb, or an empty state. Empty and error states speak in curator voice; "No results found" is banned copy.
-- Tap targets floor at 44px on public pages, WCAG 2.2 AA is the floor, motion is the two existing tokens and nothing new.
+- **Titles wrap to two lines and are never truncated.** Meta lines may ellipsize.
+- **One implementation per pattern.** `WA.UI` is down to four functions — `esc`, `safeUrl`, `priceLabel`, `passwordField` — so patterns live in `wa.css`, not in a render helper. Reuse the component rather than hand-copying a row, a card or an empty state.
+- **Loading is a skeleton that matches the real grid exactly** — no spinner, and no layout jump when data lands. Measure it: a skeleton row and a real row should be the same height to the pixel.
+- **One toast at a time**, above the tab bar, ~4s, and **always with the reverse action**. Never a toast for a navigation.
+- **Empty and error states name the filter that emptied the list and carry the next-best answer.** "No results found" is banned copy, "discover" is never a verb, no em-dashes in headlines, no exclamation marks.
+- WCAG 2.2 AA is the floor; motion is the two existing tokens and nothing new.
 
 Don't add CSS variables without asking. When you touch any pattern, check every other instance of it across pages rather than the one screen you have open — measure heights and gaps, don't eyeball. Screen-local fixes are the recurring failure mode here.
 
-**Never decide a CSS class is unused by grepping for it.** `ui-helpers.js` and the page scripts compose class names at runtime (`class="${cls}"`, base + `--variant`), so a name that appears nowhere in the source can still be on a live element — which is exactly why PurgeCSS-style tools mis-fire on this repo. The only trustworthy signal is a DOM census: drive every page, width, skin and interaction state in a headless browser, collect every class that actually appears, and treat anything absent from both that census and the source as dead. Verify a deletion by diffing the rule set through the browser's own CSS parser, not by screenshots (font-load timing makes ~10% of shots differ run to run) and not by computed styles (those resolve to layout geometry, which is just as noisy).
+**Never decide a CSS class is unused by grepping for it.** The page scripts compose class names at runtime (`class="${cls}"`, base + `--variant`), so a name that appears nowhere in the source can still be on a live element — which is exactly why PurgeCSS-style tools mis-fire on this repo. The only trustworthy signal is a **DOM census**: drive every page, width, theme and interaction state in the browser, collect every class that actually appears, and treat anything absent from both that census and the source as dead. Diff it through the browser's own CSS parser — and note that a modern `CSSStyleRule` exposes an empty-but-truthy `cssRules`, so a naive recursive walker that checks `cssRules` before `selectorText` silently returns nothing.
+
+A census is also how you find the *opposite* bug. Aug 2026 turned up 23 unreached classes; five were genuinely dead, but `.wa-row__media` was a reserved-and-never-filled 96px column costing every desktop row 112px of dead space, and `.wa-skel--rail` was orphaned because the row skeleton the design specified had never been built. **An unused rule is as often an unfinished feature as it is dead weight** — read what it was for before deleting it.
 
 ## Checking your work
 
@@ -71,13 +83,13 @@ Two things the deleted suite used to catch, worth checking by hand: no horizonta
 
 ## Rendering untrusted content
 
-Pick, venue and curator text is scraped from Telegram, RSS and venue pages, passed through an LLM, and interpolated into `innerHTML` via template literals. Treat every one of those fields as attacker-controlled: **wrap it in `WA.UI.esc()` at the interpolation site**, including inside `aria-label`, `title` and `data-*` attributes, and including values that arrive via `buildMeta()`. A stored-XSS probe in July 2026 found `venue.html` and `curator.html` executing injected `onerror` handlers because `title`, `quote`, `tagline` and `bio` were interpolated raw while neighbouring fields were escaped.
+Pick, venue and source text is scraped from Telegram, RSS and venue pages, passed through an LLM, and interpolated into `innerHTML` via template literals. Treat every one of those fields as attacker-controlled: **wrap it in `WA.UI.esc()` at the interpolation site**, including inside `aria-label`, `title` and `data-*` attributes, and including values that arrive via a meta-line builder. A stored-XSS probe in July 2026 found the then-`venue.html` and `curator.html` executing injected `onerror` handlers because `title`, `quote`, `tagline` and `bio` were interpolated raw while neighbouring fields were escaped. Those two pages are now `detail.html` and `source.html`; the lesson is the page-independent one, so check it in whatever renders scraped text next.
 
 URLs need more than escaping — `esc()` escapes quotes, not schemes, so a `javascript:` value survives it. Any DB-sourced URL going into an `href` or `src` goes through **`WA.UI.safeUrl()`**, which passes only http(s) and relative paths. The CSP blocks inline handlers in production, but that is the second line of defence, not the first: the local dev server sends no CSP at all.
 
 ## Voice
 
-Curator handles start with `@` and match the Telegram slug. Metadata reads `Neighborhood · type · day + time`. No em-dashes in headlines, no exclamation marks, never the word "discover" as a verb, no marketing register — it should read like the back page of a newsletter. No cookie banner, no analytics, no third-party scripts; `about.html` covers privacy and terms.
+Source handles start with `@` and match the Telegram slug — they name a feed now, not a person. Metadata reads `Neighborhood · type · day + time`. No em-dashes in headlines, no exclamation marks, never the word "discover" as a verb, no marketing register — it should read like the back page of a newsletter. No cookie banner, no analytics, no third-party scripts; `about.html` covers privacy and terms.
 
 ## Working rules
 

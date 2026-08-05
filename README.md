@@ -1,10 +1,12 @@
 # WanderAlt
 
-A static, mobile-first site for alternative and underground culture in European cities: vinyl shops, art squats, small venues, craft bars, experimental gigs, political talks. Every entry is vouched for by a named human curator, and the curator's voice is the product.
+A static, mobile-first site for alternative and underground culture in European cities: vinyl shops, art squats, small venues, craft bars, experimental gigs, political talks.
 
-Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing — venues are populated from OpenStreetMap, events run off an in-house editorial desk, and there is no resident curator voice yet.
+It is a decision surface, not a publication. **A time and a walking distance are the loudest things on every row**, and every listing says where it came from. The Aug 2026 redesign removed curators: there is no named human voice on a pick, and provenance replaced personality.
 
-**Current version: v0.8.5** (11 July 2026), the Dusk Glass redesign: every public page sits on a scene (a photo, a dark map, or a dusk gradient) under one glass panel recipe, with a Daybreak light twin that switches at each city's civil dusk. Version stamp lives in `package.json`.
+Live cities: **Tallinn · Helsinki · Riga**. **Vilnius** is unlocked for internal testing — venues are populated from OpenStreetMap and events run off an in-house editorial desk. Dropping curators removed what used to block its public launch.
+
+**Current redesign: Aug 2026.** Flat opaque paper replaces the Dusk Glass scene-under-glass: ink on cream by day, ink on near-black at night, with glass surviving on exactly two elements — the sticky top bar and the bottom tab bar. Day is now the default; night still arrives at each city's civil dusk. Version stamp lives in `package.json`.
 
 ## Running it
 
@@ -24,19 +26,21 @@ That serves the site at `http://localhost:5173`. `npm run admin` serves the admi
 
 There isn't any right now. A Puppeteer and Playwright suite (structural sweep, E2E, pixel diff, screenshot captures) was removed in July 2026: it cost two browser engines and ~180 MB of dependencies while reliably missing the things that actually go wrong here — alignment, overlap, control sizes, overlays. It will be rebuilt from scratch rather than patched.
 
-Until then, checking a change means looking at it: `npm start`, then the page at 390 / 768 / 1440. Real venue photos and the duotone treatment only render on the Cloudflare PR preview, not against a local server. For a performance number, `npx lighthouse http://localhost:5173/index.html --view`.
+Until then, checking a change means looking at it: `npm start`, then the page at 390 / 768 / 1440, in both themes. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed. Photos, the vector basemap and `backdrop-filter` all render correctly against a local server now — the old claim that they needed the Cloudflare preview was about the headless Chromium the deleted suite drove, not about a real browser. The PR preview is still the honest last check for anything CDN- or header-dependent, since the dev server sends no CSP. For a performance number, `npx lighthouse http://localhost:5173/index.html --view`.
 
 ## How it's put together
 
-Every page is a plain `.html` file at the repo root with a matching `.js` renderer, all sharing one `styles.css` where every design decision is a `:root` custom property. Pages: Today (`index.html`), Discover, Saved, pick detail, place detail, curator profile, profile, admin, about, 404. `map.html` and `search.html` are redirect stubs preserving legacy URLs.
+Every page is a plain `.html` file at the repo root with a matching `.js` renderer, all sharing one `wa.css` — 48 tokens, 13 components, two themes, ~1,820 lines, replacing a 9,118-line `styles.css`. Pages: Explore (`index.html`), Tonight (`discover.html`), Saved, detail (`detail.html`), source (`source.html`), profile, admin, about, 404. The filenames of the first two are deliberately unchanged so every shared link in the wild still resolves. `_redirects` maps the retired `venue.html`, `place.html`, `curator.html`, `map.html` and `search.html` onto their replacements.
 
-Today reads as a dated edition. It opens on one mono edition line — `THE BRIEFING · SUN 26 JUL · TALLINN` — which is the page's `h1` and doubles as the masthead of the scene; below it the Tonight hero, This Week, Worth a visit (dateless, timeless picks, each carrying its curator's line), and one block offering the Saturday digest and the calendar feed together.
+Explore is a browsing surface. One capsule answers Where / When / What, three scope chips narrow it to All / Tonight / Places, and below that are named carousel sections that each carry a count in the subtitle so a thin section reads as a short row rather than a hole. The Saturday email sits at the foot of the page rather than interrupting the list.
 
-Discover lists every pick in the city on load and lets you narrow it. The list is the page and scrolls with the document; the map is a companion — a sticky column beside the list from 1024px up, an overlay you summon below that — and it always shows the currently filtered set. Filters are four facet buttons, each opening its own anchored menu (a bottom sheet below 768). Search filters the list as you type; pressing Enter, or taking the suggestion under the field, hands the same words to the Concierge (`match-pick`: hybrid vector + full-text retrieval, Groq rerank, five picks each with one sentence of why). The answer opens above the list, never replacing it, points the map at what it recommended, and carries its own way out; dismissing it hands the map back to the filters. The Concierge searches picks, not the venue table, so it isn't offered in the Places scope. Today's masthead search is a plain GET into Discover — one results surface — and below 1100px, where the field doesn't fit, a compact search link stands in for it. `?q=` `?cat=` `?nhood=` `?time=` `?type=` `?within=` `?sort=` `?ai=` `?view=map` `?id=` and the `#mood=` hash all round-trip.
+Tonight is the deciding surface: a dense timetable where each row leads with its rail — time, then walking distance. The four facet buttons collapsed into the same capsule plus one filter sheet, and every toggle in that sheet prints its consequence ("9 of tonight's 19 are free") while the primary key states the outcome ("Show 5 gigs"). Map mode is a companion, not a replacement: pins carry time and distance rather than a price, pin and row highlight together, and "search this area" refilters to the viewport. The map states its own coverage gap — "8 of 26 placed" — because a partial pin count next to a full list reads as a map failure instead of the data gap it is.
+
+`?q=` `?cat=` `?time=` `?type=` `?within=` `?sort=` `?view=map` and `?id=` all still round-trip. The retired `?ai=`, `?nhood=` and `#mood=` are parsed and discarded, so an old link renders an unfiltered list rather than a 404 or an empty result. `?within=` accepts metres (≥100) or minutes, so old links keep their meaning.
 
 Both detail pages read the `venue_details` enrichment lane through `WA.UI.fetchVenueDetails` / `venueFacts` and answer in the same shape: three labelled cells, then one primary CTA on its own row, then labelled secondary keys. Fields promoted into a cell are skipped in the long-tail facts block so nothing prints twice, and a cell that has no answer is never rendered rather than showing a placeholder. Enrichment fill is partial (address on 80 of 188 rows, hours on 58, description on 1), so everything here degrades to fewer cells rather than empty ones.
 
-The two detail pages — pick (`venue.html`) and place (`place.html`) — share one column, `--detail-w`, which is the same band the topbar island occupies, so the photo lines up with the chrome above it and the long tail below caps at `--detail-read` and stays left-aligned inside that band. The photo is a full-bleed backdrop in Dusk and a framed card by day; a missing photo takes the same frame with the kind glyph in it. The floating back key exists only over a full-bleed photo — framed or photoless, it becomes a labelled link above the content. Share lives in the pick's action row, not over the photo.
+`detail.html` is one template serving two data shapes: an event fills its three cells with doors / entry / walk, a place with closes / entry / walk plus a week strip of opening hours. A missing photo takes the same well with the kind glyph on a petrol tint, never a grey box. Provenance closes every detail page. `source.html` is the venue or feed a listing came from — a source, not a person — and groups that source's picks.
 
 Data comes from Supabase through `supabase.js`, which falls back to the static `catalog.js` if the fetch fails, so the site never renders blank. The venues request is kind-filtered server-side and paged: PostgREST caps a response at 1000 rows, and an unpaged `order=name.asc` over all four cities silently sliced the alphabet at roughly "Ki" — Tallinn saw 42 of its 447 places. `ui-helpers.js` holds the shared render helpers (`WA.UI`) that every page script reuses. Auth is email/password plus Google OAuth against the Supabase REST API with no SDK. Bookmarks are localStorage-first with cloud sync on sign-in. The map is MapLibre GL over OpenFreeMap vector tiles, no API key, lazy-loaded after first paint.
 
@@ -44,11 +48,11 @@ MapLibre is self-hosted in `vendor/` rather than pulled from a CDN, which is why
 
 Canonical mobile width is 390px. Desktop shares one `--reading-max` ladder across every page so edges line up when you navigate: 1100 at ≥768, 1200 at ≥1100, 1280 at ≥1440, 1440 at ≥1680, 1600 at ≥1920. Below 768 the nav is a fixed bottom bar; above it becomes a masthead.
 
-Three self-hosted typefaces in `fonts/` (no Google Fonts request): Fraunces for display and curator quotes, Inter for body, Geist Mono for metadata. Brand assets and the icon masters live in `brand/`.
+Self-hosted typefaces in `fonts/` (no Google Fonts request): Plus Jakarta Sans for chrome (titles, buttons, nav), Fraunces 600 for catalogue voice (pick titles, headlines, the email — never under 17px), Geist Mono for facts. Inter is retired from the token set but its files remain on disk as the interim face until the two Jakarta woff2 files land; `--ff-ui` names Jakarta first and falls through. Brand assets and the icon masters live in `brand/`.
 
 ### localStorage
 
-The app writes `wa:appearance`, `wa:city`, `wa:saved-snapshots`, `wa-taste-*`, `wa-match-*`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file.
+The app writes `wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, and three admin-only `wa-admin-*` keys. `wa-taste-*` and `wa-match-*` went with the taste quiz and the Concierge; `wa:saved-snapshots` went with the old Saved page. (`wa:follows` predates the `:v1` convention below and is the one key that does not follow it.) New keys take the `wa:` prefix and a `:v1` suffix if they store a structured shape; changing a shape means bumping the suffix and writing a one-shot migration in the owning file.
 
 ## Deploying
 
@@ -69,12 +73,12 @@ Deployed during the Aug 2026 audit: `ingest-fienta`, `ingest-ra`, `ingest-kinobi
 | `send-digest` | XSS escaping (`f3ed3bf`) | scraped titles unescaped into subscriber inboxes; **its cron is held off until this lands** |
 | `ingest-hanzas-perons` | payload contract | Riga events land without a timestamp |
 | `draft-column` | Groq model repoint | still pinned to the decommissioned `llama-4-scout`; **cron held off** |
-| `classify-moods` | Groq model repoint | serves Mood, which the redesign deletes |
-| `match-pick` | Groq model repoint | serves the Concierge, which the redesign deletes |
+| `classify-moods` | none — retire it | served Mood, which the redesign deleted. Nothing calls it. |
+| `match-pick` | none — retire it | served the Concierge, which the redesign deleted. Nothing calls it. |
 
 Deploy through the Supabase MCP `deploy_edge_function` tool — there is no `supabase` CLI here — and **preserve each function's existing `verify_jwt`**. It is not uniform, and a `verify_jwt: true` function called by a cron through raw `net.http_post` returns 401, which is why healthy crons go through `public.invoke_wa_fn(fn)`.
 
-`functions/_middleware.js` is a Pages Function that rewrites per-pick and per-curator Open Graph tags server-side, using the real venue photo where one exists and a generated card otherwise. It fails open and is inert under the local dev server.
+`functions/_middleware.js` is a Pages Function that rewrites per-pick and per-source Open Graph tags server-side, using the real venue photo where one exists and a generated card otherwise. It fails open and is inert under the local dev server.
 
 ## Backend
 
@@ -87,13 +91,15 @@ The app reads picks where `archived_at IS NULL`. A pick's id is `channel-message
 ```
 ingest-* → staging_messages → process-staging → picks
          → enrich-images → geocode-picks → enrich-venues
-         → classify-moods → embed-picks
+         → embed-picks
          → rotate-tonight → archive-stale → dedup → purge
 ```
 
-Sources are rows in the `sources` table — Telegram channels, RSS feeds, Fienta org feeds, city event APIs, venue websites, and OpenStreetMap Overpass for venues. Adding a Telegram, RSS or Fienta source needs no code, just a row. Adding a city needs a `CITY_CONTEXT` entry in `process-staging`.
+Sources are rows in the `sources` table — Telegram channels, RSS feeds, Fienta org feeds, city event APIs, venue websites, and OpenStreetMap Overpass for venues. Adding a Telegram, RSS or Fienta source needs no code, just a row.
 
-Ingest functions write `staging_messages.payload` — the normalised source object — alongside the prose they hand the model. `process-staging` copies the facts (description, start and end times, ticket URL, price, named artists) from there verbatim and asks the LLM only for what it alone can do: an English title, the curator quote, the kind, the mood tags. Before this the payload was flattened into one text blob and discarded, so `picks` had nowhere to put a price or a start time and the model was asked to re-derive facts nobody had given it.
+**Adding a city means touching two per-city tables, not one.** `CITY_CONTEXT` in `process-staging` is the documented one — miss it and the city silently degrades to the Tallinn context. `CITY_CENTER` in `geocode-picks` is the other, and it has the same failure shape: Vilnius was absent from it until Aug 2026, so every geocode request for that city would have 400'd. Grep for the city you already have before adding a new one.
+
+Ingest functions write `staging_messages.payload` — the normalised source object — alongside the prose they hand the model. `process-staging` copies the facts (description, start and end times, ticket URL, price, named artists) from there verbatim and asks the LLM only for what it alone can do: an English title, a one-line description, and the kind. Before this the payload was flattened into one text blob and discarded, so `picks` had nowhere to put a price or a start time and the model was asked to re-derive facts nobody had given it.
 
 **How much schema.org markup is actually out there (audited Jul 2026, so nobody re-runs this hopefully):** of 124 reachable venue websites probed, **3** emit `Event` JSON-LD on their homepage — nuku.ee, kinosoprus.ee and merekeskus.ee, two of them with `offers` (real prices). Probing the usual event subpaths (`/events`, `/programm`, `/kava`, `/pasakumi`, `/renginiai`, …) on 45 more venues found **zero**. The regional ticketing portals — Piletilevi, Biļešu Serviss, Bilietai, Tiketti — emit only `Organization`/`LocalBusiness` on their listing pages, and Piletilevi's listing is JS-rendered so it has no static links to follow. kultuur.info advertises an RSS feed; it is a blog, last posted 2024, not events.
 
@@ -127,7 +133,9 @@ select cron.alter_job(jobid, active => true)
 
 Watch it rather than poll it — one-shot SQL against `staging_messages` status counts, `picks where archived_at is null`, and the tail of `ingest_log`.
 
-Three jobs were also dialled down to a reduced cadence and need their schedules restored: `wa-process-staging` to `*/30 * * * *`, `embed-picks-auto` to `*/30 * * * *`, `wa-geocode-picks` to `20 * * * *`.
+Three jobs were dialled down to a reduced cadence during the freeze. **`wa-geocode-picks` is back to hourly** (`20 * * * *`, restored Aug 2026) because coordinates are the dependency under walking distance and the Tonight map, and it costs nothing: it is HTTP-only against Nominatim at 20 grouped lookups an hour, comfortably inside their usage policy.
+
+Two still sit at reduced cadence, and restoring them is an owner call rather than an oversight, because both spend from the LLM/embedding lanes the freeze was protecting: `wa-process-staging` is `12 * * * *` (was `*/30 * * * *`) and `embed-picks-auto` is `40 6,12,18,23 * * *` (was `*/30 * * * *`).
 
 ```sql
 select cron.alter_job(jobid, schedule => '<schedule>')
@@ -159,6 +167,6 @@ Cloud sessions need these as environment variables, never in code: `SUPABASE_SER
 
 - **Supabase Auth redirect URL** needs pointing at the deployed domain (Dashboard → Auth → URL Configuration).
 - **Self-serve account deletion** needs enabling (Dashboard → Authentication → Settings).
-- **Vilnius public launch** is blocked on a resident curator voice. No single-voice underground Telegram channel exists for the city yet, and the Resident Advisor feed is hand-invoked only, never scheduled, on terms-of-service grounds.
+- **Vilnius public launch** is no longer blocked on a resident curator voice — the redesign removed curators, which removed the blocker. What remains is coverage: the Resident Advisor feed is hand-invoked only, never scheduled, on terms-of-service grounds.
 
 Conventions and constraints for AI coding sessions are in [CLAUDE.md](CLAUDE.md).
