@@ -472,52 +472,6 @@ a.wa-sr:focus {
   border-top: 1px solid var(--glass-hair);
 }
 
-@media (min-width: 1024px) {
-  /* Into the masthead: same band as the top bar, centred between the
-     brand and the account key. Fixed to the top rather than laid out
-     inside the header, because it cannot BE inside the header — see the
-     containing-block note above. */
-  .wa-tabbar {
-    inset-inline: auto;
-    top: 0;
-    bottom: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 41;
-    height: var(--topbar-h);
-    padding-bottom: 0;
-    grid-auto-columns: auto;
-    gap: var(--s-6);
-    align-items: center;
-    /* Never glass on glass — one layer per screen. Over the masthead the
-       nav is just links on a bar that is already glass. */
-    background: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    border-top: 0;
-  }
-
-  .wa-tabbar__item {
-    flex-direction: row;
-    gap: var(--s-2);
-    min-height: var(--tap-min);
-    font-size: var(--fs-body);
-  }
-
-  .wa-tabbar__item svg { width: 18px; height: 18px; }
-
-  /* The active mark becomes an underline in a horizontal row — a dot
-     under an inline label reads as a bullet, not a state. */
-  .wa-tabbar__item[aria-current="page"]::after {
-    content: none;
-  }
-  .wa-tabbar__item[aria-current="page"] {
-    box-shadow: inset 0 -2px 0 var(--petrol);
-  }
-
-  /* Nothing to reserve once the bar is in the masthead. */
-  body { padding-bottom: 0; }
-}
 
 .wa-tabbar__item {
   display: flex;
@@ -581,6 +535,59 @@ a.wa-sr:focus {
 }
 
 .wa-capsule__slot:last-of-type { border-right: 0; }
+
+/* The desktop overrides must come AFTER the base rules, not before.
+   Both are single-class selectors, so source order decides -- with the
+   media query above them the phone treatment won at every width and the
+   masthead nav rendered as 10px stacked labels 22px wide, under the tap
+   floor. Found by measuring at 1440, invisible at 390 where the two
+   agree. */
+@media (min-width: 1024px) {
+  /* Into the masthead: same band as the top bar, centred between the
+     brand and the account key. Fixed to the top rather than laid out
+     inside the header, because it cannot BE inside the header — see the
+     containing-block note above. */
+  .wa-tabbar {
+    inset-inline: auto;
+    top: 0;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 41;
+    height: var(--topbar-h);
+    padding-bottom: 0;
+    grid-auto-columns: auto;
+    gap: var(--s-6);
+    align-items: center;
+    /* Never glass on glass — one layer per screen. Over the masthead the
+       nav is just links on a bar that is already glass. */
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-top: 0;
+  }
+
+  .wa-tabbar__item {
+    flex-direction: row;
+    gap: var(--s-2);
+    min-height: var(--tap-min);
+    font-size: var(--fs-body);
+  }
+
+  .wa-tabbar__item svg { width: 18px; height: 18px; }
+
+  /* The active mark becomes an underline in a horizontal row — a dot
+     under an inline label reads as a bullet, not a state. */
+  .wa-tabbar__item[aria-current="page"]::after {
+    content: none;
+  }
+  .wa-tabbar__item[aria-current="page"] {
+    box-shadow: inset 0 -2px 0 var(--petrol);
+  }
+
+  /* Nothing to reserve once the bar is in the masthead. */
+  body { padding-bottom: 0; }
+}
 .wa-capsule__slot:hover { background: var(--petrol-tint); }
 
 .wa-capsule__label {
