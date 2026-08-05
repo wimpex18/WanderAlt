@@ -306,7 +306,8 @@
       </span>
       <span class="wa-row__body">
         <span class="wa-row__title">${esc(e.title || '')}</span>
-        ${desc ? `<span class="wa-row__desc">${esc(desc)}</span>` : ''}
+        ${desc ? `<span class="wa-row__desc" data-desc>${esc(desc)}</span>` : ''}
+        ${desc.length > 150 ? `<button class="wa-row__more" type="button" data-more>more</button>` : ''}
         <span class="wa-row__meta">${esc(metaFor(e, !measured && !!area))}</span>
       </span>
       ${media(e)}
@@ -780,6 +781,23 @@
          the empty state offers escapes that cannot fire. */
       if (a === 'clear-day')    state.day = '';
       render(); return;
+    }
+
+    /* 3a wants the sentence readable without leaving the list, and the
+       row is an <a>, so this has to stop the navigation it sits inside.
+       Toggling back to "more" matters: an expanded row that cannot be
+       re-collapsed pushes every row below it down for the rest of the
+       session. */
+    const more = hit('[data-more]');
+    if (more) {
+      e.preventDefault();
+      e.stopPropagation();
+      const d = more.parentElement.querySelector('[data-desc]');
+      if (d) {
+        const open = d.classList.toggle('wa-row__desc--open');
+        more.textContent = open ? 'less' : 'more';
+      }
+      return;
     }
 
     const pin = hit('[data-pin]');

@@ -902,6 +902,38 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
+/* 3a: "The description stops at three lines with an inline more that
+   expands in place — no navigation to read a sentence." Expanding is
+   just dropping the clamp. */
+.wa-row__desc--open {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
+/* Sits in the text, not beside it, so it reads as the end of the
+   sentence rather than as a control. It still has to clear the 44px
+   floor, which the negative margins buy back so it does not push the
+   meta line down. */
+.wa-row__more {
+  border: 0;
+  background: none;
+  /* Vertical padding buys the 44px height and the negative vertical
+     margin gives it back so the meta line does not shift. The LEFT edge
+     stays flush with the title and description above it -- padding it
+     for a bigger hit area pushed the word 8px out of the text column,
+     which is visible on every long row. */
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  margin: calc(var(--s-3) * -1) 0;
+  min-height: var(--tap-min);
+  color: var(--petrol);
+  font: 600 var(--fs-body)/1.5 var(--ff-ui);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.wa-row__more:hover { text-decoration: underline; }
+
 .wa-row__meta {
   font: 400 var(--fs-mono)/1.4 var(--ff-mono);
   letter-spacing: .03em;
