@@ -1,26 +1,42 @@
 /* ============================================================
-   share.js — tiny shared helpers for sharing + calendar export.
+   share.js — the native share trigger, and nothing else.
    ------------------------------------------------------------
-   Exposes window.WA.Share with two methods, both no-dependency
-   and CSP-safe (external file, no inline, Blob download):
+   Exposes window.WA.Share with one method, no dependencies and
+   CSP-safe (external file, no inline):
 
-     WA.Share.url({ title, text, url }) -> Promise<'shared'|'copied'|'failed'>
+     WA.Share.url({ title, text, url }) -> Promise<'shared'|'copied'|'cancelled'|'failed'>
        Uses the native OS share sheet (navigator.share) when
        available — the right pattern on mobile in 2026 — and falls
        back to clipboard copy, then to a no-op. Resolves with what
        actually happened so callers can update their button label.
 
-     WA.Share.downloadIcs(entry) -> boolean
-       Builds a minimal RFC-5545 VEVENT for a dated pick and triggers
-       a download. Returns false when the pick has no day (permanent
-       place / undated), so callers can hide the action. Times are
-       written as floating local time (no TZID) — WanderAlt picks
-       carry a weekday + "HH:MM" string, not an absolute timestamp,
-       so a floating event is the honest representation.
+   The AbortError branch is the reason this lives in a module rather
+   than in the click handler: dismissing the OS sheet throws, and
+   treating that as a failure copies a link the reader just declined
+   to share. detail.js hand-rolled its own version for a while and
+   made exactly that mistake.
 
-   Load order: after city.js (needs nothing else). Add
-     <script defer src="./share.js"></script>
-   before the page script that uses it.
+   ── downloadIcs was deleted here (Aug 2026) ──────────────────
+   It built a one-event .ics for a single pick and was wired to a
+   calendar button on venue.html; 93da056 added it, and e9d7f3f
+   dropped the call site when venue.html and place.html merged into
+   detail.html. It sat callable and uncalled for a month.
+
+   It is gone rather than rewired because the redesign moved the
+   calendar answer from per-pick to whole-week. Every calendar
+   surface the direction draws is the subscribable feed: 6f's
+   Saturday-email card ("take the whole thing as a calendar feed"),
+   the You row ("Add to my calendar"), and Tonight's desktop right
+   half ("the whole week as a calendar feed"). The detail screen
+   draws three cells, "Walk me there" and provenance — no calendar
+   control. The feed is calendar-feed, and About prints its URL.
+
+   The action row could not have taken it anyway: it is flex:1 1 0
+   with nowrap, so a fourth key squeezes "Walk me there" to 79px
+   across three lines at 390px. Measured, not assumed.
+
+   Load order: after city.js (needs nothing else). Only detail.html
+   loads it — it is the only page with a share trigger.
    ============================================================ */
 (function () {
   'use strict';
@@ -55,95 +71,5 @@
     return 'failed';
   }
 
-  /* ---- ICS calendar export --------------------------------- */
-  const DAY_INDEX = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
-
-  /* Resolve a pick's { day, time } to the next matching Date.
-     "Tonight" → today; a weekday name → the next such weekday
-     (today included). Returns null if day is absent/undated. */
-  function nextDateFor(day, time) {
-    if (!day) return null;
-    const now = new Date();
-    const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    if (String(day).toLowerCase() !== 'tonight') {
-      const want = DAY_INDEX[String(day).slice(0, 3).toLowerCase()];
-      if (want != null) {
-        let delta = (want - base.getDay() + 7) % 7;
-        base.setDate(base.getDate() + delta);
-      }
-    }
-    const m = /^(\d{1,2}):(\d{2})/.exec(time || '');
-    base.setHours(m ? +m[1] : 19, m ? +m[2] : 0, 0, 0); /* default 19:00 */
-    return base;
-  }
-
-  /* Local floating time stamp: YYYYMMDDTHHMMSS (no Z, no TZID). */
-  function fmtLocal(d) {
-    const p = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}T` +
-           `${p(d.getHours())}${p(d.getMinutes())}00`;
-  }
-  /* UTC stamp for DTSTAMP (creation time). */
-  function fmtUtc(d) {
-    const p = (n) => String(n).padStart(2, '0');
-    return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}T` +
-           `${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
-  }
-  /* RFC-5545 text escaping for summary/location/description. */
-  function esc(s) {
-    return String(s || '')
-      .replace(/\\/g, '\\\\').replace(/;/g, '\\;')
-      .replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-  }
-
-  function buildIcs(entry) {
-    const start = nextDateFor(entry.day, entry.time);
-    if (!start) return null;
-    /* Default duration: 2h. */
-    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
-    const loc = [entry.venue, entry.neighborhood].filter(Boolean).join(', ');
-    /* detail.html, not venue.html — the redesign merged the two templates.
-       The 301 in _redirects would have carried the old link, but a
-       calendar entry outlives a redirect rule, so it gets the real URL. */
-    const url = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}detail.html?id=${encodeURIComponent(entry.id)}`;
-    const desc = [entry.quote ? `"${entry.quote}"` : '', entry.handle ? `via ${entry.handle}` : '', url]
-      .filter(Boolean).join('\n');
-
-    return [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//WanderAlt//EN',
-      'CALSCALE:GREGORIAN',
-      'BEGIN:VEVENT',
-      `UID:${esc(entry.id)}@wanderalt.app`,
-      `DTSTAMP:${fmtUtc(new Date())}`,
-      `DTSTART:${fmtLocal(start)}`,
-      `DTEND:${fmtLocal(end)}`,
-      `SUMMARY:${esc(entry.title)}`,
-      loc  ? `LOCATION:${esc(loc)}`   : '',
-      desc ? `DESCRIPTION:${esc(desc)}` : '',
-      `URL:${esc(url)}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].filter(Boolean).join('\r\n');
-  }
-
-  function downloadIcs(entry) {
-    const ics = buildIcs(entry);
-    if (!ics) return false;
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const href = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = href;
-    a.download = `wanderalt-${String(entry.id).slice(0, 40)}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    /* Revoke after the click has a chance to start the download. */
-    setTimeout(() => URL.revokeObjectURL(href), 4000);
-    return true;
-  }
-
-  window.WA.Share = { url: shareUrl, downloadIcs };
+  window.WA.Share = { url: shareUrl };
 })();

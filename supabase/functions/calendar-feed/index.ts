@@ -27,8 +27,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // and no way to add one. It only reads RLS-public dated picks and writes
 // nothing.
 //
-// Date semantics mirror share.js's client-side .ics builder:
-// "Tonight" → today, weekday name → next such weekday (today
+// Date semantics used to be shared with a client-side .ics builder in
+// share.js. That was deleted in Aug 2026 — the redesign's calendar
+// answer is this feed, not a per-pick download — so the rules live only
+// here now: "Tonight" → today, weekday name → next such weekday (today
 // included), floating local time, default 19:00, 2h duration.
 // Calendar apps re-fetch on their own schedule (TTL hints below),
 // so the feed stays current with zero pushes and zero crons.
