@@ -1,5 +1,24 @@
 // ============================================================
-// WanderAlt — process-staging  (v42)
+// WanderAlt — process-staging  (v43)
+// v43 (Aug 2026, redesign 4a): the pipeline stops writing descriptions
+//      that only restate the title, and stops writing in a curator's
+//      voice at all.
+//      • The prompt fed curators.tagline in as `Curator voice: "..."`.
+//        26 taglines were still live and still steering every call,
+//        months after the redesign deleted the byline from the page —
+//        which is why the copy still read like a person. The tagline
+//        parameter and the whole curators fetch are gone; `handle` stays
+//        on the pick as provenance, which is a feed, not a voice.
+//      • THE QUOTE section states 4a's rule with worked bad/good
+//        examples: say something a listings site would not, or return
+//        an empty string. Empty is a correct answer — the app prints
+//        "No description filed", which beats the title said twice.
+//      • saysSomething() enforces it on the way to the DB, because a
+//        prompt is a request, not a constraint: the OLD prompt already
+//        said "do not paraphrase" and 49 of 462 live picks still carried
+//        the title with its words shuffled ("Disco party" under the
+//        title "Disco party"). Same predicate as WA.UI.descriptionOr in
+//        the browser and the copy in the Pages middleware.
 // v42 (Jul 2026, design-critique must-fix #4): Tallinn CITY_CONTEXT spelled
 //      "Pohja-Tallinn" without the diacritic, so the LLM minted an ASCII
 //      duplicate of Põhja-Tallinn that split neighborhood filters/counts
@@ -102,13 +121,48 @@ const errMsg = (e: unknown): string => {
   try { return JSON.stringify(e); } catch (_) { return String(e); }
 };
 
-const systemPrompt = (tagline: string, city: string, keepSignals: string[]): string => {
+/* ── The paraphrase guard (4a) ───────────────────────────────
+   The prompt asks for an empty quote when there is nothing to add, and
+   a prompt is a request, not a constraint — the previous one already
+   said "do not paraphrase venue marketing copy" and 49 of 462 live
+   picks still carried the title with its words shuffled. So the rule is
+   enforced here too, on the way to the DB, where it cannot drift.
+
+   Same predicate as WA.UI.descriptionOr in the browser and the copy in
+   the Pages middleware; three runtimes, one rule, and the filler list
+   must stay identical in all three. Content words added beyond the
+   title: zero is a restatement and becomes "", one or more stands.
+   Deliberately lenient — deleting a real sentence is the worse error.
+
+   Storing "" rather than the noise is what makes the app's honest
+   "No description filed" line true instead of merely available. */
+const FILLER = new Set(["the","and","with","for","from","out","you","your","its","are","was","this","that","into","all","new","one","two","live","event","events","show","shows","night","nights","music","party","concert","set","series","performs","presents","featuring","join","come","experience","enjoy","celebrate","discover","more","than","their","his","her"]);
+
+const contentWords = (s: string): string[] =>
+  String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
+    .filter((w) => w.length >= 3 && !FILLER.has(w));
+
+const saysSomething = (text: unknown, title: string): string => {
+  const s = String(text ?? "").trim();
+  if (!s) return "";
+  if (s.length < 12 || /^(tba|tbc|n\/a|none|null|-|—)$/i.test(s)) return "";
+  const t = new Set(contentWords(title));
+  return contentWords(s.slice(0, 300)).some((w) => !t.has(w)) ? s : "";
+};
+
+/* No `tagline` parameter any more. It fed the matching curators.tagline
+   into the prompt as `Curator voice: "..."`, so every description was
+   written in a named person's register — on a product that deleted its
+   curators in Aug 2026. 26 taglines were still live and still steering
+   the model, which is why the copy kept its old personality long after
+   the byline came off the page. Provenance replaced personality; the
+   model writes catalogue copy now. */
+const systemPrompt = (city: string, keepSignals: string[]): string => {
   const ctx = CITY_CONTEXT[city] ?? CITY_CONTEXT.tallinn;
   const keepHint = keepSignals.length
     ? `\nBIAS TOWARD KEEPING a borderline pick when these terms appear in the text: ${keepSignals.join(", ")}.`
     : "";
   return `You are an editor for WanderAlt, an ENGLISH-LANGUAGE guide to ${ctx.name}'s underground and alternative culture.
-Curator voice: "${tagline}"
 
 Your task: extract ALL specific events and places from this post that fit WanderAlt.
 A single post can contain MANY picks - weekly newsletters often list 5-20 events.
@@ -127,6 +181,7 @@ without a cultural angle, networking events, business conferences.${keepHint}
 LANGUAGE (HARD REQUIREMENT — the app is English-only):
   - Input may be English, Estonian, Latvian, Lithuanian, Polish, Finnish, Ukrainian, or Russian, sometimes mixed.
   - EVERY output field (title, quote) MUST be natural English. NEVER copy a non-English title verbatim.
+    (An empty quote is always allowed — see THE QUOTE below. Empty beats a translated restatement.)
   - Event titles are DESCRIPTIONS, not proper nouns — always translate them:
       "Дворовый концерт в Копли" → "Courtyard concert in Kopli"
       "Kirjandusõhtu raamatupoes" → "Literary evening at the bookshop"
@@ -134,10 +189,34 @@ LANGUAGE (HARD REQUIREMENT — the app is English-only):
   - PRESERVE proper nouns inside the English title: venue names, artist and band names,
     named festivals and series. For films/plays use the international English title when one
     exists. Transliterate personal names to Latin script.
-  - Quotes are punchy English curator voice, 1-2 sentences.
   - No em-dashes. No exclamation marks. No "discover". No marketing language
     ("must-visit", "vibrant", "hidden gem"). Do not paraphrase venue marketing
     copy — say what the thing is and why someone would go.
+
+THE QUOTE — the one rule that matters most:
+  The quote must say something a listings site WOULD NOT: the room, the
+  crowd, the door policy, the catch, what the night is actually like.
+  It is not a subtitle and not a summary of the title.
+
+  If the source text gives you nothing beyond the title, return an EMPTY
+  STRING for quote. That is a correct, expected answer — the app prints
+  an honest "No description filed" line, which is strictly better than
+  the title said twice. Do not pad. Do not invent a detail to fill it.
+
+  Test it before you write it: remove the title and read the quote alone.
+  If it still tells you something, keep it. If it is just the title
+  rearranged, return "".
+
+  BAD (all of these must be ""):
+    "Disco party"                      for the title "Disco party"
+    "Swedish House Mafia live"         for "Swedish House Mafia concert"
+    "Party with Techno Tubbies"        for "Techno Tubbies Party"
+    "Fashion show by Erki"             for "Erki Fashion Show"
+    "Tour of medieval art"             for "Medieval Art Welcome Tour"
+  GOOD:
+    "Cash only, and the back room gets loud after midnight."
+    "Free, but the 40 seats go in the first ten minutes."
+    "Sound artists improvising against a 1970s planetarium projector."
 
 FIELD RULES:
   - venue: REQUIRED. Use the specific venue name. If unknown, use "Various venues".
@@ -153,7 +232,7 @@ FIELD RULES:
       walk-up (no ticket needed), ticketed (requires booking)
 
 Return STRICT JSON:
-{"picks":[{"title":"natural ENGLISH title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"curator voice English 1-2 sentences","thumb_initials":"XX","mood_tags":["tag1","tag2"]}]}
+{"picks":[{"title":"natural ENGLISH title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"1-2 English sentences that add something the title does not, or \\"\\" if you have nothing to add","thumb_initials":"XX","mood_tags":["tag1","tag2"]}]}
 
 If no picks: {"picks":[],"reason":"brief phrase"}
 Return ONLY the JSON object.`;
@@ -177,11 +256,11 @@ type LLMResult =
   | { raw: string; provider: string }
   | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed" | "fallback_disabled"; detail?: string };
 
-async function callGemini(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+async function callGemini(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
   if (!GEMINI_KEY) return { error: "missing_key" };
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const bodyStr = JSON.stringify({
-    systemInstruction: { parts: [{ text: systemPrompt(tag, city, keepSignals) }] },
+    systemInstruction: { parts: [{ text: systemPrompt(city, keepSignals) }] },
     contents: [{ role: "user", parts: [{ text }] }],
     generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
   });
@@ -200,14 +279,14 @@ async function callGemini(text: string, tag: string, city: string, keepSignals: 
   return { raw: j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "", provider: GEMINI_MODEL };
 }
 
-async function callGroq(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+async function callGroq(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
   if (!GROQ_KEY) return { error: "missing_key" };
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: GROQ_MODEL,
-      messages: [{ role: "system", content: systemPrompt(tag, city, keepSignals) }, { role: "user", content: text }],
+      messages: [{ role: "system", content: systemPrompt(city, keepSignals) }, { role: "user", content: text }],
       temperature: 0.3,
       response_format: { type: "json_object" },
     }),
@@ -219,7 +298,7 @@ async function callGroq(text: string, tag: string, city: string, keepSignals: st
   return { raw: j?.choices?.[0]?.message?.content ?? "", provider: GROQ_MODEL };
 }
 
-async function callOpenRouter(text: string, tag: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+async function callOpenRouter(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
   if (!OPENROUTER_KEY) return { error: "missing_key" };
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -231,7 +310,7 @@ async function callOpenRouter(text: string, tag: string, city: string, keepSigna
     },
     body: JSON.stringify({
       model: OPENROUTER_MODEL,
-      messages: [{ role: "system", content: systemPrompt(tag, city, keepSignals) }, { role: "user", content: text }],
+      messages: [{ role: "system", content: systemPrompt(city, keepSignals) }, { role: "user", content: text }],
       temperature: 0.3,
       response_format: { type: "json_object" },
     }),
@@ -243,14 +322,14 @@ async function callOpenRouter(text: string, tag: string, city: string, keepSigna
   return { raw: j?.choices?.[0]?.message?.content ?? "", provider: `openrouter/${OPENROUTER_MODEL}` };
 }
 
-async function callLLM(text: string, tag: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
+async function callLLM(text: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
   // Groq is primary — free tier covers our volume.
-  const r1 = await callGroq(text, tag, city, cfg.keepSignals);
+  const r1 = await callGroq(text, city, cfg.keepSignals);
   if ("raw" in r1) return r1;
   // OpenRouter :free is the sanctioned fallback lane (Jul 2026) — tried on
   // any Groq failure, skipped silently while the key doesn't exist.
   if (OPENROUTER_KEY) {
-    const ro = await callOpenRouter(text, tag, city, cfg.keepSignals);
+    const ro = await callOpenRouter(text, city, cfg.keepSignals);
     if ("raw" in ro) return ro;
   }
   // Gemini fallback is gated: skip it entirely when the kill-switch is off
@@ -258,9 +337,9 @@ async function callLLM(text: string, tag: string, city: string, cfg: PipelineCon
   if (!cfg.geminiFallbackEnabled) {
     return r1.error === "missing_key" ? { error: "fallback_disabled" } : r1;
   }
-  if (r1.error === "missing_key") return callGemini(text, tag, city, cfg.keepSignals);
+  if (r1.error === "missing_key") return callGemini(text, city, cfg.keepSignals);
   // rate_limited or overloaded → try Gemini before giving up
-  const r2 = await callGemini(text, tag, city, cfg.keepSignals);
+  const r2 = await callGemini(text, city, cfg.keepSignals);
   if ("raw" in r2) return r2;
   return r1;
 }
@@ -328,7 +407,6 @@ async function loadPipelineConfig(sb: ReturnType<typeof createClient>): Promise<
 // ---- process a single claimed message; returns a summary object ----
 async function processOne(
   sb: ReturnType<typeof createClient>,
-  tagMap: Record<string, string>,
   cfg: PipelineConfig,
 ): Promise<{ status: string; detail: Record<string, unknown> }> {
   const { data: claimed, error: claimErr } = await sb.rpc("claim_staging_message");
@@ -340,7 +418,6 @@ async function processOne(
     .select("curator_handle, city").eq("id", m.source_id).maybeSingle();
   const handle  = src?.curator_handle ?? m.channel;
   const city    = src?.city ?? "tallinn";
-  const tagline = tagMap[handle] ?? "underground cultural picks";
 
   // v39: never silently classify against the wrong city context.
   if (!CITY_CONTEXT[city]) {
@@ -379,7 +456,7 @@ async function processOne(
     ? `[NOTE: This event is from a pre-approved venue on the WanderAlt whitelist. Accept it unless the content is completely off-topic.]\n\n${m.text}`
     : m.text;
 
-  const llm = await callLLM(llmText, tagline, city, cfg);
+  const llm = await callLLM(llmText, city, cfg);
 
   if ("error" in llm) {
     if (llm.error === "rate_limited" || llm.error === "overloaded" || llm.error === "missing_key" || llm.error === "fallback_disabled")
@@ -408,8 +485,14 @@ async function processOne(
   /* ── The staging payload contract ────────────────────────────────
      Ingest functions write staging_messages.payload alongside the prose
      they hand the model. Facts come from HERE, verbatim; the model is
-     asked only for what it alone can do — an English title, the curator
-     quote, the kind, the mood tags. Nothing below is model output.
+     asked only for what it alone can do — an English title, the one
+     sentence worth reading, the kind, the mood tags. Nothing below is
+     model output.
+
+     `description` is the SOURCE's own blurb and is stored verbatim, even
+     when it echoes the title: it is a fact about the listing, not our
+     copy. The paraphrase guard applies to `quote`, which we write. The
+     display layer decides what is worth showing (WA.UI.descriptionOr).
 
        source       string  the ingest that produced the row
        description  string  the blurb as the source wrote it
@@ -473,7 +556,8 @@ async function processOne(
       neighborhood: String(p.neighborhood),
       kind: String(p.kind),
       day, time,
-      quote: String(p.quote ?? ""),
+      /* 4a, enforced in code and not only asked for in the prompt. */
+      quote: saysSomething(p.quote, title),
       handle, thumb_initials: initials,
       tonight: day === "Tonight",
       this_week: day !== null,
@@ -522,13 +606,10 @@ export default {
     if (!GEMINI_KEY && !GROQ_KEY && !OPENROUTER_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Pre-fetch curator taglines and pipeline config once for the whole batch
-    const [{ data: curators }, cfg] = await Promise.all([
-      sb.from("curators").select("handle, tagline"),
-      loadPipelineConfig(sb),
-    ]);
-    const tagMap: Record<string, string> = {};
-    for (const c of curators ?? []) tagMap[c.handle] = c.tagline;
+    /* The curators fetch that used to sit here is gone with the byline —
+       see the note on systemPrompt. `handle` is still carried on every
+       pick, but as provenance (a feed), not as a voice to write in. */
+    const cfg = await loadPipelineConfig(sb);
 
     const start   = Date.now();
     const results: Record<string, unknown>[] = [];
@@ -540,7 +621,7 @@ export default {
       if (Date.now() - start > TIME_CAP_MS) break; // safety time cap
       let r: { status: string; detail: Record<string, unknown> };
       try {
-        r = await processOne(sb, tagMap, cfg);
+        r = await processOne(sb, cfg);
       } catch (e) {
         r = { status: "exception", detail: { error: errMsg(e) } };
       }
