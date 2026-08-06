@@ -234,9 +234,25 @@
     window.WA.Seen.mark(e.id);
 
     document.title = `WanderAlt — ${title}`;
+    /* 4a: a line that only restates the title is suppressed, so it takes
+       2b's honest sentence instead of "Disco party" under "Disco party".
+       Same predicate as the Tonight row — one implementation per
+       pattern, and the two screens must not disagree about whether a
+       pick has a description. */
     const md = document.querySelector('meta[name="description"]');
-    const desc = real(e.description) || real(e.quote) || '';
-    if (md) md.content = desc.slice(0, 160);
+    const filed = window.WA.UI.descriptionOr(real(e.description), title)
+               || window.WA.UI.descriptionOr(real(e.quote), title);
+
+    /* 2b applies here too. Detail printed blank space where Tonight
+       printed the sentence, so the same pick read as richer in the list
+       than on its own page. */
+    const venueWord = real(e.venue);
+    const desc = filed ||
+      (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
+                 : 'No description filed by the source.');
+    /* The meta tag describes the page to a crawler, so it only ever
+       carries a real sentence — never our apology for not having one. */
+    if (md) md.content = filed.slice(0, 160);
 
     /* The eyebrow is the same three facts the row rail carries, so the
        page reads as a continuation of the list rather than a new object. */

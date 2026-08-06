@@ -62,6 +62,47 @@
       : `${sym}${n(p.priceMin)}`;
   };
 
+  /* ── Does this line earn its place? ─────────────────────────
+     4a, on dropping curators: "what readers valued was never the
+     handle, it was the specificity. Rule for implementation: a
+     description must say something a listings site wouldn't — the room,
+     the crowd, the door policy, the catch. If the model can only
+     paraphrase the title, print nothing and say so."
+
+     The pipeline does not honour that yet, so 47 of 470 live picks
+     render the title with its words shuffled: "Swedish House Mafia
+     concert" carrying "Swedish House Mafia live", "Disco party"
+     carrying "Disco party". That is noise wearing the costume of
+     information, and 2b's honest sentence is strictly better than it.
+
+     The test is content words the line adds beyond the title. ZERO new
+     words means it is a restatement; one or more is allowed to stand,
+     because "Jazz at Veino" → "Jazz music and wine" does tell you about
+     the wine. Deliberately conservative: suppressing a real sentence is
+     the worse error, so the ambiguous middle is kept.
+
+     Stopwords carry the generic listings vocabulary too (live, event,
+     party, night, concert), or "Techno Tubbies Party" → "Party with
+     Techno Tubbies" would score a new word for "party". */
+  const FILLER = new Set(['the','and','with','for','from','out','you','your','its','are','was','this','that','into','all','new','one','two','live','event','events','show','shows','night','nights','music','party','concert','set','series','performs','presents','featuring','join','come','experience','enjoy','celebrate','discover','more','than','their','his','her']);
+
+  const contentWords = (s) =>
+    String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/)
+      .filter(w => w.length >= 3 && !FILLER.has(w));
+
+  /* Returns the description when it says something, '' when it does not
+     — so callers keep 2b's "No description filed" path unchanged. */
+  const descriptionOr = (text, title) => {
+    const s = String(text == null ? '' : text).trim();
+    if (!s) return '';
+    /* "TBA", "n/a", "-": a placeholder is not a sentence. */
+    if (s.length < 12 || /^(tba|tbc|n\/a|none|null|-|—)$/i.test(s)) return '';
+    const t = new Set(contentWords(title));
+    /* Only the opening needs judging: a long scraped programme blob has
+       plenty of new words further down and is not a paraphrase. */
+    return contentWords(s.slice(0, 300)).some(w => !t.has(w)) ? s : '';
+  };
+
   /* ── Password field ─────────────────────────────────────────
      auth.js builds its own overlay markup; this is the one control it
      cannot express as a plain input, because the reveal toggle needs a
@@ -85,5 +126,5 @@
     btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
   });
 
-  window.WA.UI = { esc, safeUrl, priceLabel, passwordField };
+  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField };
 })();

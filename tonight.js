@@ -318,8 +318,13 @@
        line. That is a real editorial position for an automated
        catalogue: say what we know and what we don't, in the same
        register." Blank was the one thing it must not be. */
+    /* 4a: a line that only paraphrases the title is suppressed here, so
+       it falls through to the honest sentence below rather than printing
+       "Disco party" under the title "Disco party". */
     const venueWord = real(e.venue);
-    const desc = e.description || e.quote ||
+    const filed = window.WA.UI.descriptionOr(e.description, e.title)
+               || window.WA.UI.descriptionOr(e.quote, e.title);
+    const desc = filed ||
       (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
                  : 'No description filed by the source.');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
