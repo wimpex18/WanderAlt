@@ -90,6 +90,8 @@ caches.keys().then(k => Promise.all(k.map(x => caches.delete(x))));
 navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
 ```
 
+**And clearing it is not enough on its own — check `navigator.serviceWorker.controller` before you believe a measurement.** A controller stays attached for the life of the *document*, so the snippet above can report `unregistered: 0` with the page still being served by the worker it just removed; `offline.js` then re-registers on the next load. Aug 2026 lost four rounds to this in one session, twice concluding a fix had not applied when the served file was already correct. The reliable check is to compare the file the server sends against the DOM — `fetch('/x.js?b='+Date.now(), {cache:'no-store'})` versus the element you expect it to have produced. When those disagree, it is the worker, not the code.
+
 ## Checking your work
 
 There are no automated tests and no CI. The old Puppeteer/Playwright suite was removed in July 2026 — it never caught the failures that actually happen here (alignment, overlap, control sizes, overlays) and it is being rebuilt from scratch, so don't patch it back in piecemeal or add a test framework without being asked.

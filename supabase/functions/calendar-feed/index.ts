@@ -1,12 +1,31 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// calendar-feed  v1 — subscribable ICS feed (July 2026)
-// The no-push retention primitive from docs/market-scan-jul26.md:
-// "put the curator in your calendar." Serves text/calendar built
-// from active DATED picks — per city and optionally per curator.
+// calendar-feed  v2 — subscribable ICS feed (July 2026, Aug 2026)
+// The no-push retention primitive from docs/market-scan-jul26.md.
+// Serves text/calendar built from active DATED picks — per city and
+// optionally filtered to one source feed.
 //
 // GET ?city=tallinn[&handle=@sigmundtells]
+//
+// v2 (Aug 2026) brought it up to the redesign. It was three sentences
+// of a deleted product: the calendar described itself as
+// "Curator-vouched picks. A human chose every event here.", every event
+// linked to venue.html (a page 6e deleted), and each description opened
+// with the pick's line in quotation marks, as if a person had said it.
+// The first of those is the one that mattered — it is the calendar's own
+// description, it lands inside somebody's calendar app, and nothing on
+// our side ever gets to correct it.
+//
+// The feed had no way in from the app at all until Aug 2026: About's
+// #calendar section described it without printing a URL, and Explore's
+// ".ics" button and You's "Add to my calendar" both pointed at that
+// section. Built, deployed, working, and unreachable.
+//
+// verify_jwt stays FALSE and must: a calendar app subscribes to this URL
+// and re-fetches it on its own schedule, with no Authorization header
+// and no way to add one. It only reads RLS-public dated picks and writes
+// nothing.
 //
 // Date semantics mirror share.js's client-side .ics builder:
 // "Tonight" → today, weekday name → next such weekday (today
@@ -82,8 +101,14 @@ Deno.serve(async (req: Request) => {
       const start = nextDateFor(p.day!, p.time);
       const end   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
       const loc   = [p.venue, p.neighborhood].filter(Boolean).join(', ');
-      const link  = `https://wanderalt.app/venue.html?id=${encodeURIComponent(p.id)}`;
-      const desc  = [p.quote ? `"${p.quote}"` : '', p.handle ? `via ${p.handle}` : '', link]
+      /* detail.html, not venue.html. The 301 in _redirects would carry an
+         old link, but a calendar entry outlives a redirect rule — the
+         same reason share.js writes the real URL into its own .ics. */
+      const link  = `https://wanderalt.app/detail.html?id=${encodeURIComponent(p.id)}`;
+      /* The sentence is no longer wrapped in quotation marks: quoting it
+         presents it as somebody's words, and there is no somebody. The
+         handle rides along as provenance, which is what it is now. */
+      const desc  = [p.quote || '', p.handle ? `via ${p.handle}` : '', link]
         .filter(Boolean).join('\n');
       return [
         'BEGIN:VEVENT',
@@ -105,7 +130,13 @@ Deno.serve(async (req: Request) => {
     'PRODID:-//WanderAlt//calendar-feed//EN',
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${esc(calName)}`,
-    'X-WR-CALDESC:Curator-vouched picks. A human chose every event here.',
+    /* Was "Curator-vouched picks. A human chose every event here." That
+       stopped being true in Aug 2026 — there are no curators, and the
+       picks are read from venue programmes and local feeds by an
+       automated pipeline. It is also the one line that shows up as the
+       calendar's own description inside somebody's calendar app, where
+       nothing on our side ever corrects it. */
+    `X-WR-CALDESC:${esc(`Dated picks in ${cap(city)}, read from venue programmes and local feeds. Refreshed twice a day.`)}`,
     'X-PUBLISHED-TTL:PT12H',
     'REFRESH-INTERVAL;VALUE=DURATION:PT12H',
     ...events,

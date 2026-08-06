@@ -400,11 +400,38 @@ document.addEventListener('click', (e) => {
       e.target.closest('#more').remove();
       return;
     }
-    if (e.target.closest && e.target.closest('#share')) {
+    const sh = e.target.closest && e.target.closest('#share');
+    if (sh) {
+      /* The trigger is the top bar's quiet Share (detail.html), not a
+         fourth key in the action row — the row is already flex:1 1 0 with
+         nowrap, so a fourth control squeezes "Walk me there" to 79px and
+         three wrapped lines.
+
+         Routed through WA.Share rather than reimplemented here. This
+         handler used to hand-roll navigator.share with a clipboard
+         fallback, which is a second implementation of a module the page
+         already loads — and it missed the one case share.js exists to
+         get right: dismissing the OS sheet throws AbortError, and
+         treating that as a failure copies a link nobody asked for.
+         That duplication is why WA.Share read as unused. */
       const hit = resolve();
-      const title = hit ? (hit.e.title || hit.e.name || 'WanderAlt') : 'WanderAlt';
-      if (navigator.share) navigator.share({ title, url: location.href }).catch(() => {});
-      else navigator.clipboard && navigator.clipboard.writeText(location.href);
+      if (!hit || !window.WA.Share) return;
+      const p = hit.e;
+      window.WA.Share.url({
+        title: p.title || 'WanderAlt',
+        text:  [p.title, real(p.venue)].filter(Boolean).join(' · '),
+        url:   location.href,
+      }).then((r) => {
+        /* WA.Toast refuses any toast without a reverse action, and a
+           copied link has none, so the confirmation lives on the control.
+           'shared' needs nothing: the OS sheet is its own feedback, and
+           'cancelled' means the reader backed out on purpose. */
+        if (r !== 'copied' && r !== 'failed') return;
+        const was = sh.textContent;
+        sh.textContent = r === 'copied' ? 'Link copied' : 'Copy failed';
+        setTimeout(() => { sh.textContent = was; }, 2000);
+      });
+      return;
     }
   });
 
