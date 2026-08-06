@@ -318,8 +318,13 @@
        line. That is a real editorial position for an automated
        catalogue: say what we know and what we don't, in the same
        register." Blank was the one thing it must not be. */
+    /* 4a: a line that only paraphrases the title is suppressed here, so
+       it falls through to the honest sentence below rather than printing
+       "Disco party" under the title "Disco party". */
     const venueWord = real(e.venue);
-    const desc = e.description || e.quote ||
+    const filed = window.WA.UI.descriptionOr(e.description, e.title)
+               || window.WA.UI.descriptionOr(e.quote, e.title);
+    const desc = filed ||
       (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
                  : 'No description filed by the source.');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
@@ -714,11 +719,13 @@
 
   const openWhere = () => {
     $('sheet-title').textContent = 'Where?';
-    $('sheet-body').innerHTML = (window.WA.CITIES || []).map((c) => {
+
+    const cityRow = (c) => {
       const on = c.id === window.WA.CITY;
       const n = (window.WA._catalogAll || []).filter(e => e.city === c.id && window.WA.when.isTonight(e)).length;
       const places = (window.WA._venuesAll || []).filter(v => v.city === c.id).length;
-      const coverage = c.status === 'internal' ? 'internal testing'
+      const coverage = c.status === 'internal'
+        ? `internal testing · ${places} places`
         : `${n ? `${n} tonight` : 'nothing tonight'} · ${places} places`;
       return `<button class="wa-sheet__parked" type="button" data-city="${esc(c.id)}"
         style="margin-top:var(--s-2);${on ? 'border-color:var(--petrol);background:var(--petrol-tint)' : ''}">
@@ -726,7 +733,36 @@
         <span class="wa-sheet__parked-label">${esc(c.label.charAt(0) + c.label.slice(1).toLowerCase())}</span>
         <span class="wa-sheet__parked-value">${esc(coverage)}</span>
       </button>`;
-    }).join('');
+    };
+
+    const all = window.WA.CITIES || [];
+    const live = all.filter(c => c.status !== 'internal');
+    const testing = all.filter(c => c.status === 'internal');
+
+    /* 5c: "Nearby / Around me", then "Live cities", then the internal
+       one BELOW the live three. Grouping is the whole point -- it is
+       "the kindest possible way to ship a four-city product that is thin
+       in two of them", and an ungrouped list of four makes Vilnius look
+       like an equal that happens to be empty. */
+    $('sheet-body').innerHTML = `
+      <div class="wa-field">
+        <span class="wa-field__label">Nearby</span>
+        <button class="wa-sheet__parked" type="button" id="around-me" style="margin-top:var(--s-2)">
+          <span class="wa-sheet__parked-label">Around me</span>
+          <span class="wa-sheet__parked-value">${esc(
+            state.sort === 'nearest' ? 'sorting by distance' : 'sort by how far you would walk')}</span>
+        </button>
+      </div>
+
+      <div class="wa-field" style="margin-top:var(--s-5)">
+        <span class="wa-field__label">Live cities</span>
+        ${live.map(cityRow).join('')}
+      </div>
+
+      ${testing.length ? `<div class="wa-field" style="margin-top:var(--s-5)">
+        <span class="wa-field__label">Not live yet</span>
+        ${testing.map(cityRow).join('')}
+      </div>` : ''}`;
     $('sheet-foot').innerHTML = sheetFoot();
     if (!sheet.open) sheet.showModal();
   };
@@ -755,6 +791,18 @@
     const t = e.target;
     const hit = (sel) => t.closest && t.closest(sel);
 
+    /* "Around me" is the one Where answer that is not a city: it asks
+       for location and sorts by how far you would walk. Falls back to
+       soonest if permission is refused, which is what the sort control
+       already says it does. */
+    if (hit('#around-me')) {
+      state.sort = 'nearest';
+      window.WA.Geo.userLoc().then(() => render());
+      if (sheet.open) sheet.close();
+      writeParams();
+      render();
+      return;
+    }
     if (hit('#open-filters')) { openSheet('filters'); return; }
     const slot = hit('[data-slot]');
     if (slot) { openSheet(slot.dataset.slot); return; }

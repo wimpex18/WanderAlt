@@ -277,7 +277,49 @@
         </div>`).join('')}</div>
     </section>`;
 
+  /* 6b's test surface: ONE route as a full-width card, above the fold,
+     for two weeks. Not a scope chip -- Walks is not a section of the
+     catalogue, it is a single experiment, and 5g's build order puts it
+     last precisely because it is the only thing here that needs new
+     logic rather than new layout.
+
+     Renders only for cities that actually have routes, so the other
+     three do not carry a hole where an experiment would be. */
+  let ROUTES = null;
+  const walkCard = () => {
+    /* esc is function-scoped throughout this file, not module-scoped --
+       using it without this line threw a ReferenceError that vanished
+       into loadWalks()'s unawaited promise, so the card simply never
+       appeared and nothing said why. */
+    const esc = UI().esc;
+    const host = $('walkcard');
+    if (!host) return;
+    const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
+    if (!mine.length) { host.innerHTML = ''; return; }
+    const r = mine[0];
+    const stops = r.stops.length;
+    host.innerHTML = `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
+      <span class="wa-walkcard__eyebrow">A walk</span>
+      <span class="wa-walkcard__title">${esc(r.title)}</span>
+      <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
+      <span class="wa-walkcard__facts">${esc(`${stops} stops · ordered so every door is open when you reach it`)}</span>
+    </a>`;
+  };
+
+  const loadWalks = async () => {
+    try {
+      const res = await fetch('./walks.json');
+      ROUTES = res.ok ? (await res.json()).routes : [];
+      walkCard();
+    } catch (err) {
+      ROUTES = [];
+      console.warn('[WanderAlt] walks.json did not load — the route card is skipped.', err);
+    }
+  };
+  loadWalks();
+
   const render = () => {
+    walkCard();
     $('sections').innerHTML = buildSections();
     $('cap-where').textContent = CITY_LABEL();
     $('cap-when').textContent  = WHEN_LABEL[state.when] || 'Anytime';

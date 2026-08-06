@@ -46,6 +46,37 @@
         </span>
       </a>`;
     }).join('');
+
+    /* The calendar feed, with its actual URL. calendar-feed has served a
+       real per-city ICS since Jul 2026 and nothing in the app ever said
+       where it was — About described it, Explore's ".ics" button and
+       You's "Add to my calendar" both pointed at this section, and the
+       section printed no address. A subscribe URL cannot be guessed.
+
+       One row per live city, because a feed is per city and a reader in
+       Riga should not have to hand-edit a query string. Vilnius is left
+       out for the same reason it is left off the OG card: internal
+       testing does not claim parity. */
+    const feeds = document.getElementById('about-feeds');
+    if (feeds) {
+      const base = `${window.WA.BASE_URL}/functions/v1/calendar-feed?city=`;
+      feeds.innerHTML = (window.WA.CITIES || [])
+        .filter(c => c.status === 'live')
+        .map((c) => {
+          const url = base + encodeURIComponent(c.id);
+          const name = c.label.charAt(0) + c.label.slice(1).toLowerCase();
+          /* overflow-wrap:anywhere because a feed URL is one 84-character
+             token with no spaces: at 390px it ran to 475px and dragged
+             the tab bar out with it. The address is printed in full and
+             not hidden behind a label, because subscribing means pasting
+             it into a calendar app — a link you can only click is the
+             wrong affordance for a thing you need to copy. */
+          return `<p class="wa-detail__note" style="margin-top:var(--s-4)">
+            <strong>${esc(name)}</strong><br>
+            <a href="${esc(url)}" style="overflow-wrap:anywhere">${esc(url)}</a>
+          </p>`;
+        }).join('');
+    }
   };
 
   document.addEventListener('wa:catalog-ready', render);

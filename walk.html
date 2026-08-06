@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt</title>
+  <title>WanderAlt — a walk</title>
   <meta name="description" content="" />
   <meta name="theme-color" content="#f2efe6" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
@@ -38,9 +38,10 @@
   <script defer src="./lists.js"></script>
   <script defer src="./follow.js"></script>
   <script defer src="./view-transition.js"></script>
-  <script defer src="./source.js"></script>
+  <script defer src="./toast.js"></script>
+  <script defer src="./walk.js"></script>
 </head>
-<body data-page="source">
+<body data-page="walk">
 
   <a class="wa-sr" href="#main">Skip to content</a>
 
@@ -49,14 +50,16 @@
       <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
       <span>WanderAlt</span>
     </a>
-    <button class="wa-btn wa-btn--quiet" type="button" id="follow" aria-pressed="false">Follow</button>
+    <a class="wa-btn wa-btn--quiet" href="./index.html">Close</a>
   </header>
 
-  <!-- The curator page became a source page (3b): same shape, honest
-       subject. A venue, a feed, a channel — not a person. Following a
-       venue is a stronger habit than following a stranger, and it is the
-       seed of personalisation earned from behaviour rather than a quiz. -->
-  <main class="wa-shell wa-source" id="main"></main>
+  <!-- 6b's Walks test. Three hand-written routes in walks.json, ordered
+       so every door is open when you reach it. This is the cheap version
+       the direction asks for: no generator, no route solver, no hours
+       pipeline -- a human curated the stops around the half of the
+       catalogue that has no filed hours, which is what keeps the promise
+       honest. The number that decides its future is third-stop opens. -->
+  <main class="wa-shell wa-walk" id="main"></main>
 
   <nav class="wa-tabbar" aria-label="Primary">
     <a class="wa-tabbar__item" href="./index.html">

@@ -64,7 +64,6 @@
   <script defer src="./geo.js"></script>
   <script defer src="./hours.js"></script>
   <script defer src="./marks.js"></script>
-  <script defer src="./share.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
@@ -125,6 +124,10 @@
       <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="tonight">Tonight</button>
       <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">Places</button>
     </div>
+
+    <!-- 6b's Walks test: one hand-written route, full width, above the
+         fold, for two weeks. Empty for cities with no routes. -->
+    <div id="walkcard"></div>
 
     <!-- Named carousels, each with a count in its subtitle so a thin
          section reads as a short row rather than a hole. -->

@@ -234,9 +234,25 @@
     window.WA.Seen.mark(e.id);
 
     document.title = `WanderAlt — ${title}`;
+    /* 4a: a line that only restates the title is suppressed, so it takes
+       2b's honest sentence instead of "Disco party" under "Disco party".
+       Same predicate as the Tonight row — one implementation per
+       pattern, and the two screens must not disagree about whether a
+       pick has a description. */
     const md = document.querySelector('meta[name="description"]');
-    const desc = real(e.description) || real(e.quote) || '';
-    if (md) md.content = desc.slice(0, 160);
+    const filed = window.WA.UI.descriptionOr(real(e.description), title)
+               || window.WA.UI.descriptionOr(real(e.quote), title);
+
+    /* 2b applies here too. Detail printed blank space where Tonight
+       printed the sentence, so the same pick read as richer in the list
+       than on its own page. */
+    const venueWord = real(e.venue);
+    const desc = filed ||
+      (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
+                 : 'No description filed by the source.');
+    /* The meta tag describes the page to a crawler, so it only ever
+       carries a real sentence — never our apology for not having one. */
+    if (md) md.content = filed.slice(0, 160);
 
     /* The eyebrow is the same three facts the row rail carries, so the
        page reads as a continuation of the list rather than a new object. */
@@ -384,11 +400,38 @@ document.addEventListener('click', (e) => {
       e.target.closest('#more').remove();
       return;
     }
-    if (e.target.closest && e.target.closest('#share')) {
+    const sh = e.target.closest && e.target.closest('#share');
+    if (sh) {
+      /* The trigger is the top bar's quiet Share (detail.html), not a
+         fourth key in the action row — the row is already flex:1 1 0 with
+         nowrap, so a fourth control squeezes "Walk me there" to 79px and
+         three wrapped lines.
+
+         Routed through WA.Share rather than reimplemented here. This
+         handler used to hand-roll navigator.share with a clipboard
+         fallback, which is a second implementation of a module the page
+         already loads — and it missed the one case share.js exists to
+         get right: dismissing the OS sheet throws AbortError, and
+         treating that as a failure copies a link nobody asked for.
+         That duplication is why WA.Share read as unused. */
       const hit = resolve();
-      const title = hit ? (hit.e.title || hit.e.name || 'WanderAlt') : 'WanderAlt';
-      if (navigator.share) navigator.share({ title, url: location.href }).catch(() => {});
-      else navigator.clipboard && navigator.clipboard.writeText(location.href);
+      if (!hit || !window.WA.Share) return;
+      const p = hit.e;
+      window.WA.Share.url({
+        title: p.title || 'WanderAlt',
+        text:  [p.title, real(p.venue)].filter(Boolean).join(' · '),
+        url:   location.href,
+      }).then((r) => {
+        /* WA.Toast refuses any toast without a reverse action, and a
+           copied link has none, so the confirmation lives on the control.
+           'shared' needs nothing: the OS sheet is its own feedback, and
+           'cancelled' means the reader backed out on purpose. */
+        if (r !== 'copied' && r !== 'failed') return;
+        const was = sh.textContent;
+        sh.textContent = r === 'copied' ? 'Link copied' : 'Copy failed';
+        setTimeout(() => { sh.textContent = was; }, 2000);
+      });
+      return;
     }
   });
 

@@ -26,6 +26,11 @@ That serves the site at `http://localhost:5173`. `npm run admin` serves the admi
 
 There isn't any right now. A Puppeteer and Playwright suite (structural sweep, E2E, pixel diff, screenshot captures) was removed in July 2026: it cost two browser engines and ~180 MB of dependencies while reliably missing the things that actually go wrong here — alignment, overlap, control sizes, overlays. It will be rebuilt from scratch rather than patched.
 
+There is a service worker now (`sw.js`), which means a hard reload is
+sometimes needed to see a change: it serves the shell from cache and only
+revalidates in the background. Navigations are network-first, so a deploy
+is visible immediately; static assets are stale-while-revalidate.
+
 Until then, checking a change means looking at it: `npm start`, then the page at 390 / 768 / 1440, in both themes. Measure heights and gaps rather than eyeballing them, and check every other instance of a pattern you changed. Photos, the vector basemap and `backdrop-filter` all render correctly against a local server now — the old claim that they needed the Cloudflare preview was about the headless Chromium the deleted suite drove, not about a real browser. The PR preview is still the honest last check for anything CDN- or header-dependent, since the dev server sends no CSP. For a performance number, `npx lighthouse http://localhost:5173/index.html --view`.
 
 ## How it's put together

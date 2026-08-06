@@ -59,6 +59,12 @@
 /assets/*
   Cache-Control: public, max-age=2592000, immutable
 
+# The service worker must never be served stale: a cached sw.js pins the
+# whole app to whatever it was built against, and the 5-minute /* rule
+# would do exactly that for five minutes after every deploy.
+/sw.js
+  Cache-Control: no-cache
+
 # Favicons / manifest: 1 day — these rotate rarely but not "never".
 /favicon.ico
   Cache-Control: public, max-age=86400
