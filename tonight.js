@@ -595,9 +595,15 @@
        the reader is left wondering whether they imagined it. The zeroes
        come back disabled below, which says "nothing tonight" rather
        than "no such thing". */
+    /* A placeholder is not a kind. One pick carries the STRING "null",
+       which passed the `if (k)` truthiness test and put a filter option
+       labelled "null" in the sheet — offering the reader a category the
+       product does not have. Same placeholder set the rest of the app
+       already refuses for venue and neighbourhood. */
+    const NOT_A_KIND = /^(null|undefined|unknown|tba|tbc|n\/a|none|other|-)$/i;
     for (const e of picks()) {
-      const k = String(e.kind || '').toLowerCase();
-      if (k) map.set(k, 0);
+      const k = String(e.kind || '').toLowerCase().trim();
+      if (k && !NOT_A_KIND.test(k)) map.set(k, 0);
     }
     for (const e of base) {
       const k = String(e.kind || '').toLowerCase();

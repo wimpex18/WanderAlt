@@ -703,6 +703,26 @@ a.wa-sr:focus {
   }
 }
 
+/* 5b's masthead link. Quiet by design — it sits next to the account
+   key and must not compete with the four scope tabs beside it. Hidden
+   below 1024, where the masthead has no room and the digest card at the
+   foot of Explore is the only surface (5a draws no such link). */
+.wa-topbar__digest {
+  display: none;
+  margin-left: auto;
+  padding: 0 var(--s-3);
+  align-self: center;
+  font: 600 var(--fs-meta)/1 var(--ff-ui);
+  color: var(--ink-mute);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wa-topbar__digest:hover { color: var(--ink); }
+
+@media (min-width: 1024px) {
+  .wa-topbar__digest { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+}
+
 /* 5b: on Explore's desktop the scope tabs ARE the masthead row. The
    direction draws no Explore/Tonight/Saved/You there — 5b's header is
    logo, four scope tabs, the Saturday-email link and an avatar, and

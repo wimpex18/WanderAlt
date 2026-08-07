@@ -224,9 +224,25 @@
     const events = picks().filter(e => when.matches(e, state.when))
       .filter(e => state.what === 'all' || String(e.kind || '').toLowerCase() === state.what);
 
+    /* 5a and 5b both subtitle this shelf "within a 20-minute walk", so
+       the shelf is bounded, not merely sorted — it answers "what can I
+       reach", not "what is open somewhere in the city". 20 minutes at
+       the walking rate geo.js already uses.
+
+       The bound only exists once we know where the reader is. Without
+       permission there is no distance to filter on, and printing
+       "within a 20-minute walk" over an unbounded list would be a claim
+       we cannot support — so the shelf stays whole and the subtitle
+       says what it actually is. Same rule as the row rail: degrade the
+       copy with the data, never keep the copy and lose the truth. */
+    const WALK_MIN = 20;
+    const bounded = !!(geo.currentLoc && geo.currentLoc());
     const openNow = places().filter((p) => {
       const s = window.WA.Hours.state(p.openingHours);
-      return s.known && s.open;
+      if (!(s.known && s.open)) return false;
+      if (!bounded) return true;
+      const d = geo.distanceTo(p);
+      return d == null || d <= WALK_MIN * geo.WALK_M_PER_MIN;
     });
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
@@ -239,16 +255,14 @@
       const esc = UI().esc;
       const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
       out.push(`<section class="wa-section">
-        <h2 class="wa-section-title">Walks in ${esc(city)}</h2>
-        <p class="wa-section-sub">${esc(mine.length
-          ? `${mine.length} ${mine.length === 1 ? 'route' : 'routes'} · hand-assembled`
-          : 'none yet')}</p>
+        <p class="wa-section-sub">${esc(`${city} · this weekend`)}</p>
+        <h2 class="wa-section-title">Walks we assembled</h2>
         ${mine.length
           ? mine.map(r => `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
               <span class="wa-walkcard__eyebrow">A walk</span>
               <span class="wa-walkcard__title">${esc(r.title)}</span>
               <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
-              <span class="wa-walkcard__facts">${esc(`${r.stops.length} stops · ordered so every door is open when you reach it`)}</span>
+              <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
             </a>`).join('')
           : `<div class="wa-empty">
               <p class="wa-empty__title">No walks written for ${esc(city)} yet.</p>
@@ -278,7 +292,9 @@
          section below, which never claims to know. */
       out.push(section({
         title: 'Open right now',
-        sub:   `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
+        sub:   bounded
+          ? `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · within a ${WALK_MIN}-minute walk`
+          : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
         items: sorted(openNow),
         href:  'discover.html?type=places',
         hrefSub: 'every place',
@@ -334,6 +350,35 @@
      Renders only for cities that actually have routes, so the other
      three do not carry a hole where an experiment would be. */
   let ROUTES = null;
+
+  /* 5a labels a route "6 stops · 2.5 km", not with a promise sentence.
+     walks.json stores stops as {id, note} and no distance, so the
+     distance is the walked length of the route: the legs between
+     consecutive stops, looked up in the venue index. Computed rather
+     than filed, because a hand-typed number in the JSON would drift the
+     first time a stop is swapped and nothing would catch it.
+
+     Stops with no coordinate drop out of the sum rather than zeroing
+     it, and if fewer than two stops resolve there is no line to print,
+     so the count stands alone. */
+  const routeFacts = (r) => {
+    const stops = r.stops.length;
+    const idx = {};
+    for (const v of (window.WA._venuesAll || window.WA.venues || [])) idx[v.id] = v;
+    const pts = r.stops
+      .map(s => idx[s.id])
+      .filter(Boolean)
+      .map(v => ({ lat: v.lat ?? v.latitude, lng: v.lng ?? v.longitude }))
+      .filter(p => p.lat != null && p.lng != null);
+
+    if (pts.length < 2) return `${stops} stops`;
+    let m = 0;
+    for (let i = 1; i < pts.length; i++) {
+      m += window.WA.Geo.haversineM(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
+    }
+    return `${stops} stops · ${window.WA.Geo.format(m)}`;
+  };
+
   const walkCard = () => {
     /* esc is function-scoped throughout this file, not module-scoped --
        using it without this line threw a ReferenceError that vanished
@@ -348,12 +393,11 @@
     const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
     if (!mine.length) { host.innerHTML = ''; return; }
     const r = mine[0];
-    const stops = r.stops.length;
     host.innerHTML = `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
       <span class="wa-walkcard__eyebrow">A walk</span>
       <span class="wa-walkcard__title">${esc(r.title)}</span>
       <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
-      <span class="wa-walkcard__facts">${esc(`${stops} stops · ordered so every door is open when you reach it`)}</span>
+      <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
     </a>`;
   };
 
