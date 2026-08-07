@@ -703,6 +703,49 @@ a.wa-sr:focus {
   }
 }
 
+/* 5b: on Explore's desktop the scope tabs ARE the masthead row. The
+   direction draws no Explore/Tonight/Saved/You there — 5b's header is
+   logo, four scope tabs, the Saturday-email link and an avatar, and
+   5d's is the capsule's current answers plus two keys. The four app
+   tabs are a phone pattern; on desktop Tonight is a scope, Saved is
+   the saved-strip, You is the avatar.
+
+   Scoped to .explore-scope via :has() so only Explore loses the tab
+   bar. The row goes out of flow for the same reason the tab bar does
+   at this width, and takes the same z-index so it sits on the glass
+   rather than under it. */
+@media (min-width: 1024px) {
+  body:has(.explore-scope) .wa-tabbar { display: none; }
+
+  .explore-scope {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 41;
+    height: var(--topbar-h);
+    align-items: center;
+    padding: 0;
+    /* The phone rule sets margin-top: var(--s-4) to space the row under
+       the capsule. Margin still applies once the element is fixed, so
+       it pushed the whole row 16px below the bar it is supposed to sit
+       in — "top: 0" measuring at y=16 with no containing-block ancestor
+       in sight. */
+    margin: 0;
+    overflow: visible;
+  }
+
+  /* The 768 tab is 60px tall and the bar is 56, so at its normal size
+     the active underline lands 4px below the glass edge — the mark
+     detaches from the band it belongs to. Compressed to fit inside the
+     bar, still clearing --tap-min in both directions. */
+  .explore-scope .wa-scope__chip {
+    padding: var(--s-1) var(--s-2);
+    min-height: var(--tap-min);
+  }
+  .explore-scope .wa-scope__chip svg { width: 18px; height: 18px; }
+}
+
 /* ============================================================
    9 · COMPONENT — category mark
    No photo is the normal case. A photoless card is filled by its
@@ -1836,7 +1879,13 @@ a.wa-sr:focus {
    row sits tight under it because the two are one control group, and
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
-.explore-scope   { margin-top: var(--s-4); }
+/* Phone/tablet only. From 1024 this row is fixed into the masthead
+   (see the scope component), and a margin still applies to a fixed
+   element — left unscoped it pushed the whole tab row 16px below the
+   bar it belongs to, from 700 lines away. */
+@media (max-width: 1023.98px) {
+  .explore-scope { margin-top: var(--s-4); }
+}
 
 /* ============================================================
    Saved + You (5f) — small shared pieces.

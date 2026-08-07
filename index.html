@@ -119,10 +119,31 @@
     <!-- Three scope chips. Walks was cut this cycle: opening-hours
          coverage came in around 48%, under the ~70% that the "every door
          is open when you reach it" promise needs. -->
+    <!-- 5b: "Scope tabs live above the capsule, not beside the list.
+         Icon over label, underline on the active one... the whole page
+         identity changes from one row of four." On desktop this row IS
+         the masthead — 5b draws no Explore/Tonight/Saved/You there, and
+         5d's header is the capsule's answers plus two keys, so the four
+         app tabs are a phone pattern only.
+
+         Walks is the fourth. It was cut from this row when opening-hours
+         coverage measured 47%, under the 70% floor the walk-in-progress
+         screen needs; the parse rate of filed hours is 93.7% now and the
+         three routes and both walk screens are built, so the tab is
+         surfacing what already exists rather than promising new work. -->
     <div class="wa-scope explore-scope" role="tablist" aria-label="Scope" id="scope">
-      <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">All</button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="tonight">Tonight</button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">Places</button>
+      <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>All
+      </button>
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="tonight">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
+      </button>
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Places
+      </button>
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="walks">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 17C13 16 16 13 17 8.5"/></svg>Walks
+      </button>
     </div>
 
     <!-- 6b's Walks test: one hand-written route, full width, above the

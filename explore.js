@@ -7,9 +7,13 @@
    Carousels with plain section names, a count in every subtitle, and
    the dense list one tap away in Tonight.
 
-   Three scope chips, not four. Walks was cut this cycle — measured
-   opening-hours coverage is around 48%, under the ~70% the "ordered so
-   every door is open when you reach it" promise needs.
+   Four scope tabs, as 5b and 5c both draw them: All, Tonight, Places,
+   Walks. Walks was cut from this row in the first cycle because measured
+   opening-hours coverage was ~48%, under the ~70% the "ordered so every
+   door is open when you reach it" promise needs. The parse rate of filed
+   hours is 93.7% now, and both walk screens and the three hand-written
+   routes shipped in 6b, so the tab surfaces what exists rather than
+   promising work. On desktop this row is the masthead — see wa.css.
 
    Everything interpolated here is scraped: titles, venues, kinds and
    neighbourhoods come from Telegram, RSS and venue pages via an LLM.
@@ -227,6 +231,32 @@
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
 
+    /* 5b's fourth scope. Routes are not picks, so this does not go
+       through section() -- it lists every route for the city using the
+       same card the All scope shows one of. A city with no routes says
+       so plainly rather than showing an empty shelf. */
+    if (state.scope === 'walks') {
+      const esc = UI().esc;
+      const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
+      out.push(`<section class="wa-section">
+        <h2 class="wa-section-title">Walks in ${esc(city)}</h2>
+        <p class="wa-section-sub">${esc(mine.length
+          ? `${mine.length} ${mine.length === 1 ? 'route' : 'routes'} · hand-assembled`
+          : 'none yet')}</p>
+        ${mine.length
+          ? mine.map(r => `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
+              <span class="wa-walkcard__eyebrow">A walk</span>
+              <span class="wa-walkcard__title">${esc(r.title)}</span>
+              <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
+              <span class="wa-walkcard__facts">${esc(`${r.stops.length} stops · ordered so every door is open when you reach it`)}</span>
+            </a>`).join('')
+          : `<div class="wa-empty">
+              <p class="wa-empty__title">No walks written for ${esc(city)} yet.</p>
+              <p class="wa-empty__body">Routes are assembled by hand around venues whose opening hours are filed, so they arrive one city at a time. Tallinn has three.</p>
+            </div>`}
+      </section>`);
+    }
+
     if (state.scope === 'all' || state.scope === 'tonight') {
       const label = WHEN_LABEL[state.when] || 'On';
       out.push(section({
@@ -312,6 +342,9 @@
     const esc = UI().esc;
     const host = $('walkcard');
     if (!host) return;
+    /* The Walks scope lists every route below, so the teaser above it
+       would be the same card printed twice. */
+    if (state.scope === 'walks') { host.innerHTML = ''; return; }
     const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
     if (!mine.length) { host.innerHTML = ''; return; }
     const r = mine[0];
