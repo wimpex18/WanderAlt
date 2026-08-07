@@ -202,11 +202,9 @@
 
      picks.time is the pipeline's own extracted display time, so if that
      is set the source really did state one. Otherwise a timestamp landing
-     exactly on midnight in either clock is treated as date-only. */
-  const isMidnightUTC = (iso) => {
-    const d = new Date(iso);
-    return !isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0;
-  };
+     exactly on midnight in either clock is treated as date-only.
+
+     The midnight test itself moved into WA.when.statedMinutes. */
 
   /* A rail prints a clock ONLY when a clock can actually be parsed.
      Trusting the string instead put "00:00" on a record store whose time
@@ -222,12 +220,10 @@
      what had eleven exhibitions claiming to start at three in the
      morning. A genuine midnight start loses its clock and shows the day
      instead, which is much cheaper than a shop that opens at 00:00. */
-  const hasStatedTime = (e) => {
-    const m = doorsMinutes(e);
-    if (m == null || m === 0) return false;
-    if (e.startsAt && isMidnightUTC(e.startsAt)) return false;
-    return true;
-  };
+  /* Delegates to the time model now. This predicate used to live here
+     alone, which is why the Explore card badge never got it and shipped
+     "Doors 00:00" long after the rail stopped saying "00:00". */
+  const hasStatedTime = (e) => window.WA.when.statedMinutes(e) != null;
 
   const railFor = (e) => {
     const isToday = window.WA.when.isTonight(e);

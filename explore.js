@@ -81,8 +81,26 @@
       return null;
     }
     if (isFreeish(e))                 return { text: 'Free', now: false };
-    if (window.WA.when.isTonight(e) && e.time) return { text: `Doors ${e.time}`, now: true };
-    if (e.time)                       return { text: e.time, now: false };
+
+    /* Two bugs lived on this line. It printed e.time raw, so a pick
+       whose time field is prose or a bare date rendered "Doors 00:00"
+       on 24 cards; and it set now:true for anything merely happening
+       today, which painted every one of those badges lime. Lime has one
+       job — "now" — and a door opening at 15:00 seen at nine in the
+       morning is not now. 5b draws these as the plain cream pill.
+
+       So: lime only once it has actually started, which is the same
+       rule the row rail uses for NOW, and a clock only when one parses. */
+    const m = window.WA.when.statedMinutes(e);
+    const today = window.WA.when.isTonight(e);
+    if (m != null) {
+      if (today && m <= window.WA.Hours.cityNow().minutes) return { text: 'Now', now: true };
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      return { text: `Doors ${hh}:${mm}`, now: false };
+    }
+    /* Dated but undated-in-time: say the day, never a made-up clock. */
+    if (today) return { text: 'Tonight', now: false };
     return null;
   };
 
