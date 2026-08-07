@@ -780,8 +780,12 @@ a.wa-sr:focus {
 
 .wa-mark svg,
 .wa-mark use {
-  width: 46%;
-  height: 46%;
+  /* 5e sizes the card mark at 44-62px. 46% alone tracked the card, so a
+     181px desktop cell drew it at 83px — the mark stopped being a label
+     on a ground and became an illustration. Clamped to the stated range;
+     the percentage still drives it between those ends. */
+  width: clamp(44px, 46%, 62px);
+  height: clamp(44px, 46%, 62px);
   stroke: var(--petrol);
   fill: none;
   stroke-width: 1.5;
@@ -838,9 +842,12 @@ a.wa-sr:focus {
 
 [data-theme="dusk"] .wa-card__badge { background: rgba(20, 28, 29, .94); }
 
-/* The one lime use on a card: something is live or starting now. */
+/* The one lime use on a card: something is live or starting now.
+   94% like the neutral badge — 5e's rule is about badges over photos,
+   not about which badge, and a fully opaque chip was the only element
+   on a card that sat flat on top of a photograph instead of over it. */
 .wa-card__badge--now {
-  background: var(--signal);
+  background: color-mix(in srgb, var(--signal) 94%, transparent);
   color: var(--signal-ink);
 }
 
@@ -1527,6 +1534,26 @@ a.wa-sr:focus {
 }
 
 .wa-chip__count { font: 400 var(--fs-mono)/1 var(--ff-mono); color: var(--ink-mute); }
+
+/* 5e's other job for the eight marks: "the 15px version rides in chips
+   and filter pills". Same sprite as the card mark, no second asset —
+   only the size and the ground change. It rides bare here rather than
+   on the 9%-petrol tile, because the chip already IS a tinted pill when
+   selected and a mark-on-tint-on-tint reads as a button inside a
+   button. Colour follows the label so a disabled chip dims as one
+   object. */
+.wa-chip__mark {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .75;
+}
+.wa-chip[aria-pressed="true"] .wa-chip__mark { opacity: 1; }
 
 .wa-chip[aria-pressed="true"] {
   background: var(--petrol-tint);

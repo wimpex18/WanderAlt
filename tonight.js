@@ -641,9 +641,14 @@
       <div class="wa-field">
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
+          ${/* 5e: "Two jobs, one asset: the 15px version rides in chips
+                and filter pills, the 44-62px version IS the card when
+                there's no photograph." Only the card job was built, so
+                the same eight marks that identify a kind on a card were
+                absent from the control that filters by kind. */''}
           ${kinds.map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}"
              aria-pressed="${state.kinds.has(k)}" data-count="${n}"
-             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}>${esc(k)}
+             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}><svg class="wa-chip__mark" aria-hidden="true"><use href="#wa-mark-${esc(window.WA.Marks.markFor(k))}"></use></svg>${esc(k)}
              <span class="wa-chip__count">${n}</span></button>`).join('')
            || '<span class="wa-field__consequence">Nothing filed for this window.</span>'}
         </div>
