@@ -357,6 +357,67 @@
     </a>`;
   };
 
+  /* ── 5b's saved strip ────────────────────────────────────────
+     "3 saved in Kalamaja · Two are open right now →". It sits between
+     the capsule and the first shelf, and on desktop it is now the only
+     route to Saved, since 5b's masthead is the scope tabs and the app
+     tab bar is a phone pattern. So it always carries the link, even
+     when nothing saved is open.
+
+     The area is the neighbourhood most of the saved things share, not
+     the reader's GPS position: it is a fact about the shelf being
+     described, it needs no permission, and it is still true when
+     location is denied. It falls back to the city.
+
+     Nothing saved means no strip at all. A row reading "0 saved in
+     Tallinn" is an empty state for a shelf that was never asked for. */
+  const savedStrip = () => {
+    const esc = UI().esc;
+    const host = $('savedstrip');
+    if (!host) return;
+    const B = window.WA.Bookmarks;
+    if (!B || !B.ids) { host.innerHTML = ''; return; }
+
+    /* Both shapes, the way saved-page.js resolves them. Saved holds
+       places as well as picks, and searching only the pick catalogue
+       made a reader with three saved bars see no strip at all. */
+    const ids = new Set(B.ids());
+    const mine = [
+      ...(window.WA._catalogAll || window.WA.catalog || []),
+      ...(window.WA._venuesAll  || window.WA.venues  || []),
+    ].filter(e => ids.has(e.id) && e.city === window.WA.CITY);
+    if (!mine.length) { host.innerHTML = ''; return; }
+
+    const tally = {};
+    for (const e of mine) {
+      const a = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : '';
+      if (a) tally[a] = (tally[a] || 0) + 1;
+    }
+    const area = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0] || CITY_LABEL();
+
+    /* Open right now means the same thing it means everywhere else: a
+       place whose filed hours say open, or a dated pick that has
+       already started. Never a guess from an unparsed time. */
+    const openCount = mine.filter((e) => {
+      if (e.__place || e.openingHours) return window.WA.Hours.state(e.openingHours).open === true;
+      const m = window.WA.when.statedMinutes(e);
+      return m != null && window.WA.when.isTonight(e) && m <= window.WA.Hours.cityNow().minutes;
+    }).length;
+
+    const WORD = ['None', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+    const tail = openCount
+      ? `${WORD[openCount] || openCount} ${openCount === 1 ? 'is' : 'are'} open right now`
+      : 'See them all';
+
+    host.innerHTML = `<a class="wa-savedstrip" href="saved.html">
+      <span class="wa-savedstrip__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+      </span>
+      <span class="wa-savedstrip__count">${esc(`${mine.length} saved in ${area}`)}</span>
+      <span class="wa-savedstrip__more">${esc(tail)} &rarr;</span>
+    </a>`;
+  };
+
   const loadWalks = async () => {
     try {
       const res = await fetch('./walks.json');
@@ -370,6 +431,7 @@
   loadWalks();
 
   const render = () => {
+    savedStrip();
     walkCard();
     $('sections').innerHTML = buildSections();
     $('cap-where').textContent = CITY_LABEL();

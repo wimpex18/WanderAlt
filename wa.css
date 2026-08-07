@@ -1301,6 +1301,61 @@ a.wa-sr:focus {
 .wa-note--ok   { color: var(--ink); }
 
 /* The full-width route card 5a puts on Explore, above the fold. */
+/* 5b's saved strip. A sibling of the walk card in every respect — same
+   full-width card, same rule and radius — so Explore's two standing
+   strips read as one family rather than two inventions. Icon, the count
+   in ink, the consequence in mute, and the whole row is the link.
+   The mark is a bookmark on the 9%-petrol tint, the same treatment a
+   photoless card gets, so nothing here is a new colour. */
+.wa-savedstrip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--tap-min);
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card-lg);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: var(--s-6);
+}
+.wa-savedstrip:hover { border-color: var(--rule-strong); }
+
+.wa-savedstrip__mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-control);
+  background: var(--petrol-tint);
+}
+.wa-savedstrip__mark svg {
+  width: 20px; height: 20px;
+  fill: none; stroke: var(--petrol); stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.wa-savedstrip__count {
+  font: 700 var(--fs-body)/1.3 var(--ff-ui);
+  color: var(--ink);
+}
+.wa-savedstrip__more {
+  font: 400 var(--fs-body)/1.3 var(--ff-ui);
+  color: var(--ink-mute);
+}
+
+/* The count and the consequence sit on one line from 768; below that
+   the strip would need three lines to hold both, so the consequence
+   wraps under the count instead of squeezing the count to two lines. */
+@media (max-width: 767.98px) {
+  .wa-savedstrip { flex-wrap: wrap; }
+  .wa-savedstrip__mark { order: 0; }
+  .wa-savedstrip__count { order: 1; flex: 1 1 auto; }
+  .wa-savedstrip__more { order: 2; flex: 1 0 100%; padding-left: calc(40px + var(--s-4)); }
+}
+
 .wa-walkcard {
   display: block;
   padding: var(--s-5);
@@ -1879,6 +1934,19 @@ a.wa-sr:focus {
    row sits tight under it because the two are one control group, and
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
+
+/* 5b draws the capsule as a compact centred control, not a full-bleed
+   bar: roughly 60% of the reading column, with the three slots and the
+   petrol key sitting close together so the row reads as ONE object.
+   Stretched to the full 1160px the slots drift ~370px apart and it
+   stops looking like a single control at all. Phone keeps 100%, where
+   the capsule collapses to its first slot anyway. */
+@media (min-width: 1024px) {
+  .explore-capsule {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+}
 /* Phone/tablet only. From 1024 this row is fixed into the masthead
    (see the scope component), and a margin still applies to a fixed
    element — left unscoped it pushed the whole tab row 16px below the
