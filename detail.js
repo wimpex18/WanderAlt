@@ -53,6 +53,9 @@
   /* ── Resolve ─────────────────────────────────────────────────
      Picks first: an id collision between the two tables is possible in
      principle and an event is the more time-critical answer. */
+  /* Set by lookUp() so resolve() can find what the catalogue could not. */
+  let extra = null;
+
   const resolve = () => {
     const id = param('id');
     if (!id) return null;
@@ -62,7 +65,8 @@
     const venues = window.WA._venuesAll || window.WA.venues || [];
     const venue = venues.find(v => v.id === id);
     if (venue) return { kind: 'place', e: venue };
-    return null;
+    /* Whatever the by-id lookup fetched, if it ran. */
+    return extra && extra.e && extra.e.id === id ? extra : null;
   };
 
   /* ── The three cells ─────────────────────────────────────────
@@ -208,20 +212,63 @@
     return `In ${ls.length} lists`;
   };
 
+  /* The two honest dead ends, kept apart because they are different
+     facts. 6d's copy — "listings expire, that's normal" — belongs only
+     to the first; using it for a row we never had is a claim we cannot
+     support. Both carry the next-best answer rather than an apology. */
+  const deadEnd = (title, body) => {
+    const cityLabel = (window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.label
+      .replace(/^(.)(.*)$/, (m, a, b) => a + b.toLowerCase()) || 'Tallinn';
+    main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
+      <p class="wa-empty__title">${esc(title)}</p>
+      <p class="wa-empty__body">${esc(body)}</p>
+      <div class="wa-empty__actions">
+        <a class="wa-btn wa-btn--primary" href="./discover.html">Tonight in ${esc(cityLabel)}</a>
+        <a class="wa-btn" href="./index.html">Explore</a>
+      </div>
+    </div>`;
+  };
+
+  /* Ask the database for the one row the loaded set does not carry.
+     Guarded against a double fetch: render() runs on catalog-ready and
+     again after interactions, and a miss must not re-query each time. */
+  let lookedUp = false;
+  const lookUp = async () => {
+    if (lookedUp) return;
+    lookedUp = true;
+    const found = window.WA.byId ? await window.WA.byId(param('id')) : null;
+
+    if (!found) {
+      deadEnd('We have no listing at that address.',
+        'The link may be mistyped, or it may predate a change here. Nothing is missing from tonight.');
+      return;
+    }
+    if (found.archivedAt) {
+      const when = new Date(found.archivedAt);
+      const dated = isNaN(when) ? '' :
+        ` It came off the list on ${when.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`;
+      deadEnd('That listing has closed down.',
+        `Listings expire — that's normal.${dated} Here's what's on tonight instead.`);
+      return;
+    }
+    /* A live row the loaded set simply never held — a museum, a theatre,
+       an old place.html link. Render it exactly like any other. */
+    extra = found;
+    render();
+  };
+
   const render = () => {
     const hit = resolve();
 
     if (!hit) {
-      /* 6d's expired-listing copy: listings expire, that is normal, and
-         the state carries the next-best answer rather than an apology. */
-      main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
-        <p class="wa-empty__title">That page has closed down.</p>
-        <p class="wa-empty__body">Listings expire — that's normal. Here's what's on tonight instead.</p>
-        <div class="wa-empty__actions">
-          <a class="wa-btn wa-btn--primary" href="./discover.html">Tonight in ${esc((window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.label.replace(/^(.)(.*)$/, (m,a,b)=>a+b.toLowerCase()) || 'Tallinn')}</a>
-          <a class="wa-btn" href="./index.html">Explore</a>
-        </div>
-      </div>`;
+      /* Not in the loaded set is NOT the same as gone, and saying so was
+         the app inventing a fact. The loaded set excludes archived picks
+         (where "closed down" is true) but also every venue outside
+         VENUE_KINDS — museums, theatres, bars, libraries — where it is
+         simply false. Ask the database, then say what is actually so.
+         Meanwhile the skeleton stays; a wrong answer shown fast is
+         worse than a right one shown a moment later. */
+      lookUp();
       return;
     }
 

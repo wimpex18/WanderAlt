@@ -348,5 +348,41 @@
     dispatch();
   };
 
+  /* ── Look one row up by id, when the loaded set does not have it ──
+     The loaded set is deliberately narrower than the database: picks
+     exclude archived rows, and venues are filtered to VENUE_KINDS (so
+     museums, theatres, bars and libraries — 22 of the 26 venues that
+     carry a photograph — are absent by design).
+
+     detail.js used to answer "not in the loaded set" with "That page
+     has closed down. Listings expire — that's normal." For an archived
+     pick that is true. For a museum, or for a `place.html?id=` link
+     from before the redesign, it is the app inventing a fact about the
+     world, which is the one thing this product must not do. So ask the
+     database before saying anything.
+
+     Returns { kind: 'event' | 'place', e, archivedAt } or null when the
+     row genuinely does not exist. */
+  const byId = async (id) => {
+    if (!id) return null;
+    const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
+    try {
+      const picks = await get('picks', `${q}&select=*`);
+      if (picks && picks[0]) {
+        return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
+      }
+    } catch (_) { /* fall through to venues */ }
+    try {
+      const venues = await get(
+        'venues',
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram,opening_hours`
+      );
+      if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
+    } catch (_) { /* nothing more to try */ }
+    return null;
+  };
+
+  window.WA.byId = byId;
+
   load();
 })();
