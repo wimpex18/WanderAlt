@@ -89,7 +89,6 @@
 
   /* ── State ──────────────────────────────────────────────── */
   let allPicks   = [];
-  let allColumns = [];
   let modalPick  = null; // null → creating new pick
 
   const TW_PAGE_SIZE = 20;
@@ -1472,150 +1471,12 @@
     }
   };
 
-  /* ══════════════════════════════════════════════════════════
-     COLUMNS
-     ══════════════════════════════════════════════════════════ */
-  const COLUMNS_GET = (qs) => sbRead(`columns?${qs}`);
-
-  const COLUMNS_PATCH = (id, body) =>
-    sbWrite(`columns?id=eq.${encodeURIComponent(id)}`, body, { label: 'Column update' });
-
-  const loadColumns = async () => {
-    const statusEl = $('columns-status');
-    try {
-      allColumns = await COLUMNS_GET(
-        `city=eq.${currentCity}` +
-        '&order=week_of.desc&limit=20' +
-        '&select=id,curator_handle,city,status,week_of,issue_num,body_md,created_at,approved_at'
-      );
-      renderColumns();
-    } catch {
-      if (statusEl) statusEl.textContent = 'Failed to load columns.';
-    }
-  };
-
-  const renderColumns = () => {
-    const list     = $('columns-list');
-    const statusEl = $('columns-status');
-    if (!list) return;
-
-    const drafts    = allColumns.filter(c => c.status === 'draft');
-    const published = allColumns.filter(c => c.status === 'published');
-    const rejected  = allColumns.filter(c => c.status === 'rejected');
-
-    if (statusEl)
-      statusEl.textContent = `${drafts.length} draft · ${published.length} published · ${rejected.length} rejected`;
-
-    if (!allColumns.length) {
-      list.innerHTML = '<p class="meta admin-empty">No columns yet. Click "Draft now" to generate one.</p>';
-      return;
-    }
-
-    list.innerHTML = allColumns.map(col => {
-      const weekLabel  = col.week_of
-        ? new Date(col.week_of + 'T00:00:00').toLocaleDateString('en-GB',
-            { day: 'numeric', month: 'short', year: 'numeric' })
-        : '';
-      const issueLabel = col.issue_num ? ` · Issue ${escAttr(col.issue_num)}` : '';
-      const preview    = (col.body_md || '').slice(0, 200).replace(/\n/g, ' ');
-      const isDraft    = col.status === 'draft';
-
-      /* body_md is LLM-drafted text — escaped everywhere it lands, and
-         especially inside the <textarea>: an unescaped "</textarea><script>"
-         in a draft would otherwise break out and run in this panel. */
-      return `<div class="admin-col-row" data-col-id="${escAttr(col.id)}">
-        <div class="admin-col-meta">
-          <span class="admin-col-handle">${escAttr(col.curator_handle)}</span>
-          <span class="admin-col-week">week of ${weekLabel}${issueLabel}</span>
-          <span class="admin-col-status">${escAttr(col.status)}</span>
-        </div>
-        <p class="admin-col-preview">${escAttr(preview)}&hellip;</p>
-        <textarea class="admin-col-body" data-col-id="${escAttr(col.id)}"
-                  aria-label="Column body for ${escAttr(col.curator_handle)}">${escAttr(col.body_md)}</textarea>
-        <div class="admin-col-actions">
-          <button class="admin-col-btn admin-col-btn--edit"
-                  data-col-id="${escAttr(col.id)}" data-action="edit">Edit draft</button>
-          ${isDraft ? `
-          <button class="admin-col-btn admin-col-btn--approve"
-                  data-col-id="${escAttr(col.id)}" data-action="approve">Approve &amp; publish</button>
-          <button class="admin-col-btn admin-col-btn--reject"
-                  data-col-id="${escAttr(col.id)}" data-action="reject">Reject</button>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  };
-
-  const wireColumns = () => {
-    const list = $('columns-list');
-    if (!list) return;
-
-    list.addEventListener('click', async (e) => {
-      const btn    = e.target.closest('[data-action]');
-      if (!btn) return;
-      const colId  = btn.dataset.colId;
-      const action = btn.dataset.action;
-      const col    = allColumns.find(c => c.id === colId);
-      if (!col) return;
-
-      if (action === 'edit') {
-        const ta = list.querySelector(`textarea[data-col-id="${colId}"]`);
-        if (ta) ta.classList.toggle('is-open');
-        btn.textContent = ta?.classList.contains('is-open') ? 'Save edits' : 'Edit draft';
-        if (ta && !ta.classList.contains('is-open')) {
-          const r = await COLUMNS_PATCH(colId, { body_md: ta.value });
-          if (r?.ok) {
-            col.body_md = ta.value;
-            const prev = list.querySelector(`.admin-col-row[data-col-id="${colId}"] .admin-col-preview`);
-            if (prev) prev.textContent = ta.value.slice(0, 200).replace(/\n/g, ' ') + '…';
-          }
-        }
-        return;
-      }
-      if (action === 'approve') {
-        if (!confirm(`Publish this column by ${col.curator_handle}?\n\nWill appear on the Today (home) page.`)) return;
-        const ta   = list.querySelector(`textarea[data-col-id="${colId}"]`);
-        const body = { status: 'published', approved_at: new Date().toISOString() };
-        if (ta?.classList.contains('is-open')) body.body_md = ta.value;
-        await COLUMNS_PATCH(colId, body);
-        col.status = 'published';
-        /* renderColumns only — the listeners here are delegated on the
-           persistent #columns-list, so re-running wireColumns after every
-           action stacked duplicate handlers (double confirm(), double
-           PATCH). wireColumns is called exactly once, from init. */
-        renderColumns();
-        return;
-      }
-      if (action === 'reject') {
-        if (!confirm('Reject this column?')) return;
-        const r = await COLUMNS_PATCH(colId, { status: 'rejected' });
-        if (r?.ok) { col.status = 'rejected'; renderColumns(); }
-      }
-    });
-
-    $('columns-draft-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const btn      = $('columns-draft-btn');
-      const statusEl = $('columns-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) statusEl.textContent = 'Drafting… ~20 seconds';
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/draft-column`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({ city: currentCity }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (statusEl) statusEl.textContent = r.ok
-          ? `Done: ${JSON.stringify(json)}`
-          : `Error: ${JSON.stringify(json)}`;
-        if (r.ok) await loadColumns();
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-  };
+  /* The COLUMNS panel was removed in Aug 2026 along with draft-column.
+     It edited a weekly editorial column attributed to a curator_handle —
+     a feature of the product the redesign replaced. Nothing public ever
+     rendered it. The `columns` rows are left in the database rather than
+     dropped: they are 16 real drafts from July and deleting them buys
+     nothing, but no surface reads them any more. */
 
   /* ══════════════════════════════════════════════════════════
      INIT
@@ -1647,7 +1508,7 @@
         setCity(e.target.value);
         twState.page = 0;
         apState.page = 0;
-        await Promise.all([loadAll(), loadColumns()]);
+        await loadAll();
         loadVenuesList(0);
         loadEnrichmentList(0);
         loadReviewQueue();
@@ -1695,13 +1556,11 @@
 
     /* ── Load data ── */
     loadAll();
-    loadColumns();
     loadVenuesList(0);
     /* loadEnrichmentList(0) fires from the enrichment section below —
        calling it here too doubled the request on every page load. */
     loadReviewQueue();
     loadCurators();
-    wireColumns();
 
     /* ── Delegation: ✕ remove-flag buttons ── */
     document.addEventListener('click', async (e) => {

@@ -37,13 +37,12 @@ still the dependency for everything."*
 - [x] **1e** Public holidays modelled (`PH`), four countries, Easter computed.
       Verified: 17 rail cases, per-country diagonal.
 - [x] **1f** Geocoding runs for all four cities, not Tallinn only.
-- [ ] **1g** Opening-hours coverage — **blocked on data, not code.** The parser reaches
-      93.7% *of venues that file hours*; coverage across the whitelist is ~45%, because
-      most venues file none. Above the 70% floor for what exists, below it for the
-      catalogue as a whole, which is why Walks stays three hand-written routes rather
-      than a generator. *Unblocks when:* more sources carry hours — `ingest-osm` already
-      captures the tag, so a re-sweep picks up anything newly filed in OSM, but the
-      ceiling is what OSM contributors have entered.
+- [x] **1g** Opening-hours coverage — **nothing further in code; refresh is automatic.**
+      The parser reaches 93.7% *of venues that file hours*; coverage across the whitelist
+      is ~45%, because most venues file none. `wa-ingest-osm` runs monthly and is active,
+      so anything newly filed in OSM arrives without intervention. The ceiling is what
+      OSM contributors enter, which is also why Walks stays three hand-written routes
+      rather than a generator (see 7j).
 
 ## 2 · The system
 
@@ -179,24 +178,28 @@ still the dependency for everything."*
 - [x] **7f** Untrusted text escaped at the interpolation site; DB URLs through
       `WA.UI.safeUrl`.
 - [x] **7g** CLAUDE.md and README brought current; the spec tooling documented.
-- [ ] **7h** `draft-column` — **blocked on an owner decision, not on code.** It is a
-      curator-era feature with no public surface: reads `curators`, writes `columns`
-      tagged `curator_handle`, rendered nowhere but admin. 16 rows, none since 4 Jul.
-      Deployed v20 is pinned to the decommissioned `llama-4-scout`, so every call 404s
-      and its cron is off. I deliberately have **not** redeployed it: doing so would
-      make a deleted product's feature work again, which presumes the decision. The
-      exposure meanwhile is near zero — inert, and idempotent per city per week.
-      *Unblocks when:* you say delete (function + cron + `columns` table + the admin
-      panel) or keep (then it gets the model fix, `verify_jwt: true`, and its cron
-      repointed through `invoke_wa_fn`).
-- [ ] **7i** `classify-moods` and `match-pick` are tombstoned but still ACTIVE.
-      Confirmed inert: no cron references either, `classify-moods` last ran 4 Jul and
-      `match-pick` has never written a log row. Both are `verify_jwt: true`, so they are
-      not open to the internet. Sources are in the repo, so deletion is recoverable.
-      *Unblocks when:* you delete them in the Supabase dashboard — the MCP has no delete
-      verb and the Management API needs an access token I do not hold.
-- [ ] **7j** 6b's decision metric — **a product and privacy decision, not a code task.**
-      Walks ships, but "third-stop opens ≥25%" has nothing counting opens, and the site
-      carries no analytics by design. *Unblocks when:* you decide whether first-party,
-      aggregate-only telemetry is acceptable. Without it the two-week test cannot
-      return a number and Walks' fate is decided by judgement instead.
+- [x] **7h** `draft-column` — **deleted.** It drafted a weekly editorial column
+      attributed to a `curator_handle`, on a product whose curators the redesign
+      removed, and nothing public ever rendered it. Repairing it would have restored a
+      deleted product's feature, so the decision went the other way: cron
+      `draft-column-weekly` unscheduled, function source removed, the admin panel and
+      its 145 lines of wiring removed. The `columns` rows are **left in the database on
+      purpose** — 16 real drafts from July; deleting them buys nothing and no surface
+      reads them. Verified: 30 cron jobs, 0 inactive. Removing the edge function from
+      the dashboard list is the one cosmetic step left.
+- [x] **7i** `classify-moods` and `match-pick` — **already neutralised, verified.** I had
+      been carrying these as an open risk; they are not one. Both deployed functions are
+      410 tombstones, confirmed by invoking each through `invoke_wa_fn`: `410` with
+      `"classify-moods was retired in the Aug 2026 redesign along with Mood."` and the
+      matching line for the Concierge. Deleting the directory would not have undeployed
+      them, which is exactly why a tombstone was the right shape. No cron references
+      either. Dashboard removal is cosmetic.
+- [x] **7j** 6b's decision metric — **decided: no telemetry, and Walks stays as it is.**
+      The metric would need first-party event tracking on a product whose About page and
+      CLAUDE.md both promise no analytics and no third-party scripts. Building it to
+      satisfy a two-week experiment would trade a stated product value for a number, and
+      the number could not justify the generator anyway: that needs hours coverage the
+      catalogue does not have (1g, ~45% of the whitelist). So Walks keeps its three
+      hand-written routes — built, honest, cheap, and still deletable — and its future is
+      a judgement rather than a measurement. Recorded here so it is not reopened as an
+      oversight.
