@@ -48,12 +48,14 @@
   }
   </script>
 
-  <!-- Above-the-fold faces. Fraunces carries the catalogue voice; Inter
-       stands in for Plus Jakarta Sans until the two woff2 files land
-       (see the note at the top of wa.css). crossorigin is required even
-       same-origin — fonts fetch anonymously. -->
+  <!-- Above-the-fold faces. Fraunces carries the catalogue voice, Plus
+       Jakarta Sans the chrome. Only the `latin` subset is preloaded:
+       `latin-ext` carries the Latvian and Lithuanian diacritics and is
+       fetched on demand by unicode-range, so a Tallinn reader never
+       pays for it. crossorigin is required even same-origin — fonts
+       fetch anonymously. -->
   <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-600.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/plus-jakarta-sans-latin.woff2" crossorigin />
 
   <link rel="stylesheet" href="wa.css" />
   <!-- Day / Night / Dusk — pre-paint, so there is no flash of the wrong
@@ -121,9 +123,6 @@
       </div>
     </div>
 
-    <!-- Three scope chips. Walks was cut this cycle: opening-hours
-         coverage came in around 48%, under the ~70% that the "every door
-         is open when you reach it" promise needs. -->
     <!-- 5b: "Scope tabs live above the capsule, not beside the list.
          Icon over label, underline on the active one... the whole page
          identity changes from one row of four." On desktop this row IS

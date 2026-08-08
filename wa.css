@@ -54,52 +54,40 @@
 
 /* The interface face. The direction (6a, option C) specifies Plus
    Jakarta Sans 600/700 — geometric skeleton, humanist warmth, and it
-   holds at 10–11px in the tab bar where Fraunces does not.
+   holds at 10–11px in the tab bar where Fraunces does not. Landed
+   Aug 2026, so Inter is out of this token set. The woff2 files stay on
+   disk because admin-tokens.css still declares them: 6e's verdict on
+   admin is "keep, not redesigned", and public pages never load that file.
 
-   The two woff2 files are not in the repo yet, so --ff-ui names Jakarta
-   first and falls through to Inter, which is already self-hosted below.
-   Declaring @font-face for files that don't exist would 404 on every
-   page load, and "no console errors on load" is one of the two things
-   worth checking by hand here.
+   TWO files, not four, because Google ships v12 as a VARIABLE font: one
+   woff2 per subset carries the whole 200–800 axis, so 600 and 700 come
+   out of the same file and any weight between them is free.
 
-   TO LAND THE REAL FACE: drop plus-jakarta-sans-600.woff2 and -700.woff2
-   into fonts/, uncomment the two blocks below, and delete the four Inter
-   files and their @font-face rules. Nothing else changes — every layout
-   in the direction survives the swap untouched. */
+   Both subsets are required and neither is optional. Estonian õ ä ö ü
+   sit in Latin-1 and come from `latin`, but Latvian ā ē ī ū ķ ļ ņ ģ and
+   Lithuanian ą č ė į ų are all U+0100 and up, so they come from
+   `latin-ext`. Shipping `latin` alone would have rendered Āgenskalns,
+   Mežaparks and Šnipiškės in a fallback face — three of four cities
+   quietly wrong, and the kind of thing that looks fine in Tallinn.
 
-/*
+   unicode-range is what keeps that cheap: a reader who never scrolls
+   past a diacritic never downloads the second file. */
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
+  src: url('fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-700.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-*/
-
-/* Interim only — retired from the token set the moment Jakarta lands. */
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-400.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-500.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-700.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
+  src: url('fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 /* ============================================================
@@ -148,7 +136,7 @@
   --scrim-photo:  linear-gradient(to top, rgba(6, 10, 11, .82) 0%, rgba(6, 10, 11, .38) 46%, rgba(6, 10, 11, 0) 100%);
 
   /* ---- Type ---- */
-  --ff-ui:      'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif;
+  --ff-ui:      'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
   --ff-display: 'Fraunces', Georgia, serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -668,7 +656,16 @@ a.wa-sr:focus {
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 
-.wa-scope__chip svg { width: 18px; height: 18px; }
+/* Same monoline treatment as the tab bar. Without fill:none these
+   stroke-drawn paths fill instead of outlining, and every scope icon
+   renders as a solid blob — the globe became a black dot. Caught by
+   looking at a screenshot; no measurement would have said anything,
+   because the box was the right size the whole time. */
+.wa-scope__chip svg {
+  width: 18px; height: 18px;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 /* Tint plus a mark: the border thickens and the fill tints. */
 .wa-scope__chip[aria-selected="true"],

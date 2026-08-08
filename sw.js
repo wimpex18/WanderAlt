@@ -32,7 +32,11 @@
    a liability with no upside.
    ============================================================ */
 
-const VERSION = 'wa-v1';
+/* Bump this whenever the precache list changes. v2: Inter came out and
+   Plus Jakarta Sans went in, so a reader still holding the v1 shell
+   would have kept a cached font the CSS no longer asks for and missed
+   the one it does. */
+const VERSION = 'wa-v2';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -62,8 +66,8 @@ const SHELL_URLS = [
   './fonts/fraunces-600.woff2',
   './fonts/geist-mono-400.woff2',
   './fonts/geist-mono-500.woff2',
-  './fonts/inter-400.woff2',
-  './fonts/inter-600.woff2',
+  './fonts/plus-jakarta-sans-latin.woff2',
+  './fonts/plus-jakarta-sans-latin-ext.woff2',
 ];
 
 self.addEventListener('install', (e) => {

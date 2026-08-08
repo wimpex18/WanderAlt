@@ -73,17 +73,23 @@ still the dependency for everything."*
       vertically and miss sideways. WCAG 2.2 exempts inline text buttons; this repo's
       rule does not. Now 44 × 44.
 - [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged.
-- [ ] **2i** Type fork (6a) — **blocked on the font files.** `--ff-ui` names Plus Jakarta
-      Sans first and falls through to Inter, so the product's chrome face is still Inter.
-      Verified the landing path is genuinely one step: the two `@font-face` blocks are
-      written and commented out in `wa.css` with the reason (declaring them now would
-      404 on every page load). *Unblocks when:* `plus-jakarta-sans-600.woff2` and
-      `-700.woff2` are dropped into `fonts/` — then uncomment those two blocks and
-      delete the four Inter files and their rules. No layout changes.
+- [x] **2i** Type fork (6a) — **landed.** Plus Jakarta Sans is the chrome face; Inter is
+      out of the public token set. Two files, not four: Google ships v12 as a variable
+      font, so one woff2 per subset carries the whole 200–800 axis. Both `latin` and
+      `latin-ext` ship, because Estonian õäöü are Latin-1 but Latvian ā ē ķ ļ and
+      Lithuanian ą č ė ų are U+0100+ — shipping `latin` alone would have rendered
+      Āgenskalns, Mežaparks and Šnipiškės in a fallback, i.e. three of four cities
+      quietly wrong. `unicode-range` means a Tallinn reader never downloads the second
+      file. Verified: both faces report `loaded`, and canvas measurement confirms both
+      latin and latin-ext render as Jakarta rather than the system fallback. The Inter
+      woff2 files stay on disk for `admin-tokens.css` only — 6e's verdict on admin is
+      "keep, not redesigned", and no public page loads that stylesheet. `sw.js` bumped
+      to v2 so a held v1 shell cannot keep a font the CSS no longer asks for.
 - [ ] **2j** 5g's open question — a geometric sans for headlines too, with Fraunces kept
-      only for timetable rows. The designer offered to draw that fork. **Owner's call,
-      and it cannot honestly be judged until 2i lands**, since the question is whether
-      Explore reads stiff *with Jakarta in place*.
+      only for timetable rows. Now **judgeable for the first time**, since 2i has landed
+      and Explore is finally rendering in the face the direction specified. The designer
+      offered to draw the fork; whether to ask for it is an aesthetic call that belongs
+      to the owner, not a gap in the build.
 
 ## 3 · Explore (5a phone, 5b desktop)
 
