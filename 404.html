@@ -16,6 +16,11 @@
   <link rel="stylesheet" href="wa.css" />
   <script src="./theme.js"></script>
   <script defer src="./when.js"></script>
+  <!-- WA.when.statedMinutes reads the clock through WA.Geo, so the rail
+       on this page cannot print a time without it. It was absent, which
+       is half the reason these rows rendered blank rails. geo.js has no
+       load-time dependencies of its own. -->
+  <script defer src="./geo.js"></script>
   <script defer src="./catalog.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>

@@ -237,7 +237,11 @@
       return { time: `${hh}:${mm}`, now: false };
     }
 
-    if (isToday) return { time: 'TON', now: true };
+    /* TON is "dated today, no door time stated" — an exhibition that may
+       open at six or may already be shut. It is not "now", so it does
+       not get the alarm colour. This was the same predicate error the
+       card badges had: isTonight() means TODAY, and lime has one job. */
+    if (isToday) return { time: 'TON', now: false };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
     /* A place with filed hours gets the arrow form 1a specifies: "→02

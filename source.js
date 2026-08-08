@@ -94,7 +94,9 @@
     const t = real(e.time);
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
       <span class="wa-row__rail">
-        <span class="wa-row__time${window.WA.when.isTonight(e) ? ' wa-row__time--now' : ''}">${esc(railFor(e))}</span>
+        <!-- No --now: this rail prints TON, a weekday or OPEN, never
+             NOW, and isTonight() means TODAY rather than right now. -->
+        <span class="wa-row__time">${esc(railFor(e))}</span>
         <span class="wa-row__dist">${esc(t)}</span>
       </span>
       <span class="wa-row__body">

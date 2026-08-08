@@ -2126,6 +2126,11 @@ a.wa-sr:focus {
   margin-top: var(--s-2);
   padding: 0;
   min-height: var(--tap-min);
+  /* --tap-min is a floor in BOTH directions. With padding:0 and no
+     min-width this collapsed to the intrinsic width of the word "more",
+     34.66px — a target you clear vertically and miss sideways. WCAG
+     2.2 exempts inline text buttons; this repo's own rule does not. */
+  min-width: var(--tap-min);
   background: none;
   border: 0;
   color: var(--petrol);
@@ -2276,10 +2281,16 @@ a.wa-sr:focus {
   overflow-y: auto;
   margin: 0;
   padding: 0 var(--gutter) var(--s-3);
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-top: 1px solid var(--glass-hair);
+  /* Opaque, not glass. This was a third glass surface — 5e allows
+     exactly two, the top bar and the tab bar, and is explicit that
+     "nothing else in the product is translucent". Worse, it was the one
+     case the rule exists to prevent: glass over live content rather
+     than over something already scrolled past, so the map moved under
+     the rows and the text sat on whatever colour happened to pan
+     beneath it. The hairline stays — that line, not the blur, is what
+     reads as "this floats". */
+  background: var(--ground);
+  border-top: 1px solid var(--rule);
 }
 
 .tonight-map__drawer:empty { display: none; }

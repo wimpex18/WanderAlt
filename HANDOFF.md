@@ -26,9 +26,14 @@ still the dependency for everything."*
       de-duplicated out of `discover.js` and `map.js`.
 - [x] **1b** `WA.Hours` parses both filed shapes (OSM and Google `weekday_text`).
 - [x] **1c** Rail says when a place *shuts* (`→02`), `24H`, `SHUT`, or nothing when
-      hours are not filed. Verified: 67 rows, no `00:00`.
+      hours are not filed, and **never goes blank**.
 - [x] **1d** A clock is printed only when one parses. `WA.when.statedMinutes` is the one
       implementation; midnight counts as absent.
+      *1c and 1d were both refuted on 404.html*, which I had never opened. `notfound.js`
+      was the only rail renderer in the repo that bypassed the time model — it printed
+      `picks.time` raw, giving `00:00` on one row and a blank rail on three. The page
+      also never loaded `geo.js`, which `statedMinutes` reads the clock through. Both
+      fixed; re-measured: 4 rows, rails `FRI FRI THU FRI`, no blanks, no `00:00`.
 - [x] **1e** Public holidays modelled (`PH`), four countries, Easter computed.
       Verified: 17 rail cases, per-country diagonal.
 - [x] **1f** Geocoding runs for all four cities, not Tallinn only.
@@ -45,14 +50,29 @@ still the dependency for everything."*
 - [x] **2a** `wa.css` written fresh; `styles.css` (9,118 lines) deleted, not patched.
 - [x] **2b** Glass on exactly two elements, `rgba(242,239,230,.92)` / `rgba(16,24,25,.94)`,
       blur 16px, 1px hairline on the content-facing edge. Measured in both themes.
+      *Was refuted once:* the map drawer was a third glass surface, and the one case the
+      rule exists to prevent — glass over live content, so rows sat on whatever colour
+      panned beneath. Now opaque in the page ground, hairline kept. Re-measured: 2 in
+      both themes, in list view and map mode.
 - [x] **2c** Sticky chrome reserves real layout height (body reserves 60px).
-- [x] **2d** Lime is signal only. Verified after fixing 24 card badges that painted lime
-      for anything merely happening today.
+- [x] **2d** Lime is signal only. *Refuted twice, same root cause both times:*
+      `isTonight()` means TODAY, not now. First on 24 card badges, then on 34 `TON` row
+      rails — I fixed the badges and ticked the item without checking the rail, which
+      is the exact failure this file exists to stop. `TON` is "dated today, no door time
+      stated"; it is not now and no longer wears the alarm. Saved and Source applied
+      `--now` straight from `isTonight()` and never print `NOW` at all, so the class is
+      gone there. Re-measured on discover.html: **4 lime elements, all `NOW`** (was 38);
+      index.html: 0.
 - [x] **2e** Eight category marks, 1.5px stroke, round caps, no fill; petrol on 9%-petrol
       by day, pale teal on 6%-cream at night.
 - [x] **2f** Marks do both jobs: 44–62px on cards (clamped), 15px in chips and filter
       pills.
-- [x] **2g** `--tap-min` 44px holds on every interactive control measured.
+- [x] **2g** `--tap-min` 44px holds on every interactive control measured, across index,
+      discover (list, sheet open, empty), saved, detail, profile and about.
+      *Was refuted:* `.wa-detail__more` measured 34.66 × 44 — `padding: 0` with no
+      `min-width`, so it collapsed to the width of the word "more". A target you clear
+      vertically and miss sideways. WCAG 2.2 exempts inline text buttons; this repo's
+      rule does not. Now 44 × 44.
 - [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged.
 - [ ] **2i** Type fork (6a) — **blocked on the font files.** `--ff-ui` names Plus Jakarta
       Sans first and falls through to Inter, so the product's chrome face is still Inter.

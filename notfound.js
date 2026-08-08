@@ -26,11 +26,28 @@
 
     const host = document.getElementById('tonight-preview');
     if (!host || !soon.length) return;
+
+    /* This was the one rail renderer in the repo that bypassed the time
+       model: it printed picks.time raw, so a pick carrying a bare date
+       showed "00:00" and three of four rows showed nothing at all. Both
+       are the failures the rail rules exist to prevent — a clock only
+       when one parses, and never a blank rail. Same chain as Tonight:
+       a stated clock, else the weekday, else OPEN. */
+    const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const rail = (e) => {
+      const m = window.WA.when.statedMinutes(e);
+      if (m != null) {
+        return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      }
+      if (window.WA.when.isTonight(e)) return 'TON';
+      const k = window.WA.when.resolveKey(e);
+      return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
+    };
     host.innerHTML = `<section class="wa-section">
       <h2 class="wa-section-title">On this week</h2>
       <p class="wa-section-sub">${esc(`${soon.length} of what's coming up`)}</p>
       <ul class="wa-rows">${soon.map(e => `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
-        <span class="wa-row__rail"><span class="wa-row__time">${esc(e.time || '')}</span></span>
+        <span class="wa-row__rail"><span class="wa-row__time">${esc(rail(e))}</span></span>
         <span class="wa-row__body">
           <span class="wa-row__title">${esc(e.title || '')}</span>
           <span class="wa-row__meta">${esc([e.kind, e.venue].filter(Boolean).join(' · '))}</span>

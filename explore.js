@@ -297,7 +297,9 @@
           : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
         items: sorted(openNow),
         href:  'discover.html?type=places',
-        hrefSub: 'every place',
+        /* Reads as one sentence with the label above it: "See all 61 /
+           as a list". "every place" made it "See all 61 every place". */
+        hrefSub: 'as a list',
         emptyTitle: 'Nothing we can confirm is open this minute.',
         emptyBody:  `Opening hours reach us for about half of ${city}'s places, so this is quieter than the city is. Places below shows everything.`,
       }));

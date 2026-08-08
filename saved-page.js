@@ -164,7 +164,11 @@
     ].filter(Boolean).join(' · ');
     return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
       <span class="wa-row__rail">
-        <span class="wa-row__time${window.WA.when.isTonight(e) ? ' wa-row__time--now' : ''}">${esc(railFor(e))}</span>
+        <!-- No --now here. It keyed off isTonight(), which means TODAY,
+             so every pick dated today wore the alarm colour. This rail
+             never prints NOW at all — it prints TON, a weekday, or the
+             arrow form for a place — and lime's one job is "now". -->
+        <span class="wa-row__time">${esc(railFor(e))}</span>
         <span class="wa-row__dist">${esc(dist)}</span>
       </span>
       <span class="wa-row__body">
