@@ -1,5 +1,5 @@
 /* ============================================================
-   enrich-venue-images v1 — a photograph of the place, or nothing
+   enrich-venue-images v3 — a photograph of the place, or nothing
    ------------------------------------------------------------
    Fills venues.image_url. Nothing filled it before: every venue photo
    in the database was an Unsplash stock image sprayed across unrelated
@@ -10,7 +10,7 @@
 
    Two sources, tried in order, both free and keyless:
 
-   1. OSM's `wikidata` tag → Wikidata P18 → Wikimedia Commons.
+   1. OSM's `wikidata` tag → Wikidata P18 → Wikimedia Commons CDN.
       This is the answer to short names. enrich-images had to guess a
       venue from its label and put Tallinn Town Hall's Christmas market
       on a basement club called Hall; a QID is an identifier, so it
@@ -45,12 +45,41 @@ const db = createClient(SUPABASE_URL, SUPABASE_SERVICE);
 
 /* ---- Wikimedia ------------------------------------------- */
 
-function thumbUrl(file: string, width = 800): string {
-  const clean = file.replace(/^File:/, '');
-  let decoded: string;
-  try { decoded = decodeURIComponent(clean.replace(/ /g, '_')); }
-  catch { decoded = clean.replace(/ /g, '_'); }
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(decoded)}?width=${width}`;
+/* Resolve a Commons filename to a URL on upload.wikimedia.org — the CDN —
+   rather than to commons.wikimedia.org/wiki/Special:FilePath, which is the
+   MediaWiki APP LAYER and 302s to the same place.
+
+   The redirect form was what this function used to write, and it cost twice:
+   the first verification sweep marked a third of the catalogue "transient"
+   and every one of those was an `http 429`, and every reader's browser was
+   loading venue photos through that same throttled endpoint.
+
+   The imageinfo API gives the CDN URL directly and, unlike deriving the
+   sharded path from md5(filename) by hand, it is right about the case that
+   breaks the derivation: a file NARROWER than the requested width has no
+   /thumb/ rendition at all and must be served as the original. Eesti
+   Draamateater is exactly that file. */
+async function commonsCdnUrl(file: string, width = 800): Promise<string | null> {
+  const clean = String(file).replace(/^File:/, '');
+  try {
+    const params = new URLSearchParams({
+      action: 'query', format: 'json', prop: 'imageinfo',
+      iiprop: 'url', iiurlwidth: String(width), titles: 'File:' + clean,
+    });
+    const r = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
+      headers: { 'User-Agent': AGENT }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!r.ok) return null;
+    const pages = (await r.json())?.query?.pages ?? {};
+    const info = (Object.values(pages)[0] as { imageinfo?: Array<Record<string, string>> })?.imageinfo?.[0];
+    const url = info?.thumburl || info?.url;
+    if (!url) return null;
+    /* The API appends utm_* for Commons' own analytics. They are no part of
+       the image's address and have no business in a URL we store. */
+    const u = new URL(url);
+    u.search = '';
+    return u.toString();
+  } catch { return null; }
 }
 
 async function imageFromQid(qid: string): Promise<{ url: string; attr: string } | null> {
@@ -62,8 +91,10 @@ async function imageFromQid(qid: string): Promise<{ url: string; attr: string } 
     if (!r.ok) return null;
     const file = (await r.json())?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
     if (!file) return null;
+    const url = await commonsCdnUrl(String(file));
+    if (!url) return null;
     return {
-      url:  thumbUrl(String(file)),
+      url,
       attr: `Wikimedia Commons — ${String(file).replace(/^File:/, '').replace(/_/g, ' ')}`,
     };
   } catch { return null; }
@@ -154,7 +185,7 @@ async function enrichVenue(v: Venue, dryRun: boolean) {
     if (hit) {
       if (!dryRun) {
         await db.from('venues')
-          .update({ image_url: hit.url, image_attr: hit.attr })
+          .update({ image_url: hit.url, image_attr: hit.attr, image_source: 'wikidata' })
           .eq('id', v.id);
       }
       return { name: v.name, status: dryRun ? 'would_enrich_wikidata' : 'enriched_wikidata', url: hit.url };
@@ -170,7 +201,7 @@ async function enrichVenue(v: Venue, dryRun: boolean) {
       }
       if (!dryRun) {
         await db.from('venues')
-          .update({ image_url: hit.url, image_attr: hit.attr })
+          .update({ image_url: hit.url, image_attr: hit.attr, image_source: 'website' })
           .eq('id', v.id);
       }
       return { name: v.name, status: dryRun ? 'would_enrich_website' : 'enriched_website', url: hit.url };

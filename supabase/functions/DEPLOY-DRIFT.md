@@ -188,6 +188,34 @@ header at all, so those commands have to move to `invoke_wa_fn` **before**
 any function is flipped — otherwise they fail silently, which
 `cron.job_run_details` will happily report as `succeeded`.
 
+### Cleared 9 Aug 2026
+
+| function | to | why |
+| --- | --- | --- |
+| `enrich-venue-images` | **v3**, `verify_jwt:true` | writes `upload.wikimedia.org` CDN URLs instead of `Special:FilePath`, and records `image_source` |
+| `verify-images` | **v5**, `verify_jwt:true` | new; four revisions in one session, each one a thing the previous one got wrong (below) |
+| `ingest-osm` | **v17**, `verify_jwt:true` | captures the `wikidata` QID it had always been fetching and discarding |
+
+`verify-images` went v1 → v5 in a single session and the sequence is the
+useful part, because each version fixed a failure the previous one had
+made invisible:
+
+- **v2** — v1 never stamped `image_checked_at` on a transient result. With
+  the queue ordered `NULLS FIRST`, 32 permanently-transient rows would have
+  sat at its head forever and starved every row behind them.
+- **v3** — v2 reported a bare count of "transient" with no reason, which is
+  undiagnosable. Adding `transientWhy` turned "a third of the catalogue is
+  unverifiable" into "every one of them is an `http 429`" in one run.
+- **v4** — deduped the probe per run. A pick borrows its venue's photo, so
+  one Commons file was being asked about seven times.
+- **v5** — v4 did not actually fix it: two runs a minute apart returned
+  0/26 and 9/26 transient off the *same* URLs, which is a rate limit on the
+  egress IP, not anything about the images. Added per-host pacing.
+
+The thing worth carrying forward: **the fix that looked obviously right (v4)
+measured as no better than the bug.** Only re-running it twice showed that,
+and a single lucky run would have closed the ticket.
+
 ## The rule
 
 **Deploying is a separate act from committing.** When you change an edge
