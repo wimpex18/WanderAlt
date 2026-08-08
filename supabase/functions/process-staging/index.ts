@@ -59,8 +59,13 @@ const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
 // OpenRouter free lane (Jul 2026 policy): inert until the owner creates
 // OPENROUTER_API_KEY (free, no card — openrouter.ai/keys). Model must be a
 // :free-suffixed id so the lane can never bill.
+// Aug 2026: the previous default, openai/gpt-oss-120b:free, is ABSENT
+// from OpenRouter's catalogue -- probed /v1/models, 400 models, no
+// match. The paid openai/gpt-oss-120b still exists, which is exactly
+// how a dead :free pin hides: the name looks familiar. Repointed to a
+// model that is present AND advertises structured_outputs.
 const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
-const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-oss-120b:free";
+const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "nvidia/nemotron-3-super-120b-a12b:free";
 const GEMINI_MODEL  = "gemini-2.5-flash";
 /* llama-4-scout was decommissioned at Groq — absent from /v1/models and
    404 on completion (verified by probe, Jul 2026; not recalled from

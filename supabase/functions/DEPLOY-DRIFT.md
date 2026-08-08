@@ -61,8 +61,31 @@ Three commits had landed in the repo without reaching production.
 
 ### Still behind
 
-**Nothing, as of 8 Aug 2026.** Every function in `supabase/functions/` matches
-what is deployed.
+**Three functions, one-line change each, as of 9 Aug 2026.**
+
+| function | missing | severity |
+| --- | --- | --- |
+| `process-staging` | OpenRouter default repointed | low — see below |
+| `send-digest` | same | low |
+| `generate-context` | same | low |
+
+All three default `OPENROUTER_MODEL` to a model that no longer exists.
+`openai/gpt-oss-120b:free` is **absent** from OpenRouter's catalogue — probed
+`/v1/models` directly, 400 models, no match — while the *paid*
+`openai/gpt-oss-120b` still resolves, which is precisely how a dead `:free`
+pin hides. The repo now defaults to `nvidia/nemotron-3-super-120b-a12b:free`,
+which is present and advertises `structured_outputs`.
+
+Severity is low because the default is only reached when the
+`OPENROUTER_MODEL` secret is UNSET, and the lane itself only fires when Groq
+fails. Whether the secret is set cannot be checked from here any more:
+`check-secrets` is a 410 tombstone, so that is a dashboard question.
+
+**The zero-deploy fix is to set the secret** —
+`OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free` — which takes
+effect for all three callers immediately and makes this drift inert.
+Deploying the three is the tidier fix and can wait for the next session that
+touches them.
 
 The last two entries closed differently and both are worth knowing:
 
