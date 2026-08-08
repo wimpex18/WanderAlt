@@ -84,6 +84,12 @@ fails. Whether the secret is set cannot be checked from here any more:
 **The zero-deploy fix is to set the secret** —
 `OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free` — which takes
 effect for all three callers immediately and makes this drift inert.
+Re-probed 9 Aug 2026 against `/api/v1/models`: that id is **present**,
+prices at `"prompt": "0", "completion": "0"`, carries a 262k context and
+advertises `structured_outputs`. So the repo default is correct as it
+stands and the secret is optional — the one that actually matters is
+`OPENROUTER_API_KEY`, which is unset, which is why the lane has never
+fired.
 Deploying the three is the tidier fix and can wait for the next session that
 touches them.
 
