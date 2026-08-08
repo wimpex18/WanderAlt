@@ -89,19 +89,26 @@ touches them.
 
 The last two entries closed differently and both are worth knowing:
 
-- `draft-column` was **deleted**, not deployed. It drafted a weekly editorial
+- `draft-column` was **retired**, not deployed. It drafted a weekly editorial
   column attributed to a `curator_handle` on a product whose curators the
   redesign removed, and nothing public rendered it. Repairing it — the Groq
   model repoint it had been waiting on since July — would have restored a
   deleted feature. Cron unscheduled, source and admin panel removed.
+  **This entry used to say "deleted", and that was false.** Removing the
+  directory undeploys nothing: probed 9 Aug 2026, an unauthenticated POST
+  still returned 200 — a live, world-reachable, LLM-calling endpoint for a
+  feature that does not exist, which is the exact failure the tombstone
+  section below was written about, missed in the session that wrote it.
+  Now a 410 tombstone at `verify_jwt:true`, the fourth. **After retiring
+  anything, curl the URL** — the repo cannot tell you what is deployed.
 - `ingest-hanzas-perons` was cleared at **v10** (below). A later read of this
   file suggested it was still behind; it is not. The deployed function writes
   both `text` and `payload.starts_at`, verified against `staging_messages`:
   9 rows, all with prose, 3 with a timestamp — the other 6 have dates the
   parser cannot read, which is a null it is right to write.
 
-`classify-moods` and `match-pick` were **retired**, not deployed. See the
-tombstone note below.
+`classify-moods`, `match-pick` and `draft-column` were **retired**, not
+deployed. See the tombstone note below.
 
 **`ingest-hanzas-perons` did not clear itself, and the way I first
 concluded it had is the point.** I saw its 03:50 cron insert 3 rows and
