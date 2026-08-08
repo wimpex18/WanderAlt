@@ -59,11 +59,23 @@ Three commits had landed in the repo without reaching production.
 | `ingest-splendidpalace` | v6 → **v8** | parser rewritten (titles were URL slugs) + numeric entity decode |
 | `ingest-kinobize` | v5 → **v7** | parser rewritten (day-grouped schedule) + numeric entity decode |
 
-### Still behind — deploy from this repo when you're ready
+### Still behind
 
-| function | deployed | missing | severity |
-| --- | --- | --- | --- |
-| ~~`draft-column`~~ | — | — | **Deleted Aug 2026.** Curator-era feature with no public surface; cron unscheduled, source and admin panel removed. There is no remaining deploy drift. |
+**Nothing, as of 8 Aug 2026.** Every function in `supabase/functions/` matches
+what is deployed.
+
+The last two entries closed differently and both are worth knowing:
+
+- `draft-column` was **deleted**, not deployed. It drafted a weekly editorial
+  column attributed to a `curator_handle` on a product whose curators the
+  redesign removed, and nothing public rendered it. Repairing it — the Groq
+  model repoint it had been waiting on since July — would have restored a
+  deleted feature. Cron unscheduled, source and admin panel removed.
+- `ingest-hanzas-perons` was cleared at **v10** (below). A later read of this
+  file suggested it was still behind; it is not. The deployed function writes
+  both `text` and `payload.starts_at`, verified against `staging_messages`:
+  9 rows, all with prose, 3 with a timestamp — the other 6 have dates the
+  parser cannot read, which is a null it is right to write.
 
 `classify-moods` and `match-pick` were **retired**, not deployed. See the
 tombstone note below.
