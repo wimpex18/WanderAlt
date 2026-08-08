@@ -195,6 +195,24 @@ any function is flipped — otherwise they fail silently, which
 | `enrich-venue-images` | **v3**, `verify_jwt:true` | writes `upload.wikimedia.org` CDN URLs instead of `Special:FilePath`, and records `image_source` |
 | `verify-images` | **v5**, `verify_jwt:true` | new; four revisions in one session, each one a thing the previous one got wrong (below) |
 | `ingest-osm` | **v17**, `verify_jwt:true` | captures the `wikidata` QID it had always been fetching and discarding |
+| `enrich-images` | **v15**, `verify_jwt` false → **true** | writes CDN URLs; was a world-open catalogue write |
+| `rotate-tonight` | **v6**, `verify_jwt` false → **true** | same, byte-identical source, flag only |
+
+**Two crons were sending no `Authorization` header at all** — `enrich-images-auto`
+and `rotate-tonight-daily` — and they worked only because both functions
+were `verify_jwt:false`. That is the shape the digest open-relay had:
+preserving the flag preserves the hole. Both functions WRITE to the
+catalogue, and both were reachable by anyone on the internet. Closed in
+the documented order: repoint the cron through `invoke_wa_fn`, verify the
+call still returns 200, and only then flip the flag. The reverse 401s in
+silence while `cron.job_run_details` keeps saying `succeeded`.
+
+`enrich-images` also needed a code change in the same deploy, and this is
+worth noticing: it still built `Special:FilePath` URLs. It writes into
+`picks` nightly, so flipping the flag without fixing the builder would
+have quietly re-introduced the throttled URLs and undone the CDN
+migration inside a day. **A migration is not finished until every writer
+agrees with it.**
 
 `verify-images` went v1 → v5 in a single session and the sequence is the
 useful part, because each version fixed a failure the previous one had

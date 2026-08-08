@@ -1,37 +1,43 @@
 /* ============================================================
-   enrich-images v10 — populate picks.image_url from venue_images
+   enrich-images v11 — populate picks.image_url from venue_images
    table (self-learning DB cache) with Wikidata fallback. Free/
    unauthenticated Wikimedia APIs only — no paid Google key.
    ------------------------------------------------------------
    Flow per pick:
    1. Batch-load venue_images for all venues in the current run.
    2. If found  → write image_url/image_attr to pick, done.
-   3. If not    → search Wikidata, validate venue type, pull P18.
+   3. If not    → search Wikidata, validate NAME, TYPE and CITY, pull P18.
    4. If Wikidata hits → write to pick AND cache in venue_images
       (source='wikidata') so every future pick at that venue is
       served from the DB without an API call.
 
-   Scaling to new cities:
-   - Add rows to venue_images with the new city name.
-   - The Wikidata path works city-agnostically out of the box.
-   - No redeploy needed.
+   v9 (Jul 2026): optional `dry_run` — reports what it WOULD write and
+   mutates nothing. Worth using after any change to the gates below.
 
-   v8 (Jul 2026): this is now the sole picks.image_url filler —
-   enrich-pick-images (Google Places, paid) was retired. Two fixes
-   that mirror what caused the Places overspend:
-     - iterates tallinn/helsinki/riga when no `city` is given, instead
-       of silently defaulting to tallinn and leaving other cities'
-       picks NULL forever.
-     - a pick Wikidata has no image for gets `image_enrich_failed_at`
-       stamped so it's skipped for FAIL_COOLDOWN_DAYS instead of
-       re-querying Wikidata for the same unmatchable venue every run.
+   v10 (Aug 2026): the matcher had one gate where it needed three, and
+   the missing two are why a basement techno club called Hall was
+   illustrated with the Old Town Christmas market. searchEntity() took
+   `search[0]` from a FUZZY prefix/alias endpoint — something always
+   comes back — and the only validation was P31 against a type list
+   containing Q41176 "building", which almost any address satisfies. A
+   wrong hit was then cached into venue_images and served forever. Now
+   every candidate must clear labelMatches(), isVenueEntity() and
+   isInCity(); a name that reduces to nothing distinctive ("Hall", "D3")
+   is refused rather than guessed at, and a city missing from CITY_QID
+   matches nothing rather than anything.
 
-   v9 (Jul 2026): optional `dry_run`. WanderAlt is human-curated, so
-   auto-matched Wikidata photos want a review before they go live. With
-   {"dry_run": true} the function reports the venue → proposed image URL
-   it WOULD write (status `would_enrich_*`) and writes nothing — no pick
-   update, no venue_images cache, no failed_at stamp. Default is false
-   (unchanged behaviour).
+   v11 (Aug 2026): two things.
+   • Writes upload.wikimedia.org CDN URLs. The old Special:FilePath form
+     is the MediaWiki app layer — it 302s and is rate-limited, which is
+     what made the first verification sweep report a third of the
+     catalogue as unverifiable (every one an http 429). All stored URLs
+     were migrated off it; this function writes into picks nightly, so
+     leaving the old builder here would have undone that within a day.
+   • Runs behind verify_jwt. It WRITES to the catalogue and had been
+     reachable by anyone on the internet. Its cron moved to
+     invoke_wa_fn first — that order matters, the reverse 401s in
+     silence and cron.job_run_details still says "succeeded".
+   Also sets image_source, so image_health can attribute what it wrote.
    ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -53,12 +59,31 @@ const GENERIC_VENUES = new Set(['various venues','various','tba','tbd','']);
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE);
 
-function thumbUrl(file: string, width = 600): string {
-  const clean = file.replace(/^File:/, '');
-  let decoded: string;
-  try { decoded = decodeURIComponent(clean.replace(/ /g, '_')); }
-  catch { decoded = clean.replace(/ /g, '_'); }
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(decoded)}?width=${width}`;
+/* v11: resolve to upload.wikimedia.org, the CDN, rather than to
+   commons.wikimedia.org/wiki/Special:FilePath — the MediaWiki app layer,
+   which 302s and is rate-limited. Aug 2026 migrated all 57 stored URLs off
+   that form; this function writes into picks nightly, so leaving it here
+   would have quietly re-introduced the throttled URLs and undone the
+   migration within a day. Same resolver as enrich-venue-images. */
+async function thumbUrl(file: string, width = 600): Promise<string | null> {
+  const clean = String(file).replace(/^File:/, '');
+  try {
+    const params = new URLSearchParams({
+      action: 'query', format: 'json', prop: 'imageinfo',
+      iiprop: 'url', iiurlwidth: String(width), titles: 'File:' + clean,
+    });
+    const r = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`,
+      { headers: { 'User-Agent': AGENT } });
+    if (!r.ok) return null;
+    const pages = (await r.json())?.query?.pages ?? {};
+    const info = (Object.values(pages)[0] as any)?.imageinfo?.[0];
+    const url = info?.thumburl || info?.url;
+    if (!url) return null;
+    /* utm_* is Commons' own analytics, not part of the image's address. */
+    const u = new URL(url);
+    u.search = '';
+    return u.toString();
+  } catch { return null; }
 }
 
 /* Normalised for comparison: case, punctuation and the words that make
@@ -160,20 +185,13 @@ async function enrichPick(
   if (known) {
     if (!dryRun) {
       await db.from('picks')
-        .update({ image_url: known.url, image_attr: known.attr })
+        .update({ image_url: known.url, image_attr: known.attr, image_source: 'venue_images' })
         .eq('id', pick.id);
     }
     return { status: dryRun ? 'would_enrich_known' : 'enriched_known', url: known.url, attr: known.attr };
   }
 
-  /* 2. Wikidata dynamic search — now with three gates, not one.
-
-     Every candidate must (a) carry a label that is actually this venue,
-     (b) be typed as a venue, and (c) sit inside the city we are asking
-     about. Previously only (b) applied, to a blindly-taken first hit,
-     and (b) alone is close to worthless because Q41176 "building"
-     matches almost any address in Wikidata. That is how a nightclub
-     ended up illustrated with the Old Town Christmas market. */
+  /* 2. Wikidata dynamic search — now with three gates, not one. */
   const cityLabel = city.charAt(0).toUpperCase() + city.slice(1);
   const seen = new Set<string>();
   for (const q of [`${pick.venue} ${cityLabel}`, pick.venue]) {
@@ -188,13 +206,14 @@ async function enrichPick(
       const filename = await getImageFilename(cand.id);
       if (!filename) continue;
 
-      const url  = thumbUrl(filename);
+      const url = await thumbUrl(filename);
+      if (!url) continue;
       const attr = `Wikimedia Commons — ${filename.replace(/^File:/, '').replace(/_/g, ' ')}`;
 
       if (!dryRun) {
         /* Write to pick. */
         await db.from('picks')
-          .update({ image_url: url, image_attr: attr })
+          .update({ image_url: url, image_attr: attr, image_source: 'wikidata' })
           .eq('id', pick.id);
 
         /* Cache in venue_images — next pick at this venue costs 0 API
