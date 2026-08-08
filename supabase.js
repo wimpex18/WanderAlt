@@ -293,6 +293,46 @@
       window.WA.past = [];  /* past table is optional — silently empty if absent */
     }
 
+  /* ── An event with no photo borrows its venue's ──────────────
+     Only 49 of 580 live picks carry an image of their own, but the room
+     they happen in is the same room every time — so a gig at Kanuti
+     Gildi Saal can show Kanuti Gildi Saal rather than a category glyph.
+
+     Two rules keep this honest. It only ever borrows DOWNWARD, from the
+     place to the event held there, never sideways between events. And
+     the attribution travels with the picture, relabelled, so a reader
+     is told they are looking at the venue and not at the night: a
+     photograph of the room is context, but passing it off as coverage
+     of the event would be the same class of lie as an invented time.
+
+     Runs once here rather than in four render paths, so Explore,
+     Tonight, Saved, Source and detail all agree about what a pick's
+     photo is. */
+  const borrowVenuePhotos = () => {
+    const picks  = window.WA._catalogAll || [];
+    const venues = window.WA._venuesAll  || [];
+    if (!picks.length || !venues.length) return;
+
+    const byName = new Map();
+    for (const v of venues) {
+      if (!v.imageUrl || !v.name) continue;
+      byName.set(`${v.city}|${String(v.name).toLowerCase().trim()}`, v);
+    }
+    if (!byName.size) return;
+
+    let borrowed = 0;
+    for (const p of picks) {
+      if (p.imageUrl || !p.venue) continue;
+      const v = byName.get(`${p.city}|${String(p.venue).toLowerCase().trim()}`);
+      if (!v) continue;
+      p.imageUrl   = v.imageUrl;
+      p.imageAttr  = v.imageAttr ? `${v.imageAttr} — the venue, not the event` : 'The venue, not the event';
+      p.imageIsVenue = true;
+      borrowed++;
+    }
+    if (borrowed) console.info(`[WanderAlt] ${borrowed} picks borrowed their venue's photo.`);
+  };
+
     if (venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value)) {
       const allVenues = venuesResult.value
         .filter(r => VENUE_KINDS.has(r.kind))
@@ -304,6 +344,7 @@
       console.warn('[WanderAlt] venues fetch failed — using static venue seed.', venuesResult.reason?.message);
     }
 
+    borrowVenuePhotos();
     dispatch();
   };
 

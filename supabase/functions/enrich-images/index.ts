@@ -1,5 +1,5 @@
 /* ============================================================
-   enrich-images v9 — populate picks.image_url from venue_images
+   enrich-images v10 — populate picks.image_url from venue_images
    table (self-learning DB cache) with Wikidata fallback. Free/
    unauthenticated Wikimedia APIs only — no paid Google key.
    ------------------------------------------------------------
@@ -61,14 +61,67 @@ function thumbUrl(file: string, width = 600): string {
   return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(decoded)}?width=${width}`;
 }
 
-async function searchEntity(q: string): Promise<string | null> {
+/* Normalised for comparison: case, punctuation and the words that make
+   a venue name a venue name all dropped, so "Kino Sõprus" matches
+   "Sõprus" but "Hall" does not match "Tallinn Town Hall". */
+const NOISE = /\b(bar|baar|club|klubi|kino|cinema|teater|theatre|gallery|galerii|museum|muuseum|centre|center|keskus|saal|hall|pub|cafe|kohvik|restoran|restaurant)\b/g;
+const normName = (s: string) =>
+  s.toLowerCase()
+    .replace(/[^\p{L}\p{N} ]/gu, ' ')
+    .replace(NOISE, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/* Returns candidates rather than "the first one". Taking search[0]
+   blindly is what put Tallinn Town Hall's Christmas market on a
+   basement techno club called Hall: wbsearchentities is a fuzzy
+   prefix/alias match, so SOMETHING always comes back, and every
+   downstream check then validated the wrong entity. */
+async function searchEntities(q: string): Promise<Array<{ id: string; label: string }>> {
   try {
     const r = await fetch(
-      `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=5&format=json`,
+      `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=8&format=json`,
       { headers: { 'User-Agent': AGENT } }
     );
-    return r.ok ? ((await r.json())?.search?.[0]?.id ?? null) : null;
-  } catch { return null; }
+    if (!r.ok) return [];
+    return ((await r.json())?.search ?? [])
+      .map((s: any) => ({ id: s?.id, label: String(s?.label ?? '') }))
+      .filter((s: any) => s.id);
+  } catch { return []; }
+}
+
+/* The entity's label must actually be the venue we asked about. A
+   Wikidata label may be longer ("Kanuti Gildi SAAL" vs "Kanuti Gildi
+   saal") but it must contain the venue's distinctive words, and a
+   venue name that reduces to nothing distinctive — "Hall", "Club" —
+   is unmatchable by name alone and must not be guessed at. */
+function labelMatches(venue: string, label: string): boolean {
+  const v = normName(venue);
+  const l = normName(label);
+  if (!v || v.length < 3) return false;      /* nothing distinctive left */
+  return l === v || l.includes(v) || v.includes(l);
+}
+
+/* And it must be in the right city. P131 (administrative territory)
+   walked one level, compared against the city's own entity. Without
+   this, a correctly-typed venue of the same name in another country
+   passes every other check. */
+const CITY_QID: Record<string, string> = {
+  tallinn: 'Q1770', helsinki: 'Q1757', riga: 'Q1773', vilnius: 'Q216',
+};
+
+async function isInCity(id: string, city: string): Promise<boolean> {
+  const want = CITY_QID[city];
+  if (!want) return false;
+  try {
+    const r = await fetch(
+      `https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${id}&property=P131&format=json`,
+      { headers: { 'User-Agent': AGENT } }
+    );
+    if (!r.ok) return false;
+    const claims = (await r.json())?.claims?.P131 ?? [];
+    return claims.some((c: any) => c?.mainsnak?.datavalue?.value?.id === want);
+  } catch { return false; }
 }
 
 async function isVenueEntity(id: string): Promise<boolean> {
@@ -113,31 +166,49 @@ async function enrichPick(
     return { status: dryRun ? 'would_enrich_known' : 'enriched_known', url: known.url, attr: known.attr };
   }
 
-  /* 2. Wikidata dynamic search. */
+  /* 2. Wikidata dynamic search — now with three gates, not one.
+
+     Every candidate must (a) carry a label that is actually this venue,
+     (b) be typed as a venue, and (c) sit inside the city we are asking
+     about. Previously only (b) applied, to a blindly-taken first hit,
+     and (b) alone is close to worthless because Q41176 "building"
+     matches almost any address in Wikidata. That is how a nightclub
+     ended up illustrated with the Old Town Christmas market. */
   const cityLabel = city.charAt(0).toUpperCase() + city.slice(1);
+  const seen = new Set<string>();
   for (const q of [`${pick.venue} ${cityLabel}`, pick.venue]) {
-    const entityId = await searchEntity(q);
-    if (!entityId || !(await isVenueEntity(entityId))) continue;
-    const filename = await getImageFilename(entityId);
-    if (!filename) continue;
+    for (const cand of await searchEntities(q)) {
+      if (seen.has(cand.id)) continue;
+      seen.add(cand.id);
 
-    const url  = thumbUrl(filename);
-    const attr = `Wikimedia Commons — ${filename.replace(/^File:/, '').replace(/_/g, ' ')}`;
+      if (!labelMatches(pick.venue, cand.label)) continue;
+      if (!(await isVenueEntity(cand.id)))       continue;
+      if (!(await isInCity(cand.id, city)))      continue;
 
-    if (!dryRun) {
-      /* Write to pick. */
-      await db.from('picks')
-        .update({ image_url: url, image_attr: attr })
-        .eq('id', pick.id);
+      const filename = await getImageFilename(cand.id);
+      if (!filename) continue;
 
-      /* Cache in venue_images — next pick at this venue costs 0 API calls. */
-      await db.from('venue_images').upsert(
-        { city, venue_key: key, image_url: url, image_attr: attr, source: 'wikidata' },
-        { onConflict: 'city,venue_key', ignoreDuplicates: true }
-      );
+      const url  = thumbUrl(filename);
+      const attr = `Wikimedia Commons — ${filename.replace(/^File:/, '').replace(/_/g, ' ')}`;
+
+      if (!dryRun) {
+        /* Write to pick. */
+        await db.from('picks')
+          .update({ image_url: url, image_attr: attr })
+          .eq('id', pick.id);
+
+        /* Cache in venue_images — next pick at this venue costs 0 API
+           calls. This cache is also why a bad match used to be
+           permanent: one wrong hit was written here and then served
+           forever. The three gates above are what keep it clean. */
+        await db.from('venue_images').upsert(
+          { city, venue_key: key, image_url: url, image_attr: attr, source: 'wikidata' },
+          { onConflict: 'city,venue_key', ignoreDuplicates: true }
+        );
+      }
+
+      return { status: dryRun ? 'would_enrich_wikidata' : 'enriched_wikidata', url, attr };
     }
-
-    return { status: dryRun ? 'would_enrich_wikidata' : 'enriched_wikidata', url, attr };
   }
 
   return { status: 'not_found' };
