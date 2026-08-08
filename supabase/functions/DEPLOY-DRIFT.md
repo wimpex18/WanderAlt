@@ -63,7 +63,7 @@ Three commits had landed in the repo without reaching production.
 
 | function | deployed | missing | severity |
 | --- | --- | --- | --- |
-| `draft-column` | 15 Jul | `df25819` model repoint | dead Groq model; still called from `admin.js`, so it is a live admin feature. `draft-column-weekly` stays off until it is repointed. **The only real drift left.** |
+| ~~`draft-column`~~ | — | — | **Deleted Aug 2026.** Curator-era feature with no public surface; cron unscheduled, source and admin panel removed. There is no remaining deploy drift. |
 
 `classify-moods` and `match-pick` were **retired**, not deployed. See the
 tombstone note below.

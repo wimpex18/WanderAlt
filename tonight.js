@@ -202,11 +202,9 @@
 
      picks.time is the pipeline's own extracted display time, so if that
      is set the source really did state one. Otherwise a timestamp landing
-     exactly on midnight in either clock is treated as date-only. */
-  const isMidnightUTC = (iso) => {
-    const d = new Date(iso);
-    return !isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0;
-  };
+     exactly on midnight in either clock is treated as date-only.
+
+     The midnight test itself moved into WA.when.statedMinutes. */
 
   /* A rail prints a clock ONLY when a clock can actually be parsed.
      Trusting the string instead put "00:00" on a record store whose time
@@ -222,12 +220,10 @@
      what had eleven exhibitions claiming to start at three in the
      morning. A genuine midnight start loses its clock and shows the day
      instead, which is much cheaper than a shop that opens at 00:00. */
-  const hasStatedTime = (e) => {
-    const m = doorsMinutes(e);
-    if (m == null || m === 0) return false;
-    if (e.startsAt && isMidnightUTC(e.startsAt)) return false;
-    return true;
-  };
+  /* Delegates to the time model now. This predicate used to live here
+     alone, which is why the Explore card badge never got it and shipped
+     "Doors 00:00" long after the rail stopped saying "00:00". */
+  const hasStatedTime = (e) => window.WA.when.statedMinutes(e) != null;
 
   const railFor = (e) => {
     const isToday = window.WA.when.isTonight(e);
@@ -241,7 +237,11 @@
       return { time: `${hh}:${mm}`, now: false };
     }
 
-    if (isToday) return { time: 'TON', now: true };
+    /* TON is "dated today, no door time stated" — an exhibition that may
+       open at six or may already be shut. It is not "now", so it does
+       not get the alarm colour. This was the same predicate error the
+       card badges had: isTonight() means TODAY, and lime has one job. */
+    if (isToday) return { time: 'TON', now: false };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
     /* A place with filed hours gets the arrow form 1a specifies: "→02
@@ -599,9 +599,15 @@
        the reader is left wondering whether they imagined it. The zeroes
        come back disabled below, which says "nothing tonight" rather
        than "no such thing". */
+    /* A placeholder is not a kind. One pick carries the STRING "null",
+       which passed the `if (k)` truthiness test and put a filter option
+       labelled "null" in the sheet — offering the reader a category the
+       product does not have. Same placeholder set the rest of the app
+       already refuses for venue and neighbourhood. */
+    const NOT_A_KIND = /^(null|undefined|unknown|tba|tbc|n\/a|none|other|-)$/i;
     for (const e of picks()) {
-      const k = String(e.kind || '').toLowerCase();
-      if (k) map.set(k, 0);
+      const k = String(e.kind || '').toLowerCase().trim();
+      if (k && !NOT_A_KIND.test(k)) map.set(k, 0);
     }
     for (const e of base) {
       const k = String(e.kind || '').toLowerCase();
@@ -645,9 +651,14 @@
       <div class="wa-field">
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
+          ${/* 5e: "Two jobs, one asset: the 15px version rides in chips
+                and filter pills, the 44-62px version IS the card when
+                there's no photograph." Only the card job was built, so
+                the same eight marks that identify a kind on a card were
+                absent from the control that filters by kind. */''}
           ${kinds.map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}"
              aria-pressed="${state.kinds.has(k)}" data-count="${n}"
-             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}>${esc(k)}
+             ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}><svg class="wa-chip__mark" aria-hidden="true"><use href="#wa-mark-${esc(window.WA.Marks.markFor(k))}"></use></svg>${esc(k)}
              <span class="wa-chip__count">${n}</span></button>`).join('')
            || '<span class="wa-field__consequence">Nothing filed for this window.</span>'}
         </div>

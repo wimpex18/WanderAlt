@@ -54,52 +54,40 @@
 
 /* The interface face. The direction (6a, option C) specifies Plus
    Jakarta Sans 600/700 — geometric skeleton, humanist warmth, and it
-   holds at 10–11px in the tab bar where Fraunces does not.
+   holds at 10–11px in the tab bar where Fraunces does not. Landed
+   Aug 2026, so Inter is out of this token set. The woff2 files stay on
+   disk because admin-tokens.css still declares them: 6e's verdict on
+   admin is "keep, not redesigned", and public pages never load that file.
 
-   The two woff2 files are not in the repo yet, so --ff-ui names Jakarta
-   first and falls through to Inter, which is already self-hosted below.
-   Declaring @font-face for files that don't exist would 404 on every
-   page load, and "no console errors on load" is one of the two things
-   worth checking by hand here.
+   TWO files, not four, because Google ships v12 as a VARIABLE font: one
+   woff2 per subset carries the whole 200–800 axis, so 600 and 700 come
+   out of the same file and any weight between them is free.
 
-   TO LAND THE REAL FACE: drop plus-jakarta-sans-600.woff2 and -700.woff2
-   into fonts/, uncomment the two blocks below, and delete the four Inter
-   files and their @font-face rules. Nothing else changes — every layout
-   in the direction survives the swap untouched. */
+   Both subsets are required and neither is optional. Estonian õ ä ö ü
+   sit in Latin-1 and come from `latin`, but Latvian ā ē ī ū ķ ļ ņ ģ and
+   Lithuanian ą č ė į ų are all U+0100 and up, so they come from
+   `latin-ext`. Shipping `latin` alone would have rendered Āgenskalns,
+   Mežaparks and Šnipiškės in a fallback face — three of four cities
+   quietly wrong, and the kind of thing that looks fine in Tallinn.
 
-/*
+   unicode-range is what keeps that cheap: a reader who never scrolls
+   past a diacritic never downloads the second file. */
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
+  src: url('fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-700.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-*/
-
-/* Interim only — retired from the token set the moment Jakarta lands. */
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-400.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-500.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Inter';
-  src: url('fonts/inter-700.woff2') format('woff2');
-  font-weight: 700; font-style: normal; font-display: swap;
+  src: url('fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 /* ============================================================
@@ -148,7 +136,7 @@
   --scrim-photo:  linear-gradient(to top, rgba(6, 10, 11, .82) 0%, rgba(6, 10, 11, .38) 46%, rgba(6, 10, 11, 0) 100%);
 
   /* ---- Type ---- */
-  --ff-ui:      'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif;
+  --ff-ui:      'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
   --ff-display: 'Fraunces', Georgia, serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -668,7 +656,16 @@ a.wa-sr:focus {
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 
-.wa-scope__chip svg { width: 18px; height: 18px; }
+/* Same monoline treatment as the tab bar. Without fill:none these
+   stroke-drawn paths fill instead of outlining, and every scope icon
+   renders as a solid blob — the globe became a black dot. Caught by
+   looking at a screenshot; no measurement would have said anything,
+   because the box was the right size the whole time. */
+.wa-scope__chip svg {
+  width: 18px; height: 18px;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 /* Tint plus a mark: the border thickens and the fill tints. */
 .wa-scope__chip[aria-selected="true"],
@@ -701,6 +698,69 @@ a.wa-sr:focus {
     background: none;
     border-bottom-color: var(--petrol);
   }
+}
+
+/* 5b's masthead link. Quiet by design — it sits next to the account
+   key and must not compete with the four scope tabs beside it. Hidden
+   below 1024, where the masthead has no room and the digest card at the
+   foot of Explore is the only surface (5a draws no such link). */
+.wa-topbar__digest {
+  display: none;
+  margin-left: auto;
+  padding: 0 var(--s-3);
+  align-self: center;
+  font: 600 var(--fs-meta)/1 var(--ff-ui);
+  color: var(--ink-mute);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wa-topbar__digest:hover { color: var(--ink); }
+
+@media (min-width: 1024px) {
+  .wa-topbar__digest { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+}
+
+/* 5b: on Explore's desktop the scope tabs ARE the masthead row. The
+   direction draws no Explore/Tonight/Saved/You there — 5b's header is
+   logo, four scope tabs, the Saturday-email link and an avatar, and
+   5d's is the capsule's current answers plus two keys. The four app
+   tabs are a phone pattern; on desktop Tonight is a scope, Saved is
+   the saved-strip, You is the avatar.
+
+   Scoped to .explore-scope via :has() so only Explore loses the tab
+   bar. The row goes out of flow for the same reason the tab bar does
+   at this width, and takes the same z-index so it sits on the glass
+   rather than under it. */
+@media (min-width: 1024px) {
+  body:has(.explore-scope) .wa-tabbar { display: none; }
+
+  .explore-scope {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 41;
+    height: var(--topbar-h);
+    align-items: center;
+    padding: 0;
+    /* The phone rule sets margin-top: var(--s-4) to space the row under
+       the capsule. Margin still applies once the element is fixed, so
+       it pushed the whole row 16px below the bar it is supposed to sit
+       in — "top: 0" measuring at y=16 with no containing-block ancestor
+       in sight. */
+    margin: 0;
+    overflow: visible;
+  }
+
+  /* The 768 tab is 60px tall and the bar is 56, so at its normal size
+     the active underline lands 4px below the glass edge — the mark
+     detaches from the band it belongs to. Compressed to fit inside the
+     bar, still clearing --tap-min in both directions. */
+  .explore-scope .wa-scope__chip {
+    padding: var(--s-1) var(--s-2);
+    min-height: var(--tap-min);
+  }
+  .explore-scope .wa-scope__chip svg { width: 18px; height: 18px; }
 }
 
 /* ============================================================
@@ -737,8 +797,12 @@ a.wa-sr:focus {
 
 .wa-mark svg,
 .wa-mark use {
-  width: 46%;
-  height: 46%;
+  /* 5e sizes the card mark at 44-62px. 46% alone tracked the card, so a
+     181px desktop cell drew it at 83px — the mark stopped being a label
+     on a ground and became an illustration. Clamped to the stated range;
+     the percentage still drives it between those ends. */
+  width: clamp(44px, 46%, 62px);
+  height: clamp(44px, 46%, 62px);
   stroke: var(--petrol);
   fill: none;
   stroke-width: 1.5;
@@ -795,9 +859,12 @@ a.wa-sr:focus {
 
 [data-theme="dusk"] .wa-card__badge { background: rgba(20, 28, 29, .94); }
 
-/* The one lime use on a card: something is live or starting now. */
+/* The one lime use on a card: something is live or starting now.
+   94% like the neutral badge — 5e's rule is about badges over photos,
+   not about which badge, and a fully opaque chip was the only element
+   on a card that sat flat on top of a photograph instead of over it. */
 .wa-card__badge--now {
-  background: var(--signal);
+  background: color-mix(in srgb, var(--signal) 94%, transparent);
   color: var(--signal-ink);
 }
 
@@ -1258,6 +1325,61 @@ a.wa-sr:focus {
 .wa-note--ok   { color: var(--ink); }
 
 /* The full-width route card 5a puts on Explore, above the fold. */
+/* 5b's saved strip. A sibling of the walk card in every respect — same
+   full-width card, same rule and radius — so Explore's two standing
+   strips read as one family rather than two inventions. Icon, the count
+   in ink, the consequence in mute, and the whole row is the link.
+   The mark is a bookmark on the 9%-petrol tint, the same treatment a
+   photoless card gets, so nothing here is a new colour. */
+.wa-savedstrip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--tap-min);
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card-lg);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: var(--s-6);
+}
+.wa-savedstrip:hover { border-color: var(--rule-strong); }
+
+.wa-savedstrip__mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-control);
+  background: var(--petrol-tint);
+}
+.wa-savedstrip__mark svg {
+  width: 20px; height: 20px;
+  fill: none; stroke: var(--petrol); stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.wa-savedstrip__count {
+  font: 700 var(--fs-body)/1.3 var(--ff-ui);
+  color: var(--ink);
+}
+.wa-savedstrip__more {
+  font: 400 var(--fs-body)/1.3 var(--ff-ui);
+  color: var(--ink-mute);
+}
+
+/* The count and the consequence sit on one line from 768; below that
+   the strip would need three lines to hold both, so the consequence
+   wraps under the count instead of squeezing the count to two lines. */
+@media (max-width: 767.98px) {
+  .wa-savedstrip { flex-wrap: wrap; }
+  .wa-savedstrip__mark { order: 0; }
+  .wa-savedstrip__count { order: 1; flex: 1 1 auto; }
+  .wa-savedstrip__more { order: 2; flex: 1 0 100%; padding-left: calc(40px + var(--s-4)); }
+}
+
 .wa-walkcard {
   display: block;
   padding: var(--s-5);
@@ -1429,6 +1551,26 @@ a.wa-sr:focus {
 }
 
 .wa-chip__count { font: 400 var(--fs-mono)/1 var(--ff-mono); color: var(--ink-mute); }
+
+/* 5e's other job for the eight marks: "the 15px version rides in chips
+   and filter pills". Same sprite as the card mark, no second asset —
+   only the size and the ground change. It rides bare here rather than
+   on the 9%-petrol tile, because the chip already IS a tinted pill when
+   selected and a mark-on-tint-on-tint reads as a button inside a
+   button. Colour follows the label so a disabled chip dims as one
+   object. */
+.wa-chip__mark {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .75;
+}
+.wa-chip[aria-pressed="true"] .wa-chip__mark { opacity: 1; }
 
 .wa-chip[aria-pressed="true"] {
   background: var(--petrol-tint);
@@ -1836,7 +1978,26 @@ a.wa-sr:focus {
    row sits tight under it because the two are one control group, and
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
-.explore-scope   { margin-top: var(--s-4); }
+
+/* 5b draws the capsule as a compact centred control, not a full-bleed
+   bar: roughly 60% of the reading column, with the three slots and the
+   petrol key sitting close together so the row reads as ONE object.
+   Stretched to the full 1160px the slots drift ~370px apart and it
+   stops looking like a single control at all. Phone keeps 100%, where
+   the capsule collapses to its first slot anyway. */
+@media (min-width: 1024px) {
+  .explore-capsule {
+    max-width: 840px;
+    margin-inline: auto;
+  }
+}
+/* Phone/tablet only. From 1024 this row is fixed into the masthead
+   (see the scope component), and a margin still applies to a fixed
+   element — left unscoped it pushed the whole tab row 16px below the
+   bar it belongs to, from 700 lines away. */
+@media (max-width: 1023.98px) {
+  .explore-scope { margin-top: var(--s-4); }
+}
 
 /* ============================================================
    Saved + You (5f) — small shared pieces.
@@ -1962,6 +2123,11 @@ a.wa-sr:focus {
   margin-top: var(--s-2);
   padding: 0;
   min-height: var(--tap-min);
+  /* --tap-min is a floor in BOTH directions. With padding:0 and no
+     min-width this collapsed to the intrinsic width of the word "more",
+     34.66px — a target you clear vertically and miss sideways. WCAG
+     2.2 exempts inline text buttons; this repo's own rule does not. */
+  min-width: var(--tap-min);
   background: none;
   border: 0;
   color: var(--petrol);
@@ -2112,10 +2278,16 @@ a.wa-sr:focus {
   overflow-y: auto;
   margin: 0;
   padding: 0 var(--gutter) var(--s-3);
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-top: 1px solid var(--glass-hair);
+  /* Opaque, not glass. This was a third glass surface — 5e allows
+     exactly two, the top bar and the tab bar, and is explicit that
+     "nothing else in the product is translucent". Worse, it was the one
+     case the rule exists to prevent: glass over live content rather
+     than over something already scrolled past, so the map moved under
+     the rows and the text sat on whatever colour happened to pan
+     beneath it. The hairline stays — that line, not the blur, is what
+     reads as "this floats". */
+  background: var(--ground);
+  border-top: 1px solid var(--rule);
 }
 
 .tonight-map__drawer:empty { display: none; }

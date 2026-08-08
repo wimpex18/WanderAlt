@@ -12,10 +12,15 @@
   <link rel="mask-icon" href="./brand/favicon/safari-pinned-tab.svg" color="#055959" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-600.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/plus-jakarta-sans-latin.woff2" crossorigin />
   <link rel="stylesheet" href="wa.css" />
   <script src="./theme.js"></script>
   <script defer src="./when.js"></script>
+  <!-- WA.when.statedMinutes reads the clock through WA.Geo, so the rail
+       on this page cannot print a time without it. It was absent, which
+       is half the reason these rows rendered blank rails. geo.js has no
+       load-time dependencies of its own. -->
+  <script defer src="./geo.js"></script>
   <script defer src="./catalog.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>

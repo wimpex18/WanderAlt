@@ -201,9 +201,38 @@
     return list;
   };
 
+  /* ── Does this pick actually state a clock? ──────────────────
+     picks.time carries prose as often as a time — "open daily",
+     "Wed–Sun", "ongoing" — and the pipeline writes a bare date as a
+     midnight timestamp. Printing either as a clock invents a fact:
+     it put "00:00" on a record store and "Doors 00:00" on a festival.
+
+     This lives here, in the time model, because it is a question about
+     time and because it has now been needed in two places. The row rail
+     had its own copy (tonight.js) and the Explore card badge had none,
+     which is exactly how the same lie reached the cards after the rows
+     were fixed. Midnight counts as absent in both clocks: a timestamp
+     landing exactly on 00:00 UTC is the pipeline saying "a date, no
+     time", and a genuine midnight start loses its clock and shows the
+     day instead, which is far cheaper than a shop that opens at 00:00.
+
+     Returns minutes past local midnight, or null when no clock is
+     stated. Callers must treat null as "say the day, not a time". */
+  const statedMinutes = (e) => {
+    if (!e) return null;
+    const m = window.WA.Geo && window.WA.Geo.startMinutes
+      ? window.WA.Geo.startMinutes(e) : null;
+    if (m == null || m === 0) return null;
+    if (e.startsAt) {
+      const d = new Date(e.startsAt);
+      if (!isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return null;
+    }
+    return m;
+  };
+
   window.WA.when = {
     todayAbbrev, isTonight, isThisWeek, stampAll,
     dayKey, todayKey, keyPlus, resolveKey, isTomorrow, isWeekend, weekendKeys, isOnDate,
-    matches,
+    matches, statedMinutes,
   };
 })();

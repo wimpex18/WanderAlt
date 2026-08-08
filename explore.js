@@ -7,9 +7,13 @@
    Carousels with plain section names, a count in every subtitle, and
    the dense list one tap away in Tonight.
 
-   Three scope chips, not four. Walks was cut this cycle — measured
-   opening-hours coverage is around 48%, under the ~70% the "ordered so
-   every door is open when you reach it" promise needs.
+   Four scope tabs, as 5b and 5c both draw them: All, Tonight, Places,
+   Walks. Walks was cut from this row in the first cycle because measured
+   opening-hours coverage was ~48%, under the ~70% the "ordered so every
+   door is open when you reach it" promise needs. The parse rate of filed
+   hours is 93.7% now, and both walk screens and the three hand-written
+   routes shipped in 6b, so the tab surfaces what exists rather than
+   promising work. On desktop this row is the masthead — see wa.css.
 
    Everything interpolated here is scraped: titles, venues, kinds and
    neighbourhoods come from Telegram, RSS and venue pages via an LLM.
@@ -81,8 +85,26 @@
       return null;
     }
     if (isFreeish(e))                 return { text: 'Free', now: false };
-    if (window.WA.when.isTonight(e) && e.time) return { text: `Doors ${e.time}`, now: true };
-    if (e.time)                       return { text: e.time, now: false };
+
+    /* Two bugs lived on this line. It printed e.time raw, so a pick
+       whose time field is prose or a bare date rendered "Doors 00:00"
+       on 24 cards; and it set now:true for anything merely happening
+       today, which painted every one of those badges lime. Lime has one
+       job — "now" — and a door opening at 15:00 seen at nine in the
+       morning is not now. 5b draws these as the plain cream pill.
+
+       So: lime only once it has actually started, which is the same
+       rule the row rail uses for NOW, and a clock only when one parses. */
+    const m = window.WA.when.statedMinutes(e);
+    const today = window.WA.when.isTonight(e);
+    if (m != null) {
+      if (today && m <= window.WA.Hours.cityNow().minutes) return { text: 'Now', now: true };
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      return { text: `Doors ${hh}:${mm}`, now: false };
+    }
+    /* Dated but undated-in-time: say the day, never a made-up clock. */
+    if (today) return { text: 'Tonight', now: false };
     return null;
   };
 
@@ -202,12 +224,52 @@
     const events = picks().filter(e => when.matches(e, state.when))
       .filter(e => state.what === 'all' || String(e.kind || '').toLowerCase() === state.what);
 
+    /* 5a and 5b both subtitle this shelf "within a 20-minute walk", so
+       the shelf is bounded, not merely sorted — it answers "what can I
+       reach", not "what is open somewhere in the city". 20 minutes at
+       the walking rate geo.js already uses.
+
+       The bound only exists once we know where the reader is. Without
+       permission there is no distance to filter on, and printing
+       "within a 20-minute walk" over an unbounded list would be a claim
+       we cannot support — so the shelf stays whole and the subtitle
+       says what it actually is. Same rule as the row rail: degrade the
+       copy with the data, never keep the copy and lose the truth. */
+    const WALK_MIN = 20;
+    const bounded = !!(geo.currentLoc && geo.currentLoc());
     const openNow = places().filter((p) => {
       const s = window.WA.Hours.state(p.openingHours);
-      return s.known && s.open;
+      if (!(s.known && s.open)) return false;
+      if (!bounded) return true;
+      const d = geo.distanceTo(p);
+      return d == null || d <= WALK_MIN * geo.WALK_M_PER_MIN;
     });
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
+
+    /* 5b's fourth scope. Routes are not picks, so this does not go
+       through section() -- it lists every route for the city using the
+       same card the All scope shows one of. A city with no routes says
+       so plainly rather than showing an empty shelf. */
+    if (state.scope === 'walks') {
+      const esc = UI().esc;
+      const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
+      out.push(`<section class="wa-section">
+        <p class="wa-section-sub">${esc(`${city} · this weekend`)}</p>
+        <h2 class="wa-section-title">Walks we assembled</h2>
+        ${mine.length
+          ? mine.map(r => `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
+              <span class="wa-walkcard__eyebrow">A walk</span>
+              <span class="wa-walkcard__title">${esc(r.title)}</span>
+              <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
+              <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
+            </a>`).join('')
+          : `<div class="wa-empty">
+              <p class="wa-empty__title">No walks written for ${esc(city)} yet.</p>
+              <p class="wa-empty__body">Routes are assembled by hand around venues whose opening hours are filed, so they arrive one city at a time. Tallinn has three.</p>
+            </div>`}
+      </section>`);
+    }
 
     if (state.scope === 'all' || state.scope === 'tonight') {
       const label = WHEN_LABEL[state.when] || 'On';
@@ -230,10 +292,14 @@
          section below, which never claims to know. */
       out.push(section({
         title: 'Open right now',
-        sub:   `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
+        sub:   bounded
+          ? `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · within a ${WALK_MIN}-minute walk`
+          : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
         items: sorted(openNow),
         href:  'discover.html?type=places',
-        hrefSub: 'every place',
+        /* Reads as one sentence with the label above it: "See all 61 /
+           as a list". "every place" made it "See all 61 every place". */
+        hrefSub: 'as a list',
         emptyTitle: 'Nothing we can confirm is open this minute.',
         emptyBody:  `Opening hours reach us for about half of ${city}'s places, so this is quieter than the city is. Places below shows everything.`,
       }));
@@ -286,6 +352,35 @@
      Renders only for cities that actually have routes, so the other
      three do not carry a hole where an experiment would be. */
   let ROUTES = null;
+
+  /* 5a labels a route "6 stops · 2.5 km", not with a promise sentence.
+     walks.json stores stops as {id, note} and no distance, so the
+     distance is the walked length of the route: the legs between
+     consecutive stops, looked up in the venue index. Computed rather
+     than filed, because a hand-typed number in the JSON would drift the
+     first time a stop is swapped and nothing would catch it.
+
+     Stops with no coordinate drop out of the sum rather than zeroing
+     it, and if fewer than two stops resolve there is no line to print,
+     so the count stands alone. */
+  const routeFacts = (r) => {
+    const stops = r.stops.length;
+    const idx = {};
+    for (const v of (window.WA._venuesAll || window.WA.venues || [])) idx[v.id] = v;
+    const pts = r.stops
+      .map(s => idx[s.id])
+      .filter(Boolean)
+      .map(v => ({ lat: v.lat ?? v.latitude, lng: v.lng ?? v.longitude }))
+      .filter(p => p.lat != null && p.lng != null);
+
+    if (pts.length < 2) return `${stops} stops`;
+    let m = 0;
+    for (let i = 1; i < pts.length; i++) {
+      m += window.WA.Geo.haversineM(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
+    }
+    return `${stops} stops · ${window.WA.Geo.format(m)}`;
+  };
+
   const walkCard = () => {
     /* esc is function-scoped throughout this file, not module-scoped --
        using it without this line threw a ReferenceError that vanished
@@ -294,15 +389,78 @@
     const esc = UI().esc;
     const host = $('walkcard');
     if (!host) return;
+    /* The Walks scope lists every route below, so the teaser above it
+       would be the same card printed twice. */
+    if (state.scope === 'walks') { host.innerHTML = ''; return; }
     const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
     if (!mine.length) { host.innerHTML = ''; return; }
     const r = mine[0];
-    const stops = r.stops.length;
     host.innerHTML = `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
       <span class="wa-walkcard__eyebrow">A walk</span>
       <span class="wa-walkcard__title">${esc(r.title)}</span>
       <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
-      <span class="wa-walkcard__facts">${esc(`${stops} stops · ordered so every door is open when you reach it`)}</span>
+      <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
+    </a>`;
+  };
+
+  /* ── 5b's saved strip ────────────────────────────────────────
+     "3 saved in Kalamaja · Two are open right now →". It sits between
+     the capsule and the first shelf, and on desktop it is now the only
+     route to Saved, since 5b's masthead is the scope tabs and the app
+     tab bar is a phone pattern. So it always carries the link, even
+     when nothing saved is open.
+
+     The area is the neighbourhood most of the saved things share, not
+     the reader's GPS position: it is a fact about the shelf being
+     described, it needs no permission, and it is still true when
+     location is denied. It falls back to the city.
+
+     Nothing saved means no strip at all. A row reading "0 saved in
+     Tallinn" is an empty state for a shelf that was never asked for. */
+  const savedStrip = () => {
+    const esc = UI().esc;
+    const host = $('savedstrip');
+    if (!host) return;
+    const B = window.WA.Bookmarks;
+    if (!B || !B.ids) { host.innerHTML = ''; return; }
+
+    /* Both shapes, the way saved-page.js resolves them. Saved holds
+       places as well as picks, and searching only the pick catalogue
+       made a reader with three saved bars see no strip at all. */
+    const ids = new Set(B.ids());
+    const mine = [
+      ...(window.WA._catalogAll || window.WA.catalog || []),
+      ...(window.WA._venuesAll  || window.WA.venues  || []),
+    ].filter(e => ids.has(e.id) && e.city === window.WA.CITY);
+    if (!mine.length) { host.innerHTML = ''; return; }
+
+    const tally = {};
+    for (const e of mine) {
+      const a = e.neighborhood && e.neighborhood.toLowerCase() !== 'other' ? e.neighborhood : '';
+      if (a) tally[a] = (tally[a] || 0) + 1;
+    }
+    const area = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0] || CITY_LABEL();
+
+    /* Open right now means the same thing it means everywhere else: a
+       place whose filed hours say open, or a dated pick that has
+       already started. Never a guess from an unparsed time. */
+    const openCount = mine.filter((e) => {
+      if (e.__place || e.openingHours) return window.WA.Hours.state(e.openingHours).open === true;
+      const m = window.WA.when.statedMinutes(e);
+      return m != null && window.WA.when.isTonight(e) && m <= window.WA.Hours.cityNow().minutes;
+    }).length;
+
+    const WORD = ['None', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+    const tail = openCount
+      ? `${WORD[openCount] || openCount} ${openCount === 1 ? 'is' : 'are'} open right now`
+      : 'See them all';
+
+    host.innerHTML = `<a class="wa-savedstrip" href="saved.html">
+      <span class="wa-savedstrip__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+      </span>
+      <span class="wa-savedstrip__count">${esc(`${mine.length} saved in ${area}`)}</span>
+      <span class="wa-savedstrip__more">${esc(tail)} &rarr;</span>
     </a>`;
   };
 
@@ -319,6 +477,7 @@
   loadWalks();
 
   const render = () => {
+    savedStrip();
     walkCard();
     $('sections').innerHTML = buildSections();
     $('cap-where').textContent = CITY_LABEL();
