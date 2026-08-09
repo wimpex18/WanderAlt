@@ -95,6 +95,7 @@ The app reads picks where `archived_at IS NULL`. A pick's id is `channel-message
 ```
 ingest-* → staging_messages → process-staging → picks
          → enrich-images → geocode-picks → enrich-venues
+         → enrich-venue-images → verify-images
          → embed-picks
          → rotate-tonight → archive-stale → dedup → purge
 ```
@@ -107,6 +108,8 @@ Ingest functions write `staging_messages.payload` — the normalised source obje
 
 **How much schema.org markup is actually out there (audited Jul 2026, so nobody re-runs this hopefully):** of 124 reachable venue websites probed, **3** emit `Event` JSON-LD on their homepage — nuku.ee, kinosoprus.ee and merekeskus.ee, two of them with `offers` (real prices). Probing the usual event subpaths (`/events`, `/programm`, `/kava`, `/pasakumi`, `/renginiai`, …) on 45 more venues found **zero**. The regional ticketing portals — Piletilevi, Biļešu Serviss, Bilietai, Tiketti — emit only `Organization`/`LocalBusiness` on their listing pages, and Piletilevi's listing is JS-rendered so it has no static links to follow. kultuur.info advertises an RSS feed; it is a blog, last posted 2024, not events.
 
+**What the catalogue actually carries (9 Aug 2026).** Of 581 live picks: 177 have a start time, 135 a ticket URL, 99 are marked free, 49 carry a photo of their own — and **2 have a price**. Of 2,598 venues: 1,467 have opening hours, 1,321 a website, 46 a Wikidata QID, 26 a photograph. Two of those numbers are worth reading rather than skimming. **Price is effectively an empty column**, so any screen that leans on it is drawing a field that does not exist; `is_free` is the only money signal with real coverage. And **hours are at 56%, not the ~45% quoted around the Walks decision** — that older figure was measured against the narrower Places whitelist, so quote the one that matches the question being asked, and prefer counting to either.
+
 The conclusion is that JSON-LD is a **detail-page** format here, not a listing-page one: an individual Fienta event page carries a full `Event` node with prices, which is exactly why `backfill-pick-facts` works when a pick already has a `source_url`. There is no large untapped seam of structured venue data waiting to be scraped — which makes the Facebook/commercial-scraper question more important, not less.
 
 `resolve-links` turns `picks.entities` into `picks.links`. It integrates hubs, not platforms: MusicBrainz for music (one keyless lookup returns Spotify, SoundCloud, Bandcamp, Mixcloud, Discogs, YouTube and the official site together — Bandcamp has no public metadata API and Mixcloud's is OAuth-only, so this is the only free route to either), Open Library for authors, Wikidata for art, theatre, film and everything else. Matches are confidence-gated and drop out rather than guess. For flea markets, community nights and sports there is no hub at all; those resolve to nothing and the page falls back to the source link and the venue's own socials. `backfill-pick-facts` fills the same columns for older picks by reading schema.org JSON-LD off the pick's own `source_url` — one extractor for every source, no LLM, no keys.
@@ -115,7 +118,7 @@ Text generation goes Groq first, OpenRouter `:free` second, with a retired Gemin
 
 ### Cron posture
 
-**The pipeline runs again (Aug 2026).** All 30 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set, the lifecycle housekeeping, and the Saturday digest.
+**The pipeline runs again (Aug 2026).** All 32 jobs are active: every ingest, `wa-process-staging` hourly, the enrichment set (including `wa-enrich-venue-images` nightly and `wa-verify-images` weekly), the lifecycle housekeeping, and the Saturday digest.
 
 They had been frozen pre-release — no users, and cron-driven retry loops were what ran up the Google bill. The freeze did its job on spend and then quietly became the problem: nothing reached `picks` between 2 Jul and 4 Aug, 49 staging rows sat unprocessed, and Tonight was empty because the catalogue had stopped moving.
 

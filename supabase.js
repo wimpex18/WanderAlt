@@ -293,6 +293,46 @@
       window.WA.past = [];  /* past table is optional — silently empty if absent */
     }
 
+  /* ── An event with no photo borrows its venue's ──────────────
+     Only 49 of 580 live picks carry an image of their own, but the room
+     they happen in is the same room every time — so a gig at Kanuti
+     Gildi Saal can show Kanuti Gildi Saal rather than a category glyph.
+
+     Two rules keep this honest. It only ever borrows DOWNWARD, from the
+     place to the event held there, never sideways between events. And
+     the attribution travels with the picture, relabelled, so a reader
+     is told they are looking at the venue and not at the night: a
+     photograph of the room is context, but passing it off as coverage
+     of the event would be the same class of lie as an invented time.
+
+     Runs once here rather than in four render paths, so Explore,
+     Tonight, Saved, Source and detail all agree about what a pick's
+     photo is. */
+  const borrowVenuePhotos = () => {
+    const picks  = window.WA._catalogAll || [];
+    const venues = window.WA._venuesAll  || [];
+    if (!picks.length || !venues.length) return;
+
+    const byName = new Map();
+    for (const v of venues) {
+      if (!v.imageUrl || !v.name) continue;
+      byName.set(`${v.city}|${String(v.name).toLowerCase().trim()}`, v);
+    }
+    if (!byName.size) return;
+
+    let borrowed = 0;
+    for (const p of picks) {
+      if (p.imageUrl || !p.venue) continue;
+      const v = byName.get(`${p.city}|${String(p.venue).toLowerCase().trim()}`);
+      if (!v) continue;
+      p.imageUrl   = v.imageUrl;
+      p.imageAttr  = v.imageAttr ? `${v.imageAttr} — the venue, not the event` : 'The venue, not the event';
+      p.imageIsVenue = true;
+      borrowed++;
+    }
+    if (borrowed) console.info(`[WanderAlt] ${borrowed} picks borrowed their venue's photo.`);
+  };
+
     if (venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value)) {
       const allVenues = venuesResult.value
         .filter(r => VENUE_KINDS.has(r.kind))
@@ -304,8 +344,45 @@
       console.warn('[WanderAlt] venues fetch failed — using static venue seed.', venuesResult.reason?.message);
     }
 
+    borrowVenuePhotos();
     dispatch();
   };
+
+  /* ── Look one row up by id, when the loaded set does not have it ──
+     The loaded set is deliberately narrower than the database: picks
+     exclude archived rows, and venues are filtered to VENUE_KINDS (so
+     museums, theatres, bars and libraries — 22 of the 26 venues that
+     carry a photograph — are absent by design).
+
+     detail.js used to answer "not in the loaded set" with "That page
+     has closed down. Listings expire — that's normal." For an archived
+     pick that is true. For a museum, or for a `place.html?id=` link
+     from before the redesign, it is the app inventing a fact about the
+     world, which is the one thing this product must not do. So ask the
+     database before saying anything.
+
+     Returns { kind: 'event' | 'place', e, archivedAt } or null when the
+     row genuinely does not exist. */
+  const byId = async (id) => {
+    if (!id) return null;
+    const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
+    try {
+      const picks = await get('picks', `${q}&select=*`);
+      if (picks && picks[0]) {
+        return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
+      }
+    } catch (_) { /* fall through to venues */ }
+    try {
+      const venues = await get(
+        'venues',
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram,opening_hours`
+      );
+      if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
+    } catch (_) { /* nothing more to try */ }
+    return null;
+  };
+
+  window.WA.byId = byId;
 
   load();
 })();

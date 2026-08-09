@@ -1,5 +1,13 @@
 // ============================================================
-// WanderAlt — ingest-osm  (v13)
+// WanderAlt — ingest-osm  (v14)
+// v14 (Aug 2026): capture the `wikidata` tag. This function has always
+//      fetched every tag (`out center tags`) and the row mapping simply
+//      never read this one. It matters more than its ~10% coverage
+//      suggests, because it is an IDENTIFIER: enrich-images had to guess
+//      a venue from its name and put Tallinn Town Hall's Christmas
+//      market on a basement club called Hall, whereas a QID resolves
+//      "D3" as precisely as "Estonian National Opera".
+//      enrich-venue-images consumes it.
 // v13 (Aug 2026, redesign step 0): capture opening_hours.
 //   The Overpass query already ends `out center tags;`, so every element
 //   has always arrived with its full tag set — the row mapping just never
@@ -106,7 +114,7 @@ async function ingestCity(
   bbox: string,
   now: string,
   blocklist: RegExp[],
-): Promise<{ upserted: number; total: number; blocked: number; withHours: number }> {
+): Promise<{ upserted: number; total: number; blocked: number; withHours: number; withQid: number }> {
   const res = await fetch(OVERPASS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8",
@@ -126,6 +134,7 @@ async function ingestCity(
   const rows: Record<string, unknown>[] = [];
   let blocked   = 0;
   let withHours = 0;
+  let withQid   = 0;
 
   for (const el of elements) {
     const t    = el.tags ?? {};
@@ -141,6 +150,20 @@ async function ingestCity(
 
     const hours = t.opening_hours || null;
     if (hours) withHours++;
+
+    /* v14: the QID, which this function has been fetching and
+       discarding since it was written — `out center tags` returns every
+       tag and the row mapping simply never read this one.
+
+       It matters more than its 10% coverage suggests, because it is an
+       IDENTIFIER. enrich-images had to guess a venue from its name and
+       put Tallinn Town Hall's Christmas market on a basement club
+       called Hall; a QID resolves "D3" as precisely as it resolves
+       "Estonian National Opera". Only accepted in Q-number form so a
+       malformed tag cannot poison the lookup. */
+    const qid = /^Q\d+$/.test(String(t.wikidata || "").trim())
+      ? String(t.wikidata).trim() : null;
+    if (qid) withQid++;
 
     rows.push({
       id:           slugify(name) + "-" + el.id,
@@ -158,6 +181,7 @@ async function ingestCity(
       website:      t.website || t["contact:website"] || null,
       facebook:     normSocial(t["contact:facebook"]  || t.facebook,  "https://facebook.com/"),
       instagram:    normSocial(t["contact:instagram"] || t.instagram, "https://instagram.com/"),
+      wikidata:     qid,
       /* v12: no `status` here — INSERTs get the column default ('active'),
          existing rows keep curator-set statuses (rejections must stick). */
       last_seen_at: now,
@@ -174,7 +198,7 @@ async function ingestCity(
     upserted += Math.min(CHUNK, rows.length - i);
   }
 
-  return { upserted, total: elements.length, blocked, withHours };
+  return { upserted, total: elements.length, blocked, withHours, withQid };
 }
 
 export default {
@@ -205,14 +229,14 @@ export default {
 
     const blocklist = await loadChainBlocklist(sb);
 
-    const perCity: Record<string, { upserted?: number; total?: number; blocked?: number; withHours?: number; error?: string }> = {};
+    const perCity: Record<string, { upserted?: number; total?: number; blocked?: number; withHours?: number; withQid?: number; error?: string }> = {};
     let totalUpserted = 0;
     const errors: string[] = [];
 
     for (const [city, bbox] of cities) {
       try {
         const out = await ingestCity(sb, city, bbox, now, blocklist);
-        perCity[city]  = { upserted: out.upserted, total: out.total, blocked: out.blocked, withHours: out.withHours };
+        perCity[city]  = { upserted: out.upserted, total: out.total, blocked: out.blocked, withHours: out.withHours, withQid: out.withQid };
         totalUpserted += out.upserted;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

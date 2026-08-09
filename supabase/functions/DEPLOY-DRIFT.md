@@ -61,24 +61,60 @@ Three commits had landed in the repo without reaching production.
 
 ### Still behind
 
-**Nothing, as of 8 Aug 2026.** Every function in `supabase/functions/` matches
-what is deployed.
+**Three functions, one-line change each, as of 9 Aug 2026.**
+
+| function | missing | severity |
+| --- | --- | --- |
+| `process-staging` | OpenRouter default repointed | low — see below |
+| `send-digest` | same | low |
+| `generate-context` | same | low |
+
+All three default `OPENROUTER_MODEL` to a model that no longer exists.
+`openai/gpt-oss-120b:free` is **absent** from OpenRouter's catalogue — probed
+`/v1/models` directly, 400 models, no match — while the *paid*
+`openai/gpt-oss-120b` still resolves, which is precisely how a dead `:free`
+pin hides. The repo now defaults to `nvidia/nemotron-3-super-120b-a12b:free`,
+which is present and advertises `structured_outputs`.
+
+Severity is low because the default is only reached when the
+`OPENROUTER_MODEL` secret is UNSET, and the lane itself only fires when Groq
+fails. Whether the secret is set cannot be checked from here any more:
+`check-secrets` is a 410 tombstone, so that is a dashboard question.
+
+**The zero-deploy fix is to set the secret** —
+`OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free` — which takes
+effect for all three callers immediately and makes this drift inert.
+Re-probed 9 Aug 2026 against `/api/v1/models`: that id is **present**,
+prices at `"prompt": "0", "completion": "0"`, carries a 262k context and
+advertises `structured_outputs`. So the repo default is correct as it
+stands and the secret is optional — the one that actually matters is
+`OPENROUTER_API_KEY`, which is unset, which is why the lane has never
+fired.
+Deploying the three is the tidier fix and can wait for the next session that
+touches them.
 
 The last two entries closed differently and both are worth knowing:
 
-- `draft-column` was **deleted**, not deployed. It drafted a weekly editorial
+- `draft-column` was **retired**, not deployed. It drafted a weekly editorial
   column attributed to a `curator_handle` on a product whose curators the
   redesign removed, and nothing public rendered it. Repairing it — the Groq
   model repoint it had been waiting on since July — would have restored a
   deleted feature. Cron unscheduled, source and admin panel removed.
+  **This entry used to say "deleted", and that was false.** Removing the
+  directory undeploys nothing: probed 9 Aug 2026, an unauthenticated POST
+  still returned 200 — a live, world-reachable, LLM-calling endpoint for a
+  feature that does not exist, which is the exact failure the tombstone
+  section below was written about, missed in the session that wrote it.
+  Now a 410 tombstone at `verify_jwt:true`, the fourth. **After retiring
+  anything, curl the URL** — the repo cannot tell you what is deployed.
 - `ingest-hanzas-perons` was cleared at **v10** (below). A later read of this
   file suggested it was still behind; it is not. The deployed function writes
   both `text` and `payload.starts_at`, verified against `staging_messages`:
   9 rows, all with prose, 3 with a timestamp — the other 6 have dates the
   parser cannot read, which is a null it is right to write.
 
-`classify-moods` and `match-pick` were **retired**, not deployed. See the
-tombstone note below.
+`classify-moods`, `match-pick` and `draft-column` were **retired**, not
+deployed. See the tombstone note below.
 
 **`ingest-hanzas-perons` did not clear itself, and the way I first
 concluded it had is the point.** I saw its 03:50 cron insert 3 rows and
@@ -164,6 +200,52 @@ defence in depth, but four of their crons send `apikey` only, or no auth
 header at all, so those commands have to move to `invoke_wa_fn` **before**
 any function is flipped — otherwise they fail silently, which
 `cron.job_run_details` will happily report as `succeeded`.
+
+### Cleared 9 Aug 2026
+
+| function | to | why |
+| --- | --- | --- |
+| `enrich-venue-images` | **v3**, `verify_jwt:true` | writes `upload.wikimedia.org` CDN URLs instead of `Special:FilePath`, and records `image_source` |
+| `verify-images` | **v5**, `verify_jwt:true` | new; four revisions in one session, each one a thing the previous one got wrong (below) |
+| `ingest-osm` | **v17**, `verify_jwt:true` | captures the `wikidata` QID it had always been fetching and discarding |
+| `enrich-images` | **v15**, `verify_jwt` false → **true** | writes CDN URLs; was a world-open catalogue write |
+| `rotate-tonight` | **v6**, `verify_jwt` false → **true** | same, byte-identical source, flag only |
+
+**Two crons were sending no `Authorization` header at all** — `enrich-images-auto`
+and `rotate-tonight-daily` — and they worked only because both functions
+were `verify_jwt:false`. That is the shape the digest open-relay had:
+preserving the flag preserves the hole. Both functions WRITE to the
+catalogue, and both were reachable by anyone on the internet. Closed in
+the documented order: repoint the cron through `invoke_wa_fn`, verify the
+call still returns 200, and only then flip the flag. The reverse 401s in
+silence while `cron.job_run_details` keeps saying `succeeded`.
+
+`enrich-images` also needed a code change in the same deploy, and this is
+worth noticing: it still built `Special:FilePath` URLs. It writes into
+`picks` nightly, so flipping the flag without fixing the builder would
+have quietly re-introduced the throttled URLs and undone the CDN
+migration inside a day. **A migration is not finished until every writer
+agrees with it.**
+
+`verify-images` went v1 → v5 in a single session and the sequence is the
+useful part, because each version fixed a failure the previous one had
+made invisible:
+
+- **v2** — v1 never stamped `image_checked_at` on a transient result. With
+  the queue ordered `NULLS FIRST`, 32 permanently-transient rows would have
+  sat at its head forever and starved every row behind them.
+- **v3** — v2 reported a bare count of "transient" with no reason, which is
+  undiagnosable. Adding `transientWhy` turned "a third of the catalogue is
+  unverifiable" into "every one of them is an `http 429`" in one run.
+- **v4** — deduped the probe per run. A pick borrows its venue's photo, so
+  one Commons file was being asked about seven times.
+- **v5** — v4 did not actually fix it: two runs a minute apart returned
+  0/26 and 9/26 transient off the *same* URLs, which is a rate limit on the
+  egress IP, not anything about the images. Added per-host pacing.
+
+The thing worth carrying forward: **the fix that looked obviously right (v4)
+measured as no better than the bug.** Only re-running it twice showed that,
+and a single lucky run would have closed the ticket.
 
 ## The rule
 

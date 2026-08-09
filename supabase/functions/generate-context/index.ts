@@ -21,7 +21,7 @@ const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ    = Deno.env.get('GROQ_API_KEY') ?? '';
 // OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
 const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
-const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'openai/gpt-oss-120b:free';
+const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-super-120b-a12b:free';
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 /* llama-4-scout was decommissioned at Groq — absent from /v1/models and
    404 on completion (verified by probe, Jul 2026; not recalled from

@@ -75,7 +75,7 @@ const RESEND  = Deno.env.get('RESEND_API_KEY') ?? '';
 const GROQ_KEY        = Deno.env.get('GROQ_API_KEY') ?? '';
 const GROQ_MODEL      = 'llama-3.3-70b-versatile';
 const OPENROUTER_KEY  = Deno.env.get('OPENROUTER_API_KEY') ?? '';
-const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'openai/gpt-oss-120b:free';
+const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-super-120b-a12b:free';
 const FROM    = Deno.env.get('DIGEST_FROM_EMAIL') ?? 'WanderAlt <onboarding@resend.dev>';
 /* wanderalt.app is the canonical domain; wanderalt.com is brand defence
    and 301s across. The old default was the .com, so an unset SITE_URL put
