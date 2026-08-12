@@ -209,14 +209,28 @@
   const mosaic = (ids) => {
     const byId = Object.fromEntries(pool().map(e => [e.id, e]));
     const tiles = ids.map(id => byId[id]).filter(Boolean).slice(0, 4);
+    /* A list with nothing to show it. Two ways in: a list just made,
+       and a list whose every item has since been archived -- the second
+       is the misleading one, because the card beside this square still
+       reads "3 saved · 3 expired".
+
+       It used to be an empty tile, which the mosaic's own rule calls
+       out one paragraph up in wa.css: "an empty tile reads as a missing
+       image rather than as a short list". So it draws the bookmark on
+       the same 9%-petrol ground the savedstrip already uses -- the
+       sanctioned no-photo treatment, no new colour, and honest, since
+       an empty list has no contents to be recognised by and no category
+       of its own to borrow a mark from. */
     if (!tiles.length) {
-      return `<span class="wa-list-card__mosaic"><span class="wa-list-card__tile"></span></span>`;
+      return `<span class="wa-list-card__mosaic"><span class="wa-list-card__tile">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+      </span></span>`;
     }
     return `<span class="wa-list-card__mosaic">${tiles.map(e => {
       const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
       const mark  = window.WA.Marks ? window.WA.Marks.markFor(e.kind) : 'place';
       return `<span class="wa-list-card__tile">${photo
-        ? `<img src="${esc(window.WA.img ? window.WA.img(photo, 200) : photo)}" alt="" loading="lazy">`
+        ? `<img src="${esc(window.WA.img ? window.WA.img(photo, 200) : photo)}" alt="" loading="lazy" data-mark="${esc(mark)}">`
         : `<svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg>`}</span>`;
     }).join('')}</span>`;
   };

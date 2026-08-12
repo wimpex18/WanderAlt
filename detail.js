@@ -182,7 +182,7 @@
     if (photo) {
       return `<div class="wa-detail__well">
         <img class="wa-detail__photo" src="${esc(window.WA.img ? window.WA.img(photo, 900) : photo)}"
-             alt="" loading="eager" decoding="async" />
+             alt="" loading="eager" decoding="async" data-mark="${esc(mark)}" />
         ${e.imageAttr ? `<p class="wa-detail__credit">${esc(e.imageAttr)}</p>` : ''}
       </div>`;
     }

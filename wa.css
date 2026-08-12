@@ -1657,6 +1657,14 @@ a.wa-sr:focus {
 .wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--petrol); }
 .wa-switch[aria-pressed="true"] .wa-switch__thumb { transform: translateX(18px); }
 
+/* Same rule as a zero-count chip, same treatment: an option with
+   nothing behind it is dimmed, not removed. "Only sources I follow"
+   before you follow anything says the feature exists and its sub says
+   where follows come from -- an absent switch says neither. Dashed is
+   the chip's border trick and there is no border here, so the dimming
+   carries it alone. */
+.wa-switch:disabled { cursor: default; opacity: .45; }
+
 /* ---- Buttons. One control size, one radius. ---- */
 
 .wa-btn {
@@ -1739,6 +1747,25 @@ a.wa-sr:focus {
 }
 
 .wa-pin[aria-current="true"] .wa-pin__dist { color: var(--signal-ink); }
+
+/* A cluster pin. Petrol, because it is a COUNT and lime's one job is
+   "now" -- "nine things here" is not that. Same pill, same shadow, same
+   mono face as the pins it stands in for, so it reads as one of them
+   rather than as a different kind of object; it is round because it
+   carries a number instead of a time and a distance, and it is the one
+   pin you cannot open. Sits under the selected pin, which never
+   clusters. */
+.wa-pin--cluster {
+  min-width: 34px;
+  height: 34px;
+  justify-content: center;
+  padding: 0 var(--s-1);
+  border-radius: var(--r-pill);
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: var(--petrol-ink);
+  font-weight: 600;
+}
 
 .wa-pin--now::before {
   content: '';
@@ -2211,6 +2238,32 @@ a.wa-sr:focus {
   margin-top: var(--s-3);
 }
 
+/* In map mode the chips and the Filters key stick under the top bar.
+   The map is a mode, and a mode you cannot re-filter without scrolling
+   back out of it is a mode with its controls taken away -- measured at
+   390: with the map scrolled to the middle of the viewport the chip row
+   sat at top:-47, i.e. behind the glass, so Where/When/What and the
+   filter count were unreachable while looking at the pins.
+
+   Opaque, never glass: 5e allows exactly two glass surfaces and both
+   are spent on the chrome. This is paper that happens to stay put, and
+   it keeps its own height in flow, so nothing under it is overlapped.
+
+   Only in map mode, and only below 1024 where the map REPLACES the
+   list. From 1024 up the map is a companion column that sticks on its
+   own while the list scrolls past it, so the chain is never out of
+   reach there and a second sticky block would just eat the column. */
+@media (max-width: 1023.98px) {
+  body.tonight-mapmode .tonight-head {
+    position: sticky;
+    top: var(--topbar-h);
+    z-index: 4;
+    background: var(--ground);
+    padding-bottom: var(--s-3);
+    border-bottom: 1px solid var(--rule);
+  }
+}
+
 /* The count headline and its subtitle are one unit, so they sit tight
    together and the list takes the wider gap below. */
 #results-title { margin-top: var(--s-7); }
@@ -2264,17 +2317,35 @@ a.wa-sr:focus {
   z-index: 2;
 }
 
-/* One glass layer per screen is already spent on the chrome, so this bar
-   is opaque. */
-/* The drawer 2a asks for: the picks currently in view, under the bar.
-   "A mode is never empty" -- a map with pins and no names is a puzzle,
-   and this is what makes tapping a pin optional rather than required.
-   Capped in height so the map itself stays the larger half. */
-.tonight-map__drawer {
+/* One glass layer per screen is already spent on the chrome, so the bar
+   and the drawer below are both opaque.
+
+   They stack inside one foot instead of both being pinned to bottom:0
+   at the same z-index -- which is what they were, so the drawer (later
+   in the DOM) painted straight over the bar and took the pin count and
+   "Show list" with it: the way out of the mode was invisible on every
+   phone. A box that stacks them, not a z-index.
+
+   The 42% cap moved with it, and it is deliberately on the WHOLE foot
+   rather than on the drawer alone, so the original rule still holds:
+   the map keeps the larger half. The drawer gets what the bar leaves,
+   which is a peek at two rows rather than three -- the way out of a
+   mode is worth more than one extra row. */
+.tonight-map__foot {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
   max-height: 42%;
+}
+
+/* The drawer 2a asks for: the picks currently in view, under the bar.
+   "A mode is never empty" -- a map with pins and no names is a puzzle,
+   and this is what makes tapping a pin optional rather than required. */
+.tonight-map__drawer {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   margin: 0;
   padding: 0 var(--gutter) var(--s-3);
@@ -2298,10 +2369,7 @@ a.wa-sr:focus {
 .tonight-map__drawer .wa-row__desc { display: none; }
 
 .tonight-map__bar {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 3;
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--s-3);

@@ -153,7 +153,7 @@
     const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
 
     const well = photo
-      ? `<img class="wa-card__photo" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async">`
+      ? `<img class="wa-card__photo" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
       : `<span class="wa-mark"><svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg></span>`;
 
     return `<a class="wa-card" href="${esc(hrefFor(e))}">
