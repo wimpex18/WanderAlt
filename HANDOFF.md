@@ -95,6 +95,32 @@ still the dependency for everything."*
       text now resolves to the link. **When an audit item names the pages it covers,
       the pages it does not name are the finding.**
 - [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged.
+- [x] **2k** Geometry audit — alignment, control size, type scale, painted overlap.
+      Swept every public page at 375 / 768 / 1440, both themes, at three scroll
+      positions, plus the filter sheet and map mode. Result after the fixes below:
+      **no painted text overlap anywhere**, every `.wa-btn` exactly 48px
+      (`--control-h`) on every page and state, every `<main>` child sharing one left
+      edge, no computed font size off the token scale, no Fraunces under its 17px
+      floor, and every focusable control carrying both an accessible name and a
+      visible focus ring (49 on Tonight, 68 on Explore, 12 on a walk).
+      Three real defects came out of it:
+      **(a)** The Explore walk card's eyebrow and title are `<span>`s with no
+      `display`, so they were inline: `A WALK` shared a line with the title and the
+      title's `margin: 12px 0 8px` was silently discarded, leaving the blurb hard
+      against it. Both are `display: block` now — measured 12px above the title and
+      8px below, exactly what the rule asked for.
+      **(b)** The offline banner hard-coded `color: #fffdf8`, which is `--card`'s day
+      value, over a `--warn` ground that inverts between themes. 7.6:1 day but
+      **2.71:1 dusk**, under the 4.5:1 AA floor. Now `var(--ground)` — 6.72:1 and
+      6.97:1 — with no new token, because the banner is an inversion.
+      **(c)** The rail's neighbourhood was allowed the track plus the *whole* 16px
+      column gap, so a clipped value's ellipsis sat flush against the title while an
+      unclipped row kept 12px. Half the gap instead: 8px of clearance on every row,
+      and the common names still show in full.
+      The method matters as much as the result, and is written up in CLAUDE.md: use
+      the **box** on an element that clips and the **ink** on one that does not.
+      Backwards, and line-clamped card titles report overlaps they cannot paint while
+      a genuinely escaping rail reports none.
 - [x] **2i** Type fork (6a) — **landed.** Plus Jakarta Sans is the chrome face; Inter is
       out of the public token set. Two files, not four: Google ships v12 as a variable
       font, so one woff2 per subset carries the whole 200–800 axis. Both `latin` and

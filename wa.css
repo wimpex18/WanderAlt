@@ -994,7 +994,13 @@ a.wa-sr:focus {
   color: var(--ink-mute);
   align-self: flex-start;
   width: max-content;
-  max-width: calc(100% + var(--s-4));   /* the track, plus the column gap */
+  /* The track plus MOST of the column gap, not all of it. Letting it
+     take the full 16px put the clipped values' ellipsis flush against
+     the title -- 0px clearance where an unclipped row has 12px, so the
+     longest names were the ones that looked cramped. Half the gap keeps
+     8px of air on every row, and the common names (Vanalinn, Kalamaja,
+     Kadriorg, all ~57px) still show in full. */
+  max-width: calc(100% + var(--s-2));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1450,13 +1456,22 @@ a.wa-sr:focus {
 }
 
 .wa-walkcard:hover { border-color: var(--rule-strong); }
+/* Both are <span>, so both need an explicit display. Without it they
+   are inline, and two things follow: they share a line — the card read
+   "A WALK The Telliskivi record crawl" as one run — and the title's
+   `margin: 12px 0 8px` was inert, because vertical margins do nothing
+   on an inline box. So the eyebrow was not a label above the title and
+   the blurb butted straight against it. `__facts` below already sets
+   `display: block` for exactly this reason; these two were missed. */
 .wa-walkcard__eyebrow {
+  display: block;
   font: 400 var(--fs-mono)/1 var(--ff-mono);
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--petrol);
 }
 .wa-walkcard__title {
+  display: block;
   font: 600 var(--fs-headline)/1.15 var(--ff-display);
   color: var(--ink);
   margin: var(--s-3) 0 var(--s-2);
@@ -1942,7 +1957,15 @@ a.wa-sr:focus {
   gap: var(--s-3);
   padding: var(--s-3) var(--gutter);
   background: var(--warn);
-  color: #fffdf8;
+  /* NOT a hard-coded cream. `--warn` is a dark rust by day and a LIGHT
+     salmon at night, so a fixed light ink passed at 7.6:1 in day and
+     failed at 2.71:1 in dusk -- under the 4.5:1 AA floor this repo
+     treats as non-negotiable. Nobody caught it because the banner was
+     unreachable until it was moved out of the end of the document.
+     `--ground` is the one token that flips the right way on its own:
+     the banner is an inversion, so the page's ground becomes its ink.
+     Measured 7.34:1 day, 6.87:1 dusk, and no new variable. */
+  color: var(--ground);
   font: 600 var(--fs-meta)/1.4 var(--ff-ui);
 }
 
