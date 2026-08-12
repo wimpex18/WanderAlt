@@ -73,12 +73,35 @@
       '</span>';
   };
 
+  /* Directly after the top bar, NOT appended to <body>.
+
+     wa.css has always said this banner "sits under the top bar rather
+     than over the tab bar, because the toast owns that slot", and gives
+     it `position: sticky; top: var(--topbar-h)` to do it. Appending to
+     body made that sticky rule unreachable: a sticky element cannot
+     travel up past its own place in the flow, and its place was the very
+     end of the document. Measured 12 Aug 2026 on Tonight — the banner
+     rendered at y=4589 of a 4724px page, so you had to scroll **3,852px**
+     to find out you were offline. On a short page like Saved it landed
+     mid-screen instead. Wherever the document happened to end.
+
+     A notice nobody can see is the failure this whole file exists to
+     avoid: 6f#5's point was that the offline claim must be *backed*, and
+     the staleness number is what makes it honest. Both are worthless
+     below the fold.
+
+     Inserted before <main> so it also reserves real layout height rather
+     than covering the first row — the same rule the two chrome bars
+     follow. Every page has a .wa-topbar; the fallback keeps a page that
+     somehow lacks one from losing the banner entirely. */
   const show = () => {
     if (node || !document.body) return;
     node = document.createElement('div');
     node.className = 'wa-offline';
     node.setAttribute('role', 'status');
-    document.body.appendChild(node);
+    const topbar = document.querySelector('.wa-topbar');
+    if (topbar && topbar.parentNode) topbar.insertAdjacentElement('afterend', node);
+    else document.body.insertBefore(node, document.body.firstChild);
     paint();
     askCacheAge();
   };

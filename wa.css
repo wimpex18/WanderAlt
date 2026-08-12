@@ -1328,10 +1328,33 @@ a.wa-sr:focus {
 .wa-walk__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
 
 .wa-walk__name {
+  position: relative;
   font: 600 var(--fs-title)/1.28 var(--ff-display);
   color: var(--ink);
   text-decoration: none;
   text-wrap: pretty;
+}
+
+/* A single line of title type is 22px, so the only tappable thing on a
+   walk stop was half the 44px floor -- measured 291 x 22 on all four
+   stops of the Telliskivi route, and 291 x 44 on the one whose name
+   happens to wrap. `--tap-min` is a hard floor on public pages, and
+   2g's audit listed index, discover, saved, detail, profile and about
+   but never walk.html, so nothing had looked.
+
+   Same remedy as the map pin: an invisible hit area centred on the
+   name, so the target grows without the layout moving and without
+   pushing the note away from the title it belongs to. Centred rather
+   than anchored, so it stays inside the stop's own padding and can
+   never reach the stop above or below. */
+.wa-walk__name::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  min-height: var(--tap-min);
 }
 
 .wa-walk__name:hover { text-decoration: underline; }

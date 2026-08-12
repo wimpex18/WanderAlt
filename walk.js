@@ -207,7 +207,50 @@
 
   /* ── Walk in progress ────────────────────────────────────────── */
   const renderProgress = (r, n) => {
-    const live = r.stops.filter((_, i) => !skipped.has(i));
+    /* `skipped` holds indices into r.stops, so the Skip button has to
+       emit one of those -- not the index into the filtered list. It used
+       to emit the filtered index, which happened to be right for the
+       first skip and silently wrong for every one after it: skipping the
+       new first stop re-added 0 to a set that already contained 0, so
+       the count froze and Skip became a no-op from the second press on.
+       Keeping the original indices alongside the live stops is what
+       makes the two agree. */
+    const liveIdx = r.stops.map((_, i) => i).filter(i => !skipped.has(i));
+    const live = liveIdx.map(i => r.stops[i]);
+
+    /* Nothing to show, and the two reasons are NOT the same thing.
+
+       `resolve()` drops any stop whose venue is not in the catalogue, so
+       r.stops is empty whenever the venues have not arrived yet — and
+       load() calls render() as soon as walks.json lands, which is well
+       before the Supabase catalogue does. That is the crash in the
+       console on every cold load of a /walk.html?stop=N URL: stops[-1]
+       and a thrown render, recovered a moment later by the re-render on
+       wa:catalog-ready, so it never showed on screen and nobody chased
+       it. Telling that reader "you skipped every stop" would be a fact
+       about our load order dressed up as something they did. */
+    if (!r.stops.length) {
+      main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
+        <p class="wa-empty__title">This walk's stops are still loading.</p>
+        <p class="wa-empty__body">The route is written; the venues behind it come from the catalogue, which has not arrived yet. It fills in on its own.</p>
+      </div>`;
+      return;
+    }
+
+    /* The other reason: they really did skip all of them. Reachable only
+       now that Skip works more than once. */
+    if (!live.length) {
+      main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
+        <p class="wa-empty__title">You skipped every stop on this walk.</p>
+        <p class="wa-empty__body">Nothing is booked and nothing is lost — the route is still there if you want to start it again.</p>
+        <div class="wa-empty__actions">
+          <a class="wa-btn wa-btn--primary" href="walk.html?id=${esc(encodeURIComponent(r.id))}">Back to the route</a>
+          <a class="wa-btn" href="./index.html">Explore</a>
+        </div>
+      </div>`;
+      return;
+    }
+
     const idx = Math.min(Math.max(n, 1), live.length) - 1;
     const sch = schedule(live);
     const s = sch.stops[idx];
@@ -237,7 +280,7 @@
       <div class="wa-btn-row">
         <a class="wa-btn wa-btn--primary" href="${esc(mapsHref(s.venue))}"
            target="_blank" rel="noopener noreferrer">Walk me there</a>
-        <button class="wa-btn" type="button" id="skip" data-i="${esc(String(idx))}">Skip</button>
+        <button class="wa-btn" type="button" id="skip" data-i="${esc(String(liveIdx[idx]))}">Skip</button>
         ${next ? `<a class="wa-btn" href="walk.html?id=${esc(encodeURIComponent(r.id))}&stop=${idx + 2}">Next stop</a>` : ''}
       </div>
 

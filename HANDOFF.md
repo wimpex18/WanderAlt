@@ -79,11 +79,21 @@ still the dependency for everything."*
 - [x] **2f** Marks do both jobs: 44–62px on cards (clamped), 15px in chips and filter
       pills.
 - [x] **2g** `--tap-min` 44px holds on every interactive control measured, across index,
-      discover (list, sheet open, empty), saved, detail, profile and about.
+      discover (list, sheet open, empty), saved, detail, profile, about **and walk**.
       *Was refuted:* `.wa-detail__more` measured 34.66 × 44 — `padding: 0` with no
       `min-width`, so it collapsed to the width of the word "more". A target you clear
       vertically and miss sideways. WCAG 2.2 exempts inline text buttons; this repo's
       rule does not. Now 44 × 44.
+      *Refuted a second time, 12 Aug 2026, and the tell was in the tick itself:* the
+      list of pages above did not include **walk.html**, so nothing had ever measured
+      it. All four stop links on the Telliskivi route were **291 × 22** — a single line
+      of title type, half the floor, and inconsistent with the one stop whose name
+      wraps and therefore passed at 291 × 44. Fixed the way the map pin already does
+      it: an invisible hit area centred on the name, so the target reaches 44 without
+      the layout moving or the note being pushed away from its title. Re-measured: all
+      four at 44, adjacent stops' hit areas do not touch, and a probe 8px above the
+      text now resolves to the link. **When an audit item names the pages it covers,
+      the pages it does not name are the finding.**
 - [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged.
 - [x] **2i** Type fork (6a) — **landed.** Plus Jakarta Sans is the chrome face; Inter is
       out of the public token set. Two files, not four: Google ships v12 as a variable
@@ -118,6 +128,31 @@ still the dependency for everything."*
       says so; unbounded and honestly labelled when it is not.
 - [x] **3h** Walks scope: "Tallinn · this weekend / Walks we assembled", routes labelled
       "N stops · X km" with the distance computed from the legs.
+- [x] **3m** Walk-in-progress: Skip works more than once, and skipping everything is
+      an answer rather than a blank page.
+      Found auditing pages this branch had not touched (12 Aug 2026). `skipped` holds
+      indices into `r.stops`, but the Skip button emitted the index into the already
+      *filtered* list — right by coincidence for the first press, wrong for every one
+      after it, because skipping the new first stop re-added 0 to a set that already
+      contained 0. Measured: the counter went "Stop 1 of 4" → "1 of 3" and then froze,
+      so **only one stop could ever be skipped** on a feature whose own copy says
+      "Skipping a stop re-times the rest of the walk". The button now carries the
+      original index; re-measured 4 → 3 → 2 → 1 with the venue name advancing each
+      press, and Undo restores exactly the stop it removed.
+      Fixing it made a second bug reachable that had been sitting behind the first:
+      with every stop skipped, `live.length` is 0, `idx` computes to -1, and
+      `sch.stops[-1].state` throws — a blank page. It now renders a named empty state
+      with the way back to the route.
+      Chasing *that* found a third, which had been throwing in production the whole
+      time. `resolve()` drops any stop whose venue is not in the catalogue, and
+      `load()` renders as soon as walks.json lands — well before the Supabase
+      catalogue does. So every cold load of a `/walk.html?stop=N` URL threw on
+      `stops[-1]`, was silently recovered by the re-render on `wa:catalog-ready`, and
+      left nothing but a console error nobody was reading. The two empty cases are now
+      told apart, because they are not the same thing: no stops **resolved** says the
+      catalogue has not arrived and it fills in on its own; no stops **left** says you
+      skipped them. Calling the first one "you skipped every stop" would have been a
+      fact about our load order dressed up as something the reader did.
 - [x] **3i** "Get the Saturday email" in the desktop masthead.
 - [x] **3j** Card anatomy: square well, one badge top-left, bookmark top-right, title
       2 lines never truncated, two mono lines (distance · area, then kind · time/price).
@@ -266,6 +301,21 @@ still the dependency for everything."*
       developer account, so the provider cannot be configured. `auth.js` and `you.js`
       were reverted to their pre-Apple state and email + Google verified working.
       Nothing outstanding.
+
+- [x] **5k** The offline banner is actually visible.
+      6f#5 backed the offline *claim* — the worker caches the shell and the last
+      picks/venues responses, and the banner prints how stale the list is. What was
+      never checked is whether anyone could see it. `wa.css` gives it
+      `position: sticky; top: var(--topbar-h)` and its own comment says it "sits under
+      the top bar rather than over the tab bar, because the toast owns that slot";
+      `offline.js` appended it to `<body>`. A sticky element cannot travel up past its
+      own place in the flow, and its place was the end of the document. Measured on
+      Tonight: the banner rendered at y=4589 of a 4724px page — **3,852px of scrolling
+      to discover you were offline** — and mid-screen on a short page like Saved.
+      Now inserted after `.wa-topbar`. Re-measured: visible on load at top 56 under a
+      56px bar, still stuck at 56 after scrolling 1200px, and it reserves its own
+      58px so the first row moves down rather than being covered. No collision with
+      the toast, which owns the opposite edge.
 
 ## 6 · Sheets, states, About (5c, 6d)
 
