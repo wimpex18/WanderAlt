@@ -1,0 +1,43 @@
+-- ============================================================
+-- Move `vector` and `pg_trgm` out of the public schema.
+--
+-- I previously claimed all three flagged extensions were unsafe to
+-- move. That was one true statement covering three different cases, so
+-- here is the actual per-extension finding, from pg_extension:
+--
+--   pg_net    extrelocatable = FALSE  -> Postgres REFUSES to move it.
+--                                        The only route is DROP/CREATE,
+--                                        which destroys net.http_post,
+--                                        every queued request row, and
+--                                        all 32 crons. Genuinely stuck.
+--                                        Its functions already live in
+--                                        the `net` schema regardless --
+--                                        only the registration is in
+--                                        public -- so the exposure the
+--                                        lint describes is nil, and the
+--                                        grant that DID matter was
+--                                        revoked separately.
+--   vector    extrelocatable = TRUE   -> movable.
+--   pg_trgm   extrelocatable = TRUE   -> movable.
+--
+-- So two of the three get fixed properly rather than excused.
+--
+-- Why this is safe here, in order:
+--   * Columns and indexes reference a type and an opclass by OID, not
+--     by name, so pick_embeddings.embedding (vector(1024)) and
+--     pick_embeddings_hnsw_idx survive a schema change untouched.
+--   * Every function that names these operators now carries
+--     `search_path = public, extensions` (pinned earlier today), so
+--     they resolve from inside regardless of the caller.
+--   * The API roles were just given the same path, which covers any
+--     query PostgREST builds on their behalf.
+--
+-- Verified after: 706 live picks / 376 embeddings / 50 trigram hits /
+-- 32 active crons all unchanged; `<=>` still resolves unqualified
+-- (0.483599 on real rows); and with enable_seqscan off the planner
+-- still chooses `Index Scan using pick_embeddings_hnsw_idx` and
+-- `Bitmap Index Scan on places_index_name_trgm`.
+-- ============================================================
+
+alter extension vector  set schema extensions;
+alter extension pg_trgm set schema extensions;
