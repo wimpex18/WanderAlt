@@ -40,6 +40,7 @@
     doors:  'any',        /* any | now | 21:00 | 23:00 */
     free:   false,
     hideSeen: false,
+    followed: false,
     sort:   'soonest',
     q:      '',
     map:    false,
@@ -105,6 +106,32 @@
 
   const doorsMinutes = (e) => window.WA.Geo.startMinutes(e);
 
+  /* ── Followed sources ────────────────────────────────────────
+     WA.Follows was written by source.js and read only by You, so the
+     store existed and nothing in a list ever used it. This is the facet
+     that makes it mean something, and it is deliberately provenance
+     rather than taste: the reader picked these feeds by hand, one at a
+     time, and can see and undo every one. No model, no ranking.
+
+     Two keys, because source.js stores two different things under one
+     store and there is no third possibility. `?venue=` follows the
+     VENUE NAME; `?handle=` follows the venue name too when the feed's
+     picks share exactly one venue, and otherwise falls back to the raw
+     handle. So a pick belongs to a followed source if either its venue
+     or its handle is in the store. Checking both is not a guess — it is
+     the complete set of what toggle() can ever have written.
+
+     Follows.has() is city-scoped by keyOf(), which is right here: the
+     list is already one city, and a Riga venue must not lift a Tallinn
+     row. */
+  const isFollowed = (e) => {
+    const F = window.WA.Follows;
+    if (!F) return false;
+    return F.has(e.venue) || F.has(e.handle);
+  };
+
+  const followCount = () => (window.WA.Follows ? window.WA.Follows.keys().length : 0);
+
   const doorsPass = (e) => {
     if (state.doors === 'any') return true;
     const m = doorsMinutes(e);
@@ -136,6 +163,7 @@
     if (skip !== 'doors')                   out = out.filter(doorsPass);
     if (skip !== 'within' && state.within)  out = geo.withinFilter(out, state.within);
     if (skip !== 'seen' && state.hideSeen)  out = window.WA.Seen.filter(out);
+    if (skip !== 'followed' && state.followed) out = out.filter(isFollowed);
     if (skip !== 'bounds' && state.bounds) {
       const b = state.bounds;
       /* Unplaceable entries ARE dropped here. The first cut kept them, on
@@ -298,7 +326,7 @@
     const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
     if (!src) return '';
     return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
-      loading="lazy" decoding="async"
+      loading="lazy" decoding="async" data-mark="${esc(window.WA.Marks.markFor(e.kind))}"
       src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
   };
 
@@ -355,6 +383,7 @@
     if (state.free)       drops.push({ label: 'Include paid', act: 'clear-free', n: sorted(applyFilters(picks(), 'free')).length });
     if (state.doors !== 'any') drops.push({ label: 'Any door time', act: 'clear-doors', n: sorted(applyFilters(picks(), 'doors')).length });
     if (state.hideSeen)   drops.push({ label: 'Include seen', act: 'clear-seen', n: sorted(applyFilters(picks(), 'seen')).length });
+    if (state.followed)   drops.push({ label: 'Any source', act: 'clear-followed', n: sorted(applyFilters(picks(), 'followed')).length });
     if (state.bounds)     drops.push({ label: 'Search everywhere', act: 'clear-bounds', n: sorted(applyFilters(picks(), 'bounds')).length });
     drops.sort((a, b) => b.n - a.n);
     const best = drops.find(d => d.n > 0);
@@ -397,7 +426,8 @@
   /* ── Render ──────────────────────────────────────────────────── */
   const activeFilterCount = () =>
     (state.kinds.size ? 1 : 0) + (state.within ? 1 : 0) +
-    (state.free ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) + (state.hideSeen ? 1 : 0);
+    (state.free ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) + (state.hideSeen ? 1 : 0) +
+    (state.followed ? 1 : 0);
 
   /* "Friday" reads better than a date, and "tomorrow" better than
      either when it is in fact tomorrow. */
@@ -486,7 +516,7 @@
      and 6e asks for pins to become time · distance labels with row
      pairing, which is a different component rather than a patch. */
   const Pins = (() => {
-    let started = false, entries = [], activeId = '';
+    let started = false, entries = [], activeId = '', lastClusters = [], lastDrawerHtml = null;
 
     const T = () => window.WA.MapTiles;
 
@@ -497,10 +527,26 @@
       if (!t) return;
       t.init('map-canvas');
       t.onReady(() => { place(); fit(); });
-      t.on && t.on('moveend', () => { $('search-area').hidden = false; });
+      /* The layer is positioned in PROJECTED PIXEL SPACE, so it is only
+         correct for the camera it was drawn against -- and nothing was
+         redrawing it. Verified rather than assumed: jumpTo() a tenth of
+         a degree east and every pin keeps its exact left/top, so the
+         labels detach from the city underneath them on the first drag.
+
+         It surfaced here because a cluster has to re-form as you zoom
+         in, and a cluster that never re-forms cannot be opened. But the
+         bug is older and wider than clustering.
+
+         `move`, not `moveend`: pins have to stay glued during the drag,
+         not snap back at the end of it. Only the PINS, though -- see
+         placeDrawer for why the list of names is on `moveend` instead.
+         Projecting 106 points and rebuilding 22 nodes is ~0.2ms; it was
+         14.8ms when the drawer came with it. */
+      t.on && t.on('move', placePins);
+      t.on && t.on('moveend', () => { $('search-area').hidden = false; placeDrawer(); });
     };
 
-    const place = () => {
+    const placePins = () => {
       const t = T();
       if (!t || !t.isReady || !t.isReady()) return;
       /* Mounted on the PANE, not inside the canvas host: MapLibre owns
@@ -512,9 +558,67 @@
         layer.className = 'tonight-map__pins';
         pane.appendChild(layer);
       }
-      layer.innerHTML = entries.map((e) => {
-        const p = t.project(e.lng, e.lat);
-        if (!p) return '';
+      /* ── Clustering ────────────────────────────────────────
+         A pin here is a time plus a distance, so it is a ~90px label,
+         not a dot. At city zoom the Old Town stacks a dozen of them
+         into an unreadable pile and the labels -- which are the whole
+         point of this pin -- cannot be read at all.
+
+         Done in PROJECTED PIXEL SPACE rather than through MapLibre's
+         own clustering, because these pins are DOM nodes positioned
+         over the canvas, not a GeoJSON source. Switching sources to get
+         clustering would mean rewriting the pin↔row pairing, which is
+         the thing on this screen most worth not breaking.
+
+         Greedy single pass in the order the list is already sorted, so
+         the first pin of a cluster is the soonest one and the cluster
+         sits where the reader's eye would have gone anyway. Ordering is
+         stable between renders because `entries` is.
+
+         The ACTIVE pin never clusters. A tapped row must always show
+         its own pin, or the pairing silently stops working exactly when
+         the reader is using it. */
+      const CLUSTER_PX = 56;
+      const placed = entries
+        .map(e => ({ e, p: t.project(e.lng, e.lat) }))
+        .filter(x => x.p);
+
+      const clusters = [];
+      for (const item of placed) {
+        if (item.e.id === activeId) { clusters.push({ ...item, members: [item.e] }); continue; }
+        const near = clusters.find(c =>
+          c.e.id !== activeId &&
+          Math.abs(c.p.x - item.p.x) < CLUSTER_PX &&
+          Math.abs(c.p.y - item.p.y) < CLUSTER_PX);
+        if (near) near.members.push(item.e);
+        else clusters.push({ ...item, members: [item.e] });
+      }
+      /* Held so a cluster button can carry its INDEX rather than a
+         serialised list of ids. Ids are pipeline-generated and carry no
+         guarantee about their character set -- they happen to be
+         [a-zA-Z0-9-_] across all 1,643 today, but a single id with a
+         space in it would silently split one cluster's membership on
+         the way back and zoom to the wrong subset. The array and the
+         DOM are written in the same call, so they cannot disagree. */
+      lastClusters = clusters;
+
+      layer.innerHTML = clusters.map((c, i) => {
+        const { e, p, members } = c;
+        /* A count, so it is mono and petrol. Never lime: lime's one job
+           is "now", and "there are nine things here" is not that. */
+        if (members.length > 1) {
+          return `<button class="wa-pin wa-pin--cluster" type="button"
+            data-cluster="${i}"
+            ${/* States the count rather than promising a zoom. Picks
+                  filed at the SAME venue share one coordinate and can
+                  never separate however far you go in -- the drawer
+                  below is what lists those, which is why 2a insists the
+                  mode carries one. */''}
+            aria-label="${esc(`${members.length} listings here`)}"
+            style="left:${p.x}px;top:${p.y}px">
+            <span>${members.length}</span>
+          </button>`;
+        }
         const rail = railFor(e);
         const dist = window.WA.Geo.distanceLabel(e);
         return `<button class="wa-pin${rail.now ? ' wa-pin--now' : ''}" type="button"
@@ -532,28 +636,46 @@
       $('map-count').textContent = n === total
         ? `${n} ${n === 1 ? 'pin' : 'pins'}`
         : `${n} of ${total} placed`;
-
-      /* The drawer (2a: "a mode is never empty"; 5d draws it with real
-         rows). Same row component as the list, so a pin is never the
-         only way to learn what something is. Clipped to what the
-         viewport actually holds when the map has been moved, because
-         the bar above already says how many that is. */
-      const drawer = $('map-drawer');
-      if (drawer) {
-        /* Same source "search this area" reads, so the drawer and that
-           button can never disagree about what "in view" means. */
-        const m = t.getMap && t.getMap();
-        const mb = m && m.getBounds && m.getBounds();
-        const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
-        const inView = b
-          ? entries.filter(e => {
-              const c = window.WA.Geo.coordsFor(e);
-              return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
-            })
-          : entries;
-        drawer.innerHTML = inView.slice(0, 12).map(row).join('');
-      }
     };
+
+    /* The drawer (2a: "a mode is never empty"; 5d draws it with real
+       rows). Same row component as the list, so a pin is never the only
+       way to learn what something is. Clipped to what the viewport
+       actually holds when the map has been moved, because the bar above
+       already says how many that is.
+
+       SEPARATE from placePins, and deliberately so. Both used to be one
+       function bound to `move`, which cost 14.8ms a frame -- most of it
+       this innerHTML -- and, worse, destroyed the drawer's DOM on every
+       frame of a drag: a keyboard user focused on a drawer row had focus
+       thrown to <body>, and any scroll position in the drawer was lost.
+       Pins must track the camera per frame; a list of names does not. */
+    const placeDrawer = () => {
+      const t = T();
+      if (!t || !t.isReady || !t.isReady()) return;
+      const drawer = $('map-drawer');
+      if (!drawer) return;
+      /* Same source "search this area" reads, so the drawer and that
+         button can never disagree about what "in view" means. */
+      const m = t.getMap && t.getMap();
+      const mb = m && m.getBounds && m.getBounds();
+      const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
+      const inView = b
+        ? entries.filter(e => {
+            const c = window.WA.Geo.coordsFor(e);
+            return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
+          })
+        : entries;
+      const html = inView.slice(0, 12).map(row).join('');
+      /* Panning within the same set of visible picks is the common case,
+         and rewriting identical markup would still blow away focus and
+         scroll for no change on screen. */
+      if (html === lastDrawerHtml) return;
+      lastDrawerHtml = html;
+      drawer.innerHTML = html;
+    };
+
+    const place = () => { placePins(); placeDrawer(); };
 
     const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries); };
 
@@ -563,9 +685,25 @@
         if (state.map) { start(); place(); }
       },
       open() { start(); place(); fit(); },
+      /* Zoom to exactly the picks the cluster was hiding. Reuses the
+         same fit the mode already opens with, so there is no second
+         camera implementation to keep in step -- only the ceiling
+         differs: fitToPicks defaults to maxZoom 15, which is the right
+         opening frame for a whole city but leaves venues on one street
+         still clustered, so a cluster tap raises it to 17. */
+      zoomTo(index) {
+        const t = T();
+        const c = lastClusters[Number(index)];
+        const mine = c ? c.members : [];
+        if (!mine.length || !t || !t.fitToPicks) return;
+        t.fitToPicks(mine, { maxZoom: 17, padding: 72 });
+      },
       focus(id) {
         activeId = id || '';
-        place();
+        /* Pins only: the drawer's contents do not depend on which pin is
+           current, so rebuilding it here would drop focus and scroll on
+           every row hover for no visible change. */
+        placePins();
         const e = entries.find(x => x.id === activeId);
         const t = T();
         if (e && t && t.flyTo) t.flyTo(e.lng, e.lat);
@@ -578,6 +716,10 @@
     state.map = !!on;
     $('map-pane').hidden = !state.map;
     $('split').classList.toggle('tonight-split--map', state.map);
+    /* On the body rather than on #split, because the chips and the
+       Filters key live ABOVE the split and have to know about the mode
+       to stick under the top bar while it is on. */
+    document.body.classList.toggle('tonight-mapmode', state.map);
     $('toggle-map').setAttribute('aria-pressed', String(state.map));
     $('toggle-map-label').textContent = state.map ? 'List' : 'Map';
     if (state.map) Pins.open();
@@ -623,6 +765,13 @@
     const totalN = applyFilters(picks(), 'free').length;
     const seenN = applyFilters(picks(), 'seen').length - applyFilters(picks(), null).length;
     const mins = state.within ? window.WA.Geo.walkMinutes(state.within) : null;
+    /* Counted off the same chain as every other option, minus this
+       facet, so the switch's own sub can never disagree with the list
+       it produces. */
+    const followBase = applyFilters(picks(), 'followed');
+    const followBaseN = followBase.length;
+    const followedN = followBase.filter(isFollowed).length;
+    const follows = followCount();
 
     return `
       <div class="wa-field">
@@ -703,6 +852,25 @@
           <span class="wa-switch__text">
             <span class="wa-switch__title">Hide things I've seen</span>
             <span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved before</span>
+          </span>
+          <span class="wa-switch__track"><span class="wa-switch__thumb"></span></span>
+        </button>
+      </div>
+
+      ${/* 2a's rule applied to a switch: a zero-count option is DISABLED,
+           never hidden. Following nothing yet is the common case, and a
+           control that disappears cannot be reasoned about -- the dimmed
+           switch says "this exists, and here is where follows come from",
+           an absent one says the feature does not exist. */''}
+      <div class="wa-field">
+        <button class="wa-switch" type="button" data-toggle="followed"
+                aria-pressed="${state.followed}"
+                ${follows === 0 && !state.followed ? 'disabled aria-disabled="true"' : ''}>
+          <span class="wa-switch__text">
+            <span class="wa-switch__title">Only sources I follow</span>
+            <span class="wa-switch__sub">${follows
+              ? `${followedN} of ${followBaseN} ${followedN === 1 ? 'is' : 'are'} from ${follows} you follow`
+              : 'Follow a venue from its page to use this'}</span>
           </span>
           <span class="wa-switch__track"><span class="wa-switch__thumb"></span></span>
         </button>
@@ -870,7 +1038,7 @@
 
     if (hit('#sheet-clear')) {
       state.kinds.clear(); state.within = 0; state.free = false;
-      state.doors = 'any'; state.hideSeen = false;
+      state.doors = 'any'; state.hideSeen = false; state.followed = false;
       state.q = ''; state.bounds = null; state.day = '';
       /* Order lives in this sheet too, so "Clear all" resets it — it is
          not a filter, but leaving it set after a clear is a surprise. */
@@ -886,6 +1054,7 @@
       if (a === 'clear-free')   state.free = false;
       if (a === 'clear-doors')  state.doors = 'any';
       if (a === 'clear-seen')   state.hideSeen = false;
+      if (a === 'clear-followed') state.followed = false;
       if (a === 'when-all')     state.when = 'all';
       /* Not a filter reset -- it reopens the Where sheet, which is the
          one control that can actually change city. */
@@ -910,6 +1079,15 @@
         const open = d.classList.toggle('wa-row__desc--open');
         more.textContent = open ? 'less' : 'more';
       }
+      return;
+    }
+
+    /* A cluster is not a pick, so it does not open one -- it zooms to
+       what it is hiding. The drawer below already lists these rows, so
+       nothing here is reachable only by this tap. */
+    const cluster = hit('[data-cluster]');
+    if (cluster) {
+      Pins.zoomTo(cluster.dataset.cluster);
       return;
     }
 
@@ -1067,6 +1245,11 @@
 
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
+  /* Following happens on another page, so this fires on return via
+     bfcache rather than mid-session -- but a stale count in the sheet
+     would be a filter disagreeing with its own list, which is the one
+     thing the single filter chain exists to prevent. */
+  document.addEventListener('wa:follows-changed', () => { refreshSheet(); render(); });
   if (window.WA && window.WA.catalog && window.WA.catalog.length) {
     boot();
   } else {

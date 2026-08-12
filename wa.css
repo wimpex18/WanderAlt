@@ -140,6 +140,14 @@
   --ff-display: 'Fraunces', Georgia, serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* Deliberately the same VALUE as --fs-mono, not the same token: this
+     is Jakarta chrome (the eyebrow above a value, the nav label) and
+     that is the mono fact line. They are free to diverge, and folding
+     one into the other would mean a change to the fact size silently
+     resizing every label in the product. Was 10px until Aug 2026 --
+     under the scale's own floor, and small for a tab-bar label that is
+     the primary navigation on a phone. */
+  --fs-label:     11px;
   --fs-mono:      11px;   /* the fact line, uppercase, tracked */
   --fs-meta:      12px;
   --fs-body:      14px;
@@ -383,6 +391,27 @@ a.wa-sr:focus {
 
 .wa-fact--strong { color: var(--ink); }
 
+/* The eyebrow label: the small uppercase word that names the value
+   under it. The capsule's WHERE / WHEN / WHAT and the labelled cells on
+   detail, walk, about and You were byte-identical four-declaration
+   rules 1,683 lines apart, so the pair could drift without anyone
+   noticing they were meant to match. One rule, both users named — no
+   speculative third class, because an unreached rule in this file is as
+   likely to be an unfinished feature as dead weight and the next census
+   should not have to decide which.
+
+   It lives here rather than in either component because it belongs to
+   neither: it is a type role, like .wa-fact above it. Both classes are
+   declared exactly once in the file, so hoisting them changes no
+   cascade. */
+.wa-capsule__label,
+.wa-cell__label {
+  font: 700 var(--fs-label)/1 var(--ff-ui);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
 /* ============================================================
    5 · COMPONENT — top bar (glass 1 of 2)
    Sticky, in normal flow, so it occupies real layout height and
@@ -470,7 +499,10 @@ a.wa-sr:focus {
   min-height: var(--tap-min);
   text-decoration: none;
   color: var(--ink-mute);
-  font: 600 10px/1 var(--ff-ui);
+  /* Shares the label SIZE and nothing else: lighter, barely tracked and
+     not uppercase, because it is a name rather than an eyebrow. From
+     1024 it is overridden to --fs-body in the masthead. */
+  font: 600 var(--fs-label)/1 var(--ff-ui);
   letter-spacing: .01em;
   transition: color var(--t-fast);
 }
@@ -577,13 +609,6 @@ a.wa-sr:focus {
   body { padding-bottom: 0; }
 }
 .wa-capsule__slot:hover { background: var(--petrol-tint); }
-
-.wa-capsule__label {
-  font: 700 10px/1 var(--ff-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
 
 .wa-capsule__value {
   font: 600 var(--fs-body)/1.3 var(--ff-ui);
@@ -960,10 +985,51 @@ a.wa-sr:focus {
   gap: var(--s-1);
   font: 500 var(--fs-mono)/1.2 var(--ff-mono);
   letter-spacing: .04em;
+  /* A flex item's default min-width is auto, so the rail refused to
+     shrink below its longest word and let it paint outside the track. */
+  min-width: 0;
 }
 
 .wa-row__time { color: var(--ink); font-size: var(--fs-meta); }
-.wa-row__dist { color: var(--ink-mute); }
+
+/* The slot holds a measured distance ("450 m") in the steady state, and
+   the NEIGHBOURHOOD only as the fallback before location is granted.
+   The 52px track is sized for the distance; it is the fallback that
+   does not fit, and measuring at 375 says exactly how badly: 13 of 30
+   rows overran the track, but only `Telliskivi` (71px of ink) actually
+   crossed into the title column, by 2.4px. `Vanalinn`, `Kalamaja` and
+   `Kadriorg` (~57px) overran into the 16px column gap and stopped
+   there, which is why nobody had ever noticed them.
+
+   So the fix is sized to the defect. The line may use the track plus
+   that gap and is clipped at the column boundary, which leaves those
+   27 rows pixel-identical, stops the two that crossed, and costs no
+   list height. The rejected alternatives are worth naming: ellipsis at
+   52px truncated 14 of 30 rows to fix 2; widening the track to 72px
+   truncated nothing but took 20px off every title forever — 5 two-line
+   titles became 7 and the list grew 116px — to buy a fallback state
+   that disappears the moment permission is granted. And widening only
+   *while* the fallback shows is barred outright, because the rail must
+   not reflow when permission arrives later.
+
+   `nowrap` earns its place separately: `Põhja-Tallinn` was the one
+   value that wrapped, making that rail three lines where every other
+   was two. */
+.wa-row__dist {
+  color: var(--ink-mute);
+  align-self: flex-start;
+  width: max-content;
+  /* The track plus MOST of the column gap, not all of it. Letting it
+     take the full 16px put the clipped values' ellipsis flush against
+     the title -- 0px clearance where an unclipped row has 12px, so the
+     longest names were the ones that looked cramped. Half the gap keeps
+     8px of air on every row, and the common names (Vanalinn, Kalamaja,
+     Kadriorg, all ~57px) still show in full. */
+  max-width: calc(100% + var(--s-2));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* NOW is one of the sanctioned lime uses. */
 .wa-row__time--now {
@@ -1293,10 +1359,33 @@ a.wa-sr:focus {
 .wa-walk__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
 
 .wa-walk__name {
+  position: relative;
   font: 600 var(--fs-title)/1.28 var(--ff-display);
   color: var(--ink);
   text-decoration: none;
   text-wrap: pretty;
+}
+
+/* A single line of title type is 22px, so the only tappable thing on a
+   walk stop was half the 44px floor -- measured 291 x 22 on all four
+   stops of the Telliskivi route, and 291 x 44 on the one whose name
+   happens to wrap. `--tap-min` is a hard floor on public pages, and
+   2g's audit listed index, discover, saved, detail, profile and about
+   but never walk.html, so nothing had looked.
+
+   Same remedy as the map pin: an invisible hit area centred on the
+   name, so the target grows without the layout moving and without
+   pushing the note away from the title it belongs to. Centred rather
+   than anchored, so it stays inside the stop's own padding and can
+   never reach the stop above or below. */
+.wa-walk__name::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  min-height: var(--tap-min);
 }
 
 .wa-walk__name:hover { text-decoration: underline; }
@@ -1392,13 +1481,22 @@ a.wa-sr:focus {
 }
 
 .wa-walkcard:hover { border-color: var(--rule-strong); }
+/* Both are <span>, so both need an explicit display. Without it they
+   are inline, and two things follow: they share a line — the card read
+   "A WALK The Telliskivi record crawl" as one run — and the title's
+   `margin: 12px 0 8px` was inert, because vertical margins do nothing
+   on an inline box. So the eyebrow was not a label above the title and
+   the blurb butted straight against it. `__facts` below already sets
+   `display: block` for exactly this reason; these two were missed. */
 .wa-walkcard__eyebrow {
+  display: block;
   font: 400 var(--fs-mono)/1 var(--ff-mono);
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--petrol);
 }
 .wa-walkcard__title {
+  display: block;
   font: 600 var(--fs-headline)/1.15 var(--ff-display);
   color: var(--ink);
   margin: var(--s-3) 0 var(--s-2);
@@ -1657,6 +1755,14 @@ a.wa-sr:focus {
 .wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--petrol); }
 .wa-switch[aria-pressed="true"] .wa-switch__thumb { transform: translateX(18px); }
 
+/* Same rule as a zero-count chip, same treatment: an option with
+   nothing behind it is dimmed, not removed. "Only sources I follow"
+   before you follow anything says the feature exists and its sub says
+   where follows come from -- an absent switch says neither. Dashed is
+   the chip's border trick and there is no border here, so the dimming
+   carries it alone. */
+.wa-switch:disabled { cursor: default; opacity: .45; }
+
 /* ---- Buttons. One control size, one radius. ---- */
 
 .wa-btn {
@@ -1739,6 +1845,25 @@ a.wa-sr:focus {
 }
 
 .wa-pin[aria-current="true"] .wa-pin__dist { color: var(--signal-ink); }
+
+/* A cluster pin. Petrol, because it is a COUNT and lime's one job is
+   "now" -- "nine things here" is not that. Same pill, same shadow, same
+   mono face as the pins it stands in for, so it reads as one of them
+   rather than as a different kind of object; it is round because it
+   carries a number instead of a time and a distance, and it is the one
+   pin you cannot open. Sits under the selected pin, which never
+   clusters. */
+.wa-pin--cluster {
+  min-width: 34px;
+  height: 34px;
+  justify-content: center;
+  padding: 0 var(--s-1);
+  border-radius: var(--r-pill);
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: var(--petrol-ink);
+  font-weight: 600;
+}
 
 .wa-pin--now::before {
   content: '';
@@ -1857,7 +1982,15 @@ a.wa-sr:focus {
   gap: var(--s-3);
   padding: var(--s-3) var(--gutter);
   background: var(--warn);
-  color: #fffdf8;
+  /* NOT a hard-coded cream. `--warn` is a dark rust by day and a LIGHT
+     salmon at night, so a fixed light ink passed at 7.6:1 in day and
+     failed at 2.71:1 in dusk -- under the 4.5:1 AA floor this repo
+     treats as non-negotiable. Nobody caught it because the banner was
+     unreachable until it was moved out of the end of the document.
+     `--ground` is the one token that flips the right way on its own:
+     the banner is an inversion, so the page's ground becomes its ink.
+     Measured 7.34:1 day, 6.87:1 dusk, and no new variable. */
+  color: var(--ground);
   font: 600 var(--fs-meta)/1.4 var(--ff-ui);
 }
 
@@ -2153,13 +2286,6 @@ a.wa-sr:focus {
 
 .wa-cell { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
 
-.wa-cell__label {
-  font: 700 10px/1 var(--ff-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-
 .wa-cell__value {
   font: 500 var(--fs-card)/1.3 var(--ff-mono);
   color: var(--ink);
@@ -2209,6 +2335,32 @@ a.wa-sr:focus {
   display: flex;
   gap: var(--s-3);
   margin-top: var(--s-3);
+}
+
+/* In map mode the chips and the Filters key stick under the top bar.
+   The map is a mode, and a mode you cannot re-filter without scrolling
+   back out of it is a mode with its controls taken away -- measured at
+   390: with the map scrolled to the middle of the viewport the chip row
+   sat at top:-47, i.e. behind the glass, so Where/When/What and the
+   filter count were unreachable while looking at the pins.
+
+   Opaque, never glass: 5e allows exactly two glass surfaces and both
+   are spent on the chrome. This is paper that happens to stay put, and
+   it keeps its own height in flow, so nothing under it is overlapped.
+
+   Only in map mode, and only below 1024 where the map REPLACES the
+   list. From 1024 up the map is a companion column that sticks on its
+   own while the list scrolls past it, so the chain is never out of
+   reach there and a second sticky block would just eat the column. */
+@media (max-width: 1023.98px) {
+  body.tonight-mapmode .tonight-head {
+    position: sticky;
+    top: var(--topbar-h);
+    z-index: 4;
+    background: var(--ground);
+    padding-bottom: var(--s-3);
+    border-bottom: 1px solid var(--rule);
+  }
 }
 
 /* The count headline and its subtitle are one unit, so they sit tight
@@ -2264,17 +2416,35 @@ a.wa-sr:focus {
   z-index: 2;
 }
 
-/* One glass layer per screen is already spent on the chrome, so this bar
-   is opaque. */
-/* The drawer 2a asks for: the picks currently in view, under the bar.
-   "A mode is never empty" -- a map with pins and no names is a puzzle,
-   and this is what makes tapping a pin optional rather than required.
-   Capped in height so the map itself stays the larger half. */
-.tonight-map__drawer {
+/* One glass layer per screen is already spent on the chrome, so the bar
+   and the drawer below are both opaque.
+
+   They stack inside one foot instead of both being pinned to bottom:0
+   at the same z-index -- which is what they were, so the drawer (later
+   in the DOM) painted straight over the bar and took the pin count and
+   "Show list" with it: the way out of the mode was invisible on every
+   phone. A box that stacks them, not a z-index.
+
+   The 42% cap moved with it, and it is deliberately on the WHOLE foot
+   rather than on the drawer alone, so the original rule still holds:
+   the map keeps the larger half. The drawer gets what the bar leaves,
+   which is a peek at two rows rather than three -- the way out of a
+   mode is worth more than one extra row. */
+.tonight-map__foot {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
   max-height: 42%;
+}
+
+/* The drawer 2a asks for: the picks currently in view, under the bar.
+   "A mode is never empty" -- a map with pins and no names is a puzzle,
+   and this is what makes tapping a pin optional rather than required. */
+.tonight-map__drawer {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   margin: 0;
   padding: 0 var(--gutter) var(--s-3);
@@ -2298,10 +2468,7 @@ a.wa-sr:focus {
 .tonight-map__drawer .wa-row__desc { display: none; }
 
 .tonight-map__bar {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 3;
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--s-3);

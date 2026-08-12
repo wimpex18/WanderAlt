@@ -53,6 +53,92 @@
     return { top: ranked.slice(0, 4), lead: ranked.slice(0, 2).map(r => r[0]) };
   };
 
+  /* ── Opened earlier ──────────────────────────────────────────
+     The log already existed and You only ever printed its LENGTH. A
+     count is a claim about the reader they cannot check; the list is
+     the receipt this page says it is, and it is the one thing here
+     that is actually useful mid-trip -- "what was that place called".
+
+     No model, no ranking, no tracking: newest first, straight off the
+     same local log the hide-seen switch reads and the reset above
+     wipes. Rows are the ordinary component, so a thing you opened
+     looks like the same thing everywhere else in the product.
+
+     The rest of the log is deliberately NOT described. Entries we
+     cannot resolve are not necessarily gone: the browser loads less
+     than the database holds -- picks exclude archived rows and venues
+     are filtered to VENUE_KINDS -- so a museum you opened is missing
+     from `pool()` while being perfectly alive. Saying "3 no longer
+     listed" would be a fact about our cache dressed as a fact about
+     the world. The subline counts what it can show and claims nothing
+     about the remainder. */
+  const LAST_OPENED = 8;
+  const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  /* Venues carry __place, exactly as Saved and Explore tag them when
+     they merge the two lists. It is set by the consuming page, not by
+     the loader -- without it a venue takes the pick branch below and
+     renders with an empty title, since a venue has `name` and no
+     `title`. */
+  const pool = () => [
+    ...(window.WA._catalogAll || window.WA.catalog || []),
+    ...(window.WA._venuesAll  || window.WA.venues  || []).map(v => Object.assign({ __place: true }, v)),
+  ];
+
+  /* Same rail contract as Tonight and Saved (1a): a place says when it
+     SHUTS, a dated pick says its day, and nothing prints a clock it did
+     not parse. */
+  const railFor = (e) => {
+    if (e.__place || e.openingHours) {
+      const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
+      return h || 'OPEN';
+    }
+    if (window.WA.when.isTonight(e)) return 'TON';
+    const k = window.WA.when.resolveKey(e);
+    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
+  };
+
+  const openedRow = (e) => {
+    const title = e.__place ? (e.name || '') : (e.title || '');
+    /* Distance degrades to the neighbourhood so the rail keeps its
+       second line and nothing reflows when permission arrives later. */
+    const measured = window.WA.Geo.distanceLabel(e);
+    const dist = measured || real(e.neighborhood);
+    const meta = [
+      real(e.kind),
+      e.__place ? (measured ? real(e.neighborhood) : '') : real(e.venue),
+      real(e.time),
+    ].filter(Boolean).join(' · ');
+    return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
+      <span class="wa-row__rail">
+        <span class="wa-row__time">${esc(railFor(e))}</span>
+        <span class="wa-row__dist">${esc(dist)}</span>
+      </span>
+      <span class="wa-row__body">
+        <span class="wa-row__title">${esc(title)}</span>
+        <span class="wa-row__meta">${esc(meta)}</span>
+      </span>
+    </a></li>`;
+  };
+
+  const openedEarlier = () => {
+    const ids = window.WA.Seen.ids().slice().reverse();   /* newest first */
+    if (!ids.length) return '';
+    const byId = new Map(pool().map(e => [e.id, e]));
+    const found = [];
+    for (const id of ids) {
+      const e = byId.get(id);
+      if (e) found.push(e);
+      if (found.length >= LAST_OPENED) break;
+    }
+    if (!found.length) return '';
+    return `<section class="wa-section">
+      <h2 class="wa-section-title">Opened earlier</h2>
+      <p class="wa-section-sub">${esc(`${found.length} OF ${ids.length} · NEWEST FIRST`)}</p>
+      <ul class="wa-rows">${found.map(openedRow).join('')}</ul>
+    </section>`;
+  };
+
   const counts = () => {
     const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
     const picks = window.WA._catalogAll || window.WA.catalog || [];
@@ -117,6 +203,8 @@
           <button class="wa-linkbtn" type="button" id="reset">Reset what you've learned about me &rarr;</button>
         </p>` : ''}
       </section>
+
+      ${openedEarlier()}
 
       <section class="wa-section">
         <h2 class="wa-section-title">Appearance</h2>

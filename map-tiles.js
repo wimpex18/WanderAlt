@@ -134,6 +134,20 @@
     return { x: p.x, y: p.y };
   }
 
+  /* Every camera move in the product goes through this file, and none of
+     them honoured prefers-reduced-motion: wa.css respects it in three
+     places and view-transition.js checks it before naming a transition,
+     but a 480ms easing camera ignored it entirely. A moving map is
+     exactly the kind of large-area motion that setting exists for.
+
+     Fixed here rather than at the call sites so all three -- the fit
+     when the mode opens, the flyTo when a row is focused, and the zoom
+     when a cluster is tapped -- get it from one place. Reduced motion
+     does not mean "do not go there"; it means arrive without the tween,
+     so the destination is identical either way. */
+  const MOVE_MS = () =>
+    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : 480;
+
   /* Fit map to a bounding box covering all visible pin coords. */
   function fitToPicks(entries, options = {}) {
     if (!map) return;
@@ -145,19 +159,19 @@
       return;
     }
     if (pts.length === 1) {
-      map.flyTo({ center: pts[0], zoom: 14, ...options });
+      map.flyTo({ center: pts[0], zoom: 14, duration: MOVE_MS(), ...options });
       return;
     }
     const bounds = pts.reduce(
       (b, p) => b.extend(p),
       new maplibregl.LngLatBounds(pts[0], pts[0])
     );
-    map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 480, ...options });
+    map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: MOVE_MS(), ...options });
   }
 
   function flyTo(lng, lat, zoom) {
     if (!map) return;
-    map.flyTo({ center: [lng, lat], zoom: zoom ?? 15, duration: 480 });
+    map.flyTo({ center: [lng, lat], zoom: zoom ?? 15, duration: MOVE_MS() });
   }
 
   function on(event, handler) {

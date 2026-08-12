@@ -86,7 +86,7 @@
     const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
     if (!src) return '';
     return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
-      loading="lazy" decoding="async"
+      loading="lazy" decoding="async" data-mark="${esc(window.WA.Marks.markFor(e.kind))}"
       src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
   };
 
