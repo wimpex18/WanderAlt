@@ -516,7 +516,7 @@
      and 6e asks for pins to become time · distance labels with row
      pairing, which is a different component rather than a patch. */
   const Pins = (() => {
-    let started = false, entries = [], activeId = '', lastClusters = [];
+    let started = false, entries = [], activeId = '', lastClusters = [], lastDrawerHtml = null;
 
     const T = () => window.WA.MapTiles;
 
@@ -538,14 +538,15 @@
          bug is older and wider than clustering.
 
          `move`, not `moveend`: pins have to stay glued during the drag,
-         not snap back at the end of it. Cheap enough to do per frame --
-         22 nodes rebuild in ~0.5ms, and clustering is what keeps the
-         node count at 22 instead of 106. */
-      t.on && t.on('move', place);
-      t.on && t.on('moveend', () => { $('search-area').hidden = false; });
+         not snap back at the end of it. Only the PINS, though -- see
+         placeDrawer for why the list of names is on `moveend` instead.
+         Projecting 106 points and rebuilding 22 nodes is ~0.2ms; it was
+         14.8ms when the drawer came with it. */
+      t.on && t.on('move', placePins);
+      t.on && t.on('moveend', () => { $('search-area').hidden = false; placeDrawer(); });
     };
 
-    const place = () => {
+    const placePins = () => {
       const t = T();
       if (!t || !t.isReady || !t.isReady()) return;
       /* Mounted on the PANE, not inside the canvas host: MapLibre owns
@@ -635,28 +636,46 @@
       $('map-count').textContent = n === total
         ? `${n} ${n === 1 ? 'pin' : 'pins'}`
         : `${n} of ${total} placed`;
-
-      /* The drawer (2a: "a mode is never empty"; 5d draws it with real
-         rows). Same row component as the list, so a pin is never the
-         only way to learn what something is. Clipped to what the
-         viewport actually holds when the map has been moved, because
-         the bar above already says how many that is. */
-      const drawer = $('map-drawer');
-      if (drawer) {
-        /* Same source "search this area" reads, so the drawer and that
-           button can never disagree about what "in view" means. */
-        const m = t.getMap && t.getMap();
-        const mb = m && m.getBounds && m.getBounds();
-        const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
-        const inView = b
-          ? entries.filter(e => {
-              const c = window.WA.Geo.coordsFor(e);
-              return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
-            })
-          : entries;
-        drawer.innerHTML = inView.slice(0, 12).map(row).join('');
-      }
     };
+
+    /* The drawer (2a: "a mode is never empty"; 5d draws it with real
+       rows). Same row component as the list, so a pin is never the only
+       way to learn what something is. Clipped to what the viewport
+       actually holds when the map has been moved, because the bar above
+       already says how many that is.
+
+       SEPARATE from placePins, and deliberately so. Both used to be one
+       function bound to `move`, which cost 14.8ms a frame -- most of it
+       this innerHTML -- and, worse, destroyed the drawer's DOM on every
+       frame of a drag: a keyboard user focused on a drawer row had focus
+       thrown to <body>, and any scroll position in the drawer was lost.
+       Pins must track the camera per frame; a list of names does not. */
+    const placeDrawer = () => {
+      const t = T();
+      if (!t || !t.isReady || !t.isReady()) return;
+      const drawer = $('map-drawer');
+      if (!drawer) return;
+      /* Same source "search this area" reads, so the drawer and that
+         button can never disagree about what "in view" means. */
+      const m = t.getMap && t.getMap();
+      const mb = m && m.getBounds && m.getBounds();
+      const b = mb ? { west: mb.getWest(), east: mb.getEast(), south: mb.getSouth(), north: mb.getNorth() } : null;
+      const inView = b
+        ? entries.filter(e => {
+            const c = window.WA.Geo.coordsFor(e);
+            return c && c.lng >= b.west && c.lng <= b.east && c.lat >= b.south && c.lat <= b.north;
+          })
+        : entries;
+      const html = inView.slice(0, 12).map(row).join('');
+      /* Panning within the same set of visible picks is the common case,
+         and rewriting identical markup would still blow away focus and
+         scroll for no change on screen. */
+      if (html === lastDrawerHtml) return;
+      lastDrawerHtml = html;
+      drawer.innerHTML = html;
+    };
+
+    const place = () => { placePins(); placeDrawer(); };
 
     const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries); };
 
@@ -681,7 +700,10 @@
       },
       focus(id) {
         activeId = id || '';
-        place();
+        /* Pins only: the drawer's contents do not depend on which pin is
+           current, so rebuilding it here would drop focus and scroll on
+           every row hover for no visible change. */
+        placePins();
         const e = entries.find(x => x.id === activeId);
         const t = T();
         if (e && t && t.flyTo) t.flyTo(e.lng, e.lat);

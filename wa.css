@@ -960,10 +960,45 @@ a.wa-sr:focus {
   gap: var(--s-1);
   font: 500 var(--fs-mono)/1.2 var(--ff-mono);
   letter-spacing: .04em;
+  /* A flex item's default min-width is auto, so the rail refused to
+     shrink below its longest word and let it paint outside the track. */
+  min-width: 0;
 }
 
 .wa-row__time { color: var(--ink); font-size: var(--fs-meta); }
-.wa-row__dist { color: var(--ink-mute); }
+
+/* The slot holds a measured distance ("450 m") in the steady state, and
+   the NEIGHBOURHOOD only as the fallback before location is granted.
+   The 52px track is sized for the distance; it is the fallback that
+   does not fit, and measuring at 375 says exactly how badly: 13 of 30
+   rows overran the track, but only `Telliskivi` (71px of ink) actually
+   crossed into the title column, by 2.4px. `Vanalinn`, `Kalamaja` and
+   `Kadriorg` (~57px) overran into the 16px column gap and stopped
+   there, which is why nobody had ever noticed them.
+
+   So the fix is sized to the defect. The line may use the track plus
+   that gap and is clipped at the column boundary, which leaves those
+   27 rows pixel-identical, stops the two that crossed, and costs no
+   list height. The rejected alternatives are worth naming: ellipsis at
+   52px truncated 14 of 30 rows to fix 2; widening the track to 72px
+   truncated nothing but took 20px off every title forever — 5 two-line
+   titles became 7 and the list grew 116px — to buy a fallback state
+   that disappears the moment permission is granted. And widening only
+   *while* the fallback shows is barred outright, because the rail must
+   not reflow when permission arrives later.
+
+   `nowrap` earns its place separately: `Põhja-Tallinn` was the one
+   value that wrapped, making that rail three lines where every other
+   was two. */
+.wa-row__dist {
+  color: var(--ink-mute);
+  align-self: flex-start;
+  width: max-content;
+  max-width: calc(100% + var(--s-4));   /* the track, plus the column gap */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* NOW is one of the sanctioned lime uses. */
 .wa-row__time--now {

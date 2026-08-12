@@ -134,6 +134,20 @@ still the dependency for everything."*
 - [x] **4b** Seven-day density strip as Tonight's header; counts from the same filter
       chain as the rows; a genuinely empty day gets no bar.
 - [x] **4c** Rows lead with the rail (time, then distance), never a photo.
+      *Refuted 12 Aug 2026 on the rail's second line.* The 52px track is sized for a
+      measured distance ("450 m"); the NEIGHBOURHOOD fallback, shown before location
+      is granted, does not fit. Measured at 375: 13 of 30 rows overran the track, and
+      `Telliskivi` (71px of ink) crossed **into the title column** by 2.4px, while
+      `Põhja-Tallinn` wrapped and made that rail three lines where every other was two.
+      The line may now use the track plus the 16px column gap and is clipped at the
+      column boundary. That leaves the 27 unaffected rows pixel-identical, costs no
+      list height, and truncates 3 rows instead of the 14 a plain ellipsis at 52px
+      would have. Widening the track to 72px was measured and rejected: it truncated
+      nothing but took 20px off every title forever (5 two-line titles → 7, list 116px
+      taller) to buy a state that disappears the moment permission is granted — and
+      widening only *while* the fallback shows is barred, because the rail must not
+      reflow when permission arrives. Re-measured on Tonight, Saved, Source and You:
+      0 rows entering the title column, 0 multi-line rails.
 - [x] **4d** Map is a mode, and carries a way out, "Search this area", and a drawer of
       the picks in view.
       *Refuted 12 Aug 2026, and the tick was the problem.* All three were in the DOM,
@@ -158,12 +172,37 @@ still the dependency for everything."*
       on sync/open/focus and nothing else, so a `jumpTo` a tenth of a degree east left
       every pin at its exact `left`/`top` — labels detached from the city on the first
       drag, and had done since the layer was written. Now bound to `move`.
+      *That fix was itself wrong on the first cut, and review caught it.* Binding the
+      whole of `place()` to `move` dragged the DRAWER along per frame: 14.8ms a frame
+      against a 16.7ms budget, and — worse — `drawer.innerHTML` was rewritten on every
+      frame of a drag, so a keyboard user focused on a drawer row had focus thrown to
+      `<body>` and any scroll position in the drawer was lost. Split: `placePins` on
+      `move`, `placeDrawer` on `moveend`, and the drawer write is skipped when the
+      resulting markup is unchanged, which is the common case when panning within the
+      same visible set. Re-measured by firing `move` alone (a `jumpTo` fires `moveend`
+      synchronously and so hid the bug): **1.31ms a frame, focus and scroll survive**;
+      `moveend` with an unchanged view costs 0.4ms and does not touch the DOM.
       Verified: 106 → 22 nodes; sum of cluster counts + solo pins = 106 at zoom 12.4 and
       again at 15; clusters re-form on zoom (13/9 → 22/18); contrast 8.14:1 day,
-      10.57:1 dusk. **Not verified: the cluster-tap zoom animation.** MapLibre's
-      transition is rAF-driven and rAF is throttled in the preview pane, so `fitBounds`
-      was confirmed by intercepting the call and by a `duration:0` jump (12.4 → 13.26),
-      never by watching it move. Worth one look on a real device.
+      10.57:1 dusk; tap target 44 × 44 via the pin's `::after`, visual 34 × 34.
+      **The cluster-tap zoom is now verified, by removing the need to watch it.**
+      The preview pane's document reports `visibilityState: hidden`, so rAF never
+      ticks and MapLibre's tween genuinely cannot run there — measured, not assumed
+      (0 rAF callbacks in 1s). Instead the destination is asserted directly: the tap
+      lands on exactly what `map.cameraForBounds()` computes for the same bounds,
+      padding and maxZoom (12.4 → 13.26, centre 24.7450,59.4340 → 24.7497,59.4377),
+      and clusters re-form 13 → 17. What remains unobserved is only MapLibre's own
+      tween between two states we have both pinned, which is library code.
+- [x] **4j** Camera moves honour `prefers-reduced-motion`.
+      Found reviewing 4i: `wa.css` respects the setting in three places and
+      `view-transition.js` checks it before naming a transition, but **no camera move
+      did** — `fitToPicks` and `flyTo` both hard-coded `duration: 480`, and a map
+      easing across the viewport is precisely the large-area motion the setting exists
+      for. Fixed in `map-tiles.js` rather than at the call sites, so the fit when the
+      mode opens, the flyTo on row focus and the new cluster zoom all take it from one
+      place. Reduced motion does not mean "do not go there" — the destination is
+      identical, it just arrives without the tween, which is also what made 4i
+      verifiable in a pane that cannot animate.
 - [x] **4f** Retired params (`?ai=`, `#mood=`, `?nhood=`) drop silently and still render
       a list. Verified: 34 rows, URL rewritten clean.
 - [x] **4g** Night is the same layout at different values; no layout switch.
