@@ -140,7 +140,14 @@
   --ff-display: 'Fraunces', Georgia, serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --fs-label:     10px;   /* the eyebrow above a value, and the nav label */
+  /* Deliberately the same VALUE as --fs-mono, not the same token: this
+     is Jakarta chrome (the eyebrow above a value, the nav label) and
+     that is the mono fact line. They are free to diverge, and folding
+     one into the other would mean a change to the fact size silently
+     resizing every label in the product. Was 10px until Aug 2026 --
+     under the scale's own floor, and small for a tab-bar label that is
+     the primary navigation on a phone. */
+  --fs-label:     11px;
   --fs-mono:      11px;   /* the fact line, uppercase, tracked */
   --fs-meta:      12px;
   --fs-body:      14px;

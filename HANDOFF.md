@@ -95,7 +95,7 @@ still the dependency for everything."*
       text now resolves to the link. **When an audit item names the pages it covers,
       the pages it does not name are the finding.**
 - [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged. The TYPE
-      scale gained one: **`--fs-label: 10px`** (Aug 2026), the 49th token.
+      scale gained one: **`--fs-label: 11px`** (Aug 2026), the 49th token.
       2k's sweep reported no font size off the scale, which was true only because the
       scale was being *quoted* rather than counted — three components hard-coded 10px,
       below `--fs-mono` (11px), so the smallest type in the product was the one size
@@ -110,10 +110,21 @@ still the dependency for everything."*
       Deliberately no speculative `.wa-label` third class: an unreached rule in this
       file is as likely to be an unfinished feature as dead weight, and the next census
       should not have to work out which.
-      Proved inert rather than assumed: computed font, weight, tracking, transform,
-      colour and box geometry captured before and after on Explore, detail and a walk
-      in progress — **identical on every node**, with `--fs-label` resolving to 10px
-      and the desktop tab bar still at 14px.
+      The refactor was proved inert rather than assumed: computed font, weight,
+      tracking, transform, colour and box geometry captured before and after on
+      Explore, detail and a walk in progress — **identical on every node**.
+      Then the value moved 10px → 11px as a separate, deliberate step, because the
+      hard-coded size was below the scale's own floor and the tab-bar label is the
+      primary navigation on a phone. Simulated before editing the file and measured
+      after: widest label ink 41px in a 94px tab, **nothing wraps, clips or
+      overflows**, the bar keeps its 60px so the `--tabbar-h` reservation still
+      holds, a labelled cell grows by exactly 1px, and the desktop masthead still
+      overrides to 14px. The sweep now reports the sizes in use as 11/12/14/15/17/26
+      — every one a token, so "no font size off the scale" is finally true by
+      counting rather than by quoting the scale.
+      `--fs-label` and `--fs-mono` share a value and stay separate tokens on purpose:
+      one is Jakarta chrome, the other the mono fact line, and folding them together
+      would let a change to the fact size silently resize every label.
 - [x] **2k** Geometry audit — alignment, control size, type scale, painted overlap.
       Swept every public page at 375 / 768 / 1440, both themes, at three scroll
       positions, plus the filter sheet and map mode. Result after the fixes below:
