@@ -94,7 +94,26 @@ still the dependency for everything."*
       four at 44, adjacent stops' hit areas do not touch, and a probe 8px above the
       text now resolves to the link. **When an audit item names the pages it covers,
       the pages it does not name are the finding.**
-- [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged.
+- [x] **2h** Radii, spacing scale and the `--reading-max` ladder unchanged. The TYPE
+      scale gained one: **`--fs-label: 10px`** (Aug 2026), the 49th token.
+      2k's sweep reported no font size off the scale, which was true only because the
+      scale was being *quoted* rather than counted — three components hard-coded 10px,
+      below `--fs-mono` (11px), so the smallest type in the product was the one size
+      the system did not name. Worse, `.wa-capsule__label` and `.wa-cell__label` were
+      byte-identical four-declaration rules **1,683 lines apart**, free to drift
+      without anyone noticing they were meant to match. They are now one rule in TYPE
+      HELPERS, where a type role belongs and where neither component owns it; both are
+      declared exactly once in the file, so hoisting them changed no cascade. The tab
+      bar takes the size token and nothing else — lighter, barely tracked, not
+      uppercase, because it is a name rather than an eyebrow — and still overrides to
+      `--fs-body` in the masthead from 1024.
+      Deliberately no speculative `.wa-label` third class: an unreached rule in this
+      file is as likely to be an unfinished feature as dead weight, and the next census
+      should not have to work out which.
+      Proved inert rather than assumed: computed font, weight, tracking, transform,
+      colour and box geometry captured before and after on Explore, detail and a walk
+      in progress — **identical on every node**, with `--fs-label` resolving to 10px
+      and the desktop tab bar still at 14px.
 - [x] **2k** Geometry audit — alignment, control size, type scale, painted overlap.
       Swept every public page at 375 / 768 / 1440, both themes, at three scroll
       positions, plus the filter sheet and map mode. Result after the fixes below:
