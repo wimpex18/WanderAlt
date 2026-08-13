@@ -997,6 +997,23 @@ a.wa-sr:focus {
 
 .wa-row:last-child { border-bottom: 0; }
 
+/* The row and the card are links, and until Aug 2026 they were the only
+   links in the product without a hover state -- while `.wa-list-card`,
+   `.wa-walkcard` and `.wa-savedstrip`, all rarer, each had one. The row
+   is the primary object on Tonight, Saved, Source and You, so on a
+   pointer device the most common clickable thing in the product was the
+   one giving no sign it could be clicked.
+
+   Underlining the title is the system's existing answer for this --
+   `.wa-walk__name` and `.wa-row__more` both already do it -- rather than
+   a new tint band, which on a full-bleed row would read as selection.
+   Behind `(hover: hover)` so a touch device does not keep the state
+   stuck on the last row tapped. */
+@media (hover: hover) {
+  .wa-row:hover .wa-row__title,
+  .wa-card:hover .wa-card__title { text-decoration: underline; }
+}
+
 .wa-row__rail {
   display: flex;
   flex-direction: column;
@@ -1542,7 +1559,19 @@ a.wa-sr:focus {
   margin: var(--s-3) 0 var(--s-2);
   text-wrap: pretty;
 }
-.wa-walkcard__blurb { font: 400 var(--fs-body)/1.5 var(--ff-ui); color: var(--ink-soft); margin: 0; }
+/* The same 62ch measure `.wa-detail__desc` uses, and for the same
+   reason. This card is the only prose on Explore that sits in the full
+   content column, so at 1440 the blurb ran as ONE line of 133
+   characters across 1198px -- roughly twice the length the eye tracks
+   comfortably, and the identical sentence on walk.html was already
+   wrapping at 67. One copy readable and the other not is the measure
+   being a property of the page rather than of the text. */
+.wa-walkcard__blurb {
+  font: 400 var(--fs-body)/1.5 var(--ff-ui);
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 62ch;
+}
 .wa-walkcard__facts {
   display: block;
   margin-top: var(--s-3);
@@ -2304,6 +2333,23 @@ a.wa-sr:focus {
 
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
 .wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
+
+/* 3:2 is the right hero on a phone -- 375px wide makes it 250 tall --
+   and the wrong one at 1240, where it computes to 729px and eats 81% of
+   a 900px viewport. Measured on a 1440x900 desktop: the venue's TITLE
+   landed at y=856, right on the fold, and CLOSES/ENTRY -- the two facts
+   this product exists to deliver -- at y=998, below it. A hero that
+   pushes the deciding facts off the first screen has inverted the page.
+
+   Capped rather than re-proportioned, so the ratio still drives the
+   shape until it hits the ceiling; `object-fit: cover` on the photo and
+   `overflow: hidden` on the well were already there, so this crops
+   instead of letterboxing. Companion to the landscape rule above: a
+   viewport is not always tall, and it is not always narrow either. */
+@media (min-width: 768px) {
+  .wa-detail__photo,
+  .wa-detail__well--mark { max-height: min(46vh, 460px); }
+}
 
 .wa-detail__credit {
   margin: 0;

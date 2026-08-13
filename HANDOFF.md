@@ -651,3 +651,62 @@ was believed).
       than the viewport was the fronted-pane geometry this file already warns
       about, not a layout fault: `clientWidth` 375, map 20 → 355, no overflow.
       The DOM is the authority; the capture is for eyeballing.
+
+## 9 · Desktop pass (Aug 2026)
+
+The mobile pass had a desktop half. Measured at 1024 / 1280 / 1440 / 1920 /
+2560; the top band was re-examined first, since it is what the last two
+rounds changed.
+
+- [x] **9a** The top band is **correct and current, verified rather than
+      assumed.** Brand flush left, the four app-nav items centred, account
+      flush right — the same three-zone header Airbnb ships in 2026. The nav
+      is `.wa-tabbar` repositioned to `top: 0`, and it is **transparent
+      there** (`backdrop-filter: none`, no background), so the "never nest
+      glass" rule holds: one blur, the top bar's, with the nav painted on it.
+      Active state is petrol ink + 600 weight + a 2px petrol underline, which
+      is tint-plus-a-mark and matches the underline convention. Nothing to fix.
+- [x] **9b** The capsule's centred 960 column — **examined and deliberately
+      left alone.** Three left edges exist in the top region (20 header, 100
+      content, 240 controls), and one edge would be simpler. I built the
+      one-column version and measured it: at 1440 the capsule's three slots go
+      to 394px each, which is exactly the drift 5b's own note refuses — "the
+      slots drift ~370px apart and it stops looking like a single control".
+      The prior decision has a spec basis and a stated reason, and the
+      alternative reproduces the failure it was written to avoid. Recorded so
+      the next session does not re-open it as an oversight. The one thing worth
+      knowing: `max-width: 960px` on `.explore-scope` buys only the shared left
+      edge — the chips themselves end at 632, leaving **568px of the row
+      empty** — so the group is read from its left edge, not its width.
+- [x] **9c** `.wa-detail__well` — **the hero pushed the deciding facts off the
+      first screen.** `aspect-ratio: 3 / 2` is right at 375 (250px tall) and
+      wrong at 1240, where it computes to **729px, 81% of a 900px viewport**.
+      Measured at 1440x900: the venue title landed at y=856, on the fold, and
+      CLOSES / ENTRY at **y=998, below it** — on a product whose entire thesis
+      is that the time and the price are the point. Capped at
+      `min(46vh, 460px)` from 768 up, so the ratio still drives the shape until
+      it hits the ceiling; `object-fit: cover` and `overflow: hidden` were
+      already in place, so it crops rather than letterboxes. Now 445px / 49%,
+      title at 573 and facts at **715, above the fold**, at every desktop width
+      tested. Phone untouched at 281px.
+- [x] **9d** `.wa-row` and `.wa-card` — **no hover state, on the two most
+      common clickable things in the product.** Both are `<a>` elements;
+      `.wa-list-card`, `.wa-walkcard` and `.wa-savedstrip`, all rarer, each had
+      one. The row is the primary object on Tonight, Saved, Source and You, so
+      on a pointer device the thing a reader clicks most often was the one
+      giving no sign it could be clicked. The title underlines on hover — the
+      answer `.wa-walk__name` and `.wa-row__more` already use — behind
+      `@media (hover: hover)` so a touch device does not leave the state stuck
+      on the last row tapped.
+- [x] **9e** `.wa-walkcard__blurb` — **133 characters on one line.** It is the
+      only prose on Explore sitting in the full content column, so at 1440 it
+      ran unbroken across 1198px, roughly twice a comfortable measure — while
+      the *identical sentence* on walk.html was already wrapping at 67, because
+      that page's copy carries the system's `62ch`. Given the same measure.
+      A scan of every text-bearing element across all eight pages at 1440 found
+      this and nothing else above 95 characters per line.
+- [x] **9f** Swept clean and recorded: eight pages at 1024, 1440 and 1920 — no
+      horizontal overflow, no text overlap, no tap target under 44px. Focus is
+      handled globally (`:focus-visible`, 2px petrol, 2px offset) and reaches
+      every control in the header, capsule and scope row. Content caps at
+      1560px, so nothing runs away at 2560.
