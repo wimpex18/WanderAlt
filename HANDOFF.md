@@ -280,6 +280,17 @@ still the dependency for everything."*
 - [x] **4a** Four facets collapsed to the capsule plus one filter sheet.
 - [x] **4b** Seven-day density strip as Tonight's header; counts from the same filter
       chain as the rows; a genuinely empty day gets no bar.
+      **One rule it cannot satisfy, stated rather than papered over.** Below a 372px
+      viewport each day button falls under `--tap-min`: seven columns in 320px, less
+      a 20px gutter each side and six 4px gaps, is 36.6px. Measured, not estimated.
+      There is no fix that keeps the component: it exists to say the thing a list
+      cannot — *Monday is dead, wait for Friday* — which requires the whole week on
+      screen at once, so it cannot scroll; and closing the gaps to reach 40px would
+      remove the dead zones that stop a mis-tap landing on the wrong day, making it
+      worse in practice. It clears WCAG 2.2 AA's own 24px minimum with spacing to
+      spare; it is this repo's stricter 44px rule that it misses, and only on
+      screens narrower than an iPhone 12. Recorded as a known conflict between two
+      of our own rules rather than pretended away.
 - [x] **4c** Rows lead with the rail (time, then distance), never a photo.
       *Refuted 12 Aug 2026 on the rail's second line.* The 52px track is sized for a
       measured distance ("450 m"); the NEIGHBOURHOOD fallback, shown before location
@@ -353,6 +364,20 @@ still the dependency for everything."*
 - [x] **4f** Retired params (`?ai=`, `#mood=`, `?nhood=`) drop silently and still render
       a list. Verified: 34 rows, URL rewritten clean.
 - [x] **4g** Night is the same layout at different values; no layout switch.
+- [x] **4k** Map mode survives a short viewport.
+      Never tested until 13 Aug 2026, and it failed twice at 740 x 360 — a phone in
+      landscape. The map's `clamp(360px, 62vh, 680px)` **floor** is taller than the
+      236px the viewport actually leaves after 64px of top bar and 60px of tab bar,
+      so the map overflowed its band and pushed the foot — and with it "Show list" —
+      **366px below the tab bar**. The same failure as the drawer covering the bar,
+      arriving by a different route. And the map-mode head stuck 125px open on top
+      of the 64px bar, pinning **52% of the screen**.
+      Height is now `min(clamp(...), calc(100vh - --topbar-h - --tabbar-h - --s-6))`
+      and the head goes `static` under `max-height: 500px`. Re-measured at 740 x 360:
+      map 212px, head static, the exit 281px into a 668px document — an ordinary
+      short scroll rather than a hunt. Portrait re-checked and identical: map 503px,
+      head sticky, chips reachable, bar and drawer not overlapping.
+      **Check `max-height` as well as `max-width`.**
 - [x] **4h** Map's way out — **deliberate divergence, decision recorded.** 5d draws
       "Show list" on the drawer; we spell it as the symmetric "List" key in the chrome,
       paired with "Map". 2a's actual requirement is "a way out", and there is one.
@@ -428,6 +453,29 @@ still the dependency for everything."*
       56px bar, still stuck at 56 after scrolling 1200px, and it reserves its own
       58px so the first row moves down rather than being covered. No collision with
       the toast, which owns the opposite edge.
+
+- [x] **5l** The auth surface is styled at all.
+      Found auditing components this branch had never opened (13 Aug 2026), and it
+      is the largest defect the audits have turned up. `.auth-panel*`, `.field-pw`
+      and `.pw-toggle` are defined **only in `admin.css`**, which no public page
+      loads — so sign-in, create-account, reset-password and the account panel
+      rendered on **seven public pages** as raw browser defaults appended to the end
+      of the document: `position: static` instead of an overlay, a transparent panel
+      with no padding or radius, **28px-tall inputs** against a 44px floor, and a
+      grey UA submit button. The status line reached for `--c-accent` and
+      `--c-ink-mute`, two of the three tokens that died with `styles.css`.
+      It is the system's **sheet** now rather than a fourteenth component: `auth.js`
+      builds the same `<dialog class="wa-sheet">` Tonight's filters use and calls
+      `showModal()`, so the backdrop, the bottom-sheet-to-centred-dialog behaviour,
+      focus trapping and Escape all come from the platform and the existing CSS.
+      Fields are `.wa-field` + `.wa-input`, the primary key is `.wa-btn--primary` in
+      the sheet's foot. The password reveal toggle got the only new rules — the
+      input growing a modifier, not a new component.
+      Verified across all five views (sign-in, create, forgot, set-password,
+      account): `:modal` true, inputs 48px, submit petrol at 48px, toggle 44 x 44
+      with the input padded so text never runs under it, Escape closes, 560px
+      centred at 1440, and at **320 x 568** the panel fits with its foot visible and
+      its body scrolling. No console errors.
 
 ## 6 · Sheets, states, About (5c, 6d)
 

@@ -2390,6 +2390,15 @@ a.wa-sr:focus {
     border-bottom: 1px solid var(--rule);
   }
 
+  /* A landscape phone is 360 tall. The top bar takes 64 of that and this
+     head another 125, so sticking it would pin 52% of the screen open
+     and leave 171px for the map, its drawer and the way out. Sticky is
+     a convenience on a tall screen and a tax on a short one, so below
+     500px of height it simply scrolls with the page. */
+  @media (max-height: 500px) {
+    body.tonight-mapmode .tonight-head { position: static; }
+  }
+
   /* Two sticky things cannot own one offset, which is the failure the
      offline banner's own comment names: "only one thing may occupy it".
      Both read `top: var(--topbar-h)`, so once the banner was moved into
@@ -2423,7 +2432,20 @@ a.wa-sr:focus {
   border-radius: var(--r-card-lg);
   overflow: hidden;
   background: var(--petrol-tint);
-  height: clamp(360px, 62vh, 680px);
+  /* The clamp's 360px FLOOR is taller than the whole content band on a
+     phone in landscape: 360 tall minus 64 of top bar and 60 of tab bar
+     leaves 236. The map overflowed it, pushing the foot -- and with it
+     "Show list", the way out of the mode -- 366px below the tab bar,
+     reachable only by scrolling. The same failure as the drawer
+     covering the bar, arriving by a different route, so the same test
+     catches it: can you leave the mode without hunting for the exit.
+
+     min() caps the floor at what the viewport actually has. Portrait is
+     untouched (812 tall still resolves to 62vh = 503px); landscape gets
+     a short map instead of an unreachable one. The 1024 rule below sets
+     its own height for the companion column and still wins. */
+  height: min(clamp(360px, 62vh, 680px),
+              calc(100vh - var(--topbar-h) - var(--tabbar-h) - var(--s-6)));
 }
 
 .tonight-split--map .tonight-list { display: none; }
@@ -2580,6 +2602,38 @@ a.wa-sr:focus {
 }
 
 .wa-input::placeholder { color: var(--ink-mute); }
+
+/* The reveal toggle that WA.UI.passwordField wraps a password input in.
+   `.field-pw` and `.pw-toggle` were only ever styled in admin.css, which
+   no public page loads, so the eye sat as a default UA button jammed
+   against the field on every public sign-in. The input keeps its own
+   padding on the right so the text never runs under the toggle. */
+.field-pw { position: relative; display: block; }
+
+.field-pw .wa-input { width: 100%; padding-right: var(--tap-min); }
+
+.pw-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+
+.pw-toggle:hover { color: var(--ink); }
+
+.pw-toggle .ic {
+  width: 20px; height: 20px;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 .wa-digest__fine {
   font: 400 var(--fs-meta)/1.5 var(--ff-mono);
