@@ -237,7 +237,7 @@
       <section class="wa-section">
         <h2 class="wa-section-title">Add to my calendar</h2>
         <p class="wa-detail__note">Take the week as a calendar feed and never open the app.</p>
-        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar">How it works &rsaquo;</a></p>
+        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar-feed">How it works &rsaquo;</a></p>
       </section>
 
       ${follows.length ? `<section class="wa-section">

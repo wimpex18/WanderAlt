@@ -253,6 +253,19 @@ still the dependency for everything."*
       weekend it described had already begun — after the decision it exists to inform.
       The `.ics` key is now **"Calendar feed"**: the old label named a file format
       rather than what the key does.
+      *Two more came out of re-checking it.* The key pointed at `#calendar`, a
+      section whose FIRST heading is "The Thursday email" — so a key promising a
+      calendar feed delivered a paragraph about email and left the reader to scroll.
+      It points at the calendar heading's own id now; the section keeps `#calendar`
+      so any link already in the wild still resolves.
+      And every in-page anchor landed **behind the sticky top bar** — the jump puts
+      the target at y=0, which is under 64px of chrome. Pre-existing on `#calendar`
+      and `#main`; the taller bar made it obvious rather than causing it. Fixed with
+      `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to the four ids
+      that are actually link targets rather than a blanket `[id]` rule: the property
+      also applies to `scrollIntoView()`, and Tonight centres a row that way when a
+      pin is tapped, so a global rule would have quietly shifted it. Verified by
+      clicking the real key: lands 16px below the bar with the feed URL in view.
 - [x] **3j** Card anatomy: square well, one badge top-left, bookmark top-right, title
       2 lines never truncated, two mono lines (distance · area, then kind · time/price).
 - [x] **3k** Digest card at the foot of Explore.

@@ -37,6 +37,32 @@ is legitimately newer while the content already matches. `rotate-tonight`,
 Timestamps only narrow the search. Confirm with `get_edge_function` and
 read the actual source before deploying anything.
 
+## Audit, 13 Aug 2026 — send-digest
+
+Found while doing something else, which is how this one always turns up.
+The repo had corrected `OPENROUTER_MODEL`'s default from
+`openai/gpt-oss-120b:free` (absent from OpenRouter's catalogue) to
+`nvidia/nemotron-3-super-120b-a12b:free`, and never redeployed. The
+deployed copy — Supabase v16, last touched 5 Aug — still carried the
+dead id.
+
+**Why the timestamp check would not have caught it.** The drift was a
+one-line default inside a file whose commit dates look unremarkable, and
+the consequence is invisible today: `callLLM` only reaches OpenRouter
+`if (OPENROUTER_KEY)`, and that secret is not set. The lane would have
+404'd and fallen silently through to the static intro on the first send
+after anyone set it — a bug that arrives later, attached to an unrelated
+action. Timestamps narrow the search; only reading the source finds this
+shape.
+
+Deployed as v17 with `verify_jwt: true` preserved. Verified three ways:
+`invoke_wa_fn('send-digest')` returned **200
+`{"ok":true,"sent":0,"reason":"no subscribers"}`** — the cron's own path,
+so the anon key still satisfies the gate; an unauthenticated
+`POST /functions/v1/send-digest` still returns **401**, so the
+open-relay fix from v13 is intact; and `get_edge_function` shows the
+nemotron id in the deployed source.
+
 ## Audit, 4 Aug 2026
 
 Three commits had landed in the repo without reaching production.

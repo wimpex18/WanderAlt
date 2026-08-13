@@ -299,6 +299,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wa-shell > .wa-detail__well:first-child,
 .wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
 
+/* An in-page jump scrolls the target to y=0, which is underneath the
+   sticky top bar -- so "Calendar feed" landed the reader on a heading
+   hidden by 64px of chrome, and #calendar did the same before it. The
+   bar getting taller made an existing problem more obvious rather than
+   creating one.
+
+   Scoped to the ids that are actually link targets rather than a blanket
+   [id] rule: scroll-margin-top also applies to scrollIntoView(), and
+   Tonight centres a row that way when a pin is tapped. A global rule
+   would quietly shift that. Plus one gutter, so the heading clears the
+   bar instead of touching it. */
+#main,
+#digest-title,
+#calendar,
+#calendar-feed {
+  scroll-margin-top: calc(var(--topbar-h) + var(--s-4));
+}
+
 /* Screen-reader-only, for the labels a sighted reader gets from layout. */
 .wa-sr {
   position: absolute; width: 1px; height: 1px;

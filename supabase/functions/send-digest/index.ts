@@ -1,5 +1,18 @@
 /* ============================================================
-   WanderAlt — send-digest edge function v13
+   WanderAlt — send-digest edge function v14
+   v14: no behaviour change of its own -- it exists to close a drift that
+        did have one. The deployed copy (Supabase v16) still defaulted
+        OPENROUTER_MODEL to 'openai/gpt-oss-120b:free', which is ABSENT
+        from OpenRouter's catalogue; the repo was corrected to
+        'nvidia/nemotron-3-super-120b-a12b:free' and never redeployed, so
+        the second LLM lane would have 404'd the moment an
+        OPENROUTER_API_KEY was set and fallen silently through to the
+        static intro. Exactly the shape CLAUDE.md warns about: the repo
+        cannot tell you what is deployed.
+        Also retires the phrase "the Saturday cron" -- the job is
+        send-digest-thursday (0 7 * * THU) as of 13 Aug 2026. The
+        sentence's actual claim, that invoke_wa_fn's anon key satisfies
+        verify_jwt, is unchanged and still true.
    v13: SECURITY — this was an open email relay. verify_jwt was false and
         the handler took the recipient straight from the request body:
 
@@ -15,7 +28,7 @@
         key in the Authorization header -- that is the actual control,
         because it is the one credential that is never published.
         verify_jwt also goes true, which blocks unauthenticated callers
-        at the platform edge before this code runs; the Saturday cron is
+        at the platform edge before this code runs; the digest cron is
         unaffected because public.invoke_wa_fn() sends the anon key,
         which is a valid JWT (the same reason ingest-osm and
         process-staging already run fine at verify_jwt:true).
