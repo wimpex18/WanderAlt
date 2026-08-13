@@ -54,6 +54,21 @@ still the dependency for everything."*
       panned beneath. Now opaque in the page ground, hairline kept. Re-measured: 2 in
       both themes, in list view and map mode.
 - [x] **2c** Sticky chrome reserves real layout height (body reserves 60px).
+      `--topbar-h` went 56 → **64px** on 13 Aug 2026: the bar carries the brand, the
+      app nav (restored, see 3d) and the account key on desktop, and at 56 all three
+      sat cramped against a 26px mark. The wordmark went to `--fs-title` and the mark
+      to 32px with the radius scaled to match. Every sticky offset in the file reads
+      the token — the offline banner, the map-mode head, the sticky companion column —
+      so all three followed with no second number to keep in step. Verified at scroll
+      zero: bar bottom 64, first content block at 88, 24px clearance, nothing covered.
+      **One collision came out of it**, and it was mine: the offline banner had just
+      been moved into the flow where its `top: var(--topbar-h)` could finally take
+      effect, and Tonight's map-mode head sticks at the same offset. 58px of overlap,
+      banner z-index 39 over head z-index 4, and the When chip stopped being
+      clickable while offline. Two sticky elements cannot own one offset — which is
+      what the banner's own comment says. The banner wins it; the head goes `static`
+      while the banner is present. Re-measured: offline, head static and overlap 1px;
+      back online, head sticky at 64 and the chip reachable again.
 - [x] **2d** Lime is signal only. *Refuted twice, same root cause both times:*
       `isTonight()` means TODAY, not now. First on 24 card badges, then on 34 `TON` row
       rails — I fixed the badges and ticked the item without checking the rail, which
@@ -177,6 +192,23 @@ still the dependency for everything."*
       underline on the active one.
 - [x] **3d** On desktop the scope tabs **are** the masthead; the four app tabs are a
       phone pattern (5b draws no app nav, 5d's header is the capsule's answers).
+      *Refuted 13 Aug 2026 by a dead end, not by taste, and reversed.* Measured at
+      1440 on a first visit: `.wa-tabbar` was `display:none`, the saved strip is
+      designed to be absent until something is saved ("a strip reading 0 saved is
+      worse than no strip"), and a query for every visible link to `saved.html`
+      returned **an empty array**. There was no route to Saved at all; Tonight had
+      only the "See all N" bridges at the foot of a shelf.
+      The two rows also collided in meaning. Both are four items, icon over label, in
+      the same band, and both contain **"Tonight"** — a scope filter on Explore, a
+      whole page on the other eight. The masthead meant navigation everywhere except
+      the one screen where it meant filtering, with nothing to tell them apart. The
+      owner read the two as the same control and asked why they disagreed, which is
+      the clearest evidence this item could have had.
+      The app nav now stays on every page and the scope tabs sit with the content they
+      filter, aligned to the capsule's 840px column so the two read as one control
+      group rather than two unrelated strips. Verified: `routesToSaved` is no longer
+      empty, `.explore-scope` is back in normal flow, and capsule and scope share a
+      left edge at 1440 (300 → 1140 both).
 - [x] **3e** Saved strip between capsule and first shelf, and the desktop route to Saved.
 - [x] **3f** Named carousels with a count in the subtitle; 6-up at 1280 with the
       "See all N as a timetable" bridge as the last cell.
@@ -209,7 +241,18 @@ still the dependency for everything."*
       catalogue has not arrived and it fills in on its own; no stops **left** says you
       skipped them. Calling the first one "you skipped every stop" would have been a
       fact about our load order dressed up as something the reader did.
-- [x] **3i** "Get the Saturday email" in the desktop masthead.
+- [x] **3i** ~~"Get the Saturday email" in the desktop masthead.~~ **Removed
+      13 Aug 2026, decision recorded.** It was a jump link to a section on the same
+      page, and with the app nav restored to the masthead (3d) the bar was carrying
+      the brand, four nav items, an account key and a marketing shortcut. One masthead
+      does one job. The email is still reachable from You and from About, and its own
+      section at the foot of Explore is unchanged. Its CSS block went with it rather
+      than being left to fail a future census.
+      The send day moved too: **Thursday, not Saturday** (`send-digest-thursday`,
+      `0 7 * * THU` = 10:00 Tallinn). Saturday delivered a week-ahead digest after the
+      weekend it described had already begun — after the decision it exists to inform.
+      The `.ics` key is now **"Calendar feed"**: the old label named a file format
+      rather than what the key does.
 - [x] **3j** Card anatomy: square well, one badge top-left, bookmark top-right, title
       2 lines never truncated, two mono lines (distance · area, then kind · time/price).
 - [x] **3k** Digest card at the foot of Explore.

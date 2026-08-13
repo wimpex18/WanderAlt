@@ -649,7 +649,7 @@
 
   sheet && sheet.addEventListener('close', () => { openSlot = ''; });
 
-  /* ── Saturday email ──────────────────────────────────────────
+  /* ── The weekly email (Thursday) ─────────────────────────────
      Anonymous opt-in; the account is attached only when there is one. */
   const form = $('digest-form');
   if (form) {
@@ -672,7 +672,7 @@
           }),
         });
         note.textContent = res.ok
-          ? 'Done. First one lands on Saturday morning.'
+          ? 'Done. First one lands on Thursday morning.'
           : 'That did not go through. Try again in a minute.';
         if (res.ok) input.value = '';
       } catch (_) {

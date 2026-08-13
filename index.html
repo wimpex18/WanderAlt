@@ -88,11 +88,6 @@
       <span>WanderAlt</span>
     </a>
 
-    <!-- 5b's masthead carries the Saturday email as a quiet text link
-         beside the account key. The card at the foot of Explore is the
-         signup; this is the way in from the top of the page, which is
-         where a reader who already knows they want it will look. -->
-    <a class="wa-topbar__digest" href="#digest-title">Get the Saturday email</a>
     <a class="wa-btn wa-btn--quiet" href="./profile.html" id="explore-account">Sign in</a>
   </header>
 
@@ -165,17 +160,27 @@
          section reads as a short row rather than a hole. -->
     <div id="sections"></div>
 
-    <!-- The Saturday email, at the foot of Explore rather than
+    <!-- The weekly email, at the foot of Explore rather than
          interrupting the list. digest_opt_ins and the Resend key
-         already exist, so this surface is real. -->
+         already exist, so this surface is real.
+
+         THURSDAY, not Saturday. The old timing sent a week-ahead digest
+         on the morning the weekend had already started, which is after
+         the decision it exists to inform. Thursday is both the general
+         optimum for a weekly send and, more to the point, what every
+         other what's-on guide uses for exactly this reason: it lands
+         while the weekend is still being planned. -->
     <section class="wa-digest" aria-labelledby="digest-title">
-      <h2 class="wa-digest__title" id="digest-title">One email on Saturdays.</h2>
-      <p class="wa-digest__body">What's on in <span id="digest-city">Tallinn</span> next week, in the same six-row shape as Tonight. Or take the whole thing as a calendar feed and never open the app.</p>
+      <h2 class="wa-digest__title" id="digest-title">One email on Thursdays.</h2>
+      <p class="wa-digest__body">What's on in <span id="digest-city">Tallinn</span> over the weekend and the week after, in the same six-row shape as Tonight. It lands while there is still time to make a plan.</p>
       <form class="wa-digest__form" data-no-submit id="digest-form">
         <label class="wa-sr" for="digest-email">Your email address</label>
         <input class="wa-input" type="email" id="digest-email" name="email" placeholder="you@example.com" autocomplete="email" required />
         <button class="wa-btn wa-btn--primary" type="submit" style="flex:0 0 auto">Send it to me</button>
-        <a class="wa-btn" href="./about.html#calendar" id="digest-ics" style="flex:0 0 auto">.ics</a>
+        <!-- Was labelled ".ics", which names the file format rather than
+             what the key does. Nobody scanning a signup form knows what
+             an .ics is; everybody knows what a calendar is. -->
+        <a class="wa-btn" href="./about.html#calendar" id="digest-ics" style="flex:0 0 auto">Calendar feed</a>
       </form>
       <p class="wa-digest__fine" id="digest-note">No account needed. One unsubscribe link, no other mail, ever.</p>
     </section>

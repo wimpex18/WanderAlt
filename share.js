@@ -25,7 +25,7 @@
    It is gone rather than rewired because the redesign moved the
    calendar answer from per-pick to whole-week. Every calendar
    surface the direction draws is the subscribable feed: 6f's
-   Saturday-email card ("take the whole thing as a calendar feed"),
+   weekly-email card ("take the whole thing as a calendar feed"),
    the You row ("Add to my calendar"), and Tonight's desktop right
    half ("the whole week as a calendar feed"). The detail screen
    draws three cells, "Walk me there" and provenance — no calendar
