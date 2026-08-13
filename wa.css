@@ -1213,6 +1213,28 @@ a.wa-sr:focus {
    for. Both are a tint plus a mark, never colour alone. */
 .wa-density__day--today .wa-density__label { color: var(--ink); }
 
+/* Below 372px a day falls under --tap-min: seven columns in 320px, less
+   two 20px gutters and six 4px gaps, is 36.6. Measured, not estimated.
+   The strip cannot scroll -- it exists to say the thing a list cannot,
+   "Monday is dead, wait for Friday", which needs the whole week on
+   screen at once.
+   What makes it soluble is that the GAP is not what separates the bars.
+   `.wa-density__bar` is capped at max-width 28px and centred, so the
+   visual rhythm comes from the bar's own width inside a wider cell. The
+   grid gap only shrinks the tap target. Take it to zero and full-bleed
+   the strip -- the same margin-inline opt-out the carousel uses -- and
+   each cell becomes 320/7 = 45.7px while the bars keep 17.7px of air
+   between them, more than the 8.6px they have now.
+   Cells tile with no dead zone, which is what a calendar grid or a tab
+   bar does: at a boundary the tap picks a neighbouring day rather than
+   doing nothing, and this is a filter, recoverable in one tap. */
+@media (max-width: 371.98px) {
+  .wa-density {
+    margin-inline: calc(var(--gutter) * -1);
+    gap: 0;
+  }
+}
+
 .wa-density__day[aria-pressed="true"] {
   background: var(--petrol-tint);
   box-shadow: inset 0 -2px 0 var(--petrol);

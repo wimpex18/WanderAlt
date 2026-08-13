@@ -280,17 +280,29 @@ still the dependency for everything."*
 - [x] **4a** Four facets collapsed to the capsule plus one filter sheet.
 - [x] **4b** Seven-day density strip as Tonight's header; counts from the same filter
       chain as the rows; a genuinely empty day gets no bar.
-      **One rule it cannot satisfy, stated rather than papered over.** Below a 372px
-      viewport each day button falls under `--tap-min`: seven columns in 320px, less
-      a 20px gutter each side and six 4px gaps, is 36.6px. Measured, not estimated.
-      There is no fix that keeps the component: it exists to say the thing a list
-      cannot — *Monday is dead, wait for Friday* — which requires the whole week on
-      screen at once, so it cannot scroll; and closing the gaps to reach 40px would
-      remove the dead zones that stop a mis-tap landing on the wrong day, making it
-      worse in practice. It clears WCAG 2.2 AA's own 24px minimum with spacing to
-      spare; it is this repo's stricter 44px rule that it misses, and only on
-      screens narrower than an iPhone 12. Recorded as a known conflict between two
-      of our own rules rather than pretended away.
+      *Refuted, then fixed — and the first verdict was mine and wrong.* Below a 372px
+      viewport each day button fell under `--tap-min`: seven columns in 320px, less a
+      20px gutter each side and six 4px gaps, is 36.6px. I first recorded this as an
+      irreducible conflict between two of our own rules, on the reasoning that the
+      strip cannot scroll (it exists to say what a list cannot — *Monday is dead,
+      wait for Friday* — which needs the whole week on screen) and that closing the
+      gaps would delete the dead zones protecting against a mis-tap.
+      **The second premise was false.** The grid gap is not what separates the bars:
+      `.wa-density__bar` is capped at `max-width: 28px` and centred, so the visual
+      rhythm comes from the bar's own width inside a wider cell, and the gap only
+      shrinks the tap target. Taking the gap to zero and full-bleeding the strip —
+      the same `margin-inline` opt-out the carousel already uses — makes each cell
+      320/7 = **45.7px** while the air between bars goes from 8.6px to **17.7px**.
+      Bigger targets *and* more separation. Verified at 320: all seven cells ≥44, bars
+      still 28px, labels unclipped, no overflow; at 375 the rule does not apply and
+      the strip is unchanged at 44.4px inside its gutter.
+      Cells now tile with no dead zone, which is what a calendar grid and a tab bar
+      both do: at a boundary the tap picks a neighbouring day rather than doing
+      nothing, and this is a filter — recoverable in one tap.
+      **The lesson is about the reasoning, not the pixels:** "this cannot be fixed"
+      rested on an assumption about where the visual separation came from that one
+      look at the component would have corrected. Check what actually produces an
+      effect before concluding the constraint is immovable.
 - [x] **4c** Rows lead with the rail (time, then distance), never a photo.
       *Refuted 12 Aug 2026 on the rail's second line.* The 52px track is sized for a
       measured distance ("450 m"); the NEIGHBOURHOOD fallback, shown before location
