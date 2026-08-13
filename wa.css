@@ -782,12 +782,28 @@ a.wa-sr:focus {
    One masthead, one meaning. The tabs keep their compressed desktop
    sizing because the row still has to read as a control strip rather
    than a list of links. */
-@media (min-width: 1024px) {
+/* The row used to be lifted into the 56px masthead, where the chips had
+   to be squeezed to fit inside the glass band. It sits in the content
+   flow now, so that compression made the desktop chips SMALLER than the
+   phone ones for no remaining reason. Gone; the chips below grow instead. */
+
+/* Bigger on the surfaces that have the room. Explore's first screen is
+   one control group -- capsule then scope -- and at 48px tall against a
+   1240px column it read as a toolbar rather than the page's main
+   instrument. Phone keeps the compact sizes, where the capsule collapses
+   to a single slot anyway. */
+@media (min-width: 768px) {
+  .explore-capsule .wa-capsule { min-height: calc(var(--control-h) + var(--s-4)); }
+  .explore-capsule .wa-capsule__slot { padding: var(--s-3) var(--s-6); }
+  .explore-capsule .wa-capsule__value { font-size: var(--fs-card); }
+  .explore-capsule .wa-capsule__go { width: 52px; height: 52px; }
+
   .explore-scope .wa-scope__chip {
-    padding: var(--s-1) var(--s-3);
-    min-height: var(--tap-min);
+    min-height: calc(var(--tap-min) + var(--s-2));
+    padding: 0 var(--s-5);
+    font-size: var(--fs-card);
   }
-  .explore-scope .wa-scope__chip svg { width: 18px; height: 18px; }
+  .explore-scope .wa-scope__chip svg { width: 20px; height: 20px; }
 }
 
 /* ============================================================
@@ -980,6 +996,23 @@ a.wa-sr:focus {
 }
 
 .wa-row:last-child { border-bottom: 0; }
+
+/* The row and the card are links, and until Aug 2026 they were the only
+   links in the product without a hover state -- while `.wa-list-card`,
+   `.wa-walkcard` and `.wa-savedstrip`, all rarer, each had one. The row
+   is the primary object on Tonight, Saved, Source and You, so on a
+   pointer device the most common clickable thing in the product was the
+   one giving no sign it could be clicked.
+
+   Underlining the title is the system's existing answer for this --
+   `.wa-walk__name` and `.wa-row__more` both already do it -- rather than
+   a new tint band, which on a full-bleed row would read as selection.
+   Behind `(hover: hover)` so a touch device does not keep the state
+   stuck on the last row tapped. */
+@media (hover: hover) {
+  .wa-row:hover .wa-row__title,
+  .wa-card:hover .wa-card__title { text-decoration: underline; }
+}
 
 .wa-row__rail {
   display: flex;
@@ -1526,7 +1559,19 @@ a.wa-sr:focus {
   margin: var(--s-3) 0 var(--s-2);
   text-wrap: pretty;
 }
-.wa-walkcard__blurb { font: 400 var(--fs-body)/1.5 var(--ff-ui); color: var(--ink-soft); margin: 0; }
+/* The same 62ch measure `.wa-detail__desc` uses, and for the same
+   reason. This card is the only prose on Explore that sits in the full
+   content column, so at 1440 the blurb ran as ONE line of 133
+   characters across 1198px -- roughly twice the length the eye tracks
+   comfortably, and the identical sentence on walk.html was already
+   wrapping at 67. One copy readable and the other not is the measure
+   being a property of the page rather than of the text. */
+.wa-walkcard__blurb {
+  font: 400 var(--fs-body)/1.5 var(--ff-ui);
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 62ch;
+}
 .wa-walkcard__facts {
   display: block;
   margin-top: var(--s-3);
@@ -1818,8 +1863,20 @@ a.wa-sr:focus {
 .wa-btn:disabled { opacity: .45; cursor: default; }
 
 /* Sibling controls in a row share a width and never wrap. */
-.wa-btn-row { display: flex; gap: var(--s-3); align-items: stretch; }
-.wa-btn-row > .wa-btn { flex: 1 1 0; min-width: 0; }
+/* Content width, and wrap rather than squeeze. `flex: 1 1 0` forced
+   every button in a row to one width, which is the right look only when
+   the labels are about the same length -- and none of these rows are:
+   "Walk me there" next to "Save", "Continue with email" next to
+   "Continue with Google". Measured on detail at 375: the three natural
+   widths sum to 332px in a 335px row, and equal-width squeezed all
+   three to 104px so that TWO of them wrapped their text inside a 48px
+   button. The wrap was caused by the layout, not by the space.
+   A row that genuinely runs out of width now moves a button to a second
+   line at full height instead. `flex: 0 1 auto` still allows shrinking,
+   and an instance that wants one full-width key says so with `flex: 1`
+   inline, which walk.js's "Start the walk" already does. */
+.wa-btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: stretch; }
+.wa-btn-row > .wa-btn { flex: 0 1 auto; min-width: 0; }
 
 /* ============================================================
    14 · COMPONENT — map pin
@@ -2155,7 +2212,7 @@ a.wa-sr:focus {
    the capsule collapses to its first slot anyway. */
 @media (min-width: 1024px) {
   .explore-capsule {
-    max-width: 840px;
+    max-width: 960px;
     margin-inline: auto;
   }
 }
@@ -2170,6 +2227,29 @@ a.wa-sr:focus {
    the row back in normal flow that hazard is gone. */
 .explore-scope { margin-top: var(--s-4); }
 
+/* Four chips need 411px and a phone gutter leaves 335, so this row
+   scrolls -- and inside the gutter the fourth chip showed as 24px of a
+   100px pill: a rounded edge and half an icon, which reads as a
+   rendering fault rather than as "there is more to the right". The
+   trims that would fit all four (padding, gap, icon, type) recover 54px
+   between them, so fitting is not on the table; what is on the table is
+   whether the overflow is legible.
+
+   Full bleed to the viewport edge, with the gutter moved into the
+   scroller's own padding so the first chip keeps the page's left edge.
+   The row gains the two gutters, which puts 44px of the fourth chip on
+   screen -- a peek that reads as content continuing rather than as
+   clipping. Same device the density strip uses at these widths.
+   `scroll-padding` so a chip revealed by script lands at the gutter and
+   not flush against the bezel. */
+@media (max-width: 767.98px) {
+  .explore-scope {
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+}
+
 /* Aligned with the capsule above it, not with the page gutter. The two
    are one control group -- you set Where/When/What, then you narrow the
    scope -- and with the capsule centred at 840 and this row starting at
@@ -2177,7 +2257,7 @@ a.wa-sr:focus {
    and centring, so the group has one left edge. */
 @media (min-width: 768px) {
   .explore-scope {
-    max-width: 840px;
+    max-width: 960px;
     margin-inline: auto;
   }
 }
@@ -2253,6 +2333,23 @@ a.wa-sr:focus {
 
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
 .wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
+
+/* 3:2 is the right hero on a phone -- 375px wide makes it 250 tall --
+   and the wrong one at 1240, where it computes to 729px and eats 81% of
+   a 900px viewport. Measured on a 1440x900 desktop: the venue's TITLE
+   landed at y=856, right on the fold, and CLOSES/ENTRY -- the two facts
+   this product exists to deliver -- at y=998, below it. A hero that
+   pushes the deciding facts off the first screen has inverted the page.
+
+   Capped rather than re-proportioned, so the ratio still drives the
+   shape until it hits the ceiling; `object-fit: cover` on the photo and
+   `overflow: hidden` on the well were already there, so this crops
+   instead of letterboxing. Companion to the landscape rule above: a
+   viewport is not always tall, and it is not always narrow either. */
+@media (min-width: 768px) {
+  .wa-detail__photo,
+  .wa-detail__well--mark { max-height: min(46vh, 460px); }
+}
 
 .wa-detail__credit {
   margin: 0;

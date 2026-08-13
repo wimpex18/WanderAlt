@@ -101,7 +101,7 @@
     <div class="explore-capsule">
       <div class="wa-capsule" id="capsule">
         <button class="wa-capsule__slot" type="button" data-slot="where">
-          <span class="wa-capsule__label">Where</span>
+          <span class="wa-capsule__label" id="cap-where-label">Where</span>
           <span class="wa-capsule__value" id="cap-where">Tallinn</span>
         </button>
         <button class="wa-capsule__slot" type="button" data-slot="when">
@@ -134,8 +134,16 @@
       <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>All
       </button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="tonight">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
+      <!-- "Events", not "Tonight". This tab never set a time: the shelf it
+           reveals is filtered by the capsule's WHEN, so with the capsule on
+           This weekend a tab labelled Tonight sat selected above a shelf
+           headed "This weekend in Tallinn" -- demonstrated, not assumed.
+           It is a CONTENT TYPE switch like Places and Walks beside it, and
+           it was the only one of the four wearing a time word. That word
+           also collided with the Tonight PAGE in the bar above, down to the
+           identical clock icon. Calendar mark here, clock stays on the page. -->
+      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="events">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events
       </button>
       <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Places

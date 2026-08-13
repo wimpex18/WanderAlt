@@ -7,13 +7,16 @@
    Carousels with plain section names, a count in every subtitle, and
    the dense list one tap away in Tonight.
 
-   Four scope tabs, as 5b and 5c both draw them: All, Tonight, Places,
-   Walks. Walks was cut from this row in the first cycle because measured
+   Four scope tabs, as 5b and 5c both draw them: All, Events, Places,
+   Walks. The second was called "Tonight" until Aug 2026, which named a
+   time on a row that switches content type -- and the time it named was
+   not its own, since the shelf is filtered by the capsule's WHEN. Walks was cut from this row in the first cycle because measured
    opening-hours coverage was ~48%, under the ~70% the "ordered so every
    door is open when you reach it" promise needs. The parse rate of filed
    hours is 93.7% now, and both walk screens and the three hand-written
    routes shipped in 6b, so the tab surfaces what exists rather than
-   promising work. On desktop this row is the masthead — see wa.css.
+   promising work. The row sat in the desktop masthead until Aug 2026;
+   it lives with the content it filters now — see wa.css.
 
    Everything interpolated here is scraped: titles, venues, kinds and
    neighbourhoods come from Telegram, RSS and venue pages via an LLM.
@@ -62,12 +65,36 @@
      offers Show places; without this the button could only drop them on
      Explore's default tab and leave them to find Places themselves. */
   const readScope = () => {
-    const want = new URLSearchParams(location.search).get('scope');
-    if (!['all', 'tonight', 'places'].includes(want)) return;
+    const raw = new URLSearchParams(location.search).get('scope');
+    /* `tonight` was this scope's name until Aug 2026, when it was renamed
+       to what it actually does. Shared links carry the old value, so it
+       still resolves rather than silently falling through to All. */
+    const want = raw === 'tonight' ? 'events' : raw;
+    if (!['all', 'events', 'places', 'walks'].includes(want)) return;
     state.scope = want;
     document.querySelectorAll('#scope [data-scope]').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.scope === want)));
+    revealScope();
   };
+
+  /* The row scrolls on a phone, and arriving on ?scope=walks put the
+     selected chip 76px past the right edge: a walks list under a
+     control row where nothing appeared to be chosen. The link works and
+     the screen denies it. Nudges the selected chip into view, and only
+     when it is actually out of view -- a chip the reader just tapped is
+     already on screen, and re-centring under their finger is motion
+     with nothing to say. Scrolls the row, never the page, so this can
+     never move the document out from under a reader mid-read. */
+  const revealScope = () => {
+    const row = document.querySelector('.explore-scope');
+    const sel = row && row.querySelector('[aria-selected="true"]');
+    if (!sel) return;
+    const r = row.getBoundingClientRect();
+    const b = sel.getBoundingClientRect();
+    if (b.left >= r.left && b.right <= r.right) return;
+    row.scrollLeft += (b.left - r.left) - (r.width - b.width) / 2;
+  };
+
   readScope();
 
   document.addEventListener('wa:catalog-ready', () => { _places = null; });
@@ -271,8 +298,32 @@
       </section>`);
     }
 
-    if (state.scope === 'all' || state.scope === 'tonight') {
+    if (state.scope === 'all' || state.scope === 'events') {
       const label = WHEN_LABEL[state.when] || 'On';
+      /* An empty state carries the next-best answer, and the answer used
+         to be "the When slot above" -- which named a control that below
+         768 is not on the screen at all, since the capsule collapses to
+         one key there. Pointing at furniture the reader cannot see is
+         the same failure as pointing at a listing we do not have.
+
+         So it names the window instead of the control, and only a
+         window that actually holds something: the count is the same
+         filter chain the sheet's own chips print, so the sentence
+         cannot promise a night that is equally empty.
+
+         The count carries the WHAT facet too. Counting the window alone
+         would offer "Anytime has 115 events" to a reader filtered to one
+         kind, where Anytime holds three of it or none -- a promise the
+         next tap breaks, which is worse than the sentence it replaced. */
+      const inWindow = (v) => picks()
+        .filter(e => when.matches(e, v))
+        .filter(e => state.what === 'all' || String(e.kind || '').toLowerCase() === state.what)
+        .length;
+      const widest = ['tomorrow', 'weekend', 'thisweek', 'all']
+        .filter(v => v !== state.when)
+        .map(v => ({ v, n: inWindow(v) }))
+        .filter(o => o.n > 0)
+        .sort((a, b) => b.n - a.n)[0];
       out.push(section({
         title: `${label} in ${city}`,
         sub:   `${events.length} ${events.length === 1 ? 'event' : 'events'} · soonest first`,
@@ -282,7 +333,9 @@
         emptyTitle: `Nothing filed for ${label.toLowerCase()} in ${city}.`,
         emptyBody:  openNow.length
           ? `The sources went quiet, which happens. ${openNow.length} ${openNow.length === 1 ? 'place is' : 'places are'} open right now regardless.`
-          : `The sources went quiet, which happens. Try a wider window from the When slot above.`,
+          : widest
+            ? `The sources went quiet, which happens. ${WHEN_LABEL[widest.v]} has ${widest.n} ${widest.n === 1 ? 'event' : 'events'}.`
+            : `The sources went quiet, which happens. Nothing is filed for ${city} in any window right now.`,
       }));
     }
 
@@ -476,13 +529,46 @@
   };
   loadWalks();
 
+  /* ── The collapsed key ───────────────────────────────────────
+     Below 768 wa.css shows only the capsule's FIRST slot, so WHEN and
+     WHAT have no control of their own on a phone -- and for as long as
+     that was true, a filter you had applied was invisible. Set When to
+     Anytime and the bar still read "WHERE / Tallinn": nothing on the
+     screen said the time window was no longer tonight, and the reader
+     who set it yesterday has no way to know what they are looking at.
+     A collapsed search must still show what is applied to it; that it
+     is reachable inside the sheet is not the same as visible.
+
+     So the one visible key carries the whole search, the way the sheet
+     behind it sets the whole search. Defaults stay out of the summary:
+     an unapplied filter is not state, and omitting them keeps the
+     common case one word long instead of "Tallinn · Tonight ·
+     Anything", where three words carry no information and the one that
+     would are buried among them. The label follows the content -- it
+     says Where while the value is a city, and Search once the value is
+     a summary, because a label that names one facet over three is the
+     same small lie in the other direction. */
+  const MOBILE = window.matchMedia('(max-width: 767px)');
+
+  const appliedFacets = () => {
+    const f = [];
+    if (state.when !== 'tonight') f.push(WHEN_LABEL[state.when] || 'Anytime');
+    if (state.what !== 'all') f.push(state.what);
+    return f;
+  };
+
   const render = () => {
     savedStrip();
     walkCard();
     $('sections').innerHTML = buildSections();
-    $('cap-where').textContent = CITY_LABEL();
+    const facets = MOBILE.matches ? appliedFacets() : [];
+    $('cap-where').textContent = facets.length ? [CITY_LABEL(), ...facets].join(' · ') : CITY_LABEL();
+    $('cap-where-label').textContent = facets.length ? 'Search' : 'Where';
     $('cap-when').textContent  = WHEN_LABEL[state.when] || 'Anytime';
     $('cap-what').textContent  = state.what === 'all' ? 'Anything' : state.what;
+    /* Again here because readScope() runs before first layout, where
+       every rect is 0 and the guard reads "already visible". */
+    revealScope();
     const dc = $('digest-city');
     if (dc) dc.textContent = CITY_LABEL();
   };
@@ -490,6 +576,10 @@
   /* ── Sheets ──────────────────────────────────────────────────
      One question expanded, the other two parked below showing their
      current value. */
+  /* The summary exists only while the capsule is collapsed, so the
+     breakpoint crossing is a content change, not just a layout one. */
+  MOBILE.addEventListener('change', render);
+
   const sheet = $('sheet');
 
   const parkedRow = (slot, label, value) => {
