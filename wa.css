@@ -179,7 +179,12 @@
   /* ---- Chrome. Both bars reserve real layout height — the old
           floating island was positioned and reserved nothing, which is
           the whole overlap bug. ---- */
-  --topbar-h:  56px;
+  /* 64, not 56. The bar carries the brand, the app nav and the account
+     key on desktop, and at 56 all three sat cramped against a 26px
+     mark. Every sticky offset in the file reads this token -- the
+     offline banner, the map-mode head, the sticky companion column --
+     so they follow it without a second number to keep in step. */
+  --topbar-h:  64px;
   --tabbar-h:  60px;
   --control-h: 48px;
   --tap-min:   44px;   /* hard floor on public pages */
@@ -293,6 +298,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wa-shell > :first-child { margin-top: var(--s-6); }
 .wa-shell > .wa-detail__well:first-child,
 .wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
+
+/* An in-page jump scrolls the target to y=0, which is underneath the
+   sticky top bar -- so "Calendar feed" landed the reader on a heading
+   hidden by 64px of chrome, and #calendar did the same before it. The
+   bar getting taller made an existing problem more obvious rather than
+   creating one.
+
+   Scoped to the ids that are actually link targets rather than a blanket
+   [id] rule: scroll-margin-top also applies to scrollIntoView(), and
+   Tonight centres a row that way when a pin is tapped. A global rule
+   would quietly shift that. Plus one gutter, so the heading clears the
+   bar instead of touching it. */
+#main,
+#digest-title,
+#calendar,
+#calendar-feed {
+  scroll-margin-top: calc(var(--topbar-h) + var(--s-4));
+}
 
 /* Screen-reader-only, for the labels a sighted reader gets from layout. */
 .wa-sr {
@@ -448,14 +471,19 @@ a.wa-sr:focus {
   /* The home link is a tap target like any other — the 26px mark is the
      icon, not the hit area. */
   min-height: var(--tap-min);
-  font: 700 var(--fs-card)/1 var(--ff-ui);
+  /* --fs-title, not --fs-card: the wordmark is the one piece of chrome
+     that should read at a glance from across a desk, and it grew with
+     the bar rather than staying at the card size it borrowed. */
+  font: 700 var(--fs-title)/1 var(--ff-ui);
   letter-spacing: -.01em;
   color: var(--ink);
   text-decoration: none;
   margin-right: auto;
 }
 
-.wa-topbar__mark { width: 26px; height: 26px; border-radius: 6px; }
+/* Scaled with the bar. The radius moves with it so the tile keeps its
+   proportion rather than looking squarer as it grows. */
+.wa-topbar__mark { width: 32px; height: 32px; border-radius: 8px; }
 
 /* ============================================================
    6 · COMPONENT — tab bar (glass 2 of 2)
@@ -729,60 +757,34 @@ a.wa-sr:focus {
    key and must not compete with the four scope tabs beside it. Hidden
    below 1024, where the masthead has no room and the digest card at the
    foot of Explore is the only surface (5a draws no such link). */
-.wa-topbar__digest {
-  display: none;
-  margin-left: auto;
-  padding: 0 var(--s-3);
-  align-self: center;
-  font: 600 var(--fs-meta)/1 var(--ff-ui);
-  color: var(--ink-mute);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.wa-topbar__digest:hover { color: var(--ink); }
 
+
+/* 5b drew Explore's desktop masthead as the four SCOPE tabs, with the
+   app nav dropped there entirely: "on desktop Tonight is a scope, Saved
+   is the saved-strip, You is the avatar." That shipped, and it is
+   refuted -- by a dead end rather than by taste.
+
+   Measured at 1440 on a first visit: `.wa-tabbar` is display:none, the
+   saved strip is absent because nothing is saved yet (it is designed to
+   be -- "a strip reading 0 saved is worse than no strip"), and a query
+   for every visible link to saved.html returns **an empty array**.
+   There is no route to Saved at all. Tonight fares little better: the
+   only links to it are the "See all N" bridges at the foot of a shelf.
+
+   And the row that replaced the nav collides with it: both are four
+   items, icon over label, in the same band, and both contain
+   "Tonight" -- pointing at a scope filter here and at a whole page
+   everywhere else. The masthead meant page navigation on eight pages
+   and content filtering on the ninth, with no way to tell which.
+
+   So the app nav stays on every page, and the scope tabs sit with the
+   content they filter, which is where they already were below 1024.
+   One masthead, one meaning. The tabs keep their compressed desktop
+   sizing because the row still has to read as a control strip rather
+   than a list of links. */
 @media (min-width: 1024px) {
-  .wa-topbar__digest { display: inline-flex; align-items: center; min-height: var(--tap-min); }
-}
-
-/* 5b: on Explore's desktop the scope tabs ARE the masthead row. The
-   direction draws no Explore/Tonight/Saved/You there — 5b's header is
-   logo, four scope tabs, the Saturday-email link and an avatar, and
-   5d's is the capsule's current answers plus two keys. The four app
-   tabs are a phone pattern; on desktop Tonight is a scope, Saved is
-   the saved-strip, You is the avatar.
-
-   Scoped to .explore-scope via :has() so only Explore loses the tab
-   bar. The row goes out of flow for the same reason the tab bar does
-   at this width, and takes the same z-index so it sits on the glass
-   rather than under it. */
-@media (min-width: 1024px) {
-  body:has(.explore-scope) .wa-tabbar { display: none; }
-
-  .explore-scope {
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 41;
-    height: var(--topbar-h);
-    align-items: center;
-    padding: 0;
-    /* The phone rule sets margin-top: var(--s-4) to space the row under
-       the capsule. Margin still applies once the element is fixed, so
-       it pushed the whole row 16px below the bar it is supposed to sit
-       in — "top: 0" measuring at y=16 with no containing-block ancestor
-       in sight. */
-    margin: 0;
-    overflow: visible;
-  }
-
-  /* The 768 tab is 60px tall and the bar is 56, so at its normal size
-     the active underline lands 4px below the glass edge — the mark
-     detaches from the band it belongs to. Compressed to fit inside the
-     bar, still clearing --tap-min in both directions. */
   .explore-scope .wa-scope__chip {
-    padding: var(--s-1) var(--s-2);
+    padding: var(--s-1) var(--s-3);
     min-height: var(--tap-min);
   }
   .explore-scope .wa-scope__chip svg { width: 18px; height: 18px; }
@@ -1210,6 +1212,28 @@ a.wa-sr:focus {
 /* Today is where the reader is standing. Selected is what they asked
    for. Both are a tint plus a mark, never colour alone. */
 .wa-density__day--today .wa-density__label { color: var(--ink); }
+
+/* Below 372px a day falls under --tap-min: seven columns in 320px, less
+   two 20px gutters and six 4px gaps, is 36.6. Measured, not estimated.
+   The strip cannot scroll -- it exists to say the thing a list cannot,
+   "Monday is dead, wait for Friday", which needs the whole week on
+   screen at once.
+   What makes it soluble is that the GAP is not what separates the bars.
+   `.wa-density__bar` is capped at max-width 28px and centred, so the
+   visual rhythm comes from the bar's own width inside a wider cell. The
+   grid gap only shrinks the tap target. Take it to zero and full-bleed
+   the strip -- the same margin-inline opt-out the carousel uses -- and
+   each cell becomes 320/7 = 45.7px while the bars keep 17.7px of air
+   between them, more than the 8.6px they have now.
+   Cells tile with no dead zone, which is what a calendar grid or a tab
+   bar does: at a boundary the tap picks a neighbouring day rather than
+   doing nothing, and this is a filter, recoverable in one tap. */
+@media (max-width: 371.98px) {
+  .wa-density {
+    margin-inline: calc(var(--gutter) * -1);
+    gap: 0;
+  }
+}
 
 .wa-density__day[aria-pressed="true"] {
   background: var(--petrol-tint);
@@ -2112,6 +2136,17 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 
+/* The saved strip and the walk teaser are blocks in Explore's vertical
+   rhythm and neither carried a top margin, so with nothing saved the
+   walk card sat flush against the capsule -- measured 0px at 1440.
+   Their containers are always in the DOM and are filled by JS, hence
+   :not(:empty): a city with no routes, or a reader with nothing saved,
+   still contributes no space. Tighter than the --s-8 between sections,
+   because these two are companions to the capsule rather than new
+   sections of the page. */
+#savedstrip:not(:empty),
+#walkcard:not(:empty) { margin-top: var(--s-6); }
+
 /* 5b draws the capsule as a compact centred control, not a full-bleed
    bar: roughly 60% of the reading column, with the three slots and the
    petrol key sitting close together so the row reads as ONE object.
@@ -2124,12 +2159,27 @@ a.wa-sr:focus {
     margin-inline: auto;
   }
 }
-/* Phone/tablet only. From 1024 this row is fixed into the masthead
-   (see the scope component), and a margin still applies to a fixed
-   element — left unscoped it pushed the whole tab row 16px below the
-   bar it belongs to, from 700 lines away. */
-@media (max-width: 1023.98px) {
-  .explore-scope { margin-top: var(--s-4); }
+/* The row sits under the capsule at every width now that it is no
+   longer lifted into the masthead at 1024, so the margin is no longer
+   phone-only.
+
+   Historical note, because it cost a session once: this used to be
+   wrapped in a max-width query, since a margin still applies to a
+   FIXED element — unscoped, it pushed the whole tab row 16px below the
+   bar it was supposed to sit in, diagnosed from 700 lines away. With
+   the row back in normal flow that hazard is gone. */
+.explore-scope { margin-top: var(--s-4); }
+
+/* Aligned with the capsule above it, not with the page gutter. The two
+   are one control group -- you set Where/When/What, then you narrow the
+   scope -- and with the capsule centred at 840 and this row starting at
+   the full-width edge they read as two unrelated strips. Same max-width
+   and centring, so the group has one left edge. */
+@media (min-width: 768px) {
+  .explore-scope {
+    max-width: 840px;
+    margin-inline: auto;
+  }
 }
 
 /* ============================================================
@@ -2361,6 +2411,29 @@ a.wa-sr:focus {
     padding-bottom: var(--s-3);
     border-bottom: 1px solid var(--rule);
   }
+
+  /* A landscape phone is 360 tall. The top bar takes 64 of that and this
+     head another 125, so sticking it would pin 52% of the screen open
+     and leave 171px for the map, its drawer and the way out. Sticky is
+     a convenience on a tall screen and a tax on a short one, so below
+     500px of height it simply scrolls with the page. */
+  @media (max-height: 500px) {
+    body.tonight-mapmode .tonight-head { position: static; }
+  }
+
+  /* Two sticky things cannot own one offset, which is the failure the
+     offline banner's own comment names: "only one thing may occupy it".
+     Both read `top: var(--topbar-h)`, so once the banner was moved into
+     the flow where its sticky rule could finally take effect, the two
+     stacked at 64 -- 58px of overlap, banner at z-index 39 over a head
+     at 4, and the When chip stopped being clickable while offline.
+
+     The banner wins the slot. It is the more urgent of the two and it
+     is transient; the filter chain simply scrolls with the page for as
+     long as there is no signal, which is a degraded state anyway. No
+     new length to keep in step with the banner's own height, which
+     varies with how many lines its copy wraps to. */
+  body.tonight-mapmode:has(.wa-offline) .tonight-head { position: static; }
 }
 
 /* The count headline and its subtitle are one unit, so they sit tight
@@ -2381,7 +2454,20 @@ a.wa-sr:focus {
   border-radius: var(--r-card-lg);
   overflow: hidden;
   background: var(--petrol-tint);
-  height: clamp(360px, 62vh, 680px);
+  /* The clamp's 360px FLOOR is taller than the whole content band on a
+     phone in landscape: 360 tall minus 64 of top bar and 60 of tab bar
+     leaves 236. The map overflowed it, pushing the foot -- and with it
+     "Show list", the way out of the mode -- 366px below the tab bar,
+     reachable only by scrolling. The same failure as the drawer
+     covering the bar, arriving by a different route, so the same test
+     catches it: can you leave the mode without hunting for the exit.
+
+     min() caps the floor at what the viewport actually has. Portrait is
+     untouched (812 tall still resolves to 62vh = 503px); landscape gets
+     a short map instead of an unreachable one. The 1024 rule below sets
+     its own height for the companion column and still wins. */
+  height: min(clamp(360px, 62vh, 680px),
+              calc(100vh - var(--topbar-h) - var(--tabbar-h) - var(--s-6)));
 }
 
 .tonight-split--map .tonight-list { display: none; }
@@ -2538,6 +2624,38 @@ a.wa-sr:focus {
 }
 
 .wa-input::placeholder { color: var(--ink-mute); }
+
+/* The reveal toggle that WA.UI.passwordField wraps a password input in.
+   `.field-pw` and `.pw-toggle` were only ever styled in admin.css, which
+   no public page loads, so the eye sat as a default UA button jammed
+   against the field on every public sign-in. The input keeps its own
+   padding on the right so the text never runs under the toggle. */
+.field-pw { position: relative; display: block; }
+
+.field-pw .wa-input { width: 100%; padding-right: var(--tap-min); }
+
+.pw-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+
+.pw-toggle:hover { color: var(--ink); }
+
+.pw-toggle .ic {
+  width: 20px; height: 20px;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 .wa-digest__fine {
   font: 400 var(--fs-meta)/1.5 var(--ff-mono);

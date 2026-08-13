@@ -152,7 +152,7 @@
   const signInCard = () => `
     <section class="wa-digest" aria-labelledby="signin-title">
       <h2 class="wa-digest__title" id="signin-title">Keep your shortlist across devices.</h2>
-      <p class="wa-digest__body">Everything works signed out. An account only carries your saves and the Saturday email between your phone and your laptop.</p>
+      <p class="wa-digest__body">Everything works signed out. An account only carries your saves and the Thursday email between your phone and your laptop.</p>
       <div class="wa-btn-row" style="flex-wrap:wrap">
         <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
         <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
@@ -223,21 +223,21 @@
         </div>
       </section>
 
-      <!-- 5f draws the Saturday email and "Add to my calendar" as rows
+      <!-- 5f draws the weekly email and "Add to my calendar" as rows
            in You, not only at the foot of Explore. The digest_opt_ins
            table, the Resend key and the calendar-feed function all
            already exist; this surface was the one 5f asked for and the
            only one that had not been built. -->
       <section class="wa-section">
-        <h2 class="wa-section-title">Saturday email</h2>
-        <p class="wa-detail__note">One email a week: what's on next week in ${esc(cityLabel(window.WA.CITY))}, in the same shape as Tonight. No account needed, one unsubscribe link, no other mail.</p>
+        <h2 class="wa-section-title">Thursday email</h2>
+        <p class="wa-detail__note">One email a week, on Thursday: what's on over the weekend and the week after in ${esc(cityLabel(window.WA.CITY))}, in the same shape as Tonight. No account needed, one unsubscribe link, no other mail.</p>
         <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./index.html#digest-title">Sign up &rsaquo;</a></p>
       </section>
 
       <section class="wa-section">
         <h2 class="wa-section-title">Add to my calendar</h2>
         <p class="wa-detail__note">Take the week as a calendar feed and never open the app.</p>
-        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar">How it works &rsaquo;</a></p>
+        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar-feed">How it works &rsaquo;</a></p>
       </section>
 
       ${follows.length ? `<section class="wa-section">

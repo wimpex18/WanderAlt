@@ -54,6 +54,21 @@ still the dependency for everything."*
       panned beneath. Now opaque in the page ground, hairline kept. Re-measured: 2 in
       both themes, in list view and map mode.
 - [x] **2c** Sticky chrome reserves real layout height (body reserves 60px).
+      `--topbar-h` went 56 → **64px** on 13 Aug 2026: the bar carries the brand, the
+      app nav (restored, see 3d) and the account key on desktop, and at 56 all three
+      sat cramped against a 26px mark. The wordmark went to `--fs-title` and the mark
+      to 32px with the radius scaled to match. Every sticky offset in the file reads
+      the token — the offline banner, the map-mode head, the sticky companion column —
+      so all three followed with no second number to keep in step. Verified at scroll
+      zero: bar bottom 64, first content block at 88, 24px clearance, nothing covered.
+      **One collision came out of it**, and it was mine: the offline banner had just
+      been moved into the flow where its `top: var(--topbar-h)` could finally take
+      effect, and Tonight's map-mode head sticks at the same offset. 58px of overlap,
+      banner z-index 39 over head z-index 4, and the When chip stopped being
+      clickable while offline. Two sticky elements cannot own one offset — which is
+      what the banner's own comment says. The banner wins it; the head goes `static`
+      while the banner is present. Re-measured: offline, head static and overlap 1px;
+      back online, head sticky at 64 and the chip reachable again.
 - [x] **2d** Lime is signal only. *Refuted twice, same root cause both times:*
       `isTonight()` means TODAY, not now. First on 24 card badges, then on 34 `TON` row
       rails — I fixed the badges and ticked the item without checking the rail, which
@@ -177,6 +192,23 @@ still the dependency for everything."*
       underline on the active one.
 - [x] **3d** On desktop the scope tabs **are** the masthead; the four app tabs are a
       phone pattern (5b draws no app nav, 5d's header is the capsule's answers).
+      *Refuted 13 Aug 2026 by a dead end, not by taste, and reversed.* Measured at
+      1440 on a first visit: `.wa-tabbar` was `display:none`, the saved strip is
+      designed to be absent until something is saved ("a strip reading 0 saved is
+      worse than no strip"), and a query for every visible link to `saved.html`
+      returned **an empty array**. There was no route to Saved at all; Tonight had
+      only the "See all N" bridges at the foot of a shelf.
+      The two rows also collided in meaning. Both are four items, icon over label, in
+      the same band, and both contain **"Tonight"** — a scope filter on Explore, a
+      whole page on the other eight. The masthead meant navigation everywhere except
+      the one screen where it meant filtering, with nothing to tell them apart. The
+      owner read the two as the same control and asked why they disagreed, which is
+      the clearest evidence this item could have had.
+      The app nav now stays on every page and the scope tabs sit with the content they
+      filter, aligned to the capsule's 840px column so the two read as one control
+      group rather than two unrelated strips. Verified: `routesToSaved` is no longer
+      empty, `.explore-scope` is back in normal flow, and capsule and scope share a
+      left edge at 1440 (300 → 1140 both).
 - [x] **3e** Saved strip between capsule and first shelf, and the desktop route to Saved.
 - [x] **3f** Named carousels with a count in the subtitle; 6-up at 1280 with the
       "See all N as a timetable" bridge as the last cell.
@@ -209,7 +241,31 @@ still the dependency for everything."*
       catalogue has not arrived and it fills in on its own; no stops **left** says you
       skipped them. Calling the first one "you skipped every stop" would have been a
       fact about our load order dressed up as something the reader did.
-- [x] **3i** "Get the Saturday email" in the desktop masthead.
+- [x] **3i** ~~"Get the Saturday email" in the desktop masthead.~~ **Removed
+      13 Aug 2026, decision recorded.** It was a jump link to a section on the same
+      page, and with the app nav restored to the masthead (3d) the bar was carrying
+      the brand, four nav items, an account key and a marketing shortcut. One masthead
+      does one job. The email is still reachable from You and from About, and its own
+      section at the foot of Explore is unchanged. Its CSS block went with it rather
+      than being left to fail a future census.
+      The send day moved too: **Thursday, not Saturday** (`send-digest-thursday`,
+      `0 7 * * THU` = 10:00 Tallinn). Saturday delivered a week-ahead digest after the
+      weekend it described had already begun — after the decision it exists to inform.
+      The `.ics` key is now **"Calendar feed"**: the old label named a file format
+      rather than what the key does.
+      *Two more came out of re-checking it.* The key pointed at `#calendar`, a
+      section whose FIRST heading is "The Thursday email" — so a key promising a
+      calendar feed delivered a paragraph about email and left the reader to scroll.
+      It points at the calendar heading's own id now; the section keeps `#calendar`
+      so any link already in the wild still resolves.
+      And every in-page anchor landed **behind the sticky top bar** — the jump puts
+      the target at y=0, which is under 64px of chrome. Pre-existing on `#calendar`
+      and `#main`; the taller bar made it obvious rather than causing it. Fixed with
+      `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to the four ids
+      that are actually link targets rather than a blanket `[id]` rule: the property
+      also applies to `scrollIntoView()`, and Tonight centres a row that way when a
+      pin is tapped, so a global rule would have quietly shifted it. Verified by
+      clicking the real key: lands 16px below the bar with the feed URL in view.
 - [x] **3j** Card anatomy: square well, one badge top-left, bookmark top-right, title
       2 lines never truncated, two mono lines (distance · area, then kind · time/price).
 - [x] **3k** Digest card at the foot of Explore.
@@ -224,6 +280,29 @@ still the dependency for everything."*
 - [x] **4a** Four facets collapsed to the capsule plus one filter sheet.
 - [x] **4b** Seven-day density strip as Tonight's header; counts from the same filter
       chain as the rows; a genuinely empty day gets no bar.
+      *Refuted, then fixed — and the first verdict was mine and wrong.* Below a 372px
+      viewport each day button fell under `--tap-min`: seven columns in 320px, less a
+      20px gutter each side and six 4px gaps, is 36.6px. I first recorded this as an
+      irreducible conflict between two of our own rules, on the reasoning that the
+      strip cannot scroll (it exists to say what a list cannot — *Monday is dead,
+      wait for Friday* — which needs the whole week on screen) and that closing the
+      gaps would delete the dead zones protecting against a mis-tap.
+      **The second premise was false.** The grid gap is not what separates the bars:
+      `.wa-density__bar` is capped at `max-width: 28px` and centred, so the visual
+      rhythm comes from the bar's own width inside a wider cell, and the gap only
+      shrinks the tap target. Taking the gap to zero and full-bleeding the strip —
+      the same `margin-inline` opt-out the carousel already uses — makes each cell
+      320/7 = **45.7px** while the air between bars goes from 8.6px to **17.7px**.
+      Bigger targets *and* more separation. Verified at 320: all seven cells ≥44, bars
+      still 28px, labels unclipped, no overflow; at 375 the rule does not apply and
+      the strip is unchanged at 44.4px inside its gutter.
+      Cells now tile with no dead zone, which is what a calendar grid and a tab bar
+      both do: at a boundary the tap picks a neighbouring day rather than doing
+      nothing, and this is a filter — recoverable in one tap.
+      **The lesson is about the reasoning, not the pixels:** "this cannot be fixed"
+      rested on an assumption about where the visual separation came from that one
+      look at the component would have corrected. Check what actually produces an
+      effect before concluding the constraint is immovable.
 - [x] **4c** Rows lead with the rail (time, then distance), never a photo.
       *Refuted 12 Aug 2026 on the rail's second line.* The 52px track is sized for a
       measured distance ("450 m"); the NEIGHBOURHOOD fallback, shown before location
@@ -297,6 +376,20 @@ still the dependency for everything."*
 - [x] **4f** Retired params (`?ai=`, `#mood=`, `?nhood=`) drop silently and still render
       a list. Verified: 34 rows, URL rewritten clean.
 - [x] **4g** Night is the same layout at different values; no layout switch.
+- [x] **4k** Map mode survives a short viewport.
+      Never tested until 13 Aug 2026, and it failed twice at 740 x 360 — a phone in
+      landscape. The map's `clamp(360px, 62vh, 680px)` **floor** is taller than the
+      236px the viewport actually leaves after 64px of top bar and 60px of tab bar,
+      so the map overflowed its band and pushed the foot — and with it "Show list" —
+      **366px below the tab bar**. The same failure as the drawer covering the bar,
+      arriving by a different route. And the map-mode head stuck 125px open on top
+      of the 64px bar, pinning **52% of the screen**.
+      Height is now `min(clamp(...), calc(100vh - --topbar-h - --tabbar-h - --s-6))`
+      and the head goes `static` under `max-height: 500px`. Re-measured at 740 x 360:
+      map 212px, head static, the exit 281px into a 668px document — an ordinary
+      short scroll rather than a hunt. Portrait re-checked and identical: map 503px,
+      head sticky, chips reachable, bar and drawer not overlapping.
+      **Check `max-height` as well as `max-width`.**
 - [x] **4h** Map's way out — **deliberate divergence, decision recorded.** 5d draws
       "Show list" on the drawer; we spell it as the symmetric "List" key in the chrome,
       paired with "Map". 2a's actual requirement is "a way out", and there is one.
@@ -372,6 +465,29 @@ still the dependency for everything."*
       56px bar, still stuck at 56 after scrolling 1200px, and it reserves its own
       58px so the first row moves down rather than being covered. No collision with
       the toast, which owns the opposite edge.
+
+- [x] **5l** The auth surface is styled at all.
+      Found auditing components this branch had never opened (13 Aug 2026), and it
+      is the largest defect the audits have turned up. `.auth-panel*`, `.field-pw`
+      and `.pw-toggle` are defined **only in `admin.css`**, which no public page
+      loads — so sign-in, create-account, reset-password and the account panel
+      rendered on **seven public pages** as raw browser defaults appended to the end
+      of the document: `position: static` instead of an overlay, a transparent panel
+      with no padding or radius, **28px-tall inputs** against a 44px floor, and a
+      grey UA submit button. The status line reached for `--c-accent` and
+      `--c-ink-mute`, two of the three tokens that died with `styles.css`.
+      It is the system's **sheet** now rather than a fourteenth component: `auth.js`
+      builds the same `<dialog class="wa-sheet">` Tonight's filters use and calls
+      `showModal()`, so the backdrop, the bottom-sheet-to-centred-dialog behaviour,
+      focus trapping and Escape all come from the platform and the existing CSS.
+      Fields are `.wa-field` + `.wa-input`, the primary key is `.wa-btn--primary` in
+      the sheet's foot. The password reveal toggle got the only new rules — the
+      input growing a modifier, not a new component.
+      Verified across all five views (sign-in, create, forgot, set-password,
+      account): `:modal` true, inputs 48px, submit petrol at 48px, toggle 44 x 44
+      with the input padded so text never runs under it, Escape closes, 560px
+      centred at 1440, and at **320 x 568** the panel fits with its foot visible and
+      its body scrolling. No console errors.
 
 ## 6 · Sheets, states, About (5c, 6d)
 
