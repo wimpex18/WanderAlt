@@ -153,7 +153,7 @@
     <section class="wa-digest" aria-labelledby="signin-title">
       <h2 class="wa-digest__title" id="signin-title">Keep your shortlist across devices.</h2>
       <p class="wa-digest__body">Everything works signed out. An account only carries your saves and the Thursday email between your phone and your laptop.</p>
-      <div class="wa-btn-row" style="flex-wrap:wrap">
+      <div class="wa-btn-row">
         <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
         <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
       </div>

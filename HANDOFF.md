@@ -570,3 +570,84 @@ still the dependency for everything."*
       hand-written routes — built, honest, cheap, and still deletable — and its future is
       a judgement rather than a measurement. Recorded here so it is not reopened as an
       oversight.
+
+## 8 · Mobile pass (Aug 2026)
+
+The desktop capsule/scope work had a mobile half, and this is it. All measured
+at 375x812 unless stated; the harness self-test came first, because a sweep
+that reports nothing is usually broken rather than lucky (three faults were
+planted into a live page and all three were detected before any result below
+was believed).
+
+- [x] **8a** `.wa-btn-row` — **equal width replaced by content width.** `flex: 1 1 0`
+      forced every button in a row to one size, which flatters labels of equal
+      length and none of these rows have them. Measured on detail at 375: three
+      natural widths of 137 / 75 / 120 summing to 332px in a 335px row, squeezed
+      to 104px each so that **two of the three wrapped their text inside a 48px
+      button**. The wrap was caused by the layout, not by a shortage of space.
+      Now `flex-wrap: wrap` on the row and `flex: 0 1 auto` on the keys: no text
+      wraps in any of the four call sites, all keys stay 48px, and a row that
+      genuinely runs out of width moves a key to a second line. `walk.js`'s
+      single "Start the walk" still fills its row through the inline `flex: 1`
+      it already carried. Verified at 375 / 768 / 1440 on all four.
+- [x] **8b** The collapsed capsule — **an applied filter was invisible on a
+      phone.** `wa.css` hides every slot but the first below 768, so Explore has
+      no When and no What control there. Set When to Anytime and the bar still
+      read "WHERE / Tallinn": nothing on screen said the window was no longer
+      tonight. Reachable inside the sheet is not the same as visible, and a
+      search that hides what is applied to it is the one thing a search must
+      not do. The single visible key now carries the whole search — "Tallinn ·
+      Anytime", label switching Where → Search — with defaults left out so the
+      common case stays one word. Only the worst real combination
+      ("Helsinki · This weekend · community art space") exceeds the 245px value
+      track, and it ellipsizes, which the type rules already allow of a meta line.
+- [x] **8c** The events empty state — **it named a control that is not on the
+      screen.** "Try a wider window from the When slot above" was written for a
+      desktop capsule. It names a window and its real count now, and the count
+      **carries the What facet**: filtered to cinema the sentence reads "Anytime
+      has 10 events", not the unfiltered 115. Verified by driving the sheet to a
+      kind with nothing tonight and forcing the open-places branch closed.
+- [x] **8d** The scope row — **the fourth chip was a 24px sliver.** Four chips
+      need 411px and a phone gutter leaves 335, so the row scrolls; inside the
+      gutter that showed a rounded edge and half an icon, which reads as a
+      rendering fault rather than as more content. Fitting all four is not
+      available — trimming padding, gap, icon and type recovers 54px of the 76
+      needed — so the overflow was made legible instead: full bleed to the
+      viewport edge with the gutter moved into the scroller's padding, which
+      puts **44px of the fourth chip** on screen and keeps the first chip on the
+      capsule's left edge.
+- [x] **8e** Arriving on `?scope=walks` — **the selected chip was off-screen.**
+      A walks list rendered under a control row where nothing appeared to be
+      chosen: the selected chip sat 76px past the right edge at `scrollLeft: 0`.
+      The row now nudges the selected chip into view, scrolling the row and
+      never the page, and only when it is genuinely out of view — a chip the
+      reader just tapped is already visible and re-centring under their finger
+      is motion with nothing to say. Called from `render()` as well as
+      `readScope()`, because `readScope()` runs before first layout where every
+      rect is zero and the guard reads "already visible".
+- [x] **8f** The map camera — **fitted to a canvas that is 42% covered.** The
+      foot (bar plus drawer) sits *on* the map: at 375x812 the canvas is 503px
+      tall and the foot covers the bottom 211, leaving 292 visible. Both the
+      opening fit and the cluster-tap zoom padded symmetrically, so pins parked
+      underneath it — one of four was 16px under the foot on the default frame.
+      Padding is per-side now and measured live from the two elements. **Not a
+      phone-only fault:** at 1440 the foot covers 331 of 788px, so desktop had
+      it too, which reading the geometry catches and reading the breakpoint
+      would not. Zero pins occluded after, on the opening frame and after a
+      cluster tap.
+- [x] **8g** Swept and clean, recorded rather than changed: eight pages at 375,
+      320 and landscape 812x375 — no horizontal overflow anywhere, no text
+      overlap, no tap target under 44px. Saved with six real rows, the Explore
+      and Tonight sheets (including landscape, where the sheet fits, its body
+      scrolls and its foot stays reachable at 341 of 375), the toast on Saved
+      (above the tab bar, Undo 53x44), and the offline banner (inserted after
+      `.wa-topbar`, `--ground` ink, so both earlier fixes hold on a phone).
+- [x] **8h** Two false alarms, run down rather than filed. Map pins measure
+      39x21 and 34x34, under the 44px floor — but `.wa-pin::after` extends the
+      hit area, and a hit test 21px from each centre lands on the pin in every
+      direction. The harness had been doing inset arithmetic, which cannot
+      recover a pseudo-element sized by `width`/`height` and centred with a
+      transform; it hit-tests now. And a capture showing the page ~45px narrower
+      than the viewport was the fronted-pane geometry this file already warns
+      about, not a layout fault: `clientWidth` 375, map 20 → 355, no overflow.
+      The DOM is the authority; the capture is for eyeballing.

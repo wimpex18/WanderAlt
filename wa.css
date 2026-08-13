@@ -1834,8 +1834,20 @@ a.wa-sr:focus {
 .wa-btn:disabled { opacity: .45; cursor: default; }
 
 /* Sibling controls in a row share a width and never wrap. */
-.wa-btn-row { display: flex; gap: var(--s-3); align-items: stretch; }
-.wa-btn-row > .wa-btn { flex: 1 1 0; min-width: 0; }
+/* Content width, and wrap rather than squeeze. `flex: 1 1 0` forced
+   every button in a row to one width, which is the right look only when
+   the labels are about the same length -- and none of these rows are:
+   "Walk me there" next to "Save", "Continue with email" next to
+   "Continue with Google". Measured on detail at 375: the three natural
+   widths sum to 332px in a 335px row, and equal-width squeezed all
+   three to 104px so that TWO of them wrapped their text inside a 48px
+   button. The wrap was caused by the layout, not by the space.
+   A row that genuinely runs out of width now moves a button to a second
+   line at full height instead. `flex: 0 1 auto` still allows shrinking,
+   and an instance that wants one full-width key says so with `flex: 1`
+   inline, which walk.js's "Start the walk" already does. */
+.wa-btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: stretch; }
+.wa-btn-row > .wa-btn { flex: 0 1 auto; min-width: 0; }
 
 /* ============================================================
    14 · COMPONENT — map pin
@@ -2185,6 +2197,29 @@ a.wa-sr:focus {
    bar it was supposed to sit in, diagnosed from 700 lines away. With
    the row back in normal flow that hazard is gone. */
 .explore-scope { margin-top: var(--s-4); }
+
+/* Four chips need 411px and a phone gutter leaves 335, so this row
+   scrolls -- and inside the gutter the fourth chip showed as 24px of a
+   100px pill: a rounded edge and half an icon, which reads as a
+   rendering fault rather than as "there is more to the right". The
+   trims that would fit all four (padding, gap, icon, type) recover 54px
+   between them, so fitting is not on the table; what is on the table is
+   whether the overflow is legible.
+
+   Full bleed to the viewport edge, with the gutter moved into the
+   scroller's own padding so the first chip keeps the page's left edge.
+   The row gains the two gutters, which puts 44px of the fourth chip on
+   screen -- a peek that reads as content continuing rather than as
+   clipping. Same device the density strip uses at these widths.
+   `scroll-padding` so a chip revealed by script lands at the gutter and
+   not flush against the bezel. */
+@media (max-width: 767.98px) {
+  .explore-scope {
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+}
 
 /* Aligned with the capsule above it, not with the page gutter. The two
    are one control group -- you set Where/When/What, then you narrow the

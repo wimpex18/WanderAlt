@@ -677,7 +677,37 @@
 
     const place = () => { placePins(); placeDrawer(); };
 
-    const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries); };
+    /* The foot -- the bar and the drawer under it -- sits ON the canvas,
+       not beside it: at 375x812 the map is 503px tall and the foot
+       covers the bottom 211 of them, so 42% of what the camera treats
+       as visible is behind an opaque panel. Fitting to the whole canvas
+       therefore parks pins where they cannot be seen, and one of four
+       was 16px under the foot on the default frame. Symmetric padding
+       cannot express this; MapLibre takes a per-side object, so the
+       bottom side carries whatever the foot actually covers.
+
+       Measured live rather than assumed from the 42% rule, because the
+       foot's height varies with how many rows the drawer holds. It is
+       not a phone-only correction either: at 1440 the foot covers 331
+       of the map's 788 pixels, so the same fit was parking pins behind
+       it on desktop -- reading the geometry rather than the breakpoint
+       is what catches that. Capped so the
+       padding can never exceed the canvas: MapLibre cannot satisfy a
+       fit whose padding leaves no room, and a silently unsatisfiable
+       fit is worse than a slightly cramped one. */
+    const fitPad = (base) => {
+      const el = document.querySelector('.tonight-map');
+      const foot = document.querySelector('.tonight-map__foot');
+      if (!el || !foot) return base;
+      const m = el.getBoundingClientRect();
+      const f = foot.getBoundingClientRect();
+      const covered = Math.max(0, Math.round(m.bottom - f.top));
+      if (!covered) return base;
+      const room = Math.max(0, Math.round(m.height) - base - 40);
+      return { top: base, right: base, left: base, bottom: Math.min(base + covered, room) };
+    };
+
+    const fit = () => { const t = T(); if (t && t.fitToPicks) t.fitToPicks(entries, { padding: fitPad(48) }); };
 
     return {
       sync(list) {
@@ -696,7 +726,7 @@
         const c = lastClusters[Number(index)];
         const mine = c ? c.members : [];
         if (!mine.length || !t || !t.fitToPicks) return;
-        t.fitToPicks(mine, { maxZoom: 17, padding: 72 });
+        t.fitToPicks(mine, { maxZoom: 17, padding: fitPad(72) });
       },
       focus(id) {
         activeId = id || '';
