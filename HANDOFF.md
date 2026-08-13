@@ -188,8 +188,34 @@ still the dependency for everything."*
 
 - [x] **3a** Where / When / What capsule, one control, search key inside it.
 - [x] **3b** Capsule compact and centred on desktop (840px), not full-bleed.
-- [x] **3c** Four scope tabs — All, Tonight, Places, **Walks** — icon over label,
+- [x] **3c** Four scope tabs — All, **Events**, Places, **Walks** — icon over label,
       underline on the active one.
+      *Renamed 14 Aug 2026 from "Tonight", which was the wrong word on three
+      counts.* It named a TIME on a row that switches CONTENT TYPE — All, Places and
+      Walks are all types, and this was the only tab wearing a time word. The time
+      it named was not even its own: the shelf it reveals is filtered by the
+      capsule's WHEN, so setting the capsule to "This weekend" left a tab labelled
+      Tonight selected above a shelf headed *This weekend in Tallinn*. Reproduced in
+      the browser before renaming anything. And it duplicated the **Tonight page** in
+      the bar above it, down to the identical clock icon — one word, two rows, two
+      meanings, which is the redundancy NN/G's own guidance names.
+      It is "Events" with a calendar mark now; the clock stays with the page.
+      `?scope=tonight` maps to `events` on read, so links already shared still land
+      where they did rather than falling through to All.
+- [x] **3n** Explore's three rows each answer a different question, and that is the
+      answer to "why not two like Airbnb".
+      Top bar = where am I in the app. Capsule = what am I looking for. Scope = what
+      kind of thing. Airbnb reaches two rows by putting category tabs beside the logo
+      and page-level navigation behind a right-hand menu — we tried exactly that shape
+      (3d) and it produced a dead end where Saved had no route at all on desktop, so
+      the app nav keeps its row. The overlap worth removing was never the row count,
+      it was the repeated word (3c).
+      Both lower rows also grew: the capsule to 64px tall and 960 wide with the search
+      key at 52px, the scope chips to 52px with 20px marks, both from 768 up and both
+      still sharing one left edge. A vestigial rule was deleted in the process — the
+      chips were still being *compressed* at 1024 to fit inside a masthead they no
+      longer sit in, which had made the desktop chips smaller than the phone ones.
+      Phone is deliberately untouched: capsule 48, chips 44, the row scrolling.
 - [x] **3d** On desktop the scope tabs **are** the masthead; the four app tabs are a
       phone pattern (5b draws no app nav, 5d's header is the capsule's answers).
       *Refuted 13 Aug 2026 by a dead end, not by taste, and reversed.* Measured at

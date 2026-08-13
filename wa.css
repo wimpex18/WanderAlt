@@ -782,12 +782,28 @@ a.wa-sr:focus {
    One masthead, one meaning. The tabs keep their compressed desktop
    sizing because the row still has to read as a control strip rather
    than a list of links. */
-@media (min-width: 1024px) {
+/* The row used to be lifted into the 56px masthead, where the chips had
+   to be squeezed to fit inside the glass band. It sits in the content
+   flow now, so that compression made the desktop chips SMALLER than the
+   phone ones for no remaining reason. Gone; the chips below grow instead. */
+
+/* Bigger on the surfaces that have the room. Explore's first screen is
+   one control group -- capsule then scope -- and at 48px tall against a
+   1240px column it read as a toolbar rather than the page's main
+   instrument. Phone keeps the compact sizes, where the capsule collapses
+   to a single slot anyway. */
+@media (min-width: 768px) {
+  .explore-capsule .wa-capsule { min-height: calc(var(--control-h) + var(--s-4)); }
+  .explore-capsule .wa-capsule__slot { padding: var(--s-3) var(--s-6); }
+  .explore-capsule .wa-capsule__value { font-size: var(--fs-card); }
+  .explore-capsule .wa-capsule__go { width: 52px; height: 52px; }
+
   .explore-scope .wa-scope__chip {
-    padding: var(--s-1) var(--s-3);
-    min-height: var(--tap-min);
+    min-height: calc(var(--tap-min) + var(--s-2));
+    padding: 0 var(--s-5);
+    font-size: var(--fs-card);
   }
-  .explore-scope .wa-scope__chip svg { width: 18px; height: 18px; }
+  .explore-scope .wa-scope__chip svg { width: 20px; height: 20px; }
 }
 
 /* ============================================================
@@ -2155,7 +2171,7 @@ a.wa-sr:focus {
    the capsule collapses to its first slot anyway. */
 @media (min-width: 1024px) {
   .explore-capsule {
-    max-width: 840px;
+    max-width: 960px;
     margin-inline: auto;
   }
 }
@@ -2177,7 +2193,7 @@ a.wa-sr:focus {
    and centring, so the group has one left edge. */
 @media (min-width: 768px) {
   .explore-scope {
-    max-width: 840px;
+    max-width: 960px;
     margin-inline: auto;
   }
 }

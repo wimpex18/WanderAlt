@@ -62,8 +62,12 @@
      offers Show places; without this the button could only drop them on
      Explore's default tab and leave them to find Places themselves. */
   const readScope = () => {
-    const want = new URLSearchParams(location.search).get('scope');
-    if (!['all', 'tonight', 'places'].includes(want)) return;
+    const raw = new URLSearchParams(location.search).get('scope');
+    /* `tonight` was this scope's name until Aug 2026, when it was renamed
+       to what it actually does. Shared links carry the old value, so it
+       still resolves rather than silently falling through to All. */
+    const want = raw === 'tonight' ? 'events' : raw;
+    if (!['all', 'events', 'places', 'walks'].includes(want)) return;
     state.scope = want;
     document.querySelectorAll('#scope [data-scope]').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.scope === want)));
@@ -271,7 +275,7 @@
       </section>`);
     }
 
-    if (state.scope === 'all' || state.scope === 'tonight') {
+    if (state.scope === 'all' || state.scope === 'events') {
       const label = WHEN_LABEL[state.when] || 'On';
       out.push(section({
         title: `${label} in ${city}`,
