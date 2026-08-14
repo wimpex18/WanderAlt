@@ -179,8 +179,14 @@
     const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
     const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
 
+    /* A logo is contained on the tint, not cropped square. `--photo` is
+       `aspect-ratio: 1; object-fit: cover`, which on a WORDMARK cuts the
+       ends off the words -- and the venue marks v4 now writes are mostly
+       wordmarks around 106-192px. Cropping "ALLA GALLERY" to a square is
+       the wrong-image failure at card size. */
+    const isMark = e.imageSource === 'logo';
     const well = photo
-      ? `<img class="wa-card__photo" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
+      ? `<img class="wa-card__photo${isMark ? ' wa-card__photo--brand' : ''}" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
       : `<span class="wa-mark"><svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg></span>`;
 
     return `<a class="wa-card" href="${esc(hrefFor(e))}">
@@ -264,12 +270,62 @@
        copy with the data, never keep the copy and lose the truth. */
     const WALK_MIN = 20;
     const bounded = !!(geo.currentLoc && geo.currentLoc());
+
+    /* Minutes of opening left, which is NOT the closing clock. `state()`
+       reports `closesAt` as a wall time mod 1440, so a bar open until
+       02:00 answers 120 and a gallery until 18:00 answers 1080 -- order
+       on that and the gallery outranks the bar while having four hours
+       left to its eight. Subtracting now and wrapping gives the figure
+       the reader actually cares about. A 24h venue has no closing time
+       to subtract and sorts first, which is correct. */
+    const minutesLeft = (p) => {
+      const st = window.WA.Hours.state(p.openingHours);
+      if (!(st.known && st.open)) return null;
+      if (st.allDay || st.closesAt == null) return Infinity;
+      const nowMin = window.WA.Hours.cityNow().minutes;
+      return (st.closesAt - nowMin + 1440) % 1440;
+    };
+
+    const leftFor = new Map();
     const openNow = places().filter((p) => {
-      const s = window.WA.Hours.state(p.openingHours);
-      if (!(s.known && s.open)) return false;
+      const left = minutesLeft(p);
+      if (left == null) return false;
+      leftFor.set(p.id, left);
       if (!bounded) return true;
       const d = geo.distanceTo(p);
       return d == null || d <= WALK_MIN * geo.WALK_M_PER_MIN;
+    });
+
+    /* The shelf shows twelve of these and the subtitle used to say
+       "nearest first" whether or not we knew where the reader was. With
+       no permission `bySoonestThenDistance` has neither a start time nor
+       a distance to compare, so it returns 0 for every pair, the
+       database's own order survives, and what the reader got was the
+       twelve venues whose names begin with A -- presented as a ranking.
+       74 places, and you could not reach B.
+
+       Unbounded, the fact that decides is how long you have got, so that
+       is the order and the subtitle says so. Ties break on a per-day
+       rotation rather than on the name: most of these shut at the same
+       hour, and a name tie-break hands the shelf straight back to the
+       A's. Seeded on the date, so it is stable for the whole day and a
+       different twelve surfaces tomorrow -- a sample that admits it is
+       one, not a ranking that is really an alphabet. */
+    const rotation = (() => {
+      const d = new Date();
+      const seed = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}:`;
+      return (id) => {
+        let h = 2166136261;
+        const str = seed + String(id);
+        for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+        return h >>> 0;
+      };
+    })();
+
+    const byTimeLeft = (list) => list.slice().sort((a, b) => {
+      const la = leftFor.get(a.id) ?? 0, lb = leftFor.get(b.id) ?? 0;
+      if (la !== lb) return lb - la;
+      return rotation(a.id) - rotation(b.id);
     });
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
@@ -347,8 +403,8 @@
         title: 'Open right now',
         sub:   bounded
           ? `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · within a ${WALK_MIN}-minute walk`
-          : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · nearest first`,
-        items: sorted(openNow),
+          : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · most time left`,
+        items: bounded ? sorted(openNow) : byTimeLeft(openNow),
         href:  'discover.html?type=places',
         /* Reads as one sentence with the label above it: "See all 61 /
            as a list". "every place" made it "See all 61 every place". */
@@ -368,7 +424,12 @@
       });
       out.push(section({
         title: `Places in ${city}`,
-        sub:   `${all.length} listed · nearest first`,
+        /* Same correction as the shelf above: this list falls back to
+           localeCompare when there is no location, so "nearest first"
+           was naming an order it was not in. */
+        sub:   bounded
+          ? `${all.length} listed · nearest first`
+          : `${all.length} listed · A to Z`,
         items: all,
         href:  'discover.html?type=places',
         hrefSub: 'as a list',

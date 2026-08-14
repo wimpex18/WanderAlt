@@ -710,3 +710,105 @@ rounds changed.
       handled globally (`:focus-visible`, 2px petrol, 2px offset) and reaches
       every control in the header, capsule and scope row. Content caps at
       1560px, so nothing runs away at 2560.
+
+## 10 · Images: what the numbers actually said (Aug 2026)
+
+- [x] **10a** `enrich-venue-images` **v4 deployed**, `verify_jwt: true` preserved,
+      repo and platform in step. Four lanes now, all identity-anchored: QID →
+      P18, og:image, schema.org JSON-LD, then the venue's own mark. Written
+      against twenty hand-read failures rather than a hunch (4 discarded for
+      "logo" in the filename, 5 with only an apple-touch-icon, 3 with only
+      JSON-LD, 1 past the 200KB slice, 7 genuinely empty).
+- [x] **10b** **The 30-day cooldown was the live blocker, not the queue order.**
+      This corrects what the previous commit message implied. A dry run against
+      Tallinn returned "nothing to enrich" with 141 candidates in the table:
+      every one carried an `image_enrich_failed_at` stamped between 8 and 14
+      Aug, so all of them sat inside `FAIL_COOLDOWN_DAYS`. The cron has been
+      running fine. v4 would therefore have changed nothing for up to thirty
+      days — its repairs invalidate those verdicts, which record only that *v3*
+      could not find an image. Cleared the stamp for the 130 whitelisted venues
+      that have a website and no image; 302 are eligible now. Nothing but a
+      retry timestamp was touched.
+      **The general rule: after fixing a fetcher, the failure stamps it wrote
+      are stale data, not history.**
+- [x] **10c** **Events were the half of the request I under-delivered on, and
+      they are a different problem entirely.** 411 live picks, 41 with an image
+      (10%). The borrow-from-venue path is dead: `picks.venue_id` is populated
+      on **4 of 411**, and matching on the venue NAME instead does not rescue
+      it — 102 of 121 distinct venue names on live picks match no row in
+      `venues`, and neither normalisation nor substring matching finds them,
+      because they are mostly not our venues at all: `Hakunila Library`,
+      `Esplanade Park`, `Suomenlinna Sea Fortress`, `Kolmas linja 12`,
+      `Tallinn Zoo`, and twice the literal string `Various venues`. The venue
+      index is an OSM sweep of culture venues; the event feeds cover a whole
+      city. This ceiling is structural and no amount of matching lifts it.
+- [x] **10d** **`enrich-pick-images` is the mechanism `enrich-venue-images` was
+      written to replace, still running.** It resolves a photo by
+      `places:searchText` on the venue NAME through Google Places — which is
+      precisely the name-guessing that put Tallinn Town Hall's Christmas market
+      on a basement club, and precisely what CLAUDE.md forbids. It also costs
+      ~$0.039 a venue against billing that was deleted. The evidence that it is
+      inert: of 41 picks holding an image, 40 have `image_source` NULL (legacy
+      rows) and 1 came from `venue_images`; nothing traceable to Google, while
+      285 live picks are stamped as failed.
+      **The repair is the one v4 just proved: 339 live picks without an image
+      carry a `source_url` — the event's own listing page — which is
+      identity-safe for that event in exactly the way a name search is not, and
+      the v4 extractors already read those pages.** Not built yet; it is the
+      next piece of work rather than a finding.
+
+## 11 · Event pictures — the feed was carrying them all along
+
+- [x] **11a** `enrich-pick-images` **v5 deployed** (`verify_jwt: true` preserved)
+      and the Google Places name search is gone. v4's own header called
+      itself DORMANT: its cron was unscheduled in Jul 2026 when the paid
+      key was retired, and nothing replaced it — so picks had no filler at
+      all. It resolved photos by sending the VENUE NAME to
+      `places:searchText`, which is the guessing this repo bans and which
+      `enrich-venue-images` was written to replace.
+- [x] **11b** **The picture was in the feed and the ingest dropped it.**
+      334 of 367 live `source_url`s are `tapahtumat.hel.fi`, whose
+      permalink carries the Linkedevents event id — so
+      `api.hel.fi/linkedevents/v1/event/<id>/` returns that event's own
+      filed image. **40 of 40 sampled events had one.** Two upstream gaps
+      kept it out: `ingest-hel-linkedevents` never reads `images[]` into
+      the staging payload, and `process-staging` **documents `image_url`
+      in its payload contract but never reads it**. Both still true — v5
+      re-fetches per pick instead, which fixes the 324-row backlog and
+      every future pick, but the leak upstream is the tidier repair and
+      is not done.
+- [x] **11c** Result, backfill complete: live picks with an image went
+      **41 → 336 of 411, 10% → 82%**, 284 of them via the Linkedevents
+      lane, with real photographer credits (Seppo Laakso, Riikka
+      Kantinkoski, Pasi Pitkänen) rather than a hostname. 35 still
+      queued for the nightly cron; the rest have no source that carries
+      one. Dry run measured 9 of 10 before any of it was written.
+      **The same cooldown trap bit again one turn after it was written
+      down** — the run stalled at 130 because ~280 picks carried
+      `image_enrich_failed_at` from the past week, nearly all
+      Linkedevents rows the API resolves on sight. Those verdicts came
+      from the Wikidata venue matcher and mean "no venue match", not
+      "this event has no picture".
+- [x] **11d** Two design decisions in v5 worth keeping. **The API lane is
+      exempt from the shared-image guard and the page lane is not**: a
+      theatre run is one show on twelve dates and shares one image
+      correctly — two of fourteen sampled source_urls did exactly that —
+      whereas a repeat on a scraped page means a site template. And
+      **there is no icon/logo lane here**, unlike the venue function: a
+      same-origin icon on an aggregator is the ticketing platform's
+      brand, so it would put Fienta's logo on somebody's gig.
+- [x] **11e** `wa-enrich-pick-images` scheduled `35 4 * * *`, deliberately
+      ahead of `enrich-images-auto` at 05:10 so an event's own picture
+      wins over a venue-level match. **33 jobs, all active** (was 32).
+      Note `enrich-images` is no longer the name-guesser CLAUDE.md
+      remembers — v10 added the three gates that fixed the Hall /
+      Christmas-market bug — so the two coexist safely.
+- [x] **11f** **A picture can be too small for the box it is given, and
+      that is the same failure as a wrong one.** Venue marks arrive at
+      106–192px and Linkedevents thumbnails at 222×222; the detail well
+      runs to 1240 wide with `object-fit: cover`. CSS cannot ask how big
+      a file is and `image_source` says where it came from, not what it
+      measures — so `marks.js` now asks at load, against the box the
+      image actually got: below 60% of its container it is contained on
+      the tint instead of cropped to fill. Adaptive rather than a
+      hard-coded pixel guess, and it covers sources not written yet.

@@ -948,6 +948,17 @@ a.wa-sr:focus {
   object-fit: cover;
 }
 
+/* The venue's own mark rather than a photograph of it. `cover` on a
+   square well crops a wordmark's ends off -- and the marks v4 writes
+   are mostly wordmarks at 106-192px, so they would also be upscaled
+   into the crop. Contained on the tint, padded so it reads as a mark
+   on a ground and not as a photo that failed to fill its frame. */
+.wa-card__photo--brand {
+  object-fit: contain;
+  padding: var(--s-5);
+  background: var(--petrol-tint);
+}
+
 .wa-card__body { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
 
 /* Two lines, wraps, NEVER truncated. A 60-character gig title is the
@@ -2329,6 +2340,25 @@ a.wa-sr:focus {
   /* Pairs with the card photo tagged by view-transition.js, so a card
      expands into the detail hero rather than the page cross-fading. */
   view-transition-name: venue-hero;
+}
+
+/* The well holding a venue's own MARK rather than a photograph. Same
+   ground as the markless well, and the image is contained instead of
+   cropped -- a 192px logo stretched across 1240px of hero is the "wrong
+   photograph" failure wearing a different hat. Capped tighter than the
+   photo hero too, because a mark needs no room to breathe. */
+.wa-detail__well--brand {
+  display: grid;
+  place-items: center;
+  background: var(--petrol-tint);
+}
+.wa-detail__well--brand .wa-detail__photo {
+  width: auto;
+  max-width: min(70%, 320px);
+  max-height: min(28vh, 220px);
+  aspect-ratio: auto;
+  object-fit: contain;
+  padding: var(--s-6) 0;
 }
 
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }

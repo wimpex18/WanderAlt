@@ -163,6 +163,11 @@
     lng:          r.lng ?? null,
     imageUrl:     proxifyImage(r.image_url) || null,
     imageAttr:    r.image_attr || null,
+    /* Which mechanism wrote the picture. `logo` means it is the venue's
+       own MARK rather than a photograph of the place -- enrich-venue-images
+       v4 admits those deliberately, and they arrive at ~192px, so a
+       surface that would stretch one has to know. */
+    imageSource:  r.image_source || null,
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
@@ -229,7 +234,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram,opening_hours` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours` +
         `&order=name.asc`,
         abort.signal
       ),
@@ -375,7 +380,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,website,facebook,instagram,opening_hours`
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours`
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (_) { /* nothing more to try */ }

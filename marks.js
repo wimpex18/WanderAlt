@@ -150,5 +150,46 @@
 
   document.addEventListener('error', onImageError, true);
 
+  /* ── Too small to fill the box it was given ──────────────────
+     A stored image is not always a photograph sized for a hero. The
+     venue mark lane writes logos at 106-192px, and Helsinki's
+     Linkedevents feed supplies event thumbnails at 222x222 -- both fine
+     in a 181px card and both ruinous in the detail well, which runs to
+     1240 wide with `object-fit: cover`. A 106px mark blown up
+     elevenfold and cropped is the same "wrong photograph" failure this
+     product refuses everywhere else; it just arrives by upscaling
+     rather than by mismatching.
+
+     CSS cannot ask how big a file is, and the builder cannot know
+     either -- `image_source` says where a picture came from, not what
+     it measures. So it is asked at load, against the box the image
+     actually got, which makes the rule adaptive rather than a
+     hard-coded pixel guess: below 60% of its container it is contained
+     on the tint instead of cropped to fill. That covers every source,
+     including ones not written yet.
+
+     Capture phase, like the error handler above, because `load` does
+     not bubble. */
+  const FILL_RATIO = 0.6;
+
+  const onImageLoad = (ev) => {
+    const img = ev.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    if (!img.naturalWidth) return;
+    if (img.dataset.waFit) return;
+
+    const well = img.closest('.wa-detail__well');
+    if (!well || well.classList.contains('wa-detail__well--brand')) return;
+
+    const box = well.getBoundingClientRect().width;
+    if (!box) return;
+    if (img.naturalWidth >= box * FILL_RATIO) return;
+
+    img.dataset.waFit = '1';
+    well.classList.add('wa-detail__well--brand');
+  };
+
+  document.addEventListener('load', onImageLoad, true);
+
   window.WA.Marks = { markFor, load };
 })();
