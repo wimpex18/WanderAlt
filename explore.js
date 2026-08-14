@@ -179,8 +179,14 @@
     const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
     const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
 
+    /* A logo is contained on the tint, not cropped square. `--photo` is
+       `aspect-ratio: 1; object-fit: cover`, which on a WORDMARK cuts the
+       ends off the words -- and the venue marks v4 now writes are mostly
+       wordmarks around 106-192px. Cropping "ALLA GALLERY" to a square is
+       the wrong-image failure at card size. */
+    const isMark = e.imageSource === 'logo';
     const well = photo
-      ? `<img class="wa-card__photo" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
+      ? `<img class="wa-card__photo${isMark ? ' wa-card__photo--brand' : ''}" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
       : `<span class="wa-mark"><svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg></span>`;
 
     return `<a class="wa-card" href="${esc(hrefFor(e))}">

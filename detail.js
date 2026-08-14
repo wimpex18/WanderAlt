@@ -180,10 +180,21 @@
     const photo = e.imageUrl ? url(e.imageUrl) : '';
     const mark  = window.WA.Marks.markFor(e.kind);
     if (photo) {
-      return `<div class="wa-detail__well">
+      /* A logo is not a photograph and must not be treated as one here.
+         enrich-venue-images v4 admits the venue's own mark when no
+         picture exists, and those arrive at about 192px -- fine in a
+         181px card, and ruinous in this well, which runs to 1240 wide.
+         `cover` would blow a 192px badge up sixfold and crop it. So a
+         mark is CONTAINED on the same petrol tint the markless well
+         uses, which is the treatment it should have had all along: it
+         reads as a mark on a ground rather than as a bad photograph.
+         The credit line says which it is, because "a photo of the
+         place" and "their logo" are different claims. */
+      const isMark = e.imageSource === 'logo';
+      return `<div class="wa-detail__well${isMark ? ' wa-detail__well--brand' : ''}">
         <img class="wa-detail__photo" src="${esc(window.WA.img ? window.WA.img(photo, 900) : photo)}"
              alt="" loading="eager" decoding="async" data-mark="${esc(mark)}" />
-        ${e.imageAttr ? `<p class="wa-detail__credit">${esc(e.imageAttr)}</p>` : ''}
+        ${e.imageAttr ? `<p class="wa-detail__credit">${esc(isMark ? `${e.imageAttr} — their logo, not a photo` : e.imageAttr)}</p>` : ''}
       </div>`;
     }
     return `<div class="wa-detail__well wa-detail__well--mark">

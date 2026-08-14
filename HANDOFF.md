@@ -710,3 +710,49 @@ rounds changed.
       handled globally (`:focus-visible`, 2px petrol, 2px offset) and reaches
       every control in the header, capsule and scope row. Content caps at
       1560px, so nothing runs away at 2560.
+
+## 10 · Images: what the numbers actually said (Aug 2026)
+
+- [x] **10a** `enrich-venue-images` **v4 deployed**, `verify_jwt: true` preserved,
+      repo and platform in step. Four lanes now, all identity-anchored: QID →
+      P18, og:image, schema.org JSON-LD, then the venue's own mark. Written
+      against twenty hand-read failures rather than a hunch (4 discarded for
+      "logo" in the filename, 5 with only an apple-touch-icon, 3 with only
+      JSON-LD, 1 past the 200KB slice, 7 genuinely empty).
+- [x] **10b** **The 30-day cooldown was the live blocker, not the queue order.**
+      This corrects what the previous commit message implied. A dry run against
+      Tallinn returned "nothing to enrich" with 141 candidates in the table:
+      every one carried an `image_enrich_failed_at` stamped between 8 and 14
+      Aug, so all of them sat inside `FAIL_COOLDOWN_DAYS`. The cron has been
+      running fine. v4 would therefore have changed nothing for up to thirty
+      days — its repairs invalidate those verdicts, which record only that *v3*
+      could not find an image. Cleared the stamp for the 130 whitelisted venues
+      that have a website and no image; 302 are eligible now. Nothing but a
+      retry timestamp was touched.
+      **The general rule: after fixing a fetcher, the failure stamps it wrote
+      are stale data, not history.**
+- [x] **10c** **Events were the half of the request I under-delivered on, and
+      they are a different problem entirely.** 411 live picks, 41 with an image
+      (10%). The borrow-from-venue path is dead: `picks.venue_id` is populated
+      on **4 of 411**, and matching on the venue NAME instead does not rescue
+      it — 102 of 121 distinct venue names on live picks match no row in
+      `venues`, and neither normalisation nor substring matching finds them,
+      because they are mostly not our venues at all: `Hakunila Library`,
+      `Esplanade Park`, `Suomenlinna Sea Fortress`, `Kolmas linja 12`,
+      `Tallinn Zoo`, and twice the literal string `Various venues`. The venue
+      index is an OSM sweep of culture venues; the event feeds cover a whole
+      city. This ceiling is structural and no amount of matching lifts it.
+- [x] **10d** **`enrich-pick-images` is the mechanism `enrich-venue-images` was
+      written to replace, still running.** It resolves a photo by
+      `places:searchText` on the venue NAME through Google Places — which is
+      precisely the name-guessing that put Tallinn Town Hall's Christmas market
+      on a basement club, and precisely what CLAUDE.md forbids. It also costs
+      ~$0.039 a venue against billing that was deleted. The evidence that it is
+      inert: of 41 picks holding an image, 40 have `image_source` NULL (legacy
+      rows) and 1 came from `venue_images`; nothing traceable to Google, while
+      285 live picks are stamped as failed.
+      **The repair is the one v4 just proved: 339 live picks without an image
+      carry a `source_url` — the event's own listing page — which is
+      identity-safe for that event in exactly the way a name search is not, and
+      the v4 extractors already read those pages.** Not built yet; it is the
+      next piece of work rather than a finding.
