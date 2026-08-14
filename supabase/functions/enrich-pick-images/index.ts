@@ -1,299 +1,319 @@
+/* ============================================================
+   enrich-pick-images v5 — the event's own picture, or nothing
+   ------------------------------------------------------------
+   Fills picks.image_url.
+
+   v4 and everything before it resolved a photo by sending the VENUE
+   NAME to Google Places `places:searchText` and taking whatever came
+   back. That is the guessing this repo bans: it is how a Christmas
+   market ended up on a basement club called Hall, and it is the exact
+   mechanism `enrich-venue-images` was written to replace. It also
+   billed ~$0.039 a venue against a Google account whose billing has
+   since been deleted. The evidence that it had stopped working at all:
+   of 41 live picks holding an image, 40 have `image_source` NULL —
+   legacy rows — and one came from a venue borrow. Nothing traceable to
+   Google, while 285 picks sat stamped as failed. There is also no cron
+   for this function, so it was not even running.
+
+   So the name search is gone, and both lanes below are anchored to the
+   EVENT rather than to a string that resembles one.
+
+   1. The source's own API, by event id.
+      334 of 367 live source_urls are `tapahtumat.hel.fi` — Helsinki's
+      Linkedevents portal — and the permalink carries the event id, so
+      `api.hel.fi/linkedevents/v1/event/<id>/` returns that event's own
+      filed image. 40 of 40 sampled events had one. This is the widest
+      single source of event pictures available to us and it costs
+      nothing.
+
+      Those images are licensed `event_only`, which permits use in
+      connection with that event and nothing else. That is precisely
+      what a pick is, and it is why such an image must never be copied
+      onto a venue or outlive the listing: picks are archived, the URL
+      goes with them, and `image_source` records the lane so the whole
+      set can be found in one query.
+
+   2. The listing page's own og:image or schema.org JSON-LD.
+      For every other source, the pick's `source_url` IS the event's
+      page, so its share image is the event's own — identity-safe in
+      the way a name search never was.
+
+   No third lane. There is deliberately no icon or logo fallback here,
+   unlike enrich-venue-images: a same-origin icon on an aggregator is
+   the TICKETING PLATFORM's brand, not the event's and not even the
+   venue's, so it would put Fienta's logo on somebody's gig.
+
+   If both miss, the pick keeps no image and the row draws its category
+   mark, which is the designed answer. A wrong picture is worse than
+   none.
+
+   POST body: { city?, limit?, dry_run? }
+   ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-// ============================================================
-// enrich-pick-images v2
-//
-// For each active pick whose image_url is NULL, find a photo via
-// Google Places API (Text Search + Photo media) and store it on
-// picks.image_url. Groups by (venue, neighborhood) so the same
-// venue's photo is reused across multiple picks.
-//
-// v2 (May 2026): when no body / no `city` is supplied, iterate all
-// cities. The previous version silently defaulted to 'tallinn',
-// which meant the cron only ever enriched Tallinn picks — Riga and
-// Helsinki picks accumulated NULL image_urls forever.
-//
-// Two Places API calls per unique venue:
-//   1. places:searchText  — returns photo references
-//   2. {photo.name}/media — resolves to a stable CDN URL
-//
-// Cost: ~$0.039 per unique venue (within free tier credit).
-//
-// v3 (Jun 2026): optional `heal` mode. We store Google's *resolved*
-// photo URI (the ephemeral lh3.googleusercontent.com/place-photos/…
-// link), which Google expires/revokes for a small minority of photos
-// over time — they start returning 403 and the venue card shows its
-// initials placeholder. heal mode HEAD-checks existing Google image
-// URLs, nulls only the ones that no longer resolve, and the normal
-// refill loop then fetches a fresh photoUri for just those. This is
-// broken-only and self-contained (no storage bucket, no new function);
-// almost all stored URLs keep working, so heal touches very few rows.
-//
-// v4 (Jul 2026): venues Places genuinely has no photo for get
-// `image_enrich_failed_at` stamped so the hourly cron stops re-buying a
-// Places search for them every run — previously a permanently-photoless
-// venue was rebilled forever since `image_url IS NULL` never changed.
-//
-// POST body: { city?: string, limit?: number, dry_run?: boolean,
-//              heal?: boolean, heal_limit?: number }
-// ============================================================
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const PLACES_KEY   = Deno.env.get('GOOGLE_PLACES_API_KEY') ?? '';
-
+const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const AGENT   = 'WanderAlt/1.0 (+https://wanderalt.app)';
+const BATCH   = 40;
 const FAIL_COOLDOWN_DAYS = 14;
+const FETCH_TIMEOUT_MS   = 8000;
 
-const CITY_CENTER: Record<string, [number, number]> = {
-  tallinn:  [59.4370, 24.7536],
-  helsinki: [60.1699, 24.9384],
-  riga:     [56.9460, 24.1059],
-  vilnius:  [54.6872, 25.2797],
-};
+const db = createClient(SUPABASE_URL, SUPABASE_SERVICE);
 
-const sbHeaders = (extra: Record<string, string> = {}) => ({
-  apikey:        SERVICE_KEY,
-  Authorization: `Bearer ${SERVICE_KEY}`,
-  'Content-Type':'application/json',
-  ...extra,
-});
+/* Same denylist as the venue lane: a share image is not automatically a
+   picture of anything. Themes ship defaults and parked domains ship
+   graphics, and one of those written onto a real event is a claim we
+   cannot support. */
+const NOT_A_PHOTO =
+  /(placeholder|default|fallback|no[-_]?image|blank|spacer|dummy|sample|logo|favicon|sprite|banner[-_]?default|og[-_]?image|social[-_]?share|share[-_]?card|preview[-_]?card)/i;
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type':                'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
+function absHttp(raw: string, pageUrl: string): string | null {
+  const v = String(raw).trim().replace(/&amp;/g, '&');
+  if (!v || v.startsWith('data:')) return null;
+  let abs: URL;
+  try { abs = new URL(v, pageUrl); } catch { return null; }
+  if (abs.protocol !== 'http:' && abs.protocol !== 'https:') return null;
+  return abs.toString();
+}
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+/* ---- lane 1: Linkedevents by event id --------------------- */
 
-async function fetchPlacePhoto(
-  venue: string, neighborhood: string, city: string,
-  centerLat: number, centerLng: number,
-): Promise<string | null> {
-  if (!PLACES_KEY) return null;
-  const q = [venue, neighborhood].filter(Boolean).join(', ') + `, ${city}`;
+/* The permalink is https://tapahtumat.hel.fi/en/<id> and the id itself
+   contains a colon (`lippupiste:21462567`), which is why this reads the
+   last path segment rather than splitting on ':'. */
+function linkedEventsId(sourceUrl: string): string | null {
   try {
-    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method:  'POST',
-      headers: {
-        'Content-Type':     'application/json',
-        'X-Goog-Api-Key':   PLACES_KEY,
-        'X-Goog-FieldMask': 'places.id,places.photos,places.displayName',
-      },
-      body: JSON.stringify({
-        textQuery:      q,
-        languageCode:   'en',
-        locationBias:   { circle: { center: { latitude: centerLat, longitude: centerLng }, radius: 10000 } },
-        maxResultCount: 1,
-      }),
-    });
-    if (!searchRes.ok) return null;
-    const sd      = await searchRes.json();
-    const place   = sd.places?.[0];
-    const photoNm = place?.photos?.[0]?.name;
-    if (!photoNm) return null;
-
-    const mediaRes = await fetch(
-      `https://places.googleapis.com/v1/${photoNm}/media?maxWidthPx=800&skipHttpRedirect=true`,
-      { headers: { 'X-Goog-Api-Key': PLACES_KEY } }
-    );
-    if (!mediaRes.ok) return null;
-    const md = await mediaRes.json();
-    return md?.photoUri ?? null;
+    const u = new URL(sourceUrl);
+    if (!/(^|\.)tapahtumat\.hel\.fi$/i.test(u.hostname)) return null;
+    const seg = u.pathname.split('/').filter(Boolean).pop();
+    return seg && seg.includes(':') ? decodeURIComponent(seg) : null;
   } catch { return null; }
 }
 
-// Returns true if the stored photo URL no longer resolves (expired/
-// revoked by Google). Network errors are treated as "still valid" so a
-// transient blip never wipes a good URL.
-async function isDeadPhotoUrl(url: string): Promise<boolean> {
+async function imageFromLinkedEvents(id: string): Promise<{ url: string; attr: string } | null> {
   try {
-    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    // 403/404/410 = Google has dropped this resolved photo URI.
-    return res.status === 403 || res.status === 404 || res.status === 410;
-  } catch {
-    return false;
-  }
+    const r = await fetch(
+      `https://api.hel.fi/linkedevents/v1/event/${encodeURIComponent(id)}/`,
+      { headers: { 'User-Agent': AGENT, 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+    );
+    if (!r.ok) return null;
+    const data = await r.json() as { images?: Array<Record<string, unknown>> };
+    const img = (data.images ?? [])[0];
+    const raw = typeof img?.url === 'string' ? img.url : '';
+    if (!raw) return null;
+    const url = absHttp(raw, 'https://api.hel.fi/');
+    if (!url) return null;
+    let path = '';
+    try { path = new URL(url).pathname; } catch { return null; }
+    if (NOT_A_PHOTO.test(path)) return null;
+
+    /* Credit the photographer when the feed names one; otherwise the
+       portal, which is where the picture came from. Never blank: the
+       row prints whatever this says, and an uncredited photograph is a
+       claim about provenance too. */
+    const who = typeof img?.photographer_name === 'string' && img.photographer_name.trim()
+      ? img.photographer_name.trim()
+      : 'tapahtumat.hel.fi';
+    return { url, attr: who };
+  } catch { return null; }
 }
 
-// heal: find active picks whose stored Google photo URL has gone dead
-// and null those (only) so the refill loop re-fetches a fresh URI.
-async function healCity(city: string, healLimit: number, dryRun: boolean) {
-  const url = `${SUPABASE_URL}/rest/v1/picks` +
-    `?city=eq.${encodeURIComponent(city)}` +
-    `&archived_at=is.null&image_url=like.*googleusercontent.com*` +
-    `&select=id,image_url&order=id.asc`;
-  const res = await fetch(url, { headers: sbHeaders() });
-  if (!res.ok) return { checked: 0, dead: 0, nulled: 0, error: 'fetch failed', status: res.status };
-  const rows = await res.json() as Array<{ id: string; image_url: string }>;
+/* ---- lane 2: the listing page ----------------------------- */
 
-  // De-dupe by URL — many picks share one venue photo, so we HEAD each
-  // distinct URL once.
-  const byUrl = new Map<string, string[]>();
-  for (const r of rows) {
-    if (!r.image_url) continue;
-    const ids = byUrl.get(r.image_url) ?? [];
-    ids.push(r.id);
-    byUrl.set(r.image_url, ids);
+function pickOgImage(html: string, pageUrl: string): string | null {
+  const metas = html.match(/<meta[^>]+>/gi) ?? [];
+  for (const tag of metas) {
+    if (!/(property|name)\s*=\s*["'](og:image(:secure_url|:url)?|twitter:image)["']/i.test(tag)) continue;
+    const m = tag.match(/content\s*=\s*["']([^"']+)["']/i);
+    if (!m) continue;
+    const url = absHttp(m[1], pageUrl);
+    if (!url) continue;
+    let abs: URL;
+    try { abs = new URL(url); } catch { continue; }
+    if (/\.svg(\?|$)/i.test(abs.pathname)) continue;
+    if (NOT_A_PHOTO.test(abs.pathname)) continue;
+    return abs.toString();
   }
-  const distinct = [...byUrl.keys()].slice(0, healLimit);
+  return null;
+}
 
-  // HEAD-check in small concurrent batches to stay within the wall clock.
-  const dead: string[] = [];
-  const BATCH = 20;
-  for (let i = 0; i < distinct.length; i += BATCH) {
-    const slice = distinct.slice(i, i + BATCH);
-    const flags = await Promise.all(slice.map(isDeadPhotoUrl));
-    slice.forEach((u, j) => { if (flags[j]) dead.push(u); });
-  }
-
-  const deadIds = dead.flatMap(u => byUrl.get(u) ?? []);
-  let nulled = 0;
-  if (deadIds.length && !dryRun) {
-    const idList = deadIds.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-    const upRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})`,
-      {
-        method:  'PATCH',
-        headers: sbHeaders({ Prefer: 'return=minimal' }),
-        body:    JSON.stringify({ image_url: null }),
+function pickJsonLdImage(html: string, pageUrl: string): string | null {
+  const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) ?? [];
+  for (const block of blocks) {
+    const body = block.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '');
+    let data: unknown;
+    try { data = JSON.parse(body); } catch { continue; }
+    const seen = new Set<unknown>();
+    const walk = (node: unknown): string | null => {
+      if (!node || typeof node !== 'object' || seen.has(node)) return null;
+      seen.add(node);
+      if (Array.isArray(node)) {
+        for (const item of node) { const hit = walk(item); if (hit) return hit; }
+        return null;
       }
-    );
-    if (upRes.ok) nulled = deadIds.length;
+      const obj = node as Record<string, unknown>;
+      const v = obj['image'];
+      const candidate = typeof v === 'string' ? v
+        : Array.isArray(v) ? (typeof v[0] === 'string' ? v[0] as string
+            : (v[0] as Record<string, unknown> | undefined)?.url as string | undefined)
+        : (v as Record<string, unknown> | undefined)?.url as string | undefined;
+      if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+      for (const nested of Object.values(obj)) { const hit = walk(nested); if (hit) return hit; }
+      return null;
+    };
+    const raw = walk(data);
+    if (!raw) continue;
+    /* Same guard the venue lane needed: the walker returns whatever sat
+       under `image`, and a bare token resolves to <origin>/token, which
+       is a 404 stored as a photograph. */
+    if (!/^(https?:)?\/\//i.test(raw) && !raw.startsWith('/')) continue;
+    const abs = absHttp(raw, pageUrl);
+    if (!abs) continue;
+    let path = '';
+    try { path = new URL(abs).pathname; } catch { continue; }
+    if (!/\.(jpe?g|png|webp|avif|gif)$/i.test(path)) continue;
+    if (NOT_A_PHOTO.test(path)) continue;
+    return abs;
+  }
+  return null;
+}
+
+async function imageFromPage(sourceUrl: string): Promise<{ url: string; attr: string } | null> {
+  try {
+    const r = await fetch(sourceUrl, {
+      headers: { 'User-Agent': AGENT, 'Accept': 'text/html' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!r.ok) return null;
+    if (!(r.headers.get('content-type') ?? '').includes('text/html')) return null;
+    /* Cut at </head>, not at an arbitrary byte count -- the venue lane
+       lost real finds to a 200KB slice on sites that inline their CSS
+       ahead of the meta tags. */
+    const full = await r.text();
+    const headEnd = full.search(/<\/head>/i);
+    const html = headEnd > 0 ? full.slice(0, headEnd) : full.slice(0, 1_500_000);
+    const pageUrl = r.url || sourceUrl;
+
+    const url = pickOgImage(html, pageUrl) || pickJsonLdImage(html, pageUrl);
+    if (!url) return null;
+    let host = sourceUrl;
+    try { host = new URL(sourceUrl).hostname.replace(/^www\./, ''); } catch { /**/ }
+    return { url, attr: host };
+  } catch { return null; }
+}
+
+/* ---- the shared-image guard ------------------------------- */
+
+/* One picture standing in for many listings is the failure this whole
+   family of functions exists to prevent -- but it is only a failure
+   when the listings are UNRELATED. A theatre run is one show on twelve
+   dates and shares one image correctly, and Linkedevents returns that
+   image per event id, so the API lane is exempt: it cannot be wrong
+   about which event it fetched.
+
+   The page lane is not exempt. There, a repeat means a site template or
+   an aggregator's default card, which is exactly the thing to refuse. */
+async function alreadyUsedByPage(url: string, selfId: string): Promise<boolean> {
+  const { count } = await db
+    .from('picks')
+    .select('id', { count: 'exact', head: true })
+    .eq('image_url', url)
+    .neq('id', selfId);
+  return (count ?? 0) > 0;
+}
+
+/* ---- per-pick --------------------------------------------- */
+
+type Pick = { id: string; title: string; city: string; source_url: string | null };
+
+async function enrichPick(p: Pick, dryRun: boolean) {
+  const src = p.source_url ?? '';
+
+  const leId = src ? linkedEventsId(src) : null;
+  if (leId) {
+    const hit = await imageFromLinkedEvents(leId);
+    if (hit) {
+      if (!dryRun) {
+        await db.from('picks')
+          .update({ image_url: hit.url, image_attr: hit.attr, image_source: 'linkedevents' })
+          .eq('id', p.id);
+      }
+      return { title: p.title, status: dryRun ? 'would_enrich_linkedevents' : 'enriched_linkedevents', url: hit.url };
+    }
   }
 
-  return {
-    checked:    distinct.length,
-    dead_urls:  dead.length,
-    nulled:     dryRun ? 0 : nulled,
-    dead_picks: deadIds.length,
-  };
+  if (src) {
+    const hit = await imageFromPage(src);
+    if (hit) {
+      if (await alreadyUsedByPage(hit.url, p.id)) {
+        return { title: p.title, status: 'rejected_shared_image', url: hit.url };
+      }
+      if (!dryRun) {
+        await db.from('picks')
+          .update({ image_url: hit.url, image_attr: hit.attr, image_source: 'source_page' })
+          .eq('id', p.id);
+      }
+      return { title: p.title, status: dryRun ? 'would_enrich_source_page' : 'enriched_source_page', url: hit.url };
+    }
+  }
+
+  return { title: p.title, status: 'not_found' };
 }
 
 async function enrichCity(city: string, limit: number, dryRun: boolean) {
-  const center = CITY_CENTER[city];
-  if (!center) return { city, ok: false, error: `unknown city ${city}` };
+  const cutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400_000).toISOString();
 
-  const failCutoff = new Date(Date.now() - FAIL_COOLDOWN_DAYS * 86400 * 1000).toISOString();
-  const picksUrl = `${SUPABASE_URL}/rest/v1/picks` +
-    `?city=eq.${encodeURIComponent(city)}` +
-    `&archived_at=is.null&image_url=is.null` +
-    `&or=(image_enrich_failed_at.is.null,image_enrich_failed_at.lt.${failCutoff})` +
-    `&select=id,venue,neighborhood&order=id.asc`;
-  const picksRes = await fetch(picksUrl, { headers: sbHeaders() });
-  if (!picksRes.ok) return { city, ok: false, error: 'picks fetch failed', status: picksRes.status };
-  const picks = await picksRes.json() as Array<{ id: string; venue: string; neighborhood: string | null }>;
+  const { data: picks, error } = await db
+    .from('picks')
+    .select('id, title, city, source_url')
+    .eq('city', city)
+    .is('image_url', null)
+    .is('archived_at', null)
+    .not('source_url', 'is', null)
+    .or(`image_enrich_failed_at.is.null,image_enrich_failed_at.lt.${cutoff}`)
+    .limit(limit);
 
-  type Group = { venue: string; neighborhood: string; pick_ids: string[] };
-  const groups = new Map<string, Group>();
-  for (const p of picks) {
-    if (!p.venue) continue;
-    if (/various|multiple|online|popup|pop-up/i.test(p.venue)) continue;
-    const nhood = (p.neighborhood || '').trim();
-    const key   = `${p.venue.toLowerCase()}|${nhood.toLowerCase()}`;
-    let g = groups.get(key);
-    if (!g) { g = { venue: p.venue, neighborhood: nhood, pick_ids: [] }; groups.set(key, g); }
-    g.pick_ids.push(p.id);
+  if (error) return { city, ok: false, error: error.message };
+  if (!picks?.length) return { city, ok: true, total: 0, enriched: 0, message: 'nothing to enrich' };
+
+  const results = [];
+  const failed: string[] = [];
+  for (const p of picks as Pick[]) {
+    const r = await enrichPick(p, dryRun);
+    results.push(r);
+    if (r.status === 'not_found' || r.status === 'rejected_shared_image') failed.push(p.id);
   }
 
-  const todo = [...groups.values()].slice(0, limit);
-  let updated = 0, failed = 0;
-  const results: Array<Record<string, unknown>> = [];
-
-  for (const g of todo) {
-    await sleep(300);
-    const photoUri = await fetchPlacePhoto(g.venue, g.neighborhood, city, center[0], center[1]);
-    if (!photoUri) {
-      failed++;
-      results.push({ venue: g.venue, status: 'no_photo' });
-      if (!dryRun) {
-        const idList = g.pick_ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-        await fetch(`${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})`, {
-          method:  'PATCH',
-          headers: sbHeaders({ Prefer: 'return=minimal' }),
-          body:    JSON.stringify({ image_enrich_failed_at: new Date().toISOString() }),
-        }).catch(() => {});
-      }
-      continue;
-    }
-
-    if (!dryRun) {
-      const idList = g.pick_ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-      const upRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/picks?id=in.(${idList})&image_url=is.null`,
-        {
-          method:  'PATCH',
-          headers: sbHeaders({ Prefer: 'return=minimal' }),
-          body:    JSON.stringify({ image_url: photoUri }),
-        }
-      );
-      if (!upRes.ok) {
-        failed++;
-        results.push({
-          venue: g.venue, status: 'patch_failed',
-          error: (await upRes.text().catch(() => '')).slice(0, 200),
-        });
-        continue;
-      }
-    }
-
-    updated += g.pick_ids.length;
-    results.push({ venue: g.venue, status: 'ok', image_url: photoUri, picks_updated: g.pick_ids.length });
+  if (failed.length && !dryRun) {
+    await db.from('picks')
+      .update({ image_enrich_failed_at: new Date().toISOString() })
+      .in('id', failed);
   }
 
-  return {
-    city, ok: true,
-    groups_processed: todo.length,
-    groups_remaining: Math.max(0, groups.size - todo.length),
-    picks_updated:    updated,
-    groups_failed:    failed,
-    results,
-  };
+  const enriched = results.filter(r => r.status.includes('enrich')).length;
+  console.log(`[enrich-pick-images] ${city} dry_run=${dryRun} ${enriched}/${picks.length}`);
+  return { city, ok: true, dry_run: dryRun, total: picks.length, enriched, results: results.slice(0, 40) };
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin':  '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
-      },
-    });
-  }
-  if (req.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+  if (req.method !== 'POST') return new Response('POST only', { status: 405 });
 
-  const t0 = Date.now();
-  let body: { city?: string; limit?: number; dry_run?: boolean; heal?: boolean; heal_limit?: number } = {};
-  try { body = await req.json(); } catch { /* no body */ }
+  let city: string | null = null, limit = BATCH, dryRun = false;
+  try {
+    const b = await req.json().catch(() => ({}));
+    if (b.city) city = String(b.city).toLowerCase();
+    if (b.limit) limit = Math.min(Number(b.limit), 100);
+    if (b.dry_run === true) dryRun = true;
+  } catch (_) { /**/ }
 
-  const limit     = Math.min(body.limit ?? 30, 100);
-  const dryRun    = body.dry_run === true;
-  const heal      = body.heal === true;
-  const healLimit = Math.min(body.heal_limit ?? 400, 1000);
+  const cities = city ? [city] : ['tallinn', 'helsinki', 'riga', 'vilnius'];
+  const reports = [];
+  for (const c of cities) reports.push(await enrichCity(c, limit, dryRun));
 
-  // When city is omitted, run all cities in sequence (cron mode).
-  // Vilnius is excluded until the city flips from 'coming' to 'live'.
-  const cities = body.city
-    ? [body.city.toLowerCase()]
-    : ['tallinn', 'helsinki', 'riga'];
-
-  const reports: Array<Record<string, unknown>> = [];
-  for (const c of cities) {
-    // heal first: null any dead Google URLs so enrichCity refills them.
-    const healReport = heal ? await healCity(c, healLimit, dryRun) : undefined;
-    const enrichReport = await enrichCity(c, limit, dryRun);
-    reports.push(heal ? { ...enrichReport, heal: healReport } : enrichReport);
-  }
-
-  return json({
-    ok: true,
-    dry_run: dryRun,
-    heal,
-    cities: reports,
-    latency_ms: Date.now() - t0,
+  return new Response(JSON.stringify({ dry_run: dryRun, cities: reports }), {
+    headers: { 'Content-Type': 'application/json' },
   });
 });
