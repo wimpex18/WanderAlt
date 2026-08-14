@@ -777,11 +777,18 @@ rounds changed.
       re-fetches per pick instead, which fixes the 324-row backlog and
       every future pick, but the leak upstream is the tidier repair and
       is not done.
-- [x] **11c** Result: live picks with an image went **41 → 130 of 411
-      (10% → 32%)** and climbing as the backfill drains, 89 of them via
-      the Linkedevents lane, with real photographer credits (Seppo
-      Laakso, Riikka Kantinkoski, Pasi Pitkänen) rather than a hostname.
-      Dry run measured 9 of 10 before any of it was written.
+- [x] **11c** Result, backfill complete: live picks with an image went
+      **41 → 336 of 411, 10% → 82%**, 284 of them via the Linkedevents
+      lane, with real photographer credits (Seppo Laakso, Riikka
+      Kantinkoski, Pasi Pitkänen) rather than a hostname. 35 still
+      queued for the nightly cron; the rest have no source that carries
+      one. Dry run measured 9 of 10 before any of it was written.
+      **The same cooldown trap bit again one turn after it was written
+      down** — the run stalled at 130 because ~280 picks carried
+      `image_enrich_failed_at` from the past week, nearly all
+      Linkedevents rows the API resolves on sight. Those verdicts came
+      from the Wikidata venue matcher and mean "no venue match", not
+      "this event has no picture".
 - [x] **11d** Two design decisions in v5 worth keeping. **The API lane is
       exempt from the shared-image guard and the page lane is not**: a
       theatre run is one show on twelve dates and shares one image
