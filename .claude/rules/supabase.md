@@ -51,5 +51,5 @@ update picks set archived_at = null, archive_reason = null where archive_reason 
 - `verify-images` walks oldest-checked first (`NULLS FIRST`): 404/410/403 or non-image content-type clears the URL; timeout, 5xx and 429 retry once, never delete, but still stamp `image_checked_at`. Fresh Commons thumbnails 429 on first render.
 - `image_source` records which mechanism wrote each photo. Audit: `select * from image_health` — `duplicate_rows > 0` is the bad shape.
 - **After changing what a fetcher can find, clear `image_enrich_failed_at` for the rows the change could help** — the cooldown otherwise hides the fix for 30 days.
-- `enrich-venues` writes venue_details only (socials, coords, short_desc, closure); it writes no images.
+- `enrich-venues` writes venue_details only (socials, coords, short_desc, closure); it writes no images and archives nothing. It uses a Wikidata entity only when a label or alias equals the venue name (normalised) and P131 reaches the city; that entity's P576 sets `is_closed`, which hides the venue's picks in the app.
 - Most venue photos sit on kinds Places doesn't draw (museum, theatre, bar, library); they exist to be borrowed by events.

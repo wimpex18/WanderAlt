@@ -3,8 +3,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // ---------------------------------------------------------------------------
 // enrich-venues
 // Enriches venue_details rows from Wikidata + Nominatim + a website scrape.
-// Sets is_closed=true and archives picks when Wikidata P576 (dissolved/
-// demolished) is present — the only closure signal.
+// A Wikidata entity is used only when its label or alias equals the venue
+// name (normalised) and it sits in the city. Its P576 (dissolved/demolished)
+// sets venue_details.is_closed, which hides the venue's picks in the app;
+// nothing is archived from here.
 //
 // Also captures website (P856), facebook/instagram (P2013/P2003, else
 // scraped from the homepage) into venue_details.{website,facebook,instagram}.
@@ -63,14 +65,26 @@ async function dbUpsert(table: string, row: Record<string, unknown>, onConflict:
 // Wikidata helpers
 // ---------------------------------------------------------------------------
 
-async function wdSearch(label: string): Promise<string | null> {
+const normName = (s: string) =>
+  s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/* Candidates whose label, or the alias the search matched, is exactly the
+   venue name once normalised. wbsearchentities is a fuzzy prefix match, so
+   the first result is not evidence of anything. */
+async function wdSearch(label: string): Promise<string[]> {
   const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities` +
-    `&search=${encodeURIComponent(label)}&language=en&type=item&limit=5&format=json`;
+    `&search=${encodeURIComponent(label)}&language=en&uselang=en&type=item&limit=7&format=json`;
+  const want = normName(label);
+  if (!want) return [];
   try {
     const r = await fetch(url, { headers: { 'User-Agent': 'WanderAlt/1.0 (enrichment bot)' } });
     const j = await r.json();
-    return j.search?.[0]?.id ?? null;
-  } catch { return null; }
+    return (j.search ?? [])
+      .filter((c: { label?: string; match?: { text?: string } }) =>
+        normName(c.label ?? '') === want || normName(c.match?.text ?? '') === want)
+      .map((c: { id: string }) => c.id);
+  } catch { return []; }
 }
 
 async function wdVerifyCity(qid: string, cityQid: string): Promise<boolean> {
@@ -241,16 +255,14 @@ Deno.serve(async (req: Request) => {
     let claims: WdClaims = { ...EMPTY_CLAIMS };
     let source = 'nominatim';
 
-    const qid = await wdSearch(name);
-    if (qid) {
+    for (const qid of await wdSearch(name)) {
       await sleep(200);
-      const inCity = await wdVerifyCity(qid, cityQid);
-      if (inCity) {
-        await sleep(200);
-        claims = await wdGetClaims(qid);
-        wikidataId = qid;
-        source = 'wikidata';
-      }
+      if (!(await wdVerifyCity(qid, cityQid))) continue;
+      await sleep(200);
+      claims = await wdGetClaims(qid);
+      wikidataId = qid;
+      source = 'wikidata';
+      break;
     }
 
     let address: string | null = null;
@@ -295,19 +307,6 @@ Deno.serve(async (req: Request) => {
     if (isClosed)                row.is_closed       = true;
 
     await dbUpsert('venue_details', row, 'city,venue_key');
-
-    // Archive all active picks for permanently closed venues
-    if (isClosed) {
-      const archiveRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}&archived_at=is.null&venue=eq.${encodeURIComponent(name)}`,
-        {
-          method: 'PATCH',
-          headers: headers({ Prefer: 'return=minimal' }),
-          body: JSON.stringify({ archived_at: new Date().toISOString() }),
-        }
-      );
-      if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key} (source: wikidata)`);
-    }
 
     results.push({
       venue_key:      key,

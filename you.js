@@ -229,9 +229,7 @@
         <p style="margin-top:var(--s-4)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>
       </section>` : signInCard()}
 
-      <!-- The source count is the credibility line now that curators are
-           gone, and it belongs where someone goes looking for who is
-           behind this. -->
+      <!-- The source count says who is behind this. -->
       <p class="wa-digest__fine" style="margin-top:var(--s-8)">
         WanderAlt reads ${sources || 'its'} sources across ${cityList.length} cities.
         <a href="./about.html">See them all &rarr;</a>

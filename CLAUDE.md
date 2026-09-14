@@ -49,7 +49,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration. pg_cron runs as job owner and is unaffected.
 - **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
 - `anon`/`authenticated` have `search_path = public, extensions`; `vector` and `pg_trgm` live in `extensions`. `pg_net` is non-relocatable and stays; EXECUTE on `net.*` is revoked from `anon`.
-- Pipeline-internal tables (`sources`, `places_index`, `ingest_log`, `pick_changes`, `staging_messages`) have RLS on with no policies and no grants — intended deny-all. `admin.js` reads them with the service-role key.
+- Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`) have RLS on with no policies and no grants — intended deny-all. `admin.js` reads them with the service-role key.
 - `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
 - Open: leaked-password protection is off (dashboard toggle under Auth).
 

@@ -1,7 +1,7 @@
 {
   "name": "WanderAlt",
   "short_name": "WanderAlt",
-  "description": "Alternative culture in European cities, vouched for by human curators.",
+  "description": "What's on in European cities, with a time and a walking distance on every listing.",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#055959",
