@@ -6,6 +6,8 @@ It is a decision surface, not a publication. **A time and a walking distance are
 
 **Cities:** Tallinn · Helsinki · Riga live. Vilnius unlocked for internal testing. Version stamp lives in `package.json`.
 
+**Status:** pre-release with no production users. A full rewrite is planned; this codebase is kept to its current, working state.
+
 ## Running it
 
 No build step. Open `index.html`, or:
@@ -56,6 +58,8 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 ## Backend
 
 Supabase project `aqnsmmbrspkbfcvougeh` (eu-central-1): Postgres, REST, Edge Functions, pg_cron. RLS allows SELECT only, plus INSERT on `bookmarks` and `digest_opt_ins`. Function sources live in `supabase/functions/`, migrations in `supabase/migrations/`.
+
+Tables: `picks`, `venues`, `venue_details`, `venue_images`, `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `past`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`.
 
 ```
 ingest-* → staging_messages → process-staging → picks

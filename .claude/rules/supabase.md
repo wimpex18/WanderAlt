@@ -8,6 +8,10 @@ paths:
 
 # Supabase: functions, crons, pipeline, images
 
+## Functions
+
+Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fienta`, `-osm`, `-hel-linkedevents`, `-kinobize`, `-splendidpalace`, `-telliskivi`, `-hanzas-perons`, `-echo-gone-wrong`, `-ra` manual only), `process-staging`, `translate-picks` (manual), `geocode-picks`, `enrich-venues`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `verify-images`, `verify-venues` (admin), `resolve-links`, `backfill-pick-facts` (manual), `rotate-tonight`, `archive-stale`, `send-digest`, `unsubscribe-digest`, `calendar-feed`, `og-image`.
+
 ## Crons
 
 - 30 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).

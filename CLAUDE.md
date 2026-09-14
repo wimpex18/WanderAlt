@@ -1,6 +1,6 @@
 # WanderAlt
 
-Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
+Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full rewrite is planned, so retired code and data are deleted rather than kept. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
 
 Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-central-1) · Cloudflare Pages on `wanderalt.app`.
 
@@ -48,7 +48,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only, with INSERT on `bookmarks` and `digest_opt_ins`. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
 - **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration. pg_cron runs as job owner and is unaffected.
 - **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
-- `anon`/`authenticated` have `search_path = public, extensions`; `vector` and `pg_trgm` live in `extensions`. `pg_net` is non-relocatable and stays; EXECUTE on `net.*` is revoked from `anon`.
+- `anon`/`authenticated` have `search_path = public, extensions`. `pg_net` is non-relocatable and stays in `public`; EXECUTE on `net.*` is revoked from `anon`.
 - Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`) have RLS on with no policies and no grants — intended deny-all. `admin.js` reads them with the service-role key.
 - `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
 - Open: leaked-password protection is off (dashboard toggle under Auth).
@@ -71,6 +71,8 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 
 ## Pipeline and data
 
+Tables: `picks` (events), `venues` (OSM places), `venue_details` (enrichment by venue name), `venue_images` (photo cache), `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `past`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`; view `image_health`.
+
 ```
 ingest-* → staging_messages → process-staging → picks
          → enrich-images / enrich-pick-images → geocode-picks → enrich-venues
@@ -83,7 +85,8 @@ ingest-* → staging_messages → process-staging → picks
 - **A new city needs entries in `CITY_CONTEXT` (`process-staging`) and `CITY_CENTER` (`geocode-picks`)** or it silently falls back / 400s.
 - App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
 - `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
-- `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set.
+- `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.
+- `process-staging` still writes `picks.mood_tags` and `thumb_initials`; nothing reads them.
 - **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`.
 - **`cron.job_run_details` does not show whether a cron worked** — use `net._http_response` (`status_code`, `timed_out`, `error_msg`) by request id.
 - **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
