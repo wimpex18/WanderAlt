@@ -37,9 +37,8 @@
       });
 
   /* Same as get(), but walks PostgREST's 1000-row ceiling with
-     offset/limit until a short page comes back. Only the venues table
-     needs it today; a 2000-row cap on the loop is a runaway guard, and
-     it logs when it trips rather than truncating silently. */
+     offset/limit until a short page comes back. The 2000-row loop cap is
+     a runaway guard and logs when it trips. */
   const PAGE = 1000;
   const getAllPages = async (table, qs, signal) => {
     const out = [];
@@ -53,13 +52,9 @@
     return out;
   };
 
-  /* Route Wikimedia thumbnail URLs through our edge proxy so Wikipedia
-     doesn't set a third-party cookie on every visitor (Lighthouse
-     Best-Practice failure + a direct contradiction of the About page's
-     "no third-party scripts/cookies" promise). The /img/wm/* path is
-     handled by the wikimedia-proxy Worker (see workers/wikimedia-proxy/).
-     On localhost the rewrite is a no-op — the Worker isn't wired in
-     dev, and Wikipedia loads fine for local testing. */
+  /* Route Wikimedia thumbnails through the wikimedia-proxy Worker
+     (/img/wm/*) so Wikipedia sets no third-party cookie. No-op on
+     localhost, where the Worker is not wired. */
   const proxifyImage = (url) => {
     if (!url || typeof url !== 'string') return url;
     if (!/wikimedia\.org|wikipedia\.org/i.test(url))    return url;
@@ -128,9 +123,7 @@
     currency:    r.currency    || null,
     links:       r.links       || null,
     entities:    r.entities    || null,
-    /* Provenance freshness: the detail page prints "read N ago", which
-       is the line that replaced the curator byline as the reason to
-       believe a listing. Without these it silently printed nothing. */
+    /* Provenance freshness: the detail page prints "read N ago". */
     lastSeenAt: r.last_seen_at || null,
     createdAt:  r.created_at   || null,
     /* isClosed is hydrated below by joining against venue_details. */
@@ -138,15 +131,9 @@
   });
 
   /* ── Venues (Places) ──────────────────────────────────────────
-     The venues table is ~1000 OSM-ingested rows, mostly mainstream
-     (bars, museums, libraries). WanderAlt is alternative culture, so
-     Places mode surfaces only the underground-leaning kinds — record
-     stores, indie bookshops, galleries, clubs, flea markets, arts
-     centres, independent cinemas, community/experimental spaces.
-     Generic bars / museums / libraries are intentionally excluded
-     (they'd dilute the curated identity; craft bars still surface as
-     event venues on picks). Exposed as WA.VENUE_KINDS for any surface
-     that needs to name the same set. */
+     Places surfaces only the underground-leaning kinds. Generic bars,
+     museums, theatres and libraries are intentionally excluded (they
+     still surface as event venues on picks). Exposed as WA.VENUE_KINDS. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club',
     'thrift', 'arts centre', 'cinema', 'community',
@@ -163,17 +150,14 @@
     lng:          r.lng ?? null,
     imageUrl:     proxifyImage(r.image_url) || null,
     imageAttr:    r.image_attr || null,
-    /* Which mechanism wrote the picture. `logo` means it is the venue's
-       own MARK rather than a photograph of the place -- enrich-venue-images
-       v4 admits those deliberately, and they arrive at ~192px, so a
-       surface that would stretch one has to know. */
+    /* Which mechanism wrote the picture. `logo` means the venue's own mark
+       rather than a photograph (small, so surfaces must not stretch it). */
     imageSource:  r.image_source || null,
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
-    /* Raw OSM opening_hours, captured by ingest-osm since Aug 2026.
-       WA.Hours parses it; null on roughly half the table, and a null
-       must render as "hours not filed", never as "closed". */
+    /* Raw OSM opening_hours. WA.Hours parses it; a null must render as
+       "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
   });
 
@@ -185,14 +169,10 @@
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), 2000);
 
-    /* Fetch ALL active picks across every city (not just the current
-       one). Roughly ~200 rows total — well under any per-request size
-       cap and the same order of magnitude as the static catalog. The
-       all-cities catalog is exposed as WA._catalogAll so cross-city
-       venue/curator URLs resolve (e.g. a Tallinn user clicking a
-       bookmarked Riga pick), and the city-filtered slice is exposed
-       as WA.catalog (the listing pages keep showing only the active
-       city). past + venue_details follow the same all-cities pattern. */
+    /* Fetch ALL active picks across every city. The all-cities catalogue
+       is exposed as WA._catalogAll so cross-city links resolve; the
+       city-filtered slice is WA.catalog. past + venue_details follow the
+       same pattern. */
     const [picksResult, pastResult, vdResult, venuesResult] = await Promise.allSettled([
       get(
         `picks`,
@@ -200,8 +180,8 @@
         `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
                 `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
                 `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked,` +
-                /* Facts the sources stated about themselves (Jul 2026) —
-                   see the staging payload contract in process-staging. */
+                /* Facts the sources stated about themselves — see the
+                   staging payload contract in process-staging. */
                 `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
@@ -209,27 +189,15 @@
         abort.signal
       ),
       get(`past`, `order=created_at.asc`, abort.signal),
-      /* Widened Aug 2026: short_desc is the venue blurb 3b draws on the
-         source page ("Former industrial hall in Põhja-Tallinn…"). It
-         only lands on 3 of 224 rows today, so the section renders when
-         there is one and is simply absent otherwise — the enrichment
-         lane can fill it later without another code change. */
+      /* short_desc is the venue blurb the source page prints when present. */
       get(
         `venue_details`,
         `select=venue_key,is_closed,business_status,short_desc`,
         abort.signal
       ),
-      /* Places: active alt-culture venues with coordinates.
-
-         The kind whitelist is applied SERVER-side (built from the same
-         VENUE_KINDS set, so it still lives in one place) and the request
-         is paged. Neither is cosmetic: PostgREST caps a response at 1000
-         rows, and this asked for all 2555 active venues ordered by name
-         across all four cities. The cap silently sliced the alphabet —
-         the last row that ever reached the browser was "Kierrätyskeskus
-         Malmi", so every venue sorting after roughly "Ki" was invisible
-         on Discover's Places scope and unreachable on place.html. Tallinn
-         saw 42 of its 447. */
+      /* Places: active alt-culture venues with coordinates. The kind
+         whitelist is applied server-side (from VENUE_KINDS) and the request
+         is paged, because PostgREST caps a response at 1000 rows. */
       getAllPages(
         `venues`,
         `status=eq.active` +
@@ -268,10 +236,8 @@
         }
         return p;
       });
-      /* All-cities snapshot for cross-city lookups (venue.html?id=… of
-         a pick from another city, curator profile for a Riga curator
-         while CITY=tallinn, etc.). The listing pages keep using the
-         city-filtered slice. */
+      /* All-cities snapshot for cross-city lookups (e.g. a saved pick from
+         another city). Listing pages use the city-filtered slice. */
       if (window.WA.when) window.WA.when.stampAll(all);
       window.WA._catalogAll = all;
       window.WA.catalog     = all.filter(e => e.city === CITY);
@@ -286,9 +252,7 @@
     }
 
     if (pastResult.status === 'fulfilled') {
-      /* created_at is when the row was archived, which is what 3b's
-         "the source stopped listing it four days ago" is measuring.
-         It was fetched and then dropped by this mapper. */
+      /* created_at is when the row was archived. */
       const allPast = pastResult.value.map(r => ({
         id: r.id, title: r.title, date: r.date, city: r.city, archivedAt: r.created_at,
       }));
@@ -299,20 +263,9 @@
     }
 
   /* ── An event with no photo borrows its venue's ──────────────
-     Only 49 of 580 live picks carry an image of their own, but the room
-     they happen in is the same room every time — so a gig at Kanuti
-     Gildi Saal can show Kanuti Gildi Saal rather than a category glyph.
-
-     Two rules keep this honest. It only ever borrows DOWNWARD, from the
-     place to the event held there, never sideways between events. And
-     the attribution travels with the picture, relabelled, so a reader
-     is told they are looking at the venue and not at the night: a
-     photograph of the room is context, but passing it off as coverage
-     of the event would be the same class of lie as an invented time.
-
-     Runs once here rather than in four render paths, so Explore,
-     Tonight, Saved, Source and detail all agree about what a pick's
-     photo is. */
+     Only ever downward, from the place to the event held there, and the
+     attribution travels relabelled so the reader knows it shows the
+     venue, not the night. Runs once here so every surface agrees. */
   const borrowVenuePhotos = () => {
     const picks  = window.WA._catalogAll || [];
     const venues = window.WA._venuesAll  || [];
@@ -354,17 +307,9 @@
   };
 
   /* ── Look one row up by id, when the loaded set does not have it ──
-     The loaded set is deliberately narrower than the database: picks
-     exclude archived rows, and venues are filtered to VENUE_KINDS (so
-     museums, theatres, bars and libraries — 22 of the 26 venues that
-     carry a photograph — are absent by design).
-
-     detail.js used to answer "not in the loaded set" with "That page
-     has closed down. Listings expire — that's normal." For an archived
-     pick that is true. For a museum, or for a `place.html?id=` link
-     from before the redesign, it is the app inventing a fact about the
-     world, which is the one thing this product must not do. So ask the
-     database before saying anything.
+     The loaded set is narrower than the database: picks exclude archived
+     rows and venues are filtered to VENUE_KINDS. Ask the database before
+     saying a row is gone.
 
      Returns { kind: 'event' | 'place', e, archivedAt } or null when the
      row genuinely does not exist. */

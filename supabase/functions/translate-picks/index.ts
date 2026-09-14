@@ -1,17 +1,9 @@
 // ============================================================
-// WanderAlt — translate-picks  (v3, July 2026)
-// One-shot backfill + safety net for the English-only app rule.
-// v3 (Jul 2026): also reviews picks.description — the promoter's own
-// listing copy, carried through from the source by the staging payload
-// contract. It arrives in the venue's language, and this is an
-// English-only guide.
-// v2 vs v1: detection covers BOTH title and quote (v1 keyed on the
-// title only, so picks with an English title but a Cyrillic quote
-// were skipped — 11 such quotes survived the first drain), and
-// quote-only updates no longer get blocked by the title-unchanged
-// guard. Groq llama-4-scout only; ~25 items per call; hard time cap;
-// ONE invocation drains what it can and reports `remaining`.
-// NOT scheduled — process-staging v38 keeps new picks English.
+// WanderAlt — translate-picks
+// Backfill + safety net for the English-only rule: reviews title, quote
+// and description. Groq, ~25 items per call, hard time cap; ONE
+// invocation drains what it can and reports `remaining`.
+// NOT scheduled — process-staging keeps new picks English.
 //
 //   POST {"limit": 700, "batch": 25, "dry_run": false}
 // ============================================================
@@ -21,11 +13,6 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_KEY     = Deno.env.get("GROQ_API_KEY");
-/* llama-4-scout was decommissioned at Groq — /v1/models no longer lists
-   it and a completion returns 404 (verified Jul 2026, not recalled).
-   llama-3.3-70b-versatile was already this repo's documented fallback and
-   probes 200, so it is the minimal verified replacement. Six functions
-   pinned the dead id; see the note in CLAUDE.md. */
 const GROQ_MODEL   = "llama-3.3-70b-versatile";
 const TIME_CAP_MS  = 110_000;
 
@@ -78,12 +65,9 @@ export default {
     for (let off = 0; off < (picks ?? []).length; off += batch) {
       if (Date.now() - start > TIME_CAP_MS) break;
       const chunk = (picks ?? []).slice(off, off + batch);
-      /* description is the promoter blurb carried through from the source
-         (Jul 2026). It arrives in the venue's language, and this is an
-         English-only guide — so it is reviewed here alongside title and
-         quote rather than shipping Estonian prose to an English page.
-         Truncated into the prompt: a 4000-char press release would blow
-         the batch budget, and 1200 chars is past what the page renders. */
+      /* description is the promoter blurb carried from the source, in the
+         venue's language. Truncated into the prompt to protect the batch
+         budget. */
       const items = chunk.map(p => ({
         id: p.id, title: p.title, quote: p.quote ?? "",
         description: String(p.description ?? "").slice(0, 1200),

@@ -1,35 +1,23 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// resolve-links  v1  (Jul 2026)
+// resolve-links
 // ------------------------------------------------------------
 // Turns picks.entities — the named things a pick is ABOUT — into
-// picks.links, a map of platform -> url.
+// picks.links, a map of platform -> url, via hubs rather than platforms:
 //
-// The design decision worth keeping: we integrate HUBS, not platforms.
-// A Spotify integration buys one platform and costs a client-credentials
-// secret. One MusicBrainz artist lookup with inc=url-rels returns
-// Spotify, SoundCloud, Bandcamp, Mixcloud, Discogs, Resident Advisor,
-// YouTube and the official site together, for free, with no key at all —
-// and Bandcamp has no public metadata API to integrate directly, while
-// Mixcloud's is OAuth-only. So the hubs are strictly better:
-//
-//   music (artist, label)          -> MusicBrainz
+//   music (artist, label)          -> MusicBrainz (url-rels: Spotify,
+//                                     SoundCloud, Bandcamp, Mixcloud, …)
 //   books, authors, readings       -> Open Library
 //   art, theatre, film, everything -> Wikidata
 //
-// And the honest part: for flea markets, community nights, sports and
-// most local underground events there is NO hub. Nothing looks them up.
-// Those pass through with no links, and the pages fall back to the
-// source page and the venue's own socials, which we already hold. This
-// function must never invent a link to fill that gap — a wrong artist
-// page is worse than an empty one, which is why every match below is
+// Many local events have no hub; those get no links and the pages fall
+// back to the source page and the venue's socials. Every match is
 // confidence-gated and drops out rather than guessing.
 //
-// All three hubs are free, keyless, and ask for a descriptive
-// User-Agent plus considerate rates. We are serial with a delay, small
-// batches per invocation, and each pick is stamped links_resolved_at
-// whether or not anything was found, so nothing is retried forever.
+// All three hubs are free and keyless. Serial with a delay, small batches,
+// and each pick is stamped links_resolved_at whether or not anything was
+// found, so nothing is retried forever.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;

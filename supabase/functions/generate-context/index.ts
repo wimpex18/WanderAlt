@@ -1,32 +1,15 @@
-/* generate-context v12 — Groq-primary, Gemini fallback
-
-   v12 (Jul 2026): GROQ_MODEL repointed. llama-4-scout is decommissioned
-   at Groq — absent from /v1/models and 404 on completion (verified by
-   probe, not recalled). Six functions pinned the dead id; see CLAUDE.md.
-
-   v11 (cost policy): Groq llama-4-scout is now PRIMARY; Gemini
-   gemini-2.5-flash-lite is the FALLBACK only when Groq is
-   unavailable (missing key / 429 / 5xx). The “why this matters”
-   blurb is plain editorial text generation that Groq handles well,
-   and Groq's free tier means this function costs ~€0 in the normal
-   case. Per CLAUDE.md: use the free model when possible, Gemini only
-   when nothing else works.
-
-   v10: dropped Search grounding + downgraded to gemini-2.5-flash-lite
-   (grounding was the primary cost driver). Kept as the fallback model. */
+/* generate-context — the "why this matters" blurb (picks.context_md).
+   Groq first, then the OpenRouter :free lane, then Gemini only if
+   pipeline_config.gemini_fallback_enabled allows it. */
 
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI  = Deno.env.get('GEMINI_API_KEY') ?? '';
 const GROQ    = Deno.env.get('GROQ_API_KEY') ?? '';
-// OpenRouter free lane — inert until OPENROUTER_API_KEY exists (Jul 2026 policy).
+// OpenRouter free lane — inert until OPENROUTER_API_KEY exists.
 const OPENROUTER_KEY   = Deno.env.get('OPENROUTER_API_KEY');
 const OPENROUTER_MODEL = Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-super-120b-a12b:free';
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-/* llama-4-scout was decommissioned at Groq — absent from /v1/models and
-   404 on completion (verified by probe, Jul 2026; not recalled from
-   memory). llama-3.3-70b-versatile was already this repo's documented
-   fallback and probes 200, so it is the minimal verified replacement. */
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const INTER_PICK_DELAY_MS = 800;
 
@@ -106,7 +89,7 @@ const callGroq = async (prompt: string): Promise<string|null> => {
   } catch { return null; }
 };
 
-/* Gemini (fallback only). */
+/* Gemini (last resort, gated). */
 const callOpenRouter = async (prompt: string): Promise<string|null> => {
   if (!OPENROUTER_KEY) return null;
   try {
@@ -168,10 +151,7 @@ const saveContext = async (id: string, context_md: string): Promise<boolean> => 
   return r.ok || r.status === 204;
 };
 
-/* Same kill-switch process-staging reads — Gemini fallback is retired
-   (pipeline_config.gemini_fallback_enabled=false) until an owner re-flips
-   it. This function used to call Gemini unconditionally as a last resort,
-   ungated, which contradicted the policy; fixed to match process-staging. */
+/* Same kill-switch process-staging reads (pipeline_config.gemini_fallback_enabled). */
 const loadGeminiGateEnabled = async (): Promise<boolean> => {
   const r = await sbFetch(`/rest/v1/pipeline_config?key=eq.gemini_fallback_enabled&select=value&limit=1`);
   if (!r.ok) return true;

@@ -1,30 +1,10 @@
 /* ============================================================
    marks.js — makes the category sprite usable.
    ------------------------------------------------------------
-   marks.svg is the single source of truth for the eight marks, but
-   <use href="marks.svg#wa-mark-gig"> does NOT resolve in Chrome or
-   Safari: external-document references in <use> are a Firefox-only
-   feature in practice. The sprite renders as an empty well everywhere
-   that matters, which is exactly the grey box the direction bans.
-
-   The alternatives were: inline forty lines of <symbol> into all eight
-   pages (duplication the repo already avoids), or move the paths into a
-   JS table (then marks.svg is decorative and drifts). Instead the file
-   stays authoritative and is injected once per page, after which the
-   same-document <use href="#wa-mark-gig"> resolves normally — SVG
-   references are live, so marks already on the page fill in the moment
-   the symbols land.
-
-   Same-origin fetch, so CSP connect-src 'self' covers it.
-
-   NOT cached in sessionStorage. It was, to avoid re-fetching a few
-   hundred bytes on every navigation — but that put a copy of the sprite
-   somewhere with no expiry, so editing marks.svg showed nothing until
-   the reader opened a new tab, and a half-written sprite would have
-   pinned itself for the session. The HTTP cache already does this job
-   properly: /*.svg falls under the _headers /* rule, the browser
-   revalidates, and a changed file wins. One cache, and it is the one
-   with invalidation.
+   <use href="marks.svg#…"> (external document) does not resolve in
+   Chrome or Safari, so marks.svg is fetched and injected once per page,
+   after which same-document <use href="#wa-mark-…"> resolves. Not cached
+   in sessionStorage: the HTTP cache revalidates, so an edited sprite wins.
    ============================================================ */
 (() => {
   'use strict';
@@ -83,33 +63,14 @@
   else document.addEventListener('DOMContentLoaded', load, { once: true });
 
   /* ── A photo that fails to load ──────────────────────────────
-     The no-grey-box rule is written for a photo that is ABSENT, and
-     every renderer already honours it: explore's card, saved's mosaic
-     tile and detail's well all branch to the mark when imageUrl is
-     empty. A photo that is PRESENT and then 404s produces the same
-     rendered outcome — an empty well — and nothing was catching it.
-     A census on 12 Aug 2026 confirmed it: point a tile's img at a
-     missing file and the img stays in the DOM at full tile size with
-     naturalWidth 0 and no mark behind it. That is the torn frame the
-     rule exists to ban, and verify-images only clears dead URLs on a
-     schedule, so a decayed link renders that way until the next sweep.
-
-     One delegated listener rather than an onerror attribute: the
-     production CSP blocks inline handlers. `error` does not bubble but
-     it does capture, which is why this is on the capture phase.
-
-     Each surface degrades exactly the way its own renderer already
-     does when there is no photo, so nothing new is invented here:
+     A photo that 404s degrades exactly as the renderer would with no
+     photo. One delegated capture-phase listener (`error` does not bubble,
+     and the CSP blocks inline onerror):
        card well   → the mark on the tint
        list tile   → the mark alone; the tile IS the well
-       row media   → nothing at all. The element is removed so the
-                     :has(.wa-row__media) track collapses and the row
-                     runs full width, which is what a photoless row
-                     already does. Never a 96px glyph on a timetable.
+       row media   → removed, so the :has(.wa-row__media) track collapses
        detail well → the --mark variant with its own credit line
-     The kind travels on data-mark, written at each render site, since
-     an <img> cannot otherwise say what it was a picture of. A missing
-     or unknown value lands on the plain pin via markFor. */
+     The kind travels on data-mark; unknown values land on the plain pin. */
   const useMark = (name) => `<svg aria-hidden="true"><use href="#wa-mark-${name}"></use></svg>`;
 
   const onImageError = (ev) => {
@@ -151,25 +112,10 @@
   document.addEventListener('error', onImageError, true);
 
   /* ── Too small to fill the box it was given ──────────────────
-     A stored image is not always a photograph sized for a hero. The
-     venue mark lane writes logos at 106-192px, and Helsinki's
-     Linkedevents feed supplies event thumbnails at 222x222 -- both fine
-     in a 181px card and both ruinous in the detail well, which runs to
-     1240 wide with `object-fit: cover`. A 106px mark blown up
-     elevenfold and cropped is the same "wrong photograph" failure this
-     product refuses everywhere else; it just arrives by upscaling
-     rather than by mismatching.
-
-     CSS cannot ask how big a file is, and the builder cannot know
-     either -- `image_source` says where a picture came from, not what
-     it measures. So it is asked at load, against the box the image
-     actually got, which makes the rule adaptive rather than a
-     hard-coded pixel guess: below 60% of its container it is contained
-     on the tint instead of cropped to fill. That covers every source,
-     including ones not written yet.
-
-     Capture phase, like the error handler above, because `load` does
-     not bubble. */
+     Logos and feed thumbnails can be far smaller than the detail well.
+     Asked at load against the box the image actually got: below 60% of
+     its container it is contained on the tint instead of cropped to fill.
+     Capture phase because `load` does not bubble. */
   const FILL_RATIO = 0.6;
 
   const onImageLoad = (ev) => {

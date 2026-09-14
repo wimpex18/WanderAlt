@@ -1,22 +1,10 @@
 // ============================================================
-// ingest-kinobize  v5
-// v5 (Aug 2026): parseDateText returns null when the date text cannot be
-//   read. The old tail was `return now.toISOString()`, so any
-//   unrecognised date string became "starts right now" — six picks
-//   landed sharing a starts_at of 2026-07-27 14:56:34.766 because that
-//   is when this ran. when.js now derives "on tonight" from starts_at,
-//   so a fabricated one would put a film on the Tonight list on its
-//   scrape day. Unknown stays unknown.
-// v4 (Jul 2026): writes staging_messages.payload — the structured half
-//   of the row. See the payload contract in process-staging.
-// v3 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id, so repeat listings 409'd instead
-//   of being silently ignored.
-// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
-//   for wa_reconcile_absent_picks (silent-cancellation detection).
+// ingest-kinobize
 // Scrapes Kino Bize (art-house cinema, Riga) film schedule from
-// https://kinobize.lv/en/repertoire and pushes films to staging_messages.
-// Dedup key: (channel, message_id) where message_id = slug-id.
+// https://kinobize.lv/en/repertoire and pushes films to staging_messages
+// with a structured payload. Dedup key: (channel, message_id) where
+// message_id = cyrb53(slug). bumpSeen() marks still-listed picks for
+// wa_reconcile_absent_picks.
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -27,12 +15,8 @@ const EVENTS_URL   = 'https://www.kinobize.lv/en/repertoire/all-screenings';
 const CHANNEL      = 'kinobize';
 const SOURCE_CITY  = 'riga';
 
-/* Slug -> bigint. staging_messages.message_id is a BIGINT column, and this
-   function used to pass the URL slug (a string) straight into it. PostgREST
-   rejected every non-numeric slug, upsertEvent returned 'error', and the
-   run loop counted only 'inserted' and 'skipped' — so the function reported
-   ok with zeros, forever. Same hash hel-linkedevents already uses; keeping
-   one implementation rather than inventing a second. */
+/* Slug -> bigint (staging_messages.message_id is BIGINT). Same hash
+   hel-linkedevents uses. */
 function cyrb53(str: string, seed = 0): number {
   let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
   for (let i = 0; i < str.length; i++) {
@@ -94,14 +78,9 @@ type KinoBizeEvent = {
   dateIso: string | null;
 };
 
-/* The listing prints a day as "Thursday, 06.08." with NO year, so the
-   year has to be inferred. Anything more than a month behind today is
-   read as next year — a cinema repertoire never lists the deep past, and
-   that is the only way 06.01. can mean January of next year rather than
-   seven months ago. Returns null if the day is unreadable; unknown stays
-   unknown rather than becoming "starts right now", which is what the old
-   `return now.toISOString()` tail did (two picks landed sharing a
-   starts_at of 2026-07-27 14:56:34.766 — the moment of the scrape). */
+/* The listing prints a day as "Thursday, 06.08." with NO year. Anything
+   more than a month behind today is read as next year. Returns null if
+   the day is unreadable: unknown stays unknown, never "starts right now". */
 function isoFromDayAndClock(day: number, month: number, clock: string): string | null {
   if (!day || !month) return null;
   const tm = clock.match(/(\d{1,2}):(\d{2})/);
@@ -117,22 +96,16 @@ function isoFromDayAndClock(day: number, month: number, clock: string): string |
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-/* v6: rewritten against the site's current markup.
-   The old parser split on <li> and expected one film per <li> with a
-   combined "06.08. 18:00" date-and-time string. The schedule is now
-   grouped BY DAY — one <li> per day holding many .movie blocks, the day
-   in <p class="day">, each screening's time in its own <p class="clock">.
-   So the combined regex matched nothing, every dateText came back empty,
-   and the old now() fallback stamped the scrape time on all of them.
+/* The schedule is grouped BY DAY — one <li> per day holding many .movie
+   blocks:
 
      <li><p class="day">Thursday, 06.08.</p>
        <div class="movie" …>
          <p class="clock">18:00</p>
          <a href="/en/repertoire/films/<slug>/<id>"><p class="movie-title">Title</p></a>
 
-   One row per film at its earliest upcoming screening, which keeps the
-   existing (channel, cyrb53(slug)) dedup key intact. Verified against
-   the live page: 7 films, 0 slug-titles, 0 missing times. */
+   One row per film at its earliest upcoming screening, keeping the
+   (channel, cyrb53(slug)) dedup key. */
 function parseListing(html: string): KinoBizeEvent[] {
   const events: KinoBizeEvent[] = [];
   const seen = new Set<string>();
@@ -277,8 +250,7 @@ Deno.serve(async () => {
       const r = await upsertEvent(sourceId, e);
       if (r === 'inserted') totalInserted++;
       else if (r === 'skipped') totalSkipped++;
-      /* 'error' used to fall through both branches, which is how a fully
-         broken ingest reported ok with zeros for 47 consecutive runs. */
+      /* 'error' is counted, never dropped. */
       else totalErrors++;
     }
 
@@ -288,9 +260,8 @@ Deno.serve(async () => {
     console.error('[kinobize]', runError);
   }
 
-  /* Zero yield with events on the page is a failure, not a quiet success —
-     it is exactly what hid the bigint/slug bug. Report it as 'warn' so
-     wa_ingest_zero_yield_check and a human both see it. */
+  /* Zero yield with events on the page is a failure, not a quiet success.
+     Report it as 'warn' so wa_ingest_zero_yield_check sees it. */
   const zeroYield = !runError && totalInserted === 0 && totalSkipped === 0;
   await logRun({
     inserted: totalInserted,

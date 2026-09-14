@@ -1,19 +1,8 @@
 /* ============================================================
    seen.js — WA.Seen, the opened/saved log.
    ------------------------------------------------------------
-   This is what replaced the taste quiz. 5c: "Hide things I've seen is
-   the behavioural personalisation you asked for instead of a taste
-   quiz. It needs no onboarding, no profile, and no model — just an
-   opened-and-saved log — and it makes the second visit feel different
-   from the first."
-
-   So it is deliberately tiny: a set of pick ids the reader has opened
-   or saved, and nothing else. No scores, no decay, no vectors. The
-   filter it powers is opt-in and reversible, and You can wipe it.
-
-   Capped and FIFO-trimmed: an unbounded localStorage key on a site
-   someone uses for a year is a slow leak, and nothing here is worth
-   more than the last few hundred things you looked at.
+   A capped, FIFO-trimmed set of pick ids the reader opened or saved.
+   Powers the opt-in "hide things I've seen" filter; You can wipe it.
 
    Public API (window.WA.Seen):
      mark(id)      → record an open

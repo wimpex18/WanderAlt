@@ -1,33 +1,20 @@
 /* ============================================================
-   map-tiles.js — MapLibre GL basemap for WanderAlt's Discover map.
+   map-tiles.js — MapLibre GL basemap for the Tonight map.
    ------------------------------------------------------------
-   Replaces the illustrated SVG city plane with a real, pannable,
-   zoomable vector basemap. Free tiles from OpenFreeMap (OpenStreetMap
-   data, no API key, no rate limit).
+   Free OpenFreeMap vector tiles (OpenStreetMap data, no API key).
 
-   Exposes window.WA.MapTiles — a thin façade so the page scripts don't
-   need to know MapLibre exists. The pin overlay (tonight.js, since the
-   Aug 2026 redesign replaced map.js) calls .project(lng, lat) to convert
-   real-world coords into container pixels and positions absolute-pinned
-   DOM nodes on top.
-
-   Style: a custom editorial style file matching WanderAlt tokens
-   (cream paper, muted petrol sea, off-white roads, mono labels).
+   Exposes window.WA.MapTiles — a thin façade so page scripts don't need
+   to know MapLibre exists. The pin overlay in tonight.js calls
+   .project(lng, lat) to position absolute DOM nodes over the canvas.
    ============================================================ */
 (function () {
   'use strict';
   window.WA = window.WA || {};
 
-  /* City default views — what the map shows before any pins exist.
-     Explicit land-weighted {center, zoom} per city, NOT a bbox fit:
-     these are coastal cities, so fitting a bounding box put half the
-     frame in open water (Tallinn fit to its old bbox landed at zoom
-     ~10.9 desktop / ~9.6 mobile with the Gulf of Finland filling the
-     pane). A fixed center/zoom also frames identically
-     in the narrow mobile pane and the desktop split pane.
-     EVERY live city in city.js MUST have an entry — a missing one is
-     a loud console error (the silent fall-back-to-Tallinn class of
-     bug has bitten twice; see CITY_CONTEXT in process-staging). */
+  /* City default views: explicit land-weighted {center, zoom}, not a bbox
+     fit (a bbox puts half of a coastal city's frame in open water).
+     EVERY live city in city.js MUST have an entry — a missing one is a
+     loud console error. */
   const CITY_VIEWS = {
     tallinn:  { center: [24.745, 59.434], zoom: 12.4 },  /* Old Town · Kalamaja · Telliskivi */
     helsinki: { center: [24.938, 60.168], zoom: 12.0 },  /* Kallio · Punavuori · Kamppi */
@@ -45,10 +32,8 @@
   function init(containerId, opts = {}) {
     if (map) return map;
     if (typeof window.maplibregl === 'undefined') {
-      /* maplibre is lazy-loaded after first paint (maplibre-loader.js,
-         June 2026 perf pass) — re-run init when it announces itself
-         instead of giving up. The pending/onReady queues already absorb
-         any calls made in the meantime. */
+      /* MapLibre is lazy-loaded (maplibre-loader.js); re-run init when it
+         announces itself. Pending/onReady queues absorb calls meanwhile. */
       document.addEventListener('wa:maplibre-ready',
         () => init(containerId, opts), { once: true });
       return null;
@@ -60,13 +45,7 @@
       view = CITY_VIEWS.tallinn;
     }
 
-    /* The basemap follows the theme, and ONLY the theme.
-       This used to also require body[data-skin="dusk"], which was the
-       Dusk Glass system's marker. The Aug 2026 pages don't carry
-       data-skin at all, so the condition was never true and the night
-       map silently loaded the paper style — a cream basemap under dark
-       chrome. theme.js owns data-theme on <html>; that is the single
-       signal now. */
+    /* The basemap follows data-theme on <html>, set by theme.js. */
     const styleFor = () =>
       document.documentElement.dataset.theme === 'dusk'
         ? './map-style-dusk.json' : './map-style.json';
@@ -107,12 +86,9 @@
       pending = [];
     };
     map.on('load', markReady);
-    /* 'load' fires at most once, and only for the style the map booted
-       with. theme.js resolves Dusk/Daybreak just after this module inits,
-       so on a Daybreak boot the handler above swaps the style before the
-       first one finished — 'load' never fired, `ready` never latched, and
-       the pin overlay stayed empty over a basemap that had visibly
-       rendered. 'styledata' covers the swapped-in style. */
+    /* 'load' fires only for the style the map booted with. theme.js can
+       swap the style before that finishes, so 'styledata' covers the
+       swapped-in style too. */
     map.on('styledata', markReady);
 
     /* Auto-resize whenever the container's box changes (pane toggles,
@@ -134,17 +110,8 @@
     return { x: p.x, y: p.y };
   }
 
-  /* Every camera move in the product goes through this file, and none of
-     them honoured prefers-reduced-motion: wa.css respects it in three
-     places and view-transition.js checks it before naming a transition,
-     but a 480ms easing camera ignored it entirely. A moving map is
-     exactly the kind of large-area motion that setting exists for.
-
-     Fixed here rather than at the call sites so all three -- the fit
-     when the mode opens, the flyTo when a row is focused, and the zoom
-     when a cluster is tapped -- get it from one place. Reduced motion
-     does not mean "do not go there"; it means arrive without the tween,
-     so the destination is identical either way. */
+  /* Every camera move goes through here, so prefers-reduced-motion is
+     honoured in one place: same destination, no tween. */
   const MOVE_MS = () =>
     (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : 480;
 

@@ -1,40 +1,11 @@
 // ============================================================
-// WanderAlt — ingest-osm  (v14)
-// v14 (Aug 2026): capture the `wikidata` tag. This function has always
-//      fetched every tag (`out center tags`) and the row mapping simply
-//      never read this one. It matters more than its ~10% coverage
-//      suggests, because it is an IDENTIFIER: enrich-images had to guess
-//      a venue from its name and put Tallinn Town Hall's Christmas
-//      market on a basement club called Hall, whereas a QID resolves
-//      "D3" as precisely as "Estonian National Opera".
-//      enrich-venue-images consumes it.
-// v13 (Aug 2026, redesign step 0): capture opening_hours.
-//   The Overpass query already ends `out center tags;`, so every element
-//   has always arrived with its full tag set — the row mapping just never
-//   read t.opening_hours. Result: the catalogue carried opening hours on
-//   1 of 937 public venues while the answer sat unread in every response.
-//   Measured OSM coverage for the Places-whitelist kinds: tallinn 55%,
-//   riga 44%, helsinki 47%, vilnius 57%. Under the 70% floor Walks needed
-//   (so Walks was cut), but it is the difference between "open now" being
-//   a real field and a decorative one. Stored as raw OSM syntax; hours.js
-//   parses it, and also the Google weekday_text shape in venue_details.
-// v12 (Jul 2026, design-critique should-fix): two curation guards.
-//   • Chain blocklist: pipeline_config.venue_chain_blocklist (string[],
-//     word-prefix match on the venue name, case-insensitive) skips
-//     mainstream chains at ingest — 18 "Apollo" mall bookshops/multiplex
-//     rows had flooded the Places list of an *underground* guide.
-//   • Upsert no longer writes `status` — the column defaults to 'active'
-//     on INSERT, and existing rows keep curator-set statuses; previously
-//     every OSM run silently re-activated rejected venues.
-// v11 (May 2026): add Vilnius to the CITIES map (bbox covers the
-//                 core cultural districts — Senamiestis, Naujamiestis,
-//                 Užupis, Žvėrynas, Antakalnis, Valakampiai). No other
-//                 change — existing cities + per-city try/catch intact.
-// v10 (May 2026): capture contact:facebook / contact:instagram from
-//                 OSM tags (normalised to full URLs) so Places cards
-//                 can show social links. Website capture unchanged.
-// v9: per-city try/catch so an Overpass 504 on one city doesn't abort
-//     the others. v8: multi-city (was Tallinn-only).
+// WanderAlt — ingest-osm
+// Overpass sweep of culture venues for all four cities (per-city
+// try/catch so one 504 doesn't abort the others). Captures website,
+// contact:facebook / contact:instagram (normalised to URLs),
+// opening_hours (raw OSM syntax) and the `wikidata` QID.
+// Skips chains on pipeline_config.venue_chain_blocklist, and never
+// writes `status` on upsert.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -94,10 +65,9 @@ const tagToKind = (t: Record<string, string>) => {
   return null;
 };
 
-/* Chain blocklist (v12): entries match as a case-insensitive word prefix
-   of the venue name — "apollo" skips "Apollo", "Apollo Kino", "Apollo Kids"
-   but NOT "Apollonia". Config-driven so curators extend it without a
-   redeploy: pipeline_config key `venue_chain_blocklist`, value string[]. */
+/* Chain blocklist: entries match as a case-insensitive word prefix of the
+   venue name — "apollo" skips "Apollo Kino" but NOT "Apollonia".
+   pipeline_config key `venue_chain_blocklist`, value string[]. */
 const loadChainBlocklist = async (sb: ReturnType<typeof createClient>): Promise<RegExp[]> => {
   const { data } = await sb.from("pipeline_config")
     .select("value").eq("key", "venue_chain_blocklist").maybeSingle();
@@ -145,22 +115,14 @@ async function ingestCity(
     const lat = el.lat ?? el.center?.lat;
     const lng = el.lon ?? el.center?.lon;
     if (!lat || !lng) continue;
-    /* v12: mainstream chains never enter the catalog. */
+    /* Mainstream chains never enter the catalog. */
     if (blocklist.some((re) => re.test(name))) { blocked++; continue; }
 
     const hours = t.opening_hours || null;
     if (hours) withHours++;
 
-    /* v14: the QID, which this function has been fetching and
-       discarding since it was written — `out center tags` returns every
-       tag and the row mapping simply never read this one.
-
-       It matters more than its 10% coverage suggests, because it is an
-       IDENTIFIER. enrich-images had to guess a venue from its name and
-       put Tallinn Town Hall's Christmas market on a basement club
-       called Hall; a QID resolves "D3" as precisely as it resolves
-       "Estonian National Opera". Only accepted in Q-number form so a
-       malformed tag cannot poison the lookup. */
+    /* The QID: an identifier enrich-venue-images resolves exactly. Only
+       accepted in Q-number form so a malformed tag cannot poison it. */
     const qid = /^Q\d+$/.test(String(t.wikidata || "").trim())
       ? String(t.wikidata).trim() : null;
     if (qid) withQid++;
@@ -172,18 +134,16 @@ async function ingestCity(
       neighborhood: t["addr:suburb"] || t["addr:city_district"] || null,
       kind, lat, lng,
       osm_id:       el.id,
-      /* v13: raw OSM syntax ("Tu-Sa 12:00-19:00; Su,Mo off"), stored
-         verbatim — hours.js parses it client-side. Writing null when OSM
-         has no tag is correct: this column has exactly one writer, and a
-         venue that drops the tag upstream should stop claiming hours.
-         Hand-edited hours live in venue_details, which this never touches. */
+      /* Raw OSM syntax ("Tu-Sa 12:00-19:00; Su,Mo off"), stored verbatim —
+         hours.js parses it. Null when OSM has no tag: this column has one
+         writer. Hand-edited hours live in venue_details. */
       opening_hours: hours,
       website:      t.website || t["contact:website"] || null,
       facebook:     normSocial(t["contact:facebook"]  || t.facebook,  "https://facebook.com/"),
       instagram:    normSocial(t["contact:instagram"] || t.instagram, "https://instagram.com/"),
       wikidata:     qid,
-      /* v12: no `status` here — INSERTs get the column default ('active'),
-         existing rows keep curator-set statuses (rejections must stick). */
+      /* No `status` here — INSERTs get the column default ('active'),
+         existing rows keep manually-set statuses (rejections must stick). */
       last_seen_at: now,
       updated_at:   now,
     });

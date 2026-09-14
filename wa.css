@@ -1,28 +1,16 @@
 /* ============================================================
    wa.css — the whole design system.
    ------------------------------------------------------------
-   Replaces styles.css (9,118 lines) wholesale. That file was not
-   patchable: its [data-skin="dusk"] [data-page="…"] override layers
-   meant every screen-local fix fought three others, which is why the
-   same overlap and alignment bugs kept coming back.
-
-   This file is deliberately small enough to hold in your head:
-   48 tokens, 13 components, two themes. If a screen needs something
-   that isn't here, the answer is almost always that one of the
-   thirteen should grow a modifier — not that the screen should grow
-   a rule. (The direction asked for "roughly thirty tokens, twelve
-   components". Those were targets; these are the counts. If you
-   change the shape of this file, recount rather than copying the
-   sentence forward.)
+   Tokens, components, two themes. If a screen needs something that
+   isn't here, one of the components should grow a modifier — not the
+   screen a rule.
 
    MATERIAL: flat opaque paper. Ink on cream by day, ink on near-black
-   at night. There is no scene under glass any more.
+   at night.
 
    GLASS: exactly two elements — the sticky top bar and the bottom tab
-   bar. Both are chrome, both float over content the reader has already
-   passed, both are ≥92% opaque in the page's own ground colour. Nothing
-   else in the product is translucent: not cards, not sheets, not map
-   pins, not badges over photos. Never nest it.
+   bar, both ≥92% opaque in the page's own ground colour. Nothing else
+   is translucent. Never nest it.
 
    Theme is driven by data-theme on <html>, set pre-paint by theme.js.
    ============================================================ */
@@ -31,9 +19,8 @@
    1 · FONTS
    ============================================================ */
 
-/* Fraunces — the catalogue voice. Only where a human wrote something:
-   pick titles, page headlines, the Saturday email. Never below 17px;
-   below that it muddies and it is why the old cards read cramped. */
+/* Fraunces — the catalogue voice: pick titles, page headlines, the email.
+   Never below 17px. */
 @font-face {
   font-family: 'Fraunces';
   src: url('fonts/fraunces-600.woff2') format('woff2');
@@ -52,26 +39,10 @@
   font-weight: 500; font-style: normal; font-display: swap;
 }
 
-/* The interface face. The direction (6a, option C) specifies Plus
-   Jakarta Sans 600/700 — geometric skeleton, humanist warmth, and it
-   holds at 10–11px in the tab bar where Fraunces does not. Landed
-   Aug 2026, so Inter is out of this token set. The woff2 files stay on
-   disk because admin-tokens.css still declares them: 6e's verdict on
-   admin is "keep, not redesigned", and public pages never load that file.
-
-   TWO files, not four, because Google ships v12 as a VARIABLE font: one
-   woff2 per subset carries the whole 200–800 axis, so 600 and 700 come
-   out of the same file and any weight between them is free.
-
-   Both subsets are required and neither is optional. Estonian õ ä ö ü
-   sit in Latin-1 and come from `latin`, but Latvian ā ē ī ū ķ ļ ņ ģ and
-   Lithuanian ą č ė į ų are all U+0100 and up, so they come from
-   `latin-ext`. Shipping `latin` alone would have rendered Āgenskalns,
-   Mežaparks and Šnipiškės in a fallback face — three of four cities
-   quietly wrong, and the kind of thing that looks fine in Tallinn.
-
-   unicode-range is what keeps that cheap: a reader who never scrolls
-   past a diacritic never downloads the second file. */
+/* The interface face: Plus Jakarta Sans, a variable font — one woff2 per
+   subset carries the whole 200–800 axis. Both subsets are required:
+   Latvian and Lithuanian diacritics are U+0100 and up (`latin-ext`).
+   unicode-range means a reader who never hits one never downloads it. */
 @font-face {
   font-family: 'Plus Jakarta Sans';
   src: url('fonts/plus-jakarta-sans-latin.woff2') format('woff2');
@@ -92,14 +63,12 @@
 
 /* ============================================================
    2 · TOKENS
-   Forty-eight values. Do not hand-roll a colour, blur or rgba
-   literal anywhere else in the product — a hard-coded value looks
-   right in one theme and breaks completely in the other.
+   Do not hand-roll a colour, blur or rgba literal anywhere else in
+   the product — a hard-coded value breaks the other theme.
    ============================================================ */
 
 :root {
-  /* ---- Paper (day is the default; most deciding happens in daylight,
-          and outdoors in daylight paper beats glass) ---- */
+  /* ---- Paper (day is the default) ---- */
   --ground:       #f2efe6;
   --card:         #fffdf8;
   --ink:          #0a1011;
@@ -113,13 +82,9 @@
   --petrol-ink:   #ffffff;   /* text on a petrol fill */
   --petrol-tint:  rgba(5, 89, 89, .09);   /* the mark well, active chips */
 
-  /* ---- Signal. Lime is NOT a colour, it is an alarm, and in this
-          system it has exactly one job: "now". That means the NOW pill
-          on a row's time rail and the selected/now map pin — nothing
-          else. Never body text, never borders, never an icon, and not
-          the CTA: the primary key is petrol in both themes, because
-          lime fails on paper by day and there is no second rule at
-          night worth the inconsistency. ---- */
+  /* ---- Signal. Lime is an alarm with exactly one job: "now" — the NOW
+          pill on a row's rail and the selected/now map pin. Never body
+          text, borders, icons, or the CTA. ---- */
   --signal:       #d2dc50;
   --signal-ink:   #0a1011;
 
@@ -140,13 +105,8 @@
   --ff-display: 'Fraunces', Georgia, serif;
   --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Deliberately the same VALUE as --fs-mono, not the same token: this
-     is Jakarta chrome (the eyebrow above a value, the nav label) and
-     that is the mono fact line. They are free to diverge, and folding
-     one into the other would mean a change to the fact size silently
-     resizing every label in the product. Was 10px until Aug 2026 --
-     under the scale's own floor, and small for a tab-bar label that is
-     the primary navigation on a phone. */
+  /* Same VALUE as --fs-mono, separate token on purpose: this is Jakarta
+     chrome (eyebrows, nav label), that is the mono fact line. */
   --fs-label:     11px;
   --fs-mono:      11px;   /* the fact line, uppercase, tracked */
   --fs-meta:      12px;
@@ -176,21 +136,14 @@
   --r-card-lg:  16px;
   --r-sheet:    20px;
 
-  /* ---- Chrome. Both bars reserve real layout height — the old
-          floating island was positioned and reserved nothing, which is
-          the whole overlap bug. ---- */
-  /* 64, not 56. The bar carries the brand, the app nav and the account
-     key on desktop, and at 56 all three sat cramped against a 26px
-     mark. Every sticky offset in the file reads this token -- the
-     offline banner, the map-mode head, the sticky companion column --
-     so they follow it without a second number to keep in step. */
+  /* ---- Chrome. Both bars reserve real layout height. ---- */
+  /* Every sticky offset in the file reads this token. */
   --topbar-h:  64px;
   --tabbar-h:  60px;
   --control-h: 48px;
   --tap-min:   44px;   /* hard floor on public pages */
 
-  /* ---- Width ladder. Carried over from the old system unchanged;
-          only the components inside it are new. ---- */
+  /* ---- Width ladder ---- */
   --reading-max: 1024px;
 
   /* ---- Motion. These two and nothing new. ---- */
@@ -227,12 +180,9 @@
    3 · BASE
    ============================================================ */
 
-/* Cross-document View Transitions. This lived in styles.css and went
-   with it — view-transition.js was left tagging elements for a feature
-   no stylesheet enabled any more, which is a silent regression rather
-   than a deliberate removal. The chrome carries stable names so the bars
-   morph instead of cross-fading; the shared-element pair is set up in
-   view-transition.js. Unsupported browsers just navigate instantly. */
+/* Cross-document View Transitions. The chrome carries stable names so the
+   bars morph instead of cross-fading; the shared-element pair is set up
+   in view-transition.js. Unsupported browsers just navigate instantly. */
 @view-transition { navigation: auto; }
 
 .wa-topbar { view-transition-name: wa-topbar; }
@@ -264,7 +214,7 @@ body {
      scrolled content; the page still owns the space so nothing is ever
      covered at the end of a list. */
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-  /* No horizontal overflow, at any width. Checked by hand every pass. */
+/* No horizontal overflow, at any width. */
   overflow-x: hidden;
 }
 
@@ -290,26 +240,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 /* Content clears the sticky bar here rather than in each page's first
-   element. Explore and Tonight had their own margin on the capsule and
-   the chip row; Saved, You, About and 404 start with a heading and had
-   nothing, so the title sat flush against the bar with a measured 0px
-   gap. One rule, and no page has to remember. Pages that open with a
-   full-bleed well opt out — the photo is meant to touch the chrome. */
+   element. Pages that open with a full-bleed well opt out. */
 .wa-shell > :first-child { margin-top: var(--s-6); }
 .wa-shell > .wa-detail__well:first-child,
 .wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
 
-/* An in-page jump scrolls the target to y=0, which is underneath the
-   sticky top bar -- so "Calendar feed" landed the reader on a heading
-   hidden by 64px of chrome, and #calendar did the same before it. The
-   bar getting taller made an existing problem more obvious rather than
-   creating one.
-
-   Scoped to the ids that are actually link targets rather than a blanket
-   [id] rule: scroll-margin-top also applies to scrollIntoView(), and
-   Tonight centres a row that way when a pin is tapped. A global rule
-   would quietly shift that. Plus one gutter, so the heading clears the
-   bar instead of touching it. */
+/* An in-page jump scrolls the target under the sticky top bar. Scoped to
+   the ids that are link targets, not [id]: scroll-margin-top also applies
+   to scrollIntoView(), which Tonight uses to centre a row. */
 #main,
 #digest-title,
 #calendar,
@@ -397,10 +335,8 @@ a.wa-sr:focus {
 .wa-section { margin-top: var(--s-8); }
 
 /* Scoped to a direct child and given two classes deliberately: the list
-   components below reset `margin: 0`, which is the same specificity and
-   sits later in the file, so a one-class rule here loses to them
-   silently — which is exactly how "the heading is the tightest gap"
-   keeps coming back. */
+   components below reset `margin: 0` at the same specificity later in
+   the file, so a one-class rule here would lose. */
 .wa-section > .wa-section-title + *:not(.wa-section-sub),
 .wa-section > .wa-section-sub + * {
   margin-top: var(--s-5);
@@ -414,19 +350,9 @@ a.wa-sr:focus {
 
 .wa-fact--strong { color: var(--ink); }
 
-/* The eyebrow label: the small uppercase word that names the value
-   under it. The capsule's WHERE / WHEN / WHAT and the labelled cells on
-   detail, walk, about and You were byte-identical four-declaration
-   rules 1,683 lines apart, so the pair could drift without anyone
-   noticing they were meant to match. One rule, both users named — no
-   speculative third class, because an unreached rule in this file is as
-   likely to be an unfinished feature as dead weight and the next census
-   should not have to decide which.
-
-   It lives here rather than in either component because it belongs to
-   neither: it is a type role, like .wa-fact above it. Both classes are
-   declared exactly once in the file, so hoisting them changes no
-   cascade. */
+/* The eyebrow label: the small uppercase word that names the value under
+   it. Shared by the capsule's WHERE / WHEN / WHAT and the labelled cells
+   on detail, walk, about and You. A type role, owned by neither. */
 .wa-capsule__label,
 .wa-cell__label {
   font: 700 var(--fs-label)/1 var(--ff-ui);
@@ -471,9 +397,7 @@ a.wa-sr:focus {
   /* The home link is a tap target like any other — the 26px mark is the
      icon, not the hit area. */
   min-height: var(--tap-min);
-  /* --fs-title, not --fs-card: the wordmark is the one piece of chrome
-     that should read at a glance from across a desk, and it grew with
-     the bar rather than staying at the card size it borrowed. */
+  /* --fs-title: the wordmark reads at a glance. */
   font: 700 var(--fs-title)/1 var(--ff-ui);
   letter-spacing: -.01em;
   color: var(--ink);
@@ -481,8 +405,7 @@ a.wa-sr:focus {
   margin-right: auto;
 }
 
-/* Scaled with the bar. The radius moves with it so the tile keeps its
-   proportion rather than looking squarer as it grows. */
+/* Scaled with the bar; the radius moves with it. */
 .wa-topbar__mark { width: 32px; height: 32px; border-radius: 8px; }
 
 /* ============================================================
@@ -491,16 +414,12 @@ a.wa-sr:focus {
    because it is the only nav item with an expiry.
    ============================================================ */
 
-/* ONE set of nav links at every width — a phone copy and a desktop copy
-   drift apart, and this is the component the whole product navigates by.
+/* ONE set of nav links at every width.
 
-   It is a sibling of the top bar, NOT a child of it. That is load-bearing:
-   .wa-topbar carries backdrop-filter, and any element with a backdrop
-   filter becomes the containing block for its fixed-position descendants.
-   Nested inside, this bar's `bottom: 0` resolved against the 56px header
-   and pinned the nav to the TOP of the page on phones. Below 1024 it is
-   fixed to the bottom of the viewport; at 1024 it is fixed to the top and
-   centred in the masthead band (6f), which needs it outside either way. */
+   A sibling of the top bar, NOT a child: .wa-topbar carries
+   backdrop-filter, which makes it the containing block for fixed
+   descendants. Below 1024 it is fixed to the bottom of the viewport; at
+   1024 it is fixed to the top, centred in the masthead band. */
 .wa-tabbar {
   position: fixed;
   inset-inline: 0;
@@ -584,17 +503,11 @@ a.wa-sr:focus {
 
 .wa-capsule__slot:last-of-type { border-right: 0; }
 
-/* The desktop overrides must come AFTER the base rules, not before.
-   Both are single-class selectors, so source order decides -- with the
-   media query above them the phone treatment won at every width and the
-   masthead nav rendered as 10px stacked labels 22px wide, under the tap
-   floor. Found by measuring at 1440, invisible at 390 where the two
-   agree. */
+/* The desktop overrides must come AFTER the base rules: both are
+   single-class selectors, so source order decides. */
 @media (min-width: 1024px) {
-  /* Into the masthead: same band as the top bar, centred between the
-     brand and the account key. Fixed to the top rather than laid out
-     inside the header, because it cannot BE inside the header — see the
-     containing-block note above. */
+  /* Into the masthead: fixed to the top band, centred between the brand
+     and the account key (it cannot be inside the header, see above). */
   .wa-tabbar {
     inset-inline: auto;
     top: 0;
@@ -646,8 +559,7 @@ a.wa-sr:focus {
   white-space: nowrap;
 }
 
-/* Inset by 2px, not 4 — at 4 the key came out 38px tall inside a 48px
-   capsule, under the 44 floor. */
+/* Inset by 2px, not 4, so the key clears 44px inside a 48px capsule. */
 .wa-capsule__go {
   flex: 0 0 auto;
   width: var(--tap-min);
@@ -676,8 +588,8 @@ a.wa-sr:focus {
 
 /* ============================================================
    8 · COMPONENT — scope chips / tabs
-   All / Tonight / Places. One row of three changes the whole page
-   identity. Icon-over-label from 768 up, underline on the active one.
+   All / Events / Places / Walks. Icon-over-label from 768 up,
+   underline on the active one.
    ============================================================ */
 
 .wa-scope {
@@ -709,11 +621,8 @@ a.wa-sr:focus {
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
 
-/* Same monoline treatment as the tab bar. Without fill:none these
-   stroke-drawn paths fill instead of outlining, and every scope icon
-   renders as a solid blob — the globe became a black dot. Caught by
-   looking at a screenshot; no measurement would have said anything,
-   because the box was the right size the whole time. */
+/* Same monoline treatment as the tab bar: without fill:none these
+   stroke-drawn paths render as solid blobs. */
 .wa-scope__chip svg {
   width: 18px; height: 18px;
   fill: none; stroke: currentColor; stroke-width: 1.5;
@@ -730,10 +639,8 @@ a.wa-sr:focus {
 
 @media (min-width: 768px) {
   .wa-scope { gap: var(--s-6); }
-  /* Icon over label from 768 (6f). min-width matters here: dropping the
-     pill's horizontal padding for an underline tab shrinks a short label
-     like "All" to 31px, which clears the 44px floor vertically and fails
-     it horizontally -- a target you can miss sideways. */
+  /* Icon over label from 768. min-width keeps a short label like "All"
+     over the 44px floor horizontally. */
   .wa-scope__chip {
     flex-direction: column;
     gap: var(--s-1);
@@ -753,39 +660,6 @@ a.wa-sr:focus {
   }
 }
 
-/* 5b's masthead link. Quiet by design — it sits next to the account
-   key and must not compete with the four scope tabs beside it. Hidden
-   below 1024, where the masthead has no room and the digest card at the
-   foot of Explore is the only surface (5a draws no such link). */
-
-
-/* 5b drew Explore's desktop masthead as the four SCOPE tabs, with the
-   app nav dropped there entirely: "on desktop Tonight is a scope, Saved
-   is the saved-strip, You is the avatar." That shipped, and it is
-   refuted -- by a dead end rather than by taste.
-
-   Measured at 1440 on a first visit: `.wa-tabbar` is display:none, the
-   saved strip is absent because nothing is saved yet (it is designed to
-   be -- "a strip reading 0 saved is worse than no strip"), and a query
-   for every visible link to saved.html returns **an empty array**.
-   There is no route to Saved at all. Tonight fares little better: the
-   only links to it are the "See all N" bridges at the foot of a shelf.
-
-   And the row that replaced the nav collides with it: both are four
-   items, icon over label, in the same band, and both contain
-   "Tonight" -- pointing at a scope filter here and at a whole page
-   everywhere else. The masthead meant page navigation on eight pages
-   and content filtering on the ninth, with no way to tell which.
-
-   So the app nav stays on every page, and the scope tabs sit with the
-   content they filter, which is where they already were below 1024.
-   One masthead, one meaning. The tabs keep their compressed desktop
-   sizing because the row still has to read as a control strip rather
-   than a list of links. */
-/* The row used to be lifted into the 56px masthead, where the chips had
-   to be squeezed to fit inside the glass band. It sits in the content
-   flow now, so that compression made the desktop chips SMALLER than the
-   phone ones for no remaining reason. Gone; the chips below grow instead. */
 
 /* Bigger on the surfaces that have the room. Explore's first screen is
    one control group -- capsule then scope -- and at 48px tall against a
@@ -823,13 +697,9 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
-/* 5e: "Petrol on a 9%-petrol ground by day; pale teal on a 6%-cream
-   ground at night." The day half is --petrol-tint. The night half is
-   NOT the accent tint -- a teal wash on near-black reads as a colour
-   cast behind a teal glyph, which is why the spec switches the ground
-   to cream there. Scoped to the mark surfaces rather than changing
-   --petrol-tint, because active chips and capsule hover do want the
-   accent at night. */
+/* Petrol on a 9%-petrol ground by day; pale teal on a 6%-cream ground at
+   night (a teal wash on near-black reads as a colour cast). Scoped to the
+   mark surfaces rather than changing --petrol-tint. */
 [data-theme="dusk"] .wa-mark,
 [data-theme="dusk"] .wa-list-card__mosaic,
 [data-theme="dusk"] .wa-list-card__tile,
@@ -840,10 +710,7 @@ a.wa-sr:focus {
 
 .wa-mark svg,
 .wa-mark use {
-  /* 5e sizes the card mark at 44-62px. 46% alone tracked the card, so a
-     181px desktop cell drew it at 83px — the mark stopped being a label
-     on a ground and became an illustration. Clamped to the stated range;
-     the percentage still drives it between those ends. */
+  /* The card mark is 44-62px: the percentage drives it, clamped. */
   width: clamp(44px, 46%, 62px);
   height: clamp(44px, 46%, 62px);
   stroke: var(--petrol);
@@ -902,10 +769,7 @@ a.wa-sr:focus {
 
 [data-theme="dusk"] .wa-card__badge { background: rgba(20, 28, 29, .94); }
 
-/* The one lime use on a card: something is live or starting now.
-   94% like the neutral badge — 5e's rule is about badges over photos,
-   not about which badge, and a fully opaque chip was the only element
-   on a card that sat flat on top of a photograph instead of over it. */
+/* The one lime use on a card: something is live or starting now. */
 .wa-card__badge--now {
   background: color-mix(in srgb, var(--signal) 94%, transparent);
   color: var(--signal-ink);
@@ -948,11 +812,8 @@ a.wa-sr:focus {
   object-fit: cover;
 }
 
-/* The venue's own mark rather than a photograph of it. `cover` on a
-   square well crops a wordmark's ends off -- and the marks v4 writes
-   are mostly wordmarks at 106-192px, so they would also be upscaled
-   into the crop. Contained on the tint, padded so it reads as a mark
-   on a ground and not as a photo that failed to fill its frame. */
+/* The venue's own mark rather than a photograph: contained on the tint
+   and padded, never cropped to the square. */
 .wa-card__photo--brand {
   object-fit: contain;
   padding: var(--s-5);
@@ -989,9 +850,8 @@ a.wa-sr:focus {
 /* ============================================================
    11 · COMPONENT — timetable row
    The dense list. Time and distance own a fixed left rail that always
-   prints something: a clock time, NOW, or →02 for a place open until
-   two. That single column is what makes the missing-date and
-   missing-photo cases boring instead of broken.
+   prints something: a clock time, NOW, →02 for a place open until two,
+   or OPEN.
    ============================================================ */
 
 .wa-rows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
@@ -1008,18 +868,8 @@ a.wa-sr:focus {
 
 .wa-row:last-child { border-bottom: 0; }
 
-/* The row and the card are links, and until Aug 2026 they were the only
-   links in the product without a hover state -- while `.wa-list-card`,
-   `.wa-walkcard` and `.wa-savedstrip`, all rarer, each had one. The row
-   is the primary object on Tonight, Saved, Source and You, so on a
-   pointer device the most common clickable thing in the product was the
-   one giving no sign it could be clicked.
-
-   Underlining the title is the system's existing answer for this --
-   `.wa-walk__name` and `.wa-row__more` both already do it -- rather than
-   a new tint band, which on a full-bleed row would read as selection.
-   Behind `(hover: hover)` so a touch device does not keep the state
-   stuck on the last row tapped. */
+/* Rows and cards are links: the title underlines on hover, behind
+   `(hover: hover)` so touch devices don't keep the state stuck. */
 @media (hover: hover) {
   .wa-row:hover .wa-row__title,
   .wa-card:hover .wa-card__title { text-decoration: underline; }
@@ -1038,39 +888,16 @@ a.wa-sr:focus {
 
 .wa-row__time { color: var(--ink); font-size: var(--fs-meta); }
 
-/* The slot holds a measured distance ("450 m") in the steady state, and
-   the NEIGHBOURHOOD only as the fallback before location is granted.
-   The 52px track is sized for the distance; it is the fallback that
-   does not fit, and measuring at 375 says exactly how badly: 13 of 30
-   rows overran the track, but only `Telliskivi` (71px of ink) actually
-   crossed into the title column, by 2.4px. `Vanalinn`, `Kalamaja` and
-   `Kadriorg` (~57px) overran into the 16px column gap and stopped
-   there, which is why nobody had ever noticed them.
-
-   So the fix is sized to the defect. The line may use the track plus
-   that gap and is clipped at the column boundary, which leaves those
-   27 rows pixel-identical, stops the two that crossed, and costs no
-   list height. The rejected alternatives are worth naming: ellipsis at
-   52px truncated 14 of 30 rows to fix 2; widening the track to 72px
-   truncated nothing but took 20px off every title forever — 5 two-line
-   titles became 7 and the list grew 116px — to buy a fallback state
-   that disappears the moment permission is granted. And widening only
-   *while* the fallback shows is barred outright, because the rail must
-   not reflow when permission arrives later.
-
-   `nowrap` earns its place separately: `Põhja-Tallinn` was the one
-   value that wrapped, making that rail three lines where every other
-   was two. */
+/* The slot holds a distance ("450 m"), or the neighbourhood as the
+   fallback before location is granted. `nowrap` keeps every rail at two
+   lines, and the rail must not reflow when permission arrives. */
 .wa-row__dist {
   color: var(--ink-mute);
   align-self: flex-start;
   width: max-content;
-  /* The track plus MOST of the column gap, not all of it. Letting it
-     take the full 16px put the clipped values' ellipsis flush against
-     the title -- 0px clearance where an unclipped row has 12px, so the
-     longest names were the ones that looked cramped. Half the gap keeps
-     8px of air on every row, and the common names (Vanalinn, Kalamaja,
-     Kadriorg, all ~57px) still show in full. */
+  /* The track plus half the column gap, clipped there: the neighbourhood
+     fallback is wider than a distance, and this keeps 8px of air before
+     the title. */
   max-width: calc(100% + var(--s-2));
   white-space: nowrap;
   overflow: hidden;
@@ -1108,27 +935,20 @@ a.wa-sr:focus {
   overflow: hidden;
 }
 
-/* 3a: "The description stops at three lines with an inline more that
-   expands in place — no navigation to read a sentence." Expanding is
-   just dropping the clamp. */
+/* The description stops at three lines with an inline "more" that
+   expands in place. */
 .wa-row__desc--open {
   -webkit-line-clamp: unset;
   display: block;
   overflow: visible;
 }
 
-/* Sits in the text, not beside it, so it reads as the end of the
-   sentence rather than as a control. It still has to clear the 44px
-   floor, which the negative margins buy back so it does not push the
-   meta line down. */
+/* Sits in the text, so it reads as the end of the sentence. */
 .wa-row__more {
   border: 0;
   background: none;
-  /* Vertical padding buys the 44px height and the negative vertical
-     margin gives it back so the meta line does not shift. The LEFT edge
-     stays flush with the title and description above it -- padding it
-     for a bigger hit area pushed the word 8px out of the text column,
-     which is visible on every long row. */
+  /* Vertical padding buys the 44px height and the negative margin gives
+     it back. The left edge stays flush with the text column. */
   padding: var(--s-3) var(--s-4) var(--s-3) 0;
   margin: calc(var(--s-3) * -1) 0;
   min-height: var(--tap-min);
@@ -1160,26 +980,10 @@ a.wa-sr:focus {
   background: var(--petrol-tint);
 }
 
-/* The wider desktop row earns a photo; the phone row has no photo
-   region at all, so nothing collapses when a photo is missing.
-
-   The third track is `auto`, not a fixed 96px, and that is the whole
-   point: only ~6% of picks carry an image, so a reserved column would
-   be empty on almost every row — which is exactly the "hole in the
-   layout" the direction warns against ("the optional photo sits at the
-   far right where its absence reads as 'no photo', not as a hole").
-   With `auto` a row with no media element has no third cell at all and
-   the body simply runs wider; rows that do have one still align their
-   photo to the shared right edge.
-
-   This shipped broken: the fixed track was declared and .wa-row__media
-   was never emitted by any module, so every Tonight and Source row
-   carried 112px of dead space at 1024+. Found by DOM census, Aug 2026. */
+/* The wider desktop row earns a photo; the phone row has no photo region.
+   The third track is added only when the row HAS media, so a photoless
+   row has no third cell and no hanging column gap. */
 @media (min-width: 1024px) {
-  /* The track is added only when the row HAS media. A collapsed-to-zero
-     third track is not good enough — the column gap still applies to an
-     empty track, which left 16px hanging off the right of every
-     photoless row. Same :has() shape the saved row already uses. */
   .wa-row:has(.wa-row__media) {
     grid-template-columns: 52px minmax(0, 1fr) 96px;
   }
@@ -1189,20 +993,9 @@ a.wa-sr:focus {
 /* ============================================================
    COMPONENT — seven-day density strip
 
-   From 1b, where it was the best idea of that round. 5b traded it out of
-   Explore ("it does not survive a single-column browsing layout") with an
-   explicit recommendation: it becomes the header of the Tonight tab,
-   where the reader is already thinking about time.
-
-   It says the one thing a rail of identical tickets cannot: Monday is
-   dead, wait for Friday. That is worth a header because the alternative
-   is a reader filtering to Monday, finding nothing, and concluding the
-   product is empty rather than the night is.
-
-   Bars are proportional to the busiest day, with a floor so a day with
-   one thing still reads as one thing rather than as nothing. A genuinely
-   empty day gets no bar at all — that is the honest signal, and it is
-   the whole point of the component.
+   Tonight's header. Says what a list cannot: Monday is dead, wait for
+   Friday. Bars are proportional to the busiest day, with a floor so one
+   event still reads; a genuinely empty day gets no bar at all.
    ============================================================ */
 
 .wa-density {
@@ -1257,21 +1050,10 @@ a.wa-sr:focus {
    for. Both are a tint plus a mark, never colour alone. */
 .wa-density__day--today .wa-density__label { color: var(--ink); }
 
-/* Below 372px a day falls under --tap-min: seven columns in 320px, less
-   two 20px gutters and six 4px gaps, is 36.6. Measured, not estimated.
-   The strip cannot scroll -- it exists to say the thing a list cannot,
-   "Monday is dead, wait for Friday", which needs the whole week on
-   screen at once.
-   What makes it soluble is that the GAP is not what separates the bars.
-   `.wa-density__bar` is capped at max-width 28px and centred, so the
-   visual rhythm comes from the bar's own width inside a wider cell. The
-   grid gap only shrinks the tap target. Take it to zero and full-bleed
-   the strip -- the same margin-inline opt-out the carousel uses -- and
-   each cell becomes 320/7 = 45.7px while the bars keep 17.7px of air
-   between them, more than the 8.6px they have now.
-   Cells tile with no dead zone, which is what a calendar grid or a tab
-   bar does: at a boundary the tap picks a neighbouring day rather than
-   doing nothing, and this is a filter, recoverable in one tap. */
+/* Below 372px seven cells would fall under --tap-min. The grid gap is
+   not what separates the bars (each bar is capped at 28px and centred),
+   so the gap goes to zero and the strip bleeds full width: bigger
+   targets and more air between bars. */
 @media (max-width: 371.98px) {
   .wa-density {
     margin-inline: calc(var(--gutter) * -1);
@@ -1291,15 +1073,11 @@ a.wa-sr:focus {
 .wa-density__day--empty .wa-density__count { color: var(--ink-mute); opacity: .55; }
 
 /* ============================================================
-   COMPONENT — list card (5f, "lists as four-up mosaics")
+   COMPONENT — list card ("lists as four-up mosaics")
 
-   The mosaic is four tiles from the list's own contents, so a list is
-   recognisable by what is in it rather than by a name you have to read.
-   With photo coverage around 6% most tiles are the category mark on the
-   petrol tint, which is the sanctioned no-photo treatment — never a
-   grey box. Fewer than four items simply means fewer tiles; the grid
-   does not pad with blanks, because an empty tile reads as a missing
-   image rather than as a short list.
+   Four tiles from the list's own contents: a photo, else the category
+   mark on the petrol tint. Fewer than four items means fewer tiles; the
+   grid never pads with blanks.
    ============================================================ */
 
 .wa-lists {
@@ -1381,19 +1159,15 @@ a.wa-sr:focus {
   color: var(--ink-mute);
 }
 
-/* An expired count is the one thing in a list card worth warning about
-   — it is the "lost trust in an automated catalogue" case from 5f. */
+/* An expired count is the one thing in a list card worth warning about. */
 .wa-list-card__sub em { font-style: normal; color: var(--warn); }
 
 /* ============================================================
-   COMPONENT — walk (6b)
+   COMPONENT — walk
 
-   A numbered route and the walk-in-progress state. Deliberately thin:
-   6b is a two-week test with three hand-written routes, and the point
-   is to learn whether anyone reaches stop three, not to build a
-   product. If the number comes back under 10% this whole block is
-   deleted, which is why it borrows the existing row and cell components
-   rather than inventing a vocabulary of its own.
+   A numbered route and the walk-in-progress state. Walks is an
+   experiment built to be deleted, so it borrows the existing row and
+   cell components rather than a vocabulary of its own.
    ============================================================ */
 
 .wa-walk__stops {
@@ -1434,18 +1208,9 @@ a.wa-sr:focus {
   text-wrap: pretty;
 }
 
-/* A single line of title type is 22px, so the only tappable thing on a
-   walk stop was half the 44px floor -- measured 291 x 22 on all four
-   stops of the Telliskivi route, and 291 x 44 on the one whose name
-   happens to wrap. `--tap-min` is a hard floor on public pages, and
-   2g's audit listed index, discover, saved, detail, profile and about
-   but never walk.html, so nothing had looked.
-
-   Same remedy as the map pin: an invisible hit area centred on the
-   name, so the target grows without the layout moving and without
-   pushing the note away from the title it belongs to. Centred rather
-   than anchored, so it stays inside the stop's own padding and can
-   never reach the stop above or below. */
+/* A single line of title type is 22px, so an invisible hit area centred
+   on the name grows the stop link to the 44px floor without moving the
+   layout (same remedy as the map pin). */
 .wa-walk__name::after {
   content: '';
   position: absolute;
@@ -1481,13 +1246,9 @@ a.wa-sr:focus {
 .wa-note--warn { color: var(--warn); }
 .wa-note--ok   { color: var(--ink); }
 
-/* The full-width route card 5a puts on Explore, above the fold. */
-/* 5b's saved strip. A sibling of the walk card in every respect — same
-   full-width card, same rule and radius — so Explore's two standing
-   strips read as one family rather than two inventions. Icon, the count
-   in ink, the consequence in mute, and the whole row is the link.
-   The mark is a bookmark on the 9%-petrol tint, the same treatment a
-   photoless card gets, so nothing here is a new colour. */
+/* The full-width route card on Explore. */
+/* The saved strip. A sibling of the walk card — same full-width card,
+   rule and radius. The mark is a bookmark on the 9%-petrol tint. */
 .wa-savedstrip {
   display: flex;
   align-items: center;
@@ -1549,13 +1310,8 @@ a.wa-sr:focus {
 }
 
 .wa-walkcard:hover { border-color: var(--rule-strong); }
-/* Both are <span>, so both need an explicit display. Without it they
-   are inline, and two things follow: they share a line — the card read
-   "A WALK The Telliskivi record crawl" as one run — and the title's
-   `margin: 12px 0 8px` was inert, because vertical margins do nothing
-   on an inline box. So the eyebrow was not a label above the title and
-   the blurb butted straight against it. `__facts` below already sets
-   `display: block` for exactly this reason; these two were missed. */
+/* Both are <span>, so both need an explicit display: inline boxes share
+   a line and discard vertical margins. */
 .wa-walkcard__eyebrow {
   display: block;
   font: 400 var(--fs-mono)/1 var(--ff-mono);
@@ -1570,13 +1326,7 @@ a.wa-sr:focus {
   margin: var(--s-3) 0 var(--s-2);
   text-wrap: pretty;
 }
-/* The same 62ch measure `.wa-detail__desc` uses, and for the same
-   reason. This card is the only prose on Explore that sits in the full
-   content column, so at 1440 the blurb ran as ONE line of 133
-   characters across 1198px -- roughly twice the length the eye tracks
-   comfortably, and the identical sentence on walk.html was already
-   wrapping at 67. One copy readable and the other not is the measure
-   being a property of the page rather than of the text. */
+/* The same 62ch measure as `.wa-detail__desc`. */
 .wa-walkcard__blurb {
   font: 400 var(--fs-body)/1.5 var(--ff-ui);
   color: var(--ink-soft);
@@ -1598,10 +1348,8 @@ a.wa-sr:focus {
    the other answers are and can never get lost inside a filter.
    ============================================================ */
 
-/* A <dialog> is display:none until it is open — but only via the UA
-   stylesheet, which any display declaration here overrides. Without the
-   [open] guard the sheet renders inline at the top of every page, which
-   is exactly what it did the first time this shipped. */
+/* A <dialog> is display:none only via the UA stylesheet, which any display
+   declaration here overrides — hence the [open] guard. */
 .wa-sheet {
   position: fixed;
   inset: 0;
@@ -1730,13 +1478,9 @@ a.wa-sr:focus {
 
 .wa-chip__count { font: 400 var(--fs-mono)/1 var(--ff-mono); color: var(--ink-mute); }
 
-/* 5e's other job for the eight marks: "the 15px version rides in chips
-   and filter pills". Same sprite as the card mark, no second asset —
-   only the size and the ground change. It rides bare here rather than
-   on the 9%-petrol tile, because the chip already IS a tinted pill when
-   selected and a mark-on-tint-on-tint reads as a button inside a
-   button. Colour follows the label so a disabled chip dims as one
-   object. */
+/* The 15px mark in chips and filter pills: same sprite, bare rather than
+   on a tint tile. Colour follows the label so a disabled chip dims as
+   one object. */
 .wa-chip__mark {
   width: 15px;
   height: 15px;
@@ -1759,9 +1503,8 @@ a.wa-sr:focus {
    reader the filter exists and is empty, which a missing chip doesn't. */
 .wa-chip[data-count="0"] { opacity: .5; }
 
-/* 2a: zeroes are disabled, not hidden. Dimmed rather than removed so a
-   reader can see that the kind exists and simply has nothing in this
-   window -- "nothing tonight", not "no such thing". */
+/* Zeroes are disabled, not hidden: "nothing tonight", not "no such
+   thing". */
 .wa-chip:disabled {
   cursor: default;
   opacity: .45;
@@ -1835,12 +1578,7 @@ a.wa-sr:focus {
 .wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--petrol); }
 .wa-switch[aria-pressed="true"] .wa-switch__thumb { transform: translateX(18px); }
 
-/* Same rule as a zero-count chip, same treatment: an option with
-   nothing behind it is dimmed, not removed. "Only sources I follow"
-   before you follow anything says the feature exists and its sub says
-   where follows come from -- an absent switch says neither. Dashed is
-   the chip's border trick and there is no border here, so the dimming
-   carries it alone. */
+/* A switch with nothing behind it is dimmed, not removed. */
 .wa-switch:disabled { cursor: default; opacity: .45; }
 
 /* ---- Buttons. One control size, one radius. ---- */
@@ -1873,19 +1611,8 @@ a.wa-sr:focus {
 
 .wa-btn:disabled { opacity: .45; cursor: default; }
 
-/* Sibling controls in a row share a width and never wrap. */
-/* Content width, and wrap rather than squeeze. `flex: 1 1 0` forced
-   every button in a row to one width, which is the right look only when
-   the labels are about the same length -- and none of these rows are:
-   "Walk me there" next to "Save", "Continue with email" next to
-   "Continue with Google". Measured on detail at 375: the three natural
-   widths sum to 332px in a 335px row, and equal-width squeezed all
-   three to 104px so that TWO of them wrapped their text inside a 48px
-   button. The wrap was caused by the layout, not by the space.
-   A row that genuinely runs out of width now moves a button to a second
-   line at full height instead. `flex: 0 1 auto` still allows shrinking,
-   and an instance that wants one full-width key says so with `flex: 1`
-   inline, which walk.js's "Start the walk" already does. */
+/* Content width, and wrap rather than squeeze: labels are never equal
+   length. An instance that wants one full-width key sets `flex: 1`. */
 .wa-btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: stretch; }
 .wa-btn-row > .wa-btn { flex: 0 1 auto; min-width: 0; }
 
@@ -1913,10 +1640,8 @@ a.wa-sr:focus {
   transition: transform var(--t-fast);
 }
 
-/* A pin is a 21px label by design (5d) — it has to stay small enough to
-   read forty of them on one screen. The TAP target is a different thing
-   from the drawn one, so it is grown to the 44px floor with a
-   pseudo-element instead of by inflating the label. */
+/* A pin is a 21px label by design. The tap target is grown to the 44px
+   floor with a pseudo-element instead of by inflating the label. */
 .wa-pin::after {
   content: '';
   position: absolute;
@@ -1938,13 +1663,9 @@ a.wa-sr:focus {
 
 .wa-pin[aria-current="true"] .wa-pin__dist { color: var(--signal-ink); }
 
-/* A cluster pin. Petrol, because it is a COUNT and lime's one job is
-   "now" -- "nine things here" is not that. Same pill, same shadow, same
-   mono face as the pins it stands in for, so it reads as one of them
-   rather than as a different kind of object; it is round because it
-   carries a number instead of a time and a distance, and it is the one
-   pin you cannot open. Sits under the selected pin, which never
-   clusters. */
+/* A cluster pin. Petrol, because it is a count and never "now". Round,
+   because it carries a number instead of a time and a distance. Sits
+   under the selected pin, which never clusters. */
 .wa-pin--cluster {
   min-width: 34px;
   height: 34px;
@@ -1981,8 +1702,7 @@ a.wa-sr:focus {
    ============================================================ */
 
 /* No top padding: the section's own heading gap already opened the
-   space, and doubling it left a thin section reading as a hole — which
-   is the specific thing a short row is meant to avoid. */
+   space. */
 .wa-empty {
   padding: 0 0 var(--s-4);
   max-width: 46ch;
@@ -2003,8 +1723,7 @@ a.wa-sr:focus {
 
 .wa-empty__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
 
-/* The expired / gone-away note. The fastest way to lose trust in an
-   automated catalogue is a saved row that quietly died. */
+/* The expired / gone-away note. */
 .wa-note {
   display: flex;
   gap: var(--s-3);
@@ -2061,10 +1780,8 @@ a.wa-sr:focus {
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* The offline banner. Sits under the top bar rather than over the tab
-   bar, because the toast owns that slot and only one thing may occupy
-   it — two transient bars stacked is the failure this system exists to
-   avoid. Opaque: the glass budget is already spent on the two bars. */
+/* The offline banner. Sits under the top bar, because the toast owns the
+   bottom slot. Opaque. */
 .wa-offline {
   position: sticky;
   top: var(--topbar-h);
@@ -2074,21 +1791,13 @@ a.wa-sr:focus {
   gap: var(--s-3);
   padding: var(--s-3) var(--gutter);
   background: var(--warn);
-  /* NOT a hard-coded cream. `--warn` is a dark rust by day and a LIGHT
-     salmon at night, so a fixed light ink passed at 7.6:1 in day and
-     failed at 2.71:1 in dusk -- under the 4.5:1 AA floor this repo
-     treats as non-negotiable. Nobody caught it because the banner was
-     unreachable until it was moved out of the end of the document.
-     `--ground` is the one token that flips the right way on its own:
-     the banner is an inversion, so the page's ground becomes its ink.
-     Measured 7.34:1 day, 6.87:1 dusk, and no new variable. */
+  /* `--ground`, not a fixed light ink: --warn is dark by day and light at
+     night, and the banner is an inversion. */
   color: var(--ground);
   font: 600 var(--fs-meta)/1.4 var(--ff-ui);
 }
 
-/* How stale the cached list is. Quieter than the claim it qualifies,
-   but present -- 6d prints it because an offline list that does not say
-   its age is implying it is tonight's. */
+/* How stale the cached list is. */
 .wa-offline__age {
   font: 400 var(--fs-mono)/1.4 var(--ff-mono);
   letter-spacing: .03em;
@@ -2121,13 +1830,9 @@ a.wa-sr:focus {
 .wa-skel--line  { width: 60%;  height: 12px; }
 .wa-skel--well  { width: 100%; aspect-ratio: 1; border-radius: var(--r-card); }
 
-/* Inside a row the blocks stand in for specific strings, so they take
-   those strings' line boxes — title 22, description 21, meta 15, which
-   with the 8px body gap lands a skeleton row on the same 114px as a
-   real one. The generic sizes above are tuned for the card well and
-   leave a 36px step per row here, and a skeleton that changes height
-   when data arrives is just a slower version of the jump it exists to
-   prevent. */
+/* Inside a row the blocks take the line boxes of the strings they stand
+   in for (title 22, description 21, meta 15), so a skeleton row is the
+   same 114px as a real one. */
 .wa-row .wa-skel--title { width: 72%;  height: 22px; }
 .wa-row .wa-skel--line  { width: 100%; height: 21px; }
 .wa-row .wa-skel--line ~ .wa-skel--line { width: 40%; height: 15px; }
@@ -2204,55 +1909,28 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 
-/* The saved strip and the walk teaser are blocks in Explore's vertical
-   rhythm and neither carried a top margin, so with nothing saved the
-   walk card sat flush against the capsule -- measured 0px at 1440.
-   Their containers are always in the DOM and are filled by JS, hence
-   :not(:empty): a city with no routes, or a reader with nothing saved,
-   still contributes no space. Tighter than the --s-8 between sections,
-   because these two are companions to the capsule rather than new
-   sections of the page. */
+/* The saved strip and the walk teaser containers are always in the DOM
+   and filled by JS, hence :not(:empty). Tighter than the --s-8 between
+   sections: they are companions to the capsule. */
 #savedstrip:not(:empty),
 #walkcard:not(:empty) { margin-top: var(--s-6); }
 
-/* 5b draws the capsule as a compact centred control, not a full-bleed
-   bar: roughly 60% of the reading column, with the three slots and the
-   petrol key sitting close together so the row reads as ONE object.
-   Stretched to the full 1160px the slots drift ~370px apart and it
-   stops looking like a single control at all. Phone keeps 100%, where
-   the capsule collapses to its first slot anyway. */
+/* The capsule is a compact centred control, not a full-bleed bar:
+   stretched to the full column the slots drift apart and it stops reading
+   as one object. Phone keeps 100%. */
 @media (min-width: 1024px) {
   .explore-capsule {
     max-width: 960px;
     margin-inline: auto;
   }
 }
-/* The row sits under the capsule at every width now that it is no
-   longer lifted into the masthead at 1024, so the margin is no longer
-   phone-only.
-
-   Historical note, because it cost a session once: this used to be
-   wrapped in a max-width query, since a margin still applies to a
-   FIXED element — unscoped, it pushed the whole tab row 16px below the
-   bar it was supposed to sit in, diagnosed from 700 lines away. With
-   the row back in normal flow that hazard is gone. */
 .explore-scope { margin-top: var(--s-4); }
 
-/* Four chips need 411px and a phone gutter leaves 335, so this row
-   scrolls -- and inside the gutter the fourth chip showed as 24px of a
-   100px pill: a rounded edge and half an icon, which reads as a
-   rendering fault rather than as "there is more to the right". The
-   trims that would fit all four (padding, gap, icon, type) recover 54px
-   between them, so fitting is not on the table; what is on the table is
-   whether the overflow is legible.
-
-   Full bleed to the viewport edge, with the gutter moved into the
-   scroller's own padding so the first chip keeps the page's left edge.
-   The row gains the two gutters, which puts 44px of the fourth chip on
-   screen -- a peek that reads as content continuing rather than as
-   clipping. Same device the density strip uses at these widths.
-   `scroll-padding` so a chip revealed by script lands at the gutter and
-   not flush against the bezel. */
+/* Four chips overflow a phone gutter, so the row scrolls. Full bleed to
+   the viewport edge with the gutter moved into the scroller's padding, so
+   the fourth chip peeks as content continuing rather than clipping. Same
+   device the density strip uses. `scroll-padding` so a chip revealed by
+   script lands at the gutter. */
 @media (max-width: 767.98px) {
   .explore-scope {
     margin-inline: calc(var(--gutter) * -1);
@@ -2261,11 +1939,8 @@ a.wa-sr:focus {
   }
 }
 
-/* Aligned with the capsule above it, not with the page gutter. The two
-   are one control group -- you set Where/When/What, then you narrow the
-   scope -- and with the capsule centred at 840 and this row starting at
-   the full-width edge they read as two unrelated strips. Same max-width
-   and centring, so the group has one left edge. */
+/* Aligned with the capsule above it (same max-width and centring), so
+   the two read as one control group with one left edge. */
 @media (min-width: 768px) {
   .explore-scope {
     max-width: 960px;
@@ -2274,7 +1949,7 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
-   Saved + You (5f) — small shared pieces.
+   Saved + You — small shared pieces.
    ============================================================ */
 
 /* A text-weight button. "Reset what you've learned about me" is an
@@ -2319,7 +1994,7 @@ a.wa-sr:focus {
 .wa-note .wa-linkbtn { font-size: inherit; min-height: 0; }
 
 /* ============================================================
-   Detail + Source (6c, 3b) — one template, two data shapes.
+   Detail + Source — one template, two data shapes.
    ============================================================ */
 
 .wa-detail, .wa-source { padding-bottom: var(--s-8); }
@@ -2342,11 +2017,9 @@ a.wa-sr:focus {
   view-transition-name: venue-hero;
 }
 
-/* The well holding a venue's own MARK rather than a photograph. Same
-   ground as the markless well, and the image is contained instead of
-   cropped -- a 192px logo stretched across 1240px of hero is the "wrong
-   photograph" failure wearing a different hat. Capped tighter than the
-   photo hero too, because a mark needs no room to breathe. */
+/* The well holding a venue's own MARK rather than a photograph: same
+   ground as the markless well, contained instead of cropped, and capped
+   tighter than the photo hero. */
 .wa-detail__well--brand {
   display: grid;
   place-items: center;
@@ -2364,18 +2037,9 @@ a.wa-sr:focus {
 .wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
 .wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
 
-/* 3:2 is the right hero on a phone -- 375px wide makes it 250 tall --
-   and the wrong one at 1240, where it computes to 729px and eats 81% of
-   a 900px viewport. Measured on a 1440x900 desktop: the venue's TITLE
-   landed at y=856, right on the fold, and CLOSES/ENTRY -- the two facts
-   this product exists to deliver -- at y=998, below it. A hero that
-   pushes the deciding facts off the first screen has inverted the page.
-
-   Capped rather than re-proportioned, so the ratio still drives the
-   shape until it hits the ceiling; `object-fit: cover` on the photo and
-   `overflow: hidden` on the well were already there, so this crops
-   instead of letterboxing. Companion to the landscape rule above: a
-   viewport is not always tall, and it is not always narrow either. */
+/* 3:2 is right on a phone and far too tall at 1240, where it pushes the
+   title and the facts below the fold. Capped rather than re-proportioned:
+   the ratio drives the shape until the ceiling, and cover crops. */
 @media (min-width: 768px) {
   .wa-detail__photo,
   .wa-detail__well--mark { max-height: min(46vh, 460px); }
@@ -2418,10 +2082,8 @@ a.wa-sr:focus {
 
 .wa-detail__note { margin-top: var(--s-3); }
 
-/* 3a: a long description stops at three lines with an inline "more" that
-   expands in place. Navigating to read a sentence is the thing that rule
-   exists to prevent — and these run to 1,200 characters of scraped
-   press copy. */
+/* A long description stops at three lines with an inline "more" that
+   expands in place. */
 .wa-detail__desc--clamp {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -2433,10 +2095,7 @@ a.wa-sr:focus {
   margin-top: var(--s-2);
   padding: 0;
   min-height: var(--tap-min);
-  /* --tap-min is a floor in BOTH directions. With padding:0 and no
-     min-width this collapsed to the intrinsic width of the word "more",
-     34.66px — a target you clear vertically and miss sideways. WCAG
-     2.2 exempts inline text buttons; this repo's own rule does not. */
+  /* --tap-min is a floor in both directions. */
   min-width: var(--tap-min);
   background: none;
   border: 0;
@@ -2475,8 +2134,7 @@ a.wa-sr:focus {
 .wa-detail__actions { margin-top: var(--s-5); }
 
 /* The week strip is the same object as the density strip — a row per
-   day, value on the right. Reusing it is what makes the app feel
-   designed rather than assembled. */
+   day, value on the right. */
 .wa-week { margin: 0; padding: 0; list-style: none; }
 
 .wa-week__row {
@@ -2503,7 +2161,7 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
-   Tonight (5d) — the dense list, and the map as a mode.
+   Tonight — the dense list, and the map as a mode.
    ============================================================ */
 
 .tonight-scope { margin-top: var(--s-5); }
@@ -2514,21 +2172,11 @@ a.wa-sr:focus {
   margin-top: var(--s-3);
 }
 
-/* In map mode the chips and the Filters key stick under the top bar.
-   The map is a mode, and a mode you cannot re-filter without scrolling
-   back out of it is a mode with its controls taken away -- measured at
-   390: with the map scrolled to the middle of the viewport the chip row
-   sat at top:-47, i.e. behind the glass, so Where/When/What and the
-   filter count were unreachable while looking at the pins.
-
-   Opaque, never glass: 5e allows exactly two glass surfaces and both
-   are spent on the chrome. This is paper that happens to stay put, and
-   it keeps its own height in flow, so nothing under it is overlapped.
-
-   Only in map mode, and only below 1024 where the map REPLACES the
-   list. From 1024 up the map is a companion column that sticks on its
-   own while the list scrolls past it, so the chain is never out of
-   reach there and a second sticky block would just eat the column. */
+/* In map mode the chips and the Filters key stick under the top bar, so
+   the mode can be re-filtered without scrolling out of it. Opaque paper,
+   in flow. Only below 1024, where the map replaces the list; from 1024
+   the map is a sticky companion column and the chain never leaves the
+   screen. */
 @media (max-width: 1023.98px) {
   body.tonight-mapmode .tonight-head {
     position: sticky;
@@ -2539,27 +2187,14 @@ a.wa-sr:focus {
     border-bottom: 1px solid var(--rule);
   }
 
-  /* A landscape phone is 360 tall. The top bar takes 64 of that and this
-     head another 125, so sticking it would pin 52% of the screen open
-     and leave 171px for the map, its drawer and the way out. Sticky is
-     a convenience on a tall screen and a tax on a short one, so below
-     500px of height it simply scrolls with the page. */
+  /* A landscape phone is ~360 tall; sticking this head would pin half the
+     screen, so below 500px of height it scrolls with the page. */
   @media (max-height: 500px) {
     body.tonight-mapmode .tonight-head { position: static; }
   }
 
-  /* Two sticky things cannot own one offset, which is the failure the
-     offline banner's own comment names: "only one thing may occupy it".
-     Both read `top: var(--topbar-h)`, so once the banner was moved into
-     the flow where its sticky rule could finally take effect, the two
-     stacked at 64 -- 58px of overlap, banner at z-index 39 over a head
-     at 4, and the When chip stopped being clickable while offline.
-
-     The banner wins the slot. It is the more urgent of the two and it
-     is transient; the filter chain simply scrolls with the page for as
-     long as there is no signal, which is a degraded state anyway. No
-     new length to keep in step with the banner's own height, which
-     varies with how many lines its copy wraps to. */
+  /* Two sticky things cannot own one offset. While the offline banner is
+     present it wins the slot and the filter chain scrolls with the page. */
   body.tonight-mapmode:has(.wa-offline) .tonight-head { position: static; }
 }
 
@@ -2581,18 +2216,9 @@ a.wa-sr:focus {
   border-radius: var(--r-card-lg);
   overflow: hidden;
   background: var(--petrol-tint);
-  /* The clamp's 360px FLOOR is taller than the whole content band on a
-     phone in landscape: 360 tall minus 64 of top bar and 60 of tab bar
-     leaves 236. The map overflowed it, pushing the foot -- and with it
-     "Show list", the way out of the mode -- 366px below the tab bar,
-     reachable only by scrolling. The same failure as the drawer
-     covering the bar, arriving by a different route, so the same test
-     catches it: can you leave the mode without hunting for the exit.
-
-     min() caps the floor at what the viewport actually has. Portrait is
-     untouched (812 tall still resolves to 62vh = 503px); landscape gets
-     a short map instead of an unreachable one. The 1024 rule below sets
-     its own height for the companion column and still wins. */
+  /* min() caps the clamp's 360px floor at what a landscape phone actually
+     has after both chrome bars, so the way out of the mode stays
+     reachable. Portrait is untouched; the 1024 rule below still wins. */
   height: min(clamp(360px, 62vh, 680px),
               calc(100vh - var(--topbar-h) - var(--tabbar-h) - var(--s-6)));
 }
@@ -2629,20 +2255,9 @@ a.wa-sr:focus {
   z-index: 2;
 }
 
-/* One glass layer per screen is already spent on the chrome, so the bar
-   and the drawer below are both opaque.
-
-   They stack inside one foot instead of both being pinned to bottom:0
-   at the same z-index -- which is what they were, so the drawer (later
-   in the DOM) painted straight over the bar and took the pin count and
-   "Show list" with it: the way out of the mode was invisible on every
-   phone. A box that stacks them, not a z-index.
-
-   The 42% cap moved with it, and it is deliberately on the WHOLE foot
-   rather than on the drawer alone, so the original rule still holds:
-   the map keeps the larger half. The drawer gets what the bar leaves,
-   which is a peek at two rows rather than three -- the way out of a
-   mode is worth more than one extra row. */
+/* The bar and the drawer stack inside one opaque foot (not two elements
+   pinned to bottom:0, which overlapped). The 42% cap is on the whole
+   foot so the map keeps the larger half. */
 .tonight-map__foot {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -2652,23 +2267,16 @@ a.wa-sr:focus {
   max-height: 42%;
 }
 
-/* The drawer 2a asks for: the picks currently in view, under the bar.
-   "A mode is never empty" -- a map with pins and no names is a puzzle,
-   and this is what makes tapping a pin optional rather than required. */
+/* The drawer: the picks currently in view, under the bar. A mode is
+   never empty. */
 .tonight-map__drawer {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   margin: 0;
   padding: 0 var(--gutter) var(--s-3);
-  /* Opaque, not glass. This was a third glass surface — 5e allows
-     exactly two, the top bar and the tab bar, and is explicit that
-     "nothing else in the product is translucent". Worse, it was the one
-     case the rule exists to prevent: glass over live content rather
-     than over something already scrolled past, so the map moved under
-     the rows and the text sat on whatever colour happened to pan
-     beneath it. The hairline stays — that line, not the blur, is what
-     reads as "this floats". */
+  /* Opaque, not glass: glass over live content is what the two-element
+     rule forbids. The hairline is what reads as "this floats". */
   background: var(--ground);
   border-top: 1px solid var(--rule);
 }
@@ -2712,9 +2320,8 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
-   19 · The Saturday email card
-   Sits at the foot of Explore and as a row in You. Not a block
-   interrupting the list, which is what it does today.
+   19 · The Thursday email card
+   Sits at the foot of Explore and as a row in You.
    ============================================================ */
 
 .wa-digest {
@@ -2752,11 +2359,8 @@ a.wa-sr:focus {
 
 .wa-input::placeholder { color: var(--ink-mute); }
 
-/* The reveal toggle that WA.UI.passwordField wraps a password input in.
-   `.field-pw` and `.pw-toggle` were only ever styled in admin.css, which
-   no public page loads, so the eye sat as a default UA button jammed
-   against the field on every public sign-in. The input keeps its own
-   padding on the right so the text never runs under the toggle. */
+/* The reveal toggle WA.UI.passwordField wraps a password input in. The
+   input keeps right padding so text never runs under the toggle. */
 .field-pw { position: relative; display: block; }
 
 .field-pw .wa-input { width: 100%; padding-right: var(--tap-min); }

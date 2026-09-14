@@ -1,20 +1,8 @@
 // ============================================================
-// ingest-telliskivi  v6
-// v6 (Jul 2026): THE FIX — message_id is now cyrb53(slug), not the slug
-//   itself. staging_messages.message_id is BIGINT, so only events whose
-//   slug happened to be purely numeric ever landed (3 rows in 49 runs);
-//   every other upsert was rejected, returned 'error', and fell through
-//   both counters. Errors are counted now and a zero-yield run warns.
-// v5 (Jul 2026): writes staging_messages.payload — the structured half
-//   of the row. See the payload contract in process-staging.
-// v4 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id, so repeat listings 409'd instead
-//   of being silently ignored.
-// v3 (Jun 2026): bumpSeen() marks each still-listed pick's
-//   last_seen_at so wa_reconcile_absent_picks can detect silent
-//   source-side cancellations. Best-effort; never blocks ingest.
+// ingest-telliskivi
 // Scrapes the Telliskivi Creative City events listing page and
-// pushes events to staging_messages for process-staging.
+// pushes events to staging_messages with a structured payload.
+// bumpSeen() marks still-listed picks for wa_reconcile_absent_picks.
 //
 // Source: https://telliskivi.cc/en/events/
 // Dedup key: (channel, message_id) where message_id = cyrb53(URL slug).
@@ -28,12 +16,8 @@ const EVENTS_URL   = 'https://telliskivi.cc/en/events/';
 const CHANNEL      = 'telliskivi';
 const SOURCE_CITY  = 'tallinn';
 
-/* Slug -> bigint. staging_messages.message_id is a BIGINT column, and this
-   function used to pass the URL slug (a string) straight into it. PostgREST
-   rejected every non-numeric slug, upsertEvent returned 'error', and the
-   run loop counted only 'inserted' and 'skipped' — so the function reported
-   ok with zeros, forever. Same hash hel-linkedevents already uses; keeping
-   one implementation rather than inventing a second. */
+/* Slug -> bigint (staging_messages.message_id is BIGINT). Same hash
+   hel-linkedevents uses. */
 function cyrb53(str: string, seed = 0): number {
   let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
   for (let i = 0; i < str.length; i++) {
@@ -188,9 +172,8 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: cyrb53(e.slug),
     text:       composeText(e),
-    /* Structured half (Jul 2026) — see the payload contract in
-       process-staging. The listing page gives no blurb, so description
-       stays null rather than echoing the title. */
+    /* Structured half — see the payload contract in process-staging. The
+       listing page gives no blurb, so description stays null. */
     payload: {
       source:     'telliskivi',
       starts_at:  parseEventDate(e.date)?.toISOString() ?? null,
@@ -267,8 +250,7 @@ Deno.serve(async () => {
       const r = await upsertEvent(sourceId, e);
       if (r === 'inserted') totalInserted++;
       else if (r === 'skipped') totalSkipped++;
-      /* 'error' used to fall through both branches, which is how a fully
-         broken ingest reported ok with zeros for 47 consecutive runs. */
+      /* 'error' is counted, never dropped. */
       else totalErrors++;
     }
 
@@ -278,9 +260,8 @@ Deno.serve(async () => {
     console.error('[telliskivi]', runError);
   }
 
-  /* Zero yield with events on the page is a failure, not a quiet success —
-     it is exactly what hid the bigint/slug bug. Report it as 'warn' so
-     wa_ingest_zero_yield_check and a human both see it. */
+  /* Zero yield with events on the page is a failure, not a quiet success.
+     Report it as 'warn' so wa_ingest_zero_yield_check sees it. */
   const zeroYield = !runError && totalInserted === 0 && totalSkipped === 0;
   await logRun({
     inserted: totalInserted,

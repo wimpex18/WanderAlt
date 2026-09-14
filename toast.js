@@ -1,15 +1,8 @@
 /* ============================================================
-   toast.js — WA.Toast (6d).
+   toast.js — WA.Toast.
    ------------------------------------------------------------
-   "One toast at a time, above the tab bar, 4s, always with the reverse
-   action. Never a toast for a navigation."
-
-   All four of those are enforced here rather than left to call sites,
-   because a toast system where each caller decides is how you end up
-   with two stacked at once and one with no way back. The reverse action
-   is a required argument, not an option: if an action cannot be undone
-   it should not be announcing itself in a transient bar that disappears
-   before the reader can react.
+   One toast at a time, above the tab bar, ~4s, always with the reverse
+   action. Enforced here: the undo action is a required argument.
    ============================================================ */
 window.WA = window.WA || {};
 

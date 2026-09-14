@@ -1,28 +1,14 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// enrich-venues v14
+// enrich-venues
 // Enriches venue_details rows from Wikidata + Nominatim + a website scrape.
 // Mirrors found images into venue_images AND propagates to picks.image_url.
-// Sets is_closed=true and archives picks when Wikidata P576 is present.
+// Sets is_closed=true and archives picks when Wikidata P576 (dissolved/
+// demolished) is present — the only closure signal.
 //
-// v14 (Jul 2026): dropped the Google Places call — Places is a paid,
-// no-free-tier API and this function was calling it unconditionally for
-// every venue with no freshness check, 2-3x/day. Closure detection and
-// business hours/phone that used to come from Places' businessStatus are
-// gone; Wikidata P576 (dissolved/demolished) is now the only closure
-// signal. Website/image fall back to Wikidata + the homepage scrape only.
-//
-// v13 (Jul 2026): skip venues enriched within ENRICH_COOLDOWN_DAYS instead
-// of always re-processing the alphabetically-first `limit` venues — the
-// backlog now actually advances, and fresh venues stop being rebilled
-// for identical data.
-//
-// v12 (Jun 2026): also captures venue SOCIAL links (website/facebook/
-// instagram) so the detail page can surface them. website = Wikidata P856;
-// facebook/instagram = Wikidata P2013/P2003, else scraped from the venue
-// homepage (one fetch, shared with the og:image step). Stored on
-// venue_details.{website,facebook,instagram}.
+// Also captures website (P856), facebook/instagram (P2013/P2003, else
+// scraped from the homepage) into venue_details.{website,facebook,instagram}.
 //
 // Image sources tried in order per venue:
 //   1. Wikidata P18 → Wikimedia Commons thumbnail (?width=800)
@@ -44,10 +30,7 @@ const CITY_QID: Record<string, string> = {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 // A venue re-enriched within this window is skipped (unless targeted via
-// venue_key) — previously every run re-called Google Places for the same
-// alphabetically-first N venues with no freshness check, so the backlog
-// never advanced past the first ~30 and already-current venues got
-// rebilled 2-3x/day for no new data.
+// venue_key), so the backlog advances.
 const ENRICH_COOLDOWN_DAYS = 14;
 
 // ---------------------------------------------------------------------------

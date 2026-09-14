@@ -1,16 +1,9 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// discover-venues  v2 — Overture-backed (July 2026)
-// External-search discovery — called only when match-pick returns
-// `suggested_more: true` (i.e. fewer than 3 strong DB hits).
-//
-// v1 called the metered Google Places API (retired after the July
-// 2026 uncapped-retry bill). v2 searches the local `places_index`
-// table instead — 1,895 alt-culture venues for the four cities,
-// extracted from the Overture Maps places theme (open data,
-// CDLA-Permissive/Apache-2.0; June 2026 release). Zero external
-// calls, zero keys, zero marginal cost.
+// discover-venues — places_index-backed discovery
+// Searches the local `places_index` table (Overture Maps places theme,
+// open data) for venues matching a prompt. No external calls, no keys.
 //
 // Strategy:
 //   1. Derive candidate venue kinds from the prompt keywords.
@@ -21,14 +14,12 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 //        - new → surface flagged as "new venue suggestion"
 //   4. Save each as a pick with `pending_review = true`,
 //      `discovery_source = 'overture_index'`,
-//      `discovery_query = original prompt`.
-//   5. Return hits in match-pick-compatible shape so the frontend
-//      renders them with the "pending review" badge.
+//      `discovery_query = original prompt`, for the admin review queue.
 //
 // POST body:
 //   { city: 'tallinn'|'helsinki'|'riga'|'vilnius', prompt: string, limit?: number }
 //
-// Response (matches match-pick shape):
+// Response:
 //   { ok, hits: [{ pick, why }], classifier: 'discovery',
 //     saved: number, cached: false, latency_ms }
 // ============================================================
@@ -38,9 +29,8 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga', 'vilnius']);
 
-// Prompt keywords → places_index kinds. First pass of the search: a hit on
-// any keyword adds that kind to the RPC's boost list. Kept deliberately
-// literal — the concierge's semantic layer already ran in match-pick.
+// Prompt keywords → places_index kinds. A hit on any keyword adds that kind
+// to the RPC's boost list.
 const KIND_KEYWORDS: Array<[RegExp, string]> = [
   [/vinyl|record|lp\b|dj|crate/i,                'record store'],
   [/book|read|zine|literatur/i,                  'bookshop'],

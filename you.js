@@ -1,25 +1,14 @@
 /* ============================================================
-   you.js — You (5f) and sign-in (6c). Replaces profile.js.
+   you.js — You and sign-in.
    ------------------------------------------------------------
-   "You is not a profile — it is a receipt. There is no social graph, no
-   reviews, no host onboarding, so their profile card becomes three
-   counts (opened, saved, cities) and one plain sentence about what the
-   app has inferred. Stating the inference and offering a reset is the
-   whole deal: personalisation without a quiz, and no black box."
-
-   Sign-in leads with the reason, not the wall (6c). Nothing here is
-   gated — the honest pitch is "keeps your shortlist across devices",
-   with a plain third option to carry on signed out. The privacy card is
-   a feature, not fine print: we are asking for location from someone
-   standing on a street in a foreign city.
+   Three counts (opened, saved, cities), one plain sentence about what
+   the app has inferred, and a reset. Nothing is gated behind sign-in;
+   the privacy card is part of the page.
    ============================================================ */
 (() => {
   'use strict';
 
-  /* Guarded: detail.html shipped without toast.js and the unguarded call
-     threw, aborting the handler it sat in -- so the list toggled, the
-     label never refreshed, and nothing said why. A missing optional
-     module must degrade, not break the interaction around it. */
+  /* Guarded: WA.Toast is optional per page. */
   const toast = (msg, label, undo) => {
     if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
   };
@@ -54,24 +43,10 @@
   };
 
   /* ── Opened earlier ──────────────────────────────────────────
-     The log already existed and You only ever printed its LENGTH. A
-     count is a claim about the reader they cannot check; the list is
-     the receipt this page says it is, and it is the one thing here
-     that is actually useful mid-trip -- "what was that place called".
-
-     No model, no ranking, no tracking: newest first, straight off the
-     same local log the hide-seen switch reads and the reset above
-     wipes. Rows are the ordinary component, so a thing you opened
-     looks like the same thing everywhere else in the product.
-
-     The rest of the log is deliberately NOT described. Entries we
-     cannot resolve are not necessarily gone: the browser loads less
-     than the database holds -- picks exclude archived rows and venues
-     are filtered to VENUE_KINDS -- so a museum you opened is missing
-     from `pool()` while being perfectly alive. Saying "3 no longer
-     listed" would be a fact about our cache dressed as a fact about
-     the world. The subline counts what it can show and claims nothing
-     about the remainder. */
+     Newest first, straight off the local opened/saved log, in the
+     ordinary row component. Entries that do not resolve are not described:
+     the browser loads less than the database holds, so "no longer listed"
+     would be a fact about our cache. */
   const LAST_OPENED = 8;
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 

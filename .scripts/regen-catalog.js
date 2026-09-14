@@ -48,39 +48,25 @@ function pickEntry(r) {
   return '  {\n    ' + fields.join(',\n    ') + '\n  }';
 }
 
-function curatorEntry(c) {
-  return '  {\n' +
-    `    handle:  ${js(c.handle)},\n` +
-    `    name:    ${js(c.name)},\n` +
-    `    city:    ${js(c.city)},\n` +
-    `    tagline: ${js(c.tagline)},\n` +
-    `    bio:     ${js(c.bio || '')}\n` +
-    '  }';
-}
-
 function pastEntry(p) {
   return `  { id: ${js(p.id)}, title: ${js(p.title)}, date: ${js(p.date)} }`;
 }
 
 (async () => {
-  const [picks, curators, past] = await Promise.all([
+  const [picks, past] = await Promise.all([
     get('picks',
       `archived_at=is.null&handle=neq.@discovery` +
       `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
               `thumb_initials,image_url,tonight,this_week,mood_tags,` +
               `lat,lng,address&order=city.asc,sort_order.asc,created_at.asc`),
-    get('curators',
-      `select=handle,name,city,tagline,bio&order=city.asc,handle.asc`),
     get('past',
       `select=id,title,date&order=created_at.asc`),
   ]);
 
-  console.log(`picks: ${picks.length}, curators: ${curators.length}, past: ${past.length}`);
+  console.log(`picks: ${picks.length}, past: ${past.length}`);
 
-  /* The Places (venues) seed is HAND-CURATED (README: ≤12 per city, real
-     venues only) — it does not come from the DB's 2,500-row OSM venues
-     table. Carry the existing block over verbatim so a regen never
-     clobbers curation. */
+  /* The Places (venues) seed is hand-curated, not from the DB's venues
+     table. Carry the existing block over verbatim. */
   const catalogPath = path.join(__dirname, '..', 'catalog.js');
   const existing = fs.readFileSync(catalogPath, 'utf8');
   const venuesStart = existing.indexOf('/* Static Places (venues) seed');
@@ -100,9 +86,8 @@ function pastEntry(p) {
    The raw multi-city list is exposed as \`window.WA._catalogAll\`;
    \`window.WA.catalog\` is the slice for the currently selected
    city (read from localStorage 'wa:city' since city.js loads
-   after this file). Same for curators. Without this filter, an
-   offline visitor on the Riga or Helsinki city setting would
-   see Tallinn picks bleed through.
+   after this file). Without this filter, an offline visitor on
+   another city setting would see Tallinn picks bleed through.
    ============================================================ */
 window.WA = window.WA || {};
 
@@ -119,12 +104,6 @@ ${picks.map(pickEntry).join(',\n')}
    replace this with live data once the network responds, but the
    filter ensures the offline fallback respects the city setting. */
 window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
-
-window.WA._curatorsAll = [
-${curators.map(curatorEntry).join(',\n')}
-];
-
-window.WA.curators = window.WA._curatorsAll.filter(c => c.city === _waCity);
 
 window.WA.past = [
 ${past.map(pastEntry).join(',\n')}

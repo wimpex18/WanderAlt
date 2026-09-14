@@ -23,8 +23,7 @@
   <meta name="twitter:card"       content="summary_large_image" />
   <meta name="twitter:image"      content="./brand/social/twitter-default.png" />
 
-  <!-- JSON-LD Organization. Curators are gone from the product, so the
-       description no longer claims them. -->
+  <!-- JSON-LD Organization. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -118,30 +117,12 @@
       </div>
     </div>
 
-    <!-- 5b: "Scope tabs live above the capsule, not beside the list.
-         Icon over label, underline on the active one... the whole page
-         identity changes from one row of four." On desktop this row IS
-         the masthead — 5b draws no Explore/Tonight/Saved/You there, and
-         5d's header is the capsule's answers plus two keys, so the four
-         app tabs are a phone pattern only.
-
-         Walks is the fourth. It was cut from this row when opening-hours
-         coverage measured 47%, under the 70% floor the walk-in-progress
-         screen needs; the parse rate of filed hours is 93.7% now and the
-         three routes and both walk screens are built, so the tab is
-         surfacing what already exists rather than promising new work. -->
+    <!-- Scope tabs under the capsule: All, Events, Places, Walks. Icon
+         over label, underline on the active one. -->
     <div class="wa-scope explore-scope" role="tablist" aria-label="Scope" id="scope">
       <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>All
       </button>
-      <!-- "Events", not "Tonight". This tab never set a time: the shelf it
-           reveals is filtered by the capsule's WHEN, so with the capsule on
-           This weekend a tab labelled Tonight sat selected above a shelf
-           headed "This weekend in Tallinn" -- demonstrated, not assumed.
-           It is a CONTENT TYPE switch like Places and Walks beside it, and
-           it was the only one of the four wearing a time word. That word
-           also collided with the Tonight PAGE in the bar above, down to the
-           identical clock icon. Calendar mark here, clock stays on the page. -->
       <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="events">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events
       </button>
@@ -153,31 +134,19 @@
       </button>
     </div>
 
-    <!-- 5b's saved strip, between the capsule and the first shelf. It is
-         also how Saved is reached on desktop now that the app tab bar is
-         a phone pattern, so it carries a link even when none of the
-         saved things are open. Absent entirely when nothing is saved:
-         a strip reading "0 saved" is worse than no strip. -->
+    <!-- The saved strip, between the capsule and the first shelf. Absent
+         entirely when nothing is saved. -->
     <div id="savedstrip"></div>
 
-    <!-- 6b's Walks test: one hand-written route, full width, above the
-         fold, for two weeks. Empty for cities with no routes. -->
+    <!-- The Walks card: one hand-written route, full width. Empty for
+         cities with no routes. -->
     <div id="walkcard"></div>
 
     <!-- Named carousels, each with a count in its subtitle so a thin
          section reads as a short row rather than a hole. -->
     <div id="sections"></div>
 
-    <!-- The weekly email, at the foot of Explore rather than
-         interrupting the list. digest_opt_ins and the Resend key
-         already exist, so this surface is real.
-
-         THURSDAY, not Saturday. The old timing sent a week-ahead digest
-         on the morning the weekend had already started, which is after
-         the decision it exists to inform. Thursday is both the general
-         optimum for a weekly send and, more to the point, what every
-         other what's-on guide uses for exactly this reason: it lands
-         while the weekend is still being planned. -->
+    <!-- The weekly Thursday email, at the foot of Explore. -->
     <section class="wa-digest" aria-labelledby="digest-title">
       <h2 class="wa-digest__title" id="digest-title">One email on Thursdays.</h2>
       <p class="wa-digest__body">What's on in <span id="digest-city">Tallinn</span> over the weekend and the week after, in the same six-row shape as Tonight. It lands while there is still time to make a plan.</p>
@@ -185,9 +154,6 @@
         <label class="wa-sr" for="digest-email">Your email address</label>
         <input class="wa-input" type="email" id="digest-email" name="email" placeholder="you@example.com" autocomplete="email" required />
         <button class="wa-btn wa-btn--primary" type="submit" style="flex:0 0 auto">Send it to me</button>
-        <!-- Was labelled ".ics", which names the file format rather than
-             what the key does. Nobody scanning a signup form knows what
-             an .ics is; everybody knows what a calendar is. -->
         <a class="wa-btn" href="./about.html#calendar-feed" id="digest-ics" style="flex:0 0 auto">Calendar feed</a>
       </form>
       <p class="wa-digest__fine" id="digest-note">No account needed. One unsubscribe link, no other mail, ever.</p>
@@ -195,12 +161,9 @@
 
   </main>
 
-    <!-- Glass 2 of 2, and the only set of nav links there is. Below 1024
-       it is pinned to the bottom of the viewport as the tab bar and
-       body reserves its height; at 1024 it stops being fixed and lays
-       out here in the masthead (6f). One DOM node either way, so a
-       phone copy and a desktop copy cannot drift apart. Tonight earns
-       a permanent tab because it is the one screen with an expiry. -->
+    <!-- Glass 2 of 2, and the only set of nav links. Below 1024 it is the
+       fixed bottom tab bar and body reserves its height; at 1024 it is
+       fixed into the masthead band. One DOM node either way. -->
   <nav class="wa-tabbar" aria-label="Primary">
     <a class="wa-tabbar__item" href="./index.html" aria-current="page">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore

@@ -1,32 +1,16 @@
 /* ============================================================
    geo.js — WA.Geo, the one distance module.
    ------------------------------------------------------------
-   "Every row and card carries a distance. Time and distance are the
-   loudest things in any list." That makes distance a shared primitive,
-   and it was previously two private copies: haversineM lived in both
-   discover.js and map.js, each with its own WALK_M_PER_MIN = 80, which
-   is exactly how a list and a map end up disagreeing about what is
-   within a 20-minute walk. One copy now, and both surfaces read it.
-
-   Coordinate coverage, measured before this was written:
-
-     venues (Places)          937 / 937   100%
-     picks, own lat/lng        18 /  46   and all 18 are Tallinn
-     picks, +venue name join   27 /  46    59%
-     picks, nothing anywhere   19          mostly Riga / Helsinki / Vilnius
-
-   So coordsFor() falls back through the joins, and everything returns
-   null rather than zero when it runs out. A null distance is a designed
-   state — the row prints its street or area instead and does not shift
-   layout when permission arrives later.
+   coordsFor() falls back from a pick's own lat/lng to the venue joins,
+   and everything returns null rather than zero when it runs out. A null
+   distance is a designed state: the row prints its area instead and
+   does not shift layout when location permission arrives later.
    ============================================================ */
 (() => {
   'use strict';
   window.WA = window.WA || {};
 
-  /* ~4.8 km/h. Was duplicated in discover.js and map.js; this is now the
-     only declaration, and the filter sheet's minutes-to-metres readout
-     divides by the same number the map filters on. */
+  /* ~4.8 km/h. The only declaration; list, filter sheet and map share it. */
   const WALK_M_PER_MIN = 80;
 
   const haversineM = (aLat, aLng, bLat, bLng) => {
@@ -124,10 +108,8 @@
   const distanceLabel = (entry, from) => format(distanceTo(entry, from));
 
   /* ── The shared sort: starts-soonest, then distance ──────────
-     6e asks for exactly one module owning this so Explore, Tonight and
-     the map cannot drift. Undated entries sort after dated ones;
-     unknown distances sort after known ones, so a row we know least
-     about never leads the list. */
+     Undated entries sort after dated ones; unknown distances after known
+     ones. */
   const startMinutes = (e) => {
     if (e && e.startsAt) {
       const d = new Date(e.startsAt);
@@ -158,9 +140,7 @@
   };
 
   /* ── The ?within= contract ───────────────────────────────────
-     The redesign specifies metres; the shipped URLs carry minutes. Both
-     are read, and links already in the wild keep meaning what they meant:
-     a bare small integer is minutes, anything >= 100 is metres. */
+     A bare small integer is minutes; anything >= 100 is metres. */
   const parseWithin = (raw) => {
     const n = parseInt(raw, 10);
     if (!isFinite(n) || n <= 0) return 0;

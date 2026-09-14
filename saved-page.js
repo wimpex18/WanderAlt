@@ -1,28 +1,16 @@
 /* ============================================================
-   saved-page.js — Saved (5f). Replaces saved.js.
+   saved-page.js — Saved.
    ------------------------------------------------------------
-   "Saved borrows their wishlist grid but sorts by EXPIRY, not by date
-   added. Time-bound things first, in a card that says happening while
-   you're here; then places for whenever; then the honest note about
-   what died. A saved item that has quietly expired is the fastest way
-   to lose trust in an automated catalogue."
-
-   So there are three blocks and the order is the argument:
+   Sorted by expiry, not date added, in three blocks:
 
      1 Happening while you're here — dated, still ahead, soonest first
      2 Places, for whenever        — undated things and venues
      3 Gone since you saved it     — archived at the source
-
-   Block 3 is the one that matters. We already compute the disappearance
-   (archive_reason / archived_at); it just was not said out loud.
    ============================================================ */
 (() => {
   'use strict';
 
-  /* Guarded: detail.html shipped without toast.js and the unguarded call
-     threw, aborting the handler it sat in -- so the list toggled, the
-     label never refreshed, and nothing said why. A missing optional
-     module must degrade, not break the interaction around it. */
+  /* Guarded: WA.Toast is optional per page. */
   const toast = (msg, label, undo) => {
     if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
   };
@@ -67,12 +55,9 @@
       /* Not in either live table. The past table knows why, when it
          has the row; otherwise we say the honest minimum. */
       const dead = past.find(p => p.id === id);
-      /* 3b prints how long ago and then says the plain thing: "the
-         source stopped listing it four days ago. Probably cancelled."
-         The elapsed part is real -- past.created_at is when we archived
-         it -- and "probably" is the hedge the design chose, because a
-         Fienta absence is under-processing rather than a cancellation
-         (see the reconcile-absent note in CLAUDE.md). */
+      /* "The source stopped listing it four days ago. Probably cancelled."
+         past.created_at is when we archived it; "probably" because a
+         source absence is not always a cancellation. */
       const ago = dead && dead.archivedAt ? agoWords(dead.archivedAt) : '';
       out.gone.push({
         id,
@@ -132,14 +117,9 @@
      "will I still be here" rather than "what time". */
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  /* OPEN, not ANY, and never an empty rail. 3a's rule is
-     page-independent: a row with no date prints OPEN rather than
-     claiming a time we do not have. Saved used to say ANY for places and
-     nothing at all for undated events -- two words and a blank for one
-     idea, on the screen where the reader is comparing rows most
-     directly. */
+  /* A row with no date prints OPEN, never an empty rail. */
   const railFor = (e) => {
-    /* Same arrow form as Tonight (1a): a place says when it shuts. */
+    /* Same arrow form as Tonight: a place says when it shuts. */
     if (e.__place || e.openingHours) {
       const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
       return h || 'OPEN';
@@ -204,23 +184,12 @@
      list id is meaningless on another device and Saved is local-first. */
   let listFilter = '';
 
-  /* Up to four tiles from the list's own contents (5f). A photo when
-     there is one, the category mark otherwise -- never a grey box. */
+  /* Up to four tiles from the list's contents: a photo, else the mark. */
   const mosaic = (ids) => {
     const byId = Object.fromEntries(pool().map(e => [e.id, e]));
     const tiles = ids.map(id => byId[id]).filter(Boolean).slice(0, 4);
-    /* A list with nothing to show it. Two ways in: a list just made,
-       and a list whose every item has since been archived -- the second
-       is the misleading one, because the card beside this square still
-       reads "3 saved · 3 expired".
-
-       It used to be an empty tile, which the mosaic's own rule calls
-       out one paragraph up in wa.css: "an empty tile reads as a missing
-       image rather than as a short list". So it draws the bookmark on
-       the same 9%-petrol ground the savedstrip already uses -- the
-       sanctioned no-photo treatment, no new colour, and honest, since
-       an empty list has no contents to be recognised by and no category
-       of its own to borrow a mark from. */
+    /* A list with nothing to show (new, or every item archived) draws the
+       bookmark on the 9%-petrol ground rather than an empty tile. */
     if (!tiles.length) {
       return `<span class="wa-list-card__mosaic"><span class="wa-list-card__tile">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
@@ -275,9 +244,7 @@
     $('saved-title').textContent = total ? `${total} saved` : 'Nothing saved yet';
     $('saved-sub').textContent = total ? 'SOONEST TO EXPIRE FIRST' : '';
 
-    /* City chips only earn their place when more than one city is in
-       play — a single "All 12" chip is a control that cannot do
-       anything. */
+    /* City chips only when more than one city is in play. */
     const cities = [...new Set([...all.dated, ...all.anytime].map(cityOf))];
     $('scope').innerHTML = cities.length > 1
       ? [['all', 'All', total], ...cities.map(c => [c, c.charAt(0).toUpperCase() + c.slice(1),
@@ -316,10 +283,8 @@
   };
 
   /* ── The add-to-list sheet ───────────────────────────────────
-     One question at a time, same as every other sheet in the product:
-     the lists this pick is already in, checked, then one field to make
-     a new one. Closing is the only way out and nothing is destructive,
-     so there is no confirm step. */
+     The lists this pick is already in, checked, then one field to make a
+     new one. Nothing is destructive, so there is no confirm step. */
   const sheet = () => document.getElementById('sheet');
 
   const openSheet = (pickId) => {

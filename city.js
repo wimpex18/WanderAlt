@@ -16,13 +16,8 @@
      catalog.js → city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
-  /* ── Right-size remote photos (Core Web Vitals, June 2026) ──────
-     Google Places (lh3.googleusercontent.com) photos arrive at
-     =s4800-w800 (~106 KB) even for a 72px thumb. Swapping the trailing
-     size directive to =w<width> cuts a thumbnail to ~9 KB (verified).
-     Only touches googleusercontent URLs that carry a size token; every
-     other host (Wikimedia, etc.) is returned unchanged. Exposed as
-     WA.img(url, width) and used at every background-image build site. */
+  /* Right-size Google-hosted photos (googleusercontent size token →
+     =w<width>). Every other host is returned unchanged. */
   window.WA = window.WA || {};
   window.WA.img = (url, width) => {
     if (!url || typeof url !== 'string' || !width) return url;
@@ -35,10 +30,7 @@
   /* Each city has a static illustrated overview plate at /assets/
      <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). Two marks
      per plate, no more: one national flag plus one lime accent. */
-  /* Vilnius is internal testing, not live — README and the Where sheet
-     both say so, and printing coverage before the tap is the kindest way
-     to ship a four-city product that is thin in one of them. It stays
-     selectable; it just stops claiming parity. */
+  /* Vilnius is internal testing: selectable, but it does not claim parity. */
   const CITIES = [
     { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg'  },
     { id: 'helsinki', label: 'HELSINKI', status: 'live',     thumb: './assets/helsinki-overview.svg' },

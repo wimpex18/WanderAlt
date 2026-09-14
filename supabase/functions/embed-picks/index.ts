@@ -1,11 +1,9 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ---------------------------------------------------------------------------
-// embed-picks  v4 — Cloudflare Workers AI bge-m3 (Jul 2026)
-// Generates 1024-dim embeddings via @cf/baai/bge-m3 (free 10k neurons/day;
-// the owner revoked the Google key, closing the last Google dependency),
-// upserts into pick_embeddings. Used by the hybrid-search retriever.
-// v3 fixed the anti-join outage; v4 swaps the provider + batches requests.
+// embed-picks — Cloudflare Workers AI bge-m3
+// Generates 1024-dim embeddings via @cf/baai/bge-m3 (free tier) and upserts
+// into pick_embeddings. Used by the hybrid-search retriever.
 //
 // POST body:
 //   { city?: string, force?: boolean, limit?: number, pick_id?: string }
@@ -103,9 +101,7 @@ Deno.serve(async (req: Request) => {
   const limit = Math.min(body.limit ?? 100, 200);
 
   // Fetch the picks to embed. The not-yet-embedded set comes from a DB-side
-  // anti-join RPC — the old client-side diff passed every embedded id back
-  // as one giant id=not.in.(...) URL filter, which blew the HTTP/2 header
-  // limit past ~500 embeddings and 500'd every run (Jun–Jul 2026 outage).
+  // anti-join RPC; a client-side id=not.in.(...) filter overflows the URL.
   let picksRes: Response;
   if (body.pick_id) {
     picksRes = await fetch(

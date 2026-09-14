@@ -1,14 +1,7 @@
 /* ============================================================
    WanderAlt — admin.css
    ------------------------------------------------------------
-   Admin-only styles. Lives outside styles.css because it's
-   loaded only by admin.html — the admin tool is the one
-   surface that has its own visual vocabulary (data-dense
-   tables, modals, search-results popovers) we don't want
-   bleeding into the editorial site CSS.
-
-   Extracted from admin.html's inline <style> in May 2026 so
-   the site-wide CSP can drop 'unsafe-inline'.
+   Admin-only styles, loaded only by admin.html.
    ============================================================ */
 
 /* ── Admin-only styles ───────────────────────────────────── */
@@ -63,8 +56,7 @@
 .admin-pick-row > span:first-child { flex:1; font-family:var(--ff-body); font-size:var(--fs-pick); }
 .admin-pick-row > .meta  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                            max-width:38%; flex-shrink:0; }
-/* Muted annotations: use the AA-floor ink token, not opacity — opacity
-   blends toward the white bg and drops below 4.5:1 (axe serious). */
+/* Muted annotations use the AA ink token, never opacity. */
 .admin-pick-row__noPin   { color:var(--c-ink-mute); }
 .admin-pick-row__flags   { color:var(--c-ink-mute); }
 .admin-btn--rm           { border:none; background:none; color:var(--c-accent);
@@ -86,10 +78,7 @@
 .admin-stat-badge--warn  { color:var(--c-ink-mute); }
 .admin-stat-badge--accent { color:var(--c-accent); border-color:var(--c-accent); }
 .admin-stat-badge--bad   { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
-/* Match field width to expected input (Baymard): a search query / title
-   is short, so don't stretch these inputs to the full ~1280px column —
-   cap to a readable measure, left-aligned. (The public Discover search
-   bar stays wide on purpose — it's the primary search surface.) */
+/* Cap search inputs to a readable measure rather than the full column. */
 .admin-search-row        { position:relative; margin-top:var(--s-4); max-width:560px; }
 .admin-search-row input  { width:100%; box-sizing:border-box;
                            padding:var(--s-2) var(--s-3); border:1px solid var(--c-ink);
@@ -102,8 +91,6 @@
                            font-size:var(--fs-meta); font-family:var(--ff-mono); }
 .admin-result:hover,
 .admin-result:focus      { background:rgba(26,26,26,.06); outline:none; }
-/* Empty-state text is class="meta …" (already --c-ink-mute, 6.4:1). No
-   opacity — opacity:.5 dropped it to ~2.4:1 (axe serious). */
 .admin-empty             { padding:var(--s-3) 0; }
 
 /* This Week filter bar */
@@ -140,8 +127,6 @@
 .admin-pin-map__attr a   { color:inherit; text-decoration:underline; }
 
 /* Admin utility classes — replace common inline style patterns. */
-/* Hint/status lines are class="meta …" — rely on --c-ink-mute for AA,
-   not opacity (which blended them to ~3.2–3.4:1). */
 .a-hint                  { margin-bottom:var(--s-3); }
 .a-status                { margin:var(--s-4) 0 var(--s-2); }
 .a-list                  { list-style:none; margin:0; padding:0; }
@@ -152,13 +137,11 @@
 .a-mt-1                  { margin-top:var(--s-1); }
 .a-mt-2                  { margin-top:var(--s-2); }
 .a-mt-3                  { margin-top:var(--s-3); }
-/* .meta is already --c-ink-mute (6.4:1); opacity:.65 dropped it to ~3.2:1. */
 .a-mute                  { color:var(--c-ink-mute); }
 .a-w-full                { width:100%; }
 .a-accent                { color:var(--c-accent); }
 .a-stats-grid            { display:flex; flex-wrap:wrap; gap:var(--s-3); }
 .a-pt-4                  { padding-top:var(--s-4); }
-.a-analytics-grid        { display:grid; grid-template-columns:1fr 1fr; gap:var(--s-5); }
 .a-review-badge          { display:none; margin-left:6px; padding:0 7px;
                            font-family:var(--ff-mono); font-size:11px;
                            letter-spacing:.06em; color:var(--c-accent);
@@ -216,23 +199,7 @@
   .review-actions        { grid-column:1 / -1; flex-direction:row; align-items:center; }
 }
 
-/* Column approval */
-.admin-col-row           { padding:var(--s-4) 0; border-bottom:1px solid rgba(26,26,26,.1); }
-.admin-col-row:last-child { border-bottom:none; }
-.admin-col-meta          { display:flex; align-items:baseline; gap:var(--s-3); margin-bottom:var(--s-2); }
-.admin-col-handle        { font-family:var(--ff-mono); font-size:var(--fs-meta);
-                           color:var(--c-accent); letter-spacing:.04em; }
-.admin-col-week          { font-family:var(--ff-mono); font-size:10px;
-                           color:var(--c-ink-mute); letter-spacing:.04em; }
-.admin-col-preview       { font-family:var(--ff-body); font-size:15px;
-                           color:var(--c-ink-soft); line-height:1.45; margin:0 0 var(--s-3); }
-.admin-col-body          { width:100%; box-sizing:border-box; min-height:180px;
-                           padding:var(--s-2) var(--s-3); border:1px solid rgba(26,26,26,.25);
-                           font-family:var(--ff-body); font-size:14px; line-height:1.5;
-                           background:var(--c-paper); color:var(--c-ink);
-                           resize:vertical; display:none; margin-bottom:var(--s-3); }
-.admin-col-body.is-open  { display:block; }
-.admin-col-actions       { display:flex; gap:var(--s-3); align-items:center; flex-wrap:wrap; }
+/* Approve / reject buttons */
 .admin-col-btn           { padding:var(--s-2) var(--s-4); border:1px solid currentColor;
                            background:none; font-family:var(--ff-mono);
                            font-size:var(--fs-meta); cursor:pointer; letter-spacing:.04em; }
@@ -240,11 +207,6 @@
 .admin-col-btn--approve:hover { background:var(--c-ink); color:var(--c-paper); }
 .admin-col-btn--reject   { color:var(--c-ink-mute); }
 .admin-col-btn--reject:hover { color:var(--c-accent); border-color:var(--c-accent); }
-.admin-col-btn--edit     { color:var(--c-ink-mute); border-color:transparent; padding-left:0; }
-.admin-col-btn--edit:hover { color:var(--c-ink); }
-.admin-col-status        { font-family:var(--ff-mono); font-size:10px;
-                           letter-spacing:.04em; color:var(--c-ink-mute); margin-left:auto; }
-
 /* Pipeline table */
 .admin-pipeline-badges    { display:flex; flex-wrap:wrap; gap:var(--s-2); margin-bottom:var(--s-3); }
 .admin-pipeline-badge     { font-family:var(--ff-mono); font-size:var(--fs-meta);

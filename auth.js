@@ -15,7 +15,7 @@
      'wa:signed-out'  — after signOut()
 
    Injects .auth-btn into .topbar__right (creates the wrapper
-   if absent). Overlay is a single <div> re-rendered per state:
+   if absent). Overlay is a .wa-sheet dialog re-rendered per state:
      sign-in | sign-up | forgot | set-password | account
 
    Load order (all HTML files):
@@ -74,10 +74,8 @@
   window.WA      = window.WA || {};
   window.WA.Auth = {
     session:         null,
-    /* Exported so the You page can offer Google beside email without
-       owning a second copy of the redirect URL. 6c draws both on the
-       sign-in screen; before this only the modal overlay had it, so the
-       page that IS the signed-out state offered one of the two. */
+    /* Exported so the You page can offer Google beside email without a
+       second copy of the redirect URL. */
     googleHref:      () => googleHref(),
     recoverySession: null,   /* set when hash type=recovery; cleared after password update */
     isSignedIn:      () => !!(window.WA.Auth.session),
@@ -93,8 +91,7 @@
       updateBtn();
       document.dispatchEvent(new CustomEvent('wa:signed-out'));
     },
-    /* Open the sign-in overlay programmatically (signed-out profile's
-       board-4c invite card uses this — one auth form, many doors). */
+    /* Open the sign-in overlay programmatically. */
     openSignIn: () => openOverlay('sign-in'),
   };
 
@@ -139,20 +136,9 @@
   let overlay = null;
   let btn     = null;
 
-  /* This whole surface used to render UNSTYLED on every public page.
-     `.auth-panel*` is defined in admin.css and nothing public loads that
-     stylesheet, so sign-in, create-account, reset and the account panel
-     came out as raw browser defaults appended to the bottom of the
-     document: no overlay, no panel, 28px-tall inputs under the 44px
-     floor, a grey UA submit button. It also reached for --c-accent,
-     --c-ink-mute and --c-rule-strong, three tokens that died with
-     styles.css. The primary account flow, on seven pages.
-
-     It is the system's SHEET now rather than a fourteenth component --
-     the same <dialog class="wa-sheet"> Tonight's filters use, so it
-     inherits the backdrop, the bottom-sheet-to-centred-dialog
-     responsive behaviour, focus trapping and Escape from showModal(),
-     and every control inside is a .wa-btn or .wa-input. */
+  /* The auth surface is the system's sheet: a <dialog class="wa-sheet">
+     opened with showModal(), which supplies the backdrop, focus trapping
+     and Escape. Every control inside is a .wa-btn or .wa-input. */
   const closeOverlay = () => { if (overlay && overlay.open) overlay.close(); };
 
   const openOverlay = (state) => {
@@ -188,10 +174,8 @@
 
   /* ── State renderers ─────────────────────────────────────── */
 
-  /* The dialog, not the body: the submit key lives in the sheet's foot
-     now while the fields live in its body, and every doSignIn/doSignUp
-     below looks its controls up with panel().querySelector(). Returning
-     the root keeps all of them working unchanged. */
+  /* Returns the dialog, not the body: the submit key lives in the sheet's
+     foot while the fields live in its body. */
   const panel = () => overlay;
   const body  = () => overlay.querySelector('#auth-body');
   const foot  = () => overlay.querySelector('#auth-foot');
@@ -213,9 +197,7 @@
     const el = status();
     if (!el) return;
     el.textContent = msg;
-    /* --warn is the alarm's quieter sibling and this is a state the
-       reader has to act on; --c-accent and --c-ink-mute died with
-       styles.css and resolved to nothing here. */
+    /* --warn: a state the reader has to act on. */
     el.style.color = isError ? 'var(--warn)' : 'var(--ink-mute)';
   };
 

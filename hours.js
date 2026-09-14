@@ -1,29 +1,20 @@
 /* ============================================================
    hours.js — WA.Hours, the one reading of "is it open right now".
    ------------------------------------------------------------
-   The Aug 2026 direction prints open-now / closes-at next to a walking
-   distance on every place row, so this had to become a real field
-   instead of a decorative one. Two shapes reach the browser and neither
-   is going away:
+   Two shapes reach the browser:
 
-     venues.opening_hours       raw OSM syntax, written by ingest-osm
-                                "Tu-Sa 12:00-19:00; Su,Mo off"
+     venues.opening_hours         raw OSM syntax, written by ingest-osm
+                                  "Tu-Sa 12:00-19:00; Su,Mo off"
      venue_details.opening_hours  Google weekday_text JSON array,
-                                ["Monday: 12:00 – 10:00 PM", …]
+                                  ["Monday: 12:00 – 10:00 PM", …]
 
    parse() sniffs which one it got. Everything downstream works on the
    normalised week: seven arrays of {open, close} minute pairs.
 
-   Coverage is the thing to keep in mind while reading this file. It was
-   1 of 937 public venues before ingest-osm started capturing the tag,
-   and OSM carries it on roughly half its rows — so "unknown" is a
-   first-class answer here, not an error path. Every function returns
-   null rather than guessing, and the UI prints the honest line
-   ("Hours not filed") instead of implying a venue is shut.
+   "Unknown" is a first-class answer: every function returns null rather
+   than guessing, and the UI prints "Hours not filed".
 
-   All reasoning happens in Europe/Tallinn: the four cities share the
-   Baltic clock, and a reader whose phone is on another timezone should
-   still be told what the door is doing locally.
+   All reasoning happens in Europe/Tallinn.
    ============================================================ */
 (() => {
   'use strict';
@@ -77,26 +68,13 @@
   };
 
   /* ── Public holidays ─────────────────────────────────────────
-     "PH off" is OSM's public-holiday selector and 24 of the venues we
-     hold carry one. It used to sit in the unsupported list, which threw
-     away the whole venue's week over it — a museum with perfectly good
-     Tu-Su hours rendered "hours not filed" 365 days a year to avoid
-     being wrong on about fourteen.
+     "PH off" is OSM's public-holiday selector. The four countries'
+     national holidays are modelled: fixed dates plus the feasts computed
+     off Easter. It is not a claim about which shops choose to close.
 
-     Stripping the clause instead is the other bad answer: it prints an
-     open rail over a door locked for Jaanipäev, which is the same class
-     of lie as inventing a time.
-
-     So the holidays are modelled. The product covers four cities in four
-     countries and that is the whole table — fixed dates plus the handful
-     of feasts that hang off Easter, computed rather than listed so it
-     does not expire. A country's list is the national public holidays;
-     it is not a claim about which shops choose to close.
-
-     PH is a genuine eighth bucket, not a weekday: OSM says an absent PH
-     rule inherits the weekday rule, so "no PH clause" must stay
-     distinguishable from "PH off". That is `week.ph === null` versus
-     `week.ph === []`. */
+     PH is a genuine eighth bucket: an absent PH rule inherits the weekday
+     rule, so `week.ph === null` (no clause) must stay distinguishable from
+     `week.ph === []` (PH off). */
   const CITY_COUNTRY = { tallinn: 'ee', helsinki: 'fi', riga: 'lv', vilnius: 'lt' };
 
   const pad2 = (n) => String(n).padStart(2, '0');
@@ -180,9 +158,7 @@
     return DAYS.findIndex(d => d.toLowerCase() === t);
   };
 
-  /* "18:30" and the bare "18" both appear in filed hours. Minutes are
-     optional here because rejecting "Tu-Fr 15-19" lost that venue's
-     whole week over a colon. */
+  /* "18:30" and the bare "18" both appear in filed hours. */
   const hhmm = (s) => {
     const m = /^(\d{1,2})(?::(\d{2}))?$/.exec(String(s).trim());
     if (!m) return null;
@@ -204,25 +180,13 @@
       return week;
     }
 
-    /* OSM's separator is ';', but 10% of the venues we hold (149 of
-       1,467) write their rules comma-separated with no semicolon at all:
-       "We,Th 12:00-23:00, Fr,Sa 12:00-01:00, Su 12:00-18:00". Splitting
-       on ';' alone left those unparsed, so their rail fell back to OPEN
-       and a route could not promise anything about them.
-
-       A comma cannot just be treated as a separator: it also joins days
-       inside one rule ("Mo,We,Fr 09:00-17:00"), and it joins two ranges
-       on one day ("10:00-12:00,14:00-18:00"). Both of those must survive.
-
-       What tells a rule boundary apart is BOTH sides of the comma: it is
-       preceded by a time (or off/closed) and followed by day letters
-       carrying their own time. Keying on the lookahead alone split
-       "Mo,We,Fr 09:00-17:00" after "Mo" -- caught by testing a plain day
-       list, which is why that case is in the list below.
-
-       Written with a capture rather than a lookbehind: lookbehind is
-       still a parse-time syntax error on older Safari, and one bad regex
-       would take the whole file down rather than one venue's hours. */
+    /* OSM's separator is ';', but many venues write rules comma-separated:
+       "We,Th 12:00-23:00, Fr,Sa 12:00-01:00". A comma also joins days in
+       one rule ("Mo,We,Fr 09:00-17:00") and two ranges on one day
+       ("10:00-12:00,14:00-18:00"), so a rule boundary is a comma preceded
+       by a time (or off/closed) AND followed by day letters with their own
+       time. Written with a capture rather than a lookbehind, which is a
+       parse-time error on older Safari. */
     const normalised = src.replace(
       /(\d{1,2}:\d{2}|off|closed)\s*,\s*(?=[A-Za-z]{2,3}(?:\s*-\s*[A-Za-z]{2,3})?(?:\s*,\s*[A-Za-z]{2,3}(?:\s*-\s*[A-Za-z]{2,3})?)*\s+(?:\d{1,2}:\d{2}|off|closed))/gi,
       '$1;'
@@ -400,17 +364,7 @@
   const pad = (n) => String(n).padStart(2, '0');
   const clock = (mins) => (mins == null ? '' : `${pad(Math.floor((mins % 1440) / 60))}:${pad(mins % 60)}`);
 
-  /* The left-rail string the timetable row prints for a place.
-     "NOW" while open, "→02" for a place open until two, '' when unknown
-     — the rail must never invent a time we don't have. */
-  /* The place rail, exactly as 1a defines it: "a clock time for an
-     event, NOW when it has already started, →02 for a place open until
-     two." So the arrow carries the CLOSING hour — the fact that decides
-     whether it is worth walking there — not the opening one.
-
-     This function had no callers and the opposite semantics: it printed
-     NOW when open and the OPENING hour when shut, which is the one
-     reading 1a rules out. Returns:
+  /* The place rail. The arrow carries the CLOSING hour. Returns:
        →HH  open now, closing at HH
        24H  open with no closing time worth printing
        SHUT hours are known and it is closed

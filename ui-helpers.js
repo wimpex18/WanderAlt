@@ -1,18 +1,9 @@
 /* ============================================================
-   ui-helpers.js — WA.UI, what is left of it.
+   ui-helpers.js — WA.UI.
    ------------------------------------------------------------
-   This was 489 lines of shared render helpers for the Dusk Glass pages:
-   thumbs, glyph tiles, row media, social button rows, venue_details
-   fact blocks, quote-echo detection, empty states. The Aug 2026
-   redesign replaced every one of those with a component in wa.css or a
-   module of its own, and the pages that called them are gone.
-
-   Four things survive, and they survive because they are logic rather
-   than markup — the two escapers that every page must route scraped
-   text through, the password field auth.js builds, and the one price
-   formatter. Everything else was deleted with its callers; see the
-   cutover commit rather than reviving it from git history, because the
-   markup it emitted no longer matches any stylesheet in the repo.
+   The two escapers every page routes scraped text through, the price
+   formatter, the description guard, and the password field auth.js
+   builds.
 
    Load order: any page script using WA.UI must load AFTER this file.
    All pages use <script defer>, so document order is the contract.
@@ -63,27 +54,13 @@
   };
 
   /* ── Does this line earn its place? ─────────────────────────
-     4a, on dropping curators: "what readers valued was never the
-     handle, it was the specificity. Rule for implementation: a
-     description must say something a listings site wouldn't — the room,
-     the crowd, the door policy, the catch. If the model can only
-     paraphrase the title, print nothing and say so."
-
-     The pipeline does not honour that yet, so 47 of 470 live picks
-     render the title with its words shuffled: "Swedish House Mafia
-     concert" carrying "Swedish House Mafia live", "Disco party"
-     carrying "Disco party". That is noise wearing the costume of
-     information, and 2b's honest sentence is strictly better than it.
-
-     The test is content words the line adds beyond the title. ZERO new
-     words means it is a restatement; one or more is allowed to stand,
-     because "Jazz at Veino" → "Jazz music and wine" does tell you about
-     the wine. Deliberately conservative: suppressing a real sentence is
-     the worse error, so the ambiguous middle is kept.
-
-     Stopwords carry the generic listings vocabulary too (live, event,
-     party, night, concert), or "Techno Tubbies Party" → "Party with
-     Techno Tubbies" would score a new word for "party". */
+     A description that only paraphrases the title counts as missing.
+     The test is content words added beyond the title: zero is a
+     restatement, one or more stands. Suppressing a real sentence is the
+     worse error, so the ambiguous middle is kept. Stopwords include the
+     generic listings vocabulary (live, event, party, night, concert).
+     The same filler list exists in functions/_middleware.js, og-image and
+     process-staging; keep all four identical. */
   const FILLER = new Set(['the','and','with','for','from','out','you','your','its','are','was','this','that','into','all','new','one','two','live','event','events','show','shows','night','nights','music','party','concert','set','series','performs','presents','featuring','join','come','experience','enjoy','celebrate','discover','more','than','their','his','her']);
 
   const contentWords = (s) =>

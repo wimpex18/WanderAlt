@@ -1,10 +1,9 @@
 /* ============================================================
    WanderAlt — Admin curation panel
    ------------------------------------------------------------
-   Reads  via anon key (SELECT-only RLS — intentionally public).
+   Reads  via anon key (SELECT-only RLS).
    Writes via service role key (localStorage, localhost only).
-   Auth   via Supabase email+password (optional; for identity
-          and future role-based access control).
+   Auth   via Supabase email+password.
    ============================================================ */
 (() => {
   const BASE  = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
@@ -14,14 +13,9 @@
   /* ── Helpers ─────────────────────────────────────────────── */
   const $ = (id) => document.getElementById(id);
 
-  /* HTML-escape for every template interpolation of DB-sourced text.
-     Not optional cosmetics: discovery rows carry titles/venues scraped
-     from external sources, and this panel runs with the service-role
-     key in localStorage — a stored payload rendered unescaped here
-     would execute with that key in reach. */
-  /* Mirrors WA.UI.esc, including the single quote — admin builds attributes
-     from DB values and this panel holds the service-role key, so it gets the
-     same escaping contract as the public pages rather than a weaker one. */
+  /* HTML-escape every DB-sourced interpolation, including the single quote.
+     Discovery rows carry scraped text and this panel holds the service-role
+     key, so it uses the same escaping contract as the public pages. */
   const escAttr = (s) => String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -42,10 +36,8 @@
   const setCity   = (c) => { currentCity = c; localStorage.setItem('wa-admin-city', c); };
 
   /* ── Supabase REST helpers ───────────────────────────────── */
-  /* One anon read + one service-key write. Every table-specific wrapper
-     below is a thin alias — the headers / key guard / error surfacing
-     used to be six near-identical blocks plus inline fetch copies that
-     had already drifted apart (different alerts, one silent). */
+  /* One anon read + one service-key write; every table-specific wrapper
+     below is a thin alias. */
   const sbRead = (pathQs) =>
     fetch(`${BASE}/rest/v1/${pathQs}`, {
       headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
@@ -1203,200 +1195,6 @@
   };
 
   /* ══════════════════════════════════════════════════════════
-     MATCH ANALYTICS — aggregate likes/dislikes from user_match_history
-     ══════════════════════════════════════════════════════════ */
-  const loadAnalytics = async () => {
-    const status = document.getElementById('analytics-status');
-    const grid   = document.getElementById('analytics-grid');
-    const likeEl = document.getElementById('analytics-likes');
-    const disEl  = document.getElementById('analytics-dislikes');
-    if (!status || !grid || !likeEl || !disEl) return;
-
-    /* user_match_history RLS is per-user; aggregation needs service role.
-       Without a key, show a hint and bail out gracefully. */
-    if (!hasKey()) {
-      status.textContent = 'Paste service-role key above to load aggregates.';
-      grid.hidden = true;
-      return;
-    }
-
-    status.textContent = 'Loading…';
-    const key     = getKey();
-    const headers = { apikey: key, Authorization: `Bearer ${key}` };
-
-    try {
-      const res = await fetch(
-        `${BASE}/rest/v1/user_match_history?select=pick_id,vote`,
-        { headers }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rows = await res.json();
-
-      if (!rows.length) {
-        status.textContent = 'No votes yet — table is empty.';
-        grid.hidden = true;
-        return;
-      }
-
-      /* Aggregate counts per pick. */
-      const tally = new Map();
-      for (const r of rows) {
-        if (!r.pick_id || !r.vote) continue;
-        const t = tally.get(r.pick_id) || { likes: 0, dislikes: 0 };
-        if (r.vote === 'like')    t.likes++;
-        if (r.vote === 'dislike') t.dislikes++;
-        tally.set(r.pick_id, t);
-      }
-
-      /* Resolve pick titles in one batch — limit to relevant ids. */
-      const ids = [...tally.keys()];
-      const idList = ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-      const titlesRes = await fetch(
-        `${BASE}/rest/v1/picks?id=in.(${encodeURIComponent(idList)})&select=id,title,handle`,
-        { headers }
-      );
-      const titles = titlesRes.ok ? await titlesRes.json() : [];
-      const titleMap = Object.fromEntries(titles.map(p => [p.id, p]));
-
-      const render = (entries) => entries.slice(0, 10).map(([id, t]) => {
-        const p = titleMap[id] || {};
-        const name = p.title || id;
-        return `<li class="review-row" style="padding:var(--s-2) 0;border-bottom:1px solid var(--c-rule)">
-          <p style="margin:0;font-weight:500">${escAttr(name)}</p>
-          <p class="meta" style="margin:2px 0 0">
-            ${escAttr(p.handle || '')} · 👍 ${t.likes} · 👎 ${t.dislikes}
-          </p>
-        </li>`;
-      }).join('') || '<li class="meta">None.</li>';
-
-      const liked = [...tally.entries()]
-        .filter(([, t]) => t.likes > 0)
-        .sort((a, b) => b[1].likes - a[1].likes);
-      const disliked = [...tally.entries()]
-        .filter(([, t]) => t.dislikes > 0)
-        .sort((a, b) => b[1].dislikes - a[1].dislikes);
-
-      likeEl.innerHTML = render(liked);
-      disEl.innerHTML  = render(disliked);
-
-      const total = rows.length;
-      status.textContent =
-        `${total} vote${total !== 1 ? 's' : ''} across ${ids.length} pick${ids.length !== 1 ? 's' : ''}.`;
-      grid.hidden = false;
-    } catch (err) {
-      status.textContent = `Error: ${err.message}`;
-      grid.hidden = true;
-    }
-  };
-
-  /* ══════════════════════════════════════════════════════════
-     CURATORS MANAGEMENT
-     ══════════════════════════════════════════════════════════ */
-  let curatorsList = [];
-  let modalCurator = null; // curator being edited (null = new)
-
-  const loadCurators = async () => {
-    const countEl = document.getElementById('curators-count');
-    if (countEl) countEl.textContent = 'Loading…';
-    const key     = hasKey() ? getKey() : ANON;
-    const headers = { apikey: key, Authorization: `Bearer ${key}` };
-    try {
-      const res = await fetch(
-        `${BASE}/rest/v1/curators?city=eq.${currentCity}` +
-        `&select=handle,name,city,tagline,bio,source_channel,pick_count` +
-        `&order=pick_count.desc.nullslast,handle.asc&limit=100`,
-        { headers }
-      );
-      curatorsList = await res.json().catch(() => []);
-      renderCurators();
-    } catch (err) {
-      if (countEl) countEl.textContent = `Failed: ${err.message}`;
-    }
-  };
-
-  const renderCurators = () => {
-    const list    = document.getElementById('curators-list');
-    const countEl = document.getElementById('curators-count');
-    if (!list) return;
-    if (countEl) countEl.textContent = `${curatorsList.length} curator${curatorsList.length !== 1 ? 's' : ''}`;
-    list.innerHTML = curatorsList.length
-      ? curatorsList.map(c => `
-          <li class="admin-pick-row">
-            <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${escAttr(c.handle)}</span>
-            <span class="meta">${escAttr([c.name, c.tagline].filter(Boolean).join(' — ') || '—')}
-              ${c.pick_count != null ? `<em> · ${c.pick_count} picks</em>` : ''}</span>
-            <button class="admin-btn--edit" data-curator-handle="${escAttr(c.handle)}"
-                    aria-label="Edit ${escAttr(c.handle)}" title="Edit">&#9998;</button>
-          </li>`
-        ).join('')
-      : `<li class="meta admin-empty" style="padding:var(--s-3) 0">No curators found for ${currentCity}.</li>`;
-  };
-
-  const openCuratorModal = (curator) => {
-    modalCurator = curator || null;
-    const modal = document.getElementById('curator-modal');
-    if (!modal) return;
-    const titleEl = document.getElementById('curator-modal-heading');
-    if (titleEl) titleEl.textContent = curator ? 'Edit curator' : 'New curator';
-    document.getElementById('curator-modal-status').textContent = '';
-    document.getElementById('cf-handle').value  = curator?.handle         || '';
-    document.getElementById('cf-name').value    = curator?.name           || '';
-    document.getElementById('cf-city').value    = curator?.city           || currentCity;
-    document.getElementById('cf-tagline').value = curator?.tagline        || '';
-    document.getElementById('cf-bio').value     = curator?.bio            || '';
-    document.getElementById('cf-source').value  = curator?.source_channel || '';
-    document.getElementById('cf-handle').readOnly = !!curator;
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    document.getElementById('cf-handle').focus();
-  };
-
-  const closeCuratorModal = () => {
-    const modal = document.getElementById('curator-modal');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
-    modalCurator = null;
-  };
-
-  const saveCuratorModal = async () => {
-    if (!hasKey()) { alert('Service key required to save curators.'); return; }
-    const status = document.getElementById('curator-modal-status');
-    const btn    = document.getElementById('curator-save-btn');
-    const handle   = document.getElementById('cf-handle').value.trim();
-    const city     = document.getElementById('cf-city').value.trim()   || currentCity;
-    const name     = document.getElementById('cf-name').value.trim()   || null;
-    const tagline  = document.getElementById('cf-tagline').value.trim() || null;
-    const bio      = document.getElementById('cf-bio').value.trim()    || null;
-    const source   = document.getElementById('cf-source').value.trim() || null;
-
-    if (!handle) { if (status) status.textContent = 'Handle is required.'; return; }
-
-    if (status) status.textContent = 'Saving…';
-    if (btn)    btn.disabled = true;
-
-    try {
-      /* onError:'ignore' — this modal reports failures in its own status
-         line (parsing the error body itself), not via alert(). */
-      const res = await sbWrite('curators',
-        { handle, city, name, tagline, bio, source_channel: source },
-        { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
-          label: 'Curator save', onError: 'ignore' });
-      if (res && (res.ok || res.status === 204)) {
-        if (status) status.textContent = 'Saved.';
-        await loadCurators();
-        setTimeout(closeCuratorModal, 700);
-      } else {
-        const data = res ? await res.json().catch(() => ({})) : {};
-        if (status) status.textContent = data.message || `Error ${res ? res.status : 'no key'}`;
-      }
-    } catch (err) {
-      if (status) status.textContent = `Network error: ${err.message}`;
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  };
-
-  /* ══════════════════════════════════════════════════════════
      PIPELINE
      ══════════════════════════════════════════════════════════ */
   const loadPipeline = async () => {
@@ -1471,13 +1269,6 @@
     }
   };
 
-  /* The COLUMNS panel was removed in Aug 2026 along with draft-column.
-     It edited a weekly editorial column attributed to a curator_handle —
-     a feature of the product the redesign replaced. Nothing public ever
-     rendered it. The `columns` rows are left in the database rather than
-     dropped: they are 16 real drafts from July and deleting them buys
-     nothing, but no surface reads them any more. */
-
   /* ══════════════════════════════════════════════════════════
      INIT
      ══════════════════════════════════════════════════════════ */
@@ -1512,16 +1303,12 @@
         loadVenuesList(0);
         loadEnrichmentList(0);
         loadReviewQueue();
-        loadCurators();
         loadStats();
-        loadAnalytics();
       });
     }
 
-    /* ── Stats strip + analytics ── */
+    /* ── Stats strip ── */
     loadStats();
-    loadAnalytics();
-    $('analytics-refresh-btn')?.addEventListener('click', () => loadAnalytics());
 
     /* ── Auth ── */
     renderAuthState();
@@ -1560,7 +1347,6 @@
     /* loadEnrichmentList(0) fires from the enrichment section below —
        calling it here too doubled the request on every page load. */
     loadReviewQueue();
-    loadCurators();
 
     /* ── Delegation: ✕ remove-flag buttons ── */
     document.addEventListener('click', async (e) => {
@@ -2002,33 +1788,9 @@
       if (r?.ok) await loadEnrichmentList(vePage);
     });
 
-    /* ── Curators section ── */
-    $('curator-new-btn')?.addEventListener('click', () => openCuratorModal(null));
-    $('curator-save-btn')?.addEventListener('click', saveCuratorModal);
-    $('curator-modal-close')?.addEventListener('click',  closeCuratorModal);
-    $('curator-modal-cancel')?.addEventListener('click', closeCuratorModal);
-    $('curator-delete-btn')?.addEventListener('click', async () => {
-      if (!modalCurator) return;
-      if (!confirm(`Delete curator "${modalCurator.handle}"?\n\nThis does not delete their picks.`)) return;
-      const res = await sbWrite(
-        `curators?handle=eq.${encodeURIComponent(modalCurator.handle)}`,
-        undefined, { method: 'DELETE', label: 'Curator delete' });
-      if (res?.ok) { closeCuratorModal(); await loadCurators(); }
-    });
-    $('curator-modal')?.addEventListener('click', (e) => {
-      if (e.target === $('curator-modal')) closeCuratorModal();
-    });
-    $('curators-list')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-curator-handle]');
-      if (!btn) return;
-      const curator = curatorsList.find(c => c.handle === btn.dataset.curatorHandle);
-      if (curator) openCuratorModal(curator);
-    });
-
     /* Escape closes whichever modal is open */
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      if (!document.getElementById('curator-modal')?.hidden) { closeCuratorModal(); return; }
       if (!$('admin-venue-modal')?.hidden) { closeVenueModal(); return; }
       if (!$('admin-modal')?.hidden)       { closeModal();      return; }
     });

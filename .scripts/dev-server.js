@@ -2,26 +2,13 @@
 /* ============================================================
    WanderAlt — dev server launcher
    ------------------------------------------------------------
-   `npm start` used to be a bare `npx http-server . -p 5173`, which
-   throws an unhandled EADDRINUSE and dies the moment anything is
-   already on the port. That happens more than you'd think: an
-   http-server detached from a closed terminal keeps running (its
-   parent becomes init, so it survives the shell that started it),
-   and from then on every `npm start` fails with a stack trace that
-   says nothing about what to do.
-
-   This wrapper never throws and never kills anything:
+   Wraps `npx http-server` so a busy port never throws:
 
      port free                → serve on it
      port serving WanderAlt   → say so and exit 0, nothing to do
      port serving something   → step to the next free port and serve
 
-   Only Node builtins plus the same `npx http-server` underneath —
-   no new dependency, no build step.
-
-   Starting port: --port 8080, or PORT=8080, else 5173. The flag form is
-   what package.json uses — `PORT=x node …` is a POSIX-ism that would
-   break the npm script on Windows.
+   Starting port: --port 8080, or PORT=8080, else 5173.
    ============================================================ */
 'use strict';
 
@@ -48,13 +35,8 @@ const isFree = (port) => new Promise((resolve) => {
   probe.listen(port, '0.0.0.0');
 });
 
-/* Is the thing already on this port OUR dev server? Ask it for a file
-   only this repo serves, and check the SHAPE of the answer — parse it as
-   the manifest and read its name field. A substring search for the word
-   would be enough to fool: a stub server answering every path with the
-   text "not wanderalt" matched it during testing, and got misreported as
-   our own server. Anything that isn't valid JSON with name: "WanderAlt"
-   is somebody else's process. */
+/* Is the thing already on this port OUR dev server? Fetch the manifest
+   and check it parses with name: "WanderAlt". */
 const servesWanderAlt = (port) => new Promise((resolve) => {
   const req = http.get(
     { host: '127.0.0.1', port, path: '/manifest.webmanifest', timeout: 1500 },

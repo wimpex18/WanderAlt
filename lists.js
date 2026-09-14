@@ -1,24 +1,13 @@
 /* ============================================================
-   lists.js — WA.Lists. Named collections of saves (5f).
+   lists.js — WA.Lists. Named collections of saves.
+   ------------------------------------------------------------
+   A list is a name and a set of pick ids, not a second bookmark store:
+   adding to a list also saves the pick, and removing a save removes it
+   from every list.
 
-   "Saved borrows their wishlist grid but sorts by expiry, not by date
-   added. Time-bound things first… then lists as four-up mosaics; then
-   the honest note about what died."
-
-   A list is a name and a set of pick ids. It is deliberately NOT a
-   second bookmark store: adding to a list also saves the pick, and
-   removing a save removes it from every list, so the two can never
-   disagree about what is saved. Saving without choosing a list stays
-   the default path — the reader who never makes one sees exactly what
-   they saw before, which is the whole reason lists are additive here
-   rather than a step in the way.
-
-   Modelled on bookmark.js line for line: localStorage is the source of
-   truth, cloud is a copy that only exists once signed in, every network
-   call is fire-and-forget and silent on failure. If you change the
-   shape of the stored object, bump the :v1 suffix and write the
-   migration in this file — that is the repo's rule and this store is
-   the one most likely to grow a field.
+   Same model as bookmark.js: localStorage is the source of truth, cloud
+   is a copy once signed in, network calls are fire-and-forget. Changing
+   the stored shape means bumping the :v1 suffix and migrating here.
    ============================================================ */
 window.WA = window.WA || {};
 

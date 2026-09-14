@@ -1,43 +1,20 @@
 /* ============================================================
-   enrich-images v11 — populate picks.image_url from venue_images
-   table (self-learning DB cache) with Wikidata fallback. Free/
-   unauthenticated Wikimedia APIs only — no paid Google key.
+   enrich-images — populate picks.image_url from the venue_images
+   cache, with a Wikidata fallback. Free, keyless Wikimedia APIs only.
    ------------------------------------------------------------
    Flow per pick:
    1. Batch-load venue_images for all venues in the current run.
    2. If found  → write image_url/image_attr to pick, done.
-   3. If not    → search Wikidata, validate NAME, TYPE and CITY, pull P18.
+   3. If not    → search Wikidata; every candidate must clear
+      labelMatches(), isVenueEntity() and isInCity(). A name that reduces
+      to nothing distinctive ("Hall", "D3") is refused rather than guessed,
+      and a city missing from CITY_QID matches nothing.
    4. If Wikidata hits → write to pick AND cache in venue_images
-      (source='wikidata') so every future pick at that venue is
-      served from the DB without an API call.
+      (source='wikidata').
 
-   v9 (Jul 2026): optional `dry_run` — reports what it WOULD write and
-   mutates nothing. Worth using after any change to the gates below.
-
-   v10 (Aug 2026): the matcher had one gate where it needed three, and
-   the missing two are why a basement techno club called Hall was
-   illustrated with the Old Town Christmas market. searchEntity() took
-   `search[0]` from a FUZZY prefix/alias endpoint — something always
-   comes back — and the only validation was P31 against a type list
-   containing Q41176 "building", which almost any address satisfies. A
-   wrong hit was then cached into venue_images and served forever. Now
-   every candidate must clear labelMatches(), isVenueEntity() and
-   isInCity(); a name that reduces to nothing distinctive ("Hall", "D3")
-   is refused rather than guessed at, and a city missing from CITY_QID
-   matches nothing rather than anything.
-
-   v11 (Aug 2026): two things.
-   • Writes upload.wikimedia.org CDN URLs. The old Special:FilePath form
-     is the MediaWiki app layer — it 302s and is rate-limited, which is
-     what made the first verification sweep report a third of the
-     catalogue as unverifiable (every one an http 429). All stored URLs
-     were migrated off it; this function writes into picks nightly, so
-     leaving the old builder here would have undone that within a day.
-   • Runs behind verify_jwt. It WRITES to the catalogue and had been
-     reachable by anyone on the internet. Its cron moved to
-     invoke_wa_fn first — that order matters, the reverse 401s in
-     silence and cron.job_run_details still says "succeeded".
-   Also sets image_source, so image_health can attribute what it wrote.
+   Writes upload.wikimedia.org CDN URLs and sets image_source.
+   verify_jwt: true (it writes to the catalogue); its cron goes through
+   invoke_wa_fn. `dry_run` reports what it would write and mutates nothing.
    ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -59,12 +36,9 @@ const GENERIC_VENUES = new Set(['various venues','various','tba','tbd','']);
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE);
 
-/* v11: resolve to upload.wikimedia.org, the CDN, rather than to
-   commons.wikimedia.org/wiki/Special:FilePath — the MediaWiki app layer,
-   which 302s and is rate-limited. Aug 2026 migrated all 57 stored URLs off
-   that form; this function writes into picks nightly, so leaving it here
-   would have quietly re-introduced the throttled URLs and undone the
-   migration within a day. Same resolver as enrich-venue-images. */
+/* Resolve to upload.wikimedia.org (the CDN), never
+   commons.wikimedia.org/wiki/Special:FilePath, which 302s and is
+   rate-limited. Same resolver as enrich-venue-images. */
 async function thumbUrl(file: string, width = 600): Promise<string | null> {
   const clean = String(file).replace(/^File:/, '');
   try {
@@ -97,11 +71,8 @@ const normName = (s: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-/* Returns candidates rather than "the first one". Taking search[0]
-   blindly is what put Tallinn Town Hall's Christmas market on a
-   basement techno club called Hall: wbsearchentities is a fuzzy
-   prefix/alias match, so SOMETHING always comes back, and every
-   downstream check then validated the wrong entity. */
+/* Returns candidates rather than "the first one": wbsearchentities is a
+   fuzzy prefix/alias match, so something always comes back. */
 async function searchEntities(q: string): Promise<Array<{ id: string; label: string }>> {
   try {
     const r = await fetch(
@@ -127,10 +98,8 @@ function labelMatches(venue: string, label: string): boolean {
   return l === v || l.includes(v) || v.includes(l);
 }
 
-/* And it must be in the right city. P131 (administrative territory)
-   walked one level, compared against the city's own entity. Without
-   this, a correctly-typed venue of the same name in another country
-   passes every other check. */
+/* And it must be in the right city: P131 (administrative territory)
+   walked one level, compared against the city's own entity. */
 const CITY_QID: Record<string, string> = {
   tallinn: 'Q1770', helsinki: 'Q1757', riga: 'Q1773', vilnius: 'Q216',
 };
@@ -191,7 +160,7 @@ async function enrichPick(
     return { status: dryRun ? 'would_enrich_known' : 'enriched_known', url: known.url, attr: known.attr };
   }
 
-  /* 2. Wikidata dynamic search — now with three gates, not one. */
+  /* 2. Wikidata search, behind three gates: name, type, city. */
   const cityLabel = city.charAt(0).toUpperCase() + city.slice(1);
   const seen = new Set<string>();
   for (const q of [`${pick.venue} ${cityLabel}`, pick.venue]) {
@@ -216,10 +185,8 @@ async function enrichPick(
           .update({ image_url: url, image_attr: attr, image_source: 'wikidata' })
           .eq('id', pick.id);
 
-        /* Cache in venue_images — next pick at this venue costs 0 API
-           calls. This cache is also why a bad match used to be
-           permanent: one wrong hit was written here and then served
-           forever. The three gates above are what keep it clean. */
+        /* Cache in venue_images — next pick at this venue costs 0 API calls,
+           which is why the three gates above must keep it clean. */
         await db.from('venue_images').upsert(
           { city, venue_key: key, image_url: url, image_attr: attr, source: 'wikidata' },
           { onConflict: 'city,venue_key', ignoreDuplicates: true }
