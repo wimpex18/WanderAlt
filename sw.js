@@ -1,41 +1,21 @@
 /* ============================================================
-   sw.js — the minimal service worker 6f#5 asks for.
-
-   "The offline card in 6d promises saved picks and tonight's list work
-   without signal. There is no service worker in the repo — bookmarks are
-   localStorage, the list is not cached. Either ship a minimal SW that
-   caches the last Tonight response and the shell, or soften the copy.
-   Do not ship the stronger claim unbacked."
-
-   The copy was softened first, which was the right call at the time.
-   This is the other half, so the stronger claim can be true.
-
+   sw.js — the service worker.
+   ------------------------------------------------------------
    Three strategies, chosen per request type:
 
-     navigations   network-first, cache fallback. There is no build step
-                   and no content hashing here, so a cache-first HTML
-                   rule would serve yesterday's page for as long as the
-                   cache lived. Network-first means a deploy is visible
-                   immediately and offline still works.
+     navigations   network-first, cache fallback. Nothing is content-
+                   hashed, so cache-first HTML would serve stale pages.
 
      static        stale-while-revalidate. CSS, JS, fonts, the sprite.
-                   Fast, and self-healing on the next visit.
 
-     picks/venues  network-first with a timestamped cache fallback. This
-                   is what makes "tonight's list works offline" true.
-                   The timestamp is what lets the banner say how stale
-                   it is rather than implying it is live.
+     picks/venues  network-first with a timestamped cache fallback, so
+                   the banner can say how stale the list is.
 
    Never cached: anything carrying an Authorization header that is not
-   the public anon key, and every non-GET. Saves already sync through
-   localStorage and Supabase; a worker holding someone's session data is
-   a liability with no upside.
+   the public anon key, and every non-GET.
    ============================================================ */
 
-/* Bump this whenever the precache list changes. v2: Inter came out and
-   Plus Jakarta Sans went in, so a reader still holding the v1 shell
-   would have kept a cached font the CSS no longer asks for and missed
-   the one it does. */
+/* Bump this whenever the precache list changes. */
 const VERSION = 'wa-v2';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
@@ -127,9 +107,7 @@ self.addEventListener('fetch', (e) => {
       const c = await caches.open(DATA);
       try {
         const fresh = await fetch(req);
-        /* Stamp the response so the offline banner can say how old the
-           list is. Implying a cached list is live is the exact thing
-           6f#5 warns against. */
+        /* Stamp the response so the offline banner can say how old it is. */
         const body = await fresh.clone().blob();
         const stamped = new Response(body, {
           status: fresh.status,

@@ -1,15 +1,10 @@
 // ============================================================
-// WanderAlt — ingest-hel-linkedevents (v6)
-// v6 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id — the third appearance of a bug
-//   CLAUDE.md already records twice. Also writes staging_messages.payload
-//   (see the payload contract in process-staging); LinkedEvents is the
-//   only source that states admission, via offers[].is_free.
-// v5 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
-//   for wa_reconcile_absent_picks (silent-cancellation detection).
-// Pulls events from the official City of Helsinki Linked Events API.
-// v4 (May 2026): municipal-noise tightening (SKIP_VENUE_PATTERNS +
-//   expanded SKIP_PATTERNS). v3: cyrb53 hash of string id -> bigint.
+// WanderAlt — ingest-hel-linkedevents
+// Pulls events from the official City of Helsinki Linked Events API into
+// staging_messages with a structured payload (see process-staging).
+// Municipal noise is skipped (SKIP_VENUE_PATTERNS, SKIP_PATTERNS); string
+// ids hash to bigint via cyrb53. bumpSeen() marks still-listed picks for
+// wa_reconcile_absent_picks.
 // ============================================================
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -175,9 +170,8 @@ async function upsertEvent(
     channel:    CHANNEL,
     message_id: mid,
     text:       composeText(e),
-    /* LinkedEvents is the one source that states admission: offers[].is_free
-       is authoritative, and info_url is the organiser's own ticket page.
-       composeText() reduced both to the string "Free admission." */
+    /* LinkedEvents states admission: offers[].is_free is authoritative, and
+       info_url is the organiser's own ticket page. */
     payload: {
       source:      "linkedevents",
       description: stripTags(pickLocalized(e.description) || pickLocalized(e.short_description) || "") || null,
@@ -194,9 +188,7 @@ async function upsertEvent(
   };
   /* on_conflict=channel,message_id is load-bearing — without it PostgREST
      resolves ON CONFLICT against the PK, so every re-crawled event 409s
-     instead of skipping and bumpSeen never runs. This function was the one
-     ingest still missing it (the same bug fixed in fienta v5 and, before
-     that, in telegram). */
+     instead of skipping and bumpSeen never runs. */
   const res = await rest("staging_messages?on_conflict=channel,message_id", {
     method:  "POST",
     headers: { Prefer: "resolution=ignore-duplicates,return=representation" },

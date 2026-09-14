@@ -1,33 +1,20 @@
 /* ============================================================
    WanderAlt — appearance: Day / Night / Dusk
    ------------------------------------------------------------
-   Day is the default now, not Night. Most deciding happens in
-   daylight, and outdoors in daylight paper beats glass; Night
-   arrives at dusk. Loaded WITHOUT defer so the attribute lands
-   before first paint — no flash of the wrong theme. CSP-clean.
+   Loaded WITHOUT defer so the attribute lands before first paint.
+   Day is the default.
 
-   Three explicit options, persisted (localStorage `wa:appearance`).
-   The automation survives as one of the three rather than as an
-   invisible rule, which is both what the direction asked for and
-   what accessibility needs — a reader in bright sun and a reader in
-   a dark bar both have to be able to override us.
-
+   Three options, persisted in localStorage `wa:appearance`:
      'day'   → Day    — always the paper theme
      'dusk'  → Night  — always the near-black theme
      'auto'  → Dusk   — follow the sun in the active city
+   WA.Theme.OPTIONS owns the value↔label mapping.
 
-   The stored VALUES are unchanged from the previous two-plus-auto
-   scheme on purpose: everyone who already set a preference keeps it.
-   Only the labels are new, and WA.Theme.OPTIONS owns the mapping so
-   no page hand-writes it.
+   The DOM attribute is data-theme="day" | "dusk".
 
-   The DOM attribute stays data-theme="day" | "dusk" — wa.css keys
-   its night block off exactly that.
-
-   The sun table is PRECOMPUTED (no API — the €45 lesson): civil
-   dawn/dusk as fractional local hours, mid-month, per city. ±15
-   minutes of truth is fine; this drives a theme, not an almanac.
-   White-nights months round to just-before-midnight.
+   The sun table is precomputed (no API): civil dawn/dusk as fractional
+   local hours, mid-month, per city. White-nights months round to
+   just-before-midnight.
    ============================================================ */
 (() => {
   'use strict';
@@ -65,22 +52,10 @@
     return isDayNow() ? 'day' : 'dusk';
   };
 
-  /* The browser chrome colour has to match the ground the page actually
-     paints. wa.css uses #f2efe6 by day and #0a1011 at night, but hard-
-     coding either mis-tints anything that does not, and rots the next
-     time a ground value moves — which is exactly what happened during
-     the migration, when half the pages were still on a stylesheet with
-     a different cream.
-
-     Ask the page rather than guess. --ground is wa.css's token; if it is
-     absent this is an un-migrated page, and the honest answer is what
-     <body> actually paints. Reading the old stylesheet's token instead
-     was the first attempt and it was wrong — --c-paper is that system's
-     CARD colour (#ffffff), not its ground (#f4f1e8), so the chrome came
-     out white against cream.
-
-     <body> does not exist yet on the pre-paint call, which is why the
-     literal fallback stays and why settle() runs once the DOM is up. */
+  /* The browser chrome colour matches the ground the page paints: read
+     wa.css's --ground, else what <body> paints. <body> does not exist on
+     the pre-paint call, so the literal fallback stays and settle() runs
+     once the DOM is up. */
   const rgbToHex = (v) => {
     const m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(v || '');
     if (!m) return '';
@@ -108,8 +83,8 @@
     document.dispatchEvent(new CustomEvent('wa:theme-changed', { detail: { theme: mode } }));
   };
 
-  /* Second pass once <body> exists, so un-migrated pages — which have no
-     --ground to read pre-paint — end up with the colour they really are. */
+  /* Second pass once <body> exists, in case --ground was unreadable
+     pre-paint. */
   const settle = () => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = groundColour(resolve());

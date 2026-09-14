@@ -39,9 +39,7 @@
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
   <script defer src="./lists.js"></script>
-  <!-- The "Only sources I follow" facet reads WA.Follows. Without this
-       the store is undefined here and the switch sits permanently
-       disabled with no way to tell that from "you follow nothing". -->
+  <!-- The "Only sources I follow" facet reads WA.Follows. -->
   <script defer src="./follow.js"></script>
   <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
@@ -62,15 +60,9 @@
 
   <main class="wa-shell" id="main">
 
-    <!-- The capsule collapses here to the current answers as chips.
-         Tapping any of them opens the sheet on that question — same model
-         as Explore, so there is still exactly one place to change what
-         you are looking at.
-
-         Chips and controls share a wrapper so that in map mode they can
-         stick as ONE block under the top bar. Two sticky elements with
-         two different tops is a number to keep in sync by hand, and the
-         one that drifts is invisible until a chip lands behind glass. -->
+    <!-- The capsule collapses here to the current answers as chips, each
+         opening the sheet on that question. Chips and controls share a
+         wrapper so in map mode they stick as ONE block under the top bar. -->
     <div class="tonight-head" id="tonight-head">
       <div class="wa-scope tonight-scope" id="scope" aria-label="Current filters">
         <button class="wa-scope__chip" type="button" data-slot="where" id="chip-where">Tallinn</button>
@@ -93,10 +85,8 @@
     <!-- The headline is a count, not a title. It answers the question the
          reader arrived with, and it is generated, so it never leaves a
          hole when a photo or a hero pick is missing. -->
-    <!-- The seven-day density strip (1b, re-housed as Tonight's header
-         by 5b). It says what a list cannot: which nights are worth
-         waiting for. Renders above the headline because it frames the
-         count rather than annotating it. -->
+    <!-- The seven-day density strip: which nights are worth waiting for.
+         Above the headline because it frames the count. -->
     <ul class="wa-density" id="density" aria-label="The next seven days"></ul>
 
     <h1 class="wa-headline" id="results-title">Reading the sources</h1>
@@ -107,22 +97,13 @@
         <ul class="wa-rows" id="rows"></ul>
       </div>
 
-      <!-- Companion column from 1024 up (6f); a full-screen mode below
-           that. One map either way, never two implementations. -->
+      <!-- Companion column from 1024 up; a full-screen mode below. -->
       <div class="tonight-map" id="map-pane" hidden>
         <div class="tonight-map__canvas" id="map-canvas"></div>
         <button class="wa-btn wa-map-refresh" type="button" id="search-area" hidden>Search this area</button>
-        <!-- 2a: "a mode is never empty" -- the map carries a way out, a
-             way to re-query what you can see, and a DRAWER with the
-             picks in view. 5d draws that drawer with real rows.
-
-             The bar and the drawer are ONE stacked foot, not two things
-             that both happen to sit at bottom:0. They were the second,
-             at the same z-index, so the drawer painted over the bar and
-             took the pin count and "Show list" with it -- the way out
-             of the mode was invisible on every phone. Same failure as
-             the floating island that reserved no height: the fix is a
-             box that stacks them, not a z-index. -->
+        <!-- A mode is never empty: a way out, a way to re-query the view,
+             and a drawer with the picks in view. The bar and the drawer
+             are ONE stacked foot. -->
         <div class="tonight-map__foot">
           <div class="tonight-map__bar" id="map-bar">
             <span class="wa-fact wa-fact--strong" id="map-count"></span>

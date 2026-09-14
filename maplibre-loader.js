@@ -1,18 +1,10 @@
 /* ============================================================
    maplibre-loader.js — defers the MapLibre GL bundle (~800KB JS)
-   until after the page has painted (June 2026 perf pass: parsing
-   it at boot cost Discover ~340ms of main-thread blocking and 15
-   Lighthouse performance points; the map pane can arrive a beat
-   later without hurting the journey — the elements are list-
-   side). Injects the script + stylesheet on window 'load', then
-   announces 'wa:maplibre-ready' so map-tiles.js can run its
-   deferred init. admin.html keeps eager tags (desktop tool, the
-   pin editor needs the map immediately).
-
-   Self-hosted from vendor/ (Jul 2026) rather than unpkg, for the
-   same reason the fonts were: it drops the last third-party script
-   origin, so the CSP is 'self' only. Upgrading is a manual swap of
-   the two files in vendor/ — keep admin.html's tags in lockstep.
+   until after first paint. Injects the self-hosted script and
+   stylesheet from vendor/ on window 'load', then announces
+   'wa:maplibre-ready' so map-tiles.js can run its deferred init.
+   admin.html keeps eager tags; upgrading MapLibre means swapping
+   the two vendor/ files and keeping admin.html's tags in lockstep.
    ============================================================ */
 (() => {
   'use strict';

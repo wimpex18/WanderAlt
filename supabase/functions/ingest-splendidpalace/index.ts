@@ -1,28 +1,9 @@
 // ============================================================
-// ingest-splendidpalace  v6
-// v6 (Aug 2026): parseDateDMY returns null when the date text cannot be
-//   read. It used to fall back to new Date().toISOString() — the moment
-//   of the scrape — so an unparseable date silently became "starts right
-//   now". Three picks shared a starts_at of 2026-07-27 14:55:09.43, to
-//   the millisecond, because that is when this ran. Harmless while
-//   nothing read the field; when.js now derives "on tonight" from
-//   starts_at, so a fabricated one would put an event on the Tonight
-//   list on its scrape day and send someone out to it.
-// v5 (Jul 2026): THE FIX — message_id is now cyrb53(slug), not the slug
-//   itself. staging_messages.message_id is a BIGINT, so every non-numeric
-//   slug was rejected by PostgREST; upsertEvent returned 'error' and the
-//   run loop counted only 'inserted'/'skipped', so this function reported
-//   ok with zeros for 47 consecutive runs and produced not one row. Errors
-//   are now counted and a zero-yield run logs a warning.
-// v4 (Jul 2026): writes staging_messages.payload — the structured half
-//   of the row. See the payload contract in process-staging.
-// v3 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id, so repeat listings 409'd instead
-//   of being silently ignored.
-// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
-//   for wa_reconcile_absent_picks (silent-cancellation detection).
-// Scrapes Splendid Palace (Riga) events from https://splendidpalace.lv/lv/pasakumi.
+// ingest-splendidpalace
+// Scrapes Splendid Palace (Riga) events from https://splendidpalace.lv/lv/pasakumi
+// into staging_messages with a structured payload.
 // Dedup key: (channel, message_id) where message_id = cyrb53(slug).
+// bumpSeen() marks still-listed picks for wa_reconcile_absent_picks.
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -33,12 +14,8 @@ const EVENTS_URL   = 'https://www.splendidpalace.lv/lv/pasakumi';
 const CHANNEL      = 'splendidpalace';
 const SOURCE_CITY  = 'riga';
 
-/* Slug -> bigint. staging_messages.message_id is a BIGINT column, and this
-   function used to pass the URL slug (a string) straight into it. PostgREST
-   rejected every non-numeric slug, upsertEvent returned 'error', and the
-   run loop counted only 'inserted' and 'skipped' — so the function reported
-   ok with zeros, forever. Same hash hel-linkedevents already uses; keeping
-   one implementation rather than inventing a second. */
+/* Slug -> bigint (staging_messages.message_id is BIGINT). Same hash
+   hel-linkedevents uses. */
 function cyrb53(str: string, seed = 0): number {
   let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
   for (let i = 0; i < str.length; i++) {
@@ -99,20 +76,9 @@ type SplendidEvent = {
   dateIso: string | null;
 };
 
-/* Returns null when the listing's date cannot be read.
-   This used to fall back to `new Date().toISOString()` — the moment of
-   the scrape — which meant an unparseable date silently became "starts
-   right now". Three picks in the live catalogue shared a starts_at of
-   2026-07-27 14:55:09.43, to the millisecond, because that is when the
-   scraper ran.
-
-   Harmless while nothing read the field; not harmless now that
-   when.js derives "on tonight" from starts_at. A fabricated timestamp
-   would put an event on the Tonight list on the day it was scraped and
-   tell someone standing in the street to walk to it. An unknown date
-   has to stay unknown — the row still lands, it just doesn't claim a
-   time. (posted_at keeps its own now() fallback: that one really is a
-   scrape-adjacent field.) */
+/* Returns null when the listing's date cannot be read: an unknown date
+   stays unknown rather than becoming "starts right now". (posted_at keeps
+   its own now() fallback: that one really is a scrape-adjacent field.) */
 function parseDateDMY(dateText: string, timeText: string): string | null {
   const dm = dateText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
   if (!dm) return null;
@@ -123,22 +89,12 @@ function parseDateDMY(dateText: string, timeText: string): string | null {
   return new Date(`${year}-${month}-${day}T${hour}:${min}:00+03:00`).toISOString();
 }
 
-/* v7: rewritten against the site's current markup.
-   The old parser walked every /lv/pasakumi/ href and read a window of
-   ±300 chars around it, looking for <h3> for the title. The site has
-   since moved to a card component and emits NO <h3> at all, so every
-   title fell back to the URL slug — picks were landing titled
-   "nopietna-komedija-uz-visu-banku-242-316" — and the date regex was
-   picking up whatever happened to be in the window.
-
-   The card is self-delimiting, so split on it and read named fields:
+/* The card is self-delimiting, so split on it and read named fields:
      <div class="movie-card">
        data-event-card="/lv/pasakumi/<slug>"
        <div class="… movie-card__title">Title</div>
        Datums:</span><span> 17.09.2026</span>
-       …<br> 19:00
-   Verified against the live page: 10 events, 0 slug-titles, 0 missing
-   dates. */
+       …<br> 19:00 */
 function parseListing(html: string): SplendidEvent[] {
   const events: SplendidEvent[] = [];
   const seen = new Set<string>();
@@ -276,8 +232,7 @@ Deno.serve(async () => {
       const r = await upsertEvent(sourceId, e);
       if (r === 'inserted') totalInserted++;
       else if (r === 'skipped') totalSkipped++;
-      /* 'error' used to fall through both branches, which is how a fully
-         broken ingest reported ok with zeros for 47 consecutive runs. */
+      /* 'error' is counted, never dropped. */
       else totalErrors++;
     }
 
@@ -287,9 +242,8 @@ Deno.serve(async () => {
     console.error('[splendidpalace]', runError);
   }
 
-  /* Zero yield with events on the page is a failure, not a quiet success —
-     it is exactly what hid the bigint/slug bug. Report it as 'warn' so
-     wa_ingest_zero_yield_check and a human both see it. */
+  /* Zero yield with events on the page is a failure, not a quiet success.
+     Report it as 'warn' so wa_ingest_zero_yield_check sees it. */
   const zeroYield = !runError && totalInserted === 0 && totalSkipped === 0;
   await logRun({
     inserted: totalInserted,

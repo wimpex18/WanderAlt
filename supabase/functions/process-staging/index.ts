@@ -1,53 +1,15 @@
 // ============================================================
-// WanderAlt — process-staging  (v43)
-// v43 (Aug 2026, redesign 4a): the pipeline stops writing descriptions
-//      that only restate the title, and stops writing in a curator's
-//      voice at all.
-//      • The prompt fed curators.tagline in as `Curator voice: "..."`.
-//        26 taglines were still live and still steering every call,
-//        months after the redesign deleted the byline from the page —
-//        which is why the copy still read like a person. The tagline
-//        parameter and the whole curators fetch are gone; `handle` stays
-//        on the pick as provenance, which is a feed, not a voice.
-//      • THE QUOTE section states 4a's rule with worked bad/good
-//        examples: say something a listings site would not, or return
-//        an empty string. Empty is a correct answer — the app prints
-//        "No description filed", which beats the title said twice.
-//      • saysSomething() enforces it on the way to the DB, because a
-//        prompt is a request, not a constraint: the OLD prompt already
-//        said "do not paraphrase" and 49 of 462 live picks still carried
-//        the title with its words shuffled ("Disco party" under the
-//        title "Disco party"). Same predicate as WA.UI.descriptionOr in
-//        the browser and the copy in the Pages middleware.
-// v42 (Jul 2026, design-critique must-fix #4): Tallinn CITY_CONTEXT spelled
-//      "Pohja-Tallinn" without the diacritic, so the LLM minted an ASCII
-//      duplicate of Põhja-Tallinn that split neighborhood filters/counts
-//      (5 picks vs 2). Fixed to Põhja-Tallinn; existing rows merged by SQL.
-// v41: OpenRouter :free fallback lane (inert until OPENROUTER_API_KEY set);
-//      Gemini text fallback retired via config flag (kept as last resort).
-// v39 changes vs v38:
-//   • A city with no CITY_CONTEXT entry now FAILS LOUDLY (message
-//     marked error with an actionable rejection) instead of silently
-//     classifying against the Tallinn context — that silent degrade
-//     bit twice (Vilnius, then Helsinki: ~1,900 misrejected messages).
-//     Adding a city now hard-requires the context entry.
-// v38 changes vs v37 (English-only app):
-//   • LANGUAGE HANDLING hardened: 42 active picks had verbatim
-//     Cyrillic titles despite the v34+ "output English" rule —
-//     llama-4-scout copies source titles. The prompt now states the
-//     hard requirement first, explains that event titles are
-//     DESCRIPTIONS (not proper nouns) with concrete RU/ET examples,
-//     and adds Polish/Ukrainian to the input list.
-//   • Code-level compliance guard: after parsing, any pick whose
-//     title/quote still contains Cyrillic gets ONE targeted batch
-//     translation call (Groq) before upsert — picks are saved to
-//     Supabase already in English. Fail-open: if the fix call fails,
-//     the original text is kept (translate-picks backfills later).
-//   • title_original: when the guard rewrites a title, the source
-//     title is preserved in picks.title_original.
-// v37: Gemini fallback gated behind pipeline_config.gemini_fallback_enabled.
-// v36: CITY_CONTEXT gained `helsinki`. v35: gained `vilnius`.
-// v34: Groq llama-4-scout primary, Gemini fallback.
+// WanderAlt — process-staging
+// Claims staging_messages, copies facts from the payload, and asks the LLM
+// (Groq, then OpenRouter :free, then Gemini only if
+// pipeline_config.gemini_fallback_enabled) for an English title, one
+// sentence worth reading, the kind and mood tags. Upserts picks.
+//
+//   • A city with no CITY_CONTEXT entry FAILS LOUDLY (message marked
+//     error) — adding a city hard-requires the context entry.
+//   • saysSomething() drops a quote that only restates the title.
+//   • Any title/quote still containing Cyrillic gets one batch translation
+//     call before upsert; the source title is kept in picks.title_original.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -56,28 +18,19 @@ const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
-// OpenRouter free lane (Jul 2026 policy): inert until the owner creates
-// OPENROUTER_API_KEY (free, no card — openrouter.ai/keys). Model must be a
-// :free-suffixed id so the lane can never bill.
-// Aug 2026: the previous default, openai/gpt-oss-120b:free, is ABSENT
-// from OpenRouter's catalogue -- probed /v1/models, 400 models, no
-// match. The paid openai/gpt-oss-120b still exists, which is exactly
-// how a dead :free pin hides: the name looks familiar. Repointed to a
-// model that is present AND advertises structured_outputs.
+// OpenRouter free lane: inert until OPENROUTER_API_KEY is set. The model must
+// be a :free-suffixed id (verify it in OpenRouter's /v1/models) so the lane
+// can never bill.
 const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "nvidia/nemotron-3-super-120b-a12b:free";
 const GEMINI_MODEL  = "gemini-2.5-flash";
-/* llama-4-scout was decommissioned at Groq — absent from /v1/models and
-   404 on completion (verified by probe, Jul 2026; not recalled from
-   memory). llama-3.3-70b-versatile was already this repo's documented
-   fallback and probes 200, so it is the minimal verified replacement. */
 const GROQ_MODEL    = "llama-3.3-70b-versatile";
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
 
 const KINDS = "gig|talk|exhibition|club|place|bookshop|record store|gallery|thrift|lecture|noise|theatre|cinema|library|bar|museum|arts centre";
 
-/* Mood vocabulary — must match mood-chips.js on the frontend. */
+/* Mood vocabulary. */
 const VALID_MOOD_TAGS = new Set([
   "quiet", "loud", "indoors", "outdoors",
   "solo", "social", "drinks", "sober",
@@ -126,21 +79,12 @@ const errMsg = (e: unknown): string => {
   try { return JSON.stringify(e); } catch (_) { return String(e); }
 };
 
-/* ── The paraphrase guard (4a) ───────────────────────────────
-   The prompt asks for an empty quote when there is nothing to add, and
-   a prompt is a request, not a constraint — the previous one already
-   said "do not paraphrase venue marketing copy" and 49 of 462 live
-   picks still carried the title with its words shuffled. So the rule is
-   enforced here too, on the way to the DB, where it cannot drift.
-
-   Same predicate as WA.UI.descriptionOr in the browser and the copy in
-   the Pages middleware; three runtimes, one rule, and the filler list
-   must stay identical in all three. Content words added beyond the
-   title: zero is a restatement and becomes "", one or more stands.
-   Deliberately lenient — deleting a real sentence is the worse error.
-
-   Storing "" rather than the noise is what makes the app's honest
-   "No description filed" line true instead of merely available. */
+/* ── The paraphrase guard ────────────────────────────────────
+   The prompt asks for an empty quote when there is nothing to add; a
+   prompt is a request, not a constraint, so it is enforced here too.
+   Content words added beyond the title: zero is a restatement and
+   becomes "", one or more stands. The filler list must stay identical
+   to WA.UI.descriptionOr, the Pages middleware and og-image. */
 const FILLER = new Set(["the","and","with","for","from","out","you","your","its","are","was","this","that","into","all","new","one","two","live","event","events","show","shows","night","nights","music","party","concert","set","series","performs","presents","featuring","join","come","experience","enjoy","celebrate","discover","more","than","their","his","her"]);
 
 const contentWords = (s: string): string[] =>
@@ -155,13 +99,6 @@ const saysSomething = (text: unknown, title: string): string => {
   return contentWords(s.slice(0, 300)).some((w) => !t.has(w)) ? s : "";
 };
 
-/* No `tagline` parameter any more. It fed the matching curators.tagline
-   into the prompt as `Curator voice: "..."`, so every description was
-   written in a named person's register — on a product that deleted its
-   curators in Aug 2026. 26 taglines were still live and still steering
-   the model, which is why the copy kept its old personality long after
-   the byline came off the page. Provenance replaced personality; the
-   model writes catalogue copy now. */
 const systemPrompt = (city: string, keepSignals: string[]): string => {
   const ctx = CITY_CONTEXT[city] ?? CITY_CONTEXT.tallinn;
   const keepHint = keepSignals.length
@@ -331,8 +268,7 @@ async function callLLM(text: string, city: string, cfg: PipelineConfig): Promise
   // Groq is primary — free tier covers our volume.
   const r1 = await callGroq(text, city, cfg.keepSignals);
   if ("raw" in r1) return r1;
-  // OpenRouter :free is the sanctioned fallback lane (Jul 2026) — tried on
-  // any Groq failure, skipped silently while the key doesn't exist.
+  // OpenRouter :free fallback lane — skipped silently while the key doesn't exist.
   if (OPENROUTER_KEY) {
     const ro = await callOpenRouter(text, city, cfg.keepSignals);
     if ("raw" in ro) return ro;
@@ -349,12 +285,10 @@ async function callLLM(text: string, city: string, cfg: PipelineConfig): Promise
   return r1;
 }
 
-// ── English-compliance guard (v38) ───────────────────────────
-// The classifier occasionally copies non-Latin titles verbatim despite
-// the prompt. Detect Cyrillic in title/quote and run ONE targeted batch
-// translation (Groq) so picks are written to the DB already in English.
-// Fail-open: on any error the original text is kept (the translate-picks
-// backfill catches stragglers later).
+// ── English-compliance guard ─────────────────────────────────
+// The classifier occasionally copies non-Latin titles verbatim. Detect
+// Cyrillic in title/quote and run ONE targeted batch translation (Groq).
+// Fail-open: on any error the original text is kept.
 const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));
 
 async function fixNonEnglish(picks: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
@@ -424,7 +358,7 @@ async function processOne(
   const handle  = src?.curator_handle ?? m.channel;
   const city    = src?.city ?? "tallinn";
 
-  // v39: never silently classify against the wrong city context.
+  // Never silently classify against the wrong city context.
   if (!CITY_CONTEXT[city]) {
     await sb.from("staging_messages")
       .update({ status: "error",
@@ -484,20 +418,18 @@ async function processOne(
     return { status: "rejected", detail: { reason, id: m.id } };
   }
 
-  // v38: guarantee English before anything is written.
+  // Guarantee English before anything is written.
   validPicks = await fixNonEnglish(validPicks);
 
   /* ── The staging payload contract ────────────────────────────────
      Ingest functions write staging_messages.payload alongside the prose
      they hand the model. Facts come from HERE, verbatim; the model is
-     asked only for what it alone can do — an English title, the one
-     sentence worth reading, the kind, the mood tags. Nothing below is
-     model output.
+     asked only for an English title, the one sentence worth reading, the
+     kind, the mood tags.
 
      `description` is the SOURCE's own blurb and is stored verbatim, even
-     when it echoes the title: it is a fact about the listing, not our
-     copy. The paraphrase guard applies to `quote`, which we write. The
-     display layer decides what is worth showing (WA.UI.descriptionOr).
+     when it echoes the title. The paraphrase guard applies to `quote`,
+     which we write. The display layer decides (WA.UI.descriptionOr).
 
        source       string  the ingest that produced the row
        description  string  the blurb as the source wrote it
@@ -506,16 +438,14 @@ async function processOne(
        venue        string
        address      string
        ticket_url   string  where you actually buy or RSVP
-       image_url    string
+       image_url    string  (documented, not read here)
        is_free      bool    only when the source states it
        price_min/max number  price_text string  currency string
        categories   string[]
        entities     [{name, role}]  artist | author | film | organiser
 
-     Every field is optional — a Telegram post carries none of it, and a
-     scraped listing page carries two or three. A missing field must never
-     be inferred here; that is what left the pages empty in the first
-     place, and a guessed price is worse than no price. */
+     Every field is optional. A missing field is never inferred here: a
+     guessed price is worse than no price. */
   const pay = (m.payload ?? {}) as Record<string, unknown>;
   const payStr = (k: string): string | null => {
     const v = pay[k];
@@ -570,8 +500,8 @@ async function processOne(
       auto_generated: true,
       source_message_id: m.id,
       /* Carry the source/ticket page from the staging row so the detail page
-         can link out. Telegram curator posts aren't event/ticket pages, so
-         only web permalinks are kept (matches the backfill). */
+         can link out. Telegram posts aren't event/ticket pages, so only web
+         permalinks are kept (matches the backfill). */
       source_url: (typeof m.permalink === "string"
         && /^https?:\/\//i.test(m.permalink)
         && !/(\/\/(www\.)?t\.me\/|telegram)/i.test(m.permalink)) ? m.permalink : null,
@@ -611,9 +541,6 @@ export default {
     if (!GEMINI_KEY && !GROQ_KEY && !OPENROUTER_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    /* The curators fetch that used to sit here is gone with the byline —
-       see the note on systemPrompt. `handle` is still carried on every
-       pick, but as provenance (a feed), not as a voice to write in. */
     const cfg = await loadPipelineConfig(sb);
 
     const start   = Date.now();

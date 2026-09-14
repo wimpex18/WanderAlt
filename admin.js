@@ -1,10 +1,9 @@
 /* ============================================================
    WanderAlt — Admin curation panel
    ------------------------------------------------------------
-   Reads  via anon key (SELECT-only RLS — intentionally public).
+   Reads  via anon key (SELECT-only RLS).
    Writes via service role key (localStorage, localhost only).
-   Auth   via Supabase email+password (optional; for identity
-          and future role-based access control).
+   Auth   via Supabase email+password.
    ============================================================ */
 (() => {
   const BASE  = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
@@ -14,14 +13,9 @@
   /* ── Helpers ─────────────────────────────────────────────── */
   const $ = (id) => document.getElementById(id);
 
-  /* HTML-escape for every template interpolation of DB-sourced text.
-     Not optional cosmetics: discovery rows carry titles/venues scraped
-     from external sources, and this panel runs with the service-role
-     key in localStorage — a stored payload rendered unescaped here
-     would execute with that key in reach. */
-  /* Mirrors WA.UI.esc, including the single quote — admin builds attributes
-     from DB values and this panel holds the service-role key, so it gets the
-     same escaping contract as the public pages rather than a weaker one. */
+  /* HTML-escape every DB-sourced interpolation, including the single quote.
+     Discovery rows carry scraped text and this panel holds the service-role
+     key, so it uses the same escaping contract as the public pages. */
   const escAttr = (s) => String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -42,10 +36,8 @@
   const setCity   = (c) => { currentCity = c; localStorage.setItem('wa-admin-city', c); };
 
   /* ── Supabase REST helpers ───────────────────────────────── */
-  /* One anon read + one service-key write. Every table-specific wrapper
-     below is a thin alias — the headers / key guard / error surfacing
-     used to be six near-identical blocks plus inline fetch copies that
-     had already drifted apart (different alerts, one silent). */
+  /* One anon read + one service-key write; every table-specific wrapper
+     below is a thin alias. */
   const sbRead = (pathQs) =>
     fetch(`${BASE}/rest/v1/${pathQs}`, {
       headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
@@ -149,7 +141,7 @@
       `city=eq.${currentCity}` +
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
-               'valid_until,quote,handle,context_md,image_url,' +
+               'valid_until,quote,handle,image_url,' +
                'lat,lng,address,coords_source,coords_locked' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
@@ -212,7 +204,7 @@
 
     if (count) {
       const note = total < all.length ? ` of ${all.length} flagged` : ' flagged';
-      count.textContent = `${total}${note} · briefing shows first 8`;
+      count.textContent = `${total}${note}`;
     }
 
     if (ctrl) {
@@ -380,7 +372,6 @@
     $('mf-day').value          = pick?.day          || '';
     $('mf-valid-until').value  = pick?.valid_until  ? pick.valid_until.slice(0, 10) : '';
     $('mf-quote').value        = pick?.quote        || '';
-    $('mf-context').value      = pick?.context_md   || '';
     $('mf-image-url').value    = pick?.image_url    || '';
     $('mf-image').value        = '';
     $('mf-tonight').checked    = !!pick?.tonight;
@@ -599,7 +590,6 @@
       day:          $('mf-day').value           || null,
       valid_until:  $('mf-valid-until').value   || null,
       quote:        $('mf-quote').value.trim()  || null,
-      context_md:   $('mf-context').value.trim() || null,
       tonight:      $('mf-tonight').checked,
       this_week:    $('mf-thisweek').checked,
     };
@@ -664,9 +654,6 @@
       setModalStatus('Saved.');
       setTimeout(closeModal, 700);
       render();
-      /* If the edited pick was on the review queue, refresh it so the
-         editor's title/quote changes show up before they click Approve. */
-      if (modalPick?.pending_review) loadReviewQueue();
     } else {
       setModalStatus('Failed — check console.', true);
     }
@@ -743,7 +730,7 @@
     $('vmf-city').value         = venue?.city         || currentCity;
     $('vmf-lat').value          = venue?.lat          ?? '';
     $('vmf-lng').value          = venue?.lng          ?? '';
-    $('vmf-address').value      = venue?.address      || '';
+    $('vmf-address').value      = '';
     $('vmf-image-url').value    = venue?.image_url    || '';
     $('vmf-status').value       = venue?.status       || 'active';
 
@@ -759,10 +746,11 @@
       VD_GET(
         `city=eq.${encodeURIComponent(vcity)}` +
         `&venue_key=eq.${encodeURIComponent(vkey)}` +
-        `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
+        `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
       ).then(rows => {
         const vd = Array.isArray(rows) ? rows[0] : null;
         if (!vd) return;
+        $('vmf-address').value         = vd.address         || '';
         $('vmf-wikidata').value        = vd.wikidata_id     || '';
         $('vmf-short-desc').value      = vd.short_desc      || '';
         $('vmf-opening-hours').value   = vd.opening_hours   || '';
@@ -811,7 +799,6 @@
       city:         $('vmf-city').value             || currentCity,
       lat:          isNaN(latVal) ? null : latVal,
       lng:          isNaN(lngVal) ? null : lngVal,
-      address:      $('vmf-address').value.trim()   || null,
       image_url:    $('vmf-image-url').value.trim() || null,
       status:       $('vmf-status').value           || 'active',
     };
@@ -872,7 +859,7 @@
           `name=ilike.*${encodeURIComponent(term)}*` +
           `&city=eq.${currentCity}` +
           '&limit=10' +
-          '&select=id,name,kind,neighborhood,city,lat,lng,address,image_url,status'
+          '&select=id,name,kind,neighborhood,city,lat,lng,image_url,status'
         );
         if (!Array.isArray(hits) || !hits.length) { resultsEl.hidden = true; return; }
         venueSearchCache = hits;
@@ -908,7 +895,7 @@
       const r      = await fetch(
         `${BASE}/rest/v1/venues?city=eq.${currentCity}` +
         `&limit=${VL_PAGE_SIZE}&offset=${offset}&order=name.asc` +
-        `&select=id,name,kind,neighborhood,city,status,lat,lng,address,image_url`,
+        `&select=id,name,kind,neighborhood,city,status,lat,lng,image_url`,
         {
           headers: {
             apikey: ANON, Authorization: `Bearer ${ANON}`,
@@ -1047,112 +1034,6 @@
   };
 
   /* ══════════════════════════════════════════════════════════
-     DISCOVERY REVIEW QUEUE
-     Picks created by discover-venues live with pending_review=true
-     and handle='@discovery'. This list lets editors approve (publish
-     + re-embed) or reject (archive) each one.
-     ══════════════════════════════════════════════════════════ */
-  const stripPendingSuffix = (title) =>
-    String(title || '').replace(/\s*[—-]\s*pending review\s*$/i, '').trim();
-
-  const loadReviewQueue = async () => {
-    const list     = $('review-list');
-    const statusEl = $('review-status');
-    if (!list) return;
-
-    list.innerHTML = '';
-    if (statusEl) statusEl.textContent = 'Loading…';
-
-    try {
-      const r = await fetch(
-        `${BASE}/rest/v1/picks?city=eq.${encodeURIComponent(currentCity)}` +
-        `&pending_review=eq.true&archived_at=is.null` +
-        `&select=id,title,venue,neighborhood,kind,handle,image_url,discovery_source,discovery_query,thumb_initials,created_at` +
-        `&order=created_at.desc&limit=50`,
-        { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } }
-      );
-      const rows = await r.json();
-      const badge = $('review-badge');
-      if (!Array.isArray(rows) || !rows.length) {
-        if (statusEl) statusEl.textContent = 'No picks awaiting review.';
-        if (badge) badge.dataset.visible = '0';
-        return;
-      }
-
-      if (statusEl) {
-        statusEl.textContent =
-          `${rows.length} pick${rows.length !== 1 ? 's' : ''} awaiting review`;
-      }
-      if (badge) { badge.textContent = rows.length; badge.dataset.visible = '1'; }
-
-      list.innerHTML = rows.map(row => {
-        const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
-        const initials   = row.thumb_initials
-          || (row.venue || cleanTitle).slice(0, 2).toUpperCase();
-        /* image_url is the most-untrusted field on a discovery row — escape
-           the whole style attribute value ('%27 for quotes inside url()),
-           a bare single-quote replace still let " break out of style="". */
-        const thumbStyle = row.image_url
-          ? escAttr(`background-image:url('${String(row.image_url).replace(/'/g, '%27')}')`)
-          : '';
-        const thumbInner = row.image_url ? '' : escAttr(initials);
-        const metaBits = [row.neighborhood, row.kind].filter(Boolean).join(' · ');
-        const query    = row.discovery_query
-          ? `via "${escAttr(row.discovery_query)}"`
-          : (row.discovery_source || '');
-
-        return `<li class="review-row" data-id="${escAttr(row.id)}">
-          <div class="review-thumb" style="${thumbStyle}">${thumbInner}</div>
-          <div class="review-body">
-            <p class="review-title">${escAttr(cleanTitle)}</p>
-            <p class="review-meta">${escAttr(metaBits)}</p>
-            <p class="review-query">${escAttr(query)}</p>
-          </div>
-          <div class="review-actions">
-            <button type="button" class="admin-col-btn admin-col-btn--approve"
-                    data-review-action="approve">Approve</button>
-            <button type="button" class="admin-col-btn"
-                    data-review-action="edit">Edit</button>
-            <button type="button" class="admin-col-btn admin-col-btn--reject"
-                    data-review-action="reject">Reject</button>
-          </div>
-        </li>`;
-      }).join('');
-    } catch (err) {
-      if (statusEl) statusEl.textContent = `Error: ${err.message}`;
-    }
-  };
-
-  /* Approve: clear pending_review, strip placeholder suffix, refresh embedding. */
-  const approveReview = async (id, row) => {
-    const newTitle = stripPendingSuffix(row.title);
-    const patch    = { pending_review: false };
-    if (newTitle && newTitle !== row.title) patch.title = newTitle;
-
-    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`, patch);
-    if (!r?.ok) return false;
-
-    /* Re-embed so the now-published pick is searchable by vector + BM25.
-       Best-effort — failure doesn't block the approval. */
-    try {
-      await fetch(`${BASE}/functions/v1/embed-picks`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-        body:    JSON.stringify({ city: currentCity, pick_id: id }),
-      });
-    } catch (_) { /* embedding refresh is opportunistic */ }
-
-    return true;
-  };
-
-  /* Reject: archive the pick so it disappears from queues + search. */
-  const rejectReview = async (id) => {
-    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`,
-                          { archived_at: new Date().toISOString() });
-    return r?.ok;
-  };
-
-  /* ══════════════════════════════════════════════════════════
      STATS STRIP — quick health counts
      ══════════════════════════════════════════════════════════ */
   const loadStats = async () => {
@@ -1165,23 +1046,16 @@
     };
     const el = (id) => document.getElementById(id);
     try {
-      const [picksRes, unpinnedRes, reviewRes, embedsRes] = await Promise.all([
+      const [picksRes, unpinnedRes] = await Promise.all([
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null` +
               `&or=(lat.is.null,lng.is.null)&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
-        fetch(`${BASE}/rest/v1/picks?handle=eq.@discovery&archived_at=is.null&select=id`,
-              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
-        fetch(`${BASE}/rest/v1/pick_embeddings?select=pick_id`,
-              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
       ]);
 
       const total    = countHeader(picksRes);
       const unpinned = countHeader(unpinnedRes);
-      const review   = countHeader(reviewRes);
-      const embeds   = countHeader(embedsRes);
-      const noEmbeds = (total != null && embeds != null) ? Math.max(0, total - embeds) : null;
 
       if (el('stat-picks'))    el('stat-picks').textContent    = `${total ?? '?'} picks`;
       if (el('stat-unpinned')) {
@@ -1189,211 +1063,7 @@
         el('stat-unpinned').className   =
           `admin-stat-badge${unpinned > 0 ? ' admin-stat-badge--warn' : ''}`;
       }
-      if (el('stat-review')) {
-        el('stat-review').textContent = `${review ?? '?'} pending review`;
-        el('stat-review').className   =
-          `admin-stat-badge${review > 0 ? ' admin-stat-badge--accent' : ''}`;
-      }
-      if (el('stat-noembeds')) {
-        el('stat-noembeds').textContent = noEmbeds != null ? `${noEmbeds} no embedding` : '— no embedding';
-        el('stat-noembeds').className   =
-          `admin-stat-badge${noEmbeds > 0 ? ' admin-stat-badge--warn' : ''}`;
-      }
     } catch { /* silently absent */ }
-  };
-
-  /* ══════════════════════════════════════════════════════════
-     MATCH ANALYTICS — aggregate likes/dislikes from user_match_history
-     ══════════════════════════════════════════════════════════ */
-  const loadAnalytics = async () => {
-    const status = document.getElementById('analytics-status');
-    const grid   = document.getElementById('analytics-grid');
-    const likeEl = document.getElementById('analytics-likes');
-    const disEl  = document.getElementById('analytics-dislikes');
-    if (!status || !grid || !likeEl || !disEl) return;
-
-    /* user_match_history RLS is per-user; aggregation needs service role.
-       Without a key, show a hint and bail out gracefully. */
-    if (!hasKey()) {
-      status.textContent = 'Paste service-role key above to load aggregates.';
-      grid.hidden = true;
-      return;
-    }
-
-    status.textContent = 'Loading…';
-    const key     = getKey();
-    const headers = { apikey: key, Authorization: `Bearer ${key}` };
-
-    try {
-      const res = await fetch(
-        `${BASE}/rest/v1/user_match_history?select=pick_id,vote`,
-        { headers }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rows = await res.json();
-
-      if (!rows.length) {
-        status.textContent = 'No votes yet — table is empty.';
-        grid.hidden = true;
-        return;
-      }
-
-      /* Aggregate counts per pick. */
-      const tally = new Map();
-      for (const r of rows) {
-        if (!r.pick_id || !r.vote) continue;
-        const t = tally.get(r.pick_id) || { likes: 0, dislikes: 0 };
-        if (r.vote === 'like')    t.likes++;
-        if (r.vote === 'dislike') t.dislikes++;
-        tally.set(r.pick_id, t);
-      }
-
-      /* Resolve pick titles in one batch — limit to relevant ids. */
-      const ids = [...tally.keys()];
-      const idList = ids.map(id => `"${id.replace(/"/g, '\\"')}"`).join(',');
-      const titlesRes = await fetch(
-        `${BASE}/rest/v1/picks?id=in.(${encodeURIComponent(idList)})&select=id,title,handle`,
-        { headers }
-      );
-      const titles = titlesRes.ok ? await titlesRes.json() : [];
-      const titleMap = Object.fromEntries(titles.map(p => [p.id, p]));
-
-      const render = (entries) => entries.slice(0, 10).map(([id, t]) => {
-        const p = titleMap[id] || {};
-        const name = p.title || id;
-        return `<li class="review-row" style="padding:var(--s-2) 0;border-bottom:1px solid var(--c-rule)">
-          <p style="margin:0;font-weight:500">${escAttr(name)}</p>
-          <p class="meta" style="margin:2px 0 0">
-            ${escAttr(p.handle || '')} · 👍 ${t.likes} · 👎 ${t.dislikes}
-          </p>
-        </li>`;
-      }).join('') || '<li class="meta">None.</li>';
-
-      const liked = [...tally.entries()]
-        .filter(([, t]) => t.likes > 0)
-        .sort((a, b) => b[1].likes - a[1].likes);
-      const disliked = [...tally.entries()]
-        .filter(([, t]) => t.dislikes > 0)
-        .sort((a, b) => b[1].dislikes - a[1].dislikes);
-
-      likeEl.innerHTML = render(liked);
-      disEl.innerHTML  = render(disliked);
-
-      const total = rows.length;
-      status.textContent =
-        `${total} vote${total !== 1 ? 's' : ''} across ${ids.length} pick${ids.length !== 1 ? 's' : ''}.`;
-      grid.hidden = false;
-    } catch (err) {
-      status.textContent = `Error: ${err.message}`;
-      grid.hidden = true;
-    }
-  };
-
-  /* ══════════════════════════════════════════════════════════
-     CURATORS MANAGEMENT
-     ══════════════════════════════════════════════════════════ */
-  let curatorsList = [];
-  let modalCurator = null; // curator being edited (null = new)
-
-  const loadCurators = async () => {
-    const countEl = document.getElementById('curators-count');
-    if (countEl) countEl.textContent = 'Loading…';
-    const key     = hasKey() ? getKey() : ANON;
-    const headers = { apikey: key, Authorization: `Bearer ${key}` };
-    try {
-      const res = await fetch(
-        `${BASE}/rest/v1/curators?city=eq.${currentCity}` +
-        `&select=handle,name,city,tagline,bio,source_channel,pick_count` +
-        `&order=pick_count.desc.nullslast,handle.asc&limit=100`,
-        { headers }
-      );
-      curatorsList = await res.json().catch(() => []);
-      renderCurators();
-    } catch (err) {
-      if (countEl) countEl.textContent = `Failed: ${err.message}`;
-    }
-  };
-
-  const renderCurators = () => {
-    const list    = document.getElementById('curators-list');
-    const countEl = document.getElementById('curators-count');
-    if (!list) return;
-    if (countEl) countEl.textContent = `${curatorsList.length} curator${curatorsList.length !== 1 ? 's' : ''}`;
-    list.innerHTML = curatorsList.length
-      ? curatorsList.map(c => `
-          <li class="admin-pick-row">
-            <span style="font-family:var(--ff-mono);font-size:var(--fs-meta)">${escAttr(c.handle)}</span>
-            <span class="meta">${escAttr([c.name, c.tagline].filter(Boolean).join(' — ') || '—')}
-              ${c.pick_count != null ? `<em> · ${c.pick_count} picks</em>` : ''}</span>
-            <button class="admin-btn--edit" data-curator-handle="${escAttr(c.handle)}"
-                    aria-label="Edit ${escAttr(c.handle)}" title="Edit">&#9998;</button>
-          </li>`
-        ).join('')
-      : `<li class="meta admin-empty" style="padding:var(--s-3) 0">No curators found for ${currentCity}.</li>`;
-  };
-
-  const openCuratorModal = (curator) => {
-    modalCurator = curator || null;
-    const modal = document.getElementById('curator-modal');
-    if (!modal) return;
-    const titleEl = document.getElementById('curator-modal-heading');
-    if (titleEl) titleEl.textContent = curator ? 'Edit curator' : 'New curator';
-    document.getElementById('curator-modal-status').textContent = '';
-    document.getElementById('cf-handle').value  = curator?.handle         || '';
-    document.getElementById('cf-name').value    = curator?.name           || '';
-    document.getElementById('cf-city').value    = curator?.city           || currentCity;
-    document.getElementById('cf-tagline').value = curator?.tagline        || '';
-    document.getElementById('cf-bio').value     = curator?.bio            || '';
-    document.getElementById('cf-source').value  = curator?.source_channel || '';
-    document.getElementById('cf-handle').readOnly = !!curator;
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    document.getElementById('cf-handle').focus();
-  };
-
-  const closeCuratorModal = () => {
-    const modal = document.getElementById('curator-modal');
-    if (modal) modal.hidden = true;
-    document.body.style.overflow = '';
-    modalCurator = null;
-  };
-
-  const saveCuratorModal = async () => {
-    if (!hasKey()) { alert('Service key required to save curators.'); return; }
-    const status = document.getElementById('curator-modal-status');
-    const btn    = document.getElementById('curator-save-btn');
-    const handle   = document.getElementById('cf-handle').value.trim();
-    const city     = document.getElementById('cf-city').value.trim()   || currentCity;
-    const name     = document.getElementById('cf-name').value.trim()   || null;
-    const tagline  = document.getElementById('cf-tagline').value.trim() || null;
-    const bio      = document.getElementById('cf-bio').value.trim()    || null;
-    const source   = document.getElementById('cf-source').value.trim() || null;
-
-    if (!handle) { if (status) status.textContent = 'Handle is required.'; return; }
-
-    if (status) status.textContent = 'Saving…';
-    if (btn)    btn.disabled = true;
-
-    try {
-      /* onError:'ignore' — this modal reports failures in its own status
-         line (parsing the error body itself), not via alert(). */
-      const res = await sbWrite('curators',
-        { handle, city, name, tagline, bio, source_channel: source },
-        { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
-          label: 'Curator save', onError: 'ignore' });
-      if (res && (res.ok || res.status === 204)) {
-        if (status) status.textContent = 'Saved.';
-        await loadCurators();
-        setTimeout(closeCuratorModal, 700);
-      } else {
-        const data = res ? await res.json().catch(() => ({})) : {};
-        if (status) status.textContent = data.message || `Error ${res ? res.status : 'no key'}`;
-      }
-    } catch (err) {
-      if (status) status.textContent = `Network error: ${err.message}`;
-    } finally {
-      if (btn) btn.disabled = false;
-    }
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -1471,13 +1141,6 @@
     }
   };
 
-  /* The COLUMNS panel was removed in Aug 2026 along with draft-column.
-     It edited a weekly editorial column attributed to a curator_handle —
-     a feature of the product the redesign replaced. Nothing public ever
-     rendered it. The `columns` rows are left in the database rather than
-     dropped: they are 16 real drafts from July and deleting them buys
-     nothing, but no surface reads them any more. */
-
   /* ══════════════════════════════════════════════════════════
      INIT
      ══════════════════════════════════════════════════════════ */
@@ -1511,17 +1174,12 @@
         await loadAll();
         loadVenuesList(0);
         loadEnrichmentList(0);
-        loadReviewQueue();
-        loadCurators();
         loadStats();
-        loadAnalytics();
       });
     }
 
-    /* ── Stats strip + analytics ── */
+    /* ── Stats strip ── */
     loadStats();
-    loadAnalytics();
-    $('analytics-refresh-btn')?.addEventListener('click', () => loadAnalytics());
 
     /* ── Auth ── */
     renderAuthState();
@@ -1559,8 +1217,6 @@
     loadVenuesList(0);
     /* loadEnrichmentList(0) fires from the enrichment section below —
        calling it here too doubled the request on every page load. */
-    loadReviewQueue();
-    loadCurators();
 
     /* ── Delegation: ✕ remove-flag buttons ── */
     document.addEventListener('click', async (e) => {
@@ -1801,35 +1457,6 @@
       }
     });
 
-    /* ── Backfill embeddings button ── */
-    $('pipeline-embed-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const btn      = $('pipeline-embed-btn');
-      const statusEl = $('pipeline-embed-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) { statusEl.hidden = false; statusEl.textContent = 'Embedding missing picks — takes up to 1 min…'; }
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/embed-picks`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({ city: currentCity, limit: 200 }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) {
-          if (statusEl) statusEl.textContent =
-            json.embedded === 0
-              ? 'All picks are already embedded.'
-              : `Embedded ${json.embedded} pick${json.embedded !== 1 ? 's' : ''} (model: ${json.model}).`;
-        } else {
-          if (statusEl) statusEl.textContent = `Error: ${JSON.stringify(json)}`;
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
     /* ── Edit modal wiring ── */
     $('modal-form')?.addEventListener('submit', saveModal);
     $('modal-cancel')?.addEventListener('click', closeModal);
@@ -1896,10 +1523,11 @@
           /* Reload enrichment fields from venue_details */
           const vdRows = await VD_GET(
             `city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(name.toLowerCase())}` +
-            `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
+            `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
           );
           const vd = Array.isArray(vdRows) ? vdRows[0] : null;
           if (vd) {
+            $('vmf-address').value         = vd.address         || '';
             $('vmf-wikidata').value        = vd.wikidata_id     || '';
             $('vmf-short-desc').value      = vd.short_desc      || '';
             $('vmf-opening-hours').value   = vd.opening_hours   || '';
@@ -1949,48 +1577,6 @@
       }
     });
 
-    /* ── Discovery review queue ── */
-    $('review-refresh-btn')?.addEventListener('click', () => loadReviewQueue());
-
-    /* Delegation for Approve / Edit / Reject on each review row. */
-    $('review-list')?.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-review-action]');
-      if (!btn) return;
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const row = btn.closest('.review-row');
-      const id  = row?.dataset.id;
-      if (!id) return;
-
-      const action = btn.dataset.reviewAction;
-
-      /* Fetch the full pick row so Edit can populate the modal and
-         Approve can compute the cleaned title. */
-      const picks = await GET(`id=eq.${encodeURIComponent(id)}&limit=1`);
-      const pick  = Array.isArray(picks) ? picks[0] : null;
-      if (!pick) { alert('Pick not found.'); await loadReviewQueue(); return; }
-
-      if (action === 'edit') {
-        openModal(pick);
-        return;
-      }
-
-      if (action === 'approve') {
-        btn.disabled = true; btn.textContent = 'Approving…';
-        const ok = await approveReview(id, pick);
-        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
-        else { btn.disabled = false; btn.textContent = 'Approve'; }
-        return;
-      }
-
-      if (action === 'reject') {
-        if (!confirm(`Reject "${stripPendingSuffix(pick.title) || pick.id}"?\n\nArchived; will not appear anywhere.`)) return;
-        btn.disabled = true; btn.textContent = 'Rejecting…';
-        const ok = await rejectReview(id);
-        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
-        else { btn.disabled = false; btn.textContent = 'Reject'; }
-      }
-    });
-
     /* Delegation: lock/unlock toggle buttons in enrichment list */
     $('enrichment-list')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.admin-btn--lock-toggle');
@@ -2002,33 +1588,9 @@
       if (r?.ok) await loadEnrichmentList(vePage);
     });
 
-    /* ── Curators section ── */
-    $('curator-new-btn')?.addEventListener('click', () => openCuratorModal(null));
-    $('curator-save-btn')?.addEventListener('click', saveCuratorModal);
-    $('curator-modal-close')?.addEventListener('click',  closeCuratorModal);
-    $('curator-modal-cancel')?.addEventListener('click', closeCuratorModal);
-    $('curator-delete-btn')?.addEventListener('click', async () => {
-      if (!modalCurator) return;
-      if (!confirm(`Delete curator "${modalCurator.handle}"?\n\nThis does not delete their picks.`)) return;
-      const res = await sbWrite(
-        `curators?handle=eq.${encodeURIComponent(modalCurator.handle)}`,
-        undefined, { method: 'DELETE', label: 'Curator delete' });
-      if (res?.ok) { closeCuratorModal(); await loadCurators(); }
-    });
-    $('curator-modal')?.addEventListener('click', (e) => {
-      if (e.target === $('curator-modal')) closeCuratorModal();
-    });
-    $('curators-list')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-curator-handle]');
-      if (!btn) return;
-      const curator = curatorsList.find(c => c.handle === btn.dataset.curatorHandle);
-      if (curator) openCuratorModal(curator);
-    });
-
     /* Escape closes whichever modal is open */
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      if (!document.getElementById('curator-modal')?.hidden) { closeCuratorModal(); return; }
       if (!$('admin-venue-modal')?.hidden) { closeVenueModal(); return; }
       if (!$('admin-modal')?.hidden)       { closeModal();      return; }
     });

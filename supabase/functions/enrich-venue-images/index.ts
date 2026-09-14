@@ -1,72 +1,28 @@
 /* ============================================================
-   enrich-venue-images v4 — a photograph of the place, or its own
-   mark, or nothing
+   enrich-venue-images — a photograph of the place, or its own mark,
+   or nothing
    ------------------------------------------------------------
-   Fills venues.image_url. Nothing filled it before: every venue photo
-   in the database was an Unsplash stock image sprayed across unrelated
-   places (one steeple served D3, CatHouse, Ali Baba and Fotografiska),
-   written by something no longer in the repo, and therefore never
-   corrected either. Those were deleted in Aug 2026 and this replaces
-   the mechanism rather than the pictures.
-
-   Four lanes, tried in order, all free and all keyless:
+   Fills venues.image_url. Four lanes, tried in order, all free and
+   keyless, and every one anchored to the venue's own identity — its QID
+   or its own domain. Nothing is ever guessed from a name.
 
    1. OSM's `wikidata` tag → Wikidata P18 → Wikimedia Commons CDN.
-      This is the answer to short names. enrich-images had to guess a
-      venue from its label and put Tallinn Town Hall's Christmas market
-      on a basement club called Hall; a QID is an identifier, so it
-      resolves "D3" exactly as well as "Estonian National Opera".
-      ~10% of Tallinn's culture venues carry one.
+      A QID resolves "D3" exactly as well as "Estonian National Opera".
 
    2. The venue's own website → og:image.
-      ~42% carry a website, and a venue's own share image is a picture
-      it chose of itself. This is the widest source available without
-      paying anyone.
 
    3. The same page's schema.org JSON-LD → image.
-      Emitted by plenty of CMS themes that skip the OpenGraph tags.
 
    4. The same page's own mark — the og:image the photo lane refused
       for looking like a logo, or an apple-touch-icon of at least
-      120px. Same-origin only.
+      120px. Same-origin only. Recorded as its own `image_source`
+      ('logo') so the set can be found and reversed with one query.
 
-   v4 was written against a measurement rather than a hunch. Of the
-   614 venues on the kinds Places actually draws, 31 had an image --
-   5%. Twenty of the failures were fetched and read by hand, and the
-   cause was never "the venue has no picture":
-
-     4/20  og:image was THERE and this function threw it away, because
-           the filename contained "logo" and the denylist treats that
-           as a CMS default.
-     5/20  no og:image, but an apple-touch-icon on the venue's own
-           domain.
-     3/20  no og:image, but schema.org JSON-LD carrying one.
-     1/20  og:image present at byte 297,361 of a 570KB document, past
-           the 200KB slice below, so it was never seen.
-     7/20  genuinely nothing. The mark is the right answer for these.
-
-   So roughly half of "not found" was this function's own doing, and
-   the lanes below are the four repairs. The rule they all keep is the
-   one that matters: **every source is anchored to the venue's own
-   identity** -- its QID, or its own domain -- and nothing is ever
-   guessed from a name. That is what stopped Tallinn Town Hall's
-   Christmas market appearing on a basement club.
-
-   A logo is not a photograph, and it is admitted deliberately: it is
-   the venue's own mark, served from the venue's own host, so it
-   cannot be a claim about the WRONG place -- which is the failure
-   this file exists to prevent. It is recorded as its own
-   `image_source` so the whole set can be found, judged and reversed
-   with one query.
-
-   If every lane misses, the venue keeps no photo and the app draws
-   the category mark on a 9%-petrol tint, which is the designed answer
-   and an honest one. A wrong photograph is worse than none: it is a
-   claim about a real place.
+   If every lane misses, the venue keeps no photo and the app draws the
+   category mark. A wrong photograph is worse than none.
 
    POST body: { city?, limit?, dry_run? }
-   dry_run reports what it WOULD write and mutates nothing — worth
-   running first after any change to the guards below.
+   dry_run reports what it WOULD write and mutates nothing.
    ============================================================ */
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -82,20 +38,11 @@ const db = createClient(SUPABASE_URL, SUPABASE_SERVICE);
 
 /* ---- Wikimedia ------------------------------------------- */
 
-/* Resolve a Commons filename to a URL on upload.wikimedia.org — the CDN —
-   rather than to commons.wikimedia.org/wiki/Special:FilePath, which is the
-   MediaWiki APP LAYER and 302s to the same place.
-
-   The redirect form was what this function used to write, and it cost twice:
-   the first verification sweep marked a third of the catalogue "transient"
-   and every one of those was an `http 429`, and every reader's browser was
-   loading venue photos through that same throttled endpoint.
-
-   The imageinfo API gives the CDN URL directly and, unlike deriving the
-   sharded path from md5(filename) by hand, it is right about the case that
-   breaks the derivation: a file NARROWER than the requested width has no
-   /thumb/ rendition at all and must be served as the original. Eesti
-   Draamateater is exactly that file. */
+/* Resolve a Commons filename to a URL on upload.wikimedia.org (the CDN),
+   never Special:FilePath (the MediaWiki app layer: 302s, rate-limited).
+   The imageinfo API is used rather than deriving the md5 path, because a
+   file NARROWER than the requested width has no /thumb/ rendition and
+   must be served as the original. */
 async function commonsCdnUrl(file: string, width = 800): Promise<string | null> {
   const clean = String(file).replace(/^File:/, '');
   try {
@@ -139,30 +86,17 @@ async function imageFromQid(qid: string): Promise<{ url: string; attr: string } 
 
 /* ---- og:image -------------------------------------------- */
 
-/* A share image is not automatically a photograph of the place. Themes
-   ship defaults, and Kino Sõprus really does serve
-   "og-image-placeholder.png" — which would have been written as its
-   venue photo without this list.
-
-   A file named literally "og-image" is on the list too, and that is a
-   deliberate over-reach: a handful of venues do name a real photograph
-   that way and will be refused. The case that decided it was a dry run
-   proposing domeeninimi.ee/static/og-image.png as the photo of
-   Pärimusteater Loomine — a PARKED DOMAIN's share graphic, which the
-   dedup guard could not catch because only one venue points at it. A
-   wrong photograph is a claim about a real place; a missing one is a
-   category mark. Err toward the mark. */
+/* A share image is not automatically a photograph of the place: themes
+   ship defaults (e.g. "og-image-placeholder.png") and parked domains ship
+   share graphics. A file named literally "og-image" is refused too, a
+   deliberate over-reach: err toward the category mark. */
 const NOT_A_PHOTO =
   /(placeholder|default|fallback|no[-_]?image|blank|spacer|dummy|sample|logo|favicon|sprite|banner[-_]?default|og[-_]?image|social[-_]?share|share[-_]?card|preview[-_]?card)/i;
 
 /* `allowMark` runs the same scan with the photo denylist relaxed to the
-   terms that mean "no image at all". It exists because the denylist was
-   throwing away real finds: 4 of 20 sampled failures had an og:image
-   whose filename merely contained "logo" -- muzikumas-logo-crop.png,
-   janisroze .../logo.png, kinobize logo-bw.png -- which is the venue's
-   own mark on the venue's own host, not a CMS default. The terms kept
-   in both modes are the ones that name an ABSENCE (placeholder, blank,
-   spacer, dummy, default), and those still buy nothing anywhere. */
+   terms that name an ABSENCE (placeholder, blank, spacer, dummy,
+   default). A filename containing "logo" on the venue's own host is the
+   venue's own mark, not a CMS default. */
 const NOT_AN_IMAGE_AT_ALL =
   /(placeholder|fallback|no[-_]?image|blank|spacer|dummy|sample|default)/i;
 
@@ -219,12 +153,9 @@ function pickJsonLdImage(html: string, pageUrl: string): string | null {
     };
     const raw = walk(data);
     if (!raw) continue;
-    /* The walker returns whatever sat under an `image` key, and that is
-       not always a URL: zuzeum.com yielded the bare token "Array",
-       which `new URL()` happily resolved to <origin>/Array -- a 404
-       stored as a venue photograph. Require something that is actually
-       addressed (absolute, protocol-relative or rooted) AND that ends
-       in an image extension, before it is allowed to be one. */
+    /* The walker returns whatever sat under an `image` key, which is not
+       always a URL (a bare token resolves to <origin>/token, a 404).
+       Require something addressed AND ending in an image extension. */
     if (!/^(https?:)?\/\//i.test(raw) && !raw.startsWith('/')) continue;
     const abs = absHttp(raw, pageUrl);
     if (!abs) continue;
@@ -261,9 +192,7 @@ function pickIcon(html: string, pageUrl: string): string | null {
     try { u = new URL(abs); } catch { continue; }
     if (/\.svg(\?|$)/i.test(u.pathname)) continue;
     if (u.origin !== pageOrigin) continue;
-    /* A .ico is a 16 or 32px browser-tab glyph. In a 181px card it is a
-       smudge, which is worse than the category mark it would replace --
-       and three of the twenty sampled sites offered exactly that. */
+    /* A .ico is a 16 or 32px tab glyph — worse than the category mark. */
     if (/\.ico(\?|$)/i.test(u.pathname)) continue;
     const sizeAttr = tag.match(/sizes\s*=\s*["'](\d+)/i)?.[1];
     const size = sizeAttr ? Number(sizeAttr) : (/apple-touch-icon/.test(rel) ? 180 : 0);
@@ -299,16 +228,8 @@ async function imageFromWebsite(site: string): Promise<WebHit | null> {
     const ct = r.headers.get('content-type') ?? '';
     if (!ct.includes('text/html')) return null;
 
-    /* v3 sliced the response at 200KB on the reasoning that only the
-       head is needed. The reasoning was right and the slice was not:
-       zuzeum.com carries its og:image at byte 297,361 of 570KB and
-       rahvaraamat.ee at 771,059 of 772,353, because both inline the
-       whole site's CSS and JSON state ahead of it. The slice was
-       discarding the tag it existed to find.
-
-       Cut at </head> when there is one -- that is the boundary the
-       200KB was standing in for -- and otherwise take a cap large
-       enough for the documents that provoked this. */
+    /* Cut at </head> when there is one, otherwise take a large cap: some
+       sites inline their whole CSS and JSON state ahead of the meta tags. */
     const full = await r.text();
     const headEnd = full.search(/<\/head>/i);
     const html = headEnd > 0 ? full.slice(0, headEnd) : full.slice(0, 1_500_000);
@@ -339,10 +260,10 @@ async function imageFromWebsite(site: string): Promise<WebHit | null> {
 
 /* ---- the shared-template guard ---------------------------- */
 
-/* The Unsplash mess was one photo standing in for seven venues. A CMS
-   default does exactly the same thing, so an og:image already claimed
-   by other venues is refused rather than spread further. Checked
-   against what is committed, so it tightens as the run proceeds. */
+/* An og:image already claimed by other venues is refused rather than
+   spread further (one photo standing in for many venues is the failure
+   this guards). Checked against what is committed, so it tightens as the
+   run proceeds. */
 async function alreadyUsed(url: string, selfId: string): Promise<boolean> {
   const { count } = await db
     .from('venues')
@@ -352,18 +273,9 @@ async function alreadyUsed(url: string, selfId: string): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
-/* One exception, and only for the mark lane. The rule above exists
-   because one photograph standing in for seven unrelated venues is the
-   Unsplash disaster; a CHAIN's logo standing for its own branches is
-   not that -- it is correct. Rahva Raamat, Apollo and Jānis Roze each
-   run several shops in this catalogue (janisroze.lv came up three
-   times in a 24-row sample), and blanket dedup would give the mark to
-   whichever branch was enriched first and stamp the rest as failures.
-
-   Same website host is the test, because that is what makes them the
-   same organisation rather than two venues that merely happen to share
-   a file. A shared logo across DIFFERENT hosts is still refused, which
-   is the CMS-default case the guard was written for. */
+/* One exception, for the mark lane only: a chain's logo standing for its
+   own branches is correct. Same website host is the test; a shared logo
+   across different hosts is still refused. */
 async function sameOrgOnly(url: string, selfId: string, selfSite: string): Promise<boolean> {
   const { data } = await db
     .from('venues')
@@ -424,19 +336,8 @@ async function enrichVenue(v: Venue, dryRun: boolean) {
   return { name: v.name, status: 'not_found' };
 }
 
-/* The kinds Places actually draws (VENUE_KINDS in supabase.js). The
-   queue is ordered by this and nothing else was doing that job: the
-   batch is 25 a city a night, taken from every venue in the table
-   without an image -- and the whitelisted kinds are 614 of 2,598, so
-   they were getting about a quarter of the slots by chance while
-   museums, bars and libraries -- which Places never renders -- took
-   the rest.
-
-   That is the arithmetic behind the state this run was written to fix:
-   172 whitelisted venues WITH a website had never once been attempted,
-   while CLAUDE.md had already noticed the other end of the same fact
-   (22 of 26 stored photos were on kinds Places never draws) without
-   connecting it to the queue. Enrich what the reader can see first. */
+/* The kinds Places actually draws (VENUE_KINDS in supabase.js) are
+   enriched first, so the nightly batch goes to what the reader sees. */
 const PLACES_KINDS = [
   'gallery', 'bookshop', 'thrift', 'record store',
   'arts centre', 'community space', 'studio', 'cinema',
@@ -455,10 +356,8 @@ async function enrichCity(city: string, limit: number, dryRun: boolean) {
        rather than spend a round-trip discovering that. */
     .or('wikidata.not.is.null,website.not.is.null');
 
-  /* Whitelisted kinds first, and only then the rest -- two queries
-     rather than one, because PostgREST cannot order by "is this value
-     in that list" and sorting in JS would only reorder whatever single
-     page the limit had already chosen. */
+  /* Whitelisted kinds first, then the rest — two queries, because
+     PostgREST cannot order by list membership. */
   const { data: first, error } = await base().in('kind', PLACES_KINDS).limit(limit);
   if (error) return { city, ok: false, error: error.message };
 

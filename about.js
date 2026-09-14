@@ -1,16 +1,8 @@
 /* ============================================================
-   about.js — About (6d).
+   about.js — About.
    ------------------------------------------------------------
-   "About is your credibility page now that curators are gone — and it's
-   the only page where the illustrated city plates in assets/ genuinely
-   earn their place."
-
-   Every number here is counted from the live catalogue rather than
-   written into the copy, because a hand-written "34 sources" is a claim
-   that rots the first week nobody updates it. Vilnius is shown as
-   internal, not hidden: same treatment as the thin-city case in 3a —
-   state the coverage plainly and the product reads as honest rather
-   than empty.
+   Every number is counted from the live catalogue rather than written
+   into the copy. Vilnius is shown as internal, not hidden.
    ============================================================ */
 (() => {
   'use strict';
@@ -47,16 +39,8 @@
       </a>`;
     }).join('');
 
-    /* The calendar feed, with its actual URL. calendar-feed has served a
-       real per-city ICS since Jul 2026 and nothing in the app ever said
-       where it was — About described it, Explore's ".ics" button and
-       You's "Add to my calendar" both pointed at this section, and the
-       section printed no address. A subscribe URL cannot be guessed.
-
-       One row per live city, because a feed is per city and a reader in
-       Riga should not have to hand-edit a query string. Vilnius is left
-       out for the same reason it is left off the OG card: internal
-       testing does not claim parity. */
+    /* The calendar feed with its real per-city URL. Vilnius is left out:
+       internal testing does not claim parity. */
     const feeds = document.getElementById('about-feeds');
     if (feeds) {
       const base = `${window.WA.BASE_URL}/functions/v1/calendar-feed?city=`;
@@ -65,12 +49,8 @@
         .map((c) => {
           const url = base + encodeURIComponent(c.id);
           const name = c.label.charAt(0) + c.label.slice(1).toLowerCase();
-          /* overflow-wrap:anywhere because a feed URL is one 84-character
-             token with no spaces: at 390px it ran to 475px and dragged
-             the tab bar out with it. The address is printed in full and
-             not hidden behind a label, because subscribing means pasting
-             it into a calendar app — a link you can only click is the
-             wrong affordance for a thing you need to copy. */
+          /* overflow-wrap:anywhere: a feed URL is one long unbroken token.
+             Printed in full because subscribing means copying it. */
           return `<p class="wa-detail__note" style="margin-top:var(--s-4)">
             <strong>${esc(name)}</strong><br>
             <a href="${esc(url)}" style="overflow-wrap:anywhere">${esc(url)}</a>

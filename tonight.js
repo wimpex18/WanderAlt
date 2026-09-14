@@ -1,19 +1,10 @@
 /* ============================================================
-   tonight.js — Tonight: results + map mode (5d), filter sheet (5c).
+   tonight.js — Tonight: results, map mode, filter sheet.
    ------------------------------------------------------------
-   Replaces discover.js on this page. Discover opened on five controls
-   for a few dozen rows; Tonight opens on the answer. The four facet
-   menus collapse to the capsule's three chips plus ONE filter sheet,
-   and the sheet's key says the outcome rather than the verb, so you
-   know the size of the result before you commit to it.
-
-   Two things that were on Discover are gone with the redesign and are
-   not reimplemented here: the Concierge (?ai=) and Mood (#mood=). Their
-   params drop silently — see readParams.
-
-   The map is a MODE, not a companion doing triage the rows do better.
-   Below 1024 it replaces the list; from 1024 it sits beside it (6f).
-   Pins are time · distance labels, paired both ways with their row.
+   The capsule's three chips plus one filter sheet, whose key states the
+   outcome. The map is a mode: below 1024 it replaces the list; from 1024
+   it sits beside it. Pins are time · distance labels, paired both ways
+   with their row.
 
    Everything interpolated is scraped and goes through WA.UI.esc() at
    the interpolation site; URLs go through WA.UI.safeUrl().
@@ -58,12 +49,10 @@
     return c ? c.label.charAt(0) + c.label.slice(1).toLowerCase() : 'Tallinn';
   };
 
-  /* ── URL contract (6f) ───────────────────────────────────────
+  /* ── URL contract ────────────────────────────────────────────
      Live: ?q ?cat ?time ?type ?sort ?id ?view=map ?within=
-     Retired: ?ai= (Concierge), #mood= (Mood), ?nhood= (Area facet).
-     All three are READ AND DISCARDED. Shared links from the current
-     site are in the wild; they must still render a list, never 404 and
-     never come back empty. */
+     Retired ?ai= ?nhood= #mood= are read and discarded, so old links
+     still render a list. */
   const readParams = () => {
     const sp = new URLSearchParams(location.search);
 
@@ -84,9 +73,7 @@
 
   const writeParams = () => {
     const sp = new URLSearchParams();
-    /* A picked day is a filter, so it round-trips like one. Without this
-       the strip was the only control on the page whose state a shared
-       link silently dropped. */
+    /* A picked day is a filter, so it round-trips like one. */
     if (state.day)                sp.set('date', state.day);
     else if (state.when !== 'tonight') sp.set('time', state.when);
     if (state.q)                  sp.set('q', state.q);
@@ -107,23 +94,10 @@
   const doorsMinutes = (e) => window.WA.Geo.startMinutes(e);
 
   /* ── Followed sources ────────────────────────────────────────
-     WA.Follows was written by source.js and read only by You, so the
-     store existed and nothing in a list ever used it. This is the facet
-     that makes it mean something, and it is deliberately provenance
-     rather than taste: the reader picked these feeds by hand, one at a
-     time, and can see and undo every one. No model, no ranking.
-
-     Two keys, because source.js stores two different things under one
-     store and there is no third possibility. `?venue=` follows the
-     VENUE NAME; `?handle=` follows the venue name too when the feed's
-     picks share exactly one venue, and otherwise falls back to the raw
-     handle. So a pick belongs to a followed source if either its venue
-     or its handle is in the store. Checking both is not a guess — it is
-     the complete set of what toggle() can ever have written.
-
-     Follows.has() is city-scoped by keyOf(), which is right here: the
-     list is already one city, and a Riga venue must not lift a Tallinn
-     row. */
+     A pick belongs to a followed source if either its venue or its handle
+     is in WA.Follows: `?venue=` follows the venue name, and `?handle=`
+     follows the venue name when the feed's picks share exactly one venue,
+     else the raw handle. Follows.has() is city-scoped. */
   const isFollowed = (e) => {
     const F = window.WA.Follows;
     if (!F) return false;
@@ -166,14 +140,9 @@
     if (skip !== 'followed' && state.followed) out = out.filter(isFollowed);
     if (skip !== 'bounds' && state.bounds) {
       const b = state.bounds;
-      /* Unplaceable entries ARE dropped here. The first cut kept them, on
-         the reasoning that "no coordinate" is not "elsewhere" — but the
-         reader has just pressed a button on a map asking what is in this
-         area, and answering with 157 rows that are not on the map is the
-         control not doing what it says. Matching the map is the whole
-         point of the action. The map bar prints "1 of 158 placed" and the
-         empty state offers "Search everywhere", so the coverage gap is
-         stated rather than hidden. */
+      /* Unplaceable entries are dropped: "search this area" must match the
+         map. The map bar states the coverage gap and the empty state offers
+         "Search everywhere". */
       out = out.filter((e) => {
         const c = geo.coordsFor(e);
         if (!c) return false;
@@ -203,54 +172,13 @@
 
   const results = () => sorted(applyFilters(picks()));
 
-  /* ── The row (5d) ────────────────────────────────────────────
-     The rail always prints something: a clock time, NOW when it has
-     already started, or nothing rather than a guess. That single column
-     is what makes the missing-date and missing-photo cases boring. */
+  /* ── The row ─────────────────────────────────────────────────
+     The rail always prints something: a clock, NOW, the day, or OPEN. */
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  /* An exhibition or a festival has a DATE but no door time, and the
-     pipeline stores that as starts_at at midnight — so reading the clock
-     off starts_at printed "00:00" on every one of them. That is the rail
-     claiming a time we do not have, which 3a forbids outright: it must
-     never print a time the source did not give.
-
-     So a clock only appears when the source actually stated one
-     (picks.time, or a starts_at that is not exactly midnight). Otherwise
-     the rail falls back to the day — the same TON / SAT vocabulary the
-     saved rows use — and to nothing at all when there is no date either.
-     A dated-but-timeless row is still perfectly scannable; it just does
-     not pretend the doors open at midnight. */
-  /* "Date only" reaches us as a midnight timestamp, and WHICH midnight
-     depends on the ingest: some build the day in local time (00:00+03:00),
-     others store plain UTC midnight. Read in Europe/Tallinn those show up
-     as 00:00 and as 02:00/03:00 respectively — which is why eleven
-     exhibitions were sitting in the list claiming they start at three in
-     the morning. Both are the absence of a time, not a time.
-
-     picks.time is the pipeline's own extracted display time, so if that
-     is set the source really did state one. Otherwise a timestamp landing
-     exactly on midnight in either clock is treated as date-only.
-
-     The midnight test itself moved into WA.when.statedMinutes. */
-
-  /* A rail prints a clock ONLY when a clock can actually be parsed.
-     Trusting the string instead put "00:00" on a record store whose time
-     field reads "open daily", a thrift shop reading "Wed-Sun" and a
-     gallery reading "ongoing" -- prose the parser returns null for,
-     which the formatter then rendered as midnight. Places do not have a
-     start time at all; they have opening hours, and 3a says such a row
-     prints OPEN.
-
-     Midnight is also treated as absent. "00:00" is the pipeline's null
-     wearing the display field's clothes, and a timestamp landing exactly
-     on midnight UTC is a date the source gave without a time -- that is
-     what had eleven exhibitions claiming to start at three in the
-     morning. A genuine midnight start loses its clock and shows the day
-     instead, which is much cheaper than a shop that opens at 00:00. */
-  /* Delegates to the time model now. This predicate used to live here
-     alone, which is why the Explore card badge never got it and shipped
-     "Doors 00:00" long after the rail stopped saying "00:00". */
+  /* A rail prints a clock only when the source stated one
+     (WA.when.statedMinutes); a midnight timestamp is a date without a
+     time. Otherwise the rail falls back to the day (TON / SAT), then OPEN. */
   const hasStatedTime = (e) => window.WA.when.statedMinutes(e) != null;
 
   const railFor = (e) => {
@@ -265,36 +193,21 @@
       return { time: `${hh}:${mm}`, now: false };
     }
 
-    /* TON is "dated today, no door time stated" — an exhibition that may
-       open at six or may already be shut. It is not "now", so it does
-       not get the alarm colour. This was the same predicate error the
-       card badges had: isTonight() means TODAY, and lime has one job. */
+    /* TON is "dated today, no door time stated". Not "now", so not lime. */
     if (isToday) return { time: 'TON', now: false };
     const key = window.WA.when.resolveKey(e);
     if (key) return { time: DAY_ABBR[new Date(`${key}T12:00:00Z`).getUTCDay()], now: false };
-    /* A place with filed hours gets the arrow form 1a specifies: "→02
-       for a place open until two". That is the fact that decides whether
-       it is worth walking there, so it outranks the generic word. SHUT
-       when the hours are known and it is closed -- printing OPEN over a
-       closed shop is the same class of lie as printing a time we do not
-       have. */
+    /* A place with filed hours says when it shuts (→02), or SHUT. */
     const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
     if (h) return { time: h, now: h === '24H' || h.charAt(0) === '\u2192' };
 
-    /* No hours filed, no time, no date -- a run-until-October
-       exhibition, or a place we know nothing about. 3a: "The rail prints
-       OPEN and the row sorts into an Anytime group. It never claims a
-       time we don't have." OPEN here means ongoing, not open right now.
-       It used to print an empty string, which left the loudest column on
-       the row blank on exactly the entries that most needed orienting. */
+    /* No hours, no time, no date: OPEN, meaning ongoing, not open now. */
     return { time: 'OPEN', now: false };
   };
 
-  /* The pipeline writes literal placeholders when the LLM could not read
-     a field — "Unknown", "TBA", "N/A", and 'other' for the neighbourhood
-     bucket. Printing them is worse than printing nothing: 3a's rule is
-     that a missing field is content, so the gap gets stated in words
-     ("venue not yet named") rather than shown as a dead value. */
+  /* The pipeline writes placeholders ("Unknown", "TBA", "N/A", 'other')
+     when the LLM could not read a field; the gap is stated in words
+     instead of shown as a dead value. */
   const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
   const real = (v) => {
     const s = String(v == null ? '' : v).trim();
@@ -309,19 +222,14 @@
     const area  = real(e.neighborhood);
     const price = UI().priceLabel ? UI().priceLabel(e) : '';
     const where = venue || (area ? '' : 'venue not yet named');
-    /* 1b and 2b both close the desktop metadata line with a provenance
-       token -- "via fienta". Provenance replaced personality when
-       curators went, so the row has to say where it read this. The
-       handle names a feed, not a person. */
+    /* The desktop metadata line closes with provenance: "via fienta". */
     const via = real(e.handle) ? `via ${real(e.handle).replace(/^@/, '')}` : '';
     return [real(e.kind), where, areaInRail ? '' : area, price, via].filter(Boolean).join(' · ');
   };
 
   /* The optional far-right photo, desktop only (CSS hides it below
-     1024). Emitted only when there is a real image — no element means
-     no third grid cell, so a photoless row reads as "no photo" rather
-     than leaving a gap. Never a placeholder here: a 96px glyph on every
-     row of a timetable is noise, and the rail already carries the kind. */
+     1024). Emitted only for a real image, so a photoless row has no third
+     grid cell. */
   const media = (e) => {
     const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
     if (!src) return '';
@@ -332,23 +240,14 @@
 
   const row = (e) => {
     const rail = railFor(e);
-    /* 3a, location refused: "the distance slot degrades to the street
-       name -- still an orientation aid, still one line, no layout shift
-       when permission is granted later." We hold a neighbourhood rather
-       than a street, so that is what stands in. The slot is never empty,
-       which is what keeps the rail from collapsing to one line and
-       reflowing the moment permission arrives. */
+    /* Location refused: the distance slot degrades to the neighbourhood,
+       so the rail keeps two lines and nothing reflows later. */
     const measured = window.WA.Geo.distanceLabel(e);
     const area     = real(e.neighborhood);
     const dist     = measured || area;
-    /* 2b: "A missing description gets a sentence, not blank space. Row
-       two says, in the product's own voice, that the venue filed one
-       line. That is a real editorial position for an automated
-       catalogue: say what we know and what we don't, in the same
-       register." Blank was the one thing it must not be. */
-    /* 4a: a line that only paraphrases the title is suppressed here, so
-       it falls through to the honest sentence below rather than printing
-       "Disco party" under the title "Disco party". */
+    /* A missing description gets a sentence, not blank space. */
+    /* A line that only paraphrases the title falls through to the
+       sentence below. */
     const venueWord = real(e.venue);
     const filed = window.WA.UI.descriptionOr(e.description, e.title)
                || window.WA.UI.descriptionOr(e.quote, e.title);
@@ -398,10 +297,7 @@
       title = `Nothing filed for ${WHEN_LABEL[state.when].toLowerCase()} in ${city}.`;
       body  = `The sources went quiet, which happens. ${anytime} ${anytime === 1 ? 'thing is' : 'things are'} listed across other days.`;
     } else {
-      /* 3a's thin-city case, which it calls "the normal case as you
-         expand": admit the coverage gap and fall back to places, which
-         is the whole reason Places is a first-class scope rather than a
-         filter. Naming the number is the honest part. */
+      /* Thin city: admit the coverage gap and fall back to places. */
       const placeCount = (window.WA.venues || []).length;
       title = `${city} has no listings tonight.`;
       body  = placeCount
@@ -444,9 +340,7 @@
     const noun = kinds.length === 1 ? `${kinds[0]}${n === 1 ? '' : 's'}`
                : kinds.length > 1  ? kinds.join(' and ')
                : (n === 1 ? 'thing' : 'things');
-    /* An exact day from the density strip outranks the When window --
-       printing "52 things tonight" over Friday's rows was the header
-       lying about the list directly beneath it. */
+    /* An exact day from the density strip outranks the When window. */
     /* "on Friday" but "tomorrow" -- the preposition belongs before a
        weekday name and nowhere else. */
     const w = state.day ? dayWord(state.day) : '';
@@ -511,10 +405,7 @@
   };
 
   /* ── Map mode ────────────────────────────────────────────────
-     A thin pin layer over the WA.MapTiles façade. map.js is not reused:
-     it is built around the old Discover DOM, Mood and the Concierge,
-     and 6e asks for pins to become time · distance labels with row
-     pairing, which is a different component rather than a patch. */
+     A thin pin layer over the WA.MapTiles façade. */
   const Pins = (() => {
     let started = false, entries = [], activeId = '', lastClusters = [], lastDrawerHtml = null;
 
@@ -527,21 +418,9 @@
       if (!t) return;
       t.init('map-canvas');
       t.onReady(() => { place(); fit(); });
-      /* The layer is positioned in PROJECTED PIXEL SPACE, so it is only
-         correct for the camera it was drawn against -- and nothing was
-         redrawing it. Verified rather than assumed: jumpTo() a tenth of
-         a degree east and every pin keeps its exact left/top, so the
-         labels detach from the city underneath them on the first drag.
-
-         It surfaced here because a cluster has to re-form as you zoom
-         in, and a cluster that never re-forms cannot be opened. But the
-         bug is older and wider than clustering.
-
-         `move`, not `moveend`: pins have to stay glued during the drag,
-         not snap back at the end of it. Only the PINS, though -- see
-         placeDrawer for why the list of names is on `moveend` instead.
-         Projecting 106 points and rebuilding 22 nodes is ~0.2ms; it was
-         14.8ms when the drawer came with it. */
+      /* The layer is positioned in projected pixel space, so pins redraw
+         on `move` to stay glued during a drag. Only the pins: the drawer is
+         on `moveend` (see placeDrawer). */
       t.on && t.on('move', placePins);
       t.on && t.on('moveend', () => { $('search-area').hidden = false; placeDrawer(); });
     };
@@ -559,25 +438,10 @@
         pane.appendChild(layer);
       }
       /* ── Clustering ────────────────────────────────────────
-         A pin here is a time plus a distance, so it is a ~90px label,
-         not a dot. At city zoom the Old Town stacks a dozen of them
-         into an unreadable pile and the labels -- which are the whole
-         point of this pin -- cannot be read at all.
-
-         Done in PROJECTED PIXEL SPACE rather than through MapLibre's
-         own clustering, because these pins are DOM nodes positioned
-         over the canvas, not a GeoJSON source. Switching sources to get
-         clustering would mean rewriting the pin↔row pairing, which is
-         the thing on this screen most worth not breaking.
-
-         Greedy single pass in the order the list is already sorted, so
-         the first pin of a cluster is the soonest one and the cluster
-         sits where the reader's eye would have gone anyway. Ordering is
-         stable between renders because `entries` is.
-
-         The ACTIVE pin never clusters. A tapped row must always show
-         its own pin, or the pairing silently stops working exactly when
-         the reader is using it. */
+         Pins are ~90px DOM labels, so they cluster in projected pixel space
+         (not MapLibre's GeoJSON clustering, which would break pin↔row
+         pairing). Greedy single pass in list order, so a cluster's first pin
+         is the soonest. The ACTIVE pin never clusters. */
       const CLUSTER_PX = 56;
       const placed = entries
         .map(e => ({ e, p: t.project(e.lng, e.lat) }))
@@ -593,27 +457,16 @@
         if (near) near.members.push(item.e);
         else clusters.push({ ...item, members: [item.e] });
       }
-      /* Held so a cluster button can carry its INDEX rather than a
-         serialised list of ids. Ids are pipeline-generated and carry no
-         guarantee about their character set -- they happen to be
-         [a-zA-Z0-9-_] across all 1,643 today, but a single id with a
-         space in it would silently split one cluster's membership on
-         the way back and zoom to the wrong subset. The array and the
-         DOM are written in the same call, so they cannot disagree. */
+      /* A cluster button carries its INDEX into this array rather than a
+         serialised id list, since ids carry no character-set guarantee. */
       lastClusters = clusters;
 
       layer.innerHTML = clusters.map((c, i) => {
         const { e, p, members } = c;
-        /* A count, so it is mono and petrol. Never lime: lime's one job
-           is "now", and "there are nine things here" is not that. */
+        /* A count, so it is mono and petrol. Never lime. */
         if (members.length > 1) {
           return `<button class="wa-pin wa-pin--cluster" type="button"
             data-cluster="${i}"
-            ${/* States the count rather than promising a zoom. Picks
-                  filed at the SAME venue share one coordinate and can
-                  never separate however far you go in -- the drawer
-                  below is what lists those, which is why 2a insists the
-                  mode carries one. */''}
             aria-label="${esc(`${members.length} listings here`)}"
             style="left:${p.x}px;top:${p.y}px">
             <span>${members.length}</span>
@@ -627,10 +480,7 @@
           <span>${esc(rail.time || '·')}</span>${dist ? `<span class="wa-pin__dist">${esc(dist)}</span>` : ''}
         </button>`;
       }).join('');
-      /* State the coverage gap rather than implying the map shows the
-         whole list. Only 27 of 46 picks resolve to a coordinate today,
-         and on a filtered view it can be far fewer — "12 pins" next to
-         151 rows reads as a map failure instead of a data one. */
+      /* State the coverage gap: not every pick resolves to a coordinate. */
       const n = entries.length;
       const total = lastResults.length;
       $('map-count').textContent = n === total
@@ -638,18 +488,10 @@
         : `${n} of ${total} placed`;
     };
 
-    /* The drawer (2a: "a mode is never empty"; 5d draws it with real
-       rows). Same row component as the list, so a pin is never the only
-       way to learn what something is. Clipped to what the viewport
-       actually holds when the map has been moved, because the bar above
-       already says how many that is.
-
-       SEPARATE from placePins, and deliberately so. Both used to be one
-       function bound to `move`, which cost 14.8ms a frame -- most of it
-       this innerHTML -- and, worse, destroyed the drawer's DOM on every
-       frame of a drag: a keyboard user focused on a drawer row had focus
-       thrown to <body>, and any scroll position in the drawer was lost.
-       Pins must track the camera per frame; a list of names does not. */
+    /* The drawer: the same row component as the list, clipped to what the
+       viewport holds. Separate from placePins and bound to `moveend`:
+       rewriting it per frame of a drag costs time and throws away focus
+       and scroll. */
     const placeDrawer = () => {
       const t = T();
       if (!t || !t.isReady || !t.isReady()) return;
@@ -677,24 +519,10 @@
 
     const place = () => { placePins(); placeDrawer(); };
 
-    /* The foot -- the bar and the drawer under it -- sits ON the canvas,
-       not beside it: at 375x812 the map is 503px tall and the foot
-       covers the bottom 211 of them, so 42% of what the camera treats
-       as visible is behind an opaque panel. Fitting to the whole canvas
-       therefore parks pins where they cannot be seen, and one of four
-       was 16px under the foot on the default frame. Symmetric padding
-       cannot express this; MapLibre takes a per-side object, so the
-       bottom side carries whatever the foot actually covers.
-
-       Measured live rather than assumed from the 42% rule, because the
-       foot's height varies with how many rows the drawer holds. It is
-       not a phone-only correction either: at 1440 the foot covers 331
-       of the map's 788 pixels, so the same fit was parking pins behind
-       it on desktop -- reading the geometry rather than the breakpoint
-       is what catches that. Capped so the
-       padding can never exceed the canvas: MapLibre cannot satisfy a
-       fit whose padding leaves no room, and a silently unsatisfiable
-       fit is worse than a slightly cramped one. */
+    /* The foot (bar + drawer) sits ON the canvas, so the camera is padded
+       per side by what it actually covers, measured live (its height varies
+       with the drawer). Capped so padding never exceeds the canvas: MapLibre
+       cannot satisfy a fit whose padding leaves no room. */
     const fitPad = (base) => {
       const el = document.querySelector('.tonight-map');
       const foot = document.querySelector('.tonight-map__foot');
@@ -746,9 +574,8 @@
     state.map = !!on;
     $('map-pane').hidden = !state.map;
     $('split').classList.toggle('tonight-split--map', state.map);
-    /* On the body rather than on #split, because the chips and the
-       Filters key live ABOVE the split and have to know about the mode
-       to stick under the top bar while it is on. */
+    /* On the body rather than #split, because the chips and Filters key
+       live above the split and stick under the top bar in map mode. */
     document.body.classList.toggle('tonight-mapmode', state.map);
     $('toggle-map').setAttribute('aria-pressed', String(state.map));
     $('toggle-map-label').textContent = state.map ? 'List' : 'Map';
@@ -765,17 +592,9 @@
     const base = applyFilters(picks(), 'kind');
     const map = new Map();
 
-    /* 2a: "Counts on every option, zeroes disabled not hidden." Every
-       kind the city has appears, whatever the current window returns --
-       a kind that vanishes from the sheet cannot be reasoned about, and
-       the reader is left wondering whether they imagined it. The zeroes
-       come back disabled below, which says "nothing tonight" rather
-       than "no such thing". */
-    /* A placeholder is not a kind. One pick carries the STRING "null",
-       which passed the `if (k)` truthiness test and put a filter option
-       labelled "null" in the sheet — offering the reader a category the
-       product does not have. Same placeholder set the rest of the app
-       already refuses for venue and neighbourhood. */
+    /* Every kind the city has appears; zero counts are disabled below,
+       never hidden. */
+    /* A placeholder is not a kind (one pick carries the string "null"). */
     const NOT_A_KIND = /^(null|undefined|unknown|tba|tbc|n\/a|none|other|-)$/i;
     for (const e of picks()) {
       const k = String(e.kind || '').toLowerCase().trim();
@@ -830,11 +649,6 @@
       <div class="wa-field">
         <span class="wa-field__label">Kind</span>
         <div class="wa-chips">
-          ${/* 5e: "Two jobs, one asset: the 15px version rides in chips
-                and filter pills, the 44-62px version IS the card when
-                there's no photograph." Only the card job was built, so
-                the same eight marks that identify a kind on a card were
-                absent from the control that filters by kind. */''}
           ${kinds.map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}"
              aria-pressed="${state.kinds.has(k)}" data-count="${n}"
              ${n === 0 && !state.kinds.has(k) ? 'disabled aria-disabled="true"' : ''}><svg class="wa-chip__mark" aria-hidden="true"><use href="#wa-mark-${esc(window.WA.Marks.markFor(k))}"></use></svg>${esc(k)}
@@ -887,11 +701,6 @@
         </button>
       </div>
 
-      ${/* 2a's rule applied to a switch: a zero-count option is DISABLED,
-           never hidden. Following nothing yet is the common case, and a
-           control that disappears cannot be reasoned about -- the dimmed
-           switch says "this exists, and here is where follows come from",
-           an absent one says the feature does not exist. */''}
       <div class="wa-field">
         <button class="wa-switch" type="button" data-toggle="followed"
                 aria-pressed="${state.followed}"
@@ -948,11 +757,7 @@
     const live = all.filter(c => c.status !== 'internal');
     const testing = all.filter(c => c.status === 'internal');
 
-    /* 5c: "Nearby / Around me", then "Live cities", then the internal
-       one BELOW the live three. Grouping is the whole point -- it is
-       "the kindest possible way to ship a four-city product that is thin
-       in two of them", and an ungrouped list of four makes Vilnius look
-       like an equal that happens to be empty. */
+    /* Nearby / Around me, then Live cities, then the internal one below. */
     $('sheet-body').innerHTML = `
       <div class="wa-field">
         <span class="wa-field__label">Nearby</span>
@@ -1020,11 +825,8 @@
     if (hit('#toggle-map'))  { setMap(!state.map); return; }
     if (hit('#show-list'))   { setMap(false); return; }
 
-    /* "Search this area" clips the results to what the reader is looking
-       at, which is the only reason to pan a map on a results screen. The
-       same key releases it again — a filter with no visible way off is a
-       trap, and once the clipped list is non-empty the empty state's
-       "Search everywhere" never appears to offer one. */
+    /* "Search this area" clips the results to the viewport; the same key
+       releases it. */
     if (hit('#search-area')) {
       if (state.bounds) {
         state.bounds = null;
@@ -1095,11 +897,8 @@
       render(); return;
     }
 
-    /* 3a wants the sentence readable without leaving the list, and the
-       row is an <a>, so this has to stop the navigation it sits inside.
-       Toggling back to "more" matters: an expanded row that cannot be
-       re-collapsed pushes every row below it down for the rest of the
-       session. */
+    /* The row is an <a>, so this stops the navigation it sits inside, and
+       toggles back to "more" so an expanded row can re-collapse. */
     const more = hit('[data-more]');
     if (more) {
       e.preventDefault();
@@ -1194,28 +993,19 @@
     if (r && state.map) Pins.focus(r.dataset.row);
   });
 
-  /* ── The seven-day density strip (1b, re-housed here by 5b) ──
-     5b traded it out of Explore and recommended it become the header of
-     Tonight: "where the reader is already thinking about time". It says
-     the one thing a list cannot — Monday is dead, wait for Friday — and
-     without it a reader who filters to a quiet night concludes the
-     product is empty rather than the night.
-
-     Counts come from the SAME applyFilters chain the list uses, minus
-     the time facet, so a bar can never disagree with the rows it sits
-     above. Clicking a day sets an exact-date filter; clicking the
-     selected day again clears it back to the current When. */
+  /* ── The seven-day density strip ─────────────────────────────
+     Says what a list cannot: Monday is dead, wait for Friday. Counts come
+     from the same applyFilters chain as the list, minus the time facet.
+     Clicking a day sets an exact-date filter; clicking the selected day
+     again clears it back to the current When. */
   const densityDays = () => {
     const when = window.WA.when;
     const base = applyFilters(picks(), 'when');
     const today = when.todayKey();
     return Array.from({ length: 7 }, (_, i) => {
       const key = i === 0 ? today : when.keyPlus(i);
-      /* TODAY counts with the SAME predicate the list uses for
-         "tonight", not by date. A pick flagged tonight that carries no
-         resolvable date is real and is in the list; counting it by date
-         alone printed 22 over a headline reading 23, and a header that
-         disagrees with the rows beneath it is worse than no header. */
+      /* TODAY counts with the same predicate the list uses for "tonight",
+         not by date, so the bar matches the headline. */
       const n = i === 0
         ? base.filter(e => when.matches(e, 'tonight')).length
         : base.filter(e => when.isOnDate(e, key)).length;
@@ -1246,14 +1036,8 @@
   };
 
   /* ── Loading ─────────────────────────────────────────────────
-     "Skeleton matches the row grid exactly — no spinner, no layout
-     jump when data lands." Until this, #rows sat empty until
-     wa:catalog-ready and the whole list appeared at once, which is the
-     jump the spec exists to prevent. The shape is the real row — 52px
-     rail, then body — so the swap to live rows moves nothing.
-
-     Six, because that is what fits above the fold on a phone; more
-     would animate off-screen for nothing. */
+     Six skeleton rows with the real row's shape (52px rail, then body),
+     so the swap to live rows moves nothing. */
   const skeleton = () =>
     Array.from({ length: 6 }, () => `<li><span class="wa-row" aria-hidden="true">
       <span class="wa-row__rail"><span class="wa-skel wa-skel--rail"></span></span>
@@ -1275,10 +1059,8 @@
 
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
-  /* Following happens on another page, so this fires on return via
-     bfcache rather than mid-session -- but a stale count in the sheet
-     would be a filter disagreeing with its own list, which is the one
-     thing the single filter chain exists to prevent. */
+  /* Following happens on another page, so refresh the sheet's counts on
+     return via bfcache. */
   document.addEventListener('wa:follows-changed', () => { refreshSheet(); render(); });
   if (window.WA && window.WA.catalog && window.WA.catalog.length) {
     boot();

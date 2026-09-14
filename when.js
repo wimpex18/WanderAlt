@@ -1,21 +1,12 @@
 /* ============================================================
    when.js — the ONE shared definition of "tonight" / "this week".
    ------------------------------------------------------------
-   Why this exists: the DB flags (picks.tonight / picks.this_week) are
-   maintained by lifecycle crons that are FROZEN pre-release, so the
-   flags aged to false while pages kept trusting them — Today then
-   fabricated a "This week" list via its never-blank fallback while
-   Discover's thisweek filter honestly showed 0. One derivation, stamped
-   onto every catalog entry, keeps all surfaces telling the same truth.
+   One derivation, stamped onto every catalog entry, so every surface
+   agrees rather than trusting the DB flags alone.
 
-   Semantics mirror the pipeline's reset_tonight() SQL:
-   - picks.day holds 'Mon'…'Sun' abbreviations (Europe/Tallinn clock —
-     all three cities share the Baltic timezone) or the special
-     value 'Tonight'.
-   - tonight  = explicit flag OR day === 'Tonight' OR day === today.
-   - thisWeek = explicit flag OR the pick is dated at all (the catalog
-     is a weekly edition; a dated pick belongs to the current week).
-   Explicit true flags are always respected — derivation only widens.
+   - picks.day holds 'Mon'…'Sun' (Europe/Tallinn clock, shared by all
+     four cities) or the special value 'Tonight'.
+   - Explicit true flags are always respected — derivation only widens.
 
    Both catalog paths call WA.when.stampAll(): catalog.js (static
    fallback) and supabase.js (live). Loads before catalog.js on every
@@ -38,20 +29,13 @@
 
   const norm = (d) => String(d || '').trim().slice(0, 3).toLowerCase();
 
-  /* isTonight / isThisWeek are defined AFTER resolveKey below — they
-     depend on it, and putting them here (where they used to live) is
-     what let them drift into being day-only. */
+  /* isTonight / isThisWeek are defined AFTER resolveKey below, which they
+     depend on. */
 
   /* ── Calendar days ───────────────────────────────────────────
-     "Tomorrow" and "pick a date" need an actual day, not a flag, so the
-     weekday abbreviation has to resolve to one. A pick carrying 'Fri' in a
-     weekly edition means the COMING Friday — today counts as its own day,
-     so 'Fri' read on a Friday is today, not a week out.
-
-     Everything below works in Europe/Tallinn (all three live cities share
-     the Baltic clock) and compares 'YYYY-MM-DD' keys rather than Date
-     objects, so a reader whose device sits in another timezone still sees
-     the same "tomorrow" the curators meant. */
+     A pick carrying 'Fri' means the COMING Friday; today counts as its own
+     day. Everything works in Europe/Tallinn and compares 'YYYY-MM-DD'
+     keys, so a device in another timezone sees the same "tomorrow". */
   const KEY_FMT = { timeZone: 'Europe/Tallinn', year: 'numeric', month: '2-digit', day: '2-digit' };
 
   /* 'YYYY-MM-DD' in city time. en-CA formats exactly that way. */
@@ -66,14 +50,9 @@
 
   const todayKey = () => dayKey(new Date());
 
-  /* Step whole calendar days off today's key.
-     Deliberately NOT `Date.now() + n * 86400000`: Estonia keeps EU summer
-     time, so twice a year a day is 23 or 25 wall-clock hours long. Adding
-     a fixed 24h and reformatting in city time then lands on the wrong date
-     for the hour either side of midnight — "tomorrow" jumping two days in
-     March and staying on today in October. The key is already a calendar
-     date, so anchor it at UTC noon and step UTC days, which no offset
-     change can shift. */
+  /* Step whole calendar days off today's key. Not `Date.now() + n*86400000`:
+     DST days are 23 or 25 hours long. Anchor at UTC noon and step UTC
+     days, which no offset change can shift. */
   const keyStep = (key, n) => {
     const d = new Date(`${key}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() + n);
@@ -104,28 +83,10 @@
   };
 
   /* ── Tonight / this week ─────────────────────────────────────
-     These used to read `day` and nothing else:
-
-       isTonight  = tonight flag OR day === 'Tonight' OR day === today
-       isThisWeek = thisWeek flag OR the pick carried any day at all
-
-     That was correct when a weekday abbreviation was the only date a
-     pick had. It stopped being correct when process-staging started
-     writing real timestamps: it takes `day` from the LLM, which returns
-     null whenever a listing doesn't state a weekday, while `starts_at`
-     comes straight from the source and is the more reliable of the two.
-     Such a pick lands with day = null, tonight = false, this_week =
-     false and a perfectly good starts_at — and was therefore invisible
-     to Tonight ON THE NIGHT IT HAPPENED. Both dated picks in the live
-     catalogue look exactly like that.
-
-     The flags themselves cannot cover for it either: rotate-tonight
-     maintains picks.tonight and is one of the frozen crons, so it ages
-     to false and stays there.
-
-     Both now go through resolveKey(), which already prefers starts_at
-     and falls back to projecting the weekday. Explicit true flags are
-     still respected — derivation only ever widens. */
+     Both go through resolveKey(), which prefers starts_at and falls back
+     to projecting the weekday (process-staging often writes day = null
+     with a good starts_at). Explicit true flags are still respected —
+     derivation only ever widens. */
 
   const isTonight = (e) => {
     if (!e) return false;
@@ -134,17 +95,11 @@
     return resolveKey(e) === todayKey();
   };
 
-  /* "This week" is now the coming seven days rather than "has a date at
-     all". With only weekday abbreviations those meant the same thing —
-     a 'Fri' is always within seven days — but a real timestamp three
-     months out would otherwise have counted as this week. */
+  /* "This week" is the coming seven days. */
   const isThisWeek = (e) => {
     if (!e) return false;
     if (e.thisWeek === true) return true;
-    /* Anything on tonight is trivially in the coming week. matches()
-       used to bolt this on at the call site, which meant isThisWeek was
-       wrong on its own terms for a pick carrying only the tonight flag —
-       and every other caller inherited that. */
+    /* Anything on tonight is trivially in the coming week. */
     if (isTonight(e)) return true;
     const k = resolveKey(e);
     if (k == null) return false;
@@ -173,13 +128,9 @@
 
   const isOnDate = (e, key) => !!key && resolveKey(e) === key;
 
-  /* The ONE reading of a `time` filter value, so the list and the map
-     cannot drift apart. They used to hold separate copies of this switch,
-     which meant a value one of them didn't know (weekend, tomorrow, a
-     picked date) silently filtered nothing on the other — the map showing
-     every pin beside a list showing one.
-     An unrecognised value widens rather than blanks: a stale bookmarked
-     link should show more than the reader expected, never an empty page. */
+  /* The ONE reading of a `time` filter value, shared by list and map.
+     An unrecognised value widens rather than blanks: a stale link should
+     show more than expected, never an empty page. */
   const matches = (e, time) => {
     const t = String(time == null ? 'all' : time);
     if (t.startsWith('date:')) return isOnDate(e, t.slice(5));
@@ -202,19 +153,9 @@
   };
 
   /* ── Does this pick actually state a clock? ──────────────────
-     picks.time carries prose as often as a time — "open daily",
-     "Wed–Sun", "ongoing" — and the pipeline writes a bare date as a
-     midnight timestamp. Printing either as a clock invents a fact:
-     it put "00:00" on a record store and "Doors 00:00" on a festival.
-
-     This lives here, in the time model, because it is a question about
-     time and because it has now been needed in two places. The row rail
-     had its own copy (tonight.js) and the Explore card badge had none,
-     which is exactly how the same lie reached the cards after the rows
-     were fixed. Midnight counts as absent in both clocks: a timestamp
-     landing exactly on 00:00 UTC is the pipeline saying "a date, no
-     time", and a genuine midnight start loses its clock and shows the
-     day instead, which is far cheaper than a shop that opens at 00:00.
+     picks.time carries prose as often as a time ("open daily", "Wed–Sun")
+     and the pipeline writes a bare date as a midnight timestamp. Midnight
+     counts as absent: a genuine midnight start shows the day instead.
 
      Returns minutes past local midnight, or null when no clock is
      stated. Callers must treat null as "say the day, not a time". */

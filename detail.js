@@ -1,27 +1,10 @@
 /* ============================================================
-   detail.js — one detail template, two data shapes (6c).
+   detail.js — one detail template, two data shapes.
    ------------------------------------------------------------
-   Replaces venue.js (pick detail) and place.js (place detail). The repo
-   had two templates for what is one layout: "an event fills the three
-   cells with doors / entry / walk, a place fills them with closes /
-   entry / walk and adds the week strip. Everything else is identical.
-   That's one component to build instead of two to keep in sync."
-
-   ?id= resolves against picks first, then venues — the same param the
-   two old pages each used for their own type, so every venue.html?id=
-   and place.html?id= link already in the wild lands on the right thing
-   through the redirect.
-
-   Detail is where the photo belongs: one item, no peers to compare
-   against, and a reason for atmosphere. Under it three cells answer the
-   only three questions a person on the street has — when, how much, how
-   far — and the primary action is "Walk me there", not "I'm going": the
-   reader has already decided; what they need is the route.
-
-   Provenance closes every page. "The venue's own site, read 40 minutes
-   ago" does the job the curator handle used to do — it tells you why to
-   believe this, and it is checkable and scales to forty cities, which a
-   person's taste does not.
+   ?id= resolves against picks first, then venues. An event fills the
+   three cells with doors / entry / walk; a place with closes / entry /
+   walk plus the week strip. The primary action is "Walk me there".
+   Provenance closes every page.
 
    Every interpolated value is scraped: esc() at the site, safeUrl() for
    anything reaching an href or src.
@@ -29,10 +12,7 @@
 (() => {
   'use strict';
 
-  /* Guarded: detail.html shipped without toast.js and the unguarded call
-     threw, aborting the handler it sat in -- so the list toggled, the
-     label never refreshed, and nothing said why. A missing optional
-     module must degrade, not break the interaction around it. */
+  /* Guarded: WA.Toast is optional per page. */
   const toast = (msg, label, undo) => {
     if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
   };
@@ -88,12 +68,9 @@
     return [cell('Doors', doors), cell('Entry', price), walkCell(e)].join('');
   };
 
-  /* The LABEL follows the state, it does not stay fixed while the value
-     contorts to fit it. The first cut always said "Closes" and then had
-     to put "closed today" underneath it — a cell reading
-     "Closes / closed today" is not a fact, it is a template showing
-     through. Open → Closes 18:00. Shut but opening later → Opens 10:00.
-     Shut for the day → Today / closed. Unknown → no cell at all. */
+  /* The label follows the state: Open → Closes 18:00. Shut but opening
+     later → Opens 10:00. Shut for the day → Today / closed. Unknown → no
+     cell at all. */
   const placeCells = (v) => {
     const s = window.WA.Hours.state(v.openingHours);
     let hours = '';
@@ -107,9 +84,8 @@
     return [hours, cell('Entry', 'Free'), walkCell(v)].join('');
   };
 
-  /* ── The week strip (6c) ─────────────────────────────────────
-     Same object as the density strip: a row per day, value on the right.
-     Only for places, and only when hours exist — about half the table. */
+  /* ── The week strip ──────────────────────────────────────────
+     Only for places, and only when hours exist. */
   const weekStrip = (v) => {
     const week = window.WA.Hours.week(v.openingHours);
     if (!week) {
@@ -130,9 +106,8 @@
     </section>`;
   };
 
-  /* ── Provenance (3b) ─────────────────────────────────────────
-     Closes every detail page, and is the credibility line now that
-     curators are gone. Says what we read and when. */
+  /* ── Provenance ──────────────────────────────────────────────
+     Closes every detail page: what we read and when. */
   const ago = (iso) => {
     if (!iso) return '';
     const ms = Date.now() - new Date(iso).getTime();
@@ -145,12 +120,8 @@
     return `${days} day${days === 1 ? '' : 's'} ago`;
   };
 
-  /* The sentence has to describe the link it is shown with. The first
-     cut branched on `permalink` but rendered whichever URL existed, so a
-     pick with only a ticket URL read "Our own desk. fienta.com" — the
-     provenance line contradicting its own citation, which is worse than
-     no provenance at all. One decision now: pick the URL first, then say
-     what that URL is. */
+  /* Pick the URL first, then describe that URL, so the sentence always
+     matches the link it is shown with. */
   const provenance = ({ sourceUrl, what, when, sourceName }) => {
     if (!sourceUrl && !what) return '';
     const host = sourceUrl ? String(sourceUrl).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
@@ -180,16 +151,8 @@
     const photo = e.imageUrl ? url(e.imageUrl) : '';
     const mark  = window.WA.Marks.markFor(e.kind);
     if (photo) {
-      /* A logo is not a photograph and must not be treated as one here.
-         enrich-venue-images v4 admits the venue's own mark when no
-         picture exists, and those arrive at about 192px -- fine in a
-         181px card, and ruinous in this well, which runs to 1240 wide.
-         `cover` would blow a 192px badge up sixfold and crop it. So a
-         mark is CONTAINED on the same petrol tint the markless well
-         uses, which is the treatment it should have had all along: it
-         reads as a mark on a ground rather than as a bad photograph.
-         The credit line says which it is, because "a photo of the
-         place" and "their logo" are different claims. */
+      /* A logo (image_source 'logo', ~192px) is contained on the petrol tint,
+         never cropped to fill the well. The credit line says which it is. */
       const isMark = e.imageSource === 'logo';
       return `<div class="wa-detail__well${isMark ? ' wa-detail__well--brand' : ''}">
         <img class="wa-detail__photo" src="${esc(window.WA.img ? window.WA.img(photo, 900) : photo)}"
@@ -211,9 +174,7 @@
   };
 
   /* ── Render ──────────────────────────────────────────────────── */
-  /* Says where the pick already is, not just what the button does --
-     "In Kalamaja day off" is the answer to the question the reader
-     actually has when they come back to a pick they saved. */
+  /* Says which list the pick is already in, not just what the button does. */
   const listLabel = (id) => {
     const L = window.WA.Lists;
     if (!L) return 'Add to a list';
@@ -223,10 +184,8 @@
     return `In ${ls.length} lists`;
   };
 
-  /* The two honest dead ends, kept apart because they are different
-     facts. 6d's copy — "listings expire, that's normal" — belongs only
-     to the first; using it for a row we never had is a claim we cannot
-     support. Both carry the next-best answer rather than an apology. */
+  /* The two dead ends are different facts: an archived listing, and a row
+     we never had. Both carry the next-best answer. */
   const deadEnd = (title, body) => {
     const cityLabel = (window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.label
       .replace(/^(.)(.*)$/, (m, a, b) => a + b.toLowerCase()) || 'Tallinn';
@@ -262,8 +221,8 @@
         `Listings expire — that's normal.${dated} Here's what's on tonight instead.`);
       return;
     }
-    /* A live row the loaded set simply never held — a museum, a theatre,
-       an old place.html link. Render it exactly like any other. */
+    /* A live row the loaded set never held (e.g. a museum). Render it
+       like any other. */
     extra = found;
     render();
   };
@@ -272,13 +231,9 @@
     const hit = resolve();
 
     if (!hit) {
-      /* Not in the loaded set is NOT the same as gone, and saying so was
-         the app inventing a fact. The loaded set excludes archived picks
-         (where "closed down" is true) but also every venue outside
-         VENUE_KINDS — museums, theatres, bars, libraries — where it is
-         simply false. Ask the database, then say what is actually so.
-         Meanwhile the skeleton stays; a wrong answer shown fast is
-         worse than a right one shown a moment later. */
+      /* Not in the loaded set is not the same as gone: the loaded set also
+         excludes every venue outside VENUE_KINDS. Ask the database first;
+         the skeleton stays meanwhile. */
       lookUp();
       return;
     }
@@ -292,18 +247,13 @@
     window.WA.Seen.mark(e.id);
 
     document.title = `WanderAlt — ${title}`;
-    /* 4a: a line that only restates the title is suppressed, so it takes
-       2b's honest sentence instead of "Disco party" under "Disco party".
-       Same predicate as the Tonight row — one implementation per
-       pattern, and the two screens must not disagree about whether a
-       pick has a description. */
+    /* A line that only restates the title is suppressed — same predicate
+       as the Tonight row. */
     const md = document.querySelector('meta[name="description"]');
     const filed = window.WA.UI.descriptionOr(real(e.description), title)
                || window.WA.UI.descriptionOr(real(e.quote), title);
 
-    /* 2b applies here too. Detail printed blank space where Tonight
-       printed the sentence, so the same pick read as richer in the list
-       than on its own page. */
+    /* No description gets the same sentence Tonight prints. */
     const venueWord = real(e.venue);
     const desc = filed ||
       (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
@@ -452,26 +402,15 @@ document.addEventListener('click', (e) => {
       return;
     }
     if (e.target.closest && e.target.closest('#more')) {
-      /* 3a: the description expands IN PLACE — no navigation to read a
-         sentence. */
+      /* The description expands in place. */
       document.getElementById('desc').classList.remove('wa-detail__desc--clamp');
       e.target.closest('#more').remove();
       return;
     }
     const sh = e.target.closest && e.target.closest('#share');
     if (sh) {
-      /* The trigger is the top bar's quiet Share (detail.html), not a
-         fourth key in the action row — the row is already flex:1 1 0 with
-         nowrap, so a fourth control squeezes "Walk me there" to 79px and
-         three wrapped lines.
-
-         Routed through WA.Share rather than reimplemented here. This
-         handler used to hand-roll navigator.share with a clipboard
-         fallback, which is a second implementation of a module the page
-         already loads — and it missed the one case share.js exists to
-         get right: dismissing the OS sheet throws AbortError, and
-         treating that as a failure copies a link nobody asked for.
-         That duplication is why WA.Share read as unused. */
+      /* The trigger is the top bar's Share. Routed through WA.Share, which
+         treats a dismissed OS sheet as cancelled rather than copying. */
       const hit = resolve();
       if (!hit || !window.WA.Share) return;
       const p = hit.e;
@@ -480,10 +419,8 @@ document.addEventListener('click', (e) => {
         text:  [p.title, real(p.venue)].filter(Boolean).join(' · '),
         url:   location.href,
       }).then((r) => {
-        /* WA.Toast refuses any toast without a reverse action, and a
-           copied link has none, so the confirmation lives on the control.
-           'shared' needs nothing: the OS sheet is its own feedback, and
-           'cancelled' means the reader backed out on purpose. */
+        /* WA.Toast requires a reverse action and a copied link has none, so
+           the confirmation lives on the control. */
         if (r !== 'copied' && r !== 'failed') return;
         const was = sh.textContent;
         sh.textContent = r === 'copied' ? 'Link copied' : 'Copy failed';

@@ -1,22 +1,14 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// backfill-pick-facts  v1  (Jul 2026)
+// backfill-pick-facts
 // ------------------------------------------------------------
 // Fills description / starts_at / ends_at / ticket_url / price /
-// entities on picks that predate the staging payload contract.
+// entities on picks that predate the staging payload contract, by
+// reading schema.org JSON-LD off the pick's own source_url.
 //
-// It does NOT re-run any per-source scraper. Instead it fetches the
-// pick's own source_url and reads schema.org JSON-LD, which nearly
-// every ticketing and venue page emits for SEO — Fienta, Resident
-// Advisor, Eventbrite, most WordPress venue sites. One extractor
-// covers every source we have and every source we add, and it reads
-// exactly the fields the publisher chose to state about themselves.
-//
-// Nothing here is inferred. A page with no JSON-LD Event yields
-// nothing and the pick is stamped so it is not refetched.
-//
-// No LLM. No API keys. One HTTP GET per pick.
+// Nothing is inferred: a page with no JSON-LD Event yields nothing and
+// the pick is stamped so it is not refetched. No LLM, no API keys.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;

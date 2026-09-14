@@ -1,13 +1,7 @@
 /* ============================================================
-   notfound.js — the 404 state (6d).
+   notfound.js — the 404 state.
    ------------------------------------------------------------
-   "Every state carries the next-best action — 404 offers tonight. These
-   are the screens users hit when they're already annoyed; they deserve
-   the same care as the happy path."
-
-   So the page does not just apologise and link away: it shows the first
-   few things that are actually on, which is what the reader wanted when
-   they followed the dead link.
+   Shows the first few things actually on, as the next-best action.
    ============================================================ */
 (() => {
   'use strict';
@@ -27,12 +21,8 @@
     const host = document.getElementById('tonight-preview');
     if (!host || !soon.length) return;
 
-    /* This was the one rail renderer in the repo that bypassed the time
-       model: it printed picks.time raw, so a pick carrying a bare date
-       showed "00:00" and three of four rows showed nothing at all. Both
-       are the failures the rail rules exist to prevent — a clock only
-       when one parses, and never a blank rail. Same chain as Tonight:
-       a stated clock, else the weekday, else OPEN. */
+    /* Same rail chain as Tonight: a stated clock, else the weekday, else
+       OPEN. */
     const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     const rail = (e) => {
       const m = window.WA.when.statedMinutes(e);

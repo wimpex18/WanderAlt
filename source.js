@@ -1,19 +1,11 @@
 /* ============================================================
-   source.js — the source page (3b). Replaces curator.js.
+   source.js — the source page.
    ------------------------------------------------------------
-   "The curator page becomes a source page. Same shape, honest subject:
-   a venue, a feed, a channel. Following a venue is a stronger habit
-   than following a stranger, and it is the seed of the personalisation
-   you wanted to earn from behaviour rather than a quiz."
+   The subject is a venue or feed, grouped from the picks that name it:
+   how many are on, when we last read it, how far away it is.
 
-   The subject is a VENUE — the thing a reader recognises and can walk
-   into — grouped from the picks that name it. Provenance replaces the
-   byline: how many are on, when we last read it, how far away it is.
-
-   ?venue=<name> is the key. ?handle=<@handle> is accepted too, because
-   every curator.html link in the wild carries one; it resolves to that
-   source's picks rather than 404ing, which is the same contract the
-   retired query params get.
+   ?venue=<name> is the key. ?handle=<@handle> resolves to that source's
+   picks.
    ============================================================ */
 (() => {
   'use strict';
@@ -32,9 +24,7 @@
   const key = (s) => String(s || '').toLowerCase().trim();
 
   /* ── Resolve the subject ─────────────────────────────────────
-     A venue name, or a legacy curator handle mapped to the picks that
-     carry it. Either way the answer is "a set of picks and the place
-     they came from". */
+     A venue name, or a handle mapped to the picks that carry it. */
   const resolve = () => {
     const sp = new URLSearchParams(location.search);
     const wantVenue  = sp.get('venue') || '';
@@ -51,8 +41,7 @@
     }
 
     if (wantHandle) {
-      /* Legacy curator link. The handle is the source channel, so it
-         still identifies a real feed — we just present it as one. */
+      /* Handle link: the handle is the source channel, a real feed. */
       const k = key(wantHandle);
       const mine = picks.filter(e => key(e.handle) === k);
       /* Prefer naming it by the venue its picks actually share. */
@@ -69,9 +58,7 @@
 
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  /* OPEN rather than an empty rail -- 3a's rule, same as Tonight and
-     Saved. A source page is mostly exhibitions and runs, so the undated
-     case is the common one here, not the edge. */
+  /* OPEN rather than an empty rail; undated is the common case here. */
   const railFor = (e) => {
     if (window.WA.when.isTonight(e)) return 'TON';
     const k = window.WA.when.resolveKey(e);
@@ -79,9 +66,8 @@
     return 'OPEN';
   };
 
-  /* Desktop-only far-right photo; absent element means absent cell, so
-     a photoless row runs wider instead of leaving a gap. Same rule as
-     the Tonight row — one implementation per pattern. */
+  /* Desktop-only far-right photo; an absent element means an absent cell,
+     so a photoless row runs wider. */
   const media = (e) => {
     const src = e.imageUrl ? window.WA.UI.safeUrl(e.imageUrl) : '';
     if (!src) return '';

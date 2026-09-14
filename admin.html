@@ -10,18 +10,13 @@
 
 
   <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
-  <!-- Admin is out of scope for the Aug 2026 redesign and keeps its own
-       desktop-light surface. admin-tokens.css carries the tokens and the
-       nine shell classes it used to inherit from styles.css, so this page
-       is unchanged by that file's deletion and fully decoupled from the
-       public product's paper. -->
+  <!-- Admin keeps its own desktop-light surface: admin-tokens.css carries
+       its tokens and shell classes, decoupled from wa.css. -->
   <link rel="stylesheet" href="./admin-tokens.css" />
   <link rel="stylesheet" href="./admin.css" />
 
-  <!-- Local-only convenience: sets the admin service key on this machine.
-       Gitignored, so it is absent on the deployed site by design — the
-       panel then asks for the key, and the console shows a 404 for this
-       file. That is expected, not a fault. -->
+  <!-- Local-only, gitignored: sets the service key on this machine. A 404
+       for this file on the deployed site is expected. -->
   <script src="./local-secrets.js"></script>
   <script defer src="./vendor/maplibre-gl.js"></script>
   <script defer src="./admin.js"></script>
@@ -91,8 +86,6 @@
       <div id="admin-stats-inner" class="a-stats-grid">
         <span class="admin-stat-badge" id="stat-picks">— picks</span>
         <span class="admin-stat-badge admin-stat-badge--warn" id="stat-unpinned">— unpinned</span>
-        <span class="admin-stat-badge admin-stat-badge--warn" id="stat-noembeds">— no embedding</span>
-        <span class="admin-stat-badge admin-stat-badge--accent" id="stat-review">— pending review</span>
       </div>
     </section>
 
@@ -150,105 +143,6 @@
       <div id="all-picks-controls"></div>
       <ol id="all-picks-list" class="a-list" role="list"></ol>
     </section>
-
-    <!-- Discovery review — picks surfaced by external search awaiting curation -->
-    <section id="admin-review" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Discovery review <span id="review-badge" class="a-review-badge"></span></p>
-        <button type="button" id="review-refresh-btn" class="admin-reset">Refresh &rarr;</button>
-      </div>
-      <p class="meta a-hint">
-        Picks surfaced by external search (Google Places) and tagged
-        <strong>@discovery</strong>. Edit to add a curator handle, real title and
-        quote — then approve to publish. Reject to archive.
-      </p>
-      <p class="meta a-mb-3 a-mute" id="review-status">Loading…</p>
-      <ol id="review-list" class="a-list" role="list"></ol>
-    </section>
-
-    <!-- Match analytics — top liked / disliked picks from user_match_history -->
-    <section id="admin-analytics" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Match analytics</p>
-        <button type="button" id="analytics-refresh-btn" class="admin-reset">Refresh &rarr;</button>
-      </div>
-      <p class="meta a-hint">
-        Aggregated 👍/👎 from signed-in users. Use to weed out picks that consistently underperform.
-      </p>
-      <p class="meta a-status" id="analytics-status">Loading…</p>
-      <div id="analytics-grid" class="a-analytics-grid" hidden>
-        <div>
-          <p class="eyebrow a-mb-2">Top liked</p>
-          <ol id="analytics-likes" class="a-list" role="list"></ol>
-        </div>
-        <div>
-          <p class="eyebrow a-mb-2">Top disliked</p>
-          <ol id="analytics-dislikes" class="a-list" role="list"></ol>
-        </div>
-      </div>
-    </section>
-
-    <!-- Curators — browse and edit curator profiles -->
-    <section id="admin-curators" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Curators</p>
-        <button type="button" id="curator-new-btn" class="admin-reset">New curator &rarr;</button>
-      </div>
-      <p class="meta a-hint">
-        Edit curator handle, name, bio, and tagline. Pick counts are updated by the ingest pipeline.
-      </p>
-      <p class="meta a-status" id="curators-count">Loading…</p>
-      <ol id="curators-list" class="a-list" role="list"></ol>
-    </section>
-
-    <!-- Curator edit modal -->
-    <div id="curator-modal" class="admin-modal-overlay" hidden
-         role="dialog" aria-modal="true" aria-labelledby="curator-modal-heading">
-      <div class="admin-modal">
-        <div class="admin-modal-head">
-          <h2 id="curator-modal-heading" class="a-modal-heading">Edit curator</h2>
-          <button type="button" id="curator-modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="admin-modal-grid">
-          <div class="admin-mfield">
-            <label for="cf-handle">Handle</label>
-            <input id="cf-handle" type="text" autocomplete="off"
-                   placeholder="@handle or channel-name" />
-          </div>
-          <div class="admin-mfield">
-            <label for="cf-name">Display name</label>
-            <input id="cf-name" type="text" autocomplete="off"
-                   placeholder="Human-readable name" />
-          </div>
-          <div class="admin-mfield">
-            <label for="cf-city">City</label>
-            <input id="cf-city" type="text" autocomplete="off"
-                   placeholder="tallinn" />
-          </div>
-          <div class="admin-mfield">
-            <label for="cf-tagline">Tagline</label>
-            <input id="cf-tagline" type="text" autocomplete="off"
-                   placeholder="One-line description" />
-          </div>
-          <div class="admin-mfield admin-mfield--full">
-            <label for="cf-bio">Bio</label>
-            <textarea id="cf-bio" rows="4"
-                      placeholder="2–4 sentence bio shown on curator profile page"></textarea>
-          </div>
-          <div class="admin-mfield admin-mfield--full">
-            <label for="cf-source">Source channel</label>
-            <input id="cf-source" type="text" autocomplete="off"
-                   placeholder="Telegram channel URL or identifier" />
-          </div>
-        </div>
-        <div class="admin-modal-actions">
-          <button type="button" id="curator-save-btn" class="admin-modal-save">Save</button>
-          <button type="button" id="curator-modal-cancel" class="admin-modal-cancel">Cancel</button>
-          <button type="button" id="curator-delete-btn" class="admin-modal-archive">Delete&hellip;</button>
-        </div>
-        <p class="meta a-modal-status-inline" id="curator-modal-status" aria-live="polite"></p>
-      </div>
-    </div>
 
     <!-- Venues — browse, edit, create venue records -->
     <section id="admin-venues" class="admin-section">
@@ -321,12 +215,7 @@
                   class="admin-col-btn">
             Rotate tonight now &rarr;
           </button>
-          <button type="button" id="pipeline-embed-btn"
-                  class="admin-col-btn">
-            Backfill embeddings &rarr;
-          </button>
         </div>
-        <p class="meta a-hint" id="pipeline-embed-status" hidden></p>
         <table class="admin-pipeline-table" id="pipeline-log" aria-label="Recent ingest log">
           <thead>
             <tr>
@@ -546,7 +435,7 @@
                    placeholder="e.g. Kalamaja" />
           </div>
           <div class="admin-mfield">
-            <label for="mf-handle">Curator handle *</label>
+            <label for="mf-handle">Source handle *</label>
             <input type="text" id="mf-handle" required
                    placeholder="e.g. sigmundtells" />
           </div>
@@ -571,15 +460,9 @@
           </div>
 
           <div class="admin-mfield admin-mfield--full">
-            <label for="mf-quote">Curator quote *</label>
+            <label for="mf-quote">Description *</label>
             <textarea id="mf-quote" rows="3"
-                      placeholder="Short, direct quote in the curator's voice&hellip;"></textarea>
-          </div>
-
-          <div class="admin-mfield admin-mfield--full">
-            <label for="mf-context">Context &mdash; why this matters</label>
-            <textarea id="mf-context" rows="5"
-                      placeholder="2-paragraph editorial context. Markdown supported."></textarea>
+                      placeholder="One sentence a listings site would not say&hellip;"></textarea>
           </div>
 
           <div class="admin-mfield admin-mfield--full">
@@ -631,10 +514,6 @@
             </div>
             <input type="hidden" id="mf-lat" />
             <input type="hidden" id="mf-lng" />
-            <!-- legacy SVG coords kept for any consumer that still reads them;
-                 not exposed to the user. -->
-            <input type="hidden" id="mf-world-x" />
-            <input type="hidden" id="mf-world-y" />
           </div>
 
         </div><!-- /.admin-modal-grid -->

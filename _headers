@@ -16,14 +16,8 @@
   # Permissions-Policy — explicitly deny the powerful features we don't use.
   # Geolocation IS used (locate-fab on map) so we allow self.
   Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=(self)
-  # CSP — strict. May 2026 sweep extracted admin.html's inline <style>
-  # to admin.css, the redirect stubs to redirect-stub.css, and moved
-  # the two onsubmit="return false;" forms to a [data-no-submit]
-  # JS handler in city.js. All scripts are external same-origin (the
-  # pre-paint taste flag is taste-flag.js), so script-src stays 'self'
-  # with no 'unsafe-inline'. Fonts are now self-hosted, so the Google
-  # Fonts origins were dropped — style-src no longer needs
-  # fonts.googleapis.com and font-src is 'self' only.
+  # CSP — strict: every script and stylesheet is same-origin (no inline
+  # handlers; forms use [data-no-submit] in city.js), fonts self-hosted.
   # 'unsafe-inline' on style-src is retained ONLY because MapLibre
   # injects inline width/height on the canvas elements it manages;
   # removing it breaks the map. img-src https: keeps the Supabase Storage
@@ -43,16 +37,10 @@
 /*.html
   Cache-Control: public, max-age=300, must-revalidate
 
-# Hashed/versioned assets: long cache. The stylesheets carry no content
-# hash, so they stay on the conservative 5-minute cache via the /* rule
-# above — that applies to wa.css (the Aug 2026 design system), to
-# admin-tokens.css, and to styles.css for as long as the un-migrated
-# pages still load it. marks.svg is deliberately in the same bucket
-# rather than under /assets/: marks.js fetches it at runtime and injects
-# it, so it has to be able to change without a filename bump.
+# Stylesheets and marks.svg carry no content hash, so they stay on the
+# 5-minute /* rule above (marks.js fetches marks.svg at runtime).
 #
-# Static brand assets below are immutable by design (they only change
-# with a version bump that triggers a filename change).
+# Static brand assets below are immutable by design.
 /brand/*
   Cache-Control: public, max-age=2592000, immutable
 

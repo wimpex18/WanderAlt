@@ -1,82 +1,26 @@
 /* ============================================================
-   WanderAlt — send-digest edge function v14
-   v14: no behaviour change of its own -- it exists to close a drift that
-        did have one. The deployed copy (Supabase v16) still defaulted
-        OPENROUTER_MODEL to 'openai/gpt-oss-120b:free', which is ABSENT
-        from OpenRouter's catalogue; the repo was corrected to
-        'nvidia/nemotron-3-super-120b-a12b:free' and never redeployed, so
-        the second LLM lane would have 404'd the moment an
-        OPENROUTER_API_KEY was set and fallen silently through to the
-        static intro. Exactly the shape CLAUDE.md warns about: the repo
-        cannot tell you what is deployed.
-        Also retires the phrase "the Saturday cron" -- the job is
-        send-digest-thursday (0 7 * * THU) as of 13 Aug 2026. The
-        sentence's actual claim, that invoke_wa_fn's anon key satisfies
-        verify_jwt, is unchanged and still true.
-   v13: SECURITY — this was an open email relay. verify_jwt was false and
-        the handler took the recipient straight from the request body:
+   WanderAlt — send-digest edge function
+   ------------------------------------------------------------
+   The weekly Thursday digest (cron send-digest-thursday, 0 7 * * THU,
+   through invoke_wa_fn). verify_jwt: true.
 
-          POST /functions/v1/send-digest  {"email":"anyone@example.com"}
+   SECURITY: the recipient override addresses an arbitrary mailbox, so it
+   requires the SERVICE ROLE key in the Authorization header. verify_jwt
+   alone is not that gate — the anon key ships in supabase.js.
 
-        with no Authorization header at all returned {"ok":true,"sent":1}
-        and, outside dry-run, put a real message from the WanderAlt
-        domain in an arbitrary stranger's inbox. Verified against
-        production before the fix. Anyone who found the URL could send
-        mail as us, at our Resend quota and our sending reputation.
+   Links go to detail.html; the pick line is a description with
+   "via @handle" as provenance. The intro is generated Groq-first, then
+   OpenRouter :free, falling back to static copy.
 
-        Two layers now. The recipient override requires the SERVICE ROLE
-        key in the Authorization header -- that is the actual control,
-        because it is the one credential that is never published.
-        verify_jwt also goes true, which blocks unauthenticated callers
-        at the platform edge before this code runs; the digest cron is
-        unaffected because public.invoke_wa_fn() sends the anon key,
-        which is a valid JWT (the same reason ingest-osm and
-        process-staging already run fine at verify_jwt:true).
-
-        Note what verify_jwt alone would NOT have fixed: the anon key is
-        public by design, committed in supabase.js. Turning the gate on
-        raises the bar from "anyone" to "anyone who reads one JS file".
-        The service-key check is what actually closes this.
-   v12: caught up with the Aug 2026 redesign, which this function
-        predated in three ways that would each have shipped to an inbox.
-        (a) Every link pointed at venue.html, a page that no longer
-            exists. The 301 would have carried it, but an email outlives
-            a redirect rule -- same reason share.js's .ics was repointed.
-        (b) The pick row was quote-as-hero with a curator byline
-            ("<quote>" -- @handle). The redesign removed curators: the
-            line is a description now and the handle is provenance, so
-            it reads "via @handle" under the row rather than as a person
-            recommending. The footer's "Curated by humans, not
-            algorithms" and the fallback intro's "from the humans who
-            know it best" were making the same retired claim.
-        (c) The intro called Gemini DIRECTLY and ungated, which breaks
-            the LLM policy twice over: Groq is the documented primary
-            for every text-generation function, and the Gemini path is
-            retired behind pipeline_config.gemini_fallback_enabled with
-            its Google billing deleted -- so this silently fell back to
-            static copy on every send. Now Groq first, OpenRouter :free
-            second, same ladder as process-staging.
-   v11: per-recipient "Your saved events changed" block — the digest is
-        the brand's ONE sanctioned change-notification channel (no
-        push). For recipients linked to an account (profiles toggle, or
-        digest_opt_ins.user_id captured at opt-in when signed in) the
-        email now includes their bookmarked picks whose day/time changed
-        in the last 7 days (from the pick_changes journal) and those
-        archived in the window ("no longer listed"). Anonymous opt-ins
-        get the unchanged digest.
-   v11 also fixed GEMINI_MODEL to gemini-2.5-flash (was the nonexistent
-        3.5 — intros silently fell back to static copy). Superseded by
-        v12(c): the whole Gemini lane is gone.
-   v9:  gemini for email intro generation.
-   v10: curator handle in the email uses petrol (--c-accent #055959),
-        retiring the last stray oxblood #8a2a1a in the codebase.
+   Per-recipient "Your saved events changed" block: for account-linked
+   recipients, bookmarked picks whose day/time changed in the last 7
+   days (pick_changes journal) or that were archived in the window.
+   Anonymous opt-ins get the plain digest.
    ============================================================ */
 
 /* Pick titles, quotes, handles and venue names are scraped and
-   LLM-processed, and this function drops them straight into an HTML email.
-   Unescaped, a crafted title closes the surrounding tag and injects its own
-   markup into every subscriber's inbox — a link in a mail that genuinely
-   comes from WanderAlt. Same contract as WA.UI.esc on the site. */
+   LLM-processed and land in an HTML email: escape them. Same contract as
+   WA.UI.esc on the site. */
 const esc = (s: unknown) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;')
   .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -90,19 +34,10 @@ const GROQ_MODEL      = 'llama-3.3-70b-versatile';
 const OPENROUTER_KEY  = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-super-120b-a12b:free';
 const FROM    = Deno.env.get('DIGEST_FROM_EMAIL') ?? 'WanderAlt <onboarding@resend.dev>';
-/* wanderalt.app is the canonical domain; wanderalt.com is brand defence
-   and 301s across. The old default was the .com, so an unset SITE_URL put
-   a redirect-dependent host in every link of every email -- and an email
-   outlives a redirect rule. */
+/* wanderalt.app is the canonical domain; an email outlives a redirect. */
 const BASE_URL = Deno.env.get('SITE_URL') ?? 'https://wanderalt.app';
-/* Gemini is gone from this function. It was called directly and ungated,
-   which broke the LLM policy twice: Groq is the documented primary for
-   every text-generation function, and the Gemini path is retired behind
-   pipeline_config.gemini_fallback_enabled with its Google billing
-   deleted. So the "fix" in v11 -- repointing GEMINI_MODEL at a model id
-   that does exist -- bought nothing: the key no longer authenticates and
-   every intro still fell through to the static fallback, just one HTTP
-   round trip later. The ladder below is the one process-staging uses. */
+/* Text generation: Groq first, OpenRouter :free second — the same ladder
+   process-staging uses. No Gemini. */
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
   fetch(`${SB_URL}${path}`, {
@@ -268,8 +203,7 @@ const buildMeta = (p: Pick) => {
 
 /* An email cannot read CSS variables, so these hexes are copies. Keep
    them in step with wa.css: #d2dc50 is --signal and #0a1011 is
-   --signal-ink. The badge was still on an older lime (#c8f56a) that no
-   longer appears anywhere in the product. */
+   --signal-ink. */
 const renderPickRow = (p: Pick) => {
   const tonightBadge = p.tonight
     ? `<span style="display:inline-block;background:#d2dc50;color:#0a1011;font-family:'Courier New',monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;margin-right:8px;text-transform:uppercase;">Tonight</span>`

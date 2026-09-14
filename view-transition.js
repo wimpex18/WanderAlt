@@ -1,35 +1,12 @@
 /* ============================================================
    WanderAlt — card → detail hero View Transition (cross-document)
    ------------------------------------------------------------
-   Cross-document transitions are enabled globally by @view-transition
-   in wa.css, where the top bar and tab bar also carry stable
-   view-transition-names so the chrome morphs instead of cross-fading.
-
-   This file adds the SHARED-ELEMENT half: clicking a card that
-   navigates to detail.html tags that card's photo with
-   `view-transition-name: venue-hero`, which pairs with the same name on
-   detail.html's `.wa-detail__photo` — so the photo expands into the
-   hero rather than the page fading.
-
-   Rewritten Aug 2026, because every line of it had rotted quietly. It
-   targeted `a[href*="venue.html"]` (a page the redesign merged into
-   detail.html), read a rule from styles.css (deleted in the cutover),
-   and hunted for `.pick`, `.list-row--card`, `.thumb`, `.tonight__hero`
-   and `.tonight__photo` — five Dusk Glass class names, none of which
-   any module emits any more. The file still loaded on six pages and did
-   nothing at all. Nothing surfaces a dead listener, which is exactly
-   why it survived the reskin.
-
-   The new markup is simpler: `.wa-card` IS the anchor, so the photo is
-   just a descendant of the clicked link. Cards without a photo render a
-   `.wa-mark` glyph instead and are deliberately left untagged — morphing
-   a category glyph into a photograph reads as a glitch, so those fall
-   through to the default cross-fade.
-
-   Only one element is ever tagged (any prior is cleared first), modifier
-   and middle clicks are ignored, reduced-motion skips tagging, and on
-   browsers without the API setting the property is a harmless no-op —
-   the navigation just happens instantly.
+   @view-transition in wa.css enables cross-document transitions and
+   names the chrome. This file adds the shared element: clicking a
+   .wa-card tags its photo `view-transition-name: venue-hero`, pairing
+   with detail.html's .wa-detail__photo. Photoless cards stay untagged
+   and cross-fade. One element tagged at a time; modifier/middle clicks
+   and reduced motion skip tagging.
    ============================================================ */
 (() => {
   'use strict';

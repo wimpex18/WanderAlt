@@ -1,17 +1,8 @@
 // ============================================================
-// ingest-ra  v3
-// v3 (Jul 2026, DEPLOYED Aug 2026): writes staging_messages.payload.
-//   Committed in 3190013 and never deployed — production stayed on v2,
-//   so every Vilnius event reached staging with its start time only in
-//   the prose text and no structured payload. process-staging copies
-//   starts_at from the payload and nowhere else, so the picks landed
-//   with a weekday at best and no timestamp.
-// v2 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id, so repeat listings would 409
-//   instead of being silently ignored.
+// ingest-ra
 // Pulls upcoming electronic / club events from Resident Advisor
 // (ra.co) via their GraphQL endpoint and pushes them to
-// staging_messages for process-staging to curate.
+// staging_messages with a structured payload.
 //
 // RA's HTML frontend is Cloudflare-gated, but the GraphQL API at
 // https://ra.co/graphql answers eventListings queries from a
@@ -23,8 +14,7 @@
 // sources row (kind 'web', channel 'ra-<city>').
 //
 // Dedup key: (channel, message_id) where message_id = RA listing id.
-// Schedule: NONE by default — invoke manually, or add a cron once
-//           the RA terms-of-service question is settled.
+// Schedule: NONE — invoke manually, on terms-of-service grounds.
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -148,10 +138,8 @@ async function upsertEvent(
     channel,
     message_id: messageId,
     text:       composeText(e),
-    /* The lineup is the reason this payload matters: artist names are the
-       lookup key resolve-links feeds to MusicBrainz, which hands back
-       Spotify / SoundCloud / Bandcamp / Mixcloud / Discogs in one call.
-       composeText() buried them in a "Lineup:" prose line. */
+    /* The lineup: artist names are the lookup key resolve-links feeds to
+       MusicBrainz. */
     payload: {
       source:      'residentadvisor',
       description: (ev.content ?? '').replace(/\s+/g, ' ').trim() || null,

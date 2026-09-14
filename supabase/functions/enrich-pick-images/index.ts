@@ -1,51 +1,25 @@
 /* ============================================================
-   enrich-pick-images v5 — the event's own picture, or nothing
+   enrich-pick-images — the event's own picture, or nothing
    ------------------------------------------------------------
-   Fills picks.image_url.
-
-   v4 and everything before it resolved a photo by sending the VENUE
-   NAME to Google Places `places:searchText` and taking whatever came
-   back. That is the guessing this repo bans: it is how a Christmas
-   market ended up on a basement club called Hall, and it is the exact
-   mechanism `enrich-venue-images` was written to replace. It also
-   billed ~$0.039 a venue against a Google account whose billing has
-   since been deleted. The evidence that it had stopped working at all:
-   of 41 live picks holding an image, 40 have `image_source` NULL —
-   legacy rows — and one came from a venue borrow. Nothing traceable to
-   Google, while 285 picks sat stamped as failed. There is also no cron
-   for this function, so it was not even running.
-
-   So the name search is gone, and both lanes below are anchored to the
-   EVENT rather than to a string that resembles one.
+   Fills picks.image_url. Both lanes are anchored to the EVENT, never to
+   a venue name.
 
    1. The source's own API, by event id.
-      334 of 367 live source_urls are `tapahtumat.hel.fi` — Helsinki's
-      Linkedevents portal — and the permalink carries the event id, so
+      `tapahtumat.hel.fi` permalinks carry the Linkedevents event id, so
       `api.hel.fi/linkedevents/v1/event/<id>/` returns that event's own
-      filed image. 40 of 40 sampled events had one. This is the widest
-      single source of event pictures available to us and it costs
-      nothing.
-
-      Those images are licensed `event_only`, which permits use in
-      connection with that event and nothing else. That is precisely
-      what a pick is, and it is why such an image must never be copied
-      onto a venue or outlive the listing: picks are archived, the URL
-      goes with them, and `image_source` records the lane so the whole
-      set can be found in one query.
+      filed image. These images are licensed `event_only`: never copied
+      onto a venue, never outliving the listing. `image_source` records
+      the lane.
 
    2. The listing page's own og:image or schema.org JSON-LD.
-      For every other source, the pick's `source_url` IS the event's
-      page, so its share image is the event's own — identity-safe in
-      the way a name search never was.
+      The pick's `source_url` IS the event's page, so its share image is
+      the event's own.
 
-   No third lane. There is deliberately no icon or logo fallback here,
-   unlike enrich-venue-images: a same-origin icon on an aggregator is
-   the TICKETING PLATFORM's brand, not the event's and not even the
-   venue's, so it would put Fienta's logo on somebody's gig.
+   No logo/icon lane: a same-origin icon on an aggregator is the ticketing
+   platform's brand.
 
    If both miss, the pick keeps no image and the row draws its category
-   mark, which is the designed answer. A wrong picture is worse than
-   none.
+   mark. A wrong picture is worse than none.
 
    POST body: { city?, limit?, dry_run? }
    ============================================================ */
@@ -165,9 +139,8 @@ function pickJsonLdImage(html: string, pageUrl: string): string | null {
     };
     const raw = walk(data);
     if (!raw) continue;
-    /* Same guard the venue lane needed: the walker returns whatever sat
-       under `image`, and a bare token resolves to <origin>/token, which
-       is a 404 stored as a photograph. */
+    /* The walker returns whatever sat under `image`; a bare token would
+       resolve to <origin>/token, a 404. */
     if (!/^(https?:)?\/\//i.test(raw) && !raw.startsWith('/')) continue;
     const abs = absHttp(raw, pageUrl);
     if (!abs) continue;
@@ -189,9 +162,8 @@ async function imageFromPage(sourceUrl: string): Promise<{ url: string; attr: st
     });
     if (!r.ok) return null;
     if (!(r.headers.get('content-type') ?? '').includes('text/html')) return null;
-    /* Cut at </head>, not at an arbitrary byte count -- the venue lane
-       lost real finds to a 200KB slice on sites that inline their CSS
-       ahead of the meta tags. */
+    /* Cut at </head>, not at an arbitrary byte count: sites that inline
+       their CSS put the meta tags far into the document. */
     const full = await r.text();
     const headEnd = full.search(/<\/head>/i);
     const html = headEnd > 0 ? full.slice(0, headEnd) : full.slice(0, 1_500_000);
@@ -207,15 +179,11 @@ async function imageFromPage(sourceUrl: string): Promise<{ url: string; attr: st
 
 /* ---- the shared-image guard ------------------------------- */
 
-/* One picture standing in for many listings is the failure this whole
-   family of functions exists to prevent -- but it is only a failure
-   when the listings are UNRELATED. A theatre run is one show on twelve
-   dates and shares one image correctly, and Linkedevents returns that
-   image per event id, so the API lane is exempt: it cannot be wrong
-   about which event it fetched.
-
-   The page lane is not exempt. There, a repeat means a site template or
-   an aggregator's default card, which is exactly the thing to refuse. */
+/* One picture standing in for many listings is refused — unless the
+   listings are related. A theatre run shares one image correctly, and
+   Linkedevents returns the image per event id, so the API lane is exempt.
+   On the page lane a repeat means a site template or an aggregator's
+   default card. */
 async function alreadyUsedByPage(url: string, selfId: string): Promise<boolean> {
   const { count } = await db
     .from('picks')

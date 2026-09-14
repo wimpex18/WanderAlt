@@ -1,48 +1,21 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// geocode-picks v8
+// geocode-picks
 //
 // Two responsibilities:
 //   * Default mode (batch): backfill picks.lat/lng + picks.address for
 //     active picks whose coords or address is still NULL, via Nominatim
-//     (OpenStreetMap, free/unauthenticated) only. Skip locked rows. Runs
-//     daily at 05:20 via the wa-geocode-picks pg_cron job.
+//     (OpenStreetMap, free/unauthenticated). Skips locked rows. A bare
+//     call sweeps every city on a shared round-robin budget. Runs hourly
+//     via the wa-geocode-picks pg_cron job.
 //   * action='reverse' mode (per-call): proxy a single reverse-geocode
-//     to Nominatim and return the resolved address. Used by the admin
-//     pin editor so the browser never hits Nominatim directly (keeps
-//     a single User-Agent identity, respects the OSM usage policy,
-//     and hides editor IPs).
+//     to Nominatim for the admin pin editor, so the browser never hits
+//     Nominatim directly.
 //
-// v8 (Aug 2026): three bugs that between them kept pick coverage at 5.7%
-// and left the Tonight map with nothing to draw.
-//
-//   1. The neighborhood was part of the search string, and Nominatim
-//      treats every term as a constraint. Pick neighborhoods are
-//      LLM-assigned and often wrong -- Von Krahl is filed under Vanalinn
-//      but stands in Kalamaja -- so the query could not match. Of eight
-//      venues sampled across all four cities, the neighborhood-qualified
-//      query matched ZERO; the plain one matched every venue that really
-//      exists. It is now a fallback, tried only after a plain miss.
-//   2. A non-OK response was indistinguishable from "no such place", and
-//      both stamped geocode_failed_at -- so one 429 benched a findable
-//      venue for fourteen days. Transport errors now stamp nothing.
-//   3. The batch defaulted to city='tallinn' and public.invoke_wa_fn()
-//      can only post '{}', so the nightly cron geocoded Tallinn and
-//      nothing else, forever, with no error to show for it. A bare call
-//      now sweeps every city on a shared round-robin budget. Vilnius was
-//      also missing from CITY_CENTER and would have 400'd.
-//
-//   Placeholder venue names ("Unknown", "null") are skipped outright --
-//   140 Tallinn picks share the single "Unknown" group, and geocoding it
-//   spends a call to learn nothing.
-//
-// v6 (Jul 2026): dropped the Google Places fallback -- Places is a paid,
-// no-free-tier API and was being rebilled every 20-minute tick for venues
-// it could never resolve. A venue Nominatim can't find now just stays
-// unresolved (admin can pin it manually); `geocode_failed_at` still stamps
-// so unresolvable venues are skipped for FAIL_COOLDOWN_DAYS instead of
-// hammering Nominatim forever.
+// Placeholder venue names ("Unknown", "null") are skipped outright.
+// A venue Nominatim can't find stays unresolved (admin can pin it
+// manually) and is skipped for FAIL_COOLDOWN_DAYS.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -59,9 +32,6 @@ const CITY_CENTER: Record<string, [number, number]> = {
   tallinn:  [59.4370, 24.7536],
   helsinki: [60.1699, 24.9384],
   riga:     [56.9460, 24.1059],
-  // Unlocked for internal testing, and just as absent from this table as
-  // it once was from process-staging's CITY_CONTEXT. Same failure shape:
-  // silent for everyone who isn't looking at that city.
   vilnius:  [54.6872, 25.2797],
 };
 
@@ -100,11 +70,8 @@ function distKm(a: [number, number], b: [number, number]): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// Three outcomes, not two. The old code collapsed "Nominatim answered and
-// there is no such place" into "Nominatim refused to answer", returned null
-// for both, and the caller stamped geocode_failed_at either way -- so a
-// single 429 or a blip locked a perfectly findable venue out of retry for
-// fourteen days. Only 'none' is a real answer worth remembering.
+// Three outcomes, not two: only 'none' (Nominatim answered, no such place)
+// stamps geocode_failed_at. A 429 or transport error stamps nothing.
 type GeoOutcome =
   | { kind: 'hit'; lat: number; lng: number; address: string | null }
   | { kind: 'none' }
@@ -140,10 +107,10 @@ async function nominatimQuery(q: string): Promise<GeoOutcome> {
   } catch { return { kind: 'error', status: null }; }
 }
 
-// Venue + city FIRST, and the neighborhood only as a fallback. See bug 1
-// in the v8 note above: the neighborhood was making the query unmatchable.
-// MAX_NOMINATIM_KM already guards against a same-name hit in the wrong
-// part of the world, which is the job the neighborhood was meant to do.
+// Venue + city FIRST, and the neighborhood only as a fallback: pick
+// neighborhoods are LLM-assigned and often wrong, and Nominatim treats every
+// term as a constraint. MAX_NOMINATIM_KM guards against a same-name hit
+// elsewhere.
 async function nominatimGeocode(
   venue: string, neighborhood: string, city: string,
 ): Promise<GeoOutcome> {
@@ -255,9 +222,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // -- Default: batch backfill -----------------------------------
-  // No city given = sweep them all. See bug 3 in the v8 note: the old
-  // default of 'tallinn' meant the cron could only ever reach one city,
-  // because invoke_wa_fn() posts a fixed empty body.
+  // No city given = sweep them all (invoke_wa_fn() posts a fixed empty body).
   const dryRun   = body.dry_run === true;
   const askedFor = body.city ? String(body.city).toLowerCase() : null;
   if (askedFor && !CITY_CENTER[askedFor]) {
@@ -265,18 +230,11 @@ Deno.serve(async (req: Request) => {
   }
   const cities = askedFor ? [askedFor] : ALL_CITIES;
 
-  // One budget for the whole run, not per city -- each group costs a
-  // ~1.1s Nominatim pause, so an unshared budget would blow the wall
-  // clock the moment a second city had work to do.
-  //
-  // 20 is sized to the CALLER, not to the work: public.invoke_wa_fn()
-  // posts with timeout_milliseconds := 60000, and a miss costs two
-  // pauses (plain query, then the neighborhood fallback), so the worst
-  // case is ~44s and a cron run always finishes before pg_net hangs up.
-  // Measured Aug 2026: 40 groups took 89s, which would have been cut off
-  // mid-sweep every night. The backfill is a daily job with no deadline
-  // -- it is better for it to take a few more days than to be truncated
-  // at an unpredictable point. Manual runs can pass a bigger limit.
+  // One budget for the whole run, not per city: each group costs a ~1.1s
+  // Nominatim pause, and a miss costs two (plain, then neighborhood).
+  // Sized to the caller: invoke_wa_fn() posts with a 60s timeout, so the
+  // worst case (~44s) finishes before pg_net hangs up. Manual runs can
+  // pass a bigger limit.
   const budget = Math.min(body.limit ?? 20, 200);
 
   const collected: Array<{ city: string; groups: Group[] }> = [];

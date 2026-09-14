@@ -1,25 +1,8 @@
 /* ============================================================
-   follow.js — WA.Follows, the store 6e assumed already existed.
+   follow.js — WA.Follows.
    ------------------------------------------------------------
-   The handoff map says of curator.js: "rewrite → source.js. Group by
-   venue/feed, KEEP the follow store." There is no follow store to keep.
-   Verified rather than assumed: no `follow` code in any page script, no
-   wa:follow* key among the fifteen localStorage keys the product uses,
-   no follows table, and `profiles` carries only user_id / city /
-   digest_enabled. Following was drawn in 3b and never built.
-
-   So it is new, and it lands here rather than inside source.js because
-   it is behaviour, not a screen: Explore will want to lift followed
-   venues, You will want to list them, and a store that lives inside one
-   page script is a store the other pages hand-copy.
-
-   Deliberately localStorage-only for now. bookmark.js mirrors to a
-   Supabase table because saves are the thing a reader would be upset to
-   lose between devices; a follow is a weaker signal, and inventing a
-   `follows` table plus an RLS INSERT policy before the screen that
-   writes to it exists is schema written on spec. The API below is the
-   same shape as WA.Bookmarks, so adding cloud sync later is an addition
-   to this file and nothing else.
+   localStorage-only follow store, same shape as WA.Bookmarks. Drives
+   "Only sources I follow" on Tonight and the list on You.
 
    Public API (window.WA.Follows):
      get()            → { sourceKey: true, … }
@@ -28,11 +11,8 @@
      toggle(key)      → flips and returns the new state
      keys()           → [ sourceKey, … ]
 
-   A sourceKey identifies a venue or feed, not a person — that is the
-   whole point of the change from curators. Callers should pass the
-   value they already display: the venue name or the source channel,
-   lowercased and trimmed by keyOf() so "Paavli Kultuurivabrik" and
-   "paavli kultuurivabrik " are one thing.
+   A sourceKey identifies a venue or feed. Callers pass the value they
+   display (venue name or source channel); keyOf() lowercases and trims.
    ============================================================ */
 window.WA = window.WA || {};
 

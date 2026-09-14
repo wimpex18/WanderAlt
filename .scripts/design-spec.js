@@ -2,25 +2,9 @@
 /* ============================================================
    design-spec.js — turn the Claude Design handoff into a checklist.
    ------------------------------------------------------------
-   Why this exists: every section of the direction was signed off as
-   "audited" and four separate things in it had never been looked at —
-   Walks as the fourth scope tab, the scope tabs owning the desktop
-   masthead, the 15px category marks in filter pills, and the saved
-   strip. They were missed because auditing meant reading the rationale
-   column and looking at the screen, which finds what you thought to
-   look for and nothing else.
-
-   The direction is a rendered document: every screen in it is real
-   markup, so every label, count, chip and button that the designer drew
-   is extractable. This pulls them out per section and writes
-   design-spec.json — the ground truth list of what each screen SAYS.
-   design-check.js then drives the app and reports which of those
-   strings actually reach the DOM.
-
-   It is deliberately dumb. It does not judge layout, colour or spacing;
-   those still need measuring by hand. What it guarantees is that
-   nothing DRAWN in the handoff can be silently absent from the build,
-   which is the failure that kept happening.
+   Extracts every label, count, chip and button each section of the
+   direction draws, per section, into design-spec.json. design-check.js
+   then reports which of those strings reach the DOM. Text only.
 
    Usage:  node .scripts/design-spec.js [path-to-.dc.html]
    ============================================================ */
@@ -43,14 +27,9 @@ const raw = fs.readFileSync(SRC, 'utf8')
   .replace(/<style[\s\S]*?<\/style>/g, '');
 
 /* Every section is <div id="5b" style="display:flex;gap:56px..."> with
-   exactly two children: the SCREEN column (style="flex:none") and the
-   rationale column. Only the screen column is a claim about what the
-   product renders, so the boundary has to be structural — an earlier
-   version of this script guessed it from prose and pulled 6f's text
-   into 5b, which is the kind of noise that makes a checklist ignorable.
-
-   Walks the tags counting depth rather than regexing, because these
-   blocks nest ~8 divs deep. */
+   two children: the SCREEN column (style="flex:none") and the rationale
+   column. Only the screen column counts. Walks the tags counting depth
+   rather than regexing, because these blocks nest ~8 divs deep. */
 const blockAt = (start) => {
   const tag = /<(\/?)div\b[^>]*>/g;
   tag.lastIndex = start;

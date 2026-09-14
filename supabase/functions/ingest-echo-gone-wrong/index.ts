@@ -1,15 +1,9 @@
 // ============================================================
-// ingest-echo-gone-wrong  v3
-// v3 (Jul 2026): staging_messages POST was missing
-//   ?on_conflict=channel,message_id, so repeat items 409'd instead of
-//   being silently ignored.
-// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
-//   for wa_reconcile_absent_picks (silent-cancellation detection). NB:
-//   this is a recent-items RSS feed, so items age off naturally; the
-//   reconcile's web/fienta filter should be narrowed to exclude feed-
-//   based sources before the enforce flip.
+// ingest-echo-gone-wrong
 // Polls echogonewrong.com/feed/ (Baltic art press RSS) and pushes
 // Riga-tagged items into staging_messages. Dedup key: hash of <guid>.
+// bumpSeen() marks still-listed picks for wa_reconcile_absent_picks;
+// this is a recent-items feed, so items age off naturally.
 // ============================================================
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';

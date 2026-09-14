@@ -1,33 +1,19 @@
 /* ============================================================
    design-check.js — does the build render what the handoff draws?
    ------------------------------------------------------------
-   Companion to design-spec.js. That one extracts every string the
-   direction DRAWS, per section; this one is pasted into the browser
-   console (or run through the Claude Code browser pane) on a given
-   page and reports which of those strings actually reach the DOM.
-
-   Run it per page, naming the sections that page is supposed to
-   satisfy:
+   Companion to design-spec.js. Paste into the browser console on a
+   page and name the sections that page should satisfy:
 
      await waDesignCheck(['5a', '5b'])        // on index.html
      await waDesignCheck(['5d', '2a', '2b'])  // on discover.html
 
-   It reports three buckets:
-
+   Reports three buckets:
      present  — the string is in the DOM
-     absent   — the string is NOT in the DOM. Every one of these needs
-                an answer: built differently, superseded by a later
-                round, or genuinely missing. Silence is what let four
-                gaps ship.
-     sample   — looks like the designer's placeholder catalogue (venue
-                names, prices), so absence is expected.
+     absent   — the string is NOT in the DOM (built differently,
+                superseded, or missing)
+     sample   — the designer's placeholder catalogue; absence expected
 
-   Deliberately dumb: it checks text, not layout, colour or spacing.
-   Those still need measuring. What it buys is that nothing DRAWN can
-   go missing without showing up in a list.
-
-   Not a test framework and not wired to CI — there is no CI. It is a
-   checklist you can re-run, which is the thing that was missing.
+   Text only, not layout, colour or spacing.
    ============================================================ */
 (() => {
   const SAMPLE = /^(Uus Laine|Turntable|EYEHATEGOD|Drew McDowall|Napalm|Köögi|Võta|Sveta|Sigmund|Puänt|Paavli|Kopli|Telliskivi|Kalamaja|Vanalinn|Põhja-Tallinn|Cabaret|Film Club|Alcarràs|Childbeater|HUKK|Robert Nikolajev|Rat Chat|Riga in October|Kanuti)/i;

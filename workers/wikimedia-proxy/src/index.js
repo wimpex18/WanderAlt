@@ -2,25 +2,14 @@
    WanderAlt — wikimedia-proxy Worker
    ------------------------------------------------------------
    Routes: wanderalt.app/img/wm/*
-   Job:    Re-fetch a Wikimedia thumbnail URL, strip the
-           Set-Cookie / Set-Cookie2 headers Wikimedia attaches
-           (WMF-Uniq, NetworkProbeLimit), and serve the bytes
-           through Cloudflare's edge cache.
+   Job:    Re-fetch a Wikimedia thumbnail URL, strip the Set-Cookie
+           headers Wikimedia attaches, and serve the bytes through
+           Cloudflare's edge cache (24 h), so no third-party cookie
+           reaches the reader.
 
-   Why:    venue_details.image_url is often a Wikimedia URL when
-           a venue has a Wikipedia article. Loaded directly, that
-           URL sets a third-party cookie on every visitor, which
-           Lighthouse flags as a Best-Practice failure and which
-           contradicts WanderAlt's "no third-party scripts/cookies"
-           promise on /about.html. Going through this Worker keeps
-           the privacy promise intact AND lets the CF edge cache
-           the bytes for 24 h — Wikipedia is rate-limited, the
-           edge isn't.
-
-   Client: supabase.js' toPick() rewrites Wikimedia URLs to the
-           /img/wm/<url-encoded-target> form when running on
-           wanderalt.app. On localhost the URLs pass through
-           unchanged.
+   Client: supabase.js rewrites Wikimedia URLs to
+           /img/wm/<url-encoded-target> on wanderalt.app. On localhost
+           the URLs pass through unchanged.
    ============================================================ */
 
 const ALLOWED_HOSTS = new Set([

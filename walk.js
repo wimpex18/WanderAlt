@@ -1,26 +1,11 @@
 /* ============================================================
-   walk.js — a route, and walking it (6b).
-
-   6b is a TEST, not a feature: "Hand-write three Tallinn routes. Ship
-   them as flat content. No generator, no opening-hours pipeline, no
-   route solver — three JSON objects with an ordered list of existing
-   pick ids, a title and a sentence."
-
-   So this file is deliberately small. It reads walks.json, resolves each
-   stop id against the venues already in memory, and does the one piece
-   of real logic the idea needs: work out whether the doors will still be
-   open when you get there.
-
-   That timing is the whole promise. 6b's risk flag: "the whole promise
-   is 'every door is open when you reach it'. That needs reliable
-   opening hours, which is the weakest field in your catalogue. If hours
-   are missing for a third of places, the walk-in-progress screen lies to
-   people outdoors — worse than not shipping."
-
-   Hours are missing for HALF the Tallinn catalogue, which is why the
-   routes are hand-written around the stops that have them. A stop whose
-   hours vanish later is not guessed at — it says so, and the route stops
-   claiming a leave-by time it can no longer stand behind.
+   walk.js — a route, and walking it.
+   ------------------------------------------------------------
+   Walks is an experiment: three hand-written routes in walks.json. This
+   resolves each stop against the venues in memory and works out whether
+   every door will still be open when you get there. Routes are written
+   around stops with filed hours; a stop whose hours vanish is not
+   guessed at, and the route stops claiming a leave-by time.
 
    ?id=<route id>. ?stop=<n> puts it in walk-in-progress at that stop.
    ============================================================ */
@@ -144,9 +129,8 @@
     const mins = r.stops.length * MINS_AT_STOP + (walkMins(total) ?? 0);
     const by = leaveBy(r.stops);
 
-    /* The status line is the promise, stated to whatever standard the
-       data actually supports. Three outcomes, and only the first is the
-       one 6b draws. */
+    /* The status line states the promise only to the standard the data
+       supports. Three outcomes. */
     let status, tone;
     if (sch.anyUnknown) {
       status = 'Some hours are not filed, so this route cannot promise every door is open.';
@@ -207,28 +191,15 @@
 
   /* ── Walk in progress ────────────────────────────────────────── */
   const renderProgress = (r, n) => {
-    /* `skipped` holds indices into r.stops, so the Skip button has to
-       emit one of those -- not the index into the filtered list. It used
-       to emit the filtered index, which happened to be right for the
-       first skip and silently wrong for every one after it: skipping the
-       new first stop re-added 0 to a set that already contained 0, so
-       the count froze and Skip became a no-op from the second press on.
-       Keeping the original indices alongside the live stops is what
-       makes the two agree. */
+    /* `skipped` holds indices into r.stops, so Skip emits the original
+       index, not the index into the filtered list. */
     const liveIdx = r.stops.map((_, i) => i).filter(i => !skipped.has(i));
     const live = liveIdx.map(i => r.stops[i]);
 
-    /* Nothing to show, and the two reasons are NOT the same thing.
-
-       `resolve()` drops any stop whose venue is not in the catalogue, so
-       r.stops is empty whenever the venues have not arrived yet — and
-       load() calls render() as soon as walks.json lands, which is well
-       before the Supabase catalogue does. That is the crash in the
-       console on every cold load of a /walk.html?stop=N URL: stops[-1]
-       and a thrown render, recovered a moment later by the re-render on
-       wa:catalog-ready, so it never showed on screen and nobody chased
-       it. Telling that reader "you skipped every stop" would be a fact
-       about our load order dressed up as something they did. */
+    /* Nothing to show, for one of two reasons. resolve() drops stops whose
+       venue is not in the catalogue, so r.stops is empty until the
+       Supabase catalogue arrives (render() runs as soon as walks.json
+       lands). That is not "you skipped every stop". */
     if (!r.stops.length) {
       main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
         <p class="wa-empty__title">This walk's stops are still loading.</p>
@@ -237,8 +208,7 @@
       return;
     }
 
-    /* The other reason: they really did skip all of them. Reachable only
-       now that Skip works more than once. */
+    /* The other reason: every stop was skipped. */
     if (!live.length) {
       main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
         <p class="wa-empty__title">You skipped every stop on this walk.</p>
@@ -339,9 +309,7 @@
       render();
       return;
     }
-    /* 6b's decision number is third-stop opens, so opening a stop from
-       inside a route is the event worth logging. WA.Seen already records
-       opens; this just makes sure a route stop counts as one. */
+    /* Opening a stop from inside a route counts as an open in WA.Seen. */
     const so = e.target.closest && e.target.closest('[data-stop-open]');
     if (so && window.WA.Seen) window.WA.Seen.mark(so.getAttribute('href').split('id=')[1]);
   });

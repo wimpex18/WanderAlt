@@ -1,27 +1,13 @@
 /* ============================================================
-   explore.js — Explore (5a phone, 5b desktop).
+   explore.js — Explore.
    ------------------------------------------------------------
-   Replaces briefing.js. Today opened on a photograph and a single hero
-   pick, which spent the whole first screen on one thing that might not
-   be for you; Explore is a browsing surface and is honest about it.
-   Carousels with plain section names, a count in every subtitle, and
-   the dense list one tap away in Tonight.
+   A browsing surface: carousels with plain section names, a count in
+   every subtitle, and the dense list one tap away in Tonight. Four scope
+   tabs under the capsule: All, Events, Places, Walks.
 
-   Four scope tabs, as 5b and 5c both draw them: All, Events, Places,
-   Walks. The second was called "Tonight" until Aug 2026, which named a
-   time on a row that switches content type -- and the time it named was
-   not its own, since the shelf is filtered by the capsule's WHEN. Walks was cut from this row in the first cycle because measured
-   opening-hours coverage was ~48%, under the ~70% the "ordered so every
-   door is open when you reach it" promise needs. The parse rate of filed
-   hours is 93.7% now, and both walk screens and the three hand-written
-   routes shipped in 6b, so the tab surfaces what exists rather than
-   promising work. The row sat in the desktop masthead until Aug 2026;
-   it lives with the content it filters now — see wa.css.
-
-   Everything interpolated here is scraped: titles, venues, kinds and
-   neighbourhoods come from Telegram, RSS and venue pages via an LLM.
-   Every one goes through WA.UI.esc() at the interpolation site, and any
-   URL goes through WA.UI.safeUrl() — esc() escapes quotes, not schemes.
+   Everything interpolated here is scraped. Every value goes through
+   WA.UI.esc() at the interpolation site, and any URL through
+   WA.UI.safeUrl() — esc() escapes quotes, not schemes.
    ============================================================ */
 (() => {
   'use strict';
@@ -60,15 +46,10 @@
     _places = (window.WA.venues || []).map(v => Object.assign({ __place: true }, v));
     return _places;
   };
-  /* ?scope= so another screen can hand the reader straight to a scope.
-     3a's thin-city empty state says "166 places are open regardless" and
-     offers Show places; without this the button could only drop them on
-     Explore's default tab and leave them to find Places themselves. */
+  /* ?scope= so another screen can hand the reader straight to a scope. */
   const readScope = () => {
     const raw = new URLSearchParams(location.search).get('scope');
-    /* `tonight` was this scope's name until Aug 2026, when it was renamed
-       to what it actually does. Shared links carry the old value, so it
-       still resolves rather than silently falling through to All. */
+    /* `tonight` is the old name of this scope; shared links still resolve. */
     const want = raw === 'tonight' ? 'events' : raw;
     if (!['all', 'events', 'places', 'walks'].includes(want)) return;
     state.scope = want;
@@ -77,14 +58,8 @@
     revealScope();
   };
 
-  /* The row scrolls on a phone, and arriving on ?scope=walks put the
-     selected chip 76px past the right edge: a walks list under a
-     control row where nothing appeared to be chosen. The link works and
-     the screen denies it. Nudges the selected chip into view, and only
-     when it is actually out of view -- a chip the reader just tapped is
-     already on screen, and re-centring under their finger is motion
-     with nothing to say. Scrolls the row, never the page, so this can
-     never move the document out from under a reader mid-read. */
+  /* Nudges the selected chip into view on a phone, only when it is
+     actually out of view, scrolling the row and never the page. */
   const revealScope = () => {
     const row = document.querySelector('.explore-scope');
     const sel = row && row.querySelector('[aria-selected="true"]');
@@ -113,15 +88,8 @@
     }
     if (isFreeish(e))                 return { text: 'Free', now: false };
 
-    /* Two bugs lived on this line. It printed e.time raw, so a pick
-       whose time field is prose or a bare date rendered "Doors 00:00"
-       on 24 cards; and it set now:true for anything merely happening
-       today, which painted every one of those badges lime. Lime has one
-       job — "now" — and a door opening at 15:00 seen at nine in the
-       morning is not now. 5b draws these as the plain cream pill.
-
-       So: lime only once it has actually started, which is the same
-       rule the row rail uses for NOW, and a clock only when one parses. */
+    /* Lime only once it has actually started (same rule as the rail's
+       NOW), and a clock only when one parses. */
     const m = window.WA.when.statedMinutes(e);
     const today = window.WA.when.isTonight(e);
     if (m != null) {
@@ -162,8 +130,7 @@
     return [line1, line2];
   };
 
-  /* One template for both shapes now (6c), so both go to the same page
-     and detail.js resolves the id against picks then venues. */
+  /* Events and places go to the same detail page. */
   const hrefFor = (e) => `detail.html?id=${encodeURIComponent(e.id)}`;
 
   /* ── Card ────────────────────────────────────────────────────
@@ -179,11 +146,8 @@
     const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
     const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
 
-    /* A logo is contained on the tint, not cropped square. `--photo` is
-       `aspect-ratio: 1; object-fit: cover`, which on a WORDMARK cuts the
-       ends off the words -- and the venue marks v4 now writes are mostly
-       wordmarks around 106-192px. Cropping "ALLA GALLERY" to a square is
-       the wrong-image failure at card size. */
+    /* A logo is contained on the tint, not cropped square — most venue
+       marks are small wordmarks. */
     const isMark = e.imageSource === 'logo';
     const well = photo
       ? `<img class="wa-card__photo${isMark ? ' wa-card__photo--brand' : ''}" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
@@ -241,12 +205,6 @@
     </section>`;
   };
 
-  /* ── The sections themselves ─────────────────────────────────
-     "Locals kept coming back to" from 5a is deliberately absent: it
-     ranks by how often a pick is saved, and the bookmarks table has
-     no rows yet. A popularity shelf invented from nothing is exactly
-     the kind of claim this redesign removed everywhere else. It
-     returns when there is something to count. */
   const buildSections = () => {
     const esc  = UI().esc;
     const when = window.WA.when;
@@ -257,27 +215,14 @@
     const events = picks().filter(e => when.matches(e, state.when))
       .filter(e => state.what === 'all' || String(e.kind || '').toLowerCase() === state.what);
 
-    /* 5a and 5b both subtitle this shelf "within a 20-minute walk", so
-       the shelf is bounded, not merely sorted — it answers "what can I
-       reach", not "what is open somewhere in the city". 20 minutes at
-       the walking rate geo.js already uses.
-
-       The bound only exists once we know where the reader is. Without
-       permission there is no distance to filter on, and printing
-       "within a 20-minute walk" over an unbounded list would be a claim
-       we cannot support — so the shelf stays whole and the subtitle
-       says what it actually is. Same rule as the row rail: degrade the
-       copy with the data, never keep the copy and lose the truth. */
+    /* Bounded to a 20-minute walk once the reader's position is known.
+       Without it the shelf stays whole and the subtitle says what it
+       actually is. */
     const WALK_MIN = 20;
     const bounded = !!(geo.currentLoc && geo.currentLoc());
 
-    /* Minutes of opening left, which is NOT the closing clock. `state()`
-       reports `closesAt` as a wall time mod 1440, so a bar open until
-       02:00 answers 120 and a gallery until 18:00 answers 1080 -- order
-       on that and the gallery outranks the bar while having four hours
-       left to its eight. Subtracting now and wrapping gives the figure
-       the reader actually cares about. A 24h venue has no closing time
-       to subtract and sorts first, which is correct. */
+    /* Minutes of opening left, not the closing clock: `closesAt` is a wall
+       time mod 1440, so subtract now and wrap. A 24h venue sorts first. */
     const minutesLeft = (p) => {
       const st = window.WA.Hours.state(p.openingHours);
       if (!(st.known && st.open)) return null;
@@ -296,21 +241,10 @@
       return d == null || d <= WALK_MIN * geo.WALK_M_PER_MIN;
     });
 
-    /* The shelf shows twelve of these and the subtitle used to say
-       "nearest first" whether or not we knew where the reader was. With
-       no permission `bySoonestThenDistance` has neither a start time nor
-       a distance to compare, so it returns 0 for every pair, the
-       database's own order survives, and what the reader got was the
-       twelve venues whose names begin with A -- presented as a ranking.
-       74 places, and you could not reach B.
-
-       Unbounded, the fact that decides is how long you have got, so that
-       is the order and the subtitle says so. Ties break on a per-day
-       rotation rather than on the name: most of these shut at the same
-       hour, and a name tie-break hands the shelf straight back to the
-       A's. Seeded on the date, so it is stable for the whole day and a
-       different twelve surfaces tomorrow -- a sample that admits it is
-       one, not a ranking that is really an alphabet. */
+    /* Without location there is no distance to rank on, so the unbounded
+       shelf orders by time left open. Ties break on a per-day rotation
+       seeded on the date (stable all day), not on the name, so the shelf
+       is not an alphabet. */
     const rotation = (() => {
       const d = new Date();
       const seed = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}:`;
@@ -330,10 +264,8 @@
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
 
-    /* 5b's fourth scope. Routes are not picks, so this does not go
-       through section() -- it lists every route for the city using the
-       same card the All scope shows one of. A city with no routes says
-       so plainly rather than showing an empty shelf. */
+    /* Routes are not picks, so this does not go through section(): it
+       lists every route for the city with the same card All shows. */
     if (state.scope === 'walks') {
       const esc = UI().esc;
       const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
@@ -356,21 +288,9 @@
 
     if (state.scope === 'all' || state.scope === 'events') {
       const label = WHEN_LABEL[state.when] || 'On';
-      /* An empty state carries the next-best answer, and the answer used
-         to be "the When slot above" -- which named a control that below
-         768 is not on the screen at all, since the capsule collapses to
-         one key there. Pointing at furniture the reader cannot see is
-         the same failure as pointing at a listing we do not have.
-
-         So it names the window instead of the control, and only a
-         window that actually holds something: the count is the same
-         filter chain the sheet's own chips print, so the sentence
-         cannot promise a night that is equally empty.
-
-         The count carries the WHAT facet too. Counting the window alone
-         would offer "Anytime has 115 events" to a reader filtered to one
-         kind, where Anytime holds three of it or none -- a promise the
-         next tap breaks, which is worse than the sentence it replaced. */
+      /* The empty state names a window that actually holds something, not
+         a control (the When slot is not on screen below 768). The count
+         runs the same filter chain as the sheet, including the What facet. */
       const inWindow = (v) => picks()
         .filter(e => when.matches(e, v))
         .filter(e => state.what === 'all' || String(e.kind || '').toLowerCase() === state.what)
@@ -406,8 +326,8 @@
           : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · most time left`,
         items: bounded ? sorted(openNow) : byTimeLeft(openNow),
         href:  'discover.html?type=places',
-        /* Reads as one sentence with the label above it: "See all 61 /
-           as a list". "every place" made it "See all 61 every place". */
+        /* Reads as one sentence with the label above: "See all 61 / as a
+           list". */
         hrefSub: 'as a list',
         emptyTitle: 'Nothing we can confirm is open this minute.',
         emptyBody:  `Opening hours reach us for about half of ${city}'s places, so this is quieter than the city is. Places below shows everything.`,
@@ -424,9 +344,8 @@
       });
       out.push(section({
         title: `Places in ${city}`,
-        /* Same correction as the shelf above: this list falls back to
-           localeCompare when there is no location, so "nearest first"
-           was naming an order it was not in. */
+        /* This list falls back to localeCompare with no location, so it
+           does not claim "nearest first". */
         sub:   bounded
           ? `${all.length} listed · nearest first`
           : `${all.length} listed · A to Z`,
@@ -457,26 +376,13 @@
         </div>`).join('')}</div>
     </section>`;
 
-  /* 6b's test surface: ONE route as a full-width card, above the fold,
-     for two weeks. Not a scope chip -- Walks is not a section of the
-     catalogue, it is a single experiment, and 5g's build order puts it
-     last precisely because it is the only thing here that needs new
-     logic rather than new layout.
-
-     Renders only for cities that actually have routes, so the other
-     three do not carry a hole where an experiment would be. */
+  /* The Walks card: one route, full width, only for cities with routes. */
   let ROUTES = null;
 
-  /* 5a labels a route "6 stops · 2.5 km", not with a promise sentence.
-     walks.json stores stops as {id, note} and no distance, so the
-     distance is the walked length of the route: the legs between
-     consecutive stops, looked up in the venue index. Computed rather
-     than filed, because a hand-typed number in the JSON would drift the
-     first time a stop is swapped and nothing would catch it.
-
-     Stops with no coordinate drop out of the sum rather than zeroing
-     it, and if fewer than two stops resolve there is no line to print,
-     so the count stands alone. */
+  /* A route is labelled "6 stops · 2.5 km". The distance is computed from
+     the legs between consecutive stops in the venue index, not filed in
+     walks.json. Stops with no coordinate drop out of the sum; with fewer
+     than two resolved stops the count stands alone. */
   const routeFacts = (r) => {
     const stops = r.stops.length;
     const idx = {};
@@ -496,15 +402,11 @@
   };
 
   const walkCard = () => {
-    /* esc is function-scoped throughout this file, not module-scoped --
-       using it without this line threw a ReferenceError that vanished
-       into loadWalks()'s unawaited promise, so the card simply never
-       appeared and nothing said why. */
+    /* esc is function-scoped in this file, not module-scoped. */
     const esc = UI().esc;
     const host = $('walkcard');
     if (!host) return;
-    /* The Walks scope lists every route below, so the teaser above it
-       would be the same card printed twice. */
+    /* The Walks scope lists every route below, so skip the teaser there. */
     if (state.scope === 'walks') { host.innerHTML = ''; return; }
     const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
     if (!mine.length) { host.innerHTML = ''; return; }
@@ -517,20 +419,11 @@
     </a>`;
   };
 
-  /* ── 5b's saved strip ────────────────────────────────────────
-     "3 saved in Kalamaja · Two are open right now →". It sits between
-     the capsule and the first shelf, and on desktop it is now the only
-     route to Saved, since 5b's masthead is the scope tabs and the app
-     tab bar is a phone pattern. So it always carries the link, even
-     when nothing saved is open.
-
-     The area is the neighbourhood most of the saved things share, not
-     the reader's GPS position: it is a fact about the shelf being
-     described, it needs no permission, and it is still true when
-     location is denied. It falls back to the city.
-
-     Nothing saved means no strip at all. A row reading "0 saved in
-     Tallinn" is an empty state for a shelf that was never asked for. */
+  /* ── The saved strip ─────────────────────────────────────────
+     "3 saved in Kalamaja · Two are open right now →", between the capsule
+     and the first shelf. The area is the neighbourhood most saved things
+     share (no permission needed), falling back to the city. Nothing saved
+     means no strip at all. */
   const savedStrip = () => {
     const esc = UI().esc;
     const host = $('savedstrip');
@@ -591,24 +484,10 @@
   loadWalks();
 
   /* ── The collapsed key ───────────────────────────────────────
-     Below 768 wa.css shows only the capsule's FIRST slot, so WHEN and
-     WHAT have no control of their own on a phone -- and for as long as
-     that was true, a filter you had applied was invisible. Set When to
-     Anytime and the bar still read "WHERE / Tallinn": nothing on the
-     screen said the time window was no longer tonight, and the reader
-     who set it yesterday has no way to know what they are looking at.
-     A collapsed search must still show what is applied to it; that it
-     is reachable inside the sheet is not the same as visible.
-
-     So the one visible key carries the whole search, the way the sheet
-     behind it sets the whole search. Defaults stay out of the summary:
-     an unapplied filter is not state, and omitting them keeps the
-     common case one word long instead of "Tallinn · Tonight ·
-     Anything", where three words carry no information and the one that
-     would are buried among them. The label follows the content -- it
-     says Where while the value is a city, and Search once the value is
-     a summary, because a label that names one facet over three is the
-     same small lie in the other direction. */
+     Below 768 only the capsule's first slot shows, so the one visible key
+     carries the whole applied search ("Tallinn · Anytime"), defaults
+     omitted. The label says Where while the value is a city and Search
+     once it is a summary. */
   const MOBILE = window.matchMedia('(max-width: 767px)');
 
   const appliedFacets = () => {
@@ -726,11 +605,9 @@
             <button class="wa-btn wa-btn--primary" type="button" id="sheet-apply" style="flex:1">Show ${n} ${UI().esc(noun)}</button>`;
   };
 
-  /* Held in a variable, NOT as data-slot on the <dialog>. The capsule
-     keys are [data-slot], the sheet contains the chips, and an attribute
-     of the same name on the dialog made every click inside the sheet
-     match the "open this slot" branch first and return early — the
-     chips looked dead while quietly reopening the sheet. */
+  /* Held in a variable, NOT as data-slot on the <dialog>: the capsule keys
+     are [data-slot], so the same attribute on the dialog made every click
+     inside the sheet match the "open this slot" branch. */
   let openSlot = '';
 
   const openSheet = (slot) => {
@@ -834,8 +711,7 @@
 
   /* ── Boot ────────────────────────────────────────────────────
      Skeleton immediately, real sections when the catalog lands, and a
-     re-render when geolocation resolves so distances fill in without
-     shifting the layout. */
+     re-render when geolocation resolves. */
   $('sections').innerHTML = skeleton();
   document.addEventListener('wa:catalog-ready', () => {
     render();

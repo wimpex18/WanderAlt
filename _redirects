@@ -11,35 +11,17 @@ https://www.wanderalt.com/* https://wanderalt.app/:splat   301
 # Force www → apex on the primary domain.
 https://www.wanderalt.app/* https://wanderalt.app/:splat   301
 
-# Legacy URL aliases — the old /map and /search lived as standalone
-# pages before the May 2026 Discover consolidation. These map to a
-# DIFFERENT target (discover.html, one with a query param), so they
-# are genuine redirects Cloudflare can't infer on its own. The HTML
-# stubs still ship with redirect-on-load JS as a fallback.
+# Retired /map and /search pages: search is a sheet, the map is a mode.
 /map          /discover.html?view=map    301
 /search       /discover.html             301
-# The HTML stubs behind those two are gone (Aug 2026) — Search is a
-# sheet and the map is a mode, so neither is a page any more. The
-# extension-ful forms need their own rules now that no file answers them.
 /map.html     /discover.html?view=map    301
 /search.html  /discover.html             301
 
-# NOTE: do NOT add bare-name → *.html rules for /about, /discover,
-# /saved, /profile, /curator, /venue, /place. Cloudflare Pages already
-# serves pretty URLs natively (it 308-redirects /foo.html → /foo and
-# serves /foo as 200). A /discover → /discover.html rule fights that
-# canonicalisation and creates an INFINITE redirect loop
-# (/discover →301→ /discover.html →308→ /discover → …). The four rules
-# that used to live here were removed June 2026 after the loop was
-# found on the live preview; verified /curator and /venue (which never
-# had rules) already serve 200 on their own.
+# NOTE: do NOT add bare-name → *.html rules (e.g. /discover →
+# /discover.html). Cloudflare Pages already serves pretty URLs natively
+# (308 /foo.html → /foo), so such a rule creates an INFINITE redirect loop.
 
-# Aug 2026 redesign: venue.html + place.html merged into one detail.html
-# (6c — one layout, two data shapes), and the curator page became a
-# source page (3b — a venue or a feed, not a person). Both keep ?id=,
-# so the query string carries across untouched. Shared links from the
-# current site are in the wild and must land on the real thing rather
-# than a 404.
+# Retired pages → their replacements. ?id= carries across untouched.
 /venue.html    /detail.html    301
 /place.html    /detail.html    301
 /curator.html  /source.html    301

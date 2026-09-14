@@ -1,32 +1,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
-// ingest-fienta  v6
-// v6 (Jul 2026, DEPLOYED Aug 2026): writes staging_messages.payload.
-//   This was committed in July and never deployed — the running function
-//   stayed on v5 for a month. Consequence: every Fienta event reached
-//   staging with its date only inside the prose `text` ("When: 2026-10-03
-//   · 19:00") and no structured payload, so process-staging had no
-//   starts_at to copy and fell back to asking the LLM for a weekday
-//   abbreviation, which returns null for an ISO date. Every Tallinn pick
-//   therefore landed undated and could never appear on Tonight.
-// v5 (Jun 2026): THE FIX — staging upsert now targets on_conflict=
-//   channel,message_id. Without it PostgREST resolved ON CONFLICT against
-//   the PK, so every re-crawled duplicate 409'd ('error', not 'skipped')
-//   and bumpSeen never ran — the root cause of the under-processing and
-//   the false stale-flags on live events.
-// v4 (Jun 2026): permanent per-channel diagnostics in ingest_log.detail —
-//   { fetched, eligible, inserted, skipped, bumped } per source — to
-//   diagnose + monitor the under-processing observed June 2026 (~2 of ~13
-//   feed events getting last_seen bumped; live events false-flagged by the
-//   absence reconcile). bumpSeen() now reports how many pick rows its
-//   PATCH matched, so "bumped" is ground truth, not an assumption. Also
-//   closes the low-yield blind spot from finding #3: a collapse
-//   from fetched=13 to eligible=2 is now visible in the log row.
-// v2 (Jun 2026): bumpSeen() marks each still-listed pick's last_seen_at
-//   for wa_reconcile_absent_picks (silent-cancellation detection).
+// ingest-fienta
 // Pulls Tallinn underground venue events from Fienta's JSON API and pushes
-// them to staging_messages. Dedup key: (channel, message_id=event.id).
+// them to staging_messages with a structured payload. Dedup key:
+// (channel, message_id=event.id). Per-channel diagnostics
+// { fetched, eligible, inserted, skipped, bumped } go to ingest_log.detail;
+// bumpSeen() marks still-listed picks for wa_reconcile_absent_picks.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -155,13 +135,9 @@ async function fetchSourceEvents(source: Source): Promise<{ fetched: number; eve
   return { fetched: all.length, events };
 }
 
-/* The structured half of the row (v6, Jul 2026). composeText() above
-   flattens this event into prose for the LLM, and until now that prose was
-   ALL that survived — a 600-char description excerpt, and a start time the
-   model then had to re-parse. Everything factual is copied verbatim from
-   here by process-staging instead; the model is only asked for voice.
-   Shape is the shared staging payload contract documented in
-   process-staging. */
+/* The structured half of the row: facts are copied verbatim from here by
+   process-staging; the model is only asked for voice. Shape is the shared
+   staging payload contract documented in process-staging. */
 function composePayload(e: FientaEvent) {
   const iso = (s?: string) => {
     if (!s) return null;
@@ -197,9 +173,8 @@ async function upsertEvent(source: Source, e: FientaEvent): Promise<{ r: 'insert
     status:     'new',
   };
   /* on_conflict=channel,message_id is load-bearing: without it PostgREST
-     targets the PK for ON CONFLICT, so re-crawled (duplicate) events 409
-     instead of skipping — and bumpSeen below never runs. That was the June
-     2026 under-processing bug (errors=23/skipped=0 in the v4 diagnostics). */
+     targets the PK for ON CONFLICT, so re-crawled events 409 instead of
+     skipping — and bumpSeen below never runs. */
   const res = await rest('staging_messages?on_conflict=channel,message_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
