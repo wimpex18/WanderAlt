@@ -68,7 +68,7 @@ ingest-* → staging_messages → process-staging → picks
 - **Processing**: ingests store the normalised source object in `staging_messages.payload`; `process-staging` copies facts verbatim and asks the LLM only for an English title, one sentence worth reading, and the kind.
 - **LLM**: Groq free tier first, OpenRouter `:free` second. Embeddings on Cloudflare Workers AI. No paid APIs.
 - **Images**: looked up by identity (Wikidata, the venue's or event's own page, the event feed), never guessed from a name, and re-verified on a schedule.
-- **Crons**: 33 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
+- **Crons**: 31 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
 - **Lifecycle**: the app reads picks where `archived_at IS NULL`. Archived picks hard-delete after 14 days; a venue missing from OSM is flagged after 90.
 - **Adding a city**: add it to `CITY_CONTEXT` in `process-staging` and `CITY_CENTER` in `geocode-picks`.
 

@@ -66,7 +66,7 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 - **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
 - **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
 - **Crons calling `verify_jwt:true` functions go through `public.invoke_wa_fn(fn)`**, which supplies the Authorization header. A raw `net.http_post` without it 401s silently.
-- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `classify-moods`, `match-pick`, `check-secrets`, `draft-column`, `import-pick-photos`, `load-places-index`.
+- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
 - **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
 ## Pipeline and data
@@ -86,7 +86,7 @@ ingest-* → staging_messages → process-staging → picks
 - `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set.
 - **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`.
 - **`cron.job_run_details` does not show whether a cron worked** — use `net._http_response` (`status_code`, `timed_out`, `error_msg`) by request id.
-- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark.
+- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
 
 ## LLM
 

@@ -141,7 +141,7 @@
       `city=eq.${currentCity}` +
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
-               'valid_until,quote,handle,context_md,image_url,' +
+               'valid_until,quote,handle,image_url,' +
                'lat,lng,address,coords_source,coords_locked' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
@@ -372,7 +372,6 @@
     $('mf-day').value          = pick?.day          || '';
     $('mf-valid-until').value  = pick?.valid_until  ? pick.valid_until.slice(0, 10) : '';
     $('mf-quote').value        = pick?.quote        || '';
-    $('mf-context').value      = pick?.context_md   || '';
     $('mf-image-url').value    = pick?.image_url    || '';
     $('mf-image').value        = '';
     $('mf-tonight').checked    = !!pick?.tonight;
@@ -591,7 +590,6 @@
       day:          $('mf-day').value           || null,
       valid_until:  $('mf-valid-until').value   || null,
       quote:        $('mf-quote').value.trim()  || null,
-      context_md:   $('mf-context').value.trim() || null,
       tonight:      $('mf-tonight').checked,
       this_week:    $('mf-thisweek').checked,
     };
@@ -656,9 +654,6 @@
       setModalStatus('Saved.');
       setTimeout(closeModal, 700);
       render();
-      /* If the edited pick was on the review queue, refresh it so the
-         editor's title/quote changes show up before they click Approve. */
-      if (modalPick?.pending_review) loadReviewQueue();
     } else {
       setModalStatus('Failed — check console.', true);
     }
@@ -735,7 +730,7 @@
     $('vmf-city').value         = venue?.city         || currentCity;
     $('vmf-lat').value          = venue?.lat          ?? '';
     $('vmf-lng').value          = venue?.lng          ?? '';
-    $('vmf-address').value      = venue?.address      || '';
+    $('vmf-address').value      = '';
     $('vmf-image-url').value    = venue?.image_url    || '';
     $('vmf-status').value       = venue?.status       || 'active';
 
@@ -751,10 +746,11 @@
       VD_GET(
         `city=eq.${encodeURIComponent(vcity)}` +
         `&venue_key=eq.${encodeURIComponent(vkey)}` +
-        `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
+        `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
       ).then(rows => {
         const vd = Array.isArray(rows) ? rows[0] : null;
         if (!vd) return;
+        $('vmf-address').value         = vd.address         || '';
         $('vmf-wikidata').value        = vd.wikidata_id     || '';
         $('vmf-short-desc').value      = vd.short_desc      || '';
         $('vmf-opening-hours').value   = vd.opening_hours   || '';
@@ -803,7 +799,6 @@
       city:         $('vmf-city').value             || currentCity,
       lat:          isNaN(latVal) ? null : latVal,
       lng:          isNaN(lngVal) ? null : lngVal,
-      address:      $('vmf-address').value.trim()   || null,
       image_url:    $('vmf-image-url').value.trim() || null,
       status:       $('vmf-status').value           || 'active',
     };
@@ -864,7 +859,7 @@
           `name=ilike.*${encodeURIComponent(term)}*` +
           `&city=eq.${currentCity}` +
           '&limit=10' +
-          '&select=id,name,kind,neighborhood,city,lat,lng,address,image_url,status'
+          '&select=id,name,kind,neighborhood,city,lat,lng,image_url,status'
         );
         if (!Array.isArray(hits) || !hits.length) { resultsEl.hidden = true; return; }
         venueSearchCache = hits;
@@ -900,7 +895,7 @@
       const r      = await fetch(
         `${BASE}/rest/v1/venues?city=eq.${currentCity}` +
         `&limit=${VL_PAGE_SIZE}&offset=${offset}&order=name.asc` +
-        `&select=id,name,kind,neighborhood,city,status,lat,lng,address,image_url`,
+        `&select=id,name,kind,neighborhood,city,status,lat,lng,image_url`,
         {
           headers: {
             apikey: ANON, Authorization: `Bearer ${ANON}`,
@@ -1039,112 +1034,6 @@
   };
 
   /* ══════════════════════════════════════════════════════════
-     DISCOVERY REVIEW QUEUE
-     Picks created by discover-venues live with pending_review=true
-     and handle='@discovery'. This list lets editors approve (publish
-     + re-embed) or reject (archive) each one.
-     ══════════════════════════════════════════════════════════ */
-  const stripPendingSuffix = (title) =>
-    String(title || '').replace(/\s*[—-]\s*pending review\s*$/i, '').trim();
-
-  const loadReviewQueue = async () => {
-    const list     = $('review-list');
-    const statusEl = $('review-status');
-    if (!list) return;
-
-    list.innerHTML = '';
-    if (statusEl) statusEl.textContent = 'Loading…';
-
-    try {
-      const r = await fetch(
-        `${BASE}/rest/v1/picks?city=eq.${encodeURIComponent(currentCity)}` +
-        `&pending_review=eq.true&archived_at=is.null` +
-        `&select=id,title,venue,neighborhood,kind,handle,image_url,discovery_source,discovery_query,thumb_initials,created_at` +
-        `&order=created_at.desc&limit=50`,
-        { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } }
-      );
-      const rows = await r.json();
-      const badge = $('review-badge');
-      if (!Array.isArray(rows) || !rows.length) {
-        if (statusEl) statusEl.textContent = 'No picks awaiting review.';
-        if (badge) badge.dataset.visible = '0';
-        return;
-      }
-
-      if (statusEl) {
-        statusEl.textContent =
-          `${rows.length} pick${rows.length !== 1 ? 's' : ''} awaiting review`;
-      }
-      if (badge) { badge.textContent = rows.length; badge.dataset.visible = '1'; }
-
-      list.innerHTML = rows.map(row => {
-        const cleanTitle = stripPendingSuffix(row.title) || row.venue || row.id;
-        const initials   = row.thumb_initials
-          || (row.venue || cleanTitle).slice(0, 2).toUpperCase();
-        /* image_url is the most-untrusted field on a discovery row — escape
-           the whole style attribute value ('%27 for quotes inside url()),
-           a bare single-quote replace still let " break out of style="". */
-        const thumbStyle = row.image_url
-          ? escAttr(`background-image:url('${String(row.image_url).replace(/'/g, '%27')}')`)
-          : '';
-        const thumbInner = row.image_url ? '' : escAttr(initials);
-        const metaBits = [row.neighborhood, row.kind].filter(Boolean).join(' · ');
-        const query    = row.discovery_query
-          ? `via "${escAttr(row.discovery_query)}"`
-          : (row.discovery_source || '');
-
-        return `<li class="review-row" data-id="${escAttr(row.id)}">
-          <div class="review-thumb" style="${thumbStyle}">${thumbInner}</div>
-          <div class="review-body">
-            <p class="review-title">${escAttr(cleanTitle)}</p>
-            <p class="review-meta">${escAttr(metaBits)}</p>
-            <p class="review-query">${escAttr(query)}</p>
-          </div>
-          <div class="review-actions">
-            <button type="button" class="admin-col-btn admin-col-btn--approve"
-                    data-review-action="approve">Approve</button>
-            <button type="button" class="admin-col-btn"
-                    data-review-action="edit">Edit</button>
-            <button type="button" class="admin-col-btn admin-col-btn--reject"
-                    data-review-action="reject">Reject</button>
-          </div>
-        </li>`;
-      }).join('');
-    } catch (err) {
-      if (statusEl) statusEl.textContent = `Error: ${err.message}`;
-    }
-  };
-
-  /* Approve: clear pending_review, strip placeholder suffix, refresh embedding. */
-  const approveReview = async (id, row) => {
-    const newTitle = stripPendingSuffix(row.title);
-    const patch    = { pending_review: false };
-    if (newTitle && newTitle !== row.title) patch.title = newTitle;
-
-    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`, patch);
-    if (!r?.ok) return false;
-
-    /* Re-embed so the now-published pick is searchable by vector + BM25.
-       Best-effort — failure doesn't block the approval. */
-    try {
-      await fetch(`${BASE}/functions/v1/embed-picks`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-        body:    JSON.stringify({ city: currentCity, pick_id: id }),
-      });
-    } catch (_) { /* embedding refresh is opportunistic */ }
-
-    return true;
-  };
-
-  /* Reject: archive the pick so it disappears from queues + search. */
-  const rejectReview = async (id) => {
-    const r = await PATCH(`id=eq.${encodeURIComponent(id)}`,
-                          { archived_at: new Date().toISOString() });
-    return r?.ok;
-  };
-
-  /* ══════════════════════════════════════════════════════════
      STATS STRIP — quick health counts
      ══════════════════════════════════════════════════════════ */
   const loadStats = async () => {
@@ -1157,13 +1046,11 @@
     };
     const el = (id) => document.getElementById(id);
     try {
-      const [picksRes, unpinnedRes, reviewRes, embedsRes] = await Promise.all([
+      const [picksRes, unpinnedRes, embedsRes] = await Promise.all([
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null` +
               `&or=(lat.is.null,lng.is.null)&select=id`,
-              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
-        fetch(`${BASE}/rest/v1/picks?handle=eq.@discovery&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/pick_embeddings?select=pick_id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
@@ -1171,7 +1058,6 @@
 
       const total    = countHeader(picksRes);
       const unpinned = countHeader(unpinnedRes);
-      const review   = countHeader(reviewRes);
       const embeds   = countHeader(embedsRes);
       const noEmbeds = (total != null && embeds != null) ? Math.max(0, total - embeds) : null;
 
@@ -1180,11 +1066,6 @@
         el('stat-unpinned').textContent = `${unpinned ?? '?'} unpinned`;
         el('stat-unpinned').className   =
           `admin-stat-badge${unpinned > 0 ? ' admin-stat-badge--warn' : ''}`;
-      }
-      if (el('stat-review')) {
-        el('stat-review').textContent = `${review ?? '?'} pending review`;
-        el('stat-review').className   =
-          `admin-stat-badge${review > 0 ? ' admin-stat-badge--accent' : ''}`;
       }
       if (el('stat-noembeds')) {
         el('stat-noembeds').textContent = noEmbeds != null ? `${noEmbeds} no embedding` : '— no embedding';
@@ -1302,7 +1183,6 @@
         await loadAll();
         loadVenuesList(0);
         loadEnrichmentList(0);
-        loadReviewQueue();
         loadStats();
       });
     }
@@ -1346,7 +1226,6 @@
     loadVenuesList(0);
     /* loadEnrichmentList(0) fires from the enrichment section below —
        calling it here too doubled the request on every page load. */
-    loadReviewQueue();
 
     /* ── Delegation: ✕ remove-flag buttons ── */
     document.addEventListener('click', async (e) => {
@@ -1682,10 +1561,11 @@
           /* Reload enrichment fields from venue_details */
           const vdRows = await VD_GET(
             `city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(name.toLowerCase())}` +
-            `&select=wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
+            `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
           );
           const vd = Array.isArray(vdRows) ? vdRows[0] : null;
           if (vd) {
+            $('vmf-address').value         = vd.address         || '';
             $('vmf-wikidata').value        = vd.wikidata_id     || '';
             $('vmf-short-desc').value      = vd.short_desc      || '';
             $('vmf-opening-hours').value   = vd.opening_hours   || '';
@@ -1732,48 +1612,6 @@
         if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
       } finally {
         if (btn) btn.disabled = false;
-      }
-    });
-
-    /* ── Discovery review queue ── */
-    $('review-refresh-btn')?.addEventListener('click', () => loadReviewQueue());
-
-    /* Delegation for Approve / Edit / Reject on each review row. */
-    $('review-list')?.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-review-action]');
-      if (!btn) return;
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const row = btn.closest('.review-row');
-      const id  = row?.dataset.id;
-      if (!id) return;
-
-      const action = btn.dataset.reviewAction;
-
-      /* Fetch the full pick row so Edit can populate the modal and
-         Approve can compute the cleaned title. */
-      const picks = await GET(`id=eq.${encodeURIComponent(id)}&limit=1`);
-      const pick  = Array.isArray(picks) ? picks[0] : null;
-      if (!pick) { alert('Pick not found.'); await loadReviewQueue(); return; }
-
-      if (action === 'edit') {
-        openModal(pick);
-        return;
-      }
-
-      if (action === 'approve') {
-        btn.disabled = true; btn.textContent = 'Approving…';
-        const ok = await approveReview(id, pick);
-        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
-        else { btn.disabled = false; btn.textContent = 'Approve'; }
-        return;
-      }
-
-      if (action === 'reject') {
-        if (!confirm(`Reject "${stripPendingSuffix(pick.title) || pick.id}"?\n\nArchived; will not appear anywhere.`)) return;
-        btn.disabled = true; btn.textContent = 'Rejecting…';
-        const ok = await rejectReview(id);
-        if (ok) await Promise.all([loadReviewQueue(), loadAll()]);
-        else { btn.disabled = false; btn.textContent = 'Reject'; }
       }
     });
 

@@ -10,8 +10,8 @@ paths:
 
 ## Crons
 
-- 33 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `embed-picks-auto` (`40 6,12,18,23 * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).
-- `archive-stale-daily`, `generate-context-nightly`, `wa-enrich-venues-day` and `wa-enrich-venues-osm` post raw `net.http_post` with their own `Authorization` header; every other function cron goes through `invoke_wa_fn`. SQL-only jobs: `cleanup-match-cache`, `reset-tonight`, `wa-dedup-picks`, `wa-ingest-health`, `wa-purge-archived`, `wa-purge-pick-changes`, `wa-reconcile-absent`.
+- 31 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `embed-picks-auto` (`40 6,12,18,23 * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).
+- `archive-stale-daily`, `wa-enrich-venues-day` and `wa-enrich-venues-osm` post raw `net.http_post` with their own `Authorization` header; every other function cron goes through `invoke_wa_fn`. SQL-only jobs: `reset-tonight`, `wa-dedup-picks`, `wa-ingest-health`, `wa-purge-archived`, `wa-purge-pick-changes`, `wa-reconcile-absent`.
 - pg_cron has no rename: unschedule + schedule. Change cadence with:
   ```sql
   select cron.alter_job(jobid, schedule => '<schedule>') from cron.job where jobname = '<name>';
@@ -20,10 +20,10 @@ paths:
 
 ## Deploy drift
 
-Compare `list_edge_functions` `updated_at` (milliseconds) with the last commit per directory:
+Compare `list_edge_functions` `updated_at` (milliseconds) with the last behaviour-changing commit per directory (commits with a `No-Deploy:` trailer are skipped):
 
 ```bash
-for d in supabase/functions/*/; do echo "$(basename "$d") $(git log -1 --format=%ct -- "$d")"; done | sort
+for d in supabase/functions/*/; do echo "$(basename "$d") $(git log -1 --format=%ct --invert-grep --grep='^No-Deploy:' -- "$d")"; done | sort
 ```
 
 ## Silent-cancellation archiver
@@ -38,7 +38,6 @@ update picks set archived_at = null, archive_reason = null where archive_reason 
 
 - `resolve-links`: `picks.entities` → `picks.links` via hubs only (MusicBrainz, Open Library, Wikidata), confidence-gated.
 - `backfill-pick-facts`: schema.org JSON-LD from the pick's own `source_url`, no LLM. JSON-LD is a detail-page format here; listing pages and venue homepages rarely carry `Event`.
-- Admin venue search and `discover-venues` use local `places_index` (Overture extract). To reload from a newer Overture release: download the places theme per city bbox (`overturemaps download --bbox=… --type=place -f geojson`), filter to the WA kind vocabulary at confidence ≥ 0.55, dedupe on `(city, lower(name))` keeping the highest confidence, and insert with the service key via `/rest/v1/places_index?on_conflict=id` with `Prefer: resolution=ignore-duplicates`. Never leave an unauthenticated loader deployed.
 - `description` is stored verbatim (source blurb); `saysSomething()` guards only generated copy.
 
 ## Images
@@ -52,4 +51,5 @@ update picks set archived_at = null, archive_reason = null where archive_reason 
 - `verify-images` walks oldest-checked first (`NULLS FIRST`): 404/410/403 or non-image content-type clears the URL; timeout, 5xx and 429 retry once, never delete, but still stamp `image_checked_at`. Fresh Commons thumbnails 429 on first render.
 - `image_source` records which mechanism wrote each photo. Audit: `select * from image_health` — `duplicate_rows > 0` is the bad shape.
 - **After changing what a fetcher can find, clear `image_enrich_failed_at` for the rows the change could help** — the cooldown otherwise hides the fix for 30 days.
+- `enrich-venues` writes venue_details only (socials, coords, short_desc, closure); it writes no images.
 - Most venue photos sit on kinds Places doesn't draw (museum, theatre, bar, library); they exist to be borrowed by events.

@@ -3,16 +3,14 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // ---------------------------------------------------------------------------
 // enrich-venues
 // Enriches venue_details rows from Wikidata + Nominatim + a website scrape.
-// Mirrors found images into venue_images AND propagates to picks.image_url.
 // Sets is_closed=true and archives picks when Wikidata P576 (dissolved/
 // demolished) is present — the only closure signal.
 //
 // Also captures website (P856), facebook/instagram (P2013/P2003, else
 // scraped from the homepage) into venue_details.{website,facebook,instagram}.
 //
-// Image sources tried in order per venue:
-//   1. Wikidata P18 → Wikimedia Commons thumbnail (?width=800)
-//   2. Venue website og:image (from the homepage scrape)
+// Writes no images: venue photos are enrich-venue-images' job (identity-
+// anchored), event photos enrich-pick-images'.
 //
 // POST body: { city: string, limit?: number, venue_key?: string }
 // ---------------------------------------------------------------------------
@@ -61,19 +59,6 @@ async function dbUpsert(table: string, row: Record<string, unknown>, onConflict:
   return r;
 }
 
-// Propagate image URL to any picks at this venue that still have image_url = null
-async function updatePicksImageUrl(city: string, venueName: string, imageUrl: string): Promise<void> {
-  await fetch(
-    `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}` +
-    `&venue=ilike.${encodeURIComponent(venueName)}&image_url=is.null`,
-    {
-      method: 'PATCH',
-      headers: headers({ Prefer: 'return=minimal' }),
-      body: JSON.stringify({ image_url: imageUrl }),
-    }
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Wikidata helpers
 // ---------------------------------------------------------------------------
@@ -102,14 +87,13 @@ interface WdClaims {
   website:    string | null;
   facebook:   string | null;
   instagram:  string | null;
-  imageFile:  string | null;
   lat:        number | null;
   lng:        number | null;
   shortDesc:  string | null;
   isClosed:   boolean;
 }
 
-const EMPTY_CLAIMS: WdClaims = { website: null, facebook: null, instagram: null, imageFile: null, lat: null, lng: null, shortDesc: null, isClosed: false };
+const EMPTY_CLAIMS: WdClaims = { website: null, facebook: null, instagram: null, lat: null, lng: null, shortDesc: null, isClosed: false };
 
 async function wdGetClaims(qid: string): Promise<WdClaims> {
   const url = `https://www.wikidata.org/w/api.php?action=wbgetentities` +
@@ -122,7 +106,6 @@ async function wdGetClaims(qid: string): Promise<WdClaims> {
 
     const claims    = entity.claims ?? {};
     const website   = claims.P856?.[0]?.mainsnak?.datavalue?.value ?? null;
-    const imgFile   = claims.P18?.[0]?.mainsnak?.datavalue?.value ?? null;
     const coord     = claims.P625?.[0]?.mainsnak?.datavalue?.value ?? null;
     const shortDesc = entity.descriptions?.en?.value ?? null;
     const isClosed  = !!(claims.P576?.[0]?.mainsnak?.datavalue);
@@ -134,19 +117,12 @@ async function wdGetClaims(qid: string): Promise<WdClaims> {
       website:   typeof website === 'string' ? website.trim() : null,
       facebook:  typeof fbId  === 'string' && fbId  ? `https://www.facebook.com/${fbId.replace(/^\/+|\/+$/g, '')}` : null,
       instagram: typeof igUser === 'string' && igUser ? `https://www.instagram.com/${igUser.replace(/^@|^\/+|\/+$/g, '')}` : null,
-      imageFile: typeof imgFile === 'string' ? imgFile.trim() : null,
       lat:       coord ? coord.latitude  : null,
       lng:       coord ? coord.longitude : null,
       shortDesc: shortDesc ?? null,
       isClosed,
     };
   } catch { return { ...EMPTY_CLAIMS }; }
-}
-
-// Wikimedia Commons thumbnail — sized via ?width= parameter on Special:FilePath
-function wikimediaThumbUrl(filename: string, width = 800): string {
-  const clean = filename.replace(/ /g, '_');
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(clean)}?width=${width}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,16 +143,16 @@ async function nominatimLookup(venueName: string, city: string): Promise<{ addre
 }
 
 // ---------------------------------------------------------------------------
-// Website homepage scrape — fetch the venue site ONCE and pull both the
-// og:image and any Facebook/Instagram profile links from the markup. Most
+// Website homepage scrape — fetch the venue site ONCE and pull any
+// Facebook/Instagram profile links from the markup. Most
 // venue sites link their socials in the header/footer; JS-only SPAs that
 // render those client-side won't expose them to a plain fetch (a known gap —
 // Wikidata covers some of those, the rest stay null until a manual lock).
 // ---------------------------------------------------------------------------
-interface ScrapeResult { ogImage: string | null; facebook: string | null; instagram: string | null; }
+interface ScrapeResult { facebook: string | null; instagram: string | null; }
 
 async function scrapeWebsite(websiteUrl: string): Promise<ScrapeResult> {
-  const out: ScrapeResult = { ogImage: null, facebook: null, instagram: null };
+  const out: ScrapeResult = { facebook: null, instagram: null };
   try {
     const r = await fetch(websiteUrl, {
       // A real browser UA — some venue hosts 403 bot agents.
@@ -185,16 +161,6 @@ async function scrapeWebsite(websiteUrl: string): Promise<ScrapeResult> {
     });
     if (!r.ok) return out;
     const html = await r.text();
-
-    // og:image (both attribute orderings); resolve relative URLs.
-    const m =
-      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-    if (m?.[1]) {
-      const raw = m[1].trim();
-      if (raw.startsWith('http')) out.ogImage = raw;
-      else { try { out.ogImage = new URL(raw, websiteUrl).href; } catch { /* ignore */ } }
-    }
 
     // First plausible profile URL — skip share widgets, login, posts, etc.
     // The trailing handle class stops at the first non-handle char (/, ", ?…),
@@ -266,7 +232,7 @@ Deno.serve(async (req: Request) => {
     venues = stale.slice(0, limitN);
   }
 
-  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string; image_source?: string }> = [];
+  const results: Array<{ venue_key: string; status: string; closed?: boolean; wikidata_id?: string; source?: string }> = [];
 
   for (const venue of venues) {
     await sleep(300);
@@ -304,9 +270,9 @@ Deno.serve(async (req: Request) => {
 
     const website = claims.website || null;
 
-    // Scrape the venue homepage ONCE for og:image + social links (when we
+    // Scrape the venue homepage ONCE for social links (when we
     // have a site). Socials: Wikidata wins, the scrape fills the gaps.
-    let scraped: ScrapeResult = { ogImage: null, facebook: null, instagram: null };
+    let scraped: ScrapeResult = { facebook: null, instagram: null };
     if (website) { scraped = await scrapeWebsite(website); await sleep(100); }
     const facebook  = claims.facebook  || scraped.facebook  || null;
     const instagram = claims.instagram || scraped.instagram || null;
@@ -343,43 +309,14 @@ Deno.serve(async (req: Request) => {
       if (archiveRes.ok) console.log(`archived picks for permanently closed venue: ${key} (source: wikidata)`);
     }
 
-    // ── Image enrichment ─────────────────────────────────────────────
-    const existingImg = await dbGet(
-      `venue_images?city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(key)}&select=image_url&limit=1`
-    );
-    let imageUrl: string | null = Array.isArray(existingImg) && existingImg.length
-      ? existingImg[0].image_url
-      : null;
-    let imageSource = imageUrl ? 'existing' : null;
-
-    if (!imageUrl) {
-      // Source 1: Wikidata P18 → Wikimedia Commons thumbnail
-      if (claims.imageFile) {
-        imageUrl = wikimediaThumbUrl(claims.imageFile);
-        await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'wikidata' }, 'city,venue_key');
-        imageSource = 'wikidata';
-        await sleep(100);
-      }
-
-      // Source 2: Venue website og:image (from the homepage scrape above)
-      if (!imageUrl && scraped.ogImage) {
-        imageUrl = scraped.ogImage;
-        await dbUpsert('venue_images', { city, venue_key: key, image_url: imageUrl, source: 'og_image' }, 'city,venue_key');
-        imageSource = 'og_image';
-      }
-    }
-
-    if (imageUrl) await updatePicksImageUrl(city, name, imageUrl);
-
     results.push({
       venue_key:      key,
       status:         'ok',
       closed:         isClosed || undefined,
       wikidata_id:    wikidataId ?? undefined,
       source,
-      image_source:   imageSource ?? undefined,
     });
-    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${isClosed} image=${imageSource ?? 'none'}`);
+    console.log(`enriched: ${key} — source=${source} wikidata=${wikidataId ?? 'none'} closed=${isClosed}`);
   }
 
   return new Response(JSON.stringify({

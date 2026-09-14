@@ -87,7 +87,6 @@
         <span class="admin-stat-badge" id="stat-picks">— picks</span>
         <span class="admin-stat-badge admin-stat-badge--warn" id="stat-unpinned">— unpinned</span>
         <span class="admin-stat-badge admin-stat-badge--warn" id="stat-noembeds">— no embedding</span>
-        <span class="admin-stat-badge admin-stat-badge--accent" id="stat-review">— pending review</span>
       </div>
     </section>
 
@@ -144,21 +143,6 @@
       <p class="meta a-status" id="all-picks-count"></p>
       <div id="all-picks-controls"></div>
       <ol id="all-picks-list" class="a-list" role="list"></ol>
-    </section>
-
-    <!-- Discovery review — picks surfaced by external search awaiting curation -->
-    <section id="admin-review" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Discovery review <span id="review-badge" class="a-review-badge"></span></p>
-        <button type="button" id="review-refresh-btn" class="admin-reset">Refresh &rarr;</button>
-      </div>
-      <p class="meta a-hint">
-        Picks surfaced from the places index and tagged
-        <strong>@discovery</strong>. Edit to add a handle, real title and
-        quote — then approve to publish. Reject to archive.
-      </p>
-      <p class="meta a-mb-3 a-mute" id="review-status">Loading…</p>
-      <ol id="review-list" class="a-list" role="list"></ol>
     </section>
 
     <!-- Venues — browse, edit, create venue records -->
@@ -485,12 +469,6 @@
             <label for="mf-quote">Curator quote *</label>
             <textarea id="mf-quote" rows="3"
                       placeholder="Short, direct quote in the curator's voice&hellip;"></textarea>
-          </div>
-
-          <div class="admin-mfield admin-mfield--full">
-            <label for="mf-context">Context &mdash; why this matters</label>
-            <textarea id="mf-context" rows="5"
-                      placeholder="2-paragraph editorial context. Markdown supported."></textarea>
           </div>
 
           <div class="admin-mfield admin-mfield--full">

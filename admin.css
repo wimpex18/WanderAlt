@@ -76,7 +76,6 @@
                            letter-spacing:.04em; padding:3px 10px;
                            border:1px solid var(--c-rule-strong); color:var(--c-ink-mute); }
 .admin-stat-badge--warn  { color:var(--c-ink-mute); }
-.admin-stat-badge--accent { color:var(--c-accent); border-color:var(--c-accent); }
 .admin-stat-badge--bad   { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
 /* Cap search inputs to a readable measure rather than the full column. */
 .admin-search-row        { position:relative; margin-top:var(--s-4); max-width:560px; }
@@ -142,11 +141,6 @@
 .a-accent                { color:var(--c-accent); }
 .a-stats-grid            { display:flex; flex-wrap:wrap; gap:var(--s-3); }
 .a-pt-4                  { padding-top:var(--s-4); }
-.a-review-badge          { display:none; margin-left:6px; padding:0 7px;
-                           font-family:var(--ff-mono); font-size:11px;
-                           letter-spacing:.06em; color:var(--c-accent);
-                           border:1px solid var(--c-accent); vertical-align:middle; }
-.a-review-badge[data-visible="1"] { display:inline-block; }
 .a-modal-heading         { font-family:var(--ff-mono); font-size:var(--fs-meta);
                            font-weight:600; letter-spacing:.04em; }
 .a-modal-status-inline   { margin-top:var(--s-3); min-height:1.4em; }
@@ -171,35 +165,7 @@
 .a-pipeline-actions      { margin:var(--s-2) 0 var(--s-4); display:flex;
                            flex-wrap:wrap; gap:var(--s-2); }
 
-/* Discovery review rows */
-.review-row              { padding:var(--s-4) 0; border-bottom:1px solid rgba(26,26,26,.1);
-                           display:grid; grid-template-columns:64px 1fr auto; gap:var(--s-3);
-                           align-items:start; }
-.review-row:last-child   { border-bottom:none; }
-.review-thumb            { width:64px; height:64px; background:var(--c-rule);
-                           background-size:cover; background-position:center;
-                           display:flex; align-items:center; justify-content:center;
-                           font-family:var(--ff-mono); font-size:14px;
-                           color:var(--c-ink-mute); letter-spacing:.08em; }
-.review-body             { min-width:0; }
-.review-title            { font-family:var(--ff-body); font-size:var(--fs-pick);
-                           margin:0 0 var(--s-1); line-height:1.3; }
-.review-meta             { font-family:var(--ff-mono); font-size:var(--fs-meta);
-                           color:var(--c-ink-mute); margin:0 0 var(--s-1);
-                           letter-spacing:.04em; }
-.review-query            { font-family:var(--ff-mono); font-size:10px;
-                           color:var(--c-accent); letter-spacing:.08em;
-                           text-transform:uppercase; margin:0; }
-.review-actions          { display:flex; flex-direction:column; gap:var(--s-2);
-                           align-items:flex-end; }
-.review-actions .admin-col-btn { white-space:nowrap; padding:var(--s-1) var(--s-3); }
-@media (max-width: 600px) {
-  .review-row            { grid-template-columns:48px 1fr; }
-  .review-thumb          { width:48px; height:48px; font-size:12px; }
-  .review-actions        { grid-column:1 / -1; flex-direction:row; align-items:center; }
-}
-
-/* Approve / reject buttons */
+/* Action buttons */
 .admin-col-btn           { padding:var(--s-2) var(--s-4); border:1px solid currentColor;
                            background:none; font-family:var(--ff-mono);
                            font-size:var(--fs-meta); cursor:pointer; letter-spacing:.04em; }
@@ -207,6 +173,7 @@
 .admin-col-btn--approve:hover { background:var(--c-ink); color:var(--c-paper); }
 .admin-col-btn--reject   { color:var(--c-ink-mute); }
 .admin-col-btn--reject:hover { color:var(--c-accent); border-color:var(--c-accent); }
+
 /* Pipeline table */
 .admin-pipeline-badges    { display:flex; flex-wrap:wrap; gap:var(--s-2); margin-bottom:var(--s-3); }
 .admin-pipeline-badge     { font-family:var(--ff-mono); font-size:var(--fs-meta);

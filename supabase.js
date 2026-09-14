@@ -112,7 +112,7 @@
     coordsLocked: !!r.coords_locked,
     permalink: r.source_url || null,   /* external event/ticket page (picks.source_url, sourced from staging_messages.permalink) */
     /* Source-authored facts. description is the venue's own blurb (never
-       LLM-written — that's context_md); links is written by resolve-links. */
+       LLM-written); links is written by resolve-links. */
     description: r.description || null,
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,
