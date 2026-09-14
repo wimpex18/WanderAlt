@@ -8,6 +8,8 @@ Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pag
 
 ## Commands
 
+Node >= 22 for local scripts; `npm install` brings the pinned dev tools (`http-server`, `sharp`, `png-to-ico`).
+
 ```bash
 npm start              # dev server, http://localhost:5173 (no CSP)
 npm run admin          # admin panel on :8080 (service-role key kept in localStorage)
@@ -28,7 +30,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - `bookmark.js` + `lists.js` — one saves store, localStorage-first, cloud sync on sign-in. `auth.js` — Supabase REST auth, no SDK.
 - `sw.js` + `offline.js` — service worker and offline banner. `marks.js` — image fallback and small-image handling.
 - `functions/_middleware.js` — Pages Function rewriting OG meta. `workers/wikimedia-proxy/` — strips Wikimedia cookies on `/img/wm/*`.
-- `vendor/` — self-hosted MapLibre (upgrade = swap files + pinned tags in `admin.html`). `fonts/` — self-hosted faces.
+- `vendor/` — self-hosted MapLibre GL 5.24.0, the last UMD release; 6.x ships ESM-only modules and needs loader changes (upgrade = swap files + pinned tags in `admin.html`). `fonts/` — self-hosted faces.
 - `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
 - `walks.json` — three hand-written routes.
 
@@ -37,7 +39,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Groq free, OpenRouter `:free`, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
+- **Free tier only.** Groq, NVIDIA, Mistral and OpenRouter free tiers, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
 - **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
@@ -86,22 +88,24 @@ ingest-* → staging_messages → process-staging → picks
 - App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
 - `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
 - `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.
-- `process-staging` still writes `picks.mood_tags` and `thumb_initials`; nothing reads them.
 - **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`.
 - **`cron.job_run_details` does not show whether a cron worked** — use `net._http_response` (`status_code`, `timed_out`, `error_msg`) by request id.
 - **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
 
 ## LLM
 
-- Groq first: `llama-3.3-70b-versatile`. OpenRouter `:free` second: repo default `nvidia/nemotron-3-super-120b-a12b:free`; the `OPENROUTER_MODEL` secret overrides it with no deploy.
-- `OPENROUTER_API_KEY` is not set, so Groq's free tier is the entire capacity and `staging_messages` backs up. Free OpenRouter is 50 req/day, 1,000/day after a one-time $10 credit purchase — owner's call.
-- Gemini is retired behind `pipeline_config.gemini_fallback_enabled`; don't assume its key authenticates. No Search grounding.
+- Lanes, tried in order in `process-staging` and `send-digest`; each is skipped while its secret is unset. All free tiers.
+  - Groq `openai/gpt-oss-120b` (`GROQ_API_KEY`). Groq retired `llama-3.3-70b-versatile` on its free tier in Aug 2026.
+  - NVIDIA `nvidia/nemotron-3-super-120b-a12b` (`NVIDIA_API_KEY`), 40 RPM, prototyping terms.
+  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`). The free Experiment tier trains on inputs unless opted out in the console.
+  - OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`; `OPENROUTER_MODEL` overrides with no deploy).
+- `translate-picks` and the Cyrillic guard use Groq only. `max_tokens` must leave room for reasoning tokens.
 - **Pin models by exact id and confirm the id is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
 - Secret presence can't be checked from here (`check-secrets` is a tombstone); look in the dashboard.
 
 ## Environment
 
-Cloud sessions: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy.
+Edge-function secrets: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. Cloud sessions also read `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Voice
 

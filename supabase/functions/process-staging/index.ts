@@ -1,9 +1,9 @@
 // ============================================================
 // WanderAlt — process-staging
 // Claims staging_messages, copies facts from the payload, and asks the LLM
-// (Groq, then OpenRouter :free, then Gemini only if
-// pipeline_config.gemini_fallback_enabled) for an English title, one
-// sentence worth reading, the kind and mood tags. Upserts picks.
+// for an English title, one sentence worth reading and the kind. Upserts
+// picks. LLM lanes, tried in order, each skipped while its key is unset:
+// Groq, NVIDIA, Mistral, OpenRouter :free. All free tiers.
 //
 //   • A city with no CITY_CONTEXT entry FAILS LOUDLY (message marked
 //     error) — adding a city hard-requires the context entry.
@@ -16,26 +16,30 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const GEMINI_KEY    = Deno.env.get("GEMINI_API_KEY");
 const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
-// OpenRouter free lane: inert until OPENROUTER_API_KEY is set. The model must
-// be a :free-suffixed id (verify it in OpenRouter's /v1/models) so the lane
-// can never bill.
-const OPENROUTER_KEY   = Deno.env.get("OPENROUTER_API_KEY");
-const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL") || "nvidia/nemotron-3-super-120b-a12b:free";
-const GEMINI_MODEL  = "gemini-2.5-flash";
-const GROQ_MODEL    = "llama-3.3-70b-versatile";
+// Groq retired llama-3.3-70b-versatile on its free tier (Aug 2026); this is
+// its documented replacement.
+const GROQ_MODEL    = "openai/gpt-oss-120b";
+
+/* Model ids are pinned and checked against each provider's catalogue.
+   The OpenRouter model must stay :free-suffixed so that lane cannot bill. */
+type Lane = { name: string; url: string; key?: string; model: string; jsonMode: boolean; headers?: Record<string, string> };
+const LANES: Lane[] = [
+  { name: "groq", url: "https://api.groq.com/openai/v1/chat/completions",
+    key: GROQ_KEY, model: GROQ_MODEL, jsonMode: true },
+  { name: "nvidia", url: "https://integrate.api.nvidia.com/v1/chat/completions",
+    key: Deno.env.get("NVIDIA_API_KEY"), model: "nvidia/nemotron-3-super-120b-a12b", jsonMode: false },
+  { name: "mistral", url: "https://api.mistral.ai/v1/chat/completions",
+    key: Deno.env.get("MISTRAL_API_KEY"), model: "mistral-small-2603", jsonMode: true },
+  { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions",
+    key: Deno.env.get("OPENROUTER_API_KEY"),
+    model: Deno.env.get("OPENROUTER_MODEL") || "nvidia/nemotron-3-super-120b-a12b:free", jsonMode: true,
+    headers: { "HTTP-Referer": "https://wanderalt.app", "X-Title": "WanderAlt pipeline" } },
+];
 const BATCH_SIZE    = 10;   // max messages per invocation
 const TIME_CAP_MS   = 100_000; // 100 s hard stop
 
 const KINDS = "gig|talk|exhibition|club|place|bookshop|record store|gallery|thrift|lecture|noise|theatre|cinema|library|bar|museum|arts centre";
-
-/* Mood vocabulary. */
-const VALID_MOOD_TAGS = new Set([
-  "quiet", "loud", "indoors", "outdoors",
-  "solo", "social", "drinks", "sober",
-  "walk-up", "ticketed",
-]);
 
 const CITY_CONTEXT: Record<string, { name: string; neighborhoods: string }> = {
   tallinn: {
@@ -60,7 +64,6 @@ type PipelineConfig = {
   venueWhitelist: string[];
   skipKeywords: string[];
   keepSignals: string[];
-  geminiFallbackEnabled: boolean;
 };
 
 const validUntil = (day: string | null): string => {
@@ -166,21 +169,17 @@ FIELD RULES:
   - kind: REQUIRED. Must be one of the allowed values.
   - day: Use Tonight/Mon/Tue/Wed/Thu/Fri/Sat/Sun or null (not the string "null").
   - time: Use HH:MM format or null (not the string "null").
-  - mood_tags: Choose 1-4 tags from this fixed list that honestly describe the feel:
-      quiet (understated, focused), loud (amplified, crowd energy),
-      indoors (inside a building), outdoors (open-air, walkabout),
-      solo (ideal alone: lectures, exhibitions), social (better with others: clubs, bars),
-      drinks (bar/drinking is central), sober (no alcohol emphasis, daytime/academic),
-      walk-up (no ticket needed), ticketed (requires booking)
 
 Return STRICT JSON:
-{"picks":[{"title":"natural ENGLISH title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"1-2 English sentences that add something the title does not, or \\"\\" if you have nothing to add","thumb_initials":"XX","mood_tags":["tag1","tag2"]}]}
+{"picks":[{"title":"natural ENGLISH title, max 70 chars","venue":"venue name, never null","neighborhood":"${ctx.neighborhoods}","kind":"${KINDS}","day":"Tonight|Mon|Tue|Wed|Thu|Fri|Sat|Sun or null","time":"HH:MM or null","quote":"1-2 English sentences that add something the title does not, or \\"\\" if you have nothing to add"}]}
 
 If no picks: {"picks":[],"reason":"brief phrase"}
 Return ONLY the JSON object.`;
 };
 
-const parseJson = (s: string) => {
+const parseJson = (raw: string) => {
+  /* Reasoning models may prepend a <think> block. */
+  const s = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   const tryParse = (t: string) => {
     try { const o = JSON.parse(t); return (o && Array.isArray(o.picks)) ? o : null; } catch (_) { return null; }
   };
@@ -189,100 +188,40 @@ const parseJson = (s: string) => {
     || tryParse(s.slice(s.indexOf("{"), s.lastIndexOf("}") + 1));
 };
 
-const retryDelay = (body: string): number => {
-  const m = body.match(/(\d+(?:\.\d+)?)s/);
-  return ((m ? parseFloat(m[1]) : 14) + 2) * 1000;
-};
-
 type LLMResult =
   | { raw: string; provider: string }
-  | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed" | "fallback_disabled"; detail?: string };
+  | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed"; detail?: string };
 
-async function callGemini(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
-  if (!GEMINI_KEY) return { error: "missing_key" };
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-  const bodyStr = JSON.stringify({
-    systemInstruction: { parts: [{ text: systemPrompt(city, keepSignals) }] },
-    contents: [{ role: "user", parts: [{ text }] }],
-    generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
-  });
-  const headers = { "Content-Type": "application/json" };
-  let res = await fetch(url, { method: "POST", headers, body: bodyStr });
-  if (res.status === 429) {
-    const errText = await res.text();
-    const wait = retryDelay(errText);
-    await new Promise<void>((resolve) => { setTimeout(resolve, wait); });
-    res = await fetch(url, { method: "POST", headers, body: bodyStr });
-  }
-  if (res.status === 429) return { error: "rate_limited" };
-  if (res.status >= 500)  return { error: "overloaded", detail: `gemini ${res.status}` };
-  if (!res.ok) return { error: "all_failed", detail: `gemini ${res.status}: ${await res.text()}` };
-  const j = await res.json();
-  return { raw: j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "", provider: GEMINI_MODEL };
-}
-
-async function callGroq(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
-  if (!GROQ_KEY) return { error: "missing_key" };
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+async function callLane(lane: Lane, text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+  if (!lane.key) return { error: "missing_key" };
+  const res = await fetch(lane.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${lane.key}`, "Content-Type": "application/json", ...(lane.headers ?? {}) },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: lane.model,
       messages: [{ role: "system", content: systemPrompt(city, keepSignals) }, { role: "user", content: text }],
       temperature: 0.3,
-      response_format: { type: "json_object" },
+      ...(lane.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
   if (res.status === 429) return { error: "rate_limited" };
-  if (res.status >= 500)  return { error: "overloaded", detail: `groq ${res.status}` };
-  if (!res.ok) return { error: "all_failed", detail: `groq ${res.status}: ${await res.text()}` };
+  if (res.status >= 500)  return { error: "overloaded", detail: `${lane.name} ${res.status}` };
+  if (!res.ok) return { error: "all_failed", detail: `${lane.name} ${res.status}: ${await res.text()}` };
   const j = await res.json();
-  return { raw: j?.choices?.[0]?.message?.content ?? "", provider: GROQ_MODEL };
+  return { raw: j?.choices?.[0]?.message?.content ?? "", provider: `${lane.name}/${lane.model}` };
 }
 
-async function callOpenRouter(text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
-  if (!OPENROUTER_KEY) return { error: "missing_key" };
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENROUTER_KEY}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://wanderalt.app",
-      "X-Title": "WanderAlt pipeline",
-    },
-    body: JSON.stringify({
-      model: OPENROUTER_MODEL,
-      messages: [{ role: "system", content: systemPrompt(city, keepSignals) }, { role: "user", content: text }],
-      temperature: 0.3,
-      response_format: { type: "json_object" },
-    }),
-  });
-  if (res.status === 429) return { error: "rate_limited" };
-  if (res.status >= 500)  return { error: "overloaded", detail: `openrouter ${res.status}` };
-  if (!res.ok) return { error: "all_failed", detail: `openrouter ${res.status}: ${await res.text()}` };
-  const j = await res.json();
-  return { raw: j?.choices?.[0]?.message?.content ?? "", provider: `openrouter/${OPENROUTER_MODEL}` };
-}
-
+/* First lane with an answer wins. If none answers, the first real error is
+   returned, so a rate limit anywhere releases the message rather than
+   failing it. */
 async function callLLM(text: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
-  // Groq is primary — free tier covers our volume.
-  const r1 = await callGroq(text, city, cfg.keepSignals);
-  if ("raw" in r1) return r1;
-  // OpenRouter :free fallback lane — skipped silently while the key doesn't exist.
-  if (OPENROUTER_KEY) {
-    const ro = await callOpenRouter(text, city, cfg.keepSignals);
-    if ("raw" in ro) return ro;
+  let err: LLMResult = { error: "missing_key" };
+  for (const lane of LANES) {
+    const r = await callLane(lane, text, city, cfg.keepSignals);
+    if ("raw" in r) return r;
+    if ("error" in err && err.error === "missing_key") err = r;
   }
-  // Gemini fallback is gated: skip it entirely when the kill-switch is off
-  // (rate-limited messages just wait for the next Groq window — no spend).
-  if (!cfg.geminiFallbackEnabled) {
-    return r1.error === "missing_key" ? { error: "fallback_disabled" } : r1;
-  }
-  if (r1.error === "missing_key") return callGemini(text, city, cfg.keepSignals);
-  // rate_limited or overloaded → try Gemini before giving up
-  const r2 = await callGemini(text, city, cfg.keepSignals);
-  if ("raw" in r2) return r2;
-  return r1;
+  return err;
 }
 
 // ── English-compliance guard ─────────────────────────────────
@@ -337,9 +276,6 @@ async function loadPipelineConfig(sb: ReturnType<typeof createClient>): Promise<
     venueWhitelist: (map.venue_whitelist as string[]) ?? [],
     skipKeywords: (map.skip_keywords as string[]) ?? [],
     keepSignals: (map.keep_signals as string[]) ?? [],
-    // default ON when the row is absent, so behaviour is unchanged until
-    // someone explicitly flips it to false.
-    geminiFallbackEnabled: map.gemini_fallback_enabled !== false,
   };
 }
 
@@ -398,7 +334,7 @@ async function processOne(
   const llm = await callLLM(llmText, city, cfg);
 
   if ("error" in llm) {
-    if (llm.error === "rate_limited" || llm.error === "overloaded" || llm.error === "missing_key" || llm.error === "fallback_disabled")
+    if (llm.error === "rate_limited" || llm.error === "overloaded" || llm.error === "missing_key")
       return releaseToNew(llm.error);
     return failMessage(llm.detail ?? llm.error);
   }
@@ -424,8 +360,8 @@ async function processOne(
   /* ── The staging payload contract ────────────────────────────────
      Ingest functions write staging_messages.payload alongside the prose
      they hand the model. Facts come from HERE, verbatim; the model is
-     asked only for an English title, the one sentence worth reading, the
-     kind, the mood tags.
+     asked only for an English title, the one sentence worth reading and
+     the kind.
 
      `description` is the SOURCE's own blurb and is stored verbatim, even
      when it echoes the title. The paraphrase guard applies to `quote`,
@@ -477,13 +413,6 @@ async function processOne(
       : `${m.channel}-${m.message_id}-${slugify(title)}`.toLowerCase();
     const day  = nullStr(p.day);
     const time = nullStr(p.time);
-    const initials = (String(p.thumb_initials || "") || venue.slice(0, 2)).toUpperCase().slice(0, 2) || "??";
-
-    /* Extract and validate mood_tags from LLM output. */
-    const rawMoodTags = Array.isArray(p.mood_tags) ? p.mood_tags : [];
-    const moodTags = rawMoodTags
-      .map((t: unknown) => String(t).toLowerCase().trim())
-      .filter((t: string) => VALID_MOOD_TAGS.has(t));
 
     const { error: upsertErr } = await sb.from("picks").upsert({
       id: pid, city,
@@ -493,10 +422,9 @@ async function processOne(
       day, time,
       /* 4a, enforced in code and not only asked for in the prompt. */
       quote: saysSomething(p.quote, title),
-      handle, thumb_initials: initials,
+      handle,
       tonight: day === "Tonight",
       this_week: day !== null,
-      mood_tags: moodTags,
       auto_generated: true,
       source_message_id: m.id,
       /* Carry the source/ticket page from the staging row so the detail page
@@ -538,7 +466,7 @@ const json = (body: unknown, status = 200) =>
 
 export default {
   async fetch(_req: Request): Promise<Response> {
-    if (!GEMINI_KEY && !GROQ_KEY && !OPENROUTER_KEY) return json({ ok: false, error: "no LLM key set" }, 503);
+    if (!LANES.some(l => l.key)) return json({ ok: false, error: "no LLM key set" }, 503);
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const cfg = await loadPipelineConfig(sb);

@@ -13,7 +13,7 @@ It is a decision surface, not a publication. **A time and a walking distance are
 No build step. Open `index.html`, or:
 
 ```bash
-npm install
+npm install   # Node >= 22
 npm start
 ```
 
@@ -42,7 +42,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 
 - **Data**: `supabase.js` reads Supabase REST with the public anon key and falls back to `catalog.js` if the fetch fails, so the site never renders blank.
 - **Auth**: email/password and Google OAuth against Supabase REST, no SDK. Saves and lists are localStorage-first with cloud sync on sign-in.
-- **Map**: MapLibre GL, self-hosted in `vendor/`, over OpenFreeMap vector tiles. No API key; lazy-loaded after first paint.
+- **Map**: MapLibre GL 5.24.0, self-hosted in `vendor/`, over OpenFreeMap vector tiles. No API key; lazy-loaded after first paint.
 - **Fonts**: self-hosted in `fonts/` — Plus Jakarta Sans (chrome), Fraunces (catalogue voice), Geist Mono (facts).
 - **Offline**: `sw.js` precaches the shell and the last picks/venues responses; the banner says how stale they are.
 - **Sharing**: `functions/_middleware.js` (Pages Function) rewrites Open Graph tags per pick and source; the `og-image` edge function renders fallback cards.
@@ -70,7 +70,7 @@ ingest-* → staging_messages → process-staging → picks
 
 - **Sources** are rows in `sources`: Telegram channels, RSS, Fienta org feeds, city event APIs, venue websites, and OpenStreetMap for venues. Telegram, RSS and Fienta sources need no code.
 - **Processing**: ingests store the normalised source object in `staging_messages.payload`; `process-staging` copies facts verbatim and asks the LLM only for an English title, one sentence worth reading, and the kind.
-- **LLM**: Groq free tier first, OpenRouter `:free` second. No paid APIs.
+- **LLM**: free tiers only: Groq (`openai/gpt-oss-120b`), then NVIDIA, Mistral and OpenRouter when their keys are set.
 - **Images**: looked up by identity (Wikidata, the venue's or event's own page, the event feed), never guessed from a name, and re-verified on a schedule.
 - **Crons**: 30 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
 - **Lifecycle**: the app reads picks where `archived_at IS NULL`. Archived picks hard-delete after 14 days; a venue missing from OSM is flagged after 90.
@@ -78,7 +78,7 @@ ingest-* → staging_messages → process-staging → picks
 
 ### Environment
 
-Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`.
+Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `NVIDIA_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`.
 
 ## Key constraints
 
@@ -92,7 +92,7 @@ Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`,
 - Supabase Auth redirect URL → deployed domain (Dashboard → Auth → URL Configuration).
 - Self-serve account deletion (Dashboard → Authentication → Settings).
 - Leaked-password protection (Dashboard → Auth).
-- `OPENROUTER_API_KEY` not set, so Groq's free tier is the whole LLM capacity and staging backs up.
+- Set `NVIDIA_API_KEY` and `MISTRAL_API_KEY` as edge-function secrets to add LLM capacity beyond Groq.
 - Linkedevents images are dropped at ingest; `enrich-pick-images` re-fetches them per pick instead.
 - Vilnius public launch: coverage. The Resident Advisor feed is hand-invoked only, on terms-of-service grounds.
 - Design question: a geometric sans for headlines, with Fraunces kept for timetable rows (owner's aesthetic call).
