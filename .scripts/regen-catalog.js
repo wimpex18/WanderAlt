@@ -23,7 +23,6 @@ function js(v) {
 }
 
 function pickEntry(r) {
-  const thumb = r.thumb_initials || (r.venue ? r.venue.slice(0, 2).toUpperCase() : '??');
   const fields = [
     `id:            ${js(r.id)}`,
     `city:          ${js(r.city)}`,
@@ -35,15 +34,12 @@ function pickEntry(r) {
     `time:          ${js(r.time)}`,
     `quote:         ${js(r.quote)}`,
     `handle:        ${js(r.handle)}`,
-    `thumbInitials: ${js(thumb)}`,
     `tonight:       ${js(!!r.tonight)}`,
     `thisWeek:      ${js(!!r.this_week)}`,
-    `moodTags:      ${js(r.mood_tags || [])}`,
     r.image_url  ? `imageUrl:      ${js(r.image_url)}`  : null,
     r.lat != null ? `lat:           ${js(r.lat)}` : null,
     r.lng != null ? `lng:           ${js(r.lng)}` : null,
     r.address     ? `address:       ${js(r.address)}` : null,
-    `pin:           null`,
   ].filter(Boolean);
   return '  {\n    ' + fields.join(',\n    ') + '\n  }';
 }
@@ -57,7 +53,7 @@ function pastEntry(p) {
     get('picks',
       `archived_at=is.null&handle=neq.@discovery` +
       `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
-              `thumb_initials,image_url,tonight,this_week,mood_tags,` +
+              `image_url,tonight,this_week,` +
               `lat,lng,address&order=city.asc,sort_order.asc,created_at.asc`),
     get('past',
       `select=id,title,date&order=created_at.asc`),

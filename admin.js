@@ -204,7 +204,7 @@
 
     if (count) {
       const note = total < all.length ? ` of ${all.length} flagged` : ' flagged';
-      count.textContent = `${total}${note} · briefing shows first 8`;
+      count.textContent = `${total}${note}`;
     }
 
     if (ctrl) {
@@ -1046,31 +1046,22 @@
     };
     const el = (id) => document.getElementById(id);
     try {
-      const [picksRes, unpinnedRes, embedsRes] = await Promise.all([
+      const [picksRes, unpinnedRes] = await Promise.all([
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
         fetch(`${BASE}/rest/v1/picks?city=eq.${city}&archived_at=is.null` +
               `&or=(lat.is.null,lng.is.null)&select=id`,
               { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
-        fetch(`${BASE}/rest/v1/pick_embeddings?select=pick_id`,
-              { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } }),
       ]);
 
       const total    = countHeader(picksRes);
       const unpinned = countHeader(unpinnedRes);
-      const embeds   = countHeader(embedsRes);
-      const noEmbeds = (total != null && embeds != null) ? Math.max(0, total - embeds) : null;
 
       if (el('stat-picks'))    el('stat-picks').textContent    = `${total ?? '?'} picks`;
       if (el('stat-unpinned')) {
         el('stat-unpinned').textContent = `${unpinned ?? '?'} unpinned`;
         el('stat-unpinned').className   =
           `admin-stat-badge${unpinned > 0 ? ' admin-stat-badge--warn' : ''}`;
-      }
-      if (el('stat-noembeds')) {
-        el('stat-noembeds').textContent = noEmbeds != null ? `${noEmbeds} no embedding` : '— no embedding';
-        el('stat-noembeds').className   =
-          `admin-stat-badge${noEmbeds > 0 ? ' admin-stat-badge--warn' : ''}`;
       }
     } catch { /* silently absent */ }
   };
@@ -1458,35 +1449,6 @@
           if (json.action === 'promoted') setTimeout(loadPipeline, 800);
         } else {
           statusEl.textContent = `Error: ${JSON.stringify(json)}`;
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
-    /* ── Backfill embeddings button ── */
-    $('pipeline-embed-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const btn      = $('pipeline-embed-btn');
-      const statusEl = $('pipeline-embed-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) { statusEl.hidden = false; statusEl.textContent = 'Embedding missing picks — takes up to 1 min…'; }
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/embed-picks`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({ city: currentCity, limit: 200 }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) {
-          if (statusEl) statusEl.textContent =
-            json.embedded === 0
-              ? 'All picks are already embedded.'
-              : `Embedded ${json.embedded} pick${json.embedded !== 1 ? 's' : ''} (model: ${json.model}).`;
-        } else {
-          if (statusEl) statusEl.textContent = `Error: ${JSON.stringify(json)}`;
         }
       } catch (err) {
         if (statusEl) statusEl.textContent = `Network error: ${err.message}`;

@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
 
   let url =
     `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}` +
-    `&archived_at=is.null&day=not.is.null&pending_review=not.is.true` +
+    `&archived_at=is.null&day=not.is.null` +
     `&select=id,title,venue,neighborhood,quote,handle,day,time&limit=100`;
   if (handle) url += `&handle=eq.${encodeURIComponent(handle)}`;
 

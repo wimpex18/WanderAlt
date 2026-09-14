@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- WanderAlt sitemap. Static pages only — per-venue and per-curator
+<!-- WanderAlt sitemap. Static pages only — detail and source
      URLs are excluded because their content is dynamic, the catalog
      rotates weekly, and crawl budget is better spent on the editorial
      landing surfaces. Update the lastmod when content materially

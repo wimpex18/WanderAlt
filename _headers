@@ -16,14 +16,8 @@
   # Permissions-Policy — explicitly deny the powerful features we don't use.
   # Geolocation IS used (locate-fab on map) so we allow self.
   Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=(self)
-  # CSP — strict. May 2026 sweep extracted admin.html's inline <style>
-  # to admin.css, the redirect stubs to redirect-stub.css, and moved
-  # the two onsubmit="return false;" forms to a [data-no-submit]
-  # JS handler in city.js. All scripts are external same-origin (the
-  # pre-paint taste flag is taste-flag.js), so script-src stays 'self'
-  # with no 'unsafe-inline'. Fonts are now self-hosted, so the Google
-  # Fonts origins were dropped — style-src no longer needs
-  # fonts.googleapis.com and font-src is 'self' only.
+  # CSP — strict: every script and stylesheet is same-origin (no inline
+  # handlers; forms use [data-no-submit] in city.js), fonts self-hosted.
   # 'unsafe-inline' on style-src is retained ONLY because MapLibre
   # injects inline width/height on the canvas elements it manages;
   # removing it breaks the map. img-src https: keeps the Supabase Storage

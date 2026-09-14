@@ -37,7 +37,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Groq free, OpenRouter `:free`, Cloudflare Workers AI free, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
+- **Free tier only.** Groq free, OpenRouter `:free`, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
 - **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
@@ -66,7 +66,7 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 - **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
 - **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
 - **Crons calling `verify_jwt:true` functions go through `public.invoke_wa_fn(fn)`**, which supplies the Authorization header. A raw `net.http_post` without it 401s silently.
-- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
+- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
 - **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
 ## Pipeline and data
@@ -74,7 +74,7 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 ```
 ingest-* → staging_messages → process-staging → picks
          → enrich-images / enrich-pick-images → geocode-picks → enrich-venues
-         → enrich-venue-images → verify-images → embed-picks
+         → enrich-venue-images → verify-images
          → rotate-tonight → archive-stale → dedup → purge
 ```
 
@@ -93,13 +93,12 @@ ingest-* → staging_messages → process-staging → picks
 - Groq first: `llama-3.3-70b-versatile`. OpenRouter `:free` second: repo default `nvidia/nemotron-3-super-120b-a12b:free`; the `OPENROUTER_MODEL` secret overrides it with no deploy.
 - `OPENROUTER_API_KEY` is not set, so Groq's free tier is the entire capacity and `staging_messages` backs up. Free OpenRouter is 50 req/day, 1,000/day after a one-time $10 credit purchase — owner's call.
 - Gemini is retired behind `pipeline_config.gemini_fallback_enabled`; don't assume its key authenticates. No Search grounding.
-- Embeddings: Cloudflare Workers AI `@cf/baai/bge-m3`, 1024 dims.
 - **Pin models by exact id and confirm the id is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
 - Secret presence can't be checked from here (`check-secrets` is a tombstone); look in the dashboard.
 
 ## Environment
 
-Cloud sessions: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy.
+Cloud sessions: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy.
 
 ## Voice
 

@@ -60,21 +60,21 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-central-1): Postgres, REST, Edge Fun
 ```
 ingest-* → staging_messages → process-staging → picks
          → enrich-images / enrich-pick-images → geocode-picks → enrich-venues
-         → enrich-venue-images → verify-images → embed-picks
+         → enrich-venue-images → verify-images
          → rotate-tonight → archive-stale → dedup → purge
 ```
 
 - **Sources** are rows in `sources`: Telegram channels, RSS, Fienta org feeds, city event APIs, venue websites, and OpenStreetMap for venues. Telegram, RSS and Fienta sources need no code.
 - **Processing**: ingests store the normalised source object in `staging_messages.payload`; `process-staging` copies facts verbatim and asks the LLM only for an English title, one sentence worth reading, and the kind.
-- **LLM**: Groq free tier first, OpenRouter `:free` second. Embeddings on Cloudflare Workers AI. No paid APIs.
+- **LLM**: Groq free tier first, OpenRouter `:free` second. No paid APIs.
 - **Images**: looked up by identity (Wikidata, the venue's or event's own page, the event feed), never guessed from a name, and re-verified on a schedule.
-- **Crons**: 31 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
+- **Crons**: 30 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
 - **Lifecycle**: the app reads picks where `archived_at IS NULL`. Archived picks hard-delete after 14 days; a venue missing from OSM is flagged after 90.
 - **Adding a city**: add it to `CITY_CONTEXT` in `process-staging` and `CITY_CENTER` in `geocode-picks`.
 
 ### Environment
 
-Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `RESEND_API_KEY`.
+Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`.
 
 ## Key constraints
 

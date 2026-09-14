@@ -31,11 +31,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Discover the history of Suomenlinna Church from the 18th century to the present day",
     handle:        "@helsinkievents",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "sober", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "otaniemievents-1781-speksijuhannus-midsummer-festi",
@@ -48,11 +45,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Join the speksi-vibed people for a weekend of interspex activities, live music, and sauna.",
     handle:        "@otaniemievents",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["social", "loud", "outdoors", "drinks"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "helsinkievents-3946-vantaan-kes-lava-concerts",
@@ -65,11 +59,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Free summer concert program in Vantaa",
     handle:        "@helsinkievents",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["social", "outdoors", "loud"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "helsinkievents-3953-free-outdoor-dance-floor-at-am",
@@ -82,11 +73,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Experience a unique outdoor dance floor with Bluetooth connection, where you can play your own music and dance for free.",
     handle:        "@helsinkievents",
-    thumbInitials: "AR",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["outdoors", "social", "walk-up", "sober"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "helsinkievents-3972",
@@ -99,11 +87,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Discover Helsinki's hidden meanings and surprising history at this new exhibition. Explore the city's significant moments and residents' lives through the centuries.",
     handle:        "@helsinkievents",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "sober", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "aaniwalli-drone-night",
@@ -116,11 +101,8 @@ window.WA._catalogAll = [
     time:          "21:00",
     quote:         "Forty minutes of uninterrupted drone. No encore, no chat.",
     handle:        "@jani.after",
-    thumbInitials: "ÄW",
     tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "solo", "ticketed"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "baarikarpanen-late",
@@ -133,11 +115,8 @@ window.WA._catalogAll = [
     time:          "open late",
     quote:         "The bar that never asks why you are still here.",
     handle:        "@jani.after",
-    thumbInitials: "BK",
     tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "kiasma-koho",
@@ -150,11 +129,8 @@ window.WA._catalogAll = [
     time:          "ongoing",
     quote:         "Finnish contemporary at its least obvious. Worth three visits.",
     handle:        "@jani.after",
-    thumbInitials: "KO",
     tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "kaapelitehdas-vinyl",
@@ -167,11 +143,8 @@ window.WA._catalogAll = [
     time:          "10:00",
     quote:         "More crates than you have time for.",
     handle:        "@jani.after",
-    thumbInitials: "VM",
     tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "notboring_riga-4246",
@@ -184,12 +157,9 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Escape the mainstream with international electronic artists and the unique folk techno duo Dyur, bringing a different vibe to the Holi Music Festival.",
     handle:        "@notboring_riga",
-    thumbInitials: "HF",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "social", "drinks", "ticketed", "indoors"],
-    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9abc5e4b36799e06.jpg",
-    pin:           null
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9abc5e4b36799e06.jpg"
   },
   {
     id:            "echogonewrong-1044869250397803",
@@ -202,11 +172,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "A solo exhibition by Priyageetha Dia, exploring the unseen.",
     handle:        "@echogonewrong",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "echogonewrong-4834885832084220",
@@ -219,11 +186,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "A small sketch of life: Kaspars Groševs' apartment available for short-term rent at Kim? Contemporary Art Centre.",
     handle:        "@echogonewrong",
-    thumbInitials: "KG",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "solo", "sober"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "echogonewrong-3711184685108563",
@@ -236,11 +200,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Celebrating art across disciplines in a social atmosphere",
     handle:        "@echogonewrong",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["social", "indoors"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "echogonewrong-3162528380960004",
@@ -253,11 +214,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Explore the intersection of photography and ecology in this thought-provoking exhibition.",
     handle:        "@echogonewrong",
-    thumbInitials: "AA",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "quiet", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "echogonewrong-7759585672630940",
@@ -270,11 +228,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Experience Karlīna Mežecka's latest art exhibition at Kim? Contemporary Art Centre, inspired by Madonna's 'Don't Tell Me'. A unique visual exploration.",
     handle:        "@echogonewrong",
-    thumbInitials: "KM",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "echogonewrong-4739255805995343",
@@ -287,12 +242,9 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Step into TUR and meet the serpentine creature of 'I want to Be Glue!', a tender patchwork of textures and mythologies.",
     handle:        "@echogonewrong",
-    thumbInitials: "SD",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["indoors", "quiet", "solo"],
-    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9fba754e48c41497.jpg",
-    pin:           null
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/9fba754e48c41497.jpg"
   },
   {
     id:            "echogonewrong-6652406191569123",
@@ -305,12 +257,9 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Exploring landscape transformation through photography",
     handle:        "@echogonewrong",
-    thumbInitials: "AG",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/5c4e49e04ea26ac4.jpg",
-    pin:           null
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/5c4e49e04ea26ac4.jpg"
   },
   {
     id:            "notboring_riga-4325",
@@ -323,11 +272,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Get a glimpse into Prusax's musical world with their personal playlist, a three-hour journey through a Saturday's soundtrack.",
     handle:        "@notboring_riga",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "cafe-mimosa-guest-chef",
@@ -340,12 +286,9 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "They treat this kitchen like a stage. The guest chef nights are where Riga actually surprises you.",
     handle:        "@katestrelca",
-    thumbInitials: "CM",
     tonight:       false,
     thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "social", "drinks"],
-    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/797acae1ba16f24f.jpg",
-    pin:           null
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/797acae1ba16f24f.jpg"
   },
   {
     id:            "kkc-experimental-night",
@@ -358,11 +301,8 @@ window.WA._catalogAll = [
     time:          "21:00",
     quote:         "Across the river and worth every bridge. KKC is where the real stuff happens.",
     handle:        "@katestrelca",
-    thumbInitials: "KK",
     tonight:       false,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "skapis-queer-night",
@@ -375,11 +315,8 @@ window.WA._catalogAll = [
     time:          "23:00",
     quote:         "Community-built, community-run. Not a trend, a fact.",
     handle:        "@katestrelca",
-    thumbInitials: "SK",
     tonight:       true,
-    thisWeek:      true,
-    moodTags:      ["loud", "indoors", "social", "drinks"],
-    pin:           null
+    thisWeek:      true
   },
   {
     id:            "hanzas-perons-chamber",
@@ -392,12 +329,9 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "A train hall that became one of the best concert rooms in the city. The acoustics earned it.",
     handle:        "@katestrelca",
-    thumbInitials: "HP",
     tonight:       false,
     thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "sober", "ticketed"],
-    imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Hanzas_perons_(2).jpg",
-    pin:           null
+    imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Hanzas_perons_(2).jpg"
   },
   {
     id:            "kim-gallery-traces",
@@ -410,12 +344,9 @@ window.WA._catalogAll = [
     time:          "ongoing",
     quote:         "Design that asks questions instead of decorating walls.",
     handle:        "@katestrelca",
-    thumbInitials: "KI",
     tonight:       false,
     thisWeek:      true,
-    moodTags:      ["quiet", "indoors", "solo", "sober"],
-    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/69119d5625f4f003.png",
-    pin:           null
+    imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/69119d5625f4f003.png"
   },
   {
     id:            "sigmundtells-2516",
@@ -428,15 +359,12 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Beyond the popcorn, engage with cinema that challenges. This isn't just a screening; it's a deep dive into the art.",
     handle:        "@sigmundtells",
-    thumbInitials: "KA",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/6045f0ca50f53dcc.jpg",
     lat:           59.4331739,
     lng:           24.7516185,
-    address:       "Estonia pst 9, 10143 Tallinn, Estonia",
-    pin:           null
+    address:       "Estonia pst 9, 10143 Tallinn, Estonia"
   },
   {
     id:            "giadafromgamma-1773810091",
@@ -449,15 +377,12 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Kanuti Gildi SAAL consistently pushes boundaries, offering vital perspectives through its diverse performances. Reading keeps the city honest.",
     handle:        "@raul.reads",
-    thumbInitials: "KG",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "ticketed"],
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Kanuti_Gildi_Saal1.JPG?width=600",
     lat:           59.4385252,
     lng:           24.7460931,
-    address:       "Pikk 20, 15059, Tallinn",
-    pin:           null
+    address:       "Pikk 20, 15059, Tallinn"
   },
   {
     id:            "giadafromgamma-1776052882-egs-exhibition",
@@ -470,14 +395,11 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Discover the vibrant works of Finnish street artist EGS at the PoCo pop art museum, a must-visit exhibition.",
     handle:        "@raul.reads",
-    thumbInitials: "EG",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "ticketed"],
     lat:           59.4387603,
     lng:           24.7581548,
-    address:       "Rotermanni tn 2, 10111 Tallinn, Estonia",
-    pin:           null
+    address:       "Rotermanni tn 2, 10111 Tallinn, Estonia"
   },
   {
     id:            "proeesti-4686",
@@ -490,11 +412,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Experience the powerful voice of a generation's poetess as Vera Polozkova shares her poignant words on love, loss, and inner strength.",
     handle:        "@proeesti",
-    thumbInitials: "VP",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "solo", "social", "ticketed"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "paavli-kultuurivabrik-170265",
@@ -507,15 +426,12 @@ window.WA._catalogAll = [
     time:          "23:00",
     quote:         "Nikki Nair is bringing his genre-bending, bass-heavy techno from the Atlanta underground to Tallinn. Get ready for experimental sounds and a night of unexpected dance music!",
     handle:        "@paavli",
-    thumbInitials: "NN",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
-    address:       "Paavli 7, 10412, Tallinn",
-    pin:           null
+    address:       "Paavli 7, 10412, Tallinn"
   },
   {
     id:            "paavli-kultuurivabrik-166091",
@@ -528,15 +444,12 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "Prepare for a sonic assault! Sludge metal legends Eyehategod bring their distorted, slow-burn chaos to Tallinn, supported by local heavyweights. Loud, weird, excellent.",
     handle:        "@paavli",
-    thumbInitials: "EH",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
-    address:       "Paavli 7, 10412, Tallinn",
-    pin:           null
+    address:       "Paavli 7, 10412, Tallinn"
   },
   {
     id:            "paavli-kultuurivabrik-177873",
@@ -549,15 +462,12 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "Drew McDowall, a Coil alumnus, brings his uncompromising experimental soundscapes to Tallinn. Prepare for a night of truly boundary-pushing music.",
     handle:        "@paavli",
-    thumbInitials: "DM",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
-    address:       "Paavli 7, 10412, Tallinn",
-    pin:           null
+    address:       "Paavli 7, 10412, Tallinn"
   },
   {
     id:            "paavli-kultuurivabrik-169457",
@@ -570,15 +480,12 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "Loud, weird, excellent. This is rock’n’roll full of sparkle, chaos, and attitude – imagine David Bowie playing seven minutes in heaven with Debbie Harry!",
     handle:        "@paavli",
-    thumbInitials: "SS",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
-    address:       "Paavli 7, 10412, Tallinn",
-    pin:           null
+    address:       "Paavli 7, 10412, Tallinn"
   },
   {
     id:            "paavli-kultuurivabrik-184159",
@@ -591,15 +498,12 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "Grindcore pioneers and extreme music legends hit the stage. Loud, weird, excellent.",
     handle:        "@paavli",
-    thumbInitials: "ND",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "drinks", "ticketed"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/98e38295e7f286e5.jpg",
     lat:           59.4475957,
     lng:           24.704955,
-    address:       "Paavli 7, 10412, Tallinn",
-    pin:           null
+    address:       "Paavli 7, 10412, Tallinn"
   },
   {
     id:            "15-172435",
@@ -612,14 +516,11 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "This experimental drama throws you into the heart of an uprising, exploring the visceral tension between rebellion and fear. A powerful piece from a cornerstone of Tallinn's fringe theatre.",
     handle:        "@vonkrahl",
-    thumbInitials: "VT",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["indoors", "social", "ticketed", "loud"],
     lat:           59.4371803,
     lng:           24.7428101,
-    address:       "Rataskaevu 10, 10123, Tallinn",
-    pin:           null
+    address:       "Rataskaevu 10, 10123, Tallinn"
   },
   {
     id:            "15-175394",
@@ -632,14 +533,11 @@ window.WA._catalogAll = [
     time:          "19:00",
     quote:         "A new era cabaret blending 1920s Berlin aesthetics with contemporary techno, dance, and social satire. Expect poetic words, grotesque humor, and physical theatre.",
     handle:        "@vonkrahl",
-    thumbInitials: "VK",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "ticketed"],
     lat:           59.4371803,
     lng:           24.7428101,
-    address:       "Rataskaevu 10, 10123, Tallinn",
-    pin:           null
+    address:       "Rataskaevu 10, 10123, Tallinn"
   },
   {
     id:            "15-177981",
@@ -652,14 +550,11 @@ window.WA._catalogAll = [
     time:          "20:00",
     quote:         "A musical production dissecting the destructive and inspiring force of ambition. Expect a powerful, experimental theatrical experience.",
     handle:        "@vonkrahl",
-    thumbInitials: "VK",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["indoors", "social", "ticketed"],
     lat:           59.4371803,
     lng:           24.7428101,
-    address:       "Rataskaevu 10, 10123, Tallinn",
-    pin:           null
+    address:       "Rataskaevu 10, 10123, Tallinn"
   },
   {
     id:            "sigmundtells-2558-exhibition-photography-in-powe",
@@ -672,15 +567,12 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Explore the impactful 'Photography in Power' exhibition at Fotografiska. A visual journey into how images shape our world.",
     handle:        "@sigmundtells",
-    thumbInitials: "FG",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["indoors", "solo", "ticketed", "quiet"],
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Fotografiska_tallinn_telliskivi_exterior1_-_2019.jpg?width=600",
     lat:           59.4383522,
     lng:           24.7284645,
-    address:       "Telliskivi 60a/8, 10412, Tallinn",
-    pin:           null
+    address:       "Telliskivi 60a/8, 10412, Tallinn"
   },
   {
     id:            "sigmundtells-2579-cinamon-moves-to-kosmos-cinema",
@@ -693,14 +585,11 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "A new home for Cinamon, bringing horror movies to the screen",
     handle:        "@sigmundtells",
-    thumbInitials: "XX",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["social", "drinks"],
     lat:           59.4280264,
     lng:           24.7440114,
-    address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia",
-    pin:           null
+    address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia"
   },
   {
     id:            "sigmundtells-2579-horror-movies-at-cinamon",
@@ -713,14 +602,11 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Catch the latest horror hits like 'The Possession' and 'Behind the Scene of Reality'",
     handle:        "@sigmundtells",
-    thumbInitials: "XX",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["social", "drinks"],
     lat:           59.4280264,
     lng:           24.7440114,
-    address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia",
-    pin:           null
+    address:       "Pärnu mnt. 45, 10119 Tallinn, Estonia"
   },
   {
     id:            "sigmundtells-2583-outdoor-screening-of-2026-worl",
@@ -733,14 +619,11 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Experience the World Cup in a cultural setting",
     handle:        "@sigmundtells",
-    thumbInitials: "XX",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["outdoors", "social", "drinks"],
     lat:           59.4475874,
     lng:           24.7049709,
-    address:       "Paavli tn 7, 10412 Tallinn, Estonia",
-    pin:           null
+    address:       "Paavli tn 7, 10412 Tallinn, Estonia"
   },
   {
     id:            "sigmundtells-2583-sports-bar-with-2026-world-cup",
@@ -753,14 +636,11 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Watch the World Cup in a lively beer garden",
     handle:        "@sigmundtells",
-    thumbInitials: "XX",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["social", "drinks", "loud"],
     lat:           59.4382258,
     lng:           24.7519333,
-    address:       "Inseneri tn 1, 10111 Tallinn, Estonia",
-    pin:           null
+    address:       "Inseneri tn 1, 10111 Tallinn, Estonia"
   },
   {
     id:            "sigmundtells-2585",
@@ -773,11 +653,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Tune in for unfiltered conversations on human behavior and social quirks",
     handle:        "@sigmundtells",
-    thumbInitials: "EA",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["sober", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "uus-laine",
@@ -790,14 +667,11 @@ window.WA._catalogAll = [
     time:          "23:00",
     quote:         "After midnight, no lineup, no regrets.",
     handle:        "@hel.nocturnes",
-    thumbInitials: "UL",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["loud", "indoors", "social", "drinks"],
     lat:           59.4414205,
     lng:           24.7381887,
-    address:       "Kopli 4, 10412, Tallinn",
-    pin:           null
+    address:       "Kopli 4, 10412, Tallinn"
   },
   {
     id:            "turntable-tallinn",
@@ -810,15 +684,12 @@ window.WA._catalogAll = [
     time:          "open daily",
     quote:         "Their B-side curation is unmatched.",
     handle:        "@mattias.v",
-    thumbInitials: "TT",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "walk-up"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/c6f89f6ff9f59040.jpg",
     lat:           59.440257,
     lng:           24.7335355,
-    address:       "Telliskivi tn 60/2, 10412 Tallinn, Estonia",
-    pin:           null
+    address:       "Telliskivi tn 60/2, 10412 Tallinn, Estonia"
   },
   {
     id:            "vota-voi-jata",
@@ -831,15 +702,12 @@ window.WA._catalogAll = [
     time:          "Wed–Sun",
     quote:         "Where Tallinn's old paperbacks rest.",
     handle:        "@mattias.v",
-    thumbInitials: "VJ",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "walk-up"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/d535f59e81ead136.jpg",
     lat:           59.4298591,
     lng:           24.7592864,
-    address:       "Liivalaia tn 36, 10132 Tallinn, Estonia",
-    pin:           null
+    address:       "Liivalaia tn 36, 10132 Tallinn, Estonia"
   },
   {
     id:            "koogi-galerii",
@@ -852,15 +720,12 @@ window.WA._catalogAll = [
     time:          "ongoing",
     quote:         "A gallery in someone's actual kitchen.",
     handle:        "@kaisa.writes",
-    thumbInitials: "KG",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "walk-up"],
     imageUrl:      "https://aqnsmmbrspkbfcvougeh.supabase.co/storage/v1/object/public/pick-images/271235e92da8e174.jpg",
     lat:           59.4451815,
     lng:           24.7285136,
-    address:       "Salme tn 19, 10413 Tallinn, Estonia",
-    pin:           null
+    address:       "Salme tn 19, 10413 Tallinn, Estonia"
   },
   {
     id:            "feminine-power",
@@ -873,15 +738,12 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Worth a second visit.",
     handle:        "@kaisa.writes",
-    thumbInitials: "FP",
     tonight:       false,
     thisWeek:      false,
-    moodTags:      ["quiet", "indoors", "solo", "ticketed"],
     imageUrl:      "https://commons.wikimedia.org/wiki/Special:FilePath/Le_KUMU%2C_mus%C3%A9e_dart_estonien_%28Tallinn%29_%287643108702%29.jpg?width=600",
     lat:           59.4353156,
     lng:           24.7981512,
-    address:       "Laagna tee, 11413, Tallinn",
-    pin:           null
+    address:       "Laagna tee, 11413, Tallinn"
   },
   {
     id:            "afishavilnius-12139",
@@ -894,11 +756,8 @@ window.WA._catalogAll = [
     time:          null,
     quote:         "Experience the vibrant Rathayatra Festival, a visual treat you won't want to miss. Get ready for a spectacular celebration!",
     handle:        "@afishavilnius",
-    thumbInitials: "PA",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["social", "outdoors", "loud"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "afishavilnius-12193-toxic-garden-exhibition-at-art",
@@ -911,11 +770,8 @@ window.WA._catalogAll = [
     time:          "12:00",
     quote:         "Explore a mutant 'garden' of ceramic objects at Artifex Gallery, featuring guided tours with the artist.",
     handle:        "@afishavilnius",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "sober", "quiet", "solo"],
-    pin:           null
+    thisWeek:      false
   },
   {
     id:            "afishavilnius-12221",
@@ -928,11 +784,8 @@ window.WA._catalogAll = [
     time:          "11:00-16:00",
     quote:         "Explore the connection between painting and music, memory and history, through works by modernist masters like Picasso and Chagall.",
     handle:        "@afishavilnius",
-    thumbInitials: "XX",
     tonight:       false,
-    thisWeek:      false,
-    moodTags:      ["indoors", "sober", "quiet", "solo"],
-    pin:           null
+    thisWeek:      false
   }
 ];
 

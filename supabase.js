@@ -93,18 +93,10 @@
     time:          r.time,
     quote:         r.quote,
     handle:        r.handle,
-    thumbInitials: r.thumb_initials || (r.venue ? r.venue.slice(0, 2).toUpperCase() : '??'),
     imageUrl:      proxifyImage(r.image_url) || null,
     imageAttr:     r.image_attr    || null,
     tonight:       r.tonight,
     thisWeek:      r.this_week,
-    moodTags:      r.mood_tags || [],
-    pin: r.pin_num != null ? {
-      num:     r.pin_num,
-      left:    r.pin_left,
-      top:     r.pin_top,
-      eyebrow: r.pin_eyebrow
-    } : null,
     lat:       r.lat       ?? null,
     lng:       r.lng       ?? null,
     address:   r.address   ?? null,
@@ -178,8 +170,8 @@
         `picks`,
         `archived_at=is.null` +
         `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
-                `thumb_initials,image_url,image_attr,tonight,this_week,mood_tags,` +
-                `pin_num,pin_left,pin_top,pin_eyebrow,lat,lng,address,coords_source,coords_locked,` +
+                `image_url,image_attr,tonight,this_week,` +
+                `lat,lng,address,coords_source,coords_locked,` +
                 /* Facts the sources stated about themselves — see the
                    staging payload contract in process-staging. */
                 `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +

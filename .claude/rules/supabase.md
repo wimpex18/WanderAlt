@@ -10,7 +10,7 @@ paths:
 
 ## Crons
 
-- 31 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `embed-picks-auto` (`40 6,12,18,23 * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).
+- 30 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).
 - `archive-stale-daily`, `wa-enrich-venues-day` and `wa-enrich-venues-osm` post raw `net.http_post` with their own `Authorization` header; every other function cron goes through `invoke_wa_fn`. SQL-only jobs: `reset-tonight`, `wa-dedup-picks`, `wa-ingest-health`, `wa-purge-archived`, `wa-purge-pick-changes`, `wa-reconcile-absent`.
 - pg_cron has no rename: unschedule + schedule. Change cadence with:
   ```sql
