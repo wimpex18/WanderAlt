@@ -5,13 +5,12 @@
    converts them to the window.WA.catalog shape,
    then dispatches 'wa:catalog-ready' so page scripts can render.
 
-   On network failure or timeout (2 s) the static catalog.js
-   data is kept as a fallback and the event is still dispatched,
-   so pages always render — just from the bundled snapshot.
+   On network failure or timeout (2 s) the lists stay empty and the
+   event is still dispatched, so pages render their empty states.
 
    Load order in every HTML file:
-     catalog.js → supabase.js → bookmark.js → [page script]
-                                                (all defer)
+     city.js → supabase.js → bookmark.js → [page script]
+                                            (all defer)
 
    The anon key is intentionally public; RLS allows only SELECT.
    ============================================================ */
@@ -25,6 +24,8 @@
   window.WA          = window.WA || {};
   window.WA.BASE_URL = BASE;
   window.WA.ANON_KEY = KEY;
+  window.WA._catalogAll = window.WA.catalog = [];
+  window.WA._venuesAll  = window.WA.venues  = [];
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
@@ -155,7 +156,7 @@
     document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
 
   const load = async () => {
-    /* 2-second timeout so a slow network falls back to catalog.js */
+    /* 2-second timeout so a slow network renders the empty states */
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), 2000);
 
@@ -234,8 +235,7 @@
          every live bookmark looks "gone". */
       window.WA.DATA_LIVE = true;
     } else {
-      /* Keep static catalog.js snapshot; log so devtools shows the reason. */
-      console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);
+      console.warn('[WanderAlt] picks fetch failed.', picksResult.reason?.message);
       window.WA.DATA_LIVE = false;
     }
 
@@ -275,8 +275,7 @@
       window.WA._venuesAll = allVenues;
       window.WA.venues     = allVenues.filter(v => v.city === CITY);
     } else {
-      /* Keep the static catalog.js venue seed as a fallback. */
-      console.warn('[WanderAlt] venues fetch failed — using static venue seed.', venuesResult.reason?.message);
+      console.warn('[WanderAlt] venues fetch failed.', venuesResult.reason?.message);
     }
 
     borrowVenuePhotos();

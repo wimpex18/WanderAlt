@@ -1,7 +1,7 @@
 /* ============================================================
    walk.js — a route, and walking it.
    ------------------------------------------------------------
-   Walks is an experiment: three hand-written routes in walks.json. This
+   Walks is an experiment: hand-written routes in walks.json (none yet). This
    resolves each stop against the venues in memory and works out whether
    every door will still be open when you get there. Routes are written
    around stops with filed hours; a stop whose hours vanish is not
@@ -97,8 +97,7 @@
 
   /* The latest you could leave and still find every door open. Walks
      the clock forward in 10-minute steps until a stop would be shut --
-     crude, and honest about being crude, but it is three routes of four
-     stops, not a solver. */
+     crude, and honest about being crude: a few short routes, not a solver. */
   const leaveBy = (stops) => {
     const now = new Date();
     let best = null;
@@ -282,7 +281,7 @@
     if (!r) {
       main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
         <p class="wa-empty__title">That walk is not here.</p>
-        <p class="wa-empty__body">There are three, and they are all in Tallinn. Explore has them.</p>
+        <p class="wa-empty__body">Explore lists every walk under its Walks tab.</p>
         <div class="wa-empty__actions">
           <a class="wa-btn wa-btn--primary" href="./index.html">Explore</a>
           <a class="wa-btn" href="./discover.html">Tonight</a>

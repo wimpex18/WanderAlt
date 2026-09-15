@@ -19,7 +19,7 @@
      sign-in | sign-up | forgot | set-password | account
 
    Load order (all HTML files):
-     catalog.js → city.js → supabase.js → auth.js → …
+     city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
   const SESSION_KEY = 'wanderalt:session:v1';

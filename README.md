@@ -6,7 +6,7 @@ It is a decision surface, not a publication. **A time and a walking distance are
 
 **Cities:** Tallinn · Helsinki · Riga live. Vilnius unlocked for internal testing. Version stamp lives in `package.json`.
 
-**Status:** pre-release with no production users. A full rewrite is planned; this codebase is kept to its current, working state.
+**Status:** pre-release with no production users. A full backend and frontend rewrite is planned. The database holds no venues or events and no cron jobs run, so pages show empty states.
 
 ## Running it
 
@@ -22,7 +22,6 @@ Serves the site at `http://localhost:5173` (no CSP locally).
 | Command | Does |
 | --- | --- |
 | `npm run admin` | Admin panel on `:8080`; needs a Supabase service-role key, kept in localStorage |
-| `npm run catalog` | Regenerates the static fallback `catalog.js` from live Supabase |
 | `npm run build:icons` | Rasterises the PNG icon ladder from `brand/` (the only use of `sharp` / `png-to-ico`) |
 
 There is no automated test suite. Check changes in a browser at 390, 768 and 1440 px, in both themes. The service worker caches static assets stale-while-revalidate, so clear it when debugging.
@@ -39,7 +38,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 | Source — the venue or feed a listing came from | `source.html` |
 | Saved, You, Walk, About, Admin, 404 | `saved.html`, `profile.html`, `walk.html`, `about.html`, `admin.html`, `404.html` |
 
-- **Data**: `supabase.js` reads Supabase REST with the public anon key and falls back to `catalog.js` if the fetch fails, so the site never renders blank.
+- **Data**: `supabase.js` reads Supabase REST with the public anon key and renders empty states if the fetch fails.
 - **Auth**: email/password and Google OAuth against Supabase REST, no SDK. Saves and lists are localStorage-first with cloud sync on sign-in.
 - **Map**: MapLibre GL 6.9.0 (ES modules), self-hosted in `vendor/`, over OpenFreeMap vector tiles. No API key; lazy-loaded after first paint.
 - **Fonts**: self-hosted in `fonts/` — Plus Jakarta Sans (chrome), Fraunces (catalogue voice), Geist Mono (facts).
@@ -52,7 +51,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 
 **Site**: Cloudflare Pages, connected to GitHub. Framework preset None, build command empty, output directory `/`. `_headers` and `_redirects` are picked up automatically. Everything lives on `wanderalt.app`; `wanderalt.com` 301s across.
 
-**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`; crons call `verify_jwt:true` functions through `public.invoke_wa_fn(fn)`. Deleting a function's directory does not undeploy it; retired functions stay deployed as 410 tombstones.
+**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`; run `verify_jwt:true` functions by hand through `public.invoke_wa_fn(fn)`. Deleting a function's directory does not undeploy it; retired functions stay deployed as 410 tombstones.
 
 ## Backend
 
@@ -71,7 +70,7 @@ ingest-* → staging_messages → process-staging → picks
 - **Processing**: ingests store the normalised source object in `staging_messages.payload`; `process-staging` copies facts verbatim and asks the LLM only for an English title, one sentence worth reading, and the kind.
 - **LLM**: free tiers only: Mistral (`mistral-small-2603`), then NVIDIA (`nemotron-3.5-lightning-30b-a3b`), then OpenRouter when its key is set.
 - **Images**: looked up by identity (Wikidata, the venue's or event's own page, the event feed), never guessed from a name, and re-verified on a schedule.
-- **Crons**: 30 jobs, all active, including the weekly digest every Thursday at 07:00 UTC.
+- **Crons**: none scheduled. Functions run by hand via `select public.invoke_wa_fn('<fn>')`.
 - **Lifecycle**: the app reads picks where `archived_at IS NULL`. Archived picks hard-delete after 14 days; a venue missing from OSM is flagged after 90.
 - **Adding a city**: add it to `CITY_CONTEXT` in `process-staging` and `CITY_CENTER` in `geocode-picks`.
 

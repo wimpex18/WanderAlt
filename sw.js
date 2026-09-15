@@ -16,7 +16,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v2';
+const VERSION = 'wa-v3';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -37,7 +37,7 @@ const SHELL_URLS = [
   './wa.css',
   './marks.svg',
   './walks.json',
-  './theme.js', './when.js', './catalog.js', './geo.js', './hours.js',
+  './theme.js', './when.js', './geo.js', './hours.js',
   './marks.js', './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
   './follow.js', './toast.js', './view-transition.js',

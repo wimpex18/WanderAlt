@@ -13,7 +13,7 @@
    reloads the page — supabase.js then fetches the right data.
 
    Load order (all HTML files):
-     catalog.js → city.js → supabase.js → auth.js → …
+     city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
   /* Right-size Google-hosted photos (googleusercontent size token →

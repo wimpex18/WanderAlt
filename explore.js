@@ -719,7 +719,6 @@
   });
   document.addEventListener('wa:location-ready', render);
 
-  /* catalog.js ships a static snapshot, so if the live fetch already
-     resolved before this script ran there is still something to draw. */
+  /* If the live fetch resolved before this script ran, draw now. */
   if (window.WA && window.WA.catalog && window.WA.catalog.length) render();
 })();

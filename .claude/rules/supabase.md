@@ -2,26 +2,21 @@
 paths:
   - "supabase/**"
   - "admin.js"
-  - ".scripts/regen-catalog.js"
 ---
 
-# Supabase: functions, crons, pipeline, images
+# Supabase: functions, scheduling, pipeline, images
 
 ## Functions
 
 Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fienta`, `-osm`, `-hel-linkedevents`, `-kinobize`, `-splendidpalace`, `-telliskivi`, `-hanzas-perons`, `-echo-gone-wrong`, `-ra` manual only), `process-staging`, `translate-picks` (manual), `geocode-picks`, `enrich-venues`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `verify-images`, `verify-venues` (admin; `dry_run=false` requires the service-role key), `resolve-links`, `backfill-pick-facts` (manual), `rotate-tonight`, `archive-stale`, `send-digest`, `unsubscribe-digest`, `calendar-feed`, `og-image` (satori 0.33.4 + resvg-wasm 2.6.2).
 
-## Crons
+## Scheduling
 
-- 30 jobs, all active: every ingest, `wa-process-staging` (`12 * * * *`), `wa-geocode-picks` hourly, the enrichment set (`wa-enrich-pick-images` `35 4 * * *` ahead of `enrich-images-auto` 05:10; `wa-enrich-venue-images` nightly; `wa-verify-images` weekly), lifecycle housekeeping, and `send-digest-thursday` (`0 7 * * THU` = 09:00/10:00 local).
-- `archive-stale-daily`, `wa-enrich-venues-day` and `wa-enrich-venues-osm` post raw `net.http_post` with their own `Authorization` header; every other function cron goes through `invoke_wa_fn`. SQL-only jobs: `reset-tonight`, `wa-dedup-picks`, `wa-ingest-health`, `wa-purge-archived`, `wa-purge-pick-changes`, `wa-reconcile-absent`.
-- pg_cron has no rename: unschedule + schedule. Change cadence with:
-  ```sql
-  select cron.alter_job(jobid, schedule => '<schedule>') from cron.job where jobname = '<name>';
-  ```
-- pg_net gives up at 60s while the function keeps running: `ingest-hel-linkedevents` times out nightly and still inserts its rows.
+- No cron jobs exist. SQL housekeeping functions remain for the rewrite to reuse or drop: `reset_tonight`, `wa_dedup_active_picks`, `wa_ingest_zero_yield_check`, `wa_purge_old_archived`, `wa_purge_old_pick_changes`, `wa_reconcile_absent_picks`.
+- Run an edge function by hand: `select public.invoke_wa_fn('<fn>')`; the result is in `net._http_response` by the returned request id.
+- pg_net gives up at 60s while the function keeps running: `ingest-hel-linkedevents` times out and still inserts its rows.
 - A migration that drops a column must grep `pg_proc`, `cron.job` and `pg_policies` for it: SQL functions break at run time, not at migration time.
-- `wa-ingest-health` warns when an ingest's last 3 ok-runs log `inserted = 0` and `detail.skipped = 0`. Ingests that don't log `skipped` (cursor feeds: telegram, rss) are never flagged; a scraper that parses nothing must log `status = 'error'` itself.
+- `wa_ingest_zero_yield_check()` warns when an ingest's last 3 ok-runs log `inserted = 0` and `detail.skipped = 0`. Ingests that don't log `skipped` (cursor feeds: telegram, rss) are never flagged; a scraper that parses nothing must log `status = 'error'` itself.
 
 ## Deploy drift
 

@@ -1,10 +1,10 @@
 # WanderAlt
 
-Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full rewrite is planned, so retired code and data are deleted rather than kept. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
+Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full backend and frontend rewrite is planned, so retired code and data are deleted rather than kept. **The database holds no venues or events and no cron jobs run**; every page shows its empty state until the new pipeline populates it. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
 
 Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-west-1, Postgres 17) · Cloudflare Pages on `wanderalt.app`.
 
-Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (functions, crons, pipeline, images, LLM).
+Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (functions, scheduling, pipeline, images, LLM).
 
 ## Commands
 
@@ -13,7 +13,6 @@ Node 24 LTS (`.nvmrc`) for local scripts; `npm install` brings the pinned dev to
 ```bash
 npm start              # dev server, http://localhost:5173 (no CSP)
 npm run admin          # admin panel on :8080 (service-role key kept in localStorage)
-npm run catalog        # regenerate static fallback catalog.js from live Supabase
 npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 ```
 
@@ -21,7 +20,7 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 
 - Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `walk.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. Filenames of the first two stay unchanged for links in the wild; `_redirects` maps retired pages.
 - `wa.css` is the whole design system. `admin.css` / `admin-tokens.css` load on admin only.
-- `supabase.js` — data access + public anon key; falls back to `catalog.js` on fetch failure. Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
+- `supabase.js` — data access + public anon key; the lists stay empty on fetch failure (no static fallback). Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
 - `ui-helpers.js` — `WA.UI`: `esc`, `safeUrl`, `priceLabel`, `descriptionOr`, `passwordField`.
 - `geo.js` (`WA.Geo`), `hours.js` (`WA.Hours`), `when.js` — distance, opening hours, time parsing.
 - `bookmark.js` + `lists.js` — one saves store, localStorage-first, cloud sync on sign-in. `auth.js` — Supabase REST auth, no SDK.
@@ -29,7 +28,7 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 - `functions/_middleware.js` — Pages Function rewriting OG meta. `functions/img/wm/[[path]].js` — Pages Function proxying Wikimedia images on `/img/wm/*` (raster only, no cookies).
 - `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM only: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), byte-identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl`, and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
 - `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
-- `walks.json` — three hand-written routes.
+- `walks.json` — hand-written walk routes; currently none.
 
 ## Hard rules
 
@@ -65,7 +64,7 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 - **Pages**: GitHub-connected, preset None, build command empty, output `/`. `_headers` and `_redirects` apply automatically. `wanderalt.com` 301s to `wanderalt.app`.
 - **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
 - **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
-- **Crons calling `verify_jwt:true` functions go through `public.invoke_wa_fn(fn)`**, which supplies the Authorization header. A raw `net.http_post` without it 401s silently.
+- **No cron jobs are scheduled.** Run a function by hand with `select public.invoke_wa_fn('<fn>')`, which supplies the Authorization header a `verify_jwt:true` function needs; a raw `net.http_post` without it 401s silently.
 - **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
 - **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
@@ -83,14 +82,13 @@ ingest-* → staging_messages → process-staging → picks
 - Sources are rows in `sources`. Telegram, RSS and Fienta sources need no code.
 - **Staging upserts must carry `?on_conflict=channel,message_id`** or repeats 409 and `bumpSeen()` never runs.
 - **A new city needs entries in `CITY_CONTEXT` (`process-staging`) and `CITY_CENTER` (`geocode-picks`)** or it silently falls back / 400s.
-- Every pick comes from a source (`auto_generated`); there are no hand-written fixtures. `sources.handle` is the provenance shown as `via @handle`.
+- `sources` (18 feeds) is kept with cursors reset; `picks`, `venues`, `venue_details`, `venue_images`, `staging_messages`, `pick_changes`, `ingest_log` and `pipeline_config` are empty. Every pick comes from a source; `sources.handle` is the provenance shown as `via @handle`.
 - `process-staging` enforces the kind list and rejects `"null"` strings; the prompt alone does not.
-- `claim_staging_message()` claims from the least recently claimed source (its oldest message) and first rejects past events: feed rows by `payload.ends_at`/`starts_at`, Telegram/RSS posts older than 14 days. FIFO let `hel-linkedevents` (~80% of the queue) starve every other city. Throughput is 10 messages per hourly run.
+- `claim_staging_message()` claims from the least recently claimed source (its oldest message) and first rejects past events: feed rows by `payload.ends_at`/`starts_at`, Telegram/RSS posts older than 14 days. FIFO let `hel-linkedevents` (~80% of the queue) starve every other city. A run takes up to 10 messages.
 - App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
 - `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
 - `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.
-- **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`.
-- **`cron.job_run_details` does not show whether a cron worked** — use `net._http_response` (`status_code`, `timed_out`, `error_msg`) by request id.
+- **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`; an HTTP call's real result is `net._http_response` by request id.
 - **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
 
 ## LLM
