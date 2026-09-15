@@ -125,19 +125,18 @@
   };
 
   const signInCard = () => `
-    <section class="wa-digest" aria-labelledby="signin-title">
-      <h2 class="wa-digest__title" id="signin-title">Keep your shortlist across devices.</h2>
-      <p class="wa-digest__body">Everything works signed out. An account only carries your saves and the Thursday email between your phone and your laptop.</p>
+    <section class="wa-signin" aria-labelledby="signin-title">
+      <h2 class="wa-signin__title" id="signin-title">Keep your shortlist across devices.</h2>
+      <p class="wa-signin__body">Everything works signed out. An account only carries your saves between your phone and your laptop.</p>
       <div class="wa-btn-row">
         <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
         <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
       </div>
-      <!-- 6c draws Apple as a third option. It is deliberately absent
-           rather than drawn-and-broken: Apple sign-in needs a Service ID
+      <!-- No Apple option: Apple sign-in needs a Service ID
            and key configured in Supabase, and a button that 400s on tap
            is worse than one option fewer. Add the button here the day
            the provider is configured. -->
-      <p class="wa-digest__fine">By continuing you agree to the terms. We'll email you once a week at most, and only if you ask.</p>
+      <p class="wa-signin__fine">By continuing you agree to the terms.</p>
     </section>
 
     <section class="wa-section">
@@ -198,17 +197,6 @@
         </div>
       </section>
 
-      <!-- 5f draws the weekly email and "Add to my calendar" as rows
-           in You, not only at the foot of Explore. The digest_opt_ins
-           table, the Resend key and the calendar-feed function all
-           already exist; this surface was the one 5f asked for and the
-           only one that had not been built. -->
-      <section class="wa-section">
-        <h2 class="wa-section-title">Thursday email</h2>
-        <p class="wa-detail__note">One email a week, on Thursday: what's on over the weekend and the week after in ${esc(cityLabel(window.WA.CITY))}, in the same shape as Tonight. No account needed, one unsubscribe link, no other mail.</p>
-        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./index.html#digest-title">Sign up &rsaquo;</a></p>
-      </section>
-
       <section class="wa-section">
         <h2 class="wa-section-title">Add to my calendar</h2>
         <p class="wa-detail__note">Take the week as a calendar feed and never open the app.</p>
@@ -230,7 +218,7 @@
       </section>` : signInCard()}
 
       <!-- The source count says who is behind this. -->
-      <p class="wa-digest__fine" style="margin-top:var(--s-8)">
+      <p class="wa-signin__fine" style="margin-top:var(--s-8)">
         WanderAlt reads ${sources || 'its'} sources across ${cityList.length} cities.
         <a href="./about.html">See them all &rarr;</a>
       </p>`;

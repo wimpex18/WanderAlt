@@ -16,7 +16,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v2';
+const VERSION = 'wa-v4';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -33,16 +33,14 @@ const SHELL_URLS = [
   './profile.html',
   './about.html',
   './404.html',
-  './walk.html',
   './wa.css',
   './marks.svg',
-  './walks.json',
-  './theme.js', './when.js', './catalog.js', './geo.js', './hours.js',
+  './theme.js', './when.js', './geo.js', './hours.js',
   './marks.js', './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
   './follow.js', './toast.js', './view-transition.js',
   './explore.js', './tonight.js', './saved-page.js', './detail.js',
-  './source.js', './you.js', './about.js', './notfound.js', './walk.js',
+  './source.js', './you.js', './about.js', './notfound.js',
   './fonts/fraunces-600.woff2',
   './fonts/geist-mono-400.woff2',
   './fonts/geist-mono-500.woff2',

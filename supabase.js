@@ -1,17 +1,16 @@
 /* ============================================================
    WanderAlt — Supabase data loader
    ------------------------------------------------------------
-   Fetches picks and past entries from the Supabase REST API,
-   converts them to the window.WA.catalog / window.WA.past shape,
+   Fetches picks, venues and venue details from the Supabase REST API,
+   converts them to the window.WA.catalog shape,
    then dispatches 'wa:catalog-ready' so page scripts can render.
 
-   On network failure or timeout (2 s) the static catalog.js
-   data is kept as a fallback and the event is still dispatched,
-   so pages always render — just from the bundled snapshot.
+   On network failure or timeout (2 s) the lists stay empty and the
+   event is still dispatched, so pages render their empty states.
 
    Load order in every HTML file:
-     catalog.js → supabase.js → bookmark.js → [page script]
-                                                (all defer)
+     city.js → supabase.js → bookmark.js → [page script]
+                                            (all defer)
 
    The anon key is intentionally public; RLS allows only SELECT.
    ============================================================ */
@@ -25,6 +24,8 @@
   window.WA          = window.WA || {};
   window.WA.BASE_URL = BASE;
   window.WA.ANON_KEY = KEY;
+  window.WA._catalogAll = window.WA.catalog = [];
+  window.WA._venuesAll  = window.WA.venues  = [];
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
@@ -77,9 +78,7 @@
   const FOOD_PLACE_KINDS = new Set([
     'bar', 'cafe', 'restaurant', 'food', 'eatery', 'place'
   ]);
-  const isPublicPick = (r) =>
-    r.handle !== '@discovery' &&
-    !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
+  const isPublicPick = (r) => !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
 
   /* Convert a Postgres picks row → catalog entry shape */
   const toPick = (r) => ({
@@ -102,9 +101,8 @@
     address:   r.address   ?? null,
     coordsSource: r.coords_source ?? null,
     coordsLocked: !!r.coords_locked,
-    permalink: r.source_url || null,   /* external event/ticket page (picks.source_url, sourced from staging_messages.permalink) */
-    /* Source-authored facts. description is the venue's own blurb (never
-       LLM-written); links is written by resolve-links. */
+    permalink: r.source_url || null,   /* the listing's own event or ticket page */
+    /* Source-authored facts. description is the venue's own blurb. */
     description: r.description || null,
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,
@@ -157,15 +155,14 @@
     document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
 
   const load = async () => {
-    /* 2-second timeout so a slow network falls back to catalog.js */
+    /* 2-second timeout so a slow network renders the empty states */
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), 2000);
 
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
-       city-filtered slice is WA.catalog. past + venue_details follow the
-       same pattern. */
-    const [picksResult, pastResult, vdResult, venuesResult] = await Promise.allSettled([
+       city-filtered slice is WA.catalog. */
+    const [picksResult, vdResult, venuesResult] = await Promise.allSettled([
       get(
         `picks`,
         `archived_at=is.null` +
@@ -180,7 +177,6 @@
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),
-      get(`past`, `order=created_at.asc`, abort.signal),
       /* short_desc is the venue blurb the source page prints when present. */
       get(
         `venue_details`,
@@ -238,20 +234,8 @@
          every live bookmark looks "gone". */
       window.WA.DATA_LIVE = true;
     } else {
-      /* Keep static catalog.js snapshot; log so devtools shows the reason. */
-      console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);
+      console.warn('[WanderAlt] picks fetch failed.', picksResult.reason?.message);
       window.WA.DATA_LIVE = false;
-    }
-
-    if (pastResult.status === 'fulfilled') {
-      /* created_at is when the row was archived. */
-      const allPast = pastResult.value.map(r => ({
-        id: r.id, title: r.title, date: r.date, city: r.city, archivedAt: r.created_at,
-      }));
-      window.WA._pastAll = allPast;
-      window.WA.past     = allPast.filter(e => !e.city || e.city === CITY);
-    } else {
-      window.WA.past = [];  /* past table is optional — silently empty if absent */
     }
 
   /* ── An event with no photo borrows its venue's ──────────────
@@ -290,8 +274,7 @@
       window.WA._venuesAll = allVenues;
       window.WA.venues     = allVenues.filter(v => v.city === CITY);
     } else {
-      /* Keep the static catalog.js venue seed as a fallback. */
-      console.warn('[WanderAlt] venues fetch failed — using static venue seed.', venuesResult.reason?.message);
+      console.warn('[WanderAlt] venues fetch failed.', venuesResult.reason?.message);
     }
 
     borrowVenuePhotos();

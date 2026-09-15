@@ -5,7 +5,6 @@
   "scripts": {
     "start": "node .scripts/dev-server.js",
     "admin": "node .scripts/dev-server.js --port 8080",
-    "catalog": "node .scripts/regen-catalog.js",
     "build:icons": "node .scripts/rasterize-favicons.js"
   },
   "devDependencies": {

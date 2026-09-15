@@ -8,9 +8,8 @@
      four cities) or the special value 'Tonight'.
    - Explicit true flags are always respected — derivation only widens.
 
-   Both catalog paths call WA.when.stampAll(): catalog.js (static
-   fallback) and supabase.js (live). Loads before catalog.js on every
-   page that includes it (deferred scripts execute in document order).
+   supabase.js calls WA.when.stampAll() on the live catalogue. Loads
+   before supabase.js (deferred scripts execute in document order).
    ============================================================ */
 (() => {
   'use strict';

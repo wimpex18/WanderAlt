@@ -2,8 +2,8 @@
    explore.js — Explore.
    ------------------------------------------------------------
    A browsing surface: carousels with plain section names, a count in
-   every subtitle, and the dense list one tap away in Tonight. Four scope
-   tabs under the capsule: All, Events, Places, Walks.
+   every subtitle, and the dense list one tap away in Tonight. Three scope
+   tabs under the capsule: All, Events, Places.
 
    Everything interpolated here is scraped. Every value goes through
    WA.UI.esc() at the interpolation site, and any URL through
@@ -48,10 +48,8 @@
   };
   /* ?scope= so another screen can hand the reader straight to a scope. */
   const readScope = () => {
-    const raw = new URLSearchParams(location.search).get('scope');
-    /* `tonight` is the old name of this scope; shared links still resolve. */
-    const want = raw === 'tonight' ? 'events' : raw;
-    if (!['all', 'events', 'places', 'walks'].includes(want)) return;
+    const want = new URLSearchParams(location.search).get('scope');
+    if (!['all', 'events', 'places'].includes(want)) return;
     state.scope = want;
     document.querySelectorAll('#scope [data-scope]').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.scope === want)));
@@ -264,28 +262,6 @@
 
     const sorted = (list) => list.slice().sort(geo.bySoonestThenDistance());
 
-    /* Routes are not picks, so this does not go through section(): it
-       lists every route for the city with the same card All shows. */
-    if (state.scope === 'walks') {
-      const esc = UI().esc;
-      const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
-      out.push(`<section class="wa-section">
-        <p class="wa-section-sub">${esc(`${city} · this weekend`)}</p>
-        <h2 class="wa-section-title">Walks we assembled</h2>
-        ${mine.length
-          ? mine.map(r => `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
-              <span class="wa-walkcard__eyebrow">A walk</span>
-              <span class="wa-walkcard__title">${esc(r.title)}</span>
-              <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
-              <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
-            </a>`).join('')
-          : `<div class="wa-empty">
-              <p class="wa-empty__title">No walks written for ${esc(city)} yet.</p>
-              <p class="wa-empty__body">Routes are assembled by hand around venues whose opening hours are filed, so they arrive one city at a time. Tallinn has three.</p>
-            </div>`}
-      </section>`);
-    }
-
     if (state.scope === 'all' || state.scope === 'events') {
       const label = WHEN_LABEL[state.when] || 'On';
       /* The empty state names a window that actually holds something, not
@@ -325,10 +301,6 @@
           ? `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · within a ${WALK_MIN}-minute walk`
           : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · most time left`,
         items: bounded ? sorted(openNow) : byTimeLeft(openNow),
-        href:  'discover.html?type=places',
-        /* Reads as one sentence with the label above: "See all 61 / as a
-           list". */
-        hrefSub: 'as a list',
         emptyTitle: 'Nothing we can confirm is open this minute.',
         emptyBody:  `Opening hours reach us for about half of ${city}'s places, so this is quieter than the city is. Places below shows everything.`,
       }));
@@ -350,8 +322,6 @@
           ? `${all.length} listed · nearest first`
           : `${all.length} listed · A to Z`,
         items: all,
-        href:  'discover.html?type=places',
-        hrefSub: 'as a list',
         emptyTitle: `No places listed in ${city} yet.`,
         emptyBody:  'The venue index is built from OpenStreetMap, and this city has not been swept yet.',
       }));
@@ -375,49 +345,6 @@
           </span>
         </div>`).join('')}</div>
     </section>`;
-
-  /* The Walks card: one route, full width, only for cities with routes. */
-  let ROUTES = null;
-
-  /* A route is labelled "6 stops · 2.5 km". The distance is computed from
-     the legs between consecutive stops in the venue index, not filed in
-     walks.json. Stops with no coordinate drop out of the sum; with fewer
-     than two resolved stops the count stands alone. */
-  const routeFacts = (r) => {
-    const stops = r.stops.length;
-    const idx = {};
-    for (const v of (window.WA._venuesAll || window.WA.venues || [])) idx[v.id] = v;
-    const pts = r.stops
-      .map(s => idx[s.id])
-      .filter(Boolean)
-      .map(v => ({ lat: v.lat ?? v.latitude, lng: v.lng ?? v.longitude }))
-      .filter(p => p.lat != null && p.lng != null);
-
-    if (pts.length < 2) return `${stops} stops`;
-    let m = 0;
-    for (let i = 1; i < pts.length; i++) {
-      m += window.WA.Geo.haversineM(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
-    }
-    return `${stops} stops · ${window.WA.Geo.format(m)}`;
-  };
-
-  const walkCard = () => {
-    /* esc is function-scoped in this file, not module-scoped. */
-    const esc = UI().esc;
-    const host = $('walkcard');
-    if (!host) return;
-    /* The Walks scope lists every route below, so skip the teaser there. */
-    if (state.scope === 'walks') { host.innerHTML = ''; return; }
-    const mine = (ROUTES || []).filter(r => r.city === window.WA.CITY);
-    if (!mine.length) { host.innerHTML = ''; return; }
-    const r = mine[0];
-    host.innerHTML = `<a class="wa-walkcard" href="walk.html?id=${esc(encodeURIComponent(r.id))}">
-      <span class="wa-walkcard__eyebrow">A walk</span>
-      <span class="wa-walkcard__title">${esc(r.title)}</span>
-      <p class="wa-walkcard__blurb">${esc(r.blurb)}</p>
-      <span class="wa-walkcard__facts">${esc(routeFacts(r))}</span>
-    </a>`;
-  };
 
   /* ── The saved strip ─────────────────────────────────────────
      "3 saved in Kalamaja · Two are open right now →", between the capsule
@@ -471,18 +398,6 @@
     </a>`;
   };
 
-  const loadWalks = async () => {
-    try {
-      const res = await fetch('./walks.json');
-      ROUTES = res.ok ? (await res.json()).routes : [];
-      walkCard();
-    } catch (err) {
-      ROUTES = [];
-      console.warn('[WanderAlt] walks.json did not load — the route card is skipped.', err);
-    }
-  };
-  loadWalks();
-
   /* ── The collapsed key ───────────────────────────────────────
      Below 768 only the capsule's first slot shows, so the one visible key
      carries the whole applied search ("Tallinn · Anytime"), defaults
@@ -499,7 +414,6 @@
 
   const render = () => {
     savedStrip();
-    walkCard();
     $('sections').innerHTML = buildSections();
     const facets = MOBILE.matches ? appliedFacets() : [];
     $('cap-where').textContent = facets.length ? [CITY_LABEL(), ...facets].join(' · ') : CITY_LABEL();
@@ -509,8 +423,6 @@
     /* Again here because readScope() runs before first layout, where
        every rect is 0 and the guard reads "already visible". */
     revealScope();
-    const dc = $('digest-city');
-    if (dc) dc.textContent = CITY_LABEL();
   };
 
   /* ── Sheets ──────────────────────────────────────────────────
@@ -677,38 +589,6 @@
 
   sheet && sheet.addEventListener('close', () => { openSlot = ''; });
 
-  /* ── The weekly email (Thursday) ─────────────────────────────
-     Anonymous opt-in; the account is attached only when there is one. */
-  const form = $('digest-form');
-  if (form) {
-    form.addEventListener('submit', async () => {
-      const input = $('digest-email');
-      const note  = $('digest-note');
-      const email = (input.value || '').trim();
-      if (!email) return;
-      const base = window.WA.BASE_URL, key = window.WA.ANON_KEY;
-      if (!base || !key) return;
-      try {
-        const res = await fetch(`${base}/rest/v1/digest_opt_ins`, {
-          method:  'POST',
-          headers: { apikey: key, Authorization: `Bearer ${key}`,
-                     'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            email, city: window.WA.CITY,
-            ...(window.WA.Auth && window.WA.Auth.session && window.WA.Auth.session.user_id
-              ? { user_id: window.WA.Auth.session.user_id } : {}),
-          }),
-        });
-        note.textContent = res.ok
-          ? 'Done. First one lands on Thursday morning.'
-          : 'That did not go through. Try again in a minute.';
-        if (res.ok) input.value = '';
-      } catch (_) {
-        note.textContent = 'That did not go through. Try again in a minute.';
-      }
-    });
-  }
-
   /* ── Boot ────────────────────────────────────────────────────
      Skeleton immediately, real sections when the catalog lands, and a
      re-render when geolocation resolves. */
@@ -719,7 +599,6 @@
   });
   document.addEventListener('wa:location-ready', render);
 
-  /* catalog.js ships a static snapshot, so if the live fetch already
-     resolved before this script ran there is still something to draw. */
+  /* If the live fetch resolved before this script ran, draw now. */
   if (window.WA && window.WA.catalog && window.WA.catalog.length) render();
 })();
