@@ -1,7 +1,6 @@
 ---
 paths:
   - "supabase/**"
-  - "workers/**"
   - "admin.js"
   - ".scripts/regen-catalog.js"
 ---
@@ -51,7 +50,7 @@ update picks set archived_at = null, archive_reason = null where archive_reason 
 - `enrich-pick-images` lanes: Linkedevents API by event id (from `tapahtumat.hel.fi` permalinks), then the pick's own `source_url` page. The API lane is exempt from the shared-image guard (one show, many dates); the page lane is not. No logo lane — an aggregator's icon is the platform's brand.
 - Event images borrow from the venue downward only, relabelled "the venue, not the event". Linkedevents images are `event_only`: never copied to a venue, never outlive the listing.
 - Open upstream gap: `ingest-hel-linkedevents` doesn't carry `images[]` into the payload, and `process-staging` documents `image_url` but never reads it.
-- Commons photos are stored as `upload.wikimedia.org` URLs resolved via the imageinfo API (a file narrower than the requested width has no `/thumb/` rendition). Never store `Special:FilePath` URLs. Wikimedia URLs are served via `workers/wikimedia-proxy` (`/img/wm/*`) to strip cookies.
+- Commons photos are stored as `upload.wikimedia.org` URLs resolved via the imageinfo API (a file narrower than the requested width has no `/thumb/` rendition). Never store `Special:FilePath` URLs. Wikimedia URLs are served via the Pages Function `functions/img/wm/[[path]].js` (`/img/wm/*`) to strip cookies.
 - `verify-images` walks oldest-checked first (`NULLS FIRST`): 404/410/403 or non-image content-type clears the URL; timeout, 5xx and 429 retry once, never delete, but still stamp `image_checked_at`. Fresh Commons thumbnails 429 on first render.
 - `image_source` records which mechanism wrote each photo. Audit: `select * from image_health` — `duplicate_rows > 0` is the bad shape.
 - **After changing what a fetcher can find, clear `image_enrich_failed_at` for the rows the change could help** — the cooldown otherwise hides the fix for 30 days.

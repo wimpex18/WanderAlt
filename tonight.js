@@ -57,7 +57,10 @@
     const sp = new URLSearchParams(location.search);
 
     if (sp.get('date') && /^\d{4}-\d{2}-\d{2}$/.test(sp.get('date'))) state.day = sp.get('date');
-    if (sp.get('time'))  state.when   = sp.get('time');
+    /* Only known windows; "anytime" is the label people type for "all".
+       An unknown value would leave the list on its skeleton. */
+    const time = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
+    if (time && WHEN_LABEL[time]) state.when = time;
     if (sp.get('q'))     state.q      = sp.get('q');
     if (sp.get('sort'))  state.sort   = sp.get('sort');
     if (sp.get('cat'))   sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));

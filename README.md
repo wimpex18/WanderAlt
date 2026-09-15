@@ -46,7 +46,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 - **Fonts**: self-hosted in `fonts/` — Plus Jakarta Sans (chrome), Fraunces (catalogue voice), Geist Mono (facts).
 - **Offline**: `sw.js` precaches the shell and the last picks/venues responses; the banner says how stale they are.
 - **Sharing**: `functions/_middleware.js` (Pages Function) rewrites Open Graph tags per pick and source; the `og-image` edge function renders fallback cards.
-- **Images**: `workers/wikimedia-proxy` serves Wikimedia images through Cloudflare without third-party cookies.
+- **Images**: the Pages Function `functions/img/wm/[[path]].js` serves Wikimedia images from our origin without third-party cookies.
 - **URLs**: `?q= ?cat= ?time= ?type= ?within= ?sort= ?view=map ?id=` round-trip; `_redirects` maps retired pages onto current ones.
 
 ## Deploying
@@ -92,8 +92,6 @@ Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`,
 - Supabase Auth redirect URL → deployed domain (Dashboard → Auth → URL Configuration).
 - Self-serve account deletion (Dashboard → Authentication → Settings).
 - Leaked-password protection (Dashboard → Auth).
-- Mistral console: opt out of training on inputs (Experiment tier default).
-- `workers/wikimedia-proxy` is not in the connected Cloudflare account; confirm `/img/wm/*` is routed, then `npx wrangler@latest deploy` to apply the current `compatibility_date`.
 - Linkedevents images are dropped at ingest; `enrich-pick-images` re-fetches them per pick instead.
 - Vilnius public launch: coverage. The Resident Advisor feed is hand-invoked only, on terms-of-service grounds.
 - Design question: a geometric sans for headlines, with Fraunces kept for timetable rows (owner's aesthetic call).

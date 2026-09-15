@@ -52,8 +52,8 @@
     return out;
   };
 
-  /* Route Wikimedia thumbnails through the wikimedia-proxy Worker
-     (/img/wm/*) so Wikipedia sets no third-party cookie. No-op on
+  /* Route Wikimedia thumbnails through the Pages Function at
+     functions/img/wm (/img/wm/*) so Wikipedia sets no third-party cookie. No-op on
      localhost, where the Worker is not wired. */
   const proxifyImage = (url) => {
     if (!url || typeof url !== 'string') return url;

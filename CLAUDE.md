@@ -29,7 +29,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - `geo.js` (`WA.Geo`), `hours.js` (`WA.Hours`), `when.js` — distance, opening hours, time parsing.
 - `bookmark.js` + `lists.js` — one saves store, localStorage-first, cloud sync on sign-in. `auth.js` — Supabase REST auth, no SDK.
 - `sw.js` + `offline.js` — service worker and offline banner. `marks.js` — image fallback and small-image handling.
-- `functions/_middleware.js` — Pages Function rewriting OG meta. `workers/wikimedia-proxy/` — strips Wikimedia cookies on `/img/wm/*`.
+- `functions/_middleware.js` — Pages Function rewriting OG meta. `functions/img/wm/[[path]].js` — Pages Function proxying Wikimedia images on `/img/wm/*` (raster only, no cookies).
 - `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM only: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), byte-identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl`, and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
 - `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
 - `walks.json` — three hand-written routes.
@@ -95,7 +95,7 @@ ingest-* → staging_messages → process-staging → picks
 ## LLM
 
 - Lanes, tried in order in `process-staging` and `send-digest`; each is skipped while its secret is unset. All free tiers.
-  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`), `response_format: json_object`. The free Experiment tier trains on inputs unless opted out in the console.
+  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`), `response_format: json_object`.
   - NVIDIA `nvidia/nemotron-3.5-lightning-30b-a3b` (`NVIDIA_API_KEY`), 40 RPM, prototyping terms. Sent `chat_template_kwargs: {enable_thinking: false}`; without it the model reasons and one call can outlive the worker.
   - OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`, currently unset; `OPENROUTER_MODEL` overrides with no deploy).
 - `translate-picks` uses Mistral then NVIDIA. In `process-staging` an unparseable answer falls through to the next lane.
