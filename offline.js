@@ -2,8 +2,8 @@
    offline.js — the offline banner, and service-worker registration.
    ------------------------------------------------------------
    Saves are localStorage-first; sw.js caches the shell and the last
-   picks/venues responses; distances degrade as they do without
-   location permission. The banner prints how stale the cached list is.
+   listings response; distances degrade as they do without location
+   permission. The banner prints how old the cached listings are.
    ============================================================ */
 (() => {
   'use strict';
@@ -52,8 +52,8 @@
     const stale = ago(cachedAt);
     node.innerHTML =
       '<span class="wa-offline__dot" aria-hidden="true"></span>' +
-      `<span>No signal. Showing ${clock()}. Your saved picks and tonight's ` +
-      'list work offline. Distances won\'t update.' +
+      `<span>No signal. Showing ${clock()}. Your saves work offline, and ` +
+      'listings stay as they last loaded. Distances won\'t update.' +
       (stale ? ` <span class="wa-offline__age">${stale}</span>` : '') +
       '</span>';
   };

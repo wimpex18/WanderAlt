@@ -2,7 +2,7 @@
    source.js — the source page.
    ------------------------------------------------------------
    The subject is a venue or feed, grouped from the picks that name it:
-   how many are on, when we last read it, how far away it is.
+   how many are on, when it was listed, how far away it is.
 
    ?venue=<name> is the key. ?handle=<@handle> resolves to that source's
    picks.
@@ -112,8 +112,7 @@
 
     const onNow = s.picks.filter(e => window.WA.when.isTonight(e)).length;
     const dist  = s.venue ? window.WA.Geo.distanceLabel(s.venue) : '';
-    /* Freshest last_seen across this source's picks is the honest
-       "read N ago" — it is when we last confirmed the listing stood. */
+    /* The freshest last_seen_at (or created_at) across this source's picks. */
     const seen = s.picks
       .map(e => e.lastSeenAt || e.createdAt)
       .filter(Boolean)
@@ -141,9 +140,7 @@
       ${blurb ? `<p class="wa-detail__desc" style="margin-top:var(--s-4)">${esc(blurb)}</p>` : ''}
 
       <div class="wa-cells">
-        <!-- The label follows the number. Falling back to the total under
-             an "On now" heading claimed thirteen things were happening
-             tonight when none were — the stat contradicting itself. -->
+        <!-- The label follows the number: "On now" only when something is. -->
         <div class="wa-cell"><span class="wa-cell__label">${onNow ? 'On now' : 'Listed'}</span>
           <span class="wa-cell__value">${onNow || s.picks.length}</span></div>
         ${seen ? `<div class="wa-cell"><span class="wa-cell__label">Read</span>

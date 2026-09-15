@@ -290,7 +290,6 @@
   document.addEventListener('click', (e) => {
     if (e.target.closest && e.target.closest('#sheet-close')) { closeSheet(); return; }
 
-    /* Toggle membership from the sheet. */
     const tog = e.target.closest && e.target.closest('[data-toggle-list]');
     if (tog) {
       const L = window.WA.Lists;

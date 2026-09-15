@@ -72,7 +72,6 @@
   /* Synchronous read for render paths — null until the prompt resolves,
      at which point 'wa:location-ready' asks the page to re-render. */
   const currentLoc  = () => _loc;
-  const locDenied   = () => _denied;
 
   /* Metres from the reader to an entry, or null if either end is unknown. */
   const distanceTo = (entry, from) => {
@@ -136,8 +135,8 @@
 
   window.WA.Geo = {
     WALK_M_PER_MIN,
-    haversineM, walkMinutes, format,
-    coordsFor, userLoc, currentLoc, locDenied,
+    walkMinutes, format,
+    coordsFor, userLoc, currentLoc,
     distanceTo, distanceLabel,
     startMinutes, bySoonestThenDistance,
     parseWithin, withinFilter,

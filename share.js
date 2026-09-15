@@ -13,7 +13,7 @@
   'use strict';
   window.WA = window.WA || {};
 
-  /* ---- Native share with graceful fallbacks ---------------- */
+  /* ── Native share with graceful fallbacks ─────────────────── */
   async function shareUrl({ title, text, url } = {}) {
     const shareData = {
       title: title || 'WanderAlt',

@@ -8,8 +8,9 @@
 
      static        stale-while-revalidate. CSS, JS, fonts, the sprite.
 
-     picks/venues  network-first with a timestamped cache fallback, so
-                   the banner can say how stale the list is.
+     listings      picks, venues and venue_details: network-first with a
+                   timestamped cache fallback, so the banner can say how
+                   old they are.
 
    Never cached: anything carrying an Authorization header that is not
    the public anon key, and every non-GET.
