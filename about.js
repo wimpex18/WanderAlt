@@ -18,9 +18,7 @@
       <div class="wa-cell"><span class="wa-cell__label">Sources read</span>
         <span class="wa-cell__value">${sources || '—'}</span></div>
       <div class="wa-cell"><span class="wa-cell__label">Places listed</span>
-        <span class="wa-cell__value">${venues.length || '—'}</span></div>
-      <div class="wa-cell"><span class="wa-cell__label">Refresh</span>
-        <span class="wa-cell__value">hourly</span></div>`;
+        <span class="wa-cell__value">${venues.length || '—'}</span></div>`;
 
     const grid = document.getElementById('about-cities');
     if (grid) grid.innerHTML = (window.WA.CITIES || []).map((c) => {

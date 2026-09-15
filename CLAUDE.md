@@ -1,10 +1,10 @@
 # WanderAlt
 
-Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full backend and frontend rewrite is planned, so retired code and data are deleted rather than kept. **The database holds no venues or events and no cron jobs run**; every page shows its empty state until the new pipeline populates it. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
+Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full backend and frontend rewrite is planned, so retired code and data are deleted rather than kept. **The database holds no venues or events, there is no ingestion pipeline and no cron jobs run**; every page shows its empty state. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
 
-Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-west-1, Postgres 17) · Cloudflare Pages on `wanderalt.app`.
+Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions; project `aqnsmmbrspkbfcvougeh`, eu-west-1, Postgres 17) · Cloudflare Pages on `wanderalt.app`.
 
-Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (functions, scheduling, pipeline, images, LLM).
+Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (schema, edge functions, deploy, images).
 
 ## Commands
 
@@ -18,7 +18,7 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 
 ## Map
 
-- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `walk.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. Filenames of the first two stay unchanged for links in the wild; `_redirects` maps retired pages.
+- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. Filenames of the first two stay unchanged for links in the wild; `_redirects` maps retired pages.
 - `wa.css` is the whole design system. `admin.css` / `admin-tokens.css` load on admin only.
 - `supabase.js` — data access + public anon key; the lists stay empty on fetch failure (no static fallback). Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
 - `ui-helpers.js` — `WA.UI`: `esc`, `safeUrl`, `priceLabel`, `descriptionOr`, `passwordField`.
@@ -28,14 +28,13 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 - `functions/_middleware.js` — Pages Function rewriting OG meta. `functions/img/wm/[[path]].js` — Pages Function proxying Wikimedia images on `/img/wm/*` (raster only, no cookies).
 - `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM only: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), byte-identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl`, and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
 - `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
-- `walks.json` — hand-written walk routes; currently none.
 
 ## Hard rules
 
 - **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Mistral, NVIDIA and OpenRouter free tiers, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
+- **Free tier only.** Mistral, NVIDIA and OpenRouter free tiers; Google Cloud billing is gone.
 - **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
@@ -44,11 +43,10 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 ## Security
 
 - **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only, with INSERT on `bookmarks` and `digest_opt_ins`. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
-- **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration. pg_cron runs as job owner and is unaffected.
+- **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration.
 - **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
 - `anon`/`authenticated` have `search_path = public, extensions`. `pg_net` is non-relocatable and stays in `public`; EXECUTE on `net.*` is revoked from `anon`.
-- Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`, `pipeline_config`, `venue_images`) have no anon/authenticated access — intended deny-all. Edge functions and `admin.js` use the service-role key.
-- Cron-only SQL functions (`wa_*`, `reset_tonight`) have EXECUTE revoked from API roles. Own-row policies use `(select auth.uid())`.
+- `pick_changes` has no anon/authenticated access. Edge functions and `admin.js` use the service-role key. Own-row policies use `(select auth.uid())`.
 - `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
 - Open: leaked-password protection is off (dashboard toggle under Auth).
 
@@ -64,43 +62,22 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 - **Pages**: GitHub-connected, preset None, build command empty, output `/`. `_headers` and `_redirects` apply automatically. `wanderalt.com` 301s to `wanderalt.app`.
 - **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
 - **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
-- **No cron jobs are scheduled.** Run a function by hand with `select public.invoke_wa_fn('<fn>')`, which supplies the Authorization header a `verify_jwt:true` function needs; a raw `net.http_post` without it 401s silently.
-- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
+- **No cron jobs are scheduled.** Run a function by hand with `select public.invoke_wa_fn('<fn>')`, which supplies the Authorization header a `verify_jwt:true` function needs.
+- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 stubs (listed in `.claude/rules/supabase.md`). Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
 - **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
-## Pipeline and data
+## Data
 
-Tables: `picks` (events), `venues` (OSM places), `venue_details` (enrichment by venue name), `venue_images` (photo cache), `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`; view `image_health`.
-
-```
-ingest-* → staging_messages → process-staging → picks
-         → enrich-images / enrich-pick-images → geocode-picks → enrich-venues
-         → enrich-venue-images → verify-images
-         → rotate-tonight → archive-stale → dedup → purge
-```
-
-- Sources are rows in `sources`. Telegram, RSS and Fienta sources need no code.
-- **Staging upserts must carry `?on_conflict=channel,message_id`** or repeats 409 and `bumpSeen()` never runs.
-- **A new city needs entries in `CITY_CONTEXT` (`process-staging`) and `CITY_CENTER` (`geocode-picks`)** or it silently falls back / 400s.
-- `sources` (18 feeds) is kept with cursors reset; `picks`, `venues`, `venue_details`, `venue_images`, `staging_messages`, `pick_changes`, `ingest_log` and `pipeline_config` are empty. Every pick comes from a source; `sources.handle` is the provenance shown as `via @handle`.
-- `process-staging` enforces the kind list and rejects `"null"` strings; the prompt alone does not.
-- `claim_staging_message()` claims from the least recently claimed source (its oldest message) and first rejects past events: feed rows by `payload.ends_at`/`starts_at`, Telegram/RSS posts older than 14 days. FIFO let `hel-linkedevents` (~80% of the queue) starve every other city. A run takes up to 10 messages.
-- App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
-- `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
-- `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.
-- **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`; an HTTP call's real result is `net._http_response` by request id.
-- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
+- The site reads `picks WHERE archived_at IS NULL`, active `venues` of the kinds in `VENUE_KINDS`, and `venue_details`. All three are empty; the next backend decides how they are filled. The admin panel can add picks and venues by hand.
+- Pick id format is `channel-message_id`; provenance is `picks.handle`, shown as `via @handle`.
+- `picks.price` is unused; `is_free` is the money signal.
+- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark.
+- When a model writes data, a prompt is a request, not a constraint: enforce allowed values, reject `"null"` strings and drop restatements (`WA.UI.descriptionOr`) in code.
 
 ## LLM
 
-- Lanes, tried in order in `process-staging` and `send-digest`; each is skipped while its secret is unset. All free tiers.
-  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`), `response_format: json_object`.
-  - NVIDIA `nvidia/nemotron-3.5-lightning-30b-a3b` (`NVIDIA_API_KEY`), 40 RPM, prototyping terms. Sent `chat_template_kwargs: {enable_thinking: false}`; without it the model reasons and one call can outlive the worker.
-  - OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`, currently unset; `OPENROUTER_MODEL` overrides with no deploy).
-- `translate-picks` uses Mistral then NVIDIA. In `process-staging` an unparseable answer falls through to the next lane.
-- Edge workers are killed at 150s and pg_net stops waiting at 60s: every LLM call carries an `AbortSignal.timeout`, and `process-staging` stops taking messages at 90s (30s per call, hard stop 130s).
-- **Pin models by exact id and confirm the id is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
-- Secret presence can't be checked from here (`check-secrets` is a tombstone); look in the dashboard.
+- `send-digest` writes its intro with the first lane that answers, each skipped while its secret is unset: Mistral `mistral-small-2603` (`MISTRAL_API_KEY`) → NVIDIA `nvidia/nemotron-3.5-lightning-30b-a3b` (`NVIDIA_API_KEY`, sent `chat_template_kwargs: {enable_thinking: false}`) → OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`, unset). All free tiers.
+- **Pin models by exact id and confirm it is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
 
 ## Environment
 

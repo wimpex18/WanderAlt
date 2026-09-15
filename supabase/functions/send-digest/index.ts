@@ -1,8 +1,8 @@
 /* ============================================================
    WanderAlt — send-digest edge function
    ------------------------------------------------------------
-   The weekly Thursday digest (cron send-digest-thursday, 0 7 * * THU,
-   through invoke_wa_fn). verify_jwt: true.
+   The weekly digest. Not scheduled; run by hand through invoke_wa_fn.
+   verify_jwt: true.
 
    SECURITY: the recipient override addresses an arbitrary mailbox, so it
    requires the SERVICE ROLE key in the Authorization header. verify_jwt
@@ -36,8 +36,8 @@ const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-s
 const FROM    = Deno.env.get('DIGEST_FROM_EMAIL') ?? 'WanderAlt <onboarding@resend.dev>';
 /* wanderalt.app is the canonical domain; an email outlives a redirect. */
 const BASE_URL = Deno.env.get('SITE_URL') ?? 'https://wanderalt.app';
-/* Text generation: Mistral, NVIDIA, OpenRouter :free — the same
-   ladder process-staging uses, each lane skipped while its key is unset. */
+/* Text generation: Mistral, NVIDIA, OpenRouter :free, each lane skipped
+   while its key is unset. */
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
   fetch(`${SB_URL}${path}`, {
@@ -297,13 +297,6 @@ const sendEmail = async (to: string, subject: string, html: string, text: string
   return { ok: false, error: (body.message as string) ?? `HTTP ${res.status}` };
 };
 
-const log = async (status: string, inserted: number, error?: string) => {
-  await sbFetch('/rest/v1/ingest_log', {
-    method: 'POST',
-    body: JSON.stringify({ fn: 'send-digest', status, inserted, rejected: 0, error: error ?? null, finished_at: new Date().toISOString() }),
-  }).catch(() => {});
-};
-
 Deno.serve(async (req: Request) => {
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
   const dryRun     = body.dry_run === true;
@@ -336,13 +329,11 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!recipients.length) {
-    await log('ok', 0);
     return new Response(JSON.stringify({ ok: true, sent: 0, reason: 'no subscribers' }), { headers: { 'Content-Type': 'application/json' } });
   }
 
   const picks = await fetchThisWeekPicks(city, 5);
   if (!picks.length) {
-    await log('ok', 0);
     return new Response(JSON.stringify({ ok: true, sent: 0, reason: 'no picks this week' }), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -373,7 +364,5 @@ Deno.serve(async (req: Request) => {
     if (ok) sent++; else errors.push(`${r.email}: ${error}`);
   }
 
-  const status = errors.length === 0 ? 'ok' : 'partial';
-  await log(status, sent, errors.length ? errors.join('; ') : undefined);
   return new Response(JSON.stringify({ ok: true, sent, total: recipients.length, errors: errors.length ? errors : undefined }), { headers: { 'Content-Type': 'application/json' } });
 });

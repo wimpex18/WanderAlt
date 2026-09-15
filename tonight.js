@@ -304,8 +304,8 @@
       const placeCount = (window.WA.venues || []).length;
       title = `${city} has no listings tonight.`;
       body  = placeCount
-        ? `We read the sources hourly and none of them filed anything. ${placeCount} places are open regardless.`
-        : `We read the sources hourly. Nothing has come in for this city yet.`;
+        ? `None of the sources filed anything. ${placeCount} places are open regardless.`
+        : `Nothing has come in for this city yet.`;
     }
 
     return `<div class="wa-empty">

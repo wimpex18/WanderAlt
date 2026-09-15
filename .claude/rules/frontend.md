@@ -3,7 +3,6 @@ paths:
   - "*.html"
   - "*.css"
   - "*.js"
-  - "walks.json"
   - "functions/**"
 ---
 
@@ -15,7 +14,7 @@ paths:
 - **Use tokens. Never hand-roll a colour, blur or rgba literal** — it breaks the other theme.
 - Material is flat opaque paper. **Day is the default**; `theme.js` swaps pre-paint from a precomputed per-city sun table, never an API.
 - **Glass is exactly two elements**: sticky `.wa-topbar` and bottom `.wa-tabbar`, both ≥92% opaque, both reserving real layout height. Never nest glass; they are siblings because `backdrop-filter` becomes the containing block for fixed descendants.
-- **Petrol is the only accent** (CTA included). **Lime means "now" only**: the NOW pill and the selected/now map pin. **`--warn`** marks states the reader must act on (offline banner, `.wa-note`, too-late walk, expired saved count) — never emphasis, never a control.
+- **Petrol is the only accent** (CTA included). **Lime means "now" only**: the NOW pill and the selected/now map pin. **`--warn`** marks states the reader must act on (offline banner, `.wa-note`, expired saved count) — never emphasis, never a control.
 - Radii: 999 pills · 12 controls · 14–16 cards · 18–20 sheets. `--tap-min` 44px is a hard floor on public pages.
 - Type: Plus Jakarta Sans 600/700 for chrome; Fraunces 600 for catalogue voice, **never under 17px**; Geist Mono for facts. `--fs-label` and `--fs-mono` share a value but stay separate tokens.
 - Jakarta is variable, two files (`latin`, `latin-ext`); **both subsets are required** for Latvian/Lithuanian diacritics. Only `latin` is preloaded. Inter stays on disk only for `admin-tokens.css`.
@@ -35,7 +34,7 @@ paths:
 - **One implementation per pattern.** `.wa-row` has four builders (`tonight.js`, `saved-page.js`, `source.js`, `you.js`); copy the nearest one rather than inventing a fifth.
 - Desktop masthead (≥1024): brand left, `.wa-tabbar` repositioned to `top: 0` and transparent (one blur, the top bar's), account right. Active nav = petrol ink + 600 + 2px underline. The capsule's centred 960px column is deliberate: full width drifts the slots apart.
 - In-page anchors that are link targets carry `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to those ids (not `[id]`, which would shift Tonight's `scrollIntoView`). About's calendar feed has its own id; the section keeps `#calendar`.
-- Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places/Walks under the capsule, on its 840px column. `?scope=tonight` still resolves to Events.
+- Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places under the capsule, on its 840px column. `?scope=tonight` still resolves to Events.
 - Below 768 the capsule collapses to one key that carries the applied search ("Tallinn · Anytime"), defaults omitted. A collapsed control must still show its state.
 - Scrolling chip rows run full bleed with the gutter in the scroller's padding, and scroll the selected chip into view (the row, never the page).
 - Tonight's header is the seven-day density strip: counts from the same filter chain as the rows minus time; an empty day draws no bar. Below 372px the grid gap is zero and the strip bleeds full width so each day stays ≥44px.
@@ -58,7 +57,6 @@ paths:
 - Offline banner is inserted after `.wa-topbar`, sticky at `--topbar-h`. Under it, Tonight's map-mode head goes `position: static`. Two sticky elements cannot share one offset.
 - `sw.js`: navigations network-first; static assets stale-while-revalidate; last picks/venues cached with `x-wa-cached-at`. `/sw.js` is `no-cache`. Never cache a signed-in response.
 - `.wa-sheet` (`<dialog>` + `showModal()`) is the one modal, including auth.
-- Walks is an experiment, judged not measured, built to be deleted: `walks.json`, `walk.*`, `.wa-walk*`, the scope tab, the Explore card. Every stop has filed `opening_hours`; no generator. Skip indices refer to `r.stops`; an empty route distinguishes "catalogue not loaded yet" from "every stop skipped".
 
 ## localStorage
 

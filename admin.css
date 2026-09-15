@@ -160,10 +160,6 @@
 .a-pin-reset-btn         { font-size:10px; }
 .a-pin-edit-hint         { margin-left:8px; }
 .a-pin-coords-help       { margin-top:var(--s-1); }
-.a-enrichment-buttons    { display:flex; flex-wrap:wrap; gap:var(--s-2);
-                           margin-bottom:var(--s-4); }
-.a-pipeline-actions      { margin:var(--s-2) 0 var(--s-4); display:flex;
-                           flex-wrap:wrap; gap:var(--s-2); }
 
 /* Action buttons */
 .admin-col-btn           { padding:var(--s-2) var(--s-4); border:1px solid currentColor;
@@ -171,29 +167,6 @@
                            font-size:var(--fs-meta); cursor:pointer; letter-spacing:.04em; }
 .admin-col-btn--approve  { color:var(--c-ink); border-color:var(--c-ink); }
 .admin-col-btn--approve:hover { background:var(--c-ink); color:var(--c-paper); }
-.admin-col-btn--reject   { color:var(--c-ink-mute); }
-.admin-col-btn--reject:hover { color:var(--c-accent); border-color:var(--c-accent); }
-
-/* Pipeline table */
-.admin-pipeline-badges    { display:flex; flex-wrap:wrap; gap:var(--s-2); margin-bottom:var(--s-3); }
-.admin-pipeline-badge     { font-family:var(--ff-mono); font-size:var(--fs-meta);
-                            padding:var(--s-1) var(--s-3);
-                            border:1px solid var(--c-rule-strong); }
-.admin-pipeline-badge--new      { border-color:var(--c-accent); color:var(--c-accent); }
-.admin-pipeline-badge--processed { border-color:var(--c-ink-mute); }
-.admin-pipeline-badge--error    { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
-.admin-pipeline-table     { width:100%; border-collapse:collapse;
-                            font-family:var(--ff-mono); font-size:var(--fs-meta);
-                            margin-top:var(--s-4); }
-.admin-pipeline-table th  { text-align:left; padding:var(--s-2) var(--s-3);
-                            border-bottom:1px solid var(--c-ink);
-                            letter-spacing:.06em; text-transform:uppercase;
-                            font-size:10px; color:var(--c-ink-mute); font-weight:normal; }
-.admin-pipeline-table td  { padding:var(--s-2) var(--s-3);
-                            border-bottom:1px solid rgba(26,26,26,.08); vertical-align:top; }
-.admin-pipeline-table tr:last-child td { border-bottom:none; }
-.pipeline-status-ok   { color:var(--c-ink-mute); }
-.pipeline-status-err  { color:var(--c-accent); }
 
 /* Edit / create pick modal */
 .admin-modal-overlay     { position:fixed; inset:0; z-index:400;

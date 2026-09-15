@@ -1,22 +1,36 @@
 ---
 paths:
   - "supabase/**"
+  - "functions/**"
   - "admin.js"
 ---
 
-# Supabase: functions, scheduling, pipeline, images
+# Supabase: schema, functions, deploy
 
-## Functions
+## Schema
 
-Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fienta`, `-osm`, `-hel-linkedevents`, `-kinobize`, `-splendidpalace`, `-telliskivi`, `-hanzas-perons`, `-echo-gone-wrong`, `-ra` manual only), `process-staging`, `translate-picks` (manual), `geocode-picks`, `enrich-venues`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `verify-images`, `verify-venues` (admin; `dry_run=false` requires the service-role key), `resolve-links`, `backfill-pick-facts` (manual), `rotate-tonight`, `archive-stale`, `send-digest`, `unsubscribe-digest`, `calendar-feed`, `og-image` (satori 0.33.4 + resvg-wasm 2.6.2).
+- Tables: `picks` (events), `venues` (places), `venue_details` (per-venue details keyed by `city` + lowercased `venue_key`), `pick_changes` (day/time journal written by trigger `picks_log_change`), `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`. All catalogue tables are empty.
+- Picks, venues and venue details join on lowercased venue name; `picks.venue_id` is rarely set.
+- Trigger `wa_normalise_image_url` (picks, venues) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library image URLs.
+- SQL functions: `invoke_wa_fn(fn[, body])` (SECURITY DEFINER; posts to an edge function with the anon key), `set_updated_at`, `wa_log_pick_change`, `wa_normalise_image_url`.
+- A migration that drops a column must grep `pg_proc`, `pg_policies` and triggers for it first: SQL functions break at run time, not at migration time.
+- No cron jobs. `supabase/migrations/20260915_drop_ingestion_pipeline.sql` lists the 18 event sources the retired pipeline read.
 
-## Scheduling
+## Edge functions
 
-- No cron jobs exist. SQL housekeeping functions remain for the rewrite to reuse or drop: `reset_tonight`, `wa_dedup_active_picks`, `wa_ingest_zero_yield_check`, `wa_purge_old_archived`, `wa_purge_old_pick_changes`, `wa_reconcile_absent_picks`.
-- Run an edge function by hand: `select public.invoke_wa_fn('<fn>')`; the result is in `net._http_response` by the returned request id.
-- pg_net gives up at 60s while the function keeps running: `ingest-hel-linkedevents` times out and still inserts its rows.
-- A migration that drops a column must grep `pg_proc`, `cron.job` and `pg_policies` for it: SQL functions break at run time, not at migration time.
-- `wa_ingest_zero_yield_check()` warns when an ingest's last 3 ok-runs log `inserted = 0` and `detail.skipped = 0`. Ingests that don't log `skipped` (cursor feeds: telegram, rss) are never flagged; a scraper that parses nothing must log `status = 'error'` itself.
+Live, with source in `supabase/functions/`:
+
+| Function | `verify_jwt` | Called by |
+| --- | --- | --- |
+| `og-image` | false | `functions/_middleware.js` (share cards; satori 0.33.4 + resvg-wasm 2.6.2) |
+| `calendar-feed` | false | About page calendar subscription |
+| `unsubscribe-digest` | false | links in digest emails |
+| `send-digest` | true | by hand: `select public.invoke_wa_fn('send-digest')` |
+
+Retired, deployed as 410 stubs with no source here (delete them in the dashboard when convenient): `archive-stale`, `backfill-pick-facts`, `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `enrich-venues`, `generate-context`, `geocode-picks`, `import-pick-photos`, `ingest-echo-gone-wrong`, `ingest-fienta`, `ingest-hanzas-perons`, `ingest-hel-linkedevents`, `ingest-kinobize`, `ingest-osm`, `ingest-ra`, `ingest-rss`, `ingest-splendidpalace`, `ingest-telegram`, `ingest-telliskivi`, `load-places-index`, `match-pick`, `process-staging`, `resolve-links`, `rotate-tonight`, `translate-picks`, `verify-images`, `verify-venues`.
+
+- `invoke_wa_fn` returns a pg_net request id; the real result is `net._http_response` (`status_code`, `timed_out`, `error_msg`). pg_net stops waiting at 60s while the function keeps running.
+- Edge workers are killed at 150s: give every outbound call an `AbortSignal.timeout`.
 
 ## Deploy drift
 
@@ -26,35 +40,8 @@ Compare `list_edge_functions` `updated_at` (milliseconds) with the last behaviou
 for d in supabase/functions/*/; do echo "$(basename "$d") $(git log -1 --format=%ct --invert-grep --grep='^No-Deploy:' -- "$d")"; done | sort
 ```
 
-## Silent-cancellation archiver
-
-`wa_reconcile_absent_picks(p_enforce, p_grace_days)` archives future picks whose `last_seen_at` went stale. Enforce mode for web sources; **Fienta excluded** (its scraper under-bumps `last_seen_at`). A spike in `ingest_log` where `fn='reconcile-absent'` means a scraper broke. Reverse with:
-
-```sql
-update picks set archived_at = null, archive_reason = null where archive_reason = 'source_absent';
-```
-
-## Ingest notes
-
-- `ingest-telegram` reads `t.me/s/<channel>` and splits the HTML on `tgme_widget_message_wrap`; the body is `js-message_text`. Posts with no text are skipped.
-- Commits titled "Sync deployed source" copied already-deployed code into the repo; the drift loop shows them as newer than the deploy.
-
-## Links and facts
-
-- `resolve-links`: `picks.entities` → `picks.links` via hubs only (MusicBrainz, Open Library, Wikidata), confidence-gated.
-- `backfill-pick-facts`: schema.org JSON-LD from the pick's own `source_url`, no LLM. JSON-LD is a detail-page format here; listing pages and venue homepages rarely carry `Event`.
-- `description` is stored verbatim (source blurb); `saysSomething()` guards only generated copy.
-
 ## Images
 
-- **Identity, never name.** `enrich-venue-images` lanes in order: OSM `wikidata` → P18 → Commons; the venue's own `og:image`; schema.org JSON-LD; the venue's own mark. If all miss, no photo.
-- og:image guards: filename denylist (placeholders, logos) and a dedup check — one image across many venues is rejected.
-- `enrich-pick-images` lanes: Linkedevents API by event id (from `tapahtumat.hel.fi` permalinks), then the pick's own `source_url` page. The API lane is exempt from the shared-image guard (one show, many dates); the page lane is not. No logo lane — an aggregator's icon is the platform's brand.
-- Event images borrow from the venue downward only, relabelled "the venue, not the event". Linkedevents images are `event_only`: never copied to a venue, never outlive the listing.
-- Open upstream gap: `ingest-hel-linkedevents` doesn't carry `images[]` into the payload, and `process-staging` documents `image_url` but never reads it.
-- Commons photos are stored as `upload.wikimedia.org` URLs resolved via the imageinfo API (a file narrower than the requested width has no `/thumb/` rendition). Never store `Special:FilePath` URLs. Wikimedia URLs are served via the Pages Function `functions/img/wm/[[path]].js` (`/img/wm/*`) to strip cookies.
-- `verify-images` walks oldest-checked first (`NULLS FIRST`): 404/410/403 or non-image content-type clears the URL; timeout, 5xx and 429 retry once, never delete, but still stamp `image_checked_at`. Fresh Commons thumbnails 429 on first render.
-- `image_source` records which mechanism wrote each photo. Audit: `select * from image_health` — `duplicate_rows > 0` is the bad shape.
-- **After changing what a fetcher can find, clear `image_enrich_failed_at` for the rows the change could help** — the cooldown otherwise hides the fix for 30 days.
-- `enrich-venues` writes venue_details only (socials, coords, short_desc, closure); it writes no images and archives nothing. It uses a Wikidata entity only when a label or alias equals the venue name (normalised) and P131 reaches the city; that entity's P576 sets `is_closed`, which hides the venue's picks in the app.
-- Most venue photos sit on kinds Places doesn't draw (museum, theatre, bar, library); they exist to be borrowed by events.
+- Commons photos are stored as `upload.wikimedia.org` URLs (a file narrower than the requested width has no `/thumb/` rendition). Never store `Special:FilePath` URLs.
+- Wikimedia URLs are served through the Pages Function `functions/img/wm/[[path]].js` on `/img/wm/*`: allowlisted hosts, raster types only (an SVG on our origin is active content), cookies stripped, 24h edge cache.
+- An event with no photo borrows its venue's, downward only, relabelled "the venue, not the event" (`supabase.js`).
