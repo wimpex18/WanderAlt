@@ -34,12 +34,12 @@ paths:
 - **One implementation per pattern.** `.wa-row` has four builders (`tonight.js`, `saved-page.js`, `source.js`, `you.js`); copy the nearest one rather than inventing a fifth.
 - Desktop masthead (≥1024): brand left, `.wa-tabbar` repositioned to `top: 0` and transparent (one blur, the top bar's), account right. Active nav = petrol ink + 600 + 2px underline. The capsule's centred 960px column is deliberate: full width drifts the slots apart.
 - In-page anchors that are link targets carry `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to those ids (not `[id]`, which would shift Tonight's `scrollIntoView`). About's calendar feed has its own id; the section keeps `#calendar`.
-- Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places under the capsule, on its 840px column. `?scope=tonight` still resolves to Events.
+- Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places under the capsule, on its 840px column.
 - Below 768 the capsule collapses to one key that carries the applied search ("Tallinn · Anytime"), defaults omitted. A collapsed control must still show its state.
 - Scrolling chip rows run full bleed with the gutter in the scroller's padding, and scroll the selected chip into view (the row, never the page).
 - Tonight's header is the seven-day density strip: counts from the same filter chain as the rows minus time; an empty day draws no bar. Below 372px the grid gap is zero and the strip bleeds full width so each day stays ≥44px.
 - **The map is a mode and never empty**: a way out, "search this area", and a drawer of picks in view. Camera padding is read live from the foot elements covering the canvas, per side. Honour `prefers-reduced-motion` (in `map-tiles.js`). Pins cluster in projected pixel space into a petrol count bubble; the selected pin never clusters. `placePins` runs on `move`; `placeDrawer` on `moveend` and skips unchanged markup (keeps focus and scroll).
-- Sheet booleans (free, hide-seen, only sources I follow) don't round-trip in the URL. `?q= ?cat= ?time= ?type= ?within= ?sort= ?view=map ?id=` do; `?ai= ?nhood= #mood=` are parsed and discarded.
+- Sheet booleans (free, hide-seen, only sources I follow) don't round-trip in the URL. `?date= ?q= ?cat= ?time= ?sort= ?within= ?view=map` do.
 - **Zero-count filter options are disabled, never hidden.**
 - **Empty/error states name the filter that emptied the list and offer a next-best answer with a real, non-empty count.** Name the answer, not a control a viewport may not draw.
 - A missing or restating description (`WA.UI.descriptionOr`) gets a sentence saying so. The filler list is shared by four copies — browser, Pages middleware, `og-image`, `process-staging` — and must stay identical.

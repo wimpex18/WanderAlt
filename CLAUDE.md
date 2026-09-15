@@ -18,7 +18,7 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 
 ## Map
 
-- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. Filenames of the first two stay unchanged for links in the wild; `_redirects` maps retired pages.
+- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. `_redirects` only folds `wanderalt.com` and `www` onto `wanderalt.app`.
 - `wa.css` is the whole design system. `admin.css` / `admin-tokens.css` load on admin only.
 - `supabase.js` — data access + public anon key; the lists stay empty on fetch failure (no static fallback). Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
 - `ui-helpers.js` — `WA.UI`: `esc`, `safeUrl`, `priceLabel`, `descriptionOr`, `passwordField`.

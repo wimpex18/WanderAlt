@@ -3,8 +3,6 @@
    ------------------------------------------------------------
    Social crawlers don't run JS, so this rewrites the OG meta server-side
    for /detail and /source requests carrying ?id= / ?venue= / ?handle=.
-   Retired /venue and /curator paths are matched too, though _redirects
-   301s them first (a 301 is not text/html, so the rewrite bails).
 
    og:image:
    - Picks WITH a photo → the real photo (~1200px wide); declared
@@ -95,11 +93,8 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const p = url.pathname;
 
-  const isPick   = p === '/detail' || p === '/detail.html' ||
-                   p === '/venue'  || p === '/venue.html'  ||
-                   p === '/place'  || p === '/place.html';
-  const isSource = p === '/source' || p === '/source.html' ||
-                   p === '/curator' || p === '/curator.html';
+  const isPick   = p === '/detail' || p === '/detail.html';
+  const isSource = p === '/source' || p === '/source.html';
   if (!isPick && !isSource) return next();             // pass through everything else
 
   const id     = url.searchParams.get('id');

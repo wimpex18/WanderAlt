@@ -297,8 +297,8 @@
         <button class="wa-btn" type="button" id="save" aria-pressed="${saved}">
           ${saved ? 'Saved' : 'Save'}
         </button>
-        <!-- 5f's lists live here rather than on a Saved row: 5f draws no
-             per-row control, and adding one cost the title 44px and
+        <!-- Lists live here rather than on a Saved row: a per-row
+             control would cost the title 44px and
              pushed long picks to a third line. This is the screen where
              the reader is already deciding about one thing. -->
         <button class="wa-btn" type="button" id="addlist">${listLabel(e.id)}</button>

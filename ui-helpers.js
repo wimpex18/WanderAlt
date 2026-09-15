@@ -68,7 +68,7 @@
       .filter(w => w.length >= 3 && !FILLER.has(w));
 
   /* Returns the description when it says something, '' when it does not
-     — so callers keep 2b's "No description filed" path unchanged. */
+     — so callers keep their "No description filed" path unchanged. */
   const descriptionOr = (text, title) => {
     const s = String(text == null ? '' : text).trim();
     if (!s) return '';

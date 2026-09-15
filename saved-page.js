@@ -347,7 +347,7 @@
       const id = drop.dataset.unsave;
       window.WA.Bookmarks.set(id, false);
       render();
-      /* Every toast carries its reverse action (6d). */
+      /* Every toast carries its reverse action. */
       toast('Removed from saved', 'Undo', () => {
         window.WA.Bookmarks.set(id, true);
         render();

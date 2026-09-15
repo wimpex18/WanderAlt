@@ -50,9 +50,7 @@
   };
 
   /* ── URL contract ────────────────────────────────────────────
-     Live: ?q ?cat ?time ?type ?sort ?id ?view=map ?within=
-     Retired ?ai= ?nhood= #mood= are read and discarded, so old links
-     still render a list. */
+     ?date ?q ?cat ?time ?sort ?view=map ?within= */
   const readParams = () => {
     const sp = new URLSearchParams(location.search);
 
@@ -66,12 +64,6 @@
     if (sp.get('cat'))   sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));
     if (sp.get('within')) state.within = window.WA.Geo.parseWithin(sp.get('within'));
     if (sp.get('view') === 'map') state.map = true;
-
-    /* Retired — deliberately read so it is obvious they are handled,
-       then dropped. No redirect, no error, no empty result. */
-    void sp.get('ai');
-    void sp.get('nhood');
-    void location.hash.match(/[#&]mood=/);
   };
 
   const writeParams = () => {

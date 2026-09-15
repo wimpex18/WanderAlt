@@ -48,9 +48,7 @@
   };
   /* ?scope= so another screen can hand the reader straight to a scope. */
   const readScope = () => {
-    const raw = new URLSearchParams(location.search).get('scope');
-    /* `tonight` is the old name of this scope; shared links still resolve. */
-    const want = raw === 'tonight' ? 'events' : raw;
+    const want = new URLSearchParams(location.search).get('scope');
     if (!['all', 'events', 'places'].includes(want)) return;
     state.scope = want;
     document.querySelectorAll('#scope [data-scope]').forEach(b =>
@@ -303,10 +301,6 @@
           ? `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · within a ${WALK_MIN}-minute walk`
           : `${openNow.length} ${openNow.length === 1 ? 'place' : 'places'} · most time left`,
         items: bounded ? sorted(openNow) : byTimeLeft(openNow),
-        href:  'discover.html?type=places',
-        /* Reads as one sentence with the label above: "See all 61 / as a
-           list". */
-        hrefSub: 'as a list',
         emptyTitle: 'Nothing we can confirm is open this minute.',
         emptyBody:  `Opening hours reach us for about half of ${city}'s places, so this is quieter than the city is. Places below shows everything.`,
       }));
@@ -328,8 +322,6 @@
           ? `${all.length} listed · nearest first`
           : `${all.length} listed · A to Z`,
         items: all,
-        href:  'discover.html?type=places',
-        hrefSub: 'as a list',
         emptyTitle: `No places listed in ${city} yet.`,
         emptyBody:  'The venue index is built from OpenStreetMap, and this city has not been swept yet.',
       }));

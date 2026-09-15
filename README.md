@@ -45,7 +45,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 - **Offline**: `sw.js` precaches the shell and the last picks/venues responses; the banner says how stale they are.
 - **Sharing**: `functions/_middleware.js` (Pages Function) rewrites Open Graph tags per pick and source; the `og-image` edge function renders fallback cards.
 - **Images**: the Pages Function `functions/img/wm/[[path]].js` serves Wikimedia images from our origin without third-party cookies.
-- **URLs**: `?q= ?cat= ?time= ?type= ?within= ?sort= ?view=map ?id=` round-trip; `_redirects` maps retired pages onto current ones.
+- **URLs**: Tonight round-trips `?date= ?q= ?cat= ?time= ?sort= ?within= ?view=map`; Explore reads `?scope=`; detail and source read `?id=`, `?venue=`, `?handle=`.
 
 ## Deploying
 

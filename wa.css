@@ -2170,7 +2170,7 @@ a.wa-sr:focus {
 .tonight-map__bar .wa-fact { margin-right: auto; }
 
 @media (min-width: 1024px) {
-  /* The companion column appears on results only (6f). The map sticks
+  /* The companion column appears on results only. The map sticks
      while the list scrolls past it. */
   .tonight-split--map {
     display: grid;

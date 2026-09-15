@@ -132,8 +132,7 @@
         <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
         <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
       </div>
-      <!-- 6c draws Apple as a third option. It is deliberately absent
-           rather than drawn-and-broken: Apple sign-in needs a Service ID
+      <!-- No Apple option: Apple sign-in needs a Service ID
            and key configured in Supabase, and a button that 400s on tap
            is worse than one option fewer. Add the button here the day
            the provider is configured. -->
