@@ -480,9 +480,15 @@
     setPinCoords(lat ?? null, lng ?? null, address ?? '');
 
     if (!pinMap) {
-      if (typeof maplibregl === 'undefined') {
+      if (typeof window.maplibregl === 'undefined') {
+        /* maplibre-loader.js has not finished (or failed): say so, and
+           retry if it announces itself. */
         const el = $('mf-pin-map');
-        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre failed to load — coords editable via lat/lng above.</div>';
+        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre not loaded — coords editable via lat/lng above.</div>';
+        document.addEventListener('wa:maplibre-ready', () => {
+          if (el) el.innerHTML = '';
+          initPinMap(lat, lng, address, locked);
+        }, { once: true });
         return;
       }
       pinMap = new maplibregl.Map({
@@ -1404,7 +1410,7 @@
         if (statusEl) statusEl.textContent = dryRun ? 'Running dry-run check…' : 'Applying venue closure…';
         try {
           const r    = await fetch(`${BASE}/functions/v1/verify-venues?dry_run=${dryRun}`, {
-            headers: { apikey: ANON },
+            headers: { apikey: ANON, Authorization: `Bearer ${getKey()}` },
           });
           const json = await r.json().catch(() => ({}));
           if (r.ok) {
@@ -1438,7 +1444,7 @@
       try {
         const r    = await fetch(`${BASE}/functions/v1/rotate-tonight`, {
           method: 'POST',
-          headers: { apikey: ANON, 'Content-Type': 'application/json' },
+          headers: { apikey: ANON, Authorization: `Bearer ${getKey()}`, 'Content-Type': 'application/json' },
           body: '{}',
         });
         const json = await r.json().catch(() => ({}));

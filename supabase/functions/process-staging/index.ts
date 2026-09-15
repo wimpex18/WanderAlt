@@ -3,7 +3,7 @@
 // Claims staging_messages, copies facts from the payload, and asks the LLM
 // for an English title, one sentence worth reading and the kind. Upserts
 // picks. LLM lanes, tried in order, each skipped while its key is unset:
-// Groq, NVIDIA, Mistral, OpenRouter :free. All free tiers.
+// Mistral, NVIDIA, OpenRouter :free. All free tiers.
 //
 //   • A city with no CITY_CONTEXT entry FAILS LOUDLY (message marked
 //     error) — adding a city hard-requires the context entry.
@@ -16,28 +16,25 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const GROQ_KEY      = Deno.env.get("GROQ_API_KEY");
-// Groq retired llama-3.3-70b-versatile on its free tier (Aug 2026); this is
-// its documented replacement.
-const GROQ_MODEL    = "openai/gpt-oss-120b";
-
 /* Model ids are pinned and checked against each provider's catalogue.
    The OpenRouter model must stay :free-suffixed so that lane cannot bill. */
-type Lane = { name: string; url: string; key?: string; model: string; jsonMode: boolean; headers?: Record<string, string> };
+type Lane = { name: string; url: string; key?: string; model: string; jsonMode: boolean; headers?: Record<string, string>; body?: Record<string, unknown> };
 const LANES: Lane[] = [
-  { name: "groq", url: "https://api.groq.com/openai/v1/chat/completions",
-    key: GROQ_KEY, model: GROQ_MODEL, jsonMode: true },
-  { name: "nvidia", url: "https://integrate.api.nvidia.com/v1/chat/completions",
-    key: Deno.env.get("NVIDIA_API_KEY"), model: "nvidia/nemotron-3-super-120b-a12b", jsonMode: false },
   { name: "mistral", url: "https://api.mistral.ai/v1/chat/completions",
     key: Deno.env.get("MISTRAL_API_KEY"), model: "mistral-small-2603", jsonMode: true },
+  { name: "nvidia", url: "https://integrate.api.nvidia.com/v1/chat/completions",
+    key: Deno.env.get("NVIDIA_API_KEY"), model: "nvidia/nemotron-3.5-lightning-30b-a3b", jsonMode: false,
+    body: { chat_template_kwargs: { enable_thinking: false } } },
   { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions",
     key: Deno.env.get("OPENROUTER_API_KEY"),
     model: Deno.env.get("OPENROUTER_MODEL") || "nvidia/nemotron-3-super-120b-a12b:free", jsonMode: true,
     headers: { "HTTP-Referer": "https://wanderalt.app", "X-Title": "WanderAlt pipeline" } },
 ];
 const BATCH_SIZE    = 10;   // max messages per invocation
-const TIME_CAP_MS   = 100_000; // 100 s hard stop
+const TIME_CAP_MS   = 90_000;  // no new message after 90 s
+const CALL_CAP_MS   = 30_000;  // per LLM call
+const HARD_STOP_MS  = 130_000; // the worker is killed at 150 s
+let deadline = Date.now() + HARD_STOP_MS;
 
 const KINDS = "gig|talk|exhibition|club|place|bookshop|record store|gallery|thrift|lecture|noise|theatre|cinema|library|bar|museum|arts centre";
 
@@ -177,56 +174,71 @@ If no picks: {"picks":[],"reason":"brief phrase"}
 Return ONLY the JSON object.`;
 };
 
-const parseJson = (raw: string) => {
-  /* Reasoning models may prepend a <think> block. */
+/* Reasoning models may prepend a <think> block or loose reasoning text. */
+const parseJsonWith = (raw: string, key: string) => {
   const s = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   const tryParse = (t: string) => {
-    try { const o = JSON.parse(t); return (o && Array.isArray(o.picks)) ? o : null; } catch (_) { return null; }
+    try { const o = JSON.parse(t); return (o && Array.isArray(o[key])) ? o : null; } catch (_) { return null; }
   };
+  const at = s.lastIndexOf(`{"${key}"`);
   return tryParse(s)
     || tryParse((s.match(/```(?:json)?\s*([\s\S]+?)```/) || [])[1] || "")
+    || (at >= 0 ? tryParse(s.slice(at, s.lastIndexOf("}") + 1)) : null)
     || tryParse(s.slice(s.indexOf("{"), s.lastIndexOf("}") + 1));
 };
 
 type LLMResult =
-  | { raw: string; provider: string }
+  | { raw: string; provider: string; parsed: Record<string, any> }
   | { error: "rate_limited" | "overloaded" | "missing_key" | "all_failed"; detail?: string };
 
-async function callLane(lane: Lane, text: string, city: string, keepSignals: string[]): Promise<LLMResult> {
+type Msg = { role: "system" | "user"; content: string };
+
+async function callLane(lane: Lane, messages: Msg[], temperature: number, key: string): Promise<LLMResult> {
   if (!lane.key) return { error: "missing_key" };
+  const budget = Math.min(CALL_CAP_MS, deadline - Date.now());
+  if (budget < 2_000) return { error: "overloaded", detail: "time budget spent" };
   const res = await fetch(lane.url, {
+    signal: AbortSignal.timeout(budget),
     method: "POST",
     headers: { Authorization: `Bearer ${lane.key}`, "Content-Type": "application/json", ...(lane.headers ?? {}) },
     body: JSON.stringify({
       model: lane.model,
-      messages: [{ role: "system", content: systemPrompt(city, keepSignals) }, { role: "user", content: text }],
-      temperature: 0.3,
+      messages,
+      temperature,
       ...(lane.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      ...(lane.body ?? {}),
     }),
-  });
+  }).catch((e) => e as Error);
+  if (res instanceof Error) return { error: "overloaded", detail: `${lane.name} ${res.name}` };
   if (res.status === 429) return { error: "rate_limited" };
   if (res.status >= 500)  return { error: "overloaded", detail: `${lane.name} ${res.status}` };
   if (!res.ok) return { error: "all_failed", detail: `${lane.name} ${res.status}: ${await res.text()}` };
-  const j = await res.json();
-  return { raw: j?.choices?.[0]?.message?.content ?? "", provider: `${lane.name}/${lane.model}` };
+  const j = await res.json().catch(() => null);
+  const raw = String(j?.choices?.[0]?.message?.content ?? "");
+  const parsed = parseJsonWith(raw, key);
+  if (!parsed) return { error: "all_failed", detail: `${lane.name} unparseable: ${raw.slice(0, 200)}` };
+  return { raw, provider: `${lane.name}/${lane.model}`, parsed };
 }
 
-/* First lane with an answer wins. If none answers, the first real error is
-   returned, so a rate limit anywhere releases the message rather than
-   failing it. */
-async function callLLM(text: string, city: string, cfg: PipelineConfig): Promise<LLMResult> {
+/* First lane with a parseable answer wins. If none answers, the first real
+   error is returned, so a rate limit anywhere releases the message rather
+   than failing it. */
+async function chat(messages: Msg[], temperature: number, key: string): Promise<LLMResult> {
   let err: LLMResult = { error: "missing_key" };
   for (const lane of LANES) {
-    const r = await callLane(lane, text, city, cfg.keepSignals);
+    const r = await callLane(lane, messages, temperature, key);
     if ("raw" in r) return r;
     if ("error" in err && err.error === "missing_key") err = r;
   }
   return err;
 }
 
+const callLLM = (text: string, city: string, cfg: PipelineConfig): Promise<LLMResult> =>
+  chat([{ role: "system", content: systemPrompt(city, cfg.keepSignals) }, { role: "user", content: text }], 0.3, "picks");
+
 // ── English-compliance guard ─────────────────────────────────
 // The classifier occasionally copies non-Latin titles verbatim. Detect
-// Cyrillic in title/quote and run ONE targeted batch translation (Groq).
+// Cyrillic in title/quote and run ONE targeted batch translation.
 // Fail-open: on any error the original text is kept.
 const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));
 
@@ -234,7 +246,7 @@ async function fixNonEnglish(picks: Record<string, unknown>[]): Promise<Record<s
   const idx = picks
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => hasCyrillic(p.title) || hasCyrillic(p.quote));
-  if (!idx.length || !GROQ_KEY) return picks;
+  if (!idx.length) return picks;
   const items = idx.map(({ p, i }) => ({ i, title: String(p.title), quote: String(p.quote ?? "") }));
   const sys = `You translate event listings into natural English for an English-only city guide.
 Keep proper nouns: venue names, artist and band names, named festivals/series. For films and
@@ -242,20 +254,9 @@ plays use the international English title when one exists. Transliterate persona
 Return STRICT JSON: {"items":[{"i":0,"title":"English title, max 70 chars","quote":"English quote or empty string"}]}
 Return one entry per input item, same "i". Return ONLY the JSON object.`;
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [{ role: "system", content: sys }, { role: "user", content: JSON.stringify({ items }) }],
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) return picks;
-    const j = await res.json();
-    const out = JSON.parse(j?.choices?.[0]?.message?.content ?? "{}");
-    if (!out || !Array.isArray(out.items)) return picks;
+    const r = await chat([{ role: "system", content: sys }, { role: "user", content: JSON.stringify({ items }) }], 0.2, "items");
+    if (!("raw" in r)) return picks;
+    const out = r.parsed;
     for (const item of out.items) {
       const target = idx.find(({ i }) => i === item.i);
       if (!target || !item.title || hasCyrillic(item.title)) continue;
@@ -339,8 +340,7 @@ async function processOne(
     return failMessage(llm.detail ?? llm.error);
   }
 
-  const result = parseJson(llm.raw);
-  if (!result) return failMessage("unparseable: " + llm.raw.slice(0, 200));
+  const result = llm.parsed;
 
   let validPicks = (result.picks as Record<string, unknown>[]).filter(
     (p) => p.title && p.venue && p.kind && p.neighborhood,
@@ -472,6 +472,7 @@ export default {
     const cfg = await loadPipelineConfig(sb);
 
     const start   = Date.now();
+    deadline = start + HARD_STOP_MS;
     const results: Record<string, unknown>[] = [];
     let totalInserted = 0;
     let totalRejected = 0;

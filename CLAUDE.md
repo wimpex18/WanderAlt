@@ -2,13 +2,13 @@
 
 Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full rewrite is planned, so retired code and data are deleted rather than kept. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
 
-Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-central-1) · Cloudflare Pages on `wanderalt.app`.
+Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-west-1, Postgres 17) · Cloudflare Pages on `wanderalt.app`.
 
 Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (functions, crons, pipeline, images, LLM).
 
 ## Commands
 
-Node >= 22 for local scripts; `npm install` brings the pinned dev tools (`http-server`, `sharp`, `png-to-ico`).
+Node 24 LTS (`.nvmrc`) for local scripts; `npm install` brings the pinned dev tools (`http-server`, `sharp`, `png-to-ico`).
 
 ```bash
 npm start              # dev server, http://localhost:5173 (no CSP)
@@ -30,7 +30,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - `bookmark.js` + `lists.js` — one saves store, localStorage-first, cloud sync on sign-in. `auth.js` — Supabase REST auth, no SDK.
 - `sw.js` + `offline.js` — service worker and offline banner. `marks.js` — image fallback and small-image handling.
 - `functions/_middleware.js` — Pages Function rewriting OG meta. `workers/wikimedia-proxy/` — strips Wikimedia cookies on `/img/wm/*`.
-- `vendor/` — self-hosted MapLibre GL 5.24.0, the last UMD release; 6.x ships ESM-only modules and needs loader changes (upgrade = swap files + pinned tags in `admin.html`). `fonts/` — self-hosted faces.
+- `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM only: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), byte-identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl`, and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
 - `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
 - `walks.json` — three hand-written routes.
 
@@ -39,7 +39,7 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Groq, NVIDIA, Mistral and OpenRouter free tiers, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
+- **Free tier only.** Mistral, NVIDIA and OpenRouter free tiers, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
 - **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
@@ -95,17 +95,17 @@ ingest-* → staging_messages → process-staging → picks
 ## LLM
 
 - Lanes, tried in order in `process-staging` and `send-digest`; each is skipped while its secret is unset. All free tiers.
-  - Groq `openai/gpt-oss-120b` (`GROQ_API_KEY`). Groq retired `llama-3.3-70b-versatile` on its free tier in Aug 2026.
-  - NVIDIA `nvidia/nemotron-3-super-120b-a12b` (`NVIDIA_API_KEY`), 40 RPM, prototyping terms.
-  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`). The free Experiment tier trains on inputs unless opted out in the console.
-  - OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`; `OPENROUTER_MODEL` overrides with no deploy).
-- `translate-picks` and the Cyrillic guard use Groq only. `max_tokens` must leave room for reasoning tokens.
+  - Mistral `mistral-small-2603` (`MISTRAL_API_KEY`), `response_format: json_object`. The free Experiment tier trains on inputs unless opted out in the console.
+  - NVIDIA `nvidia/nemotron-3.5-lightning-30b-a3b` (`NVIDIA_API_KEY`), 40 RPM, prototyping terms. Sent `chat_template_kwargs: {enable_thinking: false}`; without it the model reasons and one call can outlive the worker.
+  - OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`, currently unset; `OPENROUTER_MODEL` overrides with no deploy).
+- `translate-picks` uses Mistral then NVIDIA. In `process-staging` an unparseable answer falls through to the next lane.
+- Edge workers are killed at 150s and pg_net stops waiting at 60s: every LLM call carries an `AbortSignal.timeout`, and `process-staging` stops taking messages at 90s (30s per call, hard stop 130s).
 - **Pin models by exact id and confirm the id is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
 - Secret presence can't be checked from here (`check-secrets` is a tombstone); look in the dashboard.
 
 ## Environment
 
-Edge-function secrets: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. Cloud sessions also read `SUPABASE_SERVICE_ROLE_KEY`.
+Edge-function secrets: `MISTRAL_API_KEY`, `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. Cloud sessions also read `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Voice
 

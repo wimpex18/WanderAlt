@@ -29,8 +29,6 @@ const esc = (s: unknown) => String(s ?? '')
 const SB_URL  = Deno.env.get('SUPABASE_URL')!;
 const SB_SRV  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND  = Deno.env.get('RESEND_API_KEY') ?? '';
-const GROQ_KEY        = Deno.env.get('GROQ_API_KEY') ?? '';
-const GROQ_MODEL      = 'openai/gpt-oss-120b';
 const NVIDIA_KEY      = Deno.env.get('NVIDIA_API_KEY') ?? '';
 const MISTRAL_KEY     = Deno.env.get('MISTRAL_API_KEY') ?? '';
 const OPENROUTER_KEY  = Deno.env.get('OPENROUTER_API_KEY') ?? '';
@@ -38,7 +36,7 @@ const OPENROUTER_MODEL= Deno.env.get('OPENROUTER_MODEL') || 'nvidia/nemotron-3-s
 const FROM    = Deno.env.get('DIGEST_FROM_EMAIL') ?? 'WanderAlt <onboarding@resend.dev>';
 /* wanderalt.app is the canonical domain; an email outlives a redirect. */
 const BASE_URL = Deno.env.get('SITE_URL') ?? 'https://wanderalt.app';
-/* Text generation: Groq, NVIDIA, Mistral, OpenRouter :free — the same
+/* Text generation: Mistral, NVIDIA, OpenRouter :free — the same
    ladder process-staging uses, each lane skipped while its key is unset. */
 
 const sbFetch = (path: string, opts: RequestInit = {}) =>
@@ -166,35 +164,34 @@ const generateIntro = async (picks: Pick[], city: string): Promise<string> => {
     `Return only the intro text, no subject line, no sign-off.`,
   ].join('\n');
 
-  /* OpenAI-shaped, so one call site serves both lanes. */
-  const chat = async (url: string, key: string, model: string) => {
+  /* OpenAI-shaped, so one call site serves every lane. */
+  const chat = async (url: string, key: string, model: string, extra: Record<string, unknown> = {}) => {
     const res = await fetch(url, {
+      signal: AbortSignal.timeout(30_000),
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        /* Both models reason before answering, and those tokens count. */
+        /* Reasoning tokens count against max_tokens. */
         max_tokens: 1024,
+        ...extra,
       }),
-    });
-    if (!res.ok) return '';
+    }).catch(() => null);
+    if (!res?.ok) return '';
     const j = await res.json();
     return String(j?.choices?.[0]?.message?.content ?? '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   };
 
   try {
-    if (GROQ_KEY) {
-      const out = await chat('https://api.groq.com/openai/v1/chat/completions', GROQ_KEY, GROQ_MODEL);
+    if (MISTRAL_KEY) {
+      const out = await chat('https://api.mistral.ai/v1/chat/completions', MISTRAL_KEY, 'mistral-small-2603');
       if (out) return out;
     }
     if (NVIDIA_KEY) {
-      const out = await chat('https://integrate.api.nvidia.com/v1/chat/completions', NVIDIA_KEY, 'nvidia/nemotron-3-super-120b-a12b');
-      if (out) return out;
-    }
-    if (MISTRAL_KEY) {
-      const out = await chat('https://api.mistral.ai/v1/chat/completions', MISTRAL_KEY, 'mistral-small-2603');
+      const out = await chat('https://integrate.api.nvidia.com/v1/chat/completions', NVIDIA_KEY, 'nvidia/nemotron-3.5-lightning-30b-a3b',
+        { chat_template_kwargs: { enable_thinking: false } });
       if (out) return out;
     }
     if (OPENROUTER_KEY) {

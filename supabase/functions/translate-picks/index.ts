@@ -1,7 +1,7 @@
 // ============================================================
 // WanderAlt — translate-picks
 // Backfill + safety net for the English-only rule: reviews title, quote
-// and description. Groq, ~25 items per call, hard time cap; ONE
+// and description. Mistral then NVIDIA, ~25 items per call, hard time cap; ONE
 // invocation drains what it can and reports `remaining`.
 // NOT scheduled — process-staging keeps new picks English.
 //
@@ -12,8 +12,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const GROQ_KEY     = Deno.env.get("GROQ_API_KEY");
-const GROQ_MODEL   = "openai/gpt-oss-120b";
+const LANES = [
+  { name: "mistral", url: "https://api.mistral.ai/v1/chat/completions",
+    key: Deno.env.get("MISTRAL_API_KEY"), model: "mistral-small-2603", jsonMode: true, body: {} as Record<string, unknown> },
+  { name: "nvidia", url: "https://integrate.api.nvidia.com/v1/chat/completions",
+    key: Deno.env.get("NVIDIA_API_KEY"), model: "nvidia/nemotron-3.5-lightning-30b-a3b", jsonMode: false,
+    body: { chat_template_kwargs: { enable_thinking: false } } as Record<string, unknown> },
+];
 const TIME_CAP_MS  = 110_000;
 
 const hasCyrillic = (s: unknown): boolean => /[Ѐ-ӿ]/.test(String(s ?? ""));
@@ -41,7 +46,7 @@ const json = (body: unknown, status = 200) =>
 
 export default {
   async fetch(req: Request): Promise<Response> {
-    if (!GROQ_KEY) return json({ ok: false, error: "GROQ_API_KEY not set" }, 503);
+    if (!LANES.some(l => l.key)) return json({ ok: false, error: "no LLM key set" }, 503);
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     let body: { limit?: number; batch?: number; dry_run?: boolean } = {};
@@ -73,22 +78,35 @@ export default {
         description: String(p.description ?? "").slice(0, 1200),
       }));
 
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [{ role: "system", content: SYS }, { role: "user", content: JSON.stringify({ items }) }],
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-        }),
-      });
-      if (res.status === 429) { rateLimited = true; break; }
-      if (!res.ok) { errors.push(`groq ${res.status}`); continue; }
+      let raw: string | null = null;
+      for (const lane of LANES) {
+        if (!lane.key) continue;
+        const res = await fetch(lane.url, {
+          signal: AbortSignal.timeout(40_000),
+          method: "POST",
+          headers: { Authorization: `Bearer ${lane.key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: lane.model,
+            messages: [{ role: "system", content: SYS }, { role: "user", content: JSON.stringify({ items }) }],
+            temperature: 0.2,
+            ...(lane.jsonMode ? { response_format: { type: "json_object" } } : {}),
+            ...lane.body,
+          }),
+        }).catch((e) => e as Error);
+        if (res instanceof Error) { errors.push(`${lane.name} ${res.name}`); continue; }
+        if (res.status === 429) { rateLimited = true; continue; }
+        if (!res.ok) { errors.push(`${lane.name} ${res.status}`); continue; }
+        raw = String((await res.json())?.choices?.[0]?.message?.content ?? "");
+        break;
+      }
+      if (raw === null) { if (rateLimited) break; continue; }
       scanned += chunk.length;
 
+      /* Reasoning models may wrap the JSON in thinking text. */
+      const clean = raw.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      const at = clean.lastIndexOf('{"items"');
       let out: { items?: { id: string; lang?: string; title?: string; quote?: string; description?: string }[] };
-      try { out = JSON.parse((await res.json())?.choices?.[0]?.message?.content ?? "{}"); }
+      try { out = JSON.parse(at >= 0 ? clean.slice(at, clean.lastIndexOf("}") + 1) : clean.slice(clean.indexOf("{"), clean.lastIndexOf("}") + 1)); }
       catch (_) { errors.push("unparseable batch"); continue; }
 
       for (const item of out.items ?? []) {

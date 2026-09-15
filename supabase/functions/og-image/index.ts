@@ -23,8 +23,8 @@
    ============================================================ */
 
 // @ts-ignore — satori supports npm: in Deno
-import satori from 'npm:satori@0.10.13';
-import { initWasm, Resvg } from 'npm:@resvg/resvg-wasm@2';
+import satori from 'npm:satori@0.33.4';
+import { initWasm, Resvg } from 'npm:@resvg/resvg-wasm@2.6.2';
 
 /* Public, project-scoped values (same anon key shipped in supabase.js;
    RLS is SELECT-only). Env overrides win when present. */
@@ -38,7 +38,7 @@ const C_ACCENT = '#055959', C_RULE = '#d8d2c4';
 let _wasmReady = false;
 const ensureWasm = async () => {
   if (_wasmReady) return;
-  const wasmRes = await fetch('https://cdn.jsdelivr.net/npm/@resvg/resvg-wasm@2/index_bg.wasm');
+  const wasmRes = await fetch('https://cdn.jsdelivr.net/npm/@resvg/resvg-wasm@2.6.2/index_bg.wasm');
   await initWasm(wasmRes);
   _wasmReady = true;
 };

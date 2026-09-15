@@ -10,7 +10,7 @@ paths:
 
 ## Functions
 
-Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fienta`, `-osm`, `-hel-linkedevents`, `-kinobize`, `-splendidpalace`, `-telliskivi`, `-hanzas-perons`, `-echo-gone-wrong`, `-ra` manual only), `process-staging`, `translate-picks` (manual), `geocode-picks`, `enrich-venues`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `verify-images`, `verify-venues` (admin), `resolve-links`, `backfill-pick-facts` (manual), `rotate-tonight`, `archive-stale`, `send-digest`, `unsubscribe-digest`, `calendar-feed`, `og-image`.
+Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fienta`, `-osm`, `-hel-linkedevents`, `-kinobize`, `-splendidpalace`, `-telliskivi`, `-hanzas-perons`, `-echo-gone-wrong`, `-ra` manual only), `process-staging`, `translate-picks` (manual), `geocode-picks`, `enrich-venues`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `verify-images`, `verify-venues` (admin; `dry_run=false` requires the service-role key), `resolve-links`, `backfill-pick-facts` (manual), `rotate-tonight`, `archive-stale`, `send-digest`, `unsubscribe-digest`, `calendar-feed`, `og-image` (satori 0.33.4 + resvg-wasm 2.6.2).
 
 ## Crons
 

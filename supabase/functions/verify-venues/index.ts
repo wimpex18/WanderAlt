@@ -3,9 +3,9 @@
 // Tallinn bbox: 59.35,24.55,59.55,24.95
 //
 // GET /verify-venues           → dry run (shows what would be closed)
-// GET /verify-venues?dry_run=false → apply changes
+// GET /verify-venues?dry_run=false → apply changes (service role key only)
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const OVERPASS = 'https://overpass-api.de/api/interpreter';
 
@@ -55,6 +55,11 @@ async function fetchOverpass(query: string): Promise<OsmElement[]> {
 
 Deno.serve(async (req) => {
   const dryRun = new URL(req.url).searchParams.get('dry_run') !== 'false';
+  /* Applying closes venues and archives picks, so it needs the service role
+     key; the anon key is public. */
+  if (!dryRun && req.headers.get('Authorization') !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
+    return Response.json({ ok: false, error: 'apply requires the service role key' }, { status: 403 });
+  }
 
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,

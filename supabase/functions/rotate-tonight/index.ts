@@ -8,7 +8,7 @@
 //
 // Also callable on demand from the admin panel.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const GENERIC_VENUES = new Set(['various venues', 'various', 'tba', 'tbd', '']);
 
