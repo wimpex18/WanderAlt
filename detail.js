@@ -319,9 +319,9 @@
 
       ${provenance(isEvent ? eventProvenance(e) : {
         sourceUrl: e.website,
-        what: e.openingHours ? 'Hours and details from OpenStreetMap' : 'Listed in OpenStreetMap',
+        what: 'Details from the venue',
         when: null,
-        sourceName: 'openstreetmap.org',
+        sourceName: null,
       })}
     `;
   };

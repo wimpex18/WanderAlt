@@ -153,7 +153,7 @@
 
   /* ── Does this pick actually state a clock? ──────────────────
      picks.time carries prose as often as a time ("open daily", "Wed–Sun")
-     and the pipeline writes a bare date as a midnight timestamp. Midnight
+     and a bare date arrives as a midnight timestamp. Midnight
      counts as absent: a genuine midnight start shows the day instead.
 
      Returns minutes past local midnight, or null when no clock is

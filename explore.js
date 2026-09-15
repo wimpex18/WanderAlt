@@ -323,7 +323,7 @@
           : `${all.length} listed · A to Z`,
         items: all,
         emptyTitle: `No places listed in ${city} yet.`,
-        emptyBody:  'The venue index is built from OpenStreetMap, and this city has not been swept yet.',
+        emptyBody:  'Nothing has been added for this city yet.',
       }));
     }
 

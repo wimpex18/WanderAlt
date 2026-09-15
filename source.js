@@ -169,7 +169,7 @@
 
       ${v && v.website ? `<section class="wa-section">
         <h2 class="wa-section-title">Where this came from</h2>
-        <p class="wa-detail__note">Listed in OpenStreetMap, programme read from the venue.
+        <p class="wa-detail__note">The venue's own site.
           <a href="${esc(url(v.website))}" target="_blank" rel="noopener noreferrer">${esc(String(v.website).replace(/^https?:\/\/(www\.)?/, '').split('/')[0])} &nearr;</a>
         </p>
       </section>` : ''}

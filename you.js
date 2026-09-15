@@ -220,7 +220,7 @@
       <!-- The source count says who is behind this. -->
       <p class="wa-signin__fine" style="margin-top:var(--s-8)">
         WanderAlt reads ${sources || 'its'} sources across ${cityList.length} cities.
-        <a href="./about.html">See them all &rarr;</a>
+        <a href="./about.html">About WanderAlt &rarr;</a>
       </p>`;
   };
 
