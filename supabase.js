@@ -102,8 +102,7 @@
     coordsSource: r.coords_source ?? null,
     coordsLocked: !!r.coords_locked,
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
-    /* Source-authored facts. description is the venue's own blurb (never
-       LLM-written). */
+    /* Source-authored facts. description is the venue's own blurb. */
     description: r.description || null,
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,

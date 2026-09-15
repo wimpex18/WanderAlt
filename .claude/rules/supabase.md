@@ -5,27 +5,25 @@ paths:
   - "admin.js"
 ---
 
-# Supabase: schema, functions, deploy
+# Supabase: schema, functions, images
 
 ## Schema
 
-- `supabase/migrations/20260915090000_baseline.sql` is the whole schema; the project's migration history holds only that row. Add changes as new, later-dated files.
+- `supabase/migrations/20260915090000_baseline.sql` is the whole schema and the project's only recorded migration. Add changes as new, later-dated files.
 - Tables: `picks` (events), `venues` (places), `venue_details` (per-venue details keyed by `city` + lowercased `venue_key`) — public SELECT, all empty; `bookmarks`, `saved_lists`, `saved_list_items` — own rows only.
-- Picks, venues and venue details join on lowercased venue name; `picks.venue_id` is rarely set.
+- Picks, venues and venue details join on lowercased venue name; `picks.venue_id` is optional.
 - Trigger `wa_normalise_image_url` (picks, venues) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library image URLs. It is the only SQL function in `public`.
 - A migration that drops a column must grep `pg_proc`, `pg_policies` and triggers for it first: SQL functions break at run time, not at migration time.
-- No cron jobs, no `pg_cron`, no `pg_net`. The 18 event sources the retired pipeline read are listed in `git show 7f25359:supabase/migrations/20260915_drop_ingestion_pipeline.sql`.
+- No cron jobs; `pg_cron` and `pg_net` are not installed.
 
 ## Edge functions
 
-Live, with source in `supabase/functions/`:
+With source in `supabase/functions/`:
 
 | Function | `verify_jwt` | Called by |
 | --- | --- | --- |
 | `og-image` | false | `functions/_middleware.js` (share cards; satori 0.33.4 + resvg-wasm 2.6.2) |
 | `calendar-feed` | false | About page calendar subscription |
-
-Retired, deployed as 410 stubs with no source here: `archive-stale`, `backfill-pick-facts`, `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `enrich-images`, `enrich-pick-images`, `enrich-venue-images`, `enrich-venues`, `generate-context`, `geocode-picks`, `import-pick-photos`, `ingest-echo-gone-wrong`, `ingest-fienta`, `ingest-hanzas-perons`, `ingest-hel-linkedevents`, `ingest-kinobize`, `ingest-osm`, `ingest-ra`, `ingest-rss`, `ingest-splendidpalace`, `ingest-telegram`, `ingest-telliskivi`, `load-places-index`, `match-pick`, `process-staging`, `resolve-links`, `rotate-tonight`, `send-digest`, `translate-picks`, `unsubscribe-digest`, `verify-images`, `verify-venues`.
 
 - Edge workers are killed at 150s: give every outbound call an `AbortSignal.timeout`.
 

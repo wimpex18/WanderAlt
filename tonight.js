@@ -200,9 +200,8 @@
     return { time: 'OPEN', now: false };
   };
 
-  /* The pipeline writes placeholders ("Unknown", "TBA", "N/A", 'other')
-     when the LLM could not read a field; the gap is stated in words
-     instead of shown as a dead value. */
+  /* Placeholder values ("Unknown", "TBA", "N/A", 'other') are stated as
+     a gap in words instead of shown as a dead value. */
   const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
   const real = (v) => {
     const s = String(v == null ? '' : v).trim();

@@ -16,8 +16,8 @@
      .dataset or .textContent decodes the entities, so nothing downstream
      sees &#39;.
 
-     Pick, venue and source text is scraped from Telegram, RSS and venue
-     pages, passed through an LLM, and interpolated into innerHTML. Every
+     Pick, venue and source text comes from outside sources and is
+     interpolated into innerHTML. Every
      one of those fields goes through here AT THE INTERPOLATION SITE —
      including inside aria-label, title and data-* attributes. */
   const esc = s => String(s == null ? '' : s)
@@ -25,8 +25,8 @@
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-  /* Only http(s) URLs may become an href or an image source. Scraped
-     URLs reach us via an LLM, so a `javascript:` value is a realistic
+  /* Only http(s) URLs may become an href or an image source. Stored
+     URLs come from outside sources, so a `javascript:` value is a realistic
      input, and esc() would happily pass it through — it escapes quotes,
      not schemes. Relative paths stay allowed; everything else is dropped
      rather than rendered dead. */

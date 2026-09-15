@@ -33,7 +33,7 @@ paths:
 - Photos are optional. The phone row has no photo region; desktop rows add a media track via `:has(.wa-row__media)`. No photo → kind glyph on 9% petrol tint, never a grey box. `marks.js` contains (not crops) an image under 60% of its box.
 - **One implementation per pattern.** `.wa-row` has four builders (`tonight.js`, `saved-page.js`, `source.js`, `you.js`); copy the nearest one rather than inventing a fifth.
 - Desktop masthead (≥1024): brand left, `.wa-tabbar` repositioned to `top: 0` and transparent (one blur, the top bar's), account right. Active nav = petrol ink + 600 + 2px underline. The capsule's centred 960px column is deliberate: full width drifts the slots apart.
-- In-page anchors that are link targets carry `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to those ids (not `[id]`, which would shift Tonight's `scrollIntoView`). About's calendar feed has its own id; the section keeps `#calendar`.
+- In-page anchors that are link targets carry `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to those ids (not `[id]`, which would shift Tonight's `scrollIntoView`). About's calendar section is `#calendar`, its heading `#calendar-feed`.
 - Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places under the capsule, on its 840px column.
 - Below 768 the capsule collapses to one key that carries the applied search ("Tallinn · Anytime"), defaults omitted. A collapsed control must still show its state.
 - Scrolling chip rows run full bleed with the gutter in the scroller's padding, and scroll the selected chip into view (the row, never the page).
@@ -42,7 +42,7 @@ paths:
 - Sheet booleans (free, hide-seen, only sources I follow) don't round-trip in the URL. `?date= ?q= ?cat= ?time= ?sort= ?within= ?view=map` do.
 - **Zero-count filter options are disabled, never hidden.**
 - **Empty/error states name the filter that emptied the list and offer a next-best answer with a real, non-empty count.** Name the answer, not a control a viewport may not draw.
-- A missing or restating description (`WA.UI.descriptionOr`) gets a sentence saying so. The filler list is shared by four copies — browser, Pages middleware, `og-image`, `process-staging` — and must stay identical.
+- A missing or restating description (`WA.UI.descriptionOr`) gets a sentence saying so. The filler list has three copies — `ui-helpers.js`, `functions/_middleware.js`, `og-image` — and they must stay identical.
 - Metadata closes with provenance: `via <handle>`.
 - **Detail never states a fact about the world that is really a fact about the cache.** On a miss, `WA.byId()` asks the database: render, "That listing has closed down" with the date, or "We have no listing at that address".
 - Detail: three labelled cells (event: doors/entry/walk; place: closes/entry/walk + week strip), then one primary key, then secondary keys. Cells with no answer are not rendered. Add-to-list lives on detail, not on Saved rows.
@@ -74,4 +74,4 @@ paths:
   Compare `fetch('/x.js?b='+Date.now(), {cache:'no-store'})` against the DOM when unsure.
 - Overlap: use `getBoundingClientRect()` on elements that clip, `Range.getBoundingClientRect()` (ink) on elements that don't. Fixed layers and `.wa-sr` are expected false positives.
 - Tap targets: test with `document.elementFromPoint` at half a target from centre (`.wa-pin::after` extends the hit area).
-- **Never decide a class is unused by grepping** — class names are composed at runtime. Use a DOM census across pages, widths, themes and states. An unreached rule is often an unfinished feature.
+- **Never decide a class is unused by grepping** — class names are composed at runtime. Use a DOM census across pages, widths, themes and states.

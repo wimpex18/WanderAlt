@@ -6,7 +6,7 @@ It is a decision surface, not a publication. **A time and a walking distance are
 
 **Cities:** Tallinn · Helsinki · Riga live. Vilnius unlocked for internal testing. Version stamp lives in `package.json`.
 
-**Status:** pre-release with no production users. A full backend and frontend rewrite is planned. The database holds no venues or events and there is no ingestion pipeline, so pages show empty states.
+**Status:** no production users. The database holds no venues or events, so pages show empty states.
 
 ## Running it
 
@@ -51,16 +51,16 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 
 **Site**: Cloudflare Pages, connected to GitHub. Framework preset None, build command empty, output directory `/`. `_headers` and `_redirects` are picked up automatically. Everything lives on `wanderalt.app`; `wanderalt.com` 301s across.
 
-**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`; Deleting a function's directory does not undeploy it; retired functions stay deployed as 410 stubs.
+**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`. Deleting a function's directory does not undeploy it.
 
 ## Backend
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1): Postgres 17, REST, Edge Functions. RLS allows SELECT only on the catalogue; users manage only their own saves. Function sources live in `supabase/functions/`; the schema is one baseline in `supabase/migrations/`.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1): Postgres 17, REST, Edge Functions. RLS allows SELECT only on the catalogue; users manage only their own saves.
 
-- **Tables**: `picks`, `venues`, `venue_details` (empty), `bookmarks`, `saved_lists`, `saved_list_items`.
-- **Edge functions**: `og-image` (share cards), `calendar-feed`.
+- **Tables**: `picks`, `venues`, `venue_details` (empty), `bookmarks`, `saved_lists`, `saved_list_items`. The schema is `supabase/migrations/20260915090000_baseline.sql`.
+- **Edge functions** (`supabase/functions/`): `og-image` (share cards), `calendar-feed`.
 - **Images**: looked up by identity, never guessed from a name. Wikimedia images go through the `/img/wm/*` Pages Function.
-- **Scheduling**: none.
+- **Auth**: leaked-password protection is off.
 
 ### Environment
 
@@ -71,14 +71,6 @@ Cloud sessions need `SUPABASE_SERVICE_ROLE_KEY` as an environment variable.
 - No build step, no framework, no runtime dependencies, no inline scripts (strict CSP).
 - No analytics, no third-party scripts, no cookie banner.
 - Free tiers only.
-- Scraped text is untrusted: escape with `WA.UI.esc()`, filter URLs with `WA.UI.safeUrl()`.
-
-## Open
-
-- Supabase Auth redirect URL → deployed domain (Dashboard → Auth → URL Configuration).
-- Self-serve account deletion (Dashboard → Authentication → Settings).
-- Leaked-password protection (Dashboard → Auth).
-- Delete the 410 stub edge functions (list in `.claude/rules/supabase.md`) and the unused edge-function secrets.
-- Design question: a geometric sans for headlines, with Fraunces kept for timetable rows (owner's aesthetic call).
+- Listing text is untrusted: escape with `WA.UI.esc()`, filter URLs with `WA.UI.safeUrl()`.
 
 Conventions for AI coding sessions: [CLAUDE.md](CLAUDE.md) and `.claude/rules/`.
