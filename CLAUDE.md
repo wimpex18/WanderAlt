@@ -15,10 +15,7 @@ npm start              # dev server, http://localhost:5173 (no CSP)
 npm run admin          # admin panel on :8080 (service-role key kept in localStorage)
 npm run catalog        # regenerate static fallback catalog.js from live Supabase
 npm run build:icons    # rasterise PNG icons from brand/ SVG masters
-node .scripts/design-spec.js   # Claude Design handoff -> design-spec.json
 ```
-
-In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a','5b'])` — reports which drawn strings reach the DOM (text only; run at the viewport the section was drawn at).
 
 ## Map
 
@@ -51,7 +48,8 @@ In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a
 - **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration. pg_cron runs as job owner and is unaffected.
 - **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
 - `anon`/`authenticated` have `search_path = public, extensions`. `pg_net` is non-relocatable and stays in `public`; EXECUTE on `net.*` is revoked from `anon`.
-- Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`) have RLS on with no policies and no grants — intended deny-all. `admin.js` reads them with the service-role key.
+- Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`, `pipeline_config`, `venue_images`) have no anon/authenticated access — intended deny-all. Edge functions and `admin.js` use the service-role key.
+- Cron-only SQL functions (`wa_*`, `reset_tonight`) have EXECUTE revoked from API roles. Own-row policies use `(select auth.uid())`.
 - `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
 - Open: leaked-password protection is off (dashboard toggle under Auth).
 
@@ -73,7 +71,7 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 
 ## Pipeline and data
 
-Tables: `picks` (events), `venues` (OSM places), `venue_details` (enrichment by venue name), `venue_images` (photo cache), `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `past`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`; view `image_health`.
+Tables: `picks` (events), `venues` (OSM places), `venue_details` (enrichment by venue name), `venue_images` (photo cache), `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`; view `image_health`.
 
 ```
 ingest-* → staging_messages → process-staging → picks
@@ -85,6 +83,9 @@ ingest-* → staging_messages → process-staging → picks
 - Sources are rows in `sources`. Telegram, RSS and Fienta sources need no code.
 - **Staging upserts must carry `?on_conflict=channel,message_id`** or repeats 409 and `bumpSeen()` never runs.
 - **A new city needs entries in `CITY_CONTEXT` (`process-staging`) and `CITY_CENTER` (`geocode-picks`)** or it silently falls back / 400s.
+- Every pick comes from a source (`auto_generated`); there are no hand-written fixtures. `sources.handle` is the provenance shown as `via @handle`.
+- `process-staging` enforces the kind list and rejects `"null"` strings; the prompt alone does not.
+- `claim_staging_message()` claims from the least recently claimed source (its oldest message) and first rejects past events: feed rows by `payload.ends_at`/`starts_at`, Telegram/RSS posts older than 14 days. FIFO let `hel-linkedevents` (~80% of the queue) starve every other city. Throughput is 10 messages per hourly run.
 - App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
 - `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
 - `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.

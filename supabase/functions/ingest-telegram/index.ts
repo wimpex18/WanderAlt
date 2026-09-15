@@ -15,14 +15,15 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-/** Match every <div class="tgme_widget_message_wrap"> … </div> block.
- *  Non-greedy match between class anchors. */
-const MSG_BLOCK = /<div\s+class="tgme_widget_message_wrap[^"]*"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
+/** One chunk per message: everything from a message wrapper to the next.
+ *  A regex that closed on three </div>s ended inside the photo markup of
+ *  any post with media, so those posts were read as having no text. */
+const MSG_WRAP = /<div\s+class="tgme_widget_message_wrap/;
 
 /** Pull the post id ("channel/12345") from a message's data-post attr. */
 const RE_POST_ID  = /data-post="([^"]+)"/;
-/** Pull the rendered text content of the message body. */
-const RE_MSG_TEXT = /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/;
+/** Pull the rendered text of the message body (not a reply preview). */
+const RE_MSG_TEXT = /<div class="tgme_widget_message_text[^"]*\bjs-message_text\b[^"]*"[^>]*>([\s\S]*?)<\/div>/;
 /** Pull the ISO datetime from the <time datetime="…"> tag. */
 const RE_TIME     = /<time[^>]+datetime="([^"]+)"/;
 
@@ -46,7 +47,7 @@ type ParsedMsg = {
 };
 
 const parseChannelHtml = (channel: string, html: string): ParsedMsg[] => {
-  const blocks = html.match(MSG_BLOCK) ?? [];
+  const blocks = html.split(MSG_WRAP).slice(1);
   const out: ParsedMsg[] = [];
   for (const block of blocks) {
     const idMatch = RE_POST_ID.exec(block);
@@ -75,7 +76,7 @@ const parseChannelHtml = (channel: string, html: string): ParsedMsg[] => {
 const fetchChannel = async (channel: string): Promise<ParsedMsg[]> => {
   const url = `https://t.me/s/${encodeURIComponent(channel)}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "WanderAltBot/1.0 (+https://wanderalt.example)" },
+    headers: { "User-Agent": "WanderAltBot/1.0 (+https://wanderalt.app)" },
   });
   if (!res.ok) throw new Error(`telegram ${channel}: HTTP ${res.status}`);
   const html = await res.text();

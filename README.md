@@ -24,7 +24,6 @@ Serves the site at `http://localhost:5173` (no CSP locally).
 | `npm run admin` | Admin panel on `:8080`; needs a Supabase service-role key, kept in localStorage |
 | `npm run catalog` | Regenerates the static fallback `catalog.js` from live Supabase |
 | `npm run build:icons` | Rasterises the PNG icon ladder from `brand/` (the only use of `sharp` / `png-to-ico`) |
-| `node .scripts/design-spec.js` | Extracts every drawn string from the Claude Design handoff into `design-spec.json`; `.scripts/design-check.js` reports which reach the DOM |
 
 There is no automated test suite. Check changes in a browser at 390, 768 and 1440 px, in both themes. The service worker caches static assets stale-while-revalidate, so clear it when debugging.
 
@@ -59,7 +58,7 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 
 Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1): Postgres 17, REST, Edge Functions, pg_cron. RLS allows SELECT only, plus INSERT on `bookmarks` and `digest_opt_ins`. Function sources live in `supabase/functions/`, migrations in `supabase/migrations/`.
 
-Tables: `picks`, `venues`, `venue_details`, `venue_images`, `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `past`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`.
+Tables: `picks`, `venues`, `venue_details`, `venue_images`, `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`.
 
 ```
 ingest-* → staging_messages → process-staging → picks

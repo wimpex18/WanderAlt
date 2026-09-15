@@ -37,6 +37,7 @@ const HARD_STOP_MS  = 130_000; // the worker is killed at 150 s
 let deadline = Date.now() + HARD_STOP_MS;
 
 const KINDS = "gig|talk|exhibition|club|place|bookshop|record store|gallery|thrift|lecture|noise|theatre|cinema|library|bar|museum|arts centre";
+const KIND_SET = new Set(KINDS.split("|"));
 
 const CITY_CONTEXT: Record<string, { name: string; neighborhoods: string }> = {
   tallinn: {
@@ -291,8 +292,8 @@ async function processOne(
   const m = claimed[0];
 
   const { data: src } = await sb.from("sources")
-    .select("curator_handle, city").eq("id", m.source_id).maybeSingle();
-  const handle  = src?.curator_handle ?? m.channel;
+    .select("handle, city").eq("id", m.source_id).maybeSingle();
+  const handle  = src?.handle ?? m.channel;
   const city    = src?.city ?? "tallinn";
 
   // Never silently classify against the wrong city context.
@@ -342,12 +343,14 @@ async function processOne(
 
   const result = llm.parsed;
 
+  /* The prompt asks for these; the model still returns "null" strings and
+     kinds outside the list, so both are enforced here. */
   let validPicks = (result.picks as Record<string, unknown>[]).filter(
-    (p) => p.title && p.venue && p.kind && p.neighborhood,
+    (p) => nullStr(p.title) && nullStr(p.venue) && nullStr(p.neighborhood) && KIND_SET.has(String(p.kind)),
   );
 
   if (validPicks.length === 0) {
-    const reason = result.reason ?? (result.picks.length > 0 ? "all picks missing required fields" : "no picks extracted");
+    const reason = result.reason ?? (result.picks.length > 0 ? "all picks missing required fields or kind" : "no picks extracted");
     await sb.from("staging_messages")
       .update({ status: "rejected", rejection: reason, processed_at: new Date().toISOString() })
       .eq("id", m.id);

@@ -1,8 +1,8 @@
 /* ============================================================
    WanderAlt — Supabase data loader
    ------------------------------------------------------------
-   Fetches picks and past entries from the Supabase REST API,
-   converts them to the window.WA.catalog / window.WA.past shape,
+   Fetches picks, venues and venue details from the Supabase REST API,
+   converts them to the window.WA.catalog shape,
    then dispatches 'wa:catalog-ready' so page scripts can render.
 
    On network failure or timeout (2 s) the static catalog.js
@@ -77,9 +77,7 @@
   const FOOD_PLACE_KINDS = new Set([
     'bar', 'cafe', 'restaurant', 'food', 'eatery', 'place'
   ]);
-  const isPublicPick = (r) =>
-    r.handle !== '@discovery' &&
-    !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
+  const isPublicPick = (r) => !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
 
   /* Convert a Postgres picks row → catalog entry shape */
   const toPick = (r) => ({
@@ -163,9 +161,8 @@
 
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
-       city-filtered slice is WA.catalog. past + venue_details follow the
-       same pattern. */
-    const [picksResult, pastResult, vdResult, venuesResult] = await Promise.allSettled([
+       city-filtered slice is WA.catalog. */
+    const [picksResult, vdResult, venuesResult] = await Promise.allSettled([
       get(
         `picks`,
         `archived_at=is.null` +
@@ -180,7 +177,6 @@
         `&order=sort_order.asc,created_at.asc`,
         abort.signal
       ),
-      get(`past`, `order=created_at.asc`, abort.signal),
       /* short_desc is the venue blurb the source page prints when present. */
       get(
         `venue_details`,
@@ -241,17 +237,6 @@
       /* Keep static catalog.js snapshot; log so devtools shows the reason. */
       console.warn('[WanderAlt] picks fetch failed — using static catalog.', picksResult.reason?.message);
       window.WA.DATA_LIVE = false;
-    }
-
-    if (pastResult.status === 'fulfilled') {
-      /* created_at is when the row was archived. */
-      const allPast = pastResult.value.map(r => ({
-        id: r.id, title: r.title, date: r.date, city: r.city, archivedAt: r.created_at,
-      }));
-      window.WA._pastAll = allPast;
-      window.WA.past     = allPast.filter(e => !e.city || e.city === CITY);
-    } else {
-      window.WA.past = [];  /* past table is optional — silently empty if absent */
     }
 
   /* ── An event with no photo borrows its venue's ──────────────

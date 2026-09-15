@@ -70,7 +70,6 @@ type FientaResponse = { events?: FientaEvent[] };
 type Source = {
   id: number;
   channel: string;
-  curator_handle: string | null;
   city: string;
   feed_url: string | null;
 };
@@ -208,7 +207,7 @@ async function logRun(stats: {
       inserted:    stats.inserted,
       rejected:    stats.rejected,
       error:       stats.error,
-      detail:      { channels: stats.channels },
+      detail:      { skipped: stats.skipped, channels: stats.channels },
       finished_at: new Date().toISOString(),
     }),
   }).catch(() => { /* ingest_log is optional */ });
@@ -222,7 +221,7 @@ Deno.serve(async () => {
   const channels: Record<string, ChannelStats> = {};
 
   try {
-    const sourcesRes = await rest('sources?kind=eq.fienta&enabled=eq.true&select=id,channel,curator_handle,city,feed_url');
+    const sourcesRes = await rest('sources?kind=eq.fienta&enabled=eq.true&select=id,channel,city,feed_url');
     if (!sourcesRes.ok) throw new Error(`sources fetch HTTP ${sourcesRes.status}`);
     const sources = (await sourcesRes.json()) as Source[];
 

@@ -44,22 +44,14 @@ function pickEntry(r) {
   return '  {\n    ' + fields.join(',\n    ') + '\n  }';
 }
 
-function pastEntry(p) {
-  return `  { id: ${js(p.id)}, title: ${js(p.title)}, date: ${js(p.date)} }`;
-}
-
 (async () => {
-  const [picks, past] = await Promise.all([
-    get('picks',
-      `archived_at=is.null&handle=neq.@discovery` +
-      `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
-              `image_url,tonight,this_week,` +
-              `lat,lng,address&order=city.asc,sort_order.asc,created_at.asc`),
-    get('past',
-      `select=id,title,date&order=created_at.asc`),
-  ]);
+  const picks = await get('picks',
+    `archived_at=is.null` +
+    `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
+            `image_url,tonight,this_week,` +
+            `lat,lng,address&order=city.asc,sort_order.asc,created_at.asc`);
 
-  console.log(`picks: ${picks.length}, past: ${past.length}`);
+  console.log(`picks: ${picks.length}`);
 
   /* The Places (venues) seed is hand-curated, not from the DB's venues
      table. Carry the existing block over verbatim. */
@@ -100,10 +92,6 @@ ${picks.map(pickEntry).join(',\n')}
    replace this with live data once the network responds, but the
    filter ensures the offline fallback respects the city setting. */
 window.WA.catalog = window.WA._catalogAll.filter(e => e.city === _waCity);
-
-window.WA.past = [
-${past.map(pastEntry).join(',\n')}
-];
 
 ${venuesBlock}`;
 

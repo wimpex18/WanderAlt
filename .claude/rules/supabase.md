@@ -20,6 +20,8 @@ Live (source in `supabase/functions/`): ingests (`ingest-telegram`, `-rss`, `-fi
   select cron.alter_job(jobid, schedule => '<schedule>') from cron.job where jobname = '<name>';
   ```
 - pg_net gives up at 60s while the function keeps running: `ingest-hel-linkedevents` times out nightly and still inserts its rows.
+- A migration that drops a column must grep `pg_proc`, `cron.job` and `pg_policies` for it: SQL functions break at run time, not at migration time.
+- `wa-ingest-health` warns when an ingest's last 3 ok-runs log `inserted = 0` and `detail.skipped = 0`. Ingests that don't log `skipped` (cursor feeds: telegram, rss) are never flagged; a scraper that parses nothing must log `status = 'error'` itself.
 
 ## Deploy drift
 
@@ -36,6 +38,11 @@ for d in supabase/functions/*/; do echo "$(basename "$d") $(git log -1 --format=
 ```sql
 update picks set archived_at = null, archive_reason = null where archive_reason = 'source_absent';
 ```
+
+## Ingest notes
+
+- `ingest-telegram` reads `t.me/s/<channel>` and splits the HTML on `tgme_widget_message_wrap`; the body is `js-message_text`. Posts with no text are skipped.
+- Commits titled "Sync deployed source" copied already-deployed code into the repo; the drift loop shows them as newer than the deploy.
 
 ## Links and facts
 
