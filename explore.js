@@ -5,7 +5,7 @@
    every subtitle, and the dense list one tap away in Tonight. Three scope
    tabs under the capsule: All, Events, Places.
 
-   Everything interpolated here is scraped. Every value goes through
+   Everything interpolated here comes from the database. Every value goes through
    WA.UI.esc() at the interpolation site, and any URL through
    WA.UI.safeUrl() — esc() escapes quotes, not schemes.
    ============================================================ */
@@ -148,7 +148,7 @@
        marks are small wordmarks. */
     const isMark = e.imageSource === 'logo';
     const well = photo
-      ? `<img class="wa-card__photo${isMark ? ' wa-card__photo--brand' : ''}" src="${esc(window.WA.img ? window.WA.img(photo, 400) : photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
+      ? `<img class="wa-card__photo${isMark ? ' wa-card__photo--brand' : ''}" src="${esc(photo)}" alt="" loading="lazy" decoding="async" data-mark="${esc(mark)}">`
       : `<span class="wa-mark"><svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg></span>`;
 
     return `<a class="wa-card" href="${esc(hrefFor(e))}">

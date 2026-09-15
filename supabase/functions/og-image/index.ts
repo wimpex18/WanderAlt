@@ -71,7 +71,7 @@ const cityLabel = (c?: string | null) =>
   c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Tallinn';
 
 /* A copy of WA.UI.descriptionOr for Deno. Keep the filler list identical
-   across all four copies (browser, Pages middleware, here, process-staging). */
+   across all three copies (browser, Pages middleware, here). */
 const FILLER = new Set(['the','and','with','for','from','out','you','your','its','are','was','this','that','into','all','new','one','two','live','event','events','show','shows','night','nights','music','party','concert','set','series','performs','presents','featuring','join','come','experience','enjoy','celebrate','discover','more','than','their','his','her']);
 
 const contentWords = (s: string) =>

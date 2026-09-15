@@ -151,8 +151,7 @@
         <button type="button" id="venues-new-btn" class="admin-reset">New venue &rarr;</button>
       </div>
       <p class="meta a-hint">
-        Search the venue database to edit location, kind, image, and status. Create manual
-        venues that aren&rsquo;t in the OSM dataset.
+        Search venues to edit location, kind, image, and status, or create a new one.
       </p>
       <div class="admin-search-row">
         <input type="search" id="venues-search"
@@ -255,7 +254,7 @@
           </div>
 
           <!-- ── Detail fields (stored in venue_details) ── -->
-          <div class="admin-mfield admin-mfield--full a-enrich-section">
+          <div class="admin-mfield admin-mfield--full a-details-section">
             <p class="eyebrow a-mb-0">Venue details</p>
           </div>
 
@@ -431,7 +430,7 @@
               <span class="meta a-pin-address-text" id="mf-pin-address"></span>
               <label class="a-pin-lock-label">
                 <input type="checkbox" id="mf-coords-locked" />
-                Lock coords (skip auto-geocode)
+                Lock coords
               </label>
             </div>
             <input type="hidden" id="mf-lat" />

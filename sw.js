@@ -68,7 +68,7 @@ self.addEventListener('activate', (e) => {
 });
 
 const isData = (url) =>
-  /\/rest\/v1\/(picks|venues|past|venue_details)/.test(url.pathname + url.search);
+  /\/rest\/v1\/(picks|venues|venue_details)/.test(url.pathname + url.search);
 
 const isStatic = (url) =>
   /\.(css|js|svg|woff2|json|png|ico|webmanifest)$/.test(url.pathname);

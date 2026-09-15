@@ -145,7 +145,7 @@
                            font-weight:600; letter-spacing:.04em; }
 .a-modal-status-inline   { margin-top:var(--s-3); min-height:1.4em; }
 .a-modal-status-right    { margin-left:auto; }
-.a-enrich-section        { margin-top:var(--s-3); padding-top:var(--s-3);
+.a-details-section       { margin-top:var(--s-3); padding-top:var(--s-3);
                            border-top:1px solid rgba(26,26,26,.1); }
 .admin-mfield--rel       { position:relative; }
 .a-pin-coords-row        { display:flex; gap:var(--s-3); align-items:baseline;

@@ -67,14 +67,10 @@
 
   /* Editorial filter for the public catalog.
      WanderAlt is alternative culture + events, not a restaurant guide.
-     Hide rows where:
-     - handle is @discovery (admin review queue, never user-facing)
-     - kind is a "pure venue to eat / hang" (bar/cafe/restaurant/food/
-       eatery/place) AND there's no day attached, i.e. it's a place
-       not an event. Events AT these venues (a cocktail night, a
-       Eurovision viewing party) keep `day` so they pass through.
-     admin.js fetches `picks` directly and bypasses this filter so the
-     review queue still sees everything. */
+     Hide rows whose kind is a place to eat or hang out (bar, cafe,
+     restaurant, food, eatery, place) with no day attached: a place, not
+     an event. Events at these venues keep `day` so they pass through.
+     admin.js fetches `picks` directly and bypasses this filter. */
   const FOOD_PLACE_KINDS = new Set([
     'bar', 'cafe', 'restaurant', 'food', 'eatery', 'place'
   ]);
@@ -162,7 +158,7 @@
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
-    /* Raw OSM opening_hours. WA.Hours parses it; a null must render as
+    /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
   });
@@ -185,8 +181,7 @@
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
                 `lat,lng,address,coords_source,coords_locked,` +
-                /* Facts the sources stated about themselves — see the
-                   staging payload contract in process-staging. */
+                /* Facts the sources stated about themselves. */
                 `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
@@ -246,8 +241,7 @@
       window.WA._catalogAll = all;
       window.WA.catalog     = all.filter(e => e.city === CITY);
       /* Saved's change-watch gates its destructive "no longer listed"
-         detection on this: against the static fallback (~170 entries)
-         every live bookmark looks "gone". */
+         detection on this: without live data every bookmark looks "gone". */
       window.WA.DATA_LIVE = true;
     } else {
       console.warn('[WanderAlt] picks fetch failed.', picksResult.reason?.message);

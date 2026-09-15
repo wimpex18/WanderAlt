@@ -31,8 +31,7 @@
   Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://tiles.openfreemap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 # ── Caching ─────────────────────────────────────────────────
-# HTML: never cache aggressively — content rotates with the weekly catalog
-# and bug fixes need to propagate fast. Cloudflare's edge cache picks
+# HTML: never cache aggressively — fixes need to propagate fast. Cloudflare's edge cache picks
 # the latest on each request; browsers get a short max-age.
 /*.html
   Cache-Control: public, max-age=300, must-revalidate
