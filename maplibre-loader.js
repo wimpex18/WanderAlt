@@ -1,26 +1,30 @@
 /* ============================================================
-   maplibre-loader.js — defers the MapLibre GL bundle (~800KB JS)
-   until after first paint. Injects the self-hosted script and
-   stylesheet from vendor/ on window 'load', then announces
-   'wa:maplibre-ready' so map-tiles.js can run its deferred init.
-   admin.html keeps eager tags; upgrading MapLibre means swapping
-   the two vendor/ files and keeping admin.html's tags in lockstep.
+   maplibre-loader.js — defers the MapLibre GL bundle until after
+   first paint. MapLibre 6 ships as ES modules only, so it is pulled
+   in with a dynamic import() from vendor/ on window 'load', exposed
+   as window.maplibregl, and announced with 'wa:maplibre-ready'.
+   Used by discover.html and admin.html. Upgrading MapLibre means
+   swapping the four vendor/ files: maplibre-gl.mjs, -shared.mjs,
+   -worker.mjs and maplibre-gl.css.
    ============================================================ */
 (() => {
   'use strict';
 
   const load = () => {
     if (window.maplibregl) return;
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = './vendor/maplibre-gl.css';
-    document.head.appendChild(css);
+    if (!document.querySelector('link[href$="vendor/maplibre-gl.css"]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = './vendor/maplibre-gl.css';
+      document.head.appendChild(css);
+    }
 
-    const s = document.createElement('script');
-    s.src = './vendor/maplibre-gl.js';
-    s.onload = () => document.dispatchEvent(new CustomEvent('wa:maplibre-ready'));
-    s.onerror = () => console.warn('[maplibre-loader] bundle failed to load — basemap disabled this session.');
-    document.head.appendChild(s);
+    import('./vendor/maplibre-gl.mjs')
+      .then((mod) => {
+        window.maplibregl = mod;
+        document.dispatchEvent(new CustomEvent('wa:maplibre-ready'));
+      })
+      .catch(() => console.warn('[maplibre-loader] bundle failed to load — basemap disabled this session.'));
   };
 
   if (document.readyState === 'complete') setTimeout(load, 0);

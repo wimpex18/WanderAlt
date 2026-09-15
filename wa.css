@@ -249,7 +249,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
    the ids that are link targets, not [id]: scroll-margin-top also applies
    to scrollIntoView(), which Tonight uses to centre a row. */
 #main,
-#digest-title,
 #calendar,
 #calendar-feed {
   scroll-margin-top: calc(var(--topbar-h) + var(--s-4));
@@ -352,7 +351,7 @@ a.wa-sr:focus {
 
 /* The eyebrow label: the small uppercase word that names the value under
    it. Shared by the capsule's WHERE / WHEN / WHAT and the labelled cells
-   on detail, walk, about and You. A type role, owned by neither. */
+   on detail, about and You. A type role, owned by neither. */
 .wa-capsule__label,
 .wa-cell__label {
   font: 700 var(--fs-label)/1 var(--ff-ui);
@@ -1162,93 +1161,7 @@ a.wa-sr:focus {
 /* An expired count is the one thing in a list card worth warning about. */
 .wa-list-card__sub em { font-style: normal; color: var(--warn); }
 
-/* ============================================================
-   COMPONENT — walk
-
-   A numbered route and the walk-in-progress state. Walks is an
-   experiment built to be deleted, so it borrows the existing row and
-   cell components rather than a vocabulary of its own.
-   ============================================================ */
-
-.wa-walk__stops {
-  list-style: none;
-  margin: var(--s-5) 0 0;
-  padding: 0;
-}
-
-.wa-walk__stop {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: var(--s-4);
-  padding: var(--s-4) 0;
-  border-bottom: 1px solid var(--rule);
-}
-
-.wa-walk__stop:last-child { border-bottom: 0; }
-
-/* The number IS the route -- it is the only thing that says these are
-   ordered rather than a list of nearby places. */
-.wa-walk__num {
-  display: grid;
-  place-items: center;
-  width: 28px; height: 28px;
-  border-radius: var(--r-pill);
-  background: var(--petrol);
-  color: var(--petrol-ink);
-  font: 500 var(--fs-mono)/1 var(--ff-mono);
-}
-
-.wa-walk__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
-
-.wa-walk__name {
-  position: relative;
-  font: 600 var(--fs-title)/1.28 var(--ff-display);
-  color: var(--ink);
-  text-decoration: none;
-  text-wrap: pretty;
-}
-
-/* A single line of title type is 22px, so an invisible hit area centred
-   on the name grows the stop link to the 44px floor without moving the
-   layout (same remedy as the map pin). */
-.wa-walk__name::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 100%;
-  min-height: var(--tap-min);
-}
-
-.wa-walk__name:hover { text-decoration: underline; }
-
-.wa-walk__note { font: 400 var(--fs-body)/1.5 var(--ff-ui); color: var(--ink-soft); }
-
-.wa-walk__facts {
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .03em;
-  color: var(--ink-mute);
-}
-
-.wa-walk__bar {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin-bottom: var(--s-5);
-}
-
-.wa-walk__bar .wa-fact { margin-right: auto; }
-
-/* The status line carries the promise, so it is the one place a walk
-   uses the warning colour: "this route cannot promise every door is
-   open" has to look different from "good to start now". */
-.wa-note--warn { color: var(--warn); }
-.wa-note--ok   { color: var(--ink); }
-
-/* The full-width route card on Explore. */
-/* The saved strip. A sibling of the walk card — same full-width card,
-   rule and radius. The mark is a bookmark on the 9%-petrol tint. */
+/* The saved strip. A full-width card with the card rule and radius. The mark is a bookmark on the 9%-petrol tint. */
 .wa-savedstrip {
   display: flex;
   align-items: center;
@@ -1296,49 +1209,6 @@ a.wa-sr:focus {
   .wa-savedstrip__mark { order: 0; }
   .wa-savedstrip__count { order: 1; flex: 1 1 auto; }
   .wa-savedstrip__more { order: 2; flex: 1 0 100%; padding-left: calc(40px + var(--s-4)); }
-}
-
-.wa-walkcard {
-  display: block;
-  padding: var(--s-5);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-card-lg);
-  background: var(--card);
-  text-decoration: none;
-  color: inherit;
-  margin-bottom: var(--s-6);
-}
-
-.wa-walkcard:hover { border-color: var(--rule-strong); }
-/* Both are <span>, so both need an explicit display: inline boxes share
-   a line and discard vertical margins. */
-.wa-walkcard__eyebrow {
-  display: block;
-  font: 400 var(--fs-mono)/1 var(--ff-mono);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--petrol);
-}
-.wa-walkcard__title {
-  display: block;
-  font: 600 var(--fs-headline)/1.15 var(--ff-display);
-  color: var(--ink);
-  margin: var(--s-3) 0 var(--s-2);
-  text-wrap: pretty;
-}
-/* The same 62ch measure as `.wa-detail__desc`. */
-.wa-walkcard__blurb {
-  font: 400 var(--fs-body)/1.5 var(--ff-ui);
-  color: var(--ink-soft);
-  margin: 0;
-  max-width: 62ch;
-}
-.wa-walkcard__facts {
-  display: block;
-  margin-top: var(--s-3);
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .03em;
-  color: var(--ink-mute);
 }
 
 /* ============================================================
@@ -1909,11 +1779,10 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 
-/* The saved strip and the walk teaser containers are always in the DOM
-   and filled by JS, hence :not(:empty). Tighter than the --s-8 between
-   sections: they are companions to the capsule. */
-#savedstrip:not(:empty),
-#walkcard:not(:empty) { margin-top: var(--s-6); }
+/* The saved strip container is always in the DOM and filled by JS, hence
+   :not(:empty). Tighter than the --s-8 between sections: it is a
+   companion to the capsule. */
+#savedstrip:not(:empty) { margin-top: var(--s-6); }
 
 /* The capsule is a compact centred control, not a full-bleed bar:
    stretched to the full column the slots drift apart and it stops reading
@@ -2301,7 +2170,7 @@ a.wa-sr:focus {
 .tonight-map__bar .wa-fact { margin-right: auto; }
 
 @media (min-width: 1024px) {
-  /* The companion column appears on results only (6f). The map sticks
+  /* The companion column appears on results only. The map sticks
      while the list scrolls past it. */
   .tonight-split--map {
     display: grid;
@@ -2320,11 +2189,11 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
-   19 · The Thursday email card
-   Sits at the foot of Explore and as a row in You.
+   19 · Sign-in card
+   The account card on You, and the text inputs it uses.
    ============================================================ */
 
-.wa-digest {
+.wa-signin {
   margin: var(--s-8) 0 var(--s-7);
   padding: var(--s-6);
   background: var(--card);
@@ -2332,19 +2201,17 @@ a.wa-sr:focus {
   border-radius: var(--r-card-lg);
 }
 
-.wa-digest__title {
+.wa-signin__title {
   font: 600 var(--fs-title)/1.3 var(--ff-display);
   margin: 0 0 var(--s-2);
 }
 
-.wa-digest__body {
+.wa-signin__body {
   font: 400 var(--fs-body)/1.55 var(--ff-ui);
   color: var(--ink-soft);
   margin: 0 0 var(--s-5);
   max-width: 52ch;
 }
-
-.wa-digest__form { display: flex; flex-wrap: wrap; gap: var(--s-3); }
 
 .wa-input {
   flex: 1 1 200px;
@@ -2388,7 +2255,7 @@ a.wa-sr:focus {
   stroke-linecap: round; stroke-linejoin: round;
 }
 
-.wa-digest__fine {
+.wa-signin__fine {
   font: 400 var(--fs-meta)/1.5 var(--ff-mono);
   color: var(--ink-mute);
   margin: var(--s-3) 0 0;

@@ -379,8 +379,7 @@
 
     const preview = $('mf-image-preview');
     if (preview) {
-      /* escAttr, not raw: image_url is partly attacker-influenced (Wikidata /
-         Wikimedia values arrive via enrich-images), and this panel's
+      /* escAttr, not raw: image_url can come from scraped sources, and this panel's
          localStorage holds the service-role key — an attribute break-out here
          would hand over the whole database. */
       preview.innerHTML = pick?.image_url
@@ -404,9 +403,8 @@
   /* ──────────────────────────────────────────────────────────────
      PIN POSITION EDITOR (MapLibre)
      A draggable marker on a small basemap inside the pick modal.
-     dragend → hidden #mf-lat / #mf-lng + reverse-geocode address.
-     "Lock coords" checkbox sets picks.coords_locked = true so the
-     nightly geocode-picks cron won't overwrite manual placements.
+     dragend → hidden #mf-lat / #mf-lng. "Lock coords" sets
+     picks.coords_locked, marking the placement as authoritative.
      ────────────────────────────────────────────────────────────── */
   const PIN_DEFAULT_CENTER = [24.7536, 59.4370]; /* Tallinn */
   let pinMap = null;        /* maplibregl.Map */
@@ -415,23 +413,6 @@
 
   const fmtCoords = (lat, lng) =>
     `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-  /* Reverse-geocode via our edge function. Proxies to Nominatim with a
-     single User-Agent identity (respects the OSM usage policy) and keeps
-     editor IPs hidden. Best-effort — only used to show the resolved
-     postal address in the admin UI as a sanity check. */
-  const reverseGeocode = async (lat, lng) => {
-    try {
-      const r = await fetch(`${BASE}/functions/v1/geocode-picks`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'reverse', lat, lng }),
-      });
-      if (!r.ok) return null;
-      const d = await r.json();
-      return d?.address || null;
-    } catch { return null; }
-  };
 
   const setPinCoords = (lat, lng, address) => {
     const latEl  = $('mf-lat');
@@ -460,15 +441,10 @@
       pinMarker = new maplibregl.Marker({ draggable: true, color: '#055959' })
         .setLngLat([lng, lat])
         .addTo(pinMap);
-      pinMarker.on('dragend', async () => {
+      pinMarker.on('dragend', () => {
         const ll = pinMarker.getLngLat();
         pinManualMove = true;
-        setPinCoords(ll.lat, ll.lng, '…resolving…');
-        const addr = await reverseGeocode(ll.lat, ll.lng);
-        if (addr) {
-          const addrEl = $('mf-pin-address');
-          if (addrEl) addrEl.textContent = addr;
-        }
+        setPinCoords(ll.lat, ll.lng, '');
       });
     }
   };
@@ -480,9 +456,15 @@
     setPinCoords(lat ?? null, lng ?? null, address ?? '');
 
     if (!pinMap) {
-      if (typeof maplibregl === 'undefined') {
+      if (typeof window.maplibregl === 'undefined') {
+        /* maplibre-loader.js has not finished (or failed): say so, and
+           retry if it announces itself. */
         const el = $('mf-pin-map');
-        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre failed to load — coords editable via lat/lng above.</div>';
+        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre not loaded — coords editable via lat/lng above.</div>';
+        document.addEventListener('wa:maplibre-ready', () => {
+          if (el) el.innerHTML = '';
+          initPinMap(lat, lng, address, locked);
+        }, { once: true });
         return;
       }
       pinMap = new maplibregl.Map({
@@ -499,16 +481,11 @@
       pinMap.touchZoomRotate.disableRotation();
       pinMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
       /* Click anywhere → drop the marker there (places-without-coords flow). */
-      pinMap.on('click', async (e) => {
+      pinMap.on('click', (e) => {
         const { lat, lng } = e.lngLat;
         placeMarker(lat, lng);
         pinManualMove = true;
-        setPinCoords(lat, lng, '…resolving…');
-        const addr = await reverseGeocode(lat, lng);
-        if (addr) {
-          const addrEl = $('mf-pin-address');
-          if (addrEl) addrEl.textContent = addr;
-        }
+        setPinCoords(lat, lng, '');
       });
     }
 
@@ -528,7 +505,7 @@
     }
   };
 
-  /* Reset button — clear coords so geocode-picks cron will re-fill them. */
+  /* Reset button — clear the pick's coords. */
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'mf-pin-clear') {
       setPinCoords(null, null);
@@ -594,9 +571,8 @@
       this_week:    $('mf-thisweek').checked,
     };
 
-    /* Pin position — real lat/lng from the MapLibre editor. Empty inputs
-       reset the row so the nightly geocode-picks cron will re-geocode.
-       A user drag (pinManualMove) implies the placement is authoritative,
+    /* Pin position — real lat/lng from the MapLibre editor; empty inputs
+       clear them. A user drag (pinManualMove) implies the placement is authoritative,
        so we also tag the source as 'manual'. coords_locked is the editor's
        explicit "don't touch this" switch. */
     const latRaw = $('mf-lat')?.value;
@@ -734,11 +710,10 @@
     $('vmf-image-url').value    = venue?.image_url    || '';
     $('vmf-status').value       = venue?.status       || 'active';
 
-    /* Clear enrichment fields first; async-populate from venue_details */
+    /* Clear detail fields first; async-populate from venue_details */
     $('vmf-wikidata').value      = '';
     $('vmf-short-desc').value    = '';
     $('vmf-opening-hours').value = '';
-    if ($('vmf-manual-lock')) $('vmf-manual-lock').checked = false;
 
     if (venue?.name) {
       const vkey = venue.name.toLowerCase();
@@ -746,7 +721,7 @@
       VD_GET(
         `city=eq.${encodeURIComponent(vcity)}` +
         `&venue_key=eq.${encodeURIComponent(vkey)}` +
-        `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
+        `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status&limit=1`
       ).then(rows => {
         const vd = Array.isArray(rows) ? rows[0] : null;
         if (!vd) return;
@@ -757,7 +732,6 @@
         $('vmf-phone').value           = vd.phone           || '';
         const bsEl = $('vmf-business-status');
         if (bsEl) bsEl.value = vd.business_status || '';
-        if ($('vmf-manual-lock')) $('vmf-manual-lock').checked = !!vd.manual_lock;
       }).catch(() => {});
     }
 
@@ -814,16 +788,13 @@
 
     if (saveBtn) saveBtn.disabled = false;
     if (success) {
-      /* Also upsert venue_details with any enrichment fields */
+      /* Also upsert venue_details with the detail fields */
       const latVal2 = parseFloat($('vmf-lat').value);
       const lngVal2 = parseFloat($('vmf-lng').value);
       const vdRow   = {
         city:          data.city,
         venue_key:     name.toLowerCase(),
         display_name:  name,
-        manual_lock:   !!$('vmf-manual-lock')?.checked,
-        source:        'manual',
-        enriched_at:   new Date().toISOString(),
       };
       const wikidata  = $('vmf-wikidata')?.value.trim();
       const shortDesc = $('vmf-short-desc')?.value.trim();
@@ -952,88 +923,6 @@
   };
 
   /* ══════════════════════════════════════════════════════════
-     VENUE ENRICHMENT LIST
-     ══════════════════════════════════════════════════════════ */
-  const VE_PAGE_SIZE = 20;
-  let vePage  = 0;
-  let veTotal = 0;
-
-  const loadEnrichmentList = async (page = 0) => {
-    const list    = $('enrichment-list');
-    const pagerEl = $('enrichment-pager');
-    const countEl = $('enrichment-count');
-    if (!list) return;
-
-    list.innerHTML = `<li class="meta admin-empty" style="padding:var(--s-3) 0">Loading…</li>`;
-
-    try {
-      const offset = page * VE_PAGE_SIZE;
-      const r = await fetch(
-        `${BASE}/rest/v1/venue_details?city=eq.${encodeURIComponent(currentCity)}` +
-        `&order=enriched_at.desc&limit=${VE_PAGE_SIZE}&offset=${offset}` +
-        `&select=id,venue_key,display_name,website,wikidata_id,source,manual_lock,enriched_at`,
-        {
-          headers: { apikey: ANON, Authorization: `Bearer ${ANON}`, Prefer: 'count=exact' },
-        }
-      );
-      const range = r.headers.get('content-range') || '';
-      veTotal = parseInt(range.split('/')[1]) || 0;
-      vePage  = page;
-      const rows = await r.json();
-
-      const pageCount = Math.max(1, Math.ceil(veTotal / VE_PAGE_SIZE));
-      if (countEl) countEl.textContent = `${veTotal} enriched venue${veTotal !== 1 ? 's' : ''}`;
-
-      if (!Array.isArray(rows) || !rows.length) {
-        list.innerHTML = `<li class="meta admin-empty" style="padding:var(--s-3) 0">No enriched venues yet — click "Run bulk enrichment" to start.</li>`;
-      } else {
-        list.innerHTML = rows.map(row => {
-          const ts     = row.enriched_at ? new Date(row.enriched_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) : '';
-          const locked = row.manual_lock ? ' 🔒' : '';
-          /* wikidata_id feeds an href — escape AND pin it to the expected
-             Q-id shape so a poisoned row can't mint an arbitrary link. */
-          const wdId   = /^Q\d+$/.test(row.wikidata_id || '') ? row.wikidata_id : null;
-          const wd     = wdId ? ` · <a href="https://www.wikidata.org/wiki/${escAttr(wdId)}" target="_blank" rel="noopener" style="color:var(--c-accent)">${escAttr(wdId)}</a>` : '';
-          const site   = row.website
-            ? (() => { try { return ' · ' + escAttr(new URL(row.website).hostname.replace(/^www\./, '')); } catch { return ''; } })()
-            : '';
-          return `<li class="admin-pick-row" data-vd-id="${escAttr(row.id)}" data-vd-key="${escAttr(row.venue_key)}">
-            <span>${escAttr(row.display_name || row.venue_key)}${locked}</span>
-            <span class="meta">${escAttr(row.source)}${wd}${site}</span>
-            <span class="meta" style="white-space:nowrap">${ts}</span>
-            <button class="admin-btn--edit admin-btn--lock-toggle"
-                    data-vd-id="${escAttr(row.id)}" data-locked="${row.manual_lock ? '1' : '0'}"
-                    title="${row.manual_lock ? 'Unlock (allow auto-enrichment)' : 'Lock (protect manual edits)'}"
-                    aria-label="${row.manual_lock ? 'Unlock' : 'Lock'} ${escAttr(row.display_name || row.venue_key)}">
-              ${row.manual_lock ? '🔒' : '🔓'}
-            </button>
-          </li>`;
-        }).join('');
-      }
-
-      if (pagerEl) {
-        if (pageCount > 1) {
-          pagerEl.hidden = false;
-          pagerEl.innerHTML = `
-            <div class="tw-filter-bar" style="margin-top:var(--s-2)">
-              <div class="tw-pager">
-                <button class="tw-pager-btn" id="ve-prev" ${page === 0 ? 'disabled' : ''}>&larr;</button>
-                <span class="meta">${page + 1}&thinsp;/&thinsp;${pageCount}</span>
-                <button class="tw-pager-btn" id="ve-next" ${page >= pageCount - 1 ? 'disabled' : ''}>&rarr;</button>
-              </div>
-            </div>`;
-          $('ve-prev')?.addEventListener('click', () => loadEnrichmentList(vePage - 1));
-          $('ve-next')?.addEventListener('click', () => loadEnrichmentList(vePage + 1));
-        } else {
-          pagerEl.hidden = true;
-        }
-      }
-    } catch (err) {
-      if (list) list.innerHTML = `<li class="meta" style="color:var(--c-accent);padding:var(--s-3) 0">Error: ${escAttr(err.message)}</li>`;
-    }
-  };
-
-  /* ══════════════════════════════════════════════════════════
      STATS STRIP — quick health counts
      ══════════════════════════════════════════════════════════ */
   const loadStats = async () => {
@@ -1064,81 +953,6 @@
           `admin-stat-badge${unpinned > 0 ? ' admin-stat-badge--warn' : ''}`;
       }
     } catch { /* silently absent */ }
-  };
-
-  /* ══════════════════════════════════════════════════════════
-     PIPELINE
-     ══════════════════════════════════════════════════════════ */
-  const loadPipeline = async () => {
-    const statusEl  = $('pipeline-status');
-    const contentEl = $('pipeline-content');
-    if (!hasKey()) {
-      if (statusEl) statusEl.textContent = 'Service key required to view pipeline stats.';
-      if (contentEl) contentEl.hidden = true;
-      return;
-    }
-    const key     = getKey();
-    const headers = { apikey: key, Authorization: `Bearer ${key}` };
-    if (statusEl) statusEl.textContent = 'Loading…';
-
-    try {
-      const [queueRows, logRows] = await Promise.all([
-        fetch(`${BASE}/rest/v1/staging_messages?select=status&limit=500`, { headers })
-          .then(r => r.json()).catch(() => []),
-        fetch(`${BASE}/rest/v1/ingest_log?select=fn,status,inserted,rejected,error,finished_at` +
-              `&order=id.desc&limit=5`, { headers })
-          .then(r => r.json()).catch(() => []),
-      ]);
-      renderPipeline(queueRows, logRows);
-      if (statusEl) statusEl.textContent = '';
-      if (contentEl) contentEl.hidden = false;
-    } catch (err) {
-      if (statusEl) statusEl.textContent = `Failed: ${err.message}`;
-    }
-  };
-
-  const renderPipeline = (queueRows, logRows) => {
-    /* Queue badges */
-    const queueEl = $('pipeline-queue');
-    if (queueEl) {
-      if (!Array.isArray(queueRows) || !queueRows.length) {
-        queueEl.innerHTML = '<span class="meta">Queue empty.</span>';
-      } else {
-        const counts = {};
-        queueRows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
-        /* `s` is staging_messages.status straight from the DB and lands in
-           BOTH a class attribute and the text — escaped in both, same as
-           every other DB value in this panel. */
-        queueEl.innerHTML = Object.entries(counts)
-          .map(([s, n]) => `<span class="admin-pipeline-badge admin-pipeline-badge--${escAttr(s)}">${escAttr(s)}: ${escAttr(n)}</span>`)
-          .join('');
-      }
-    }
-
-    /* Ingest log table */
-    const tbody = $('pipeline-log')?.querySelector('tbody');
-    if (tbody) {
-      if (!Array.isArray(logRows) || !logRows.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="meta">No log entries yet.</td></tr>';
-      } else {
-        tbody.innerHTML = logRows.map(r => {
-          const ts = r.finished_at
-            ? new Date(r.finished_at).toLocaleString('en-GB', { dateStyle:'short', timeStyle:'short' })
-            : '—';
-          const errCls = r.error ? 'pipeline-status-err' : 'pipeline-status-ok';
-          /* Every cell here is an ingest_log row — DB values, escaped like
-             the rest of the panel. `ts` is a formatted Date, so it is safe
-             by construction. */
-          return `<tr>
-            <td>${escAttr(r.fn || '—')}</td>
-            <td class="${errCls}">${escAttr(r.status || '—')}</td>
-            <td>${escAttr(r.inserted ?? '—')}</td>
-            <td>${escAttr(r.rejected ?? '—')}</td>
-            <td>${ts}</td>
-          </tr>`;
-        }).join('');
-      }
-    }
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -1173,7 +987,6 @@
         apState.page = 0;
         await loadAll();
         loadVenuesList(0);
-        loadEnrichmentList(0);
         loadStats();
       });
     }
@@ -1215,8 +1028,6 @@
     /* ── Load data ── */
     loadAll();
     loadVenuesList(0);
-    /* loadEnrichmentList(0) fires from the enrichment section below —
-       calling it here too doubled the request on every page load. */
 
     /* ── Delegation: ✕ remove-flag buttons ── */
     document.addEventListener('click', async (e) => {
@@ -1365,98 +1176,6 @@
       $('mf-venue-results').hidden = true;
     });
 
-    /* ── Pipeline section ── */
-    if (hasKey()) loadPipeline();
-    $('pipeline-refresh-btn')?.addEventListener('click', loadPipeline);
-    $('pipeline-process-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const btn      = $('pipeline-process-btn');
-      const statusEl = $('pipeline-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) { statusEl.textContent = 'Triggering process-staging…'; }
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/process-staging`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({}),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (statusEl) statusEl.textContent = r.ok
-          ? `Done: ${json.inserted || 0} inserted, ${json.rejected || 0} rejected.`
-          : `Error: ${JSON.stringify(json)}`;
-        if (r.ok) { await loadAll(); setTimeout(loadPipeline, 1500); }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
-    /* ── Verify venues ── */
-    const wireVerifyBtn = (btnId, dryRun) => {
-      $(btnId)?.addEventListener('click', async () => {
-        if (!dryRun && !confirm(
-          'This will mark matched venues as CLOSED in the database and archive their picks.\n\nProceed?'
-        )) return;
-        const btn      = $(btnId);
-        const statusEl = $('pipeline-status');
-        if (btn) btn.disabled = true;
-        if (statusEl) statusEl.textContent = dryRun ? 'Running dry-run check…' : 'Applying venue closure…';
-        try {
-          const r    = await fetch(`${BASE}/functions/v1/verify-venues?dry_run=${dryRun}`, {
-            headers: { apikey: ANON },
-          });
-          const json = await r.json().catch(() => ({}));
-          if (r.ok) {
-            const found = json.confirmed_closed?.length ?? 0;
-            if (dryRun) {
-              statusEl.textContent = found === 0
-                ? `Dry run: no disused venues found in OSM. (${json.venues_checked} checked)`
-                : `Dry run: ${found} venue(s) would be closed — ${json.confirmed_closed.map(v => v.name).join(', ')}`;
-            } else {
-              statusEl.textContent = `Applied: ${json.closed_venue_count} venue(s) closed, ${json.archived_pick_count} pick(s) archived.`;
-              setTimeout(loadPipeline, 1000);
-            }
-          } else {
-            statusEl.textContent = `Error: ${JSON.stringify(json)}`;
-          }
-        } catch (err) {
-          if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-        } finally {
-          if (btn) btn.disabled = false;
-        }
-      });
-    };
-    wireVerifyBtn('pipeline-verify-btn', true);
-    wireVerifyBtn('pipeline-verify-apply-btn', false);
-
-    $('pipeline-rotate-btn')?.addEventListener('click', async () => {
-      const btn      = $('pipeline-rotate-btn');
-      const statusEl = $('pipeline-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) statusEl.textContent = 'Rotating tonight pick…';
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/rotate-tonight`, {
-          method: 'POST',
-          headers: { apikey: ANON, 'Content-Type': 'application/json' },
-          body: '{}',
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) {
-          statusEl.textContent = json.action === 'promoted'
-            ? `Promoted: "${json.title}" (${json.day}) is now Tonight.`
-            : json.message || 'No eligible pick for today — noop.';
-          if (json.action === 'promoted') setTimeout(loadPipeline, 800);
-        } else {
-          statusEl.textContent = `Error: ${JSON.stringify(json)}`;
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
     /* ── Edit modal wiring ── */
     $('modal-form')?.addEventListener('submit', saveModal);
     $('modal-cancel')?.addEventListener('click', closeModal);
@@ -1497,95 +1216,6 @@
     $('vmodal-close')?.addEventListener('click',  closeVenueModal);
     $('admin-venue-modal')?.addEventListener('click', (e) => {
       if (e.target === $('admin-venue-modal')) closeVenueModal();
-    });
-
-    /* ── "Enrich now" button inside venue modal ── */
-    $('vmodal-enrich-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const name = $('vmf-name').value.trim();
-      if (!name) { setVenueModalStatus('Save the venue first.', true); return; }
-      const city   = $('vmf-city').value || currentCity;
-      const btn    = $('vmodal-enrich-btn');
-      if (btn) btn.disabled = true;
-      setVenueModalStatus('Enriching from Wikidata…');
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/enrich-venues`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({ city, venue_key: name.toLowerCase(), limit: 1 }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) {
-          const res = json.results?.[0];
-          setVenueModalStatus(
-            res ? `Enriched — source: ${res.source}${res.wikidata_id ? ', ' + res.wikidata_id : ''}` : 'No data found.'
-          );
-          /* Reload enrichment fields from venue_details */
-          const vdRows = await VD_GET(
-            `city=eq.${encodeURIComponent(city)}&venue_key=eq.${encodeURIComponent(name.toLowerCase())}` +
-            `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status,manual_lock&limit=1`
-          );
-          const vd = Array.isArray(vdRows) ? vdRows[0] : null;
-          if (vd) {
-            $('vmf-address').value         = vd.address         || '';
-            $('vmf-wikidata').value        = vd.wikidata_id     || '';
-            $('vmf-short-desc').value      = vd.short_desc      || '';
-            $('vmf-opening-hours').value   = vd.opening_hours   || '';
-            $('vmf-phone').value           = vd.phone           || '';
-            const bsEl = $('vmf-business-status');
-            if (bsEl) bsEl.value = vd.business_status || '';
-            if ($('vmf-manual-lock')) $('vmf-manual-lock').checked = !!vd.manual_lock;
-          }
-        } else {
-          setVenueModalStatus(`Error: ${JSON.stringify(json)}`, true);
-        }
-      } catch (err) {
-        setVenueModalStatus(`Network error: ${err.message}`, true);
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
-    /* ── Venue enrichment section ── */
-    loadEnrichmentList(0);
-    $('enrichment-refresh-btn')?.addEventListener('click', () => loadEnrichmentList(0));
-
-    $('enrichment-run-btn')?.addEventListener('click', async () => {
-      if (!hasKey()) { alert('Service key required.'); return; }
-      const btn      = $('enrichment-run-btn');
-      const statusEl = $('enrichment-status');
-      if (btn) btn.disabled = true;
-      if (statusEl) statusEl.textContent = 'Running enrichment — this may take 1–2 minutes…';
-      try {
-        const r    = await fetch(`${BASE}/functions/v1/enrich-venues`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getKey()}` },
-          body:    JSON.stringify({ city: currentCity, limit: 50 }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) {
-          if (statusEl) statusEl.textContent =
-            `Done — ${json.processed ?? 0} venues processed.`;
-          await loadEnrichmentList(0);
-        } else {
-          if (statusEl) statusEl.textContent = `Error: ${JSON.stringify(json)}`;
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Network error: ${err.message}`;
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
-
-    /* Delegation: lock/unlock toggle buttons in enrichment list */
-    $('enrichment-list')?.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.admin-btn--lock-toggle');
-      if (!btn) return;
-      const vdId    = btn.dataset.vdId;
-      const newLock = btn.dataset.locked !== '1';
-      const r = await sbWrite(`venue_details?id=eq.${encodeURIComponent(vdId)}`,
-        { manual_lock: newLock }, { label: 'Lock toggle' });
-      if (r?.ok) await loadEnrichmentList(vePage);
     });
 
     /* Escape closes whichever modal is open */

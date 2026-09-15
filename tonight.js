@@ -50,25 +50,20 @@
   };
 
   /* ── URL contract ────────────────────────────────────────────
-     Live: ?q ?cat ?time ?type ?sort ?id ?view=map ?within=
-     Retired ?ai= ?nhood= #mood= are read and discarded, so old links
-     still render a list. */
+     ?date ?q ?cat ?time ?sort ?view=map ?within= */
   const readParams = () => {
     const sp = new URLSearchParams(location.search);
 
     if (sp.get('date') && /^\d{4}-\d{2}-\d{2}$/.test(sp.get('date'))) state.day = sp.get('date');
-    if (sp.get('time'))  state.when   = sp.get('time');
+    /* Only known windows; "anytime" is the label people type for "all".
+       An unknown value would leave the list on its skeleton. */
+    const time = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
+    if (time && WHEN_LABEL[time]) state.when = time;
     if (sp.get('q'))     state.q      = sp.get('q');
     if (sp.get('sort'))  state.sort   = sp.get('sort');
     if (sp.get('cat'))   sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));
     if (sp.get('within')) state.within = window.WA.Geo.parseWithin(sp.get('within'));
     if (sp.get('view') === 'map') state.map = true;
-
-    /* Retired — deliberately read so it is obvious they are handled,
-       then dropped. No redirect, no error, no empty result. */
-    void sp.get('ai');
-    void sp.get('nhood');
-    void location.hash.match(/[#&]mood=/);
   };
 
   const writeParams = () => {
@@ -205,9 +200,8 @@
     return { time: 'OPEN', now: false };
   };
 
-  /* The pipeline writes placeholders ("Unknown", "TBA", "N/A", 'other')
-     when the LLM could not read a field; the gap is stated in words
-     instead of shown as a dead value. */
+  /* Placeholder values ("Unknown", "TBA", "N/A", 'other') are stated as
+     a gap in words instead of shown as a dead value. */
   const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
   const real = (v) => {
     const s = String(v == null ? '' : v).trim();
@@ -301,8 +295,8 @@
       const placeCount = (window.WA.venues || []).length;
       title = `${city} has no listings tonight.`;
       body  = placeCount
-        ? `We read the sources hourly and none of them filed anything. ${placeCount} places are open regardless.`
-        : `We read the sources hourly. Nothing has come in for this city yet.`;
+        ? `None of the sources filed anything. ${placeCount} places are open regardless.`
+        : `Nothing has come in for this city yet.`;
     }
 
     return `<div class="wa-empty">

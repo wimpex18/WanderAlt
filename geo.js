@@ -34,35 +34,13 @@
   };
 
   /* ── Resolving a coordinate ──────────────────────────────────
-     Own lat/lng, then the venues table by name, then venue_details.
-     Both joins are case- and whitespace-insensitive on the venue name,
-     matching the server-side join used to measure coverage. */
-  const key = (s) => String(s || '').toLowerCase().trim();
-
-  let _venueIdx = null;
-  const venueIndex = () => {
-    /* Rebuilt whenever the catalog reloads; cheap enough to memoise once
-       per page and invalidate on the ready event. */
-    if (_venueIdx) return _venueIdx;
-    _venueIdx = new Map();
-    const all = (window.WA && (window.WA._venuesAll || window.WA.venues)) || [];
-    for (const v of all) {
-      if (v && v.name && v.lat != null && v.lng != null) {
-        const k = `${key(v.city)}|${key(v.name)}`;
-        if (!_venueIdx.has(k)) _venueIdx.set(k, { lat: v.lat, lng: v.lng });
-      }
-    }
-    return _venueIdx;
-  };
-  document.addEventListener('wa:catalog-ready', () => { _venueIdx = null; });
-
+     Own lat/lng, then the pick's venue (WA.venueFor: venue_id, else the
+     case-insensitive name). */
   const coordsFor = (entry) => {
     if (!entry) return null;
     if (entry.lat != null && entry.lng != null) return { lat: entry.lat, lng: entry.lng };
-    if (entry.venue) {
-      const hit = venueIndex().get(`${key(entry.city)}|${key(entry.venue)}`);
-      if (hit) return hit;
-    }
+    const v = window.WA && window.WA.venueFor ? window.WA.venueFor(entry) : null;
+    if (v && v.lat != null && v.lng != null) return { lat: v.lat, lng: v.lng };
     return null;
   };
 

@@ -8,9 +8,8 @@
      four cities) or the special value 'Tonight'.
    - Explicit true flags are always respected — derivation only widens.
 
-   Both catalog paths call WA.when.stampAll(): catalog.js (static
-   fallback) and supabase.js (live). Loads before catalog.js on every
-   page that includes it (deferred scripts execute in document order).
+   supabase.js calls WA.when.stampAll() on the live catalogue. Loads
+   before supabase.js (deferred scripts execute in document order).
    ============================================================ */
 (() => {
   'use strict';
@@ -154,7 +153,7 @@
 
   /* ── Does this pick actually state a clock? ──────────────────
      picks.time carries prose as often as a time ("open daily", "Wed–Sun")
-     and the pipeline writes a bare date as a midnight timestamp. Midnight
+     and a bare date arrives as a midnight timestamp. Midnight
      counts as absent: a genuine midnight start shows the day instead.
 
      Returns minutes past local midnight, or null when no clock is

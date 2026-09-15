@@ -16,7 +16,7 @@
    state is kept (user can still bookmark while offline/guest).
 
    Load order:
-     catalog.js → supabase.js → auth.js → bookmark.js → [page]
+     supabase.js → auth.js → bookmark.js → [page]
    ============================================================ */
 window.WA = window.WA || {};
 

@@ -18,7 +18,7 @@
   <!-- Local-only, gitignored: sets the service key on this machine. A 404
        for this file on the deployed site is expected. -->
   <script src="./local-secrets.js"></script>
-  <script defer src="./vendor/maplibre-gl.js"></script>
+  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./admin.js"></script>
 </head>
 <body data-page="admin">
@@ -165,72 +165,6 @@
       <ol id="venues-list" class="a-list" role="list"></ol>
     </section>
 
-    <!-- Venue Enrichment — venue_details table browser + bulk trigger -->
-    <section id="admin-enrichment" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Venue Enrichment</p>
-        <button type="button" id="enrichment-refresh-btn" class="admin-reset">Refresh &rarr;</button>
-      </div>
-      <p class="meta a-hint">
-        Auto-enriches venues with website, address, coordinates, and short description from Wikidata
-        and Nominatim. Runs on a schedule; trigger manually here. Set
-        <strong>Lock</strong> on a venue to protect manual edits.
-      </p>
-      <div class="a-enrichment-buttons">
-        <button type="button" id="enrichment-run-btn" class="admin-col-btn admin-col-btn--approve">
-          Run bulk enrichment &rarr;
-        </button>
-      </div>
-      <p class="meta a-hint" id="enrichment-status"></p>
-      <p class="meta a-mb-2 a-mute" id="enrichment-count">Loading&hellip;</p>
-      <ol id="enrichment-list" class="a-list" role="list"></ol>
-      <div id="enrichment-pager" hidden></div>
-    </section>
-
-    <!-- Pipeline — queue depth + recent ingest logs -->
-    <section id="admin-pipeline" class="admin-section">
-      <div class="admin-section-head">
-        <p class="eyebrow">Pipeline</p>
-        <button type="button" id="pipeline-refresh-btn" class="admin-reset">Refresh &rarr;</button>
-      </div>
-      <p id="pipeline-status" class="meta a-hint">
-        Requires service key.
-      </p>
-      <div id="pipeline-content" hidden>
-        <div id="pipeline-queue" class="admin-pipeline-badges"></div>
-        <div class="a-pipeline-actions">
-          <button type="button" id="pipeline-process-btn"
-                  class="admin-col-btn admin-col-btn--approve">
-            Process staging now &rarr;
-          </button>
-          <button type="button" id="pipeline-verify-btn"
-                  class="admin-col-btn">
-            Verify venues (dry run) &rarr;
-          </button>
-          <button type="button" id="pipeline-verify-apply-btn"
-                  class="admin-col-btn admin-col-btn--reject">
-            Verify venues (apply) &rarr;
-          </button>
-          <button type="button" id="pipeline-rotate-btn"
-                  class="admin-col-btn">
-            Rotate tonight now &rarr;
-          </button>
-        </div>
-        <table class="admin-pipeline-table" id="pipeline-log" aria-label="Recent ingest log">
-          <thead>
-            <tr>
-              <th>Function</th>
-              <th>Status</th>
-              <th>Inserted</th>
-              <th>Rejected</th>
-              <th>Finished</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
   </main>
 
   <!-- ── Edit / create venue modal ────────────────────────── -->
@@ -320,9 +254,9 @@
                    placeholder="https://&hellip;" />
           </div>
 
-          <!-- ── Enrichment fields (stored in venue_details) ── -->
+          <!-- ── Detail fields (stored in venue_details) ── -->
           <div class="admin-mfield admin-mfield--full a-enrich-section">
-            <p class="eyebrow a-mb-0">Enrichment data</p>
+            <p class="eyebrow a-mb-0">Venue details</p>
           </div>
 
           <div class="admin-mfield">
@@ -356,14 +290,7 @@
           <div class="admin-mfield admin-mfield--full">
             <label for="vmf-short-desc">Short description</label>
             <textarea id="vmf-short-desc" rows="2"
-                      placeholder="1&ndash;2 sentence description (Wikidata or manual)"></textarea>
-          </div>
-
-          <div class="admin-mfield admin-mfield--full admin-mfield--flags">
-            <label>
-              <input type="checkbox" id="vmf-manual-lock" />
-              Lock enrichment &mdash; prevent auto-overwrite by cron
-            </label>
+                      placeholder="1&ndash;2 sentence description"></textarea>
           </div>
 
         </div><!-- /.admin-modal-grid -->
@@ -371,10 +298,6 @@
         <div class="admin-modal-actions">
           <button type="submit" id="vmodal-save" class="admin-modal-save">Save</button>
           <button type="button" id="vmodal-cancel" class="admin-modal-cancel">Cancel</button>
-          <button type="button" id="vmodal-enrich-btn" class="admin-col-btn"
-                  title="Run Wikidata + Nominatim enrichment for this venue now">
-            Enrich now &rarr;
-          </button>
           <span id="vmodal-status" class="meta a-modal-status-right"></span>
         </div>
       </form>
@@ -489,8 +412,7 @@
           </div>
 
           <!-- Pin position — drag the marker on the mini-map to set real
-               lat/lng coords. Locking prevents the nightly geocode-picks
-               cron from overwriting manual placements. -->
+               lat/lng coords. -->
           <div class="admin-mfield admin-mfield--full">
             <label>Pin position
               <span class="meta a-pin-edit-hint">drag the marker &middot;

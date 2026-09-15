@@ -61,7 +61,6 @@
        theme. Non-defer on purpose; CSP-clean external file. -->
   <script src="./theme.js"></script>
   <script defer src="./when.js"></script>
-  <script defer src="./catalog.js"></script>
   <script defer src="./geo.js"></script>
   <script defer src="./hours.js"></script>
   <script defer src="./marks.js"></script>
@@ -117,7 +116,7 @@
       </div>
     </div>
 
-    <!-- Scope tabs under the capsule: All, Events, Places, Walks. Icon
+    <!-- Scope tabs under the capsule: All, Events, Places. Icon
          over label, underline on the active one. -->
     <div class="wa-scope explore-scope" role="tablist" aria-label="Scope" id="scope">
       <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">
@@ -129,35 +128,15 @@
       <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Places
       </button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="walks">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 17C13 16 16 13 17 8.5"/></svg>Walks
-      </button>
     </div>
 
     <!-- The saved strip, between the capsule and the first shelf. Absent
          entirely when nothing is saved. -->
     <div id="savedstrip"></div>
 
-    <!-- The Walks card: one hand-written route, full width. Empty for
-         cities with no routes. -->
-    <div id="walkcard"></div>
-
     <!-- Named carousels, each with a count in its subtitle so a thin
          section reads as a short row rather than a hole. -->
     <div id="sections"></div>
-
-    <!-- The weekly Thursday email, at the foot of Explore. -->
-    <section class="wa-digest" aria-labelledby="digest-title">
-      <h2 class="wa-digest__title" id="digest-title">One email on Thursdays.</h2>
-      <p class="wa-digest__body">What's on in <span id="digest-city">Tallinn</span> over the weekend and the week after, in the same six-row shape as Tonight. It lands while there is still time to make a plan.</p>
-      <form class="wa-digest__form" data-no-submit id="digest-form">
-        <label class="wa-sr" for="digest-email">Your email address</label>
-        <input class="wa-input" type="email" id="digest-email" name="email" placeholder="you@example.com" autocomplete="email" required />
-        <button class="wa-btn wa-btn--primary" type="submit" style="flex:0 0 auto">Send it to me</button>
-        <a class="wa-btn" href="./about.html#calendar-feed" id="digest-ics" style="flex:0 0 auto">Calendar feed</a>
-      </form>
-      <p class="wa-digest__fine" id="digest-note">No account needed. One unsubscribe link, no other mail, ever.</p>
-    </section>
 
   </main>
 

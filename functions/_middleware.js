@@ -3,8 +3,6 @@
    ------------------------------------------------------------
    Social crawlers don't run JS, so this rewrites the OG meta server-side
    for /detail and /source requests carrying ?id= / ?venue= / ?handle=.
-   Retired /venue and /curator paths are matched too, though _redirects
-   301s them first (a 301 is not text/html, so the rewrite bails).
 
    og:image:
    - Picks WITH a photo → the real photo (~1200px wide); declared
@@ -22,7 +20,7 @@ const SB_BASE = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 /* Public anon key — same one shipped in supabase.js (RLS is SELECT-only). */
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
 
-/* A handle is a Telegram slug: @ plus word characters and dots. The value
+/* A handle is @ plus word characters and dots. The value
    is reflected into <title> and og:description when no row matches, so
    an unvalidated one would let anyone author a wanderalt.app preview. */
 const VALID_HANDLE = /^@?[A-Za-z0-9_.]{1,40}$/;
@@ -95,11 +93,8 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const p = url.pathname;
 
-  const isPick   = p === '/detail' || p === '/detail.html' ||
-                   p === '/venue'  || p === '/venue.html'  ||
-                   p === '/place'  || p === '/place.html';
-  const isSource = p === '/source' || p === '/source.html' ||
-                   p === '/curator' || p === '/curator.html';
+  const isPick   = p === '/detail' || p === '/detail.html';
+  const isSource = p === '/source' || p === '/source.html';
   if (!isPick && !isSource) return next();             // pass through everything else
 
   const id     = url.searchParams.get('id');

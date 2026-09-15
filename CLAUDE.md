@@ -1,108 +1,80 @@
 # WanderAlt
 
-Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). Pre-release: no production users, and a full rewrite is planned, so retired code and data are deleted rather than kept. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) instead of a named curator.
+Static site for underground culture in Tallinn, Helsinki and Riga (live) and Vilnius (internal testing). No production users. The database holds no venues or events, so every page shows its empty state. A decision surface, not a publication: **a time and a walking distance on every row**, and provenance (the venue or feed a listing came from) on every listing.
 
-Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres, REST, Edge Functions, pg_cron; project `aqnsmmbrspkbfcvougeh`, eu-central-1) · Cloudflare Pages on `wanderalt.app`.
+Stack: plain HTML/CSS/vanilla JS at the repo root · Supabase (Postgres 17, REST, Edge Functions; project `aqnsmmbrspkbfcvougeh`, eu-west-1) · Cloudflare Pages on `wanderalt.app`.
 
-Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (functions, crons, pipeline, images, LLM).
+Path-scoped detail loads automatically from `.claude/rules/`: `frontend.md` (pages, `wa.css`, design system) and `supabase.md` (schema, edge functions, images).
 
 ## Commands
+
+Node 24 LTS (`.nvmrc`); `npm install` brings the dev tools (`http-server`, `sharp`, `png-to-ico`).
 
 ```bash
 npm start              # dev server, http://localhost:5173 (no CSP)
 npm run admin          # admin panel on :8080 (service-role key kept in localStorage)
-npm run catalog        # regenerate static fallback catalog.js from live Supabase
 npm run build:icons    # rasterise PNG icons from brand/ SVG masters
-node .scripts/design-spec.js   # Claude Design handoff -> design-spec.json
 ```
-
-In the browser: paste `.scripts/design-check.js`, then `await waDesignCheck(['5a','5b'])` — reports which drawn strings reach the DOM (text only; run at the viewport the section was drawn at).
 
 ## Map
 
-- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `walk.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`. Filenames of the first two stay unchanged for links in the wild; `_redirects` maps retired pages.
+- Pages: `index.html` Explore · `discover.html` Tonight · `saved.html` · `detail.html` (events and places) · `source.html` · `profile.html` · `about.html` · `admin.html` · `404.html`. Each has a matching `.js`.
 - `wa.css` is the whole design system. `admin.css` / `admin-tokens.css` load on admin only.
-- `supabase.js` — data access + public anon key; falls back to `catalog.js` on fetch failure. Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
+- `supabase.js` — data access + public anon key; the lists stay empty on fetch failure. Venues are kind-filtered (`VENUE_KINDS`) and paged past PostgREST's 1000-row cap.
 - `ui-helpers.js` — `WA.UI`: `esc`, `safeUrl`, `priceLabel`, `descriptionOr`, `passwordField`.
 - `geo.js` (`WA.Geo`), `hours.js` (`WA.Hours`), `when.js` — distance, opening hours, time parsing.
 - `bookmark.js` + `lists.js` — one saves store, localStorage-first, cloud sync on sign-in. `auth.js` — Supabase REST auth, no SDK.
 - `sw.js` + `offline.js` — service worker and offline banner. `marks.js` — image fallback and small-image handling.
-- `functions/_middleware.js` — Pages Function rewriting OG meta. `workers/wikimedia-proxy/` — strips Wikimedia cookies on `/img/wm/*`.
-- `vendor/` — self-hosted MapLibre (upgrade = swap files + pinned tags in `admin.html`). `fonts/` — self-hosted faces.
-- `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
-- `walks.json` — three hand-written routes.
+- `functions/_middleware.js` — Pages Function rewriting OG meta. `functions/img/wm/[[path]].js` — Pages Function proxying Wikimedia images on `/img/wm/*`.
+- `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl` and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
+- `_redirects` folds `wanderalt.com` and `www` onto `wanderalt.app`.
+- `supabase/functions/` — edge function sources; `supabase/migrations/` — the schema.
 
 ## Hard rules
 
-- **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
+- **No build step.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Groq free, OpenRouter `:free`, Nominatim (staggered, never concurrent). Google Cloud billing is gone.
-- **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
+- **Free tiers only.** No paid APIs.
+- **Never add a bare→`.html` redirect to `_redirects`** — Pages already serves pretty URLs, so it loops.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
 - A visual change means that change only. Open PRs ready for review, not drafts. Keep README.md current when scope changes.
 
 ## Security
 
-- **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only, with INSERT on `bookmarks` and `digest_opt_ins`. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
-- **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration. pg_cron runs as job owner and is unaffected.
-- **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
-- `anon`/`authenticated` have `search_path = public, extensions`. `pg_net` is non-relocatable and stays in `public`; EXECUTE on `net.*` is revoked from `anon`.
-- Pipeline-internal tables (`sources`, `ingest_log`, `pick_changes`, `staging_messages`) have RLS on with no policies and no grants — intended deny-all. `admin.js` reads them with the service-role key.
-- `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
-- Open: leaked-password protection is off (dashboard toggle under Auth).
+- **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only on the catalogue; users read, insert and delete only their own saves. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`, and `admin.js` writes with it.
+- **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration.
+- **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate writes and outbound calls on the service-role key in code.
+- `anon`/`authenticated` have `search_path = public, extensions`. Own-row policies use `(select auth.uid())`.
+- `pg_net` is not installed and must stay that way: Supabase grants `anon` EXECUTE on `net.http_*` through a grant our role cannot revoke.
+- Leaked-password protection is off (Auth settings in the dashboard).
 
 ### Rendering untrusted content
 
-Pick, venue and source text is scraped and LLM-processed — treat it as attacker-controlled.
+Pick, venue and source text comes from outside sources — treat it as attacker-controlled.
 - Wrap every interpolated field in `WA.UI.esc()`, including inside `aria-label`, `title`, `data-*`, and values built by meta-line helpers.
 - Every DB-sourced URL in `href`/`src` goes through `WA.UI.safeUrl()` (http(s) and relative only). `esc()` does not stop `javascript:`.
 - The dev server sends no CSP, so escaping is the first line of defence.
 
 ## Deploy
 
-- **Pages**: GitHub-connected, preset None, build command empty, output `/`. `_headers` and `_redirects` apply automatically. `wanderalt.com` 301s to `wanderalt.app`.
-- **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
-- **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
-- **Crons calling `verify_jwt:true` functions go through `public.invoke_wa_fn(fn)`**, which supplies the Authorization header. A raw `net.http_post` without it 401s silently.
-- **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 tombstones with no source in the repo: `check-secrets`, `classify-moods`, `discover-venues`, `draft-column`, `embed-picks`, `generate-context`, `import-pick-photos`, `load-places-index`, `match-pick`. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
-- **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
+- **Pages**: GitHub-connected, preset None, build command empty, output `/`. `_headers`, `_redirects` and `functions/` deploy with every push.
+- **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool. Committing does not deploy; change a function → deploy it in the same session → say so in the commit.
+- **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly.
+- **The repo cannot tell you what is deployed.** Deleting a function's directory does not undeploy it; delete it in the dashboard too. Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
+- **The share surface fails open silently**: `functions/_middleware.js` and `og-image` both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
-## Pipeline and data
+## Data
 
-Tables: `picks` (events), `venues` (OSM places), `venue_details` (enrichment by venue name), `venue_images` (photo cache), `sources`, `staging_messages`, `ingest_log`, `pick_changes`, `past`, `pipeline_config`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`; view `image_health`.
-
-```
-ingest-* → staging_messages → process-staging → picks
-         → enrich-images / enrich-pick-images → geocode-picks → enrich-venues
-         → enrich-venue-images → verify-images
-         → rotate-tonight → archive-stale → dedup → purge
-```
-
-- Sources are rows in `sources`. Telegram, RSS and Fienta sources need no code.
-- **Staging upserts must carry `?on_conflict=channel,message_id`** or repeats 409 and `bumpSeen()` never runs.
-- **A new city needs entries in `CITY_CONTEXT` (`process-staging`) and `CITY_CENTER` (`geocode-picks`)** or it silently falls back / 400s.
-- App reads picks `WHERE archived_at IS NULL`. Pick id is `channel-message_id`. Archived picks hard-delete after 14 days; venue absence from OSM counts after 90.
-- `process-staging` copies facts verbatim from `staging_messages.payload`; the LLM supplies only English title, one sentence, kind. `saysSomething()` blanks restatements.
-- `picks.price` is effectively empty; `is_free` is the only money signal with coverage. `picks.venue_id` is almost never set: picks, `venues` and `venue_details` join on lowercased venue name.
-- `process-staging` still writes `picks.mood_tags` and `thumb_initials`; nothing reads them.
-- **Never poll the pipeline.** Fire, say "draining, check back in ~10 minutes", end the turn. Health = one-shot SQL on `staging_messages` status counts, `picks WHERE archived_at IS NULL`, tail of `ingest_log`.
-- **`cron.job_run_details` does not show whether a cron worked** — use `net._http_response` (`status_code`, `timed_out`, `error_msg`) by request id.
-- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark. Trigger `wa_normalise_image_url` (venues, picks, venue_images) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and refuses stock-library URLs.
-
-## LLM
-
-- Groq first: `llama-3.3-70b-versatile`. OpenRouter `:free` second: repo default `nvidia/nemotron-3-super-120b-a12b:free`; the `OPENROUTER_MODEL` secret overrides it with no deploy.
-- `OPENROUTER_API_KEY` is not set, so Groq's free tier is the entire capacity and `staging_messages` backs up. Free OpenRouter is 50 req/day, 1,000/day after a one-time $10 credit purchase — owner's call.
-- Gemini is retired behind `pipeline_config.gemini_fallback_enabled`; don't assume its key authenticates. No Search grounding.
-- **Pin models by exact id and confirm the id is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
-- Secret presence can't be checked from here (`check-secrets` is a tombstone); look in the dashboard.
+- The site reads `picks WHERE archived_at IS NULL`, active `venues` of the kinds in `VENUE_KINDS`, and `venue_details`; all are empty. The admin panel adds picks and venues by hand.
+- A pick's venue is `WA.venueFor(pick)`: `venue_id` first, then city and case-insensitive name. Provenance is `picks.handle`, shown as `via @handle`. Money is `is_free` plus `price_min`/`price_max`/`currency`.
+- **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark.
 
 ## Environment
 
-Cloud sessions: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. `GEMINI_API_KEY` is legacy.
+The edge functions read only Supabase's built-in variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 
 ## Voice
 
-Source handles start with `@` and match the Telegram slug. Metadata reads `Neighborhood · type · day + time`. No em-dashes in headlines, no exclamation marks, never "discover" as a verb, no "No results found", no marketing register — the back page of a newsletter.
+Handles start with `@`. Metadata reads `Neighborhood · type · day + time`. No em-dashes in headlines, no exclamation marks, never "discover" as a verb, no "No results found", no marketing register — the back page of a newsletter.

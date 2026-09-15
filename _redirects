@@ -11,20 +11,6 @@ https://www.wanderalt.com/* https://wanderalt.app/:splat   301
 # Force www → apex on the primary domain.
 https://www.wanderalt.app/* https://wanderalt.app/:splat   301
 
-# Retired /map and /search pages: search is a sheet, the map is a mode.
-/map          /discover.html?view=map    301
-/search       /discover.html             301
-/map.html     /discover.html?view=map    301
-/search.html  /discover.html             301
-
 # NOTE: do NOT add bare-name → *.html rules (e.g. /discover →
 # /discover.html). Cloudflare Pages already serves pretty URLs natively
 # (308 /foo.html → /foo), so such a rule creates an INFINITE redirect loop.
-
-# Retired pages → their replacements. ?id= carries across untouched.
-/venue.html    /detail.html    301
-/place.html    /detail.html    301
-/curator.html  /source.html    301
-/venue         /detail.html    301
-/place         /detail.html    301
-/curator       /source.html    301
