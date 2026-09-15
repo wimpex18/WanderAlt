@@ -51,21 +51,20 @@ Plain `.html` pages at the repo root, each with a matching `.js` renderer, shari
 
 **Site**: Cloudflare Pages, connected to GitHub. Framework preset None, build command empty, output directory `/`. `_headers` and `_redirects` are picked up automatically. Everything lives on `wanderalt.app`; `wanderalt.com` 301s across.
 
-**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`; run `verify_jwt:true` functions by hand through `public.invoke_wa_fn(fn)`. Deleting a function's directory does not undeploy it; retired functions stay deployed as 410 stubs.
+**Edge functions**: deployed by hand through the Supabase MCP `deploy_edge_function` tool (no CLI, no CI). Committing does not deploy. Preserve each function's `verify_jwt`; Deleting a function's directory does not undeploy it; retired functions stay deployed as 410 stubs.
 
 ## Backend
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1): Postgres 17, REST, Edge Functions. RLS allows SELECT only, plus INSERT on `bookmarks` and `digest_opt_ins`. Function sources live in `supabase/functions/`, migrations in `supabase/migrations/`.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1): Postgres 17, REST, Edge Functions. RLS allows SELECT only on the catalogue; users manage only their own saves. Function sources live in `supabase/functions/`; the schema is one baseline in `supabase/migrations/`.
 
-- **Tables**: `picks`, `venues`, `venue_details`, `pick_changes`, `bookmarks`, `saved_lists`, `saved_list_items`, `profiles`, `digest_opt_ins`. The catalogue tables are empty.
-- **Edge functions**: `og-image` (share cards), `calendar-feed`, `send-digest` (run by hand), `unsubscribe-digest`.
-- **LLM**: `send-digest` writes its intro on free tiers: Mistral (`mistral-small-2603`), then NVIDIA (`nemotron-3.5-lightning-30b-a3b`), then OpenRouter when its key is set.
+- **Tables**: `picks`, `venues`, `venue_details` (empty), `bookmarks`, `saved_lists`, `saved_list_items`.
+- **Edge functions**: `og-image` (share cards), `calendar-feed`.
 - **Images**: looked up by identity, never guessed from a name. Wikimedia images go through the `/img/wm/*` Pages Function.
-- **Scheduling**: none. Run a function with `select public.invoke_wa_fn('<fn>')`.
+- **Scheduling**: none.
 
 ### Environment
 
-Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`, `MISTRAL_API_KEY`, `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`.
+Cloud sessions need `SUPABASE_SERVICE_ROLE_KEY` as an environment variable.
 
 ## Key constraints
 
@@ -79,8 +78,7 @@ Cloud sessions need, as environment variables only: `SUPABASE_SERVICE_ROLE_KEY`,
 - Supabase Auth redirect URL → deployed domain (Dashboard → Auth → URL Configuration).
 - Self-serve account deletion (Dashboard → Authentication → Settings).
 - Leaked-password protection (Dashboard → Auth).
-- Delete the 410 stub edge functions and the `pick-images` storage bucket in the dashboard.
-- The digest signup (Explore, You, About) promises a Thursday email; `send-digest` is not scheduled.
+- Delete the 410 stub edge functions (list in `.claude/rules/supabase.md`) and the unused edge-function secrets.
 - Design question: a geometric sans for headlines, with Fraunces kept for timetable rows (owner's aesthetic call).
 
 Conventions for AI coding sessions: [CLAUDE.md](CLAUDE.md) and `.claude/rules/`.

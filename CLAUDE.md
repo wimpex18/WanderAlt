@@ -27,14 +27,14 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 - `sw.js` + `offline.js` — service worker and offline banner. `marks.js` — image fallback and small-image handling.
 - `functions/_middleware.js` — Pages Function rewriting OG meta. `functions/img/wm/[[path]].js` — Pages Function proxying Wikimedia images on `/img/wm/*` (raster only, no cookies).
 - `vendor/` — self-hosted MapLibre GL 6.9.0 (ESM only: `maplibre-gl.mjs`, `-shared.mjs`, `-worker.mjs`, `.css`), byte-identical to the npm release. `maplibre-loader.js` `import()`s it after first paint on `discover.html` and `admin.html`, sets `window.maplibregl`, and fires `wa:maplibre-ready`; upgrade = swap the four files. `fonts/` — self-hosted faces.
-- `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — migration journal.
+- `supabase/functions/` — edge function sources (live functions only); `supabase/migrations/` — one baseline of the current schema (`20260915090000_baseline.sql`); new changes go in new migration files after it.
 
 ## Hard rules
 
 - **No build step, ever.** No framework, bundler or runtime dependencies. devDependencies for tooling only.
 - **No inline `<script>` or inline handlers** — strict CSP.
 - **No analytics, no third-party scripts, no cookie banner.**
-- **Free tier only.** Mistral, NVIDIA and OpenRouter free tiers; Google Cloud billing is gone.
+- **Free tier only.** No paid APIs; Google Cloud billing is gone.
 - **Never add a bare→`.html` redirect to `_redirects`** — infinite loop.
 - **No automated tests or CI.** Don't add a test framework unless asked.
 - **Don't add CSS variables without asking.**
@@ -42,17 +42,16 @@ npm run build:icons    # rasterise PNG icons from brand/ SVG masters
 
 ## Security
 
-- **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only, with INSERT on `bookmarks` and `digest_opt_ins`. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
+- **The anon key in `supabase.js` is public on purpose.** RLS is SELECT-only on the catalogue; users read, insert and delete only their own saves. The service-role key is never committed; cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
 - **Every SECURITY DEFINER function in `public` is an anon-callable RPC** (`/rest/v1/rpc/…`). Revoke EXECUTE from `anon, authenticated, public` in the same migration.
 - **`verify_jwt` is not an auth gate** — the anon key is public. Before deploying, ask what an unauthenticated stranger could make the function do; gate anything outward-facing (mail, writes, LLM calls) on the service-role key in code.
-- `anon`/`authenticated` have `search_path = public, extensions`. `pg_net` is non-relocatable and stays in `public`; EXECUTE on `net.*` is revoked from `anon`.
-- `pick_changes` has no anon/authenticated access. Edge functions and `admin.js` use the service-role key. Own-row policies use `(select auth.uid())`.
-- `digest_opt_ins` INSERT policy requires a plausible email, one of the four cities, and `user_id` null or your own.
+- `anon`/`authenticated` have `search_path = public, extensions`. `admin.js` writes with the service-role key. Own-row policies use `(select auth.uid())`.
+- Extensions `pg_net` and `pg_cron` are not installed: `net.http_*` is granted to `anon` by Supabase's admin role and cannot be revoked, so installing pg_net again reopens a server-side HTTP client to the public.
 - Open: leaked-password protection is off (dashboard toggle under Auth).
 
 ### Rendering untrusted content
 
-Pick, venue and source text is scraped and LLM-processed — treat it as attacker-controlled.
+Pick, venue and source text comes from outside sources — treat it as attacker-controlled.
 - Wrap every interpolated field in `WA.UI.esc()`, including inside `aria-label`, `title`, `data-*`, and values built by meta-line helpers.
 - Every DB-sourced URL in `href`/`src` goes through `WA.UI.safeUrl()` (http(s) and relative only). `esc()` does not stop `javascript:`.
 - The dev server sends no CSP, so escaping is the first line of defence.
@@ -62,7 +61,6 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 - **Pages**: GitHub-connected, preset None, build command empty, output `/`. `_headers` and `_redirects` apply automatically. `wanderalt.com` 301s to `wanderalt.app`.
 - **Edge functions**: only via the Supabase MCP `deploy_edge_function` tool — no `supabase` CLI. Committing does not deploy. Change a function → deploy it in the same session → say so in the commit.
 - **`deploy_edge_function` defaults `verify_jwt` to true.** Always pass the function's existing value explicitly; flipping it breaks callers.
-- **No cron jobs are scheduled.** Run a function by hand with `select public.invoke_wa_fn('<fn>')`, which supplies the Authorization header a `verify_jwt:true` function needs.
 - **The repo cannot tell you what is deployed.** Deleting a directory does not undeploy a function; after retiring anything, curl the URL. Retired functions stay deployed as 410 stubs (listed in `.claude/rules/supabase.md`). Commits that touch a function without changing its behaviour carry a `No-Deploy: comment-only` trailer.
 - **Share surface fails open silently**: `functions/_middleware.js` and the `og-image` function both return a valid 200 card on failure. Judge the rendered card; `og-image?…&debug=1` returns the error instead of the fallback. Satori rejects elements without an explicit `display`.
 
@@ -70,18 +68,13 @@ Pick, venue and source text is scraped and LLM-processed — treat it as attacke
 
 - The site reads `picks WHERE archived_at IS NULL`, active `venues` of the kinds in `VENUE_KINDS`, and `venue_details`. All three are empty; the next backend decides how they are filled. The admin panel can add picks and venues by hand.
 - Pick id format is `channel-message_id`; provenance is `picks.handle`, shown as `via @handle`.
-- `picks.price` is unused; `is_free` is the money signal.
+- Money is `is_free` plus `price_min`/`price_max`/`currency`.
 - **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark.
 - When a model writes data, a prompt is a request, not a constraint: enforce allowed values, reject `"null"` strings and drop restatements (`WA.UI.descriptionOr`) in code.
 
-## LLM
-
-- `send-digest` writes its intro with the first lane that answers, each skipped while its secret is unset: Mistral `mistral-small-2603` (`MISTRAL_API_KEY`) → NVIDIA `nvidia/nemotron-3.5-lightning-30b-a3b` (`NVIDIA_API_KEY`, sent `chat_template_kwargs: {enable_thinking: false}`) → OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` (`OPENROUTER_API_KEY`, unset). All free tiers.
-- **Pin models by exact id and confirm it is in the provider's `/v1/models` before changing it.** `:free` ids vanish while the paid id remains.
-
 ## Environment
 
-Edge-function secrets: `MISTRAL_API_KEY`, `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `RESEND_API_KEY`. Cloud sessions also read `SUPABASE_SERVICE_ROLE_KEY`.
+The live edge functions read only Supabase's built-in variables. Cloud sessions read `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Voice
 

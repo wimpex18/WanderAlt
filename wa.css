@@ -249,7 +249,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
    the ids that are link targets, not [id]: scroll-margin-top also applies
    to scrollIntoView(), which Tonight uses to centre a row. */
 #main,
-#digest-title,
 #calendar,
 #calendar-feed {
   scroll-margin-top: calc(var(--topbar-h) + var(--s-4));
@@ -2190,11 +2189,11 @@ a.wa-sr:focus {
 }
 
 /* ============================================================
-   19 · The Thursday email card
-   Sits at the foot of Explore and as a row in You.
+   19 · Sign-in card
+   The account card on You, and the text inputs it uses.
    ============================================================ */
 
-.wa-digest {
+.wa-signin {
   margin: var(--s-8) 0 var(--s-7);
   padding: var(--s-6);
   background: var(--card);
@@ -2202,19 +2201,17 @@ a.wa-sr:focus {
   border-radius: var(--r-card-lg);
 }
 
-.wa-digest__title {
+.wa-signin__title {
   font: 600 var(--fs-title)/1.3 var(--ff-display);
   margin: 0 0 var(--s-2);
 }
 
-.wa-digest__body {
+.wa-signin__body {
   font: 400 var(--fs-body)/1.55 var(--ff-ui);
   color: var(--ink-soft);
   margin: 0 0 var(--s-5);
   max-width: 52ch;
 }
-
-.wa-digest__form { display: flex; flex-wrap: wrap; gap: var(--s-3); }
 
 .wa-input {
   flex: 1 1 200px;
@@ -2258,7 +2255,7 @@ a.wa-sr:focus {
   stroke-linecap: round; stroke-linejoin: round;
 }
 
-.wa-digest__fine {
+.wa-signin__fine {
   font: 400 var(--fs-meta)/1.5 var(--ff-mono);
   color: var(--ink-mute);
   margin: var(--s-3) 0 0;

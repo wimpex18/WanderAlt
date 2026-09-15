@@ -431,8 +431,6 @@
     /* Again here because readScope() runs before first layout, where
        every rect is 0 and the guard reads "already visible". */
     revealScope();
-    const dc = $('digest-city');
-    if (dc) dc.textContent = CITY_LABEL();
   };
 
   /* ── Sheets ──────────────────────────────────────────────────
@@ -598,38 +596,6 @@
   });
 
   sheet && sheet.addEventListener('close', () => { openSlot = ''; });
-
-  /* ── The weekly email (Thursday) ─────────────────────────────
-     Anonymous opt-in; the account is attached only when there is one. */
-  const form = $('digest-form');
-  if (form) {
-    form.addEventListener('submit', async () => {
-      const input = $('digest-email');
-      const note  = $('digest-note');
-      const email = (input.value || '').trim();
-      if (!email) return;
-      const base = window.WA.BASE_URL, key = window.WA.ANON_KEY;
-      if (!base || !key) return;
-      try {
-        const res = await fetch(`${base}/rest/v1/digest_opt_ins`, {
-          method:  'POST',
-          headers: { apikey: key, Authorization: `Bearer ${key}`,
-                     'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            email, city: window.WA.CITY,
-            ...(window.WA.Auth && window.WA.Auth.session && window.WA.Auth.session.user_id
-              ? { user_id: window.WA.Auth.session.user_id } : {}),
-          }),
-        });
-        note.textContent = res.ok
-          ? 'Done. First one lands on Thursday morning.'
-          : 'That did not go through. Try again in a minute.';
-        if (res.ok) input.value = '';
-      } catch (_) {
-        note.textContent = 'That did not go through. Try again in a minute.';
-      }
-    });
-  }
 
   /* ── Boot ────────────────────────────────────────────────────
      Skeleton immediately, real sections when the catalog lands, and a
