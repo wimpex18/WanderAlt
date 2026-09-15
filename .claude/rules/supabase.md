@@ -11,7 +11,7 @@ paths:
 
 - `supabase/migrations/20260915090000_baseline.sql` is the whole schema and the project's only recorded migration. Add changes as new, later-dated files.
 - Tables: `picks` (events), `venues` (places), `venue_details` (per-venue details keyed by `city` + lowercased `venue_key`) — public SELECT, all empty; `bookmarks`, `saved_lists`, `saved_list_items` — own rows only.
-- Picks, venues and venue details join on lowercased venue name; `picks.venue_id` is optional.
+- A pick links to its venue by `picks.venue_id` (set when the admin picks a venue from search), else by city and lowercased venue name (`WA.venueFor`). `venue_details` joins by city and lowercased `venue_key`.
 - Trigger `wa_normalise_image_url` (picks, venues) rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library image URLs. It is the only SQL function in `public`.
 - A migration that drops a column must grep `pg_proc`, `pg_policies` and triggers for it first: SQL functions break at run time, not at migration time.
 - No cron jobs; `pg_cron` and `pg_net` are not installed.

@@ -68,7 +68,7 @@ Pick, venue and source text comes from outside sources — treat it as attacker-
 ## Data
 
 - The site reads `picks WHERE archived_at IS NULL`, active `venues` of the kinds in `VENUE_KINDS`, and `venue_details`; all are empty. The admin panel adds picks and venues by hand.
-- Provenance is `picks.handle`, shown as `via @handle`. Money is `is_free` plus `price_min`/`price_max`/`currency`.
+- A pick's venue is `WA.venueFor(pick)`: `venue_id` first, then city and case-insensitive name. Provenance is `picks.handle`, shown as `via @handle`. Money is `is_free` plus `price_min`/`price_max`/`currency`.
 - **A venue or event photo is looked up by identity, never guessed from a name.** A wrong photo is worse than none; no photo draws the category mark.
 
 ## Environment

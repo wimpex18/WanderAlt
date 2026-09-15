@@ -86,6 +86,7 @@
     city:          r.city,
     title:         r.title,
     venue:         r.venue,
+    venueId:       r.venue_id || null,
     neighborhood:  r.neighborhood,
     kind:          r.kind,
     day:           r.day,
@@ -130,6 +131,21 @@
   ]);
   window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
+  /* The venue behind a pick: picks.venue_id when it is set, otherwise the
+     same city and case-insensitive name. */
+  const nameKey = (city, name) => `${String(city || '').toLowerCase()}|${String(name || '').toLowerCase().trim()}`;
+  window.WA.venueFor = (pick) => {
+    if (!pick) return null;
+    const venues = window.WA._venuesAll || [];
+    if (pick.venueId) {
+      const byId = venues.find(v => v.id === pick.venueId);
+      if (byId) return byId;
+    }
+    if (!pick.venue) return null;
+    const k = nameKey(pick.city, pick.venue);
+    return venues.find(v => nameKey(v.city, v.name) === k) || null;
+  };
+
   const toVenue = (r) => ({
     id:           r.id,
     city:         r.city,
@@ -166,7 +182,7 @@
       get(
         `picks`,
         `archived_at=is.null` +
-        `&select=id,city,title,venue,neighborhood,kind,day,time,quote,handle,` +
+        `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
                 `lat,lng,address,coords_source,coords_locked,` +
                 /* Facts the sources stated about themselves — see the
@@ -247,18 +263,11 @@
     const venues = window.WA._venuesAll  || [];
     if (!picks.length || !venues.length) return;
 
-    const byName = new Map();
-    for (const v of venues) {
-      if (!v.imageUrl || !v.name) continue;
-      byName.set(`${v.city}|${String(v.name).toLowerCase().trim()}`, v);
-    }
-    if (!byName.size) return;
-
     let borrowed = 0;
     for (const p of picks) {
-      if (p.imageUrl || !p.venue) continue;
-      const v = byName.get(`${p.city}|${String(p.venue).toLowerCase().trim()}`);
-      if (!v) continue;
+      if (p.imageUrl) continue;
+      const v = window.WA.venueFor(p);
+      if (!v || !v.imageUrl) continue;
       p.imageUrl   = v.imageUrl;
       p.imageAttr  = v.imageAttr ? `${v.imageAttr} — the venue, not the event` : 'The venue, not the event';
       p.imageIsVenue = true;

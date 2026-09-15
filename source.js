@@ -47,9 +47,7 @@
       /* Prefer naming it by the venue its picks actually share. */
       const venues = [...new Set(mine.map(e => real(e.venue)).filter(Boolean))];
       const name = venues.length === 1 ? venues[0] : (real(wantHandle) || wantHandle);
-      const venue = venues.length === 1
-        ? (window.WA._venuesAll || window.WA.venues || []).find(v => key(v.name) === key(venues[0]))
-        : null;
+      const venue = venues.length === 1 ? window.WA.venueFor(mine[0]) : null;
       return { name, picks: mine, venue: venue || null, via: 'handle', handle: wantHandle };
     }
 
