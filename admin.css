@@ -76,7 +76,6 @@
                            letter-spacing:.04em; padding:3px 10px;
                            border:1px solid var(--c-rule-strong); color:var(--c-ink-mute); }
 .admin-stat-badge--warn  { color:var(--c-ink-mute); }
-.admin-stat-badge--bad   { background:var(--c-accent); color:var(--c-paper); border-color:var(--c-accent); }
 /* Cap search inputs to a readable measure rather than the full column. */
 .admin-search-row        { position:relative; margin-top:var(--s-4); max-width:560px; }
 .admin-search-row input  { width:100%; box-sizing:border-box;
@@ -136,14 +135,10 @@
 .a-mt-1                  { margin-top:var(--s-1); }
 .a-mt-2                  { margin-top:var(--s-2); }
 .a-mt-3                  { margin-top:var(--s-3); }
-.a-mute                  { color:var(--c-ink-mute); }
 .a-w-full                { width:100%; }
 .a-accent                { color:var(--c-accent); }
 .a-stats-grid            { display:flex; flex-wrap:wrap; gap:var(--s-3); }
 .a-pt-4                  { padding-top:var(--s-4); }
-.a-modal-heading         { font-family:var(--ff-mono); font-size:var(--fs-meta);
-                           font-weight:600; letter-spacing:.04em; }
-.a-modal-status-inline   { margin-top:var(--s-3); min-height:1.4em; }
 .a-modal-status-right    { margin-left:auto; }
 .a-details-section       { margin-top:var(--s-3); padding-top:var(--s-3);
                            border-top:1px solid rgba(26,26,26,.1); }
@@ -155,8 +150,6 @@
 .a-pin-address-text      { font-family:var(--ff-mono); font-size:11px;
                            flex:1; min-width:0; overflow:hidden;
                            text-overflow:ellipsis; white-space:nowrap; }
-.a-pin-lock-label        { font-family:var(--ff-mono); font-size:11px;
-                           display:inline-flex; align-items:center; gap:6px; }
 .a-pin-reset-btn         { font-size:10px; }
 .a-pin-edit-hint         { margin-left:8px; }
 .a-pin-coords-help       { margin-top:var(--s-1); }

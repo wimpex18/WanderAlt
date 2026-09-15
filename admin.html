@@ -259,12 +259,6 @@
           </div>
 
           <div class="admin-mfield">
-            <label for="vmf-wikidata">Wikidata ID</label>
-            <input type="text" id="vmf-wikidata"
-                   placeholder="e.g. Q12345" />
-          </div>
-
-          <div class="admin-mfield">
             <label for="vmf-opening-hours">Opening hours</label>
             <input type="text" id="vmf-opening-hours"
                    placeholder="e.g. Mo-Fr 12:00-22:00" />
@@ -279,7 +273,7 @@
           <div class="admin-mfield">
             <label for="vmf-business-status">Business status</label>
             <select id="vmf-business-status">
-              <option value="">— auto —</option>
+              <option value="">— not set —</option>
               <option value="OPERATIONAL">Operational</option>
               <option value="CLOSED_TEMPORARILY">Temporarily closed</option>
               <option value="CLOSED_PERMANENTLY">Permanently closed</option>
@@ -428,10 +422,6 @@
             <div class="a-pin-coords-row">
               <span class="meta a-pin-coords-text" id="mf-pin-coords">not placed</span>
               <span class="meta a-pin-address-text" id="mf-pin-address"></span>
-              <label class="a-pin-lock-label">
-                <input type="checkbox" id="mf-coords-locked" />
-                Lock coords
-              </label>
             </div>
             <input type="hidden" id="mf-lat" />
             <input type="hidden" id="mf-lng" />

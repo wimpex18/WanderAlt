@@ -91,7 +91,6 @@
       updateBtn();
       document.dispatchEvent(new CustomEvent('wa:signed-out'));
     },
-    /* Open the sign-in overlay programmatically. */
     openSignIn: () => openOverlay('sign-in'),
   };
 
@@ -201,7 +200,7 @@
     el.style.color = isError ? 'var(--warn)' : 'var(--ink-mute)';
   };
 
-  /* Sign in -------------------------------------------------- */
+  /* ── Sign in ───────────────────────────────────────────────── */
   const renderSignIn = (p) => {
     title('Sign in');
     body().innerHTML = `
@@ -257,7 +256,7 @@
     } catch { setStatus('Network error.', true); btn.disabled = false; }
   };
 
-  /* Sign up -------------------------------------------------- */
+  /* ── Sign up ───────────────────────────────────────────────── */
   const renderSignUp = (p) => {
     title('Create account');
     body().innerHTML = `
@@ -313,7 +312,7 @@
     } catch { setStatus('Network error.', true); btn.disabled = false; }
   };
 
-  /* Forgot password ------------------------------------------ */
+  /* ── Forgot password ───────────────────────────────────────── */
   const renderForgot = (p) => {
     title('Reset password');
     body().innerHTML = `
@@ -355,7 +354,7 @@
     } catch { setStatus('Network error.', true); btn.disabled = false; }
   };
 
-  /* Set new password (recovery flow) ------------------------- */
+  /* ── Set new password (recovery flow) ──────────────────────── */
   const renderSetPassword = (p) => {
     title('Set new password');
     body().innerHTML = `
@@ -399,7 +398,7 @@
     } catch { setStatus('Network error.', true); btn.disabled = false; }
   };
 
-  /* Account -------------------------------------------------- */
+  /* ── Account ───────────────────────────────────────────────── */
   const renderAccount = (p) => {
     const email = window.WA.Auth.session?.email || 'Your account';
     title('Account');

@@ -20,7 +20,6 @@
   /* city.js runs first (document order) and sets window.WA.CITY. */
   const CITY = (window.WA && window.WA.CITY) || 'tallinn';
 
-  /* Expose for auth.js and bookmark.js to use. */
   window.WA          = window.WA || {};
   window.WA.BASE_URL = BASE;
   window.WA.ANON_KEY = KEY;
@@ -29,7 +28,6 @@
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
-  /* GET /rest/v1/{table}?{qs} → parsed JSON or throws */
   const get = (table, qs, signal) =>
     fetch(`${BASE}/rest/v1/${table}?${qs}`, { headers, ...(signal ? { signal } : {}) })
       .then(r => {
@@ -76,7 +74,6 @@
   ]);
   const isPublicPick = (r) => !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
 
-  /* Convert a Postgres picks row → catalog entry shape */
   const toPick = (r) => ({
     id:            r.id,
     city:          r.city,
@@ -96,8 +93,6 @@
     lat:       r.lat       ?? null,
     lng:       r.lng       ?? null,
     address:   r.address   ?? null,
-    coordsSource: r.coords_source ?? null,
-    coordsLocked: !!r.coords_locked,
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
     /* Source-authored facts. description is the venue's own blurb. */
     description: r.description || null,
@@ -110,7 +105,6 @@
     currency:    r.currency    || null,
     links:       r.links       || null,
     entities:    r.entities    || null,
-    /* Provenance freshness: the detail page prints "read N ago". */
     lastSeenAt: r.last_seen_at || null,
     createdAt:  r.created_at   || null,
     /* isClosed is hydrated below by joining against venue_details. */
@@ -180,7 +174,7 @@
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
-                `lat,lng,address,coords_source,coords_locked,` +
+                `lat,lng,address,` +
                 /* Facts the sources stated about themselves. */
                 `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */

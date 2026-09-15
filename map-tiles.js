@@ -115,7 +115,6 @@
   const MOVE_MS = () =>
     (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : 480;
 
-  /* Fit map to a bounding box covering all visible pin coords. */
   function fitToPicks(entries, options = {}) {
     if (!map) return;
     const pts = entries

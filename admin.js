@@ -8,7 +8,6 @@
 (() => {
   const BASE  = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
   const ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
-  const CITIES = ['tallinn', 'helsinki', 'riga'];
 
   /* ── Helpers ─────────────────────────────────────────────── */
   const $ = (id) => document.getElementById(id);
@@ -142,7 +141,7 @@
       '&archived_at=is.null' +
       '&select=id,title,venue,venue_id,neighborhood,kind,day,tonight,this_week,' +
                'valid_until,quote,handle,image_url,' +
-               'lat,lng,address,coords_source,coords_locked' +
+               'lat,lng,address' +
       '&order=sort_order.asc,created_at.asc' +
       '&limit=1000'
     );
@@ -303,8 +302,7 @@
         (unpinned > 0 && !apState.unpinnedOnly ? ` · ${unpinned} unpinned` : '');
     }
 
-    /* Sync the "Unpinned only" button state */
-    const unpBtn = $('ap-unpinned-btn');
+      const unpBtn = $('ap-unpinned-btn');
     if (unpBtn) unpBtn.classList.toggle('is-active', apState.unpinnedOnly);
 
     if (ctrl) {
@@ -387,13 +385,7 @@
         : '';
     }
 
-    /* Pin position editor — seed and render. */
-    initPinMap(
-      pick?.lat ?? null,
-      pick?.lng ?? null,
-      pick?.address ?? '',
-      !!pick?.coords_locked,
-    );
+    initPinMap(pick?.lat ?? null, pick?.lng ?? null, pick?.address ?? '');
 
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -403,13 +395,11 @@
   /* ──────────────────────────────────────────────────────────────
      PIN POSITION EDITOR (MapLibre)
      A draggable marker on a small basemap inside the pick modal.
-     dragend → hidden #mf-lat / #mf-lng. "Lock coords" sets
-     picks.coords_locked, marking the placement as authoritative.
+     A click or a drag writes the hidden #mf-lat / #mf-lng.
      ────────────────────────────────────────────────────────────── */
   const PIN_DEFAULT_CENTER = [24.7536, 59.4370]; /* Tallinn */
   let pinMap = null;        /* maplibregl.Map */
   let pinMarker = null;     /* maplibregl.Marker */
-  let pinManualMove = false; /* set true once the user drags the marker */
 
   const fmtCoords = (lat, lng) =>
     `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -443,16 +433,12 @@
         .addTo(pinMap);
       pinMarker.on('dragend', () => {
         const ll = pinMarker.getLngLat();
-        pinManualMove = true;
         setPinCoords(ll.lat, ll.lng, '');
       });
     }
   };
 
-  const initPinMap = (lat, lng, address, locked) => {
-    pinManualMove = false;
-    const lockedEl = $('mf-coords-locked');
-    if (lockedEl) lockedEl.checked = !!locked;
+  const initPinMap = (lat, lng, address) => {
     setPinCoords(lat ?? null, lng ?? null, address ?? '');
 
     if (!pinMap) {
@@ -460,10 +446,10 @@
         /* maplibre-loader.js has not finished (or failed): say so, and
            retry if it announces itself. */
         const el = $('mf-pin-map');
-        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">MapLibre not loaded — coords editable via lat/lng above.</div>';
+        if (el) el.innerHTML = '<div style="padding:var(--s-4);font-size:11px;color:#888">Map not loaded yet.</div>';
         document.addEventListener('wa:maplibre-ready', () => {
           if (el) el.innerHTML = '';
-          initPinMap(lat, lng, address, locked);
+          initPinMap(lat, lng, address);
         }, { once: true });
         return;
       }
@@ -480,11 +466,9 @@
       });
       pinMap.touchZoomRotate.disableRotation();
       pinMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-      /* Click anywhere → drop the marker there (places-without-coords flow). */
       pinMap.on('click', (e) => {
         const { lat, lng } = e.lngLat;
         placeMarker(lat, lng);
-        pinManualMove = true;
         setPinCoords(lat, lng, '');
       });
     }
@@ -505,14 +489,8 @@
     }
   };
 
-  /* Reset button — clear the pick's coords. */
   document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'mf-pin-clear') {
-      setPinCoords(null, null);
-      const lockedEl = $('mf-coords-locked');
-      if (lockedEl) lockedEl.checked = false;
-      pinManualMove = true;
-    }
+    if (e.target && e.target.id === 'mf-pin-clear') setPinCoords(null, null);
   });
 
   const closeModal = () => {
@@ -571,10 +549,7 @@
       this_week:    $('mf-thisweek').checked,
     };
 
-    /* Pin position — real lat/lng from the MapLibre editor; empty inputs
-       clear them. A user drag (pinManualMove) implies the placement is authoritative,
-       so we also tag the source as 'manual'. coords_locked is the editor's
-       explicit "don't touch this" switch. */
+    /* Pin position from the map editor; empty inputs clear it. */
     const latRaw = $('mf-lat')?.value;
     const lngRaw = $('mf-lng')?.value;
     const lat    = latRaw === '' ? null : Number(latRaw);
@@ -582,14 +557,11 @@
     if (lat !== null && Number.isFinite(lat) && lng !== null && Number.isFinite(lng)) {
       data.lat = lat;
       data.lng = lng;
-      if (pinManualMove) data.coords_source = 'manual';
     } else if (latRaw === '' && lngRaw === '') {
       data.lat = null;
       data.lng = null;
       data.address = null;
-      data.coords_source = null;
     }
-    data.coords_locked = !!$('mf-coords-locked')?.checked;
 
     /* Image: upload takes priority; otherwise use URL field */
     const imageFile = $('mf-image').files?.[0];
@@ -615,12 +587,10 @@
 
     let success = false;
     if (modalPick) {
-      /* Edit existing */
-      const r = await PATCH(`id=eq.${encodeURIComponent(modalPick.id)}`, data);
+        const r = await PATCH(`id=eq.${encodeURIComponent(modalPick.id)}`, data);
       if (r?.ok) { Object.assign(modalPick, data); success = true; }
     } else {
-      /* Create new */
-      data.city = currentCity;
+        data.city = currentCity;
       const r   = await POST_PICK(data);
       if (r?.ok) { success = true; await loadAll(); }
     }
@@ -711,7 +681,6 @@
     $('vmf-status').value       = venue?.status       || 'active';
 
     /* Clear detail fields first; async-populate from venue_details */
-    $('vmf-wikidata').value      = '';
     $('vmf-short-desc').value    = '';
     $('vmf-opening-hours').value = '';
 
@@ -721,12 +690,11 @@
       VD_GET(
         `city=eq.${encodeURIComponent(vcity)}` +
         `&venue_key=eq.${encodeURIComponent(vkey)}` +
-        `&select=address,wikidata_id,short_desc,opening_hours,phone,business_status&limit=1`
+        `&select=address,short_desc,opening_hours,phone,business_status&limit=1`
       ).then(rows => {
         const vd = Array.isArray(rows) ? rows[0] : null;
         if (!vd) return;
         $('vmf-address').value         = vd.address         || '';
-        $('vmf-wikidata').value        = vd.wikidata_id     || '';
         $('vmf-short-desc').value      = vd.short_desc      || '';
         $('vmf-opening-hours').value   = vd.opening_hours   || '';
         $('vmf-phone').value           = vd.phone           || '';
@@ -796,13 +764,11 @@
         venue_key:     name.toLowerCase(),
         display_name:  name,
       };
-      const wikidata  = $('vmf-wikidata')?.value.trim();
       const shortDesc = $('vmf-short-desc')?.value.trim();
       const ohours    = $('vmf-opening-hours')?.value.trim();
       const phone     = $('vmf-phone')?.value.trim();
       const bizStatus = $('vmf-business-status')?.value || null;
       const addrVal   = $('vmf-address').value.trim();
-      if (wikidata)   vdRow.wikidata_id     = wikidata;
       if (shortDesc)  vdRow.short_desc      = shortDesc;
       if (ohours)     vdRow.opening_hours   = ohours;
       if (phone)      vdRow.phone           = phone;
@@ -1182,7 +1148,6 @@
     $('modal-close')?.addEventListener('click',  closeModal);
     $('modal-archive')?.addEventListener('click', archivePick);
 
-    /* Image file → local preview */
     $('mf-image')?.addEventListener('change', (e) => {
       const file    = e.target.files?.[0];
       const preview = $('mf-image-preview');
@@ -1210,7 +1175,6 @@
     });
     $('venues-new-btn')?.addEventListener('click', () => openVenueModal(null));
 
-    /* Venue modal wiring */
     $('vmodal-form')?.addEventListener('submit',  saveVenueModal);
     $('vmodal-cancel')?.addEventListener('click', closeVenueModal);
     $('vmodal-close')?.addEventListener('click',  closeVenueModal);

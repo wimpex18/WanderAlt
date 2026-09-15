@@ -56,7 +56,6 @@
     const nameEl = btn && btn.querySelector('.city-selector__name');
     if (!btn) return;
 
-    /* Update button label to reflect the stored city. */
     const current = CITIES.find(c => c.id === window.WA.CITY) || CITIES[0];
     if (nameEl) nameEl.textContent = current.label;
 
@@ -90,7 +89,6 @@
       el.textContent = cityCap;
     });
 
-    /* Build dropdown on click; toggle on repeated click. */
     let dropdown = null;
 
     const closeDropdown = () => {
@@ -142,17 +140,14 @@
         dropdown.appendChild(li);
       });
 
-      /* Anchor to the button's parent container. */
       const anchor = btn.closest('.topbar__right') || btn.parentElement;
       anchor.style.position = 'relative';
       anchor.appendChild(dropdown);
       btn.setAttribute('aria-expanded', 'true');
 
-      /* Focus first enabled item. */
       dropdown.querySelector('.city-dropdown__item:not(.city-dropdown__item--soon)')?.focus();
     });
 
-    /* Close on outside click or Escape. */
     document.addEventListener('click',   closeDropdown);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDropdown();

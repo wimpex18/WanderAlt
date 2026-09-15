@@ -402,8 +402,7 @@ document.addEventListener('click', (e) => {
       return;
     }
     if (e.target.closest && e.target.closest('#more')) {
-      /* The description expands in place. */
-      document.getElementById('desc').classList.remove('wa-detail__desc--clamp');
+        document.getElementById('desc').classList.remove('wa-detail__desc--clamp');
       e.target.closest('#more').remove();
       return;
     }

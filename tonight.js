@@ -268,7 +268,6 @@
      that is not empty. "No results found" is banned copy. */
   const emptyState = () => {
     const city = CITY_LABEL();
-    const widerWhen = applyFilters(picks().filter(e => true), null).length;
     /* What would come back if we dropped the narrowest filter? */
     const drops = [];
     if (state.kinds.size) drops.push({ label: 'Any kind', act: 'clear-kinds', n: sorted(applyFilters(picks(), 'kind')).length });
@@ -605,7 +604,6 @@
     const kinds = kindOptions();
     const freeN = applyFilters(picks(), 'free').filter(isFreeish).length;
     const totalN = applyFilters(picks(), 'free').length;
-    const seenN = applyFilters(picks(), 'seen').length - applyFilters(picks(), null).length;
     const mins = state.within ? window.WA.Geo.walkMinutes(state.within) : null;
     /* Counted off the same chain as every other option, minus this
        facet, so the switch's own sub can never disagree with the list

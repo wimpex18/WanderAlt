@@ -17,15 +17,6 @@
 
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const todayAbbrev = () => {
-    try {
-      return new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'Europe/Tallinn' })
-        .format(new Date());
-    } catch {
-      return DAYS[new Date().getDay()]; /* local clock — same for Baltic users */
-    }
-  };
-
   const norm = (d) => String(d || '').trim().slice(0, 3).toLowerCase();
 
   /* isTonight / isThisWeek are defined AFTER resolveKey below, which they
@@ -171,8 +162,7 @@
   };
 
   window.WA.when = {
-    todayAbbrev, isTonight, isThisWeek, stampAll,
-    dayKey, todayKey, keyPlus, resolveKey, isTomorrow, isWeekend, weekendKeys, isOnDate,
+    isTonight, stampAll, todayKey, keyPlus, resolveKey, isOnDate,
     matches, statedMinutes,
   };
 })();

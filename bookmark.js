@@ -93,7 +93,6 @@ window.WA.Bookmarks = (() => {
        because bookmark.js loads on pages that do not carry lists.js. */
     if (!val && window.WA.Lists) window.WA.Lists.purge(id);
 
-    /* Fire and forget cloud sync. */
     if (val) upsertCloud(id);
     else     deleteCloud(id);
   };
