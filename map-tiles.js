@@ -122,7 +122,7 @@
       .filter(e => e.lat != null && e.lng != null)
       .map(e => [e.lng, e.lat]);
     if (!pts.length) {
-      /* No geocoded entries — keep current view. */
+      /* No placeable entries — keep current view. */
       return;
     }
     if (pts.length === 1) {

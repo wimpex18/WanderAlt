@@ -1,7 +1,7 @@
 /* ============================================================
    ui-helpers.js — WA.UI.
    ------------------------------------------------------------
-   The two escapers every page routes scraped text through, the price
+   The two escapers every page routes database text through, the price
    formatter, the description guard, and the password field auth.js
    builds.
 
@@ -59,8 +59,8 @@
      restatement, one or more stands. Suppressing a real sentence is the
      worse error, so the ambiguous middle is kept. Stopwords include the
      generic listings vocabulary (live, event, party, night, concert).
-     The same filler list exists in functions/_middleware.js, og-image and
-     process-staging; keep all four identical. */
+     The same filler list exists in functions/_middleware.js and og-image;
+     keep all three identical. */
   const FILLER = new Set(['the','and','with','for','from','out','you','your','its','are','was','this','that','into','all','new','one','two','live','event','events','show','shows','night','nights','music','party','concert','set','series','performs','presents','featuring','join','come','experience','enjoy','celebrate','discover','more','than','their','his','her']);
 
   const contentWords = (s) =>
@@ -75,7 +75,7 @@
     /* "TBA", "n/a", "-": a placeholder is not a sentence. */
     if (s.length < 12 || /^(tba|tbc|n\/a|none|null|-|—)$/i.test(s)) return '';
     const t = new Set(contentWords(title));
-    /* Only the opening needs judging: a long scraped programme blob has
+    /* Only the opening needs judging: a long programme blob has
        plenty of new words further down and is not a paraphrase. */
     return contentWords(s.slice(0, 300)).some(w => !t.has(w)) ? s : '';
   };

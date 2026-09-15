@@ -174,7 +174,7 @@
       const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
       const mark  = window.WA.Marks ? window.WA.Marks.markFor(e.kind) : 'place';
       return `<span class="wa-list-card__tile">${photo
-        ? `<img src="${esc(window.WA.img ? window.WA.img(photo, 200) : photo)}" alt="" loading="lazy" data-mark="${esc(mark)}">`
+        ? `<img src="${esc(photo)}" alt="" loading="lazy" data-mark="${esc(mark)}">`
         : `<svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg>`}</span>`;
     }).join('')}</span>`;
   };

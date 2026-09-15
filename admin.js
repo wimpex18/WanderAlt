@@ -14,7 +14,7 @@
   const $ = (id) => document.getElementById(id);
 
   /* HTML-escape every DB-sourced interpolation, including the single quote.
-     Discovery rows carry scraped text and this panel holds the service-role
+     Picks and venues carry outside text and this panel holds the service-role
      key, so it uses the same escaping contract as the public pages. */
   const escAttr = (s) => String(s || '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -379,7 +379,7 @@
 
     const preview = $('mf-image-preview');
     if (preview) {
-      /* escAttr, not raw: image_url can come from scraped sources, and this panel's
+      /* escAttr, not raw: image_url can come from outside sources, and this panel's
          localStorage holds the service-role key — an attribute break-out here
          would hand over the whole database. */
       preview.innerHTML = pick?.image_url

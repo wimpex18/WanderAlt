@@ -6,7 +6,7 @@
    it sits beside it. Pins are time · distance labels, paired both ways
    with their row.
 
-   Everything interpolated is scraped and goes through WA.UI.esc() at
+   Everything interpolated comes from the database and goes through WA.UI.esc() at
    the interpolation site; URLs go through WA.UI.safeUrl().
    ============================================================ */
 (() => {
@@ -216,7 +216,7 @@
     const area  = real(e.neighborhood);
     const price = UI().priceLabel ? UI().priceLabel(e) : '';
     const where = venue || (area ? '' : 'venue not yet named');
-    /* The desktop metadata line closes with provenance: "via fienta". */
+    /* The desktop metadata line closes with provenance: "via handle". */
     const via = real(e.handle) ? `via ${real(e.handle).replace(/^@/, '')}` : '';
     return [real(e.kind), where, areaInRail ? '' : area, price, via].filter(Boolean).join(' · ');
   };
@@ -229,7 +229,7 @@
     if (!src) return '';
     return `<span class="wa-row__media"><img class="wa-mark__photo" alt=""
       loading="lazy" decoding="async" data-mark="${esc(window.WA.Marks.markFor(e.kind))}"
-      src="${esc(window.WA.img ? window.WA.img(src, 200) : src)}"></span>`;
+      src="${esc(src)}"></span>`;
   };
 
   const row = (e) => {
@@ -263,7 +263,7 @@
     </a></li>`;
   };
 
-  /* ── Empty state (3a) ────────────────────────────────────────
+  /* ── Empty state ────────────────────────────────────────
      Names the filter that emptied the list and offers the nearest thing
      that is not empty. "No results found" is banned copy. */
   const emptyState = () => {
@@ -305,8 +305,7 @@
       <div class="wa-empty__actions">
         ${best ? `<button class="wa-btn wa-btn--primary" type="button" data-act="${esc(best.act)}">${esc(best.label)}</button>` : ''}
         ${state.when !== 'all' ? `<button class="wa-btn" type="button" data-act="when-all">Any time</button>` : ''}
-        <!-- The two 3a names them: somewhere else to look, and another
-             city. "Explore" alone made the reader go and find Places. -->
+        <!-- Somewhere else to look, and another city. -->
         <a class="wa-btn${best ? '' : ' wa-btn--primary'}" href="./index.html?scope=places">Show places</a>
         <button class="wa-btn" type="button" data-act="change-city">Change city</button>
       </div>
@@ -577,7 +576,7 @@
     writeParams();
   };
 
-  /* ── Filter sheet (5c) ───────────────────────────────────────
+  /* ── Filter sheet ───────────────────────────────────────
      Every control prints its consequence, and the key says the outcome.
      Counts come from the same applyFilters chain the list uses, each
      skipping its own facet, so a chip's count is what you would get by

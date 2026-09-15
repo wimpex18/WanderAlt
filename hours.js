@@ -1,15 +1,10 @@
 /* ============================================================
    hours.js — WA.Hours, the one reading of "is it open right now".
    ------------------------------------------------------------
-   Two shapes reach the browser:
-
-     venues.opening_hours         raw OSM syntax, written by ingest-osm
-                                  "Tu-Sa 12:00-19:00; Su,Mo off"
-     venue_details.opening_hours  Google weekday_text JSON array,
-                                  ["Monday: 12:00 – 10:00 PM", …]
-
-   parse() sniffs which one it got. Everything downstream works on the
-   normalised week: seven arrays of {open, close} minute pairs.
+   venues.opening_hours is OSM syntax, entered in the admin panel:
+   "Tu-Sa 12:00-19:00; Su,Mo off". parse() turns it into the normalised
+   week that everything downstream works on: seven arrays of {open, close}
+   minute pairs.
 
    "Unknown" is a first-class answer: every function returns null rather
    than guessing, and the UI prints "Hours not filed".
@@ -23,7 +18,7 @@
   const TZ   = 'Europe/Tallinn';
   const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];   /* index 0 = Monday */
 
-  /* Google's array is Monday-first; JS getDay() is Sunday-first. */
+  /* DAYS is Monday-first; JS getDay() is Sunday-first. */
   const MON_FIRST = (jsDay) => (jsDay + 6) % 7;
 
   /* ── City-local now, as {dayIdx, minutes} ────────────────────
@@ -139,7 +134,7 @@
     return holidayCache.get(ck).has(`${pad2(ymd.m)}-${pad2(ymd.d)}`);
   };
 
-  /* ── Shape A: raw OSM opening_hours ──────────────────────────
+  /* ── OSM opening_hours ──────────────────────────
      Deliberately a SUBSET of the OSM grammar. The full spec carries
      week numbers, sunset offsets and month ranges; a parser for all of
      it is a library, and a half-parser that guesses would tell someone
@@ -258,64 +253,14 @@
     return week;
   };
 
-  /* ── Shape B: Google weekday_text JSON ───────────────────────
-     ["Monday: 12:00 – 10:00 PM", "Tuesday: Closed", …], Monday first.
-     The en-dash is Google's; the AM/PM marker often appears only on the
-     closing time ("12:00 – 10:00 PM" means noon to 22:00), so the
-     opening time inherits the meridiem when it carries none. */
-  const parse12h = (s, inheritedMeridiem) => {
-    const m = /^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i.exec(String(s).trim());
-    if (!m) return null;
-    let h = +m[1];
-    const mi = m[2] ? +m[2] : 0;
-    const mer = (m[3] || inheritedMeridiem || '').toUpperCase();
-    if (h > 12 || mi > 59) return null;
-    if (mer === 'PM' && h !== 12) h += 12;
-    if (mer === 'AM' && h === 12) h = 0;
-    return { minutes: h * 60 + mi, meridiem: m[3] ? m[3].toUpperCase() : '' };
-  };
-
-  const parseGoogle = (raw) => {
-    let arr;
-    try { arr = JSON.parse(raw); } catch (_) { return null; }
-    if (!Array.isArray(arr) || !arr.length) return null;
-
-    const week = [[], [], [], [], [], [], []];
-    let sawAny = false;
-
-    arr.slice(0, 7).forEach((line, i) => {
-      const text = String(line || '');
-      const body = text.slice(text.indexOf(':') + 1).trim();
-      if (!body || /closed/i.test(body)) return;
-      if (/open 24 hours/i.test(body)) { week[i].push({ open: 0, close: 1440 }); sawAny = true; return; }
-
-      /* Multiple spans per day are comma separated. */
-      for (const span of body.split(',')) {
-        const parts = span.split(/[–—-]/);
-        if (parts.length !== 2) continue;
-        /* Parse the close first so its meridiem can back-fill the open. */
-        const close = parse12h(parts[1], '');
-        if (!close) continue;
-        const open = parse12h(parts[0], close.meridiem);
-        if (!open) continue;
-        let c = close.minutes;
-        if (c <= open.minutes) c += 1440;
-        week[i].push({ open: open.minutes, close: c });
-        sawAny = true;
-      }
-    });
-
-    return sawAny ? week : null;
-  };
-
-  /* ── Public: parse either shape ──────────────────────────────
+  /* ── Public: parse ───────────────────────────────────────────
      Returns the normalised week, or null for absent/unparseable —
      which callers must render as "not filed", never as "closed". */
   const parse = (raw) => {
     if (!raw) return null;
     const s = String(raw).trim();
     if (!s) return null;
-    return s.charAt(0) === '[' ? parseGoogle(s) : parseOSM(s);
+    return parseOSM(s);
   };
 
   /* ── Is it open, and until when ──────────────────────────────

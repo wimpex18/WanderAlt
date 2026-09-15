@@ -6,7 +6,7 @@
    walk plus the week strip. The primary action is "Walk me there".
    Provenance closes every page.
 
-   Every interpolated value is scraped: esc() at the site, safeUrl() for
+   Every interpolated value is database text: esc() at the site, safeUrl() for
    anything reaching an href or src.
    ============================================================ */
 (() => {
@@ -155,7 +155,7 @@
          never cropped to fill the well. The credit line says which it is. */
       const isMark = e.imageSource === 'logo';
       return `<div class="wa-detail__well${isMark ? ' wa-detail__well--brand' : ''}">
-        <img class="wa-detail__photo" src="${esc(window.WA.img ? window.WA.img(photo, 900) : photo)}"
+        <img class="wa-detail__photo" src="${esc(photo)}"
              alt="" loading="eager" decoding="async" data-mark="${esc(mark)}" />
         ${e.imageAttr ? `<p class="wa-detail__credit">${esc(isMark ? `${e.imageAttr} — their logo, not a photo` : e.imageAttr)}</p>` : ''}
       </div>`;

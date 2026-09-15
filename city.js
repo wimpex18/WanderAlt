@@ -16,16 +16,7 @@
      city.js → supabase.js → auth.js → …
    ============================================================ */
 (() => {
-  /* Right-size Google-hosted photos (googleusercontent size token →
-     =w<width>). Every other host is returned unchanged. */
   window.WA = window.WA || {};
-  window.WA.img = (url, width) => {
-    if (!url || typeof url !== 'string' || !width) return url;
-    if (url.includes('googleusercontent.com')) {
-      return url.replace(/=[-a-z0-9]+$/i, `=w${width}`);
-    }
-    return url;
-  };
 
   /* Each city has a static illustrated overview plate at /assets/
      <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). Two marks

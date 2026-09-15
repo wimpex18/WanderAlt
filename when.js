@@ -83,8 +83,8 @@
 
   /* ── Tonight / this week ─────────────────────────────────────
      Both go through resolveKey(), which prefers starts_at and falls back
-     to projecting the weekday (process-staging often writes day = null
-     with a good starts_at). Explicit true flags are still respected —
+     to projecting the weekday (a pick may carry starts_at with day = null).
+     Explicit true flags are still respected —
      derivation only ever widens. */
 
   const isTonight = (e) => {

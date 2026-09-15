@@ -5,7 +5,7 @@
    for /detail and /source requests carrying ?id= / ?venue= / ?handle=.
 
    og:image:
-   - Picks WITH a photo → the real photo (~1200px wide); declared
+   - Picks WITH a photo → the real photo; declared
      og:image:width/height are removed because the aspect varies.
    - Picks WITHOUT a photo, and sources → the `og-image` function's
      branded 1200×630 card.
@@ -33,7 +33,7 @@ const VALID_VENUE = /^[\p{L}\p{N} .,'’&()\/-]{2,60}$/u;
 
 /* A second copy of WA.UI.descriptionOr (a Worker has no access to the
    page bundle): a description that only restates the title is dropped.
-   Keep the filler list identical across all four copies. */
+   Keep the filler list identical across all three copies. */
 const FILLER = new Set(['the','and','with','for','from','out','you','your','its','are','was','this','that','into','all','new','one','two','live','event','events','show','shows','night','nights','music','party','concert','set','series','performs','presents','featuring','join','come','experience','enjoy','celebrate','discover','more','than','their','his','her']);
 
 const contentWords = (s) =>
@@ -54,13 +54,6 @@ const sbGet = async (path) => {
   });
   return r.ok ? r.json() : [];
 };
-
-/* Right-size a Google-hosted photo to <width> px; other hosts returned
-   unchanged. Matches WA.img in city.js. */
-const sizedPhoto = (url, width) =>
-  (url && url.includes('googleusercontent.com'))
-    ? url.replace(/=[-a-z0-9]+$/i, `=w${width}`)
-    : url;
 
 /* Rewrite the OG/Twitter meta on the streamed HTML. When `photo` is true
    the og:image is a real photo of unknown aspect, so the declared
@@ -132,7 +125,7 @@ export async function onRequest(context) {
         title:       `WanderAlt — ${pick.title} · ${city}`,
         description: said || facts.join(' · '),
         image:       photo
-          ? sizedPhoto(pick.image_url, 1200)
+          ? pick.image_url
           : `${SB_BASE}/functions/v1/og-image?id=${encodeURIComponent(id)}`,
         photo,
       });
