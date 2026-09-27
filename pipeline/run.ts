@@ -139,7 +139,7 @@ async function main() {
     const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
     const spent = (await db.select<{ neurons: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=neurons`))
       .reduce((a, r) => a + Number(r.neurons || 0), 0);
-    const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS ?? 6000);
+    const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
     models.neuronBudget = Math.max(0, Math.min(models.neuronBudget, daily - spent));
     const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
     runId = row?.id ?? null;

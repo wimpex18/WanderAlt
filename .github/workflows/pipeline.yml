@@ -30,4 +30,5 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          WORKERS_AI_DAILY_NEURONS: ${{ secrets.WORKERS_AI_DAILY_NEURONS }}
         run: node pipeline/run.ts ${{ inputs.source && format('--source {0}', inputs.source) || '' }}
