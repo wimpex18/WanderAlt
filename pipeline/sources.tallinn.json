@@ -17,7 +17,7 @@
     "id": "kino-soprus",
     "city": "tallinn",
     "kind": "jsonld",
-    "url": "https://kinosoprus.ee/",
+    "url": "https://kinosoprus.ee/kinokava/",
     "handle": "@kinosoprus",
     "label": "Kino Sõprus",
     "curated": true,

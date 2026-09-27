@@ -8,7 +8,8 @@ import * as fienta from '../sources/fienta.ts';
 import * as jsonld from '../sources/jsonld.ts';
 import { parseTelegram, parseRss } from '../sources/text.ts';
 import { Models, parseJson, fallbackEnrichment, type Lane } from '../llm.ts';
-import { Places } from '../places.ts';
+import { Places, normaliseAddress } from '../places.ts';
+import { Seen, overlap } from '../dedupe.ts';
 import { decide, eventId, loadSources } from '../run.ts';
 import { htmlToText, httpUrl, nameKey } from '../util.ts';
 import type { Source } from '../types.ts';
@@ -130,4 +131,57 @@ test('helpers: text, URLs, names, and the Tallinn source list', () => {
   assert.equal(nameKey('Kultuurikatel „Katel“'), 'kultuurikatel katel');
   const ids = loadSources('tallinn').map(s => s.id);
   assert.equal(new Set(ids).size, ids.length);
+});
+
+test('addresses are reduced to what Nominatim matches', () => {
+  assert.equal(normaliseAddress('Kentmanni tänav 28, 10116 Tallinn, Harju maakond'), 'Kentmanni 28, Tallinn');
+  assert.equal(normaliseAddress('Telliskivi tänav 60a / 9, 10412 Tallinn'), 'Telliskivi 60a, Tallinn');
+  assert.equal(normaliseAddress('Krulli 2b (Kopli 70a), 10412 Tallinn'), 'Krulli 2b, Tallinn');
+  assert.equal(normaliseAddress('Pärnu mnt. 139c, 11317 Tallinn'), 'Pärnu maantee 139c, Tallinn');
+  assert.equal(normaliseAddress('Vana-Posti tn 8, Tallinn'), 'Vana-Posti 8, Tallinn');
+});
+
+test('a second source copy of a show joins the first', () => {
+  const t = Date.parse('2026-10-01T15:00:00Z');
+  const seen = new Seen([{ id: 'ev_a', title: 'Screening at Kai Cinema: "Sisters"', where: 'tallinn-kai', start: t }]);
+  assert.ok(overlap('Sisters', 'Screening at Kai Cinema: Sisters') === 1);
+  assert.equal(seen.match('Sisters', 'tallinn-kai', t + 10 * 60_000), 'ev_a');
+  assert.equal(seen.match('Sisters', 'tallinn-kai', t + 3 * 3600_000), null);     // a later screening
+  assert.equal(seen.match('Sisters', 'tallinn-other', t), null);                   // another venue
+  assert.equal(seen.match('Case 137', 'tallinn-kai', t), null);                    // another film
+});
+
+test('a 429 waits and retries on the same lane without disabling it', async () => {
+  let n = 0;
+  const lane: Lane = {
+    name: 'limited', model: 'm', key: 'k', vision: false,
+    call: async () => {
+      n++;
+      if (n === 1) throw Object.assign(new Error('429 slow down'), { status: 429, retryAfter: 0.01 });
+      return '{"ok":true}';
+    },
+  };
+  const models = new Models([lane], 10);
+  assert.deepEqual((await models.ask('s', 'u', {})).data, { ok: true });
+  assert.equal(n, 2);
+  assert.equal(models.ready, true);
+});
+
+test('JSON-LD collection keeps only screenings inside the horizon', async () => {
+  const html = `<script type="application/ld+json">{"@graph":[
+    {"@type":"ScreeningEvent","@id":"https://k.example/a#s","startDate":"2026-10-01T19:00:00+03:00","location":{"@id":"https://k.example/#v"}},
+    {"@type":"ScreeningEvent","@id":"https://k.example/b#s","startDate":"2027-03-01T19:00:00+02:00"},
+    {"@type":"MovieTheater","@id":"https://k.example/#v","name":"Suur saal"}]}</script>`;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(html, { status: 200 })) as typeof fetch;
+  try {
+    const items = await jsonld.collect(source({ kind: 'jsonld', url: 'https://k.example/', config: { days: 30, venue_name: 'Kino' } }), new Date('2026-09-27T00:00:00Z'));
+    assert.deepEqual(items.map(i => i.external_id), ['https://k.example/a#s']);
+    assert.equal(items[0].url, 'https://k.example/a');
+    assert.equal((items[0].payload.location as { name: string }).name, 'Suur saal');
+    const [c] = jsonld.extract({ ...items[0], payload: { ...items[0].payload, name: 'A film' } }, source({ config: { venue_name: 'Kino' } }));
+    assert.equal(c.venue_name, 'Kino');          // the venue, not the hall
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

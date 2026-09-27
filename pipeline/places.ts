@@ -25,15 +25,47 @@ interface NominatimHit {
   lon: string;
   osm_type: string;
   osm_id: number;
+  category?: string;
+  type?: string;
   name?: string;
   address?: Record<string, string>;
 }
 
 const ONLINE = /\b(online|zoom|veebis|онлайн)\b/i;
 
+/** Estonian addresses as Nominatim matches them: "Kentmanni tänav 28, 10116
+ *  Tallinn" → "Kentmanni 28, Tallinn". OSM names streets without "tänav",
+ *  spells "maantee" and "puiestee" out, and has no unit numbers. */
+export function normaliseAddress(a: string): string {
+  const street = a
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/,?\s*Harju ?(maakond|maa)\b/gi, '')
+    .replace(/\b\d{5}\b/g, '')
+    .replace(/\s*\/\s*\d+\w?\b/g, '')
+    .replace(/\b(tänav|tn)\.?(?=\s|,|$)/gi, '')
+    .replace(/\bmnt\b\.?/gi, 'maantee')
+    .replace(/\bpst\b\.?/gi, 'puiestee')
+    .split(',')[0]
+    .replace(/\s+/g, ' ')
+    .trim();
+  return street ? `${street}, Tallinn` : '';
+}
+
+/** OSM tags → the place kinds the site lists (supabase.js VENUE_KINDS). */
+const OSM_KIND: Record<string, string> = {
+  'amenity/cinema': 'cinema', 'amenity/nightclub': 'club', 'amenity/arts_centre': 'arts centre',
+  'amenity/community_centre': 'community', 'amenity/social_centre': 'community',
+  'tourism/gallery': 'gallery', 'shop/art': 'gallery', 'shop/books': 'bookshop',
+  'shop/music': 'record store', 'shop/second_hand': 'thrift', 'shop/charity': 'thrift',
+  'amenity/theatre': 'theatre', 'amenity/bar': 'bar', 'amenity/pub': 'bar', 'amenity/cafe': 'cafe',
+  'tourism/museum': 'museum', 'amenity/library': 'library',
+};
+
 export class Places {
   private byKey = new Map<string, Place>();
   readonly created: Place[] = [];
+  readonly updated: Place[] = [];
+  private retried = new Set<string>();
   private lookups = 0;
   private city: string;
   private maxLookups: number;
@@ -54,39 +86,47 @@ export class Places {
     const name = c.venue_name?.split(',')[0]?.trim();
     if (!name || ONLINE.test(name)) return null;
     const hit = this.byKey.get(nameKey(name));
-    if (hit) return hit;
+    if (hit) {
+      // A place an earlier run could not find gets a few more tries, one per run.
+      if (geocode && hit.lat == null && !this.retried.has(hit.id) && this.retried.size < 10 && !this.created.includes(hit)) {
+        this.retried.add(hit.id);
+        if (await this.locate(hit, name, c.address ?? hit.address ?? null)) this.updated.push(hit);
+      }
+      return hit;
+    }
 
     let id = `${this.city}-${slug(name)}`;
     for (let n = 2; [...this.byKey.values()].some(p => p.id === id); n++) id = `${this.city}-${slug(name)}-${n}`;
     const place: Place = { id, city: this.city, name, aliases: [nameKey(name)], address: c.address ?? null };
 
-    if (geocode) {
-      // The address first, then without its postcode, then the name itself.
-      // "Telliskivi 60a / 9" names a building and a unit; Nominatim wants the building.
-      const street = c.address?.replace(/\s*\/\s*\d+\w?\b/, '');
-      const tries = [street, street?.replace(/\b\d{5}\b/, ''), `${name}, Tallinn`]
-        .filter((q): q is string => !!q && q.trim().length > 3);
-      for (const q of new Set(tries)) {
-        if (this.lookups >= this.maxLookups) break;
-        const found = await this.geocode(q);
-        if (!found) continue;
-        place.lat = Number(found.lat);
-        place.lng = Number(found.lon);
-        // An address can land on a different venue in the same building, so
-        // the OSM identity is kept only when the names agree.
-        const osmName = nameKey(found.name ?? found.address?.amenity ?? '');
-        if (osmName && (osmName.includes(nameKey(name)) || nameKey(name).includes(osmName))) {
-          place.osm_id = `${found.osm_type}/${found.osm_id}`;
-        }
-        const a = found.address ?? {};
-        place.neighborhood = a.neighbourhood ?? a.suburb?.replace(/ linnaosa$/, '') ?? a.city_district?.replace(/ linnaosa$/, '') ?? null;
-        if (!place.address && a.road) place.address = [a.road, a.house_number].filter(Boolean).join(' ');
-        break;
-      }
-    }
+    if (geocode) await this.locate(place, name, c.address ?? null);
     this.remember(place);
     this.created.push(place);
     return place;
+  }
+
+  /** Coordinates, neighbourhood, and — when OSM's name agrees — identity and kind. */
+  private async locate(place: Place, name: string, address: string | null): Promise<boolean> {
+    const tries = [address ? normaliseAddress(address) : '', `${name}, Tallinn`].filter(q => q.length > 9);
+    for (const q of new Set(tries)) {
+      if (this.lookups >= this.maxLookups) return false;
+      const found = await this.geocode(q);
+      if (!found) continue;
+      place.lat = Number(found.lat);
+      place.lng = Number(found.lon);
+      // An address can land on a different venue in the same building, so
+      // the OSM identity and kind are kept only when the names agree.
+      const osmName = nameKey(found.name ?? found.address?.amenity ?? '');
+      if (osmName && (osmName.includes(nameKey(name)) || nameKey(name).includes(osmName))) {
+        place.osm_id = `${found.osm_type}/${found.osm_id}`;
+        place.kind = place.kind ?? OSM_KIND[`${found.category}/${found.type}`] ?? null;
+      }
+      const a = found.address ?? {};
+      place.neighborhood = a.neighbourhood ?? a.suburb?.replace(/ linnaosa$/, '') ?? a.city_district?.replace(/ linnaosa$/, '') ?? null;
+      if (!place.address && a.road) place.address = [a.road, a.house_number].filter(Boolean).join(' ');
+      return true;
+    }
+    return false;
   }
 
   private async geocode(q: string): Promise<NominatimHit | null> {

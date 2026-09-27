@@ -18,6 +18,7 @@ import * as jsonld from './sources/jsonld.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify } from './llm.ts';
 import { Places, type Place } from './places.ts';
+import { Seen } from './dedupe.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey } from './util.ts';
 import { tallinnDay } from './time.ts';
@@ -30,6 +31,8 @@ const CITY = opt('--city') ?? 'tallinn';
 const DRY = flag('--dry-run');
 const ONLY = opt('--source');
 const MAX_ITEMS = Number(opt('--max-items') ?? 400);
+const MAX_ATTEMPTS = 3;          // a raw item that errors this often is parked as 'error'
+const KEEP_RAW_DAYS = 60;
 
 const log = (...xs: unknown[]) => console.log('[pipeline]', ...xs);
 
@@ -104,6 +107,8 @@ async function main() {
   if (db) {
     await db.upsert('sources', sources.map(({ id, city, kind, url, handle, label, curated, config }) =>
       ({ id, city, kind, url, handle, label, curated, config, active: true })), 'id');
+    // A source removed from the JSON stops being read and stops being shown.
+    if (!ONLY) await db.patch(`sources?city=eq.${CITY}&active=is.true&id=not.in.${encodeURIComponent(inList(sources.map(s => s.id)))}`, { active: false });
   }
 
   // ── 2. collect ──
@@ -148,18 +153,30 @@ async function main() {
 
   // ── 3. read ──
   const found: { c: Candidate; p: Pending }[] = [];
-  const rawOutcome = new Map<number, { status: string; note: string | null }>();
+  const done: number[] = [];
+  const skipped: number[] = [];
+  const failed: { id: number; attempts: number; note: string }[] = [];
+  const wasRead = new Set<Pending>();
   for (const p of pending) {
     try {
       const cands = await read(p.item, p.source, models);
       if (cands === null) continue;               // waits for a model
+      wasRead.add(p);
       cands.forEach(c => found.push({ c, p }));
-      if (p.rawId !== null) rawOutcome.set(p.rawId, cands.length ? { status: 'done', note: null } : { status: 'skipped', note: 'no dated Tallinn event' });
+      if (p.rawId !== null) (cands.length ? done : skipped).push(p.rawId);
     } catch (e) {
-      if (p.rawId !== null) rawOutcome.set(p.rawId, { status: 'error', note: (e as Error).message.slice(0, 300) });
+      const attempts = Number((p.item as { attempts?: number }).attempts ?? 0) + 1;
+      if (p.rawId !== null) failed.push({ id: p.rawId, attempts, note: (e as Error).message.slice(0, 300) });
+      log(`${p.source.id}/${p.item.external_id}: read failed (${attempts}/${MAX_ATTEMPTS}): ${(e as Error).message}`);
     }
   }
   log(`read ${pending.length} items into ${found.length} candidates (${models.calls} model calls)`);
+  // A page that is still fetched but no longer yields events has usually
+  // been redesigned; say so, since collection alone looks healthy.
+  for (const s of sources.filter(needsModel)) {
+    const read = pending.filter(p => p.source.id === s.id && wasRead.has(p));
+    if (read.length && !found.some(f => f.p.source.id === s.id)) log(`${s.id}: ${read.length} items read, no events found in any`);
+  }
 
   // ── 4. classify ──
   const enrich = await classify(models, found.map(f => f.c));
@@ -170,13 +187,24 @@ async function main() {
     : [];
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 25));
 
+  // Upcoming events already stored, so a second source's copy of a show joins it.
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const seen = new Seen(db
+    ? (await db.select<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string }>(
+        `events?city=eq.${CITY}&archived_at=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at&limit=5000`))
+        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at) }))
+    : []);
+
   const events = new Map<string, Record<string, unknown>>();
   const provenance: Record<string, unknown>[] = [];
   for (let i = 0; i < found.length; i++) {
     const { c, p } = found[i];
     const e = enrich[i];
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
-    const id = eventId(CITY, c, place?.id ?? null);
+    const where = place?.id ?? nameKey(c.venue_name ?? '');
+    const start = Date.parse(c.starts_at);
+    const id = seen.match(c.title, where, start) ?? eventId(CITY, c, place?.id ?? null);
+    seen.add({ id, title: c.title, where, start });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = decide(e, trusted);
     provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null, last_seen_at: new Date().toISOString() });
@@ -205,8 +233,9 @@ async function main() {
     return;
   }
 
-  if (places.created.length) {
-    await db.upsert('places', places.created.map(p => ({ ...p, kind: p.kind ?? null })), 'id');
+  const touched = [...places.created, ...places.updated];
+  if (touched.length) {
+    await db.upsert('places', touched.map(p => ({ ...p, kind: p.kind ?? null, updated_at: new Date().toISOString() })), 'id');
   }
   const ids = [...events.keys()];
   const existing = new Set<string>();
@@ -215,16 +244,30 @@ async function main() {
   }
   const fresh = ids.filter(id => !existing.has(id)).map(id => events.get(id)!);
   for (const part of chunks(fresh, 200)) await db.insert('events', part);
-  // Known events: refresh the facts, keep whatever status a person or an earlier run gave them.
-  for (const id of ids.filter(id => existing.has(id))) {
-    const { status: _s, status_note: _n, relevance: _r, id: _i, ...facts } = events.get(id)!;
-    await db.patch(`events?id=eq.${encodeURIComponent(id)}`, facts);
+  // Known events: refresh the facts, keep whatever status a person or an
+  // earlier run gave them. A run without a model keeps the earlier
+  // classification too. Upsert with merge-duplicates updates only the
+  // columns sent, and every row here already exists.
+  const refresh = ids.filter(id => existing.has(id)).map(id => {
+    const { status: _s, status_note: _n, relevance: _r, ...facts } = events.get(id)!;
+    if (String(facts.engine).endsWith('+rules')) {
+      delete facts.kind; delete facts.tags; delete facts.title_en; delete facts.summary_en;
+    }
+    return facts;
+  });
+  const byShape = new Map<string, Record<string, unknown>[]>();
+  for (const r of refresh) {
+    const shape = Object.keys(r).sort().join(',');
+    byShape.set(shape, [...(byShape.get(shape) ?? []), r]);
   }
+  for (const group of byShape.values()) for (const part of chunks(group, 200)) await db.upsert('events', part, 'id');
   const prov = new Map(provenance.map(p => [`${p.event_id}|${p.source_id}`, p]));
   for (const part of chunks([...prov.values()], 200)) await db.upsert('event_sources', part, 'event_id,source_id');
 
-  for (const [rawId, o] of rawOutcome) {
-    await db.patch(`raw_items?id=eq.${rawId}`, { status: o.status, note: o.note });
+  for (const part of chunks(done, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'done', note: null });
+  for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: 'no dated Tallinn event' });
+  for (const f of failed) {
+    await db.patch(`raw_items?id=eq.${f.id}`, { status: f.attempts >= MAX_ATTEMPTS ? 'error' : 'new', attempts: f.attempts, note: f.note });
   }
 
   // Events written before any model was available get classified now.
@@ -250,6 +293,8 @@ async function main() {
   const now = new Date().toISOString();
   const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });
+  const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
+  await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
 
   for (const [id, h] of Object.entries(health)) {
     const [prev] = await db.select<{ consecutive_failures: number }>(`sources?id=eq.${encodeURIComponent(id)}&select=consecutive_failures`);

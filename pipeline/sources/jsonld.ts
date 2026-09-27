@@ -35,14 +35,17 @@ export function parseJsonLd(html: string): Node[] {
 const text = (v: unknown): string | null =>
   typeof v === 'string' ? v : (v && typeof v === 'object' && typeof (v as Node).name === 'string' ? (v as Node).name as string : null);
 
-export async function collect(source: Source): Promise<RawItem[]> {
+export async function collect(source: Source, now = new Date()): Promise<RawItem[]> {
   const pages = [source.url, ...((source.config.extra_urls as string[] | undefined) ?? [])];
+  const horizon = now.getTime() + Number(source.config.days ?? 45) * 86_400_000;
   const out: RawItem[] = [];
   for (const page of pages) {
     const html = await (await get(page, { accept: 'text/html' })).text();
     const nodes = parseJsonLd(html);
     const byId = new Map(nodes.filter(n => typeof n['@id'] === 'string').map(n => [n['@id'] as string, n]));
     for (const n of nodes.filter(isEvent)) {
+      const start = Date.parse(toIso(n.startDate as string | undefined) ?? '');
+      if (!(start <= horizon)) continue;
       const work = n.workPresented as Node | undefined;
       const film = work && typeof work['@id'] === 'string' ? byId.get(work['@id'] as string) ?? work : work;
       const loc = n.location as Node | undefined;
