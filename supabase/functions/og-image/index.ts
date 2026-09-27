@@ -66,7 +66,7 @@ const sbGet = async <T>(table: string, qs: string): Promise<T[]> => {
 
 const trunc = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s;
 
-/* City is a lowercase slug in the DB ('tallinn', 'riga', …). */
+/* City is a lowercase slug in the DB ('tallinn'). */
 const cityLabel = (c?: string | null) =>
   c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Tallinn';
 
@@ -137,8 +137,7 @@ const defaultCard = () => div(
   { display: 'flex', flexDirection: 'column', justifyContent: 'center', width: W, height: H, background: C_PAPER, padding: PAD, fontFamily: 'Source Serif 4', boxSizing: 'border-box' },
   [
     span({ fontFamily: 'Instrument Serif', fontStyle: 'italic', fontSize: 64, color: C_INK, lineHeight: 1 }, 'WanderAlt'),
-    /* Three live cities. Vilnius (internal testing) stays off this card. */
-    span({ fontFamily: 'Source Serif 4', fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', color: C_MUTE, marginTop: 16 }, 'Alternative culture · Tallinn · Helsinki · Riga'),
+    span({ fontFamily: 'Source Serif 4', fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', color: C_MUTE, marginTop: 16 }, 'Alternative culture · Tallinn'),
   ]
 );
 
@@ -163,12 +162,16 @@ Deno.serve(async (req) => {
   let element: object;
   try {
     if (pickId) {
-      type PickRow = { title: string; venue: string; neighborhood: string; kind: string; description?: string; quote?: string; handle: string; time?: string; day?: string; city?: string };
-      const rows = await sbGet<PickRow>('picks', `id=eq.${encodeURIComponent(pickId)}&select=title,venue,neighborhood,kind,description,quote,handle,time,day,city&limit=1`);
+      type PickRow = { title: string; venue: string; neighborhood: string; kind: string; description?: string; quote?: string; handle: string; time?: string; starts_at?: string; city?: string };
+      const rows = await sbGet<PickRow>('picks', `id=eq.${encodeURIComponent(pickId)}&select=title,venue,neighborhood,kind,description,quote,handle,time,starts_at,city&limit=1`);
       const p = rows[0];
       if (p) {
         const said = saysSomething(p.description, p.title) || saysSomething(p.quote, p.title);
-        const when = [p.day, p.time].map(v => (v == null ? '' : String(v).trim())).filter(Boolean).join(' · ');
+        /* "Sat 3 Oct · 19:00", on Tallinn's calendar. */
+        const date = p.starts_at
+          ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(p.starts_at)).replace(',', '')
+          : '';
+        const when = [date, p.time].map(v => (v == null ? '' : String(v).trim())).filter(Boolean).join(' · ');
         element = pickCard(p.title, p.venue, p.neighborhood, p.kind, said, p.handle, when, cityLabel(p.city));
       } else {
         element = defaultCard();

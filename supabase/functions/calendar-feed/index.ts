@@ -2,51 +2,35 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 // ============================================================
 // calendar-feed — subscribable ICS feed
-// Serves text/calendar built from active DATED picks, per city and
-// optionally filtered to one source feed. About prints the URL.
+// Serves text/calendar built from published upcoming events, per city
+// and optionally filtered to one source. About prints the URL.
 //
 // GET ?city=tallinn[&handle=@sigmundtells]
 //
 // verify_jwt stays FALSE and must: a calendar app subscribes to this URL
-// with no Authorization header. It only reads RLS-public dated picks and
-// writes nothing.
+// with no Authorization header. It reads with the anon key, so RLS hides
+// every event that is not published, and it writes nothing.
 //
-// Date rules: "Tonight" → today, weekday name → next such weekday (today
-// included), floating local time, default 19:00, 2h duration. Calendar
-// apps re-fetch on their own schedule (TTL hints below).
+// Times are the events' own starts_at/ends_at in UTC. An event without a
+// time is an all-day entry; one without an end lasts two hours.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-const ALLOWED_CITIES = new Set(['tallinn', 'helsinki', 'riga', 'vilnius']);
-const DAY_INDEX: Record<string, number> =
-  { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+const ALLOWED_CITIES = new Set(['tallinn']);
 
 interface PickRow {
   id: string; title: string; venue: string; neighborhood: string;
-  quote: string; handle: string; day: string | null; time: string | null;
+  quote: string; handle: string; time: string | null;
+  starts_at: string; ends_at: string | null;
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function nextDateFor(day: string, time: string | null): Date {
-  const now  = new Date();
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (day.toLowerCase() !== 'tonight') {
-    const want = DAY_INDEX[day.slice(0, 3).toLowerCase()];
-    if (want != null) {
-      base.setDate(base.getDate() + ((want - base.getDay() + 7) % 7));
-    }
-  }
-  const m = /^(\d{1,2}):(\d{2})/.exec(time || '');
-  base.setHours(m ? +m[1] : 19, m ? +m[2] : 0, 0, 0);
-  return base;
-}
-
 const p2 = (n: number) => String(n).padStart(2, '0');
-const fmtLocal = (d: Date) =>
-  `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}T${p2(d.getHours())}${p2(d.getMinutes())}00`;
+/* The calendar date in Tallinn, for all-day entries. */
+const fmtDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn' }).format(d).replace(/-/g, '');
 const fmtUtc = (d: Date) =>
   `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}T${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}${p2(d.getUTCSeconds())}Z`;
 const esc = (s: string) =>
@@ -62,12 +46,12 @@ Deno.serve(async (req: Request) => {
 
   let url =
     `${SUPABASE_URL}/rest/v1/picks?city=eq.${encodeURIComponent(city)}` +
-    `&archived_at=is.null&day=not.is.null` +
-    `&select=id,title,venue,neighborhood,quote,handle,day,time&limit=100`;
+    `&archived_at=is.null&starts_at=lt.${new Date(Date.now() + 30 * 86_400_000).toISOString()}` +
+    `&select=id,title,venue,neighborhood,quote,handle,time,starts_at,ends_at&order=starts_at.asc&limit=300`;
   if (handle) url += `&handle=eq.${encodeURIComponent(handle)}`;
 
   const r = await fetch(url, {
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
   });
   if (!r.ok) return new Response('upstream error', { status: 502 });
   const picks = await r.json() as PickRow[];
@@ -78,10 +62,10 @@ Deno.serve(async (req: Request) => {
   const now = new Date();
 
   const events = picks
-    .filter(p => p.day)
     .map(p => {
-      const start = nextDateFor(p.day!, p.time);
-      const end   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      const start = new Date(p.starts_at);
+      const end   = p.ends_at ? new Date(p.ends_at) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      const allDay = !p.time;
       const loc   = [p.venue, p.neighborhood].filter(Boolean).join(', ');
       /* detail.html directly: a calendar entry outlives a redirect rule. */
       const link  = `https://wanderalt.app/detail.html?id=${encodeURIComponent(p.id)}`;
@@ -92,8 +76,8 @@ Deno.serve(async (req: Request) => {
         'BEGIN:VEVENT',
         `UID:${esc(p.id)}@wanderalt.app`,
         `DTSTAMP:${fmtUtc(now)}`,
-        `DTSTART:${fmtLocal(start)}`,
-        `DTEND:${fmtLocal(end)}`,
+        allDay ? `DTSTART;VALUE=DATE:${fmtDay(start)}` : `DTSTART:${fmtUtc(start)}`,
+        allDay ? '' : `DTEND:${fmtUtc(end)}`,
         `SUMMARY:${esc(p.title)}`,
         loc  ? `LOCATION:${esc(loc)}`     : '',
         desc ? `DESCRIPTION:${esc(desc)}` : '',
@@ -108,7 +92,7 @@ Deno.serve(async (req: Request) => {
     'PRODID:-//WanderAlt//calendar-feed//EN',
     'CALSCALE:GREGORIAN',
     `X-WR-CALNAME:${esc(calName)}`,
-    `X-WR-CALDESC:${esc(`Dated picks in ${cap(city)}, read from venue programmes and local feeds. Refreshed twice a day.`)}`,
+    `X-WR-CALDESC:${esc(`What's on in ${cap(city)} over the next 30 days, read from venue programmes and local feeds.`)}`,
     'X-PUBLISHED-TTL:PT12H',
     'REFRESH-INTERVAL;VALUE=DURATION:PT12H',
     ...events,
