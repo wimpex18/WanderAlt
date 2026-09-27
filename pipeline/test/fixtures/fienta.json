@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "events": [
+    {
+      "id": 101, "title": "Live set at Sveta", "starts_at": "2026-10-02 20:00:00", "ends_at": "2026-10-02 23:30:00",
+      "event_status": "scheduled", "attendance_mode": "offline", "venue": "Sveta Baar",
+      "address": "Telliskivi 60a, 10412 Tallinn, Harju maakond", "url": "https://fienta.com/live-set-101",
+      "buy_tickets_url": "https://fienta.com/live-set-101", "image_url": "https://fienta.com/cf/img/x.jpg",
+      "series_id": "live-set", "organizer_id": 15, "organizer_name": "Example Collective",
+      "organizer_email": "someone@example.com", "organizer_phone": "+372 0000000",
+      "categories": ["music"], "description": "<p>Live set.</p><p>Doors at 20:00.</p>", "price_from_string": "From 10 EUR"
+    },
+    {
+      "id": 102, "title": "Webinar", "starts_at": "2026-10-02 12:00:00", "ends_at": "2026-10-02 13:00:00",
+      "attendance_mode": "online", "venue": "Online", "categories": ["conference"]
+    },
+    {
+      "id": 103, "title": "Museum ticket", "starts_at": "2026-01-01 10:00:00", "ends_at": "2027-12-31 18:00:00",
+      "attendance_mode": "offline", "venue": "Museum", "categories": ["exhibition"]
+    },
+    {
+      "id": 104, "title": "Toddler sing-along", "starts_at": "2026-10-03 10:00:00", "ends_at": "2026-10-03 11:00:00",
+      "attendance_mode": "offline", "venue": "Library", "categories": ["family"]
+    }
+  ]
+}

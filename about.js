@@ -2,7 +2,7 @@
    about.js — About.
    ------------------------------------------------------------
    Every number is counted from the live catalogue rather than written
-   into the copy. Vilnius is shown as internal, not hidden.
+   into the copy.
    ============================================================ */
 (() => {
   'use strict';
@@ -37,8 +37,7 @@
       </a>`;
     }).join('');
 
-    /* The calendar feed with its real per-city URL. Vilnius is left out:
-       internal testing does not claim parity. */
+    /* The calendar feed with its real per-city URL, for live cities only. */
     const feeds = document.getElementById('about-feeds');
     if (feeds) {
       const base = `${window.WA.BASE_URL}/functions/v1/calendar-feed?city=`;

@@ -1,0 +1,43 @@
+# Models
+
+The pipeline uses a model for three jobs: reading prose (Telegram posts, venue pages, RSS) into dated events; classifying every event (kind, tags, how well it fits WanderAlt, an English title and one-sentence summary); and giving a kind to venues OpenStreetMap cannot name. Structured sources (Fienta, JSON-LD) never need a model to be read.
+
+Free models only, with no paid plan and no card on file. Same approach as Eesti-Keelt: Cloudflare Workers AI first, OpenRouter's `:free` models as fallback. Checked against the live catalogues on 27 September 2026.
+
+## Lanes
+
+Tried in this order. A lane without its key is skipped; a lane that fails twice in a run is skipped for the rest of it. With no lane, structured sources still publish (trusted ones) or wait for review, and prose sources wait in `raw_items`.
+
+| Lane | Model (pin) | Keys | Free allowance |
+|---|---|---|---|
+| Workers AI | `@cf/openai/gpt-oss-120b` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (permission: Workers AI Read) | 10,000 neurons a day on the Workers Free plan, shared by every model on the account |
+| OpenRouter | `google/gemma-4-31b-it:free` | `OPENROUTER_API_KEY` (free account, no card) | 50 requests a day, 20 a minute |
+
+Override a pin without a code change: `WORKERS_AI_MODEL`, `OPENROUTER_MODEL`.
+
+`gpt-oss-120b` is the model Eesti-Keelt measured and runs in production on the same free plan. Workers AI's allocation is per Cloudflare account: if WanderAlt uses the same account as Eesti-Keelt, the two share the 10,000 neurons. A first run classifies a few hundred Fienta events, which uses a large share of one day's allocation. Later runs only see new or changed items and use far less. When the allocation runs out, Workers AI refuses and the run falls through to OpenRouter.
+
+Calls to OpenRouter are spaced 3.1 s apart. A 429 waits (for `Retry-After`, else 20 s) and retries the same lane twice before counting as a failure. `LLM_CALL_BUDGET` (default 60) caps calls per run.
+
+Neither lane reads images, so a Telegram post that is only a poster with no text yields nothing. The post's photo is still kept as the event's image when the text announces an event.
+
+## Why not the others
+
+- **Gemini**: its free tier needs a Google AI Studio key, and Google may use free-tier traffic to improve its products. Not used.
+- **Mistral** (`mistral-small-2603`, used by the retired pipeline): the free plan is now $10 of monthly credits rather than a free allowance.
+- **NVIDIA** `nemotron-3.5-lightning` (used by the retired pipeline): survives as `nvidia/nemotron-3.5-lightning:free` on OpenRouter but has no JSON-schema support there, so Gemma 4 took the OpenRouter slot.
+- **GitHub Models**: closed to new customers in June 2026.
+- **Other Workers AI models**: `@cf/qwen/qwen3.8-27b` reads images and runs on the free plan, but Eesti-Keelt saw empty answers from it at long outputs. GLM-5.3 and DeepSeek V4 are not on the free plan.
+
+## Not yet verified
+
+No model lane has been called for real yet: this machine had no keys when the pipeline was written. Both lanes use the OpenAI-compatible chat-completions API as their providers document it (Eesti-Keelt calls the same Workers AI endpoint), and the tests use fake lanes. Once the keys are set, run `npm run pipeline:models`, then `npm run pipeline:dry`, and read the output before trusting the scores.
+
+## Checking
+
+```bash
+npm run pipeline:models     # every configured lane answers a one-line JSON probe
+npm run pipeline:dry        # full read of every source, nothing written
+```
+
+Model ids disappear without notice. When a lane starts failing, run the probe, check the provider's catalogue, and re-pin. Before switching a pin, compare a dry run's output on the same day with both models.

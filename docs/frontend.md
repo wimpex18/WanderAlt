@@ -1,12 +1,6 @@
----
-paths:
-  - "*.html"
-  - "*.css"
-  - "*.js"
-  - "functions/**"
----
+# Front end and design system
 
-# Frontend and design system
+The site as it stands: plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). A redesign is planned; until it lands, these are the rules the current pages follow.
 
 ## System
 
@@ -17,10 +11,9 @@ paths:
 - **Petrol is the only accent** (CTA included). **Lime means "now" only**: the NOW pill and the selected/now map pin. **`--warn`** marks states the reader must act on (offline banner, `.wa-note`, expired saved count) — never emphasis, never a control.
 - Radii: 999 pills · 12 controls · 14–16 cards · 18–20 sheets. `--tap-min` 44px is a hard floor on public pages.
 - Type: Plus Jakarta Sans 600/700 for chrome; Fraunces 600 for catalogue voice, **never under 17px**; Geist Mono for facts. `--fs-label` and `--fs-mono` share a value but stay separate tokens.
-- Jakarta is variable, two files (`latin`, `latin-ext`); **both subsets are required** for Latvian/Lithuanian diacritics. Only `latin` is preloaded. Inter stays on disk only for `admin-tokens.css`.
+- Jakarta is variable, two files (`latin`, `latin-ext`); **both subsets are required** for Latvian/Lithuanian diacritics. Only `latin` is preloaded.
 - Spacing from `--s-*`. Tighter within an item than between items; a heading always gets more room below than the gap between what it introduces.
 - Photo scrims use `--scrim-photo` (theme-invariant dark). Active state is tint plus a mark, never colour alone. Motion: the two existing tokens only. WCAG 2.2 AA floor.
-- **A class styled only in `admin.css` is unstyled in the product.** Check which stylesheet defines a class and which pages load it.
 - **A `<span>` in a component needs an explicit `display`** if it carries vertical margin — page scripts build components from spans.
 
 ## Patterns
@@ -60,7 +53,7 @@ paths:
 
 ## localStorage
 
-`wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wa:lists:v1`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`, admin `wa-admin-*`. New keys: `wa:` prefix, `:v1` suffix for structured shapes; a shape change bumps the suffix with a one-shot migration in the owning file.
+`wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wa:lists:v1`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`. New keys: `wa:` prefix, `:v1` suffix for structured shapes; a shape change bumps the suffix with a one-shot migration in the owning file.
 
 ## Working locally
 

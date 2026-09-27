@@ -107,7 +107,7 @@ export async function onRequest(context) {
       const pick = rows[0];
       if (!pick) return res;                            // unknown id → default OG
       const photo = !!pick.image_url;
-      /* City is a lowercase slug in the DB ('tallinn', 'riga', …). */
+      /* City is a lowercase slug in the DB ('tallinn'). */
       const city = pick.city
         ? pick.city.charAt(0).toUpperCase() + pick.city.slice(1)
         : 'Tallinn';

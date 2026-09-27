@@ -1,7 +1,8 @@
 /* ============================================================
    WanderAlt — Supabase data loader
    ------------------------------------------------------------
-   Fetches picks, venues and venue details from the Supabase REST API,
+   Fetches picks and venues (read-only views over the pipeline's events
+   and places) from the Supabase REST API,
    converts them to the window.WA.catalog shape,
    then dispatches 'wa:catalog-ready' so page scripts can render.
 
@@ -67,8 +68,7 @@
      WanderAlt is alternative culture + events, not a restaurant guide.
      Hide rows whose kind is a place to eat or hang out (bar, cafe,
      restaurant, food, eatery, place) with no day attached: a place, not
-     an event. Events at these venues keep `day` so they pass through.
-     admin.js fetches `picks` directly and bypasses this filter. */
+     an event. Events at these venues keep `day` so they pass through. */
   const FOOD_PLACE_KINDS = new Set([
     'bar', 'cafe', 'restaurant', 'food', 'eatery', 'place'
   ]);
@@ -107,7 +107,6 @@
     entities:    r.entities    || null,
     lastSeenAt: r.last_seen_at || null,
     createdAt:  r.created_at   || null,
-    /* isClosed is hydrated below by joining against venue_details. */
     isClosed:  false,
   });
 
@@ -168,7 +167,7 @@
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
        city-filtered slice is WA.catalog. */
-    const [picksResult, vdResult, venuesResult] = await Promise.allSettled([
+    const [picksResult, venuesResult] = await Promise.allSettled([
       get(
         `picks`,
         `archived_at=is.null` +
@@ -179,13 +178,7 @@
                 `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
-        `&order=sort_order.asc,created_at.asc`,
-        abort.signal
-      ),
-      /* short_desc is the venue blurb the source page prints when present. */
-      get(
-        `venue_details`,
-        `select=venue_key,is_closed,business_status,short_desc`,
+        `&order=starts_at.asc`,
         abort.signal
       ),
       /* Places: active alt-culture venues with coordinates. The kind
@@ -203,32 +196,12 @@
 
     clearTimeout(timer);
 
-    /* Build a closure map keyed on lower(venue_key) for the merge below,
-       and the venue blurbs the source page prints when it has one. */
-    const closedSet = new Set();
-    const blurbs = new Map();
-    if (vdResult.status === 'fulfilled' && Array.isArray(vdResult.value)) {
-      for (const v of vdResult.value) {
-        const key = v.venue_key ? String(v.venue_key).toLowerCase().trim() : '';
-        if (v.is_closed || v.business_status === 'CLOSED_PERMANENTLY' || v.business_status === 'CLOSED_TEMPORARILY') {
-          if (key) closedSet.add(key);
-        }
-        if (key && v.short_desc) blurbs.set(key, v.short_desc);
-      }
-    }
+    /* No venue blurbs yet: places carry no description of their own. */
     window.WA = window.WA || {};
-    window.WA.venueBlurb = (name) => blurbs.get(String(name || '').toLowerCase().trim()) || '';
-
-    window.WA = window.WA || {};
+    window.WA.venueBlurb = () => '';
 
     if (picksResult.status === 'fulfilled') {
-      const all = picksResult.value.filter(isPublicPick).map(r => {
-        const p = toPick(r);
-        if (r.venue && closedSet.has(String(r.venue).toLowerCase().trim())) {
-          p.isClosed = true;
-        }
-        return p;
-      });
+      const all = picksResult.value.filter(isPublicPick).map(toPick);
       /* All-cities snapshot for cross-city lookups (e.g. a saved pick from
          another city). Listing pages use the city-filtered slice. */
       if (window.WA.when) window.WA.when.stampAll(all);
