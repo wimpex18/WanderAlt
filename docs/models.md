@@ -16,6 +16,8 @@ Tried in this order. A lane without its key is skipped; a lane that fails twice 
 
 Override a pin without a code change: `GEMINI_MODEL`, `WORKERS_AI_MODEL`, `OPENROUTER_MODEL`.
 
+Calls are spaced to stay under the free per-minute caps (4.5 s apart on Gemini, 3.1 s on OpenRouter). A 429 waits (for `Retry-After`, else 20 s) and retries the same lane twice before counting as a failure. `LLM_CALL_BUDGET` (default 60) caps calls per run. A first run classifies a few hundred Fienta events in batches of 20, so it takes several minutes.
+
 Free-tier Gemini traffic may be used by Google to improve its products. Everything the pipeline sends is already public (listings and posts), so that is acceptable here; never send user data through a free lane.
 
 ## What replaced what
@@ -26,6 +28,10 @@ The retired pipeline (removed 15 September 2026) used Groq, then `mistral-small-
 - `nemotron-3.5-lightning` survives as `nvidia/nemotron-3.5-lightning:free` on OpenRouter; it has no JSON-schema support there, so Gemma 4 took the OpenRouter slot.
 - Gemini's free tier is Flash and Flash-Lite only (Pro models left it in May 2026). `gemini-3.8-flash` (GA 2 September 2026) is also free and is the step up if Flash-Lite misreads posts: set `GEMINI_MODEL=gemini-3.8-flash`.
 - Workers AI candidates: `@cf/qwen/qwen3.8-27b` reads images and runs on the free plan, but Eesti-Keelt saw empty answers from it at long outputs; GLM-5.3 and DeepSeek V4 are not on the free plan.
+
+## Not yet verified
+
+No model lane has been called for real yet: this machine had no keys when the pipeline was written. The request shapes follow the providers' current docs (Gemini `generateContent` with `responseMimeType` and `responseJsonSchema`, OpenAI-compatible chat completions for the others) and are covered by tests with fake lanes. Run `npm run pipeline:models` once a key is set, then `npm run pipeline:dry` and read the output before trusting the scores.
 
 ## Checking
 

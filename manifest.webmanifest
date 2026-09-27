@@ -1,7 +1,7 @@
 {
   "name": "WanderAlt",
   "short_name": "WanderAlt",
-  "description": "What's on in European cities, with a time and a walking distance on every listing.",
+  "description": "What's on in Tallinn, with a time and a walking distance on every listing.",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#055959",
