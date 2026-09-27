@@ -28,7 +28,7 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.timeout(180_000),
   });
   const text = await r.text();
   if (!r.ok) {
@@ -50,10 +50,20 @@ export function lanes(): Lane[] {
       const res = await post(url, { authorization: `Bearer ${key}` }, {
         model,
         temperature: 0,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        // Reasoning models spend output tokens thinking; the provider default
+        // cap is small enough to cut the answer off.
+        max_tokens: 8192,
+        reasoning_effort: 'low',
+        messages: [
+          // A lane without schema-constrained output is told the shape in words.
+          { role: 'system', content: jsonSchema ? system : `${system}\n\nAnswer with one JSON object only, matching this JSON Schema:\n${JSON.stringify(schema)}` },
+          { role: 'user', content: user },
+        ],
         ...(jsonSchema ? { response_format: { type: 'json_schema', json_schema: { name: 'answer', strict: false, schema } } } : {}),
-      }) as { choices?: { message?: { content?: string } }[] };
-      return res.choices?.[0]?.message?.content ?? '';
+      }) as { choices?: { finish_reason?: string; message?: { content?: string | null } }[] };
+      const choice = res.choices?.[0];
+      if (choice?.finish_reason === 'length') throw new Error('answer cut off at max_tokens');
+      return choice?.message?.content ?? '';
     };
 
   return [
