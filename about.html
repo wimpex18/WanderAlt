@@ -3,78 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt — About</title>
-  <meta name="description" content="We read the sources so you do not have to open nine tabs." />
-  <meta name="theme-color" content="#f2efe6" />
+  <title>About · WanderAlt</title>
+  <meta name="description" content="How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed." />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
-  <link rel="mask-icon" href="./brand/favicon/safari-pinned-tab.svg" color="#055959" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/plus-jakarta-sans-latin.woff2" crossorigin />
+  <link rel="canonical" href="https://wanderalt.app/about.html" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="WanderAlt" />
+  <meta property="og:title"       content="About · WanderAlt" />
+  <meta property="og:description" content="How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed." />
+  <meta property="og:image"       content="./brand/social/og-default.png" />
+  <meta name="twitter:card"       content="summary_large_image" />
+
+  <!-- Geologica carries Latin, Estonian and Cyrillic; only the latin
+       subset is preloaded, the others load by unicode-range. -->
+  <link rel="preload" as="font" type="font/woff2" href="fonts/geologica-latin.woff2" crossorigin />
   <link rel="stylesheet" href="wa.css" />
+  <!-- Pre-paint, so there is no flash of the wrong theme. -->
   <script src="./theme.js"></script>
+  <script defer src="./icons.js"></script>
   <script defer src="./when.js"></script>
+  <script defer src="./geo.js"></script>
+  <script defer src="./hours.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
   <script defer src="./supabase.js"></script>
+  <script defer src="./auth.js"></script>
+  <script defer src="./bookmark.js"></script>
+  <script defer src="./lists.js"></script>
+  <script defer src="./follow.js"></script>
+  <script defer src="./seen.js"></script>
+  <script defer src="./toast.js"></script>
+  <script defer src="./render.js"></script>
+  <script defer src="./view-transition.js"></script>
   <script defer src="./about.js"></script>
 </head>
 <body data-page="about">
+
   <a class="wa-sr" href="#main">Skip to content</a>
+
   <header class="wa-topbar" role="banner">
-    <a class="wa-topbar__brand" href="./index.html">
-      <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
-      <span>WanderAlt</span>
+    <a class="wa-brand" href="./index.html" aria-label="WanderAlt, Tallinn tonight">
+      <svg class="wa-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><circle cx="16" cy="18" r="7.5" fill="#ff4d17"/><rect x="0" y="18" width="32" height="14" rx="0" fill="currentColor"/><path d="M7 22.5h18M10.5 26h11" stroke="#ff4d17" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Wander<span class="wa-brand__alt">Alt</span></span><span class="wa-brand__city">Tallinn</span>
     </a>
-    <a class="wa-btn wa-btn--quiet" href="./about.html">About</a>
+    <div class="wa-topbar__end">
+      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search the programme"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></a>
+      <a class="wa-iconbtn" href="./profile.html" id="account" aria-label="You"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></a>
+    </div>
   </header>
+
   <main class="wa-shell" id="main">
-
-    <h1 class="wa-display" style="margin-top:var(--s-7)">We read the sources so you don't have to open nine tabs.</h1>
-
-    <p class="wa-detail__desc">WanderAlt collects what's actually on in Tallinn — gigs, club nights, screenings, markets, and the places that stay open late — and puts a time and a walking distance on every one of them. No hosts, no bookings, no commission. If a listing is wrong, it's because a venue's own page is wrong, and we'll say so.</p>
-
-    <div class="wa-cells" id="about-counts"></div>
-
-    <section class="wa-section">
-      <h2 class="wa-section-title">Coverage</h2>
-      <p class="wa-section-sub">COVERAGE, STATED PLAINLY</p>
-      <div class="wa-grid" id="about-cities"></div>
-    </section>
-
-    <section class="wa-section">
-      <h2 class="wa-section-title">What we store</h2>
-      <p class="wa-detail__note">Your saves, your city, and which kinds you open — all in your own browser. No cookie banner, because there are no cookies to consent to. No analytics, no third-party scripts, no tracking between sessions. You can wipe everything from You in one tap.</p>
-    </section>
-
-    <section class="wa-section">
-      <h2 class="wa-section-title">Terms, briefly</h2>
-      <p class="wa-detail__note">The listings belong to the venues and sources they came from; we link back to every one. Use the site as you like. It comes with no warranty that a door will be open when you arrive — we print what the source said and when we read it, and that is the whole promise.</p>
-    </section>
-
-    <section class="wa-section" id="calendar">
-      <h2 class="wa-section-title" id="calendar-feed">Take the week as a calendar</h2>
-      <p class="wa-detail__note">Subscribe once and the week keeps itself current. Your calendar re-reads it twice a day; nothing is pushed and no account is involved.</p>
-      <div id="about-feeds"></div>
-    </section>
-</main>
+    <header class="wa-pagehead">
+      <p class="wa-kicker">About</p>
+      <h1 class="wa-hero" style="max-width:14ch">We read the sources so you don't open nine tabs.</h1>
+    </header>
+    <div class="you-cols">
+      <section class="wa-sect">
+        <div class="wa-sect__head"><h2 class="wa-sect__title">What this is</h2></div>
+        <p class="wa-prose">WanderAlt collects what's on in Tallinn's independent scene: DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. Every listing carries a time, a walking distance and the source it came from. No hosts, no bookings, no commission. If a listing is wrong, a venue's own page is wrong, and we say where we read it.</p>
+        <div class="wa-stats" id="about-counts" style="margin-top:var(--s-5)"></div>
+      </section>
+      <section class="wa-sect" id="calendar">
+        <div class="wa-sect__head"><h2 class="wa-sect__title" id="calendar-feed">The week as a calendar</h2></div>
+        <p class="wa-note">Subscribe once and the week keeps itself current. Your calendar re-reads it twice a day; nothing is pushed and no account is involved.</p>
+        <div id="about-feeds" style="margin-top:var(--s-4)"></div>
+      </section>
+      <section class="wa-sect">
+        <div class="wa-sect__head"><h2 class="wa-sect__title">What we store</h2></div>
+        <p class="wa-note">Your saves, your interests and which listings you open, all in your own browser. No cookie banner, because there are no cookies to consent to. No analytics, no third-party scripts, no tracking between sessions. You can wipe everything from You.</p>
+      </section>
+      <section class="wa-sect">
+        <div class="wa-sect__head"><h2 class="wa-sect__title">Terms, briefly</h2></div>
+        <p class="wa-note">The listings belong to the venues and sources they came from; we link back to every one. There is no warranty that a door will be open when you arrive: we print what the source said and when we read it.</p>
+      </section>
+    </div>
+    <footer class="wa-foot"><span>WanderAlt · Tallinn</span><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a><a href="./profile.html">You</a></footer>
+  </main>
 
   <nav class="wa-tabbar" aria-label="Primary">
-    <a class="wa-tabbar__item" href="./index.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore
-    </a>
-    <a class="wa-tabbar__item" href="./discover.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
-    </a>
-    <a class="wa-tabbar__item" href="./saved.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved
-    </a>
-    <a class="wa-tabbar__item" href="./profile.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
-    </a>
+    <a class="wa-tabbar__item" href="./index.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>Tonight</a>
+    <a class="wa-tabbar__item" href="./discover.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>Programme</a>
+    <a class="wa-tabbar__item" href="./map.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
+    <a class="wa-tabbar__item" href="./places.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8.5h13V12M10 20.5v-5h4v5"/></svg>Places</a>
+    <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h11v17L12 16.6 6.5 20.5z"/></svg>Saved</a>
   </nav>
 
 </body>

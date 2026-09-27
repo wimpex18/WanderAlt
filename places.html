@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Saved · WanderAlt</title>
-  <meta name="description" content="Your shortlist. It stays in this browser and works signed out." />
+  <title>Places · WanderAlt Tallinn</title>
+  <meta name="description" content="Record shops, bookshops, galleries, thrift shops, small cinemas, clubs and theatres in Tallinn, nearest first, with what's open now." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="canonical" href="https://wanderalt.app/places.html" />
 
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
-  <meta property="og:title"       content="Saved · WanderAlt" />
-  <meta property="og:description" content="Your shortlist. It stays in this browser and works signed out." />
+  <meta property="og:title"       content="Places · WanderAlt Tallinn" />
+  <meta property="og:description" content="Record shops, bookshops, galleries, thrift shops, small cinemas, clubs and theatres in Tallinn, nearest first, with what's open now." />
   <meta property="og:image"       content="./brand/social/og-default.png" />
   <meta name="twitter:card"       content="summary_large_image" />
 
@@ -40,9 +41,9 @@
   <script defer src="./toast.js"></script>
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
-  <script defer src="./saved-page.js"></script>
+  <script defer src="./places.js"></script>
 </head>
-<body data-page="saved">
+<body data-page="places">
 
   <a class="wa-sr" href="#main">Skip to content</a>
 
@@ -59,30 +60,27 @@
 
   <main class="wa-shell" id="main">
     <header class="wa-pagehead">
-      <h1 class="wa-h1" id="saved-title">Saved</h1>
-      <p class="wa-lede" id="saved-sub">Your shortlist stays in this browser.</p>
+      <div class="wa-pagehead__row">
+        <h1 class="wa-h1">Places</h1>
+        <a class="wa-btn wa-btn--sm" href="./map.html" id="to-map"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
+      </div>
+      <p class="wa-lede" id="places-lede">The shops, rooms and stages the scene runs on.</p>
     </header>
-    <div id="saved-body"></div>
+    <div class="wa-chips wa-chips--scroll" id="kinds" role="group" aria-label="Kind"></div>
+    <div class="prog-summary">
+      <p class="prog-summary__text" id="summary" aria-live="polite"></p>
+      <button class="wa-chip" type="button" id="open-now" aria-pressed="false">Open now</button>
+    </div>
+    <div id="list"></div>
   </main>
 
   <nav class="wa-tabbar" aria-label="Primary">
     <a class="wa-tabbar__item" href="./index.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>Tonight</a>
     <a class="wa-tabbar__item" href="./discover.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>Programme</a>
     <a class="wa-tabbar__item" href="./map.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
-    <a class="wa-tabbar__item" href="./places.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8.5h13V12M10 20.5v-5h4v5"/></svg>Places</a>
-    <a class="wa-tabbar__item" href="./saved.html" aria-current="page"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h11v17L12 16.6 6.5 20.5z"/></svg>Saved</a>
+    <a class="wa-tabbar__item" href="./places.html" aria-current="page"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8.5h13V12M10 20.5v-5h4v5"/></svg>Places</a>
+    <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h11v17L12 16.6 6.5 20.5z"/></svg>Saved</a>
   </nav>
-
-  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
-    <div class="wa-sheet__panel">
-      <div class="wa-sheet__head">
-        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
-        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-      </div>
-      <div class="wa-sheet__body" id="sheet-body"></div>
-      <div class="wa-sheet__foot" id="sheet-foot"></div>
-    </div>
-  </dialog>
 
 </body>
 </html>

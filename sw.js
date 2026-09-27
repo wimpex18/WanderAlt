@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v7';
+const VERSION = 'wa-v8';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -26,27 +26,22 @@ const DATA    = `${VERSION}-data`;
    shipping files nobody meant to ship. */
 const SHELL_URLS = [
   './',
-  './index.html',
-  './discover.html',
-  './saved.html',
-  './detail.html',
-  './source.html',
-  './profile.html',
-  './about.html',
-  './404.html',
+  './index.html', './discover.html', './map.html', './places.html',
+  './saved.html', './detail.html', './source.html', './profile.html',
+  './about.html', './404.html',
   './wa.css',
-  './marks.svg',
-  './theme.js', './when.js', './geo.js', './hours.js',
-  './marks.js', './seen.js', './share.js', './offline.js', './ui-helpers.js',
+  './theme.js', './icons.js', './when.js', './geo.js', './hours.js',
+  './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
-  './follow.js', './toast.js', './view-transition.js',
-  './explore.js', './tonight.js', './saved-page.js', './detail.js',
-  './source.js', './you.js', './about.js', './notfound.js',
-  './fonts/fraunces-600.woff2',
-  './fonts/geist-mono-400.woff2',
+  './follow.js', './toast.js', './render.js', './view-transition.js',
+  './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
+  './detail.js', './source.js', './you.js', './about.js', './notfound.js',
+  './maplibre-loader.js', './map-tiles.js',
+  './map-style.json', './map-style-dusk.json',
+  './fonts/geologica-latin.woff2',
+  './fonts/geologica-latin-ext.woff2',
+  './fonts/geologica-cyrillic.woff2',
   './fonts/geist-mono-500.woff2',
-  './fonts/plus-jakarta-sans-latin.woff2',
-  './fonts/plus-jakarta-sans-latin-ext.woff2',
 ];
 
 self.addEventListener('install', (e) => {

@@ -3,65 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>WanderAlt — Explore · Tallinn</title>
-  <meta name="description" content="What's actually on in Tallinn tonight — gigs, club nights, screenings, markets, and the places that stay open late. A time and a walking distance on every one." />
-  <meta name="theme-color" content="#f2efe6" />
+  <title>WanderAlt · Tonight in Tallinn</title>
+  <meta name="description" content="What's on tonight in Tallinn's independent scene: gigs, club nights, arthouse film, art, talks. A time and a walking distance on every listing." />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png" />
-  <link rel="mask-icon" href="./brand/favicon/safari-pinned-tab.svg" color="#055959" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="canonical" href="https://wanderalt.app/" />
 
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
-  <meta property="og:title"       content="WanderAlt — Tallinn" />
-  <meta property="og:description" content="What's on tonight, with a time and a walking distance on every row." />
+  <meta property="og:title"       content="WanderAlt · Tonight in Tallinn" />
+  <meta property="og:description" content="What's on tonight in Tallinn's independent scene: gigs, club nights, arthouse film, art, talks. A time and a walking distance on every listing." />
   <meta property="og:image"       content="./brand/social/og-default.png" />
-  <meta property="og:image:width"  content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta name="twitter:card"       content="summary_large_image" />
-  <meta name="twitter:image"      content="./brand/social/twitter-default.png" />
-
-  <!-- JSON-LD Organization. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "WanderAlt",
-    "alternateName": "WanderAlt — what's on in the other city",
     "url": "https://wanderalt.app",
     "logo": "https://wanderalt.app/brand/favicon/favicon.svg",
-    "description": "What's actually on in Tallinn, with a time and a walking distance on every listing.",
-    "foundingLocation": { "@type": "City", "name": "Tallinn" },
-    "areaServed": [
-      { "@type": "City", "name": "Tallinn", "containedInPlace": { "@type": "Country", "name": "Estonia" } }
-    ],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "email": "hello@wanderalt.app",
-      "contactType": "customer support"
-    }
+    "description": "What's on tonight in Tallinn's independent scene, with a time and a walking distance on every listing.",
+    "areaServed": { "@type": "City", "name": "Tallinn", "containedInPlace": { "@type": "Country", "name": "Estonia" } },
+    "contactPoint": { "@type": "ContactPoint", "email": "hello@wanderalt.app", "contactType": "customer support" }
   }
   </script>
-
-  <!-- Above-the-fold faces. Fraunces carries the catalogue voice, Plus
-       Jakarta Sans the chrome. Only the `latin` subset is preloaded:
-       `latin-ext` carries the Latvian and Lithuanian diacritics and is
-       fetched on demand by unicode-range, so a Tallinn reader never
-       pays for it. crossorigin is required even same-origin — fonts
-       fetch anonymously. -->
-  <link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-600.woff2" crossorigin />
-  <link rel="preload" as="font" type="font/woff2" href="fonts/plus-jakarta-sans-latin.woff2" crossorigin />
-
+  <!-- Geologica carries Latin, Estonian and Cyrillic; only the latin
+       subset is preloaded, the others load by unicode-range. -->
+  <link rel="preload" as="font" type="font/woff2" href="fonts/geologica-latin.woff2" crossorigin />
   <link rel="stylesheet" href="wa.css" />
-  <!-- Day / Night / Dusk — pre-paint, so there is no flash of the wrong
-       theme. Non-defer on purpose; CSP-clean external file. -->
+  <!-- Pre-paint, so there is no flash of the wrong theme. -->
   <script src="./theme.js"></script>
+  <script defer src="./icons.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./geo.js"></script>
   <script defer src="./hours.js"></script>
-  <script defer src="./marks.js"></script>
   <script defer src="./offline.js"></script>
   <script defer src="./ui-helpers.js"></script>
   <script defer src="./city.js"></script>
@@ -69,104 +46,67 @@
   <script defer src="./auth.js"></script>
   <script defer src="./bookmark.js"></script>
   <script defer src="./lists.js"></script>
+  <script defer src="./follow.js"></script>
+  <script defer src="./seen.js"></script>
+  <script defer src="./toast.js"></script>
+  <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
-  <script defer src="./explore.js"></script>
+  <script defer src="./home.js"></script>
 </head>
-<body data-page="explore">
+<body data-page="tonight">
 
   <a class="wa-sr" href="#main">Skip to content</a>
 
-  <!-- Glass 1 of 2. Sticky and in normal flow, so it occupies real
-       layout height and content scrolls under a known offset. -->
   <header class="wa-topbar" role="banner">
-    <a class="wa-topbar__brand" href="./index.html">
-      <img class="wa-topbar__mark" src="./brand/masters/tile.svg" alt="" width="26" height="26" />
-      <span>WanderAlt</span>
+    <a class="wa-brand" href="./index.html" aria-label="WanderAlt, Tallinn tonight">
+      <svg class="wa-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><circle cx="16" cy="18" r="7.5" fill="#ff4d17"/><rect x="0" y="18" width="32" height="14" rx="0" fill="currentColor"/><path d="M7 22.5h18M10.5 26h11" stroke="#ff4d17" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Wander<span class="wa-brand__alt">Alt</span></span><span class="wa-brand__city">Tallinn</span>
     </a>
-
-    <a class="wa-btn wa-btn--quiet" href="./profile.html" id="explore-account">Sign in</a>
+    <div class="wa-topbar__end">
+      <a class="wa-iconbtn" href="./profile.html" id="account" aria-label="You"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></a>
+    </div>
   </header>
 
   <main class="wa-shell" id="main">
-
-    <h1 class="wa-sr">Explore WanderAlt</h1>
-
-    <!-- One capsule for Where / When / What. It absorbs the whole filter
-         model, so there is exactly one place to change what you're
-         looking at. Collapses to a single key below 768. -->
-    <div class="explore-capsule">
-      <div class="wa-capsule" id="capsule">
-        <button class="wa-capsule__slot" type="button" data-slot="where">
-          <span class="wa-capsule__label" id="cap-where-label">Where</span>
-          <span class="wa-capsule__value" id="cap-where">Tallinn</span>
-        </button>
-        <button class="wa-capsule__slot" type="button" data-slot="when">
-          <span class="wa-capsule__label">When</span>
-          <span class="wa-capsule__value" id="cap-when">Tonight</span>
-        </button>
-        <button class="wa-capsule__slot" type="button" data-slot="what">
-          <span class="wa-capsule__label">What</span>
-          <span class="wa-capsule__value" id="cap-what">Anything</span>
-        </button>
-        <button class="wa-capsule__go" type="button" id="cap-go" aria-label="Search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        </button>
+    <section class="home-hero" aria-labelledby="hero-title">
+      <div class="home-hero__text">
+        <p class="home-hero__line"><span class="wa-kicker" id="hero-kicker">Tallinn</span><span class="home-hero__clock" id="hero-clock"></span></p>
+        <h1 class="wa-hero home-hero__title" id="hero-title">What's on tonight</h1>
       </div>
+      <div class="home-hero__search">
+        <form class="wa-search" role="search" id="search-form" action="./discover.html">
+          <label class="wa-sr" for="q">Search tonight and the week</label>
+          <span class="wa-search__icon"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></span>
+          <input class="wa-search__input" id="q" name="q" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="Gigs, films, a venue, Kalamaja" aria-controls="suggest" aria-expanded="false" />
+          <button class="wa-iconbtn wa-search__clear" type="button" id="q-clear" aria-label="Clear search" hidden><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </form>
+        <div id="suggest" aria-live="polite"></div>
+        <div id="since"></div>
+      </div>
+    </section>
+
+    <div id="interest"></div>
+
+    <div class="home-grid">
+      <div class="home-main" id="home-main"></div>
+      <aside class="home-side" id="home-side" aria-label="Places and areas"></aside>
     </div>
-
-    <!-- Scope tabs under the capsule: All, Events, Places. Icon
-         over label, underline on the active one. -->
-    <div class="wa-scope explore-scope" role="tablist" aria-label="Scope" id="scope">
-      <button class="wa-scope__chip" role="tab" aria-selected="true"  data-scope="all">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>All
-      </button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="events">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events
-      </button>
-      <button class="wa-scope__chip" role="tab" aria-selected="false" data-scope="places">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Places
-      </button>
-    </div>
-
-    <!-- The saved strip, between the capsule and the first shelf. Absent
-         entirely when nothing is saved. -->
-    <div id="savedstrip"></div>
-
-    <!-- Named carousels, each with a count in its subtitle so a thin
-         section reads as a short row rather than a hole. -->
-    <div id="sections"></div>
-
   </main>
 
-    <!-- Glass 2 of 2, and the only set of nav links. Below 1024 it is the
-       fixed bottom tab bar and body reserves its height; at 1024 it is
-       fixed into the masthead band. One DOM node either way. -->
   <nav class="wa-tabbar" aria-label="Primary">
-    <a class="wa-tabbar__item" href="./index.html" aria-current="page">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Explore
-    </a>
-    <a class="wa-tabbar__item" href="./discover.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Tonight
-    </a>
-    <a class="wa-tabbar__item" href="./saved.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved
-    </a>
-    <a class="wa-tabbar__item" href="./profile.html">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You
-    </a>
+    <a class="wa-tabbar__item" href="./index.html" aria-current="page"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>Tonight</a>
+    <a class="wa-tabbar__item" href="./discover.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>Programme</a>
+    <a class="wa-tabbar__item" href="./map.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
+    <a class="wa-tabbar__item" href="./places.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8.5h13V12M10 20.5v-5h4v5"/></svg>Places</a>
+    <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h11v17L12 16.6 6.5 20.5z"/></svg>Saved</a>
   </nav>
 
-
-  <!-- One question expanded at a time; the other two park below showing
-       their current value, so you always know the other answers and can
-       never get lost inside a filter. -->
   <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
     <div class="wa-sheet__panel">
       <div class="wa-sheet__head">
-        <h2 class="wa-sheet__title" id="sheet-title">Where?</h2>
-        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-        </button>
+        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
+        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="wa-sheet__body" id="sheet-body"></div>
       <div class="wa-sheet__foot" id="sheet-foot"></div>

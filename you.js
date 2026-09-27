@@ -1,256 +1,111 @@
 /* ============================================================
-   you.js — You and sign-in.
+   you.js — You: interests, appearance, follows, history, account.
    ------------------------------------------------------------
-   Three counts (opened, saved, cities), one plain sentence about what
-   the app has inferred, and a reset. Nothing is gated behind sign-in;
-   the privacy card is part of the page.
+   Everything here is local to the browser. The account only carries
+   saves between devices; nothing is gated behind it.
    ============================================================ */
 (() => {
   'use strict';
 
-  /* Guarded: WA.Toast is optional per page. */
-  const toast = (msg, label, undo) => {
-    if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
-  };
+  const $ = (id) => document.getElementById(id);
+  const R = () => window.WA.R;
+  const esc = (s) => window.WA.UI.esc(s);
+  const I = (n, c) => window.WA.Icon(n, c);
+  const toast = (m, l, u) => { if (window.WA.Toast) window.WA.Toast.show(m, l, u); };
 
-  const $   = (id) => document.getElementById(id);
-  const UI  = () => window.WA.UI;
-  const esc = (s) => UI().esc(s);
-
-  const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
-  const real = (v) => {
-    const s = String(v == null ? '' : v).trim();
-    return s && !PLACEHOLDER.test(s) ? s : '';
-  };
-
-  /* ── The inference, stated ───────────────────────────────────
-     Counted from the opened/saved log, which is the whole model. If the
-     reader has not opened enough for a claim to mean anything, we say
-     that instead of inventing a preference from three taps. */
-  const inference = () => {
-    const seen = window.WA.Seen.ids();
-    if (seen.length < 5) return null;
-    const picks = window.WA._catalogAll || window.WA.catalog || [];
-    const byKind = new Map();
-    for (const id of seen) {
-      const p = picks.find(e => e.id === id);
-      const k = p && real(p.kind);
-      if (k) byKind.set(k, (byKind.get(k) || 0) + 1);
-    }
-    const ranked = [...byKind.entries()].sort((a, b) => b[1] - a[1]);
-    if (!ranked.length) return null;
-    return { top: ranked.slice(0, 4), lead: ranked.slice(0, 2).map(r => r[0]) };
-  };
-
-  /* ── Opened earlier ──────────────────────────────────────────
-     Newest first, straight off the local opened/saved log, in the
-     ordinary row component. Entries that do not resolve are not described:
-     the browser loads less than the database holds, so "no longer listed"
-     would be a fact about our cache. */
-  const LAST_OPENED = 8;
-  const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-  /* Venues carry __place, exactly as Saved and Explore tag them when
-     they merge the two lists. It is set by the consuming page, not by
-     the loader -- without it a venue takes the pick branch below and
-     renders with an empty title, since a venue has `name` and no
-     `title`. */
-  const pool = () => [
-    ...(window.WA._catalogAll || window.WA.catalog || []),
-    ...(window.WA._venuesAll  || window.WA.venues  || []).map(v => Object.assign({ __place: true }, v)),
-  ];
-
-  /* Same rail contract as Tonight and Saved (1a): a place says when it
-     SHUTS, a dated pick says its day, and nothing prints a clock it did
-     not parse. */
-  const railFor = (e) => {
-    if (e.__place || e.openingHours) {
-      const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
-      return h || 'OPEN';
-    }
-    if (window.WA.when.isTonight(e)) return 'TON';
-    const k = window.WA.when.resolveKey(e);
-    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
-  };
-
-  const openedRow = (e) => {
-    const title = e.__place ? (e.name || '') : (e.title || '');
-    /* Distance degrades to the neighbourhood so the rail keeps its
-       second line and nothing reflows when permission arrives later. */
-    const measured = window.WA.Geo.distanceLabel(e);
-    const dist = measured || real(e.neighborhood);
-    const meta = [
-      real(e.kind),
-      e.__place ? (measured ? real(e.neighborhood) : '') : real(e.venue),
-      real(e.time),
-    ].filter(Boolean).join(' · ');
-    return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
-      <span class="wa-row__rail">
-        <span class="wa-row__time">${esc(railFor(e))}</span>
-        <span class="wa-row__dist">${esc(dist)}</span>
-      </span>
-      <span class="wa-row__body">
-        <span class="wa-row__title">${esc(title)}</span>
-        <span class="wa-row__meta">${esc(meta)}</span>
-      </span>
-    </a></li>`;
-  };
-
-  const openedEarlier = () => {
-    const ids = window.WA.Seen.ids().slice().reverse();   /* newest first */
-    if (!ids.length) return '';
-    const byId = new Map(pool().map(e => [e.id, e]));
-    const found = [];
-    for (const id of ids) {
-      const e = byId.get(id);
-      if (e) found.push(e);
-      if (found.length >= LAST_OPENED) break;
-    }
-    if (!found.length) return '';
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">Opened earlier</h2>
-      <p class="wa-section-sub">${esc(`${found.length} OF ${ids.length} · NEWEST FIRST`)}</p>
-      <ul class="wa-rows">${found.map(openedRow).join('')}</ul>
-    </section>`;
-  };
-
-  const counts = () => {
-    const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
-    const picks = window.WA._catalogAll || window.WA.catalog || [];
-    const venues = window.WA._venuesAll || window.WA.venues || [];
-    const ids = new Set(Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}));
-    const cities = new Set();
-    for (const e of [...picks, ...venues]) if (ids.has(e.id) && e.city) cities.add(e.city);
-    return { opened: window.WA.Seen.count(), saved, cities: cities.size };
-  };
-
-  const signInCard = () => `
-    <section class="wa-signin" aria-labelledby="signin-title">
-      <h2 class="wa-signin__title" id="signin-title">Keep your shortlist across devices.</h2>
-      <p class="wa-signin__body">Everything works signed out. An account only carries your saves between your phone and your laptop.</p>
-      <div class="wa-btn-row">
-        <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
-        <a class="wa-btn" href="${(window.WA.Auth && window.WA.Auth.googleHref) ? window.WA.Auth.googleHref() : '#'}">Continue with Google</a>
-      </div>
-      <!-- No Apple option: Apple sign-in needs a Service ID
-           and key configured in Supabase, and a button that 400s on tap
-           is worse than one option fewer. Add the button here the day
-           the provider is configured. -->
-      <p class="wa-signin__fine">By continuing you agree to the terms.</p>
-    </section>
-
-    <section class="wa-section">
-      <h2 class="wa-section-title">What we store</h2>
-      <p class="wa-detail__note">Your saves, your city, and which kinds you open. No location history, no tracking between sessions, no third-party analytics. You can wipe all of it from here in one tap.</p>
-    </section>`;
+  const pool = () => [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
 
   const render = () => {
-    const c = counts();
-    const inf = inference();
+    const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
+    const follows = window.WA.Follows ? window.WA.Follows.keys() : [];
     const signedIn = !!(window.WA.Auth && window.WA.Auth.isSignedIn && window.WA.Auth.isSignedIn());
-    const follows = window.WA.Follows.keys();
-    const sources = new Set((window.WA._catalogAll || []).map(e => e.handle).filter(Boolean)).size;
-    const cityList = (window.WA.CITIES || []);
-    const cityLabel = (id) => {
-      const x = cityList.find(y => y.id === id);
-      return x ? x.label.charAt(0) + x.label.slice(1).toLowerCase() : id;
-    };
+    const ids = R().interests.ids();
+    const venues = window.WA._venuesAll || [];
+    const byId = new Map(pool().map(x => [x.id, x]));
+    const opened = window.WA.Seen.ids().slice().reverse().map(id => byId.get(id)).filter(Boolean).slice(0, 8);
+    const followed = follows.map(k => venues.find(v => String(v.name).toLowerCase().trim() === k) || { name: k, __raw: true });
 
     $('you-body').innerHTML = `
-      <div class="wa-cells" style="margin-top:var(--s-5)">
-        <div class="wa-cell"><span class="wa-cell__label">Opened</span><span class="wa-cell__value">${c.opened}</span></div>
-        <div class="wa-cell"><span class="wa-cell__label">Saved</span><span class="wa-cell__value">${c.saved}</span></div>
-        <div class="wa-cell"><span class="wa-cell__label">Cities</span><span class="wa-cell__value">${c.cities}</span></div>
+      <div class="wa-stats">
+        <div class="wa-stat"><span class="wa-stat__n">${window.WA.Seen.count()}</span><span class="wa-stat__label">Opened</span></div>
+        <div class="wa-stat"><span class="wa-stat__n">${saved}</span><span class="wa-stat__label">Saved</span></div>
+        <div class="wa-stat"><span class="wa-stat__n">${follows.length}</span><span class="wa-stat__label">Following</span></div>
       </div>
 
-      <section class="wa-section">
-        <h2 class="wa-section-title">${inf
-          ? esc(`You open ${inf.lead.join(' and ')} most`)
-          : 'Nothing learned about you yet'}</h2>
-        <p class="wa-detail__note">${inf
-          ? 'So those move up your Explore. Nothing is hidden — it only changes the order.'
-          : 'Open a few things and this fills in. There is no quiz and no profile to complete.'}</p>
-        ${inf ? `<div class="wa-chips" style="margin-top:var(--s-4)">
-          ${inf.top.map(([k, n]) => `<span class="wa-chip" aria-disabled="true">${esc(k)} <span class="wa-chip__count">${n}</span></span>`).join('')}
-        </div>` : ''}
-        ${c.opened ? `<p style="margin-top:var(--s-4)">
-          <button class="wa-linkbtn" type="button" id="reset">Reset what you've learned about me &rarr;</button>
-        </p>` : ''}
-      </section>
+      <div class="you-cols">
+        <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: ids.length ? 'They get their own shelf on Tonight. Nothing else is hidden.' : 'Pick up to three and Tonight gives them a shelf.' })}
+          <div class="wa-chips" style="margin-top:var(--s-3)">${R().interests.OPTIONS.map(o =>
+            `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${I(o.icon)}${esc(o.label)}</button>`).join('')}</div>
+        </section>
 
-      ${openedEarlier()}
+        <section class="wa-sect">${R().sect({ title: 'Appearance', sub: `Auto follows your device, else it turns dark at ${window.WA.Theme.duskLabel()} in Tallinn.` })}
+          <div class="wa-seg" style="margin-top:var(--s-3);max-width:420px">${window.WA.Theme.OPTIONS.map(o =>
+            `<button class="wa-seg__opt" type="button" data-theme-set="${esc(o.value)}" aria-pressed="${window.WA.Theme.get() === o.value}">${esc(o.label)}</button>`).join('')}</div>
+        </section>
 
-      <section class="wa-section">
-        <h2 class="wa-section-title">Appearance</h2>
-        <p class="wa-section-sub">${esc(`DUSK AT ${window.WA.Theme.duskLabel()}`)}</p>
-        <div class="wa-segment" style="margin-top:var(--s-4)">
-          ${window.WA.Theme.OPTIONS.map(o => `<button class="wa-segment__opt" type="button"
-             data-theme-set="${esc(o.value)}" aria-pressed="${window.WA.Theme.get() === o.value}">${esc(o.label)}</button>`).join('')}
-        </div>
-      </section>
+        <section class="wa-sect">${R().sect({ title: 'Following', n: follows.length || null, sub: follows.length ? '' : 'Follow a venue from its page and its listings are marked for you.' })}
+          ${followed.length ? `<ul>${followed.map(v => v.__raw
+            ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${esc(v.name)}</span></span><span class="wa-place__side"><button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.name)}">Unfollow</button></span></li>`
+            : R().placeRow(v)).join('')}</ul>` : ''}
+        </section>
 
-      <section class="wa-section">
-        <h2 class="wa-section-title">Home city</h2>
-        <div class="wa-chips" style="margin-top:var(--s-4)">
-          ${cityList.map(x => `<button class="wa-chip" type="button" data-city="${esc(x.id)}"
-             aria-pressed="${window.WA.CITY === x.id}">${esc(cityLabel(x.id))}${x.status === 'internal' ? ' <span class="wa-chip__count">internal</span>' : ''}</button>`).join('')}
-        </div>
-      </section>
+        <section class="wa-sect">${R().sect({ title: 'Opened earlier', n: opened.length || null, sub: opened.length ? 'Newest first' : 'Nothing opened yet.' })}
+          ${opened.length ? `<ul class="wa-rows">${opened.map(x => x.title ? R().row(x, { day: true, noThumb: true }) : '').join('')}</ul>
+            <ul>${opened.filter(x => !x.title).map(v => R().placeRow(v)).join('')}</ul>
+            <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : ''}
+        </section>
 
-      <section class="wa-section">
-        <h2 class="wa-section-title">Add to my calendar</h2>
-        <p class="wa-detail__note">Take the week as a calendar feed and never open the app.</p>
-        <p style="margin-top:var(--s-4)"><a class="wa-btn" href="./about.html#calendar-feed">How it works &rsaquo;</a></p>
-      </section>
+        <section class="wa-sect">
+          ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in. Your saves sync between devices.</p>
+            <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>`
+          : `<div class="wa-card wa-card--ink">
+              <h2 class="wa-card__title">Keep your saves on every device.</h2>
+              <p class="wa-note">Everything works signed out. An account only carries your shortlist between your phone and your laptop.</p>
+              <div class="wa-btns">
+                <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
+                <a class="wa-btn" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}">Continue with Google</a>
+              </div>
+            </div>`}
+        </section>
 
-      ${follows.length ? `<section class="wa-section">
-        <h2 class="wa-section-title">Following</h2>
-        <p class="wa-section-sub">${esc(`${follows.length} ${follows.length === 1 ? 'venue' : 'venues'}`)}</p>
-        <div class="wa-chips" style="margin-top:var(--s-4)">
-          ${follows.map(f => `<a class="wa-chip" href="source.html?venue=${esc(encodeURIComponent(f))}">${esc(f)}</a>`).join('')}
-        </div>
-      </section>` : ''}
-
-      ${signedIn ? `<section class="wa-section">
-        <h2 class="wa-section-title">Account</h2>
-        <p class="wa-detail__note">Signed in. Your saves sync between devices.</p>
-        <p style="margin-top:var(--s-4)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>
-      </section>` : signInCard()}
-
-      <!-- The source count says who is behind this. -->
-      <p class="wa-signin__fine" style="margin-top:var(--s-8)">
-        WanderAlt reads ${sources || 'its'} sources across ${cityList.length} cities.
-        <a href="./about.html">About WanderAlt &rarr;</a>
-      </p>`;
+        <section class="wa-sect">${R().sect({ title: 'What we store' })}
+          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. No location history, no analytics, no third-party scripts.</p>
+          <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
+        </section>
+      </div>
+      <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
   };
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-
     const t = hit('[data-theme-set]');
     if (t) { window.WA.Theme.set(t.dataset.themeSet); render(); return; }
-
-    const c = hit('[data-city]');
-    if (c) { window.WA.setCity(c.dataset.city); return; }
-
+    const i = hit('[data-interest]');
+    if (i) {
+      const ids = R().interests.ids();
+      const id = i.dataset.interest;
+      R().interests.set(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id].slice(0, 3), false);
+      render();
+      const again = document.querySelector(`[data-interest="${CSS.escape(id)}"]`);
+      if (again) again.focus();
+      return;
+    }
+    const uf = hit('[data-unfollow]');
+    if (uf) { window.WA.Follows.set(uf.dataset.unfollow, false); render(); return; }
     if (hit('#reset')) {
       const had = window.WA.Seen.ids().slice();
       window.WA.Seen.clear();
       render();
-      toast('Cleared what we had learned', 'Undo', () => {
-        had.forEach(id => window.WA.Seen.mark(id));
-        render();
-      });
+      toast('Forgot what you opened', 'Undo', () => { had.forEach(id => window.WA.Seen.mark(id)); render(); });
       return;
     }
-
-    if (hit('#signin'))  { window.WA.Auth.openSignIn && window.WA.Auth.openSignIn(); return; }
-    if (hit('#signout')) { window.WA.Auth.signOut(); render(); return; }
+    if (hit('#signin')) { if (window.WA.Auth.openSignIn) window.WA.Auth.openSignIn(); return; }
+    if (hit('#signout')) { window.WA.Auth.signOut(); render(); }
   });
 
   document.addEventListener('wa:catalog-ready', render);
   document.addEventListener('wa:seen-changed', render);
   document.addEventListener('wa:signed-in', render);
   document.addEventListener('wa:signed-out', render);
-  if (window.WA && window.WA.catalog) render();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
 })();

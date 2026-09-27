@@ -1,2263 +1,813 @@
 /* ============================================================
-   wa.css — the whole design system.
+   wa.css — the whole WanderAlt design system.
    ------------------------------------------------------------
-   Tokens, components, two themes. If a screen needs something that
-   isn't here, one of the components should grow a modifier — not the
-   screen a rule.
+   Direction: a club listings sheet. White paper by day, black paper
+   by night, black ink, hairline rules, one vermilion accent that means
+   "now" and "go" (Tickets). Geologica for every word (Latin, Estonian,
+   Cyrillic), Geist Mono only for clocks and distances.
 
-   MATERIAL: flat opaque paper. Ink on cream by day, ink on near-black
-   at night.
-
-   GLASS: exactly two elements — the sticky top bar and the bottom tab
-   bar, both ≥92% opaque in the page's own ground colour. Nothing else
-   is translucent. Never nest it.
-
-   Theme is driven by data-theme on <html>, set pre-paint by theme.js.
+   Sections: fonts · tokens · base · chrome · type · controls · rows ·
+   cards · places · detail · sheet · map · states · pages.
    ============================================================ */
 
-/* ============================================================
-   1 · FONTS
-   ============================================================ */
+/* ── Fonts ───────────────────────────────────────────────────── */
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 300 800; font-display: swap;
+  src: url("fonts/geologica-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 300 800; font-display: swap;
+  src: url("fonts/geologica-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 300 800; font-display: swap;
+  src: url("fonts/geologica-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Geist Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/geist-mono-500.woff2") format("woff2"); }
 
-/* Fraunces — the catalogue voice: pick titles, page headlines, the email.
-   Never below 17px. */
-@font-face {
-  font-family: 'Fraunces';
-  src: url('fonts/fraunces-600.woff2') format('woff2');
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-
-/* Geist Mono — facts. Times, distances, counts, labels. */
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('fonts/geist-mono-400.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('fonts/geist-mono-500.woff2') format('woff2');
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-
-/* The interface face: Plus Jakarta Sans, a variable font — one woff2 per
-   subset carries the whole 200–800 axis. Both subsets are required:
-   Latvian and Lithuanian diacritics are U+0100 and up (`latin-ext`).
-   unicode-range means a reader who never hits one never downloads it. */
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-latin.woff2') format('woff2');
-  font-weight: 200 800; font-style: normal; font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
-    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
-    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  src: url('fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
-  font-weight: 200 800; font-style: normal; font-display: swap;
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
-    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
-    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
-    U+A720-A7FF;
-}
-
-/* ============================================================
-   2 · TOKENS
-   Do not hand-roll a colour, blur or rgba literal anywhere else in
-   the product — a hard-coded value breaks the other theme.
-   ============================================================ */
-
+/* ── Tokens ──────────────────────────────────────────────────── */
 :root {
-  /* ---- Paper (day is the default) ---- */
-  --ground:       #f2efe6;
-  --card:         #fffdf8;
-  --ink:          #0a1011;
-  --ink-mute:     #5c6b62;   /* meta lines, secondary facts */
-  --ink-soft:     #48564f;   /* body copy under a title */
-  --rule:         rgba(10, 16, 17, .12);
-  --rule-strong:  rgba(10, 16, 17, .22);
+  color-scheme: light;
 
-  /* ---- Accent. Petrol is the only one. ---- */
-  --petrol:       #055959;
-  --petrol-ink:   #ffffff;   /* text on a petrol fill */
-  --petrol-tint:  rgba(5, 89, 89, .09);   /* the mark well, active chips */
+  /* Paper and ink. Never cream: the ground is white. */
+  --paper:     #ffffff;
+  --paper-2:   #f2f2f0;       /* wells, skeletons, quiet fills */
+  --paper-3:   #e8e8e5;       /* pressed */
+  --ground:    var(--paper);  /* theme.js reads this for theme-color */
+  --ink:       #111110;
+  --ink-2:     #4d4d48;       /* secondary text, 8.3:1 */
+  --ink-3:     #6b6b65;       /* quiet text, 5.3:1 */
+  --hair:      #e3e3df;       /* row rules */
+  --line:      #cfcfca;       /* control borders */
 
-  /* ---- Signal. Lime is an alarm with exactly one job: "now" — the NOW
-          pill on a row's rail and the selected/now map pin. Never body
-          text, borders, icons, or the CTA. ---- */
-  --signal:       #d2dc50;
-  --signal-ink:   #0a1011;
+  /* The one accent. Fills carry ink text (5.9:1); text in the accent
+     uses --accent-ink (5.4:1 on white). */
+  --accent:      #ff4d17;
+  --accent-ink:  #c2360a;
+  --on-accent:   #111110;
+  --accent-wash: color-mix(in oklab, var(--accent) 9%, var(--paper));
 
-  /* ---- The one warning colour, for expired and gone-away rows. ---- */
-  --warn:         #8a3a2a;
+  --scrim: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.62) 100%);
+  --shadow: 0 1px 2px rgba(17,17,16,.06), 0 8px 24px rgba(17,17,16,.08);
+  --shadow-lg: 0 2px 6px rgba(17,17,16,.08), 0 24px 64px rgba(17,17,16,.18);
+  --glass: color-mix(in oklab, var(--paper) 94%, transparent);
 
-  /* ---- Glass. Two elements. ---- */
-  --glass:        rgba(242, 239, 230, .92);
-  --glass-blur:   blur(16px);
-  --glass-hair:   rgba(10, 16, 17, .14);
+  /* Type */
+  --f-sans: "Geologica", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-hero:  clamp(2.25rem, 1.2rem + 5.2vw, 4.5rem);
+  --fs-h1:    clamp(1.875rem, 1.4rem + 2.2vw, 2.75rem);
+  --fs-h2:    clamp(1.375rem, 1.2rem + .8vw, 1.75rem);
+  --fs-title: 1.0625rem;   /* 17 */
+  --fs-body:  1rem;
+  --fs-meta:  .875rem;     /* 14 */
+  --fs-label: .75rem;      /* 12 */
 
-  /* ---- Photo scrim. Deliberately theme-invariant dark: a photograph
-          needs a dark ramp under text in both themes. ---- */
-  --scrim-photo:  linear-gradient(to top, rgba(6, 10, 11, .82) 0%, rgba(6, 10, 11, .38) 46%, rgba(6, 10, 11, 0) 100%);
+  /* Space: 4px steps */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-7: 32px; --s-8: 40px; --s-9: 56px; --s-10: 72px;
+  --gutter: 16px;
 
-  /* ---- Type ---- */
-  --ff-ui:      'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
-  --ff-display: 'Fraunces', Georgia, serif;
-  --ff-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Shape: small radii, a printed object rather than an app bubble. */
+  --r-1: 4px; --r-2: 8px; --r-3: 12px; --r-sheet: 18px;
 
-  /* Same VALUE as --fs-mono, separate token on purpose: this is Jakarta
-     chrome (eyebrows, nav label), that is the mono fact line. */
-  --fs-label:     11px;
-  --fs-mono:      11px;   /* the fact line, uppercase, tracked */
-  --fs-meta:      12px;
-  --fs-body:      14px;
-  --fs-card:      15px;   /* card title, --ff-ui 600 */
-  --fs-title:     17px;   /* the Fraunces floor. Never go under it. */
-  --fs-headline:  26px;
-  --fs-display:   34px;
+  --tap: 44px;
+  --topbar-h: 56px;
+  --tabbar-h: 64px;
+  --max: 1280px;
+  --read: 62ch;
 
-  /* ---- Space. Vertical gaps encode relationship: tighter within an
-          item than between items, and a heading always gets more room
-          below it than the gap between the things it introduces. ---- */
-  --s-1:  4px;
-  --s-2:  8px;
-  --s-3: 12px;
-  --s-4: 16px;
-  --s-5: 20px;
-  --s-6: 24px;
-  --s-7: 32px;
-  --s-8: 48px;
-  --gutter: 20px;
-
-  /* ---- Radii. Four steps, and 999 is only for chips and badges. ---- */
-  --r-pill:    999px;
-  --r-control:  12px;
-  --r-card:     14px;
-  --r-card-lg:  16px;
-  --r-sheet:    20px;
-
-  /* ---- Chrome. Both bars reserve real layout height. ---- */
-  /* Every sticky offset in the file reads this token. */
-  --topbar-h:  64px;
-  --tabbar-h:  60px;
-  --control-h: 48px;
-  --tap-min:   44px;   /* hard floor on public pages */
-
-  /* ---- Width ladder ---- */
-  --reading-max: 1024px;
-
-  /* ---- Motion. These two and nothing new. ---- */
-  --t-fast: 120ms ease;
-  --t-mid:  280ms cubic-bezier(.2, .8, .2, 1);
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --t-fast: 140ms;
+  --t-med:  260ms;
 }
 
-[data-theme="dusk"] {
-  --ground:      #0a1011;
-  --card:        #141c1d;
-  --ink:         #f4f1e8;
-  --ink-mute:    #8fa199;
-  --ink-soft:    #b9c4bd;
-  --rule:        rgba(244, 241, 232, .14);
-  --rule-strong: rgba(244, 241, 232, .26);
-
-  --petrol:      #7adcd6;
-  --petrol-ink:  #05201f;
-  --petrol-tint: rgba(122, 220, 214, .12);
-
-  --warn:        #e0836d;
-
-  --glass:       rgba(16, 24, 25, .94);
-  --glass-hair:  rgba(244, 241, 232, .16);
+:root[data-theme="dusk"] {
+  color-scheme: dark;
+  --paper:   #111110;
+  --paper-2: #1c1c1a;
+  --paper-3: #262624;
+  --ink:     #f4f3ef;
+  --ink-2:   #bdbcb5;
+  --ink-3:   #94938c;
+  --hair:    #2a2a27;
+  --line:    #3b3b38;
+  --accent:      #ff5a2b;
+  --accent-ink:  #ff7c55;
+  --on-accent:   #111110;
+  --accent-wash: color-mix(in oklab, var(--accent) 13%, var(--paper));
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-lg: 0 2px 6px rgba(0,0,0,.5), 0 24px 64px rgba(0,0,0,.6);
 }
 
-@media (min-width: 768px)  { :root { --reading-max: 1100px; } }
-@media (min-width: 1100px) { :root { --reading-max: 1200px; } }
-@media (min-width: 1440px) { :root { --reading-max: 1280px; } }
-@media (min-width: 1680px) { :root { --reading-max: 1440px; } }
-@media (min-width: 1920px) { :root { --reading-max: 1600px; } }
+@media (min-width: 768px)  { :root { --gutter: 28px; } }
+@media (min-width: 1024px) { :root { --gutter: 40px; --topbar-h: 68px; --tabbar-h: 0px; } }
 
-/* ============================================================
-   3 · BASE
-   ============================================================ */
-
-/* Cross-document View Transitions. The chrome carries stable names so the
-   bars morph instead of cross-fading; the shared-element pair is set up
-   in view-transition.js. Unsupported browsers just navigate instantly. */
-@view-transition { navigation: auto; }
-
-.wa-topbar { view-transition-name: wa-topbar; }
-.wa-tabbar { view-transition-name: wa-tabbar; }
-
-/* Reduced motion kills the animation, not the transition — nesting
-   @view-transition inside @media is thinly supported, but zeroing the
-   pseudo-elements is the documented pattern and lands everywhere. */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) { animation: none !important; }
-}
-
+/* ── Base ────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-
-html {
-  -webkit-text-size-adjust: 100%;
-  background: var(--ground);
-}
-
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--topbar-h) + var(--s-4)); }
 body {
   margin: 0;
-  background: var(--ground);
+  min-height: 100dvh;
+  background: var(--paper);
   color: var(--ink);
-  font: 400 var(--fs-body)/1.55 var(--ff-ui);
+  font: 400 var(--fs-body)/1.5 var(--f-sans);
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
-  /* Reserve the tab bar. The bar itself is fixed so it can be glass over
-     scrolled content; the page still owns the space so nothing is ever
-     covered at the end of a list. */
-  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-/* No horizontal overflow, at any width. */
-  overflow-x: hidden;
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  overflow-x: clip;
 }
-
-body[data-nav="none"] { padding-bottom: 0; }
-
-img, svg, video { max-width: 100%; height: auto; display: block; }
-
-a { color: var(--petrol); text-decoration-thickness: 1px; text-underline-offset: 2px; }
-
+img { display: block; max-width: 100%; }
+a { color: inherit; }
 button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:where(h1, h2, h3, p, ul, ol, figure) { margin: 0; }
+:where(ul, ol) { padding: 0; list-style: none; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: var(--r-1); }
+::selection { background: var(--accent); color: var(--on-accent); }
+[hidden] { display: none !important; }
 
-:focus-visible {
-  outline: 2px solid var(--petrol);
-  outline-offset: 2px;
-  border-radius: var(--s-1);
-}
+.wa-ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.wa-ic--sm { width: 16px; height: 16px; }
+.wa-ic--lg { width: 28px; height: 28px; stroke-width: 1.5; }
 
-.wa-shell {
-  width: 100%;
-  max-width: var(--reading-max);
-  margin-inline: auto;
-  padding-inline: var(--gutter);
-}
-
-/* Content clears the sticky bar here rather than in each page's first
-   element. Pages that open with a full-bleed well opt out. */
-.wa-shell > :first-child { margin-top: var(--s-6); }
-.wa-shell > .wa-detail__well:first-child,
-.wa-shell > .explore-capsule:first-child { margin-top: var(--s-5); }
-
-/* An in-page jump scrolls the target under the sticky top bar. Scoped to
-   the ids that are link targets, not [id]: scroll-margin-top also applies
-   to scrollIntoView(), which Tonight uses to centre a row. */
-#main,
-#calendar,
-#calendar-feed {
-  scroll-margin-top: calc(var(--topbar-h) + var(--s-4));
-}
-
-/* Screen-reader-only, for the labels a sighted reader gets from layout. */
-.wa-sr {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
-
-/* …except when it is focusable. A skip link that stays hidden while
-   focused is invisible to exactly the keyboard user it exists for. */
-a.wa-sr:focus {
-  position: fixed;
-  top: var(--s-2);
-  left: var(--s-2);
-  z-index: 80;
-  width: auto; height: auto;
-  min-height: var(--tap-min);
-  display: inline-flex;
-  align-items: center;
-  padding: 0 var(--s-4);
-  margin: 0;
-  clip: auto;
-  border-radius: var(--r-control);
-  background: var(--ink);
-  color: var(--ground);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  text-decoration: none;
-}
+.wa-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.wa-sr:focus { position: fixed !important; top: 8px; left: 8px; width: auto; height: auto; clip: auto; margin: 0; padding: 10px 14px; background: var(--ink); color: var(--paper); z-index: 100; border-radius: var(--r-2); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-    scroll-behavior: auto !important;
-  }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ============================================================
-   4 · TYPE HELPERS
-   The rule, stated once: chrome, counts, section titles, card titles,
-   buttons and nav are --ff-ui. Pick and venue titles, page headlines
-   and the email are Fraunces 600, never under 17px. Facts are mono.
-   ============================================================ */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+.wa-topbar { view-transition-name: topbar; }
+.wa-tabbar { view-transition-name: tabbar; }
 
-.wa-display {
-  font: 600 var(--fs-display)/1.12 var(--ff-display);
-  letter-spacing: -.015em;
-  margin: 0;
-  text-wrap: pretty;
-}
-
-.wa-headline {
-  font: 600 var(--fs-headline)/1.2 var(--ff-display);
-  letter-spacing: -.01em;
-  margin: 0;
-  text-wrap: pretty;
-}
-
-/* Section titles are interface, not catalogue — they name a shelf. */
-.wa-section-title {
-  font: 700 var(--fs-title)/1.25 var(--ff-ui);
-  letter-spacing: -.01em;
-  margin: 0;
-}
-
-.wa-section-sub {
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .04em;
-  color: var(--ink-mute);
-  margin: var(--s-1) 0 0;
-}
-
-/* A heading always gets more room below it than the gap between the
-   things it introduces, and it is never the tightest gap near it.
-   The subtitle belongs TO the title, so it sits tight against it; the
-   content the pair introduces gets the wide gap. Encoding it here means
-   no screen has to remember it. */
-.wa-section { margin-top: var(--s-8); }
-
-/* Scoped to a direct child and given two classes deliberately: the list
-   components below reset `margin: 0` at the same specificity later in
-   the file, so a one-class rule here would lose. */
-.wa-section > .wa-section-title + *:not(.wa-section-sub),
-.wa-section > .wa-section-sub + * {
-  margin-top: var(--s-5);
-}
-
-.wa-fact {
-  font: 500 var(--fs-mono)/1.35 var(--ff-mono);
-  letter-spacing: .06em;
-  color: var(--ink-mute);
-}
-
-.wa-fact--strong { color: var(--ink); }
-
-/* The eyebrow label: the small uppercase word that names the value under
-   it. Shared by the capsule's WHERE / WHEN / WHAT and the labelled cells
-   on detail, about and You. A type role, owned by neither. */
-.wa-capsule__label,
-.wa-cell__label {
-  font: 700 var(--fs-label)/1 var(--ff-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-
-/* ============================================================
-   5 · COMPONENT — top bar (glass 1 of 2)
-   Sticky, in normal flow, so it occupies real layout height and
-   content scrolls under a known offset.
-   ============================================================ */
-
+/* ── Chrome: top bar, tab bar, shell ─────────────────────────── */
+/* Glass 1 of 2: sticky, in flow, so content scrolls under a known height. */
 .wa-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  position: sticky; top: 0; z-index: 40;
   height: var(--topbar-h);
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding-inline: var(--gutter);
+  padding: 0 var(--gutter);
+  padding-top: env(safe-area-inset-top);
+  box-sizing: content-box;
+  display: flex; align-items: center; gap: var(--s-3);
   background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  /* The hairline sits on the content-facing edge. That line, not the
-     blur, is what reads as "this floats". */
-  border-bottom: 1px solid var(--glass-hair);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--hair);
 }
+.wa-topbar__end { margin-left: auto; display: flex; align-items: center; gap: var(--s-1); }
 
-/* Where backdrop-filter is missing the bar goes fully opaque rather
-   than translucent-and-unreadable. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .wa-topbar, .wa-tabbar { background: var(--ground); }
-}
+/* The wordmark: "Wander" in ink, "Alt" stamped in the accent. */
+.wa-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 1.1875rem; letter-spacing: -.035em; line-height: 1; min-height: var(--tap); }
+.wa-brand__mark { width: 28px; height: 28px; flex: none; }
+.wa-brand__alt { background: var(--accent); color: var(--on-accent); padding: 3px 5px 4px; margin-left: 1px; border-radius: 3px; }
+.wa-brand__city { font-weight: 500; font-size: var(--fs-meta); letter-spacing: 0; color: var(--ink-3); margin-left: 2px; }
+@media (max-width: 380px) { .wa-brand__city { display: none; } }
 
-.wa-topbar__brand {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  /* The home link is a tap target like any other — the 26px mark is the
-     icon, not the hit area. */
-  min-height: var(--tap-min);
-  /* --fs-title: the wordmark reads at a glance. */
-  font: 700 var(--fs-title)/1 var(--ff-ui);
-  letter-spacing: -.01em;
-  color: var(--ink);
-  text-decoration: none;
-  margin-right: auto;
-}
-
-/* Scaled with the bar; the radius moves with it. */
-.wa-topbar__mark { width: 32px; height: 32px; border-radius: 8px; }
-
-/* ============================================================
-   6 · COMPONENT — tab bar (glass 2 of 2)
-   Four items, labels always visible. Tonight earns a permanent tab
-   because it is the only nav item with an expiry.
-   ============================================================ */
-
-/* ONE set of nav links at every width.
-
-   A sibling of the top bar, NOT a child: .wa-topbar carries
-   backdrop-filter, which makes it the containing block for fixed
-   descendants. Below 1024 it is fixed to the bottom of the viewport; at
-   1024 it is fixed to the top, centred in the masthead band. */
+/* Glass 2 of 2: fixed bottom tab bar on phones; the masthead nav from 1024. */
 .wa-tabbar {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 50;
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  height: var(--tabbar-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: content-box;
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-top: 1px solid var(--glass-hair);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-top: 1px solid var(--hair);
 }
-
-
 .wa-tabbar__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: var(--tap-min);
-  text-decoration: none;
-  color: var(--ink-mute);
-  /* Shares the label SIZE and nothing else: lighter, barely tracked and
-     not uppercase, because it is a name rather than an eyebrow. From
-     1024 it is overridden to --fs-body in the masthead. */
-  font: 600 var(--fs-label)/1 var(--ff-ui);
-  letter-spacing: .01em;
-  transition: color var(--t-fast);
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  text-decoration: none; color: var(--ink-3);
+  font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  min-height: var(--tap);
+  transition: color var(--t-fast) var(--ease);
 }
-
-.wa-tabbar__item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-
-/* Active state is a tint plus a mark, never colour alone — here the
-   mark is the filled dot under the label. */
+.wa-tabbar__item .wa-ic { width: 24px; height: 24px; }
 .wa-tabbar__item[aria-current="page"] { color: var(--ink); }
-.wa-tabbar__item[aria-current="page"]::after {
-  content: '';
-  width: 4px; height: 4px;
-  border-radius: var(--r-pill);
-  background: var(--petrol);
+.wa-tabbar__item[aria-current="page"]::before {
+  content: ""; position: absolute; top: -1px; left: 50%; width: 28px; height: 3px; margin-left: -14px;
+  background: var(--accent); border-radius: 0 0 2px 2px;
 }
+.wa-tabbar__item:active { color: var(--ink); }
 
-/* ============================================================
-   7 · COMPONENT — search capsule
-   One capsule for Where / When / What. It absorbs the whole filter
-   model, so there is exactly one place to change what you're looking
-   at. On phone it collapses to a single search key.
-   ============================================================ */
-
-.wa-capsule {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  min-height: var(--control-h);
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-pill);
-  box-shadow: 0 1px 2px rgba(10, 16, 17, .05);
-  overflow: hidden;
-}
-
-.wa-capsule__slot {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1px;
-  padding: var(--s-2) var(--s-5);
-  background: none;
-  border: 0;
-  border-right: 1px solid var(--rule);
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--t-fast);
-}
-
-.wa-capsule__slot:last-of-type { border-right: 0; }
-
-/* The desktop overrides must come AFTER the base rules: both are
-   single-class selectors, so source order decides. */
 @media (min-width: 1024px) {
-  /* Into the masthead: fixed to the top band, centred between the brand
-     and the account key (it cannot be inside the header, see above). */
+  /* One DOM node: from 1024 the tab bar sits in the masthead band. */
   .wa-tabbar {
-    inset-inline: auto;
-    top: 0;
-    bottom: auto;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 0; bottom: auto; left: 50%; right: auto; transform: translateX(-50%);
+    height: var(--topbar-h); padding: 0;
+    display: flex; gap: var(--s-1);
+    background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none;
     z-index: 41;
-    height: var(--topbar-h);
-    padding-bottom: 0;
-    grid-auto-columns: auto;
-    gap: var(--s-6);
-    align-items: center;
-    /* Never glass on glass — one layer per screen. Over the masthead the
-       nav is just links on a bar that is already glass. */
-    background: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    border-top: 0;
   }
-
-  .wa-tabbar__item {
-    flex-direction: row;
-    gap: var(--s-2);
-    min-height: var(--tap-min);
-    font-size: var(--fs-body);
-  }
-
-  .wa-tabbar__item svg { width: 18px; height: 18px; }
-
-  /* The active mark becomes an underline in a horizontal row — a dot
-     under an inline label reads as a bullet, not a state. */
-  .wa-tabbar__item[aria-current="page"]::after {
-    content: none;
-  }
-  .wa-tabbar__item[aria-current="page"] {
-    box-shadow: inset 0 -2px 0 var(--petrol);
-  }
-
-  /* Nothing to reserve once the bar is in the masthead. */
-  body { padding-bottom: 0; }
-}
-.wa-capsule__slot:hover { background: var(--petrol-tint); }
-
-.wa-capsule__value {
-  font: 600 var(--fs-body)/1.3 var(--ff-ui);
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Inset by 2px, not 4, so the key clears 44px inside a 48px capsule. */
-.wa-capsule__go {
-  flex: 0 0 auto;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  align-self: center;
-  display: grid;
-  place-items: center;
-  margin-inline: 2px;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: var(--petrol);
-  color: var(--petrol-ink);
-  cursor: pointer;
-}
-
-.wa-capsule__go svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-/* Phone: one key, not three slots. Three slots do not fit at 390 — the
-   What value truncates to "Anyth…", which is worse than not showing it.
-   Done here rather than with a class so no page can get it wrong; the
-   parked values still appear inside the search sheet. */
-@media (max-width: 767px) {
-  .wa-capsule__slot { border-right: 0; }
-  .wa-capsule__slot:not(:first-of-type) { display: none; }
-}
-
-/* ============================================================
-   8 · COMPONENT — scope chips / tabs
-   All / Events / Places. Icon-over-label from 768 up,
-   underline on the active one.
-   ============================================================ */
-
-.wa-scope {
-  display: flex;
-  gap: var(--s-2);
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: var(--s-1) 0;
-  margin: 0;
-  list-style: none;
-}
-.wa-scope::-webkit-scrollbar { display: none; }
-
-.wa-scope__chip {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-height: var(--tap-min);
-  padding: 0 var(--s-4);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-pill);
-  background: var(--card);
-  color: var(--ink-mute);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
-}
-
-/* Same monoline treatment as the tab bar: without fill:none these
-   stroke-drawn paths render as solid blobs. */
-.wa-scope__chip svg {
-  width: 18px; height: 18px;
-  fill: none; stroke: currentColor; stroke-width: 1.5;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-
-/* Tint plus a mark: the border thickens and the fill tints. */
-.wa-scope__chip[aria-selected="true"],
-.wa-scope__chip[aria-current="true"] {
-  background: var(--petrol-tint);
-  border-color: var(--petrol);
-  color: var(--ink);
-}
-
-@media (min-width: 768px) {
-  .wa-scope { gap: var(--s-6); }
-  /* Icon over label from 768. min-width keeps a short label like "All"
-     over the 44px floor horizontally. */
-  .wa-scope__chip {
-    flex-direction: column;
-    gap: var(--s-1);
-    min-width: var(--tap-min);
-    padding: var(--s-2) var(--s-2) var(--s-3);
-    border: 0;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    background: none;
-    font-size: var(--fs-meta);
-  }
-  .wa-scope__chip svg { width: 22px; height: 22px; }
-  .wa-scope__chip[aria-selected="true"],
-  .wa-scope__chip[aria-current="true"] {
-    background: none;
-    border-bottom-color: var(--petrol);
-  }
-}
-
-
-/* Bigger on the surfaces that have the room. Explore's first screen is
-   one control group -- capsule then scope -- and at 48px tall against a
-   1240px column it read as a toolbar rather than the page's main
-   instrument. Phone keeps the compact sizes, where the capsule collapses
-   to a single slot anyway. */
-@media (min-width: 768px) {
-  .explore-capsule .wa-capsule { min-height: calc(var(--control-h) + var(--s-4)); }
-  .explore-capsule .wa-capsule__slot { padding: var(--s-3) var(--s-6); }
-  .explore-capsule .wa-capsule__value { font-size: var(--fs-card); }
-  .explore-capsule .wa-capsule__go { width: 52px; height: 52px; }
-
-  .explore-scope .wa-scope__chip {
-    min-height: calc(var(--tap-min) + var(--s-2));
-    padding: 0 var(--s-5);
-    font-size: var(--fs-card);
-  }
-  .explore-scope .wa-scope__chip svg { width: 20px; height: 20px; }
-}
-
-/* ============================================================
-   9 · COMPONENT — category mark
-   No photo is the normal case. A photoless card is filled by its
-   category mark on a 9%-petrol ground — a labelled object, not a
-   failure. Never a grey box.
-   ============================================================ */
-
-.wa-mark {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  aspect-ratio: 1;
-  background: var(--petrol-tint);
-  border-radius: var(--r-card);
-  overflow: hidden;
-}
-
-/* Petrol on a 9%-petrol ground by day; pale teal on a 6%-cream ground at
-   night (a teal wash on near-black reads as a colour cast). Scoped to the
-   mark surfaces rather than changing --petrol-tint. */
-[data-theme="dusk"] .wa-mark,
-[data-theme="dusk"] .wa-list-card__mosaic,
-[data-theme="dusk"] .wa-list-card__tile,
-[data-theme="dusk"] .wa-row__media,
-[data-theme="dusk"] .wa-detail__well--mark {
-  background: rgba(244, 241, 232, .06);
-}
-
-.wa-mark svg,
-.wa-mark use {
-  /* The card mark is 44-62px: the percentage drives it, clamped. */
-  width: clamp(44px, 46%, 62px);
-  height: clamp(44px, 46%, 62px);
-  stroke: var(--petrol);
-  fill: none;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.wa-mark__photo {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-/* ============================================================
-   10 · COMPONENT — card
-   1 square well (photo, else the mark) · 2 one badge top-left ·
-   3 save top-right · 4 title, two lines, never truncated ·
-   5 two mono lines in fixed order so a row of eight scans.
-   ============================================================ */
-
-.wa-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  min-width: 0;
-  background: none;   /* the card is the well plus text, not a panel */
-  text-decoration: none;
-  color: inherit;
-}
-
-.wa-card__well {
-  position: relative;
-  border-radius: var(--r-card);
-  overflow: hidden;
-  background: var(--petrol-tint);
-}
-
-/* One badge, top left — the single most decision-changing fact.
-   Never two. Over a photo it is 94% opaque and never blurred. */
-.wa-card__badge {
-  position: absolute;
-  top: var(--s-2);
-  left: var(--s-2);
-  z-index: 2;
-  padding: 5px var(--s-2);
-  border-radius: var(--r-pill);
-  background: rgba(255, 253, 248, .94);
-  color: var(--ink);
-  font: 500 var(--fs-mono)/1 var(--ff-mono);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-[data-theme="dusk"] .wa-card__badge { background: rgba(20, 28, 29, .94); }
-
-/* The one lime use on a card: something is live or starting now. */
-.wa-card__badge--now {
-  background: color-mix(in srgb, var(--signal) 94%, transparent);
-  color: var(--signal-ink);
-}
-
-.wa-card__save {
-  position: absolute;
-  top: var(--s-1);
-  right: var(--s-1);
-  z-index: 2;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  color: #fffdf8;
-}
-
-.wa-card__save svg {
-  width: 20px; height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  filter: drop-shadow(0 1px 2px rgba(6, 10, 11, .5));
-}
-
-/* A bookmark, not a heart. You are not collecting favourites, you are
-   keeping a shortlist. Filled state is the mark; the tint is the well. */
-.wa-card__save[aria-pressed="true"] svg { fill: currentColor; }
-
-/* Photoless wells put the save on ink, not on white. */
-.wa-card__well:not(:has(.wa-card__photo)) .wa-card__save { color: var(--petrol); }
-.wa-card__well:not(:has(.wa-card__photo)) .wa-card__save svg { filter: none; }
-
-.wa-card__photo {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-
-/* The venue's own mark rather than a photograph: contained on the tint
-   and padded, never cropped to the square. */
-.wa-card__photo--brand {
-  object-fit: contain;
-  padding: var(--s-5);
-  background: var(--petrol-tint);
-}
-
-.wa-card__body { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
-
-/* Two lines, wraps, NEVER truncated. A 60-character gig title is the
-   most load-bearing string on the screen. */
-.wa-card__title {
-  font: 600 var(--fs-card)/1.32 var(--ff-ui);
-  color: var(--ink);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Fixed order: distance · area, then kind · time or price. */
-.wa-card__meta {
-  font: 400 var(--fs-mono)/1.45 var(--ff-mono);
-  letter-spacing: .03em;
-  color: var(--ink-mute);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wa-card__meta strong { color: var(--ink); font-weight: 500; }
-
-/* ============================================================
-   11 · COMPONENT — timetable row
-   The dense list. Time and distance own a fixed left rail that always
-   prints something: a clock time, NOW, →02 for a place open until two,
-   or OPEN.
-   ============================================================ */
-
-.wa-rows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-
-.wa-row {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: var(--s-4);
-  padding: var(--s-5) 0;
-  border-bottom: 1px solid var(--rule);
-  text-decoration: none;
-  color: inherit;
-}
-
-.wa-row:last-child { border-bottom: 0; }
-
-/* Rows and cards are links: the title underlines on hover, behind
-   `(hover: hover)` so touch devices don't keep the state stuck. */
-@media (hover: hover) {
-  .wa-row:hover .wa-row__title,
-  .wa-card:hover .wa-card__title { text-decoration: underline; }
-}
-
-.wa-row__rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-  font: 500 var(--fs-mono)/1.2 var(--ff-mono);
-  letter-spacing: .04em;
-  /* A flex item's default min-width is auto, so the rail refused to
-     shrink below its longest word and let it paint outside the track. */
-  min-width: 0;
-}
-
-.wa-row__time { color: var(--ink); font-size: var(--fs-meta); }
-
-/* The slot holds a distance ("450 m"), or the neighbourhood as the
-   fallback before location is granted. `nowrap` keeps every rail at two
-   lines, and the rail must not reflow when permission arrives. */
-.wa-row__dist {
-  color: var(--ink-mute);
-  align-self: flex-start;
-  width: max-content;
-  /* The track plus half the column gap, clipped there: the neighbourhood
-     fallback is wider than a distance, and this keeps 8px of air before
-     the title. */
-  max-width: calc(100% + var(--s-2));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* NOW is one of the sanctioned lime uses. */
-.wa-row__time--now {
-  color: var(--signal-ink);
-  background: var(--signal);
-  border-radius: var(--r-pill);
-  padding: 2px var(--s-2);
-  align-self: flex-start;
-}
-
-[data-theme="dusk"] .wa-row__time--now { color: var(--signal-ink); }
-
-.wa-row__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
-
-/* Pick titles are catalogue voice — Fraunces, at the 17px floor. */
-.wa-row__title {
-  font: 600 var(--fs-title)/1.28 var(--ff-display);
-  color: var(--ink);
-  margin: 0;
-  text-wrap: pretty;
-}
-
-.wa-row__desc {
-  font: 400 var(--fs-body)/1.5 var(--ff-ui);
-  color: var(--ink-soft);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* The description stops at three lines with an inline "more" that
-   expands in place. */
-.wa-row__desc--open {
-  -webkit-line-clamp: unset;
-  display: block;
-  overflow: visible;
-}
-
-/* Sits in the text, so it reads as the end of the sentence. */
-.wa-row__more {
-  border: 0;
-  background: none;
-  /* Vertical padding buys the 44px height and the negative margin gives
-     it back. The left edge stays flush with the text column. */
-  padding: var(--s-3) var(--s-4) var(--s-3) 0;
-  margin: calc(var(--s-3) * -1) 0;
-  min-height: var(--tap-min);
-  color: var(--petrol);
-  font: 600 var(--fs-body)/1.5 var(--ff-ui);
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-.wa-row__more:hover { text-decoration: underline; }
-
-.wa-row__meta {
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .03em;
-  color: var(--ink-mute);
-  margin: 0;
-}
-
-/* Fixed shape and centred, because a grid item stretches by default —
-   left to itself this would grow to the full height of a three-line
-   description and turn the timetable into a picture list. */
-.wa-row__media {
-  display: none;
-  width: 96px;
-  aspect-ratio: 3 / 2;
-  align-self: center;
-  border-radius: var(--r-control);
-  overflow: hidden;
-  background: var(--petrol-tint);
-}
-
-/* The wider desktop row earns a photo; the phone row has no photo region.
-   The third track is added only when the row HAS media, so a photoless
-   row has no third cell and no hanging column gap. */
-@media (min-width: 1024px) {
-  .wa-row:has(.wa-row__media) {
-    grid-template-columns: 52px minmax(0, 1fr) 96px;
-  }
-  .wa-row__media { display: block; }
-}
-
-/* ============================================================
-   COMPONENT — seven-day density strip
-
-   Tonight's header. Says what a list cannot: Monday is dead, wait for
-   Friday. Bars are proportional to the busiest day, with a floor so one
-   event still reads; a genuinely empty day gets no bar at all.
-   ============================================================ */
-
-.wa-density {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--s-1);
-  align-items: end;
-  margin: 0 0 var(--s-6);
-  padding: 0;
-  list-style: none;
-}
-
-/* The <li> is the grid item; without this the button shrinks to its
-   label and the tap target comes out 22px wide on a phone -- vertically
-   over the 44px floor, horizontally well under it. */
-.wa-density > li { display: flex; }
-
-.wa-density__day {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-1);
-  padding: var(--s-2) 0 var(--s-1);
-  border: 0;
-  border-radius: var(--r-control);
-  background: none;
-  color: var(--ink-mute);
-  font: 400 var(--fs-mono)/1 var(--ff-mono);
-  letter-spacing: .06em;
-  cursor: pointer;
-  min-height: var(--tap-min);
-  justify-content: flex-end;
-}
-
-.wa-density__day:hover { background: var(--petrol-tint); }
-
-/* The bar itself. Height is set inline per day because it is data, not
-   design — the only inline style in the component. */
-.wa-density__bar {
-  width: 100%;
-  max-width: 28px;
-  border-radius: 3px;
-  background: var(--petrol);
-  opacity: .55;
-}
-
-.wa-density__count { color: var(--ink); font-size: var(--fs-meta); }
-.wa-density__label { text-transform: uppercase; }
-
-/* Today is where the reader is standing. Selected is what they asked
-   for. Both are a tint plus a mark, never colour alone. */
-.wa-density__day--today .wa-density__label { color: var(--ink); }
-
-/* Below 372px seven cells would fall under --tap-min. The grid gap is
-   not what separates the bars (each bar is capped at 28px and centred),
-   so the gap goes to zero and the strip bleeds full width: bigger
-   targets and more air between bars. */
-@media (max-width: 371.98px) {
-  .wa-density {
-    margin-inline: calc(var(--gutter) * -1);
-    gap: 0;
-  }
-}
-
-.wa-density__day[aria-pressed="true"] {
-  background: var(--petrol-tint);
-  box-shadow: inset 0 -2px 0 var(--petrol);
-}
-.wa-density__day[aria-pressed="true"] .wa-density__bar { opacity: 1; }
-.wa-density__day[aria-pressed="true"] .wa-density__label { color: var(--ink); }
-
-/* Nothing on. No bar, and the count greys out rather than printing a
-   confident zero in the same weight as a five. */
-.wa-density__day--empty .wa-density__count { color: var(--ink-mute); opacity: .55; }
-
-/* ============================================================
-   COMPONENT — list card ("lists as four-up mosaics")
-
-   Four tiles from the list's own contents: a photo, else the category
-   mark on the petrol tint. Fewer than four items means fewer tiles; the
-   grid never pads with blanks.
-   ============================================================ */
-
-.wa-lists {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-4);
-  margin: var(--s-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 768px) { .wa-lists { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .wa-lists { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-
-.wa-list-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-3);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-card);
-  background: var(--card);
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-  min-height: var(--tap-min);
-}
-
-.wa-list-card:hover { border-color: var(--rule-strong); }
-
-.wa-list-card[aria-pressed="true"] {
-  border-color: var(--petrol);
-  box-shadow: inset 0 0 0 1px var(--petrol);
-}
-
-.wa-list-card__mosaic {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  aspect-ratio: 1;
-  border-radius: var(--r-control);
-  overflow: hidden;
-  background: var(--petrol-tint);
-}
-
-/* One item fills the square, two split it, three or four tile it. The
-   list should look like its contents at a glance. */
-.wa-list-card__mosaic:has(> :only-child) { grid-template-columns: 1fr; }
-
-.wa-list-card__tile {
-  display: grid;
-  place-items: center;
-  background: var(--petrol-tint);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.wa-list-card__tile img { width: 100%; height: 100%; object-fit: cover; }
-
-.wa-list-card__tile svg {
-  width: 40%; height: 40%;
-  stroke: var(--petrol);
-  fill: none;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.wa-list-card__name {
-  font: 600 var(--fs-card)/1.25 var(--ff-ui);
-  color: var(--ink);
-  text-wrap: pretty;
-}
-
-.wa-list-card__sub {
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .03em;
-  color: var(--ink-mute);
-}
-
-/* An expired count is the one thing in a list card worth warning about. */
-.wa-list-card__sub em { font-style: normal; color: var(--warn); }
-
-/* The saved strip. A full-width card with the card rule and radius. The mark is a bookmark on the 9%-petrol tint. */
-.wa-savedstrip {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  min-height: var(--tap-min);
-  padding: var(--s-4) var(--s-5);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-card-lg);
-  background: var(--card);
-  text-decoration: none;
-  color: inherit;
-  margin-bottom: var(--s-6);
-}
-.wa-savedstrip:hover { border-color: var(--rule-strong); }
-
-.wa-savedstrip__mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-control);
-  background: var(--petrol-tint);
-}
-.wa-savedstrip__mark svg {
-  width: 20px; height: 20px;
-  fill: none; stroke: var(--petrol); stroke-width: 1.5;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-
-.wa-savedstrip__count {
-  font: 700 var(--fs-body)/1.3 var(--ff-ui);
-  color: var(--ink);
-}
-.wa-savedstrip__more {
-  font: 400 var(--fs-body)/1.3 var(--ff-ui);
-  color: var(--ink-mute);
-}
-
-/* The count and the consequence sit on one line from 768; below that
-   the strip would need three lines to hold both, so the consequence
-   wraps under the count instead of squeezing the count to two lines. */
-@media (max-width: 767.98px) {
-  .wa-savedstrip { flex-wrap: wrap; }
-  .wa-savedstrip__mark { order: 0; }
-  .wa-savedstrip__count { order: 1; flex: 1 1 auto; }
-  .wa-savedstrip__more { order: 2; flex: 1 0 100%; padding-left: calc(40px + var(--s-4)); }
-}
-
-/* ============================================================
-   12 · COMPONENT — sheet
-   One question expanded at a time. The other slots sit below as
-   collapsed rows showing their current value, so you always know what
-   the other answers are and can never get lost inside a filter.
-   ============================================================ */
-
-/* A <dialog> is display:none only via the UA stylesheet, which any display
-   declaration here overrides — hence the [open] guard. */
-.wa-sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: none;
-  flex-direction: column;
-  justify-content: flex-end;
-  background: rgba(6, 10, 11, .44);
-  border: 0;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-}
-
-.wa-sheet[open] { display: flex; }
-
-.wa-sheet::backdrop { background: rgba(6, 10, 11, .44); }
-
-.wa-sheet__panel {
-  background: var(--card);        /* opaque. Sheets are never glass. */
-  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.wa-sheet__head {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-5) var(--gutter) var(--s-3);
-  border-bottom: 1px solid var(--rule);
-}
-
-.wa-sheet__title { font: 700 var(--fs-title)/1.2 var(--ff-ui); margin: 0 auto 0 0; }
-
-.wa-sheet__close {
-  width: var(--tap-min); height: var(--tap-min);
-  display: grid; place-items: center;
-  border: 0; border-radius: var(--r-pill);
-  background: var(--petrol-tint); color: var(--ink);
-  cursor: pointer;
-}
-
-.wa-sheet__body { padding: var(--s-5) var(--gutter); overflow-y: auto; flex: 1; }
-
-.wa-sheet__foot {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-4) var(--gutter);
-  padding-bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--rule);
-  background: var(--card);
-}
-
-/* A collapsed slot: the question, and its current answer. */
-.wa-sheet__parked {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--control-h);
-  padding: 0 var(--s-4);
-  gap: var(--s-3);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
-  background: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.wa-sheet__parked-label { font: 600 var(--fs-body)/1 var(--ff-ui); }
-.wa-sheet__parked-value { margin-left: auto; font: 400 var(--fs-meta)/1 var(--ff-mono); color: var(--ink-mute); }
-
-@media (min-width: 768px) {
-  .wa-sheet { justify-content: center; align-items: center; }
-  .wa-sheet__panel {
-    width: min(560px, 100% - var(--s-8));
-    border-radius: var(--r-sheet);
-    max-height: 82vh;
-  }
-}
-
-/* ============================================================
-   13 · COMPONENT — filter control set
-   Every toggle carries its consequence. The primary key says the
-   outcome, not the verb: "Show 5 gigs".
-   ============================================================ */
-
-.wa-field { display: block; margin-bottom: var(--s-7); }
-
-.wa-field__label {
-  display: block;
-  font: 700 var(--fs-body)/1.2 var(--ff-ui);
-  margin-bottom: var(--s-3);
-}
-
-/* The consequence line. Always present, always mono, always true. */
-.wa-field__consequence {
-  display: block;
-  font: 400 var(--fs-meta)/1.4 var(--ff-mono);
-  color: var(--ink-mute);
-  margin-top: var(--s-2);
-}
-
-.wa-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-
-.wa-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-height: var(--tap-min);
-  padding: 0 var(--s-4);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-pill);
-  background: none;
-  color: var(--ink);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  cursor: pointer;
-  transition: background var(--t-fast), border-color var(--t-fast);
-}
-
-.wa-chip__count { font: 400 var(--fs-mono)/1 var(--ff-mono); color: var(--ink-mute); }
-
-/* The 15px mark in chips and filter pills: same sprite, bare rather than
-   on a tint tile. Colour follows the label so a disabled chip dims as
-   one object. */
-.wa-chip__mark {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: .75;
-}
-.wa-chip[aria-pressed="true"] .wa-chip__mark { opacity: 1; }
-
-.wa-chip[aria-pressed="true"] {
-  background: var(--petrol-tint);
-  border-color: var(--petrol);
-}
-
-/* A zero-count option is shown, not hidden — "Market 0" tells the
-   reader the filter exists and is empty, which a missing chip doesn't. */
-.wa-chip[data-count="0"] { opacity: .5; }
-
-/* Zeroes are disabled, not hidden: "nothing tonight", not "no such
-   thing". */
-.wa-chip:disabled {
-  cursor: default;
-  opacity: .45;
-  border-style: dashed;
-}
-.wa-chip:disabled:hover { background: none; }
-
-/* Segmented control — Doors after: now / 21:00 / 23:00 / any */
-.wa-segment {
-  display: flex;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
-  overflow: hidden;
-}
-
-.wa-segment__opt {
-  flex: 1;
-  min-height: var(--tap-min);
-  border: 0;
-  border-right: 1px solid var(--rule);
-  background: none;
-  color: var(--ink-mute);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  cursor: pointer;
-}
-
-.wa-segment__opt:last-child { border-right: 0; }
-
-.wa-segment__opt[aria-pressed="true"] {
-  background: var(--petrol-tint);
-  color: var(--ink);
-}
-
-/* Range — How far you'll walk, in minutes AND metres. */
-.wa-range { width: 100%; accent-color: var(--petrol); height: var(--tap-min); }
-
-.wa-switch {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  width: 100%;
-  min-height: var(--control-h);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-}
-
-.wa-switch__text { flex: 1; min-width: 0; }
-.wa-switch__title { font: 600 var(--fs-body)/1.3 var(--ff-ui); }
-.wa-switch__sub { font: 400 var(--fs-meta)/1.4 var(--ff-mono); color: var(--ink-mute); }
-
-.wa-switch__track {
-  flex: 0 0 auto;
-  width: 46px; height: 28px;
-  border-radius: var(--r-pill);
-  background: var(--rule-strong);
-  padding: 3px;
-  transition: background var(--t-fast);
-}
-
-.wa-switch__thumb {
-  width: 22px; height: 22px;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  box-shadow: 0 1px 2px rgba(10, 16, 17, .3);
-  transition: transform var(--t-fast);
-}
-
-.wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--petrol); }
-.wa-switch[aria-pressed="true"] .wa-switch__thumb { transform: translateX(18px); }
-
-/* A switch with nothing behind it is dimmed, not removed. */
-.wa-switch:disabled { cursor: default; opacity: .45; }
-
-/* ---- Buttons. One control size, one radius. ---- */
-
+  .wa-tabbar__item { flex-direction: row; gap: 8px; padding: 0 14px; font-size: .9375rem; font-weight: 600; color: var(--ink-2); }
+  .wa-tabbar__item .wa-ic { width: 20px; height: 20px; }
+  .wa-tabbar__item:hover { color: var(--ink); }
+  .wa-tabbar__item[aria-current="page"]::before { top: auto; bottom: -1px; width: auto; left: 14px; right: 14px; margin: 0; border-radius: 2px 2px 0 0; }
+}
+
+.wa-shell { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter) var(--s-9); }
+
+/* ── Type ────────────────────────────────────────────────────── */
+.wa-kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: var(--fs-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.wa-hero { font-size: var(--fs-hero); font-weight: 800; letter-spacing: -.045em; line-height: .95; text-wrap: balance; }
+.wa-h1 { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -.035em; line-height: 1.02; text-wrap: balance; overflow-wrap: anywhere; }
+.wa-h2 { font-size: var(--fs-h2); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+.wa-lede { font-size: 1.125rem; line-height: 1.45; color: var(--ink-2); max-width: var(--read); }
+.wa-prose { max-width: var(--read); font-size: 1.0625rem; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.wa-quiet { color: var(--ink-3); }
+.wa-mono { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.wa-link { color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.wa-note { font-size: var(--fs-meta); color: var(--ink-2); max-width: var(--read); line-height: 1.5; }
+.wa-note a { color: var(--accent-ink); font-weight: 600; }
+
+/* The page head: kicker, title, optional line under. */
+.wa-pagehead { padding: var(--s-6) 0 var(--s-5); display: grid; gap: var(--s-3); }
+@media (min-width: 1024px) { .wa-pagehead { padding: var(--s-8) 0 var(--s-6); } }
+.wa-pagehead__row { display: flex; align-items: end; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
+
+/* Section head: a printed programme's heavy rule, title, count, link. */
+.wa-sect { margin-top: var(--s-8); }
+.wa-sect:first-child { margin-top: 0; }
+.wa-sect__head {
+  display: flex; align-items: baseline; gap: var(--s-3);
+  border-top: 3px solid var(--ink); padding-top: var(--s-3); margin-bottom: var(--s-2);
+}
+.wa-sect__title { font-size: var(--fs-h2); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+.wa-sect__count { font-family: var(--f-mono); font-weight: 500; font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-sect__more { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); padding-left: var(--s-2); font-size: var(--fs-meta); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.wa-sect__more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.wa-sect__sub { font-size: var(--fs-meta); color: var(--ink-3); margin: calc(-1 * var(--s-1)) 0 var(--s-2); }
+
+/* ── Controls ────────────────────────────────────────────────── */
 .wa-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: var(--control-h);
-  padding: 0 var(--s-5);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
-  background: var(--card);
-  color: var(--ink);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background var(--t-fast), border-color var(--t-fast);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 18px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-2);
+  background: var(--paper); color: var(--ink);
+  font-size: var(--fs-body); font-weight: 650; letter-spacing: -.005em; line-height: 1.1;
+  text-decoration: none; white-space: nowrap;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), color var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
 }
+.wa-btn:hover { background: var(--paper-2); }
+.wa-btn:active { transform: translateY(1px); background: var(--paper-3); }
+.wa-btn--primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.wa-btn--primary:hover { background: color-mix(in oklab, var(--accent) 88%, var(--ink)); }
+.wa-btn--primary:active { background: color-mix(in oklab, var(--accent) 80%, var(--ink)); }
+.wa-btn--ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.wa-btn--ink:hover { background: color-mix(in oklab, var(--ink) 86%, var(--paper)); }
+.wa-btn--quiet { border-color: transparent; background: transparent; }
+.wa-btn--quiet:hover { background: var(--paper-2); }
+.wa-btn--sm { min-height: var(--tap); padding: 0 14px; font-size: .9375rem; }
+.wa-btn--wide { width: 100%; }
+.wa-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.wa-btn[disabled], .wa-btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.wa-btn .wa-ic { width: 20px; height: 20px; }
 
-/* One CTA per screen. By day it is petrol — lime fails on paper. */
-.wa-btn--primary {
-  background: var(--petrol);
-  border-color: var(--petrol);
-  color: var(--petrol-ink);
+.wa-btns { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+.wa-iconbtn {
+  display: inline-grid; place-items: center; width: var(--tap); height: var(--tap);
+  border: 0; border-radius: var(--r-2); background: transparent; color: var(--ink); text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
+.wa-iconbtn:hover { background: var(--paper-2); }
+.wa-iconbtn .wa-ic { width: 22px; height: 22px; }
+.wa-iconbtn--ring { border: 1.5px solid var(--ink); }
+.wa-iconbtn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
-.wa-btn--quiet { background: none; border-color: transparent; color: var(--ink-mute); }
-
-.wa-btn:disabled { opacity: .45; cursor: default; }
-
-/* Content width, and wrap rather than squeeze: labels are never equal
-   length. An instance that wants one full-width key sets `flex: 1`. */
-.wa-btn-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: stretch; }
-.wa-btn-row > .wa-btn { flex: 0 1 auto; min-width: 0; }
-
-/* ============================================================
-   14 · COMPONENT — map pin
-   Pins carry all the signal, so the basemap stays quiet enough to read
-   forty labels on top of it. A pin is a time and a distance.
-   ============================================================ */
-
-.wa-pin {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  padding: 4px var(--s-2);
-  border-radius: var(--r-pill);
-  background: var(--card);
-  border: 1px solid var(--rule-strong);
-  box-shadow: 0 1px 3px rgba(6, 10, 11, .28);
-  font: 500 var(--fs-mono)/1 var(--ff-mono);
-  letter-spacing: .04em;
-  color: var(--ink);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: transform var(--t-fast);
+/* Chips: square-shouldered filter keys, never pills. Selected = ink fill
+   plus a check, so the state never rests on colour. */
+.wa-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.wa-chips--scroll {
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter);
+  scroll-padding: 0 var(--gutter);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
 }
-
-/* A pin is a 21px label by design. The tap target is grown to the 44px
-   floor with a pseudo-element instead of by inflating the label. */
-.wa-pin::after {
-  content: '';
-  position: absolute;
-  inset: 50% 0 0 50%;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  transform: translate(-50%, -50%);
-}
-
-.wa-pin__dist { color: var(--ink-mute); }
-
-/* The selected pin is one of the sanctioned lime uses. */
-.wa-pin[aria-current="true"] {
-  background: var(--signal);
-  border-color: var(--signal);
-  color: var(--signal-ink);
-  transform: scale(1.06);
-}
-
-.wa-pin[aria-current="true"] .wa-pin__dist { color: var(--signal-ink); }
-
-/* A cluster pin. Petrol, because it is a count and never "now". Round,
-   because it carries a number instead of a time and a distance. Sits
-   under the selected pin, which never clusters. */
-.wa-pin--cluster {
-  min-width: 34px;
-  height: 34px;
-  justify-content: center;
-  padding: 0 var(--s-1);
-  border-radius: var(--r-pill);
-  background: var(--petrol);
-  border-color: var(--petrol);
-  color: var(--petrol-ink);
-  font-weight: 600;
-}
-
-.wa-pin--now::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: var(--r-pill);
-  background: var(--signal);
-}
-
-/* "Search this area" floats over the canvas — a control, not chrome,
-   so it is opaque. */
-.wa-map-refresh {
-  position: absolute;
-  top: var(--s-4);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-}
-
-/* ============================================================
-   15 · COMPONENT — empty state
-   Carries the next-best answer and names the filter that emptied the
-   list. "No results found" is banned copy.
-   ============================================================ */
-
-/* No top padding: the section's own heading gap already opened the
-   space. */
-.wa-empty {
-  padding: 0 0 var(--s-4);
-  max-width: 46ch;
-}
-
-.wa-empty__title {
-  font: 600 var(--fs-title)/1.3 var(--ff-display);
-  margin: 0 0 var(--s-3);
-  text-wrap: pretty;
-}
-
-.wa-empty__body {
-  font: 400 var(--fs-body)/1.55 var(--ff-ui);
-  color: var(--ink-soft);
-  margin: 0 0 var(--s-5);
-  text-wrap: pretty;
-}
-
-.wa-empty__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
-
-/* The expired / gone-away note. */
-.wa-note {
-  display: flex;
-  gap: var(--s-3);
-  padding: var(--s-4);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--r-control);
-  background: var(--card);
-  font: 400 var(--fs-body)/1.5 var(--ff-ui);
-  color: var(--ink-soft);
-}
-
-/* ============================================================
-   16 · COMPONENT — toast
-   One at a time, above the tab bar, 4s, always with the reverse
-   action. Never a toast for a navigation.
-   ============================================================ */
-
-.wa-toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--s-3));
-  transform: translateX(-50%);
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  width: min(420px, calc(100% - var(--s-7)));
-  padding: var(--s-3) var(--s-4);
-  border-radius: var(--r-control);
-  background: var(--ink);
-  color: var(--ground);
-  font: 600 var(--fs-body)/1.3 var(--ff-ui);
-  box-shadow: 0 4px 16px rgba(6, 10, 11, .3);
-  animation: wa-toast-in var(--t-mid) both;
-}
-
-.wa-toast__text { flex: 1; min-width: 0; }
-
-.wa-toast__undo {
-  flex: 0 0 auto;
-  min-height: var(--tap-min);
-  padding: 0 var(--s-2);
-  background: none;
-  border: 0;
-  color: var(--ground);
-  font: 700 var(--fs-body)/1 var(--ff-ui);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-@keyframes wa-toast-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
-}
-
-/* The offline banner. Sits under the top bar, because the toast owns the
-   bottom slot. Opaque. */
-.wa-offline {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: 39;
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-3) var(--gutter);
-  background: var(--warn);
-  /* `--ground`, not a fixed light ink: --warn is dark by day and light at
-     night, and the banner is an inversion. */
-  color: var(--ground);
-  font: 600 var(--fs-meta)/1.4 var(--ff-ui);
-}
-
-/* How stale the cached list is. */
-.wa-offline__age {
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .03em;
-  opacity: .8;
-  white-space: nowrap;
-}
-
-.wa-offline__dot {
-  flex: 0 0 auto;
-  width: 7px; height: 7px;
-  border-radius: var(--r-pill);
-  background: currentColor;
-}
-
-/* ============================================================
-   17 · COMPONENT — skeleton
-   Matches the row grid exactly. No spinner, and no layout jump when
-   the data lands.
-   ============================================================ */
-
-.wa-skel {
-  background: linear-gradient(90deg, var(--rule) 25%, var(--petrol-tint) 37%, var(--rule) 63%);
-  background-size: 400% 100%;
-  border-radius: var(--s-1);
-  animation: wa-skel 1.4s ease infinite;
-}
-
-.wa-skel--rail  { width: 44px; height: 12px; }
-.wa-skel--title { width: 80%;  height: 18px; }
-.wa-skel--line  { width: 60%;  height: 12px; }
-.wa-skel--well  { width: 100%; aspect-ratio: 1; border-radius: var(--r-card); }
-
-/* Inside a row the blocks take the line boxes of the strings they stand
-   in for (title 22, description 21, meta 15), so a skeleton row is the
-   same 114px as a real one. */
-.wa-row .wa-skel--title { width: 72%;  height: 22px; }
-.wa-row .wa-skel--line  { width: 100%; height: 21px; }
-.wa-row .wa-skel--line ~ .wa-skel--line { width: 40%; height: 15px; }
-
-@keyframes wa-skel {
-  from { background-position: 100% 50%; }
-  to   { background-position: 0 50%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wa-skel { animation: none; background: var(--rule); }
-}
-
-/* ============================================================
-   18 · LAYOUT — carousels and grids
-   Explore is carousels; Tonight is the dense list. Browsing and
-   deciding are different modes.
-   ============================================================ */
-
-/* Tracks are a FIXED width, not minmax(0, …). With a min of 0 the grid
-   satisfies thirteen tracks by shrinking them all to nothing inside the
-   390px container instead of overflowing it, and the row renders as a
-   line of 16px slivers. A carousel must overflow — that is the whole
-   mechanism. */
-.wa-carousel {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc(50% - var(--s-3) / 2);
-  gap: var(--s-3);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  /* Bleed to the screen edge so the row reads as continuing. */
-  margin-inline: calc(var(--gutter) * -1);
-  padding-inline: var(--gutter);
-  padding-bottom: var(--s-2);
-}
-
-.wa-carousel::-webkit-scrollbar { display: none; }
-.wa-carousel > * { scroll-snap-align: start; }
-
-@media (min-width: 768px)  { .wa-carousel { grid-auto-columns: calc(33.333% - var(--s-3)); } }
-@media (min-width: 1280px) { .wa-carousel { grid-auto-columns: calc(16.666% - var(--s-3)); } }
-
-.wa-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-5) var(--s-3);
-}
-
-@media (min-width: 768px)  { .wa-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .wa-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-
-/* The last cell of an Explore row is the bridge to the dense list —
-   a visible object, not a tab you have to remember. */
-.wa-seeall {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: 100%;
-  padding: var(--s-4);
-  border: 1px dashed var(--rule-strong);
-  border-radius: var(--r-card);
-  text-decoration: none;
-  color: var(--ink);
-}
-
-.wa-seeall__label { font: 700 var(--fs-body)/1.3 var(--ff-ui); }
-.wa-seeall__sub { font: 400 var(--fs-mono)/1.3 var(--ff-mono); color: var(--ink-mute); }
-
-/* Explore's two chrome slots. The capsule clears the top bar; the scope
-   row sits tight under it because the two are one control group, and
-   the first section's own --s-8 opens the gap to content. */
-.explore-capsule { margin-top: var(--s-5); }
-
-/* The saved strip container is always in the DOM and filled by JS, hence
-   :not(:empty). Tighter than the --s-8 between sections: it is a
-   companion to the capsule. */
-#savedstrip:not(:empty) { margin-top: var(--s-6); }
-
-/* The capsule is a compact centred control, not a full-bleed bar:
-   stretched to the full column the slots drift apart and it stops reading
-   as one object. Phone keeps 100%. */
-@media (min-width: 1024px) {
-  .explore-capsule {
-    max-width: 960px;
-    margin-inline: auto;
-  }
-}
-.explore-scope { margin-top: var(--s-4); }
-
-/* Four chips overflow a phone gutter, so the row scrolls. Full bleed to
-   the viewport edge with the gutter moved into the scroller's padding, so
-   the fourth chip peeks as content continuing rather than clipping. Same
-   device the density strip uses. `scroll-padding` so a chip revealed by
-   script lands at the gutter. */
-@media (max-width: 767.98px) {
-  .explore-scope {
-    margin-inline: calc(var(--gutter) * -1);
-    padding-inline: var(--gutter);
-    scroll-padding-inline: var(--gutter);
-  }
-}
-
-/* Aligned with the capsule above it (same max-width and centring), so
-   the two read as one control group with one left edge. */
-@media (min-width: 768px) {
-  .explore-scope {
-    max-width: 960px;
-    margin-inline: auto;
-  }
-}
-
-/* ============================================================
-   Saved + You — small shared pieces.
-   ============================================================ */
-
-/* A text-weight button. "Reset what you've learned about me" is an
-   action, not a link, but it should read like prose rather than sit in a
-   control row shouting for attention. */
-.wa-linkbtn {
-  padding: 0;
-  min-height: var(--tap-min);
-  background: none;
-  border: 0;
-  color: var(--petrol);
-  font: 600 var(--fs-body)/1.5 var(--ff-ui);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  text-align: left;
-}
-
-/* Removing a save lives ON the row, so the row needs a third column and
-   the drop key needs its own hit area inside a link. */
-.wa-rows .wa-row:has(.wa-row__drop) {
-  grid-template-columns: 52px minmax(0, 1fr) var(--tap-min);
-}
-
-.wa-row__drop {
-  align-self: center;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: none;
-  color: var(--ink-mute);
-  cursor: pointer;
-}
-
-.wa-row__drop:hover { background: var(--petrol-tint); color: var(--ink); }
-
-/* The gone-away note carries a Remove inline, so the button sits in the
-   text rather than below it. */
-.wa-note .wa-linkbtn { font-size: inherit; min-height: 0; }
-
-/* ============================================================
-   Detail + Source — one template, two data shapes.
-   ============================================================ */
-
-.wa-detail, .wa-source { padding-bottom: var(--s-8); }
-
-/* Detail is the one place a photo earns full bleed: a single item, no
-   peers to compare against, and a reason for atmosphere. */
-.wa-detail__well {
-  position: relative;
-  margin: var(--s-5) calc(var(--gutter) * -1) 0;
-  background: var(--petrol-tint);
-  overflow: hidden;
-}
-
-.wa-detail__photo {
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  /* Pairs with the card photo tagged by view-transition.js, so a card
-     expands into the detail hero rather than the page cross-fading. */
-  view-transition-name: venue-hero;
-}
-
-/* The well holding a venue's own MARK rather than a photograph: same
-   ground as the markless well, contained instead of cropped, and capped
-   tighter than the photo hero. */
-.wa-detail__well--brand {
-  display: grid;
-  place-items: center;
-  background: var(--petrol-tint);
-}
-.wa-detail__well--brand .wa-detail__photo {
-  width: auto;
-  max-width: min(70%, 320px);
-  max-height: min(28vh, 220px);
-  aspect-ratio: auto;
-  object-fit: contain;
-  padding: var(--s-6) 0;
-}
-
-.wa-detail__well--mark { display: grid; place-items: center; aspect-ratio: 3 / 2; }
-.wa-detail__well--mark .wa-mark { width: 96px; height: 96px; background: none; }
-
-/* 3:2 is right on a phone and far too tall at 1240, where it pushes the
-   title and the facts below the fold. Capped rather than re-proportioned:
-   the ratio drives the shape until the ceiling, and cover crops. */
-@media (min-width: 768px) {
-  .wa-detail__photo,
-  .wa-detail__well--mark { max-height: min(46vh, 460px); }
-}
-
-.wa-detail__credit {
-  margin: 0;
-  padding: var(--s-2) var(--gutter);
-  font: 400 var(--fs-mono)/1.4 var(--ff-mono);
-  color: var(--ink-mute);
-}
-
-.wa-detail__well--mark .wa-detail__credit {
-  position: absolute; inset-inline: 0; bottom: 0; text-align: center;
-}
-
-.wa-detail__eyebrow {
-  margin: var(--s-5) 0 0;
-  font: 500 var(--fs-mono)/1.4 var(--ff-mono);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-
-.wa-detail__title { margin-top: var(--s-2); }
-
-.wa-detail__meta {
-  margin: var(--s-2) 0 0;
-  font: 400 var(--fs-mono)/1.5 var(--ff-mono);
-  color: var(--ink-mute);
-}
-
-.wa-detail__desc,
-.wa-detail__note {
-  margin: var(--s-4) 0 0;
-  font: 400 var(--fs-body)/1.6 var(--ff-ui);
-  color: var(--ink-soft);
-  max-width: 62ch;
-}
-
-.wa-detail__note { margin-top: var(--s-3); }
-
-/* A long description stops at three lines with an inline "more" that
-   expands in place. */
-.wa-detail__desc--clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.wa-detail__more {
-  margin-top: var(--s-2);
-  padding: 0;
-  min-height: var(--tap-min);
-  /* --tap-min is a floor in both directions. */
-  min-width: var(--tap-min);
-  background: none;
-  border: 0;
-  color: var(--petrol);
-  font: 600 var(--fs-body)/1 var(--ff-ui);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-/* Three cells answer the only three questions a person on the street
-   has: when, how much, how far. A cell with no answer is not rendered —
-   a placeholder here is the dead-value problem in a louder position. */
-.wa-cells {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: var(--s-3);
-  margin-top: var(--s-6);
-  padding: var(--s-4) 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.wa-cell { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
-
-.wa-cell__value {
-  font: 500 var(--fs-card)/1.3 var(--ff-mono);
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* The primary action is "Walk me there", not "I'm going": the reader has
-   already decided; what they need is the route. */
-.wa-detail__actions { margin-top: var(--s-5); }
-
-/* The week strip is the same object as the density strip — a row per
-   day, value on the right. */
-.wa-week { margin: 0; padding: 0; list-style: none; }
-
-.wa-week__row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-4);
-  padding: var(--s-2) 0;
-  border-bottom: 1px solid var(--rule);
-  font: 400 var(--fs-meta)/1.5 var(--ff-mono);
-  color: var(--ink-mute);
-}
-
-.wa-week__row:last-child { border-bottom: 0; }
-.wa-week__day { width: 3.5em; letter-spacing: .06em; }
-.wa-week__val { margin-left: auto; }
-
-.wa-week__row--today { color: var(--ink); }
-.wa-week__row--today .wa-week__day { font-weight: 500; }
-
-@media (min-width: 768px) {
-  .wa-detail__well { margin-inline: 0; border-radius: var(--r-card-lg); }
-  .wa-detail__photo,
-  .wa-detail__well--mark { aspect-ratio: 16 / 9; }
-}
-
-/* ============================================================
-   Tonight — the dense list, and the map as a mode.
-   ============================================================ */
-
-.tonight-scope { margin-top: var(--s-5); }
-
-.tonight-controls {
-  display: flex;
-  gap: var(--s-3);
-  margin-top: var(--s-3);
-}
-
-/* In map mode the chips and the Filters key stick under the top bar, so
-   the mode can be re-filtered without scrolling out of it. Opaque paper,
-   in flow. Only below 1024, where the map replaces the list; from 1024
-   the map is a sticky companion column and the chain never leaves the
-   screen. */
-@media (max-width: 1023.98px) {
-  body.tonight-mapmode .tonight-head {
-    position: sticky;
-    top: var(--topbar-h);
-    z-index: 4;
-    background: var(--ground);
-    padding-bottom: var(--s-3);
-    border-bottom: 1px solid var(--rule);
-  }
-
-  /* A landscape phone is ~360 tall; sticking this head would pin half the
-     screen, so below 500px of height it scrolls with the page. */
-  @media (max-height: 500px) {
-    body.tonight-mapmode .tonight-head { position: static; }
-  }
-
-  /* Two sticky things cannot own one offset. While the offline banner is
-     present it wins the slot and the filter chain scrolls with the page. */
-  body.tonight-mapmode:has(.wa-offline) .tonight-head { position: static; }
-}
-
-/* The count headline and its subtitle are one unit, so they sit tight
-   together and the list takes the wider gap below. */
-#results-title { margin-top: var(--s-7); }
-#results-sub   { margin-top: var(--s-2); }
-
-.tonight-split { margin-top: var(--s-5); }
-
-.tonight-list { min-width: 0; }
-
-/* Below 1024 the map REPLACES the list — it is a mode, not a companion
-   doing triage the rows do better. The list is hidden rather than
-   unmounted so scroll position and the row↔pin pairing survive the
-   toggle. */
-.tonight-map {
-  position: relative;
-  border-radius: var(--r-card-lg);
-  overflow: hidden;
-  background: var(--petrol-tint);
-  /* min() caps the clamp's 360px floor at what a landscape phone actually
-     has after both chrome bars, so the way out of the mode stays
-     reachable. Portrait is untouched; the 1024 rule below still wins. */
-  height: min(clamp(360px, 62vh, 680px),
-              calc(100vh - var(--topbar-h) - var(--tabbar-h) - var(--s-6)));
-}
-
-.tonight-split--map .tonight-list { display: none; }
-
-/* MapLibre sets `position: relative` INLINE on its container, which beats
-   any position declared here — so `position: absolute; inset: 0` left the
-   element at height 0 and nothing painted. Give it plain width/height
-   instead and let the sized, relatively-positioned .tonight-map be the
-   containing block. Don't fight the library for the property it owns. */
-.tonight-map__canvas { width: 100%; height: 100%; }
-
-/* Pins are positioned in projected pixel space by tonight.js. The layer is
-   a SIBLING of the canvas host, not a child: MapLibre rewrites its
-   container's subtree, and an overlay living inside it is at the mercy of
-   that. The layer ignores pointer events so map drags pass through; each
-   pin takes them back. */
-.tonight-map__pins {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.tonight-map__pins .wa-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-}
-
-.tonight-map__pins .wa-pin[aria-current="true"] {
-  transform: translate(-50%, -50%) scale(1.06);
-  z-index: 2;
-}
-
-/* The bar and the drawer stack inside one opaque foot (not two elements
-   pinned to bottom:0, which overlapped). The 42% cap is on the whole
-   foot so the map keeps the larger half. */
-.tonight-map__foot {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  max-height: 42%;
-}
-
-/* The drawer: the picks currently in view, under the bar. A mode is
-   never empty. */
-.tonight-map__drawer {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  margin: 0;
-  padding: 0 var(--gutter) var(--s-3);
-  /* Opaque, not glass: glass over live content is what the two-element
-     rule forbids. The hairline is what reads as "this floats". */
-  background: var(--ground);
-  border-top: 1px solid var(--rule);
-}
-
-.tonight-map__drawer:empty { display: none; }
-
-/* Rows inside the drawer are the same component, just tighter -- the
-   drawer is a peek, not a second list. */
-.tonight-map__drawer .wa-row { padding: var(--s-3) 0; }
-.tonight-map__drawer .wa-row__desc { display: none; }
-
-.tonight-map__bar {
+.wa-chips--scroll::-webkit-scrollbar { display: none; }
+.wa-chip {
   flex: none;
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
-  background: var(--card);
-  border-top: 1px solid var(--rule);
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 40px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  background: var(--paper); color: var(--ink);
+  font-size: .9375rem; font-weight: 600; white-space: nowrap; text-decoration: none;
+  transition: background var(--t-fast), border-color var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.wa-chip .wa-ic { width: 18px; height: 18px; }
+.wa-chip:hover { border-color: var(--ink); }
+.wa-chip__n { font-family: var(--f-mono); font-weight: 500; font-size: .8125rem; color: var(--ink-3); }
+.wa-chip[aria-pressed="true"], .wa-chip[aria-selected="true"], .wa-chip[aria-current="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.wa-chip[aria-pressed="true"] .wa-chip__n, .wa-chip[aria-selected="true"] .wa-chip__n, .wa-chip[aria-current="true"] .wa-chip__n { color: color-mix(in oklab, var(--paper) 70%, var(--ink)); }
+.wa-chip[aria-pressed="true"]::before { content: ""; width: 12px; height: 7px; margin-right: 1px; border: solid currentColor; border-width: 0 0 2px 2px; transform: translateY(-2px) rotate(-45deg); }
+.wa-chip[disabled] { opacity: .4; pointer-events: none; }
+
+/* Search field: the first thing on Tonight. */
+.wa-search { position: relative; display: block; }
+.wa-search__icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--ink); }
+.wa-search__icon .wa-ic { width: 22px; height: 22px; }
+.wa-search__input {
+  width: 100%; height: 56px; padding: 0 52px 0 50px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-3);
+  background: var(--paper); color: var(--ink);
+  font-size: 1.0625rem; font-weight: 500;
+  -webkit-appearance: none; appearance: none;
+  transition: box-shadow var(--t-fast);
+}
+.wa-search__input::placeholder { color: var(--ink-3); font-weight: 400; }
+.wa-search__input:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 45%, transparent); }
+.wa-search__input::-webkit-search-cancel-button { display: none; }
+.wa-search__clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+.wa-search--compact .wa-search__input { height: 48px; font-size: 1rem; border-width: 1px; border-color: var(--line); background: var(--paper-2); }
+.wa-search--compact .wa-search__input:focus { border-color: var(--ink); background: var(--paper); }
+
+/* Suggestions under the search field. */
+.wa-suggest { margin-top: var(--s-2); border: 1.5px solid var(--ink); border-radius: var(--r-3); background: var(--paper); overflow: hidden; box-shadow: var(--shadow); }
+.wa-suggest__item { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: var(--s-3); padding: 10px var(--s-4); min-height: 56px; text-decoration: none; border-top: 1px solid var(--hair); }
+.wa-suggest__item:first-child { border-top: 0; }
+.wa-suggest__item:hover, .wa-suggest__item:focus-visible { background: var(--paper-2); outline: none; }
+.wa-suggest__glyph { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--r-1); background: var(--paper-2); color: var(--ink-2); }
+.wa-suggest__title { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.wa-suggest__meta { font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-suggest__side { font-family: var(--f-mono); font-size: var(--fs-meta); color: var(--ink-2); }
+.wa-suggest__all { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: 14px var(--s-4); min-height: 52px; font-weight: 700; text-decoration: none; background: var(--paper-2); border-top: 1px solid var(--hair); }
+.wa-suggest__empty { padding: var(--s-4); color: var(--ink-2); font-size: var(--fs-meta); }
+
+/* Fields inside sheets. */
+.wa-field { display: grid; gap: var(--s-2); padding: var(--s-4) 0; border-top: 1px solid var(--hair); }
+.wa-field:first-child { border-top: 0; padding-top: 0; }
+.wa-field__label { font-size: var(--fs-label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.wa-field__consequence { font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-input { width: 100%; height: 48px; padding: 0 14px; border: 1.5px solid var(--line); border-radius: var(--r-2); background: var(--paper); font-size: 1rem; }
+.wa-input:focus { outline: none; border-color: var(--ink); }
+.wa-linkbtn { border: 0; background: none; padding: 10px 0; min-height: var(--tap); color: var(--accent-ink); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.field-pw { position: relative; display: block; }
+.field-pw .wa-input { padding-right: 52px; }
+.pw-toggle { position: absolute; right: 2px; top: 2px; width: var(--tap); height: var(--tap); border: 0; background: none; display: grid; place-items: center; color: var(--ink-2); }
+.pw-toggle .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; }
+
+/* Segmented control. */
+.wa-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1.5px solid var(--ink); border-radius: var(--r-2); overflow: hidden; }
+.wa-seg__opt { min-height: var(--tap); border: 0; border-left: 1.5px solid var(--ink); background: var(--paper); font-weight: 650; font-size: .9375rem; padding: 0 10px; }
+.wa-seg__opt:first-child { border-left: 0; }
+.wa-seg__opt[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* Switch row: the whole row is the button. */
+.wa-switch { display: flex; align-items: center; gap: var(--s-4); width: 100%; min-height: 56px; padding: 0; border: 0; background: none; text-align: left; }
+.wa-switch__text { flex: 1; display: grid; gap: 2px; }
+.wa-switch__title { font-weight: 650; }
+.wa-switch__sub { font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-switch__track { flex: none; position: relative; width: 48px; height: 28px; border-radius: 14px; border: 1.5px solid var(--ink); background: var(--paper); transition: background var(--t-fast); }
+.wa-switch__track::after { content: ""; position: absolute; left: 3px; top: 3px; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); transition: transform var(--t-med) var(--ease), background var(--t-fast); }
+.wa-switch[aria-pressed="true"] .wa-switch__track { background: var(--ink); }
+.wa-switch[aria-pressed="true"] .wa-switch__track::after { transform: translateX(20px); background: var(--accent); }
+.wa-switch[disabled] { opacity: .45; }
+
+.wa-range { width: 100%; accent-color: var(--ink); height: var(--tap); }
+
+/* ── Rail values: time, walk, now ────────────────────────────── */
+.wa-now {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 7px 3px 6px; border-radius: 3px;
+  background: var(--accent); color: var(--on-accent);
+  font: 800 .75rem/1 var(--f-sans); letter-spacing: .08em; text-transform: uppercase;
+}
+.wa-now::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: wa-pulse 1.6s var(--ease) infinite; }
+@keyframes wa-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.wa-tag { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-label); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.wa-tag .wa-ic { width: 15px; height: 15px; stroke-width: 2; }
+.wa-tag__why { padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; letter-spacing: .06em; }
+.wa-new { font-size: var(--fs-label); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); }
+
+/* ── The row ─────────────────────────────────────────────────────
+   Rail (time, walk) · body (why, title, original, meta) · thumb.
+   Titles wrap, never truncate; meta may ellipsize. */
+.wa-rows { border-top: 1px solid var(--hair); }
+.wa-rows--flush { border-top: 0; }
+.wa-row {
+  position: relative;
+  display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: var(--s-3);
+  padding: var(--s-4) 0; border-bottom: 1px solid var(--hair);
+  text-decoration: none; color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.wa-row:active { background: var(--paper-2); }
+.wa-row--now { box-shadow: inset 0 3px 0 -1px var(--accent); }
+.wa-row__rail { display: flex; flex-direction: column; gap: 6px; padding-top: 1px; min-width: 0; }
+.wa-row__time { display: block; font: 500 1.0625rem/1.15 var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.wa-row__time--word { font-family: var(--f-sans); font-weight: 800; font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.wa-row__walk { display: inline-flex; align-items: center; gap: 2px; font: 500 .8125rem/1.2 var(--f-mono); color: var(--ink-2); white-space: nowrap; }
+.wa-row__walk .wa-ic { width: 15px; height: 15px; margin-left: -2px; }
+.wa-row__area { display: block; font-size: .75rem; line-height: 1.25; color: var(--ink-3); overflow-wrap: anywhere; }
+.wa-row__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wa-row__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+.wa-row__title { display: block; font-size: var(--fs-title); font-weight: 650; line-height: 1.25; letter-spacing: -.012em; overflow-wrap: anywhere; text-wrap: pretty; }
+.wa-row__orig { display: block; font-size: var(--fs-meta); color: var(--ink-3); line-height: 1.3; overflow-wrap: anywhere; }
+.wa-row__meta { display: block; margin-top: 3px; font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-row__thumb { width: 64px; height: 64px; border-radius: var(--r-1); overflow: hidden; background: var(--paper-2); display: grid; place-items: center; color: var(--ink-3); align-self: start; }
+.wa-row__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.wa-row__thumb .wa-ic { width: 26px; height: 26px; stroke-width: 1.5; }
+.wa-row__side { align-self: center; display: flex; gap: 2px; }
+@media (min-width: 768px) {
+  .wa-row { grid-template-columns: 76px minmax(0, 1fr) auto; gap: var(--s-4); padding: 18px 0; }
+  .wa-row__thumb { width: 88px; height: 66px; }
+  .wa-row__time { font-size: 1.1875rem; }
+}
+@media (hover: hover) {
+  .wa-row:hover .wa-row__title { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .wa-row:hover { background: color-mix(in oklab, var(--paper-2) 55%, transparent); }
 }
 
-.tonight-map__bar .wa-fact { margin-right: auto; }
+/* A day heading inside a list: the programme's date line. */
+.wa-day { position: sticky; top: calc(var(--topbar-h) + var(--sticky-extra, 0px)); z-index: 5; display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-5) 0 var(--s-2); background: var(--paper); border-bottom: 2px solid var(--ink); }
+.wa-day__name { font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; }
+.wa-day__date { font-size: var(--fs-meta); color: var(--ink-3); font-weight: 500; }
+.wa-day__n { margin-left: auto; font: 500 var(--fs-meta) var(--f-mono); color: var(--ink-3); }
+.wa-day + .wa-rows { border-top: 0; }
+
+/* ── Poster card (This weekend, For you) ───────────────────────── */
+.wa-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: min(74vw, 260px); gap: var(--s-4); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter) var(--s-2); scroll-padding: 0 var(--gutter); }
+.wa-shelf::-webkit-scrollbar { display: none; }
+.wa-shelf > * { scroll-snap-align: start; }
+@media (min-width: 1024px) { .wa-shelf { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); grid-auto-columns: auto; overflow: visible; margin: 0; padding: var(--s-3) 0 0; } }
+
+.wa-poster { display: flex; flex-direction: column; gap: var(--s-2); text-decoration: none; color: inherit; min-width: 0; }
+.wa-poster__art { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-1); overflow: hidden; background: var(--paper-2); }
+.wa-poster__art img { width: 100%; height: 100%; object-fit: cover; transition: transform 600ms var(--ease); }
+.wa-poster__date { position: absolute; left: 0; top: 0; display: grid; justify-items: start; padding: 7px 9px 8px; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: var(--r-1); line-height: 1; }
+.wa-poster__dow { font-size: .6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.wa-poster__dom { font-size: 1.75rem; font-weight: 800; letter-spacing: -.04em; }
+.wa-poster__time { position: absolute; right: 8px; bottom: 8px; padding: 4px 7px; border-radius: 3px; background: var(--paper); color: var(--ink); font: 500 .8125rem/1 var(--f-mono); }
+.wa-poster__type { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: var(--s-4); background: var(--ink); color: var(--paper); }
+.wa-poster__type .wa-ic { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; stroke-width: 1.5; color: var(--accent); }
+.wa-poster__type span { font-size: 1.5rem; font-weight: 800; letter-spacing: -.035em; line-height: 1; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.wa-poster__title { font-size: var(--fs-title); font-weight: 650; line-height: 1.25; letter-spacing: -.012em; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.wa-poster__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) {
+  .wa-poster:hover .wa-poster__art img { transform: scale(1.03); }
+  .wa-poster:hover .wa-poster__title { text-decoration: underline; text-underline-offset: 3px; }
+}
+
+/* ── Places ─────────────────────────────────────────────────── */
+.wa-place {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: var(--s-3); align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--hair); text-decoration: none; color: inherit;
+}
+.wa-place:active { background: var(--paper-2); }
+.wa-place__glyph { width: 52px; height: 52px; border-radius: var(--r-1); display: grid; place-items: center; background: var(--paper-2); color: var(--ink); overflow: hidden; }
+.wa-place__glyph img { width: 100%; height: 100%; object-fit: cover; }
+.wa-place__glyph .wa-ic { width: 24px; height: 24px; stroke-width: 1.6; }
+.wa-place__body { display: grid; gap: 2px; min-width: 0; }
+.wa-place__name { font-size: var(--fs-title); font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
+.wa-place__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-place__side { display: grid; justify-items: end; gap: 4px; text-align: right; }
+.wa-place__walk { display: inline-flex; align-items: center; gap: 2px; font: 500 .875rem var(--f-mono); color: var(--ink-2); white-space: nowrap; }
+.wa-place__walk .wa-ic { width: 15px; height: 15px; }
+@media (hover: hover) { .wa-place:hover .wa-place__name { text-decoration: underline; text-underline-offset: 3px; } }
+
+/* Open state: a shape plus words, never colour alone. */
+.wa-open { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 650; white-space: nowrap; color: var(--ink-2); }
+.wa-open::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+.wa-open--yes { color: var(--ink); }
+.wa-open--yes::before { background: var(--accent); border-color: var(--accent); }
+.wa-open--no::before { border-radius: 1px; transform: rotate(45deg); width: 7px; height: 7px; }
+.wa-open--unknown { color: var(--ink-3); font-weight: 500; }
+.wa-open--unknown::before { border-style: dashed; }
+
+/* Places list: one column on phones, two from 1024. */
+.places-grid { display: grid; border-top: 1px solid var(--hair); margin-top: var(--s-3); }
+@media (min-width: 1024px) { .places-grid { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); } }
+
+/* ── Area strip ─────────────────────────────────────────────── */
+.wa-areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--hair); }
+.wa-area { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); padding: 14px 0; min-height: 52px; border-bottom: 1px solid var(--hair); text-decoration: none; font-weight: 650; }
+.wa-area:nth-child(odd) { padding-right: var(--s-4); border-right: 1px solid var(--hair); }
+.wa-area:nth-child(even) { padding-left: var(--s-4); }
+.wa-area__n { font: 500 var(--fs-meta) var(--f-mono); color: var(--ink-3); }
+.wa-area__sub { display: block; font-size: .75rem; font-weight: 500; color: var(--ink-3); }
+@media (hover: hover) { .wa-area:hover span:first-child { text-decoration: underline; text-underline-offset: 3px; } }
+
+/* ── Interests (first run) ───────────────────────────────────── */
+.wa-interest { margin: var(--s-2) 0 var(--s-8); padding: var(--s-5); border-radius: var(--r-3); background: var(--ink); color: var(--paper); display: grid; gap: var(--s-4); }
+.wa-interest__head { display: flex; align-items: start; justify-content: space-between; gap: var(--s-3); }
+.wa-interest__title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+.wa-interest__sub { font-size: var(--fs-meta); color: color-mix(in oklab, var(--paper) 72%, var(--ink)); margin-top: 4px; }
+.wa-interest .wa-chip { background: transparent; color: var(--paper); border-color: color-mix(in oklab, var(--paper) 35%, var(--ink)); }
+.wa-interest .wa-chip:hover { border-color: var(--paper); }
+.wa-interest .wa-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.wa-interest .wa-iconbtn { color: var(--paper); }
+.wa-interest .wa-iconbtn:hover { background: color-mix(in oklab, var(--paper) 12%, var(--ink)); }
+.wa-interest__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.wa-interest__count { font: 500 var(--fs-meta) var(--f-mono); color: color-mix(in oklab, var(--paper) 72%, var(--ink)); }
+.wa-interest .wa-btn--primary[disabled] { opacity: .5; }
+
+/* The "new since" line. */
+.wa-since { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-4); padding: 12px 14px; border: 1.5px solid var(--ink); border-radius: var(--r-2); text-decoration: none; font-weight: 600; }
+.wa-since .wa-ic:last-child { margin-left: auto; }
+button.wa-since { width: 100%; background: none; color: inherit; text-align: left; font-size: .9375rem; }
+button.wa-since[disabled] { opacity: .6; }
+.wa-since__n { font: 500 .9375rem var(--f-mono); background: var(--accent); color: var(--on-accent); padding: 2px 7px; border-radius: 3px; }
+
+/* ── Home ─────────────────────────────────────────────────────── */
+.home-hero { padding: var(--s-6) 0 var(--s-5); display: grid; gap: var(--s-4); }
+.home-hero__line { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.home-hero__clock { font: 500 var(--fs-label) var(--f-mono); letter-spacing: .02em; color: var(--ink-2); }
+.home-hero__title { max-width: 16ch; }
+.home-hero__title em { font-style: normal; color: var(--accent-ink); }
+.home-grid { display: grid; gap: 0; }
+.home-main, .home-side { min-width: 0; }
+.home-side { margin-top: var(--s-8); }
+@media (min-width: 1024px) {
+  .home-hero { padding: var(--s-9) 0 var(--s-7); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: end; gap: var(--s-8); }
+  .home-hero__search { padding-bottom: 6px; }
+  .home-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: var(--s-9); align-items: start; }
+  .home-side { margin-top: 0; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); }
+}
+
+/* ── Programme ────────────────────────────────────────────────── */
+.prog-controls { position: sticky; top: var(--topbar-h); z-index: 20; background: var(--paper); margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter) var(--s-3); display: grid; gap: var(--s-3); border-bottom: 1px solid var(--hair); }
+.prog-controls__bar { display: flex; gap: var(--s-2); align-items: center; }
+.prog-controls__bar .wa-search { flex: 1; }
+.prog-layout { display: grid; gap: var(--s-6); }
+.prog-aside { display: none; }
+.prog-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-4) 0 0; }
+.prog-summary__text { font-size: var(--fs-meta); color: var(--ink-2); }
+.prog-summary__text strong { color: var(--ink); font-weight: 700; }
+.prog-badge { font: 500 .75rem/1 var(--f-mono); background: var(--accent); color: var(--on-accent); border-radius: 3px; padding: 3px 5px; }
+@media (min-width: 1024px) {
+  .prog-controls { position: static; margin: 0; padding: 0 0 var(--s-4); border: 0; }
+  .prog-controls__bar .prog-filters-btn { display: none; }
+  .prog-layout { grid-template-columns: 290px minmax(0, 1fr); gap: var(--s-9); align-items: start; }
+  .prog-aside { display: block; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); max-height: calc(100vh - var(--topbar-h) - var(--s-7)); overflow: auto; padding-right: var(--s-2); }
+  .prog-list .wa-day { --sticky-extra: 0px; }
+}
+
+/* The week strip: seven days, a bar for how busy each is. */
+.wa-week7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wa-week7__day {
+  display: grid; justify-items: center; align-content: end; gap: 4px;
+  min-height: 72px; padding: 6px 0 7px; border: 1px solid var(--line); border-radius: var(--r-2);
+  background: var(--paper); -webkit-tap-highlight-color: transparent;
+}
+.wa-week7__bar { width: 60%; max-width: 26px; border-radius: 2px 2px 0 0; background: var(--ink); opacity: .85; }
+.wa-week7__dow { font-size: .6875rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.wa-week7__dom { font: 500 .8125rem/1 var(--f-mono); color: var(--ink-3); }
+.wa-week7__n { font: 500 .6875rem/1 var(--f-mono); color: var(--ink-3); }
+.wa-week7__day[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.wa-week7__day[aria-pressed="true"] .wa-week7__bar { background: var(--accent); opacity: 1; }
+.wa-week7__day[aria-pressed="true"] .wa-week7__dom, .wa-week7__day[aria-pressed="true"] .wa-week7__n { color: color-mix(in oklab, var(--paper) 70%, var(--ink)); }
+.wa-week7__day--empty .wa-week7__dow { color: var(--ink-3); }
+@media (max-width: 371px) { .wa-week7 { gap: 2px; } .wa-week7__day { border-radius: var(--r-1); } }
+
+/* ── Detail ───────────────────────────────────────────────────── */
+.det { padding-top: var(--s-4); }
+.det-grid { display: grid; gap: var(--s-6); }
+.det-media { position: relative; margin: 0 calc(-1 * var(--gutter)); aspect-ratio: 4 / 3; max-height: 58vh; background: var(--paper-2); overflow: hidden; }
+.det-media img { width: 100%; height: 100%; object-fit: cover; view-transition-name: venue-hero; }
+.det-media--logo { display: grid; place-items: center; }
+.det-media--logo img { width: auto; height: auto; max-width: 46%; max-height: 46%; object-fit: contain; }
+.det-credit { position: absolute; right: 8px; bottom: 8px; max-width: 70%; padding: 3px 7px; border-radius: 3px; background: rgba(0,0,0,.55); color: #fff; font-size: .6875rem; line-height: 1.3; }
+/* No photo: a typographic block, like a gig flyer's top half. */
+.det-type { position: relative; margin: 0 calc(-1 * var(--gutter)); min-height: 220px; padding: var(--s-6) var(--gutter); background: var(--ink); color: var(--paper); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+.det-type__word { font-size: clamp(2.75rem, 1.5rem + 7vw, 6rem); font-weight: 800; letter-spacing: -.05em; line-height: .9; overflow-wrap: anywhere; }
+.det-type .wa-ic { position: absolute; right: var(--gutter); top: var(--s-5); width: 44px; height: 44px; stroke-width: 1.4; color: var(--accent); }
+.det-type__kind { font-size: var(--fs-label); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--s-3); }
+
+.det-head { display: grid; gap: var(--s-3); }
+.det-orig { font-size: 1.0625rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.det-summary { font-size: 1.125rem; line-height: 1.45; color: var(--ink-2); max-width: var(--read); }
+
+/* The fact grid: When · Entry · Walk. Printed-ticket stub. */
+.det-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); border: 1.5px solid var(--ink); border-radius: var(--r-2); overflow: hidden; }
+.det-fact { padding: 12px 14px 13px; border-left: 1.5px dashed var(--line); display: grid; gap: 4px; min-width: 0; }
+.det-fact:first-child { border-left: 0; }
+.det-fact__label { font-size: .6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.det-fact__value { font-size: 1.125rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.det-fact__value.wa-mono { font-size: 1.0625rem; }
+.det-fact__sub { font-size: .8125rem; color: var(--ink-3); }
+
+.det-actions { display: grid; gap: var(--s-2); }
+.det-actions__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--s-2); }
+.det-actions__row .wa-btn { padding: 0 8px; flex-direction: column; gap: 4px; min-height: 64px; font-size: .8125rem; font-weight: 650; border-width: 1px; border-color: var(--line); }
+.det-actions__row .wa-btn[aria-pressed="true"] { border-color: var(--ink); }
+.det-actions__row .wa-btn .wa-ic { width: 22px; height: 22px; }
+
+.det-block { display: grid; gap: var(--s-3); padding-top: var(--s-5); border-top: 1px solid var(--hair); }
+.det-block__title { font-size: var(--fs-label); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.det-more { justify-self: start; }
+.wa-prose--clamp { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Ended / notice. */
+.det-notice { display: flex; gap: var(--s-3); align-items: start; padding: 14px 16px; border-radius: var(--r-2); background: var(--paper-2); border-left: 4px solid var(--ink); }
+.det-notice strong { display: block; }
+
+/* The venue as a small card with its photo. */
+.vcard { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: var(--s-4); align-items: center; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-2); text-decoration: none; color: inherit; transition: border-color var(--t-fast); }
+.vcard:hover { border-color: var(--ink); }
+.vcard__art { width: 76px; height: 76px; border-radius: var(--r-1); overflow: hidden; background: var(--ink); color: var(--accent); display: grid; place-items: center; }
+.vcard__art img { width: 100%; height: 100%; object-fit: cover; }
+.vcard__art .wa-ic { width: 30px; height: 30px; stroke-width: 1.5; }
+.vcard__body { display: grid; gap: 3px; min-width: 0; }
+.vcard__name { font-size: 1.125rem; font-weight: 750; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
+.vcard__meta { font-size: var(--fs-meta); color: var(--ink-2); }
+
+/* Venue links as icons. */
+.det-links { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.det-links .wa-iconbtn { border: 1px solid var(--line); width: 48px; height: 48px; }
+.det-links .wa-iconbtn:hover { border-color: var(--ink); }
+
+/* Hours: the week, today marked with a bar and bold. */
+.hours { display: grid; border-top: 1px solid var(--hair); }
+.hours__row { display: grid; grid-template-columns: 56px 1fr auto; gap: var(--s-3); align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--hair); font-size: .9375rem; }
+.hours__day { font-weight: 700; font-size: .8125rem; letter-spacing: .06em; }
+.hours__val { font-family: var(--f-mono); font-weight: 500; font-size: .875rem; color: var(--ink-2); }
+.hours__row--today { box-shadow: inset 4px 0 0 var(--accent); padding-left: var(--s-3); grid-template-columns: 44px 1fr auto; }
+.hours__row--today .hours__val { color: var(--ink); }
+.hours__today { font-size: .6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+
+.det-prov { font-size: var(--fs-meta); color: var(--ink-3); display: grid; gap: 4px; }
+.det-prov a { color: var(--ink-2); font-weight: 600; }
 
 @media (min-width: 1024px) {
-  /* The companion column appears on results only. The map sticks
-     while the list scrolls past it. */
-  .tonight-split--map {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
-    gap: var(--s-6);
-    align-items: start;
-  }
-  .tonight-split--map .tonight-list { display: block; }
-  .tonight-split--map .tonight-map {
-    position: sticky;
-    top: calc(var(--topbar-h) + var(--s-4));
-    height: calc(100vh - var(--topbar-h) - var(--s-8));
-  }
-  /* With the list beside it, "Show list" has nothing to do. */
-  .tonight-split--map #show-list { display: none; }
+  .det { padding-top: var(--s-7); }
+  .det-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s-9); align-items: start; }
+  .det-grid__media { position: sticky; top: calc(var(--topbar-h) + var(--s-6)); display: grid; gap: var(--s-4); }
+  .det-media, .det-type { margin: 0; border-radius: var(--r-2); max-height: min(70vh, 640px); }
+  .det-media { aspect-ratio: 4 / 5; }
+  .det-type { aspect-ratio: 4 / 5; min-height: 0; padding: var(--s-7); }
+  .det-grid__main { display: grid; gap: var(--s-6); }
+}
+@media (min-width: 768px) and (max-width: 1023px) { .det-media { max-height: 46vh; } }
+.det-grid__main { display: grid; gap: var(--s-6); }
+
+/* ── Sheet: the one modal ───────────────────────────────────── */
+.wa-sheet { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; height: 100%; max-width: none; max-height: none; background: transparent; color: var(--ink); overflow: hidden; }
+.wa-sheet::backdrop { background: rgba(10,10,9,.52); }
+.wa-sheet[open] { display: flex; align-items: flex-end; justify-content: center; }
+.wa-sheet__panel { width: 100%; max-height: min(88dvh, 820px); display: flex; flex-direction: column; background: var(--paper); border-radius: var(--r-sheet) var(--r-sheet) 0 0; box-shadow: var(--shadow-lg); animation: wa-sheet-in var(--t-med) var(--ease); padding-bottom: env(safe-area-inset-bottom); }
+@keyframes wa-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.wa-sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-4) var(--s-4) var(--s-3) var(--s-5); border-bottom: 1px solid var(--hair); }
+.wa-sheet__head::before { content: ""; position: absolute; left: 50%; margin-left: -20px; top: 7px; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
+.wa-sheet__panel { position: relative; }
+.wa-sheet__title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; }
+.wa-sheet__close { width: var(--tap); height: var(--tap); border: 0; border-radius: var(--r-2); background: var(--paper-2); display: grid; place-items: center; }
+.wa-sheet__body { overflow: auto; padding: var(--s-5); overscroll-behavior: contain; }
+.wa-sheet__foot { display: flex; gap: var(--s-2); padding: var(--s-3) var(--s-5) var(--s-4); border-top: 1px solid var(--hair); }
+.wa-sheet__foot:empty { display: none; }
+.wa-sheet__parked { display: flex; align-items: center; gap: var(--s-3); width: 100%; min-height: 56px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--paper); text-align: left; }
+.wa-sheet__parked-label { font-weight: 650; }
+.wa-sheet__parked-value { margin-left: auto; color: var(--ink-3); font-size: var(--fs-meta); }
+@media (min-width: 768px) {
+  .wa-sheet[open] { align-items: center; }
+  .wa-sheet__panel { width: min(560px, calc(100% - 48px)); border-radius: var(--r-sheet); max-height: min(84vh, 820px); }
+  .wa-sheet__head::before { display: none; }
 }
 
-/* ============================================================
-   19 · Sign-in card
-   The account card on You, and the text inputs it uses.
-   ============================================================ */
+/* ── Map ──────────────────────────────────────────────────────── */
+body[data-page="map"] { padding-bottom: 0; overflow: hidden; height: 100dvh; }
+.map-page { position: fixed; left: 0; right: 0; top: calc(var(--topbar-h) + env(safe-area-inset-top)); bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+.map-canvas { position: absolute; inset: 0; background: var(--paper-2); }
+.map-pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.map-top { position: absolute; left: var(--s-3); right: var(--s-3); top: var(--s-3); z-index: 3; display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: start; pointer-events: none; }
+.map-top > * { pointer-events: auto; }
+.map-layer { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 12px 0 10px; border: 1.5px solid var(--ink); border-radius: var(--r-2); background: var(--paper); font-weight: 650; font-size: .875rem; box-shadow: var(--shadow); }
+.map-layer__key { flex: none; }
+.map-layer__key--event { width: 22px; height: 14px; border-radius: 3px; background: var(--accent); }
+.map-layer__key--place { width: 14px; height: 14px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink); margin: 0 3px; }
+.map-layer[aria-pressed="false"] { opacity: .62; border-style: dashed; }
+.map-layer[aria-pressed="false"] .map-layer__key { filter: grayscale(1); opacity: .5; }
+.map-layer .wa-chip__n { margin-left: 2px; }
+.map-when { margin-left: auto; }
+.map-when select { min-height: var(--tap); padding: 0 34px 0 12px; border: 1.5px solid var(--ink); border-radius: var(--r-2); background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center / 16px; font-weight: 650; font-size: .875rem; -webkit-appearance: none; appearance: none; box-shadow: var(--shadow); }
+.map-locate { position: absolute; right: var(--s-3); z-index: 3; bottom: calc(var(--drawer-peek, 132px) + var(--s-3)); background: var(--paper); border: 1.5px solid var(--ink); box-shadow: var(--shadow); }
+.map-locate:hover { background: var(--paper-2); }
 
-.wa-signin {
-  margin: var(--s-8) 0 var(--s-7);
-  padding: var(--s-6);
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-card-lg);
+/* Event pins are tags with the time; venue pins are round with a glyph.
+   Two shapes, so the layers read without colour. */
+.wa-pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; border: 0; padding: 0; background: none; -webkit-tap-highlight-color: transparent; }
+.wa-pin::after { content: ""; position: absolute; inset: -8px; }
+.wa-pin__tag { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; border-radius: 4px; background: var(--accent); color: var(--on-accent); font: 500 .8125rem/1 var(--f-mono); white-space: nowrap; box-shadow: 0 1px 0 rgba(0,0,0,.25), 0 4px 10px rgba(0,0,0,.18); }
+.wa-pin__tag::after { content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--accent); }
+.wa-pin--event[aria-current="true"] .wa-pin__tag { background: var(--ink); color: var(--paper); transform: scale(1.12); }
+.wa-pin--event[aria-current="true"] .wa-pin__tag::after { border-top-color: var(--ink); }
+.wa-pin--place { transform: translate(-50%, -50%); }
+.wa-pin__disc { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--paper); box-shadow: 0 0 0 2px var(--paper), 0 3px 8px rgba(0,0,0,.25); }
+.wa-pin__disc .wa-ic { width: 16px; height: 16px; stroke-width: 2; }
+.wa-pin--place.is-shut .wa-pin__disc { background: var(--paper); color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink), 0 3px 8px rgba(0,0,0,.2); }
+.wa-pin--place[aria-current="true"] .wa-pin__disc { background: var(--accent); color: var(--on-accent); transform: scale(1.18); }
+.wa-pin--cluster { transform: translate(-50%, -50%); }
+.wa-pin__count { display: grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px; border-radius: 18px; background: var(--ink); color: var(--paper); font: 500 .875rem var(--f-mono); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 80%, transparent), 0 4px 10px rgba(0,0,0,.25); }
+.wa-pin--me { transform: translate(-50%, -50%); pointer-events: none; }
+.wa-pin--me span { display: block; width: 16px; height: 16px; border-radius: 50%; background: #2f6bff; box-shadow: 0 0 0 3px #fff, 0 0 0 10px rgba(47,107,255,.2); }
+
+/* The drawer: what's in view, by walking time. */
+.map-drawer { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--paper); border-radius: var(--r-sheet) var(--r-sheet) 0 0; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: var(--drawer-peek, 132px); transition: max-height var(--t-med) var(--ease); }
+.map-drawer[data-open="true"] { max-height: 64%; }
+.map-drawer__handle { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s-2); width: 100%; min-height: 60px; padding: var(--s-4) var(--s-5) var(--s-3); border: 0; background: none; text-align: left; position: relative; }
+.map-drawer__handle::before { content: ""; position: absolute; left: 50%; top: 7px; margin-left: -20px; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
+.map-drawer__title { font-size: 1.125rem; font-weight: 800; letter-spacing: -.02em; }
+.map-drawer__sub { font-size: var(--fs-meta); color: var(--ink-3); }
+.map-drawer__handle .wa-ic { transition: transform var(--t-med) var(--ease); transform: rotate(180deg); }
+.map-drawer[data-open="true"] .map-drawer__handle .wa-ic { transform: none; }
+.map-drawer__list { overflow: auto; padding: 0 var(--s-5) var(--s-4); overscroll-behavior: contain; }
+.map-drawer__list .wa-rows, .map-drawer__list .wa-place:first-child { border-top: 1px solid var(--hair); }
+.map-drawer__label { font-size: var(--fs-label); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); padding: var(--s-4) 0 var(--s-2); }
+.map-legend-note { font-size: var(--fs-meta); color: var(--ink-3); padding: var(--s-3) 0; }
+@media (min-width: 1024px) {
+  .map-page { bottom: 0; top: var(--topbar-h); }
+  .map-canvas, .map-pins { left: 420px; }
+  .map-top { left: calc(420px + var(--s-4)); right: var(--s-4); top: var(--s-4); }
+  .map-drawer { top: 0; right: auto; width: 420px; max-height: none !important; border-radius: 0; border-right: 1px solid var(--hair); box-shadow: none; }
+  .map-drawer__handle { cursor: default; padding: var(--s-5) var(--s-5) var(--s-3); }
+  .map-drawer__handle::before, .map-drawer__handle .wa-ic { display: none; }
+  .map-locate { bottom: var(--s-5); right: var(--s-5); }
 }
 
-.wa-signin__title {
-  font: 600 var(--fs-title)/1.3 var(--ff-display);
-  margin: 0 0 var(--s-2);
+/* MapLibre chrome, quieted. */
+.maplibregl-ctrl-attrib { font: 11px var(--f-sans) !important; background: color-mix(in oklab, var(--paper) 80%, transparent) !important; color: var(--ink-2) !important; }
+.maplibregl-ctrl-attrib a { color: inherit !important; }
+.map-page .maplibregl-ctrl-bottom-right { bottom: var(--drawer-peek, 132px); }
+@media (min-width: 1024px) { .map-page .maplibregl-ctrl-bottom-right { bottom: 0; } }
+
+/* ── States ─────────────────────────────────────────────────── */
+.wa-empty { display: grid; gap: var(--s-3); padding: var(--s-6) 0; max-width: 560px; }
+.wa-empty__art { width: 56px; height: 56px; border-radius: var(--r-2); display: grid; place-items: center; background: var(--paper-2); margin-bottom: var(--s-1); }
+.wa-empty__art .wa-ic { width: 28px; height: 28px; stroke-width: 1.5; }
+.wa-empty__title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; text-wrap: balance; }
+.wa-empty__body { color: var(--ink-2); }
+.wa-empty__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
+
+.wa-skel { display: block; border-radius: 3px; background: var(--paper-2); position: relative; overflow: hidden; }
+.wa-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--paper) 60%, transparent), transparent); animation: wa-shimmer 1.3s infinite; }
+@keyframes wa-shimmer { to { transform: translateX(100%); } }
+.wa-skel--time { width: 46px; height: 18px; }
+.wa-skel--walk { width: 38px; height: 12px; margin-top: 8px; }
+.wa-skel--kicker { width: 30%; height: 11px; margin-bottom: 6px; }
+.wa-skel--title { width: 88%; height: 18px; }
+.wa-skel--title2 { width: 56%; height: 18px; margin-top: 5px; }
+.wa-skel--meta { width: 64%; height: 13px; margin-top: 8px; }
+.wa-skel--thumb { width: 64px; height: 64px; }
+@media (min-width: 768px) { .wa-skel--thumb { width: 88px; height: 66px; } }
+
+/* Offline: a strip under the top bar, sticky at its offset. */
+.wa-offline { position: sticky; top: var(--topbar-h); z-index: 30; display: flex; gap: var(--s-3); align-items: center; padding: 10px var(--gutter); background: var(--ink); color: var(--paper); font-size: var(--fs-meta); }
+.wa-offline__dot { width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: var(--accent); flex: none; }
+.wa-offline__age { color: color-mix(in oklab, var(--paper) 70%, var(--ink)); }
+body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
+
+/* Toast: one at a time, above the tab bar, always with its reverse. */
+.wa-toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s-3)); transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: var(--s-4); width: max-content; max-width: calc(100% - 2 * var(--gutter)); padding: 8px 8px 8px 16px; border-radius: var(--r-2); background: var(--ink); color: var(--paper); box-shadow: var(--shadow-lg); font-weight: 600; font-size: .9375rem; animation: wa-sheet-in var(--t-med) var(--ease); }
+.wa-toast__undo { min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--r-1); background: var(--accent); color: var(--on-accent); font-weight: 750; }
+@media (min-width: 1024px) { .wa-toast { bottom: var(--s-6); } }
+
+/* ── Saved ────────────────────────────────────────────────────── */
+.wa-lists { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-3); }
+.wa-listcard { display: grid; gap: 6px; padding: 0; border: 0; background: none; text-align: left; }
+.wa-listcard__mosaic { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; aspect-ratio: 1; border-radius: var(--r-2); overflow: hidden; background: var(--paper-2); outline: 1.5px solid transparent; outline-offset: 2px; }
+.wa-listcard[aria-pressed="true"] .wa-listcard__mosaic { outline-color: var(--ink); }
+.wa-listcard__tile { background: var(--paper-2); display: grid; place-items: center; color: var(--ink-3); overflow: hidden; }
+.wa-listcard__tile img { width: 100%; height: 100%; object-fit: cover; }
+.wa-listcard__mosaic--one { grid-template-columns: 1fr; }
+.wa-listcard__name { font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.wa-listcard__sub { font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-listcard--new .wa-listcard__mosaic { border: 1.5px dashed var(--line); background: none; display: grid; place-items: center; grid-template-columns: 1fr; }
+.wa-gone { display: flex; align-items: center; gap: var(--s-3); justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); }
+.wa-gone__title { text-decoration: line-through; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
+.saved-cols { display: grid; gap: 0; }
+@media (min-width: 1024px) { .saved-cols { grid-template-columns: 1fr 1fr; gap: var(--s-9); } .saved-cols > .wa-sect { margin-top: var(--s-8); } }
+
+/* ── You / About ─────────────────────────────────────────────── */
+.you-cols { display: grid; gap: 0; }
+@media (min-width: 1024px) { .you-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--s-9); } .you-cols > .wa-sect:nth-child(2) { margin-top: 0; } }
+.wa-stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--ink); border-radius: var(--r-2); overflow: hidden; }
+.wa-stat { padding: 12px 14px; border-left: 1.5px dashed var(--line); }
+.wa-stat:first-child { border-left: 0; }
+.wa-stat__n { display: block; font: 500 1.75rem/1.1 var(--f-mono); letter-spacing: -.03em; }
+.wa-stat__label { font-size: .6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.wa-card { padding: var(--s-5); border: 1.5px solid var(--ink); border-radius: var(--r-3); display: grid; gap: var(--s-3); }
+.wa-card--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.wa-card--ink .wa-btn:not(.wa-btn--primary) { background: transparent; color: var(--paper); border-color: color-mix(in oklab, var(--paper) 45%, var(--ink)); }
+.wa-card--ink .wa-note { color: color-mix(in oklab, var(--paper) 75%, var(--ink)); }
+.wa-card__title { font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+.wa-feed-url { display: block; padding: 12px 14px; border-radius: var(--r-2); background: var(--paper-2); font: 500 .8125rem/1.5 var(--f-mono); overflow-wrap: anywhere; text-decoration: none; }
+
+/* Footer line on long pages. */
+.wa-foot { margin-top: var(--s-10); padding-top: var(--s-5); border-top: 3px solid var(--ink); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); align-items: center; font-size: var(--fs-meta); color: var(--ink-3); }
+.wa-foot a { color: var(--ink-2); font-weight: 600; text-decoration: none; min-height: var(--tap); display: inline-flex; align-items: center; }
+.wa-foot a:hover { text-decoration: underline; }
+
+/* 404 */
+.nf-num { font-size: clamp(6rem, 3rem + 20vw, 14rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; }
+.nf-num span { color: var(--accent); }
+
+/* Print: the programme as a sheet. */
+@media print {
+  .wa-topbar, .wa-tabbar, .prog-controls, .prog-aside, .wa-row__thumb, .home-side { display: none !important; }
+  body { padding: 0; }
 }
-
-.wa-signin__body {
-  font: 400 var(--fs-body)/1.55 var(--ff-ui);
-  color: var(--ink-soft);
-  margin: 0 0 var(--s-5);
-  max-width: 52ch;
-}
-
-.wa-input {
-  flex: 1 1 200px;
-  min-width: 0;
-  min-height: var(--control-h);
-  padding: 0 var(--s-4);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
-  background: var(--ground);
-  color: var(--ink);
-}
-
-.wa-input::placeholder { color: var(--ink-mute); }
-
-/* The reveal toggle WA.UI.passwordField wraps a password input in. The
-   input keeps right padding so text never runs under the toggle. */
-.field-pw { position: relative; display: block; }
-
-.field-pw .wa-input { width: 100%; padding-right: var(--tap-min); }
-
-.pw-toggle {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: var(--tap-min);
-  height: var(--tap-min);
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: none;
-  color: var(--ink-mute);
-  cursor: pointer;
-}
-
-.pw-toggle:hover { color: var(--ink); }
-
-.pw-toggle .ic {
-  width: 20px; height: 20px;
-  fill: none; stroke: currentColor; stroke-width: 1.7;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-
-.wa-signin__fine {
-  font: 400 var(--fs-meta)/1.5 var(--ff-mono);
-  color: var(--ink-mute);
-  margin: var(--s-3) 0 0;
-}
-
