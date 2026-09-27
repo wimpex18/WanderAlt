@@ -16,7 +16,7 @@ import type { Candidate, Enrichment, RawItem, Source } from './types.ts';
 import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
-import { Models, extractEvents, classify } from './llm.ts';
+import { Models, extractEvents, classify, classifyPlaces } from './llm.ts';
 import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { Db, inList, chunks } from './db.ts';
@@ -185,7 +185,7 @@ async function main() {
   const existingPlaces = db
     ? await db.select<Place>(`places?city=eq.${CITY}&select=id,city,name,aliases,kind,neighborhood,address,lat,lng,osm_id`)
     : [];
-  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 25));
+  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
 
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
@@ -218,6 +218,21 @@ async function main() {
       series_key: c.series_key ?? null, relevance: Number.isNaN(e.relevance) ? null : e.relevance,
       status, status_note: note, engine: `${c.engine}+${e.engine}`, last_seen_at: new Date().toISOString(),
     });
+  }
+
+  // Venues OpenStreetMap could not name get a kind from the model, judged
+  // by their name, address and the events held there.
+  const unnamed = places.all().filter(p => !p.kind).slice(0, 90);
+  if (unnamed.length && models.ready) {
+    const held = (id: string) => [...events.values()].filter(e => e.place_id === id).map(e => String(e.title));
+    const kinds = await classifyPlaces(models, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })));
+    kinds.forEach((k, i) => {
+      const p = unnamed[i];
+      if (!k) return;
+      p.kind = k;
+      if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+    });
+    log(`venue kinds: ${kinds.filter(Boolean).length} of ${unnamed.length} from the model`);
   }
 
   const counts = [...events.values()].reduce<Record<string, number>>((a, e) => ({ ...a, [String(e.status)]: (a[String(e.status)] ?? 0) + 1 }), {});

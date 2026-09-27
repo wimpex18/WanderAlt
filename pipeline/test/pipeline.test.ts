@@ -7,7 +7,7 @@ import { tallinnToIso, toIso, tallinnDay } from '../time.ts';
 import * as fienta from '../sources/fienta.ts';
 import * as jsonld from '../sources/jsonld.ts';
 import { parseTelegram, parseRss } from '../sources/text.ts';
-import { Models, parseJson, fallbackEnrichment, type Lane } from '../llm.ts';
+import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from '../llm.ts';
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
 import { decide, eventId, loadSources } from '../run.ts';
@@ -137,8 +137,12 @@ test('addresses are reduced to what Nominatim matches', () => {
   assert.equal(normaliseAddress('Kentmanni tänav 28, 10116 Tallinn, Harju maakond'), 'Kentmanni 28, Tallinn');
   assert.equal(normaliseAddress('Telliskivi tänav 60a / 9, 10412 Tallinn'), 'Telliskivi 60a, Tallinn');
   assert.equal(normaliseAddress('Krulli 2b (Kopli 70a), 10412 Tallinn'), 'Krulli 2b, Tallinn');
-  assert.equal(normaliseAddress('Pärnu mnt. 139c, 11317 Tallinn'), 'Pärnu maantee 139c, Tallinn');
+  assert.equal(normaliseAddress('Pärnu mnt. 139c, 11317 Tallinn'), 'Pärnu mnt 139c, Tallinn');
+  assert.equal(normaliseAddress('Narva maantee 13, 10151 Tallinn'), 'Narva mnt 13, Tallinn');
+  assert.equal(normaliseAddress('Rävala puiestee 4, 10143 Tallinn'), 'Rävala pst 4, Tallinn');
+  assert.equal(normaliseAddress('L.Koidula 21c, 10127 Tallinn'), 'Koidula 21c, Tallinn');
   assert.equal(normaliseAddress('Vana-Posti tn 8, Tallinn'), 'Vana-Posti 8, Tallinn');
+  assert.equal(normaliseAddress('CQW3+JC Tallinn, 10415 Tallinn'), '');      // a plus code: use the name instead
 });
 
 test('a second source copy of a show joins the first', () => {
@@ -184,4 +188,13 @@ test('JSON-LD collection keeps only screenings inside the horizon', async () => 
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('venue kinds from the model keep only listed kinds', async () => {
+  const lane: Lane = { name: 'fake', model: 'm', key: 'k', vision: false,
+    call: async () => '{"items":[{"i":0,"kind":"club"},{"i":1,"kind":"spaceship"},{"i":2,"kind":"other"}]}' };
+  const kinds = await classifyPlaces(new Models([lane], 5), [
+    { name: 'Sveta Baar', events: ['Techno night'] }, { name: 'X', events: [] }, { name: 'Y', events: [] },
+  ]);
+  assert.deepEqual(kinds, ['club', null, null]);
 });

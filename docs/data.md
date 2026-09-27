@@ -32,7 +32,12 @@ A run exits non-zero when a source fails or returns nothing, which turns the Act
 
 ### Venues
 
-A venue name is matched against every place's name and `aliases` (lowercased, accents folded). A new name becomes a place and is geocoded through Nominatim, first by its address reduced to what OpenStreetMap matches ("Kentmanni tänav 28, 10116 Tallinn" becomes "Kentmanni 28, Tallinn"), then by name. The OSM id and a `kind` from its tags are kept only when OSM's name agrees with ours, because an address can land on a different venue in the same building. Places still without coordinates get retried, ten per run. Up to 25 lookups a run, one a second, as Nominatim's policy asks.
+A venue name is matched against every place's name and `aliases` (lowercased, accents folded). A new name becomes a place and is looked up twice in Nominatim:
+
+- by its address, reduced to the form Nominatim matches ("Kentmanni tänav 28, 10116 Tallinn" becomes "Kentmanni 28, Tallinn"; "maantee" and "puiestee" become "mnt" and "pst"), for coordinates;
+- by its name, for OpenStreetMap's own record of the venue. That record's id and a `kind` from its tags are kept only when the names agree and it lies within 250 m of the address, because a name alone can match a namesake across town.
+
+On 27 September 2026 this placed 160 of 163 Fienta venues and identified 50. Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, one a second, as Nominatim's policy asks. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
 
 The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community). OSM supplies a kind for some places; set the rest in the Table Editor.
 
