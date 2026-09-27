@@ -19,14 +19,10 @@
   window.WA = window.WA || {};
 
   /* Each city has a static illustrated overview plate at /assets/
-     <city>-overview.svg (Tallinn, Helsinki, Riga, Vilnius). Two marks
-     per plate, no more: one national flag plus one lime accent. */
-  /* Vilnius is internal testing: selectable, but it does not claim parity. */
+     <city>-overview.svg. Tallinn is the only city the pipeline covers;
+     the other plates stay on disk for when their sources are added. */
   const CITIES = [
     { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg'  },
-    { id: 'helsinki', label: 'HELSINKI', status: 'live',     thumb: './assets/helsinki-overview.svg' },
-    { id: 'riga',     label: 'RIGA',     status: 'live',     thumb: './assets/riga-overview.svg'     },
-    { id: 'vilnius',  label: 'VILNIUS',  status: 'internal', thumb: './assets/vilnius-overview.svg'  },
   ];
 
   const LS_KEY  = 'wa:city';
@@ -37,7 +33,8 @@
      plates and coverage, and hand-copying this table into a page script
      is how the statuses drift. */
   window.WA        = window.WA || {};
-  window.WA.CITY   = localStorage.getItem(LS_KEY) || DEFAULT;
+  const stored = localStorage.getItem(LS_KEY);
+  window.WA.CITY   = CITIES.some(c => c.id === stored) ? stored : DEFAULT;
   window.WA.CITIES = CITIES.map(c => ({ ...c }));
 
   const setCity = (id) => {

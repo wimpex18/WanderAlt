@@ -4,8 +4,8 @@
    One derivation, stamped onto every catalog entry, so every surface
    agrees rather than trusting the DB flags alone.
 
-   - picks.day holds 'Mon'…'Sun' (Europe/Tallinn clock, shared by all
-     four cities) or the special value 'Tonight'.
+   - picks.day holds 'Mon'…'Sun' on the Europe/Tallinn clock, or the
+     special value 'Tonight'. The picks view derives it from starts_at.
    - Explicit true flags are always respected — derivation only widens.
 
    supabase.js calls WA.when.stampAll() on the live catalogue. Loads
