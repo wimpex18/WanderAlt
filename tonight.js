@@ -247,8 +247,10 @@
     /* A line that only paraphrases the title falls through to the
        sentence below. */
     const venueWord = real(e.venue);
-    const filed = window.WA.UI.descriptionOr(e.description, e.title)
-               || window.WA.UI.descriptionOr(e.quote, e.title);
+    /* The English one-line summary first: most sources write in Estonian
+       or Russian, and the reader is often a visitor. */
+    const filed = window.WA.UI.descriptionOr(e.quote, e.title)
+               || window.WA.UI.descriptionOr(e.description, e.title);
     const desc = filed ||
       (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
                  : 'No description filed by the source.');

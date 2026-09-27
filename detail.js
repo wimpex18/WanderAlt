@@ -357,8 +357,13 @@
     /* A line that only restates the title is suppressed — same predicate
        as the Tonight row. */
     const md = document.querySelector('meta[name="description"]');
-    const filed = window.WA.UI.descriptionOr(real(e.description), title)
-               || window.WA.UI.descriptionOr(real(e.quote), title);
+    /* The English summary leads; the source's own text follows it below
+       when it says more (see `original`). */
+    const summary = window.WA.UI.descriptionOr(real(e.quote), title);
+    const filed = summary || window.WA.UI.descriptionOr(real(e.description), title);
+    const sourceText = summary ? window.WA.UI.descriptionOr(real(e.description), title) : '';
+    /* The title as the source wrote it, when we show an English one. */
+    const original = isEvent && e.originalTitle && e.originalTitle !== title ? e.originalTitle : '';
 
     /* No description gets the same sentence Tonight prints. */
     const venueWord = real(e.venue);
@@ -393,6 +398,7 @@
 
       <p class="wa-detail__eyebrow">${esc(eyebrowBits.filter(Boolean).join(' · '))}</p>
       <h1 class="wa-display wa-detail__title">${esc(title)}</h1>
+      ${original ? `<p class="wa-detail__meta" lang="">${esc(`Original title: ${original}`)}</p>` : ''}
       ${metaLine ? `<p class="wa-detail__meta">${esc(metaLine)}</p>` : ''}
       ${desc ? `<p class="wa-detail__desc${desc.length > 240 ? ' wa-detail__desc--clamp' : ''}" id="desc">${esc(desc)}</p>
          ${desc.length > 240 ? '<button class="wa-detail__more" type="button" id="more">more</button>' : ''}` : ''}
@@ -404,6 +410,7 @@
            target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>` : ''}
         <a class="wa-btn${tickets ? '' : ' wa-btn--primary'}" href="${esc(mapsHref(e, title))}"
            target="_blank" rel="noopener noreferrer">Walk me there</a>
+        ${isEvent && /^ev_[0-9a-f]{16}$/.test(e.id) ? `<a class="wa-btn" href="${esc(`${window.WA.BASE_URL}/functions/v1/calendar-feed?id=${e.id}`)}">Add to calendar</a>` : ''}
         <button class="wa-btn" type="button" id="save" aria-pressed="${saved}">
           ${saved ? 'Saved' : 'Save'}
         </button>
@@ -417,6 +424,11 @@
       ${real(e.address) ? `<section class="wa-section">
         <h2 class="wa-section-title">Address</h2>
         <p class="wa-detail__note">${esc(e.address)}</p>
+      </section>` : ''}
+
+      ${sourceText ? `<section class="wa-section">
+        <h2 class="wa-section-title">In their words</h2>
+        <p class="wa-detail__note" style="white-space:pre-line">${esc(sourceText)}</p>
       </section>` : ''}
 
       ${!isEvent ? linkButtons(e) : ''}

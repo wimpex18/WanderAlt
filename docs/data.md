@@ -45,7 +45,9 @@ On 27 September 2026 this placed 160 of 163 Fienta venues and identified 50. Pla
 
 The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor.
 
-To merge two spellings of one venue, add the second as an alias of the first and repoint its events.
+**Areas.** A place's `neighborhood` is the asum a visitor knows (Kalamaja, Old Town, Pelgulinn), from Nominatim's `quarter`, never the district (Põhja-Tallinna linnaosa). Places still labelled with a district or nothing are reverse-geocoded, 40 a run.
+
+**Duplicates.** Two places that are one venue (the same OSM object, or within 60 m with names sharing most words, inflected forms included: "Von Krahl" and "Von Krahli Teater") are merged each run: the one with an OSM id and more details is kept, the other's names become its aliases, events are repointed and the extra row is deleted.
 
 ### Duplicates
 
@@ -61,7 +63,7 @@ Each event id is a hash of city, title, Tallinn date and time, and place. Becaus
 | Other | 0.35 to 0.6, or not yet classified | `review` |
 | Other | < 0.35 | `rejected` |
 
-Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, edit `status` in the Supabase Table Editor and start `status_note` with `manual`.
+Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, open `/review` (not linked from the site, `noindex`), paste the Supabase secret key (kept in that tab's sessionStorage only) and press Publish or Reject; it sets `status` and a `status_note` starting with `manual`, which no run changes. The Table Editor works too.
 
 Before any model is asked, titles naming a format WanderAlt never lists (conference, summit, forum, seminar, expo, trade fair, hackathon, business, networking, job fair; Estonian forms too) are rejected by rule, whoever lists them: Kultuurikatel rents its halls out and lists these beside its gigs.
 
@@ -82,6 +84,10 @@ Model output decides publication for untrusted sources, and listing text is writ
 A source whose config names a `venue_name` is a single venue's own programme: every event it lists is placed there, whatever hall name the page uses.
 
 Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite and Meetup (no public search API), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
+
+### Telegram digest
+
+`pipeline/digest.ts` posts tonight's events (from now to 04:00, soonest first, 15 at most) to a Telegram channel as one message, daily at 14:00 UTC (`.github/workflows/digest.yml`). It reads the public `picks` view with the anon key, so it only posts what the site shows. It posts nothing until `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are repository secrets. `npm run digest:dry` prints the message.
 
 ### Running it
 

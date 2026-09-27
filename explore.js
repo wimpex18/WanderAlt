@@ -593,6 +593,49 @@
      Skeleton immediately, real sections when the catalog lands, and a
      re-render when geolocation resolves. */
   $('sections').innerHTML = skeleton();
+
+  /* ── Search: events and venues together ─────────────────────
+     Matches English and original titles, venue, area, kind, tags and the
+     teaser, accents folded. Results replace the sections while typed. */
+  const esc = (t) => window.WA.UI.esc(t);
+  const fold = (t) => String(t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const DAY = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const dayOf = (e) => {
+    if (window.WA.when.isTonight(e)) return 'TON';
+    const k = window.WA.when.resolveKey(e);
+    return k ? DAY[new Date(`${k}T12:00:00Z`).getUTCDay()] : '';
+  };
+  const searchRow = (href, rail, sub, title, meta) => `<li><a class="wa-row" href="${href}">
+      <span class="wa-row__rail"><span class="wa-row__time">${esc(rail)}</span><span class="wa-row__dist">${esc(sub)}</span></span>
+      <span class="wa-row__body"><span class="wa-row__title">${esc(title)}</span>
+        ${meta ? `<span class="wa-row__meta">${esc(meta)}</span>` : ''}</span>
+    </a></li>`;
+  const runSearch = () => {
+    const input = $('explore-q');
+    const host = $('search-results');
+    if (!input || !host) return;
+    const q = fold(input.value.trim());
+    const searching = q.length >= 2;
+    host.hidden = !searching;
+    $('sections').hidden = searching;
+    /* The capsule and scope tabs filter the sections, not the results. */
+    document.querySelectorAll('.explore-capsule, #scope').forEach(el => { el.hidden = searching; });
+    if (!searching) { host.innerHTML = ''; return; }
+    const events = picks().filter(e => fold(`${e.title} ${e.originalTitle || ''} ${e.venue} ${e.neighborhood} ${e.kind} ${(e.tags || []).join(' ')} ${e.description || ''}`).includes(q)).slice(0, 30);
+    const venues = (window.WA.venues || []).filter(v => fold(`${v.name} ${v.kind} ${v.neighborhood} ${v.address || ''}`).includes(q)).slice(0, 20);
+    const none = !events.length && !venues.length;
+    host.innerHTML = none
+      ? `<div class="wa-empty" style="margin-top:var(--s-6)"><p class="wa-empty__title">${esc(`Nothing matches “${input.value.trim()}” yet.`)}</p>
+          <p class="wa-empty__body">We search titles, venues, areas and genres. Tonight lists everything we have.</p></div>`
+      : `${events.length ? `<section class="wa-section"><h2 class="wa-section-title">Events</h2>
+          <p class="wa-section-sub">${esc(`${events.length} match · soonest first`)}</p>
+          <ul class="wa-rows">${events.map(e => searchRow(`detail.html?id=${encodeURIComponent(e.id)}`, dayOf(e), e.time || '', e.title, [e.kind, e.venue].filter(Boolean).join(' · '))).join('')}</ul></section>` : ''}
+        ${venues.length ? `<section class="wa-section"><h2 class="wa-section-title">Venues</h2>
+          <p class="wa-section-sub">${esc(`${venues.length} match`)}</p>
+          <ul class="wa-rows">${venues.map(v => searchRow(`detail.html?id=${encodeURIComponent(v.id)}`, 'VENUE', '', v.name, [v.kind, v.neighborhood].filter(Boolean).join(' · '))).join('')}</ul></section>` : ''}`;
+  };
+  document.addEventListener('input', (ev) => { if (ev.target && ev.target.id === 'explore-q') runSearch(); });
+  document.addEventListener('wa:catalog-ready', runSearch);
   document.addEventListener('wa:catalog-ready', () => {
     render();
     window.WA.Geo.userLoc();

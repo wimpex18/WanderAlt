@@ -91,6 +91,16 @@
 
     <h1 class="wa-sr">Explore WanderAlt</h1>
 
+    <!-- One search over events and venues: titles in English and as the
+         source wrote them, venue, area, kind and tags. Results replace
+         the sections below while there is a query. -->
+    <form class="explore-search" role="search" data-no-submit>
+      <label class="wa-sr" for="explore-q">Search events and venues</label>
+      <input class="wa-input" type="search" id="explore-q" autocomplete="off" enterkeyhint="search"
+             placeholder="Search events, venues, areas, genres" />
+    </form>
+    <div id="search-results" hidden></div>
+
     <!-- One capsule for Where / When / What. It absorbs the whole filter
          model, so there is exactly one place to change what you're
          looking at. Collapses to a single key below 768. -->

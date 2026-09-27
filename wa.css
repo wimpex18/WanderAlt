@@ -1779,6 +1779,10 @@ a.wa-sr:focus {
    the first section's own --s-8 opens the gap to content. */
 .explore-capsule { margin-top: var(--s-5); }
 
+/* Explore's search sits above the capsule, on the capsule's column. */
+.explore-search { margin-top: var(--s-5); max-width: 960px; margin-inline: auto; }
+.explore-search .wa-input { width: 100%; }
+
 /* The saved strip container is always in the DOM and filled by JS, hence
    :not(:empty). Tighter than the --s-8 between sections: it is a
    companion to the capsule. */
