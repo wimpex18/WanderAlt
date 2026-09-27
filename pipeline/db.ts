@@ -17,7 +17,9 @@ export class Db {
       method,
       headers: {
         apikey: this.key,
-        authorization: `Bearer ${this.key}`,
+        // A legacy service_role key is a JWT and goes in both headers; a new
+        // secret key (sb_secret_…) is not a JWT and goes in apikey only.
+        ...(this.key.startsWith('eyJ') ? { authorization: `Bearer ${this.key}` } : {}),
         'content-type': 'application/json',
         ...(prefer ? { prefer } : {}),
       },
