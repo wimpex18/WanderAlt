@@ -179,7 +179,9 @@
        is exposed as WA._catalogAll so cross-city links resolve; the
        city-filtered slice is WA.catalog. */
     const [picksResult, venuesResult] = await Promise.allSettled([
-      get(
+      /* Paged like venues: PostgREST returns at most 1000 rows a request,
+         and a busy month can list more upcoming events than that. */
+      getAllPages(
         `picks`,
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
@@ -191,7 +193,7 @@
                 `teaser,original_title,tags,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
-        `&order=starts_at.asc`,
+        `&order=starts_at.asc,id.asc`,
         abort.signal
       ),
       /* Places: active alt-culture venues with coordinates. The kind
