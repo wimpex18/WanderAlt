@@ -111,12 +111,14 @@
   });
 
   /* ── Venues (Places) ──────────────────────────────────────────
-     Places surfaces only the underground-leaning kinds. Generic bars,
-     museums, theatres and libraries are intentionally excluded (they
-     still surface as event venues on picks). Exposed as WA.VENUE_KINDS. */
+     Places surfaces the kinds a reader walks into for culture: the
+     OpenStreetMap catalogue's record shops, bookshops, galleries, thrift
+     shops, arts centres, cinemas, clubs, community centres and theatres,
+     plus the bars that host listed events. Museums, libraries and the like
+     still surface as event venues on picks. Exposed as WA.VENUE_KINDS. */
   const VENUE_KINDS = new Set([
-    'record store', 'bookshop', 'gallery', 'club',
-    'thrift', 'arts centre', 'cinema', 'community',
+    'record store', 'bookshop', 'gallery', 'club', 'thrift',
+    'arts centre', 'cinema', 'community', 'theatre', 'bar',
   ]);
   window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
@@ -148,9 +150,12 @@
     /* Which mechanism wrote the picture. `logo` means the venue's own mark
        rather than a photograph (small, so surfaces must not stretch it). */
     imageSource:  r.image_source || null,
+    address:      r.address || null,
+    description:  r.description || null,
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
+    osmId:        r.osm_id || null,
     /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
@@ -188,7 +193,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id` +
         `&order=name.asc`,
         abort.signal
       ),
@@ -270,7 +275,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours`
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id`
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (_) { /* nothing more to try */ }

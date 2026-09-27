@@ -2,8 +2,10 @@
    detail.js — one detail template, two data shapes.
    ------------------------------------------------------------
    ?id= resolves against picks first, then venues. An event fills the
-   three cells with doors / entry / walk; a place with closes / entry /
-   walk plus the week strip. The primary action is "Walk me there".
+   three cells with doors / entry / walk, leads with Tickets when it has
+   a ticket link, and ends with the venue it happens at. A place is the
+   venue page: closes / entry / walk, its own links (site, Instagram,
+   Facebook), the week strip, and everything listed there next.
    Provenance closes every page.
 
    Every interpolated value is database text: esc() at the site, safeUrl() for
@@ -79,9 +81,10 @@
       else if (s.opensAt != null)  hours = cell('Opens', window.WA.Hours.clock(s.opensAt));
       else                         hours = cell('Today', 'closed');
     }
-    /* "Free" is true of every place we list — they are shops, galleries
-       and bars you walk into, not ticketed events. */
-    return [hours, cell('Entry', 'Free'), walkCell(v)].join('');
+    /* Shops and galleries are free to walk into; a cinema, theatre or club
+       charges per night, which the programme below prices. */
+    const free = /^(record store|bookshop|thrift|gallery|community)$/.test(String(v.kind || ''));
+    return [hours, free ? cell('Entry', 'Free') : '', walkCell(v)].join('');
   };
 
   /* ── The week strip ──────────────────────────────────────────
@@ -171,6 +174,106 @@
     if (c) return `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
     const q = [title, real(e.address), real(e.venue), window.WA.CITY].filter(Boolean).join(', ');
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`;
+  };
+
+  /* ── Events ↔ venues ──────────────────────────────────────── */
+  const key = (s) => String(s || '').toLowerCase().trim();
+
+  /* Everything listed at a place, soonest first. */
+  const picksAt = (place) => (window.WA._catalogAll || window.WA.catalog || [])
+    .filter(p => !p.isClosed && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
+    .sort((a, b) => String(a.startsAt || '').localeCompare(String(b.startsAt || '')));
+
+  const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const railFor = (e) => {
+    if (window.WA.when.isTonight(e)) return 'TON';
+    const k = window.WA.when.resolveKey(e);
+    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
+  };
+  /* Copied from source.js's row: rail (day, time), title, kind. */
+  const row = (e) => `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
+      <span class="wa-row__rail">
+        <span class="wa-row__time">${esc(railFor(e))}</span>
+        <span class="wa-row__dist">${esc(real(e.time))}</span>
+      </span>
+      <span class="wa-row__body">
+        <span class="wa-row__title">${esc(e.title || '')}</span>
+        <span class="wa-row__meta">${esc([real(e.kind), UI().priceLabel ? UI().priceLabel(e) : ''].filter(Boolean).join(' · '))}</span>
+      </span>
+    </a></li>`;
+
+  /* A ticket link, else an event page on a ticketing site. */
+  const TICKET_HOSTS = /fienta|piletilevi|bilesu|tiketti|ticketmaster|tickettailor|eventbrite|kinola|ra\.co|gateme|dice\.fm|shotgun/i;
+  const ticketsFor = (e) => {
+    const t = e.ticketUrl || (TICKET_HOSTS.test(String(e.permalink || '')) ? e.permalink : '');
+    return t ? url(t) : '';
+  };
+
+  /* The venue's own channels, each only when the source gave it. */
+  const linkButtons = (v) => {
+    const links = [
+      ['Website', v.website],
+      ['Instagram', v.instagram],
+      ['Facebook', v.facebook],
+    ].map(([label, href]) => [label, href ? url(href) : '']).filter(([, href]) => href);
+    return links.length ? `<div class="wa-btn-row wa-detail__links">
+      ${links.map(([label, href]) => `<a class="wa-btn" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)} &nearr;</a>`).join('')}
+    </div>` : '';
+  };
+
+  /* An event's venue: what it is, where, whether it is open, and what else
+     is on there. Links to the venue page when the venue is a place we
+     hold, else to the programme grouped by venue name. */
+  const venueSection = (e) => {
+    const v = window.WA.venueFor(e);
+    const name = real(e.venue) || (v && v.name) || '';
+    if (!name) return '';
+    const id = e.venueId || (v && v.id) || '';
+    const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(name)}`;
+    const more = picksAt({ id, name }).filter(p => p.id !== e.id).length;
+    const meta = [
+      v && real(v.kind),
+      real(e.neighborhood) || (v && real(v.neighborhood)),
+      v && v.openingHours ? window.WA.Hours.label(v.openingHours) : '',
+      more ? `${more} more listed` : '',
+    ].filter(Boolean).join(' · ');
+    return `<section class="wa-section">
+      <h2 class="wa-section-title">The venue</h2>
+      <ul class="wa-rows"><li><a class="wa-row" href="${esc(href)}">
+        <span class="wa-row__rail">
+          <span class="wa-row__time">${esc(window.WA.Geo.distanceLabel(v || e) || 'VENUE')}</span>
+          <span class="wa-row__dist"></span>
+        </span>
+        <span class="wa-row__body">
+          <span class="wa-row__title">${esc(name)}</span>
+          ${meta ? `<span class="wa-row__meta">${esc(meta)}</span>` : ''}
+        </span>
+      </a></li></ul>
+      ${v ? linkButtons(v) : ''}
+    </section>`;
+  };
+
+  /* A venue page's programme. */
+  const programmeSection = (v) => {
+    const list = picksAt(v);
+    if (!list.length) return `<section class="wa-section">
+      <h2 class="wa-section-title">Listed here next</h2>
+      <p class="wa-detail__note">Nothing from ${esc(v.name)} is listed right now. Its own channels above carry what we have not read.</p>
+    </section>`;
+    return `<section class="wa-section">
+      <h2 class="wa-section-title">Listed here next</h2>
+      <p class="wa-section-sub">${esc(`${list.length} listed · soonest first`)}</p>
+      <ul class="wa-rows">${list.map(row).join('')}</ul>
+    </section>`;
+  };
+
+  const placeProvenance = (v) => {
+    if (v.osmId) return {
+      sourceUrl: `https://www.openstreetmap.org/${v.osmId}`,
+      what: 'Address, hours and links from OpenStreetMap',
+      when: null,
+    };
+    return { sourceUrl: v.website, what: 'Details from the venue', when: null };
   };
 
   /* ── Render ──────────────────────────────────────────────────── */
@@ -279,6 +382,7 @@
     const metaLine = [real(e.kind), isEvent ? venueName : '', area].filter(Boolean).join(' · ');
 
     const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
+    const tickets = isEvent ? ticketsFor(e) : '';
 
     main().innerHTML = `
       ${well(e, title)}
@@ -292,7 +396,9 @@
       <div class="wa-cells">${isEvent ? eventCells(e) : placeCells(e)}</div>
 
       <div class="wa-btn-row wa-detail__actions">
-        <a class="wa-btn wa-btn--primary" href="${esc(mapsHref(e, title))}"
+        ${tickets ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}"
+           target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>` : ''}
+        <a class="wa-btn${tickets ? '' : ' wa-btn--primary'}" href="${esc(mapsHref(e, title))}"
            target="_blank" rel="noopener noreferrer">Walk me there</a>
         <button class="wa-btn" type="button" id="save" aria-pressed="${saved}">
           ${saved ? 'Saved' : 'Save'}
@@ -309,20 +415,13 @@
         <p class="wa-detail__note">${esc(e.address)}</p>
       </section>` : ''}
 
+      ${!isEvent ? linkButtons(e) : ''}
+
+      ${isEvent ? venueSection(e) : programmeSection(e)}
+
       ${!isEvent ? weekStrip(e) : ''}
 
-      ${isEvent && venueName ? `<section class="wa-section">
-        <h2 class="wa-section-title">More from here</h2>
-        <p class="wa-section-sub">EVERYTHING AT THIS VENUE</p>
-        <p style="margin-top:var(--s-3)"><a class="wa-btn" href="source.html?venue=${esc(encodeURIComponent(venueName))}">${esc(venueName)} &rarr;</a></p>
-      </section>` : ''}
-
-      ${provenance(isEvent ? eventProvenance(e) : {
-        sourceUrl: e.website,
-        what: 'Details from the venue',
-        when: null,
-        sourceName: null,
-      })}
+      ${provenance(isEvent ? eventProvenance(e) : placeProvenance(e))}
     `;
   };
 

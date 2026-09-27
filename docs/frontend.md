@@ -39,6 +39,8 @@ The site as it stands: plain HTML pages at the repo root, one `.js` renderer eac
 - Metadata closes with provenance: `via <handle>`.
 - **Detail never states a fact about the world that is really a fact about the cache.** On a miss, `WA.byId()` asks the database: render, "That listing has closed down" with the date, or "We have no listing at that address".
 - Detail: three labelled cells (event: doors/entry/walk; place: closes/entry/walk + week strip), then one primary key, then secondary keys. Cells with no answer are not rendered. Add-to-list lives on detail, not on Saved rows.
+- Events and venues are separate objects that link both ways. An event page leads with **Tickets** when it has a ticket link (else Walk me there), and ends with **The venue**: a row linking to the venue page with kind, area, open state and how much else is listed there. A venue page (`detail.html?id=<place id>`) is the one page per venue: photo, its own links (Website, Instagram, Facebook), hours, and **Listed here next**, its whole programme. `source.html?venue=` redirects to it when the venue is a place; `source.html?handle=` stays the page for a feed.
+- A place's Entry cell says Free only for walk-in kinds (shops, galleries, community centres), never for a cinema, theatre or club.
 - `.wa-btn-row` is content-width with wrap; an instance wanting a full-width key sets `flex: 1`.
 - Follows (`WA.Follows`, localStorage only) hold venue names and raw handles; a pick matches "Only sources I follow" if its venue or handle is followed. You's "Opened earlier" lists the last 8 resolvable entries and claims nothing about the rest.
 - Saves and lists are one store: adding to a list saves; unsaving purges from every list.
