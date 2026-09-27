@@ -1,0 +1,66 @@
+[
+  {
+    "id": "fienta-tallinn",
+    "city": "tallinn",
+    "kind": "fienta",
+    "url": "https://fienta.com/api/v1/public/events?country=EE&city=Tallinn",
+    "handle": "@fienta",
+    "label": "Fienta",
+    "curated": false,
+    "config": {
+      "days": 21,
+      "skip_categories": ["family", "beauty", "business", "conference", "spirituality", "sports", "tour", "food"],
+      "trusted_organizer_ids": [15, 17595, 3349, 2111, 12106, 1341, 8412, 1946, 825, 17330, 4603, 22740, 19710, 10996, 15342, 32193, 40471, 1692, 478, 5063, 35562, 39271]
+    }
+  },
+  {
+    "id": "kino-soprus",
+    "city": "tallinn",
+    "kind": "jsonld",
+    "url": "https://kinosoprus.ee/",
+    "handle": "@kinosoprus",
+    "label": "Kino Sõprus",
+    "curated": true,
+    "config": { "venue_name": "Kino Sõprus" }
+  },
+  {
+    "id": "telliskivi",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://telliskivi.cc/en/events/",
+    "handle": "@telliskivi",
+    "label": "Telliskivi Creative City",
+    "curated": false,
+    "config": {}
+  },
+  {
+    "id": "kultuurikatel",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://kultuurikatel.ee/en/events/",
+    "handle": "@kultuurikatel",
+    "label": "Kultuurikatel",
+    "curated": false,
+    "config": {}
+  },
+  {
+    "id": "elektriteater",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://elektriteater.ee/",
+    "handle": "@elektriteater",
+    "label": "Kino Elektriteater",
+    "curated": true,
+    "config": {}
+  },
+  {
+    "id": "tg-sigmundtells",
+    "city": "tallinn",
+    "kind": "telegram",
+    "url": "https://t.me/s/sigmundtells",
+    "handle": "@sigmundtells",
+    "label": "Sigmund Tells (Telegram)",
+    "curated": false,
+    "config": { "max_age_days": 10 }
+  }
+]

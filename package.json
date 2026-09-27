@@ -1,16 +1,22 @@
 {
   "name": "wanderalt",
-  "version": "0.8.5",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "start": "node .scripts/dev-server.js",
-    "admin": "node .scripts/dev-server.js --port 8080",
+    "pipeline": "node --env-file-if-exists=.env pipeline/run.ts",
+    "pipeline:dry": "node --env-file-if-exists=.env pipeline/run.ts --dry-run",
+    "pipeline:models": "node --env-file-if-exists=.env pipeline/run.ts --models",
+    "test": "node --test \"pipeline/test/*.test.ts\"",
+    "typecheck": "tsc -p pipeline",
     "build:icons": "node .scripts/rasterize-favicons.js"
   },
   "devDependencies": {
+    "@types/node": "^24.19.0",
     "http-server": "^14.1.1",
     "png-to-ico": "^3.0.2",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=24"
