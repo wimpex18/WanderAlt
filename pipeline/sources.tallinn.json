@@ -9,8 +9,40 @@
     "curated": false,
     "config": {
       "days": 21,
-      "skip_categories": ["family", "beauty", "business", "conference", "spirituality", "sports", "tour", "food"],
-      "trusted_organizer_ids": [15, 17595, 3349, 2111, 12106, 1341, 8412, 1946, 825, 17330, 4603, 22740, 19710, 10996, 15342, 32193, 40471, 1692, 478, 5063, 35562, 39271]
+      "skip_categories": [
+        "family",
+        "beauty",
+        "business",
+        "conference",
+        "spirituality",
+        "sports",
+        "tour",
+        "food"
+      ],
+      "trusted_organizer_ids": [
+        15,
+        17595,
+        3349,
+        2111,
+        12106,
+        1341,
+        8412,
+        1946,
+        825,
+        17330,
+        4603,
+        22740,
+        19710,
+        10996,
+        15342,
+        32193,
+        40471,
+        1692,
+        478,
+        5063,
+        35562,
+        39271
+      ]
     }
   },
   {
@@ -21,7 +53,9 @@
     "handle": "@kinosoprus",
     "label": "Kino Sõprus",
     "curated": true,
-    "config": { "venue_name": "Kino Sõprus" }
+    "config": {
+      "venue_name": "Kino Sõprus"
+    }
   },
   {
     "id": "telliskivi",
@@ -34,24 +68,30 @@
     "config": {}
   },
   {
-    "id": "kultuurikatel",
+    "id": "vabalava",
     "city": "tallinn",
     "kind": "html",
-    "url": "https://kultuurikatel.ee/en/events/",
+    "url": "https://vabalava.ee/programm/",
+    "handle": "@vabalava",
+    "label": "Vaba Lava",
+    "curated": true,
+    "config": {
+      "venue_name": "Vaba Lava"
+    }
+  },
+  {
+    "id": "kultuurikatel",
+    "city": "tallinn",
+    "kind": "wordpress",
+    "url": "https://kultuurikatel.ee/wp-json/wp/v2/events?lang=en",
     "handle": "@kultuurikatel",
     "label": "Kultuurikatel",
     "curated": false,
-    "config": {}
-  },
-  {
-    "id": "elektriteater",
-    "city": "tallinn",
-    "kind": "html",
-    "url": "https://elektriteater.ee/",
-    "handle": "@elektriteater",
-    "label": "Kino Elektriteater",
-    "curated": true,
-    "config": {}
+    "config": {
+      "venue_name": "Kultuurikatel",
+      "address": "Põhja pst 27a, Tallinn",
+      "pages": 2
+    }
   },
   {
     "id": "tg-sigmundtells",
@@ -61,6 +101,20 @@
     "handle": "@sigmundtells",
     "label": "Sigmund Tells (Telegram)",
     "curated": false,
-    "config": { "max_age_days": 10 }
+    "config": {
+      "max_age_days": 10
+    }
+  },
+  {
+    "id": "osm-tallinn",
+    "city": "tallinn",
+    "kind": "osm",
+    "url": "https://www.openstreetmap.org/",
+    "handle": "@openstreetmap",
+    "label": "OpenStreetMap",
+    "curated": true,
+    "config": {
+      "area": "Tallinn"
+    }
   }
 ]
