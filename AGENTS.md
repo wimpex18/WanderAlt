@@ -4,7 +4,7 @@ What's on tonight in Tallinn for travellers, expats and locals who want independ
 
 Two halves:
 
-- **Pipeline** (`pipeline/`): collects Tallinn sources into Supabase every three hours on GitHub Actions, reads prose with free-tier models, classifies and deduplicates events. See `docs/data.md` and `docs/models.md`.
+- **Pipeline** (`pipeline/`): collects Tallinn sources into Supabase every three hours on GitHub Actions, reads prose with free models (Workers AI, then OpenRouter `:free`), classifies and deduplicates events. See `docs/data.md` and `docs/models.md`.
 - **Site** (repo root): static HTML, CSS and vanilla JS on Cloudflare Pages at `wanderalt.app`, reading Supabase REST with the public anon key. See `docs/frontend.md`. A redesign is planned; don't spend effort polishing the current UI.
 
 ## Commands
@@ -36,7 +36,7 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 - **Secrets.** The anon key in `supabase.js` is public on purpose (RLS). The service-role key and model keys never enter the repo, a page, or a log line.
 - **Supabase.** Revoke EXECUTE from `anon, authenticated, public` on any SECURITY DEFINER function in the same migration. Keep `pg_net` uninstalled. Own-row policies use `(select auth.uid())`.
 - **Edge functions** deploy only through the Supabase MCP `deploy_edge_function`, passing the function's current `verify_jwt`. Committing does not deploy.
-- **Free tiers only** for models and services. Re-check model ids against live catalogues before pinning (`docs/models.md`).
+- **Free models only**: Workers AI and OpenRouter `:free`, no Gemini, no paid plans; free tiers for every other service too. Re-check model ids against live catalogues before pinning (`docs/models.md`).
 - **Photos by identity.** Never guess a venue or event photo from a name; no photo is better than a wrong one.
 - **`_redirects`:** never add a bare-path to `.html` redirect; Pages already serves pretty URLs and it would loop.
 - **Voice:** handles start with `@`; no exclamation marks, no marketing register, never "discover" as a verb.

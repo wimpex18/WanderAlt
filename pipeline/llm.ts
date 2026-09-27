@@ -1,10 +1,12 @@
-// Model lanes, tried in order. Every lane is a free tier (see docs/models.md);
-// a lane without its key is skipped, and a lane that fails twice in a run
-// is skipped for the rest of that run. With no lane at all, structured
-// sources still flow and prose sources wait in raw_items.
+// Model lanes, tried in order. Free models only, and no Google key: the
+// primary lane is Cloudflare Workers AI (the free daily allocation Eesti-Keelt
+// also uses), the fallback OpenRouter's :free models. A lane without its key
+// is skipped, and a lane that fails twice in a run is skipped for the rest
+// of that run. With no lane at all, structured sources still flow and prose
+// sources wait in raw_items. See docs/models.md.
 //
 // Model ids disappear without notice: `npm run pipeline:models` probes each
-// pin against the provider's live catalogue.
+// pin against the provider.
 
 import type { Candidate, Enrichment, EventKind } from './types.ts';
 import { EVENT_KINDS } from './types.ts';
@@ -15,9 +17,8 @@ export interface Lane {
   name: string;
   model: string;
   key: string | undefined;
-  vision: boolean;
   minGapMs?: number;            // free tiers cap requests per minute
-  call: (system: string, user: string, schema: object, images: string[]) => Promise<string>;
+  call: (system: string, user: string, schema: object) => Promise<string>;
 }
 
 const env = (k: string) => process.env[k]?.trim() || undefined;
@@ -39,20 +40,7 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
   return JSON.parse(text);
 }
 
-async function imagePart(url: string): Promise<{ mime: string; data: string } | null> {
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-    const mime = r.headers.get('content-type') ?? '';
-    if (!r.ok || !/^image\/(jpeg|png|webp)/.test(mime)) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
-    return buf.length < 4_000_000 ? { mime, data: buf.toString('base64') } : null;
-  } catch {
-    return null;
-  }
-}
-
 export function lanes(): Lane[] {
-  const gemini = env('GEMINI_MODEL') ?? 'gemini-3.5-flash-lite';
   const workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b';
   const openrouter = env('OPENROUTER_MODEL') ?? 'google/gemma-4-31b-it:free';
   const account = env('CLOUDFLARE_ACCOUNT_ID');
@@ -70,32 +58,12 @@ export function lanes(): Lane[] {
 
   return [
     {
-      name: 'gemini', model: gemini, key: env('GEMINI_API_KEY'), vision: true, minGapMs: 4_500,
-      call: async (system, user, schema, images) => {
-        const parts: unknown[] = [{ text: user }];
-        for (const u of images) {
-          const img = await imagePart(u);
-          if (img) parts.push({ inline_data: { mime_type: img.mime, data: img.data } });
-        }
-        const res = await post(
-          `https://generativelanguage.googleapis.com/v1beta/models/${gemini}:generateContent`,
-          { 'x-goog-api-key': env('GEMINI_API_KEY') ?? '' },
-          {
-            systemInstruction: { parts: [{ text: system }] },
-            contents: [{ role: 'user', parts }],
-            generationConfig: { temperature: 0, responseMimeType: 'application/json', responseJsonSchema: schema },
-          },
-        ) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-        return res.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('') ?? '';
-      },
-    },
-    {
-      name: 'workers-ai', model: workers, key: account && env('CLOUDFLARE_API_TOKEN'), vision: false,
+      name: 'workers-ai', model: workers, key: account && env('CLOUDFLARE_API_TOKEN'),
       call: openaiStyle(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/v1/chat/completions`,
         env('CLOUDFLARE_API_TOKEN'), workers, false),
     },
     {
-      name: 'openrouter', model: openrouter, key: env('OPENROUTER_API_KEY'), vision: false, minGapMs: 3_100,
+      name: 'openrouter', model: openrouter, key: env('OPENROUTER_API_KEY'), minGapMs: 3_100,
       call: openaiStyle('https://openrouter.ai/api/v1/chat/completions', env('OPENROUTER_API_KEY'), openrouter, true),
     },
   ];
@@ -128,7 +96,7 @@ export class Models {
   }
 
   /** First lane that answers with parseable JSON wins. Returns the lane's label too. */
-  async ask(system: string, user: string, schema: object, images: string[] = []): Promise<{ data: unknown; engine: string }> {
+  async ask(system: string, user: string, schema: object): Promise<{ data: unknown; engine: string }> {
     let last: unknown = new Error('no model lane configured');
     for (const lane of this.available) {
       if ((this.failures.get(lane.name) ?? 0) >= 2) continue;
@@ -140,7 +108,7 @@ export class Models {
         this.lastCall.set(lane.name, Date.now());
         this.calls++;
         try {
-          const data = parseJson(await lane.call(system, user, schema, lane.vision ? images : []));
+          const data = parseJson(await lane.call(system, user, schema));
           return { data, engine: `${lane.name}:${lane.model}` };
         } catch (e) {
           last = e;
@@ -198,11 +166,11 @@ Rules:
 
 export async function extractEvents(
   models: Models,
-  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },
+  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },   // images: the post's photos, kept as the event image
 ): Promise<Candidate[]> {
   const posted = args.postedAt ? new Date(args.postedAt) : new Date();
   const user = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/Tallinn' })})\n\n${args.text}`;
-  const { data, engine } = await models.ask(EXTRACT_SYSTEM, user, EXTRACT_SCHEMA, args.images ?? []);
+  const { data, engine } = await models.ask(EXTRACT_SYSTEM, user, EXTRACT_SCHEMA);
   const events = ((data as { events?: unknown[] }).events ?? []) as Record<string, string | null>[];
   const out: Candidate[] = [];
   for (const e of events) {

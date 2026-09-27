@@ -83,7 +83,7 @@ test('model answers parse through fences, and a failing lane falls through to th
   assert.deepEqual(parseJson('Sure: {"a":[1]} hope that helps'), { a: [1] });
 
   let broken = 0;
-  const lane = (name: string, fn: () => Promise<string>): Lane => ({ name, model: 'm', key: 'k', vision: false, call: fn });
+  const lane = (name: string, fn: () => Promise<string>): Lane => ({ name, model: 'm', key: 'k', call: fn });
   const models = new Models([
     lane('bad', async () => { broken++; throw new Error('503'); }),
     lane('good', async () => '{"ok":true}'),
@@ -158,7 +158,7 @@ test('a second source copy of a show joins the first', () => {
 test('a 429 waits and retries on the same lane without disabling it', async () => {
   let n = 0;
   const lane: Lane = {
-    name: 'limited', model: 'm', key: 'k', vision: false,
+    name: 'limited', model: 'm', key: 'k',
     call: async () => {
       n++;
       if (n === 1) throw Object.assign(new Error('429 slow down'), { status: 429, retryAfter: 0.01 });
@@ -191,7 +191,7 @@ test('JSON-LD collection keeps only screenings inside the horizon', async () => 
 });
 
 test('venue kinds from the model keep only listed kinds', async () => {
-  const lane: Lane = { name: 'fake', model: 'm', key: 'k', vision: false,
+  const lane: Lane = { name: 'fake', model: 'm', key: 'k',
     call: async () => '{"items":[{"i":0,"kind":"club"},{"i":1,"kind":"spaceship"},{"i":2,"kind":"other"}]}' };
   const kinds = await classifyPlaces(new Models([lane], 5), [
     { name: 'Sveta Baar', events: ['Techno night'] }, { name: 'X', events: [] }, { name: 'Y', events: [] },

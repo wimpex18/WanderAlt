@@ -92,7 +92,7 @@ async function main() {
   if (flag('--models')) {
     for (const l of models.available) {
       try {
-        const answer = await l.call('Answer in JSON.', 'Return {"ok": true}.', { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] }, []);
+        const answer = await l.call('Answer in JSON.', 'Return {"ok": true}.', { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] });
         log(`lane ${l.name} (${l.model}) answered: ${answer.slice(0, 60)}`);
       } catch (e) { log(`lane ${l.name} (${l.model}) failed: ${(e as Error).message}`); }
     }

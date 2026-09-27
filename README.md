@@ -6,7 +6,7 @@ Status: Tallinn only, not launched. Version in `package.json`.
 
 ## How it works
 
-1. **Pipeline** (`pipeline/`). Every three hours a GitHub Actions job reads the Tallinn sources in `pipeline/sources.tallinn.json`: the Fienta events API, venue sites with schema.org markup, venue programme pages and public Telegram channels. Structured sources are parsed directly; prose is read by a free-tier model (Gemini 3.5 Flash-Lite, falling back to Workers AI and OpenRouter). Each event is classified for fit, given an English title and summary, tied to a geocoded venue, and published, held for review, or rejected.
+1. **Pipeline** (`pipeline/`). Every three hours a GitHub Actions job reads the Tallinn sources in `pipeline/sources.tallinn.json`: the Fienta events API, venue sites with schema.org markup, venue programme pages and public Telegram channels. Structured sources are parsed directly; prose is read by a free model (Cloudflare Workers AI, falling back to OpenRouter's free models). Each event is classified for fit, given an English title and summary, tied to a geocoded venue, and published, held for review, or rejected.
 2. **Database**. Supabase Postgres: sources, raw items, places, events and their provenance.
 3. **Site**. Static HTML, CSS and vanilla JS on Cloudflare Pages at [wanderalt.app](https://wanderalt.app), reading Supabase with the public anon key. MapLibre GL over OpenFreeMap tiles for the map.
 
@@ -19,7 +19,7 @@ npm run pipeline:dry # read every source now, write nothing
 npm test
 ```
 
-A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`, and a model key such as `GEMINI_API_KEY` to read prose and classify. Set them in a local `.env`, or as repository secrets for the scheduled job.
+A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`, plus `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (Workers AI, free) to read prose and classify; `OPENROUTER_API_KEY` adds a free fallback. Set them in a local `.env`, or as repository secrets for the scheduled job.
 
 ## Docs
 
