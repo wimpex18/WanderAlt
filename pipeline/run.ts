@@ -3,7 +3,8 @@
 //   2. collect every source into raw_items (only new or changed items)
 //   3. read pending raw items into candidates (structured parse, or a model)
 //   4. classify candidates (kind, relevance, English title and summary)
-//   5. resolve venues to places, write events and their provenance
+//   5. fold the OpenStreetMap venue catalogue into places, enrich a few
+//      places (links, photo), resolve venues, write events and provenance
 //   6. archive what has ended, record each source's health
 //
 //   node pipeline/run.ts                 full pass (needs SUPABASE_SERVICE_ROLE_KEY)
@@ -15,8 +16,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import type { Candidate, Enrichment, RawItem, Source } from './types.ts';
 import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
+import * as wordpress from './sources/wordpress.ts';
+import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
-import { Models, extractEvents, classify, classifyPlaces } from './llm.ts';
+import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { Db, inList, chunks } from './db.ts';
@@ -36,6 +39,10 @@ const KEEP_RAW_DAYS = 60;
 
 const log = (...xs: unknown[]) => console.log('[pipeline]', ...xs);
 
+const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id',
+  'website', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
+  'image_url', 'image_attr', 'image_source', 'enriched_at'];
+
 export function loadSources(city = CITY): Source[] {
   const url = new URL(`./sources.${city}.json`, import.meta.url);
   return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).map(s => ({ ...s, active: true } as Source));
@@ -45,11 +52,16 @@ async function collect(source: Source): Promise<RawItem[]> {
   switch (source.kind) {
     case 'fienta': return fienta.collect(source);
     case 'jsonld': return jsonld.collect(source);
+    case 'wordpress': return wordpress.collect(source);
+    case 'osm': return [];            // places, not events: step 5
     case 'telegram': return collectTelegram(source);
     case 'html': return collectPage(source);
     case 'rss': return collectRss(source);
   }
 }
+
+/** Posters read per run; each costs about 35 Workers AI neurons. */
+const posters = { left: Number(opt('--max-posters') ?? 30) };
 
 const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || s.kind === 'rss';
 
@@ -57,20 +69,36 @@ const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || 
 async function read(item: RawItem, source: Source, models: Models): Promise<Candidate[] | null> {
   if (source.kind === 'fienta') return fienta.extract(item);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
+  if (source.kind === 'wordpress') return wordpress.extract(item, source);
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[] };
-  const text = [p.title, p.text].filter(Boolean).join('\n\n');
+  // A post's poster often carries the date, time and venue its text leaves out.
+  const poster = p.photos?.[0] && posters.left > 0 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
+  const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
-  return extractEvents(models, {
+  const found = await extractEvents(models, {
     text, source: `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
     images: p.photos ?? [], pageUrl: item.url ?? null,
   });
+  // A single venue's own programme page: every event is at that venue,
+  // whatever hall name the page uses.
+  const venue = source.config.venue_name as string | undefined;
+  return venue ? found.map(c => ({ ...c, venue_name: venue })) : found;
 }
 
 export function eventId(city: string, c: Candidate, placeId: string | null): string {
   const local = new Date(c.starts_at).toLocaleTimeString('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' });
   const where = placeId ?? nameKey(c.venue_name ?? '');
   return `ev_${sha([city, nameKey(c.title), tallinnDay(c.starts_at), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
+}
+
+/** Formats that are never WanderAlt, whoever lists them: a venue that
+ *  rents its halls out (Kultuurikatel) lists conferences and trade fairs
+ *  beside its gigs. Rejected by rule, before a model is asked. */
+const OFF_TOPIC = /\b(conference|konverents|summit|forum|foorum|seminar|koolitus|webinar|expo|trade fair|messe|hackathon|business|networking|investor|recruitment|job fair|töömess)\b/i;
+export function offTopic(title: string): { status: string; note: string } | null {
+  const m = OFF_TOPIC.exec(title);
+  return m ? { status: 'rejected', note: `rule: ${m[1].toLowerCase()}` } : null;
 }
 
 /** Publish, hold for review, or reject. Trusted sources need a lower bar. */
@@ -183,9 +211,32 @@ async function main() {
 
   // ── 5. places and events ──
   const existingPlaces = db
-    ? await db.select<Place>(`places?city=eq.${CITY}&select=id,city,name,aliases,kind,neighborhood,address,lat,lng,osm_id`)
+    ? await db.select<Place>(`places?city=eq.${CITY}&select=${PLACE_COLUMNS.join(',')}`)
     : [];
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
+
+  // The venue catalogue: every cultural venue OpenStreetMap knows in the city.
+  const osm = sources.find(s => s.kind === 'osm');
+  if (osm) {
+    try {
+      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'));
+      for (const p of catalogue) places.merge(p);
+      health[osm.id] = { ok: true, yield: catalogue.length };
+      log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
+    } catch (e) {
+      health[osm.id] = { ok: false, yield: 0, error: (e as Error).message };
+      log(`${osm.id}: failed: ${(e as Error).message}`);
+    }
+  }
+  // Links and a photo for a few places a run, from sources that identify them.
+  if (!flag('--no-enrich')) {
+    const due = places.all().filter(p => !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
+    for (const p of due) {
+      Object.assign(p, await enrichPlace(p), { enriched_at: new Date().toISOString() });
+      if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+    }
+    if (due.length) log(`enriched ${due.length} places`);
+  }
 
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
@@ -206,7 +257,7 @@ async function main() {
     const id = seen.match(c.title, where, start) ?? eventId(CITY, c, place?.id ?? null);
     seen.add({ id, title: c.title, where, start });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
-    const { status, note } = decide(e, trusted);
+    const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null, last_seen_at: new Date().toISOString() });
     if (events.has(id)) continue;
     events.set(id, {
@@ -242,6 +293,7 @@ async function main() {
     const out = opt('--out');
     const rows = [...events.values()].sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
     if (out) writeFileSync(out, JSON.stringify({ events: rows, places: places.created, health }, null, 2));
+    log(`${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
     for (const e of rows.slice(0, Number(opt('--show') ?? 15))) {
       log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
     }
@@ -250,7 +302,12 @@ async function main() {
 
   const touched = [...places.created, ...places.updated];
   if (touched.length) {
-    await db.upsert('places', touched.map(p => ({ ...p, kind: p.kind ?? null, updated_at: new Date().toISOString() })), 'id');
+    // Every row carries every column: a bulk upsert takes its column list
+    // from the first row, and a missing key would be written as null.
+    await db.upsert('places', touched.map(p => ({
+      ...Object.fromEntries(PLACE_COLUMNS.map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
+      aliases: p.aliases ?? [], updated_at: new Date().toISOString(),
+    })), 'id');
   }
   const ids = [...events.keys()];
   const existing = new Set<string>();
@@ -317,7 +374,7 @@ async function main() {
       ? { last_run_at: now, last_ok_at: now, last_yield: h.yield, consecutive_failures: 0, last_error: null }
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
 
   const failing = Object.entries(health).filter(([, h]) => !h.ok);
   const empty = Object.entries(health).filter(([, h]) => h.ok && h.yield === 0);

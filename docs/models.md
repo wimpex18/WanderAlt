@@ -19,7 +19,9 @@ Override a pin without a code change: `WORKERS_AI_MODEL`, `OPENROUTER_MODEL`.
 
 Calls to OpenRouter are spaced 3.1 s apart. A 429 waits (for `Retry-After`, else 20 s) and retries the same lane twice before counting as a failure. `LLM_CALL_BUDGET` (default 60) caps calls per run.
 
-Neither lane reads images, so a Telegram post that is only a poster with no text yields nothing. The post's photo is still kept as the event's image when the text announces an event.
+**Posters.** A Telegram post's first photo is read by Workers AI's free vision model, `@cf/meta/llama-4-scout-17b-16e-instruct` (override: `WORKERS_AI_VISION_MODEL`), and its text is added to the post before extraction, since a poster often carries the date, time and venue the post leaves out. About 35 neurons a poster, at most 30 posters a run (`--max-posters`). Workers AI takes images only as base64, so the pipeline downloads each one (under 3 MB). Checked on a real poster on 27 September 2026; Gemma 4 on Workers AI returned nothing for the same image.
+
+**Budget.** A run stops using Workers AI after 1,500 neurons (`WORKERS_AI_NEURON_BUDGET`) and falls through to OpenRouter; with four runs a day that leaves room for Eesti-Keelt on the same account. Measured on 27 September 2026: reading 11 Telegram posts cost about 1,500 neurons (≈135 each), Vaba Lava's schedule page about 450. Every run logs the neurons it spent.
 
 ## Why not the others
 

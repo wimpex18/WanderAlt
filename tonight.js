@@ -81,7 +81,7 @@
   };
 
   /* ── Data ────────────────────────────────────────────────────── */
-  const picks = () => (window.WA.catalog || []).filter(e => !e.isClosed);
+  const picks = () => (window.WA.catalog || []).filter(e => !e.isClosed && !window.WA.when.hasEnded(e));
 
   const isFreeish = (e) => e.isFree === true ||
     (e.priceMin != null && Number(e.priceMin) === 0);
@@ -146,7 +146,11 @@
     }
     if (state.q) {
       const q = state.q.toLowerCase();
-      out = out.filter(e => `${e.title} ${e.venue} ${e.neighborhood} ${e.kind}`.toLowerCase().includes(q));
+      /* The English title and the source's own, venue, area, kind, tags and
+         the teaser; accents folded so "soprus" finds Sõprus. */
+      const fold = (t) => String(t || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const fq = fold(q);
+      out = out.filter(e => fold(`${e.title} ${e.originalTitle || ''} ${e.venue} ${e.neighborhood} ${e.kind} ${(e.tags || []).join(' ')} ${e.description || ''}`).includes(fq));
     }
     return out;
   };

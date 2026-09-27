@@ -10,7 +10,7 @@ import { parseTelegram, parseRss } from '../sources/text.ts';
 import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from '../llm.ts';
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
-import { decide, eventId, loadSources } from '../run.ts';
+import { decide, eventId, loadSources, offTopic } from '../run.ts';
 import { htmlToText, httpUrl, nameKey } from '../util.ts';
 import type { Source } from '../types.ts';
 
@@ -197,4 +197,71 @@ test('venue kinds from the model keep only listed kinds', async () => {
     { name: 'Sveta Baar', events: ['Techno night'] }, { name: 'X', events: [] }, { name: 'Y', events: [] },
   ]);
   assert.deepEqual(kinds, ['club', null, null]);
+});
+
+import * as wordpress from '../sources/wordpress.ts';
+import { placeFromOsm, socialUrl, commonsUrl, fromHomepage, handleFits } from '../venues.ts';
+import { createHash } from 'node:crypto';
+const md5dir = (f: string) => { const h = createHash('md5').update(f).digest('hex'); return `${h[0]}/${h.slice(0, 2)}`; };
+
+test('WordPress ACF events: date-only and timed', () => {
+  const src = source({ kind: 'wordpress', config: { venue_name: 'Kultuurikatel' } });
+  const [a] = wordpress.extract({ external_id: '1', payload: { title: 'HU? &amp; EIK', link: 'https://k.example/e/1', acf: { event_date: '20261128', event_payment_link: 'https://www.piletilevi.ee/x', event_price: '15 €' } } }, src);
+  assert.equal(a.title, 'HU? & EIK');
+  assert.equal(a.has_time, false);
+  assert.equal(a.starts_at, '2026-11-27T22:00:00.000Z');
+  assert.equal(a.ticket_url, 'https://www.piletilevi.ee/x');
+  assert.equal(a.price_min, 15);
+  assert.equal(a.venue_name, 'Kultuurikatel');
+  const [b] = wordpress.extract({ external_id: '2', payload: { title: 'Gig', acf: { event_date: '20261003', add_time: true, event_start_time: '19:30', event_end_time: '22:00' } } }, src);
+  assert.equal(b.starts_at, '2026-10-03T16:30:00.000Z');
+  assert.equal(b.ends_at, '2026-10-03T19:00:00.000Z');
+});
+
+test('OpenStreetMap venues become places with identity and links', () => {
+  const p = placeFromOsm({ type: 'node', id: 42, lat: 59.43, lon: 24.73, tags: {
+    shop: 'music', name: 'Biit', 'addr:street': 'Telliskivi', 'addr:housenumber': '60a',
+    'contact:instagram': 'biit.records', website: 'https://biit.example', wikidata: 'Q123' } }, 'tallinn')!;
+  assert.equal(p.kind, 'record store');
+  assert.equal(p.osm_id, 'node/42');
+  assert.equal(p.address, 'Telliskivi 60a, Tallinn');
+  assert.equal(p.instagram, 'https://www.instagram.com/biit.records');
+  assert.equal(p.wikidata_id, 'Q123');
+  assert.equal(placeFromOsm({ type: 'node', id: 1, tags: { amenity: 'bank', name: 'Bank' } }, 'tallinn'), null);
+  assert.equal(placeFromOsm({ type: 'node', id: 2, tags: { shop: 'books', name: 'Old', disused: 'yes' } }, 'tallinn'), null);
+});
+
+test('links and photos only from sources that identify the venue', () => {
+  assert.equal(socialUrl('facebook.com', 'https://www.facebook.com/sharer/sharer.php?u=x'), null);
+  assert.equal(socialUrl('instagram.com', '@sveta.baar'), 'https://www.instagram.com/sveta.baar');
+  assert.equal(commonsUrl('Von Krahl theatre.jpg'), 'https://upload.wikimedia.org/wikipedia/commons/' +
+    md5dir('Von_Krahl_theatre.jpg') + '/Von_Krahl_theatre.jpg');
+  assert.equal(handleFits('https://www.facebook.com/IceCafeEesti', 'Apollo Kino', 'https://www.apollokino.ee/'), false);
+  assert.equal(handleFits('https://www.instagram.com/a.galerii', 'A-Galerii', 'https://www.agalerii.ee/'), true);
+  const page = `<a href="https://www.instagram.com/raamatukoi">IG</a><a href="https://www.facebook.com/sponsorbrand">x</a>
+    <meta property="og:image" content="/og.png"><meta name="description" content="Books &amp; more">`;
+  const d = fromHomepage(page, 'https://www.raamatukoi.ee/', 'Raamatukoi');
+  assert.equal(d.instagram, 'https://www.instagram.com/raamatukoi');
+  assert.equal(d.facebook, null);
+  assert.equal(d.image_url, 'https://www.raamatukoi.ee/og.png');
+  assert.equal(d.description, 'Books & more');
+  assert.deepEqual(fromHomepage('<p>See domeen on müügil</p><meta property="og:image" content="x.png">', 'https://ibiza.example/'), {});
+});
+
+test('a catalogue venue fills gaps in the place events already created', () => {
+  const places = new Places([{ id: 'tallinn-kino-soprus', city: 'tallinn', name: 'Kino Sõprus', aliases: ['kino soprus'], website: 'https://kinosoprus.ee' }], 'tallinn', 0);
+  const merged = places.merge({ id: 'tallinn-kino-soprus', city: 'tallinn', name: 'Kino Sõprus', aliases: ['kino soprus', 'soprus'], kind: 'cinema', osm_id: 'node/1', website: 'https://other.example' });
+  assert.equal(merged.kind, 'cinema');
+  assert.equal(merged.website, 'https://kinosoprus.ee');          // kept, not overwritten
+  assert.equal(places.updated.length, 1);
+  places.merge({ id: 'tallinn-biit', city: 'tallinn', name: 'Biit', aliases: ['biit'], kind: 'record store' });
+  assert.equal(places.created.length, 1);
+});
+
+test('conferences and trade fairs are rejected by rule', () => {
+  assert.equal(offTopic('NORDIC-BALTIC SECURITY SUMMIT 2026')?.status, 'rejected');
+  assert.equal(offTopic('HEALTH PROMOTION CONFERENCE 2026')?.note, 'rule: conference');
+  assert.equal(offTopic('Armenian Products Expo')?.status, 'rejected');
+  assert.equal(offTopic('HU? / EIK'), null);
+  assert.equal(offTopic('Tallinn Vegan Fair 2026'), null);
 });

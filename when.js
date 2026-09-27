@@ -161,8 +161,27 @@
     return m;
   };
 
+  /* ── Is it over? ─────────────────────────────────────────────
+     A stated end wins. Without one, a timed event is taken to last three
+     hours (a film, a gig, a play); a date-only event runs to the end of
+     its day. Ended events drop out of lists and never read as NOW. */
+  const ASSUMED_MS = 3 * 3600 * 1000;
+  const endsAtMs = (e) => {
+    if (!e) return null;
+    if (e.endsAt) { const t = Date.parse(e.endsAt); if (!isNaN(t)) return t; }
+    if (!e.startsAt) return null;
+    const t = Date.parse(e.startsAt);
+    if (isNaN(t)) return null;
+    if (statedMinutes(e) != null) return t + ASSUMED_MS;
+    return t + 24 * 3600 * 1000;           // date-only: stored as local midnight
+  };
+  const hasEnded = (e, now = Date.now()) => {
+    const end = endsAtMs(e);
+    return end != null && end < now;
+  };
+
   window.WA.when = {
     isTonight, stampAll, todayKey, keyPlus, resolveKey, isOnDate,
-    matches, statedMinutes,
+    matches, statedMinutes, hasEnded,
   };
 })();

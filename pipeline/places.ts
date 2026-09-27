@@ -18,7 +18,21 @@ export interface Place {
   lat?: number | null;
   lng?: number | null;
   osm_id?: string | null;
+  // Venue-page details (venues.ts fills them).
+  website?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  opening_hours?: string | null;
+  description?: string | null;
+  wikidata_id?: string | null;
+  image_url?: string | null;
+  image_attr?: string | null;
+  image_source?: string | null;
+  enriched_at?: string | null;
 }
+
+const DETAIL_FIELDS = ['kind', 'address', 'lat', 'lng', 'osm_id', 'website', 'instagram', 'facebook',
+  'opening_hours', 'description', 'wikidata_id', 'neighborhood'] as const;
 
 interface NominatimHit {
   lat: string;
@@ -83,6 +97,32 @@ export class Places {
     this.city = city;
     this.maxLookups = maxLookups;
     for (const p of existing) this.remember(p);
+  }
+
+  /** Fold a catalogue place (OpenStreetMap) into the store: an existing
+   *  place with the same OSM id or name gains what it lacks; anything else
+   *  becomes a new place. */
+  merge(incoming: Place): Place {
+    const known = this.all().find(p => incoming.osm_id && p.osm_id === incoming.osm_id)
+      ?? incoming.aliases.map(a => this.byKey.get(a)).find(Boolean)
+      ?? this.byKey.get(nameKey(incoming.name));
+    if (known) {
+      let changed = false;
+      for (const k of DETAIL_FIELDS) {
+        if ((known[k] == null || known[k] === '') && incoming[k] != null) { (known as unknown as Record<string, unknown>)[k] = incoming[k]; changed = true; }
+      }
+      const aliases = [...new Set([...known.aliases, ...incoming.aliases])];
+      if (aliases.length !== known.aliases.length) { known.aliases = aliases; changed = true; }
+      this.remember(known);
+      if (changed && !this.created.includes(known) && !this.updated.includes(known)) this.updated.push(known);
+      return known;
+    }
+    let id = incoming.id;
+    for (let n = 2; this.all().some(p => p.id === id); n++) id = `${incoming.id}-${n}`;
+    const place = { ...incoming, id };
+    this.remember(place);
+    this.created.push(place);
+    return place;
   }
 
   /** Every place known this run, stored or new. */

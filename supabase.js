@@ -95,7 +95,11 @@
     address:   r.address   ?? null,
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
     /* Source-authored facts. description is the venue's own blurb. */
-    description: r.description || null,
+    /* The list query carries a teaser; a by-id fetch carries the full text. */
+    description: r.description || r.teaser || null,
+    descriptionFull: r.description != null,
+    originalTitle: r.original_title || null,
+    tags:        Array.isArray(r.tags) ? r.tags : [],
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,
     ticketUrl:   r.ticket_url  || null,
@@ -111,12 +115,14 @@
   });
 
   /* ── Venues (Places) ──────────────────────────────────────────
-     Places surfaces only the underground-leaning kinds. Generic bars,
-     museums, theatres and libraries are intentionally excluded (they
-     still surface as event venues on picks). Exposed as WA.VENUE_KINDS. */
+     Places surfaces the kinds a reader walks into for culture: the
+     OpenStreetMap catalogue's record shops, bookshops, galleries, thrift
+     shops, arts centres, cinemas, clubs, community centres and theatres,
+     plus the bars that host listed events. Museums, libraries and the like
+     still surface as event venues on picks. Exposed as WA.VENUE_KINDS. */
   const VENUE_KINDS = new Set([
-    'record store', 'bookshop', 'gallery', 'club',
-    'thrift', 'arts centre', 'cinema', 'community',
+    'record store', 'bookshop', 'gallery', 'club', 'thrift',
+    'arts centre', 'cinema', 'community', 'theatre', 'bar',
   ]);
   window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
@@ -148,9 +154,12 @@
     /* Which mechanism wrote the picture. `logo` means the venue's own mark
        rather than a photograph (small, so surfaces must not stretch it). */
     imageSource:  r.image_source || null,
+    address:      r.address || null,
+    description:  r.description || null,
     website:      r.website || null,
     facebook:     r.facebook || null,
     instagram:    r.instagram || null,
+    osmId:        r.osm_id || null,
     /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
@@ -160,25 +169,31 @@
     document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
 
   const load = async () => {
-    /* 2-second timeout so a slow network renders the empty states */
+    /* 6-second timeout, then the empty states: long enough for a slow
+       phone connection to fetch the list (about 150 KB for a few hundred
+       events with teasers), short enough not to hang. */
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 2000);
+    const timer = setTimeout(() => abort.abort(), 6000);
 
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
        city-filtered slice is WA.catalog. */
     const [picksResult, venuesResult] = await Promise.allSettled([
-      get(
+      /* Paged like venues: PostgREST returns at most 1000 rows a request,
+         and a busy month can list more upcoming events than that. */
+      getAllPages(
         `picks`,
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
                 `lat,lng,address,` +
-                /* Facts the sources stated about themselves. */
-                `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
+                /* Facts the sources stated about themselves. Lists read
+                   the 300-character teaser; detail fetches the full text
+                   (WA.fullDescription). */
+                `teaser,original_title,tags,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
-        `&order=starts_at.asc`,
+        `&order=starts_at.asc,id.asc`,
         abort.signal
       ),
       /* Places: active alt-culture venues with coordinates. The kind
@@ -188,7 +203,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id` +
         `&order=name.asc`,
         abort.signal
       ),
@@ -270,7 +285,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,website,facebook,instagram,opening_hours`
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id`
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (_) { /* nothing more to try */ }
@@ -278,6 +293,18 @@
   };
 
   window.WA.byId = byId;
+
+  /* The full description of one event, for the detail page. Lists only
+     load a teaser; this fills it in once and remembers it on the pick. */
+  window.WA.fullDescription = async (pick) => {
+    if (!pick || pick.descriptionFull) return pick && pick.description;
+    try {
+      const rows = await get('picks', `id=eq.${encodeURIComponent(pick.id)}&select=description&limit=1`);
+      pick.description = (rows && rows[0] && rows[0].description) || pick.description;
+    } catch (_) { /* keep the teaser */ }
+    pick.descriptionFull = true;
+    return pick.description;
+  };
 
   load();
 })();

@@ -4,8 +4,9 @@
    The subject is a venue or feed, grouped from the picks that name it:
    how many are on, when it was listed, how far away it is.
 
-   ?venue=<name> is the key. ?handle=<@handle> resolves to that source's
-   picks.
+   ?venue=<name> is the key; a venue we hold as a place redirects to its
+   venue page (detail.html?id=). ?handle=<@handle> resolves to that
+   source's picks, which is what this page is mostly for now: a feed.
    ============================================================ */
 (() => {
   'use strict';
@@ -93,6 +94,12 @@
 
   const render = () => {
     const s = resolve();
+
+    /* A venue we hold as a place has one page: the venue page on detail. */
+    if (s && s.via === 'venue' && s.venue && s.venue.id) {
+      location.replace(`detail.html?id=${encodeURIComponent(s.venue.id)}`);
+      return;
+    }
 
     if (!s || !s.picks.length) {
       main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">

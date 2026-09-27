@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -19,7 +19,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 
 ## Pipeline
 
-`pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every three hours (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
+`pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every six hours (four runs a day keep Workers AI inside its free allocation) (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
 
 1. Sync `pipeline/sources.tallinn.json` into `sources`. The JSON file is the source of truth; add a source by PR. A source removed from the file is marked inactive, which also hides it publicly.
 2. Collect each source; store only new or changed items in `raw_items` (compared by content hash).
@@ -32,6 +32,10 @@ A run exits non-zero when a source fails or returns nothing, which turns the Act
 
 ### Venues
 
+Places come from two directions. The **catalogue** (`pipeline/venues.ts`, source `osm-tallinn`) reads every record shop, bookshop, gallery, thrift shop, arts centre, cinema, club, community centre and theatre in Tallinn from OpenStreetMap through Overpass once a run (about 220 venues), so the Places tab lists them whether or not they have an event. **Events** add the venues they happen at. The two meet by OSM id or name: a catalogue venue fills what an event-made place lacks and never overwrites it.
+
+**Enrichment** fills a venue page, 25 places a run, each only from a source that identifies the venue: its Wikidata item (photo from Commons, website, Instagram, Facebook, description), then its own homepage (Instagram and Facebook links whose handle shares a word with the venue's name or domain, `og:image`, meta description). A homepage that has become a domain-parking page is ignored. `enriched_at` records that a place was done.
+
 A venue name is matched against every place's name and `aliases` (lowercased, accents folded). A new name becomes a place and is looked up twice in Nominatim:
 
 - by its address, reduced to the form Nominatim matches ("Kentmanni tänav 28, 10116 Tallinn" becomes "Kentmanni 28, Tallinn"; "maantee" and "puiestee" become "mnt" and "pst"), for coordinates;
@@ -39,7 +43,7 @@ A venue name is matched against every place's name and `aliases` (lowercased, ac
 
 On 27 September 2026 this placed 160 of 163 Fienta venues and identified 50. Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, one a second, as Nominatim's policy asks. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
 
-The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community). OSM supplies a kind for some places; set the rest in the Table Editor.
+The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor.
 
 To merge two spellings of one venue, add the second as an alias of the first and repoint its events.
 
@@ -59,6 +63,8 @@ Each event id is a hash of city, title, Tallinn date and time, and place. Becaus
 
 Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, edit `status` in the Supabase Table Editor and start `status_note` with `manual`.
 
+Before any model is asked, titles naming a format WanderAlt never lists (conference, summit, forum, seminar, expo, trade fair, hackathon, business, networking, job fair; Estonian forms too) are rejected by rule, whoever lists them: Kultuurikatel rents its halls out and lists these beside its gigs.
+
 Model output decides publication for untrusted sources, and listing text is written by strangers, so a crafted post could talk its way to a high fit score. The prompts tell the model to ignore instructions in the text; the review queue is the backstop.
 
 ### Sources (Tallinn)
@@ -67,11 +73,15 @@ Model output decides publication for untrusted sources, and listing text is writ
 |---|---|---|
 | `fienta-tallinn` | Fienta public API | Every public Tallinn event on Fienta. Organiser email and phone are dropped at collection. |
 | `kino-soprus` | JSON-LD | `ScreeningEvent` markup on the full schedule page (`/kinokava/`), 45 days ahead. |
-| `elektriteater` | HTML → model | Arthouse cinema programme. |
-| `telliskivi`, `kultuurikatel` | HTML → model | Event pages of two creative hubs. |
+| `kultuurikatel` | WordPress REST | The venue's own events post type (`/wp-json/wp/v2/events`, ACF date fields). Date and ticket link are structured; most listings carry a date but no time. |
+| `telliskivi` | HTML → model | Telliskivi Creative City's events page. |
+| `vabalava` | HTML → model | Vaba Lava's performance schedule (`/mangukava/`), Tallinn tab. |
 | `tg-sigmundtells` | Telegram → model | Public channel preview, `t.me/s/…`, no API key. |
+| `osm-tallinn` | OpenStreetMap | Not events: the venue catalogue (below). |
 
-Instagram has no free way to read public posts, so it is not a source.
+A source whose config names a `venue_name` is a single venue's own programme: every event it lists is placed there, whatever hall name the page uses.
+
+Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite and Meetup (no public search API), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
 
 ### Running it
 
