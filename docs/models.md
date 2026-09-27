@@ -15,6 +15,10 @@ Tried in this order. A lane without its key is skipped; a lane that fails twice 
 
 Override a pin without a code change: `WORKERS_AI_MODEL`, `OPENROUTER_MODEL`.
 
+OpenRouter is asked with a `models` list, so when Gemma 4 is rate-limited upstream (it often is) the request moves to `nvidia/nemotron-3-super-120b-a12b:free`, then `google/gemma-4-26b-a4b-it:free` (OpenRouter takes at most three), all free with structured output. The 50-requests-a-day account limit still applies.
+
+**Use WanderAlt's own Cloudflare account.** The first real run (27 Sep 2026) found the day's 10,000 neurons already spent, because development runs and Eesti-Keelt shared one account. The site is hosted on a different Cloudflare account; a Workers AI token and account ID from that one give WanderAlt its own daily allocation.
+
 `gpt-oss-120b` is the model Eesti-Keelt measured and runs in production on the same free plan. Workers AI's allocation is per Cloudflare account: if WanderAlt uses the same account as Eesti-Keelt, the two share the 10,000 neurons. A first run classifies a few hundred Fienta events, which uses a large share of one day's allocation. Later runs only see new or changed items and use far less. When the allocation runs out, Workers AI refuses and the run falls through to OpenRouter.
 
 Calls to OpenRouter are spaced 3.1 s apart. A 429 waits (for `Retry-After`, else 20 s) and retries the same lane twice before counting as a failure. `LLM_CALL_BUDGET` (default 60) caps calls per run.

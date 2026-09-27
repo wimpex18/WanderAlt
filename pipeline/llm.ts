@@ -72,12 +72,18 @@ export async function transcribePoster(imageUrl: string): Promise<string | null>
   }
 }
 
+/** Free OpenRouter models with structured output, checked 27 Sep 2026. */
+const OPENROUTER_FALLBACKS = [
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'google/gemma-4-26b-a4b-it:free',
+];
+
 export function lanes(): Lane[] {
   const workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b';
   const openrouter = env('OPENROUTER_MODEL') ?? 'google/gemma-4-31b-it:free';
   const account = env('CLOUDFLARE_ACCOUNT_ID');
 
-  const openaiStyle = (url: string, key: string | undefined, model: string, jsonSchema: boolean) =>
+  const openaiStyle = (url: string, key: string | undefined, model: string, jsonSchema: boolean, extra: Record<string, unknown> = {}) =>
     async (system: string, user: string, schema: object) => {
       const res = await post(url, { authorization: `Bearer ${key}` }, {
         model,
@@ -92,6 +98,7 @@ export function lanes(): Lane[] {
           { role: 'user', content: user },
         ],
         ...(jsonSchema ? { response_format: { type: 'json_schema', json_schema: { name: 'answer', strict: false, schema } } } : {}),
+        ...extra,
       }) as { choices?: { finish_reason?: string; message?: { content?: string | null } }[]; usage?: { neurons?: number } };
       if (res.usage?.neurons) usage.neurons += res.usage.neurons;
       const choice = res.choices?.[0];
@@ -107,7 +114,11 @@ export function lanes(): Lane[] {
     },
     {
       name: 'openrouter', model: openrouter, key: env('OPENROUTER_API_KEY'), minGapMs: 3_100,
-      call: openaiStyle('https://openrouter.ai/api/v1/chat/completions', env('OPENROUTER_API_KEY'), openrouter, true),
+      // OpenRouter moves to the next model in `models` when one is
+      // rate-limited upstream, which the free ones often are.
+      call: openaiStyle('https://openrouter.ai/api/v1/chat/completions', env('OPENROUTER_API_KEY'), openrouter, true, {
+        models: [openrouter, ...OPENROUTER_FALLBACKS.filter(m => m !== openrouter)].slice(0, 3),   // OpenRouter's limit
+      }),
     },
   ];
 }
