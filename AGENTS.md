@@ -4,7 +4,7 @@ What's on tonight in Tallinn for travellers, expats and locals who want independ
 
 Two halves:
 
-- **Pipeline** (`pipeline/`): collects Tallinn sources into Supabase every three hours on GitHub Actions, reads prose with free models (Workers AI, then OpenRouter `:free`), classifies and deduplicates events. See `docs/data.md` and `docs/models.md`.
+- **Pipeline** (`pipeline/`): collects Tallinn sources into Supabase every six hours on GitHub Actions, reads prose with free models (Workers AI, then OpenRouter `:free`), classifies and deduplicates events. See `docs/data.md` and `docs/models.md`.
 - **Site** (repo root): static HTML, CSS and vanilla JS on Cloudflare Pages at `wanderalt.app`, reading Supabase REST with the public anon key. See `docs/frontend.md`. A redesign is planned; don't spend effort polishing the current UI.
 
 ## Commands

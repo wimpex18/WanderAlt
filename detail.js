@@ -181,7 +181,7 @@
 
   /* Everything listed at a place, soonest first. */
   const picksAt = (place) => (window.WA._catalogAll || window.WA.catalog || [])
-    .filter(p => !p.isClosed && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
+    .filter(p => !p.isClosed && !window.WA.when.hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
     .sort((a, b) => String(a.startsAt || '').localeCompare(String(b.startsAt || '')));
 
   const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -343,6 +343,10 @@
 
     const isEvent = hit.kind === 'event';
     const e = hit.e;
+    /* Lists carry a teaser; fetch the full text once, then draw again. */
+    if (isEvent && !e.descriptionFull && window.WA.fullDescription) {
+      window.WA.fullDescription(e).then(render);
+    }
     const title = isEvent ? (e.title || '') : (e.name || '');
     const venueName = isEvent ? real(e.venue) : real(e.name);
 

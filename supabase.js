@@ -95,7 +95,11 @@
     address:   r.address   ?? null,
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
     /* Source-authored facts. description is the venue's own blurb. */
-    description: r.description || null,
+    /* The list query carries a teaser; a by-id fetch carries the full text. */
+    description: r.description || r.teaser || null,
+    descriptionFull: r.description != null,
+    originalTitle: r.original_title || null,
+    tags:        Array.isArray(r.tags) ? r.tags : [],
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,
     ticketUrl:   r.ticket_url  || null,
@@ -165,9 +169,11 @@
     document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
 
   const load = async () => {
-    /* 2-second timeout so a slow network renders the empty states */
+    /* 6-second timeout, then the empty states: long enough for a slow
+       phone connection to fetch the list (about 150 KB for a few hundred
+       events with teasers), short enough not to hang. */
     const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), 2000);
+    const timer = setTimeout(() => abort.abort(), 6000);
 
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
@@ -179,8 +185,10 @@
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
                 `lat,lng,address,` +
-                /* Facts the sources stated about themselves. */
-                `description,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
+                /* Facts the sources stated about themselves. Lists read
+                   the 300-character teaser; detail fetches the full text
+                   (WA.fullDescription). */
+                `teaser,original_title,tags,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
         `&order=starts_at.asc`,
@@ -283,6 +291,18 @@
   };
 
   window.WA.byId = byId;
+
+  /* The full description of one event, for the detail page. Lists only
+     load a teaser; this fills it in once and remembers it on the pick. */
+  window.WA.fullDescription = async (pick) => {
+    if (!pick || pick.descriptionFull) return pick && pick.description;
+    try {
+      const rows = await get('picks', `id=eq.${encodeURIComponent(pick.id)}&select=description&limit=1`);
+      pick.description = (rows && rows[0] && rows[0].description) || pick.description;
+    } catch (_) { /* keep the teaser */ }
+    pick.descriptionFull = true;
+    return pick.description;
+  };
 
   load();
 })();

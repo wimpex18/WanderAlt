@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -19,7 +19,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 
 ## Pipeline
 
-`pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every three hours (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
+`pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every six hours (four runs a day keep Workers AI inside its free allocation) (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
 
 1. Sync `pipeline/sources.tallinn.json` into `sources`. The JSON file is the source of truth; add a source by PR. A source removed from the file is marked inactive, which also hides it publicly.
 2. Collect each source; store only new or changed items in `raw_items` (compared by content hash).
@@ -63,6 +63,8 @@ Each event id is a hash of city, title, Tallinn date and time, and place. Becaus
 
 Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, edit `status` in the Supabase Table Editor and start `status_note` with `manual`.
 
+Before any model is asked, titles naming a format WanderAlt never lists (conference, summit, forum, seminar, expo, trade fair, hackathon, business, networking, job fair; Estonian forms too) are rejected by rule, whoever lists them: Kultuurikatel rents its halls out and lists these beside its gigs.
+
 Model output decides publication for untrusted sources, and listing text is written by strangers, so a crafted post could talk its way to a high fit score. The prompts tell the model to ignore instructions in the text; the review queue is the backstop.
 
 ### Sources (Tallinn)
@@ -73,7 +75,7 @@ Model output decides publication for untrusted sources, and listing text is writ
 | `kino-soprus` | JSON-LD | `ScreeningEvent` markup on the full schedule page (`/kinokava/`), 45 days ahead. |
 | `kultuurikatel` | WordPress REST | The venue's own events post type (`/wp-json/wp/v2/events`, ACF date fields). Date and ticket link are structured; most listings carry a date but no time. |
 | `telliskivi` | HTML → model | Telliskivi Creative City's events page. |
-| `vabalava` | HTML → model | Vaba Lava's programme page; every event is placed at Vaba Lava. |
+| `vabalava` | HTML → model | Vaba Lava's performance schedule (`/mangukava/`), Tallinn tab. |
 | `tg-sigmundtells` | Telegram → model | Public channel preview, `t.me/s/…`, no API key. |
 | `osm-tallinn` | OpenStreetMap | Not events: the venue catalogue (below). |
 

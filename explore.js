@@ -35,7 +35,7 @@
      Two shapes on this page: picks (events) and venues (places).
      They are normalised only where the card needs them to agree. */
 
-  const picks  = () => (window.WA.catalog || []).filter(e => !e.isClosed);
+  const picks  = () => (window.WA.catalog || []).filter(e => !e.isClosed && !window.WA.when.hasEnded(e));
 
   /* Places and picks share the card, so the card has to know which it
      has: a place answers "closes at", a pick answers "doors". Stamped
