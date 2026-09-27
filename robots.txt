@@ -1,11 +1,8 @@
 # WanderAlt — robots.txt
-# Allow all well-behaved crawlers. The admin tool is the only
-# noindex surface.
+# Allow all well-behaved crawlers.
 
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /admin/
 # Block AI crawlers that respect a Disallow.
 # bots that show up most often and respect a Disallow.
 User-agent: GPTBot

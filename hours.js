@@ -1,7 +1,7 @@
 /* ============================================================
    hours.js — WA.Hours, the one reading of "is it open right now".
    ------------------------------------------------------------
-   venues.opening_hours is OSM syntax, entered in the admin panel:
+   venues.opening_hours is OSM syntax, as OpenStreetMap stores it:
    "Tu-Sa 12:00-19:00; Su,Mo off". parse() turns it into the normalised
    week that everything downstream works on: seven arrays of {open, close}
    minute pairs.
