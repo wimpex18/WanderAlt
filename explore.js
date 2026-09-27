@@ -307,20 +307,24 @@
     }
 
     if (state.scope === 'places') {
+      /* Nearest first when we know where the reader is. Without a
+         location: open now, then venues with something listed, then
+         venues with a photo, then A to Z, so the top of the list is
+         somewhere worth walking to. */
+      const listed = new Set(picks().map(p => p.venueId).filter(Boolean));
+      const rank = (v) => (window.WA.Hours.state(v.openingHours).open ? 4 : 0) + (listed.has(v.id) ? 2 : 0) + (v.imageUrl ? 1 : 0);
       const all = places().slice().sort((a, b) => {
         const da = geo.distanceTo(a), db = geo.distanceTo(b);
         if (da != null && db != null) return da - db;
         if (da != null) return -1;
         if (db != null) return 1;
-        return String(a.name || '').localeCompare(String(b.name || ''));
+        return rank(b) - rank(a) || String(a.name || '').localeCompare(String(b.name || ''));
       });
       out.push(section({
         title: `Places in ${city}`,
-        /* This list falls back to localeCompare with no location, so it
-           does not claim "nearest first". */
         sub:   bounded
           ? `${all.length} listed · nearest first`
-          : `${all.length} listed · A to Z`,
+          : `${all.length} listed · open and busy first`,
         items: all,
         emptyTitle: `No places listed in ${city} yet.`,
         emptyBody:  'Nothing has been added for this city yet.',

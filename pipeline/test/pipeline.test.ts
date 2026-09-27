@@ -286,13 +286,3 @@ test('areas are the asum a visitor knows', async () => {
   assert.equal(isDistrict('Põhja-Tallinna'), true);
   assert.equal(isDistrict('Kalamaja'), false);
 });
-
-test('the Telegram digest escapes listing text and links every event', async () => {
-  const { compose } = await import('../digest.ts');
-  const text = compose([{ id: 'ev_1', title: 'Noise <b>& co</b>', venue: 'Sveta', neighborhood: 'Telliskivi', kind: 'gig',
-    time: '21:00', starts_at: '2026-10-02T18:00:00Z', is_free: false, price_min: 8, currency: 'EUR' }], new Date('2026-10-02T14:00:00Z'))!;
-  assert.match(text, /Noise &lt;b&gt;&amp; co&lt;\/b&gt;/);
-  assert.match(text, /detail\.html\?id=ev_1/);
-  assert.match(text, /from 8 €/);
-  assert.equal(compose([], new Date()), null);
-});

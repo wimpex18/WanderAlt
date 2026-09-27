@@ -24,7 +24,7 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 
 ## Map
 
-- `pipeline/run.ts` orchestrates; `sources/` has one collector per kind (`fienta.ts`, `jsonld.ts`, `wordpress.ts`, `text.ts`); `venues.ts` reads the OpenStreetMap venue catalogue and fills venue links and photos; `llm.ts` holds the model lanes and prompts; `places.ts` resolves and geocodes venues; `dedupe.ts` merges one show listed by two sources; `digest.ts` posts tonight to Telegram; `sources.tallinn.json` lists the sources.
+- `pipeline/run.ts` orchestrates; `sources/` has one collector per kind (`fienta.ts`, `jsonld.ts`, `wordpress.ts`, `text.ts`); `venues.ts` reads the OpenStreetMap venue catalogue and fills venue links and photos; `llm.ts` holds the model lanes and prompts; `places.ts` resolves and geocodes venues; `dedupe.ts` merges one show listed by two sources; `sources.tallinn.json` lists the sources.
 - `supabase/migrations/` is the schema. `supabase/functions/` holds `og-image` and `calendar-feed`.
 - Pages: `index.html` Explore, `discover.html` Tonight, `detail.html`, `source.html`, `saved.html`, `profile.html`, `about.html`, `404.html`, each with a matching `.js`. `wa.css` is the whole stylesheet. `supabase.js` loads data; `ui-helpers.js` has `WA.UI.esc` and `WA.UI.safeUrl`.
 - `functions/` are Cloudflare Pages Functions (OG tags, Wikimedia image proxy). `vendor/` is MapLibre GL 6.11.2, self-hosted; upgrade by swapping its four files from the npm package's `dist/`.

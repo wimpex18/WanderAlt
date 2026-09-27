@@ -137,7 +137,7 @@ export class Models {
   /** Workers AI's free allocation is 10,000 neurons a day per Cloudflare
    *  account, shared with anything else on the account. Past this many in
    *  one run, the lane is skipped and OpenRouter answers instead. */
-  readonly neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500);
+  neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500);
 
   get ready(): boolean {
     return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2);

@@ -132,6 +132,20 @@ async function main() {
   const db = DRY ? null : new Db();
   log(`${DRY ? 'dry run' : 'run'} for ${CITY}: ${sources.length} sources, model lanes: ${models.available.map(l => `${l.name}:${l.model}`).join(', ') || 'none'}`);
 
+  // The run's row, and what today's earlier runs already spent: the free
+  // Workers AI allocation is per day (reset 00:00 UTC) and per account.
+  let runId: number | null = null;
+  if (db) {
+    const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
+    const spent = (await db.select<{ neurons: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=neurons`))
+      .reduce((a, r) => a + Number(r.neurons || 0), 0);
+    const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS ?? 6000);
+    models.neuronBudget = Math.max(0, Math.min(models.neuronBudget, daily - spent));
+    const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
+    runId = row?.id ?? null;
+    log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(models.neuronBudget)} allowed this run`);
+  }
+
   if (db) {
     await db.upsert('sources', sources.map(({ id, city, kind, url, handle, label, curated, config }) =>
       ({ id, city, kind, url, handle, label, curated, config, active: true })), 'id');
@@ -401,6 +415,12 @@ async function main() {
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  if (runId != null) {
+    await db.patch(`pipeline_runs?id=eq.${runId}`, {
+      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls,
+      events_new: fresh.length, events_seen: existing.size, ok: !Object.values(health).some(h => !h.ok),
+    });
+  }
 
   const failing = Object.entries(health).filter(([, h]) => !h.ok);
   const empty = Object.entries(health).filter(([, h]) => h.ok && h.yield === 0);

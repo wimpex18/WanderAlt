@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` `20260928120000_picks_teaser.sql` and `20260928150000_pipeline_runs.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -10,6 +10,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `raw_items` | Exactly what a source said, once per `(source_id, external_id)`, with a content hash and a processing `status` | no |
 | `places` | Venues: name, `aliases` (lowercased names sources use), coordinates, OSM identity, `kind`, neighbourhood | yes, unless `hidden` |
 | `events` | One row per dated occurrence: source facts, `title_en`/`summary_en`, `kind`, `tags`, `relevance`, `status` | `published` only |
+| `pipeline_runs` | One row per run: neurons and model calls spent, events written, whether every source was healthy. Also the daily Workers AI budget | no |
 | `event_sources` | Provenance: every source that listed an event | for published events, without `raw_item_id` |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 
@@ -84,10 +85,6 @@ Model output decides publication for untrusted sources, and listing text is writ
 A source whose config names a `venue_name` is a single venue's own programme: every event it lists is placed there, whatever hall name the page uses.
 
 Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite and Meetup (no public search API), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
-
-### Telegram digest
-
-`pipeline/digest.ts` posts tonight's events (from now to 04:00, soonest first, 15 at most) to a Telegram channel as one message, daily at 14:00 UTC (`.github/workflows/digest.yml`). It reads the public `picks` view with the anon key, so it only posts what the site shows. It posts nothing until `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are repository secrets. `npm run digest:dry` prints the message.
 
 ### Running it
 
