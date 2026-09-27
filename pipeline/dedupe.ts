@@ -19,8 +19,11 @@ const words = (s: string) => new Set(nameKey(s).split(' ').filter(w => w.length 
 export function overlap(a: string, b: string): number {
   const [x, y] = [words(a), words(b)].sort((p, q) => p.size - q.size);
   if (!x.size) return 0;
+  // Estonian inflects names ("Von Krahl", "Von Krahli teater"), so a word
+  // that begins another of four letters or more counts as shared.
+  const like = (w: string) => y.has(w) || (w.length >= 4 && [...y].some(v => v.length >= 4 && (v.startsWith(w) || w.startsWith(v))));
   let shared = 0;
-  for (const w of x) if (y.has(w)) shared++;
+  for (const w of x) if (like(w)) shared++;
   return shared / x.size;
 }
 

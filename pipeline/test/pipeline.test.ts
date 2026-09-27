@@ -265,3 +265,34 @@ test('conferences and trade fairs are rejected by rule', () => {
   assert.equal(offTopic('HU? / EIK'), null);
   assert.equal(offTopic('Tallinn Vegan Fair 2026'), null);
 });
+
+test('one venue under two names is merged, neighbours are not', () => {
+  const places = new Places([
+    { id: 'tallinn-von-krahl', city: 'tallinn', name: 'Von Krahl', aliases: ['von krahl'], lat: 59.43819, lng: 24.72864, osm_id: 'node/1', kind: 'theatre' },
+    { id: 'tallinn-von-krahli-teater', city: 'tallinn', name: 'Von Krahli Teater', aliases: ['von krahli teater'], lat: 59.43822, lng: 24.72870 },
+    { id: 'tallinn-fotografiska', city: 'tallinn', name: 'Fotografiska Tallinn', aliases: ['fotografiska tallinn'], lat: 59.43835, lng: 24.72846 },
+  ], 'tallinn', 0);
+  const d = places.duplicates();
+  assert.equal(d.length, 1);
+  assert.equal(d[0].keep.id, 'tallinn-von-krahl');
+  places.absorb(d[0].keep, d[0].drop);
+  assert.ok(d[0].keep.aliases.includes('von krahli teater'));
+});
+
+test('areas are the asum a visitor knows', async () => {
+  const { areaName, isDistrict } = await import('../places.ts');
+  assert.equal(areaName({ quarter: 'Kalamaja', suburb: 'Põhja-Tallinna linnaosa' }), 'Kalamaja');
+  assert.equal(areaName({ neighbourhood: 'All-linn', quarter: 'Vanalinn' }), 'Old Town');
+  assert.equal(isDistrict('Põhja-Tallinna'), true);
+  assert.equal(isDistrict('Kalamaja'), false);
+});
+
+test('the Telegram digest escapes listing text and links every event', async () => {
+  const { compose } = await import('../digest.ts');
+  const text = compose([{ id: 'ev_1', title: 'Noise <b>& co</b>', venue: 'Sveta', neighborhood: 'Telliskivi', kind: 'gig',
+    time: '21:00', starts_at: '2026-10-02T18:00:00Z', is_free: false, price_min: 8, currency: 'EUR' }], new Date('2026-10-02T14:00:00Z'))!;
+  assert.match(text, /Noise &lt;b&gt;&amp; co&lt;\/b&gt;/);
+  assert.match(text, /detail\.html\?id=ev_1/);
+  assert.match(text, /from 8 €/);
+  assert.equal(compose([], new Date()), null);
+});

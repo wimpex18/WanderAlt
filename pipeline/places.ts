@@ -6,6 +6,7 @@
 
 import type { Candidate } from './types.ts';
 import { UA, nameKey, slug, sleep } from './util.ts';
+import { overlap } from './dedupe.ts';
 
 export interface Place {
   id: string;
@@ -68,6 +69,18 @@ export function normaliseAddress(a: string): string {
   return /\d/.test(street) ? `${street}, Tallinn` : '';
 }
 
+/** The area a visitor knows: the asum (Kalamaja, Vanalinn, Telliskivi's
+ *  Pelgulinn), which Nominatim returns as `quarter`, not the district
+ *  (Põhja-Tallinna linnaosa). The Old Town gets its English name. */
+const DISTRICT = /^(kesklinna|põhja-tallinna|kristiine|haabersti|lasnamäe|mustamäe|nõmme|pirita)( linnaosa)?$|^(tallinn|all-linn)$/i;
+const ENGLISH: Record<string, string> = { Vanalinn: 'Old Town' };
+export function areaName(a: Record<string, string>): string | null {
+  const name = a.quarter ?? a.neighbourhood ?? a.suburb?.replace(/ linnaosa$/, '') ?? a.city_district?.replace(/ linnaosa$/, '') ?? null;
+  return name ? ENGLISH[name] ?? name : null;
+}
+/** True for an area label that names a district rather than an asum. */
+export const isDistrict = (n: string | null | undefined) => !n || DISTRICT.test(n.trim());
+
 /** Metres between two points; plenty accurate across one city. */
 const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
   const k = 111_320;
@@ -123,6 +136,43 @@ export class Places {
     this.remember(place);
     this.created.push(place);
     return place;
+  }
+
+  /** Pairs that are one venue under two names: the same OSM object, or
+   *  within 60 m with names sharing most words ("Von Krahl" and "Von
+   *  Krahli Teater"). The keeper is the one with an OSM id, then the one
+   *  with more filled fields. */
+  duplicates(): { keep: Place; drop: Place }[] {
+    const all = this.all();
+    const filled = (p: Place) => DETAIL_FIELDS.filter(k => p[k] != null && p[k] !== '').length + (p.osm_id ? 100 : 0);
+    const out: { keep: Place; drop: Place }[] = [];
+    const gone = new Set<string>();
+    for (let i = 0; i < all.length; i++) {
+      for (let j = i + 1; j < all.length; j++) {
+        const a = all[i], b = all[j];
+        if (gone.has(a.id) || gone.has(b.id)) continue;
+        const sameOsm = !!a.osm_id && a.osm_id === b.osm_id;
+        const near = a.lat != null && b.lat != null && metres({ lat: a.lat!, lng: a.lng! }, { lat: b.lat!, lng: b.lng! }) < 60;
+        if (!sameOsm && !(near && overlap(a.name, b.name) >= 0.6)) continue;
+        const [keep, drop] = filled(a) >= filled(b) ? [a, b] : [b, a];
+        out.push({ keep, drop });
+        gone.add(drop.id);
+      }
+    }
+    return out;
+  }
+
+  /** Fold `drop` into `keep` in memory: its names become aliases and its
+   *  details fill gaps. The caller repoints events and deletes the row. */
+  absorb(keep: Place, drop: Place) {
+    keep.aliases = [...new Set([...keep.aliases, ...drop.aliases, nameKey(drop.name)])];
+    for (const k of DETAIL_FIELDS) {
+      if ((keep[k] == null || keep[k] === '') && drop[k] != null) (keep as unknown as Record<string, unknown>)[k] = drop[k];
+    }
+    this.remember(keep);
+    if (!this.created.includes(keep) && !this.updated.includes(keep)) this.updated.push(keep);
+    const i = this.created.indexOf(drop); if (i >= 0) this.created.splice(i, 1);
+    const u = this.updated.indexOf(drop); if (u >= 0) this.updated.splice(u, 1);
   }
 
   /** Every place known this run, stored or new. */
@@ -181,9 +231,29 @@ export class Places {
       place.kind = place.kind ?? OSM_KIND[`${venue.category}/${venue.type}`] ?? null;
     }
     const a = hit.address ?? {};
-    place.neighborhood = a.neighbourhood ?? a.suburb?.replace(/ linnaosa$/, '') ?? a.city_district?.replace(/ linnaosa$/, '') ?? null;
+    place.neighborhood = areaName(a);
     if (!place.address && a.road) place.address = [a.road, a.house_number].filter(Boolean).join(' ');
     return true;
+  }
+
+  /** Replace a district-level or missing area with the asum at the
+   *  place's coordinates (Nominatim reverse, one lookup). */
+  async area(place: Place): Promise<boolean> {
+    if (place.lat == null || place.lng == null || this.lookups >= this.maxLookups) return false;
+    this.lookups++;
+    const url = new URL('https://nominatim.openstreetmap.org/reverse');
+    url.search = new URLSearchParams({ lat: String(place.lat), lon: String(place.lng), format: 'jsonv2', zoom: '15', addressdetails: '1' }).toString();
+    try {
+      const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+      await sleep(1100);
+      if (!r.ok) return false;
+      const name = areaName((await r.json() as { address?: Record<string, string> }).address ?? {});
+      if (!name || name === place.neighborhood) return false;
+      place.neighborhood = name;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async geocode(q: string): Promise<NominatimHit | null> {

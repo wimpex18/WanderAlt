@@ -1,0 +1,24 @@
+# Tonight in Tallinn as one Telegram post, daily at 17:00 Tallinn summer
+# time (16:00 in winter). Posts nothing until TELEGRAM_BOT_TOKEN and
+# TELEGRAM_CHAT_ID are repository secrets.
+name: digest
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Post tonight's digest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node pipeline/digest.ts

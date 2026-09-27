@@ -20,7 +20,7 @@ import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
-import { Places, type Place } from './places.ts';
+import { Places, isDistrict, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey } from './util.ts';
@@ -213,7 +213,7 @@ async function main() {
   const existingPlaces = db
     ? await db.select<Place>(`places?city=eq.${CITY}&select=${PLACE_COLUMNS.join(',')}`)
     : [];
-  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
+  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
 
   // The venue catalogue: every cultural venue OpenStreetMap knows in the city.
   const osm = sources.find(s => s.kind === 'osm');
@@ -228,6 +228,19 @@ async function main() {
       log(`${osm.id}: failed: ${(e as Error).message}`);
     }
   }
+  // Areas a visitor knows (Kalamaja, not Põhja-Tallinna) for places that
+  // carry a district or nothing; 40 a run, one Nominatim lookup each.
+  if (!(DRY && !flag('--geocode'))) {
+    let n = 0;
+    for (const p of places.all().filter(p => p.lat != null && isDistrict(p.neighborhood)).slice(0, 40)) {
+      if (await places.area(p)) {
+        n++;
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    }
+    if (n) log(`areas: ${n} places moved from a district to their asum`);
+  }
+
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
     const due = places.all().filter(p => !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
@@ -300,6 +313,13 @@ async function main() {
     return;
   }
 
+  // One venue under two names: repoint its events, keep one row.
+  const dups = places.duplicates();
+  for (const { keep, drop } of dups) {
+    places.absorb(keep, drop);
+    for (const e of events.values()) if (e.place_id === drop.id) e.place_id = keep.id;
+  }
+  if (dups.length) log(`merged ${dups.length} duplicate venues: ${dups.map(d => `${d.drop.name} → ${d.keep.name}`).join('; ')}`);
   const touched = [...places.created, ...places.updated];
   if (touched.length) {
     // Every row carries every column: a bulk upsert takes its column list
@@ -308,6 +328,12 @@ async function main() {
       ...Object.fromEntries(PLACE_COLUMNS.map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
       aliases: p.aliases ?? [], updated_at: new Date().toISOString(),
     })), 'id');
+  }
+  for (const { keep, drop } of dups) {
+    if (existingPlaces.some(p => p.id === drop.id)) {
+      await db.patch(`events?place_id=eq.${encodeURIComponent(drop.id)}`, { place_id: keep.id });
+      await db.req('DELETE', `places?id=eq.${encodeURIComponent(drop.id)}`);
+    }
   }
   const ids = [...events.keys()];
   const existing = new Set<string>();
@@ -345,7 +371,7 @@ async function main() {
   // Events written before any model was available get classified now.
   if (models.ready) {
     const waiting = await db.select<{ id: string; title: string; venue_name: string | null; description: string | null; starts_at: string; status_note: string | null }>(
-      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
+      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,status_note.not.like.manual*)&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
     const cands = waiting.map(w => ({ title: w.title, venue_name: w.venue_name, description: w.description, starts_at: w.starts_at, has_time: true, engine: 'db' }) as Candidate);
     const late = await classify(models, cands);
     let n = 0;
