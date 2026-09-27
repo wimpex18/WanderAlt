@@ -27,6 +27,7 @@ A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`, plus `CLOUDFLARE_ACCOUNT_
 - [`docs/data.md`](docs/data.md): schema, pipeline, sources, security.
 - [`docs/models.md`](docs/models.md): which models, why, and how to re-check them.
 - [`docs/frontend.md`](docs/frontend.md): the current site's design system and patterns.
+- [`docs/design-brief.md`](docs/design-brief.md): the brief for the redesign in Claude Design.
 
 ## Deploying
 
