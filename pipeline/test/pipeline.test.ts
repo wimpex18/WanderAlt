@@ -10,7 +10,7 @@ import { parseTelegram, parseRss } from '../sources/text.ts';
 import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from '../llm.ts';
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
-import { decide, eventId, loadSources } from '../run.ts';
+import { decide, eventId, loadSources, offTopic } from '../run.ts';
 import { htmlToText, httpUrl, nameKey } from '../util.ts';
 import type { Source } from '../types.ts';
 
@@ -256,4 +256,12 @@ test('a catalogue venue fills gaps in the place events already created', () => {
   assert.equal(places.updated.length, 1);
   places.merge({ id: 'tallinn-biit', city: 'tallinn', name: 'Biit', aliases: ['biit'], kind: 'record store' });
   assert.equal(places.created.length, 1);
+});
+
+test('conferences and trade fairs are rejected by rule', () => {
+  assert.equal(offTopic('NORDIC-BALTIC SECURITY SUMMIT 2026')?.status, 'rejected');
+  assert.equal(offTopic('HEALTH PROMOTION CONFERENCE 2026')?.note, 'rule: conference');
+  assert.equal(offTopic('Armenian Products Expo')?.status, 'rejected');
+  assert.equal(offTopic('HU? / EIK'), null);
+  assert.equal(offTopic('Tallinn Vegan Fair 2026'), null);
 });

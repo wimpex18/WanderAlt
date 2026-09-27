@@ -19,7 +19,7 @@ import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
-import { Models, extractEvents, classify, classifyPlaces } from './llm.ts';
+import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { Db, inList, chunks } from './db.ts';
@@ -60,6 +60,9 @@ async function collect(source: Source): Promise<RawItem[]> {
   }
 }
 
+/** Posters read per run; each costs about 35 Workers AI neurons. */
+const posters = { left: Number(opt('--max-posters') ?? 30) };
+
 const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || s.kind === 'rss';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
@@ -69,7 +72,9 @@ async function read(item: RawItem, source: Source, models: Models): Promise<Cand
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[] };
-  const text = [p.title, p.text].filter(Boolean).join('\n\n');
+  // A post's poster often carries the date, time and venue its text leaves out.
+  const poster = p.photos?.[0] && posters.left > 0 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
+  const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
   const found = await extractEvents(models, {
     text, source: `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
@@ -85,6 +90,15 @@ export function eventId(city: string, c: Candidate, placeId: string | null): str
   const local = new Date(c.starts_at).toLocaleTimeString('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' });
   const where = placeId ?? nameKey(c.venue_name ?? '');
   return `ev_${sha([city, nameKey(c.title), tallinnDay(c.starts_at), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
+}
+
+/** Formats that are never WanderAlt, whoever lists them: a venue that
+ *  rents its halls out (Kultuurikatel) lists conferences and trade fairs
+ *  beside its gigs. Rejected by rule, before a model is asked. */
+const OFF_TOPIC = /\b(conference|konverents|summit|forum|foorum|seminar|koolitus|webinar|expo|trade fair|messe|hackathon|business|networking|investor|recruitment|job fair|töömess)\b/i;
+export function offTopic(title: string): { status: string; note: string } | null {
+  const m = OFF_TOPIC.exec(title);
+  return m ? { status: 'rejected', note: `rule: ${m[1].toLowerCase()}` } : null;
 }
 
 /** Publish, hold for review, or reject. Trusted sources need a lower bar. */
@@ -243,7 +257,7 @@ async function main() {
     const id = seen.match(c.title, where, start) ?? eventId(CITY, c, place?.id ?? null);
     seen.add({ id, title: c.title, where, start });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
-    const { status, note } = decide(e, trusted);
+    const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null, last_seen_at: new Date().toISOString() });
     if (events.has(id)) continue;
     events.set(id, {
@@ -279,6 +293,7 @@ async function main() {
     const out = opt('--out');
     const rows = [...events.values()].sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
     if (out) writeFileSync(out, JSON.stringify({ events: rows, places: places.created, health }, null, 2));
+    log(`${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
     for (const e of rows.slice(0, Number(opt('--show') ?? 15))) {
       log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
     }
@@ -359,7 +374,7 @@ async function main() {
       ? { last_run_at: now, last_ok_at: now, last_yield: h.yield, consecutive_failures: 0, last_error: null }
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
 
   const failing = Object.entries(health).filter(([, h]) => !h.ok);
   const empty = Object.entries(health).filter(([, h]) => h.ok && h.yield === 0);

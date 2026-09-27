@@ -71,13 +71,11 @@
     "id": "vabalava",
     "city": "tallinn",
     "kind": "html",
-    "url": "https://vabalava.ee/programm/",
+    "url": "https://vabalava.ee/mangukava/",
     "handle": "@vabalava",
     "label": "Vaba Lava",
     "curated": true,
-    "config": {
-      "venue_name": "Vaba Lava"
-    }
+    "config": {}
   },
   {
     "id": "kultuurikatel",

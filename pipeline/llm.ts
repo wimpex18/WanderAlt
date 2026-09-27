@@ -40,6 +40,38 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
   return JSON.parse(text);
 }
 
+/** Workers AI neurons spent this run (the free allocation is 10,000 a day). */
+export const usage = { neurons: 0 };
+
+/** The text on an event poster, read by Workers AI's free vision model.
+ *  Null when no Workers AI key is set, the image is unusable, or the call
+ *  fails; a post then goes to the extractor with its own text only. */
+export async function transcribePoster(imageUrl: string): Promise<string | null> {
+  const account = env('CLOUDFLARE_ACCOUNT_ID'), token = env('CLOUDFLARE_API_TOKEN');
+  if (!account || !token) return null;
+  try {
+    const img = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
+    const mime = img.headers.get('content-type') ?? '';
+    if (!img.ok || !/^image\/(jpeg|png|webp)/.test(mime)) return null;
+    const buf = Buffer.from(await img.arrayBuffer());
+    if (buf.length > 3_000_000) return null;
+    const res = await post(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/v1/chat/completions`,
+      { authorization: `Bearer ${token}` }, {
+        model: env('WORKERS_AI_VISION_MODEL') ?? '@cf/meta/llama-4-scout-17b-16e-instruct',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: [
+          { type: 'text', text: 'Transcribe every piece of text on this image exactly as written: event names, dates, times, venues, prices. Plain text, no commentary. If there is no text, answer NONE.' },
+          { type: 'image_url', image_url: { url: `data:${mime};base64,${buf.toString('base64')}` } },
+        ] }],
+      }) as { choices?: { message?: { content?: string | null } }[]; usage?: { neurons?: number } };
+    if (res.usage?.neurons) usage.neurons += res.usage.neurons;
+    const text = res.choices?.[0]?.message?.content?.trim() ?? '';
+    return text && !/^none\.?$/i.test(text) ? clip(text, 3000) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function lanes(): Lane[] {
   const workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b';
   const openrouter = env('OPENROUTER_MODEL') ?? 'google/gemma-4-31b-it:free';
@@ -60,7 +92,8 @@ export function lanes(): Lane[] {
           { role: 'user', content: user },
         ],
         ...(jsonSchema ? { response_format: { type: 'json_schema', json_schema: { name: 'answer', strict: false, schema } } } : {}),
-      }) as { choices?: { finish_reason?: string; message?: { content?: string | null } }[] };
+      }) as { choices?: { finish_reason?: string; message?: { content?: string | null } }[]; usage?: { neurons?: number } };
+      if (res.usage?.neurons) usage.neurons += res.usage.neurons;
       const choice = res.choices?.[0];
       if (choice?.finish_reason === 'length') throw new Error('answer cut off at max_tokens');
       return choice?.message?.content ?? '';
@@ -101,6 +134,11 @@ export class Models {
     this.budget = budget;
   }
 
+  /** Workers AI's free allocation is 10,000 neurons a day per Cloudflare
+   *  account, shared with anything else on the account. Past this many in
+   *  one run, the lane is skipped and OpenRouter answers instead. */
+  readonly neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500);
+
   get ready(): boolean {
     return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2);
   }
@@ -110,6 +148,7 @@ export class Models {
     let last: unknown = new Error('no model lane configured');
     for (const lane of this.available) {
       if ((this.failures.get(lane.name) ?? 0) >= 2) continue;
+      if (lane.name === 'workers-ai' && usage.neurons >= this.neuronBudget) continue;
       if (this.calls >= this.budget) throw new Error('model call budget spent for this run');
       // A 429 is the free tier's per-minute cap, not a broken lane: wait and try again.
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -168,6 +207,7 @@ const EXTRACT_SYSTEM = `You read event announcements for WanderAlt, a guide to g
 Return every event the text announces that takes place in Tallinn on a stated date.
 Rules:
 - Copy facts; never invent a date, time, venue, price or link. Use null when the text does not say.
+- venue is the place where it happens (a club, gallery, hall, street address). Never the event's own name or the festival's name; null if no place is given.
 - Resolve dates like "28.09" or "this Friday" against the posting date you are given. Skip anything already over.
 - A multi-day run with separate dated shows is one entry per date; an exhibition open over a span is one entry with start and end dates.
 - Skip adverts, pet adoption, news, opinions, vacancies and online-only events.
