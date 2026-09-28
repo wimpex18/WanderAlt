@@ -42,6 +42,7 @@
   <script defer src="./toast.js"></script>
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
+  <script defer src="./tabbar.js"></script>
   <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
   <script defer src="./map.js"></script>
@@ -66,24 +67,28 @@
     <div class="map-canvas" id="map-canvas"></div>
     <div class="map-pins" id="map-pins"></div>
     <div class="map-top">
-      <button class="map-layer" type="button" id="layer-events" aria-pressed="true"><span class="map-layer__key map-layer__key--event" aria-hidden="true"></span>Events<span class="wa-chip__n" id="n-events"></span></button>
-      <button class="map-layer" type="button" id="layer-places" aria-pressed="true"><span class="map-layer__key map-layer__key--place" aria-hidden="true"></span>Places<span class="wa-chip__n" id="n-places"></span></button>
+      <div class="map-seg" role="group" aria-label="Show">
+        <button class="map-seg__opt" type="button" data-layer="all" aria-pressed="true">All</button>
+        <button class="map-seg__opt" type="button" data-layer="events" aria-pressed="false">Events<span class="map-seg__n" id="n-events"></span></button>
+        <button class="map-seg__opt" type="button" data-layer="places" aria-pressed="false">Places<span class="map-seg__n" id="n-places"></span></button>
+      </div>
       <label class="map-when"><span class="wa-sr">When</span>
         <select id="map-when">
           <option value="tonight">Tonight</option>
           <option value="tomorrow">Tomorrow</option>
-          <option value="weekend">This weekend</option>
+          <option value="weekend">Weekend</option>
           <option value="thisweek">This week</option>
         </select>
       </label>
     </div>
     <div class="map-preview" id="preview" data-open="false"></div>
     <button class="map-ctrl map-locate" type="button" id="locate" aria-label="Show where I am"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/></svg></button>
-    <section class="map-drawer" id="drawer" data-open="false" aria-label="In view">
-      <button class="map-drawer__handle" type="button" id="drawer-toggle" aria-expanded="false" aria-controls="drawer-list">
-        <span><span class="map-drawer__title" id="drawer-title">In view</span><br><span class="map-drawer__sub" id="drawer-sub">Reading the sources</span></span>
-        <svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
+    <section class="map-drawer" id="drawer" data-snap="peek" aria-label="In view">
+      <div class="map-drawer__grip" id="drawer-grip">
+        <button class="map-drawer__handle" type="button" id="drawer-toggle" aria-expanded="false" aria-controls="drawer-list">
+          <span><span class="map-drawer__title" id="drawer-title">In view</span><br><span class="map-drawer__sub" id="drawer-sub">Reading the sources</span></span>
+        </button>
+      </div>
       <div class="map-drawer__list" id="drawer-list"></div>
     </section>
   </main>
