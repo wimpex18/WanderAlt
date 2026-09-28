@@ -34,7 +34,7 @@
       /* Not in the loaded set: say the honest minimum only once data is live. */
       if (window.WA.DATA_LIVE) out.gone.push({ id, title: '', why: 'the source stopped listing it' });
     }
-    out.dated.sort(window.WA.Geo.bySoonestThenDistance());
+    out.dated.sort(window.WA.Geo.byDateThenSoonest());
     return out;
   };
 

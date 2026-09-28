@@ -21,7 +21,7 @@
   const nowMin = () => window.WA.Hours.cityNow().minutes;
   const isLate = () => { const m = nowMin(); return m >= 21 * 60 + 30 || m < 5 * 60; };
 
-  const sortSoon = (list) => list.slice().sort(G().bySoonestThenDistance());
+  const sortSoon = (list) => list.slice().sort(G().byDateThenSoonest());
 
   /* ── Hero ───────────────────────────────────────────────────── */
   const clockText = () => {
@@ -124,7 +124,8 @@
 
     if (later.length) {
       const late = isLate();
-      const lateOnes = later.filter(e => { const m = W().statedMinutes(e); return m == null || m >= 21 * 60; });
+      /* Late means 21:00 on, or the small hours once past midnight. */
+      const lateOnes = later.filter(e => { const m = W().statedMinutes(e); return m == null || m >= 21 * 60 || m < 5 * 60; });
       const list = late && lateOnes.length ? lateOnes : later;
       out.push(shelf({
         title: late ? 'Starting late' : 'Starting soon', n: list.length,

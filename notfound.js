@@ -7,7 +7,7 @@
 
   const render = () => {
     const soon = R().live().filter(e => window.WA.when.matches(e, 'thisweek'))
-      .sort(window.WA.Geo.bySoonestThenDistance()).slice(0, 5);
+      .sort(window.WA.Geo.byDateThenSoonest()).slice(0, 5);
     const host = document.getElementById('preview');
     if (!host || !soon.length) return;
     host.innerHTML = `<section class="wa-sect">${R().sect({ title: 'On this week', href: 'discover.html', more: 'Programme' })}

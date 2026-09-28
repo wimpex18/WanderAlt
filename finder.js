@@ -44,7 +44,7 @@
 
   const results = () => {
     if (!st.q.trim()) return '';
-    const events = R().live().filter(e => R().matches(e, st.q)).sort(G().bySoonestThenDistance());
+    const events = R().live().filter(e => R().matches(e, st.q)).sort(G().byDateThenSoonest());
     const venues = R().places().filter(v => R().matches(v, st.q));
     if (!events.length && !venues.length) {
       return `<p class="wa-suggest__empty">Nothing listed matches “${esc(st.q)}”. Try a venue, an area such as Kalamaja, or a kind such as film.</p>`;

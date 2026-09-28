@@ -247,15 +247,19 @@
     $('summary').innerHTML = `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`;
   };
 
+  /* Nearest order is one flat list; soonest order groups by day. */
+  const listHtml = (list) => {
+    if (!list.length) return emptyState();
+    if (state.sort === 'nearest' && G().currentLoc()) return `<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`;
+    return R().grouped(list, { since });
+  };
+
   const render = () => {
     const list = results();
     week();
     kinds();
     summary(list.length);
-    const flat = state.sort === 'nearest' && G().currentLoc();
-    $('list').innerHTML = !list.length ? emptyState()
-      : flat ? `<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`
-      : R().grouped(list, { since });
+    $('list').innerHTML = listHtml(list);
     const fc = activeCount();
     $('filter-count').hidden = !fc;
     $('filter-count').textContent = fc ? String(fc) : '';
@@ -351,7 +355,7 @@
       /* Redraw the list but leave the slider being dragged alone. */
       const list = results();
       summary(list.length);
-      $('list').innerHTML = list.length ? R().grouped(list, { since }) : emptyState();
+      $('list').innerHTML = listHtml(list);
       week(); kinds();
       if (sheet() && sheet().open) $('sheet-foot').innerHTML = foot(list.length);
       write();

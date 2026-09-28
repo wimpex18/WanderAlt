@@ -85,9 +85,13 @@
     }
     if (!list.length) {
       const without = all.filter(v => inGroup(v, state.group)).length;
-      $('list').innerHTML = R().empty({ icon: 'clock', title: `No ${noun} we list are open this minute.`,
-        body: `About half the places file their hours. ${without} ${noun} are listed in all.`,
-        actions: [{ act: 'all-hours', label: `Show all ${without}` }, { href: 'discover.html?time=tonight', label: "Tonight's listings" }] });
+      $('list').innerHTML = state.open && without
+        ? R().empty({ icon: 'clock', title: `No ${noun} we list are open this minute.`,
+          body: `About half the places file their hours. ${without} ${noun} are listed in all.`,
+          actions: [{ act: 'all-hours', label: `Show all ${without}` }, { href: 'discover.html?time=tonight', label: "Tonight's listings" }] })
+        : R().empty({ icon: 'store', title: `No ${noun} are listed yet.`,
+          body: 'Other kinds of place are.', actions: [{ act: 'all-kinds', label: 'All places' }] });
+      write();
       return;
     }
     $('list').innerHTML = `<ul class="places-grid">${list.map(v => {
@@ -103,6 +107,7 @@
     if (gb) { state.group = gb.dataset.group; render(); return; }
     if (hit('#open-now')) { state.open = !state.open; render(); return; }
     if (hit('[data-act="all-hours"]')) { state.open = false; render(); return; }
+    if (hit('[data-act="all-kinds"]')) { state.group = ''; render(); return; }
     if (hit('[data-act="reload"]')) location.reload();
   });
 
