@@ -22,8 +22,9 @@ import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
+import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
-import { sha, nameKey } from './util.ts';
+import { sha, nameKey, scrubContacts } from './util.ts';
 import { tallinnDay } from './time.ts';
 
 const args = process.argv.slice(2);
@@ -259,15 +260,17 @@ async function main() {
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null, last_seen_at: new Date().toISOString() });
-    if (events.has(id)) continue;
+    // Any source saying a show is off or sold out wins over one that doesn't.
+    const state = worse(c.flag, textFlag(c.title, c.description));
+    if (events.has(id)) { const had = events.get(id)!; had.flag = worse(had.flag as never, state); continue; }
     events.set(id, {
-      id, city: CITY, title: c.title, title_en: e.title_en, summary_en: e.summary_en, description: c.description ?? null,
+      id, city: CITY, title: c.title, title_en: e.title_en, summary_en: e.summary_en, description: scrubContacts(c.description),
       kind: e.kind, tags: e.tags, place_id: place?.id ?? null, venue_name: c.venue_name ?? null, address: c.address ?? null,
       lat: c.lat ?? null, lng: c.lng ?? null, starts_at: c.starts_at, ends_at: c.ends_at ?? null, has_time: c.has_time,
       is_free: c.is_free ?? null, price_min: c.price_min ?? null, price_max: c.price_max ?? null, currency: c.currency ?? null,
       ticket_url: c.ticket_url ?? null, url: c.url ?? null, image_url: c.image_url ?? null, language: c.language ?? null,
       series_key: c.series_key ?? null, relevance: Number.isNaN(e.relevance) ? null : e.relevance,
-      status, status_note: note, engine: `${c.engine}+${e.engine}`, last_seen_at: new Date().toISOString(),
+      flag: state, status, status_note: note, engine: `${c.engine}+${e.engine}`, last_seen_at: new Date().toISOString(),
     });
   }
 

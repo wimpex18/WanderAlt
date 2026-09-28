@@ -220,8 +220,10 @@
     const clock = R().clockOf(e);
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
     const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
-    const tickets = ended ? '' : ticketsFor(e);
-    const cal = !ended && e.startsAt ? ics(e) : '';
+    const off = R().isOff(e);
+    const tickets = ended || e.flag === 'cancelled' ? '' : ticketsFor(e);
+    const cal = !ended && !off && e.startsAt ? ics(e) : '';
+    const soldOut = e.flag === 'sold_out';
     const v = window.WA.venueFor(e);
     const venueName = R().real(e.venue) || (v && v.name) || '';
 
@@ -253,8 +255,9 @@
       <div class="det-grid__media">${media(e, title, e.kind)}</div>
       <div class="det-grid__main">
         ${ended ? `<div class="det-notice" role="status">${I('clock')}<span><strong>This has ended.</strong>${esc(k ? `It was on ${R().dateShort(k)}${clock ? ` at ${clock}` : ''}.` : '')} <a class="wa-link" href="index.html">What's on tonight</a></span></div>` : ''}
+        ${!ended && off ? `<div class="det-notice det-notice--off" role="status">${I('info')}<span><strong>${esc(e.flag === 'cancelled' ? 'Cancelled' : 'Postponed')}</strong>${esc(e.flag === 'cancelled' ? 'The source says this will not go ahead.' : 'The source says this is moving to a new date. Check there before you go.')}${link ? ` <a class="wa-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open the listing</a>` : ''}</span></div>` : ''}
         <header class="det-head">
-          <p class="wa-kicker">${liveNow ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
+          <p class="wa-kicker">${off ? '' : R().flagTag(e)}${liveNow && !off ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
           <h1 class="wa-h1">${esc(title)}</h1>
           ${orig ? `<p class="det-orig" lang="et">${esc(orig)}</p>` : ''}
           ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
@@ -266,11 +269,11 @@
           ${walkFact(e)}
         </div>
 
-        ${ended ? '' : `<div class="wa-bar">
-          <span class="wa-bar__text"><span class="wa-bar__price">${esc(R().price(e) || whenValue)}</span>
-            <span class="wa-bar__sub">${esc([R().price(e) ? whenValue : '', whenSub, tickets ? `on ${host(tickets)}` : venueName].filter(Boolean).join(' · '))}</span></span>
+        ${ended || e.flag === 'cancelled' ? '' : `<div class="wa-bar">
+          <span class="wa-bar__text"><span class="wa-bar__price">${esc(soldOut ? 'Sold out' : R().price(e) || whenValue)}</span>
+            <span class="wa-bar__sub">${esc([e.flag === 'few_left' ? 'Few tickets left' : '', soldOut ? '' : R().price(e) ? whenValue : '', whenSub, tickets ? `on ${host(tickets)}` : venueName].filter(Boolean).join(' · '))}</span></span>
           ${tickets
-            ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}Tickets</a>`
+            ? `<a class="wa-btn ${soldOut ? '' : 'wa-btn--primary'}" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}${soldOut ? 'Check for returns' : 'Tickets'}</a>`
             : `<a class="wa-btn wa-btn--primary" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}Walk me there</a>`}
         </div>
         <div class="det-actions">

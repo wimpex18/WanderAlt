@@ -42,7 +42,7 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
   const horizon = now.getTime() + days * 86_400_000;
 
   return (body.events ?? [])
-    .filter(e => e.attendance_mode !== 'online' && e.event_status !== 'cancelled')
+    .filter(e => e.attendance_mode !== 'online')
     .filter(e => {
       const start = Date.parse(tallinnToIso(e.starts_at) ?? '');
       const end = Date.parse(tallinnToIso(e.ends_at ?? '') ?? '') || start;
@@ -94,6 +94,7 @@ export function extract(item: RawItem): Candidate[] {
     image_url: httpUrl(e.image_url),
     series_key: e.series_id ? `fienta:${e.series_id}` : null,
     kind_hint: [...(e.categories ?? []), e.organizer_name ?? ''].filter(Boolean).join(', '),
+    flag: e.event_status === 'cancelled' ? 'cancelled' : /postponed|rescheduled/.test(e.event_status ?? '') ? 'postponed' : null,
     engine: 'fienta',
   }];
 }

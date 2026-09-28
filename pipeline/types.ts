@@ -27,6 +27,9 @@ export const EVENT_KINDS = [
 ] as const;
 export type EventKind = typeof EVENT_KINDS[number];
 
+/** What a source says about an event's state; null when nothing is wrong. */
+export type Flag = 'cancelled' | 'postponed' | 'sold_out' | 'few_left';
+
 /** One dated occurrence as extracted from a raw item, before places and ids. */
 export interface Candidate {
   title: string;
@@ -48,6 +51,7 @@ export interface Candidate {
   language?: string | null;
   series_key?: string | null;
   kind_hint?: string | null;    // the source's own category words
+  flag?: Flag | null;           // from structured fields; prose is read in run.ts
   engine: string;               // 'fienta', 'jsonld', or the model that read it
 }
 

@@ -11,7 +11,8 @@ import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
 import { decide, eventId, loadSources, offTopic } from '../run.ts';
-import { htmlToText, httpUrl, nameKey } from '../util.ts';
+import { htmlToText, httpUrl, nameKey, scrubContacts } from '../util.ts';
+import { textFlag, schemaFlag, worse } from '../flags.ts';
 import type { Source } from '../types.ts';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
@@ -264,4 +265,25 @@ test('conferences and trade fairs are rejected by rule', () => {
   assert.equal(offTopic('Armenian Products Expo')?.status, 'rejected');
   assert.equal(offTopic('HU? / EIK'), null);
   assert.equal(offTopic('Tallinn Vegan Fair 2026'), null);
+});
+
+test('cancelled, postponed, sold out and few left come from what the source says', () => {
+  assert.equal(textFlag('(80% SOLD OUT) BATUSHKA (PL) • 03.10 • Paavli Kultuurivabrik'), 'few_left');
+  assert.equal(textFlag('Ühiskondlikult kahjulik element', 'N 08.10 19:00 Vaba Lava Black Box Salmes JÄÄB ÄRA! (https://vabalava.ee/x/)'), 'cancelled');
+  assert.equal(textFlag('Концерт отменён'), 'cancelled');
+  assert.equal(textFlag('Show', 'Välja müüdud! Lisakontsert 12.10'), 'sold_out');
+  // A refund policy or a boast is not a state.
+  assert.equal(textFlag('Comedy', 'Performer: X\nIf the show is cancelled, tickets are refunded.'), null);
+  assert.equal(textFlag('Tickets sell out fast'), null);
+  assert.equal(schemaFlag('https://schema.org/EventScheduled', 'https://schema.org/SoldOut'), 'sold_out');
+  assert.equal(schemaFlag('https://schema.org/EventCancelled', 'https://schema.org/InStock'), 'cancelled');
+  assert.equal(schemaFlag('https://schema.org/EventScheduled', 'https://schema.org/InStock'), null);
+  assert.equal(worse('few_left', 'cancelled'), 'cancelled');
+  assert.equal(worse(null, 'sold_out'), 'sold_out');
+});
+
+test('organiser emails and phone numbers never reach a stored description', () => {
+  const out = scrubContacts('Piletid: piletid@teatermustkast.ee\nKontakt: tel +372 5555 1234\nN 08.10 19:00 – 21:30\nInfo (mailto:info@x.ee) at the door\nHind 12 €');
+  assert.equal(out, 'N 08.10 19:00 – 21:30\nInfo at the door\nHind 12 €');
+  assert.equal(scrubContacts('Follow @sigmundtells'), 'Follow @sigmundtells');
 });

@@ -5,6 +5,7 @@
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, htmlToText, httpUrl, clip } from '../util.ts';
 import { toIso } from '../time.ts';
+import { schemaFlag } from '../flags.ts';
 
 type Node = Record<string, unknown>;
 
@@ -93,6 +94,7 @@ export function extract(item: RawItem, source: Source): Candidate[] {
     image_url: httpUrl(typeof image === 'object' && image ? (image as Node).url : image),
     series_key: work && typeof work['@id'] === 'string' ? `jsonld:${work['@id']}` : null,
     kind_hint: String(n['@type']),
+    flag: schemaFlag(n.eventStatus, offers?.availability),
     engine: 'jsonld',
   }];
 }
