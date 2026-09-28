@@ -92,6 +92,71 @@
     }
   },
   {
+    "id": "kai",
+    "city": "tallinn",
+    "kind": "wordpress",
+    "url": "https://admin.kai.center/wp-json/www-api/v1/calendar",
+    "handle": "@kaicenter",
+    "label": "Kai Art Center",
+    "curated": true,
+    "config": {
+      "shape": "kai",
+      "extra_urls": [
+        "https://admin.kai.center/wp-json/www-api/v1/current-events"
+      ],
+      "venue_name": "Kai",
+      "address": "Peetri 12, Tallinn",
+      "days": 60,
+      "skip_titles": "kultuuripilet|suletud|closed|preparing for"
+    }
+  },
+  {
+    "id": "paavli",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://www.kultuurivabrik.ee/en/events",
+    "handle": "@paavlikultuurivabrik",
+    "label": "Paavli Kultuurivabrik",
+    "curated": true,
+    "config": {
+      "venue_name": "Paavli Kultuurivabrik"
+    }
+  },
+  {
+    "id": "saal",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://saal.ee/en/program/",
+    "handle": "@kanutigildisaal",
+    "label": "Kanuti Gildi SAAL",
+    "curated": true,
+    "config": {}
+  },
+  {
+    "id": "uuslaine",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://uuslaine.com/kalenderi-full",
+    "handle": "@laine.bar",
+    "label": "Uus Laine",
+    "curated": true,
+    "config": {
+      "venue_name": "Uus Laine"
+    }
+  },
+  {
+    "id": "gamma-newsletter",
+    "city": "tallinn",
+    "kind": "rss",
+    "url": "https://giadafromgamma.substack.com/feed",
+    "handle": "@giadafromgamma",
+    "label": "Gamma Tallinn newsletter",
+    "curated": false,
+    "config": {
+      "max_age_days": 21
+    }
+  },
+  {
     "id": "tg-sigmundtells",
     "city": "tallinn",
     "kind": "telegram",

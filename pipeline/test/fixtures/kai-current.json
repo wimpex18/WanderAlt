@@ -1,0 +1,6 @@
+[
+  {"title": "Kai is preparing for a new exhibition until October 17.", "slug": "kai-is-preparing", "post_type": "event",
+   "starting_datetime": "2026-09-21 12:00:00", "ending_datetime": "2026-10-16 18:00:00", "excluded_dates": [{"excluded_date": "2026-10-10"}]},
+  {"title": "Exhibition: Tides", "slug": "exhibition-tides", "post_type": "event", "thumbnail": {"url": "javascript:alert(1)"},
+   "starting_datetime": "2026-09-10 12:00:00", "ending_datetime": "2026-11-30 18:00:00"}
+]

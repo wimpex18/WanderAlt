@@ -287,3 +287,35 @@ test('organiser emails and phone numbers never reach a stored description', () =
   assert.equal(out, 'N 08.10 19:00 – 21:30\nInfo at the door\nHind 12 €');
   assert.equal(scrubContacts('Follow @sigmundtells'), 'Follow @sigmundtells');
 });
+
+test('Kai: English post kept, screenings split, school trips and closures skipped', async () => {
+  const bodies: Record<string, string> = {
+    'https://admin.kai.center/wp-json/www-api/v1/calendar': fixture('kai-calendar.json'),
+    'https://admin.kai.center/wp-json/www-api/v1/current-events': fixture('kai-current.json'),
+  };
+  const src = source({ kind: 'wordpress', url: 'https://admin.kai.center/wp-json/www-api/v1/calendar', config: {
+    shape: 'kai', extra_urls: ['https://admin.kai.center/wp-json/www-api/v1/current-events'], venue_name: 'Kai',
+    skip_titles: 'kultuuripilet|suletud|closed|preparing for' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (u: string) => new Response(bodies[u], { status: 200 })) as typeof fetch;
+  try {
+    const items = await wordpress.collect(src, new Date('2026-09-28T08:00:00Z'));
+    assert.deepEqual(items.map(i => i.external_id), ['17643', 'exhibition-tides']);
+    assert.equal(items[0].url, 'https://kai.center/en/movie/screening-in-kai-cinema-edge-of-the-night');
+    const films = wordpress.extract(items[0], src);
+    assert.equal(films.length, 2);
+    assert.equal(films[0].title, 'Screening in Kai Cinema: "Edge of The Night"');
+    assert.equal(films[0].starts_at, '2026-10-28T16:00:00.000Z');
+    assert.equal(films[1].starts_at, '2026-11-01T16:00:00.000Z');     // after the clocks go back
+    assert.equal(films[0].ends_at, '2026-10-28T17:32:00.000Z');
+    assert.equal(films[0].venue_name, 'Kai');
+    assert.equal(films[0].description, 'A film by Türker Süer.');
+    assert.equal(films[0].image_url, 'https://admin.kai.center/wp-content/uploads/2026/09/edge.jpg');
+    assert.equal(films[0].series_key, 'kai:17643');
+    const [show] = wordpress.extract(items[1], src);
+    assert.equal(show.ends_at, '2026-11-30T16:00:00.000Z');
+    assert.equal(show.image_url, null);                               // only http(s) survives
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

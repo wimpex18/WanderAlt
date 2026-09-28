@@ -147,7 +147,7 @@ async function main() {
     try {
       const items = await collect(source);
       health[source.id] = { ok: true, yield: items.length };
-      if (!db) { pending.push(...items.map(item => ({ rawId: null, item, source }))); continue; }
+      if (!db) { pending.push(...items.map(item => ({ rawId: null, item, source }))); log(`${source.id}: ${items.length} items`); continue; }
       const known = new Map<string, string>();
       for (const part of chunks(items.map(i => i.external_id), 150)) {
         const rows = await db.select<{ external_id: string; content_hash: string }>(

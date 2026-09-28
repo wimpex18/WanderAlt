@@ -86,12 +86,19 @@ Model output decides publication for untrusted sources, and listing text is writ
 | `kultuurikatel` | WordPress REST | The venue's own events post type (`/wp-json/wp/v2/events`, ACF date fields). Date and ticket link are structured; most listings carry a date but no time. |
 | `telliskivi` | HTML → model | Telliskivi Creative City's events page. |
 | `vabalava` | HTML → model | Vaba Lava's performance schedule (`/mangukava/`), Tallinn tab. |
+| `kai` | WordPress REST, Kai's own routes | Kai Art Center, Noblessner: `/wp-json/www-api/v1/calendar` (films, each screening dated) and `/current-events` (exhibitions). One post per language; the English one is kept. School-ticket screenings and closures are skipped (`skip_titles`). Read by `sources/kai.ts` through `config.shape: "kai"`. |
+| `paavli` | HTML → model | Paavli Kultuurivabrik's events page. Its "SOLD OUT" and "80% SOLD OUT" labels become flags. Also on Fienta; duplicates merge. |
+| `saal` | HTML → model | Kanuti Gildi SAAL's programme: contemporary dance, performance, talks. |
+| `uuslaine` | HTML → model | Uus Laine's calendar page. |
+| `gamma-newsletter` | RSS → model | The Gamma Tallinn Substack, a weekly expat round-up; not curated, so its events go through review. |
 | `tg-sigmundtells` | Telegram → model | Public channel preview, `t.me/s/…`, no API key. |
 | `osm-tallinn` | OpenStreetMap | Not events: the venue catalogue (below). |
 
 A source whose config names a `venue_name` is a single venue's own programme: every event it lists is placed there, whatever hall name the page uses.
 
-Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite and Meetup (no public search API), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
+Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite (search API removed), Meetup and Luma (their APIs need paid plans), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
+
+The `probe-sources` job in `ci.yml` runs a dry run of the newest sources on every pull request, without keys: its log shows how many items each one collects. It never fails the check.
 
 ### Running it
 
