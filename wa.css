@@ -785,8 +785,33 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .vcard__meta { font-size: var(--fs-meta); color: var(--ink-2); }
 
 .det-links { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-.det-links .wa-iconbtn { width: 48px; height: 48px; background: var(--paper-2); }
-.det-links .wa-iconbtn:hover { background: var(--paper-3); }
+/* A venue's own channels, named, so nobody has to guess a lone globe. */
+.det-links { margin-top: var(--s-3); }
+.det-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 14px 0 12px; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); text-decoration: none; font-weight: 600; font-size: .875rem; transition: background var(--t-fast), transform var(--t-fast) var(--spring); }
+.det-link:hover { background: var(--paper-3); }
+.det-link:active { transform: scale(.96); }
+.det-link .wa-ic { width: 20px; height: 20px; }
+.det-link .wa-ic--sm { width: 14px; height: 14px; color: var(--ink-3); }
+
+/* Going: one row, the count on the left, the toggle on the right. */
+.det-going { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: var(--s-3); margin-top: var(--s-4); padding: 10px 10px 10px 12px; border-radius: var(--r-lg); border: 1px solid var(--hair); }
+.det-going__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); }
+.det-going__text { font-weight: 600; font-size: .9375rem; min-width: 0; }
+.det-going .wa-btn.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* Who's in it: the source's own credits, role then names. */
+.det-credits { display: grid; gap: 10px; margin: 0 0 var(--s-2); }
+.det-credits div { display: grid; grid-template-columns: minmax(96px, 34%) 1fr; gap: var(--s-3); }
+.det-credits dt { color: var(--ink-3); font-size: var(--fs-small); padding-top: 2px; }
+.det-credits dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+
+/* The small map on event and venue pages; tap opens the Map tab on it. */
+.det-minimap { position: relative; display: block; height: 168px; margin: 0 0 var(--s-3); border-radius: var(--r-lg); overflow: hidden; background: var(--paper-2); border: 1px solid var(--hair); }
+.det-minimap__canvas, .det-minimap__canvas.maplibregl-map { position: absolute; inset: 0; }
+.det-minimap__pin { position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.22), 0 0 0 3px var(--accent); pointer-events: none; }
+.det-minimap__pin .wa-picto { width: 28px; height: 28px; background: none; }
+.det-minimap__pin .wa-picto svg { stroke-width: 2.6; }
+.det-minimap .maplibregl-ctrl-attrib { font-size: 10px !important; }
 
 .hours { display: grid; border-radius: var(--r-lg); border: 1px solid var(--hair); overflow: hidden; }
 .hours__row { display: grid; grid-template-columns: 64px 1fr auto; gap: var(--s-3); align-items: baseline; padding: 11px 16px; border-top: 1px solid var(--hair); font-size: .9375rem; }

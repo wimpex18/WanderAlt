@@ -9,7 +9,8 @@
     "pipeline:models": "node --env-file-if-exists=.env pipeline/run.ts --models",
     "test": "node --test \"pipeline/test/*.test.ts\"",
     "typecheck": "tsc -p pipeline",
-    "build:icons": "node .scripts/rasterize-favicons.js"
+    "build:icons": "node .scripts/rasterize-favicons.js",
+    "build:map-styles": "node .scripts/build-map-styles.js"
   },
   "devDependencies": {
     "@types/node": "^24.19.0",

@@ -165,8 +165,15 @@
     openingHours: r.opening_hours || null,
   });
 
-  const dispatch = () =>
-    document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
+  /* A fast answer (the service worker's cache) can land between two
+     deferred scripts, before a page script has added its listener. Hold
+     the event until every deferred script has run. */
+  let parsed = document.readyState === 'complete';
+  if (!parsed) document.addEventListener('DOMContentLoaded', () => { parsed = true; }, { once: true });
+  const dispatch = () => {
+    const fire = () => document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
+    if (parsed) fire(); else document.addEventListener('DOMContentLoaded', fire, { once: true });
+  };
 
   const load = async () => {
     /* 6-second timeout, then the empty states: long enough for a slow

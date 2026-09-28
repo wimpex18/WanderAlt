@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql` and `20260928150000_going.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -12,6 +12,8 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `events` | One row per dated occurrence: source facts, `title_en`/`summary_en`, `kind`, `tags`, `relevance`, `status` | `published` only |
 | `event_sources` | Provenance: every source that listed an event | for published events, without `raw_item_id` |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
+| `going` | Who marked "I'm going" on which pick | own rows only |
+| `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
 `picks` and `venues` are read-only views shaped like the old tables, so the current pages, `functions/_middleware.js`, `og-image` and `calendar-feed` read the new data unchanged. They go away with the front-end rebuild.
 

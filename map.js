@@ -9,7 +9,7 @@
    on phones it drags between peek, half and full. Pins cluster in screen
    space; the selected pin never clusters. Camera moves go through
    WA.MapTiles, which honours reduced motion.
-   URL: ?when=tonight|tomorrow|weekend|thisweek&show=events|places
+   URL: ?when=tonight|tomorrow|weekend|thisweek&show=events|places&pick=<id>
    ============================================================ */
 (() => {
   'use strict';
@@ -27,6 +27,9 @@
   const qp = new URLSearchParams(location.search);
   if (WHEN.includes(qp.get('when'))) state.when = qp.get('when');
   if (LAYERS.includes(qp.get('show'))) state.layer = qp.get('show');
+  /* ?pick=<id> arrives from an event or venue page: that pin is shown
+     whatever the window, chosen, and the map opens on it. */
+  const pick = qp.get('pick') || '';
   const on = { get events() { return state.layer !== 'places'; }, get places() { return state.layer !== 'events'; } };
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const phone = matchMedia('(max-width: 1023px)');
@@ -36,13 +39,13 @@
   const withCoords = (x) => { const c = G().coordsFor(x); return c ? Object.assign(x, { _c: c }) : null; };
 
   const collect = () => {
-    events = R().live().filter(e => W().matches(e, state.when)).map(withCoords).filter(Boolean)
+    events = R().live().filter(e => W().matches(e, state.when) || e.id === pick).map(withCoords).filter(Boolean)
       .sort(G().bySoonestThenDistance());
     /* The places layer is what is open now, plus the rooms hosting an
        event in this window; the rest of the catalogue lives on Places. */
     const hosts = new Set(events.map(e => e.venueId).filter(Boolean));
     const hostNames = new Set(events.map(e => String(e.venue || '').toLowerCase().trim()));
-    places = R().places().filter(v => R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
+    places = R().places().filter(v => v.id === pick || R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
       .map(withCoords).filter(Boolean);
     $('n-events').textContent = String(events.length);
     $('n-places').textContent = String(places.length);
@@ -362,9 +365,11 @@
       T().onReady(() => {
         /* Fit once the canvas has its real size, not the size it booted at. */
         const m = T().getMap();
-        requestAnimationFrame(() => { m.resize(); fit(); draw(); });
+        const picked = pick && [...events, ...places].find(x => x.id === pick);
+        if (picked) state.active = pick;
+        requestAnimationFrame(() => { m.resize(); if (picked) m.jumpTo({ center: [picked._c.lng, picked._c.lat], zoom: 15.5 }); else fit(); draw(); });
         if (phone.matches) setDrawer('peek');
-        m.once('idle', () => { m.resize(); fit(); });
+        m.once('idle', () => { m.resize(); if (!picked) fit(); });
       });
       T().on('move', placePins);
       T().on('click', () => { if (state.active) { state.active = ''; lastDrawer = ''; draw(); } });
