@@ -68,7 +68,7 @@
     $('kinds').innerHTML = `<button class="wa-chip" type="button" data-group="" aria-pressed="${!state.group}">All <span class="wa-chip__n">${pool.length}</span></button>` +
       GROUPS.map(g => {
         const n = pool.filter(v => inGroup(v, g.id)).length;
-        return `<button class="wa-chip" type="button" data-group="${esc(g.id)}" aria-pressed="${state.group === g.id}"${n || state.group === g.id ? '' : ' disabled'}>${window.WA.Icon(g.icon)}${esc(g.label)} <span class="wa-chip__n">${n}</span></button>`;
+        return `<button class="wa-chip" type="button" data-group="${esc(g.id)}" aria-pressed="${state.group === g.id}"${n || state.group === g.id ? '' : ' disabled'}>${window.WA.Picto(g.icon === "club" ? "club" : g.icon)}${esc(g.label)} <span class="wa-chip__n">${n}</span></button>`;
       }).join('');
 
     const list = sort(pool.filter(v => inGroup(v, state.group)));

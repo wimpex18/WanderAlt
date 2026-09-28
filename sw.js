@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v8';
+const VERSION = 'wa-v9';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -34,7 +34,7 @@ const SHELL_URLS = [
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
   './follow.js', './toast.js', './render.js', './view-transition.js',
-  './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
+  './finder.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js',
   './map-style.json', './map-style-dusk.json',

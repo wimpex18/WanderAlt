@@ -35,7 +35,7 @@
       <div class="you-cols">
         <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: ids.length ? 'They get their own shelf on Tonight. Nothing else is hidden.' : 'Pick up to three and Tonight gives them a shelf.' })}
           <div class="wa-chips" style="margin-top:var(--s-3)">${R().interests.OPTIONS.map(o =>
-            `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${I(o.icon)}${esc(o.label)}</button>`).join('')}</div>
+            `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'Appearance', sub: `Auto follows your device, else it turns dark at ${window.WA.Theme.duskLabel()} in Tallinn.` })}

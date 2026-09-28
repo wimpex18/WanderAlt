@@ -255,7 +255,7 @@
     const src = e.imageUrl ? url(e.imageUrl) : '';
     return `<span class="wa-row__thumb">${src
       ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
-      : window.WA.Icon.kind(e.kind)}</span>`;
+      : window.WA.Picto.kind(e.kind)}</span>`;
   };
 
   const sameTitle = (a, b) => fold(a).replace(/[^a-z0-9а-я]/g, '') === fold(b).replace(/[^a-z0-9а-я]/g, '');
@@ -296,7 +296,7 @@
     const photo = v.imageUrl && v.imageSource !== 'logo' ? url(v.imageUrl) : '';
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
-      <span class="wa-place__glyph">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Icon.kind(v.kind)}</span>
+      <span class="wa-place__glyph">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span class="wa-place__name">${esc(v.name || '')}</span>
         <span class="wa-place__meta">${esc(meta)}</span>
@@ -309,23 +309,83 @@
     </a></li>`;
   };
 
-  /* ── The poster card ─────────────────────────────────────── */
-  const poster = (e) => {
+  /* ── The event card ────────────────────────────────────────
+     Photo first with a glass badge (when) and a heart (save), then the
+     title and quiet lines: venue · area, and walk · price. */
+  const saved = (id) => !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[id]);
+  const heart = (id, title) => `<button class="wa-heart" type="button" data-heart="${esc(id)}" aria-pressed="${saved(id)}"
+      aria-label="${esc(`${saved(id) ? 'Saved' : 'Save'}: ${title || ''}`)}">${I('heart')}</button>`;
+
+  const badgeFor = (e) => {
+    if (isLive(e)) return { now: true, text: endClock(e) ? `On now · till ${endClock(e)}` : 'On now' };
     const key = W().resolveKey(e);
-    const src = e.imageUrl ? url(e.imageUrl) : '';
     const clock = clockOf(e);
-    const meta = [real(e.venue), areaOf(e), price(e)].filter(Boolean).join(' · ');
-    return `<a class="wa-poster" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+    const day = !key ? '' : key === W().todayKey() ? 'Tonight' : key === W().keyPlus(1) ? 'Tomorrow' : `${dow(key)} ${dom(key)}`;
+    return { now: false, text: [day, clock].filter(Boolean).join(' · ') || 'Ongoing' };
+  };
+
+  const poster = (e, opts = {}) => {
+    const src = e.imageUrl ? url(e.imageUrl) : '';
+    const b = badgeFor(e);
+    const m = walk(e);
+    const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
+    const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
+      .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
+    return `<div class="wa-poster"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}" style="display:contents">
       <span class="wa-poster__art">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
-              : `<span class="wa-poster__type">${window.WA.Icon.kind(e.kind)}<span>${esc(e.title || '')}</span></span>`}
-        ${key ? `<span class="wa-poster__date"><span class="wa-poster__dow">${esc(dow(key))}</span><span class="wa-poster__dom">${esc(String(dom(key)))}</span></span>` : ''}
-        ${clock ? `<span class="wa-poster__time">${esc(clock)}</span>` : ''}
+              : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
+        <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(b.text)}</span>
       </span>
       <span class="wa-poster__title">${esc(e.title || '')}</span>
-      ${meta ? `<span class="wa-poster__meta">${esc(meta)}</span>` : ''}
-    </a>`;
+      ${line1 ? `<span class="wa-poster__meta">${esc(line1)}</span>` : ''}
+      ${line2 ? `<span class="wa-poster__meta">${line2}</span>` : ''}
+    </a>${opts.noHeart ? '' : heart(e.id, e.title)}</div>`;
   };
+
+  /* A shelf: a heading, arrow keys on desktop, and a row of cards. */
+  let shelfN = 0;
+  const shelf = (head, cards) => {
+    const id = `shelf-${++shelfN}`;
+    return `<section class="wa-sect">
+      <div class="wa-sect__head">
+        <h2 class="wa-sect__title">${esc(head.title)}</h2>
+        ${head.n != null ? `<span class="wa-sect__count">${esc(String(head.n))}</span>` : ''}
+        ${head.href ? `<a class="wa-sect__more" href="${esc(head.href)}" aria-label="${esc(`${head.more || 'All'}: ${head.title}`)}">${I('arrow')}</a>` : '<span style="margin-left:auto"></span>'}
+        <span class="wa-shelfnav"><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="-1" aria-label="Previous">${I('back')}</button><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="1" aria-label="Next">${I('chevron')}</button></span>
+      </div>
+      ${head.sub ? `<p class="wa-sect__sub">${esc(head.sub)}</p>` : ''}
+      <div class="wa-shelf" id="${id}">${cards}</div>
+    </section>`;
+  };
+
+  const skelCards = (n = 4) => `<div class="wa-shelf" aria-hidden="true">${Array.from({ length: n }, () =>
+    '<div><span class="wa-skel wa-skel--card"></span><span class="wa-skel wa-skel--title"></span><span class="wa-skel wa-skel--meta"></span></div>').join('')}</div>`;
+
+  /* Hearts save from anywhere a card is shown, with the undo toast. */
+  document.addEventListener('click', (ev) => {
+    const h = ev.target.closest && ev.target.closest('[data-heart]');
+    if (h) {
+      ev.preventDefault(); ev.stopPropagation();
+      const id = h.dataset.heart;
+      const on = !saved(id);
+      window.WA.Bookmarks.set(id, on);
+      document.querySelectorAll(`[data-heart="${CSS.escape(id)}"]`).forEach(x => {
+        x.setAttribute('aria-pressed', String(on));
+        x.classList.remove('is-popped'); void x.offsetWidth; if (on) x.classList.add('is-popped');
+      });
+      if (window.WA.Toast) window.WA.Toast.show(on ? 'Saved' : 'Removed from saved', 'Undo', () => {
+        window.WA.Bookmarks.set(id, !on);
+        document.querySelectorAll(`[data-heart="${CSS.escape(id)}"]`).forEach(x => x.setAttribute('aria-pressed', String(!on)));
+      });
+      return;
+    }
+    const nav = ev.target.closest && ev.target.closest('[data-shelf]');
+    if (nav) {
+      const el = document.getElementById(nav.dataset.shelf);
+      if (el) el.scrollBy({ left: Number(nav.dataset.dir) * el.clientWidth * .9, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  }, true);
 
   /* ── Section head ────────────────────────────────────────── */
   const sect = ({ title, n, href, more, sub, id }) => `
@@ -369,8 +429,9 @@
     </span></li>`).join('')}</ul>`;
 
   /* ── Empty state: names what emptied it, offers a real next step ── */
+  const PICTO_FOR = { offline: 'nearby', calendar: 'all', search: 'place', filter: 'all', save: 'place', clock: 'all', store: 'market', programme: 'all' };
   const empty = ({ icon, title, body, actions }) => `<div class="wa-empty">
-      ${icon ? `<span class="wa-empty__art">${I(icon)}</span>` : ''}
+      ${icon ? `<span class="wa-empty__art">${window.WA.Picto(PICTO_FOR[icon] || icon)}</span>` : ''}
       <p class="wa-empty__title">${esc(title)}</p>
       ${body ? `<p class="wa-empty__body">${esc(body)}</p>` : ''}
       ${actions && actions.length ? `<div class="wa-empty__actions">${actions.map((a, i) => a.href
@@ -416,7 +477,7 @@
     esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, placeRow, poster, sect, dayHead, byDay, grouped,
+    openState, openBadge, row, placeRow, poster, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,
     skelRows, empty, cityName, locateIfGranted, locPrompt,
   };
 })();

@@ -40,15 +40,19 @@
   };
 
   /* ── Pieces ─────────────────────────────────────────────────── */
-  const fact = (label, value, sub, mono) => value ? `<div class="det-fact">
-      <span class="det-fact__label">${esc(label)}</span>
-      <span class="det-fact__value${mono ? ' wa-mono' : ''}">${esc(value)}</span>
-      ${sub ? `<span class="det-fact__sub">${esc(sub)}</span>` : ''}
+  const FACT_ICON = { When: 'calendar', Was: 'calendar', Entry: 'ticket', Walk: 'walk', Area: 'pin', Today: 'clock', Where: 'pin' };
+  const fact = (label, value, sub) => value ? `<div class="det-fact">
+      <span class="det-fact__icon">${I(FACT_ICON[label] || 'info')}</span>
+      <span class="det-fact__text">
+        <span class="det-fact__label">${esc(label)}</span>
+        <span class="det-fact__value">${esc(value)}</span>
+        ${sub ? `<span class="det-fact__sub">${esc(sub)}</span>` : ''}
+      </span>
     </div>` : '';
 
   const walkFact = (x) => {
     const m = G().distanceTo(x);
-    if (m != null) return fact('Walk', R().walkLabel(G().walkMinutes(m)), G().format(m), true);
+    if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(m));
     const a = R().areaOf(x);
     return a ? fact('Area', a, 'Allow location for walking time') : '';
   };
@@ -63,9 +67,14 @@
         ${credit ? `<figcaption class="det-credit">${esc(credit)}</figcaption>` : ''}
       </figure>`;
     }
-    return `<div class="det-type" aria-hidden="true">${window.WA.Icon.kind(kind)}
-      <span class="det-type__kind">${esc(R().kindLabel(kind, !!x.name) || 'Listing')}</span>
-      <span class="det-type__word">${esc(word)}</span></div>`;
+    /* No photo: a monogram of the name, large, on the kind's tint. */
+    const mono = String(word || '').replace(/\(.*?\)/g, ' ').split(/[\s\-–—:/@]+/)
+      .filter(w => w && !/^(the|of|and|at|in|a|an|ja|ning)$/i.test(w))
+      .slice(0, 3).map(w => w.charAt(0)).join('').toUpperCase();
+    const pic = window.WA.Picto.kind(kind);
+    const hue = (pic.match(/wa-picto--([a-z]+)/) || [])[1] || 'place';
+    return `<div class="det-type wa-picto--${hue}" aria-hidden="true">${pic}
+      <span class="det-type__word">${esc(mono || '·')}</span></div>`;
   };
 
   const directions = (x, title) => {
@@ -100,7 +109,7 @@
 
   const saveBtn = (id) => {
     const on = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[id]);
-    return `<button class="wa-btn" type="button" id="save" aria-pressed="${on}">${I(on ? 'saved' : 'save')}<span>${on ? 'Saved' : 'Save'}</span></button>`;
+    return `<button class="wa-btn" type="button" id="save" aria-pressed="${on}">${I(on ? 'hearted' : 'heart')}<span>${on ? 'Saved' : 'Save'}</span></button>`;
   };
   const listLabel = (id) => {
     const L = window.WA.Lists;
@@ -156,7 +165,7 @@
       const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Icon.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}
@@ -188,10 +197,14 @@
           ${walkFact(e)}
         </div>
 
-        ${ended ? '' : `<div class="det-actions">
+        ${ended ? '' : `<div class="wa-bar">
+          <span class="wa-bar__text"><span class="wa-bar__price">${esc(R().price(e) || whenValue)}</span>
+            <span class="wa-bar__sub">${esc([R().price(e) ? whenValue : '', whenSub, venueName].filter(Boolean).join(' · '))}</span></span>
           ${tickets
-            ? `<a class="wa-btn wa-btn--primary wa-btn--wide" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}Tickets${host(tickets) ? ` on ${esc(host(tickets))}` : ''}${I('out', 'wa-ic--sm')}</a>`
-            : `<a class="wa-btn wa-btn--primary wa-btn--wide" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}Walk me there</a>`}
+            ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}Tickets</a>`
+            : `<a class="wa-btn wa-btn--primary" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}Walk me there</a>`}
+        </div>
+        <div class="det-actions">
           <div class="det-actions__row">
             ${cal ? `<a class="wa-btn" href="${esc(cal)}" download="${esc((title || 'event').slice(0, 40).replace(/[^\w\- ]+/g, ''))}.ics">${I('calendar')}<span>Calendar</span></a>` : ''}
             ${tickets ? `<a class="wa-btn" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}<span>Walk there</span></a>` : ''}
@@ -250,7 +263,7 @@
         </header>
 
         <div class="det-facts">
-          ${fact('Today', todayHours || (o.s.known ? '' : 'Not filed'), o.s.known ? '' : 'Check their own page')}
+          ${o.s.known ? fact('Today', todayHours) : ''}
           ${walkIn ? fact('Entry', 'Free', 'Walk in') : ''}
           ${walkFact(v)}
         </div>
@@ -358,6 +371,8 @@
     const sheet = document.getElementById('sheet');
 
     if (hit('#sheet-close')) { if (sheet.open) sheet.close(); return; }
+    /* Back returns to the list you came from when there is one. */
+    if (hit('#back') && document.referrer.startsWith(location.origin) && history.length > 1) { ev.preventDefault(); history.back(); return; }
     if (hit('#addlist')) { listSheet(id); return; }
     const tog = hit('[data-toggle-list]');
     if (tog && L) {
@@ -400,7 +415,7 @@
       hit('#more').remove();
       return;
     }
-    const sh = hit('#share');
+    const sh = hit('#share') || hit('[data-share]');
     if (sh) {
       const h = resolve();
       if (!h || !window.WA.Share) return;
@@ -408,8 +423,9 @@
       window.WA.Share.url({ title: t, text: [t, R().real(h.e.venue)].filter(Boolean).join(' · '), url: location.href }).then((r) => {
         if (r !== 'copied' && r !== 'failed') return;
         sh.setAttribute('aria-label', r === 'copied' ? 'Link copied' : 'Could not copy the link');
-        sh.innerHTML = I(r === 'copied' ? 'check' : 'close');
-        setTimeout(() => { sh.innerHTML = I('share'); sh.setAttribute('aria-label', 'Share'); }, 2000);
+        const was = sh.innerHTML;
+        sh.innerHTML = sh.id === 'share' ? I(r === 'copied' ? 'check' : 'close') : `${I(r === 'copied' ? 'check' : 'close')}<span>${r === 'copied' ? 'Copied' : 'Failed'}</span>`;
+        setTimeout(() => { sh.innerHTML = was; sh.setAttribute('aria-label', 'Share'); }, 2000);
       });
     }
   });

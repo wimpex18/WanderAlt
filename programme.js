@@ -126,7 +126,7 @@
     const all = apply(base(), 'kind').length;
     $('kinds').innerHTML = `<button class="wa-chip" type="button" data-kind="" aria-pressed="${!state.kinds.size}">All <span class="wa-chip__n">${all}</span></button>` +
       kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>
-        ${window.WA.Icon.kind(k)}${esc(R().kindLabel(k))} <span class="wa-chip__n">${n}</span></button>`).join('');
+        ${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))} <span class="wa-chip__n">${n}</span></button>`).join('');
   };
 
   /* ── The filter panel (sheet on phones, sidebar on desktop) ── */

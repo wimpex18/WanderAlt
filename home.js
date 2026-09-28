@@ -1,7 +1,7 @@
 /* ============================================================
    home.js — Tonight, the home screen.
    ------------------------------------------------------------
-   Search first. Then what is on now, what starts soon (or late, after
+   The search pill and the category bar first. Then card shelves: what is on now, what starts soon (or late, after
    21:30), what fits your interests, this weekend, and on the side the
    places open now and the areas. Never empty: when tonight has
    nothing, the next listed day takes its place.
@@ -47,44 +47,31 @@
     }
   };
 
-  /* ── Search suggestions ────────────────────────────────────── */
-  const suggest = (q) => {
-    const host = $('suggest');
-    const input = $('q');
-    $('q-clear').hidden = !q;
-    if (!q.trim()) { host.innerHTML = ''; input.setAttribute('aria-expanded', 'false'); return; }
-    const events = sortSoon(R().live().filter(e => R().matches(e, q)));
-    const venues = R().places().filter(v => R().matches(v, q));
-    input.setAttribute('aria-expanded', 'true');
-    const href = `discover.html?q=${encodeURIComponent(q)}&time=all`;
-    if (!events.length && !venues.length) {
-      host.innerHTML = `<div class="wa-suggest"><p class="wa-suggest__empty">Nothing listed matches “${esc(q)}”. Try a venue, an area such as Kalamaja, or a kind such as film.</p></div>`;
-      return;
-    }
-    const ev = events.slice(0, 5).map(e => {
-      const k = W().resolveKey(e);
-      const side = [k ? (k === W().todayKey() ? 'Today' : `${R().dow(k)} ${R().dom(k)}`) : '', R().clockOf(e)].filter(Boolean).join(' ');
-      return `<a class="wa-suggest__item" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
-        <span class="wa-suggest__glyph">${window.WA.Icon.kind(e.kind)}</span>
-        <span><span class="wa-suggest__title">${esc(e.title)}</span><br><span class="wa-suggest__meta">${esc([e.venue, R().areaOf(e)].filter(Boolean).join(' · '))}</span></span>
-        <span class="wa-suggest__side">${esc(side)}</span></a>`;
-    }).join('');
-    const pl = venues.slice(0, 3).map(v => `<a class="wa-suggest__item" href="detail.html?id=${esc(encodeURIComponent(v.id))}">
-        <span class="wa-suggest__glyph">${window.WA.Icon.kind(v.kind)}</span>
-        <span><span class="wa-suggest__title">${esc(v.name)}</span><br><span class="wa-suggest__meta">${esc([R().kindLabel(v.kind, true), R().areaOf(v)].filter(Boolean).join(' · '))}</span></span>
-        <span class="wa-suggest__side">Place</span></a>`).join('');
-    host.innerHTML = `<div class="wa-suggest">${ev}${pl}
-      ${events.length ? `<a class="wa-suggest__all" href="${esc(href)}"><span>All ${events.length} ${events.length === 1 ? 'listing' : 'listings'} for “${esc(q)}”</span>${I('arrow')}</a>` : ''}</div>`;
+  /* ── The pill and the category bar ──────────────────────── */
+  const CATS = [
+    ['all', 'All', 'discover.html'], ['gig', 'Gigs', 'discover.html?cat=gig'], ['club', 'Club nights', 'discover.html?cat=club'],
+    ['film', 'Film', 'discover.html?cat=film'], ['theatre', 'Stage', 'discover.html?cat=theatre'],
+    ['art', 'Art', 'discover.html?cat=exhibition'], ['talk', 'Talks', 'discover.html?cat=talk'],
+    ['workshop', 'Workshops', 'discover.html?cat=workshop'], ['festival', 'Festivals', 'discover.html?cat=festival'],
+    ['records', 'Places', 'places.html'],
+  ];
+  const cats = () => {
+    const host = $('cats');
+    if (!host || host.childElementCount) return;
+    host.innerHTML = CATS.map(([p, label, href], i) => `<a class="wa-cat" href="${esc(href)}"${i === 0 ? ' aria-current="true"' : ''}>${window.WA.Picto(p)}<span>${esc(label)}</span></a>`).join('');
+  };
+  const pillText = (n) => {
+    const sub = $('pill-sub');
+    if (sub) sub.textContent = `${n ? `Tonight, ${n} listed` : 'This week'} · any kind · anywhere`;
   };
 
   /* ── Interests, the optional first run ─────────────────────── */
   let picked = [];
-  const interestCard = () => {
-    const host = $('interest');
+  const interestHtml = () => {
     const st = R().interests.get();
-    if (st) { host.innerHTML = ''; return; }
+    if (st) return '';
     const opts = R().interests.OPTIONS;
-    host.innerHTML = `<section class="wa-interest" aria-labelledby="interest-title">
+    return `<section class="wa-interest" aria-labelledby="interest-title">
       <div class="wa-interest__head">
         <div>
           <h2 class="wa-interest__title" id="interest-title">What are you into?</h2>
@@ -92,20 +79,29 @@
         </div>
         <button class="wa-iconbtn" type="button" data-interest-skip aria-label="Skip">${I('close')}</button>
       </div>
-      <div class="wa-chips">${opts.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${picked.includes(o.id)}">${I(o.icon)}${esc(o.label)}</button>`).join('')}</div>
+      <div class="wa-chips">${opts.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${picked.includes(o.id)}">${o.icon === 'globe' ? I('globe') : window.WA.Picto(o.icon === 'talk' ? 'talk' : o.icon)}${esc(o.label)}</button>`).join('')}</div>
       <div class="wa-interest__foot">
         <span class="wa-interest__count">${picked.length} of 3</span>
         <div class="wa-btns">
-          <button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-interest-skip style="color:inherit">Skip</button>
+          <button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-interest-skip>Skip</button>
           <button class="wa-btn wa-btn--primary wa-btn--sm" type="button" data-interest-done${picked.length ? '' : ' disabled'}>Done</button>
         </div>
       </div>
     </section>`;
   };
+  /* Redraw only the card while choosing, so the page does not jump. */
+  const interestCard = () => {
+    const el = document.querySelector('.wa-interest');
+    const html = interestHtml();
+    if (!el) return;
+    if (!html) { el.remove(); return; }
+    el.outerHTML = html;
+  };
 
   /* ── Sections ───────────────────────────────────────────────── */
   const section = (head, body, cls) => `<section class="wa-sect${cls ? ` ${cls}` : ''}">${R().sect(head)}${body}</section>`;
-  const rows = (list, opts) => `<ul class="wa-rows">${list.map(e => R().row(e, Object.assign({ since: visit.prev }, opts))).join('')}</ul>`;
+  const cards = (list) => list.map(e => R().poster(e)).join('');
+  const shelf = (head, list) => R().shelf(head, cards(list));
 
   /* The next day after today with anything listed. */
   const nextDay = (all) => {
@@ -123,46 +119,44 @@
 
     const out = [];
     if (liveNow.length) {
-      out.push(section({ title: 'On now', n: liveNow.length, sub: 'Started, and not over yet' }, rows(liveNow.slice(0, 6))));
+      out.push(shelf({ title: 'On now', n: liveNow.length, sub: 'Started, and not over yet' }, liveNow.slice(0, 12)));
     }
 
     if (later.length) {
       const late = isLate();
       const lateOnes = later.filter(e => { const m = W().statedMinutes(e); return m == null || m >= 21 * 60; });
       const list = late && lateOnes.length ? lateOnes : later;
-      out.push(section({
+      out.push(shelf({
         title: late ? 'Starting late' : 'Starting soon', n: list.length,
-        href: 'discover.html', more: 'All tonight',
-      }, rows(list.slice(0, 6))));
+        href: 'discover.html?time=tonight', more: 'All tonight',
+      }, list.slice(0, 12)));
     } else if (next) {
-      out.push(section({
-        title: `Next up: ${R().dayName(next.key)}`, n: next.items.length,
-        sub: liveNow.length ? 'Nothing else starts tonight.' : `Nothing is filed for tonight in ${R().cityName()}.`,
+      out.push(shelf({
+        title: `${R().dayName(next.key)}, ${R().dateShort(next.key)}`, n: next.items.length,
+        sub: liveNow.length ? 'Nothing else starts tonight, so this is next.' : `Nothing is filed for tonight in ${R().cityName()}, so this is next.`,
         href: `discover.html?date=${next.key}`, more: R().dateShort(next.key),
-      }, rows(sortSoon(next.items).slice(0, 6))));
+      }, sortSoon(next.items).slice(0, 12)));
     }
 
     /* For you: this week's listings that match the chosen interests. */
     const ids = R().interests.ids();
     if (ids.length) {
       const mine = sortSoon(all.filter(e => W().matches(e, 'thisweek') && R().interests.matches(e)));
-      const names = R().interests.OPTIONS.filter(o => ids.includes(o.id)).map(o => o.label.toLowerCase());
-      out.push(section({ title: 'For you this week', n: mine.length, sub: names.join(', ').replace(/^./, c => c.toUpperCase()), href: 'profile.html#interests', more: 'Change' },
-        mine.length ? `<div class="wa-shelf">${mine.slice(0, 10).map(R().poster).join('')}</div>`
-          : `<p class="wa-note">Nothing this week matches yet. New listings arrive every six hours.</p>`));
+      const names = R().interests.OPTIONS.filter(o => ids.includes(o.id)).map(o => o.label);
+      out.push(mine.length
+        ? shelf({ title: 'For you this week', n: mine.length, sub: names.join(', '), href: 'profile.html#interests', more: 'Change' }, mine.slice(0, 12))
+        : section({ title: 'For you this week', href: 'profile.html#interests', more: 'Change' }, '<p class="wa-note">Nothing this week matches yet. New listings arrive every six hours.</p>'));
     }
 
     const weekend = sortSoon(all.filter(e => W().matches(e, 'weekend') && !W().isTonight(e)));
     if (weekend.length) {
-      out.push(section({ title: 'This weekend', n: weekend.length, href: 'discover.html?time=weekend', more: 'All weekend' },
-        `<div class="wa-shelf">${weekend.slice(0, 10).map(R().poster).join('')}</div>`));
+      out.push(shelf({ title: 'This weekend', n: weekend.length, href: 'discover.html?time=weekend', more: 'All weekend' }, weekend.slice(0, 12)));
     }
 
     /* Always a way into the rest of the week. */
     const week = all.filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'weekend'));
     if (week.length) {
-      out.push(section({ title: 'Later this week', n: week.length, href: 'discover.html?time=thisweek', more: 'The week' },
-        rows(sortSoon(week).slice(0, 4), { day: true })));
+      out.push(shelf({ title: 'Later this week', n: week.length, href: 'discover.html?time=thisweek', more: 'The week' }, sortSoon(week).slice(0, 12)));
     }
 
     if (!all.length) {
@@ -171,7 +165,11 @@
         : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places below are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] }));
     }
 
+    /* The optional first run sits after the first shelf, so what is on
+       tonight is the first thing on the screen. */
+    out.splice(Math.min(1, out.length), 0, interestHtml());
     $('home-main').innerHTML = out.join('');
+    pillText(tonight.length);
     return all;
   };
 
@@ -213,10 +211,10 @@
       <div class="wa-areas">${areas.map(([a, n]) => `<a class="wa-area" href="discover.html?area=${esc(encodeURIComponent(a))}&time=thisweek">
         <span>${esc(a)}${R().AREA_SUB[a] ? `<span class="wa-area__sub">${esc(R().AREA_SUB[a])}</span>` : ''}</span><span class="wa-area__n">${n}</span></a>`).join('')}</div></section>` : '';
 
-    const mapCard = `<section class="wa-sect"><a class="wa-card wa-card--ink" href="map.html" style="text-decoration:none">
-      <span class="wa-kicker" style="color:var(--accent)">${I('map', 'wa-ic--sm')} Map</span>
-      <span class="wa-card__title">Tonight's events and the places open now, on one map.</span>
-      <span class="wa-note">Sorted by how long it takes to walk there.</span></a></section>`;
+    const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
+      <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
+      <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
+      <span class="wa-mapcard__sub">Tonight's events and the places open now, by walking time.</span></span></a></section>`;
 
     $('home-side').innerHTML = places + areaHtml + mapCard;
   };
@@ -236,16 +234,14 @@
 
   /* ── Render and events ─────────────────────────────────────── */
   const render = () => {
+    cats();
     const all = main();
     side(all);
     since(all);
-    interestCard();
   };
 
-  document.addEventListener('input', (e) => { if (e.target.id === 'q') suggest(e.target.value); });
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    if (hit('#q-clear')) { $('q').value = ''; suggest(''); $('q').focus(); return; }
     const chip = hit('[data-interest]');
     if (chip) {
       const id = chip.dataset.interest;
@@ -262,11 +258,15 @@
     const r = hit('[data-row]');
     if (r) window.WA.Seen.mark(r.dataset.row);
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && e.target.id === 'q') { e.target.value = ''; suggest(''); }
-  });
 
   const boot = () => { render(); R().locateIfGranted(); };
+  /* The category bar folds away once you scroll, as the search pill
+     keeps its place. */
+  let folded = false;
+  window.addEventListener('scroll', () => {
+    const f = window.scrollY > 140;
+    if (f !== folded) { folded = f; document.body.classList.toggle('is-scrolled', f); }
+  }, { passive: true });
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
   /* The clock ticks; the lists redraw every five minutes so "on now"
@@ -276,7 +276,8 @@
 
   const skeleton = () => {
     $('hero-clock').textContent = clockText();
-    $('home-main').innerHTML = `<section class="wa-sect">${R().sect({ title: 'Starting soon' })}${R().skelRows(5)}</section>`;
+    cats();
+    $('home-main').innerHTML = `<section class="wa-sect">${R().sect({ title: 'Starting soon' })}${R().skelCards(4)}</section>`;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });
   else skeleton();

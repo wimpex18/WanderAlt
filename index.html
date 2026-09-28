@@ -51,6 +51,7 @@
   <script defer src="./toast.js"></script>
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
+  <script defer src="./finder.js"></script>
   <script defer src="./home.js"></script>
 </head>
 <body data-page="tonight">
@@ -59,8 +60,8 @@
 
   <header class="wa-topbar" role="banner">
     <a class="wa-brand" href="./index.html" aria-label="WanderAlt, Tallinn tonight">
-      <svg class="wa-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><circle cx="16" cy="18" r="7.5" fill="#ff4d17"/><rect x="0" y="18" width="32" height="14" rx="0" fill="currentColor"/><path d="M7 22.5h18M10.5 26h11" stroke="#ff4d17" stroke-width="2" stroke-linecap="round"/></svg>
-      <span>Wander<span class="wa-brand__alt">Alt</span></span><span class="wa-brand__city">Tallinn</span>
+      <svg class="wa-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#d83a14"/><path d="M8.5 19a7.5 7.5 0 0 1 15 0z" fill="#fff"/><path d="M6 22.5h20M10 26.5h12" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="23.5" cy="9" r="1.6" fill="#fff"/></svg>
+      <span>wanderalt</span>
     </a>
     <div class="wa-topbar__end">
       <a class="wa-iconbtn" href="./profile.html" id="account" aria-label="You"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></a>
@@ -68,22 +69,24 @@
   </header>
 
   <main class="wa-shell" id="main">
+    <div class="home-top">
+      <button class="wa-pill home-pill--phone" type="button" data-finder="where" aria-label="Search: where, when and what">
+        <span class="wa-pill__main"><span class="wa-pill__title">Search Tallinn</span><span class="wa-pill__sub" id="pill-sub">Tonight · any kind · anywhere</span></span>
+        <span class="wa-pill__go"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></span>
+      </button>
+      <div class="wa-pill wa-pill--slots home-pill--desk" role="search">
+        <button class="wa-pill__slot" type="button" data-finder="where"><span class="wa-pill__label">Where</span><span class="wa-pill__value">Tallinn, a venue or an area</span></button>
+        <button class="wa-pill__slot" type="button" data-finder="when"><span class="wa-pill__label">When</span><span class="wa-pill__value">Tonight</span></button>
+        <button class="wa-pill__slot" type="button" data-finder="what"><span class="wa-pill__label">What</span><span class="wa-pill__value">Gigs, film, art</span></button>
+        <button class="wa-pill__go" type="button" data-finder="where" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></button>
+      </div>
+      <nav class="wa-cats" id="cats" aria-label="Kinds"></nav>
+    </div>
+
     <section class="home-hero" aria-labelledby="hero-title">
-      <div class="home-hero__text">
-        <p class="home-hero__line"><span class="wa-kicker" id="hero-kicker">Tallinn</span><span class="home-hero__clock" id="hero-clock"></span></p>
-        <h1 class="wa-hero home-hero__title" id="hero-title">What's on tonight</h1>
-      </div>
-      <div class="home-hero__search">
-        <form class="wa-search" role="search" id="search-form" action="./discover.html">
-          <label class="wa-sr" for="q">Search tonight and the week</label>
-          <span class="wa-search__icon"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></span>
-          <input class="wa-search__input" id="q" name="q" type="search" autocomplete="off" spellcheck="false"
-                 placeholder="Gigs, films, a venue, Kalamaja" aria-controls="suggest" aria-expanded="false" />
-          <button class="wa-iconbtn wa-search__clear" type="button" id="q-clear" aria-label="Clear search" hidden><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-        </form>
-        <div id="suggest" aria-live="polite"></div>
-        <div id="since"></div>
-      </div>
+      <p class="home-hero__clock"><span id="hero-kicker">Tallinn</span> · <span id="hero-clock"></span></p>
+      <h1 class="wa-hero home-hero__title" id="hero-title">What's on tonight</h1>
+      <div id="since"></div>
     </section>
 
     <div id="interest"></div>

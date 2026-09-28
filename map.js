@@ -1,9 +1,9 @@
 /* ============================================================
    map.js — the Map tab.
    ------------------------------------------------------------
-   Two layers with two pin shapes: events are vermilion tags carrying
-   their start time; places are round discs with their kind, filled when
-   open now and hollow when shut or unfiled. A drawer (a sidebar from
+   Two layers with two pin shapes: events are pills carrying their
+   start time (vermilion when on now); places are round discs with their
+   pictogram, ringed when open now. A chosen pin raises a preview card. A drawer (a sidebar from
    1024) lists what is in view by walking time. Pins cluster in screen
    space; the selected pin never clusters. Camera moves go through
    WA.MapTiles, which honours reduced motion.
@@ -31,7 +31,12 @@
   const collect = () => {
     events = R().live().filter(e => W().matches(e, state.when)).map(withCoords).filter(Boolean)
       .sort(G().bySoonestThenDistance());
-    places = R().places().map(withCoords).filter(Boolean);
+    /* The places layer is what is open now, plus the rooms hosting an
+       event in this window; the rest of the catalogue lives on Places. */
+    const hosts = new Set(events.map(e => e.venueId).filter(Boolean));
+    const hostNames = new Set(events.map(e => String(e.venue || '').toLowerCase().trim()));
+    places = R().places().filter(v => R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
+      .map(withCoords).filter(Boolean);
     const open = places.filter(v => R().openState(v).open === true).length;
     $('n-events').textContent = String(events.length);
     $('n-places').textContent = `${open} open`;
@@ -50,13 +55,39 @@
     const { x } = it;
     const cur = x.id === state.active;
     if (it.kind === 'event') {
-      const t = R().isLive(x) ? 'NOW' : (R().clockOf(x) || R().dow(W().resolveKey(x) || W().todayKey()));
-      return `<button class="wa-pin wa-pin--event" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
+      const live = R().isLive(x);
+      const t = live ? 'Now' : (R().clockOf(x) || R().dow(W().resolveKey(x) || W().todayKey()));
+      return `<button class="wa-pin wa-pin--event${live ? ' wa-pin--live' : ''}" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
         aria-label="${esc(`${x.title}, ${t}, ${x.venue || ''}`)}" style="left:${p.x}px;top:${p.y}px"><span class="wa-pin__tag">${esc(t)}</span></button>`;
     }
-    const open = R().openState(x).open === true;
-    return `<button class="wa-pin wa-pin--place${open ? '' : ' is-shut'}" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
-      aria-label="${esc(`${x.name}, ${R().openState(x).text}`)}" style="left:${p.x}px;top:${p.y}px"><span class="wa-pin__disc">${window.WA.Icon.kind(x.kind)}</span></button>`;
+    const o = R().openState(x);
+    return `<button class="wa-pin wa-pin--place ${o.open === true ? 'is-open' : 'is-shut'}" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
+      aria-label="${esc(`${x.name}, ${o.text}`)}" style="left:${p.x}px;top:${p.y}px"><span class="wa-pin__disc">${window.WA.Picto.kind(x.kind)}</span></button>`;
+  };
+
+  /* The card that rises for the chosen pin: photo, title, the facts,
+     a heart, and a way to close it. */
+  const preview = () => {
+    const host = $('preview');
+    const x = [...events, ...places].find(y => y.id === state.active);
+    if (!x) { host.dataset.open = 'false'; host.innerHTML = ''; return; }
+    const isEvent = !!x.title;
+    const src = x.imageUrl && x.imageSource !== 'logo' ? window.WA.UI.safeUrl(x.imageUrl) : '';
+    const m = R().walk(x);
+    const meta1 = isEvent ? R().badgeFor(x).text : R().openState(x).text;
+    const meta2 = (isEvent ? [x.venue, R().price(x)] : [R().kindLabel(x.kind, true), R().areaOf(x)])
+      .concat(m != null ? [`${R().walkLabel(m)} walk`] : []).filter(Boolean).join(' · ');
+    host.innerHTML = `<a class="map-preview__link" href="detail.html?id=${esc(encodeURIComponent(x.id))}" data-row="${esc(x.id)}">
+        <span class="map-preview__art">${src ? `<img src="${esc(src)}" alt="">` : window.WA.Picto.kind(x.kind)}</span>
+        <span class="map-preview__body">
+          <span class="map-preview__title">${esc(isEvent ? x.title : x.name)}</span>
+          <span class="map-preview__meta">${esc(meta1)}</span>
+          ${meta2 ? `<span class="map-preview__meta">${esc(meta2)}</span>` : ''}
+        </span>
+      </a>
+      ${R().heart(x.id, isEvent ? x.title : x.name)}
+      <button class="wa-iconbtn map-preview__close" type="button" data-act="unpick" aria-label="Close">${window.WA.Icon('close')}</button>`;
+    host.dataset.open = 'true';
   };
 
   const placePins = () => {
@@ -97,7 +128,6 @@
     const openFirst = (a, b) => (R().openState(a).open === true ? 0 : 1) - (R().openState(b).open === true ? 0 : 1) || String(a.name).localeCompare(String(b.name));
     const evs = byWalk(ev, G().bySoonestThenDistance());
     const pls = byWalk(pl, openFirst);
-    const active = [...events, ...places].find(x => x.id === state.active);
     const whenWord = { tonight: 'tonight', tomorrow: 'tomorrow', weekend: 'this weekend', thisweek: 'this week' }[state.when];
     $('drawer-title').textContent = evs.length || pls.length ? 'In view' : 'Nothing in view';
     $('drawer-sub').textContent = [
@@ -107,18 +137,13 @@
     ].filter(Boolean).join(' · ');
 
     let html = '';
-    if (active) {
-      html += `<p class="map-drawer__label">Selected</p>` + (active.title
-        ? `<ul class="wa-rows">${R().row(active, { day: state.when !== 'tonight' })}</ul>`
-        : `<ul>${R().placeRow(active)}</ul>`);
-    }
-    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.filter(e => e !== active).slice(0, 30).map(e => R().row(e, { day: state.when !== 'tonight', noThumb: true })).join('')}</ul>`;
-    if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.filter(v => v !== active).slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
+    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day: state.when !== 'tonight', noThumb: true })).join('')}</ul>`;
+    if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
     if (!evs.length && !pls.length) {
       html += `<p class="map-legend-note">Zoom out or move the map. ${events.length} ${events.length === 1 ? 'event is' : 'events are'} placed ${whenWord}${state.events ? '' : ', with the events layer off'}.</p>
         <button class="wa-btn wa-btn--sm" type="button" data-act="fit">Show everything</button>`;
     }
-    html += `<p class="map-legend-note">Tags are events with their start time. A filled disc is a place open now; a hollow one is shut or has no hours filed.</p>`;
+    html += `<p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;
     if (html === lastDrawer) return;
     lastDrawer = html;
     $('drawer-list').innerHTML = html;
@@ -127,13 +152,14 @@
   const fit = (list) => {
     const t = T();
     if (!t) return;
-    const pts = (list || shown().map(i => i.x)).map(x => ({ lat: x._c.lat, lng: x._c.lng }));
+    const base = list || (state.events && events.length ? events : shown().map(i => i.x));
+    const pts = base.map(x => ({ lat: x._c.lat, lng: x._c.lng }));
     const desk = matchMedia('(min-width: 1024px)').matches;
     const pad = desk ? { top: 80, left: 60, right: 60, bottom: 60 } : { top: 110, left: 40, right: 40, bottom: 150 };
     if (pts.length) t.fitToPicks(pts, { padding: pad });
   };
 
-  const draw = () => { placePins(); placeDrawer(); };
+  const draw = () => { placePins(); placeDrawer(); preview(); };
 
   /* ── Events ─────────────────────────────────────────────────── */
   const setDrawer = (open) => {
@@ -145,8 +171,9 @@
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('#layer-events')) { state.events = !state.events; collect(); draw(); return; }
     if (hit('#layer-places')) { state.places = !state.places; collect(); draw(); return; }
-    if (hit('#drawer-toggle')) { setDrawer($('drawer').dataset.open !== 'true'); return; }
+    if (hit('#drawer-toggle')) { const o = $('drawer').dataset.open !== 'true'; setDrawer(o); if (o) { state.active = ''; preview(); } return; }
     if (hit('[data-act="fit"]')) { fit(); return; }
+    if (hit('[data-act="unpick"]')) { state.active = ''; lastDrawer = ''; draw(); return; }
     if (hit('#locate')) {
       G().userLoc().then((loc) => {
         if (!loc) { $('drawer-sub').textContent = 'Location is off in this browser, so the list is ordered by time'; setDrawer(true); return; }
@@ -164,8 +191,8 @@
     if (p) {
       state.active = state.active === p.dataset.pin ? '' : p.dataset.pin;
       lastDrawer = '';
+      setDrawer(false);
       draw();
-      if (state.active) { setDrawer(true); $('drawer-list').scrollTop = 0; }
       return;
     }
     const r = hit('[data-row]');
@@ -194,7 +221,11 @@
     if (!started) {
       started = true;
       T().init('map-canvas');
-      T().onReady(() => { fit(); draw(); });
+      T().onReady(() => {
+        /* Fit once the canvas has its real size, not the size it booted at. */
+        const m = T().getMap();
+        requestAnimationFrame(() => { m.resize(); fit(); draw(); });
+      });
       T().on('move', placePins);
       T().on('moveend', placeDrawer);
     } else draw();
