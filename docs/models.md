@@ -23,6 +23,12 @@ Calls to OpenRouter are spaced 3.1 s apart. A 429 waits (for `Retry-After`, else
 
 **Budget.** A run stops using Workers AI after 1,500 neurons (`WORKERS_AI_NEURON_BUDGET`) and falls through to OpenRouter; with four runs a day that leaves room for Eesti-Keelt on the same account. Measured on 27 September 2026: reading 11 Telegram posts cost about 1,500 neurons (≈135 each), Vaba Lava's schedule page about 450. Every run logs the neurons it spent.
 
+## Search (`/api/ask`)
+
+The site's search reads a sentence in the page first (`ask.js`). Only when words are left that it cannot place and nothing matches does it call `functions/api/ask.js`, a Pages Function that asks `@cf/openai/gpt-oss-20b` (override: `ASK_MODEL`) for filters in a strict JSON schema: when, day, kinds, free, English, price cap, place words, topic words with English and Estonian synonyms, and a note of at most 60 characters. Reasoning effort is low, temperature 0.2, at most 700 tokens; about 25 neurons a question. Every field is checked against known values before it goes back, and answers are cached for a day per question and date. The model never writes listings; the list is always our own.
+
+It needs a Workers AI binding named `AI` on the Pages project: Workers & Pages → wanderalt → Settings → Bindings → Add → Workers AI, variable name `AI`, for Production and Preview, then redeploy. It uses that account's free 10,000 neurons a day. Without the binding the function answers 503 and search works on the page's own reading.
+
 ## Why not the others
 
 - **Gemini**: its free tier needs a Google AI Studio key, and Google may use free-tier traffic to improve its products. Not used.

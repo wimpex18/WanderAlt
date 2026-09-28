@@ -62,7 +62,7 @@
   };
   const pillText = (n) => {
     const sub = $('pill-sub');
-    if (sub) sub.textContent = `${n ? `Tonight, ${n} listed` : 'This week'} · any kind · anywhere`;
+    if (sub) sub.textContent = n ? `${n} tonight · or ask “free jazz tonight”` : 'Or ask “free jazz this week”';
   };
 
   /* ── Interests, the optional first run ─────────────────────── */

@@ -128,6 +128,8 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const f = hit('[data-finder]');
+    /* On phones one search lives on the Programme: the ask field. */
+    if (f && matchMedia('(max-width: 1023px)').matches) { e.preventDefault(); location.href = 'discover.html?focus=search'; return; }
     if (f) { e.preventDefault(); open(f.dataset.finder); return; }
     const d = document.getElementById('sheet');
     if (!d || !d.classList.contains('wa-sheet--finder')) return;
