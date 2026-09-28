@@ -4,7 +4,7 @@
   "description": "What's on in Tallinn, with a time and a walking distance on every listing.",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#055959",
+  "theme_color": "#111110",
   "background_color": "#ffffff",
   "icons": [
     { "src": "/brand/pwa/icon-192.png",      "sizes": "192x192", "type": "image/png", "purpose": "any" },

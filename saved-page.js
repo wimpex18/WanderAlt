@@ -1,364 +1,151 @@
 /* ============================================================
    saved-page.js — Saved.
    ------------------------------------------------------------
-   Sorted by expiry, not date added, in three blocks:
-
-     1 Happening while you're here — dated, still ahead, soonest first
-     2 Places, for whenever        — undated things and venues
-     3 Gone since you saved it     — archived at the source
+   Lists first (the only place to make one), then what is coming up
+   (soonest to expire first), then places, then what has gone since it
+   was saved, which does not look tappable because it is not.
    ============================================================ */
 (() => {
   'use strict';
 
-  /* Guarded: WA.Toast is optional per page. */
-  const toast = (msg, label, undo) => {
-    if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
-  };
+  const $ = (id) => document.getElementById(id);
+  const R = () => window.WA.R;
+  const W = () => window.WA.when;
+  const esc = (s) => window.WA.UI.esc(s);
+  const I = (n, c) => window.WA.Icon(n, c);
+  const toast = (m, l, u) => { if (window.WA.Toast) window.WA.Toast.show(m, l, u); };
 
-  const $   = (id) => document.getElementById(id);
-  const UI  = () => window.WA.UI;
-  const esc = (s) => UI().esc(s);
+  let listFilter = '';
 
-  const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
-  const real = (v) => {
-    const s = String(v == null ? '' : v).trim();
-    return s && !PLACEHOLDER.test(s) ? s : '';
-  };
-
-  let cityFilter = 'all';
-
-  /* ── Gather ──────────────────────────────────────────────────
-     Bookmarks are ids. They can point at a pick, at a venue, or at
-     something that has since been archived — and the third case is the
-     one the design cares most about. */
   const gather = () => {
     const ids = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {});
-    const picks  = window.WA._catalogAll || window.WA.catalog || [];
-    const venues = window.WA._venuesAll  || window.WA.venues  || [];
-
-    const out = { dated: [], anytime: [], gone: [] };
-
+    const picks = window.WA._catalogAll || [];
+    const venues = window.WA._venuesAll || [];
+    const out = { dated: [], places: [], gone: [] };
     for (const id of ids) {
-      const pick = picks.find(e => e.id === id);
-      if (pick) {
-        const key = window.WA.when.resolveKey(pick);
-        const today = window.WA.when.todayKey();
-        if (key && key >= today) out.dated.push(pick);
-        else if (key && key < today) out.gone.push({ ...pick, __why: 'it has already happened' });
-        else out.anytime.push(pick);
+      const p = picks.find(e => e.id === id);
+      if (p) {
+        if (W().hasEnded(p)) out.gone.push({ id, title: p.title, why: 'it has already happened' });
+        else out.dated.push(p);
         continue;
       }
-      const venue = venues.find(v => v.id === id);
-      if (venue) { out.anytime.push({ ...venue, __place: true }); continue; }
-
-      /* Not in either live table: say the honest minimum. */
-      out.gone.push({
-        id, title: id, venue: '', city: '',
-        __why: 'the source stopped listing it',
-      });
+      const v = venues.find(x => x.id === id);
+      if (v) { out.places.push(v); continue; }
+      /* Not in the loaded set: say the honest minimum only once data is live. */
+      if (window.WA.DATA_LIVE) out.gone.push({ id, title: '', why: 'the source stopped listing it' });
     }
-
-    out.dated.sort(window.WA.Geo.bySoonestThenDistance());
+    out.dated.sort(window.WA.Geo.byDateThenSoonest());
     return out;
   };
 
-  const cityOf = (e) => e.city || window.WA.CITY;
+  const inList = (x) => !listFilter || !window.WA.Lists || window.WA.Lists.items(listFilter).includes(x.id);
 
-  /* Everything a bookmark can point at, for the mosaic's id lookup. */
-  const pool = () => [
-    ...(window.WA._catalogAll || window.WA.catalog || []),
-    ...(window.WA._venuesAll  || window.WA.venues  || []),
-  ];
-
-  const cityLabel = (id) => {
-    const c = (window.WA.CITIES || []).find(x => x.id === id);
-    return c ? c.label.charAt(0) + c.label.slice(1).toLowerCase() : (id || '');
-  };
-
-  const inCity = (e) => cityFilter === 'all' || cityOf(e) === cityFilter;
-
-  /* A chosen list narrows exactly like a city chip does, so the two
-     compose instead of fighting. */
-  const inList = (e) => {
-    if (!listFilter || !window.WA.Lists) return true;
-    return window.WA.Lists.items(listFilter).includes(e.id);
-  };
-
-  const shown = (arr) => arr.filter(inCity).filter(inList);
-
-  /* ── Row ─────────────────────────────────────────────────────
-     Same timetable row as everywhere else — one implementation per
-     pattern. The rail carries the day, because on Saved the question is
-     "will I still be here" rather than "what time". */
-  const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-  /* A row with no date prints OPEN, never an empty rail. */
-  const railFor = (e) => {
-    /* Same arrow form as Tonight: a place says when it shuts. */
-    if (e.__place || e.openingHours) {
-      const h = e.openingHours && window.WA.Hours.rail(e.openingHours);
-      return h || 'OPEN';
-    }
-    if (window.WA.when.isTonight(e)) return 'TON';
-    const k = window.WA.when.resolveKey(e);
-    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
-  };
-
-  const row = (e) => {
-    const title = e.__place ? (e.name || '') : (e.title || '');
-    /* Same degradation as Tonight: with no permission the distance slot
-       falls back to the area so the rail keeps its second line and does
-       not reflow when permission arrives later. */
-    const measured = window.WA.Geo.distanceLabel(e);
-    const area     = real(e.neighborhood);
-    const dist     = measured || area;
-    const meta  = [
-      real(e.kind),
-      e.__place ? (measured ? real(e.neighborhood) : '') : real(e.venue),
-      real(e.time),
-    ].filter(Boolean).join(' · ');
-    return `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
-      <span class="wa-row__rail">
-        <!-- No --now here. It keyed off isTonight(), which means TODAY,
-             so every pick dated today wore the alarm colour. This rail
-             never prints NOW at all — it prints TON, a weekday, or the
-             arrow form for a place — and lime's one job is "now". -->
-        <span class="wa-row__time">${esc(railFor(e))}</span>
-        <span class="wa-row__dist">${esc(dist)}</span>
-      </span>
-      <span class="wa-row__body">
-        <span class="wa-row__title">${esc(title)}</span>
-        <span class="wa-row__meta">${esc(meta)}</span>
-      </span>
-      <button class="wa-row__drop" type="button" data-unsave="${esc(e.id)}"
-              aria-label="Remove ${esc(title)} from saved">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </a></li>`;
-  };
-
-  const block = (title, sub, items) => items.length ? `<section class="wa-section">
-      <h2 class="wa-section-title">${esc(title)}</h2>
-      <p class="wa-section-sub">${esc(sub)}</p>
-      <ul class="wa-rows">${items.map(row).join('')}</ul>
-    </section>` : '';
-
-  /* Block 3 speaks plainly and is NOT a row list — a dead thing should
-     not look tappable like a live one. */
-  const goneBlock = (items) => items.length ? `<section class="wa-section">
-      <h2 class="wa-section-title">Gone since you saved it</h2>
-      <p class="wa-section-sub">${esc(`${items.length} no longer listed`)}</p>
-      ${items.map(e => `<p class="wa-note" style="margin-top:var(--s-3)">
-        <span>${esc(e.title || e.id)} — ${esc(e.__why)}.
-        <button class="wa-linkbtn" type="button" data-unsave="${esc(e.id)}">Remove</button></span>
-      </p>`).join('')}
-    </section>` : '';
-
-  /* Viewing one list narrows every block below, the same way the city
-     chips do. Kept as page state rather than a URL param because a
-     list id is meaningless on another device and Saved is local-first. */
-  let listFilter = '';
-
-  /* Up to four tiles from the list's contents: a photo, else the mark. */
   const mosaic = (ids) => {
-    const byId = Object.fromEntries(pool().map(e => [e.id, e]));
-    const tiles = ids.map(id => byId[id]).filter(Boolean).slice(0, 4);
-    /* A list with nothing to show (new, or every item archived) draws the
-       bookmark on the 9%-petrol ground rather than an empty tile. */
-    if (!tiles.length) {
-      return `<span class="wa-list-card__mosaic"><span class="wa-list-card__tile">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-      </span></span>`;
-    }
-    return `<span class="wa-list-card__mosaic">${tiles.map(e => {
-      const photo = e.imageUrl ? UI().safeUrl(e.imageUrl) : '';
-      const mark  = window.WA.Marks ? window.WA.Marks.markFor(e.kind) : 'place';
-      return `<span class="wa-list-card__tile">${photo
-        ? `<img src="${esc(photo)}" alt="" loading="lazy" data-mark="${esc(mark)}">`
-        : `<svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg>`}</span>`;
+    const pool = [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
+    const found = ids.map(id => pool.find(x => x.id === id)).filter(Boolean);
+    /* Four tiles make a mosaic; fewer read better as one picture. */
+    const tiles = found.length >= 4 ? found.slice(0, 4) : found.slice(0, 1);
+    if (!tiles.length) return `<span class="wa-listcard__mosaic wa-listcard__mosaic--one"><span class="wa-listcard__tile">${I('save', 'wa-ic--lg')}</span></span>`;
+    return `<span class="wa-listcard__mosaic${tiles.length === 1 ? ' wa-listcard__mosaic--one' : ''}">${tiles.map(x => {
+      const src = x.imageUrl ? window.WA.UI.safeUrl(x.imageUrl) : '';
+      return `<span class="wa-listcard__tile">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>`;
     }).join('')}</span>`;
   };
 
-  const listsBlock = () => {
+  const listsBlock = (goneIds) => {
     const L = window.WA.Lists;
     if (!L) return '';
     const lists = L.forCity(window.WA.CITY);
-    const goneIds = new Set(gather().gone.map(g => g.id));
-
-    /* The section exists even with no lists, because it is the only
-       place to make one -- an invitation, not an empty state. */
-    const cards = lists.map(l => {
-      const n = (l.items || []).length;
-      const expired = (l.items || []).filter(id => goneIds.has(id)).length;
-      const sub = expired
-        ? `${n} saved · <em>${expired} expired</em>`
-        : `${n} ${n === 1 ? 'saved' : 'saved'} · ${esc(cityLabel(l.city))}`;
-      return `<li><button class="wa-list-card" type="button" data-list="${esc(l.id)}"
-                aria-pressed="${listFilter === l.id}">
-        ${mosaic(l.items || [])}
-        <span class="wa-list-card__name">${esc(l.name)}</span>
-        <span class="wa-list-card__sub">${sub}</span>
-      </button></li>`;
-    }).join('');
-
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">Lists</h2>
-      <p class="wa-section-sub">${esc(lists.length
-        ? `${lists.length} ${lists.length === 1 ? 'list' : 'lists'} · tap to narrow`
-        : 'Group saves into a day out, a trip, a weekend')}</p>
-      ${cards ? `<ul class="wa-lists">${cards}</ul>` : ''}
-      <p style="margin-top:var(--s-4)"><button class="wa-btn" type="button" id="new-list">New list</button>
-      ${listFilter ? `<button class="wa-btn wa-btn--quiet" type="button" data-list="">Show everything saved</button>` : ''}</p>
+    return `<section class="wa-sect">${R().sect({ title: 'Lists', n: lists.length || null, sub: lists.length ? 'Tap a list to see only what is in it' : 'Group saves into a night out, a trip, a weekend' })}
+      <div class="wa-lists" style="margin-top:var(--s-3)">
+        ${lists.map(l => {
+          const n = (l.items || []).length;
+          const gone = (l.items || []).filter(id => goneIds.has(id)).length;
+          return `<button class="wa-listcard" type="button" data-list="${esc(l.id)}" aria-pressed="${listFilter === l.id}">
+            ${mosaic(l.items || [])}<span class="wa-listcard__name">${esc(l.name)}</span>
+            <span class="wa-listcard__sub">${esc(`${n} saved${gone ? ` · ${gone} over` : ''}`)}</span></button>`;
+        }).join('')}
+        <button class="wa-listcard wa-listcard--new" type="button" id="new-list"><span class="wa-listcard__mosaic">${I('plus', 'wa-ic--lg')}</span><span class="wa-listcard__name">New list</span></button>
+      </div>
+      ${listFilter ? '<p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" data-list="">Show everything saved</button></p>' : ''}
     </section>`;
   };
 
   const render = () => {
     const all = gather();
-    const total = all.dated.length + all.anytime.length + all.gone.length;
-
-    $('saved-title').textContent = total ? `${total} saved` : 'Nothing saved yet';
-    $('saved-sub').textContent = total ? 'SOONEST TO EXPIRE FIRST' : '';
-
-    /* City chips only when more than one city is in play. */
-    const cities = [...new Set([...all.dated, ...all.anytime].map(cityOf))];
-    $('scope').innerHTML = cities.length > 1
-      ? [['all', 'All', total], ...cities.map(c => [c, c.charAt(0).toUpperCase() + c.slice(1),
-          [...all.dated, ...all.anytime].filter(e => cityOf(e) === c).length])]
-          .map(([id, label, n]) => `<button class="wa-scope__chip" type="button" data-city="${esc(id)}"
-             aria-selected="${cityFilter === id}">${esc(label)} <span class="wa-chip__count">${n}</span></button>`).join('')
-      : '';
-
-    if (!total) {
-      $('saved-body').innerHTML = `<div class="wa-empty">
-        <p class="wa-empty__title">Your shortlist is empty.</p>
-        <p class="wa-empty__body">The bookmark on any row keeps it here. Nothing is sent anywhere, and it works signed out.</p>
-        <div class="wa-empty__actions">
-          <a class="wa-btn wa-btn--primary" href="./discover.html">What's on tonight</a>
-          <a class="wa-btn" href="./index.html">Explore</a>
-        </div>
-      </div>`;
-      return;
-    }
-
-    const dated = shown(all.dated);
-    const anytime = shown(all.anytime);
+    const total = all.dated.length + all.places.length + all.gone.length;
     const L = window.WA.Lists;
     const viewing = listFilter && L ? L.byId(listFilter) : null;
+    $('saved-title').textContent = viewing ? viewing.name : total ? `${total} saved` : 'Saved';
+    $('saved-sub').textContent = viewing ? 'Only what is in this list.' : total ? 'Soonest to expire first. It stays in this browser and works signed out.' : 'Your shortlist stays in this browser.';
 
-    if (viewing) {
-      $('saved-title').textContent = viewing.name;
-      $('saved-sub').textContent = `${dated.length + anytime.length} IN THIS LIST`;
+    if (!total && !(L && L.forCity(window.WA.CITY).length)) {
+      $('saved-body').innerHTML = R().empty({ icon: 'save', title: 'Nothing saved yet.',
+        body: 'Save anything from its page and it waits here, even offline. Nothing is sent anywhere.',
+        actions: [{ href: 'index.html', label: "What's on tonight" }, { href: 'places.html', label: 'Places' }] });
+      return;
     }
-
-    $('saved-body').innerHTML =
-      listsBlock() +
-      block("Happening while you're here", `${dated.length} dated · soonest first`, dated) +
-      block('Places, for whenever', `${anytime.length} with no date`, anytime) +
-      (viewing ? '' : goneBlock(all.gone));
+    const dated = all.dated.filter(inList);
+    const places = all.places.filter(inList);
+    const goneIds = new Set(all.gone.map(g => g.id));
+    $('saved-body').innerHTML = listsBlock(goneIds) + `<div class="saved-cols">
+      <section class="wa-sect">${R().sect({ title: 'Coming up', n: dated.length })}
+        ${dated.length ? `<ul class="wa-rows">${dated.map(e => R().row(e, { day: true, drop: true })).join('')}</ul>`
+          : '<p class="wa-note">Nothing dated is saved. Events you save land here, soonest first.</p>'}</section>
+      <section class="wa-sect">${R().sect({ title: 'Places', n: places.length })}
+        ${places.length ? `<ul>${places.map(v => R().placeRow(v, { drop: true })).join('')}</ul>`
+          : '<p class="wa-note">Save a record shop or a gallery from its page and it waits here for a free afternoon.</p>'}</section>
+    </div>
+    ${!viewing && all.gone.length ? `<section class="wa-sect">${R().sect({ title: 'Over since you saved it', n: all.gone.length })}
+      ${all.gone.map(g => `<div class="wa-gone"><span><span class="wa-gone__title">${esc(g.title || 'A listing')}</span>, ${esc(g.why)}.</span>
+        <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}</section>` : ''}`;
   };
 
-  /* ── The add-to-list sheet ───────────────────────────────────
-     The lists this pick is already in, checked, then one field to make a
-     new one. Nothing is destructive, so there is no confirm step. */
-  const sheet = () => document.getElementById('sheet');
-
-  const openSheet = (pickId) => {
-    const d = sheet();
-    if (!d || !window.WA.Lists) return;
-    const L = window.WA.Lists;
-    const lists = L.forCity(window.WA.CITY);
-    const inThem = new Set(L.listsFor(pickId).map(l => l.id));
-
-    document.getElementById('sheet-title').textContent = 'Add to a list';
-    document.getElementById('sheet-body').innerHTML = `
-      ${lists.length ? `<div class="wa-chips">${lists.map(l => `
-        <button class="wa-chip" type="button" data-toggle-list="${esc(l.id)}" data-pick="${esc(pickId)}"
-                aria-pressed="${inThem.has(l.id)}">${esc(l.name)}</button>`).join('')}</div>`
-        : `<p class="wa-detail__note">No lists yet. Name one and this goes straight into it.</p>`}
-      <div class="wa-field" style="margin-top:var(--s-5)">
-        <label class="wa-field__label" for="list-name">New list</label>
-        <input class="wa-input" id="list-name" type="text" maxlength="60"
-               placeholder="Kalamaja day off" autocomplete="off">
-      </div>`;
-    document.getElementById('sheet-foot').innerHTML =
-      `<button class="wa-btn wa-btn--primary" type="button" id="list-create" data-pick="${esc(pickId)}" style="flex:1">Create and add</button>`;
-    d.showModal();
+  /* ── The new-list sheet ───────────────────────────────────── */
+  const openNew = () => {
+    $('sheet-title').textContent = 'New list';
+    $('sheet-body').innerHTML = `<div class="wa-field"><label class="wa-field__label" for="list-name">Name</label>
+      <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off"></div>
+      <p class="wa-note">Add things to it from their pages.</p>`;
+    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="list-create">Create list</button>';
+    $('sheet').showModal();
+    $('list-name').focus();
   };
-
-  const closeSheet = () => { const d = sheet(); if (d && d.open) d.close(); };
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest && e.target.closest('#sheet-close')) { closeSheet(); return; }
-
-    const tog = e.target.closest && e.target.closest('[data-toggle-list]');
-    if (tog) {
+    const hit = (s) => e.target.closest && e.target.closest(s);
+    if (hit('#sheet-close')) { $('sheet').close(); return; }
+    if (hit('#new-list')) { openNew(); return; }
+    if (hit('#list-create')) {
       const L = window.WA.Lists;
-      const listId = tog.dataset.toggleList, pickId = tog.dataset.pick;
-      const on = tog.getAttribute('aria-pressed') === 'true';
-      if (on) L.removeItem(listId, pickId); else L.add(listId, pickId);
-      tog.setAttribute('aria-pressed', String(!on));
-      const l = L.byId(listId);
-      if (!on && l) toast(`Saved to ${l.name}`, 'Undo', () => {
-        L.removeItem(listId, pickId); render();
-      });
+      const id = L.create($('list-name').value);
+      if (!id) { $('list-name').focus(); return; }
+      $('sheet').close();
       render();
+      toast(`Made “${L.byId(id).name}”`, 'Undo', () => { L.remove(id); render(); });
       return;
     }
-
-    /* Create a list, optionally with a pick going straight into it. */
-    const mk = e.target.closest && e.target.closest('#list-create, #new-list');
-    if (mk) {
-      const input = document.getElementById('list-name');
-      const name = input ? input.value : '';
-      if (mk.id === 'new-list' && !input) {
-        /* Opened from the Lists section rather than a row: same sheet,
-           no pick attached. */
-        openSheet('');
-        return;
-      }
-      const L = window.WA.Lists;
-      const id = L.create(name);
-      if (!id) { if (input) input.focus(); return; }
-      const pickId = mk.dataset.pick;
-      if (pickId) L.add(id, pickId);
-      closeSheet();
-      render();
-      toast(pickId ? `Saved to ${L.byId(id).name}` : `List "${L.byId(id).name}" created`,
-        'Undo', () => { L.remove(id); render(); });
-      return;
-    }
-
-    const addBtn = e.target.closest && e.target.closest('[data-addlist]');
-    if (addBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      openSheet(addBtn.dataset.addlist);
-      return;
-    }
-
-    const lc = e.target.closest && e.target.closest('[data-list]');
-    if (lc) { listFilter = lc.dataset.list || ''; render(); return; }
-
-    const drop = e.target.closest && e.target.closest('[data-unsave]');
+    const drop = hit('[data-unsave]');
     if (drop) {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       const id = drop.dataset.unsave;
+      const lists = window.WA.Lists ? window.WA.Lists.listsFor(id).map(l => l.id) : [];
       window.WA.Bookmarks.set(id, false);
       render();
-      /* Every toast carries its reverse action. */
       toast('Removed from saved', 'Undo', () => {
         window.WA.Bookmarks.set(id, true);
+        lists.forEach(l => window.WA.Lists.add(l, id));
         render();
       });
       return;
     }
-    const c = e.target.closest && e.target.closest('[data-city]');
-    if (c) { cityFilter = c.dataset.city; render(); }
+    const lc = hit('[data-list]');
+    if (lc) { listFilter = listFilter === lc.dataset.list ? '' : lc.dataset.list; render(); }
   });
 
-  document.addEventListener('wa:catalog-ready', () => { render(); window.WA.Geo.userLoc(); });
+  const pre = () => { $('saved-body').innerHTML = R().skelRows(3); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
+  document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:bookmarks-synced', render);
-  if (window.WA && window.WA.catalog && window.WA.catalog.length) render();
 })();

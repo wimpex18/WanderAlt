@@ -1,538 +1,436 @@
 /* ============================================================
-   detail.js — one detail template, two data shapes.
+   detail.js — the event page and the venue page.
    ------------------------------------------------------------
-   ?id= resolves against picks first, then venues. An event fills the
-   three cells with doors / entry / walk, leads with Tickets when it has
-   a ticket link, and ends with the venue it happens at. A place is the
-   venue page: closes / entry / walk, its own links (site, Instagram,
-   Facebook), the week strip, and everything listed there next.
-   Provenance closes every page.
+   ?id= resolves against events first, then places, then the database
+   (WA.byId), so a row the browser did not load is never reported gone.
 
-   Every interpolated value is database text: esc() at the site, safeUrl() for
-   anything reaching an href or src.
+   Event: photo, English title with the original under it, one-line
+   summary, When · Entry · Walk, Tickets first, then calendar, walking
+   directions, save and lists; the source's own words; the venue as a
+   small card; where this came from.
+
+   Venue: photo or a typographic block, open now or shut, Follow,
+   Website / Instagram / Facebook, the programme grouped by day, the
+   week's hours, provenance.
    ============================================================ */
 (() => {
   'use strict';
 
-  /* Guarded: WA.Toast is optional per page. */
-  const toast = (msg, label, undo) => {
-    if (window.WA.Toast && window.WA.Toast.show) window.WA.Toast.show(msg, label, undo);
-  };
-
-  const UI  = () => window.WA.UI;
+  const R = () => window.WA.R;
+  const W = () => window.WA.when;
+  const G = () => window.WA.Geo;
+  const H = () => window.WA.Hours;
+  const UI = () => window.WA.UI;
   const esc = (s) => UI().esc(s);
   const url = (u) => UI().safeUrl(u);
+  const I = (n, c) => window.WA.Icon(n, c);
   const main = () => document.getElementById('main');
-
-  const PLACEHOLDER = /^(unknown|tba|tbc|n\/a|none|null|other|-)$/i;
-  const real = (v) => {
-    const s = String(v == null ? '' : v).trim();
-    return s && !PLACEHOLDER.test(s) ? s : '';
-  };
-
+  const toast = (m, l, u) => { if (window.WA.Toast) window.WA.Toast.show(m, l, u); };
   const param = (k) => new URLSearchParams(location.search).get(k) || '';
 
-  /* ── Resolve ─────────────────────────────────────────────────
-     Picks first: an id collision between the two tables is possible in
-     principle and an event is the more time-critical answer. */
-  /* Set by lookUp() so resolve() can find what the catalogue could not. */
   let extra = null;
-
   const resolve = () => {
     const id = param('id');
     if (!id) return null;
-    const picks  = window.WA._catalogAll || window.WA.catalog || [];
-    const pick = picks.find(e => e.id === id);
+    const pick = (window.WA._catalogAll || []).find(e => e.id === id);
     if (pick) return { kind: 'event', e: pick };
-    const venues = window.WA._venuesAll || window.WA.venues || [];
-    const venue = venues.find(v => v.id === id);
+    const venue = (window.WA._venuesAll || []).find(v => v.id === id);
     if (venue) return { kind: 'place', e: venue };
-    /* Whatever the by-id lookup fetched, if it ran. */
     return extra && extra.e && extra.e.id === id ? extra : null;
   };
 
-  /* ── The three cells ─────────────────────────────────────────
-     A cell with no answer is NOT rendered — a placeholder in a cell is
-     the dead-value problem in a more prominent position. */
-  const cell = (label, value) =>
-    value ? `<div class="wa-cell"><span class="wa-cell__label">${esc(label)}</span>
-             <span class="wa-cell__value">${esc(value)}</span></div>` : '';
-
-  const walkCell = (e) => {
-    const m = window.WA.Geo.distanceTo(e);
-    if (m == null) return '';
-    return cell('Walk', `${window.WA.Geo.walkMinutes(m)} min`);
-  };
-
-  const eventCells = (e) => {
-    const doors = real(e.time) || (e.startsAt ? window.WA.Hours.clock(window.WA.Geo.startMinutes(e)) : '');
-    const price = UI().priceLabel ? UI().priceLabel(e) : '';
-    return [cell('Doors', doors), cell('Entry', price), walkCell(e)].join('');
-  };
-
-  /* The label follows the state: Open → Closes 18:00. Shut but opening
-     later → Opens 10:00. Shut for the day → Today / closed. Unknown → no
-     cell at all. */
-  const placeCells = (v) => {
-    const s = window.WA.Hours.state(v.openingHours);
-    let hours = '';
-    if (s.known) {
-      if (s.open)                  hours = cell('Closes', s.closesAt == null ? '24 hours' : window.WA.Hours.clock(s.closesAt));
-      else if (s.opensAt != null)  hours = cell('Opens', window.WA.Hours.clock(s.opensAt));
-      else                         hours = cell('Today', 'closed');
-    }
-    /* Shops and galleries are free to walk into; a cinema, theatre or club
-       charges per night, which the programme below prices. */
-    const free = /^(record store|bookshop|thrift|gallery|community)$/.test(String(v.kind || ''));
-    return [hours, free ? cell('Entry', 'Free') : '', walkCell(v)].join('');
-  };
-
-  /* ── The week strip ──────────────────────────────────────────
-     Only for places, and only when hours exist. */
-  const weekStrip = (v) => {
-    const week = window.WA.Hours.week(v.openingHours);
-    if (!week) {
-      return `<section class="wa-section">
-        <h2 class="wa-section-title">Opening hours</h2>
-        <p class="wa-section-sub">NOT FILED</p>
-        <p class="wa-detail__note">This venue's hours have not reached us. Roughly half the places we list carry them; the rest we would rather leave blank than guess.</p>
-      </section>`;
-    }
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">Opening hours</h2>
-      <ul class="wa-week">
-        ${week.map(d => `<li class="wa-week__row${d.isToday ? ' wa-week__row--today' : ''}">
-          <span class="wa-week__day">${esc(d.day)}</span>
-          <span class="wa-week__val">${esc(d.text)}</span>
-        </li>`).join('')}
-      </ul>
-    </section>`;
-  };
-
-  /* ── Provenance ──────────────────────────────────────────────
-     Closes every detail page: what we read and when. */
-  const ago = (iso) => {
-    if (!iso) return '';
-    const ms = Date.now() - new Date(iso).getTime();
-    if (!isFinite(ms) || ms < 0) return '';
-    const mins = Math.round(ms / 60000);
-    if (mins < 60)   return `${mins} minute${mins === 1 ? '' : 's'} ago`;
-    const hrs = Math.round(mins / 60);
-    if (hrs < 24)    return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
-    const days = Math.round(hrs / 24);
-    return `${days} day${days === 1 ? '' : 's'} ago`;
-  };
-
-  /* Pick the URL first, then describe that URL, so the sentence always
-     matches the link it is shown with. */
-  const provenance = ({ sourceUrl, what, when, sourceName }) => {
-    if (!sourceUrl && !what) return '';
-    const host = sourceUrl ? String(sourceUrl).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
-    const seen = when ? `, read ${ago(when)}` : '';
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">Where this came from</h2>
-      <p class="wa-detail__note">${esc(what)}${esc(seen)}.
-        ${sourceUrl ? `<a href="${esc(url(sourceUrl))}" target="_blank" rel="noopener noreferrer">${esc(host || sourceName || 'source')} &nearr;</a>` : ''}
-      </p>
-    </section>`;
-  };
-
-  const eventProvenance = (e) => {
-    const link = e.permalink || e.ticketUrl || '';
-    const host = String(link).replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
-    let what;
-    if (!link)                              what = 'Filed by our own desk';
-    else if (/fienta|piletilevi|bilesu|tiketti|ra\.co/i.test(host)) what = 'The ticketing listing';
-    else                                    what = "The venue's own page";
-    return { sourceUrl: link, what, when: e.lastSeenAt || e.createdAt };
-  };
-
-  /* ── Well: photo, else the category mark ─────────────────────
-     Never a grey box. Detail is the one place a photo earns full bleed
-     because there is a single item and a reason for atmosphere. */
-  const well = (e, title) => {
-    const photo = e.imageUrl ? url(e.imageUrl) : '';
-    const mark  = window.WA.Marks.markFor(e.kind);
-    if (photo) {
-      /* A logo (image_source 'logo', ~192px) is contained on the petrol tint,
-         never cropped to fill the well. The credit line says which it is. */
-      const isMark = e.imageSource === 'logo';
-      return `<div class="wa-detail__well${isMark ? ' wa-detail__well--brand' : ''}">
-        <img class="wa-detail__photo" src="${esc(photo)}"
-             alt="" loading="eager" decoding="async" data-mark="${esc(mark)}" />
-        ${e.imageAttr ? `<p class="wa-detail__credit">${esc(isMark ? `${e.imageAttr} — their logo, not a photo` : e.imageAttr)}</p>` : ''}
-      </div>`;
-    }
-    return `<div class="wa-detail__well wa-detail__well--mark">
-      <span class="wa-mark"><svg aria-hidden="true"><use href="#wa-mark-${esc(mark)}"></use></svg></span>
-      <p class="wa-detail__credit">no photo on file</p>
-    </div>`;
-  };
-
-  const mapsHref = (e, title) => {
-    const c = window.WA.Geo.coordsFor(e);
-    if (c) return `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
-    const q = [title, real(e.address), real(e.venue), window.WA.CITY].filter(Boolean).join(', ');
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`;
-  };
-
-  /* ── Events ↔ venues ──────────────────────────────────────── */
-  const key = (s) => String(s || '').toLowerCase().trim();
-
-  /* Everything listed at a place, soonest first. */
-  const picksAt = (place) => (window.WA._catalogAll || window.WA.catalog || [])
-    .filter(p => !p.isClosed && !window.WA.when.hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
-    .sort((a, b) => String(a.startsAt || '').localeCompare(String(b.startsAt || '')));
-
-  const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  const railFor = (e) => {
-    if (window.WA.when.isTonight(e)) return 'TON';
-    const k = window.WA.when.resolveKey(e);
-    return k ? DAY_ABBR[new Date(`${k}T12:00:00Z`).getUTCDay()] : 'OPEN';
-  };
-  /* Copied from source.js's row: rail (day, time), title, kind. */
-  const row = (e) => `<li><a class="wa-row" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
-      <span class="wa-row__rail">
-        <span class="wa-row__time">${esc(railFor(e))}</span>
-        <span class="wa-row__dist">${esc(real(e.time))}</span>
+  /* ── Pieces ─────────────────────────────────────────────────── */
+  const FACT_ICON = { When: 'calendar', Was: 'calendar', Entry: 'ticket', Walk: 'walk', Area: 'pin', Today: 'clock', Where: 'pin' };
+  const fact = (label, value, sub) => value ? `<div class="det-fact">
+      <span class="det-fact__icon">${I(FACT_ICON[label] || 'info')}</span>
+      <span class="det-fact__text">
+        <span class="det-fact__label">${esc(label)}</span>
+        <span class="det-fact__value">${esc(value)}</span>
+        ${sub ? `<span class="det-fact__sub">${esc(sub)}</span>` : ''}
       </span>
-      <span class="wa-row__body">
-        <span class="wa-row__title">${esc(e.title || '')}</span>
-        <span class="wa-row__meta">${esc([real(e.kind), UI().priceLabel ? UI().priceLabel(e) : ''].filter(Boolean).join(' · '))}</span>
-      </span>
-    </a></li>`;
+    </div>` : '';
 
-  /* A ticket link, else an event page on a ticketing site. */
+  const walkFact = (x) => {
+    const m = G().distanceTo(x);
+    if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(m));
+    const a = R().areaOf(x);
+    return a ? fact('Area', a, 'Allow location for walking time') : '';
+  };
+
+  const media = (x, word, kind) => {
+    const src = x.imageUrl ? url(x.imageUrl) : '';
+    if (src) {
+      const logo = x.imageSource === 'logo';
+      const credit = x.imageAttr ? (logo ? `${x.imageAttr}, their logo` : x.imageAttr) : '';
+      return `<figure class="det-media${logo ? ' det-media--logo' : ''}">
+        <img src="${esc(src)}" alt="" decoding="async" fetchpriority="high">
+        ${credit ? `<figcaption class="det-credit">${esc(credit)}</figcaption>` : ''}
+      </figure>`;
+    }
+    /* No photo: a monogram of the name, large, on the kind's tint. */
+    const mono = String(word || '').replace(/\(.*?\)/g, ' ').split(/[\s\-–—:/@]+/)
+      .filter(w => w && !/^(the|of|and|at|in|a|an|ja|ning)$/i.test(w))
+      .slice(0, 3).map(w => w.charAt(0)).join('').toUpperCase();
+    const pic = window.WA.Picto.kind(kind);
+    const hue = (pic.match(/wa-picto--([a-z]+)/) || [])[1] || 'place';
+    return `<div class="det-type wa-picto--${hue}" aria-hidden="true">${pic}
+      <span class="det-type__word">${esc(mono || '·')}</span></div>`;
+  };
+
+  const directions = (x, title) => {
+    const c = G().coordsFor(x);
+    if (c) return `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=walking`;
+    const q = [title, R().real(x.address), R().real(x.venue), 'Tallinn'].filter(Boolean).join(', ');
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}&travelmode=walking`;
+  };
+
   const TICKET_HOSTS = /fienta|piletilevi|bilesu|tiketti|ticketmaster|tickettailor|eventbrite|kinola|ra\.co|gateme|dice\.fm|shotgun/i;
   const ticketsFor = (e) => {
     const t = e.ticketUrl || (TICKET_HOSTS.test(String(e.permalink || '')) ? e.permalink : '');
     return t ? url(t) : '';
   };
 
-  /* The venue's own channels, each only when the source gave it. */
-  const linkButtons = (v) => {
-    const links = [
-      ['Website', v.website],
-      ['Instagram', v.instagram],
-      ['Facebook', v.facebook],
-    ].map(([label, href]) => [label, href ? url(href) : '']).filter(([, href]) => href);
-    return links.length ? `<div class="wa-btn-row wa-detail__links">
-      ${links.map(([label, href]) => `<a class="wa-btn" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)} &nearr;</a>`).join('')}
-    </div>` : '';
+  const ago = (iso) => {
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!iso || !isFinite(ms) || ms < 0) return '';
+    const m = Math.round(ms / 60000);
+    if (m < 60) return `${m} min ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h} ${h === 1 ? 'hour' : 'hours'} ago`;
+    const d = Math.round(h / 24);
+    return `${d} ${d === 1 ? 'day' : 'days'} ago`;
   };
+  const host = (u) => String(u || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
 
-  /* An event's venue: what it is, where, whether it is open, and what else
-     is on there. Links to the venue page when the venue is a place we
-     hold, else to the programme grouped by venue name. */
-  const venueSection = (e) => {
-    const v = window.WA.venueFor(e);
-    const name = real(e.venue) || (v && v.name) || '';
-    if (!name) return '';
-    const id = e.venueId || (v && v.id) || '';
-    const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(name)}`;
-    const more = picksAt({ id, name }).filter(p => p.id !== e.id).length;
-    const meta = [
-      v && real(v.kind),
-      real(e.neighborhood) || (v && real(v.neighborhood)),
-      v && v.openingHours ? window.WA.Hours.label(v.openingHours) : '',
-      more ? `${more} more listed` : '',
-    ].filter(Boolean).join(' · ');
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">The venue</h2>
-      <ul class="wa-rows"><li><a class="wa-row" href="${esc(href)}">
-        <span class="wa-row__rail">
-          <span class="wa-row__time">${esc(window.WA.Geo.distanceLabel(v || e) || 'VENUE')}</span>
-          <span class="wa-row__dist"></span>
-        </span>
-        <span class="wa-row__body">
-          <span class="wa-row__title">${esc(name)}</span>
-          ${meta ? `<span class="wa-row__meta">${esc(meta)}</span>` : ''}
-        </span>
-      </a></li></ul>
-      ${v ? linkButtons(v) : ''}
-    </section>`;
+  const key = (s) => String(s || '').toLowerCase().trim();
+  const picksAt = (place) => (window.WA._catalogAll || [])
+    .filter(p => !p.isClosed && !W().hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
+    .sort(G().bySoonestThenDistance());
+
+  const saveBtn = (id) => {
+    const on = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[id]);
+    return `<button class="wa-btn" type="button" id="save" aria-pressed="${on}">${I(on ? 'hearted' : 'heart')}<span>${on ? 'Saved' : 'Save'}</span></button>`;
   };
-
-  /* A venue page's programme. */
-  const programmeSection = (v) => {
-    const list = picksAt(v);
-    if (!list.length) return `<section class="wa-section">
-      <h2 class="wa-section-title">Listed here next</h2>
-      <p class="wa-detail__note">Nothing from ${esc(v.name)} is listed right now. Its own channels above carry what we have not read.</p>
-    </section>`;
-    return `<section class="wa-section">
-      <h2 class="wa-section-title">Listed here next</h2>
-      <p class="wa-section-sub">${esc(`${list.length} listed · soonest first`)}</p>
-      <ul class="wa-rows">${list.map(row).join('')}</ul>
-    </section>`;
-  };
-
-  const placeProvenance = (v) => {
-    if (v.osmId) return {
-      sourceUrl: `https://www.openstreetmap.org/${v.osmId}`,
-      what: 'Address, hours and links from OpenStreetMap',
-      when: null,
-    };
-    return { sourceUrl: v.website, what: 'Details from the venue', when: null };
-  };
-
-  /* ── Render ──────────────────────────────────────────────────── */
-  /* Says which list the pick is already in, not just what the button does. */
   const listLabel = (id) => {
     const L = window.WA.Lists;
-    if (!L) return 'Add to a list';
-    const ls = L.listsFor(id);
-    if (!ls.length) return 'Add to a list';
-    if (ls.length === 1) return `In ${ls[0].name}`;
-    return `In ${ls.length} lists`;
+    const ls = L ? L.listsFor(id) : [];
+    return !ls.length ? 'List' : ls.length === 1 ? ls[0].name : `${ls.length} lists`;
   };
 
-  /* The two dead ends are different facts: an archived listing, and a row
-     we never had. Both carry the next-best answer. */
-  const deadEnd = (title, body) => {
-    const cityLabel = (window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.label
-      .replace(/^(.)(.*)$/, (m, a, b) => a + b.toLowerCase()) || 'Tallinn';
-    main().innerHTML = `<div class="wa-empty" style="margin-top:var(--s-8)">
-      <p class="wa-empty__title">${esc(title)}</p>
-      <p class="wa-empty__body">${esc(body)}</p>
-      <div class="wa-empty__actions">
-        <a class="wa-btn wa-btn--primary" href="./discover.html">Tonight in ${esc(cityLabel)}</a>
-        <a class="wa-btn" href="./index.html">Explore</a>
+  /* ── Calendar file ─────────────────────────────────────────── */
+  const icsDate = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const icsText = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, m => `\\${m}`);
+  const ics = (e) => {
+    const start = e.startsAt ? new Date(e.startsAt) : null;
+    if (!start || isNaN(start)) return '';
+    const end = e.endsAt ? new Date(e.endsAt) : new Date(start.getTime() + 3 * 3600 * 1000);
+    const lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//WanderAlt//Tallinn//EN', 'BEGIN:VEVENT',
+      `UID:${icsText(e.id)}@wanderalt.app`, `DTSTAMP:${icsDate(new Date())}`,
+      `DTSTART:${icsDate(start)}`, `DTEND:${icsDate(end)}`,
+      `SUMMARY:${icsText(e.title)}`,
+      `LOCATION:${icsText([e.venue, e.address].filter(Boolean).join(', '))}`,
+      `URL:${icsText(location.href)}`,
+      'END:VEVENT', 'END:VCALENDAR',
+    ];
+    return URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+  };
+
+  /* ── The event page ─────────────────────────────────────────── */
+  const eventPage = (e) => {
+    const title = e.title || '';
+    const kind = R().kindLabel(e.kind);
+    const why = R().whyTag(e);
+    const ended = W().hasEnded(e);
+    const liveNow = R().isLive(e);
+    const orig = R().real(e.originalTitle) && R().fold(e.originalTitle) !== R().fold(title) ? e.originalTitle : '';
+    const desc = UI().descriptionOr(e.description, title);
+    const quote = UI().descriptionOr(e.quote, title);
+    const summary = quote && quote !== desc ? quote : '';
+    const k = W().resolveKey(e);
+    const clock = R().clockOf(e);
+    const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
+    const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
+    const tickets = ended ? '' : ticketsFor(e);
+    const cal = !ended && e.startsAt ? ics(e) : '';
+    const v = window.WA.venueFor(e);
+    const venueName = R().real(e.venue) || (v && v.name) || '';
+
+    const venueCard = () => {
+      if (!venueName) return '';
+      const id = e.venueId || (v && v.id) || '';
+      const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(venueName)}`;
+      const more = picksAt({ id, name: venueName }).filter(p => p.id !== e.id).length;
+      const img = v && v.imageUrl && v.imageSource !== 'logo' ? url(v.imageUrl) : '';
+      const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
+      return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
+        <a class="vcard" href="${esc(href)}">
+          <span class="vcard__art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__body">
+            <span class="vcard__name">${esc(venueName)}</span>
+            ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}
+            ${v && v.openingHours ? R().openBadge(v) : ''}
+            <span class="vcard__meta">${esc(more ? `${more} more listed here` : 'Nothing else listed here yet')}</span>
+          </span>
+          ${I('chevron')}
+        </a></section>`;
+    };
+
+    const link = e.permalink || e.ticketUrl || '';
+    const via = R().real(e.handle) ? `@${String(e.handle).replace(/^@/, '')}` : '';
+    const seen = ago(e.lastSeenAt || e.createdAt);
+
+    return `<div class="det-grid">
+      <div class="det-grid__media">${media(e, title, e.kind)}</div>
+      <div class="det-grid__main">
+        ${ended ? `<div class="det-notice" role="status">${I('clock')}<span><strong>This has ended.</strong>${esc(k ? `It was on ${R().dateShort(k)}${clock ? ` at ${clock}` : ''}.` : '')} <a class="wa-link" href="index.html">What's on tonight</a></span></div>` : ''}
+        <header class="det-head">
+          <p class="wa-kicker">${liveNow ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
+          <h1 class="wa-h1">${esc(title)}</h1>
+          ${orig ? `<p class="det-orig" lang="et">${esc(orig)}</p>` : ''}
+          ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
+        </header>
+
+        <div class="det-facts">
+          ${fact(ended ? 'Was' : 'When', whenValue, whenSub)}
+          ${fact('Entry', R().price(e), R().isFree(e) ? '' : '')}
+          ${walkFact(e)}
+        </div>
+
+        ${ended ? '' : `<div class="wa-bar">
+          <span class="wa-bar__text"><span class="wa-bar__price">${esc(R().price(e) || whenValue)}</span>
+            <span class="wa-bar__sub">${esc([R().price(e) ? whenValue : '', whenSub, venueName].filter(Boolean).join(' · '))}</span></span>
+          ${tickets
+            ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}Tickets</a>`
+            : `<a class="wa-btn wa-btn--primary" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}Walk me there</a>`}
+        </div>
+        <div class="det-actions">
+          <div class="det-actions__row">
+            ${cal ? `<a class="wa-btn" href="${esc(cal)}" download="${esc((title || 'event').slice(0, 40).replace(/[^\w\- ]+/g, ''))}.ics">${I('calendar')}<span>Calendar</span></a>` : ''}
+            ${tickets ? `<a class="wa-btn" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}<span>Walk there</span></a>` : ''}
+            ${saveBtn(e.id)}
+            <button class="wa-btn" type="button" id="addlist">${I('list')}<span>${esc(listLabel(e.id))}</span></button>
+          </div>
+        </div>`}
+
+        ${desc ? `<section class="det-block"><h2 class="det-block__title">In their words</h2>
+          <p class="wa-prose${desc.length > 420 ? ' wa-prose--clamp' : ''}" id="desc">${esc(desc)}</p>
+          ${desc.length > 420 ? '<button class="wa-btn wa-btn--sm det-more" type="button" id="more">Read all</button>' : ''}
+        </section>` : `<section class="det-block"><h2 class="det-block__title">In their words</h2>
+          <p class="wa-note">${esc(venueName ? `${venueName}'s own listing says no more than the title.` : 'The source filed no description.')}</p></section>`}
+
+        ${venueCard()}
+
+        ${R().real(e.address) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
+          <p>${esc(e.address)}</p>
+          <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Open in maps</a></section>` : ''}
+
+        <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
+          <div class="det-prov">
+            <span>${esc([via ? `Listed via ${via}` : 'Filed by the venue', seen ? `read ${seen}` : ''].filter(Boolean).join(', '))}.</span>
+            ${link ? `<a href="${esc(url(link))}" target="_blank" rel="noopener noreferrer">${esc(host(link))} ${I('out', 'wa-ic--sm')}</a>` : ''}
+            ${via ? `<a href="source.html?handle=${esc(encodeURIComponent(e.handle))}">Everything from ${esc(via)}</a>` : ''}
+          </div>
+        </section>
       </div>
     </div>`;
   };
 
-  /* Ask the database for the one row the loaded set does not carry.
-     Guarded against a double fetch: render() runs on catalog-ready and
-     again after interactions, and a miss must not re-query each time. */
+  /* ── The venue page ─────────────────────────────────────────── */
+  const placePage = (v) => {
+    const o = R().openState(v);
+    const following = window.WA.Follows && window.WA.Follows.has(v.name);
+    const links = [['globe', 'Website', v.website], ['instagram', 'Instagram', v.instagram], ['facebook', 'Facebook', v.facebook]]
+      .map(([ic, label, href]) => [ic, label, href ? url(href) : '']).filter(x => x[2]);
+    const list = picksAt(v);
+    const walkIn = /^(record store|bookshop|thrift|gallery|community)$/.test(String(v.kind || ''));
+    const week = H().week(v.openingHours);
+    const todayHours = o.s.known ? (o.open ? (o.s.closesAt == null ? '24 hours' : `till ${H().clock(o.s.closesAt)}`) : o.s.opensAt != null ? `from ${H().clock(o.s.opensAt)}` : 'Shut') : '';
+
+    const nearby = () => {
+      const a = R().areaOf(v);
+      const others = R().places().filter(x => x.id !== v.id && a && R().areaOf(x) === a).slice(0, 3);
+      return others.length ? `<p class="wa-note" style="margin-top:var(--s-4)">Also in ${esc(a)}:</p><ul>${others.map(x => R().placeRow(x)).join('')}</ul>` : '';
+    };
+
+    return `<div class="det-grid">
+      <div class="det-grid__media">${media(v, v.name || '', v.kind)}</div>
+      <div class="det-grid__main">
+        <header class="det-head">
+          <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span>${esc(R().areaOf(v))}</span>` : ''}</p>
+          <h1 class="wa-h1">${esc(v.name || '')}</h1>
+          <p>${R().openBadge(v)}</p>
+        </header>
+
+        <div class="det-facts">
+          ${o.s.known ? fact('Today', todayHours) : ''}
+          ${walkIn ? fact('Entry', 'Free', 'Walk in') : ''}
+          ${walkFact(v)}
+        </div>
+
+        <div class="det-actions">
+          <div class="det-actions__row">
+            <button class="wa-btn" type="button" id="follow" aria-pressed="${!!following}">${I(following ? 'check' : 'follow')}<span>${following ? 'Following' : 'Follow'}</span></button>
+            <a class="wa-btn" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">${I('walk')}<span>Walk there</span></a>
+            ${saveBtn(v.id)}
+          </div>
+          ${links.length ? `<div class="det-links">${links.map(([ic, label, href]) =>
+            `<a class="wa-iconbtn" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`${label} (opens ${host(href)})`)}" title="${esc(label)}">${I(ic)}</a>`).join('')}</div>` : ''}
+        </div>
+
+        <section class="det-block">
+          <h2 class="det-block__title">Listed here next${list.length ? ` · ${list.length}` : ''}</h2>
+          ${list.length ? R().grouped(list, { noThumb: false })
+            : `<p class="wa-note">Nothing from ${esc(v.name)} is listed right now. ${links.length ? 'Their own channels above carry what we have not read.' : ''} ${following ? '' : 'Follow it and its listings are marked for you when they arrive.'}</p>${nearby()}`}
+        </section>
+
+        <section class="det-block"><h2 class="det-block__title">Opening hours</h2>
+          ${week ? `<div class="hours">${week.map(d => `<div class="hours__row${d.isToday ? ' hours__row--today' : ''}">
+              <span class="hours__day">${esc(d.day)}</span><span class="hours__val">${esc(d.text)}</span>${d.isToday ? '<span class="hours__today">Today</span>' : '<span></span>'}
+            </div>`).join('')}</div>`
+            : '<p class="wa-note">Not filed. About half the places we list carry hours; for the rest we would rather leave a gap than guess.</p>'}
+        </section>
+
+        ${R().real(v.address) ? `<section class="det-block"><h2 class="det-block__title">Address</h2><p>${esc(v.address)}</p>
+          <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Open in maps</a></section>` : ''}
+
+        <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
+          <div class="det-prov">${v.osmId
+            ? `<span>Address, hours and links from OpenStreetMap.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
+            : '<span>Details from the venue.</span>'}</div>
+        </section>
+      </div>
+    </div>`;
+  };
+
+  /* ── Dead ends ─────────────────────────────────────────────── */
+  const deadEnd = (title, body) => {
+    main().innerHTML = R().empty({ icon: 'calendar', title, body,
+      actions: [{ href: 'index.html', label: `Tonight in ${R().cityName()}` }, { href: 'discover.html', label: 'The week' }] });
+  };
   let lookedUp = false;
   const lookUp = async () => {
     if (lookedUp) return;
     lookedUp = true;
     const found = window.WA.byId ? await window.WA.byId(param('id')) : null;
-
-    if (!found) {
-      deadEnd('We have no listing at that address.',
-        'The link may be mistyped, or it may predate a change here. Nothing is missing from tonight.');
-      return;
-    }
+    if (!found) { deadEnd('We have no listing at that address.', 'The link may be mistyped, or it may be older than a change here.'); return; }
     if (found.archivedAt) {
-      const when = new Date(found.archivedAt);
-      const dated = isNaN(when) ? '' :
-        ` It came off the list on ${when.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`;
-      deadEnd('That listing has closed down.',
-        `Listings expire — that's normal.${dated} Here's what's on tonight instead.`);
+      const d = new Date(found.archivedAt);
+      deadEnd('That listing has closed down.', `Listings expire, which is normal.${isNaN(d) ? '' : ` This one came off on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`}`);
       return;
     }
-    /* A live row the loaded set never held (e.g. a museum). Render it
-       like any other. */
     extra = found;
     render();
   };
 
-  const render = () => {
-    const hit = resolve();
-
-    if (!hit) {
-      /* Not in the loaded set is not the same as gone: the loaded set also
-         excludes every venue outside VENUE_KINDS. Ask the database first;
-         the skeleton stays meanwhile. */
-      lookUp();
-      return;
-    }
-
-    const isEvent = hit.kind === 'event';
-    const e = hit.e;
-    /* Lists carry a teaser; fetch the full text once, then draw again. */
-    if (isEvent && !e.descriptionFull && window.WA.fullDescription) {
-      window.WA.fullDescription(e).then(render);
-    }
-    const title = isEvent ? (e.title || '') : (e.name || '');
-    const venueName = isEvent ? real(e.venue) : real(e.name);
-
-    /* Opening a detail page is the signal "Hide things I've seen" reads. */
-    window.WA.Seen.mark(e.id);
-
-    document.title = `WanderAlt — ${title}`;
-    /* A line that only restates the title is suppressed — same predicate
-       as the Tonight row. */
-    const md = document.querySelector('meta[name="description"]');
-    const filed = window.WA.UI.descriptionOr(real(e.description), title)
-               || window.WA.UI.descriptionOr(real(e.quote), title);
-
-    /* No description gets the same sentence Tonight prints. */
-    const venueWord = real(e.venue);
-    const desc = filed ||
-      (venueWord ? `No description filed. ${venueWord}'s own listing is one line long.`
-                 : 'No description filed by the source.');
-    /* The meta tag describes the page to a crawler, so it only ever
-       carries a real sentence — never our apology for not having one. */
-    if (md) md.content = filed.slice(0, 160);
-
-    /* The eyebrow is the same three facts the row rail carries, so the
-       page reads as a continuation of the list rather than a new object. */
-    const eyebrowBits = [];
-    if (isEvent) {
-      if (window.WA.when.isTonight(e)) eyebrowBits.push('Tonight');
-      const d = real(e.time);
-      if (d) eyebrowBits.push(`doors ${d}`);
-    } else {
-      eyebrowBits.push(window.WA.Hours.label(e.openingHours));
-    }
-    const dist = window.WA.Geo.distanceLabel(e);
-    if (dist) eyebrowBits.push(dist);
-
-    const area = real(e.neighborhood);
-    const metaLine = [real(e.kind), isEvent ? venueName : '', area].filter(Boolean).join(' · ');
-
-    const saved = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[e.id]);
-    const tickets = isEvent ? ticketsFor(e) : '';
-
-    main().innerHTML = `
-      ${well(e, title)}
-
-      <p class="wa-detail__eyebrow">${esc(eyebrowBits.filter(Boolean).join(' · '))}</p>
-      <h1 class="wa-display wa-detail__title">${esc(title)}</h1>
-      ${metaLine ? `<p class="wa-detail__meta">${esc(metaLine)}</p>` : ''}
-      ${desc ? `<p class="wa-detail__desc${desc.length > 240 ? ' wa-detail__desc--clamp' : ''}" id="desc">${esc(desc)}</p>
-         ${desc.length > 240 ? '<button class="wa-detail__more" type="button" id="more">more</button>' : ''}` : ''}
-
-      <div class="wa-cells">${isEvent ? eventCells(e) : placeCells(e)}</div>
-
-      <div class="wa-btn-row wa-detail__actions">
-        ${tickets ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}"
-           target="_blank" rel="noopener noreferrer">Tickets &nearr;</a>` : ''}
-        <a class="wa-btn${tickets ? '' : ' wa-btn--primary'}" href="${esc(mapsHref(e, title))}"
-           target="_blank" rel="noopener noreferrer">Walk me there</a>
-        <button class="wa-btn" type="button" id="save" aria-pressed="${saved}">
-          ${saved ? 'Saved' : 'Save'}
-        </button>
-        <!-- Lists live here rather than on a Saved row: a per-row
-             control would cost the title 44px and
-             pushed long picks to a third line. This is the screen where
-             the reader is already deciding about one thing. -->
-        <button class="wa-btn" type="button" id="addlist">${listLabel(e.id)}</button>
-      </div>
-
-      ${real(e.address) ? `<section class="wa-section">
-        <h2 class="wa-section-title">Address</h2>
-        <p class="wa-detail__note">${esc(e.address)}</p>
-      </section>` : ''}
-
-      ${!isEvent ? linkButtons(e) : ''}
-
-      ${isEvent ? venueSection(e) : programmeSection(e)}
-
-      ${!isEvent ? weekStrip(e) : ''}
-
-      ${provenance(isEvent ? eventProvenance(e) : placeProvenance(e))}
-    `;
+  const skeleton = () => {
+    main().innerHTML = `<div class="det-grid" aria-hidden="true"><div class="det-grid__media"><div class="det-media"><span class="wa-skel" style="position:absolute;inset:0"></span></div></div>
+      <div class="det-grid__main"><span class="wa-skel wa-skel--kicker"></span><span class="wa-skel" style="height:34px;width:90%"></span><span class="wa-skel" style="height:34px;width:60%"></span><span class="wa-skel" style="height:72px;width:100%;margin-top:12px"></span></div></div>`;
   };
 
-  /* ── The add-to-list sheet ──────────────────────────────────
-   Same shape as everywhere else: the lists this pick is already in,
-   checked, then one field to name a new one. */
-const listSheet = (pickId) => {
-  const d = document.getElementById('sheet');
-  const L = window.WA.Lists;
-  if (!d || !L) return;
-  const esc2 = window.WA.UI.esc;
-  const lists = L.forCity(window.WA.CITY);
-  const inThem = new Set(L.listsFor(pickId).map(l => l.id));
+  const render = () => {
+    const hit = resolve();
+    if (!hit) { lookUp(); return; }
+    const e = hit.e;
+    const isEvent = hit.kind === 'event';
+    if (isEvent && !e.descriptionFull && window.WA.fullDescription) window.WA.fullDescription(e).then(render);
+    window.WA.Seen.mark(e.id);
+    const title = isEvent ? e.title : e.name;
+    document.title = `${title} · WanderAlt`;
+    const md = document.querySelector('meta[name="description"]');
+    if (md) md.content = (UI().descriptionOr(e.description, title) || '').slice(0, 160);
+    const y = window.scrollY;
+    main().innerHTML = isEvent ? eventPage(e) : placePage(e);
+    window.scrollTo(0, y);
+  };
 
-  document.getElementById('sheet-body').innerHTML = `
-    ${lists.length ? `<div class="wa-chips">${lists.map(l => `
-      <button class="wa-chip" type="button" data-toggle-list="${esc2(l.id)}"
-              aria-pressed="${inThem.has(l.id)}">${esc2(l.name)}</button>`).join('')}</div>`
-      : `<p class="wa-detail__note">No lists yet. Name one and this goes straight into it.</p>`}
-    <div class="wa-field" style="margin-top:var(--s-5)">
-      <label class="wa-field__label" for="list-name">New list</label>
-      <input class="wa-input" id="list-name" type="text" maxlength="60"
-             placeholder="Kalamaja day off" autocomplete="off">
-    </div>`;
-  document.getElementById('sheet-foot').innerHTML =
-    `<button class="wa-btn wa-btn--primary" type="button" id="list-create" style="flex:1">Create and add</button>`;
-  d.showModal();
-};
+  /* ── The add-to-list sheet ─────────────────────────────────── */
+  const listSheet = (pickId) => {
+    const d = document.getElementById('sheet');
+    const L = window.WA.Lists;
+    if (!d || !L) return;
+    const lists = L.forCity(window.WA.CITY);
+    const inThem = new Set(L.listsFor(pickId).map(l => l.id));
+    document.getElementById('sheet-title').textContent = 'Add to a list';
+    document.getElementById('sheet-body').innerHTML = `
+      ${lists.length ? `<div class="wa-field"><span class="wa-field__label">Your lists</span><div class="wa-chips">${lists.map(l =>
+        `<button class="wa-chip" type="button" data-toggle-list="${esc(l.id)}" aria-pressed="${inThem.has(l.id)}">${esc(l.name)}</button>`).join('')}</div></div>`
+        : '<p class="wa-note" style="margin-bottom:var(--s-4)">No lists yet. Name one and this goes straight in.</p>'}
+      <div class="wa-field">
+        <label class="wa-field__label" for="list-name">New list</label>
+        <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off">
+      </div>`;
+    document.getElementById('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="list-create">Create and add</button>';
+    d.showModal();
+  };
 
-document.addEventListener('click', (e) => {
-  const L = window.WA.Lists;
-  const id = new URLSearchParams(location.search).get('id') || '';
+  document.addEventListener('click', (ev) => {
+    const hit = (s) => ev.target.closest && ev.target.closest(s);
+    const id = param('id');
+    const L = window.WA.Lists;
+    const sheet = document.getElementById('sheet');
 
-  if (e.target.closest && e.target.closest('#sheet-close')) {
-    const d = document.getElementById('sheet'); if (d && d.open) d.close();
-    return;
-  }
-  if (e.target.closest && e.target.closest('#addlist')) { listSheet(id); return; }
-
-  const tog = e.target.closest && e.target.closest('[data-toggle-list]');
-  if (tog && L) {
-    const listId = tog.dataset.toggleList;
-    const on = tog.getAttribute('aria-pressed') === 'true';
-    if (on) L.removeItem(listId, id); else L.add(listId, id);
-    tog.setAttribute('aria-pressed', String(!on));
-    const l = L.byId(listId);
-    if (!on && l) toast(`Saved to ${l.name}`, 'Undo', () => {
-      L.removeItem(listId, id); render();
-    });
-    render();
-    return;
-  }
-
-  if (e.target.closest && e.target.closest('#list-create') && L) {
-    const input = document.getElementById('list-name');
-    const newId = L.create(input ? input.value : '');
-    if (!newId) { if (input) input.focus(); return; }
-    L.add(newId, id);
-    const d = document.getElementById('sheet'); if (d && d.open) d.close();
-    render();
-    toast(`Saved to ${L.byId(newId).name}`, 'Undo', () => {
-      L.remove(newId); render();
-    });
-    return;
-  }
-});
-
-document.addEventListener('click', (e) => {
-    const b = e.target.closest && e.target.closest('#save');
-    if (b) {
-      const hit = resolve();
-      if (!hit) return;
-      const on = b.getAttribute('aria-pressed') === 'true';
-      window.WA.Bookmarks.set(hit.e.id, !on);
-      b.setAttribute('aria-pressed', String(!on));
-      b.textContent = !on ? 'Saved' : 'Save';
+    if (hit('#sheet-close')) { if (sheet.open) sheet.close(); return; }
+    /* Back returns to the list you came from when there is one. */
+    if (hit('#back') && document.referrer.startsWith(location.origin) && history.length > 1) { ev.preventDefault(); history.back(); return; }
+    if (hit('#addlist')) { listSheet(id); return; }
+    const tog = hit('[data-toggle-list]');
+    if (tog && L) {
+      const listId = tog.dataset.toggleList;
+      const on = tog.getAttribute('aria-pressed') === 'true';
+      if (on) L.removeItem(listId, id); else L.add(listId, id);
+      tog.setAttribute('aria-pressed', String(!on));
+      const l = L.byId(listId);
+      if (!on && l) toast(`Added to ${l.name}`, 'Undo', () => { L.removeItem(listId, id); render(); });
+      render();
       return;
     }
-    if (e.target.closest && e.target.closest('#more')) {
-        document.getElementById('desc').classList.remove('wa-detail__desc--clamp');
-      e.target.closest('#more').remove();
+    if (hit('#list-create') && L) {
+      const input = document.getElementById('list-name');
+      const newId = L.create(input ? input.value : '');
+      if (!newId) { if (input) input.focus(); return; }
+      L.add(newId, id);
+      sheet.close();
+      render();
+      toast(`Added to ${L.byId(newId).name}`, 'Undo', () => { L.remove(newId); render(); });
       return;
     }
-    const sh = e.target.closest && e.target.closest('#share');
+    if (hit('#save')) {
+      const on = !(window.WA.Bookmarks.get()[id]);
+      window.WA.Bookmarks.set(id, on);
+      render();
+      toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => { window.WA.Bookmarks.set(id, !on); render(); });
+      return;
+    }
+    if (hit('#follow')) {
+      const h = resolve();
+      if (!h || !window.WA.Follows) return;
+      const on = window.WA.Follows.toggle(h.e.name);
+      render();
+      toast(on ? `Following ${h.e.name}` : `Stopped following ${h.e.name}`, 'Undo', () => { window.WA.Follows.set(h.e.name, !on); render(); });
+      return;
+    }
+    if (hit('#more')) {
+      document.getElementById('desc').classList.remove('wa-prose--clamp');
+      hit('#more').remove();
+      return;
+    }
+    const sh = hit('#share') || hit('[data-share]');
     if (sh) {
-      /* The trigger is the top bar's Share. Routed through WA.Share, which
-         treats a dismissed OS sheet as cancelled rather than copying. */
-      const hit = resolve();
-      if (!hit || !window.WA.Share) return;
-      const p = hit.e;
-      window.WA.Share.url({
-        title: p.title || 'WanderAlt',
-        text:  [p.title, real(p.venue)].filter(Boolean).join(' · '),
-        url:   location.href,
-      }).then((r) => {
-        /* WA.Toast requires a reverse action and a copied link has none, so
-           the confirmation lives on the control. */
+      const h = resolve();
+      if (!h || !window.WA.Share) return;
+      const t = h.e.title || h.e.name || 'WanderAlt';
+      window.WA.Share.url({ title: t, text: [t, R().real(h.e.venue)].filter(Boolean).join(' · '), url: location.href }).then((r) => {
         if (r !== 'copied' && r !== 'failed') return;
-        const was = sh.textContent;
-        sh.textContent = r === 'copied' ? 'Link copied' : 'Copy failed';
-        setTimeout(() => { sh.textContent = was; }, 2000);
+        sh.setAttribute('aria-label', r === 'copied' ? 'Link copied' : 'Could not copy the link');
+        const was = sh.innerHTML;
+        sh.innerHTML = sh.id === 'share' ? I(r === 'copied' ? 'check' : 'close') : `${I(r === 'copied' ? 'check' : 'close')}<span>${r === 'copied' ? 'Copied' : 'Failed'}</span>`;
+        setTimeout(() => { sh.innerHTML = was; sh.setAttribute('aria-label', 'Share'); }, 2000);
       });
-      return;
     }
   });
 
-  document.addEventListener('wa:catalog-ready', () => { render(); window.WA.Geo.userLoc(); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true }); else skeleton();
+  document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
   document.addEventListener('wa:location-ready', render);
-  if (window.WA && window.WA.catalog && window.WA.catalog.length) render();
 })();

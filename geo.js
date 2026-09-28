@@ -116,6 +116,16 @@
     return 0;
   };
 
+  /* Across days: the date first, then the clock and distance within it. */
+  const byDateThenSoonest = (from) => {
+    const within = bySoonestThenDistance(from);
+    const key = (e) => (window.WA.when && window.WA.when.resolveKey(e)) || '\uffff';   /* undated last */
+    return (a, b) => {
+      const ka = key(a), kb = key(b);
+      return ka !== kb ? (ka < kb ? -1 : 1) : within(a, b);
+    };
+  };
+
   /* ── The ?within= contract ───────────────────────────────────
      A bare small integer is minutes; anything >= 100 is metres. */
   const parseWithin = (raw) => {
@@ -138,7 +148,7 @@
     walkMinutes, format,
     coordsFor, userLoc, currentLoc,
     distanceTo, distanceLabel,
-    startMinutes, bySoonestThenDistance,
+    startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,
   };
 })();

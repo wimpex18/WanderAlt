@@ -1,13 +1,13 @@
 /* ============================================================
-   WanderAlt — appearance: Day / Night / Dusk
+   WanderAlt — appearance: Auto / Light / Dark
    ------------------------------------------------------------
    Loaded WITHOUT defer so the attribute lands before first paint.
-   Day is the default.
+   Auto is the default.
 
    Three options, persisted in localStorage `wa:appearance`:
-     'day'   → Day    — always the paper theme
-     'dusk'  → Night  — always the near-black theme
-     'auto'  → Dusk   — follow the sun in the active city
+     'auto'  → Auto   — the OS preference, else the sun in the active city
+     'day'   → Light  — always white paper
+     'dusk'  → Dark   — always black paper
    WA.Theme.OPTIONS owns the value↔label mapping.
 
    The DOM attribute is data-theme="day" | "dusk".
@@ -72,7 +72,7 @@
         if (painted) return painted;
       }
     } catch (_) { /* an engine that dislikes this pre-paint — fall through */ }
-    return mode === 'day' ? '#f2efe6' : '#0a1011';
+    return mode === 'day' ? '#ffffff' : '#111110';
   };
 
   const apply = () => {
@@ -95,9 +95,9 @@
     /* The Appearance control renders straight from this, so the label
        and the stored value can never drift apart. */
     OPTIONS: [
-      { value: 'day',  label: 'Day' },
-      { value: 'dusk', label: 'Night' },
-      { value: 'auto', label: 'Dusk' },
+      { value: 'auto', label: 'Auto' },
+      { value: 'day',  label: 'Light' },
+      { value: 'dusk', label: 'Dark' },
     ],
     apply,
     resolve,

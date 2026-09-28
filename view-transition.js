@@ -2,10 +2,10 @@
    WanderAlt — card → detail hero View Transition (cross-document)
    ------------------------------------------------------------
    @view-transition in wa.css enables cross-document transitions and
-   names the chrome. This file adds the shared element: clicking a
-   .wa-card tags its photo `view-transition-name: venue-hero`, pairing
-   with detail.html's .wa-detail__photo. Photoless cards stay untagged
-   and cross-fade. One element tagged at a time; modifier/middle clicks
+   names the chrome. This file adds the shared element: clicking a row
+   or poster tags its picture `view-transition-name: venue-hero`,
+   pairing with the detail page's photo (.det-media img). Photoless
+   rows stay untagged and cross-fade. One element tagged at a time; modifier/middle clicks
    and reduced motion skip tagging.
    ============================================================ */
 (() => {
@@ -26,7 +26,7 @@
 
     /* The card is the anchor, so the photo is inside the link itself.
        Rows and photoless cards return null and cross-fade instead. */
-    const source = link.querySelector('.wa-card__photo');
+    const source = link.querySelector('.wa-poster__art img, .wa-row__thumb img, .wa-place__glyph img');
     if (!source) return;
 
     clearAll();
