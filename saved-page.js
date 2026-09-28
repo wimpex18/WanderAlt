@@ -42,7 +42,9 @@
 
   const mosaic = (ids) => {
     const pool = [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
-    const tiles = ids.map(id => pool.find(x => x.id === id)).filter(Boolean).slice(0, 4);
+    const found = ids.map(id => pool.find(x => x.id === id)).filter(Boolean);
+    /* Four tiles make a mosaic; fewer read better as one picture. */
+    const tiles = found.length >= 4 ? found.slice(0, 4) : found.slice(0, 1);
     if (!tiles.length) return `<span class="wa-listcard__mosaic wa-listcard__mosaic--one"><span class="wa-listcard__tile">${I('save', 'wa-ic--lg')}</span></span>`;
     return `<span class="wa-listcard__mosaic${tiles.length === 1 ? ' wa-listcard__mosaic--one' : ''}">${tiles.map(x => {
       const src = x.imageUrl ? window.WA.UI.safeUrl(x.imageUrl) : '';

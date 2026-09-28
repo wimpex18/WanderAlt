@@ -141,4 +141,9 @@ When a direction is chosen, export it and "Send to Claude Code". Claude Code the
 
 ## Decisions
 
-- (none yet)
+- **28 Sep 2026: "Airbnb calm, Liquid Glass chrome".** Chosen by Sergey after a first listings-sheet direction (black ink, heavy rules) was built and set aside. Inspiration: Airbnb mobile and desktop (September 2026), Apple Liquid Glass (iOS / macOS 27), and the Dropbox brand framework (logo, type, colour, icon tiers, voice).
+  - This replaces two items in "Do not use" above: glass is allowed on everything that floats over content (top bar, tab bar, map controls, sheets, the ticket bar, card badges), and chips, search and pins are pills. Content itself is never glass.
+  - Tokens: paper `#ffffff` / dusk `#111113`, ink `#1c1c1e`, accent `#d83a14`, radii 8 / 12 / 16 / 20 / 28 and pill, Geologica 500–700.
+  - Icons in two tiers: 24px UI icons and 48px pictograms for kinds and cities on tinted tiles.
+  - Logo: a sun setting on a horizon in a vermilion tile, with a lowercase "wanderalt" wordmark.
+  - The system is written down in `docs/frontend.md`.

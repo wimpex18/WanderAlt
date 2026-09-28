@@ -128,11 +128,11 @@
       map.flyTo({ center: pts[0], zoom: 14, duration: MOVE_MS(), ...options });
       return;
     }
-    const bounds = pts.reduce(
-      (b, p) => b.extend(p),
-      new maplibregl.LngLatBounds(pts[0], pts[0])
-    );
-    map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: MOVE_MS(), ...options });
+    /* Plain min/max: extending a LngLatBounds seeded with one point left
+       it collapsed under MapLibre 6, and the camera never moved. */
+    const lngs = pts.map(p => p[0]), lats = pts.map(p => p[1]);
+    const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
+    map.fitBounds(bounds,{ padding: 48, maxZoom: 15, duration: MOVE_MS(), ...options });
   }
 
   function flyTo(lng, lat, zoom) {

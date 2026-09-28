@@ -1,75 +1,57 @@
 # Front end and design system
 
-The site as it stands: plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). A redesign is planned; until it lands, these are the rules the current pages follow.
+Plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). No framework and no build step. The direction is recorded in `docs/design-brief.md` under Decisions.
+
+## Pages
+
+| Page | Script | What it is |
+|---|---|---|
+| `index.html` | `home.js` | Tonight: search pill, category bar, card shelves (on now, starting soon or late, for you, this weekend, later this week); side column with places open now, areas and the map card. |
+| `discover.html` | `programme.js` | Programme: search, seven-day strip, kind chips, filters (sheet on phones, sidebar from 1024), list grouped by day. |
+| `map.html` | `map.js` | Map: event pills and venue pins, a preview card for the chosen pin, a drawer (sidebar from 1024) of what is in view by walking time. |
+| `places.html` | `places.js` | Places by kind, nearest then open first, with an Open now toggle. |
+| `detail.html` | `detail.js` | The event page and the venue page (one template, two shapes). |
+| `saved.html` | `saved-page.js` | Lists, then coming up, places, and what is over. |
+| `profile.html` | `you.js` | You: interests, appearance, follows, opened earlier, account. |
+| `source.html`, `about.html`, `404.html` | `source.js`, `about.js`, `notfound.js` | A source's feed, About, not found. |
+
+Shared: `render.js` (`WA.R`: rows, cards, place rows, shelves, section heads, skeletons, empty states, areas, kinds, the "why" tag, interests, last visit), `icons.js` (`WA.Icon` UI icons, `WA.Picto` pictograms), `finder.js` (the Where / When / What sheet). Data and state: `supabase.js`, `when.js`, `geo.js`, `hours.js`, `bookmark.js`, `lists.js`, `follow.js`, `seen.js`, `auth.js`, `theme.js`, `offline.js`, `sw.js`.
 
 ## System
 
-- `wa.css` is the whole system: 49 tokens, 13 components, two themes (`data-theme="day" | "dusk"`). A screen that needs something new gets a modifier on an existing component, not a screen-local rule.
-- **Use tokens. Never hand-roll a colour, blur or rgba literal** — it breaks the other theme.
-- Material is flat opaque paper. **Day is the default**; `theme.js` swaps pre-paint from a precomputed per-city sun table, never an API.
-- **Glass is exactly two elements**: sticky `.wa-topbar` and bottom `.wa-tabbar`, both ≥92% opaque, both reserving real layout height. Never nest glass; they are siblings because `backdrop-filter` becomes the containing block for fixed descendants.
-- **Petrol is the only accent** (CTA included). **Lime means "now" only**: the NOW pill and the selected/now map pin. **`--warn`** marks states the reader must act on (offline banner, `.wa-note`, expired saved count) — never emphasis, never a control.
-- Radii: 999 pills · 12 controls · 14–16 cards · 18–20 sheets. `--tap-min` 44px is a hard floor on public pages.
-- Type: Plus Jakarta Sans 600/700 for chrome; Fraunces 600 for catalogue voice, **never under 17px**; Geist Mono for facts. `--fs-label` and `--fs-mono` share a value but stay separate tokens.
-- Jakarta is variable, two files (`latin`, `latin-ext`); **both subsets are required** for Latvian/Lithuanian diacritics. Only `latin` is preloaded.
-- Spacing from `--s-*`. Tighter within an item than between items; a heading always gets more room below than the gap between what it introduces.
-- Photo scrims use `--scrim-photo` (theme-invariant dark). Active state is tint plus a mark, never colour alone. Motion: the two existing tokens only. WCAG 2.2 AA floor.
-- **A `<span>` in a component needs an explicit `display`** if it carries vertical margin — page scripts build components from spans.
+- **Surfaces.** White paper (`--paper`), a quiet fill (`--paper-2`), ink `#1c1c1e`. Dark theme (`data-theme="dusk"`) is `#111113` paper. Never cream.
+- **One accent**, Tallinn vermilion `--accent` `#d83a14`: the primary key (Tickets, Search), "now", the day-strip bars, the open ring on venue pins. White text on it is 4.7:1. Text in the accent uses `--accent-ink`.
+- **Liquid Glass is for what floats over content**, never for content: the top bar, the floating tab bar, map controls and layer toggles, the finder sheet, the ticket bar, the card time badge, the toast. One recipe (`--glass-*` tokens); `prefers-reduced-transparency` and browsers without `backdrop-filter` get solid paper.
+- **Type.** Geologica (variable 300–800; Latin, Latin Extended, Cyrillic, self-hosted in `fonts/`), weights 500–700, tight tracking on headings. Geist Mono only for feed URLs.
+- **Icons, two tiers.** UI icons: 24px line, 1.8 stroke (`WA.Icon`). Pictograms: 48px line drawings for kinds and cities on a tinted tile in their own hue (`WA.Picto`, `.wa-picto--<name>`). Hue decorates; the word beside it carries the meaning.
+- **Shape.** Concentric radii: 8 / 12 / 16 / 20 / 28, pills for chips, search and pins. Cards 20px, sheets 28px.
+- **Motion.** `--ease` and `--spring` only; press states scale, sheets rise with the spring. `prefers-reduced-motion` removes all of it.
+- WCAG 2.2 AA; 44px tap floor; focus ring 2px ink.
 
 ## Patterns
 
-- **Rows lead with the rail: time, then walking distance.** Never a photo first.
-- Rail values: a clock only when one parses (midnight = absent); `OPEN` for undated/ongoing; unknown distance falls back to the neighbourhood.
-- A place's rail says when it shuts: `WA.Hours.rail()` → `→HH`, `24H`, `SHUT`, or empty (caller falls back to `OPEN`).
-- `hours.js` models public holidays per country (`WA.CITY`-keyed; `week.ph`; `null` = inherit, `[]` = shut). Month/year selectors are refused on purpose.
-- Titles wrap to two lines, never truncate. Meta lines may ellipsize.
-- Photos are optional. The phone row has no photo region; desktop rows add a media track via `:has(.wa-row__media)`. No photo → kind glyph on 9% petrol tint, never a grey box. `marks.js` contains (not crops) an image under 60% of its box.
-- **One implementation per pattern.** `.wa-row` has four builders (`tonight.js`, `saved-page.js`, `source.js`, `you.js`); copy the nearest one rather than inventing a fifth.
-- Desktop masthead (≥1024): brand left, `.wa-tabbar` repositioned to `top: 0` and transparent (one blur, the top bar's), account right. Active nav = petrol ink + 600 + 2px underline. The capsule's centred 960px column is deliberate: full width drifts the slots apart.
-- In-page anchors that are link targets carry `scroll-margin-top: calc(var(--topbar-h) + var(--s-4))`, scoped to those ids (not `[id]`, which would shift Tonight's `scrollIntoView`). About's calendar section is `#calendar`, its heading `#calendar-feed`.
-- Explore rows: top bar = app nav (on every page, every width) · capsule = Where/When/What · scope tabs = All/Events/Places under the capsule, on its 840px column.
-- Below 768 the capsule collapses to one key that carries the applied search ("Tallinn · Anytime"), defaults omitted. A collapsed control must still show its state.
-- Scrolling chip rows run full bleed with the gutter in the scroller's padding, and scroll the selected chip into view (the row, never the page).
-- Tonight's header is the seven-day density strip: counts from the same filter chain as the rows minus time; an empty day draws no bar. Below 372px the grid gap is zero and the strip bleeds full width so each day stays ≥44px.
-- **The map is a mode and never empty**: a way out, "search this area", and a drawer of picks in view. Camera padding is read live from the foot elements covering the canvas, per side. Honour `prefers-reduced-motion` (in `map-tiles.js`). Pins cluster in projected pixel space into a petrol count bubble; the selected pin never clusters. `placePins` runs on `move`; `placeDrawer` on `moveend` and skips unchanged markup (keeps focus and scroll).
-- Sheet booleans (free, hide-seen, only sources I follow) don't round-trip in the URL. `?date= ?q= ?cat= ?time= ?sort= ?within= ?view=map` do.
-- **Zero-count filter options are disabled, never hidden.**
-- **Empty/error states name the filter that emptied the list and offer a next-best answer with a real, non-empty count.** Name the answer, not a control a viewport may not draw.
-- A missing or restating description (`WA.UI.descriptionOr`) gets a sentence saying so. The filler list has three copies — `ui-helpers.js`, `functions/_middleware.js`, `og-image` — and they must stay identical.
-- Metadata closes with provenance: `via <handle>`.
-- **Detail never states a fact about the world that is really a fact about the cache.** On a miss, `WA.byId()` asks the database: render, "That listing has closed down" with the date, or "We have no listing at that address".
-- Detail: three labelled cells (event: doors/entry/walk; place: closes/entry/walk + week strip), then one primary key, then secondary keys. Cells with no answer are not rendered. Add-to-list lives on detail, not on Saved rows.
-- Events and venues are separate objects that link both ways. An event page leads with **Tickets** when it has a ticket link (else Walk me there), and ends with **The venue**: a row linking to the venue page with kind, area, open state and how much else is listed there. A venue page (`detail.html?id=<place id>`) is the one page per venue: photo, its own links (Website, Instagram, Facebook), hours, and **Listed here next**, its whole programme. `source.html?venue=` redirects to it when the venue is a place; `source.html?handle=` stays the page for a feed.
-- An event is over at its `ends_at`, else three hours after a stated start, else at the end of its day (`WA.when.hasEnded`). Ended events leave every list and never read as NOW.
-- Lists load a 300-character `teaser` instead of the description; the detail page fetches the full text for one event (`WA.fullDescription`). The catalogue fetch waits 6 s before falling back to empty states.
-- Search on Tonight (`?q=`) matches the English and original titles, venue, area, kind, tags and teaser, with accents folded ("soprus" finds Sõprus).
-- A place's Entry cell says Free only for walk-in kinds (shops, galleries, community centres), never for a cinema, theatre or club.
-- `.wa-btn-row` is content-width with wrap; an instance wanting a full-width key sets `flex: 1`.
-- Follows (`WA.Follows`, localStorage only) hold venue names and raw handles; a pick matches "Only sources I follow" if its venue or handle is followed. You's "Opened earlier" lists the last 8 resolvable entries and claims nothing about the rest.
-- Saves and lists are one store: adding to a list saves; unsaving purges from every list.
-- **One toast at a time**, above the tab bar, ~4s, always with the reverse action, never for navigation. `WA.Toast` is optional per page — guard the call. It refuses a toast without a reverse action. Focus ring: `:focus-visible`, 2px petrol, 2px offset. Content caps at 1560px.
-- Loading is a skeleton matching the real row height exactly. No spinners.
-- Rows and cards underline their title on hover inside `@media (hover: hover)`.
-- Prose carries the `62ch` measure.
-- Viewports: cap heights for landscape (`max-height` queries, `min(clamp(...), calc(100vh - var(--topbar-h) - var(--tabbar-h) - var(--s-6)))`); cap `aspect-ratio` heroes at wide widths (`.wa-detail__well` `max-height: min(46vh, 460px)` from 768). Canonical mobile width 390; `--reading-max` ladder is shared by every page.
-- Offline banner is inserted after `.wa-topbar`, sticky at `--topbar-h`. Under it, Tonight's map-mode head goes `position: static`. Two sticky elements cannot share one offset.
-- `sw.js`: navigations network-first; static assets stale-while-revalidate; last picks/venues cached with `x-wa-cached-at`. `/sw.js` is `no-cache`. Never cache a signed-in response.
-- `.wa-sheet` (`<dialog>` + `showModal()`) is the one modal, including auth.
+- **Card**: square photo, glass badge for when ("Tonight · 19:00", "On now · till 23:00"), heart to save, title (two lines), venue · area, walk · price · why tag. No photo: the kind's pictogram on its tint.
+- **Row** (Programme, venue programme, Saved): rail with time then walk (area when location is off), kind and why tag, English title, original title under it when different, venue · area · price, thumbnail.
+- **Place row**: photo or pictogram, name, kind · area, open state (filled dot open, square shut, dashed not filed), walk.
+- **Event page**: photo or pictogram, English title, original title, summary, facts as an icon list (When, Entry, Walk or Area), the ticket bar (price, Tickets or Walk me there), Calendar / Walk there / Save / List, In their words, the venue card, address, provenance. On phones the tab bar steps aside and a back key appears.
+- **Venue page**: photo or a monogram of the name on its kind's tint, open state, Follow / Walk there / Save, icon links, programme by day, the week's hours, provenance.
+- **Map**: events are pills with the start time (vermilion when on now); places are round pins with their pictogram, ringed when open now. The places layer is what is open now plus the rooms hosting an event in the chosen window. Pins cluster in screen space; the chosen pin never clusters.
+- **Never empty**: Tonight falls back to the next listed day; empty states name what emptied the list and offer the drop that brings most back.
+- Areas print in the names visitors use (`R.area`: Põhja-Tallinna → Põhja-Tallinn, All-linn → Old Town, Kesklinna → City centre).
+- Interests (`wa:interests:v1`) give Tonight a "For you" shelf and nothing else. The last visit (`wa:visit:v1`) powers "N new since Thursday".
+- Location is asked for only on a tap; when already granted, walking times fill in by themselves.
 
 ## localStorage
 
-`wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wa:lists:v1`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`. New keys: `wa:` prefix, `:v1` suffix for structured shapes; a shape change bumps the suffix with a one-shot migration in the owning file.
+`wa:appearance`, `wa:city`, `wa:seen:v1`, `wa:follows`, `wa:lists:v1`, `wa:interests:v1`, `wa:visit:v1`, `wanderalt:bookmarks:v1`, `wanderalt:session:v1`. New keys: `wa:` prefix, `:v1` suffix for structured shapes.
 
 ## Working locally
 
-- `npm start`, open touched pages at 390, 768 and 1440 in both themes; check every other instance of a pattern you change. Screen-local fixes are the recurring failure mode.
-- The browser pane is real Chrome on the GPU: `backdrop-filter`, photos and the MapLibre basemap all render locally. Front the tab before capturing the map (rAF throttles when hidden). Dusk basemap is near-black by design. The PR preview is the check for CSP/header behaviour.
-- **The service worker serves stale files while debugging.** Clear it, and confirm `navigator.serviceWorker.controller` is null — a controller outlives unregistering:
+- `npm start`, open touched pages at 390 and 1440 in both themes (You → Appearance).
+- The service worker serves stale files while debugging. Clear it, and bump `VERSION` in `sw.js` when the shell changes:
   ```js
   caches.keys().then(k => Promise.all(k.map(x => caches.delete(x))));
   navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
   ```
-  Compare `fetch('/x.js?b='+Date.now(), {cache:'no-store'})` against the DOM when unsure.
-- Overlap: use `getBoundingClientRect()` on elements that clip, `Range.getBoundingClientRect()` (ink) on elements that don't. Fixed layers and `.wa-sr` are expected false positives.
-- Tap targets: test with `document.elementFromPoint` at half a target from centre (`.wa-pin::after` extends the hit area).
-- **Never decide a class is unused by grepping** — class names are composed at runtime. Use a DOM census across pages, widths, themes and states.
+- MapLibre gives its container `position: relative`; `.map-canvas.maplibregl-map` restores absolute positioning.
+- Brand icons are SVG masters in `brand/`; `npm run build:icons` rasterises the PNGs and `favicon.ico`.

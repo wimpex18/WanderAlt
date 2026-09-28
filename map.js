@@ -155,8 +155,9 @@
     const base = list || (state.events && events.length ? events : shown().map(i => i.x));
     const pts = base.map(x => ({ lat: x._c.lat, lng: x._c.lng }));
     const desk = matchMedia('(min-width: 1024px)').matches;
-    const pad = desk ? { top: 80, left: 60, right: 60, bottom: 60 } : { top: 110, left: 40, right: 40, bottom: 150 };
-    if (pts.length) t.fitToPicks(pts, { padding: pad });
+    const pad = desk ? { top: 100, left: 90, right: 90, bottom: 80 } : { top: 130, left: 56, right: 56, bottom: 170 };
+    /* No tween: a resize during the opening frames cancels an animated fit. */
+    if (pts.length) t.fitToPicks(pts, { padding: pad, duration: 0 });
   };
 
   const draw = () => { placePins(); placeDrawer(); preview(); };
@@ -225,6 +226,7 @@
         /* Fit once the canvas has its real size, not the size it booted at. */
         const m = T().getMap();
         requestAnimationFrame(() => { m.resize(); fit(); draw(); });
+        m.once('idle', () => { m.resize(); fit(); });
       });
       T().on('move', placePins);
       T().on('moveend', placeDrawer);

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 " width="1200" height="">
+  <!-- Social card: the mark, the wordmark, the one line. -->
+  <rect width="1200" height="" fill="#ffffff"/>
+  <g transform="translate(96 96) scale(3)"><rect width="32" height="32" rx="9" fill="#d83a14"/><path d="M8.5 19a7.5 7.5 0 0 1 15 0z" fill="#fff"/><path d="M6 22.5h20M10 26.5h12" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/><circle cx="23.5" cy="9" r="1.6" fill="#fff"/></g>
+  <text x="222" y="170" font-family="Geologica, Helvetica, Arial, sans-serif" font-size="56" font-weight="700" letter-spacing="-2" fill="#d83a14">wanderalt</text>
+  <text x="96" y="-200" font-family="Geologica, Helvetica, Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="-4" fill="#1c1c1e">What's on tonight</text>
+  <text x="96" y="-96" font-family="Geologica, Helvetica, Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="-4" fill="#1c1c1e">in Tallinn.</text>
+</svg>
