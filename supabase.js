@@ -26,6 +26,8 @@
   window.WA.ANON_KEY = KEY;
   window.WA._catalogAll = window.WA.catalog = [];
   window.WA._venuesAll  = window.WA.venues  = [];
+  let redirects = new Map();
+  window.WA.canonicalId = (id) => redirects.get(id) || id;
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
@@ -46,10 +48,10 @@
       const page = await get(table, `${qs}&offset=${offset}&limit=${PAGE}`, signal);
       if (!Array.isArray(page)) break;
       out.push(...page);
-      if (page.length < PAGE) return out;
+      if (page.length < PAGE) return [...new Map(out.map(r => [r.id, r])).values()];
     }
     console.warn(`[WanderAlt] ${table} paging hit the loop guard — result may be short.`);
-    return out;
+    return [...new Map(out.map(r => [r.id, r])).values()];
   };
 
   /* Route Wikimedia thumbnails through the Pages Function at
@@ -164,6 +166,7 @@
     /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
+    isClosed:     r.status === 'closed',
   });
 
   /* A fast answer (the service worker's cache) can land between two
@@ -186,7 +189,7 @@
     /* Fetch ALL active picks across every city. The all-cities catalogue
        is exposed as WA._catalogAll so cross-city links resolve; the
        city-filtered slice is WA.catalog. */
-    const [picksResult, venuesResult] = await Promise.allSettled([
+    const [picksResult, venuesResult, redirectsResult] = await Promise.allSettled([
       /* Paged like venues: PostgREST returns at most 1000 rows a request,
          and a busy month can list more upcoming events than that. */
       getAllPages(
@@ -212,12 +215,14 @@
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
         `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id` +
-        `&order=name.asc`,
+        `&order=name.asc,id.asc`,
         abort.signal
       ),
+      getAllPages('catalogue_redirects', 'select=id,canonical_id&order=id.asc', abort.signal),
     ]);
 
     clearTimeout(timer);
+    if (redirectsResult.status === 'fulfilled') redirects = new Map(redirectsResult.value.map(r => [r.id, r.canonical_id]));
 
     /* No venue blurbs yet: places carry no description of their own. */
     window.WA = window.WA || {};
@@ -283,6 +288,13 @@
      row genuinely does not exist. */
   const byId = async (id) => {
     if (!id) return null;
+    id = window.WA.canonicalId(id);
+    if (!redirects.has(id)) {
+      try {
+        const rows = await get('catalogue_redirects', `id=eq.${encodeURIComponent(id)}&select=canonical_id&limit=1`);
+        if (rows?.[0]) { redirects.set(id, rows[0].canonical_id); id = rows[0].canonical_id; }
+      } catch (_) { /* the direct row lookup still works */ }
+    }
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
     try {
       const picks = await get('picks', `${q}&select=*`);
@@ -293,7 +305,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id`
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status`
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (_) { /* nothing more to try */ }

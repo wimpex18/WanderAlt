@@ -10,7 +10,8 @@
 
 import { createHash } from 'node:crypto';
 import type { Place } from './places.ts';
-import { UA, get, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
+import { get, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
+import { closureReason, overpass, type OsmElement } from './osm.ts';
 
 export interface VenueDetails {
   website?: string | null;
@@ -51,7 +52,7 @@ export function socialUrl(host: 'instagram.com' | 'facebook.com', v: string | un
   return `https://www.${host}/${handle}`;
 }
 
-const QUERY = (area: string) => `[out:json][timeout:90];
+const QUERY = (area: string) => `[out:json][timeout:45];
 area["name"="${area}"]["admin_level"="7"]->.t;
 (
   nwr(area.t)["shop"~"^(music|books|second_hand|charity|art)$"]["name"];
@@ -60,47 +61,23 @@ area["name"="${area}"]["admin_level"="7"]->.t;
 );
 out center tags;`;
 
-interface OsmElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags: Record<string, string> }
-
-/** Public Overpass instances; the main one is often busy, so try the next. */
-const OVERPASS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-];
-
 export async function osmCatalogue(city = 'tallinn', area = 'Tallinn'): Promise<RichPlace[]> {
-  let last: unknown;
-  for (const endpoint of OVERPASS) {
-    try {
-      const r = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'user-agent': UA, 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ data: QUERY(area) }),
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!r.ok) throw new Error(`overpass ${r.status} at ${new URL(endpoint).hostname}`);
-      const { elements } = await r.json() as { elements: OsmElement[] };
-      return elements.map(el => placeFromOsm(el, city)).filter((p): p is RichPlace => !!p);
-    } catch (e) {
-      last = e;
-    }
-  }
-  throw last;
+  const elements = await overpass(QUERY(area));
+  return elements.map(el => placeFromOsm(el, city)).filter((p): p is RichPlace => !!p);
 }
 
 export function placeFromOsm(el: OsmElement, city: string): RichPlace | null {
   const t = el.tags ?? {};
   const kind = osmKind(t);
   const name = t['name:et'] ?? t.name;
-  if (!kind || !name || t.disused === 'yes' || t['disused:shop'] || t['disused:amenity']) return null;
+  if (!kind || !name || closureReason(t, kind)) return null;
   const lat = el.lat ?? el.center?.lat, lng = el.lon ?? el.center?.lon;
   const street = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' ');
   return {
     id: `${city}-${slug(name)}`,
     city,
     name,
-    aliases: [...new Set([name, t.name, t['name:en'], t['alt_name'], t['short_name']].filter(Boolean).map(n => nameKey(n!)))],
+    aliases: [...new Set([name, t.name, t['name:en'], ...(t.alt_name ?? '').split(';'), t['short_name']].filter(Boolean).map(n => nameKey(n!)))],
     kind,
     address: street ? `${street}, Tallinn` : null,
     lat: lat ?? null,

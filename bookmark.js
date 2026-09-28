@@ -27,10 +27,12 @@ window.WA.Bookmarks = (() => {
 
   /* ── localStorage helpers ────────────────────────────────── */
 
-  const get = () => {
+  const raw = () => {
     try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); }
     catch { return {}; }
   };
+  const canonical = (id) => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
+  const get = () => Object.fromEntries(Object.entries(raw()).filter(([, on]) => on).map(([id]) => [canonical(id), true]));
 
   const _save = (store) => {
     try { localStorage.setItem(LOCAL_KEY, JSON.stringify(store)); } catch {}
@@ -83,18 +85,20 @@ window.WA.Bookmarks = (() => {
   /* ── Public: set ─────────────────────────────────────────── */
 
   const set = (id, val) => {
-    const store = get();
+    id = canonical(id);
+    const store = raw();
+    const aliases = [...new Set([id, ...Object.keys(store).filter(key => canonical(key) === id)])];
     if (val) store[id] = true;
-    else delete store[id];
+    else aliases.forEach(key => delete store[key]);
     _save(store);
 
     /* Unsaving has to drop the pick from every list too, or Saved shows
        a list containing something the reader has just unsaved. Guarded
        because bookmark.js loads on pages that do not carry lists.js. */
-    if (!val && window.WA.Lists) window.WA.Lists.purge(id);
+    if (!val && window.WA.Lists) aliases.forEach(key => window.WA.Lists.purge(key));
 
     if (val) upsertCloud(id);
-    else     deleteCloud(id);
+    else     aliases.forEach(deleteCloud);
   };
 
   /* ── Public: syncFromCloud ───────────────────────────────── */
@@ -111,7 +115,7 @@ window.WA.Bookmarks = (() => {
       if (!res.ok) return;
 
       const rows  = await res.json();
-      const store = get();
+      const store = raw();
 
       /* Merge: cloud wins for adds; local removals are preserved.
          (Simple merge — cloud is authoritative for items present.) */

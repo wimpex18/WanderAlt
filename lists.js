@@ -73,9 +73,10 @@ window.WA.Lists = (() => {
   const byId = (id) => get()[id] || null;
 
   const items = (id) => (byId(id) || {}).items || [];
+  const canonical = (id) => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
 
   /* Which lists a pick is in — drives the checked state in the sheet. */
-  const listsFor = (pickId) => all().filter(l => (l.items || []).includes(pickId));
+  const listsFor = (pickId) => all().filter(l => (l.items || []).some(id => canonical(id) === canonical(pickId)));
 
   /* ── Writes ──────────────────────────────────────────────── */
 
@@ -122,7 +123,7 @@ window.WA.Lists = (() => {
     const l = store[listId];
     if (!l || !pickId) return;
     l.items = l.items || [];
-    if (!l.items.includes(pickId)) l.items.push(pickId);
+    if (!l.items.some(id => canonical(id) === canonical(pickId))) l.items.push(pickId);
     _save(store);
     /* Adding to a list saves the pick. The two stores cannot be allowed
        to disagree about what is saved. */
@@ -134,9 +135,10 @@ window.WA.Lists = (() => {
     const store = get();
     const l = store[listId];
     if (!l) return;
-    l.items = (l.items || []).filter(x => x !== pickId);
+    const removed = (l.items || []).filter(x => canonical(x) === canonical(pickId));
+    l.items = (l.items || []).filter(x => canonical(x) !== canonical(pickId));
     _save(store);
-    del(`saved_list_items?list_id=eq.${encodeURIComponent(listId)}&pick_id=eq.${encodeURIComponent(pickId)}`);
+    removed.forEach(id => del(`saved_list_items?list_id=eq.${encodeURIComponent(listId)}&pick_id=eq.${encodeURIComponent(id)}`));
   };
 
   /* Unsaving a pick has to drop it from every list, or Saved shows a

@@ -32,6 +32,17 @@ export class Db {
   }
 
   select<T>(path: string) { return this.req<T[]>('GET', path); }
+  /** PostgREST caps every response, even when limit=5000 was requested. */
+  async all<T>(path: string): Promise<T[]> {
+    if (!/[?&]order=/.test(path)) throw new Error('Paged reads need a stable order');
+    const out: T[] = [];
+    for (let offset = 0; offset < 100_000; offset += 500) {
+      const page = await this.select<T>(`${path}&limit=500&offset=${offset}`);
+      out.push(...page);
+      if (page.length < 500) return out;
+    }
+    throw new Error('Paged read exceeded 100000 rows');
+  }
   insert(table: string, rows: unknown[]) { return rows.length ? this.req('POST', table, rows, 'return=minimal') : null; }
   upsert(table: string, rows: unknown[], onConflict: string) {
     return rows.length

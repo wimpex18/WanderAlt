@@ -7,6 +7,8 @@
     "pipeline": "node --env-file-if-exists=.env pipeline/run.ts",
     "pipeline:dry": "node --env-file-if-exists=.env pipeline/run.ts --dry-run",
     "pipeline:models": "node --env-file-if-exists=.env pipeline/run.ts --models",
+    "places:audit": "node --env-file-if-exists=.env pipeline/maintenance.ts --dry-run",
+    "places:maintain": "node --env-file-if-exists=.env pipeline/maintenance.ts --check-osm",
     "test": "node --test \"pipeline/test/*.test.ts\"",
     "typecheck": "tsc -p pipeline",
     "build:icons": "node .scripts/rasterize-favicons.js",

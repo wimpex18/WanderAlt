@@ -31,13 +31,13 @@
 
   let extra = null;
   const resolve = () => {
-    const id = param('id');
+    const id = window.WA.canonicalId ? window.WA.canonicalId(param('id')) : param('id');
     if (!id) return null;
     const pick = (window.WA._catalogAll || []).find(e => e.id === id);
     if (pick) return { kind: 'event', e: pick };
     const venue = (window.WA._venuesAll || []).find(v => v.id === id);
     if (venue) return { kind: 'place', e: venue };
-    return extra && extra.e && extra.e.id === id ? extra : null;
+    return extra && extra.e && (extra.e.id === id || extra.requestedId === param('id')) ? extra : null;
   };
 
   /* ── Pieces ─────────────────────────────────────────────────── */
@@ -106,7 +106,7 @@
   const key = (s) => String(s || '').toLowerCase().trim();
   const picksAt = (place) => (window.WA._catalogAll || [])
     .filter(p => !p.isClosed && !W().hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
-    .sort(G().bySoonestThenDistance());
+    .sort(G().byDateThenSoonest());
 
   const saveBtn = (id) => {
     const on = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[id]);
@@ -221,7 +221,7 @@
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
     const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
     const off = R().isOff(e);
-    const tickets = ended || e.flag === 'cancelled' ? '' : ticketsFor(e);
+    const tickets = ended || off ? '' : ticketsFor(e);
     const cal = !ended && !off && e.startsAt ? ics(e) : '';
     const soldOut = e.flag === 'sold_out';
     const v = window.WA.venueFor(e);
@@ -269,7 +269,7 @@
           ${walkFact(e)}
         </div>
 
-        ${ended || e.flag === 'cancelled' ? '' : `<div class="wa-bar">
+        ${ended || off ? '' : `<div class="wa-bar">
           <span class="wa-bar__text"><span class="wa-bar__price">${esc(soldOut ? 'Sold out' : R().price(e) || whenValue)}</span>
             <span class="wa-bar__sub">${esc([e.flag === 'few_left' ? 'Few tickets left' : '', soldOut ? '' : R().price(e) ? whenValue : '', whenSub, tickets ? `on ${host(tickets)}` : venueName].filter(Boolean).join(' · '))}</span></span>
           ${tickets
@@ -334,6 +334,7 @@
       <div class="det-grid__main">
         <header class="det-head">
           <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span>${esc(R().areaOf(v))}</span>` : ''}</p>
+          ${v.isClosed ? '<div class="det-notice det-notice--off" role="status"><strong>This venue is listed as closed.</strong><span>Check with the venue before you go.</span></div>' : ''}
           <h1 class="wa-h1">${esc(v.name || '')}</h1>
           <p>${R().openBadge(v)}</p>
         </header>
@@ -398,7 +399,7 @@
       deadEnd('That listing has closed down.', `Listings expire, which is normal.${isNaN(d) ? '' : ` This one came off on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`}`);
       return;
     }
-    extra = found;
+    extra = { ...found, requestedId: param('id') };
     render();
   };
 
