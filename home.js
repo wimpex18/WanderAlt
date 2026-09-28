@@ -62,7 +62,7 @@
   };
   const pillText = (n) => {
     const sub = $('pill-sub');
-    if (sub) sub.textContent = `${n ? `Tonight, ${n} listed` : 'This week'} · any kind · anywhere`;
+    if (sub) sub.textContent = n ? `${n} tonight · or ask “free jazz tonight”` : 'Or ask “free jazz this week”';
   };
 
   /* ── Interests, the optional first run ─────────────────────── */
@@ -100,7 +100,8 @@
 
   /* ── Sections ───────────────────────────────────────────────── */
   const section = (head, body, cls) => `<section class="wa-sect${cls ? ` ${cls}` : ''}">${R().sect(head)}${body}</section>`;
-  const cards = (list) => list.map(e => R().poster(e)).join('');
+  /* A cancelled or postponed show stays listed, labelled, at the end. */
+  const cards = (list) => [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))].map(e => R().poster(e)).join('');
   const shelf = (head, list) => R().shelf(head, cards(list));
 
   /* The next day after today with anything listed. */

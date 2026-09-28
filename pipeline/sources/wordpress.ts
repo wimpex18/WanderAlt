@@ -1,13 +1,15 @@
 // Venue sites built on WordPress that keep their programme in a custom post
 // type with ACF fields, read through the site's own REST API. Structured,
-// so no model reads it. Kultuurikatel (/wp-json/wp/v2/events) is the shape
-// this was written against:
+// so no model reads it. A source whose config says shape 'kai' uses Kai
+// Art Center's own routes instead (kai.ts). Kultuurikatel
+// (/wp-json/wp/v2/events) is the default shape:
 //   acf.event_date "20261128", acf.end_date, acf.add_time + event_start_time "19:00",
 //   acf.event_payment_link, acf.event_price, acf.event_featured_image.
 
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, decodeEntities, htmlToText, httpUrl, clip } from '../util.ts';
 import { tallinnToIso, tallinnDay } from '../time.ts';
+import * as kai from './kai.ts';
 
 interface WpEvent {
   id: number;
@@ -27,6 +29,7 @@ const hhmm = (v: unknown): string | null => {
 };
 
 export async function collect(source: Source, now = new Date()): Promise<RawItem[]> {
+  if (source.config.shape === 'kai') return kai.collect(source, now);
   const pages = Number(source.config.pages ?? 2);
   const today = tallinnDay(now.toISOString());
   const horizon = tallinnDay(new Date(now.getTime() + Number(source.config.days ?? 45) * 86_400_000).toISOString());
@@ -54,6 +57,7 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
 }
 
 export function extract(item: RawItem, source: Source): Candidate[] {
+  if (source.config.shape === 'kai') return kai.extract(item, source);
   const p = item.payload as { title?: string; excerpt?: string; link?: string; acf?: Record<string, unknown> };
   const a = p.acf ?? {};
   const day = ymd(a.event_date);

@@ -6,12 +6,13 @@
 
    Event: photo, English title with the original under it, one-line
    summary, When · Entry · Walk, Tickets first, then calendar, walking
-   directions, save and lists; the source's own words; the venue as a
-   small card; where this came from.
+   directions, save and lists; Going with the count; the venue as a
+   small card; the source's own words; who is in it; a small map;
+   where this came from.
 
-   Venue: photo or a typographic block, open now or shut, Follow,
-   Website / Instagram / Facebook, the programme grouped by day, the
-   week's hours, provenance.
+   Venue: photo or a typographic block, open now or shut, what is on
+   next, Follow, Website / Instagram / Facebook as labelled links, the
+   programme grouped by day, the week's hours, a small map, provenance.
    ============================================================ */
 (() => {
   'use strict';
@@ -40,7 +41,7 @@
   };
 
   /* ── Pieces ─────────────────────────────────────────────────── */
-  const FACT_ICON = { When: 'calendar', Was: 'calendar', Entry: 'ticket', Walk: 'walk', Area: 'pin', Today: 'clock', Where: 'pin' };
+  const FACT_ICON = { When: 'calendar', Was: 'calendar', Entry: 'ticket', Walk: 'walk', Area: 'pin', Today: 'clock', Where: 'pin', Next: 'programme' };
   const fact = (label, value, sub) => value ? `<div class="det-fact">
       <span class="det-fact__icon">${I(FACT_ICON[label] || 'info')}</span>
       <span class="det-fact__text">
@@ -117,6 +118,74 @@
     return !ls.length ? 'List' : ls.length === 1 ? ls[0].name : `${ls.length} lists`;
   };
 
+  /* Cast and credits: the source's own "Role: Names" lines, when it
+     files at least two. Lines with an address, phone or link are left
+     out; organiser contacts never show here. */
+  const CONTACT = /@|https?:|www\.|mailto|\+?\d[\d\s-]{6,}/i;
+  const credits = (text) => {
+    const rows = String(text || '').split(/\n+/).map(l => l.trim()).map(l => l.match(/^([^:]{2,32}):\s*(.{2,220})$/))
+      .filter(m => m && !CONTACT.test(m[0]) && !/\d{1,2}[.:]\d{2}/.test(m[1]) && m[1].split(/\s+/).length <= 4 && /[A-ZÀ-ÖØ-ÞŠŽÕÄÖÜ]/.test(m[2]));
+    return rows.length >= 2 ? rows.slice(0, 12).map(m => [m[1].replace(/\s*\/\s*/g, ' / '), m[2]]) : [];
+  };
+  const creditsBlock = (e) => {
+    const c = credits(e.description);
+    return c.length ? `<section class="det-block"><h2 class="det-block__title">Who's in it</h2>
+      <dl class="det-credits">${c.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      <p class="wa-note">As the source lists it; check there for late changes.</p></section>` : '';
+  };
+
+  /* A small map of the spot. The MapLibre canvas outlives re-renders:
+     it is kept and put back into each new slot. */
+  const miniSlot = (x, title) => {
+    const c = G().coordsFor(x);
+    return c ? `<a class="det-minimap" id="minimap-slot" href="map.html?pick=${esc(encodeURIComponent(x.id))}" data-lat="${esc(c.lat)}" data-lng="${esc(c.lng)}" aria-label="${esc(`${title} on the map`)}">
+      <span class="det-minimap__pin" aria-hidden="true">${window.WA.Picto.kind(x.kind)}</span></a>` : '';
+  };
+  let mini = null;
+  const mountMini = () => {
+    const slot = document.getElementById('minimap-slot');
+    if (!slot) return;
+    const lat = Number(slot.dataset.lat), lng = Number(slot.dataset.lng);
+    if (mini && mini.lat === lat && mini.lng === lng) { slot.prepend(mini.el); mini.map.resize(); return; }
+    const gl = window.maplibregl;
+    if (!gl) { document.addEventListener('wa:maplibre-ready', mountMini, { once: true }); return; }
+    const el = document.createElement('div');
+    el.className = 'det-minimap__canvas';
+    slot.prepend(el);
+    const dusk = document.documentElement.dataset.theme === 'dusk';
+    try {
+      const map = new gl.Map({ container: el, style: dusk ? './map-style-dusk.json' : './map-style.json', center: [lng, lat], zoom: 15.2,
+        interactive: false, attributionControl: { compact: true } });
+      mini = { el, map, lat, lng };
+    } catch { el.remove(); }
+  };
+
+  const goingRow = (e) => {
+    if (!window.WA.Going) return '';
+    const on = window.WA.Going.has(e.id);
+    return `<div class="det-going">
+      <span class="det-going__icon">${I('people')}</span>
+      <span class="det-going__text" id="going-text">${on ? 'You are going' : 'Going?'}</span>
+      <button class="wa-btn wa-btn--sm${on ? ' is-on' : ''}" type="button" id="going" aria-pressed="${on}">${I(on ? 'check' : 'follow')}<span>${on ? 'Going' : 'I’m going'}</span></button>
+    </div>`;
+  };
+  let goingN = { id: '', n: null };
+  const paintGoing = (id) => {
+    const t = document.getElementById('going-text');
+    if (!t) return;
+    const on = window.WA.Going.has(id);
+    const n = goingN.id === id ? goingN.n : null;
+    const others = n == null ? null : Math.max(n - (on && window.WA.Auth && window.WA.Auth.isSignedIn() ? 1 : 0), 0);
+    t.textContent = others == null ? (on ? 'You are going' : 'Going?')
+      : on ? (others ? `You and ${others} ${others === 1 ? 'other' : 'others'}` : 'You are going')
+      : others ? `${others} going` : 'Be the first to say you are going';
+  };
+  const fetchGoing = (id) => {
+    if (!window.WA.Going || goingN.id === id) { paintGoing(id); return; }
+    goingN = { id, n: null };
+    window.WA.Going.count(id).then((n) => { if (goingN.id === id) { goingN.n = n; paintGoing(id); } });
+  };
+
   /* ── Calendar file ─────────────────────────────────────────── */
   const icsDate = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const icsText = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, m => `\\${m}`);
@@ -151,8 +220,10 @@
     const clock = R().clockOf(e);
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
     const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
-    const tickets = ended ? '' : ticketsFor(e);
-    const cal = !ended && e.startsAt ? ics(e) : '';
+    const off = R().isOff(e);
+    const tickets = ended || e.flag === 'cancelled' ? '' : ticketsFor(e);
+    const cal = !ended && !off && e.startsAt ? ics(e) : '';
+    const soldOut = e.flag === 'sold_out';
     const v = window.WA.venueFor(e);
     const venueName = R().real(e.venue) || (v && v.name) || '';
 
@@ -184,8 +255,9 @@
       <div class="det-grid__media">${media(e, title, e.kind)}</div>
       <div class="det-grid__main">
         ${ended ? `<div class="det-notice" role="status">${I('clock')}<span><strong>This has ended.</strong>${esc(k ? `It was on ${R().dateShort(k)}${clock ? ` at ${clock}` : ''}.` : '')} <a class="wa-link" href="index.html">What's on tonight</a></span></div>` : ''}
+        ${!ended && off ? `<div class="det-notice det-notice--off" role="status">${I('info')}<span><strong>${esc(e.flag === 'cancelled' ? 'Cancelled' : 'Postponed')}</strong>${esc(e.flag === 'cancelled' ? 'The source says this will not go ahead.' : 'The source says this is moving to a new date. Check there before you go.')}${link ? ` <a class="wa-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open the listing</a>` : ''}</span></div>` : ''}
         <header class="det-head">
-          <p class="wa-kicker">${liveNow ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
+          <p class="wa-kicker">${off ? '' : R().flagTag(e)}${liveNow && !off ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
           <h1 class="wa-h1">${esc(title)}</h1>
           ${orig ? `<p class="det-orig" lang="et">${esc(orig)}</p>` : ''}
           ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
@@ -197,11 +269,11 @@
           ${walkFact(e)}
         </div>
 
-        ${ended ? '' : `<div class="wa-bar">
-          <span class="wa-bar__text"><span class="wa-bar__price">${esc(R().price(e) || whenValue)}</span>
-            <span class="wa-bar__sub">${esc([R().price(e) ? whenValue : '', whenSub, venueName].filter(Boolean).join(' · '))}</span></span>
+        ${ended || e.flag === 'cancelled' ? '' : `<div class="wa-bar">
+          <span class="wa-bar__text"><span class="wa-bar__price">${esc(soldOut ? 'Sold out' : R().price(e) || whenValue)}</span>
+            <span class="wa-bar__sub">${esc([e.flag === 'few_left' ? 'Few tickets left' : '', soldOut ? '' : R().price(e) ? whenValue : '', whenSub, tickets ? `on ${host(tickets)}` : venueName].filter(Boolean).join(' · '))}</span></span>
           ${tickets
-            ? `<a class="wa-btn wa-btn--primary" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}Tickets</a>`
+            ? `<a class="wa-btn ${soldOut ? '' : 'wa-btn--primary'}" href="${esc(tickets)}" target="_blank" rel="noopener noreferrer">${I('ticket')}${soldOut ? 'Check for returns' : 'Tickets'}</a>`
             : `<a class="wa-btn wa-btn--primary" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">${I('walk')}Walk me there</a>`}
         </div>
         <div class="det-actions">
@@ -211,7 +283,10 @@
             ${saveBtn(e.id)}
             <button class="wa-btn" type="button" id="addlist">${I('list')}<span>${esc(listLabel(e.id))}</span></button>
           </div>
-        </div>`}
+        </div>
+        ${goingRow(e)}`}
+
+        ${venueCard()}
 
         ${desc ? `<section class="det-block"><h2 class="det-block__title">In their words</h2>
           <p class="wa-prose${desc.length > 420 ? ' wa-prose--clamp' : ''}" id="desc">${esc(desc)}</p>
@@ -219,11 +294,12 @@
         </section>` : `<section class="det-block"><h2 class="det-block__title">In their words</h2>
           <p class="wa-note">${esc(venueName ? `${venueName}'s own listing says no more than the title.` : 'The source filed no description.')}</p></section>`}
 
-        ${venueCard()}
+        ${creditsBlock(e)}
 
-        ${R().real(e.address) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
-          <p>${esc(e.address)}</p>
-          <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Open in maps</a></section>` : ''}
+        ${R().real(e.address) || G().coordsFor(e) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
+          ${miniSlot(e, title)}
+          ${R().real(e.address) ? `<p>${esc(e.address)}</p>` : ''}
+          <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
         <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
           <div class="det-prov">
@@ -264,6 +340,7 @@
 
         <div class="det-facts">
           ${o.s.known ? fact('Today', todayHours) : ''}
+          ${list.length ? fact('Next', list[0].title, [R().badgeFor(list[0]).text, list.length > 1 ? `${list.length - 1} more after` : ''].filter(Boolean).join(' · ')) : ''}
           ${walkIn ? fact('Entry', 'Free', 'Walk in') : ''}
           ${walkFact(v)}
         </div>
@@ -275,7 +352,7 @@
             ${saveBtn(v.id)}
           </div>
           ${links.length ? `<div class="det-links">${links.map(([ic, label, href]) =>
-            `<a class="wa-iconbtn" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`${label} (opens ${host(href)})`)}" title="${esc(label)}">${I(ic)}</a>`).join('')}</div>` : ''}
+            `<a class="det-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`${label} (opens ${host(href)})`)}">${I(ic)}<span>${esc(label)}</span>${I('out', 'wa-ic--sm')}</a>`).join('')}</div>` : ''}
         </div>
 
         <section class="det-block">
@@ -291,8 +368,10 @@
             : '<p class="wa-note">Not filed. About half the places we list carry hours; for the rest we would rather leave a gap than guess.</p>'}
         </section>
 
-        ${R().real(v.address) ? `<section class="det-block"><h2 class="det-block__title">Address</h2><p>${esc(v.address)}</p>
-          <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Open in maps</a></section>` : ''}
+        ${R().real(v.address) || G().coordsFor(v) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
+          ${miniSlot(v, v.name)}
+          ${R().real(v.address) ? `<p>${esc(v.address)}</p>` : ''}
+          <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
         <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
           <div class="det-prov">${v.osmId
@@ -342,6 +421,8 @@
     const y = window.scrollY;
     main().innerHTML = isEvent ? eventPage(e) : placePage(e);
     window.scrollTo(0, y);
+    mountMini();
+    if (isEvent) fetchGoing(e.id);
   };
 
   /* ── The add-to-list sheet ─────────────────────────────────── */
@@ -400,6 +481,15 @@
       window.WA.Bookmarks.set(id, on);
       render();
       toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => { window.WA.Bookmarks.set(id, !on); render(); });
+      return;
+    }
+    if (hit('#going') && window.WA.Going) {
+      const on = !window.WA.Going.has(id);
+      const signed = window.WA.Auth && window.WA.Auth.isSignedIn();
+      window.WA.Going.set(id, on).then(() => { goingN = { id: '', n: null }; fetchGoing(id); });
+      render();
+      if (on && !signed && window.WA.Auth) toast('Marked here. Sign in to be counted', 'Sign in', () => window.WA.Auth.openSignIn());
+      else toast(on ? 'Marked as going' : 'Not going', 'Undo', () => { window.WA.Going.set(id, !on).then(() => { goingN = { id: '', n: null }; fetchGoing(id); }); render(); });
       return;
     }
     if (hit('#follow')) {

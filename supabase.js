@@ -99,6 +99,7 @@
     description: r.description || r.teaser || null,
     descriptionFull: r.description != null,
     originalTitle: r.original_title || null,
+    flag:        r.flag || null,   /* cancelled, postponed, sold_out, few_left: what the source says */
     tags:        Array.isArray(r.tags) ? r.tags : [],
     startsAt:    r.starts_at   || null,
     endsAt:      r.ends_at     || null,
@@ -165,8 +166,15 @@
     openingHours: r.opening_hours || null,
   });
 
-  const dispatch = () =>
-    document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
+  /* A fast answer (the service worker's cache) can land between two
+     deferred scripts, before a page script has added its listener. Hold
+     the event until every deferred script has run. */
+  let parsed = document.readyState === 'complete';
+  if (!parsed) document.addEventListener('DOMContentLoaded', () => { parsed = true; }, { once: true });
+  const dispatch = () => {
+    const fire = () => document.dispatchEvent(new CustomEvent('wa:catalog-ready'));
+    if (parsed) fire(); else document.addEventListener('DOMContentLoaded', fire, { once: true });
+  };
 
   const load = async () => {
     /* 6-second timeout, then the empty states: long enough for a slow
@@ -190,7 +198,7 @@
                 /* Facts the sources stated about themselves. Lists read
                    the 300-character teaser; detail fetches the full text
                    (WA.fullDescription). */
-                `teaser,original_title,tags,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
+                `teaser,original_title,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
         `&order=starts_at.asc,id.asc`,

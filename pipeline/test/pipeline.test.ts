@@ -11,7 +11,8 @@ import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
 import { decide, eventId, loadSources, offTopic } from '../run.ts';
-import { htmlToText, httpUrl, nameKey } from '../util.ts';
+import { htmlToText, httpUrl, nameKey, scrubContacts } from '../util.ts';
+import { textFlag, schemaFlag, worse } from '../flags.ts';
 import type { Source } from '../types.ts';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
@@ -264,4 +265,57 @@ test('conferences and trade fairs are rejected by rule', () => {
   assert.equal(offTopic('Armenian Products Expo')?.status, 'rejected');
   assert.equal(offTopic('HU? / EIK'), null);
   assert.equal(offTopic('Tallinn Vegan Fair 2026'), null);
+});
+
+test('cancelled, postponed, sold out and few left come from what the source says', () => {
+  assert.equal(textFlag('(80% SOLD OUT) BATUSHKA (PL) • 03.10 • Paavli Kultuurivabrik'), 'few_left');
+  assert.equal(textFlag('Ühiskondlikult kahjulik element', 'N 08.10 19:00 Vaba Lava Black Box Salmes JÄÄB ÄRA! (https://vabalava.ee/x/)'), 'cancelled');
+  assert.equal(textFlag('Концерт отменён'), 'cancelled');
+  assert.equal(textFlag('Show', 'Välja müüdud! Lisakontsert 12.10'), 'sold_out');
+  // A refund policy or a boast is not a state.
+  assert.equal(textFlag('Comedy', 'Performer: X\nIf the show is cancelled, tickets are refunded.'), null);
+  assert.equal(textFlag('Tickets sell out fast'), null);
+  assert.equal(schemaFlag('https://schema.org/EventScheduled', 'https://schema.org/SoldOut'), 'sold_out');
+  assert.equal(schemaFlag('https://schema.org/EventCancelled', 'https://schema.org/InStock'), 'cancelled');
+  assert.equal(schemaFlag('https://schema.org/EventScheduled', 'https://schema.org/InStock'), null);
+  assert.equal(worse('few_left', 'cancelled'), 'cancelled');
+  assert.equal(worse(null, 'sold_out'), 'sold_out');
+});
+
+test('organiser emails and phone numbers never reach a stored description', () => {
+  const out = scrubContacts('Piletid: piletid@teatermustkast.ee\nKontakt: tel +372 5555 1234\nN 08.10 19:00 – 21:30\nInfo (mailto:info@x.ee) at the door\nHind 12 €');
+  assert.equal(out, 'N 08.10 19:00 – 21:30\nInfo at the door\nHind 12 €');
+  assert.equal(scrubContacts('Follow @sigmundtells'), 'Follow @sigmundtells');
+});
+
+test('Kai: English post kept, screenings split, school trips and closures skipped', async () => {
+  const bodies: Record<string, string> = {
+    'https://admin.kai.center/wp-json/www-api/v1/calendar': fixture('kai-calendar.json'),
+    'https://admin.kai.center/wp-json/www-api/v1/current-events': fixture('kai-current.json'),
+  };
+  const src = source({ kind: 'wordpress', url: 'https://admin.kai.center/wp-json/www-api/v1/calendar', config: {
+    shape: 'kai', extra_urls: ['https://admin.kai.center/wp-json/www-api/v1/current-events'], venue_name: 'Kai',
+    skip_titles: 'kultuuripilet|suletud|closed|preparing for' } });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (u: string) => new Response(bodies[u], { status: 200 })) as typeof fetch;
+  try {
+    const items = await wordpress.collect(src, new Date('2026-09-28T08:00:00Z'));
+    assert.deepEqual(items.map(i => i.external_id), ['17643', 'exhibition-tides']);
+    assert.equal(items[0].url, 'https://kai.center/en/movie/screening-in-kai-cinema-edge-of-the-night');
+    const films = wordpress.extract(items[0], src);
+    assert.equal(films.length, 2);
+    assert.equal(films[0].title, 'Screening in Kai Cinema: "Edge of The Night"');
+    assert.equal(films[0].starts_at, '2026-10-28T16:00:00.000Z');
+    assert.equal(films[1].starts_at, '2026-11-01T16:00:00.000Z');     // after the clocks go back
+    assert.equal(films[0].ends_at, '2026-10-28T17:32:00.000Z');
+    assert.equal(films[0].venue_name, 'Kai');
+    assert.equal(films[0].description, 'A film by Türker Süer.');
+    assert.equal(films[0].image_url, 'https://admin.kai.center/wp-content/uploads/2026/09/edge.jpg');
+    assert.equal(films[0].series_key, 'kai:17643');
+    const [show] = wordpress.extract(items[1], src);
+    assert.equal(show.ends_at, '2026-11-30T16:00:00.000Z');
+    assert.equal(show.image_url, null);                               // only http(s) survives
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

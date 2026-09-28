@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql` and `20260928150000_going.sql` and `20260928160000_event_flags.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -9,9 +9,11 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `sources` | Where listings come from, plus each source's health (`last_ok_at`, `last_yield`, `consecutive_failures`, `last_error`) | `id, city, kind, url, handle, label` only |
 | `raw_items` | Exactly what a source said, once per `(source_id, external_id)`, with a content hash and a processing `status` | no |
 | `places` | Venues: name, `aliases` (lowercased names sources use), coordinates, OSM identity, `kind`, neighbourhood | yes, unless `hidden` |
-| `events` | One row per dated occurrence: source facts, `title_en`/`summary_en`, `kind`, `tags`, `relevance`, `status` | `published` only |
+| `events` | One row per dated occurrence: source facts, `title_en`/`summary_en`, `kind`, `tags`, `relevance`, `status`, `flag` | `published` only |
 | `event_sources` | Provenance: every source that listed an event | for published events, without `raw_item_id` |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
+| `going` | Who marked "I'm going" on which pick | own rows only |
+| `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
 `picks` and `venues` are read-only views shaped like the old tables, so the current pages, `functions/_middleware.js`, `og-image` and `calendar-feed` read the new data unchanged. They go away with the front-end rebuild.
 
@@ -51,6 +53,14 @@ To merge two spellings of one venue, add the second as an alias of the first and
 
 Each event id is a hash of city, title, Tallinn date and time, and place. Because two sources rarely title a show the same way, a candidate also joins an existing upcoming event when both are at the same place within 30 minutes and at least 60% of the shorter title's words appear in the other (`pipeline/dedupe.ts`). Every source that listed it gets an `event_sources` row.
 
+### Flags
+
+`events.flag` is what a source says about the show: `cancelled`, `postponed`, `sold_out` or `few_left`, else null. It is a fact, so every read of the event sets it again and it clears when the source does; when two sources list one show, the more serious flag wins. It comes from structured fields where they exist (Fienta `event_status`, schema.org `eventStatus` and `offers.availability`), from the model reading prose (`state` in the extraction schema), and from `pipeline/flags.ts`, which reads the title and short description lines for words like "sold out", "välja müüdud", "jääb ära" or "отменён". Prose counts only when the phrase is shouted or leads its line, so refund policies don't flag a show. Fienta's cancelled events are kept and flagged, not dropped.
+
+### Contact details
+
+Descriptions pass through `scrubContacts` (`pipeline/util.ts`) before they are stored: email addresses, phone numbers and any label left bare by removing them are dropped. `raw_items` keeps the source's text as it was, service-role only.
+
 ### Status
 
 | Source | Fit (`relevance`) | Status |
@@ -76,12 +86,18 @@ Model output decides publication for untrusted sources, and listing text is writ
 | `kultuurikatel` | WordPress REST | The venue's own events post type (`/wp-json/wp/v2/events`, ACF date fields). Date and ticket link are structured; most listings carry a date but no time. |
 | `telliskivi` | HTML → model | Telliskivi Creative City's events page. |
 | `vabalava` | HTML → model | Vaba Lava's performance schedule (`/mangukava/`), Tallinn tab. |
+| `kai` | WordPress REST, Kai's own routes | Kai Art Center, Noblessner: `/wp-json/www-api/v1/calendar` (films, each screening dated) and `/current-events` (exhibitions). One post per language; the English one is kept. School-ticket screenings and closures are skipped (`skip_titles`). Read by `sources/kai.ts` through `config.shape: "kai"`. |
+| `paavli` | HTML → model | Paavli Kultuurivabrik's events page. Its "SOLD OUT" and "80% SOLD OUT" labels become flags. Also on Fienta; duplicates merge. |
+| `saal` | HTML → model | Kanuti Gildi SAAL's programme: contemporary dance, performance, talks. |
+| `uuslaine` | HTML → model | Uus Laine's calendar page. |
 | `tg-sigmundtells` | Telegram → model | Public channel preview, `t.me/s/…`, no API key. |
 | `osm-tallinn` | OpenStreetMap | Not events: the venue catalogue (below). |
 
 A source whose config names a `venue_name` is a single venue's own programme: every event it lists is placed there, whatever hall name the page uses.
 
-Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite and Meetup (no public search API), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
+Not used, and why: Instagram and Facebook (no free way to read public posts or events), Resident Advisor (its terms forbid scraping; there is no public API), Eventbrite (search API removed), Meetup and Luma (their APIs need paid plans), Substack newsletters such as Gamma Tallinn (Substack refuses GitHub's runners), Piletilevi (no public feed), Visit Tallinn (no feed; its listings are mainstream). Elektriteater is in Tartu, not Tallinn.
+
+The `probe-sources` job in `ci.yml` runs a dry run of the newest sources on every pull request, without keys: its log shows how many items each one collects. It never fails the check.
 
 ### Running it
 

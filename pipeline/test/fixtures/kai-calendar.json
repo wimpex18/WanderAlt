@@ -1,0 +1,18 @@
+[
+  {"ID": "17626", "slug": "linastus-kai-kinos-ooaar", "title": "Linastus Kai kinos: &quot;Ööäär&quot;", "excerpt": "Film Ööäärest.", "post_type": "movie",
+   "thumbnail": {"ID": 1, "url": "https://admin.kai.center/wp-content/uploads/2026/09/ooaar.jpg"},
+   "acf": {"starting_datetime": "2026-10-28 18:00:00", "ending_datetime": "2026-11-01 19:32:00", "reocurring_event": true,
+           "reocurring_dates": [{"reocurring_starting_datetime": "2026-10-28 18:00:00", "reocurring_ending_datetime": "2026-10-28 19:32:00"},
+                                {"reocurring_starting_datetime": "2026-11-01 18:00:00", "reocurring_ending_datetime": "2026-11-01 19:32:00"}],
+           "excluded_dates": false}},
+  {"ID": "17643", "slug": "screening-in-kai-cinema-edge-of-the-night", "title": "Screening in Kai Cinema: &quot;Edge of The Night&quot;", "excerpt": "<p>A film by Türker Süer.</p>", "post_type": "movie",
+   "thumbnail": {"ID": 2, "url": "https://admin.kai.center/wp-content/uploads/2026/09/edge.jpg"},
+   "acf": {"starting_datetime": "2026-10-28 18:00:00", "ending_datetime": "2026-11-01 19:32:00", "reocurring_event": true,
+           "reocurring_dates": [{"reocurring_starting_datetime": "2026-10-28 18:00:00", "reocurring_ending_datetime": "2026-10-28 19:32:00"},
+                                {"reocurring_starting_datetime": "2026-11-01 18:00:00", "reocurring_ending_datetime": "2026-11-01 19:32:00"}],
+           "excluded_dates": false}},
+  {"ID": "17320", "slug": "tallinna-noorte-kultuuripilet-disko-ja-tuumasoda", "title": "Tallinna noorte kultuuripilet: \"Disko ja tuumasõda\"", "post_type": "movie",
+   "acf": {"starting_datetime": "2026-10-03 12:30:00", "ending_datetime": "2026-10-03 13:50:00", "reocurring_event": false}},
+  {"ID": "17001", "slug": "old-screening", "title": "Old screening", "post_type": "movie",
+   "acf": {"starting_datetime": "2026-09-01 18:00:00", "ending_datetime": "2026-09-01 19:30:00", "reocurring_event": false}}
+]

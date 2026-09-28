@@ -1,11 +1,13 @@
 /* ============================================================
    programme.js — Programme: the week, day by day.
    ------------------------------------------------------------
-   Search, a seven-day strip (a bar for how busy each day is), kind
-   chips, and one filter panel that is a sheet on phones and a sidebar
-   from 1024. Every count comes from the same filter chain as the list,
-   each facet skipping itself, so a count never disagrees with what
-   choosing it would show.
+   One field for search and for a sentence, one row of quick chips
+   (when, then kinds), and one filter panel that is a sheet on phones
+   and a sidebar from 1024. A title or a venue is searched as typed. A
+   sentence ("free jazz tonight in Kalamaja") is read into those same
+   filters, in the page (ask.js); only when the page cannot read it is
+   the model asked, and it too only sets filters. Every count comes from
+   the same filter chain as the list, each facet skipping itself.
 
    URL: ?q ?date ?time ?cat ?area ?sort ?within ?new=1 ?focus=search
    ============================================================ */
@@ -23,6 +25,8 @@
     q: '', day: '', when: 'all', kinds: new Set(), area: '',
     sort: 'soonest', within: 0, doors: 'any', free: false,
     hideSeen: false, followed: false, fresh: false,
+    english: false, maxPrice: null,
+    read: null,       /* the sentence's reading: { must, any, note, by } */
   };
   const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const DOORS = { any: 'Any time', now: 'From now', '21:00': 'After 21:00', '23:00': 'After 23:00' };
@@ -78,7 +82,9 @@
     if (skip !== 'seen' && state.hideSeen) out = window.WA.Seen.filter(out);
     if (skip !== 'followed' && state.followed) out = out.filter(R().isFollowed);
     if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
-    if (skip !== 'q' && state.q) out = out.filter(e => R().matches(e, state.q));
+    if (skip !== 'english' && state.english) out = out.filter(e => (e.tags || []).some(t => String(t).toLowerCase() === 'english'));
+    if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin != null && Number(e.priceMin) <= state.maxPrice));
+    if (skip !== 'q' && state.q) out = out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
     return out;
   };
 
@@ -95,38 +101,31 @@
   const base = () => R().live();
   const results = () => sorted(apply(base()));
 
-  /* ── The seven-day strip ──────────────────────────────────── */
-  const week = () => {
-    const pool = apply(base(), 'when');
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const key = W().keyPlus(i);
-      return { key, n: pool.filter(e => W().isOnDate(e, key)).length, i };
-    });
-    const peak = Math.max(1, ...days.map(d => d.n));
-    $('week').innerHTML = days.map(d => `<button class="wa-week7__day${d.n ? '' : ' wa-week7__day--empty'}" type="button"
-        data-day="${esc(d.key)}" aria-pressed="${state.day === d.key}"
-        aria-label="${esc(`${R().dayName(d.key)}, ${R().dateShort(d.key)}: ${d.n} listed`)}">
-        <span class="wa-week7__n">${d.n || ''}</span>
-        <span class="wa-week7__bar" style="height:${d.n ? Math.max(3, Math.round(d.n / peak * 22)) : 0}px"></span>
-        <span class="wa-week7__dow">${esc(d.i === 0 ? 'Today' : R().dow(d.key))}</span>
-        <span class="wa-week7__dom">${esc(String(R().dom(d.key)))}</span>
-      </button>`).join('');
-  };
-
-  /* ── Kind chips ────────────────────────────────────────────── */
+  /* ── Quick chips: what the sentence set, then when, then kinds ── */
+  const QUICK_WHEN = [['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend'], ['thisweek', 'This week']];
   const kindCounts = () => {
     const pool = apply(base(), 'kind');
     const m = new Map();
     for (const e of base()) { const k = String(e.kind || '').toLowerCase(); if (R().real(k)) m.set(k, 0); }
     for (const e of pool) { const k = String(e.kind || '').toLowerCase(); if (m.has(k)) m.set(k, m.get(k) + 1); }
     for (const k of state.kinds) if (!m.has(k)) m.set(k, 0);
-    return [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return [...m.entries()].sort((a, b) => Number(state.kinds.has(b[0])) - Number(state.kinds.has(a[0])) || b[1] - a[1] || a[0].localeCompare(b[0]));
   };
-  const kinds = () => {
-    const all = apply(base(), 'kind').length;
-    $('kinds').innerHTML = `<button class="wa-chip" type="button" data-kind="" aria-pressed="${!state.kinds.size}">All <span class="wa-chip__n">${all}</span></button>` +
-      kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>
-        ${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))} <span class="wa-chip__n">${n}</span></button>`).join('');
+  const quick = () => {
+    const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" aria-pressed="true" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
+    const set = [];
+    if (state.day) set.push(on(R().dayName(state.day) === 'Tonight' ? 'Tonight' : `${R().dow(state.day)} ${R().dom(state.day)}`, 'clear-when'));
+    if (state.free) set.push(on('Free', 'clear-free'));
+    if (state.maxPrice != null) set.push(on(`Under €${state.maxPrice}`, 'clear-price'));
+    if (state.english) set.push(on('In English', 'clear-english'));
+    if (state.area) set.push(on(state.area, 'clear-area'));
+    const whenPool = apply(base(), 'when');
+    const when = state.day ? [] : QUICK_WHEN.map(([v, label]) => {
+      const n = whenPool.filter(e => W().matches(e, v)).length;
+      return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(label)}</button>`;
+    });
+    const kinds = kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))}</button>`);
+    $('quick').innerHTML = [...set, ...when].join('') + '<span class="prog-quick__sep" aria-hidden="true"></span>' + kinds.join('');
   };
 
   /* ── The filter panel (sheet on phones, sidebar on desktop) ── */
@@ -150,6 +149,10 @@
         <div class="wa-chips">${Object.keys(WHEN).map(v => {
           const n = whenPool.filter(e => W().matches(e, v)).length;
           return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${!state.day && state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(WHEN[v])} <span class="wa-chip__n">${n}</span></button>`;
+        }).join('')}</div>
+        <div class="wa-chips">${Array.from({ length: 7 }, (_, i) => W().keyPlus(i)).map(k => {
+          const n = whenPool.filter(e => W().isOnDate(e, k)).length;
+          return `<button class="wa-chip" type="button" data-day="${esc(k)}" aria-pressed="${state.day === k}"${n || state.day === k ? '' : ' disabled'}>${esc(k === W().todayKey() ? 'Today' : `${R().dow(k)} ${R().dom(k)}`)} <span class="wa-chip__n">${n}</span></button>`;
         }).join('')}</div>
       </div>
       <div class="wa-field">
@@ -201,7 +204,7 @@
     ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot`
     : 'Anywhere in the city') + (G().currentLoc() ? '' : '. Needs your location');
 
-  const activeCount = () => (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
+  const activeCount = () => (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
     (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0);
 
@@ -214,6 +217,8 @@
     add(state.area, 'Anywhere in the city', 'clear-area', 'area');
     add(state.day || state.when !== 'all', 'Any day', 'clear-when', 'when');
     add(state.free, 'Include paid', 'clear-free', 'free');
+    add(state.maxPrice != null, 'Any price', 'clear-price', 'price');
+    add(state.english, 'Any language', 'clear-english', 'english');
     add(state.doors !== 'any', 'Any start time', 'clear-doors', 'doors');
     add(state.within, 'Any distance', 'clear-within', 'within');
     add(state.hideSeen, "Include what I've opened", 'clear-seen', 'seen');
@@ -231,8 +236,93 @@
         body: `${best.label} brings back ${best.n} ${best.n === 1 ? 'listing' : 'listings'}.`,
         actions: [{ act: best.act, label: best.label }, { act: 'clear-all', label: 'Clear everything' }] });
     }
+    if (drops.length) {
+      return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
+        body: 'No single change brings anything back.', actions: [{ act: 'clear-all', label: 'Clear everything' }] });
+    }
     return R().empty({ icon: 'calendar', title: `Nothing is listed in ${R().cityName()} for the coming days.`,
       body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] });
+  };
+
+  /* ── Reading a sentence ─────────────────────────────────────
+     A title or a venue is searched as typed. A sentence is read into
+     the filters it names; what it set shows as chips, each removable,
+     and "Search the words" puts everything back. The model is asked only
+     when words are left that the page could not place and nothing
+     matches without them. */
+  const A = () => window.WA.Ask;
+  let before = null, askTimer = 0, asked = '';
+  const FILTER_KEYS = ['when', 'day', 'free', 'english', 'maxPrice'];
+  const unread = () => {
+    if (!state.read) return;
+    if (before) { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
+    state.read = null; before = null;
+  };
+  const adopt = (p, by) => {
+    if (!before) before = { ...Object.fromEntries(FILTER_KEYS.map(k => [k, state[k]])), kinds: [...state.kinds] };
+    else { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
+    if (p.day) { state.day = p.day; state.when = 'all'; } else if (p.when) { state.when = p.when; state.day = ''; }
+    if (p.kinds.length) state.kinds = new Set(p.kinds);
+    if (p.free) state.free = true;
+    if (p.english) state.english = true;
+    if (p.maxPrice != null) state.maxPrice = p.maxPrice;
+    state.read = { must: p.must, any: p.any, note: p.note || '', by };
+  };
+  const count = () => apply(base()).length;
+  const literal = (q) => base().filter(e => R().matches(e, q)).length;
+
+  const onQuery = (raw, now) => {
+    const q = String(raw || '').trim();
+    state.q = q;
+    $('q-clear').hidden = !q;
+    $('ask-try').hidden = !!q || document.activeElement !== $('q');
+    clearTimeout(askTimer);
+    unread();
+    if (q && A().isQuestion(q)) {
+      const p = A().local(q);
+      adopt(p, 'page');
+      const strict = count();
+      if (!strict) {
+        /* Unplaced words that match nothing are dropped before giving up. */
+        if (state.read.must.length) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] };
+        if (!count() && literal(q)) unread();
+        /* Only then is the model asked, and only about this sentence once. */
+        if (p.must.length && asked !== q) askTimer = setTimeout(() => ask(q, p), now ? 0 : 900);
+      }
+    }
+    render();
+  };
+
+  const ask = async (q, mine) => {
+    asked = q;
+    const p = await A().remote(q);
+    if (!p || state.q !== q) return;
+    unread();
+    adopt(p, 'model');
+    if (!count() && state.read.must.length) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] };
+    /* The model's reading must find something, or the page's stands. */
+    if (!count()) { unread(); adopt(mine, 'page'); if (!count()) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] }; if (!count() && literal(q)) unread(); }
+    render();
+  };
+
+  const askNote = () => {
+    const n = $('ask-note');
+    if (!state.read) { n.hidden = true; n.innerHTML = ''; return; }
+    /* Plain words for what the sentence set: "Gigs tonight with “jazz”". */
+    const words = [...state.read.must, ...state.read.any].slice(0, 3).map(w => `“${w}”`).join(', ');
+    const what = state.kinds.size ? [...state.kinds].map(k => R().kindLabel(k)).join(', ') : 'Anything';
+    const when = state.day ? `on ${R().dateShort(state.day)}` : state.when !== 'all' ? WHEN[state.when].toLowerCase() : '';
+    const text = state.read.note || [what, when, words ? `with ${words}` : ''].filter(Boolean).join(' ');
+    n.hidden = false;
+    n.innerHTML = `${state.read.by === 'model' ? I('ai') : ''}<span>${esc(text)}</span><button type="button" data-act="undo-read">Search the words</button>`;
+  };
+
+  const TRY = ['Jazz tonight', 'Free art this weekend', 'Club night in Kalamaja', 'Talks in English'];
+  const tryShow = () => {
+    const t = $('ask-try');
+    if (state.q) { t.hidden = true; return; }
+    t.innerHTML = TRY.map(x => `<button class="wa-chip" type="button" data-try="${esc(x)}">${I('ai')}${esc(x)}</button>`).join('');
+    t.hidden = false;
   };
 
   /* ── Render ─────────────────────────────────────────────────── */
@@ -242,7 +332,7 @@
     else if (state.when !== 'all') bits.push(WHEN[state.when].toLowerCase());
     if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
     if (state.area) bits.push(`in ${state.area}`);
-    if (state.q) bits.push(`matching “${state.q}”`);
+    if (state.q && !state.read) bits.push(`matching “${state.q}”`);
     bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
     $('summary').innerHTML = `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`;
   };
@@ -256,8 +346,8 @@
 
   const render = () => {
     const list = results();
-    week();
-    kinds();
+    quick();
+    askNote();
     summary(list.length);
     $('list').innerHTML = listHtml(list);
     const fc = activeCount();
@@ -293,7 +383,9 @@
       return;
     }
     if (hit('#sheet-close') || hit('#sheet-apply')) { sheet().close(); return; }
-    if (hit('#q-clear')) { state.q = ''; $('q').value = ''; $('q-clear').hidden = true; render(); $('q').focus(); return; }
+    if (hit('#q-clear')) { unread(); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; render(); $('q').focus(); return; }
+    const tr = hit('[data-try]');
+    if (tr) { $('q').value = tr.dataset.try; onQuery(tr.dataset.try, true); $('ask-try').hidden = true; return; }
 
     const d = hit('[data-day]');
     if (d) { state.day = state.day === d.dataset.day ? '' : d.dataset.day; render(); return; }
@@ -319,17 +411,20 @@
     const t = hit('[data-toggle]');
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      Object.assign(state, { q: '', day: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false });
+      Object.assign(state, { q: '', day: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, read: null });
       state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
     if (act) {
       const x = act.dataset.act;
-      if (x === 'clear-q') { state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
+      if (x === 'clear-q') { unread(); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') state.area = '';
       if (x === 'clear-when') { state.day = ''; state.when = 'all'; }
       if (x === 'clear-free') state.free = false;
+      if (x === 'clear-price') state.maxPrice = null;
+      if (x === 'clear-english') state.english = false;
+      if (x === 'undo-read') { unread(); asked = state.q; }
       if (x === 'clear-doors') state.doors = 'any';
       if (x === 'clear-within') state.within = 0;
       if (x === 'clear-seen') state.hideSeen = false;
@@ -342,12 +437,7 @@
   });
 
   document.addEventListener('input', (e) => {
-    if (e.target.id === 'q') {
-      state.q = e.target.value.trim();
-      $('q-clear').hidden = !state.q;
-      render();
-      return;
-    }
+    if (e.target.id === 'q') { onQuery(e.target.value, false); return; }
     if (e.target.matches && e.target.matches('[data-within]')) {
       state.within = parseInt(e.target.value, 10) || 0;
       if (state.within) G().userLoc();
@@ -356,17 +446,19 @@
       const list = results();
       summary(list.length);
       $('list').innerHTML = listHtml(list);
-      week(); kinds();
+      quick();
       if (sheet() && sheet().open) $('sheet-foot').innerHTML = foot(list.length);
       write();
     }
   });
   document.addEventListener('change', (e) => { if (e.target.matches && e.target.matches('[data-within]')) render(); });
-  document.addEventListener('submit', (e) => { if (e.target.id === 'search-form') { e.preventDefault(); $('q').blur(); } });
+  document.addEventListener('submit', (e) => { if (e.target.id === 'search-form') { e.preventDefault(); onQuery($('q').value, true); $('q').blur(); } });
+  document.addEventListener('focusin', (e) => { if (e.target.id === 'q') tryShow(); });
+  document.addEventListener('focusout', (e) => { if (e.target.id === 'q') setTimeout(() => { if (document.activeElement !== $('q')) $('ask-try').hidden = true; }, 150); });
 
   /* ── Boot ───────────────────────────────────────────────────── */
   read();
-  const boot = () => { render(); R().locateIfGranted(); };
+  const boot = () => { if (state.q) onQuery(state.q, true); else render(); R().locateIfGranted(); };
   const pre = () => {
     $('q').value = state.q;
     $('q-clear').hidden = !state.q;

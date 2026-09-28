@@ -41,7 +41,9 @@
   <script defer src="./toast.js"></script>
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
+  <script defer src="./tabbar.js"></script>
   <script defer src="./finder.js"></script>
+  <script defer src="./ask.js"></script>
   <script defer src="./programme.js"></script>
 </head>
 <body data-page="programme">
@@ -62,22 +64,21 @@
     <header class="wa-pagehead">
       <div class="wa-pagehead__row">
         <h1 class="wa-h1" id="prog-title">Programme</h1>
-        <a class="wa-btn wa-btn--sm" href="./map.html" id="to-map"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
+        <a class="wa-iconbtn wa-iconbtn--line" href="./map.html" id="to-map" aria-label="Show on the map"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4.5-5 2v13l5-2 6 2 5-2v-13l-5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg></a>
       </div>
     </header>
 
     <div class="prog-controls" id="prog-controls">
-      <div class="prog-controls__bar">
-        <form class="wa-search wa-search--compact" role="search" id="search-form">
-          <label class="wa-sr" for="q">Search the programme</label>
-          <span class="wa-search__icon"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></span>
-          <input class="wa-search__input" id="q" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Title, venue, area or tag" />
-          <button class="wa-iconbtn wa-search__clear" type="button" id="q-clear" aria-label="Clear search" hidden><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-        </form>
-        <button class="wa-btn wa-btn--sm prog-filters-btn" type="button" id="open-filters"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Filters</span><span class="prog-badge" id="filter-count" hidden></span></button>
-      </div>
-      <div class="wa-week7" id="week" role="group" aria-label="Pick a day"></div>
-      <div class="wa-chips wa-chips--scroll" id="kinds" role="group" aria-label="Kind"></div>
+      <form class="wa-ask" role="search" id="search-form" autocomplete="off">
+        <label class="wa-sr" for="q">Ask or search the programme</label>
+        <span class="wa-ask__mark"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 3.5c.7 4.3 2.9 6.5 7.2 7.2-4.3.7-6.5 2.9-7.2 7.2-.7-4.3-2.9-6.5-7.2-7.2 4.3-.7 6.5-2.9 7.2-7.2z"/><path d="M18.5 15c.3 1.6 1 2.3 2.6 2.6-1.6.3-2.3 1-2.6 2.6-.3-1.6-1-2.3-2.6-2.6 1.6-.3 2.3-1 2.6-2.6z"/></svg></span>
+        <input class="wa-ask__input" id="q" name="q" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Ask for a night out" aria-describedby="ask-note" />
+        <button class="wa-iconbtn wa-ask__clear" type="button" id="q-clear" aria-label="Clear" hidden><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <button class="wa-iconbtn wa-ask__filters" type="button" id="open-filters" aria-label="Filters"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span class="prog-badge" id="filter-count" hidden></span></button>
+      </form>
+      <div class="wa-ask__try wa-chips wa-chips--scroll" id="ask-try" hidden></div>
+      <div class="wa-chips wa-chips--scroll prog-quick" id="quick" role="group" aria-label="When and what"></div>
+      <p class="prog-ask" id="ask-note" aria-live="polite" hidden></p>
     </div>
 
     <div class="prog-layout">

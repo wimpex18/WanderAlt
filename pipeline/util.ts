@@ -66,3 +66,19 @@ export function httpUrl(u: unknown, base?: string): string | null {
 }
 
 export const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/** Contact details out of prose: listings may print an organiser's email
+ *  or phone, and WanderAlt never stores them. Lines left empty go. */
+const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[a-z]{2,}/giu;
+const PHONE = /(?:\+372|\+358|\+371|\+7)[\s\d()-]{6,16}\d|\b(?:tel|telefon|phone|ph|mob)\.?:?\s*\+?\d[\s\d()-]{5,16}\d/giu;
+export function scrubContacts(s: string | null | undefined): string | null {
+  if (s == null) return null;
+  return s.split('\n')
+    .map(l => {
+      const out = l.replace(/\(mailto:[^)]*\)/gi, '').replace(EMAIL, '').replace(PHONE, '').replace(/\s{2,}/g, ' ').trim();
+      // "Tickets: x@y.ee" leaves a bare label behind; it goes too.
+      return out !== l.trim() && /^([^:]{0,24}:)?[\s,;.–—-]*$/u.test(out) ? '' : out;
+    })
+    .filter(Boolean)
+    .join('\n') || null;
+}

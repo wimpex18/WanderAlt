@@ -134,7 +134,8 @@
   const startMs = (e) => (e && e.startsAt ? Date.parse(e.startsAt) : NaN);
   /* On right now: a stated start already passed, and not yet over. */
   const isLive = (e, now = Date.now()) => {
-    if (!e || W().statedMinutes(e) == null) return false;
+    /* A cancelled or postponed show is never on now. */
+    if (!e || e.flag === 'cancelled' || e.flag === 'postponed' || W().statedMinutes(e) == null) return false;
     const t = startMs(e);
     return isFinite(t) && t <= now && !W().hasEnded(e, now);
   };
@@ -260,6 +261,13 @@
 
   const sameTitle = (a, b) => fold(a).replace(/[^a-z0-9а-я]/g, '') === fold(b).replace(/[^a-z0-9а-я]/g, '');
 
+  /* What the source says about the show's state. Cancelled and postponed
+     dim the listing; sold out and few left only label it. */
+  const FLAGS = { cancelled: 'Cancelled', postponed: 'Postponed', sold_out: 'Sold out', few_left: 'Few tickets left' };
+  const flagLabel = (e) => (e && FLAGS[e.flag]) || '';
+  const isOff = (e) => !!e && (e.flag === 'cancelled' || e.flag === 'postponed');
+  const flagTag = (e, cls = '') => flagLabel(e) ? `<span class="wa-flag wa-flag--${esc(e.flag)}${cls}">${esc(flagLabel(e))}</span>` : '';
+
   const row = (e, opts = {}) => {
     const r = rail(e, opts);
     const why = whyTag(e);
@@ -273,10 +281,11 @@
       r.live && endsAt ? `till ${endsAt}` : '',
     ].filter(Boolean).join(' · ');
     const fresh = opts.since && isNewSince(e, opts.since);
-    return `<li><a class="wa-row${r.live ? ' wa-row--now' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+    return `<li><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">${r.html}</span>
       <span class="wa-row__body">
         <span class="wa-row__top">
+          ${flagTag(e)}
           ${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}
           ${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}
           ${fresh ? '<span class="wa-new">New</span>' : ''}
@@ -331,11 +340,12 @@
     const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
-    return `<div class="wa-poster"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}" style="display:contents">
+    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}" style="display:contents">
       <span class="wa-poster__art">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
         <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(b.text)}</span>
+        ${flagTag(e, ' wa-poster__flag')}
       </span>
       <span class="wa-poster__title">${esc(e.title || '')}</span>
       ${line1 ? `<span class="wa-poster__meta">${esc(line1)}</span>` : ''}
@@ -477,7 +487,7 @@
     esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, placeRow, poster, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,
+    openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,
     skelRows, empty, cityName, locateIfGranted, locPrompt,
   };
 })();

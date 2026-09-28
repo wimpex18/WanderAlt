@@ -17,3 +17,24 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
+
+  # The newest sources, collected without keys: the log shows each one's
+  # item count. Informational; never fails the check.
+  probe-sources:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: node pipeline/run.ts --dry-run --source kai --show 5
+        continue-on-error: true
+      - run: node pipeline/run.ts --dry-run --source paavli --show 5
+        continue-on-error: true
+      - run: node pipeline/run.ts --dry-run --source saal --show 5
+        continue-on-error: true
+      - run: node pipeline/run.ts --dry-run --source uuslaine --show 5
+        continue-on-error: true
