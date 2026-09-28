@@ -145,18 +145,6 @@
     }
   },
   {
-    "id": "gamma-newsletter",
-    "city": "tallinn",
-    "kind": "rss",
-    "url": "https://giadafromgamma.substack.com/feed",
-    "handle": "@giadafromgamma",
-    "label": "Gamma Tallinn newsletter",
-    "curated": false,
-    "config": {
-      "max_age_days": 21
-    }
-  },
-  {
     "id": "tg-sigmundtells",
     "city": "tallinn",
     "kind": "telegram",

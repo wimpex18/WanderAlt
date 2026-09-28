@@ -38,5 +38,3 @@ jobs:
         continue-on-error: true
       - run: node pipeline/run.ts --dry-run --source uuslaine --show 5
         continue-on-error: true
-      - run: node pipeline/run.ts --dry-run --source gamma-newsletter --show 5
-        continue-on-error: true

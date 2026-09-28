@@ -97,9 +97,12 @@ export function extract(item: RawItem, source: Source): Candidate[] {
   const p = item.payload as { id?: string; post_type?: string; title?: string; excerpt?: string | null; image?: string | null; occurrences?: { start: string; end: string | null }[] };
   if (!p.title) return [];
   const many = (p.occurrences ?? []).length > 1;
+  const gone = Date.now() - 6 * 3600_000;
   return (p.occurrences ?? []).flatMap(o => {
     const starts = tallinnToIso(o.start);
     if (!starts) return [];
+    /* A run of screenings keeps its past dates; only what is ahead is listed. */
+    if (Date.parse(tallinnToIso(o.end ?? o.start) ?? starts) < gone) return [];
     const timed = / (?!00:00)\d{2}:\d{2}$/.test(o.start);
     return [{
       title: decodeEntities(p.title!).trim(),
