@@ -191,7 +191,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-brand__city { display: none; }
 :root[data-theme="dusk"] .wa-brand { color: var(--ink); }
 
-/* The opening, once per session (brand-reveal.js). The cover exists only
+/* The opening, every time the app is opened (brand-reveal.js). The cover exists only
    while the script has it; without the script, or once it fails, the page
    is never covered: the last rule hides it on a timer of its own. */
 .wa-splash {
