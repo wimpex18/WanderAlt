@@ -5,7 +5,7 @@ export interface OsmElement {
   center?: { lat: number; lon: number }; tags?: Record<string, string>;
 }
 
-const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 
 /** Sequential fallback only. A rate limit stops this run; no endpoint hopping. */
 export async function overpass(query: string): Promise<OsmElement[]> {

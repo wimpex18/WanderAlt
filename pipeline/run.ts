@@ -167,6 +167,8 @@ async function main() {
       log(`pipeline_runs unavailable, daily budget not applied: ${(e as Error).message}`);
     }
   }
+  const account = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+  if (account) log(`Workers AI account ending …${account.slice(-4)} (compare with the account that owns the daily allocation)`);
   log(`${DRY ? 'dry run' : 'run'} for ${CITY}: ${sources.length} sources, model lanes: ${models.available.map(l => `${l.name}:${l.model}`).join(', ') || 'none'}`);
 
   if (db) {
@@ -269,9 +271,10 @@ async function main() {
       await refreshLiveness(db, existingPlaces, false, Number(opt('--max-liveness') ?? 50));
       existingPlaces = await loadPlaces(db, CITY);
     } catch (e) {
-      health[osm.id] = { ok: false, yield: 0, error: `liveness: ${(e as Error).message}` };
+      // A maintenance check, not a source: it is logged and retried next run,
+      // and does not turn the run red or count against the source.
       skipCatalogue = true;
-      log(`${osm.id}: liveness failed; visibility unchanged: ${(e as Error).message}`);
+      log(`${osm.id}: liveness check failed, will retry next run; visibility unchanged: ${(e as Error).message}`);
     }
   }
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
@@ -364,7 +367,7 @@ async function main() {
     // A place with no picture is looked at again after a month: sites add logos.
     const monthAgo = Date.now() - 30 * 86_400_000;
     const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website)
-      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < monthAgo))).slice(0, Number(opt('--max-enrich') ?? 25));
+      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < monthAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);

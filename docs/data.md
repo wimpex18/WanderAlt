@@ -51,7 +51,7 @@ Full structured descriptions are already collected. Thin listings can fetch thei
 
 Places come from two directions. The **catalogue** (`pipeline/venues.ts`, source `osm-tallinn`) reads Tallinn's record shops, bookshops, galleries, thrift shops, arts centres, cinemas, clubs, community centres and theatres from OpenStreetMap through Overpass once a run. **Events** add the venues they happen at. Matching uses retained OSM identities, names/aliases and location evidence; a catalogue venue fills missing facts without replacing existing facts. The store retains colliding names, so two branches cannot overwrite each other in memory. An ambiguous event venue stays unresolved rather than creating another ambiguous copy.
 
-**Enrichment** fills a venue page, 25 places a run, each only from a source that identifies the venue: its Wikidata item (photo from Commons, website, Instagram, Facebook, description), then its own homepage (Instagram and Facebook links whose handle shares a word with the venue's name or domain, `og:image`, meta description). A homepage that has become a domain-parking page is ignored. `enriched_at` records that a place was done.
+**Enrichment** fills a venue page, 60 places a run, each only from a source that identifies the venue: its Wikidata item (photo from Commons, website, Instagram, Facebook, description), then its own homepage (Instagram and Facebook links whose handle shares a word with the venue's name or domain, `og:image`, meta description). A homepage that has become a domain-parking page is ignored. `enriched_at` records that a place was done.
 
 A venue name is matched against every place's name and `aliases` (lowercased, accents folded). A new name becomes a place and is looked up twice in Nominatim:
 
@@ -75,6 +75,8 @@ Eligible matches are ranked by closest time, strongest title overlap, then id. S
 `merge_places` atomically adds aliases and all OSM identities, fills missing facts, moves events, retains the other row as hidden, flattens old redirects and logs the change. `merge_events` retains both source observations, archives the extra occurrence and logs an old-id redirect. No row is deleted. `catalogue_redirects` is an invoker view used by the site: old detail/map links, saves and list entries resolve to one canonical id. Tonight shelves also avoid repeating an id across sections. Sentence search only filters the loaded catalogue; neither reader generates listings.
 
 ### Place liveness
+
+The check calls Overpass on up to three mirrors in turn. If all fail, the run logs it, skips the venue catalogue and retries next run; it does not turn the run red, because it is maintenance, not a source.
 
 `pipeline/place-liveness.ts` re-queries stored node/way/relation ids, without category filters that could hide disused objects. Each identified canonical place is due every seven days; each pipeline run checks the oldest 50 due places in one Overpass request. Unidentified places need a manual check or later Nominatim identification. This confirms what OSM currently records, not independently that a business is operating.
 
