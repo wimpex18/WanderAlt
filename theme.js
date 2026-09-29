@@ -125,7 +125,7 @@
   }
 
   /* The button in the top bar, left of You: light or dark in one tap. It
-     shows the sun in light mode and the moon in dark, and sets an explicit
+     shows the mode a tap switches to (the sun while dark, the moon while light), and sets an explicit
      choice (Auto stays on You, in Appearance). Built here so every page gets
      it without repeating markup. */
   const ICON_SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>';
@@ -139,7 +139,7 @@
     const sync = () => {
       const dark = resolve() === 'dusk';
       b.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-      b.innerHTML = `<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${dark ? ICON_MOON : ICON_SUN}</svg>`;
+      b.innerHTML = `<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${dark ? ICON_SUN : ICON_MOON}</svg>`;
     };
     b.addEventListener('click', () => window.WA.Theme.set(resolve() === 'dusk' ? 'day' : 'dusk'));
     document.addEventListener('wa:theme-changed', sync);

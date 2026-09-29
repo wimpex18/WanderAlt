@@ -396,6 +396,9 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-topbar .wa-iconbtn { background: var(--paper-2); width: 42px; height: 42px; }
 /* Light / Dark: a round key like You beside it; the icon is the current mode. */
 .wa-topbar .wa-iconbtn:hover { background: var(--paper-3); }
+/* Light / Dark: a bare line icon, no disc, showing the mode a tap switches to. */
+.wa-topbar .wa-theme { background: transparent; }
+.wa-topbar .wa-theme:hover { background: var(--paper-2); }
 .wa-topbar .wa-iconbtn[aria-current="page"] { background: var(--ink); color: var(--paper); }
 
 /* Chips: pills. Selected = ink fill plus a check mark. */
