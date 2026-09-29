@@ -1,8 +1,8 @@
 /* ============================================================
    finder.js — the Where / When / What sheet.
    ------------------------------------------------------------
-   Opened by any [data-finder] key (the search pill on Tonight, its
-   three slots on desktop, the search key on Programme). Three cards,
+   Opened by any [data-finder] key (the three slots of the search pill on
+   Tonight from 1024; phones type into the pill instead). Three cards,
    one open at a time; the closed ones show their answer. Where holds
    the search field with live results and the cities; When the days;
    What the kinds. Search goes to the Programme with those answers.
@@ -128,8 +128,6 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const f = hit('[data-finder]');
-    /* On phones one search lives on the Programme: the ask field. */
-    if (f && matchMedia('(max-width: 1023px)').matches) { e.preventDefault(); location.href = 'discover.html?focus=search'; return; }
     if (f) { e.preventDefault(); open(f.dataset.finder); return; }
     const d = document.getElementById('sheet');
     if (!d || !d.classList.contains('wa-sheet--finder')) return;

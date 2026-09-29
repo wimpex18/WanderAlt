@@ -9,7 +9,7 @@
    the model asked, and it too only sets filters. Every count comes from
    the same filter chain as the list, each facet skipping itself.
 
-   URL: ?q ?date ?time ?cat ?area ?sort ?within ?new=1 ?focus=search
+   URL: ?q ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?focus=search
    ============================================================ */
 (() => {
   'use strict';
@@ -22,19 +22,22 @@
   const I = (n, c) => window.WA.Icon(n, c);
 
   const state = {
-    q: '', day: '', when: 'all', kinds: new Set(), area: '',
+    q: '', day: '', dayTo: '', when: 'all', kinds: new Set(), area: '',
     sort: 'soonest', within: 0, doors: 'any', free: false,
     hideSeen: false, followed: false, fresh: false,
     english: false, maxPrice: null,
     read: null,       /* the sentence's reading: { must, any, note, by } */
   };
   const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
+  const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
+  const KEY = /^\d{4}-\d{2}-\d{2}$/;
   const DOORS = { any: 'Any time', now: 'From now', '21:00': 'After 21:00', '23:00': 'After 23:00' };
 
   /* ── URL ───────────────────────────────────────────────────── */
   const read = () => {
     const sp = new URLSearchParams(location.search);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(sp.get('date') || '')) state.day = sp.get('date');
+    if (KEY.test(sp.get('date') || '')) state.day = sp.get('date');
+    if (state.day && KEY.test(sp.get('to') || '') && sp.get('to') > state.day) state.dayTo = sp.get('to');
     const t = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
     if (t && WHEN[t]) state.when = t;
     if (sp.get('q')) state.q = sp.get('q');
@@ -47,7 +50,7 @@
   const write = () => {
     const sp = new URLSearchParams();
     if (state.q) sp.set('q', state.q);
-    if (state.day) sp.set('date', state.day);
+    if (state.day) { sp.set('date', state.day); if (state.dayTo) sp.set('to', state.dayTo); }
     else if (state.when !== 'all') sp.set('time', state.when);
     if (state.kinds.size) sp.set('cat', [...state.kinds].join(','));
     if (state.area) sp.set('area', state.area);
@@ -69,10 +72,24 @@
     return m >= h * 60 + mm;
   };
 
+  /* One chosen day, or every day from the first to the last. */
+  const onDays = (e) => {
+    if (!state.dayTo) return W().isOnDate(e, state.day);
+    const k = W().resolveKey(e);
+    return k != null && k >= state.day && k <= state.dayTo;
+  };
+  const dayLabel = (k) => (R().dayName(k) === 'Tonight' ? 'Tonight' : `${R().dow(k)} ${R().dom(k)}`);
+  const daysLabel = () => (state.dayTo ? `${dayLabel(state.day)} to ${dayLabel(state.dayTo)}` : dayLabel(state.day));
+  const setDays = (from, to) => {
+    if (!from && to) from = W().todayKey();
+    if (from && to && to <= from) to = '';
+    state.day = from || ''; state.dayTo = from ? (to || '') : ''; state.when = 'all';
+  };
+
   const apply = (list, skip) => {
     let out = list;
     if (skip !== 'when') {
-      out = state.day ? out.filter(e => W().isOnDate(e, state.day)) : out.filter(e => W().matches(e, state.when));
+      out = state.day ? out.filter(e => onDays(e)) : out.filter(e => W().matches(e, state.when));
     }
     if (skip !== 'kind' && state.kinds.size) out = out.filter(e => state.kinds.has(String(e.kind || '').toLowerCase()));
     if (skip !== 'area' && state.area) out = out.filter(e => R().areaOf(e) === state.area);
@@ -114,7 +131,7 @@
   const quick = () => {
     const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" aria-pressed="true" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
     const set = [];
-    if (state.day) set.push(on(R().dayName(state.day) === 'Tonight' ? 'Tonight' : `${R().dow(state.day)} ${R().dom(state.day)}`, 'clear-when'));
+    if (state.day) set.push(on(daysLabel(), 'clear-when'));
     if (state.free) set.push(on('Free', 'clear-free'));
     if (state.maxPrice != null) set.push(on(`Under €${state.maxPrice}`, 'clear-price'));
     if (state.english) set.push(on('In English', 'clear-english'));
@@ -137,6 +154,7 @@
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   };
 
+  let datesOpen = false, refocus = '';
   const panel = () => {
     const whenPool = apply(base(), 'when');
     const freeN = apply(base(), 'free').filter(R().isFree).length;
@@ -146,14 +164,16 @@
     return `
       <div class="wa-field">
         <span class="wa-field__label">When</span>
-        <div class="wa-chips">${Object.keys(WHEN).map(v => {
+        <div class="wa-chips">${SHEET_WHEN.map(v => {
           const n = whenPool.filter(e => W().matches(e, v)).length;
           return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${!state.day && state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(WHEN[v])} <span class="wa-chip__n">${n}</span></button>`;
-        }).join('')}</div>
-        <div class="wa-chips">${Array.from({ length: 7 }, (_, i) => W().keyPlus(i)).map(k => {
-          const n = whenPool.filter(e => W().isOnDate(e, k)).length;
-          return `<button class="wa-chip" type="button" data-day="${esc(k)}" aria-pressed="${state.day === k}"${n || state.day === k ? '' : ' disabled'}>${esc(k === W().todayKey() ? 'Today' : `${R().dow(k)} ${R().dom(k)}`)} <span class="wa-chip__n">${n}</span></button>`;
-        }).join('')}</div>
+        }).join('')}
+          <button class="wa-chip" type="button" data-dates aria-expanded="${datesOpen || !!state.day}" aria-pressed="${!!state.day}">${I('calendar')}${esc(state.day ? daysLabel() : 'Pick dates')}</button>
+        </div>
+        ${datesOpen || state.day ? `<div class="prog-dates">
+          <label class="prog-dates__f"><span>From</span><input class="wa-input" type="date" data-date="from" min="${esc(W().todayKey())}" value="${esc(state.day)}" /></label>
+          <label class="prog-dates__f"><span>To</span><input class="wa-input" type="date" data-date="to" min="${esc(state.day || W().todayKey())}" value="${esc(state.dayTo)}" /></label>
+        </div>` : ''}
       </div>
       <div class="wa-field">
         <span class="wa-field__label">Area</span>
@@ -206,7 +226,7 @@
 
   const activeCount = () => (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
-    (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0);
+    (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0) + (state.day ? 1 : 0);
 
   /* ── Empty state: name the filter, offer the drop that helps most ── */
   const emptyState = () => {
@@ -252,7 +272,7 @@
      matches without them. */
   const A = () => window.WA.Ask;
   let before = null, askTimer = 0, asked = '';
-  const FILTER_KEYS = ['when', 'day', 'free', 'english', 'maxPrice'];
+  const FILTER_KEYS = ['when', 'day', 'dayTo', 'free', 'english', 'maxPrice'];
   const unread = () => {
     if (!state.read) return;
     if (before) { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
@@ -261,7 +281,7 @@
   const adopt = (p, by) => {
     if (!before) before = { ...Object.fromEntries(FILTER_KEYS.map(k => [k, state[k]])), kinds: [...state.kinds] };
     else { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
-    if (p.day) { state.day = p.day; state.when = 'all'; } else if (p.when) { state.when = p.when; state.day = ''; }
+    if (p.day) { state.day = p.day; state.dayTo = ''; state.when = 'all'; } else if (p.when) { state.when = p.when; state.day = ''; state.dayTo = ''; }
     if (p.kinds.length) state.kinds = new Set(p.kinds);
     if (p.free) state.free = true;
     if (p.english) state.english = true;
@@ -311,7 +331,7 @@
     /* Plain words for what the sentence set: "Gigs tonight with “jazz”". */
     const words = [...state.read.must, ...state.read.any].slice(0, 3).map(w => `“${w}”`).join(', ');
     const what = state.kinds.size ? [...state.kinds].map(k => R().kindLabel(k)).join(', ') : 'Anything';
-    const when = state.day ? `on ${R().dateShort(state.day)}` : state.when !== 'all' ? WHEN[state.when].toLowerCase() : '';
+    const when = state.day ? (state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : `on ${R().dateShort(state.day)}`) : state.when !== 'all' ? WHEN[state.when].toLowerCase() : '';
     const text = state.read.note || [what, when, words ? `with ${words}` : ''].filter(Boolean).join(' ');
     n.hidden = false;
     n.innerHTML = `${state.read.by === 'model' ? I('ai') : ''}<span>${esc(text)}</span><button type="button" data-act="undo-read">Search the words</button>`;
@@ -328,7 +348,7 @@
   /* ── Render ─────────────────────────────────────────────────── */
   const summary = (n) => {
     const bits = [];
-    if (state.day) bits.push(R().dayName(state.day) === 'Tonight' ? 'tonight' : `on ${R().dateShort(state.day)}`);
+    if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'tonight' : `on ${R().dateShort(state.day)}`);
     else if (state.when !== 'all') bits.push(WHEN[state.when].toLowerCase());
     if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
     if (state.area) bits.push(`in ${state.area}`);
@@ -361,6 +381,12 @@
     put($('aside'), panel());
     const sheet = $('sheet');
     if (sheet && sheet.open) { put($('sheet-body'), panel()); put($('sheet-foot'), foot(list.length)); }
+    if (refocus) {
+      const at = sheet && sheet.open ? sheet : $('aside');
+      const el = at.querySelector(`[data-date="${refocus}"]`);
+      refocus = '';
+      if (el) el.focus();
+    }
   };
   const render = () => {
     const list = latest = results();
@@ -402,8 +428,10 @@
     const tr = hit('[data-try]');
     if (tr) { $('q').value = tr.dataset.try; onQuery(tr.dataset.try, true); $('ask-try').hidden = true; return; }
 
-    const d = hit('[data-day]');
-    if (d) { state.day = state.day === d.dataset.day ? '' : d.dataset.day; render(); return; }
+    if (hit('[data-dates]')) {
+      if (state.day) { setDays('', ''); datesOpen = false; } else datesOpen = !datesOpen;
+      render(); return;
+    }
     const k = hit('[data-kind]');
     if (k) {
       const v = k.dataset.kind;
@@ -412,7 +440,8 @@
       render(); return;
     }
     const w = hit('[data-when]');
-    if (w) { state.when = w.dataset.when; state.day = ''; render(); return; }
+    /* The chosen chip, tapped again, clears the filter. */
+    if (w) { const v = w.dataset.when; state.when = !state.day && state.when === v ? 'all' : v; state.day = ''; state.dayTo = ''; datesOpen = false; render(); return; }
     const a = hit('[data-area]');
     if (a) { state.area = a.dataset.area; render(); return; }
     const s = hit('[data-sort]');
@@ -426,8 +455,8 @@
     const t = hit('[data-toggle]');
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      Object.assign(state, { q: '', day: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, read: null });
-      before = null; clearTimeout(askTimer);
+      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, read: null });
+      before = null; clearTimeout(askTimer); datesOpen = false;
       state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
@@ -436,7 +465,7 @@
       if (x === 'clear-q') { state.read = null; before = null; clearTimeout(askTimer); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') state.area = '';
-      if (x === 'clear-when') { state.day = ''; state.when = 'all'; }
+      if (x === 'clear-when') { state.day = ''; state.dayTo = ''; state.when = 'all'; datesOpen = false; }
       if (x === 'clear-free') state.free = false;
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
@@ -467,7 +496,19 @@
       write();
     }
   });
-  document.addEventListener('change', (e) => { if (e.target.matches && e.target.matches('[data-within]')) render(); });
+  document.addEventListener('change', (e) => {
+    if (!e.target.matches) return;
+    if (e.target.matches('[data-within]')) { render(); return; }
+    if (e.target.matches('[data-date]')) {
+      const box = e.target.closest('.prog-dates');
+      const val = (n) => (box.querySelector(`[data-date="${n}"]`).value || '');
+      const from = val('from'), to = val('to');
+      refocus = e.target.dataset.date;
+      /* The last day is only ever after the first. */
+      setDays(from, to);
+      render();
+    }
+  });
   document.addEventListener('submit', (e) => { if (e.target.id === 'search-form') { e.preventDefault(); onQuery($('q').value, true); $('q').blur(); } });
   document.addEventListener('focusin', (e) => { if (e.target.id === 'q') tryShow(); });
   document.addEventListener('focusout', (e) => { if (e.target.id === 'q') setTimeout(() => { if (document.activeElement !== $('q')) $('ask-try').hidden = true; }, 150); });

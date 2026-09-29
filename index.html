@@ -77,26 +77,25 @@
 
   <main class="wa-shell" id="main">
     <div class="home-top">
-      <button class="wa-pill home-pill--phone" type="button" data-finder="where" aria-label="Search: where, when and what">
-        <span class="wa-pill__main"><span class="wa-pill__title">Search Tallinn</span><span class="wa-pill__sub" id="pill-sub">Or ask “free jazz tonight”</span></span>
-        <span class="wa-pill__go"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></span>
-      </button>
+      <form class="wa-pill home-pill--phone" role="search" id="home-search" autocomplete="off">
+        <label class="wa-sr" for="home-q">Search Tallinn, or ask for a night out</label>
+        <input class="wa-pill__input" id="home-q" name="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search, or ask “jazz tonight”" />
+        <button class="wa-pill__go" type="submit" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></button>
+      </form>
       <div class="wa-pill wa-pill--slots home-pill--desk" role="search">
         <button class="wa-pill__slot" type="button" data-finder="where"><span class="wa-pill__label">Where</span><span class="wa-pill__value">Tallinn, a venue or an area</span></button>
         <button class="wa-pill__slot" type="button" data-finder="when"><span class="wa-pill__label">When</span><span class="wa-pill__value">Tonight</span></button>
         <button class="wa-pill__slot" type="button" data-finder="what"><span class="wa-pill__label">What</span><span class="wa-pill__value">Gigs, film, art</span></button>
         <button class="wa-pill__go" type="button" data-finder="where" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg></button>
       </div>
-      <div class="home-cats-fold"><nav class="wa-cats" id="cats" aria-label="Kinds"></nav></div>
     </div>
+    <div class="home-cats"><nav class="wa-cats" id="cats" aria-label="Kinds"></nav></div>
 
     <section class="home-hero" aria-labelledby="hero-title">
       <p class="home-hero__clock"><span id="hero-kicker">Tallinn</span> · <span id="hero-clock"></span></p>
       <h1 class="wa-hero home-hero__title" id="hero-title">What's on tonight</h1>
       <div id="since"></div>
     </section>
-
-    <div id="interest"></div>
 
     <div class="home-grid">
       <div class="home-main" id="home-main"></div>
