@@ -184,6 +184,31 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-brand__city { display: none; }
 :root[data-theme="dusk"] .wa-brand { color: var(--ink); }
 
+/* One brief introduction per session: mark, wordmark, then the page.
+   Hidden by default so a failed or blocked script never covers content. */
+.wa-brand-reveal { display: none; }
+:root[data-brand-reveal] .wa-brand-reveal {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; background: var(--paper); color: var(--accent);
+  pointer-events: none;
+  animation: wa-brand-reveal-out 1s var(--ease) both;
+}
+:root[data-theme="dusk"] .wa-brand-reveal { color: var(--ink); }
+.wa-brand-reveal__mark { flex: none; animation: wa-brand-reveal-in 220ms var(--ease) both; }
+.wa-brand-reveal__word {
+  font-size: 2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
+  animation: wa-brand-reveal-in 220ms var(--ease) 220ms both;
+}
+@keyframes wa-brand-reveal-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wa-brand-reveal-out {
+  0%, 72% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-brand-reveal] .wa-brand-reveal { display: none; }
+}
+
 /* The tab bar: a floating glass capsule on phones, the masthead nav
    from 1024. One DOM node either way. */
 .wa-tabbar {

@@ -7,10 +7,10 @@ import { tallinnToIso, toIso, tallinnDay } from '../time.ts';
 import * as fienta from '../sources/fienta.ts';
 import * as jsonld from '../sources/jsonld.ts';
 import { parseTelegram, parseRss } from '../sources/text.ts';
-import { Models, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from '../llm.ts';
+import { Models, extractEvents, parseJson, fallbackEnrichment, classifyPlaces, type Lane } from '../llm.ts';
 import { Places, normaliseAddress } from '../places.ts';
 import { Seen, overlap } from '../dedupe.ts';
-import { decide, eventId, loadSources, offTopic } from '../run.ts';
+import { decide, eventId, eventRefreshFacts, loadSources, offTopic } from '../run.ts';
 import { htmlToText, httpUrl, nameKey, scrubContacts } from '../util.ts';
 import { textFlag, schemaFlag, worse } from '../flags.ts';
 import type { Source } from '../types.ts';
@@ -103,6 +103,35 @@ test('decisions: trusted sources publish, others need a fit score', () => {
   assert.equal(decide(e(0.5), false).status, 'review');
   assert.equal(decide(e(0.1), false).status, 'rejected');
   assert.equal(fallbackEnrichment({ title: 'Screening: Sisters', starts_at: '', has_time: true, engine: 't' }).kind, 'film');
+});
+
+test('post artwork belongs to a single show, never every event in a roundup', async () => {
+  const event = (title: string, start = '2099-10-01 19:00') => ({ title, start, excerpt: title });
+  const read = (events: object[], image = 'https://cdn.example/poster.jpg') => extractEvents(new Models([
+    { name: 'fixture', model: 'fixture', key: 'fixture', call: async () => JSON.stringify({ events }) },
+  ]), { text: 'fixture announcement', source: '@fixture', images: [image] });
+  const [single] = await read([event('BRUNO')]);
+  assert.equal(single.image_url, 'https://cdn.example/poster.jpg');
+  const roundup = await read([event('BRUNO'), event('Estonia, Elsewhere'), event('Design Street')]);
+  assert.equal(roundup.length, 3);
+  assert.ok(roundup.every(e => e.image_url === null));
+  const repeat = await read([event('BRUNO'), event('Bruno', '2099-10-02 19:00')]);
+  assert.ok(repeat.every(e => e.image_url === single.image_url));
+  const [remaining] = await read([event('BRUNO'), event('Other event', '2000-01-01 19:00')]);
+  assert.equal(remaining.image_url, null);
+  assert.equal((await read([event('BRUNO')], 'javascript:alert(1)'))[0].image_url, null);
+});
+
+test('a text-only refresh preserves reviewed artwork and its credit', () => {
+  const old = { image_url: 'https://event.example/reviewed.jpg', image_attr: 'Reviewed credit', status: 'published' };
+  const refresh = eventRefreshFacts({ title: 'Updated title', image_url: null, image_attr: null, status: 'review', engine: 'model+rules', kind: 'other' });
+  const saved: Record<string, unknown> = { ...old, ...refresh };
+  assert.equal(saved.image_url, old.image_url);
+  assert.equal(saved.image_attr, old.image_attr);
+  assert.equal(saved.status, 'published');
+  assert.equal(saved.title, 'Updated title');
+  const replacement = eventRefreshFacts({ image_url: 'https://event.example/new.jpg', image_attr: 'New credit', engine: 'model+model' });
+  assert.equal({ ...old, ...replacement }.image_attr, 'New credit');
 });
 
 test('the same show from two sources gets one id', () => {
@@ -240,13 +269,22 @@ test('links and photos only from sources that identify the venue', () => {
   assert.equal(handleFits('https://www.facebook.com/IceCafeEesti', 'Apollo Kino', 'https://www.apollokino.ee/'), false);
   assert.equal(handleFits('https://www.instagram.com/a.galerii', 'A-Galerii', 'https://www.agalerii.ee/'), true);
   const page = `<a href="https://www.instagram.com/raamatukoi">IG</a><a href="https://www.facebook.com/sponsorbrand">x</a>
-    <meta property="og:image" content="/og.png"><meta name="description" content="Books &amp; more">`;
+    <meta property="og:image" content="/shop_logo.png"><meta name="description" content="Books &amp; more">`;
   const d = fromHomepage(page, 'https://www.raamatukoi.ee/', 'Raamatukoi');
   assert.equal(d.instagram, 'https://www.instagram.com/raamatukoi');
   assert.equal(d.facebook, null);
-  assert.equal(d.image_url, 'https://www.raamatukoi.ee/og.png');
+  assert.equal(d.image_url, 'https://www.raamatukoi.ee/shop_logo.png');
+  assert.equal(d.image_source, 'logo');
   assert.equal(d.description, 'Books & more');
   assert.deepEqual(fromHomepage('<p>See domeen on müügil</p><meta property="og:image" content="x.png">', 'https://ibiza.example/'), {});
+});
+
+test('homepage adverts and placeholders cannot become venue photos', () => {
+  for (const image of ['/festival-poster.jpg', '/og-image-placeholder-blank.png', '/sponsor.jpg', 'javascript:alert(1)']) {
+    const d = fromHomepage(`<meta property="og:image" content="${image}">`, 'https://venue.example');
+    assert.equal(d.image_url, null); assert.equal(d.image_attr, null); assert.equal(d.image_source, null);
+  }
+  assert.equal(fromHomepage('<meta property="og:image" content="/Ruutu10_logod-01.png">', 'https://venue.example').image_source, 'logo');
 });
 
 test('a catalogue venue fills gaps in the place events already created', () => {

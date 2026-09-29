@@ -126,7 +126,7 @@ export async function onRequest(context) {
         description: said || facts.join(' · '),
         image:       photo
           ? pick.image_url
-          : `${SB_BASE}/functions/v1/og-image?id=${encodeURIComponent(id)}`,
+          : `${SB_BASE}/functions/v1/og-image?id=${encodeURIComponent(id)}&v=route-spark`,
         photo,
       });
     }
@@ -162,7 +162,7 @@ export async function onRequest(context) {
       title:       `${name} · WanderAlt`,
       description: `Everything we read from ${name}. ${listed}`,
       image:       `${SB_BASE}/functions/v1/og-image?${
-        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}`,
+        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}&v=route-spark`,
       photo:       false,
     });
   } catch (_) {

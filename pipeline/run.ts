@@ -24,9 +24,19 @@ import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
-import { sha, nameKey, scrubContacts } from './util.ts';
+import { sha, nameKey, scrubContacts, httpUrl } from './util.ts';
 import { tallinnDay } from './time.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, verifyPlaces } from './maintenance.ts';
+
+/** Refresh source facts without erasing reviewed artwork or classification. */
+export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
+  const { status: _s, status_note: _n, relevance: _r, ...facts } = row;
+  if (!facts.image_url) { delete facts.image_url; delete facts.image_attr; }
+  if (String(facts.engine).endsWith('+rules')) {
+    delete facts.kind; delete facts.tags; delete facts.title_en; delete facts.summary_en;
+  }
+  return facts;
+}
 
 const args = process.argv.slice(2);
 const flag = (f: string) => args.includes(f);
@@ -277,6 +287,7 @@ async function main() {
     const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     // Any source saying a show is off or sold out wins over one that doesn't.
     const state = worse(c.flag, textFlag(c.title, c.description));
+    const imagePage = httpUrl(c.url ?? p.item.url);
     provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null,
       flag: state, last_seen_at: new Date().toISOString() });
     if (events.has(id)) { const had = events.get(id)!; had.flag = worse(had.flag as never, state); continue; }
@@ -286,6 +297,7 @@ async function main() {
       lat: c.lat ?? null, lng: c.lng ?? null, starts_at: c.starts_at, ends_at: c.ends_at ?? null, has_time: c.has_time,
       is_free: c.is_free ?? null, price_min: c.price_min ?? null, price_max: c.price_max ?? null, currency: c.currency ?? null,
       ticket_url: c.ticket_url ?? null, url: c.url ?? null, image_url: c.image_url ?? null, language: c.language ?? null,
+      image_attr: c.image_url && imagePage ? `Image from ${new URL(imagePage).hostname.replace(/^www\./, '')}` : null,
       series_key: c.series_key ?? null, relevance: Number.isNaN(e.relevance) ? null : e.relevance,
       flag: state, status, status_note: note, engine: `${c.engine}+${e.engine}`, last_seen_at: new Date().toISOString(),
     });
@@ -344,13 +356,7 @@ async function main() {
   // earlier run gave them. A run without a model keeps the earlier
   // classification too. Upsert with merge-duplicates updates only the
   // columns sent, and every row here already exists.
-  const refresh = ids.filter(id => existing.has(id)).map(id => {
-    const { status: _s, status_note: _n, relevance: _r, ...facts } = events.get(id)!;
-    if (String(facts.engine).endsWith('+rules')) {
-      delete facts.kind; delete facts.tags; delete facts.title_en; delete facts.summary_en;
-    }
-    return facts;
-  });
+  const refresh = ids.filter(id => existing.has(id)).map(id => eventRefreshFacts(events.get(id)!));
   const byShape = new Map<string, Record<string, unknown>[]>();
   for (const r of refresh) {
     const shape = Object.keys(r).sort().join(',');

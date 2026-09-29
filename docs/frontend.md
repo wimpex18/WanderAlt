@@ -33,6 +33,7 @@ Shared: `tabbar.js` (the tab bar's glass drop), `render.js` (`WA.R`: rows, cards
 ## Patterns
 
 - **Card**: square photo, glass badge for when ("Tonight · 19:00", "On now · till 23:00"), heart to save, title (two lines), venue · area, walk · price · why tag. No photo: the kind's pictogram on its tint.
+- **Picture identity**: event images always belong to the event; missing artwork uses its category pictogram, never a venue photo. Venue logos use pictograms in lists/maps and a small labelled logo on venue details. Photo retrieval and review rules are in `docs/data.md`.
 - **Row** (Programme, venue programme, Saved): rail with time then walk (area when location is off), kind and why tag, English title, original title under it when different, venue · area · price, thumbnail.
 - **Place row**: photo or pictogram, name, kind · area, open state (filled dot open, square shut, dashed not filed), walk.
 - **Event page**: photo or pictogram, English title, original title, summary, facts as an icon list (When, Entry, Walk or Area), the ticket bar (price and the ticket seller's host, Tickets or Walk me there), Calendar / Walk there / Save / List, the Going row, the venue card, In their words, Who's in it, Address (mini-map, address, Walking directions), provenance. On phones the tab bar steps aside and a back key appears.
@@ -69,4 +70,5 @@ Shared: `tabbar.js` (the tab bar's glass drop), `render.js` (`WA.R`: rows, cards
   navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
   ```
 - MapLibre gives its container `position: relative`; `.map-canvas.maplibregl-map` restores absolute positioning.
-- Brand icons are SVG masters in `brand/`; `npm run build:icons` rasterises the PNGs and `favicon.ico`.
+- Brand: a white walking route and night-time spark on the vermilion tile, with the lowercase Geologica wordmark. All pages share a one-second CSS logo reveal (`brand-reveal.js`), once per tab session (`sessionStorage` key `wa:brand-reveal:v1`). Reduced motion or unavailable storage skips it; without JavaScript the page is visible immediately.
+- Brand icons are SVG masters in `brand/`; `npm run build:icons` rasterises the PNGs and `favicon.ico`. Social cards use outlined Geologica 700 from the bundled font so their PNGs do not depend on installed fonts. Icon, manifest and OG references carry `?v=route-spark` to refresh the immutable brand assets without changing their paths.

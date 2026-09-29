@@ -14,8 +14,8 @@
    Judge it by the rendered PNG, never by a 200: the fallback card is
    also a valid 1200×630.
 
-   Uses Source Serif 4 / Instrument Serif on #f6f3ec, not the product's
-   Fraunces / Plus Jakarta Sans. Satori (JSX→SVG) + resvg_wasm (SVG→PNG).
+   Uses the shared outlined brand lockup and Source Serif 4 for event
+   facts. Satori (JSX→SVG) + resvg_wasm (SVG→PNG).
 
    This is the FALLBACK card: functions/_middleware.js prefers the real
    photo as og:image and only points here for photo-less picks and for
@@ -25,6 +25,7 @@
 // @ts-ignore — satori supports npm: in Deno
 import satori from 'npm:satori@0.33.4';
 import { initWasm, Resvg } from 'npm:@resvg/resvg-wasm@2.6.2';
+import { BRAND_LOCKUP } from './brand.ts';
 
 /* Public, project-scoped values (same anon key shipped in supabase.js;
    RLS is SELECT-only). Env overrides win when present. */
@@ -32,8 +33,8 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || 'https://aqnsmmbrspkbfcvoug
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
 
 const W = 1200, H = 630, PAD = 72;
-const C_PAPER = '#f6f3ec', C_INK = '#1a1a1a', C_MUTE = '#6b6b6b';
-const C_ACCENT = '#055959', C_RULE = '#d8d2c4';
+const C_PAPER = '#ffffff', C_INK = '#1c1c1e', C_MUTE = '#6b6b6b';
+const C_ACCENT = '#d83a14', C_RULE = '#e5e5e5';
 
 let _wasmReady = false;
 const ensureWasm = async () => {
@@ -43,16 +44,12 @@ const ensureWasm = async () => {
   _wasmReady = true;
 };
 
-let _fonts: Array<{ name: string; data: ArrayBuffer; weight: number; style: string }> | null = null;
+let _fonts: Array<{ name: string; data: ArrayBuffer; weight: 400; style: 'normal' }> | null = null;
 const loadFonts = async () => {
   if (_fonts) return _fonts;
-  const [ssData, isData] = await Promise.all([
-    fetch('https://fonts.gstatic.com/s/sourceserif4/v14/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjihdqrhw.ttf').then(r => r.arrayBuffer()),
-    fetch('https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zATiw.ttf').then(r => r.arrayBuffer()),
-  ]);
+  const ssData = await fetch('https://fonts.gstatic.com/s/sourceserif4/v14/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjihdqrhw.ttf').then(r => r.arrayBuffer());
   _fonts = [
     { name: 'Source Serif 4',  data: ssData, weight: 400, style: 'normal' },
-    { name: 'Instrument Serif', data: isData, weight: 400, style: 'italic' },
   ];
   return _fonts;
 };
@@ -91,9 +88,9 @@ const span = (style: Record<string, unknown>, text: string)       => ({ type: 's
 
 /* The masthead city is the row's own city. */
 const masthead = (city: string) => div(
-  { display: 'flex', alignItems: 'baseline', gap: 14 },
+  { display: 'flex', alignItems: 'center', gap: 24 },
   [
-    span({ fontFamily: 'Instrument Serif', fontStyle: 'italic', fontSize: 26, color: C_INK, lineHeight: 1 }, 'WanderAlt'),
+    { type: 'img', props: { src: BRAND_LOCKUP, width: 205, height: 48 } },
     span({ fontFamily: 'Source Serif 4', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: C_MUTE }, city),
   ]
 );
@@ -136,17 +133,17 @@ const sourceCard = (name: string, area: string, pickCount: number, city: string)
 const defaultCard = () => div(
   { display: 'flex', flexDirection: 'column', justifyContent: 'center', width: W, height: H, background: C_PAPER, padding: PAD, fontFamily: 'Source Serif 4', boxSizing: 'border-box' },
   [
-    span({ fontFamily: 'Instrument Serif', fontStyle: 'italic', fontSize: 64, color: C_INK, lineHeight: 1 }, 'WanderAlt'),
+    { type: 'img', props: { src: BRAND_LOCKUP, width: 410, height: 96 } },
     span({ fontFamily: 'Source Serif 4', fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', color: C_MUTE, marginTop: 16 }, 'Alternative culture · Tallinn'),
   ]
 );
 
-const renderPng = async (element: object): Promise<Uint8Array> => {
+const renderPng = async (element: object): Promise<ArrayBuffer> => {
   await ensureWasm();
   const fonts = await loadFonts();
   const svg = await satori(element, { width: W, height: H, fonts });
   const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: W } });
-  return resvg.render().asPng();
+  return new Uint8Array(resvg.render().asPng()).buffer;
 };
 
 Deno.serve(async (req) => {

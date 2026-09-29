@@ -244,28 +244,6 @@
       window.WA.DATA_LIVE = false;
     }
 
-  /* ── An event with no photo borrows its venue's ──────────────
-     Only ever downward, from the place to the event held there, and the
-     attribution travels relabelled so the reader knows it shows the
-     venue, not the night. Runs once here so every surface agrees. */
-  const borrowVenuePhotos = () => {
-    const picks  = window.WA._catalogAll || [];
-    const venues = window.WA._venuesAll  || [];
-    if (!picks.length || !venues.length) return;
-
-    let borrowed = 0;
-    for (const p of picks) {
-      if (p.imageUrl) continue;
-      const v = window.WA.venueFor(p);
-      if (!v || !v.imageUrl) continue;
-      p.imageUrl   = v.imageUrl;
-      p.imageAttr  = v.imageAttr ? `${v.imageAttr} — the venue, not the event` : 'The venue, not the event';
-      p.imageIsVenue = true;
-      borrowed++;
-    }
-    if (borrowed) console.info(`[WanderAlt] ${borrowed} picks borrowed their venue's photo.`);
-  };
-
     if (venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value)) {
       const allVenues = venuesResult.value
         .filter(r => VENUE_KINDS.has(r.kind))
@@ -276,7 +254,6 @@
       console.warn('[WanderAlt] venues fetch failed.', venuesResult.reason?.message);
     }
 
-    borrowVenuePhotos();
     dispatch();
   };
 

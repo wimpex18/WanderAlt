@@ -83,3 +83,30 @@ test('unverified and closed places never appear in shared recommendations, even 
   ];
   assert.deepEqual(Array.from(p.WA.R.places(), (v: any) => v.id), ['open']);
 });
+
+test('event pictures stay event-specific in the catalogue and direct details', async () => {
+  const picks = [
+    { id: 'artwork', city: 'tallinn', title: 'Own artwork', venue_id: 'venue', kind: 'gig', image_url: 'https://event.example/poster.jpg' },
+    { id: 'no-artwork', city: 'tallinn', title: 'No artwork', venue_id: 'venue', kind: 'gig', image_url: null },
+  ];
+  const venues = [{ id: 'venue', city: 'tallinn', name: 'Venue', kind: 'club', image_url: 'https://venue.example/photo.jpg', image_source: 'website' }];
+  const WA: Record<string, any> = {};
+  let ready!: () => void;
+  const loaded = new Promise<void>(resolve => { ready = resolve; });
+  const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
+    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
+    document: { readyState: 'complete', dispatchEvent: ready },
+    fetch: async (url: string) => {
+      const u = new URL(url);
+      const rows = u.pathname.endsWith('/picks') ? picks : u.pathname.endsWith('/venues') ? venues : [];
+      const id = u.searchParams.get('id')?.replace(/^eq\./, '');
+      return { ok: true, json: async () => id ? rows.filter(r => r.id === id) : rows };
+    },
+  });
+  runInContext(readFileSync(new URL('../../supabase.js', import.meta.url), 'utf8'), context);
+  await loaded;
+  assert.equal(WA.catalog[0].imageUrl, picks[0].image_url);
+  assert.equal(WA.catalog[1].imageUrl, null);
+  assert.equal(WA.venues[0].imageUrl, venues[0].image_url);
+  assert.equal((await WA.byId('no-artwork')).e.imageUrl, null);
+});

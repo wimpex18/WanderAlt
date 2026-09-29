@@ -173,4 +173,8 @@ Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing
 
 ## Images
 
-A venue or event photo is looked up by identity, never guessed from a name; no photo draws the category mark. Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted hosts, raster only, cookies stripped). A trigger rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library URLs.
+A venue or event photo is looked up by identity, never guessed from a name; no photo draws the category mark. Images are stored as source URLs with attribution, not uploaded copies. Structured sources supply artwork for their own event or film. A prose post's photo is used only when the extractor finds one distinct show (repeat dates can share a poster); roundups get no event image. A text-only refresh preserves existing reviewed artwork and its credit.
+
+Event cards and details never borrow venue photos. Venue enrichment uses Wikidata P18 for photos; a homepage's `og:image` is not evidence of a venue photo because it can show a current event, an advert or a placeholder. Recognisable logo filenames are imported as `image_source: logo`; other website images need individual review. Logos appear small and labelled on venue details, with pictograms in venue lists and maps. Reviewed physical venue photos can retain `image_source: website`.
+
+Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted hosts, raster only, cookies stripped). A trigger rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library URLs. Share metadata uses the event's own artwork when available, otherwise the branded `og-image` card; its lockup is generated with the static brand assets.
