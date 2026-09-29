@@ -259,9 +259,19 @@
     return { html: top + bottom, areaInRail: m == null && !!areaOf(e), live: liveNow };
   };
 
+  /* The picture for an event or a place, and where it came from: an event's
+     own artwork first; without it the venue's own logo or photo (the venue
+     was identified, never searched by name); without either, the kind's
+     pictogram is drawn by the caller. */
+  const art = (x) => {
+    if (x.imageUrl) return { src: url(x.imageUrl), logo: x.imageSource === 'logo', venue: false };
+    if (x.venueImageUrl) return { src: url(x.venueImageUrl), logo: x.venueImageSource === 'logo', venue: true, attr: x.venueImageAttr || '' };
+    return { src: '', logo: false, venue: false };
+  };
+
   const thumb = (e) => {
-    const src = e.imageUrl ? url(e.imageUrl) : '';
-    return `<span class="wa-row__thumb">${src
+    const { src, logo } = art(e);
+    return `<span class="wa-row__thumb${logo ? ' is-logo' : ''}">${src
       ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
       : window.WA.Picto.kind(e.kind)}</span>`;
   };
@@ -338,14 +348,14 @@
   };
 
   const poster = (e, opts = {}) => {
-    const src = e.imageUrl ? url(e.imageUrl) : '';
+    const { src, logo } = art(e);
     const b = badgeFor(e);
     const m = walk(e);
     const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
-      <span class="wa-poster__art">
+      <span class="wa-poster__art${logo ? ' is-logo' : ''}">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
         <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(opts.compact && b.now ? 'On now' : b.text)}</span>
@@ -509,7 +519,7 @@
   window.WA.R = {
     esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
-    walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
+    art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,
     skelRows, empty, cityName, locateIfGranted, locPrompt,
   };

@@ -65,11 +65,22 @@
     if (fig && img.naturalHeight && img.naturalWidth / img.naturalHeight >= 1.4) fig.classList.add('det-media--wide');
   }, true);
 
+  /* If the hero picture will not load, draw the monogram block instead. */
+  let lastMedia = null;
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    const fig = img && img.tagName === 'IMG' && img.closest('.det-media');
+    if (fig && lastMedia) fig.outerHTML = media({ ...lastMedia[0], imageUrl: null, venueImageUrl: null }, lastMedia[1], lastMedia[2]);
+  }, true);
+
   const media = (x, word, kind) => {
-    const src = x.imageUrl ? url(x.imageUrl) : '';
+    lastMedia = [x, word, kind];
+    const { src, logo, venue, attr } = R().art(x);
     if (src) {
-      const logo = x.imageSource === 'logo';
-      const credit = x.imageAttr ? (logo ? `${x.imageAttr}, their logo` : x.imageAttr) : '';
+      /* An event without artwork shows its venue's picture, and says so. */
+      const own = venue ? attr : x.imageAttr;
+      const credit = venue ? `${logo ? 'Venue logo' : 'Venue photo'}${own ? `. ${own}` : ''}`
+        : own ? (logo ? `${own}, their logo` : own) : '';
       return `<figure class="det-media${logo ? ' det-media--logo' : ''}">
         <img src="${esc(src)}" alt="" decoding="async" fetchpriority="high">
         ${credit ? `<figcaption class="det-credit">${esc(credit)}</figcaption>` : ''}

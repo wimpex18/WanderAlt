@@ -17,7 +17,7 @@ import type { Candidate, Enrichment, RawItem, Source } from './types.ts';
 import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
-import { osmCatalogue, enrichPlace } from './venues.ts';
+import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
@@ -296,6 +296,34 @@ async function main() {
       }
     }
     if (n) log(`areas: ${n} places moved from a district to their asum`);
+  }
+
+  // A curated source that names its one venue may name that venue's own
+  // site (`venue_site`): the place gets it when it has none.
+  for (const s of sources) {
+    const name = String(s.config.venue_name ?? ''), site = httpUrl(s.config.venue_site);
+    if (!name || !site) continue;
+    const p = places.all().find(x => [x.name, ...x.aliases].some(a => nameKey(a) === nameKey(name)));
+    if (p && !p.website) {
+      p.website = site; p.enriched_at = null;
+      if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      log(`${s.id}: ${p.name} website from the source`);
+    }
+  }
+  // A Wikidata item that names a place's OpenStreetMap object as its own.
+  if (!flag('--no-enrich') && !(DRY && !flag('--geocode'))) {
+    try {
+      const lonely = places.all().filter(p => (p.status ?? 'active') === 'active' && !p.wikidata_id && (p.osm_id || p.osm_ids?.length));
+      const found = await wikidataByOsm(lonely.flatMap(p => [p.osm_id, ...(p.osm_ids ?? [])].filter((x): x is string => !!x)));
+      let n = 0;
+      for (const p of lonely) {
+        const qid = [p.osm_id, ...(p.osm_ids ?? [])].map(x => (x ? found.get(x) : undefined)).find(Boolean);
+        if (!qid) continue;
+        p.wikidata_id = qid; p.enriched_at = null; n++;
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+      if (n) log(`wikidata: ${n} places matched by their OpenStreetMap id`);
+    } catch (e) { log(`wikidata lookup failed: ${(e as Error).message}`); }
   }
 
   // Links and a photo for a few places a run, from sources that identify them.
