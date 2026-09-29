@@ -451,6 +451,18 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 :root[data-theme="dusk"] .wa-picto--records { --hue: #c9c9cf; }
 :root[data-theme="dusk"] :is(.wa-chip, .wa-pin__disc, .det-type) .wa-picto { background: none; }
 
+/* A row that scrolls sideways fades at the edge with more behind it
+   (ui-helpers.js sets is-more-start / is-more-end). */
+@property --fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.wa-cats, .wa-chips--scroll {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  transition: --fade-l var(--t-med) var(--ease), --fade-r var(--t-med) var(--ease);
+}
+.wa-cats.is-more-start, .wa-chips--scroll.is-more-start { --fade-l: 44px; }
+.wa-cats.is-more-end, .wa-chips--scroll.is-more-end { --fade-r: 44px; }
+
 /* Category bar: pictogram over label, underline on the chosen one. */
 .wa-cats { display: flex; gap: var(--s-1); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); scroll-padding: 0 var(--gutter); }
 .wa-cats::-webkit-scrollbar { display: none; }
