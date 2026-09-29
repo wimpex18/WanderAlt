@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929093648_korean_event_language.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929130000_venue_logos_and_poster.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -188,6 +188,14 @@ Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing
 
 A venue or event photo is looked up by identity, never guessed from a name; no photo draws the category mark. Images are stored as source URLs with attribution, not uploaded copies. Structured sources supply artwork for their own event or film. A prose post's photo is used only when the extractor finds one distinct show (repeat dates can share a poster); roundups get no event image. A text-only refresh preserves existing reviewed artwork and its credit.
 
-Event cards and details never borrow venue photos. Venue enrichment uses Wikidata P18 for photos; a homepage's `og:image` is not evidence of a venue photo because it can show a current event, an advert or a placeholder. Recognisable logo filenames are imported as `image_source: logo`; other website images need individual review. Logos appear small and labelled on venue details, with pictograms in venue lists and maps. Reviewed physical venue photos can retain `image_source: website`.
+Event cards and details never borrow venue photos. Venue enrichment uses Wikidata P18 for photos; a homepage's `og:image` is not evidence of a venue photo because it can show a current event, an advert or a placeholder. A venue has one picture slot, so a logo fills it only when there is no photo.
+
+**Venue logos** (`image_source: logo`) come only from the venue itself: its Wikidata logo (P154, when there is no P18 photo), a `logo` its website declares for its organisation in JSON-LD, an `og:image` whose file is named as a logo, or the first `<img>` on the site's own host with a logo filename. Sponsor and partner ribbons (other hosts, other names), icons, banners and placeholders are refused, and so is a parked domain. A place with a website or Wikidata item and no picture is looked at again after 30 days. The stored Instagram and Facebook profiles are used to confirm that a link belongs to the venue (`handleFits`); their pictures, feeds and posts are never fetched, since there is no free reliable API and it breaks their terms. Logos are drawn whole on a white tile in venue lists, map cards, venue links and the detail page.
+
+**Event posters** come from `pipeline/posters.ts`: for up to 15 upcoming published events without artwork a run reads the event's own page (its `url`, `ticket_url` and provenance links, never a social profile) and takes the image only when the page's JSON-LD Event or headline has the event's title and, if it states a date, the event's day. A logo, a default or share image, or a picture already on two other events is refused. The credit reads "Image from {host}". `--no-posters` skips the step.
+
+**Owner-supplied files** live in `assets/venues/` and `assets/events/` and are served from `https://wanderalt.app/assets/…`, cached as immutable: give a changed file a new name. The migration `20260929130000_venue_logos_and_poster.sql` attaches the Südalinna Teater and Philly Joe's logos and the COSMODOLPHINS poster, and only where no picture is stored. Apply it after the files are deployed.
+
+Reviewed physical venue photos can retain `image_source: website`.
 
 Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted hosts, raster only, cookies stripped). A trigger rewrites `thumb.wikimedia.org` to `upload.wikimedia.org` and clears stock-library URLs. Share metadata uses the event's own artwork when available, otherwise the branded `og-image` card; its lockup is generated with the static brand assets.

@@ -58,6 +58,13 @@
     return a ? fact('Area', a, 'Allow location for walking time') : '';
   };
 
+  /* A wide poster is shown whole: the square hero would crop the title. */
+  document.addEventListener('load', (e) => {
+    const img = e.target;
+    const fig = img && img.tagName === 'IMG' && img.closest('.det-media:not(.det-media--logo)');
+    if (fig && img.naturalHeight && img.naturalWidth / img.naturalHeight >= 1.4) fig.classList.add('det-media--wide');
+  }, true);
+
   const media = (x, word, kind) => {
     const src = x.imageUrl ? url(x.imageUrl) : '';
     if (src) {
@@ -274,11 +281,11 @@
       const id = e.venueId || (v && v.id) || '';
       const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(venueName)}`;
       const more = picksAt({ id, name: venueName }).filter(p => p.id !== e.id).length;
-      const img = v && v.imageUrl && v.imageSource !== 'logo' ? url(v.imageUrl) : '';
+      const img = v && v.imageUrl ? url(v.imageUrl) : '';
       const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art${img && v.imageSource === 'logo' ? ' is-logo' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}

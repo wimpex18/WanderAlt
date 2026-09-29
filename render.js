@@ -303,10 +303,10 @@
   /* ── The place row ───────────────────────────────────────── */
   const placeRow = (v, opts = {}) => {
     const m = walk(v);
-    const photo = v.imageUrl && v.imageSource !== 'logo' ? url(v.imageUrl) : '';
+    const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
-      <span class="wa-place__glyph">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
+      <span class="wa-place__glyph${photo && v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span class="wa-place__name">${esc(v.name || '')}</span>
         <span class="wa-place__meta">${esc(meta)}</span>
@@ -484,6 +484,24 @@
     const a = document.getElementById('account');
     if (a) a.setAttribute('aria-label', 'You, signed in');
   });
+
+  /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
+     dead image for the row's own pictogram (no inline handler: `error`
+     does not bubble, so listen in the capture phase). */
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile';
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    const box = img.closest(ART);
+    if (!box) return;
+    const host = img.closest('[data-place], [data-row], [data-card]');
+    const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
+    const found = id && [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])].find(p => p.id === id);
+    box.classList.remove('is-logo');
+    img.outerHTML = box.matches('.wa-poster__art')
+      ? `<span class="wa-poster__type">${window.WA.Picto.kind(found && found.kind)}</span>`
+      : window.WA.Picto.kind(found && found.kind);
+  }, true);
 
   window.WA.R = {
     esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
