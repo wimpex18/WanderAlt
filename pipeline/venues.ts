@@ -119,6 +119,7 @@ async function fromWikidata(qid: string): Promise<VenueDetails> {
 
 /** A domain that lapsed and now shows a parking or for-sale page. */
 const PARKED = /domeeninimi\.ee|domain (is )?for sale|see domeen on müügil|this domain may be for sale|parkingcrew|sedoparking|godaddy\.com\/domainsearch/i;
+export const parkedHomepage = (html: string) => PARKED.test(html);
 
 /** A profile belongs to the venue when its handle shares a word with the
  *  venue's name or its website's domain. Homepages also link partners,

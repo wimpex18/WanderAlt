@@ -26,7 +26,7 @@ import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts } from './util.ts';
 import { tallinnDay } from './time.ts';
-import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness } from './maintenance.ts';
+import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, verifyPlaces } from './maintenance.ts';
 
 const args = process.argv.slice(2);
 const flag = (f: string) => args.includes(f);
@@ -159,6 +159,12 @@ async function main() {
           source_id: source.id, external_id: i.external_id, url: i.url ?? null, content_hash: i.content_hash,
           payload: i.payload, fetched_at: new Date().toISOString(), status: 'new', note: null, attempts: 0,
         })), 'source_id,external_id');
+      }
+      // Seeing an unchanged source item is still fresh activity evidence.
+      // Refresh only its provenance; never re-read it or clear its flags.
+      const changed = new Set(fresh.map(i => i.external_id));
+      for (const part of chunks(items.filter(i => !changed.has(i.external_id)).map(i => i.external_id), 150)) {
+        await db.req('POST', 'rpc/refresh_source_seen', { p_source: source.id, p_external_ids: part });
       }
       log(`${source.id}: ${items.length} items, ${fresh.length} new or changed`);
     } catch (e) {
@@ -322,7 +328,7 @@ async function main() {
       // Liveness/visibility fields belong to their atomic RPC, not a
       // stale bulk snapshot. New rows receive the database defaults.
       ...Object.fromEntries(PLACE_COLUMNS.filter(k => !k.startsWith('osm_') || ['osm_id','osm_ids'].includes(k))
-        .filter(k => !['status','merged_into','created_at'].includes(k))
+        .filter(k => !['status','merged_into','created_at','verified_at','website_checked_at'].includes(k) && !k.startsWith('verification_'))
         .map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
       aliases: p.aliases ?? [], osm_ids: p.osm_ids ?? [], updated_at: new Date().toISOString(),
     })), 'id');
@@ -390,6 +396,7 @@ async function main() {
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
+  if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 10));
 
   for (const [id, h] of Object.entries(health)) {
     const [prev] = await db.select<{ consecutive_failures: number }>(`sources?id=eq.${encodeURIComponent(id)}&select=consecutive_failures`);

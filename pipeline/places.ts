@@ -30,6 +30,13 @@ export interface Place {
   osm_note?: string | null;
   osm_closed_by_check?: boolean;
   osm_auto_close?: boolean;
+  verification_state?: 'unverified' | 'verified' | 'review' | 'closed';
+  verification_checked_at?: string | null;
+  website_checked_at?: string | null;
+  verified_at?: string | null;
+  verification_source?: string | null;
+  verification_url?: string | null;
+  verification_note?: string | null;
   // Venue-page details (venues.ts fills them).
   website?: string | null;
   instagram?: string | null;

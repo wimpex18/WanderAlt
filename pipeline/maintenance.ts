@@ -6,11 +6,13 @@ import type { Place } from './places.ts';
 import { duplicatePlaces, pairKey } from './place-match.ts';
 import { checkPlaces } from './place-liveness.ts';
 import { duplicateEvents, type StoredEvent } from './dedupe.ts';
+import { checkWebsite, dueWebsites } from './place-verification.ts';
 
 export const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id', 'osm_ids',
   'status', 'merged_into', 'created_at', 'website', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
   'image_url', 'image_attr', 'image_source', 'enriched_at', 'osm_checked_at', 'osm_last_seen_at', 'osm_missing_count',
-  'osm_state', 'osm_note', 'osm_closed_by_check', 'osm_auto_close'];
+  'osm_state', 'osm_note', 'osm_closed_by_check', 'osm_auto_close', 'verification_state', 'verification_checked_at',
+  'website_checked_at', 'verified_at', 'verification_source', 'verification_url', 'verification_note'];
 export const loadPlaces = (db: Db, city: string) => db.all<Place>(`places?city=eq.${encodeURIComponent(city)}&select=${PLACE_COLUMNS.join(',')}&order=id.asc`);
 
 export async function reconcilePlaces(db: Db, places: Place[], dry = false) {
@@ -43,6 +45,31 @@ export async function refreshLiveness(db: Db, places: Place[], dry = false, limi
   return checks;
 }
 
+export async function verifyPlaces(db: Db, city: string, websiteLimit = 10) {
+  const events = await db.req<number>('POST', 'rpc/verify_event_places', { p_city: city });
+  console.log(`[places] ${events} venues verified from recent trusted listings`);
+  const results = [];
+  for (const place of dueWebsites(await loadPlaces(db, city), Date.now(), websiteLimit)) {
+    let evidence;
+    try {
+      evidence = await checkWebsite(place);
+    } catch (e) {
+      // A timeout, challenge or outage proves neither closure nor activity.
+      // Mark the attempted check for fair weekly rotation, preserving status.
+      await db.patch(`places?id=eq.${encodeURIComponent(place.id)}`, { website_checked_at: new Date().toISOString() });
+      console.log(`[places] website ${place.id}: unavailable; verification unchanged (${(e as Error).message})`);
+      continue;
+    }
+    // Database failures must fail the run, rather than masquerade as an
+    // unavailable website and silently discard the observation.
+    await db.req('POST', 'rpc/record_place_verification', { p_id: place.id, p_state: evidence.state,
+      p_source: evidence.source, p_url: evidence.url, p_note: evidence.note, p_observed_at: evidence.observed_at });
+    results.push({ id: place.id, ...evidence });
+    console.log(`[places] website ${place.id}: ${evidence.state}; ${evidence.note}`);
+  }
+  return results;
+}
+
 export async function reconcileEvents(db: Db, city: string, dry = false) {
   const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,first_seen_at,status,has_time&order=id.asc`);
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
@@ -63,15 +90,22 @@ if (import.meta.main) {
   const db = new Db(), city = value('--city') ?? 'tallinn';
   try {
     const places = await loadPlaces(db, city);
+    if (value('--verify')) {
+      if (dry || !value('--reason') || !['verified','review','closed'].includes(value('--state') ?? '')) throw new Error('Manual verification needs --state, --reason and a write run');
+      await db.req('POST', 'rpc/record_place_verification', { p_id: value('--verify'), p_state: value('--state'),
+        p_source: 'manual', p_url: value('--url') ?? null, p_note: value('--reason') });
+      console.log(`[places] manual verification recorded for ${value('--verify')}`);
+    }
     if (value('--merge') && value('--into')) {
       if (dry || !value('--reason')) throw new Error('Manual merges need --reason and a write run');
       const id = await db.req('POST', 'rpc/merge_places', { p_duplicate: value('--merge'), p_canonical: value('--into'), p_reason: value('--reason') });
       console.log(`[places] manual merge recorded; undo id ${id}`);
     }
-    const plan = await reconcilePlaces(db, value('--merge') ? await loadPlaces(db, city) : places, dry);
+    const plan = await reconcilePlaces(db, value('--merge') || value('--verify') ? await loadPlaces(db, city) : places, dry);
     console.log(`[places] ${places.filter(p => !p.merged_into).length} canonical places; ${plan.filter(p => p.match.action === 'merge').length} merges, ${plan.filter(p => p.match.action === 'review').length} reviews${dry ? ' (dry run)' : ''}`);
     const checks = args.includes('--check-osm') ? await refreshLiveness(db, dry ? places : await loadPlaces(db, city), dry) : [];
     const events = await reconcileEvents(db, city, dry);
+    if (!dry && args.includes('--verify-websites')) await verifyPlaces(db, city, Number(value('--max-website-checks') ?? 10));
     const out = value('--out');
     if (out) writeFileSync(out, JSON.stringify({ plan, checks, events }, null, 2));
   } catch (e) { console.error('[places]', (e as Error).message); process.exitCode = 1; }

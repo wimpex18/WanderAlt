@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260928181710_place_integrity.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929061000_place_verification.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -9,10 +9,11 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `sources` | Where listings come from, plus each source's health (`last_ok_at`, `last_yield`, `consecutive_failures`, `last_error`) | `id, city, kind, url, handle, label` only |
 | `raw_items` | Exactly what a source said, once per `(source_id, external_id)`, with a content hash and a processing `status` | no |
 | `places` | Venues: name, folded `aliases`, coordinates, retained `osm_ids`, `kind`, neighbourhood, liveness observations, `merged_into` | yes, unless `hidden` |
-| `events` | One row per dated occurrence: source facts, translations, classification, `status`, `flag`, `merged_into` | published, unmerged only |
+| `events` | One row per dated occurrence: source facts, translations, classification, `status`, `flag`, `merged_into` | published, unmerged, not at a known closed venue |
 | `event_sources` | Provenance and the last flag observed from each source | for published events, without `raw_item_id` or per-source `flag` |
 | `place_redirects`, `event_redirects` | Retained ids pointing to canonical rows | yes; event targets must be published |
 | `place_match_reviews` | Uncertain pairs, evidence, and `pending` / `separate` / `merged` decisions | no |
+| `place_verification_reviews` (view) | Canonical venues awaiting activity evidence or review, including expired confirmations | no |
 | `place_merge_log`, `event_merge_log`, `place_liveness_log` | Before/after snapshots, provenance, moved events and undo history | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
@@ -27,11 +28,11 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 `pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every six hours (four runs a day keep Workers AI inside its free allocation) (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
 
 1. Sync `pipeline/sources.tallinn.json` into `sources`. The JSON file is the source of truth; add a source by PR. A source removed from the file is marked inactive, which also hides it publicly.
-2. Collect each source; store only new or changed items in `raw_items` (compared by content hash).
+2. Collect each source; store only new or changed items in `raw_items` (compared by content hash). Exact unchanged items seen again refresh their event provenance timestamps without another model call or changing flags.
 3. Read pending items into candidates: Fienta and JSON-LD are parsed; Telegram, HTML pages and RSS go to a model (`docs/models.md`). An item that fails is retried on the next runs and parked as `error` after three attempts. Prose items wait as `new` while no model is available.
 4. Classify candidates in batches.
 5. Reconcile stored venue and event copies, check a due OSM identity batch, collect the venue catalogue, resolve candidates to canonical places, and write events and provenance (details below).
-6. Classify earlier events that were written without a model, archive ended events, delete processed raw items older than 60 days, record source health.
+6. Classify earlier events that were written without a model, archive ended events, verify venue activity from recent trusted listings and a small own-site batch, delete processed raw items older than 60 days, record source health.
 
 A run exits non-zero when a source fails or returns nothing, which turns the Actions run red. A prose source whose items are fetched but yield no events is logged, since that usually means the page was redesigned.
 
@@ -48,7 +49,7 @@ A venue name is matched against every place's name and `aliases` (lowercased, ac
 
 Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, with at least 1.1 seconds between requests, including failures. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
 
-The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor.
+The site's Places tab and venue map pins recommend only freshly verified, canonical places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor. Unverified records remain available for admin review and direct detail links, without an Open now claim.
 
 ### Duplicates
 
@@ -64,13 +65,25 @@ Eligible matches are ranked by closest time, strongest title overlap, then id. S
 
 `pipeline/place-liveness.ts` re-queries stored node/way/relation ids, without category filters that could hide disused objects. Each identified canonical place is due every seven days; each pipeline run checks the oldest 50 due places in one Overpass request. Unidentified places need a manual check or later Nominatim identification. This confirms what OSM currently records, not independently that a business is operating.
 
-`osm_checked_at`, `osm_last_seen_at`, `osm_state`, `osm_note` and `osm_missing_count` record the result. Explicit venue lifecycle tags (`disused`, `abandoned`, `closed`, `removed`, and their category prefixes) can set `status=closed`; every retained identity must agree. A recognised live alternate identity keeps the venue present. Missing objects, renamed businesses and conflicting identities stay visible for review. Opening-hours `off` and a disused building part never prove permanent closure. Only a closure made by this check can automatically reopen; manual hidden/closed states are preserved. `osm_auto_close=false` disables automatic closure for one row.
+`osm_checked_at`, `osm_last_seen_at`, `osm_state`, `osm_note` and `osm_missing_count` record the result. Explicit venue lifecycle tags (`disused`, `abandoned`, `closed`, `removed`, and their category prefixes) can set `status=closed`; every retained identity must agree. A recognised live alternate identity keeps the OSM observation present. Missing objects, renamed businesses and conflicting identities stay available for review, with recommendations controlled separately by verification. Opening-hours `off` and a disused building part never prove permanent closure. OSM presence never reopens a closed venue; reopening requires an explicit admin verification. `osm_auto_close=false` disables automatic closure for one row. Conflicting closure states go to duplicate review, and the database prevents merging a closed row into an active one.
 
 Overpass requests are sequential, time-bounded and reject partial or stale replies. HTTP 429/406 stops that run without trying another host. A failed check changes no venue visibility and marks `osm-tallinn` unhealthy; the catalogue request is skipped for that run. Every successful observation has a private before/after audit row. A closed venue drops out of active lists and its retained detail page says it is listed as closed.
 
+### Operating verification
+
+`verification_state` is `unverified`, `verified`, `review` or `closed`. Evidence lives in `verification_source`, `verification_url`, `verification_note`, `verified_at` and `verification_checked_at`. The `venues` view exposes `status=active` only for an active venue with a verified observation within 90 days, so existing public clients also exclude unverified recommendations. Expiry is computed when queried. This confirms recent activity, not that a door is open right now; opening hours remain separate.
+
+`verify_event_places` accepts a published, unmerged, unarchived event dated from 30 days ago to 90 days ahead, observed within seven days by an active curated source or a trusted Fienta organiser. Cancelled and postponed events do not qualify. It uses existing provenance and costs no model calls. Newer website concerns and manual reviews block older listing evidence.
+
+`pipeline/place-verification.ts` checks up to ten due own websites sequentially per run, at most one venue per host in that batch and once per venue per seven days. Requests stop at ten seconds and 400 KB, with no retries. Recent schema.org events must identify the same venue as their location; HTTP 200, undated hours, a copyright year or old promotion proves nothing. Parked domains, identity changes and explicit closure wording go to review, never directly to permanent closure. A timeout, challenge, HTTP error or unsupported content preserves previous verification and records the attempt in `website_checked_at`. Console logs show outcomes; `place_verification_reviews` lists unresolved or expired records. A weaker undated homepage cannot erase fresh dated evidence. Fresh manual confirmations and manual reviews are protected from automatic replacement.
+
+There is no Google Places API integration. It requires a billing-enabled project, so verification uses free OSM, trusted programmes, own websites and documented admin decisions. A manual Google Maps cross-check can support a review; do not bulk-import its business database or invent a paid API fallback.
+
 ### Review and undo
 
-Use `npm run places:audit -- --out /tmp/places.json` to inspect a read-only plan, or `npm run places:maintain` to reconcile and check one OSM batch. Both require a valid service-role key. Inspect `place_match_reviews` in the Supabase Table Editor: confirm a pair with the service-only `merge_places` RPC, or set `state=separate` to suppress it. The CLI accepts `--merge <duplicate-id> --into <canonical-id> --reason "verified source/address"`. Console output includes merge reasons, distances, OSM states and undo ids.
+Use `npm run places:audit -- --out /tmp/places.json` to inspect a read-only plan, or `npm run places:maintain` to reconcile, check one OSM batch and verify activity. Both require a valid service-role key. Inspect `place_match_reviews` in the Supabase Table Editor: confirm a pair with the service-only `merge_places` RPC, or set `state=separate` to suppress it. The CLI accepts `--merge <duplicate-id> --into <canonical-id> --reason "verified source/address"`. Console output includes merge reasons, distances, OSM states and undo ids.
+
+Inspect `place_verification_reviews` and `place_liveness_log` before a manual activity decision. Record it with `npm run places:maintain -- --verify <canonical-id> --state verified --url https://venue.example/current-programme --reason "dated independent evidence"`; `--state review` withholds recommendations, and `--state closed` confirms permanent closure and disables automatic reopening. Use an actual evidence URL and reason. Correct a decision by recording another manual state; snapshots retain both observations. Do not confirm a venue solely from stale OSM hours. `--no-verification` skips the pipeline activity batch; `--max-website-checks 0` retains event verification while skipping homepages.
 
 Admin SQL (service role only; replace the example ids):
 
@@ -80,7 +93,7 @@ select public.undo_event_merge(123); -- id from event_merge_log
 select public.undo_place_merge(456); -- id from place_merge_log
 ```
 
-Undo event merges before their venue merges, and later dependent merges before earlier ones. Undo restores retained rows and original links, preserves later edits and observations, and suppresses the pair from future reconciliation. For a mistaken liveness closure, inspect `place_liveness_log`, restore the previous status in the Table Editor, clear `osm_closed_by_check` and set `osm_auto_close=false`; later checks still record evidence.
+Undo event merges before their venue merges, and later dependent merges before earlier ones. Undo restores retained rows and original links, preserves later edits and observations, and suppresses the pair from future reconciliation. For a mistaken liveness closure, inspect `place_liveness_log`, confirm current activity with `record_place_verification(..., 'verified', 'manual', ...)` and set `osm_auto_close=false`; later checks still record evidence.
 
 ### Flags
 

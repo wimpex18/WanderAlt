@@ -167,6 +167,7 @@
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
     isClosed:     r.status === 'closed',
+    isVerified:   r.status === 'active',
   });
 
   /* A fast answer (the service worker's cache) can land between two
@@ -214,7 +215,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status` +
         `&order=name.asc,id.asc`,
         abort.signal
       ),

@@ -79,7 +79,7 @@ test('lifecycle checks cover closed/disused/removed venues without inferring clo
   assert.equal(closureReason({ opening_hours: 'off' }), null);
 });
 
-test('missing or renamed OSM objects remain visible; explicit closure and positive reappearance are reversible', () => {
+test('missing or renamed OSM objects do not imply closure; OSM presence never reopens a closed venue', () => {
   const p = place('a', { osm_id: 'node/1' });
   const now = '2026-09-28T12:00:00Z';
   const closed = { type: 'node', id: 1, tags: { name: 'CatHouse', 'disused:amenity': 'nightclub' } };
@@ -87,8 +87,9 @@ test('missing or renamed OSM objects remain visible; explicit closure and positi
   const shut = livenessPatch(p, [closed], now);
   assert.equal(shut.status, 'closed');
   assert.equal(shut.osm_closed_by_check, true);
-  const reopened = livenessPatch({ ...p, ...shut }, [live], now);
-  assert.equal(reopened.status, 'active');
+  const reappeared = livenessPatch({ ...p, ...shut }, [live], now);
+  assert.equal(reappeared.osm_state, 'present');
+  assert.equal(reappeared.status, undefined);
   assert.equal(livenessPatch({ ...p, status: 'closed' }, [live], now).status, undefined);
   assert.equal(livenessPatch({ ...p, status: 'hidden' }, [live], now).status, undefined);
   assert.equal(livenessPatch({ ...p, osm_auto_close: false }, [closed], now).status, undefined);
@@ -99,6 +100,19 @@ test('missing or renamed OSM objects remain visible; explicit closure and positi
   assert.equal(livenessPatch(p, [{ ...live, tags: { name: 'New Business', shop: 'clothes' } }], now).osm_state, 'review');
   assert.equal(livenessPatch({ ...p, osm_ids: ['node/1', 'node/2'] }, [closed, { ...live, id: 2 }], now).osm_state, 'present');
   assert.equal(livenessPatch({ ...p, osm_ids: ['node/1', 'node/2'] }, [closed], now).status, undefined);
+});
+
+test('closed venue aliases and OSM imports preserve closure; conflicting merges require review', async () => {
+  const closed = place('closed', { osm_id: 'node/1', status: 'closed', verification_state: 'closed' });
+  const active = place('active', { osm_id: 'node/1' });
+  assert.equal(comparePlaces(closed, active)?.action, 'review');
+  assert.equal(comparePlaces(closed, { ...active, osm_id: 'node/2', name: 'CatHouse Club' })?.action, 'review');
+  const store = new Places([closed], 'tallinn', 0);
+  const resolved = await store.resolve({ title: 'Show', starts_at: '2026-10-01', has_time: true, engine: 'test', venue_name: 'CatHouse', lat: closed.lat, lng: closed.lng }, false);
+  assert.equal(resolved?.id, 'closed');
+  assert.equal(resolved?.status, 'closed');
+  assert.equal(resolved?.verification_state, 'closed');
+  assert.equal(store.created.length, 0);
 });
 
 test('one weekly identity batch covers nodes/ways/relations, validates ids and never checks merged rows', () => {

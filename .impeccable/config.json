@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "createdAt": "2026-09-29T06:43:53.300Z",
+        "reason": "Agent review: docs/frontend.md pins this existing face only for feed URLs; the interface uses Geologica."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "var(--spring)",
+        "createdAt": "2026-09-29T06:43:53.359Z",
+        "reason": "Agent review: docs/frontend.md pins spring motion for sheets and press feedback; retain the established native-style interaction."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.34, 1.4, .5, 1)",
+        "createdAt": "2026-09-29T06:43:53.417Z",
+        "reason": "Agent review: existing spring token implements the sheet and tab-bar motion specified in docs/frontend.md; its overshoot is intentional."
+      }
+    ]
+  }
+}

@@ -152,7 +152,7 @@
 
   /* The catalogue as lists read it: nothing that has ended. */
   const live = () => (window.WA.catalog || []).filter(e => !e.isClosed && !W().hasEnded(e));
-  const places = () => (window.WA.venues || []);
+  const places = () => (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
 
   /* ── Walking ─────────────────────────────────────────────── */
   const walk = (e) => {
@@ -224,6 +224,7 @@
   const openState = (v) => {
     const s = H().state(v && v.openingHours);
     if (v?.isClosed) return { cls: 'no', text: 'Listed as closed', open: false, s: { ...s, known: false } };
+    if (v?.isVerified === false) return { cls: 'unknown', text: 'Status unverified', open: false, s: { ...s, known: false } };
     if (!s.known) return { cls: 'unknown', text: 'Hours not filed', open: null, s };
     if (s.open) return { cls: 'yes', text: s.closesAt == null ? 'Open, 24 hours' : `Open till ${H().clock(s.closesAt)}`, open: true, s };
     if (s.opensAt != null) return { cls: 'no', text: `Opens ${H().clock(s.opensAt)}`, open: false, s };
@@ -343,7 +344,7 @@
     const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
-    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}" style="display:contents">
+    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-poster__art">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}

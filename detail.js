@@ -138,17 +138,48 @@
      it is kept and put back into each new slot. */
   const miniSlot = (x, title) => {
     const c = G().coordsFor(x);
-    return c ? `<a class="det-minimap" id="minimap-slot" href="map.html?pick=${esc(encodeURIComponent(x.id))}" data-lat="${esc(c.lat)}" data-lng="${esc(c.lng)}" aria-label="${esc(`${title} on the map`)}">
+    return c ? `<a class="det-minimap" id="minimap-slot" href="map.html?pick=${esc(encodeURIComponent(x.id))}" data-lat="${esc(c.lat)}" data-lng="${esc(c.lng)}" data-map-state="loading" aria-label="${esc(`${title} on the map`)}">
+      <span class="det-minimap__message" role="status">Loading map…</span>
       <span class="det-minimap__pin" aria-hidden="true">${window.WA.Picto.kind(x.kind)}</span></a>` : '';
   };
-  let mini = null;
+  let mini = null, miniWatch = null, miniTimer = null, miniWait = false;
+  const miniState = (state) => {
+    const slot = document.getElementById('minimap-slot');
+    if (!slot) return;
+    slot.dataset.mapState = state;
+    const message = slot.querySelector('.det-minimap__message');
+    if (message) message.textContent = state === 'error' ? 'Map preview unavailable · Open map' : 'Loading map…';
+    if (state !== 'loading') { clearTimeout(miniTimer); miniTimer = null; }
+  };
   const mountMini = () => {
     const slot = document.getElementById('minimap-slot');
     if (!slot) return;
     const lat = Number(slot.dataset.lat), lng = Number(slot.dataset.lng);
-    if (mini && mini.lat === lat && mini.lng === lng) { slot.prepend(mini.el); mini.map.resize(); return; }
+    if (mini && mini.lat === lat && mini.lng === lng) { slot.prepend(mini.el); miniState(mini.state); mini.map.resize(); return; }
+    // Offscreen WebGL previews need no tiles yet. Mount when the Address
+    // section is visible, after its responsive layout has settled.
+    const rect = slot.getBoundingClientRect();
+    if ('IntersectionObserver' in window && (rect.top >= innerHeight || rect.bottom <= 0)) {
+      if (miniWatch) miniWatch.disconnect();
+      miniWatch = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting && entry.target === document.getElementById('minimap-slot'))) {
+          miniWatch.disconnect(); miniWatch = null; mountMini();
+        }
+      });
+      miniWatch.observe(slot);
+      return;
+    }
+    if (!miniTimer) miniTimer = setTimeout(() => miniState('error'), 10000);
     const gl = window.maplibregl;
-    if (!gl) { document.addEventListener('wa:maplibre-ready', mountMini, { once: true }); return; }
+    if (!gl) {
+      if (!miniWait) {
+        miniWait = true;
+        document.addEventListener('wa:maplibre-ready', () => { miniWait = false; mountMini(); }, { once: true });
+      }
+      document.dispatchEvent(new CustomEvent('wa:maplibre-request'));
+      return;
+    }
+    if (mini) { mini.resize.disconnect(); mini.map.remove(); mini = null; }
     const el = document.createElement('div');
     el.className = 'det-minimap__canvas';
     slot.prepend(el);
@@ -156,9 +187,18 @@
     try {
       const map = new gl.Map({ container: el, style: dusk ? './map-style-dusk.json' : './map-style.json', center: [lng, lat], zoom: 15.2,
         interactive: false, attributionControl: { compact: true } });
-      mini = { el, map, lat, lng };
-    } catch { el.remove(); }
+      const resize = new ResizeObserver(() => map.resize());
+      resize.observe(el);
+      const current = mini = { el, map, lat, lng, resize, state: 'loading' };
+      map.once('load', () => {
+        if (mini === current && current.state !== 'error') { current.state = 'ready'; miniState('ready'); }
+      });
+      map.on('error', () => {
+        if (mini === current) { current.state = 'error'; miniState('error'); }
+      });
+    } catch { el.remove(); miniState('error'); console.warn('[detail] Map preview could not initialise'); }
   };
+  document.addEventListener('wa:maplibre-error', () => miniState('error'));
 
   const goingRow = (e) => {
     if (!window.WA.Going) return '';

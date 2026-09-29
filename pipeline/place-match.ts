@@ -49,7 +49,8 @@ export function comparePlaces(a: Place, b: Place): PlaceMatch | null {
   const ca = core(a.name), cb = core(b.name);
   const similarity = Math.max(nameSimilarity(nameKey(a.name), nameKey(b.name)), nameSimilarity(ca, cb));
   const evidence = { distance, similarity };
-  if (sameOsm) return { ...evidence, action: (distance != null && distance > 250) || a.status === 'hidden' || b.status === 'hidden' ? 'review' : 'merge', reason: 'same OSM identity' };
+  const closureConflict = (a.status === 'closed') !== (b.status === 'closed');
+  if (sameOsm) return { ...evidence, action: (distance != null && distance > 250) || a.status === 'hidden' || b.status === 'hidden' || closureConflict ? 'review' : 'merge', reason: closureConflict ? 'closure status needs review' : 'same OSM identity' };
   const aa = addressKey(a.address), ab = addressKey(b.address);
   const sameAddress = !!aa && aa === ab;
   const near = distance != null && distance <= 100;
@@ -61,7 +62,7 @@ export function comparePlaces(a: Place, b: Place): PlaceMatch | null {
   const addressConflict = !!aa && !!ab && !sameAddress;
   const strong = exact || (distinctive && ca === cb) ||
     (distinctive && similarity >= 0.92 && (sameAddress || (distance != null && distance <= 40)));
-  if (strong && compatible && numbersAgree && !addressConflict && a.status !== 'hidden' && b.status !== 'hidden') {
+  if (strong && compatible && numbersAgree && !addressConflict && a.status !== 'hidden' && b.status !== 'hidden' && !closureConflict) {
     return { ...evidence, action: 'merge', reason: exact ? 'same name nearby' : 'similar name and location' };
   }
   const shared = ca.split(' ').some(w => w.length >= 5 && cb.split(' ').includes(w));

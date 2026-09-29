@@ -37,7 +37,8 @@ export function livenessPatch(p: Place, elements: OsmElement[], now = new Date()
     ['amenity', 'shop', 'tourism'].some(k => !!el.tags?.[k]));
   if (present) {
     Object.assign(patch, { osm_state: 'present', osm_note: null });
-    if (p.osm_closed_by_check && p.status === 'closed') Object.assign(patch, { status: 'active', osm_closed_by_check: false });
+    // A retained map object is not evidence that a business reopened.
+    // A closed venue needs an explicit admin verification to reopen.
     return patch;
   }
   // All retained identities must explicitly agree. A missing or renamed

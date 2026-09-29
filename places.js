@@ -86,8 +86,8 @@
     if (!list.length) {
       const without = all.filter(v => inGroup(v, state.group)).length;
       $('list').innerHTML = state.open && without
-        ? R().empty({ icon: 'clock', title: `No ${noun} we list are open this minute.`,
-          body: `About half the places file their hours. ${without} ${noun} are listed in all.`,
+        ? R().empty({ icon: 'clock', title: 'None with filed hours are open now.',
+          body: `Places without filed hours aren't included. ${without} ${noun} are listed in all.`,
           actions: [{ act: 'all-hours', label: `Show all ${without}` }, { href: 'discover.html?time=tonight', label: "Tonight's listings" }] })
         : R().empty({ icon: 'store', title: `No ${noun} are listed yet.`,
           body: 'Other kinds of place are.', actions: [{ act: 'all-kinds', label: 'All places' }] });

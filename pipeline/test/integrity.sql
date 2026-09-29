@@ -57,11 +57,12 @@ begin
   perform public.check_place_liveness('qa-integrity-a','{"osm_state":"missing","osm_checked_at":"2026-09-28T13:00:00Z","osm_missing_count":1}');
   assert (select status='closed' from public.places where id='qa-integrity-a');
   perform public.check_place_liveness('qa-integrity-a','{"osm_state":"present","osm_checked_at":"2026-09-28T14:00:00Z","osm_missing_count":0}');
-  assert (select status='active' and not osm_closed_by_check from public.places where id='qa-integrity-a');
+  assert (select status='closed' and osm_closed_by_check from public.places where id='qa-integrity-a');
   update public.places set status='closed', osm_closed_by_check=false where id='qa-integrity-a';
   perform public.check_place_liveness('qa-integrity-a','{"osm_state":"present","osm_checked_at":"2026-09-28T15:00:00Z"}');
   assert (select status='closed' from public.places where id='qa-integrity-a');
   assert (select count(*)=4 from public.place_liveness_log where place_id='qa-integrity-a');
+  perform public.record_place_verification('qa-integrity-a','verified','manual','https://a.example','QA explicit reopening evidence');
 
   -- A canonical place can later become an alias of another. Undo in
   -- reverse order restores its flattened redirects and moved events.

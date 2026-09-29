@@ -69,5 +69,17 @@ test('ended, cancelled, postponed and date-only events never read On now; sold o
   assert.equal(p.WA.R.isLive({ ...e, endsAt: '2026-09-28T17:59:00Z' }, now), false);
   assert.equal(p.WA.R.isLive({ startsAt: '2026-09-28T00:00:00Z' }, now), false);
   assert.equal(p.WA.R.openState({ isClosed: true, openingHours: '24/7' }).open, false);
+  assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).open, false);
+  assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).text, 'Status unverified');
   assert.equal(p.WA.R.endClock({ endsAt: '2026-10-04T15:00:00Z' }), 'Sun 4 Oct · 18:00');
+});
+
+test('unverified and closed places never appear in shared recommendations, even with open hours', () => {
+  const p = page(); p.load('render.js');
+  p.WA.venues = [
+    { id: 'open', isVerified: true },
+    { id: 'unknown', isVerified: false },
+    { id: 'closed', isClosed: true, isVerified: true },
+  ];
+  assert.deepEqual(Array.from(p.WA.R.places(), (v: any) => v.id), ['open']);
 });

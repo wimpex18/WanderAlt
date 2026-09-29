@@ -243,13 +243,23 @@
     const top = $('drawer').offsetParent ? document.querySelector('.wa-topbar').getBoundingClientRect().bottom : 60;
     return { peek, half: Math.round(H * 0.52), full: Math.round(H - top - 8) };
   };
+  let drawerMotion = null;
   const setDrawer = (snap) => {
     if (typeof snap === 'boolean') snap = snap ? 'half' : 'peek';
     const d = $('drawer');
+    const before = d.getBoundingClientRect().top;
+    if (drawerMotion) { drawerMotion.cancel(); drawerMotion = null; }
     d.dataset.snap = snap;
     d.dataset.open = String(snap !== 'peek');
     $('drawer-toggle').setAttribute('aria-expanded', String(snap !== 'peek'));
     page().style.setProperty('--sheet-h', `${heights()[snap]}px`);
+    // Lay out the final list height once, then animate its position. The
+    // viewport clips the moving sheet; no height reflow on every frame.
+    const delta = before - d.getBoundingClientRect().top;
+    if (phone.matches && delta && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      drawerMotion = d.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+        { duration: 460, easing: getComputedStyle(d).getPropertyValue('--spring').trim() });
+    }
     if (snap !== 'peek' && state.active) { state.active = ''; placePins(); preview(); }
   };
 
@@ -259,6 +269,11 @@
   let sheetDrag = null, ateClick = false;
   const dragStart = (y, fromList) => {
     if (!phone.matches) return;
+    if (drawerMotion) {
+      const visible = page().getBoundingClientRect().bottom - $('drawer').getBoundingClientRect().top;
+      drawerMotion.cancel(); drawerMotion = null;
+      page().style.setProperty('--sheet-h', `${visible}px`);
+    }
     sheetDrag = { y0: y, h0: $('drawer').getBoundingClientRect().height, fromList, live: false, pts: [[y, performance.now()]] };
   };
   const dragMove = (y, ev) => {
