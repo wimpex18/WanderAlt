@@ -75,3 +75,28 @@ test('OSM contact websites are read from more than one tag', () => {
   const p = placeFromOsm({ type: 'node', id: 1, lat: 59.4, lon: 24.7, tags: { name: 'Klubi', amenity: 'nightclub', 'operator:website': 'https://klubi.example' } }, 'tallinn');
   assert.equal(p?.website, 'https://klubi.example/');
 });
+
+import { chunkText, Models } from '../llm.ts';
+
+test('a long page is read in parts, cut at line breaks, nothing dropped', () => {
+  assert.deepEqual(chunkText('short'), ['short']);
+  const text = Array.from({ length: 30 }, (_, i) => `line ${i} ${'x'.repeat(500)}`).join('\n');
+  const parts = chunkText(text, 4000);
+  assert.ok(parts.length > 1 && parts.every(p => p.length <= 4000));
+  assert.equal(parts.join('\n'), text);
+  assert.equal(chunkText('y'.repeat(9000), 4000).join('').length, 9000);
+});
+
+test('a used-up daily allocation is not retried or waited for', async () => {
+  let calls = 0;
+  const quota = Object.assign(new Error('429 {"errors":[{"message":"you have used up your daily free allocation of 10,000 neurons","code":4006}]}'), { status: 429 });
+  const m = new Models([
+    { name: 'workers-ai', model: 'a', key: 'k', call: async () => { calls++; throw quota; } },
+    { name: 'openrouter', model: 'b', key: 'k', call: async () => '{"ok":true}' },
+  ], 10, 5000);
+  const t0 = Date.now();
+  assert.equal((await m.ask('s', 'u', {})).engine, 'openrouter:b');
+  await m.ask('s', 'u', {});
+  assert.equal(calls, 1);                       // asked once, then skipped
+  assert.ok(Date.now() - t0 < 2000);            // no 20 s waits
+});
