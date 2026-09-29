@@ -139,13 +139,16 @@
     const t = startMs(e);
     return isFinite(t) && t <= now && !W().hasEnded(e, now);
   };
+  let endKeyFmt = null, endClockFmt = null;
   const endClock = (e) => {
     if (!e || !e.endsAt) return '';
     const d = new Date(e.endsAt);
     if (isNaN(d)) return '';
     try {
-      const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-      const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+      endKeyFmt = endKeyFmt || new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn', year: 'numeric', month: '2-digit', day: '2-digit' });
+      endClockFmt = endClockFmt || new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false });
+      const key = endKeyFmt.format(d);
+      const clock = endClockFmt.format(d);
       return key === W().todayKey() ? clock : `${dateShort(key)} · ${clock}`;
     } catch (_) { return ''; }
   };

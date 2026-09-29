@@ -30,6 +30,27 @@
   # scripts stay locked to 'self'; only blob workers are allowed.
   Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://tiles.openfreemap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
 
+# Speculation rules: the tab bar pages are prefetched, event pages are
+# prerendered on hover or press. Served from a file because the CSP forbids
+# inline script.
+/*
+  Speculation-Rules: "/speculation.json"
+
+/speculation.json
+  Content-Type: application/speculationrules+json
+  Cache-Control: public, max-age=3600
+
+# Early Hints: the browser starts the stylesheet, the font and the data
+# connection while the HTML is still on its way.
+/
+  Link: </wa.css>; rel=preload; as=style
+  Link: </fonts/geologica-latin.woff2>; rel=preload; as=font; crossorigin
+  Link: <https://aqnsmmbrspkbfcvougeh.supabase.co>; rel=preconnect; crossorigin
+/index.html
+  Link: </wa.css>; rel=preload; as=style
+  Link: </fonts/geologica-latin.woff2>; rel=preload; as=font; crossorigin
+  Link: <https://aqnsmmbrspkbfcvougeh.supabase.co>; rel=preconnect; crossorigin
+
 # ── Caching ─────────────────────────────────────────────────
 # HTML: never cache aggressively — fixes need to propagate fast. Cloudflare's edge cache picks
 # the latest on each request; browsers get a short max-age.

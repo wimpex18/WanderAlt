@@ -12,6 +12,7 @@
     "places:maintain": "node --env-file-if-exists=.env pipeline/maintenance.ts --check-osm --verify-websites",
     "test": "node --test \"pipeline/test/*.test.ts\"",
     "typecheck": "tsc -p pipeline",
+    "build:brand": "node .scripts/build-brand.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "build:map-styles": "node .scripts/build-map-styles.js"
   },

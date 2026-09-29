@@ -29,16 +29,36 @@
   const KEY_FMT = { timeZone: 'Europe/Tallinn', year: 'numeric', month: '2-digit', day: '2-digit' };
 
   /* 'YYYY-MM-DD' in city time. en-CA formats exactly that way. */
+  /* Building an Intl formatter costs far more than using one, and lists
+     ask for the same few hundred timestamps on every tap: build it once
+     and remember the answers. */
+  let keyFmt = null;
+  const keyMemo = new Map();
   const dayKey = (date) => {
     try {
-      return new Intl.DateTimeFormat('en-CA', KEY_FMT).format(date);
+      const t = +date;
+      let k = keyMemo.get(t);
+      if (k === undefined) {
+        keyFmt = keyFmt || new Intl.DateTimeFormat('en-CA', KEY_FMT);
+        k = keyFmt.format(date);
+        if (keyMemo.size > 5000) keyMemo.clear();
+        keyMemo.set(t, k);
+      }
+      return k;
     } catch {
       const p = (n) => String(n).padStart(2, '0');
       return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
     }
   };
 
-  const todayKey = () => dayKey(new Date());
+  /* "Today" is asked hundreds of times a render; it changes at most once a
+     minute, so it is worked out once a second and kept out of keyMemo. */
+  let todaySec = -1, todayVal = '';
+  const todayKey = () => {
+    const sec = Math.floor(Date.now() / 1000);
+    if (sec !== todaySec) { todayVal = dayKey(new Date(sec * 1000)); todaySec = sec; }
+    return todayVal;
+  };
 
   /* Step whole calendar days off today's key. Not `Date.now() + n*86400000`:
      DST days are 23 or 25 hours long. Anchor at UTC noon and step UTC
