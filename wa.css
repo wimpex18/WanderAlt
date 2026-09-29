@@ -478,7 +478,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-pill:hover { box-shadow: 0 6px 22px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06); }
 .wa-pill:active { transform: scale(.99); }
 :root[data-theme="dusk"] .wa-pill { background: var(--paper-2); box-shadow: 0 0 0 1px var(--line); }
-.wa-pill__input { flex: 1; min-width: 0; height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font-size: 1rem; font-weight: 500; text-overflow: ellipsis; -webkit-appearance: none; appearance: none; cursor: text; }
+.wa-pill__input { flex: 1; min-width: 0; height: 44px; padding: 10px 0; line-height: 24px; border: 0; background: none; color: var(--ink); font-size: 1rem; font-weight: 500; text-overflow: ellipsis; -webkit-appearance: none; appearance: none; cursor: text; }
 .wa-pill__input::placeholder { color: var(--ink-3); font-weight: 400; }
 .wa-pill__input:focus { outline: none; }
 .wa-pill__input::-webkit-search-cancel-button { display: none; }
@@ -627,6 +627,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-poster__title { font-size: var(--fs-title); font-weight: 600; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wa-poster__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
 .wa-poster__meta strong { color: var(--ink); font-weight: 600; }
+.wa-poster__walk { display: inline-flex; align-items: center; gap: 2px; color: var(--ink); font-weight: 600; vertical-align: bottom; }
+.wa-poster__walk .wa-ic { width: 15px; height: 15px; margin-left: -2px; }
 @media (max-width: 767px) {
   .wa-shelf--compact { grid-auto-columns: min(43vw, 162.5px); gap: var(--s-3); }
   .wa-shelf--compact .wa-poster__art { margin-bottom: var(--s-1); }
@@ -650,7 +652,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-row__rail { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; min-width: 0; }
 .wa-row__time { display: block; font: 600 1rem/1.15 var(--f-sans); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .wa-row__time--word { font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
-.wa-row__walk { display: inline-flex; align-items: center; gap: 2px; font-size: .8125rem; color: var(--ink-2); white-space: nowrap; }
+.wa-row__walk { display: inline-flex; align-items: center; gap: 2px; font-size: .8125rem; font-weight: 600; color: var(--ink); white-space: nowrap; }
 .wa-row__walk .wa-ic { width: 15px; height: 15px; margin-left: -2px; }
 .wa-row__area { display: block; font-size: .75rem; line-height: 1.25; color: var(--ink-3); overflow-wrap: anywhere; }
 .wa-row__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -682,7 +684,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-place__name { font-size: 1.0625rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
 .wa-place__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wa-place__side { display: grid; justify-items: end; gap: 4px; }
-.wa-place__walk { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-small); color: var(--ink-2); white-space: nowrap; }
+.wa-place__walk { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-meta); font-weight: 600; color: var(--ink); white-space: nowrap; }
 .wa-place__walk .wa-ic { width: 15px; height: 15px; }
 @media (hover: hover) { .wa-place:hover .wa-place__name { text-decoration: underline; text-underline-offset: 3px; } }
 .places-grid { display: grid; margin-top: var(--s-3); }
@@ -717,7 +719,15 @@ button.wa-since[disabled] { opacity: .6; }
    cannot shift under the finger and scroll anchoring has nothing to undo. */
 .home-top { position: sticky; top: var(--topbar-h); z-index: 30; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter); background: color-mix(in oklab, var(--paper) 86%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); border-bottom: 1px solid transparent; transition: border-color var(--t-fast); }
 .is-scrolled .home-top { border-bottom-color: var(--hair); }
-.home-hero { padding: var(--s-6) 0 var(--s-5); display: grid; gap: var(--s-2); }
+.home-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-6); }
+.wa-act { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px 0 12px; border: 0; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent-ink); font-size: .9375rem; font-weight: 600; white-space: nowrap; transition: background var(--t-fast), transform var(--t-fast) var(--spring); }
+.wa-act:hover { background: color-mix(in oklab, var(--accent) 16%, var(--paper)); }
+.wa-act:active { transform: scale(.96); }
+.wa-act .wa-ic { width: 20px; height: 20px; stroke-width: 2; }
+.wa-act[disabled] { opacity: .6; pointer-events: none; }
+.wa-act--off { background: var(--paper-2); color: var(--ink-2); }
+.home-acts__note { flex-basis: 100%; }
+.home-hero { padding: var(--s-6) 0 var(--s-4); display: grid; gap: var(--s-2); }
 .home-hero__clock { font-size: var(--fs-small); color: var(--ink-3); font-weight: 500; }
 .home-hero__title em { font-style: normal; color: var(--accent-ink); }
 .home-grid { display: grid; }

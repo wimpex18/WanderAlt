@@ -76,13 +76,46 @@
     const ids = R().interests.ids();
     const full = ids.length >= 3;
     $('sheet').classList.remove('wa-sheet--finder');
-    $('sheet-title').textContent = 'Your shelf';
+    $('sheet-title').textContent = 'Your kinds';
     $('sheet-body').innerHTML = `<p class="wa-note">Pick up to three kinds and Tonight gives them a shelf. Nothing else is hidden.</p>
       <div class="wa-chips" style="margin-top:var(--s-4)">${R().interests.OPTIONS.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${full && !ids.includes(o.id) ? ' disabled' : ''}>${o.icon === 'globe' ? I('globe') : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>`;
     $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="sheet-done">Done</button>';
   };
   const openInterests = () => { interestSheet(); if (!$('sheet').open) $('sheet').showModal(); };
-  const interestRow = () => `<section class="wa-sect"><button class="wa-since" type="button" data-interests-open><span>${R().interests.ids().length ? 'Change the kinds on your shelf' : 'Pick the kinds you like for a shelf of your own'}</span>${I('arrow')}</button></section>`;
+
+  /* ── Two keys under the headline ───────────────────────────────
+     Near me asks for the location (only on a tap) and puts a shelf of what
+     is closest on foot first. Pick your kinds opens the sheet above. Both
+     are in the accent's tint so they are seen; the row keeps its height
+     in every state, so nothing moves when it changes. */
+  let nearBusy = false, nearOff = false;
+  const acts = () => {
+    const host = $('home-acts');
+    if (!host) return;
+    const n = R().interests.ids().length;
+    const here = !!G().currentLoc();
+    const near = here ? '' : nearOff
+      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span>`
+      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`;
+    host.innerHTML = `${near}<button class="wa-act" type="button" data-interests-open>${I('kinds')}${n ? `Your kinds · ${n}` : 'Pick your kinds'}</button>`
+      + (!here && nearOff ? '<p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>' : '');
+  };
+
+  /* Near you: what is on tonight (else the next listed day), closest on
+     foot first; within half an hour's walk when anything is. */
+  const nearShelf = (tonight, next) => {
+    if (!G().currentLoc()) return '';
+    const day = tonight.length ? null : next;
+    const pool = (day ? day.items : tonight).filter(e => !R().isOff(e));
+    const ranked = pool.map(e => [e, G().distanceTo(e)]).filter(([, d]) => d != null).sort((a, b) => a[1] - b[1]);
+    if (!ranked.length) return '';
+    const close = ranked.filter(([, d]) => G().walkMinutes(d) <= 30);
+    const list = (close.length ? close : ranked.slice(0, 6)).slice(0, 12).map(([e]) => e);
+    return shelf({
+      title: day ? `Near you, ${R().dayName(day.key)}` : 'Near you tonight', n: list.length,
+      sub: close.length ? 'Closest first, on foot from where you are' : 'Nothing within 30 min on foot. Closest first.',
+    }, list);
+  };
 
   /* ── Sections ───────────────────────────────────────────────── */
   const section = (head, body, cls) => `<section class="wa-sect${cls ? ` ${cls}` : ''}">${R().sect(head)}${body}</section>`;
@@ -157,7 +190,8 @@
         : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places below are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] }));
     }
 
-    out.push(interestRow());
+    const nearby = nearShelf(tonight, next);
+    if (nearby) out.unshift(nearby);
     $('home-main').innerHTML = out.join('');
     return all;
   };
@@ -176,7 +210,7 @@
     let places;
     if (open.length) {
       places = `<section class="wa-sect">${R().sect({ title: 'Open now', n: open.length, href: 'places.html?open=1', more: 'All places' })}
-        <ul>${open.slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>${R().locPrompt()}</section>`;
+        <ul>${open.slice(0, 5).map(v => R().placeRow(v)).join('')}</ul></section>`;
     } else {
       /* Nothing confirmed open: say so once, then what opens later and
          the places with listings tonight, which are the ones still going. */
@@ -186,7 +220,7 @@
       places = `<section class="wa-sect">${R().sect({ title: list.length ? 'Open later' : 'Places', href: 'places.html', more: 'All places',
         sub: 'None of the places with filed hours is open this minute.' })}
         ${list.length ? `<ul>${list.map(v => R().placeRow(v, { extra: tonightVenues.includes(v) ? 'listing tonight' : '' })).join('')}</ul>`
-          : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}${R().locPrompt()}</section>`;
+          : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}</section>`;
     }
 
     /* Areas: where this week's listings are, in the names people use. */
@@ -224,6 +258,7 @@
   /* ── Render and events ─────────────────────────────────────── */
   const render = () => {
     cats();
+    acts();
     const all = main();
     side(all);
     since(all);
@@ -232,6 +267,11 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('[data-interests-open]')) { openInterests(); return; }
+    if (hit('[data-near]')) {
+      nearBusy = true; acts();
+      G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
+      return;
+    }
     const chip = hit('[data-interest]');
     if (chip) {
       const id = chip.dataset.interest;
@@ -239,6 +279,7 @@
       R().interests.set(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id].slice(0, 3), false);
       interestSheet();
       main();
+      acts();
       const again = document.querySelector(`[data-interest="${CSS.escape(id)}"]`);
       if (again) again.focus();
       return;
@@ -268,6 +309,7 @@
   const skeleton = () => {
     $('hero-clock').textContent = clockText();
     cats();
+    acts();
     $('home-main').innerHTML = `<section class="wa-sect">${R().sect({ title: 'Starting soon' })}${R().skelCards(4)}</section>`;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });

@@ -352,8 +352,8 @@
     const b = badgeFor(e);
     const m = walk(e);
     const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
-    const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
-      .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
+    const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
+      .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-poster__art${logo ? ' is-logo' : ''}">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
