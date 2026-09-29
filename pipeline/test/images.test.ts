@@ -40,10 +40,17 @@ test('a poster comes only from a page that names this event', () => {
   assert.equal(posterFromPage('<p>See domeen on müügil</p>' + page('COSMODOLPHINS'), url, EV), null);
 });
 
-test('a structured event must match on title and day', () => {
-  const ld = (start: string) => `<script type="application/ld+json">{"@type":"Event","name":"Cosmodolphins","startDate":"${start}","image":["https://v.example/p.jpg"]}</script>`;
-  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p.jpg');
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV), null);
+test('a structured event must match on title; a series is told apart by day', () => {
+  const ld = (...starts: string[]) => `<script type="application/ld+json">${JSON.stringify(starts.map((s, i) => ({ '@type': 'Event', name: 'Cosmodolphins', startDate: s, image: [`https://v.example/p${i}.jpg`] })))}</script>`;
+  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  // one event page whose date lags the listing still shows the same show
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  // a series page: the node for the day wins, no node for the day means no guess
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p1.jpg');
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-10-06T19:00:00+03:00'), 'https://v.example/e/1', EV), null);
+  // Fienta serves pictures through an extensionless proxy: the file is in the query
+  const fienta = '<meta property="og:title" content="Cosmodolphins"><meta property="og:image" content="https://fienta.com/cf/img/?width=1200&file=/org/1/poster.jpg">';
+  assert.ok(posterFromPage(fienta, 'https://fienta.com/et/cosmo', EV)?.image_url.includes('poster.jpg'));
 });
 
 test('titles and pages', () => {
@@ -51,4 +58,20 @@ test('titles and pages', () => {
   assert.equal(sameTitle('Live', 'Live music night'), false);
   assert.deepEqual(pagesFor({ ...EV, url: 'https://www.facebook.com/events/1/', ticket_url: 'https://fienta.com/x' }, ['javascript:alert(1)', 'https://t.me/x']),
     ['https://fienta.com/x']);
+});
+
+import { commonsUrl, siteIcon, placeFromOsm } from '../venues.ts';
+
+test('a vector logo is asked for as a PNG; the site icon is a logo of last resort', () => {
+  assert.match(commonsUrl('Some logo.svg'), /\/thumb\/.+\/Some_logo\.svg\/512px-Some_logo\.svg\.png$/);
+  assert.match(commonsUrl('Photo.jpg'), /commons\/[0-9a-f]\/[0-9a-f]{2}\/Photo\.jpg$/);
+  const head = '<link rel="icon" href="/f-32.png" sizes="32x32"><link rel="icon" href="/f-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/touch.png">';
+  assert.equal(siteIcon(head, 'https://venue.example/'), 'https://venue.example/f-192.png');
+  assert.equal(siteIcon('<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/t.png" sizes="32x32">', 'https://venue.example/'), null);
+  assert.equal(fromHomepage(head, 'https://venue.example/', 'X').image_source, 'logo');
+});
+
+test('OSM contact websites are read from more than one tag', () => {
+  const p = placeFromOsm({ type: 'node', id: 1, lat: 59.4, lon: 24.7, tags: { name: 'Klubi', amenity: 'nightclub', 'operator:website': 'https://klubi.example' } }, 'tallinn');
+  assert.equal(p?.website, 'https://klubi.example/');
 });

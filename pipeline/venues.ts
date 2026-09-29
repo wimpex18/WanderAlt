@@ -10,7 +10,7 @@
 
 import { createHash } from 'node:crypto';
 import type { Place } from './places.ts';
-import { get, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
+import { UA, get, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
 import { closureReason, overpass, type OsmElement } from './osm.ts';
 
 export interface VenueDetails {
@@ -83,7 +83,7 @@ export function placeFromOsm(el: OsmElement, city: string): RichPlace | null {
     lat: lat ?? null,
     lng: lng ?? null,
     osm_id: `${el.type}/${el.id}`,
-    website: httpUrl(t.website ?? t['contact:website']),
+    website: httpUrl(t.website ?? t['contact:website'] ?? t['operator:website'] ?? t.url),
     instagram: socialUrl('instagram.com', t['contact:instagram'] ?? t.instagram),
     facebook: socialUrl('facebook.com', t['contact:facebook'] ?? t.facebook),
     opening_hours: t.opening_hours ?? null,
@@ -98,7 +98,43 @@ export function placeFromOsm(el: OsmElement, city: string): RichPlace | null {
 export function commonsUrl(file: string): string {
   const name = file.replace(/ /g, '_');
   const md5 = createHash('md5').update(name).digest('hex');
-  return `https://upload.wikimedia.org/wikipedia/commons/${md5[0]}/${md5.slice(0, 2)}/${encodeURIComponent(name)}`;
+  const dir = `${md5[0]}/${md5.slice(0, 2)}`;
+  // The image proxy serves raster files only, so a vector logo is asked for as a PNG render.
+  if (/\.svg$/i.test(name)) return `https://upload.wikimedia.org/wikipedia/commons/thumb/${dir}/${encodeURIComponent(name)}/512px-${encodeURIComponent(name)}.png`;
+  return `https://upload.wikimedia.org/wikipedia/commons/${dir}/${encodeURIComponent(name)}`;
+}
+
+/** Wikidata items that name these OpenStreetMap objects as their own
+ *  (P11693 node, P10689 way, P402 relation): identity by a curated link,
+ *  not by a name. One query for all of them. */
+export async function wikidataByOsm(osmIds: string[]): Promise<Map<string, string>> {
+  const by: Record<string, string[]> = { node: [], way: [], relation: [] };
+  for (const id of new Set(osmIds)) {
+    const m = /^(node|way|relation)\/(\d+)$/.exec(id);
+    if (m) by[m[1]].push(m[2]);
+  }
+  const block = (prop: string, type: string) => by[type].length
+    ? `{ VALUES ?n { ${by[type].map(n => `"${n}"`).join(' ')} } ?i wdt:${prop} ?n . BIND(CONCAT("${type}/", ?n) AS ?osm) }` : '';
+  const parts = [block('P11693', 'node'), block('P10689', 'way'), block('P402', 'relation')].filter(Boolean);
+  const out = new Map<string, string>();
+  if (!parts.length) return out;
+  const query = `SELECT ?i ?osm WHERE { ${parts.join(' UNION ')} }`;
+  // POST: a few hundred ids do not fit in a URL.
+  const r = await fetch('https://query.wikidata.org/sparql', {
+    method: 'POST',
+    headers: { 'user-agent': UA, accept: 'application/sparql-results+json', 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ query, format: 'json' }),
+    signal: AbortSignal.timeout(45_000),
+  });
+  if (!r.ok) throw new Error(`wikidata ${r.status}`);
+  const rows = (await r.json() as { results: { bindings: { i: { value: string }; osm: { value: string } }[] } }).results.bindings;
+  for (const b of rows) {
+    const qid = /Q\d+$/.exec(b.i.value)?.[0];
+    // Two items for one object is not identity: leave it.
+    if (qid && !out.has(b.osm.value)) out.set(b.osm.value, qid); else if (qid && out.get(b.osm.value) !== qid) out.set(b.osm.value, '');
+  }
+  for (const [k, v] of out) if (!v) out.delete(k);
+  return out;
 }
 
 async function fromWikidata(qid: string): Promise<VenueDetails> {
@@ -179,6 +215,22 @@ export function ownLogoImg(html: string, base: string): string | null {
   return null;
 }
 
+/** The site's own touch icon (180 px and up): its mark, when it declares no logo. */
+export function siteIcon(html: string, base: string): string | null {
+  let best: { u: string; size: number } | null = null;
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = m[0];
+    const rel = /\brel=["']([^"']+)["']/i.exec(tag)?.[1] ?? '';
+    if (!/\b(apple-touch-icon(-precomposed)?|icon)\b/i.test(rel) || /mask-icon/i.test(rel)) continue;
+    const href = httpUrl(decodeEntities(/\bhref=["']([^"']+)["']/i.exec(tag)?.[1] ?? ''), base);
+    if (!href || /\.(ico|svg)(\?|$)/i.test(href)) continue;
+    const touch = /apple-touch-icon/i.test(rel);
+    const size = Number(/sizes=["'](\d+)x\d+/i.exec(tag)?.[1] ?? (touch ? 180 : 0));
+    if (size >= 120 && (!best || size > best.size)) best = { u: href, size };
+  }
+  return best?.u ?? null;
+}
+
 /** Homepage metadata identifies the website, not necessarily the venue:
  *  og:image often shows a current show, an advert or a placeholder. Only
  *  recognisable logo filenames are imported automatically; venue photos
@@ -196,7 +248,7 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
   const filename = og ? (new URL(og).pathname.split('/').pop() ?? '').replace(/%20/gi, ' ') : '';
   const logo = LOGO_FILE.test(filename);
   const image = (logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null)
-    ?? jsonLdLogo(html, base) ?? ownLogoImg(html, base);
+    ?? jsonLdLogo(html, base) ?? ownLogoImg(html, base) ?? siteIcon(html, base);
   const desc = meta('og:description') ?? meta('description');
   return {
     instagram: first('instagram.com'),

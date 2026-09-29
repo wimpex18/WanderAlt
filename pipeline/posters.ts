@@ -51,10 +51,17 @@ const meta = (html: string, prop: string) =>
   new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, 'i').exec(html)?.[1]
   ?? new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, 'i').exec(html)?.[1];
 
+/** The picture's file name: the path's last segment, or the `file` parameter
+ *  of an image proxy (Fienta serves /cf/img/?file=/org/1/poster.jpg). */
+const fileName = (u: URL) => decodeURIComponent(u.searchParams.get('file') ?? u.pathname).split('/').pop() ?? '';
+
 const goodImage = (u: string | null) => {
   if (!u) return null;
-  const file = decodeURIComponent(new URL(u).pathname.split('/').pop() ?? '');
-  return NOT_A_POSTER.test(file) || !/\.(jpe?g|png|webp|avif|gif)$/i.test(file) ? null : u;
+  const url = new URL(u);
+  const file = fileName(url);
+  // Vector files and icons are marks, not pictures of a show.
+  if (NOT_A_POSTER.test(file) || /\.(svg|ico)$/i.test(file)) return null;
+  return url.href;
 };
 
 /** The one image this page attaches to this event, or null. */
@@ -64,13 +71,14 @@ export function posterFromPage(html: string, pageUrl: string, ev: PosterEvent): 
   const attr = `Image from ${host}`;
   const day = tallinnDay(ev.starts_at);
 
-  // A structured Event: its own name, date and image.
-  for (const n of jsonLdEvents(html)) {
-    const name = typeof n.name === 'string' ? decodeEntities(n.name) : '';
-    if (!name || !sameTitle(name, ev.title)) continue;
-    const start = typeof n.startDate === 'string' ? n.startDate : '';
-    if (start && !Number.isNaN(Date.parse(start)) && tallinnDay(new Date(start).toISOString()) !== day) continue;
-    const img = n.image;
+  // A structured Event with this title. On a page that lists a series, the
+  // node for this day; on a page for one event, that event (a page's date
+  // can lag the listing, the show is still the show).
+  const named = jsonLdEvents(html).filter(n => typeof n.name === 'string' && sameTitle(decodeEntities(n.name), ev.title));
+  const onDay = (n: Node) => typeof n.startDate === 'string' && !Number.isNaN(Date.parse(n.startDate)) && tallinnDay(new Date(n.startDate).toISOString()) === day;
+  const node = named.find(onDay) ?? (named.length === 1 ? named[0] : undefined);
+  if (node) {
+    const img = node.image;
     const u = goodImage(httpUrl(Array.isArray(img) ? img[0] : typeof img === 'object' && img ? (img as Node).url : img, pageUrl));
     if (u) return { image_url: u, image_attr: attr };
   }
@@ -78,10 +86,7 @@ export function posterFromPage(html: string, pageUrl: string, ev: PosterEvent): 
   // Otherwise the page's headline must be this event and its og:image the picture.
   const heading = decodeEntities(meta(html, 'og:title') ?? /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html)?.[1]?.replace(/<[^>]+>/g, ' ') ?? '');
   if (!heading || !sameTitle(heading, ev.title)) return null;
-  // A dated page for another day is another performance's page.
-  const stated = /"startDate"\s*:\s*"([^"]+)"/.exec(html)?.[1];
-  if (stated && !Number.isNaN(Date.parse(stated)) && tallinnDay(new Date(stated).toISOString()) !== day) return null;
-  const u = goodImage(httpUrl(decodeEntities(meta(html, 'og:image') ?? ''), pageUrl));
+  const u = goodImage(httpUrl(decodeEntities(meta(html, 'og:image') ?? meta(html, 'twitter:image') ?? ''), pageUrl));
   return u ? { image_url: u, image_attr: attr } : null;
 }
 

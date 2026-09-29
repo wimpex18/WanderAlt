@@ -18,7 +18,7 @@ export const addressKey = (s: string | null | undefined) => nameKey((s ?? '').sp
 
 const GENERIC = new Set(('tallinn tallinna eesti estonia sa ou mtu as club klubi kino cinema galerii gallery ' +
   'theatre teater baar bar pub cafe kohvik shop store raamatupood raamatukauplus').split(' '));
-const core = (s: string) => nameKey(s).split(' ').filter(w => !GENERIC.has(w)).join(' ');
+export const core = (s: string) => nameKey(s).split(' ').filter(w => !GENERIC.has(w)).join(' ');
 const roomNumbers = (s: string) => nameKey(s).match(/\b\d+\b/g)?.join(' ') ?? '';
 
 /** Normalised edit similarity, independent of input order. */

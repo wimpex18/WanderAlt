@@ -87,6 +87,7 @@
     "curated": false,
     "config": {
       "venue_name": "Kultuurikatel",
+      "venue_site": "https://kultuurikatel.ee/",
       "address": "Põhja pst 27a, Tallinn",
       "pages": 2
     }
@@ -119,7 +120,8 @@
     "label": "Paavli Kultuurivabrik",
     "curated": true,
     "config": {
-      "venue_name": "Paavli Kultuurivabrik"
+      "venue_name": "Paavli Kultuurivabrik",
+      "venue_site": "https://www.kultuurivabrik.ee/"
     }
   },
   {
@@ -141,7 +143,8 @@
     "label": "Uus Laine",
     "curated": true,
     "config": {
-      "venue_name": "Uus Laine"
+      "venue_name": "Uus Laine",
+      "venue_site": "https://uuslaine.com/"
     }
   },
   {

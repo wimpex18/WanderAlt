@@ -90,6 +90,10 @@
     handle:        r.handle,
     imageUrl:      proxifyImage(r.image_url) || null,
     imageAttr:     r.image_attr    || null,
+    /* The venue's own logo or photo, for a listing without artwork. */
+    venueImageUrl:    proxifyImage(r.venue_image_url) || null,
+    venueImageAttr:   r.venue_image_attr || null,
+    venueImageSource: r.venue_image_source || null,
     tonight:       r.tonight,
     thisWeek:      r.this_week,
     lat:       r.lat       ?? null,
@@ -264,7 +268,7 @@
         `picks`,
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
-                `image_url,image_attr,tonight,this_week,` +
+                `image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,tonight,this_week,` +
                 `lat,lng,address,source_url,` +
                 /* Lists read a 300-character teaser; originalDescription
                    fetches the bounded original only when opened. */
@@ -339,7 +343,7 @@
     }
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
     try {
-      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`);
+      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`);
       if (picks && picks[0]) {
         return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
       }
