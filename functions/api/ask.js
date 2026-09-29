@@ -65,8 +65,20 @@ const shape = (j, today) => {
 const json = (body, status = 200, cache = 'no-store') =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cache } });
 
+/* Only the site's own pages may spend the free allocation. A browser says
+   so with Sec-Fetch-Site (or Origin/Referer on older ones); a script or a
+   crawler calling the address directly gets nothing, and the page keeps
+   its own reading of the search (ask.js). */
+const fromOwnPage = (request, url) => {
+  const site = request.headers.get('sec-fetch-site');
+  if (site) return site === 'same-origin';
+  const from = request.headers.get('origin') || request.headers.get('referer') || '';
+  try { return new URL(from).host === url.host; } catch { return false; }
+};
+
 export async function onRequestGet({ request, env, waitUntil }) {
   const url = new URL(request.url);
+  if (!fromOwnPage(request, url)) return json({ error: 'forbidden' }, 403);
   const q = (url.searchParams.get('q') || '').trim().slice(0, 140);
   const today = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('today') || '') ? url.searchParams.get('today') : new Date().toISOString().slice(0, 10);
   if (q.length < 3) return json({ error: 'short' }, 400);
