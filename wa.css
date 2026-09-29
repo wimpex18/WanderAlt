@@ -521,8 +521,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* ── Small facts ───────────────────────────────────────────────── */
 .wa-now { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent); font: 600 .75rem/1 var(--f-sans); letter-spacing: .02em; }
-.wa-now::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: wa-pulse 1.6s var(--ease) infinite; }
-@keyframes wa-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.wa-now::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .wa-tag { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); font-weight: 500; color: var(--ink-2); }
 .wa-tag .wa-ic { width: 15px; height: 15px; }
 .wa-tag__why { padding: 3px 9px; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 600; font-size: .75rem; }

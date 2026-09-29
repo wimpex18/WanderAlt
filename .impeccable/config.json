@@ -20,6 +20,15 @@
         "value": "cubic-bezier(.34, 1.4, .5, 1)",
         "createdAt": "2026-09-29T06:43:53.417Z",
         "reason": "Agent review: existing spring token implements the sheet and tab-bar motion specified in docs/frontend.md; its overshoot is intentional."
+      },
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-29T07:01:40.495Z",
+        "reason": "Agent review: this finding identifies the temporary wa-skel loading shimmer in wa.css, not scrolling content; event shelves move only through user scrolling or Previous/Next clicks in render.js."
       }
     ]
   }

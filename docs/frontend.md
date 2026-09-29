@@ -27,7 +27,7 @@ Shared: `tabbar.js` (the tab bar's glass drop), `render.js` (`WA.R`: rows, cards
 - **Type.** Geologica (variable 300–800; Latin, Latin Extended, Cyrillic, self-hosted in `fonts/`), weights 500–700, tight tracking on headings. Geist Mono only for feed URLs.
 - **Icons, two tiers.** UI icons: 24px line, 1.8 stroke (`WA.Icon`). Pictograms: 48px line drawings for kinds and cities on a tinted tile in their own hue (`WA.Picto`, `.wa-picto--<name>`). Hue decorates; the word beside it carries the meaning.
 - **Shape.** Concentric radii: 8 / 12 / 16 / 20 / 28, pills for chips, search and pins. Cards 20px, sheets 28px.
-- **Motion.** `--ease` and `--spring` only; press states scale, sheets rise with the spring. `prefers-reduced-motion` removes all of it. Map sheet snaps set the final list height once and animate its position; category folding uses grid rows. Tab-pill and grip widths do not animate. Impeccable value exceptions retain the specified spring and Geist Mono feed URLs.
+- **Motion.** `--ease` and `--spring` only; press states scale, sheets rise with the spring. `prefers-reduced-motion` removes all of it. Map sheet snaps set the final list height once and animate its position; category folding uses grid rows. Tab-pill and grip widths do not animate. The Now badge uses a static dot; shelves move only through user input. Temporary loading skeletons shimmer until data arrives. Impeccable exceptions retain the specified spring, Geist Mono feed URLs and the loading shimmer misidentified as a marquee.
 - WCAG 2.2 AA; 44px tap floor; focus ring 2px ink.
 
 ## Patterns
