@@ -103,7 +103,7 @@ export async function onRequest(context) {
   try {
     if (isPick) {
       const rows = await sbGet(
-        `picks?id=eq.${encodeURIComponent(id)}&select=title,description,quote,handle,image_url,city,venue,neighborhood,time&limit=1`);
+        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time&limit=1`);
       const pick = rows[0];
       if (!pick) return res;                            // unknown id → default OG
       const photo = !!pick.image_url;
@@ -114,8 +114,7 @@ export async function onRequest(context) {
 
       /* The card reads like the row it came from: the sentence when there
          is a real one, otherwise the facts a reader decides on. */
-      const said = saysSomething(pick.description, pick.title)
-                || saysSomething(pick.quote, pick.title);
+      const said = saysSomething(pick.quote, pick.title);
       const facts = [pick.venue, pick.neighborhood, pick.time]
         .map(v => (v == null ? '' : String(v).trim()))
         .filter(Boolean);
@@ -126,7 +125,7 @@ export async function onRequest(context) {
         description: said || facts.join(' · '),
         image:       photo
           ? pick.image_url
-          : `${SB_BASE}/functions/v1/og-image?id=${encodeURIComponent(id)}`,
+          : `${SB_BASE}/functions/v1/og-image?id=${encodeURIComponent(id)}&v=english-guide`,
         photo,
       });
     }
@@ -162,7 +161,7 @@ export async function onRequest(context) {
       title:       `${name} · WanderAlt`,
       description: `Everything we read from ${name}. ${listed}`,
       image:       `${SB_BASE}/functions/v1/og-image?${
-        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}`,
+        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}&v=route-spark`,
       photo:       false,
     });
   } catch (_) {

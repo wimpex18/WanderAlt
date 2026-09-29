@@ -133,9 +133,10 @@ export function handleFits(profile: string, name: string, site: string): boolean
   return words.some(w => handle.includes(w.replace(/ /g, '')) || (handle.length >= 4 && w.includes(handle)));
 }
 
-/** Links a venue's own homepage makes to its social profiles, and its
- *  og:image and meta description. The site is the venue's, so this is
- *  identity, not a guess, as long as the site is still the venue's. */
+/** Homepage metadata identifies the website, not necessarily the venue:
+ *  og:image often shows a current show, an advert or a placeholder. Only
+ *  recognisable logo filenames are imported automatically; venue photos
+ *  come from Wikidata P18 or an individually reviewed image. */
 export function fromHomepage(html: string, base: string, name = ''): VenueDetails {
   if (PARKED.test(html)) return {};
   const hrefs = [...html.matchAll(/href=["']([^"']+)["']/gi)].map(m => decodeEntities(m[1]));
@@ -145,20 +146,23 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
   const meta = (prop: string) =>
     new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, 'i').exec(html)?.[1]
     ?? new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, 'i').exec(html)?.[1];
-  const og = meta('og:image');
+  const og = httpUrl(decodeEntities(meta('og:image') ?? ''), base);
+  const filename = og ? (new URL(og).pathname.split('/').pop() ?? '').replace(/%20/gi, ' ') : '';
+  const logo = /(?:^|[\s_+.-])logo(?:[\s_+.-]|jpg|d|fail|$)/i.test(filename);
+  const image = logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null;
   const desc = meta('og:description') ?? meta('description');
   return {
     instagram: first('instagram.com'),
     facebook: first('facebook.com'),
-    image_url: og ? httpUrl(decodeEntities(og), base) : null,
-    image_attr: og ? `Image from ${new URL(base).hostname.replace(/^www\./, '')}` : null,
-    image_source: og ? 'website' : null,
+    image_url: image,
+    image_attr: image ? `Logo from ${new URL(base).hostname.replace(/^www\./, '')}` : null,
+    image_source: image ? 'logo' : null,
     description: desc ? clip(decodeEntities(desc).trim(), 400) : null,
   };
 }
 
 /** Fill what a place lacks; never overwrite what it has. Wikidata's photo
- *  beats a website's og:image, which is often a logo. */
+ *  beats a website's logo. */
 export async function enrichPlace(p: RichPlace): Promise<Partial<RichPlace>> {
   const patch: Partial<RichPlace> = {};
   const take = (d: VenueDetails) => {

@@ -1,8 +1,8 @@
 # Models
 
-The pipeline uses a model for three jobs: reading prose (Telegram posts, venue pages, RSS) into dated events; classifying every event (kind, tags, how well it fits WanderAlt, an English title and one-sentence summary); and giving a kind to venues OpenStreetMap cannot name. Structured sources (Fienta, JSON-LD) never need a model to be read.
+The pipeline uses a model for four jobs: reading prose (Telegram posts, venue pages, RSS) into dated events; classifying every event (kind, tags, how well it fits WanderAlt); giving a kind to venues OpenStreetMap cannot name; and editing stored English titles and short highlights independently of extraction/classification. Structured sources (Fienta, JSON-LD) never need a model to be read.
 
-Free models only, with no paid plan and no card on file. Same approach as Eesti-Keelt: Cloudflare Workers AI first, OpenRouter's `:free` models as fallback. Checked against the live catalogues on 27 September 2026.
+Free models only, with no paid plan and no card on file. Same approach as Eesti-Keelt: Cloudflare Workers AI first, OpenRouter's `:free` models as fallback. Checked against the live catalogues on 29 September 2026.
 
 ## Lanes
 
@@ -12,6 +12,8 @@ Tried in this order. A lane without its key is skipped; a lane that fails twice 
 |---|---|---|---|
 | Workers AI | `@cf/openai/gpt-oss-120b` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (permission: Workers AI Read) | 10,000 neurons a day on the Workers Free plan, shared by every model on the account |
 | OpenRouter | `google/gemma-4-31b-it:free` | `OPENROUTER_API_KEY` (free account, no card) | 50 requests a day, 20 a minute |
+
+**English editing.** `pipeline/english.ts` uses `@cf/openai/gpt-oss-120b`, the same free model as extraction/classification, with the existing OpenRouter free fallback. Override with `ENGLISH_MODEL`. Six editorial calls are reserved per pipeline run, sharing the run's 1,500-neuron Workers AI ceiling; extraction cannot consume those reserved calls, and its Workers lane stops 500 neurons below the shared ceiling to leave room for English after new events are written. Saved copy and input hashes avoid repeating translations on page visits or unchanged source refreshes. No paid translation API.
 
 Override a pin without a code change: `WORKERS_AI_MODEL`, `OPENROUTER_MODEL`.
 
@@ -36,10 +38,6 @@ It needs a Workers AI binding named `AI` on the Pages project: Workers & Pages â
 - **NVIDIA** `nemotron-3.5-lightning` (used by the retired pipeline): survives as `nvidia/nemotron-3.5-lightning:free` on OpenRouter but has no JSON-schema support there, so Gemma 4 took the OpenRouter slot.
 - **GitHub Models**: closed to new customers in June 2026.
 - **Other Workers AI models**: `@cf/qwen/qwen3.8-27b` reads images and runs on the free plan, but Eesti-Keelt saw empty answers from it at long outputs. GLM-5.3 and DeepSeek V4 are not on the free plan.
-
-## Not yet verified
-
-No model lane has been called for real yet: this machine had no keys when the pipeline was written. Both lanes use the OpenAI-compatible chat-completions API as their providers document it (Eesti-Keelt calls the same Workers AI endpoint), and the tests use fake lanes. Once the keys are set, run `npm run pipeline:models`, then `npm run pipeline:dry`, and read the output before trusting the scores.
 
 ## Checking
 

@@ -82,7 +82,7 @@
     if (skip !== 'seen' && state.hideSeen) out = window.WA.Seen.filter(out);
     if (skip !== 'followed' && state.followed) out = out.filter(R().isFollowed);
     if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
-    if (skip !== 'english' && state.english) out = out.filter(e => (e.tags || []).some(t => String(t).toLowerCase() === 'english'));
+    if (skip !== 'english' && state.english) out = out.filter(e => (e.eventLanguages || []).includes('en'));
     if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin != null && Number(e.priceMin) <= state.maxPrice));
     if (skip !== 'q' && state.q) out = out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
     return out;

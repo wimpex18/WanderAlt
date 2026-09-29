@@ -184,6 +184,31 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-brand__city { display: none; }
 :root[data-theme="dusk"] .wa-brand { color: var(--ink); }
 
+/* One brief introduction per session: mark, wordmark, then the page.
+   Hidden by default so a failed or blocked script never covers content. */
+.wa-brand-reveal { display: none; }
+:root[data-brand-reveal] .wa-brand-reveal {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; background: var(--paper); color: var(--accent);
+  pointer-events: none;
+  animation: wa-brand-reveal-out 1s var(--ease) both;
+}
+:root[data-theme="dusk"] .wa-brand-reveal { color: var(--ink); }
+.wa-brand-reveal__mark { flex: none; animation: wa-brand-reveal-in 220ms var(--ease) both; }
+.wa-brand-reveal__word {
+  font-size: 2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
+  animation: wa-brand-reveal-in 220ms var(--ease) 220ms both;
+}
+@keyframes wa-brand-reveal-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wa-brand-reveal-out {
+  0%, 72% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-brand-reveal] .wa-brand-reveal { display: none; }
+}
+
 /* The tab bar: a floating glass capsule on phones, the masthead nav
    from 1024. One DOM node either way. */
 .wa-tabbar {
@@ -557,7 +582,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-poster__flag.wa-flag--cancelled, .wa-poster__flag.wa-flag--postponed { background: #1c1c1e; color: #fff; }
 .wa-poster--off .wa-poster__art img, .wa-poster--off .wa-poster__type { opacity: .45; filter: grayscale(1); }
 .wa-row--off .wa-row__thumb { opacity: .45; filter: grayscale(1); }
-.wa-row--off .wa-row__meta, .wa-row--off .wa-row__orig { color: var(--ink-3); }
+.wa-row--off .wa-row__meta { color: var(--ink-3); }
 .wa-poster--off .wa-poster__title, .wa-row--off .wa-row__title { text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: var(--ink-3); }
 .wa-poster__type { position: absolute; inset: 0; display: grid; place-items: center; }
 .wa-poster__type .wa-picto { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; }
@@ -594,7 +619,6 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-row__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .wa-row__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 1px; }
 .wa-row__title { display: block; font-size: 1.0625rem; font-weight: 600; line-height: 1.3; letter-spacing: -.012em; overflow-wrap: anywhere; text-wrap: pretty; }
-.wa-row__orig { display: block; font-size: var(--fs-small); color: var(--ink-3); line-height: 1.3; overflow-wrap: anywhere; }
 .wa-row__meta { display: block; margin-top: 2px; font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wa-row__thumb { width: 76px; height: 76px; border-radius: var(--r-md); overflow: hidden; display: grid; place-items: center; align-self: start; }
 .wa-row__thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -801,8 +825,10 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 
 .det-block { display: grid; gap: var(--s-3); padding-top: var(--s-6); border-top: 1px solid var(--hair); }
 .det-block__title { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; }
-.det-more { justify-self: start; }
-.wa-prose--clamp { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.det-original { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.det-original > summary { min-height: 48px; padding: var(--s-3) 0; cursor: pointer; font-weight: 600; }
+.det-original > summary:hover { color: var(--accent); }
+.det-original__body { display: grid; gap: var(--s-3); padding-bottom: var(--s-5); }
 .det-notice { display: flex; gap: var(--s-3); align-items: start; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); }
 .det-notice strong { display: block; }
 .det-notice--off { background: var(--ink); color: var(--paper); }
@@ -831,12 +857,6 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-going__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); }
 .det-going__text { font-weight: 600; font-size: .9375rem; min-width: 0; }
 .det-going .wa-btn.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
-/* Who's in it: the source's own credits, role then names. */
-.det-credits { display: grid; gap: 10px; margin: 0 0 var(--s-2); }
-.det-credits div { display: grid; grid-template-columns: minmax(96px, 34%) 1fr; gap: var(--s-3); }
-.det-credits dt { color: var(--ink-3); font-size: var(--fs-small); padding-top: 2px; }
-.det-credits dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
 
 /* The small map on event and venue pages; tap opens the Map tab on it. */
 .det-minimap { position: relative; display: block; height: 168px; margin: 0 0 var(--s-3); border-radius: var(--r-lg); overflow: hidden; background: var(--paper-2); border: 1px solid var(--hair); }

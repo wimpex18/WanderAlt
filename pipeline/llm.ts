@@ -10,7 +10,7 @@
 
 import type { Candidate, Enrichment, EventKind, Flag } from './types.ts';
 import { EVENT_KINDS } from './types.ts';
-import { clip, httpUrl, sleep } from './util.ts';
+import { clip, httpUrl, nameKey, sleep } from './util.ts';
 import { tallinnToIso } from './time.ts';
 
 const FLAGS = new Set<string>(['cancelled', 'postponed', 'sold_out', 'few_left']);
@@ -74,8 +74,7 @@ export async function transcribePoster(imageUrl: string): Promise<string | null>
   }
 }
 
-export function lanes(): Lane[] {
-  const workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b';
+export function lanes(workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b'): Lane[] {
   const openrouter = env('OPENROUTER_MODEL') ?? 'google/gemma-4-31b-it:free';
   const account = env('CLOUDFLARE_ACCOUNT_ID');
 
@@ -131,18 +130,20 @@ export class Models {
   readonly budget: number;
   readonly available: Lane[];
 
-  constructor(all: Lane[] = lanes(), budget = Number(env('LLM_CALL_BUDGET') ?? 60)) {
+  constructor(all: Lane[] = lanes(), budget = Number(env('LLM_CALL_BUDGET') ?? 60), neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500)) {
     this.available = all.filter(l => l.key);
     this.budget = budget;
+    this.neuronBudget = neuronBudget;
   }
 
   /** Workers AI's free allocation is 10,000 neurons a day per Cloudflare
    *  account, shared with anything else on the account. Past this many in
    *  one run, the lane is skipped and OpenRouter answers instead. */
-  readonly neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500);
+  readonly neuronBudget: number;
 
   get ready(): boolean {
-    return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2);
+    return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2
+      && (l.name !== 'workers-ai' || usage.neurons < this.neuronBudget));
   }
 
   /** First lane that answers with parseable JSON wins. Returns the lane's label too. */
@@ -211,7 +212,7 @@ Return every event the text announces that takes place in Tallinn on a stated da
 Rules:
 - Copy facts; never invent a date, time, venue, price or link. Use null when the text does not say.
 - venue is the place where it happens (a club, gallery, hall, street address). Never the event's own name or the festival's name; null if no place is given.
-- Resolve dates like "28.09" or "this Friday" against the posting date you are given. Skip anything already over.
+- Resolve dates like "28.09" or "this Friday" against the posting date you are given. Include past dated announcements too; the caller filters dates after checking whether the post covers several events.
 - A multi-day run with separate dated shows is one entry per date; an exhibition open over a span is one entry with start and end dates.
 - state is "scheduled" unless the text says this event is "cancelled", "postponed", "sold_out", or "few_left" (last tickets, 80% sold). A cancelled event is still returned.
 - Skip adverts, pet adoption, news, opinions, vacancies and online-only events.
@@ -220,12 +221,17 @@ Rules:
 
 export async function extractEvents(
   models: Models,
-  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },   // images: the post's photos, kept as the event image
+  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },
 ): Promise<Candidate[]> {
   const posted = args.postedAt ? new Date(args.postedAt) : new Date();
   const user = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/Tallinn' })})\n\n${args.text}`;
   const { data, engine } = await models.ask(EXTRACT_SYSTEM, user, EXTRACT_SCHEMA);
   const events = ((data as { events?: unknown[] }).events ?? []) as Record<string, string | null>[];
+  // A roundup's first photo identifies the post, not each event in it.
+  // Repeated dates of the same show may share its poster. Count before
+  // date filtering so an expired sibling cannot make a roundup look single.
+  const titles = new Set(events.map(e => nameKey(e.title ?? '')).filter(Boolean));
+  const image = titles.size === 1 ? httpUrl(args.images?.[0]) : null;
   const out: Candidate[] = [];
   for (const e of events) {
     const starts = e.start ? tallinnToIso(e.start) : null;
@@ -247,7 +253,7 @@ export async function extractEvents(
       currency: /eur|€/i.test(price) ? 'EUR' : null,
       ticket_url: null,
       url: httpUrl(e.url) ?? args.pageUrl ?? null,
-      image_url: args.images?.[0] ?? null,
+      image_url: image,
       language: e.language ?? null,
       kind_hint: null,
       flag: FLAGS.has(e.state ?? '') ? e.state as Flag : null,
