@@ -274,6 +274,7 @@ async function main() {
       // A maintenance check, not a source: it is logged and retried next run,
       // and does not turn the run red or count against the source.
       skipCatalogue = true;
+      delete health[osm.id];   // not collected this run: neither a failure nor an empty source
       log(`${osm.id}: liveness check failed, will retry next run; visibility unchanged: ${(e as Error).message}`);
     }
   }
