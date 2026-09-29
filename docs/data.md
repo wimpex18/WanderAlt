@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929093648_korean_event_language.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929120000_pipeline_runs.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -15,6 +15,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `place_match_reviews` | Uncertain pairs, evidence, and `pending` / `separate` / `merged` decisions | no |
 | `place_verification_reviews` (view) | Canonical venues awaiting activity evidence or review, including expired confirmations | no |
 | `place_merge_log`, `event_merge_log`, `place_liveness_log` | Before/after snapshots, provenance, moved events and undo history | no |
+| `pipeline_runs` | One row per run: neurons and model calls spent, events written, whether every source was healthy. Also the daily Workers AI budget | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
@@ -57,7 +58,9 @@ A venue name is matched against every place's name and `aliases` (lowercased, ac
 - by its address, reduced to the form Nominatim matches ("Kentmanni tänav 28, 10116 Tallinn" becomes "Kentmanni 28, Tallinn"; "maantee" and "puiestee" become "mnt" and "pst"), for coordinates;
 - by its name, for OpenStreetMap's own record of the venue. That record's id and a `kind` from its tags are kept only when the names agree and it lies within 250 m of the address, because a name alone can match a namesake across town.
 
-Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, with at least 1.1 seconds between requests, including failures. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
+Places still unplaced or unidentified are retried, ten per run, at most 100 lookups a run, with at least 1.1 seconds between requests, including failures. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
+
+**Areas.** A place's `neighborhood` is the asum a visitor knows (Kalamaja, Old Town, Pelgulinn), from Nominatim's `quarter`, never the district (Põhja-Tallinna linnaosa). Active places still labelled with a district or nothing are reverse-geocoded, 40 a run, from the same lookup allowance.
 
 The site's Places tab and venue map pins recommend only freshly verified, canonical places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor. Unverified records remain available for admin review and direct detail links, without an Open now claim.
 
@@ -123,7 +126,7 @@ Descriptions pass through `scrubContacts` (`pipeline/util.ts`) before they are s
 | Other | 0.35 to 0.6, or not yet classified | `review` |
 | Other | < 0.35 | `rejected` |
 
-Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, edit `status` in the Supabase Table Editor and start `status_note` with `manual`.
+Once written, an event keeps its status; later runs refresh its facts only, and a run without a model leaves the earlier classification alone. To publish or reject by hand, open `/review` (not linked from the site, `noindex`, disallowed in `robots.txt`), paste the Supabase secret key (kept in that tab's sessionStorage only) and press Publish or Reject; it sets `status` and a `status_note` starting with `manual`, which no run changes, not even the late classification of unclassified events. The Table Editor works too: edit `status` and start `status_note` with `manual`.
 
 Before any model is asked, titles naming a format WanderAlt never lists (conference, summit, forum, seminar, expo, trade fair, hackathon, business, networking, job fair; Estonian forms too) are rejected by rule, whoever lists them: Kultuurikatel rents its halls out and lists these beside its gigs.
 

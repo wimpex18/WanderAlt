@@ -3,6 +3,7 @@
 
 User-agent: *
 Allow: /
+Disallow: /review
 # Block AI crawlers that respect a Disallow.
 # bots that show up most often and respect a Disallow.
 User-agent: GPTBot

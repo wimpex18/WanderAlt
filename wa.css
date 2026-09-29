@@ -1108,3 +1108,13 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   .wa-topbar, .wa-tabbar, .prog-controls, .prog-aside, .wa-row__thumb, .home-side, .wa-bar { display: none !important; }
   body { padding: 0; }
 }
+
+/* Review queue (/review, unlinked): one card per held-back event. */
+.review { padding-top: var(--s-7); }
+.review > .wa-note, .review > .wa-field { margin-top: var(--s-5); }
+.review__count { margin-top: var(--s-5); }
+.review__list { list-style: none; padding: 0; margin: var(--s-4) 0 0; display: grid; gap: var(--s-4); }
+.review__item { display: grid; gap: var(--s-2); padding: var(--s-4) 0; border-top: 1px solid var(--hair); }
+.review__title { font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.review__desc { color: var(--ink-2); font-size: var(--fs-small); overflow-wrap: anywhere; }
+.review__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); }

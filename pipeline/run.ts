@@ -21,7 +21,7 @@ import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
-import { Places, type Place } from './places.ts';
+import { Places, isDistrict, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
@@ -146,6 +146,25 @@ async function main() {
   const sources = loadSources().filter(s => !ONLY || s.id === ONLY);
   const db = DRY ? null : new Db();
   const english = englishModels(englishBudget);
+
+  // The run's row, and what today's earlier runs already spent: the free
+  // Workers AI allocation is per day (reset 00:00 UTC) and per account.
+  // A missing table (migration not applied yet) leaves the per-run cap alone.
+  let runId: number | null = null;
+  if (db) {
+    try {
+      const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
+      const spent = (await db.select<{ neurons: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=neurons`))
+        .reduce((a, r) => a + Number(r.neurons || 0), 0);
+      const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
+      models.neuronBudget = Math.max(0, Math.min(models.neuronBudget, daily - spent));
+      const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
+      runId = row?.id ?? null;
+      log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(models.neuronBudget)} allowed this run`);
+    } catch (e) {
+      log(`pipeline_runs unavailable, daily budget not applied: ${(e as Error).message}`);
+    }
+  }
   log(`${DRY ? 'dry run' : 'run'} for ${CITY}: ${sources.length} sources, model lanes: ${models.available.map(l => `${l.name}:${l.model}`).join(', ') || 'none'}`);
 
   if (db) {
@@ -253,7 +272,7 @@ async function main() {
       log(`${osm.id}: liveness failed; visibility unchanged: ${(e as Error).message}`);
     }
   }
-  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
+  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
   if (osm && !skipCatalogue) {
     try {
       const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'));
@@ -265,6 +284,19 @@ async function main() {
       log(`${osm.id}: failed: ${(e as Error).message}`);
     }
   }
+  // Areas a visitor knows (Kalamaja, not Põhja-Tallinna) for places that
+  // carry a district or nothing; 40 a run, one Nominatim lookup each.
+  if (!(DRY && !flag('--geocode'))) {
+    let n = 0;
+    for (const p of places.all().filter(p => (p.status ?? 'active') === 'active' && p.lat != null && isDistrict(p.neighborhood)).slice(0, 40)) {
+      if (await places.area(p)) {
+        n++;
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    }
+    if (n) log(`areas: ${n} places moved from a district to their asum`);
+  }
+
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
     const due = places.all().filter(p => (p.status ?? 'active') === 'active' && !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
@@ -390,7 +422,7 @@ async function main() {
   // Events written before any model was available get classified now.
   if (models.ready) {
     const waiting = await db.select<{ id: string; title: string; venue_name: string | null; description: string | null; starts_at: string; status_note: string | null }>(
-      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
+      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,status_note.not.like.manual*)&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
     const cands = waiting.map(w => ({ title: w.title, venue_name: w.venue_name, description: w.description, starts_at: w.starts_at, has_time: true, engine: 'db' }) as Candidate);
     const late = await classify(models, cands);
     let n = 0;
@@ -422,6 +454,12 @@ async function main() {
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  if (runId != null) {
+    await db.patch(`pipeline_runs?id=eq.${runId}`, {
+      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls,
+      events_new: fresh.length, events_seen: existing.size, ok: !Object.values(health).some(h => !h.ok),
+    });
+  }
 
   const failing = Object.entries(health).filter(([, h]) => !h.ok);
   const empty = Object.entries(health).filter(([, h]) => h.ok && h.yield === 0);
