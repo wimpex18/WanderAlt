@@ -13,6 +13,7 @@ Plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.
 | `detail.html` | `detail.js` | The event page and the venue page (one template, two shapes). |
 | `saved.html` | `saved-page.js` | Lists, then coming up, places, and what is over. |
 | `profile.html` | `you.js` | You: interests, appearance, follows, opened earlier, account. |
+| `review.html` | `review.js` | Review queue for held-back events; unlinked, `noindex`. See `docs/data.md`. |
 | `source.html`, `about.html`, `404.html` | `source.js`, `about.js`, `notfound.js` | A source's feed, About, not found. |
 
 Shared: `tabbar.js` (the tab bar's glass drop), `render.js` (`WA.R`: rows, cards, place rows, shelves, section heads, skeletons, empty states, areas, kinds, the "why" tag, interests, last visit), `icons.js` (`WA.Icon` UI icons, `WA.Picto` pictograms), `finder.js` (the Where / When / What sheet on desktop; on phones the search pill opens the Programme's ask field), `ask.js` (`WA.Ask`: reads a search sentence into filters). Data and state: `supabase.js`, `when.js`, `geo.js`, `hours.js`, `bookmark.js`, `lists.js`, `follow.js`, `seen.js`, `auth.js`, `theme.js`, `offline.js`, `sw.js`.

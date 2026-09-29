@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Review queue · WanderAlt</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg?v=route-spark" />
+  <link rel="stylesheet" href="wa.css" />
+  <script src="./theme.js"></script>
+  <script defer src="./ui-helpers.js"></script>
+  <script defer src="./review.js"></script>
+</head>
+<body data-page="review">
+  <a class="wa-sr" href="#main">Skip to content</a>
+  <header class="wa-topbar" role="banner">
+    <a class="wa-brand" href="./index.html" aria-label="WanderAlt, Tallinn tonight">
+      <svg class="wa-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#d83a14"/><path d="M8 24v-8h8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="24" r="2.5" fill="#fff"/><path d="m22 5 1.8 3.2L27 10l-3.2 1.8L22 15l-1.8-3.2L17 10l3.2-1.8z" fill="#fff"/></svg>
+      <span>wanderalt</span>
+    </a>
+  </header>
+  <main class="wa-shell review" id="main">
+    <h1 class="wa-h1">Review queue</h1>
+    <p class="wa-note">Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.</p>
+    <form class="wa-field" id="key-form">
+      <label class="wa-field__label" for="key">Supabase secret key</label>
+      <input class="wa-input" id="key" type="password" autocomplete="off" placeholder="sb_secret_…" />
+      <p class="wa-note">Kept in this tab only (sessionStorage) and sent only to Supabase.</p>
+      <button class="wa-btn wa-btn--primary" type="submit">Open the queue</button>
+    </form>
+    <div id="queue"></div>
+  </main>
+</body>
+</html>
