@@ -1,7 +1,7 @@
 /* ============================================================
    home.js — Tonight, the home screen.
    ------------------------------------------------------------
-   The search pill and the category bar first. Then card shelves: what is on now, what starts soon (or late, after
+   The search field and the category bar first. Then card shelves: what is on now, what starts soon (or late, after
    21:30), what fits your interests, this weekend, and on the side the
    places open now and the areas. Never empty: when tonight has
    nothing, the next listed day takes its place.
@@ -60,42 +60,61 @@
     if (!host || host.childElementCount) return;
     host.innerHTML = CATS.map(([p, label, href], i) => `<a class="wa-cat" href="${esc(href)}"${i === 0 ? ' aria-current="true"' : ''}>${window.WA.Picto(p)}<span>${esc(label)}</span></a>`).join('');
   };
-  const pillText = (n) => {
-    const sub = $('pill-sub');
-    if (sub) sub.textContent = n ? `${n} tonight · or ask “free jazz tonight”` : 'Or ask “free jazz this week”';
+  /* The field is a real one: Enter or the key sends the words to the
+     Programme, whose ask field reads a sentence as well as a title. */
+  const search = (e) => {
+    e.preventDefault();
+    const q = $('home-q').value.trim();
+    location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
   };
 
-  /* ── Interests, the optional first run ─────────────────────── */
-  let picked = [];
-  const interestHtml = () => {
-    const st = R().interests.get();
-    if (st) return '';
-    const opts = R().interests.OPTIONS;
-    return `<section class="wa-interest" aria-labelledby="interest-title">
-      <div class="wa-interest__head">
-        <div>
-          <h2 class="wa-interest__title" id="interest-title">What are you into?</h2>
-          <p class="wa-interest__sub">Pick up to three and they get their own shelf. You can change them on You.</p>
-        </div>
-        <button class="wa-iconbtn" type="button" data-interest-skip aria-label="Skip">${I('close')}</button>
-      </div>
-      <div class="wa-chips">${opts.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${picked.includes(o.id)}">${o.icon === 'globe' ? I('globe') : window.WA.Picto(o.icon === 'talk' ? 'talk' : o.icon)}${esc(o.label)}</button>`).join('')}</div>
-      <div class="wa-interest__foot">
-        <span class="wa-interest__count">${picked.length} of 3</span>
-        <div class="wa-btns">
-          <button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-interest-skip>Skip</button>
-          <button class="wa-btn wa-btn--primary wa-btn--sm" type="button" data-interest-done${picked.length ? '' : ' disabled'}>Done</button>
-        </div>
-      </div>
-    </section>`;
+  /* ── Interests ─────────────────────────────────────────────────
+     Optional and out of the way: no card on the page. The shelf, or a
+     quiet row at the end when there is none, opens a small sheet; each tap
+     is saved at once and the shelf behind it follows. */
+  const interestSheet = () => {
+    const ids = R().interests.ids();
+    const full = ids.length >= 3;
+    $('sheet').classList.remove('wa-sheet--finder');
+    $('sheet-title').textContent = 'Your kinds';
+    $('sheet-body').innerHTML = `<p class="wa-note">Pick up to three kinds and Tonight gives them a shelf. Nothing else is hidden.</p>
+      <div class="wa-chips" style="margin-top:var(--s-4)">${R().interests.OPTIONS.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${full && !ids.includes(o.id) ? ' disabled' : ''}>${o.icon === 'globe' ? I('globe') : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>`;
+    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="sheet-done">Done</button>';
   };
-  /* Redraw only the card while choosing, so the page does not jump. */
-  const interestCard = () => {
-    const el = document.querySelector('.wa-interest');
-    const html = interestHtml();
-    if (!el) return;
-    if (!html) { el.remove(); return; }
-    el.outerHTML = html;
+  const openInterests = () => { interestSheet(); if (!$('sheet').open) $('sheet').showModal(); };
+
+  /* ── Two keys under the headline ───────────────────────────────
+     Near me asks for the location (only on a tap) and puts a shelf of what
+     is closest on foot first. Pick your kinds opens the sheet above. Both
+     are in the accent's tint so they are seen; the row keeps its height
+     in every state, so nothing moves when it changes. */
+  let nearBusy = false, nearOff = false;
+  const acts = () => {
+    const host = $('home-acts');
+    if (!host) return;
+    const n = R().interests.ids().length;
+    const here = !!G().currentLoc();
+    const near = here ? '' : nearOff
+      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span>`
+      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`;
+    host.innerHTML = `${near}<button class="wa-act" type="button" data-interests-open>${I('kinds')}${n ? `Your kinds · ${n}` : 'Pick your kinds'}</button>`
+      + (!here && nearOff ? '<p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>' : '');
+  };
+
+  /* Near you: what is on tonight (else the next listed day), closest on
+     foot first; within half an hour's walk when anything is. */
+  const nearShelf = (tonight, next) => {
+    if (!G().currentLoc()) return '';
+    const day = tonight.length ? null : next;
+    const pool = (day ? day.items : tonight).filter(e => !R().isOff(e));
+    const ranked = pool.map(e => [e, G().distanceTo(e)]).filter(([, d]) => d != null).sort((a, b) => a[1] - b[1]);
+    if (!ranked.length) return '';
+    const close = ranked.filter(([, d]) => G().walkMinutes(d) <= 30);
+    const list = (close.length ? close : ranked.slice(0, 6)).slice(0, 12).map(([e]) => e);
+    return shelf({
+      title: day ? `Near you, ${R().dayName(day.key)}` : 'Near you tonight', n: list.length,
+      sub: close.length ? 'Closest first, on foot from where you are' : 'Nothing within 30 min on foot. Closest first.',
+    }, list);
   };
 
   /* ── Sections ───────────────────────────────────────────────── */
@@ -150,8 +169,8 @@
       const mine = sortSoon(fresh(matches));
       const names = R().interests.OPTIONS.filter(o => ids.includes(o.id)).map(o => o.label);
       out.push(mine.length
-        ? draw({ title: 'For you this week', n: mine.length, sub: names.join(', '), href: 'profile.html#interests', more: 'Change' }, mine.slice(0, 12))
-        : section({ title: 'For you this week', href: 'profile.html#interests', more: 'Change' }, `<p class="wa-note">${matches.length ? 'Your matches are shown above.' : 'Nothing this week matches yet. New listings arrive every six hours.'}</p>`));
+        ? draw({ title: 'For you this week', n: mine.length, sub: names.join(', ') }, mine.slice(0, 12))
+        : section({ title: 'For you this week' }, `<p class="wa-note">${matches.length ? 'Your matches are shown above.' : 'Nothing this week matches yet. New listings arrive every six hours.'}</p>`));
     }
 
     const weekend = sortSoon(fresh(all).filter(e => W().matches(e, 'weekend') && !W().isTonight(e)));
@@ -171,11 +190,9 @@
         : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places below are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] }));
     }
 
-    /* The optional first run sits after the first shelf, so what is on
-       tonight is the first thing on the screen. */
-    out.splice(Math.min(1, out.length), 0, interestHtml());
+    const nearby = nearShelf(tonight, next);
+    if (nearby) out.unshift(nearby);
     $('home-main').innerHTML = out.join('');
-    pillText(tonight.length);
     return all;
   };
 
@@ -193,7 +210,7 @@
     let places;
     if (open.length) {
       places = `<section class="wa-sect">${R().sect({ title: 'Open now', n: open.length, href: 'places.html?open=1', more: 'All places' })}
-        <ul>${open.slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>${R().locPrompt()}</section>`;
+        <ul>${open.slice(0, 5).map(v => R().placeRow(v)).join('')}</ul></section>`;
     } else {
       /* Nothing confirmed open: say so once, then what opens later and
          the places with listings tonight, which are the ones still going. */
@@ -203,7 +220,7 @@
       places = `<section class="wa-sect">${R().sect({ title: list.length ? 'Open later' : 'Places', href: 'places.html', more: 'All places',
         sub: 'None of the places with filed hours is open this minute.' })}
         ${list.length ? `<ul>${list.map(v => R().placeRow(v, { extra: tonightVenues.includes(v) ? 'listing tonight' : '' })).join('')}</ul>`
-          : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}${R().locPrompt()}</section>`;
+          : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}</section>`;
     }
 
     /* Areas: where this week's listings are, in the names people use. */
@@ -241,6 +258,7 @@
   /* ── Render and events ─────────────────────────────────────── */
   const render = () => {
     cats();
+    acts();
     const all = main();
     side(all);
     since(all);
@@ -248,31 +266,39 @@
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
+    if (hit('[data-interests-open]')) { openInterests(); return; }
+    if (hit('[data-near]')) {
+      nearBusy = true; acts();
+      G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
+      return;
+    }
     const chip = hit('[data-interest]');
     if (chip) {
       const id = chip.dataset.interest;
-      if (picked.includes(id)) picked = picked.filter(x => x !== id);
-      else if (picked.length < 3) picked.push(id);
-      interestCard();
+      const ids = R().interests.ids();
+      R().interests.set(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id].slice(0, 3), false);
+      interestSheet();
+      main();
+      acts();
       const again = document.querySelector(`[data-interest="${CSS.escape(id)}"]`);
       if (again) again.focus();
       return;
     }
-    if (hit('[data-interest-done]')) { R().interests.set(picked, false); render(); return; }
-    if (hit('[data-interest-skip]')) { R().interests.set([], true); render(); return; }
+    if (hit('#sheet-done') || hit('#sheet-close')) { $('sheet').close(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
     const r = hit('[data-row]');
     if (r) window.WA.Seen.mark(r.dataset.row);
   });
 
   const boot = () => { render(); R().locateIfGranted(); };
-  /* The category bar folds away once you scroll, as the search pill
-     keeps its place. */
-  let folded = false;
+  /* Once the page has moved, the pill's bar gets its hairline. Only a
+     border colour changes, so nothing about the layout depends on it. */
+  let scrolled = false;
   window.addEventListener('scroll', () => {
-    const f = window.scrollY > 140;
-    if (f !== folded) { folded = f; document.body.classList.toggle('is-scrolled', f); }
+    const f = window.scrollY > 4;
+    if (f !== scrolled) { scrolled = f; document.body.classList.toggle('is-scrolled', f); }
   }, { passive: true });
+  $('home-search').addEventListener('submit', search);
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
   /* The clock ticks; the lists redraw every five minutes so "on now"
@@ -283,6 +309,7 @@
   const skeleton = () => {
     $('hero-clock').textContent = clockText();
     cats();
+    acts();
     $('home-main').innerHTML = `<section class="wa-sect">${R().sect({ title: 'Starting soon' })}${R().skelCards(4)}</section>`;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });

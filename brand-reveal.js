@@ -1,5 +1,5 @@
 /* ============================================================
-   brand-reveal.js — the opening, once per tab session.
+   brand-reveal.js — the opening, every time the app is opened.
    ------------------------------------------------------------
    Loaded blocking in <head>, so the cover exists before first paint.
    The mark is built from its parts: the tile pops, the route draws
@@ -8,20 +8,25 @@
    underneath is ready (catalogue drawn, fonts in, first pictures
    decoded), and the mark flies to its place in the top bar while the
    cover lifts. Minimum about 1.7 s, never past 3.4 s.
-   Skipped for reduced motion, prerendering, storage failure, and the
-   pages people reach from a shared link (event, source, not found).
-   CSS is in wa.css under .wa-splash.
+   Every opening plays it: a link from a message (event and source pages
+   included), a bookmark, the home-screen icon, a typed address, a reload.
+   Moving around inside the app does not: a page reached from another page
+   of this site, or by Back and Forward, goes straight to its content.
+   Skipped for reduced motion, prerendering, Back and Forward, the review
+   queue and not found. CSS is in wa.css under .wa-splash.
    ============================================================ */
 (() => {
-  const key = 'wa:brand-reveal:v1';
   const MIN = 1700, MAX = 3400;
   try {
     if (document.prerendering) return;
-    if (/\/(detail|source|404|review)(\.html)?\/?$/.test(location.pathname)) return;
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, '1');
+    if (/\/(404|review)(\.html)?\/?$/.test(location.pathname)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  } catch (_) { return; } // Storage unavailable: go straight to the page.
+    // An opening arrives from outside the site. A page reached from this
+    // site's own pages, or by Back and Forward, is moving around, not opening.
+    const nav = performance.getEntriesByType('navigation')[0];
+    if (nav && nav.type === 'back_forward') return;
+    if ((!nav || nav.type !== 'reload') && document.referrer && new URL(document.referrer).origin === location.origin) return;
+  } catch (_) { return; } // Cannot tell how the page was reached: go straight to it.
 
   const root = document.documentElement;
   const t0 = performance.now();

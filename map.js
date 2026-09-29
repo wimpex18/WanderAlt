@@ -54,7 +54,24 @@
     $('n-places').textContent = String(places.length);
     document.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer)));
     $('map-when').value = state.when;
+    if (seg) seg.sync();
   };
+
+  /* Show: the tab bar's glass slider. Sliding and letting go picks a layer;
+     a tap is a click on the option, handled below. */
+  const setLayer = (layer) => {
+    state.layer = layer; state.active = '';
+    const q = new URLSearchParams(location.search);
+    if (state.layer === 'all') q.delete('show'); else q.set('show', state.layer);
+    history.replaceState(null, '', q.toString() ? `?${q}` : location.pathname);
+    lastDrawer = ''; collect(); draw();
+  };
+  const seg = window.WA.glassDrop && window.WA.glassDrop($('map-seg'), {
+    name: 'map-seg', item: '.map-seg__opt', itemClass: 'map-seg__opt',
+    current: () => LAYERS.indexOf(state.layer),
+    commit: (i) => setLayer(LAYERS[i]),
+    dropWidth: (w) => Math.round(Math.max(...w) * 1.2 + 8),
+  });
 
   const shown = () => [
     ...(on.events ? events.map(e => ({ kind: 'event', x: e })) : []),
@@ -334,11 +351,7 @@
     if (ateClick && hit('#drawer')) { e.preventDefault(); ateClick = false; return; }
     const l = hit('[data-layer]');
     if (l) {
-      state.layer = l.dataset.layer; state.active = '';
-      const q = new URLSearchParams(location.search);
-      if (state.layer === 'all') q.delete('show'); else q.set('show', state.layer);
-      history.replaceState(null, '', q.toString() ? `?${q}` : location.pathname);
-      lastDrawer = ''; collect(); draw();
+      setLayer(l.dataset.layer);
       return;
     }
     if (hit('#drawer-toggle')) { setDrawer($('drawer').dataset.snap === 'peek' ? 'half' : 'peek'); return; }

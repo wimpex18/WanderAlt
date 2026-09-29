@@ -103,5 +103,28 @@
     btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
   });
 
+  /* Rows that scroll sideways (the kind bar, the chip rows) fade out at the
+     edge that has more behind it, so a row cut off by the screen reads as
+     "there is more this way". The CSS reads .is-more-start / .is-more-end. */
+  const SCROLLERS = '.wa-cats, .wa-chips--scroll';
+  const edges = (el) => {
+    const room = el.scrollWidth - el.clientWidth;
+    const x = Math.abs(el.scrollLeft);
+    el.classList.toggle('is-more-start', x > 4);
+    el.classList.toggle('is-more-end', x < room - 4);
+  };
+  const watch = (el) => {
+    if (el.__edges) return;
+    el.__edges = true;
+    new ResizeObserver(() => edges(el)).observe(el);
+    new MutationObserver(() => edges(el)).observe(el, { childList: true, subtree: true });
+    edges(el);
+  };
+  const scan = () => document.querySelectorAll(SCROLLERS).forEach(watch);
+  /* Scroll does not bubble; the capture phase sees every row's scroll. */
+  document.addEventListener('scroll', (e) => { if (e.target.matches && e.target.matches(SCROLLERS)) edges(e.target); }, { capture: true, passive: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan, { once: true }); else scan();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(SCROLLERS).forEach(edges));
+
   window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField };
 })();
