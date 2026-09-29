@@ -160,10 +160,10 @@ Deno.serve(async (req) => {
   try {
     if (pickId) {
       type PickRow = { title: string; venue: string; neighborhood: string; kind: string; description?: string; quote?: string; handle: string; time?: string; starts_at?: string; city?: string };
-      const rows = await sbGet<PickRow>('picks', `id=eq.${encodeURIComponent(pickId)}&select=title,venue,neighborhood,kind,description,quote,handle,time,starts_at,city&limit=1`);
+      const rows = await sbGet<PickRow>('picks', `id=eq.${encodeURIComponent(pickId)}&select=title,venue,neighborhood,kind,quote,handle,time,starts_at,city&limit=1`);
       const p = rows[0];
       if (p) {
-        const said = saysSomething(p.description, p.title) || saysSomething(p.quote, p.title);
+        const said = saysSomething(p.quote, p.title);
         /* "Sat 3 Oct · 19:00", on Tallinn's calendar. */
         const date = p.starts_at
           ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(p.starts_at)).replace(',', '')

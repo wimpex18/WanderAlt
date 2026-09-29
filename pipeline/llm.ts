@@ -74,8 +74,7 @@ export async function transcribePoster(imageUrl: string): Promise<string | null>
   }
 }
 
-export function lanes(): Lane[] {
-  const workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b';
+export function lanes(workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-120b'): Lane[] {
   const openrouter = env('OPENROUTER_MODEL') ?? 'google/gemma-4-31b-it:free';
   const account = env('CLOUDFLARE_ACCOUNT_ID');
 
@@ -131,18 +130,20 @@ export class Models {
   readonly budget: number;
   readonly available: Lane[];
 
-  constructor(all: Lane[] = lanes(), budget = Number(env('LLM_CALL_BUDGET') ?? 60)) {
+  constructor(all: Lane[] = lanes(), budget = Number(env('LLM_CALL_BUDGET') ?? 60), neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500)) {
     this.available = all.filter(l => l.key);
     this.budget = budget;
+    this.neuronBudget = neuronBudget;
   }
 
   /** Workers AI's free allocation is 10,000 neurons a day per Cloudflare
    *  account, shared with anything else on the account. Past this many in
    *  one run, the lane is skipped and OpenRouter answers instead. */
-  readonly neuronBudget = Number(env('WORKERS_AI_NEURON_BUDGET') ?? 1500);
+  readonly neuronBudget: number;
 
   get ready(): boolean {
-    return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2);
+    return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2
+      && (l.name !== 'workers-ai' || usage.neurons < this.neuronBudget));
   }
 
   /** First lane that answers with parseable JSON wins. Returns the lane's label too. */

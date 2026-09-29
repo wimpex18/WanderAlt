@@ -110,3 +110,75 @@ test('event pictures stay event-specific in the catalogue and direct details', a
   assert.equal(WA.venues[0].imageUrl, venues[0].image_url);
   assert.equal((await WA.byId('no-artwork')).e.imageUrl, null);
 });
+
+test('English titles and evidence languages reach every catalogue lookup; originals fetch only on demand', async () => {
+  const paths: string[] = [];
+  const pick = { id: 'jazz', city: 'tallinn', title: 'Jazz', original_title: 'Джаз', quote: 'A jazz gig.',
+    teaser: 'Джаз в клубе.', original_language: 'ru', title_language: 'ru', event_languages: [],
+    original_excerpt: 'Джаз в клубе. Полный текст.', original_url: 'https://event.example/jazz' };
+  const WA: Record<string, any> = {};
+  let ready!: () => void;
+  const loaded = new Promise<void>(r => { ready = r; });
+  const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
+    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
+    document: { readyState: 'complete', dispatchEvent: ready },
+    fetch: async (url: string) => {
+      const u = new URL(url); paths.push(u.search);
+      return { ok: true, json: async () => u.pathname.endsWith('/picks') ? [pick] : [] };
+    },
+  });
+  runInContext(readFileSync(new URL('../../supabase.js', import.meta.url), 'utf8'), context);
+  await loaded;
+  const e = WA.catalog[0];
+  assert.equal(e.title, 'Jazz'); assert.equal(e.originalTitle, 'Джаз'); assert.equal(e.quote, 'A jazz gig.');
+  assert.equal(e.originalLanguage, 'ru'); assert.equal(e.eventLanguages.length, 0);
+  assert.equal(e.descriptionFull, false);
+  assert.equal((await WA.byId('jazz')).e.title, 'Jazz');
+  assert.equal(paths.some(p => /select=\*|select=description/.test(p)), false);
+  assert.equal(paths.some(p => p.includes('original_excerpt')), false);
+  await WA.originalDescription(e);
+  assert.equal(e.description, pick.original_excerpt);
+  assert.equal(e.originalUrl, pick.original_url);
+  assert.equal(e.descriptionFull, true);
+  const after = paths.length;
+  await WA.originalDescription(e); assert.equal(paths.length, after);
+});
+
+test('English-language filtering uses performance evidence, not an English announcement tag', () => {
+  const p = page(); p.load('render.js');
+  p.WA.R.interests.set(['english']);
+  assert.equal(p.WA.R.interests.matches({ kind: 'theatre', tags: ['english'], eventLanguages: [] }), false);
+  assert.equal(p.WA.R.interests.matches({ kind: 'theatre', tags: [], eventLanguages: ['en'] }), true);
+});
+
+test('a failed original-description request stays retryable and does not cache the teaser as complete', async () => {
+  const pick = { id: 'jazz', city: 'tallinn', title: 'Jazz', teaser: 'Короткий текст.' };
+  const WA: Record<string, any> = {};
+  let ready!: () => void;
+  let originals = 0;
+  const loaded = new Promise<void>(r => { ready = r; });
+  const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
+    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
+    document: { readyState: 'complete', dispatchEvent: ready },
+    fetch: async (url: string) => {
+      const u = new URL(url);
+      if (u.searchParams.get('select')?.includes('original_excerpt')) {
+        if (++originals === 1) throw new Error('Network unavailable');
+        return { ok: true, json: async () => [{ original_excerpt: 'Полный исходный текст.', original_language: 'ru' }] };
+      }
+      return { ok: true, json: async () => u.pathname.endsWith('/picks') ? [pick] : [] };
+    },
+  });
+  runInContext(readFileSync(new URL('../../supabase.js', import.meta.url), 'utf8'), context);
+  await loaded;
+  const e = WA.catalog[0];
+  assert.equal(await WA.originalDescription(e), false);
+  assert.equal(e.descriptionFull, false);
+  assert.equal(e.originalLoadFailed, true);
+  assert.equal(e.description, pick.teaser);
+  assert.equal(await WA.originalDescription(e), true);
+  assert.equal(e.description, 'Полный исходный текст.');
+  assert.equal(e.descriptionFull, true);
+  assert.equal(e.originalLoadFailed, false);
+  assert.equal(originals, 2);
+});

@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929061000_place_verification.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929093648_korean_event_language.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -35,6 +35,16 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 6. Classify earlier events that were written without a model, archive ended events, verify venue activity from recent trusted listings and a small own-site batch, delete processed raw items older than 60 days, record source health.
 
 A run exits non-zero when a source fails or returns nothing, which turns the Actions run red. A prose source whose items are fetched but yield no events is logged, since that usually means the page was redesigned.
+
+### English copy
+
+`pipeline/english.ts` edits published, unarchived events independently of classification: an English title (including translated production titles), 1–2 factual English sentences, and a bounded original excerpt. `picks.title` and `picks.quote` serve this same copy to Tonight, Programme, Map, Saved, venue programmes, calendars and social previews. Artist, band and venue names retain their identity.
+
+Each pipeline run reserves six free editorial calls: up to 20 pending events before collection, then up to 40 after writes. A hash of source title, description, venue, kind and URL makes unchanged copy reusable and changed input due again. Invalid or unavailable answers remain pending for a later run. Classification refreshes never overwrite saved English fields. Run `npm run pipeline:english -- 300` for a bounded backfill with a valid service-role key; it edits only copy fields.
+
+Full structured descriptions are already collected. Thin listings can fetch their exact source URL, with a ten-second/400 KB limit and cached repeated URLs. Kino Sõprus checkout URLs follow the exact ScreeningEvent’s workPresented identity to its film synopsis and official translated title. Only a matching Event node or a matching sole h1 supplies fuller copy; matching Movie descriptions are accepted on that identified film page. Programme indexes and related events are rejected. Unsupported and login pages fall back to filed facts. Inputs are capped at 8,000 characters and organiser contacts are scrubbed. Original excerpts are limited to 2,000 characters and loaded on disclosure, with their source URL and text language.
+
+`event_languages` records spoken/performance languages only when the model cites an exact statement present in the source. The containing clause must identify that language and a language statement; subtitle and interpretation clauses are rejected. Subtitles, a venue's nationality and the language of an announcement do not establish a performance language. The In English filter and interest use this evidence instead of classification tags. Unknown language stays unstated.
 
 ### Venues
 

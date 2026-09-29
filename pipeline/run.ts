@@ -20,6 +20,7 @@ import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
+import { englishModels, refreshEnglish } from './english.ts';
 import { Places, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
@@ -31,9 +32,11 @@ import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiv
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
   const { status: _s, status_note: _n, relevance: _r, ...facts } = row;
+  // English copy belongs to the separate editorial queue, including originals.
+  delete facts.title_en; delete facts.summary_en;
   if (!facts.image_url) { delete facts.image_url; delete facts.image_attr; }
   if (String(facts.engine).endsWith('+rules')) {
-    delete facts.kind; delete facts.tags; delete facts.title_en; delete facts.summary_en;
+    delete facts.kind; delete facts.tags;
   }
   return facts;
 }
@@ -81,7 +84,7 @@ async function read(item: RawItem, source: Source, models: Models): Promise<Cand
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[] };
   // A post's poster often carries the date, time and venue its text leaves out.
-  const poster = p.photos?.[0] && posters.left > 0 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
+  const poster = p.photos?.[0] && posters.left > 0 && usage.neurons < models.neuronBudget - 50 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
   const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
   const found = await extractEvents(models, {
@@ -124,7 +127,11 @@ export function decide(e: Enrichment, trusted: boolean): { status: string; note:
 interface Pending { rawId: number | null; item: RawItem; source: Source }
 
 async function main() {
-  const models = new Models();
+  // Keep some Workers AI allocation for new events' English copy after writes.
+  const callBudget = Number(process.env.LLM_CALL_BUDGET ?? 60);
+  const englishBudget = DRY ? 0 : Math.min(6, Math.max(0, callBudget));
+  const models = new Models(undefined, Math.max(0, callBudget - englishBudget),
+    Math.max(0, Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 1500) - (DRY ? 0 : 500)));
   if (flag('--models')) {
     for (const l of models.available) {
       try {
@@ -138,9 +145,12 @@ async function main() {
 
   const sources = loadSources().filter(s => !ONLY || s.id === ONLY);
   const db = DRY ? null : new Db();
+  const english = englishModels(englishBudget);
   log(`${DRY ? 'dry run' : 'run'} for ${CITY}: ${sources.length} sources, model lanes: ${models.available.map(l => `${l.name}:${l.model}`).join(', ') || 'none'}`);
 
   if (db) {
+    // Reserve free calls for English before prose extraction spends its budget.
+    await refreshEnglish(db, english, CITY, 20);
     await db.upsert('sources', sources.map(({ id, city, kind, url, handle, label, curated, config }) =>
       ({ id, city, kind, url, handle, label, curated, config, active: true })), 'id');
     // A source removed from the JSON stops being read and stops being shown.
@@ -389,7 +399,7 @@ async function main() {
       if (Number.isNaN(e.relevance)) continue;
       const { status, note } = decide(e, (waiting[i].status_note ?? '').startsWith('trusted'));
       await db.patch(`events?id=eq.${encodeURIComponent(waiting[i].id)}`, {
-        kind: e.kind, tags: e.tags, relevance: e.relevance, title_en: e.title_en, summary_en: e.summary_en, status, status_note: note,
+        kind: e.kind, tags: e.tags, relevance: e.relevance, status, status_note: note,
       });
       n++;
     }
@@ -397,6 +407,7 @@ async function main() {
   }
 
   // ── 6. archive and health ──
+  await refreshEnglish(db, english, CITY, 40);
   const now = new Date().toISOString();
   const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });

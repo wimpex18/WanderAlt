@@ -104,7 +104,7 @@
       const w = WHY[String(t).toLowerCase().trim()];
       if (w && fold(w) !== fold(kindLabel(e.kind))) return w;
     }
-    if (tags.some(t => String(t).toLowerCase() === 'english')) return 'In English';
+    if ((e.eventLanguages || []).includes('en')) return 'In English';
     const v = real(e && e.venue);
     for (const [re, label] of VENUE_WHY) if (v && re.test(v)) return label;
     return '';
@@ -200,7 +200,7 @@
       if (!ids.length) return false;
       const k = String(e.kind || '').toLowerCase();
       return INTERESTS.some(o => ids.includes(o.id) &&
-        ((o.kinds && o.kinds.includes(k)) || (o.tag && (e.tags || []).includes(o.tag))));
+        ((o.kinds && o.kinds.includes(k)) || (o.id === 'english' && (e.eventLanguages || []).includes('en'))));
     },
   };
 
@@ -263,7 +263,6 @@
       : window.WA.Picto.kind(e.kind)}</span>`;
   };
 
-  const sameTitle = (a, b) => fold(a).replace(/[^a-z0-9а-я]/g, '') === fold(b).replace(/[^a-z0-9а-я]/g, '');
 
   /* What the source says about the show's state. Cancelled and postponed
      dim the listing; sold out and few left only label it. */
@@ -276,7 +275,6 @@
     const r = rail(e, opts);
     const why = whyTag(e);
     const kind = kindLabel(e.kind);
-    const orig = real(e.originalTitle) && !sameTitle(e.originalTitle, e.title) ? e.originalTitle : '';
     const endsAt = r.live ? endClock(e) : '';
     const meta = [
       real(e.venue),
@@ -295,7 +293,6 @@
           ${fresh ? '<span class="wa-new">New</span>' : ''}
         </span>
         <span class="wa-row__title">${esc(e.title || '')}</span>
-        ${orig ? `<span class="wa-row__orig">${esc(orig)}</span>` : ''}
         ${meta ? `<span class="wa-row__meta">${esc(meta)}</span>` : ''}
       </span>
       ${opts.drop ? `<span class="wa-row__side"><button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button></span>`

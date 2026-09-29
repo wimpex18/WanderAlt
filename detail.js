@@ -4,7 +4,7 @@
    ?id= resolves against events first, then places, then the database
    (WA.byId), so a row the browser did not load is never reported gone.
 
-   Event: photo, English title with the original under it, one-line
+   Event: photo, English title and short English highlights,
    summary, When · Entry · Walk, Tickets first, then calendar, walking
    directions, save and lists; Going with the count; the venue as a
    small card; the source's own words; who is in it; a small map;
@@ -116,22 +116,6 @@
     const L = window.WA.Lists;
     const ls = L ? L.listsFor(id) : [];
     return !ls.length ? 'List' : ls.length === 1 ? ls[0].name : `${ls.length} lists`;
-  };
-
-  /* Cast and credits: the source's own "Role: Names" lines, when it
-     files at least two. Lines with an address, phone or link are left
-     out; organiser contacts never show here. */
-  const CONTACT = /@|https?:|www\.|mailto|\+?\d[\d\s-]{6,}/i;
-  const credits = (text) => {
-    const rows = String(text || '').split(/\n+/).map(l => l.trim()).map(l => l.match(/^([^:]{2,32}):\s*(.{2,220})$/))
-      .filter(m => m && !CONTACT.test(m[0]) && !/\d{1,2}[.:]\d{2}/.test(m[1]) && m[1].split(/\s+/).length <= 4 && /[A-ZÀ-ÖØ-ÞŠŽÕÄÖÜ]/.test(m[2]));
-    return rows.length >= 2 ? rows.slice(0, 12).map(m => [m[1].replace(/\s*\/\s*/g, ' / '), m[2]]) : [];
-  };
-  const creditsBlock = (e) => {
-    const c = credits(e.description);
-    return c.length ? `<section class="det-block"><h2 class="det-block__title">Who's in it</h2>
-      <dl class="det-credits">${c.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-      <p class="wa-note">As the source lists it; check there for late changes.</p></section>` : '';
   };
 
   /* A small map of the spot. The MapLibre canvas outlives re-renders:
@@ -246,16 +230,34 @@
   };
 
   /* ── The event page ─────────────────────────────────────────── */
+  const LANGUAGES = { en: 'English', et: 'Estonian', ru: 'Russian', uk: 'Ukrainian', fi: 'Finnish', sv: 'Swedish', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian', lv: 'Latvian', lt: 'Lithuanian', pl: 'Polish', ja: 'Japanese', zh: 'Chinese', ko: 'Korean' };
+  const originalContent = (e) => {
+    const lang = LANGUAGES[e.originalLanguage] ? e.originalLanguage : 'und';
+    const titleLang = LANGUAGES[e.titleLanguage] ? e.titleLanguage : lang;
+    const orig = R().real(e.originalTitle) && R().fold(e.originalTitle) !== R().fold(e.title) ? e.originalTitle : '';
+    const native = R().real(e.description);
+    const desc = R().fold(native) !== R().fold(e.originalTitle || e.title) ? native : '';
+    const source = url(e.originalUrl || e.permalink);
+    return `${orig ? `<p class="det-orig" lang="${esc(titleLang)}">${esc(orig)}</p>` : ''}
+      ${e.originalLoadFailed ? '<p class="wa-note" role="status">Could not load the original description.</p><button class="wa-btn" type="button" data-original-retry>Try again</button>' : desc ? `<p class="wa-prose" lang="${esc(lang)}">${esc(desc)}</p>` : '<p class="wa-note">The source filed no description beyond the title.</p>'}
+      ${source ? `<p class="wa-note">${desc && desc.endsWith('…') ? 'An excerpt. ' : ''}<a class="wa-link" href="${esc(source)}" target="_blank" rel="noopener noreferrer">Read the full source</a></p>` : ''}`;
+  };
+  const loadOriginal = async (disclosure, e) => {
+    disclosure.querySelector('#original-content').innerHTML = '<p class="wa-note" role="status">Loading source excerpt…</p>';
+    await window.WA.originalDescription(e);
+    if (disclosure.isConnected) {
+      disclosure.querySelector('summary').textContent = `${e.originalLanguage === 'en' ? 'Source description' : 'Original description'}${LANGUAGES[e.originalLanguage] ? ` · ${LANGUAGES[e.originalLanguage]}` : ''}`;
+      disclosure.querySelector('#original-content').innerHTML = originalContent(e);
+    }
+  };
   const eventPage = (e) => {
     const title = e.title || '';
     const kind = R().kindLabel(e.kind);
     const why = R().whyTag(e);
     const ended = W().hasEnded(e);
     const liveNow = R().isLive(e);
-    const orig = R().real(e.originalTitle) && R().fold(e.originalTitle) !== R().fold(title) ? e.originalTitle : '';
-    const desc = UI().descriptionOr(e.description, title);
-    const quote = UI().descriptionOr(e.quote, title);
-    const summary = quote && quote !== desc ? quote : '';
+    const summary = UI().descriptionOr(e.quote, title);
+    const spoken = (e.eventLanguages || []).map(code => LANGUAGES[code]).filter(Boolean).join(' and ');
     const k = W().resolveKey(e);
     const clock = R().clockOf(e);
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
@@ -299,8 +301,8 @@
         <header class="det-head">
           <p class="wa-kicker">${off ? '' : R().flagTag(e)}${liveNow && !off ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
           <h1 class="wa-h1">${esc(title)}</h1>
-          ${orig ? `<p class="det-orig" lang="et">${esc(orig)}</p>` : ''}
           ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
+          ${spoken ? `<p class="wa-note">${I('globe', 'wa-ic--sm')} In ${esc(spoken)}</p>` : ''}
         </header>
 
         <div class="det-facts">
@@ -328,13 +330,10 @@
 
         ${venueCard()}
 
-        ${desc ? `<section class="det-block"><h2 class="det-block__title">In their words</h2>
-          <p class="wa-prose${desc.length > 420 ? ' wa-prose--clamp' : ''}" id="desc">${esc(desc)}</p>
-          ${desc.length > 420 ? '<button class="wa-btn wa-btn--sm det-more" type="button" id="more">Read all</button>' : ''}
-        </section>` : `<section class="det-block"><h2 class="det-block__title">In their words</h2>
-          <p class="wa-note">${esc(venueName ? `${venueName}'s own listing says no more than the title.` : 'The source filed no description.')}</p></section>`}
-
-        ${creditsBlock(e)}
+        <details class="det-original" id="original-description">
+          <summary>${e.originalLanguage === 'en' ? 'Source description' : 'Original description'}${LANGUAGES[e.originalLanguage] ? ` · ${esc(LANGUAGES[e.originalLanguage])}` : ''}</summary>
+          <div class="det-original__body" id="original-content">${e.descriptionFull ? originalContent(e) : '<p class="wa-note" role="status">Loading source excerpt…</p>'}</div>
+        </details>
 
         ${R().real(e.address) || G().coordsFor(e) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
           ${miniSlot(e, title)}
@@ -453,12 +452,11 @@
     if (!hit) { lookUp(); return; }
     const e = hit.e;
     const isEvent = hit.kind === 'event';
-    if (isEvent && !e.descriptionFull && window.WA.fullDescription) window.WA.fullDescription(e).then(render);
     window.WA.Seen.mark(e.id);
     const title = isEvent ? e.title : e.name;
     document.title = `${title} · WanderAlt`;
     const md = document.querySelector('meta[name="description"]');
-    if (md) md.content = (UI().descriptionOr(e.description, title) || '').slice(0, 160);
+    if (md) md.content = (UI().descriptionOr(isEvent ? e.quote : e.description, title) || '').slice(0, 160);
     const y = window.scrollY;
     main().innerHTML = isEvent ? eventPage(e) : placePage(e);
     window.scrollTo(0, y);
@@ -541,9 +539,9 @@
       toast(on ? `Following ${h.e.name}` : `Stopped following ${h.e.name}`, 'Undo', () => { window.WA.Follows.set(h.e.name, !on); render(); });
       return;
     }
-    if (hit('#more')) {
-      document.getElementById('desc').classList.remove('wa-prose--clamp');
-      hit('#more').remove();
+    if (hit('[data-original-retry]')) {
+      const h = resolve();
+      if (h && h.kind === 'event') loadOriginal(document.getElementById('original-description'), h.e);
       return;
     }
     const sh = hit('#share') || hit('[data-share]');
@@ -560,6 +558,14 @@
       });
     }
   });
+
+  document.addEventListener('toggle', async (event) => {
+    const disclosure = event.target;
+    if (disclosure.id !== 'original-description' || !disclosure.open) return;
+    const hit = resolve();
+    if (!hit || hit.kind !== 'event') return;
+    await loadOriginal(disclosure, hit.e);
+  }, true);
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true }); else skeleton();
   document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });

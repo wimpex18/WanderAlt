@@ -97,10 +97,14 @@
     address:   r.address   ?? null,
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
     /* Source-authored facts. description is the venue's own blurb. */
-    /* The list query carries a teaser; a by-id fetch carries the full text. */
+    /* Lists and direct lookups carry a teaser. Originals load on disclosure. */
     description: r.description || r.teaser || null,
     descriptionFull: r.description != null,
     originalTitle: r.original_title || null,
+    originalLanguage: r.original_language || null,
+    titleLanguage: r.title_language || null,
+    originalUrl: r.original_url || null,
+    eventLanguages: Array.isArray(r.event_languages) ? r.event_languages : [],
     flag:        r.flag || null,   /* cancelled, postponed, sold_out, few_left: what the source says */
     tags:        Array.isArray(r.tags) ? r.tags : [],
     startsAt:    r.starts_at   || null,
@@ -198,11 +202,10 @@
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
                 `image_url,image_attr,tonight,this_week,` +
-                `lat,lng,address,` +
-                /* Facts the sources stated about themselves. Lists read
-                   the 300-character teaser; detail fetches the full text
-                   (WA.fullDescription). */
-                `teaser,original_title,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
+                `lat,lng,address,source_url,` +
+                /* Lists read a 300-character teaser; originalDescription
+                   fetches the bounded original only when opened. */
+                `teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
                 `last_seen_at,created_at` +
         `&order=starts_at.asc,id.asc`,
@@ -275,7 +278,7 @@
     }
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
     try {
-      const picks = await get('picks', `${q}&select=*`);
+      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`);
       if (picks && picks[0]) {
         return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
       }
@@ -292,16 +295,26 @@
 
   window.WA.byId = byId;
 
-  /* The full description of one event, for the detail page. Lists only
-     load a teaser; this fills it in once and remembers it on the pick. */
-  window.WA.fullDescription = async (pick) => {
-    if (!pick || pick.descriptionFull) return pick && pick.description;
+  /* Fetch a bounded source excerpt only when its disclosure is opened. */
+  window.WA.originalDescription = async (pick) => {
+    if (!pick) return false;
+    if (pick.descriptionFull) return true;
     try {
-      const rows = await get('picks', `id=eq.${encodeURIComponent(pick.id)}&select=description&limit=1`);
-      pick.description = (rows && rows[0] && rows[0].description) || pick.description;
-    } catch (_) { /* keep the teaser */ }
-    pick.descriptionFull = true;
-    return pick.description;
+      const rows = await get('picks', `id=eq.${encodeURIComponent(pick.id)}&select=original_excerpt,original_language,original_url&limit=1`);
+      const row = rows && rows[0];
+      if (!row) throw new Error('Source excerpt unavailable');
+      if (row) {
+        pick.description = row.original_excerpt || pick.description;
+        pick.originalLanguage = row.original_language || null;
+        pick.originalUrl = row.original_url || null;
+      }
+      pick.descriptionFull = true;
+      pick.originalLoadFailed = false;
+      return true;
+    } catch (_) {
+      pick.originalLoadFailed = true;
+      return false;                 /* reopening can retry */
+    }
   };
 
   load();

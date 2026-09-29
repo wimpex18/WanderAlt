@@ -7,6 +7,7 @@
     "pipeline": "node --env-file-if-exists=.env pipeline/run.ts",
     "pipeline:dry": "node --env-file-if-exists=.env pipeline/run.ts --dry-run",
     "pipeline:models": "node --env-file-if-exists=.env pipeline/run.ts --models",
+    "pipeline:english": "node --env-file-if-exists=.env pipeline/english.ts",
     "places:audit": "node --env-file-if-exists=.env pipeline/maintenance.ts --dry-run",
     "places:maintain": "node --env-file-if-exists=.env pipeline/maintenance.ts --check-osm --verify-websites",
     "test": "node --test \"pipeline/test/*.test.ts\"",
