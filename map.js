@@ -22,6 +22,8 @@
   const esc = (s) => window.WA.UI.esc(s);
 
   const state = { layer: 'all', when: 'tonight', active: '' };
+  /* The drawer row the pointer is over; placePins rebuilds the pins, so it forgets it. */
+  let hovered = '';
   const WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
   const LAYERS = ['all', 'events', 'places'];
   const qp = new URLSearchParams(location.search);
@@ -160,6 +162,7 @@
   };
 
   const placePins = () => {
+    hovered = '';
     const t = T();
     if (!t || !t.isReady()) return;
     const CL = 42;
@@ -381,7 +384,10 @@
     collect(); draw(); fit();
   });
   /* Hovering a drawer row lifts its pin, the cheap direction of the pairing. */
-  let hovered = '';
+  document.addEventListener('pointerout', (e) => {
+    const r = e.target.closest && e.target.closest('[data-row],[data-place]');
+    if (r && !(e.relatedTarget && r.contains(e.relatedTarget))) hovered = '';
+  });
   document.addEventListener('pointerover', (e) => {
     const r = e.target.closest && e.target.closest('[data-row],[data-place]');
     if (!r) return;

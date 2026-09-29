@@ -187,20 +187,36 @@
   /* The last answer is kept in this browser and drawn at once, so a
      returning visit shows real listings before the network replies. The
      network answer replaces it when it differs. The pipeline runs every
-     six hours, so a snapshot older than that is not trusted. */
-  const SNAP_KEY = 'wa:catalogue:v1';
+     six hours, so a snapshot last confirmed longer ago than that is not
+     trusted. The rows live under SNAP_KEY with a fingerprint of their
+     text; the time of the last confirmation is its own small key, so an
+     unchanged answer costs one tiny write, not a rewrite of the rows. */
+  const SNAP_KEY = 'wa:catalogue:v2';
+  const SNAP_AT_KEY = 'wa:catalogue:at';
   const SNAP_MAX_AGE = 6 * 3600 * 1000;
+  const fingerprint = (text) => {
+    let h = 0x811c9dc5;                               /* FNV-1a, 32 bit */
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+    return `${text.length}:${(h >>> 0).toString(36)}`;
+  };
   const readSnapshot = () => {
     try {
       const s = JSON.parse(localStorage.getItem(SNAP_KEY) || 'null');
-      if (s && Date.now() - s.at < SNAP_MAX_AGE && Array.isArray(s.picks) && Array.isArray(s.venues)) return s;
+      /* A stamp ahead of the clock (a wrong or corrected clock) is not fresh. */
+      const age = Date.now() - Number(localStorage.getItem(SNAP_AT_KEY));
+      if (s && age >= 0 && age < SNAP_MAX_AGE && s.sig && Array.isArray(s.picks) && Array.isArray(s.venues)) return s;
     } catch (_) { /* unreadable: fetch as usual */ }
     return null;
   };
-  const writeSnapshot = (text) => {
-    try { localStorage.setItem(SNAP_KEY, text); }
-    catch (_) { try { localStorage.removeItem(SNAP_KEY); } catch (__) { /* storage is off */ } }
+  const writeSnapshot = (body, sig) => {
+    try {
+      if (body) localStorage.setItem(SNAP_KEY, `{"sig":"${sig}",${body.slice(1)}`);
+      localStorage.setItem(SNAP_AT_KEY, String(Date.now()));
+    } catch (_) {
+      try { localStorage.removeItem(SNAP_KEY); localStorage.removeItem(SNAP_AT_KEY); } catch (__) { /* storage is off */ }
+    }
   };
+  try { localStorage.removeItem('wa:catalogue:v1'); } catch (_) { /* storage is off */ }
 
   /* Turn rows into the catalogue the pages read. */
   const apply = (picks, venues, redirectRows) => {
@@ -282,20 +298,26 @@
 
     /* Compare with what the snapshot already drew; identical means no
        second render. */
-    const fresh = JSON.stringify({
+    const body = JSON.stringify({
       picks:  picksOk ? picksResult.value : snap && snap.picks,
       venues: venuesOk ? venuesResult.value : snap && snap.venues,
       redirects: redirOk ? redirectsResult.value : snap && snap.redirects,
     });
-    const before = snap ? JSON.stringify({ picks: snap.picks, venues: snap.venues, redirects: snap.redirects }) : null;
+    const sig = fingerprint(body);
+    const same = !!snap && sig === snap.sig;
 
     /* Saved's change-watch gates its destructive "no longer listed"
        detection on this: without live data every bookmark looks "gone". */
     window.WA.DATA_LIVE = picksOk;
-    if (picksOk && venuesOk) writeSnapshot(`{"at":${Date.now()},${fresh.slice(1)}`);
+    if (picksOk && venuesOk) writeSnapshot(same ? null : body, sig);
 
-    if (snap && fresh === before) return;             /* the snapshot was right */
     if (snap && !picksOk) return;                     /* offline: keep what is drawn */
+    if (same) {                                       /* the snapshot was right */
+      /* Nothing to redraw, but pages that drew from it with DATA_LIVE
+         false now know the answer is live. */
+      document.dispatchEvent(new CustomEvent('wa:data-live'));
+      return;
+    }
     apply(picksOk ? picksResult.value : null, venuesOk ? venuesResult.value : null, redirOk ? redirectsResult.value : null);
     dispatch();
   };

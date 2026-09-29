@@ -148,6 +148,7 @@
   const pre = () => { $('saved-body').innerHTML = R().skelRows(3); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
   document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
+  document.addEventListener('wa:data-live', render);
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:bookmarks-synced', render);
 })();

@@ -345,7 +345,9 @@
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
-     pictures and scroll position instead of being rebuilt. */
+     pictures and scroll position instead of being rebuilt. The last string
+     is remembered on the element, so everything that fills #list, #aside,
+     #sheet-body, #sheet-foot, #quick and #summary goes through here. */
   const put = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
 
   /* A tap answers in the same frame with what is small (the chips, the
@@ -457,7 +459,7 @@
       if (state.within) G().userLoc();
       document.querySelectorAll('[data-within-note]').forEach(n => { n.textContent = withinNote(); });
       /* Redraw the list but leave the slider being dragged alone. */
-      const list = results();
+      const list = latest = results();   /* a pending drawBig must not paint older results over this */
       summary(list.length);
       put($('list'), listHtml(list));
       quick();

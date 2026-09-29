@@ -149,6 +149,8 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Render cost. Rows below the fold are not laid out or painted until they
    near the screen; taps answer at once (no double-tap wait). */
 .wa-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+/* Skipped rows are clipped to their box; a row being focused draws in full so its ring is not cut. */
+.wa-rows > li:focus-within { content-visibility: visible; }
 a, button, summary, label, select, [role="button"] { touch-action: manipulation; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 200ms; }
 .wa-topbar { view-transition-name: topbar; }
