@@ -39,6 +39,8 @@ export interface Place {
   verification_note?: string | null;
   // Venue-page details (venues.ts fills them).
   website?: string | null;
+  /** 'source' (a curated source's venue_site) or 'overture'; null for OSM and Wikidata. */
+  website_source?: string | null;
   instagram?: string | null;
   facebook?: string | null;
   opening_hours?: string | null;
