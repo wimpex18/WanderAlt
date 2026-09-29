@@ -21,6 +21,7 @@ import { osmCatalogue, enrichPlace } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
+import { attachPosters } from './posters.ts';
 import { Places, isDistrict, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
@@ -299,7 +300,10 @@ async function main() {
 
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    const due = places.all().filter(p => (p.status ?? 'active') === 'active' && !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
+    // A place with no picture is looked at again after a month: sites add logos.
+    const monthAgo = Date.now() - 30 * 86_400_000;
+    const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website)
+      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < monthAgo))).slice(0, Number(opt('--max-enrich') ?? 25));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -440,6 +444,12 @@ async function main() {
 
   // ── 6. archive and health ──
   await refreshEnglish(db, english, CITY, 40);
+  if (!flag('--no-posters')) {
+    try {
+      const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 15));
+      if (n) log(`posters: ${n} events got the picture their own page attaches to them`);
+    } catch (e) { log(`posters failed: ${(e as Error).message}`); }
+  }
   const now = new Date().toISOString();
   const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });

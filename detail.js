@@ -274,11 +274,11 @@
       const id = e.venueId || (v && v.id) || '';
       const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(venueName)}`;
       const more = picksAt({ id, name: venueName }).filter(p => p.id !== e.id).length;
-      const img = v && v.imageUrl && v.imageSource !== 'logo' ? url(v.imageUrl) : '';
+      const img = v && v.imageUrl ? url(v.imageUrl) : '';
       const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art${img && v.imageSource === 'logo' ? ' is-logo' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}

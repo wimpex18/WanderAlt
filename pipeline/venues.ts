@@ -106,10 +106,14 @@ async function fromWikidata(qid: string): Promise<VenueDetails> {
   const ent = (await r.json() as { entities: Record<string, { claims?: Record<string, { mainsnak?: { datavalue?: { value?: unknown } } }[]> ; descriptions?: Record<string, { value: string }> }> }).entities[qid];
   const claim = (p: string) => ent?.claims?.[p]?.[0]?.mainsnak?.datavalue?.value as string | undefined;
   const image = claim('P18');
+  // P154 is the item's own logo. It fills the picture only when there is no
+  // photograph (P18), and is marked as a logo so the app draws it whole.
+  const logo = image ? undefined : claim('P154');
   return {
-    image_url: image ? commonsUrl(image) : null,
-    image_attr: image ? `Photo: Wikimedia Commons, ${image.replace(/\.[a-z]+$/i, '')}` : null,
-    image_source: image ? 'wikidata' : null,
+    image_url: image ? commonsUrl(image) : logo ? commonsUrl(logo) : null,
+    image_attr: image ? `Photo: Wikimedia Commons, ${image.replace(/\.[a-z]+$/i, '')}`
+      : logo ? `Logo: Wikimedia Commons, ${logo.replace(/\.[a-z]+$/i, '')}` : null,
+    image_source: image ? 'wikidata' : logo ? 'logo' : null,
     website: httpUrl(claim('P856')),
     instagram: socialUrl('instagram.com', claim('P2003')),
     facebook: socialUrl('facebook.com', claim('P2013')),
@@ -133,6 +137,48 @@ export function handleFits(profile: string, name: string, site: string): boolean
   return words.some(w => handle.includes(w.replace(/ /g, '')) || (handle.length >= 4 && w.includes(handle)));
 }
 
+const LOGO_FILE = /(?:^|[\s_+.-])logo(?:[\s_+.-]|jpg|d|fail|$)/i;
+/** Never a venue's own mark: partners, sponsors, icons and placeholders. */
+const NOT_A_LOGO = /sponsor|partner|footer|favicon|icon|placeholder|default[-_ ]?image|banner|poster/i;
+const fileOf = (u: string) => decodeURIComponent(new URL(u).pathname.split('/').pop() ?? '').replace(/%20/gi, ' ');
+const bareHost = (u: string) => new URL(u).hostname.replace(/^www\./, '');
+
+/** The `logo` a site declares for its own organisation in JSON-LD. */
+export function jsonLdLogo(html: string, base: string): string | null {
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    let data: unknown;
+    try { data = JSON.parse(m[1]); } catch { continue; }
+    const stack: unknown[] = [data];
+    while (stack.length) {
+      const n = stack.pop();
+      if (Array.isArray(n)) { stack.push(...n); continue; }
+      if (!n || typeof n !== 'object') continue;
+      const o = n as Record<string, unknown>;
+      const types = ([] as unknown[]).concat(o['@type'] ?? []).map(String);
+      if (types.some(t => /^(Organization|PerformingGroup|TheaterGroup|LocalBusiness|NightClub|MovieTheater|ArtGallery|Library|Store|BarOrPub|EntertainmentBusiness|PerformingArtsTheater|MusicVenue)$/.test(t))) {
+        const l = o.logo;
+        const u = httpUrl(typeof l === 'object' && l ? (l as Record<string, unknown>).url : l, base);
+        if (u && !NOT_A_LOGO.test(fileOf(u))) return u;
+      }
+      stack.push(...Object.values(o));
+    }
+  }
+  return null;
+}
+
+/** The first `<img>` on the site's own host whose file is named as a logo.
+ *  Sponsor ribbons carry logos too, but on other hosts or under other names. */
+export function ownLogoImg(html: string, base: string): string | null {
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+    const src = /\b(?:data-src|src)=["']([^"']+)["']/i.exec(m[0])?.[1];
+    const u = httpUrl(decodeEntities(src ?? ''), base);
+    if (!u || bareHost(u) !== bareHost(base)) continue;
+    const f = fileOf(u);
+    if (LOGO_FILE.test(f) && !NOT_A_LOGO.test(f) && /\.(svg|png|webp|jpe?g)$/i.test(f)) return u;
+  }
+  return null;
+}
+
 /** Homepage metadata identifies the website, not necessarily the venue:
  *  og:image often shows a current show, an advert or a placeholder. Only
  *  recognisable logo filenames are imported automatically; venue photos
@@ -148,8 +194,9 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
     ?? new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, 'i').exec(html)?.[1];
   const og = httpUrl(decodeEntities(meta('og:image') ?? ''), base);
   const filename = og ? (new URL(og).pathname.split('/').pop() ?? '').replace(/%20/gi, ' ') : '';
-  const logo = /(?:^|[\s_+.-])logo(?:[\s_+.-]|jpg|d|fail|$)/i.test(filename);
-  const image = logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null;
+  const logo = LOGO_FILE.test(filename);
+  const image = (logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null)
+    ?? jsonLdLogo(html, base) ?? ownLogoImg(html, base);
   const desc = meta('og:description') ?? meta('description');
   return {
     instagram: first('instagram.com'),
