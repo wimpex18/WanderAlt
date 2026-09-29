@@ -212,7 +212,7 @@
   const emptyState = () => {
     const drops = [];
     const add = (on, label, act, skip) => { if (on) drops.push({ label, act, n: apply(base(), skip).length }); };
-    add(state.q, `Clear “${state.q}”`, 'clear-q', 'q');
+    add(state.q, 'Clear search', 'clear-q', 'q');
     add(state.kinds.size, 'Any kind', 'clear-kinds', 'kind');
     add(state.area, 'Anywhere in the city', 'clear-area', 'area');
     add(state.day || state.when !== 'all', 'Any day', 'clear-when', 'when');
@@ -227,18 +227,18 @@
     drops.sort((a, b) => b.n - a.n);
     const best = drops.find(d => d.n > 0);
     if (state.q && drops.length === 1) {
-      return R().empty({ icon: 'search', title: `Nothing listed matches “${state.q}”.`,
+      return R().empty({ icon: 'search', title: 'No listings match this search.',
         body: 'Search reads English and original titles, venues, areas and tags, with or without Estonian letters.',
-        actions: [{ act: 'clear-q', label: 'Clear the search' }, { href: 'places.html', label: 'Search places instead' }] });
+        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'Search places' }] });
     }
     if (best) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
-        body: `${best.label} brings back ${best.n} ${best.n === 1 ? 'listing' : 'listings'}.`,
-        actions: [{ act: best.act, label: best.label }, { act: 'clear-all', label: 'Clear everything' }] });
+        body: `${best.n} ${best.n === 1 ? 'listing is' : 'listings are'} available if you ${best.act === 'clear-q' ? 'remove the search words' : 'relax this filter'}. Your other filters stay selected.`,
+        actions: [{ act: best.act, label: best.label }] });
     }
     if (drops.length) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
-        body: 'No single change brings anything back.', actions: [{ act: 'clear-all', label: 'Clear everything' }] });
+        body: 'Try a different day or start a new search.', actions: [{ act: 'clear-all', label: 'Start over' }] });
     }
     return R().empty({ icon: 'calendar', title: `Nothing is listed in ${R().cityName()} for the coming days.`,
       body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] });
@@ -412,12 +412,13 @@
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
       Object.assign(state, { q: '', day: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, read: null });
+      before = null; clearTimeout(askTimer);
       state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
     if (act) {
       const x = act.dataset.act;
-      if (x === 'clear-q') { unread(); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
+      if (x === 'clear-q') { state.read = null; before = null; clearTimeout(askTimer); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') state.area = '';
       if (x === 'clear-when') { state.day = ''; state.when = 'all'; }

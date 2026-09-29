@@ -101,8 +101,8 @@
   /* ── Sections ───────────────────────────────────────────────── */
   const section = (head, body, cls) => `<section class="wa-sect${cls ? ` ${cls}` : ''}">${R().sect(head)}${body}</section>`;
   /* A cancelled or postponed show stays listed, labelled, at the end. */
-  const cards = (list) => [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))].map(e => R().poster(e)).join('');
-  const shelf = (head, list) => R().shelf(head, cards(list));
+  const cards = (list, opts) => [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))].map(e => R().poster(e, opts)).join('');
+  const shelf = (head, list) => R().shelf(head, cards(list, { compact: head.compact }));
 
   /* The next day after today with anything listed. */
   const nextDay = (all) => {
@@ -111,6 +111,9 @@
   };
 
   const main = () => {
+    const shown = new Set();
+    const fresh = (list) => list.filter(e => !shown.has(e.id));
+    const draw = (head, list) => { list.forEach(e => shown.add(e.id)); return shelf(head, list); };
     const all = R().live();
     const tonight = sortSoon(all.filter(e => W().isTonight(e)));
     const liveNow = tonight.filter(e => R().isLive(e));
@@ -120,7 +123,7 @@
 
     const out = [];
     if (liveNow.length) {
-      out.push(shelf({ title: 'On now', n: liveNow.length, sub: 'Started, and not over yet' }, liveNow.slice(0, 12)));
+      out.push(draw({ title: 'On now', n: liveNow.length, sub: 'Started, and not over yet', compact: true }, liveNow.slice(0, 12)));
     }
 
     if (later.length) {
@@ -128,12 +131,12 @@
       /* Late means 21:00 on, or the small hours once past midnight. */
       const lateOnes = later.filter(e => { const m = W().statedMinutes(e); return m == null || m >= 21 * 60 || m < 5 * 60; });
       const list = late && lateOnes.length ? lateOnes : later;
-      out.push(shelf({
+      out.push(draw({
         title: late ? 'Starting late' : 'Starting soon', n: list.length,
         href: 'discover.html?time=tonight', more: 'All tonight',
       }, list.slice(0, 12)));
     } else if (next) {
-      out.push(shelf({
+      out.push(draw({
         title: `${R().dayName(next.key)}, ${R().dateShort(next.key)}`, n: next.items.length,
         sub: liveNow.length ? 'Nothing else starts tonight, so this is next.' : `Nothing is filed for tonight in ${R().cityName()}, so this is next.`,
         href: `discover.html?date=${next.key}`, more: R().dateShort(next.key),
@@ -143,22 +146,23 @@
     /* For you: this week's listings that match the chosen interests. */
     const ids = R().interests.ids();
     if (ids.length) {
-      const mine = sortSoon(all.filter(e => W().matches(e, 'thisweek') && R().interests.matches(e)));
+      const matches = all.filter(e => W().matches(e, 'thisweek') && R().interests.matches(e));
+      const mine = sortSoon(fresh(matches));
       const names = R().interests.OPTIONS.filter(o => ids.includes(o.id)).map(o => o.label);
       out.push(mine.length
-        ? shelf({ title: 'For you this week', n: mine.length, sub: names.join(', '), href: 'profile.html#interests', more: 'Change' }, mine.slice(0, 12))
-        : section({ title: 'For you this week', href: 'profile.html#interests', more: 'Change' }, '<p class="wa-note">Nothing this week matches yet. New listings arrive every six hours.</p>'));
+        ? draw({ title: 'For you this week', n: mine.length, sub: names.join(', '), href: 'profile.html#interests', more: 'Change' }, mine.slice(0, 12))
+        : section({ title: 'For you this week', href: 'profile.html#interests', more: 'Change' }, `<p class="wa-note">${matches.length ? 'Your matches are shown above.' : 'Nothing this week matches yet. New listings arrive every six hours.'}</p>`));
     }
 
-    const weekend = sortSoon(all.filter(e => W().matches(e, 'weekend') && !W().isTonight(e)));
+    const weekend = sortSoon(fresh(all).filter(e => W().matches(e, 'weekend') && !W().isTonight(e)));
     if (weekend.length) {
-      out.push(shelf({ title: 'This weekend', n: weekend.length, href: 'discover.html?time=weekend', more: 'All weekend' }, weekend.slice(0, 12)));
+      out.push(draw({ title: 'This weekend', n: weekend.length, href: 'discover.html?time=weekend', more: 'All weekend' }, weekend.slice(0, 12)));
     }
 
     /* Always a way into the rest of the week. */
-    const week = all.filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'weekend'));
+    const week = fresh(all).filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'weekend'));
     if (week.length) {
-      out.push(shelf({ title: 'Later this week', n: week.length, href: 'discover.html?time=thisweek', more: 'The week' }, sortSoon(week).slice(0, 12)));
+      out.push(draw({ title: 'Later this week', n: week.length, href: 'discover.html?time=thisweek', more: 'The week' }, sortSoon(week).slice(0, 12)));
     }
 
     if (!all.length) {

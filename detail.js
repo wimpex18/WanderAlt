@@ -31,13 +31,13 @@
 
   let extra = null;
   const resolve = () => {
-    const id = param('id');
+    const id = window.WA.canonicalId ? window.WA.canonicalId(param('id')) : param('id');
     if (!id) return null;
     const pick = (window.WA._catalogAll || []).find(e => e.id === id);
     if (pick) return { kind: 'event', e: pick };
     const venue = (window.WA._venuesAll || []).find(v => v.id === id);
     if (venue) return { kind: 'place', e: venue };
-    return extra && extra.e && extra.e.id === id ? extra : null;
+    return extra && extra.e && (extra.e.id === id || extra.requestedId === param('id')) ? extra : null;
   };
 
   /* ── Pieces ─────────────────────────────────────────────────── */
@@ -106,7 +106,7 @@
   const key = (s) => String(s || '').toLowerCase().trim();
   const picksAt = (place) => (window.WA._catalogAll || [])
     .filter(p => !p.isClosed && !W().hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
-    .sort(G().bySoonestThenDistance());
+    .sort(G().byDateThenSoonest());
 
   const saveBtn = (id) => {
     const on = !!(window.WA.Bookmarks && window.WA.Bookmarks.get()[id]);
@@ -138,17 +138,48 @@
      it is kept and put back into each new slot. */
   const miniSlot = (x, title) => {
     const c = G().coordsFor(x);
-    return c ? `<a class="det-minimap" id="minimap-slot" href="map.html?pick=${esc(encodeURIComponent(x.id))}" data-lat="${esc(c.lat)}" data-lng="${esc(c.lng)}" aria-label="${esc(`${title} on the map`)}">
+    return c ? `<a class="det-minimap" id="minimap-slot" href="map.html?pick=${esc(encodeURIComponent(x.id))}" data-lat="${esc(c.lat)}" data-lng="${esc(c.lng)}" data-map-state="loading" aria-label="${esc(`${title} on the map`)}">
+      <span class="det-minimap__message" role="status">Loading map…</span>
       <span class="det-minimap__pin" aria-hidden="true">${window.WA.Picto.kind(x.kind)}</span></a>` : '';
   };
-  let mini = null;
+  let mini = null, miniWatch = null, miniTimer = null, miniWait = false;
+  const miniState = (state) => {
+    const slot = document.getElementById('minimap-slot');
+    if (!slot) return;
+    slot.dataset.mapState = state;
+    const message = slot.querySelector('.det-minimap__message');
+    if (message) message.textContent = state === 'error' ? 'Map preview unavailable · Open map' : 'Loading map…';
+    if (state !== 'loading') { clearTimeout(miniTimer); miniTimer = null; }
+  };
   const mountMini = () => {
     const slot = document.getElementById('minimap-slot');
     if (!slot) return;
     const lat = Number(slot.dataset.lat), lng = Number(slot.dataset.lng);
-    if (mini && mini.lat === lat && mini.lng === lng) { slot.prepend(mini.el); mini.map.resize(); return; }
+    if (mini && mini.lat === lat && mini.lng === lng) { slot.prepend(mini.el); miniState(mini.state); mini.map.resize(); return; }
+    // Offscreen WebGL previews need no tiles yet. Mount when the Address
+    // section is visible, after its responsive layout has settled.
+    const rect = slot.getBoundingClientRect();
+    if ('IntersectionObserver' in window && (rect.top >= innerHeight || rect.bottom <= 0)) {
+      if (miniWatch) miniWatch.disconnect();
+      miniWatch = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting && entry.target === document.getElementById('minimap-slot'))) {
+          miniWatch.disconnect(); miniWatch = null; mountMini();
+        }
+      });
+      miniWatch.observe(slot);
+      return;
+    }
+    if (!miniTimer) miniTimer = setTimeout(() => miniState('error'), 10000);
     const gl = window.maplibregl;
-    if (!gl) { document.addEventListener('wa:maplibre-ready', mountMini, { once: true }); return; }
+    if (!gl) {
+      if (!miniWait) {
+        miniWait = true;
+        document.addEventListener('wa:maplibre-ready', () => { miniWait = false; mountMini(); }, { once: true });
+      }
+      document.dispatchEvent(new CustomEvent('wa:maplibre-request'));
+      return;
+    }
+    if (mini) { mini.resize.disconnect(); mini.map.remove(); mini = null; }
     const el = document.createElement('div');
     el.className = 'det-minimap__canvas';
     slot.prepend(el);
@@ -156,9 +187,18 @@
     try {
       const map = new gl.Map({ container: el, style: dusk ? './map-style-dusk.json' : './map-style.json', center: [lng, lat], zoom: 15.2,
         interactive: false, attributionControl: { compact: true } });
-      mini = { el, map, lat, lng };
-    } catch { el.remove(); }
+      const resize = new ResizeObserver(() => map.resize());
+      resize.observe(el);
+      const current = mini = { el, map, lat, lng, resize, state: 'loading' };
+      map.once('load', () => {
+        if (mini === current && current.state !== 'error') { current.state = 'ready'; miniState('ready'); }
+      });
+      map.on('error', () => {
+        if (mini === current) { current.state = 'error'; miniState('error'); }
+      });
+    } catch { el.remove(); miniState('error'); console.warn('[detail] Map preview could not initialise'); }
   };
+  document.addEventListener('wa:maplibre-error', () => miniState('error'));
 
   const goingRow = (e) => {
     if (!window.WA.Going) return '';
@@ -221,7 +261,7 @@
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
     const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
     const off = R().isOff(e);
-    const tickets = ended || e.flag === 'cancelled' ? '' : ticketsFor(e);
+    const tickets = ended || off ? '' : ticketsFor(e);
     const cal = !ended && !off && e.startsAt ? ics(e) : '';
     const soldOut = e.flag === 'sold_out';
     const v = window.WA.venueFor(e);
@@ -269,7 +309,7 @@
           ${walkFact(e)}
         </div>
 
-        ${ended || e.flag === 'cancelled' ? '' : `<div class="wa-bar">
+        ${ended || off ? '' : `<div class="wa-bar">
           <span class="wa-bar__text"><span class="wa-bar__price">${esc(soldOut ? 'Sold out' : R().price(e) || whenValue)}</span>
             <span class="wa-bar__sub">${esc([e.flag === 'few_left' ? 'Few tickets left' : '', soldOut ? '' : R().price(e) ? whenValue : '', whenSub, tickets ? `on ${host(tickets)}` : venueName].filter(Boolean).join(' · '))}</span></span>
           ${tickets
@@ -334,6 +374,7 @@
       <div class="det-grid__main">
         <header class="det-head">
           <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span>${esc(R().areaOf(v))}</span>` : ''}</p>
+          ${v.isClosed ? '<div class="det-notice det-notice--off" role="status"><strong>This venue is listed as closed.</strong><span>Check with the venue before you go.</span></div>' : ''}
           <h1 class="wa-h1">${esc(v.name || '')}</h1>
           <p>${R().openBadge(v)}</p>
         </header>
@@ -398,7 +439,7 @@
       deadEnd('That listing has closed down.', `Listings expire, which is normal.${isNaN(d) ? '' : ` This one came off on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`}`);
       return;
     }
-    extra = found;
+    extra = { ...found, requestedId: param('id') };
     render();
   };
 

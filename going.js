@@ -37,12 +37,15 @@
     } catch { /* the local mark stands */ }
   };
 
-  const has = (id) => !!read()[id];
+  const canonical = (id) => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
+  const has = (id) => Object.keys(read()).some(key => canonical(key) === canonical(id));
   const set = (id, on) => {
+    id = canonical(id);
     const s = read();
-    if (on) s[id] = Date.now(); else delete s[id];
+    const aliases = [...new Set([id, ...Object.keys(s).filter(key => canonical(key) === id)])];
+    if (on) s[id] = Date.now(); else aliases.forEach(key => delete s[key]);
     write(s);
-    return cloud(id, on);
+    return on ? cloud(id, true) : Promise.all(aliases.map(key => cloud(key, false)));
   };
 
   const count = async (id) => {
@@ -68,5 +71,5 @@
     } catch { /* offline */ }
   });
 
-  window.WA.Going = { has, set, count, ids: () => Object.keys(read()) };
+  window.WA.Going = { has, set, count, ids: () => [...new Set(Object.keys(read()).map(canonical))] };
 })();

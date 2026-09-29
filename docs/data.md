@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`: `20260915090000_baseline.sql` (saves, and the first catalogue tables, since replaced) and `20260927120000_events_engine.sql` (everything below) and `20260927140000_provenance_visibility.sql` and `20260928090000_venue_pages.sql` and `20260928120000_picks_teaser.sql` and `20260928150000_going.sql` and `20260928160000_event_flags.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929061000_place_verification.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -8,9 +8,13 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 |---|---|---|
 | `sources` | Where listings come from, plus each source's health (`last_ok_at`, `last_yield`, `consecutive_failures`, `last_error`) | `id, city, kind, url, handle, label` only |
 | `raw_items` | Exactly what a source said, once per `(source_id, external_id)`, with a content hash and a processing `status` | no |
-| `places` | Venues: name, `aliases` (lowercased names sources use), coordinates, OSM identity, `kind`, neighbourhood | yes, unless `hidden` |
-| `events` | One row per dated occurrence: source facts, `title_en`/`summary_en`, `kind`, `tags`, `relevance`, `status`, `flag` | `published` only |
-| `event_sources` | Provenance: every source that listed an event | for published events, without `raw_item_id` |
+| `places` | Venues: name, folded `aliases`, coordinates, retained `osm_ids`, `kind`, neighbourhood, liveness observations, `merged_into` | yes, unless `hidden` |
+| `events` | One row per dated occurrence: source facts, translations, classification, `status`, `flag`, `merged_into` | published, unmerged, not at a known closed venue |
+| `event_sources` | Provenance and the last flag observed from each source | for published events, without `raw_item_id` or per-source `flag` |
+| `place_redirects`, `event_redirects` | Retained ids pointing to canonical rows | yes; event targets must be published |
+| `place_match_reviews` | Uncertain pairs, evidence, and `pending` / `separate` / `merged` decisions | no |
+| `place_verification_reviews` (view) | Canonical venues awaiting activity evidence or review, including expired confirmations | no |
+| `place_merge_log`, `event_merge_log`, `place_liveness_log` | Before/after snapshots, provenance, moved events and undo history | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
@@ -24,17 +28,17 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 `pipeline/run.ts`, plain TypeScript that Node 24 runs directly. GitHub Actions runs it every six hours (four runs a day keep Workers AI inside its free allocation) (`.github/workflows/pipeline.yml`) and on demand from the Actions tab.
 
 1. Sync `pipeline/sources.tallinn.json` into `sources`. The JSON file is the source of truth; add a source by PR. A source removed from the file is marked inactive, which also hides it publicly.
-2. Collect each source; store only new or changed items in `raw_items` (compared by content hash).
+2. Collect each source; store only new or changed items in `raw_items` (compared by content hash). Exact unchanged items seen again refresh their event provenance timestamps without another model call or changing flags.
 3. Read pending items into candidates: Fienta and JSON-LD are parsed; Telegram, HTML pages and RSS go to a model (`docs/models.md`). An item that fails is retried on the next runs and parked as `error` after three attempts. Prose items wait as `new` while no model is available.
 4. Classify candidates in batches.
-5. Resolve venues to `places` and write `events` and `event_sources` (details below).
-6. Classify earlier events that were written without a model, archive ended events, delete processed raw items older than 60 days, record source health.
+5. Reconcile stored venue and event copies, check a due OSM identity batch, collect the venue catalogue, resolve candidates to canonical places, and write events and provenance (details below).
+6. Classify earlier events that were written without a model, archive ended events, verify venue activity from recent trusted listings and a small own-site batch, delete processed raw items older than 60 days, record source health.
 
 A run exits non-zero when a source fails or returns nothing, which turns the Actions run red. A prose source whose items are fetched but yield no events is logged, since that usually means the page was redesigned.
 
 ### Venues
 
-Places come from two directions. The **catalogue** (`pipeline/venues.ts`, source `osm-tallinn`) reads every record shop, bookshop, gallery, thrift shop, arts centre, cinema, club, community centre and theatre in Tallinn from OpenStreetMap through Overpass once a run (about 220 venues), so the Places tab lists them whether or not they have an event. **Events** add the venues they happen at. The two meet by OSM id or name: a catalogue venue fills what an event-made place lacks and never overwrites it.
+Places come from two directions. The **catalogue** (`pipeline/venues.ts`, source `osm-tallinn`) reads Tallinn's record shops, bookshops, galleries, thrift shops, arts centres, cinemas, clubs, community centres and theatres from OpenStreetMap through Overpass once a run. **Events** add the venues they happen at. Matching uses retained OSM identities, names/aliases and location evidence; a catalogue venue fills missing facts without replacing existing facts. The store retains colliding names, so two branches cannot overwrite each other in memory. An ambiguous event venue stays unresolved rather than creating another ambiguous copy.
 
 **Enrichment** fills a venue page, 25 places a run, each only from a source that identifies the venue: its Wikidata item (photo from Commons, website, Instagram, Facebook, description), then its own homepage (Instagram and Facebook links whose handle shares a word with the venue's name or domain, `og:image`, meta description). A homepage that has become a domain-parking page is ignored. `enriched_at` records that a place was done.
 
@@ -43,19 +47,57 @@ A venue name is matched against every place's name and `aliases` (lowercased, ac
 - by its address, reduced to the form Nominatim matches ("Kentmanni tänav 28, 10116 Tallinn" becomes "Kentmanni 28, Tallinn"; "maantee" and "puiestee" become "mnt" and "pst"), for coordinates;
 - by its name, for OpenStreetMap's own record of the venue. That record's id and a `kind` from its tags are kept only when the names agree and it lies within 250 m of the address, because a name alone can match a namesake across town.
 
-On 27 September 2026 this placed 160 of 163 Fienta venues and identified 50. Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, one a second, as Nominatim's policy asks. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
+Places still unplaced or unidentified are retried, ten per run, at most 60 lookups a run, with at least 1.1 seconds between requests, including failures. Venues OpenStreetMap cannot name get a kind from the model, judged by name, address and the events held there.
 
-The site's Places tab lists only places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor.
-
-To merge two spellings of one venue, add the second as an alias of the first and repoint its events.
+The site's Places tab and venue map pins recommend only freshly verified, canonical places whose `kind` is one of `VENUE_KINDS` in `supabase.js` (record store, bookshop, gallery, club, thrift, arts centre, cinema, community, theatre, bar). OSM supplies a kind for some places; set the rest in the Table Editor. Unverified records remain available for admin review and direct detail links, without an Open now claim.
 
 ### Duplicates
 
 Each event id is a hash of city, title, Tallinn date and time, and place. Because two sources rarely title a show the same way, a candidate also joins an existing upcoming event when both are at the same place within 30 minutes and at least 60% of the shorter title's words appear in the other (`pipeline/dedupe.ts`). Every source that listed it gets an `event_sources` row.
 
+Eligible matches are ranked by closest time, strongest title overlap, then id. Stored occurrences are reconciled again after venue merges, choosing a published row, then the oldest observed id. Timed and date-only occurrences stay separate in this reconciliation. Different performance dates and separate screenings remain separate. Title-only or coordinate-only event merging is never used. Thresholds remain 30 minutes / 60%; the observed misses were caused by different venue ids.
+
+`pipeline/place-match.ts` chooses the oldest venue id deterministically. Shared OSM ids merge unless coordinates conflict by more than 250 m. Otherwise matching requires an exact address or at most 100 m, compatible kinds, matching room numbers and no conflicting address. Exact names/aliases, a distinctive name with generic/legal suffixes removed, or edit similarity ≥ 0.92 with an exact address or at most 40 m can merge. Weaker matches become private reviews. Distance alone never merges neighbours; conflicting coordinates over 150 m cannot prove a name match. Translated names, different halls, missing locations and moved businesses can still need review.
+
+`merge_places` atomically adds aliases and all OSM identities, fills missing facts, moves events, retains the other row as hidden, flattens old redirects and logs the change. `merge_events` retains both source observations, archives the extra occurrence and logs an old-id redirect. No row is deleted. `catalogue_redirects` is an invoker view used by the site: old detail/map links, saves and list entries resolve to one canonical id. Tonight shelves also avoid repeating an id across sections. Sentence search only filters the loaded catalogue; neither reader generates listings.
+
+### Place liveness
+
+`pipeline/place-liveness.ts` re-queries stored node/way/relation ids, without category filters that could hide disused objects. Each identified canonical place is due every seven days; each pipeline run checks the oldest 50 due places in one Overpass request. Unidentified places need a manual check or later Nominatim identification. This confirms what OSM currently records, not independently that a business is operating.
+
+`osm_checked_at`, `osm_last_seen_at`, `osm_state`, `osm_note` and `osm_missing_count` record the result. Explicit venue lifecycle tags (`disused`, `abandoned`, `closed`, `removed`, and their category prefixes) can set `status=closed`; every retained identity must agree. A recognised live alternate identity keeps the OSM observation present. Missing objects, renamed businesses and conflicting identities stay available for review, with recommendations controlled separately by verification. Opening-hours `off` and a disused building part never prove permanent closure. OSM presence never reopens a closed venue; reopening requires an explicit admin verification. `osm_auto_close=false` disables automatic closure for one row. Conflicting closure states go to duplicate review, and the database prevents merging a closed row into an active one.
+
+Overpass requests are sequential, time-bounded and reject partial or stale replies. HTTP 429/406 stops that run without trying another host. A failed check changes no venue visibility and marks `osm-tallinn` unhealthy; the catalogue request is skipped for that run. Every successful observation has a private before/after audit row. A closed venue drops out of active lists and its retained detail page says it is listed as closed.
+
+### Operating verification
+
+`verification_state` is `unverified`, `verified`, `review` or `closed`. Evidence lives in `verification_source`, `verification_url`, `verification_note`, `verified_at` and `verification_checked_at`. The `venues` view exposes `status=active` only for an active venue with a verified observation within 90 days, so existing public clients also exclude unverified recommendations. Expiry is computed when queried. This confirms recent activity, not that a door is open right now; opening hours remain separate.
+
+`verify_event_places` accepts a published, unmerged, unarchived event dated from 30 days ago to 90 days ahead, observed within seven days by an active curated source or a trusted Fienta organiser. Cancelled and postponed events do not qualify. It uses existing provenance and costs no model calls. Newer website concerns and manual reviews block older listing evidence.
+
+`pipeline/place-verification.ts` checks up to ten due own websites sequentially per run, at most one venue per host in that batch and once per venue per seven days. Requests stop at ten seconds and 400 KB, with no retries. Recent schema.org events must identify the same venue as their location; HTTP 200, undated hours, a copyright year or old promotion proves nothing. Parked domains, identity changes and explicit closure wording go to review, never directly to permanent closure. A timeout, challenge, HTTP error or unsupported content preserves previous verification and records the attempt in `website_checked_at`. Console logs show outcomes; `place_verification_reviews` lists unresolved or expired records. A weaker undated homepage cannot erase fresh dated evidence. Fresh manual confirmations and manual reviews are protected from automatic replacement.
+
+There is no Google Places API integration. It requires a billing-enabled project, so verification uses free OSM, trusted programmes, own websites and documented admin decisions. A manual Google Maps cross-check can support a review; do not bulk-import its business database or invent a paid API fallback.
+
+### Review and undo
+
+Use `npm run places:audit -- --out /tmp/places.json` to inspect a read-only plan, or `npm run places:maintain` to reconcile, check one OSM batch and verify activity. Both require a valid service-role key. Inspect `place_match_reviews` in the Supabase Table Editor: confirm a pair with the service-only `merge_places` RPC, or set `state=separate` to suppress it. The CLI accepts `--merge <duplicate-id> --into <canonical-id> --reason "verified source/address"`. Console output includes merge reasons, distances, OSM states and undo ids.
+
+Inspect `place_verification_reviews` and `place_liveness_log` before a manual activity decision. Record it with `npm run places:maintain -- --verify <canonical-id> --state verified --url https://venue.example/current-programme --reason "dated independent evidence"`; `--state review` withholds recommendations, and `--state closed` confirms permanent closure and disables automatic reopening. Use an actual evidence URL and reason. Correct a decision by recording another manual state; snapshots retain both observations. Do not confirm a venue solely from stale OSM hours. `--no-verification` skips the pipeline activity batch; `--max-website-checks 0` retains event verification while skipping homepages.
+
+Admin SQL (service role only; replace the example ids):
+
+```sql
+select public.merge_places('duplicate-id', 'canonical-id', 'verified source/address');
+select public.undo_event_merge(123); -- id from event_merge_log
+select public.undo_place_merge(456); -- id from place_merge_log
+```
+
+Undo event merges before their venue merges, and later dependent merges before earlier ones. Undo restores retained rows and original links, preserves later edits and observations, and suppresses the pair from future reconciliation. For a mistaken liveness closure, inspect `place_liveness_log`, confirm current activity with `record_place_verification(..., 'verified', 'manual', ...)` and set `osm_auto_close=false`; later checks still record evidence.
+
 ### Flags
 
-`events.flag` is what a source says about the show: `cancelled`, `postponed`, `sold_out` or `few_left`, else null. It is a fact, so every read of the event sets it again and it clears when the source does; when two sources list one show, the more serious flag wins. It comes from structured fields where they exist (Fienta `event_status`, schema.org `eventStatus` and `offers.availability`), from the model reading prose (`state` in the extraction schema), and from `pipeline/flags.ts`, which reads the title and short description lines for words like "sold out", "välja müüdud", "jääb ära" or "отменён". Prose counts only when the phrase is shouted or leads its line, so refund policies don't flag a show. Fienta's cancelled events are kept and flagged, not dropped.
+`events.flag` is what a source says about the show: `cancelled`, `postponed`, `sold_out` or `few_left`, else null. Every processed observation refreshes its `event_sources.flag`; `refresh_event_flags` derives the most serious flag across retained source observations. An unchanged source's cancellation survives a different source's update, and a flag clears when all sources that reported it clear it. The migration conservatively seeds existing provenance from the stored event flag until each source is read again. It comes from structured fields where they exist (Fienta `event_status`, schema.org `eventStatus` and `offers.availability`), from the model reading prose (`state` in the extraction schema), and from `pipeline/flags.ts`, which reads the title and short description lines for words like "sold out", "välja müüdud", "jääb ära" or "отменён". Prose counts only when the phrase is shouted or leads its line, so refund policies don't flag a show. Fienta's cancelled events are kept and flagged, not dropped.
 
 ### Contact details
 

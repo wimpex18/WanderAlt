@@ -38,11 +38,12 @@
     return out;
   };
 
-  const inList = (x) => !listFilter || !window.WA.Lists || window.WA.Lists.items(listFilter).includes(x.id);
+  const canonical = (id) => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
+  const inList = (x) => !listFilter || !window.WA.Lists || window.WA.Lists.items(listFilter).map(canonical).includes(x.id);
 
   const mosaic = (ids) => {
     const pool = [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
-    const found = ids.map(id => pool.find(x => x.id === id)).filter(Boolean);
+    const found = [...new Set(ids.map(canonical))].map(id => pool.find(x => x.id === id)).filter(Boolean);
     /* Four tiles make a mosaic; fewer read better as one picture. */
     const tiles = found.length >= 4 ? found.slice(0, 4) : found.slice(0, 1);
     if (!tiles.length) return `<span class="wa-listcard__mosaic wa-listcard__mosaic--one"><span class="wa-listcard__tile">${I('save', 'wa-ic--lg')}</span></span>`;
@@ -59,8 +60,9 @@
     return `<section class="wa-sect">${R().sect({ title: 'Lists', n: lists.length || null, sub: lists.length ? 'Tap a list to see only what is in it' : 'Group saves into a night out, a trip, a weekend' })}
       <div class="wa-lists" style="margin-top:var(--s-3)">
         ${lists.map(l => {
-          const n = (l.items || []).length;
-          const gone = (l.items || []).filter(id => goneIds.has(id)).length;
+          const items = [...new Set((l.items || []).map(canonical))];
+          const n = items.length;
+          const gone = items.filter(id => goneIds.has(id)).length;
           return `<button class="wa-listcard" type="button" data-list="${esc(l.id)}" aria-pressed="${listFilter === l.id}">
             ${mosaic(l.items || [])}<span class="wa-listcard__name">${esc(l.name)}</span>
             <span class="wa-listcard__sub">${esc(`${n} saved${gone ? ` · ${gone} over` : ''}`)}</span></button>`;

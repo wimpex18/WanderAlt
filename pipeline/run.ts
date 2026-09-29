@@ -26,6 +26,7 @@ import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts } from './util.ts';
 import { tallinnDay } from './time.ts';
+import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, verifyPlaces } from './maintenance.ts';
 
 const args = process.argv.slice(2);
 const flag = (f: string) => args.includes(f);
@@ -39,10 +40,6 @@ const MAX_ATTEMPTS = 3;          // a raw item that errors this often is parked 
 const KEEP_RAW_DAYS = 60;
 
 const log = (...xs: unknown[]) => console.log('[pipeline]', ...xs);
-
-const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id',
-  'website', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
-  'image_url', 'image_attr', 'image_source', 'enriched_at'];
 
 export function loadSources(city = CITY): Source[] {
   const url = new URL(`./sources.${city}.json`, import.meta.url);
@@ -163,6 +160,12 @@ async function main() {
           payload: i.payload, fetched_at: new Date().toISOString(), status: 'new', note: null, attempts: 0,
         })), 'source_id,external_id');
       }
+      // Seeing an unchanged source item is still fresh activity evidence.
+      // Refresh only its provenance; never re-read it or clear its flags.
+      const changed = new Set(fresh.map(i => i.external_id));
+      for (const part of chunks(items.filter(i => !changed.has(i.external_id)).map(i => i.external_id), 150)) {
+        await db.req('POST', 'rpc/refresh_source_seen', { p_source: source.id, p_external_ids: part });
+      }
       log(`${source.id}: ${items.length} items, ${fresh.length} new or changed`);
     } catch (e) {
       health[source.id] = { ok: false, yield: 0, error: (e as Error).message };
@@ -211,18 +214,31 @@ async function main() {
   const enrich = await classify(models, found.map(f => f.c));
 
   // ── 5. places and events ──
-  const existingPlaces = db
-    ? await db.select<Place>(`places?city=eq.${CITY}&select=${PLACE_COLUMNS.join(',')}`)
-    : [];
-  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
-
+  let existingPlaces = db ? await loadPlaces(db, CITY) : [];
+  if (db) {
+    const plan = await reconcilePlaces(db, existingPlaces);
+    if (plan.some(p => p.match.action === 'merge')) existingPlaces = await loadPlaces(db, CITY);
+    await reconcileEvents(db, CITY);
+  }
   // The venue catalogue: every cultural venue OpenStreetMap knows in the city.
   const osm = sources.find(s => s.kind === 'osm');
-  if (osm) {
+  let skipCatalogue = false;
+  if (db && osm && !flag('--no-liveness')) {
+    try {
+      await refreshLiveness(db, existingPlaces, false, Number(opt('--max-liveness') ?? 50));
+      existingPlaces = await loadPlaces(db, CITY);
+    } catch (e) {
+      health[osm.id] = { ok: false, yield: 0, error: `liveness: ${(e as Error).message}` };
+      skipCatalogue = true;
+      log(`${osm.id}: liveness failed; visibility unchanged: ${(e as Error).message}`);
+    }
+  }
+  const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 60));
+  if (osm && !skipCatalogue) {
     try {
       const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'));
       for (const p of catalogue) places.merge(p);
-      health[osm.id] = { ok: true, yield: catalogue.length };
+      if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
     } catch (e) {
       health[osm.id] = { ok: false, yield: 0, error: (e as Error).message };
@@ -231,7 +247,7 @@ async function main() {
   }
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    const due = places.all().filter(p => !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
+    const due = places.all().filter(p => (p.status ?? 'active') === 'active' && !p.enriched_at && (p.wikidata_id || p.website)).slice(0, Number(opt('--max-enrich') ?? 25));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -242,8 +258,8 @@ async function main() {
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const seen = new Seen(db
-    ? (await db.select<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string }>(
-        `events?city=eq.${CITY}&archived_at=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at&limit=5000`))
+    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string }>(
+        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at&order=id.asc`))
         .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at) }))
     : []);
 
@@ -259,9 +275,10 @@ async function main() {
     seen.add({ id, title: c.title, where, start });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = offTopic(c.title) ?? decide(e, trusted);
-    provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null, last_seen_at: new Date().toISOString() });
     // Any source saying a show is off or sold out wins over one that doesn't.
     const state = worse(c.flag, textFlag(c.title, c.description));
+    provenance.push({ event_id: id, source_id: p.source.id, raw_item_id: p.rawId, url: c.url ?? p.item.url ?? null,
+      flag: state, last_seen_at: new Date().toISOString() });
     if (events.has(id)) { const had = events.get(id)!; had.flag = worse(had.flag as never, state); continue; }
     events.set(id, {
       id, city: CITY, title: c.title, title_en: e.title_en, summary_en: e.summary_en, description: scrubContacts(c.description),
@@ -308,8 +325,12 @@ async function main() {
     // Every row carries every column: a bulk upsert takes its column list
     // from the first row, and a missing key would be written as null.
     await db.upsert('places', touched.map(p => ({
-      ...Object.fromEntries(PLACE_COLUMNS.map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
-      aliases: p.aliases ?? [], updated_at: new Date().toISOString(),
+      // Liveness/visibility fields belong to their atomic RPC, not a
+      // stale bulk snapshot. New rows receive the database defaults.
+      ...Object.fromEntries(PLACE_COLUMNS.filter(k => !k.startsWith('osm_') || ['osm_id','osm_ids'].includes(k))
+        .filter(k => !['status','merged_into','created_at','verified_at','website_checked_at'].includes(k) && !k.startsWith('verification_'))
+        .map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
+      aliases: p.aliases ?? [], osm_ids: p.osm_ids ?? [], updated_at: new Date().toISOString(),
     })), 'id');
   }
   const ids = [...events.keys()];
@@ -336,8 +357,13 @@ async function main() {
     byShape.set(shape, [...(byShape.get(shape) ?? []), r]);
   }
   for (const group of byShape.values()) for (const part of chunks(group, 200)) await db.upsert('events', part, 'id');
-  const prov = new Map(provenance.map(p => [`${p.event_id}|${p.source_id}`, p]));
+  const prov = new Map<string, Record<string, unknown>>();
+  for (const p of provenance) {
+    const key = `${p.event_id}|${p.source_id}`;
+    prov.set(key, { ...p, flag: worse(prov.get(key)?.flag as never, p.flag as never) });
+  }
   for (const part of chunks([...prov.values()], 200)) await db.upsert('event_sources', part, 'event_id,source_id');
+  for (const part of chunks(ids, 200)) await db.req('POST', 'rpc/refresh_event_flags', { p_ids: part });
 
   for (const part of chunks(done, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'done', note: null });
   for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: 'no dated Tallinn event' });
@@ -370,6 +396,7 @@ async function main() {
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
+  if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 10));
 
   for (const [id, h] of Object.entries(health)) {
     const [prev] = await db.select<{ consecutive_failures: number }>(`sources?id=eq.${encodeURIComponent(id)}&select=consecutive_failures`);

@@ -26,7 +26,7 @@
      words are written here without their accents (täna → tana). */
   const w = (alts, g = '') => new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts})(?![\\p{L}\\p{N}])`, `u${g}`);
   const WHEN = [
-    ['tonight', w('tonight|today|this evening|right now|tana|tana ohtul|сегодня|вечером')],
+    ['tonight', w('this evening|right now|tonight|today|tana ohtul|tana|сегодня вечером|сегодня|вечером', 'g')],
     ['tomorrow', w('tomorrow|homme|завтра')],
     ['weekend', w('(?:this )?weekend|nadalavahetusel?|на выходных|выходные')],
     ['thisweek', w('this week|next few days|sel nadalal|на этой неделе')],
@@ -45,7 +45,8 @@
   const WEEKDAYS = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
   const STOP = new Set(('a an the in at on for to of and or with near around something some any anything events event ' +
     'what whats what\'s is are there go going out me i want looking find show where cheap under below less than eur euro euros € ' +
-    'free english in english tallinn please good best nice cool fun').split(' '));
+    'free english in english tallinn please good best nice cool fun uritus uritused ' +
+    'мероприятие мероприятия события событие пожалуйста').split(' '));
 
   const empty = () => ({ when: '', day: '', kinds: [], free: false, english: false, maxPrice: null, must: [], any: [], note: '' });
 

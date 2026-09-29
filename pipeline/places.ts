@@ -6,6 +6,7 @@
 
 import type { Candidate } from './types.ts';
 import { UA, nameKey, slug, sleep } from './util.ts';
+import { comparePlaces, metres, osmIds, placeNames, canonicalOrder, addressKey } from './place-match.ts';
 
 export interface Place {
   id: string;
@@ -18,6 +19,24 @@ export interface Place {
   lat?: number | null;
   lng?: number | null;
   osm_id?: string | null;
+  osm_ids?: string[];
+  status?: 'active' | 'closed' | 'hidden';
+  merged_into?: string | null;
+  created_at?: string;
+  osm_checked_at?: string | null;
+  osm_last_seen_at?: string | null;
+  osm_missing_count?: number;
+  osm_state?: string;
+  osm_note?: string | null;
+  osm_closed_by_check?: boolean;
+  osm_auto_close?: boolean;
+  verification_state?: 'unverified' | 'verified' | 'review' | 'closed';
+  verification_checked_at?: string | null;
+  website_checked_at?: string | null;
+  verified_at?: string | null;
+  verification_source?: string | null;
+  verification_url?: string | null;
+  verification_note?: string | null;
   // Venue-page details (venues.ts fills them).
   website?: string | null;
   instagram?: string | null;
@@ -32,7 +51,7 @@ export interface Place {
 }
 
 const DETAIL_FIELDS = ['kind', 'address', 'lat', 'lng', 'osm_id', 'website', 'instagram', 'facebook',
-  'opening_hours', 'description', 'wikidata_id', 'neighborhood'] as const;
+  'opening_hours', 'description', 'wikidata_id', 'neighborhood', 'image_url', 'image_attr', 'image_source'] as const;
 
 interface NominatimHit {
   lat: string;
@@ -68,12 +87,6 @@ export function normaliseAddress(a: string): string {
   return /\d/.test(street) ? `${street}, Tallinn` : '';
 }
 
-/** Metres between two points; plenty accurate across one city. */
-const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
-  const k = 111_320;
-  return Math.hypot((a.lat - b.lat) * k, (a.lng - b.lng) * k * Math.cos(a.lat * Math.PI / 180));
-};
-
 /** OSM tags → the place kinds the site lists (supabase.js VENUE_KINDS). */
 const OSM_KIND: Record<string, string> = {
   'amenity/cinema': 'cinema', 'amenity/nightclub': 'club', 'amenity/arts_centre': 'arts centre',
@@ -85,7 +98,7 @@ const OSM_KIND: Record<string, string> = {
 };
 
 export class Places {
-  private byKey = new Map<string, Place>();
+  private byId = new Map<string, Place>();
   readonly created: Place[] = [];
   readonly updated: Place[] = [];
   private retried = new Set<string>();
@@ -103,22 +116,22 @@ export class Places {
    *  place with the same OSM id or name gains what it lacks; anything else
    *  becomes a new place. */
   merge(incoming: Place): Place {
-    const known = this.all().find(p => incoming.osm_id && p.osm_id === incoming.osm_id)
-      ?? incoming.aliases.map(a => this.byKey.get(a)).find(Boolean)
-      ?? this.byKey.get(nameKey(incoming.name));
+    const known = this.find(incoming);
     if (known) {
       let changed = false;
       for (const k of DETAIL_FIELDS) {
         if ((known[k] == null || known[k] === '') && incoming[k] != null) { (known as unknown as Record<string, unknown>)[k] = incoming[k]; changed = true; }
       }
-      const aliases = [...new Set([...known.aliases, ...incoming.aliases])];
+      const aliases = [...new Set([...placeNames(known), ...placeNames(incoming)])];
       if (aliases.length !== known.aliases.length) { known.aliases = aliases; changed = true; }
+      const identities = [...new Set([...osmIds(known), ...osmIds(incoming)])];
+      if (identities.join() !== (known.osm_ids ?? []).join()) { known.osm_ids = identities; changed = true; }
       this.remember(known);
       if (changed && !this.created.includes(known) && !this.updated.includes(known)) this.updated.push(known);
       return known;
     }
     let id = incoming.id;
-    for (let n = 2; this.all().some(p => p.id === id); n++) id = `${incoming.id}-${n}`;
+    for (let n = 2; this.byId.has(id); n++) id = `${incoming.id}-${n}`;
     const place = { ...incoming, id };
     this.remember(place);
     this.created.push(place);
@@ -127,19 +140,37 @@ export class Places {
 
   /** Every place known this run, stored or new. */
   all(): Place[] {
-    return [...new Set(this.byKey.values())];
+    return [...this.byId.values()].filter(p => !p.merged_into);
   }
 
   private remember(p: Place) {
-    this.byKey.set(nameKey(p.name), p);
-    for (const a of p.aliases) this.byKey.set(nameKey(a), p);
+    this.byId.set(p.id, p);
+  }
+
+  private find(incoming: Place): Place | undefined {
+    const proof = { ...incoming, id: '' };
+    const all = this.all().filter(p => p.city === incoming.city).sort(canonicalOrder);
+    const identity = all.filter(p => osmIds(incoming).some(id => osmIds(p).includes(id)));
+    if (identity.length === 1) return identity[0];
+    const exact = all.filter(p => placeNames(p).some(n => placeNames(incoming).includes(n)));
+    // A unique exact spelling without location evidence preserves the old
+    // name lookup. Supplied coordinates/address must agree when both exist.
+    if (exact.length === 1) {
+      const p = exact[0], d = metres(p, incoming);
+      if ((d == null || d <= 100) && (!p.address || !incoming.address || addressKey(p.address) === addressKey(incoming.address))) return p;
+    }
+    const near = all.filter(p => comparePlaces(p, proof)?.action === 'merge');
+    if (near.length === 1) return near[0];
+    return undefined;
   }
 
   /** The place a candidate happens at, creating it on first sight. */
   async resolve(c: Candidate, geocode = true): Promise<Place | null> {
     const name = c.venue_name?.split(',')[0]?.trim();
     if (!name || ONLINE.test(name)) return null;
-    const hit = this.byKey.get(nameKey(name));
+    const incoming: Place = { id: '', city: this.city, name, aliases: [nameKey(name)],
+      address: c.address ?? null, lat: c.lat ?? null, lng: c.lng ?? null };
+    const hit = this.find(incoming);
     if (hit) {
       // A place an earlier run could not locate or identify gets another try;
       // ten such places per run.
@@ -152,13 +183,16 @@ export class Places {
     }
 
     let id = `${this.city}-${slug(name)}`;
-    for (let n = 2; [...this.byKey.values()].some(p => p.id === id); n++) id = `${this.city}-${slug(name)}-${n}`;
-    const place: Place = { id, city: this.city, name, aliases: [nameKey(name)], address: c.address ?? null };
+    for (let n = 2; this.byId.has(id); n++) id = `${this.city}-${slug(name)}-${n}`;
+    const place: Place = { ...incoming, id };
 
     if (geocode) await this.locate(place, name, c.address ?? null);
-    this.remember(place);
-    this.created.push(place);
-    return place;
+    if (!this.find(place) && this.all().filter(p => placeNames(p).includes(nameKey(name))).length > 1) {
+      console.log(`[places] unresolved ${name}: more than one venue uses this name`);
+      return null;
+    }
+    // Geocoding can identify an existing venue under another spelling.
+    return this.merge(place);
   }
 
   /** Coordinates from the address, then identity and kind from OSM's own
@@ -171,13 +205,14 @@ export class Places {
     const sameName = !!osmName && (osmName.includes(nameKey(name)) || nameKey(name).includes(osmName));
     const at = (h: NominatimHit) => ({ lat: Number(h.lat), lng: Number(h.lon) });
     // A name match far from the stated address is a namesake, not this venue.
-    const venue = byName && sameName && (!byAddress || metres(at(byName), at(byAddress)) < 250) ? byName : null;
+    const venue = byName && sameName && (!byAddress || (metres(at(byName), at(byAddress)) ?? Infinity) < 250) ? byName : null;
     const hit = venue ?? byAddress;
     if (!hit) return false;
     place.lat = Number(hit.lat);
     place.lng = Number(hit.lon);
     if (venue) {
       place.osm_id = `${venue.osm_type}/${venue.osm_id}`;
+      place.osm_ids = [...new Set([...(place.osm_ids ?? []), place.osm_id])];
       place.kind = place.kind ?? OSM_KIND[`${venue.category}/${venue.type}`] ?? null;
     }
     const a = hit.address ?? {};
@@ -192,12 +227,13 @@ export class Places {
     url.search = new URLSearchParams({ q, format: 'jsonv2', addressdetails: '1', limit: '1', countrycodes: 'ee' }).toString();
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
-      await sleep(1100);
       if (!r.ok) return null;
       const hits = await r.json() as NominatimHit[];
       return hits[0] ?? null;
     } catch {
       return null;
+    } finally {
+      await sleep(1100); // failures must respect the same Nominatim spacing
     }
   }
 }

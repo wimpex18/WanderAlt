@@ -144,13 +144,15 @@
     const d = new Date(e.endsAt);
     if (isNaN(d)) return '';
     try {
-      return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+      const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+      const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+      return key === W().todayKey() ? clock : `${dateShort(key)} · ${clock}`;
     } catch (_) { return ''; }
   };
 
   /* The catalogue as lists read it: nothing that has ended. */
   const live = () => (window.WA.catalog || []).filter(e => !e.isClosed && !W().hasEnded(e));
-  const places = () => (window.WA.venues || []);
+  const places = () => (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
 
   /* ── Walking ─────────────────────────────────────────────── */
   const walk = (e) => {
@@ -221,6 +223,8 @@
   /* ── Venue open state ────────────────────────────────────── */
   const openState = (v) => {
     const s = H().state(v && v.openingHours);
+    if (v?.isClosed) return { cls: 'no', text: 'Listed as closed', open: false, s: { ...s, known: false } };
+    if (v?.isVerified === false) return { cls: 'unknown', text: 'Status unverified', open: false, s: { ...s, known: false } };
     if (!s.known) return { cls: 'unknown', text: 'Hours not filed', open: null, s };
     if (s.open) return { cls: 'yes', text: s.closesAt == null ? 'Open, 24 hours' : `Open till ${H().clock(s.closesAt)}`, open: true, s };
     if (s.opensAt != null) return { cls: 'no', text: `Opens ${H().clock(s.opensAt)}`, open: false, s };
@@ -340,14 +344,15 @@
     const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `${walkLabel(m)} walk` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<strong>') ? x : esc(x))).join(' · ');
-    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}" style="display:contents">
+    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-poster__art">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
-        <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(b.text)}</span>
+        <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(opts.compact && b.now ? 'On now' : b.text)}</span>
         ${flagTag(e, ' wa-poster__flag')}
       </span>
       <span class="wa-poster__title">${esc(e.title || '')}</span>
+      ${opts.compact && b.now && endClock(e) ? `<span class="wa-poster__meta">Until ${esc(endClock(e))}</span>` : ''}
       ${line1 ? `<span class="wa-poster__meta">${esc(line1)}</span>` : ''}
       ${line2 ? `<span class="wa-poster__meta">${line2}</span>` : ''}
     </a>${opts.noHeart ? '' : heart(e.id, e.title)}</div>`;
@@ -365,7 +370,7 @@
         <span class="wa-shelfnav"><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="-1" aria-label="Previous">${I('back')}</button><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="1" aria-label="Next">${I('chevron')}</button></span>
       </div>
       ${head.sub ? `<p class="wa-sect__sub">${esc(head.sub)}</p>` : ''}
-      <div class="wa-shelf" id="${id}">${cards}</div>
+      <div class="wa-shelf${head.compact ? ' wa-shelf--compact' : ''}" id="${id}">${cards}</div>
     </section>`;
   };
 

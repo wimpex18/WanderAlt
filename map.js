@@ -29,7 +29,8 @@
   if (LAYERS.includes(qp.get('show'))) state.layer = qp.get('show');
   /* ?pick=<id> arrives from an event or venue page: that pin is shown
      whatever the window, chosen, and the map opens on it. */
-  const pick = qp.get('pick') || '';
+  const requestedPick = qp.get('pick') || '';
+  const pickId = () => window.WA.canonicalId ? window.WA.canonicalId(requestedPick) : requestedPick;
   const on = { get events() { return state.layer !== 'places'; }, get places() { return state.layer !== 'events'; } };
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const phone = matchMedia('(max-width: 1023px)');
@@ -39,13 +40,13 @@
   const withCoords = (x) => { const c = G().coordsFor(x); return c ? Object.assign(x, { _c: c }) : null; };
 
   const collect = () => {
-    events = R().live().filter(e => W().matches(e, state.when) || e.id === pick).map(withCoords).filter(Boolean)
-      .sort(G().bySoonestThenDistance());
+    events = R().live().filter(e => W().matches(e, state.when) || e.id === pickId()).map(withCoords).filter(Boolean)
+      .sort(G().byDateThenSoonest());
     /* The places layer is what is open now, plus the rooms hosting an
        event in this window; the rest of the catalogue lives on Places. */
     const hosts = new Set(events.map(e => e.venueId).filter(Boolean));
     const hostNames = new Set(events.map(e => String(e.venue || '').toLowerCase().trim()));
-    places = R().places().filter(v => v.id === pick || R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
+    places = R().places().filter(v => v.id === pickId() || R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
       .map(withCoords).filter(Boolean);
     $('n-events').textContent = String(events.length);
     $('n-places').textContent = String(places.length);
@@ -82,7 +83,7 @@
     const meta1 = isEvent ? R().badgeFor(x).text : R().openState(x).text;
     const meta2 = (isEvent ? [x.venue, R().price(x)] : [R().kindLabel(x.kind, true), R().areaOf(x)])
       .concat(m != null ? [`${R().walkLabel(m)} walk`] : []).filter(Boolean).join(' · ');
-    return `<div class="map-preview__card" data-card="${esc(x.id)}">
+    return `<div class="map-preview__card${x.id === state.active ? ' is-active' : ''}" data-card="${esc(x.id)}">
         <a class="map-preview__link" href="detail.html?id=${esc(encodeURIComponent(x.id))}" data-row="${esc(x.id)}">
           <span class="map-preview__art">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
           <span class="map-preview__body">
@@ -97,6 +98,15 @@
   };
 
   let deck = [];
+  const markPreview = () => $('preview').querySelectorAll('[data-card]').forEach(c => c.classList.toggle('is-active', c.dataset.card === state.active));
+  const centreCard = (c) => {
+    const track = $('preview-track');
+    if (!track || !c) return;
+    state.active = c.dataset.card;
+    markPreview(); placePins();
+    track.scrollTo({ left: c.offsetLeft - (track.clientWidth - c.clientWidth) / 2, behavior: still() ? 'auto' : 'smooth' });
+    reveal(deck.find(y => y.id === state.active));
+  };
   const preview = () => {
     const host = $('preview');
     const x = [...events, ...places].find(y => y.id === state.active);
@@ -127,6 +137,7 @@
     });
     if (!best || best.dataset.card === state.active) return;
     state.active = best.dataset.card;
+    markPreview();
     placePins();
     reveal(deck.find(y => y.id === state.active));
   };
@@ -141,7 +152,10 @@
     const top = $('preview').getBoundingClientRect().top - box.top;
     const safeTop = phone.matches ? 130 : 80;
     if (pt.x < 40 || pt.x > box.width - 40 || pt.y < safeTop || pt.y > top - 30) {
-      m.easeTo({ center: [x._c.lng, x._c.lat], duration: still() ? 0 : 420, padding: { top: safeTop, bottom: box.height - top + 20, left: 0, right: 0 } });
+      /* Offset is local to this move. Persistent padding accumulated
+         across selections and could make the next bounds fit fail. */
+      const targetY = Math.max(safeTop, (safeTop + top - 30) / 2);
+      m.easeTo({ center: [x._c.lng, x._c.lat], duration: still() ? 0 : 420, offset: [0, targetY - box.height / 2] });
     }
   };
 
@@ -181,7 +195,7 @@
   const openFirst = (a, b) => (R().openState(a).open === true ? 0 : 1) - (R().openState(b).open === true ? 0 : 1) || String(a.name).localeCompare(String(b.name));
   const ordered = () => {
     const { ev, pl } = inView();
-    return { evs: byWalk(ev, G().bySoonestThenDistance()), pls: byWalk(pl, openFirst) };
+    return { evs: byWalk(ev, G().byDateThenSoonest()), pls: byWalk(pl, openFirst) };
   };
 
   const placeDrawer = () => {
@@ -229,13 +243,23 @@
     const top = $('drawer').offsetParent ? document.querySelector('.wa-topbar').getBoundingClientRect().bottom : 60;
     return { peek, half: Math.round(H * 0.52), full: Math.round(H - top - 8) };
   };
+  let drawerMotion = null;
   const setDrawer = (snap) => {
     if (typeof snap === 'boolean') snap = snap ? 'half' : 'peek';
     const d = $('drawer');
+    const before = d.getBoundingClientRect().top;
+    if (drawerMotion) { drawerMotion.cancel(); drawerMotion = null; }
     d.dataset.snap = snap;
     d.dataset.open = String(snap !== 'peek');
     $('drawer-toggle').setAttribute('aria-expanded', String(snap !== 'peek'));
     page().style.setProperty('--sheet-h', `${heights()[snap]}px`);
+    // Lay out the final list height once, then animate its position. The
+    // viewport clips the moving sheet; no height reflow on every frame.
+    const delta = before - d.getBoundingClientRect().top;
+    if (phone.matches && delta && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      drawerMotion = d.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+        { duration: 460, easing: getComputedStyle(d).getPropertyValue('--spring').trim() });
+    }
     if (snap !== 'peek' && state.active) { state.active = ''; placePins(); preview(); }
   };
 
@@ -245,6 +269,11 @@
   let sheetDrag = null, ateClick = false;
   const dragStart = (y, fromList) => {
     if (!phone.matches) return;
+    if (drawerMotion) {
+      const visible = page().getBoundingClientRect().bottom - $('drawer').getBoundingClientRect().top;
+      drawerMotion.cancel(); drawerMotion = null;
+      page().style.setProperty('--sheet-h', `${visible}px`);
+    }
     sheetDrag = { y0: y, h0: $('drawer').getBoundingClientRect().height, fromList, live: false, pts: [[y, performance.now()]] };
   };
   const dragMove = (y, ev) => {
@@ -335,7 +364,13 @@
       return;
     }
     const r = hit('[data-row]');
+    const neighbour = hit('.map-preview__card:not(.is-active)');
+    if (r && neighbour && phone.matches) { e.preventDefault(); centreCard(neighbour); return; }
     if (r) window.WA.Seen.mark(r.dataset.row);
+  });
+  $('preview').addEventListener('focusin', (e) => {
+    const c = e.target.closest('[data-card]');
+    if (c && c.dataset.card !== state.active && phone.matches && e.target.matches(':focus-visible')) centreCard(c);
   });
   document.addEventListener('change', (e) => {
     if (e.target.id !== 'map-when') return;
@@ -365,8 +400,8 @@
       T().onReady(() => {
         /* Fit once the canvas has its real size, not the size it booted at. */
         const m = T().getMap();
-        const picked = pick && [...events, ...places].find(x => x.id === pick);
-        if (picked) state.active = pick;
+        const picked = requestedPick && [...events, ...places].find(x => x.id === pickId());
+        if (picked) state.active = picked.id;
         requestAnimationFrame(() => { m.resize(); if (picked) m.jumpTo({ center: [picked._c.lng, picked._c.lat], zoom: 15.5 }); else fit(); draw(); });
         if (phone.matches) setDrawer('peek');
         m.once('idle', () => { m.resize(); if (!picked) fit(); });
