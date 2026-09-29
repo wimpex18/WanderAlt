@@ -23,14 +23,16 @@
 
   /* ── City-local now, as {dayIdx, minutes} ────────────────────
      Intl gives the city's wall clock regardless of device timezone. */
+  let nowFmt = null, ymdFmt = null;
   const cityNow = (date) => {
     const d = date || new Date();
     let h, m, weekday;
     try {
-      const parts = new Intl.DateTimeFormat('en-GB', {
+      nowFmt = nowFmt || new Intl.DateTimeFormat('en-GB', {
         timeZone: TZ, hour: '2-digit', minute: '2-digit',
         weekday: 'short', hour12: false,
-      }).formatToParts(d);
+      });
+      const parts = nowFmt.formatToParts(d);
       const get = (t) => (parts.find(p => p.type === t) || {}).value;
       h = parseInt(get('hour'), 10);
       m = parseInt(get('minute'), 10);
@@ -52,9 +54,10 @@
   const cityYMD = (date) => {
     const d = date || new Date();
     try {
-      const parts = new Intl.DateTimeFormat('en-GB', {
+      ymdFmt = ymdFmt || new Intl.DateTimeFormat('en-GB', {
         timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
-      }).formatToParts(d);
+      });
+      const parts = ymdFmt.formatToParts(d);
       const get = (t) => parseInt((parts.find(p => p.type === t) || {}).value, 10);
       return { y: get('year'), m: get('month'), d: get('day') };
     } catch (_) {

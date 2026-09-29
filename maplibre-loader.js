@@ -3,7 +3,7 @@
    first paint. MapLibre 6 ships as ES modules only, so it is pulled
    in with a dynamic import() from vendor/ on window 'load', exposed
    as window.maplibregl, and announced with 'wa:maplibre-ready'.
-   Used by discover.html. Upgrading MapLibre means
+   Used by the map and by the detail page's address preview. Upgrading MapLibre means
    swapping the four vendor/ files: maplibre-gl.mjs, -shared.mjs,
    -worker.mjs and maplibre-gl.css.
    ============================================================ */
@@ -36,6 +36,7 @@
   // Detail previews can request the bundle without waiting for unrelated
   // images to finish loading. The normal map still starts after paint.
   document.addEventListener('wa:maplibre-request', load);
-  if (document.readyState === 'complete') setTimeout(load, 0);
+  if (document.querySelector('.map-page')) load();          // the map is the page: no waiting for images
+  else if (document.readyState === 'complete') setTimeout(load, 0);
   else window.addEventListener('load', () => setTimeout(load, 0), { once: true });
 })();

@@ -1,0 +1,21 @@
+{
+  "prefetch": [
+    {
+      "where": { "selector_matches": ".wa-tabbar a" },
+      "eagerness": "eager"
+    },
+    {
+      "where": { "and": [
+        { "href_matches": "/*" },
+        { "not": { "href_matches": ["/img/*", "/api/*", "/review*"] } }
+      ] },
+      "eagerness": "moderate"
+    }
+  ],
+  "prerender": [
+    {
+      "where": { "selector_matches": "a[href*='detail.html']" },
+      "eagerness": "moderate"
+    }
+  ]
+}

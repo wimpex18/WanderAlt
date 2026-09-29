@@ -459,7 +459,9 @@
     if (!hit) { lookUp(); return; }
     const e = hit.e;
     const isEvent = hit.kind === 'event';
-    window.WA.Seen.mark(e.id);
+    /* A prerendered page has not been seen yet: mark it on activation. */
+    if (document.prerendering) document.addEventListener('prerenderingchange', () => window.WA.Seen.mark(e.id), { once: true });
+    else window.WA.Seen.mark(e.id);
     const title = isEvent ? e.title : e.name;
     document.title = `${title} · WanderAlt`;
     const md = document.querySelector('meta[name="description"]');

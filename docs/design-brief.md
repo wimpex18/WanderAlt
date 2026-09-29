@@ -145,5 +145,5 @@ When a direction is chosen, export it and "Send to Claude Code". Claude Code the
   - This replaces two items in "Do not use" above: glass is allowed on everything that floats over content (top bar, tab bar, map controls, sheets, the ticket bar, card badges), and chips, search and pins are pills. Content itself is never glass.
   - Tokens: paper `#ffffff` / dusk `#111113`, ink `#1c1c1e`, accent `#d83a14`, radii 8 / 12 / 16 / 20 / 28 and pill, Geologica 500–700.
   - Icons in two tiers: 24px UI icons and 48px pictograms for kinds and cities on tinted tiles.
-  - Logo: a walking route and a night-time spark in a vermilion tile, with a lowercase "wanderalt" wordmark.
+  - Logo: a route that spells a W and ends under a night spark, white on a vermilion tile (wander, then something worth the walk), with a lowercase "wanderalt" wordmark.
   - The system is written down in `docs/frontend.md`.

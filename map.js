@@ -381,37 +381,55 @@
     collect(); draw(); fit();
   });
   /* Hovering a drawer row lifts its pin, the cheap direction of the pairing. */
+  let hovered = '';
   document.addEventListener('pointerover', (e) => {
     const r = e.target.closest && e.target.closest('[data-row],[data-place]');
     if (!r) return;
     const id = r.dataset.row || r.dataset.place;
+    if (id === hovered) return;
+    hovered = id;
     document.querySelectorAll('.wa-pin[aria-current="true"]').forEach(x => x.setAttribute('aria-current', String(x.dataset.pin === state.active)));
     const pin = document.querySelector(`.wa-pin[data-pin="${CSS.escape(id)}"]`);
     if (pin) pin.setAttribute('aria-current', 'true');
   });
 
   /* ── Boot ───────────────────────────────────────────────────── */
-  let started = false;
+  /* The map starts as soon as the page does, in parallel with the
+     catalogue; the first fit waits for both. */
+  let started = false, mapUp = false, dataUp = false, settled = false;
+  let pinFrame = 0;
+  const schedulePins = () => {
+    if (pinFrame) return;
+    pinFrame = requestAnimationFrame(() => { pinFrame = 0; if (dataUp) placePins(); });
+  };
+  const settle = () => {
+    if (settled || !mapUp || !dataUp) return;
+    settled = true;
+    /* Fit once the canvas has its real size, not the size it booted at. */
+    const m = T().getMap();
+    const picked = requestedPick && [...events, ...places].find(x => x.id === pickId());
+    if (picked) state.active = picked.id;
+    requestAnimationFrame(() => { m.resize(); if (picked) m.jumpTo({ center: [picked._c.lng, picked._c.lat], zoom: 15.5 }); else fit(); draw(); });
+    if (phone.matches) setDrawer('peek');
+    m.once('idle', () => { m.resize(); if (!picked) fit(); });
+  };
+  const start = () => {
+    if (started) return;
+    started = true;
+    T().init('map-canvas');
+    T().onReady(() => { mapUp = true; settle(); });
+    T().on('move', schedulePins);
+    T().on('click', () => { if (state.active) { state.active = ''; lastDrawer = ''; draw(); } });
+    T().on('moveend', placeDrawer);
+  };
   const boot = () => {
     collect();
-    if (!started) {
-      started = true;
-      T().init('map-canvas');
-      T().onReady(() => {
-        /* Fit once the canvas has its real size, not the size it booted at. */
-        const m = T().getMap();
-        const picked = requestedPick && [...events, ...places].find(x => x.id === pickId());
-        if (picked) state.active = picked.id;
-        requestAnimationFrame(() => { m.resize(); if (picked) m.jumpTo({ center: [picked._c.lng, picked._c.lat], zoom: 15.5 }); else fit(); draw(); });
-        if (phone.matches) setDrawer('peek');
-        m.once('idle', () => { m.resize(); if (!picked) fit(); });
-      });
-      T().on('move', placePins);
-      T().on('click', () => { if (state.active) { state.active = ''; lastDrawer = ''; draw(); } });
-      T().on('moveend', placeDrawer);
-    } else draw();
+    dataUp = true;
+    start();
+    if (settled) draw(); else settle();
     R().locateIfGranted();
   };
+  start();
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', (e) => { me = e.detail || G().currentLoc(); lastDrawer = ''; draw(); });
 })();

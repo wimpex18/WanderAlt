@@ -184,7 +184,54 @@
     if (parsed) fire(); else document.addEventListener('DOMContentLoaded', fire, { once: true });
   };
 
+  /* The last answer is kept in this browser and drawn at once, so a
+     returning visit shows real listings before the network replies. The
+     network answer replaces it when it differs. The pipeline runs every
+     six hours, so a snapshot older than that is not trusted. */
+  const SNAP_KEY = 'wa:catalogue:v1';
+  const SNAP_MAX_AGE = 6 * 3600 * 1000;
+  const readSnapshot = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem(SNAP_KEY) || 'null');
+      if (s && Date.now() - s.at < SNAP_MAX_AGE && Array.isArray(s.picks) && Array.isArray(s.venues)) return s;
+    } catch (_) { /* unreadable: fetch as usual */ }
+    return null;
+  };
+  const writeSnapshot = (text) => {
+    try { localStorage.setItem(SNAP_KEY, text); }
+    catch (_) { try { localStorage.removeItem(SNAP_KEY); } catch (__) { /* storage is off */ } }
+  };
+
+  /* Turn rows into the catalogue the pages read. */
+  const apply = (picks, venues, redirectRows) => {
+    if (redirectRows) redirects = new Map(redirectRows.map(r => [r.id, r.canonical_id]));
+    /* No venue blurbs yet: places carry no description of their own. */
+    window.WA.venueBlurb = () => '';
+    if (picks) {
+      const all = picks.filter(isPublicPick).map(toPick);
+      /* All-cities snapshot for cross-city lookups (e.g. a saved pick from
+         another city). Listing pages use the city-filtered slice. */
+      if (window.WA.when) window.WA.when.stampAll(all);
+      window.WA._catalogAll = all;
+      window.WA.catalog     = all.filter(e => e.city === CITY);
+    }
+    if (venues) {
+      const allVenues = venues.filter(r => VENUE_KINDS.has(r.kind)).map(toVenue);
+      window.WA._venuesAll = allVenues;
+      window.WA.venues     = allVenues.filter(v => v.city === CITY);
+    }
+  };
+
   const load = async () => {
+    const snap = readSnapshot();
+    if (snap) {
+      apply(snap.picks, snap.venues, snap.redirects);
+      /* Not live yet: Saved must not call anything "no longer listed" on
+         the strength of a snapshot. */
+      window.WA.DATA_LIVE = false;
+      dispatch();
+    }
+
     /* 6-second timeout, then the empty states: long enough for a slow
        phone connection to fetch the list (about 150 KB for a few hundred
        events with teasers), short enough not to hang. */
@@ -226,40 +273,32 @@
     ]);
 
     clearTimeout(timer);
-    if (redirectsResult.status === 'fulfilled') redirects = new Map(redirectsResult.value.map(r => [r.id, r.canonical_id]));
+    const picksOk  = picksResult.status === 'fulfilled';
+    const venuesOk = venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value);
+    const redirOk  = redirectsResult.status === 'fulfilled';
 
-    /* No venue blurbs yet: places carry no description of their own. */
-    window.WA = window.WA || {};
-    window.WA.venueBlurb = () => '';
+    if (!picksOk) console.warn('[WanderAlt] picks fetch failed.', picksResult.reason?.message);
+    if (!venuesOk) console.warn('[WanderAlt] venues fetch failed.', venuesResult.reason?.message);
 
-    if (picksResult.status === 'fulfilled') {
-      const all = picksResult.value.filter(isPublicPick).map(toPick);
-      /* All-cities snapshot for cross-city lookups (e.g. a saved pick from
-         another city). Listing pages use the city-filtered slice. */
-      if (window.WA.when) window.WA.when.stampAll(all);
-      window.WA._catalogAll = all;
-      window.WA.catalog     = all.filter(e => e.city === CITY);
-      /* Saved's change-watch gates its destructive "no longer listed"
-         detection on this: without live data every bookmark looks "gone". */
-      window.WA.DATA_LIVE = true;
-    } else {
-      console.warn('[WanderAlt] picks fetch failed.', picksResult.reason?.message);
-      window.WA.DATA_LIVE = false;
-    }
+    /* Compare with what the snapshot already drew; identical means no
+       second render. */
+    const fresh = JSON.stringify({
+      picks:  picksOk ? picksResult.value : snap && snap.picks,
+      venues: venuesOk ? venuesResult.value : snap && snap.venues,
+      redirects: redirOk ? redirectsResult.value : snap && snap.redirects,
+    });
+    const before = snap ? JSON.stringify({ picks: snap.picks, venues: snap.venues, redirects: snap.redirects }) : null;
 
-    if (venuesResult.status === 'fulfilled' && Array.isArray(venuesResult.value)) {
-      const allVenues = venuesResult.value
-        .filter(r => VENUE_KINDS.has(r.kind))
-        .map(toVenue);
-      window.WA._venuesAll = allVenues;
-      window.WA.venues     = allVenues.filter(v => v.city === CITY);
-    } else {
-      console.warn('[WanderAlt] venues fetch failed.', venuesResult.reason?.message);
-    }
+    /* Saved's change-watch gates its destructive "no longer listed"
+       detection on this: without live data every bookmark looks "gone". */
+    window.WA.DATA_LIVE = picksOk;
+    if (picksOk && venuesOk) writeSnapshot(`{"at":${Date.now()},${fresh.slice(1)}`);
 
+    if (snap && fresh === before) return;             /* the snapshot was right */
+    if (snap && !picksOk) return;                     /* offline: keep what is drawn */
+    apply(picksOk ? picksResult.value : null, venuesOk ? venuesResult.value : null, redirOk ? redirectsResult.value : null);
     dispatch();
   };
-
   /* ── Look one row up by id, when the loaded set does not have it ──
      The loaded set is narrower than the database: picks exclude archived
      rows and venues are filtered to VENUE_KINDS. Ask the database before

@@ -125,7 +125,7 @@
       return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(label)}</button>`;
     });
     const kinds = kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))}</button>`);
-    $('quick').innerHTML = [...set, ...when].join('') + '<span class="prog-quick__sep" aria-hidden="true"></span>' + kinds.join('');
+    put($('quick'), [...set, ...when].join('') + '<span class="prog-quick__sep" aria-hidden="true"></span>' + kinds.join(''));
   };
 
   /* ── The filter panel (sheet on phones, sidebar on desktop) ── */
@@ -334,7 +334,7 @@
     if (state.area) bits.push(`in ${state.area}`);
     if (state.q && !state.read) bits.push(`matching “${state.q}”`);
     bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
-    $('summary').innerHTML = `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`;
+    put($('summary'), `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
@@ -344,18 +344,31 @@
     return R().grouped(list, { since });
   };
 
+  /* Write markup only when it changed, so an unchanged list keeps its
+     pictures and scroll position instead of being rebuilt. */
+  const put = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
+
+  /* A tap answers in the same frame with what is small (the chips, the
+     count, the summary). The list and the panel, which are large, follow
+     in the next task; taps that arrive meanwhile are drawn once. */
+  let bigFrame = 0, latest = [];
+  const drawBig = () => {
+    bigFrame = 0;
+    const list = latest;
+    put($('list'), listHtml(list));
+    put($('aside'), panel());
+    const sheet = $('sheet');
+    if (sheet && sheet.open) { put($('sheet-body'), panel()); put($('sheet-foot'), foot(list.length)); }
+  };
   const render = () => {
-    const list = results();
+    const list = latest = results();
     quick();
     askNote();
     summary(list.length);
-    $('list').innerHTML = listHtml(list);
     const fc = activeCount();
     $('filter-count').hidden = !fc;
     $('filter-count').textContent = fc ? String(fc) : '';
-    $('aside').innerHTML = panel();
-    const sheet = $('sheet');
-    if (sheet && sheet.open) { $('sheet-body').innerHTML = panel(); $('sheet-foot').innerHTML = foot(list.length); }
+    if (!bigFrame) bigFrame = requestAnimationFrame(() => setTimeout(drawBig, 0));
     $('to-map').href = `map.html${state.day === W().todayKey() || state.when === 'tonight' ? '' : state.when === 'weekend' ? '?when=weekend' : ''}`;
     stickyOffset();
     write();
@@ -377,8 +390,8 @@
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('#open-filters')) {
       $('sheet-title').textContent = 'Filters';
-      $('sheet-body').innerHTML = panel();
-      $('sheet-foot').innerHTML = foot(results().length);
+      put($('sheet-body'), panel());
+      put($('sheet-foot'), foot(results().length));
       sheet().showModal();
       return;
     }
@@ -446,9 +459,9 @@
       /* Redraw the list but leave the slider being dragged alone. */
       const list = results();
       summary(list.length);
-      $('list').innerHTML = listHtml(list);
+      put($('list'), listHtml(list));
       quick();
-      if (sheet() && sheet().open) $('sheet-foot').innerHTML = foot(list.length);
+      if (sheet() && sheet().open) put($('sheet-foot'), foot(list.length));
       write();
     }
   });
@@ -463,7 +476,7 @@
   const pre = () => {
     $('q').value = state.q;
     $('q-clear').hidden = !state.q;
-    $('list').innerHTML = R().skelRows(6);
+    put($('list'), R().skelRows(6));
     if (new URLSearchParams(location.search).get('focus') === 'search') $('q').focus();
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();

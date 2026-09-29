@@ -145,6 +145,11 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 @view-transition { navigation: auto; }
+
+/* Render cost. Rows below the fold are not laid out or painted until they
+   near the screen; taps answer at once (no double-tap wait). */
+.wa-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+a, button, summary, label, select, [role="button"] { touch-action: manipulation; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 200ms; }
 .wa-topbar { view-transition-name: topbar; }
 .wa-tabbar { view-transition-name: tabbar; }
@@ -184,30 +189,53 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-brand__city { display: none; }
 :root[data-theme="dusk"] .wa-brand { color: var(--ink); }
 
-/* One brief introduction per session: mark, wordmark, then the page.
-   Hidden by default so a failed or blocked script never covers content. */
-.wa-brand-reveal { display: none; }
-:root[data-brand-reveal] .wa-brand-reveal {
+/* The opening, once per session (brand-reveal.js). The cover exists only
+   while the script has it; without the script, or once it fails, the page
+   is never covered: the last rule hides it on a timer of its own. */
+.wa-splash {
   position: fixed; inset: 0; z-index: 100;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; background: var(--paper); color: var(--accent);
+  display: grid; place-items: center;
+  background: var(--paper); color: var(--accent);
+  font-family: var(--f-sans);
   pointer-events: none;
-  animation: wa-brand-reveal-out 1s var(--ease) both;
+  animation: wa-splash-failsafe 0s 5s forwards;
 }
-:root[data-theme="dusk"] .wa-brand-reveal { color: var(--ink); }
-.wa-brand-reveal__mark { flex: none; animation: wa-brand-reveal-in 220ms var(--ease) both; }
-.wa-brand-reveal__word {
-  font-size: 2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
-  animation: wa-brand-reveal-in 220ms var(--ease) 220ms both;
+:root[data-theme="dusk"] .wa-splash { color: var(--ink); }
+.wa-splash__stage { display: grid; justify-items: center; gap: 22px; padding-bottom: 4vh; }
+.wa-splash__mark { width: 104px; height: 104px; flex: none; overflow: visible; will-change: transform; }
+.wa-splash__tile, .wa-splash__spark, .wa-splash__ring { transform-box: fill-box; transform-origin: center; }
+
+.wa-splash__tile  { animation: wa-splash-pop 480ms cubic-bezier(.34,1.5,.5,1) both; }
+.wa-splash__route { stroke-dasharray: 1 1.2; animation: wa-splash-draw 640ms cubic-bezier(.65,0,.35,1) 280ms both; }
+.wa-splash__spark { animation: wa-splash-spark 460ms cubic-bezier(.34,1.7,.5,1) 860ms both; }
+.wa-splash__ring  { opacity: 0; animation: wa-splash-ring 620ms cubic-bezier(.2,.8,.2,1) 900ms forwards; }
+
+.wa-splash__word { display: inline-flex; font-size: 2.25rem; font-weight: 700; letter-spacing: -.045em; line-height: 1; }
+.wa-splash__w1 { animation: wa-splash-w1 520ms var(--ease) 720ms both; }
+.wa-splash__w2 { animation: wa-splash-w2 640ms cubic-bezier(.3,1.5,.5,1) 900ms both; }
+.wa-splash__line { font-size: .9375rem; font-weight: 500; letter-spacing: .02em; color: var(--ink-3); animation: wa-splash-line 460ms var(--ease) 1180ms both; }
+
+:root[data-brand-reveal="out"] .wa-splash { animation: wa-splash-bg-out 300ms var(--ease) 180ms both; }
+:root[data-brand-reveal="out"] .wa-splash__word,
+:root[data-brand-reveal="out"] .wa-splash__line { animation: wa-splash-text-out 200ms var(--ease) both; }
+:root[data-brand-reveal="out"] .wa-splash__ring { animation: none; opacity: 0; }
+
+@keyframes wa-splash-pop   { from { opacity: 0; transform: scale(.55); } 35% { opacity: 1; } to { opacity: 1; transform: scale(1); } }
+@keyframes wa-splash-draw  { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes wa-splash-spark { from { opacity: 0; transform: scale(0) rotate(-120deg); } 40% { opacity: 1; } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes wa-splash-ring  { from { opacity: .8; transform: scale(.6); } to { opacity: 0; transform: scale(3.2); } }
+@keyframes wa-splash-w1    { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+/* "alt" arrives off the line, then falls into it. */
+@keyframes wa-splash-w2    { 0% { opacity: 0; transform: translate(18px, -14px); } 45% { opacity: 1; transform: translate(0, -9px); } 100% { opacity: 1; transform: none; } }
+@keyframes wa-splash-line  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes wa-splash-text-out { to { opacity: 0; transform: translateY(6px); } }
+@keyframes wa-splash-bg-out   { to { background-color: transparent; } }
+@keyframes wa-splash-failsafe { to { visibility: hidden; } }
+@media (min-width: 768px) {
+  .wa-splash__mark { width: 128px; height: 128px; }
+  .wa-splash__word { font-size: 2.75rem; }
 }
-@keyframes wa-brand-reveal-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes wa-brand-reveal-out {
-  0%, 72% { opacity: 1; }
-  100% { opacity: 0; visibility: hidden; }
-}
-@media (prefers-reduced-motion: reduce) {
-  :root[data-brand-reveal] .wa-brand-reveal { display: none; }
-}
+@media (prefers-reduced-motion: reduce) { .wa-splash { display: none; } }
 
 /* The tab bar: a floating glass capsule on phones, the masthead nav
    from 1024. One DOM node either way. */
@@ -572,13 +600,13 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-poster__link { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-lg); }
 .wa-poster__art { position: relative; aspect-ratio: 1 / 1; border-radius: var(--r-lg); overflow: hidden; background: var(--paper-2); margin-bottom: var(--s-2); }
 .wa-poster__art img { width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--ease); }
-.wa-poster__badge { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 64px); padding: 6px 12px; border-radius: var(--r-pill); font-size: .8125rem; font-weight: 600; color: #1c1c1e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255,255,255,.82); -webkit-backdrop-filter: blur(14px) saturate(1.8); backdrop-filter: blur(14px) saturate(1.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px rgba(0,0,0,.12); }
+.wa-poster__badge { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 64px); padding: 6px 12px; border-radius: var(--r-pill); font-size: .8125rem; font-weight: 600; color: #1c1c1e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255,255,255,.93); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px rgba(0,0,0,.12); }
 .wa-poster__badge--now { background: var(--accent); color: var(--on-accent); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 /* Flags: what the source says about the show. Off (cancelled, postponed)
    is solid ink; sold out and few left are outlined. No accent: that is "now". */
 .wa-flag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--r-pill); font-size: .75rem; font-weight: 700; line-height: 1.4; white-space: nowrap; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
 .wa-flag--cancelled, .wa-flag--postponed { background: var(--ink); color: var(--paper); box-shadow: none; }
-.wa-poster__flag { position: absolute; left: 10px; bottom: 10px; padding: 5px 10px; background: rgba(255,255,255,.86); color: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.wa-poster__flag { position: absolute; left: 10px; bottom: 10px; padding: 5px 10px; background: rgba(255,255,255,.94); color: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,.14); }
 .wa-poster__flag.wa-flag--cancelled, .wa-poster__flag.wa-flag--postponed { background: #1c1c1e; color: #fff; }
 .wa-poster--off .wa-poster__art img, .wa-poster--off .wa-poster__type { opacity: .45; filter: grayscale(1); }
 .wa-row--off .wa-row__thumb { opacity: .45; filter: grayscale(1); }
@@ -631,7 +659,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 }
 @media (hover: hover) { .wa-row:hover .wa-row__title { text-decoration: underline; text-underline-offset: 3px; } }
 
-.wa-day { position: sticky; top: calc(var(--topbar-h) + var(--sticky-extra, 0px)); z-index: 5; display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-5) 0 var(--s-3); background: color-mix(in oklab, var(--paper) 92%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--hair); }
+.wa-day { position: sticky; top: calc(var(--topbar-h) + var(--sticky-extra, 0px)); z-index: 5; display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-5) 0 var(--s-3); background: color-mix(in oklab, var(--paper) 96%, transparent); border-bottom: 1px solid var(--hair); }
 .wa-day__name { font-size: 1.25rem; font-weight: 650; letter-spacing: -.02em; }
 .wa-day__date { font-size: var(--fs-meta); color: var(--ink-3); }
 .wa-day__n { margin-left: auto; font-size: var(--fs-small); color: var(--ink-3); }

@@ -161,7 +161,7 @@ export async function onRequest(context) {
       title:       `${name} · WanderAlt`,
       description: `Everything we read from ${name}. ${listed}`,
       image:       `${SB_BASE}/functions/v1/og-image?${
-        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}&v=route-spark`,
+        byVenue ? `venue=${encodeURIComponent(name)}` : `handle=${encodeURIComponent(handle)}`}&v=route-w`,
       photo:       false,
     });
   } catch (_) {

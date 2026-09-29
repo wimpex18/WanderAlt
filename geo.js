@@ -87,16 +87,25 @@
   /* ── The shared sort: starts-soonest, then distance ──────────
      Undated entries sort after dated ones; unknown distances after known
      ones. */
+  let clockFmt = null;
+  const clockMemo = new Map();
   const startMinutes = (e) => {
     if (e && e.startsAt) {
       const d = new Date(e.startsAt);
       if (!isNaN(d)) {
         try {
-          const p = new Intl.DateTimeFormat('en-GB', {
-            timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false,
-          }).formatToParts(d);
-          const g = (t) => +(p.find(x => x.type === t) || {}).value;
-          return g('hour') * 60 + g('minute');
+          let v = clockMemo.get(e.startsAt);
+          if (v === undefined) {
+            clockFmt = clockFmt || new Intl.DateTimeFormat('en-GB', {
+              timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false,
+            });
+            const p = clockFmt.formatToParts(d);
+            const g = (t) => +(p.find(x => x.type === t) || {}).value;
+            v = g('hour') * 60 + g('minute');
+            if (clockMemo.size > 5000) clockMemo.clear();
+            clockMemo.set(e.startsAt, v);
+          }
+          return v;
         } catch (_) { return d.getHours() * 60 + d.getMinutes(); }
       }
     }
