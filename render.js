@@ -485,6 +485,24 @@
     if (a) a.setAttribute('aria-label', 'You, signed in');
   });
 
+  /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
+     dead image for the row's own pictogram (no inline handler: `error`
+     does not bubble, so listen in the capture phase). */
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile';
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    const box = img.closest(ART);
+    if (!box) return;
+    const host = img.closest('[data-place], [data-row], [data-card]');
+    const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
+    const found = id && [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])].find(p => p.id === id);
+    box.classList.remove('is-logo');
+    img.outerHTML = box.matches('.wa-poster__art')
+      ? `<span class="wa-poster__type">${window.WA.Picto.kind(found && found.kind)}</span>`
+      : window.WA.Picto.kind(found && found.kind);
+  }, true);
+
   window.WA.R = {
     esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,

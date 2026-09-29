@@ -58,6 +58,13 @@
     return a ? fact('Area', a, 'Allow location for walking time') : '';
   };
 
+  /* A wide poster is shown whole: the square hero would crop the title. */
+  document.addEventListener('load', (e) => {
+    const img = e.target;
+    const fig = img && img.tagName === 'IMG' && img.closest('.det-media:not(.det-media--logo)');
+    if (fig && img.naturalHeight && img.naturalWidth / img.naturalHeight >= 1.4) fig.classList.add('det-media--wide');
+  }, true);
+
   const media = (x, word, kind) => {
     const src = x.imageUrl ? url(x.imageUrl) : '';
     if (src) {
