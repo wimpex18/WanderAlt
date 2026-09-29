@@ -191,7 +191,7 @@ export class Places {
       const unfinished = hit.lat == null || (hit.osm_id == null && hit.kind == null);
       if (geocode && unfinished && !this.retried.has(hit.id) && this.retried.size < 10 && !this.created.includes(hit)) {
         this.retried.add(hit.id);
-        if (await this.locate(hit, name, c.address ?? hit.address ?? null)) this.updated.push(hit);
+        if (await this.locate(hit, name, c.address ?? hit.address ?? null) && !this.updated.includes(hit)) this.updated.push(hit);
       }
       return hit;
     }
