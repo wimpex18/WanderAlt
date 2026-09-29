@@ -439,7 +439,8 @@ async function main() {
     return;
   }
 
-  const touched = [...places.created, ...places.updated];
+  // One row per id: a bulk upsert that names a row twice is refused.
+  const touched = [...new Map([...places.created, ...places.updated].map(p => [p.id, p])).values()];
   if (touched.length) {
     // Every row carries every column: a bulk upsert takes its column list
     // from the first row, and a missing key would be written as null.
