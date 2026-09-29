@@ -59,7 +59,38 @@
     const host = $('cats');
     if (!host || host.childElementCount) return;
     host.innerHTML = CATS.map(([p, label, href], i) => `<a class="wa-cat" href="${esc(href)}"${i === 0 ? ' aria-current="true"' : ''}>${window.WA.Picto(p)}<span>${esc(label)}</span></a>`).join('');
+    peek();
   };
+
+  /* The kind row must show that it goes on. Whatever the screen width, the
+     first item that does not fit is left half in view: the gap between the
+     kinds is set so it lands about half over the edge (2 to 24px). From 1024
+     the whole row fits and the gap is left alone. */
+  const peek = () => {
+    const nav = $('cats');
+    if (!nav || !nav.childElementCount) return;
+    nav.style.removeProperty('--cat-gap');
+    if (matchMedia('(min-width: 1024px)').matches) return;
+    const items = [...nav.children];
+    const w = items.map(a => a.getBoundingClientRect().width);
+    const g0 = parseFloat(getComputedStyle(nav).columnGap) || 4;
+    const edge = nav.clientWidth;
+    const pad = parseFloat(getComputedStyle(nav).paddingLeft) || 0;
+    let left = pad;
+    for (let k = 0; k < items.length; k++) {
+      if (left + w[k] > edge + 1) {
+        if (k === 0) return;
+        const before = w.slice(0, k).reduce((x, y) => x + y, 0);
+        const g = (edge - w[k] * 0.5 - pad - before) / k;
+        nav.style.setProperty('--cat-gap', `${Math.min(24, Math.max(2, g)).toFixed(1)}px`);
+        return;
+      }
+      left += w[k] + g0;
+    }
+  };
+  window.addEventListener('resize', peek);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(peek);
+
   /* The field is a real one: Enter or the key sends the words to the
      Programme, whose ask field reads a sentence as well as a title. */
   const search = (e) => {

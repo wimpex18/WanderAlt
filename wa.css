@@ -394,6 +394,19 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-iconbtn--fill { background: var(--paper-2); }
 .wa-iconbtn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .wa-topbar .wa-iconbtn { background: var(--paper-2); width: 42px; height: 42px; }
+/* Light / Dark: a small switch left of You. The knob carries the sun or the
+   moon; the hit area is grown to the 44px floor. */
+.wa-theme { position: relative; flex: none; width: 52px; height: 30px; padding: 0; border: 0; border-radius: 15px; background: var(--paper-3); transition: background var(--t-med) var(--ease); }
+.wa-theme::after { content: ""; position: absolute; inset: -7px -3px; }
+.wa-theme__knob { position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0,0,0,.28); transition: transform var(--t-med) var(--spring); }
+.wa-theme__knob > span { grid-area: 1 / 1; display: grid; transition: opacity var(--t-fast); }
+.wa-theme__knob .wa-ic { width: 15px; height: 15px; stroke-width: 2; }
+.wa-theme__moon, .wa-theme[aria-checked="true"] .wa-theme__sun { opacity: 0; }
+.wa-theme[aria-checked="true"] .wa-theme__moon { opacity: 1; }
+.wa-theme[aria-checked="true"] { background: #3a3a40; }
+.wa-theme[aria-checked="true"] .wa-theme__knob { transform: translateX(22px); background: #f4f4f5; }
+.wa-theme:active .wa-theme__knob { transform: scale(.92); }
+.wa-theme[aria-checked="true"]:active .wa-theme__knob { transform: translateX(22px) scale(.92); }
 .wa-topbar .wa-iconbtn:hover { background: var(--paper-3); }
 .wa-topbar .wa-iconbtn[aria-current="page"] { background: var(--ink); color: var(--paper); }
 
@@ -462,9 +475,10 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 }
 .wa-cats.is-more-start, .wa-chips--scroll.is-more-start { --fade-l: 44px; }
 .wa-cats.is-more-end, .wa-chips--scroll.is-more-end { --fade-r: 44px; }
+.wa-cats.is-more-end { --fade-r: 14px; }
 
 /* Category bar: pictogram over label, underline on the chosen one. */
-.wa-cats { display: flex; gap: var(--s-1); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); scroll-padding: 0 var(--gutter); }
+.wa-cats { display: flex; gap: var(--cat-gap, var(--s-1)); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); scroll-padding: 0 var(--gutter); }
 .wa-cats::-webkit-scrollbar { display: none; }
 /* Kinds sit on their own tinted tiles, the pictogram tier of the
    system; the chosen one gets an ink ring rather than a tab underline. */
