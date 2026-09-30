@@ -104,3 +104,21 @@ export async function attachInstagramPictures(
   log(`[instagram] ${todo.length} profiles looked at, ${done.length} pictures stored${why ? `; skipped: ${why}` : ''}`);
   return done;
 }
+
+export interface InstagramPost { caption: string | null; timestamp: string; permalink: string; mediaType: string }
+
+/** The latest posts of a public Business or Creator account, through the same
+ *  business_discovery call. These are venue announcements to read for events,
+ *  never to republish. */
+export async function recentPosts(handle: string, cfg: InstagramConfig, limit = 10, fetcher: typeof fetch = fetch): Promise<InstagramPost[] | null> {
+  const url = `${API}/${encodeURIComponent(cfg.businessId)}?` + new URLSearchParams({
+    fields: `business_discovery.username(${handle}){media.limit(${Math.min(Math.max(limit, 1), 25)}){caption,timestamp,permalink,media_type}}`,
+    access_token: cfg.token,
+  });
+  try {
+    const r = await fetcher(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+    const body = await r.json() as { business_discovery?: { media?: { data?: { caption?: string; timestamp: string; permalink: string; media_type: string }[] } }; error?: unknown };
+    if (body.error) return null;
+    return (body.business_discovery?.media?.data ?? []).map(m => ({ caption: m.caption ?? null, timestamp: m.timestamp, permalink: m.permalink, mediaType: m.media_type }));
+  } catch { return null; }
+}
