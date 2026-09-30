@@ -361,8 +361,12 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
   const site = patch.website ?? p.website;
   if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description)) {
     try {
-      const html = await getHtml(site, { timeoutMs: 15_000 });
-      const d = fromHomepage(html.slice(0, 400_000), site, p.name);
+      const page = await getHtml(site, { timeoutMs: 15_000 });
+      // A site that now redirects to another host (a domain that changed
+      // hands, a parent organisation) is another identity: nothing is taken.
+      const same = bareHost(page.url) === bareHost(site);
+      if (!same) console.warn(`[venues] ${p.name}: ${site} now redirects to ${bareHost(page.url)}; nothing taken`);
+      const d = same ? fromHomepage(page.html.slice(0, 400_000), site, p.name) : {};
       // Which of the site's candidate marks is big enough to be one.
       if (!p.image_url && !patch.image_url && d.image_candidates?.length) {
         const url = await pickLogo(d.image_candidates);

@@ -75,7 +75,7 @@ async function fetchHtml(url: string): Promise<{ html: string; url: string }> {
   // No cookies, contact details, external search, retries or parallel load.
   const response = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html' }, signal: AbortSignal.timeout(10_000) });
   // Some hosts refuse Node's handshake with a 403 and serve curl (see getHtml).
-  if (response.status === 403) return { html: (await getHtml(url, { timeoutMs: 10_000 })).slice(0, MAX_BYTES), url };
+  if (response.status === 403) { const page = await getHtml(url, { timeoutMs: 10_000 }); return { html: page.html.slice(0, MAX_BYTES), url: page.url }; }
   if (!response.ok) throw new Error(`website HTTP ${response.status}`);
   if (!/text\/html|application\/xhtml\+xml/i.test(response.headers.get('content-type') ?? '')) throw new Error('Website is not HTML');
   const reader = response.body?.getReader();
