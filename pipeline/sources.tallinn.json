@@ -105,7 +105,7 @@
       "extra_urls": [
         "https://admin.kai.center/wp-json/www-api/v1/current-events"
       ],
-      "venue_name": "Kai",
+      "venue_name": "Kai Art Center",
       "address": "Peetri 12, Tallinn",
       "days": 60,
       "skip_titles": "kultuuripilet|suletud|closed|preparing for"

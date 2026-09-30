@@ -13,7 +13,12 @@ export interface Known {
   start: number;       // epoch ms
 }
 
-const words = (s: string) => new Set(nameKey(s).split(' ').filter(w => w.length > 1));
+/* Repeated screening headers describe the format/room, not the film.
+   Otherwise "Screening at Kai Cinema: Sisters" and "…: Nightborn"
+   share four of five words and can erase a separate screening. */
+const words = (s: string) => new Set(nameKey(s.replace(
+  /^(?:(?:special\s+)?screening\s+(?:at|in)\s+[^:]{1,80}|linastus\s+[^:]{1,80})\s*:\s*/i, ''
+)).split(' ').filter(w => w.length > 1));
 
 /** Share of the shorter title's words that the longer one also has. */
 export function overlap(a: string, b: string): number {

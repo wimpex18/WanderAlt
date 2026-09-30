@@ -42,7 +42,15 @@
     ['workshop', w('workshops?|class|masterclass|tootuba|мастер-?класс\\p{L}*', 'g')],
     ['festival', w('festivals?|фестивал\\p{L}*', 'g')],
   ];
-  const WEEKDAYS = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+  const WEEKDAYS = [
+    [1, 'monday|esmaspaev(?:al)?|понедельник'],
+    [2, 'tuesday|teisipaev(?:al)?|вторник'],
+    [3, 'wednesday|kolmapaev(?:al)?|среда|среду'],
+    [4, 'thursday|neljapaev(?:al)?|четверг'],
+    [5, 'friday|reede|reedel|пятница|пятницу'],
+    [6, 'saturday|laupaev(?:al)?|суббота|субботу'],
+    [0, 'sunday|puhapaev(?:al)?|воскресенье'],
+  ];
   const STOP = new Set(('a an the in at on for to of and or with near around something some any anything events event ' +
     'what whats what\'s is are there go going out me i want looking find show where cheap under below less than eur euro euros € ' +
     'free english in english tallinn please good best nice cool fun uritus uritused ' +
@@ -64,8 +72,8 @@
     let q = ` ${fold(raw)} `;
     const take = (re) => { q = q.replace(re, ' '); };
     for (const [v, re] of WHEN) if (re.test(q)) { out.when = out.when || v; take(re); }
-    for (const [name, dow] of Object.entries(WEEKDAYS)) {
-      const re = w(`(?:on )?${name}`);
+    for (const [dow, names] of WEEKDAYS) {
+      const re = w(`(?:(?:on|sel|в|во) )?(?:${names})`);
       if (re.test(q) && window.WA.when) { out.day = dayKeyFor(dow); out.when = ''; take(re); }
     }
     for (const [k, re] of KINDS) {
@@ -96,20 +104,23 @@
 
   const cache = new Map();
   const remote = async (q) => {
-    const key = fold(q).trim().slice(0, 140);
-    if (!key) return null;
+    const query = fold(q).trim().slice(0, 140);
+    if (!query) return null;
+    const today = window.WA.when.todayKey();
+    const key = `${today}:${query}`;
     if (cache.has(key)) return cache.get(key);
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 6000);
     try {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 6000);
-      const r = await fetch(`/api/ask?q=${encodeURIComponent(key)}&today=${encodeURIComponent(window.WA.when.todayKey())}`, { signal: ctl.signal });
-      clearTimeout(t);
+      const r = await fetch(`/api/ask?q=${encodeURIComponent(query)}&today=${encodeURIComponent(today)}`, { signal: ctl.signal });
       if (!r.ok) return null;
       const j = await r.json();
       const out = { ...empty(), ...j, kinds: Array.isArray(j.kinds) ? j.kinds : [], must: Array.isArray(j.must) ? j.must : [], any: Array.isArray(j.any) ? j.any : [] };
       cache.set(key, out);
+      if (cache.size > 100) cache.delete(cache.keys().next().value);
       return out;
     } catch { return null; }
+    finally { clearTimeout(t); }
   };
 
   /* The words part of a reading, against one listing. */

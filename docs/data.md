@@ -66,7 +66,7 @@ The site's Places tab and venue map pins recommend only freshly verified, canoni
 
 ### Duplicates
 
-Each event id is a hash of city, title, Tallinn date and time, and place. Because two sources rarely title a show the same way, a candidate also joins an existing upcoming event when both are at the same place within 30 minutes and at least 60% of the shorter title's words appear in the other (`pipeline/dedupe.ts`). Every source that listed it gets an `event_sources` row.
+Each event id is a hash of city, title, Tallinn date and time, and place. Because two sources rarely title a show the same way, a candidate also joins an existing upcoming event when both are at the same place within 30 minutes and at least 60% of the shorter title's words appear in the other (`pipeline/dedupe.ts`). Repeated cinema prefixes such as "Screening at Kai Cinema:" and "Linastus Kai kinos:" are removed for comparison so two different films cannot match on their room name alone. Kai's collector uses the canonical name Kai Art Center. Every source that listed it gets an `event_sources` row.
 
 Eligible matches are ranked by closest time, strongest title overlap, then id. Stored occurrences are reconciled again after venue merges, choosing a published row, then the oldest observed id. Timed and date-only occurrences stay separate in this reconciliation. Different performance dates and separate screenings remain separate. Title-only or coordinate-only event merging is never used. Thresholds remain 30 minutes / 60%; the observed misses were caused by different venue ids.
 
@@ -76,7 +76,7 @@ Eligible matches are ranked by closest time, strongest title overlap, then id. S
 
 ### Place liveness
 
-The check calls Overpass on up to three mirrors in turn. If all fail, the run logs it, skips the venue catalogue and retries next run; it does not turn the run red, because it is maintenance, not a source. Four mirrors are tried in turn.
+The check calls Overpass on up to four mirrors in turn. If all fail, the run logs it, skips the venue catalogue and retries next run; it does not turn the run red, because it is maintenance, not a source.
 
 `pipeline/place-liveness.ts` re-queries stored node/way/relation ids, without category filters that could hide disused objects. Each identified canonical place is due every seven days; each pipeline run checks the oldest 50 due places in one Overpass request. Unidentified places need a manual check or later Nominatim identification. This confirms what OSM currently records, not independently that a business is operating.
 

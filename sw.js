@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v33';
+const VERSION = 'wa-v35';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -63,8 +63,12 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
-const isData = (url) =>
-  /\/rest\/v1\/(picks|venues|venue_details)/.test(url.pathname + url.search);
+/* Exact public credentials only: JWT length or claimed role cannot prove
+   anonymity. Keep these in sync with supabase.js. */
+const PUBLIC_ORIGIN = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
+const PUBLIC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
+const isData = (url) => url.origin === PUBLIC_ORIGIN &&
+  /^\/rest\/v1\/(picks|venues|venue_details|catalogue_redirects)$/.test(url.pathname);
 
 const isStatic = (url) =>
   /\.(css|js|svg|woff2|json|png|ico|webmanifest)$/.test(url.pathname);
@@ -77,15 +81,15 @@ self.addEventListener('fetch', (e) => {
 
   /* Never hold a signed-in session's responses. */
   const auth = req.headers.get('Authorization') || '';
-  const isAnon = !auth || auth.includes('anon') || auth.length > 200;
-  if (auth && !isAnon) return;
+  const apiKey = req.headers.get('apikey') || '';
+  if ((auth && auth !== `Bearer ${PUBLIC_KEY}`) || (apiKey && apiKey !== PUBLIC_KEY)) return;
 
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       try {
         const fresh = await fetch(req);
         const c = await caches.open(SHELL);
-        c.put(req, fresh.clone());
+        if (fresh.ok) await c.put(req, fresh.clone());
         return fresh;
       } catch (_) {
         return (await caches.match(req)) ||
@@ -97,10 +101,12 @@ self.addEventListener('fetch', (e) => {
   }
 
   if (isData(url)) {
+    if (auth !== `Bearer ${PUBLIC_KEY}` || apiKey !== PUBLIC_KEY) return;
     e.respondWith((async () => {
       const c = await caches.open(DATA);
       try {
         const fresh = await fetch(req);
+        if (!fresh.ok) return (await c.match(req)) || fresh;
         /* Stamp the response so the offline banner can say how old it is. */
         const body = await fresh.clone().blob();
         const stamped = new Response(body, {
@@ -112,7 +118,7 @@ self.addEventListener('fetch', (e) => {
             return h;
           })(),
         });
-        c.put(req, stamped.clone());
+        await c.put(req, stamped.clone());
         return fresh;
       } catch (_) {
         const hit = await c.match(req);
@@ -126,7 +132,8 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const c = await caches.open(SHELL);
       const hit = await c.match(req);
-      const net = fetch(req).then(res => { c.put(req, res.clone()); return res; }).catch(() => null);
+      const net = fetch(req).then(async res => { if (res.ok) await c.put(req, res.clone()); return res; }).catch(() => null);
+      e.waitUntil(net.then(() => {}));
       return hit || (await net) || Response.error();
     })());
   }

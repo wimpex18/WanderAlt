@@ -271,7 +271,8 @@
      when words are left that the page could not place and nothing
      matches without them. */
   const A = () => window.WA.Ask;
-  let before = null, askTimer = 0, asked = '';
+  let before = null, askTimer = 0, asked = '', askVersion = 0;
+  const cancelAsk = () => { askVersion++; clearTimeout(askTimer); };
   const FILTER_KEYS = ['when', 'day', 'dayTo', 'free', 'english', 'maxPrice'];
   const unread = () => {
     if (!state.read) return;
@@ -296,7 +297,7 @@
     state.q = q;
     $('q-clear').hidden = !q;
     $('ask-try').hidden = !!q || document.activeElement !== $('q');
-    clearTimeout(askTimer);
+    cancelAsk();
     unread();
     if (q && A().isQuestion(q)) {
       const p = A().local(q);
@@ -307,19 +308,32 @@
         if (state.read.must.length) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] };
         if (!count() && literal(q)) unread();
         /* Only then is the model asked, and only about this sentence once. */
-        if (p.must.length && asked !== q) askTimer = setTimeout(() => ask(q, p), now ? 0 : 900);
+        if (p.must.length && asked !== q) {
+          const version = askVersion;
+          askTimer = setTimeout(() => ask(q, p, version), now ? 0 : 900);
+        }
       }
     }
     render();
   };
 
-  const ask = async (q, mine) => {
+  const ask = async (q, mine, version) => {
     asked = q;
     const p = await A().remote(q);
-    if (!p || state.q !== q) return;
+    if (!p || state.q !== q || askVersion !== version) return;
+    /* Explicit constraints understood in the page remain authoritative. */
+    const reading = { ...p,
+      day: mine.day || (mine.when ? '' : p.day),
+      when: mine.day ? '' : mine.when || p.when,
+      kinds: mine.kinds.length ? mine.kinds : p.kinds,
+      free: mine.free || p.free, english: mine.english || p.english,
+      maxPrice: mine.maxPrice ?? p.maxPrice,
+      note: '', /* Render a summary of the filters actually applied. */
+    };
     unread();
-    adopt(p, 'model');
-    if (!count() && state.read.must.length) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] };
+    adopt(reading, 'model');
+    /* Model place constraints remain mandatory; don't turn Kalamaja and
+       jazz into Kalamaja OR jazz just to fill an empty result. */
     /* The model's reading must find something, or the page's stands. */
     if (!count()) { unread(); adopt(mine, 'page'); if (!count()) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] }; if (!count() && literal(q)) unread(); }
     render();
@@ -416,6 +430,7 @@
   const sheet = () => $('sheet');
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
+    if (hit('[data-kind], [data-when], [data-area], [data-sort], [data-doors], [data-toggle], [data-clear], [data-act], [data-dates], #q-clear')) cancelAsk();
     if (hit('#open-filters')) {
       $('sheet-title').textContent = 'Filters';
       put($('sheet-body'), panel());
@@ -484,6 +499,7 @@
   document.addEventListener('input', (e) => {
     if (e.target.id === 'q') { onQuery(e.target.value, false); return; }
     if (e.target.matches && e.target.matches('[data-within]')) {
+      cancelAsk();
       state.within = parseInt(e.target.value, 10) || 0;
       if (state.within) G().userLoc();
       document.querySelectorAll('[data-within-note]').forEach(n => { n.textContent = withinNote(); });
@@ -500,6 +516,7 @@
     if (!e.target.matches) return;
     if (e.target.matches('[data-within]')) { render(); return; }
     if (e.target.matches('[data-date]')) {
+      cancelAsk();
       const box = e.target.closest('.prog-dates');
       const val = (n) => (box.querySelector(`[data-date="${n}"]`).value || '');
       const from = val('from'), to = val('to');
