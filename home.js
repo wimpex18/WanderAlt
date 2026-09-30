@@ -76,18 +76,25 @@
     const g0 = parseFloat(getComputedStyle(nav).columnGap) || 4;
     const edge = nav.clientWidth;
     const pad = parseFloat(getComputedStyle(nav).paddingLeft) || 0;
-    let left = pad;
-    for (let k = 0; k < items.length; k++) {
-      if (left + w[k] > edge + 1) {
-        if (k === 0) return;
-        const before = w.slice(0, k).reduce((x, y) => x + y, 0);
-        const g = (edge - w[k] * 0.5 - pad - before) / k;
-        nav.style.setProperty('--cat-gap', `${Math.min(24, Math.max(2, g)).toFixed(1)}px`);
-        return;
-      }
-      left += w[k] + g0;
+    /* Which item to leave half in view: the first that does not fit, or one
+       either side when the gap would leave 2..24px. The kinds differ in width
+       (labels, text size), so this is worked out from what is on screen. */
+    const total = w.reduce((x, y) => x + y, 0) + g0 * (items.length - 1) + 2 * pad;
+    if (total <= edge + 1) return;
+    let k0 = 0, left = pad;
+    while (k0 < items.length && left + w[k0] <= edge + 1) { left += w[k0] + g0; k0++; }
+    let best = null;
+    for (const k of [k0, k0 - 1, k0 + 1]) {
+      if (k < 1 || k >= items.length) continue;
+      const before = w.slice(0, k).reduce((x, y) => x + y, 0);
+      const g = (edge - w[k] * 0.5 - pad - before) / k;
+      if (g >= 2 && g <= 24) { best = g; break; }
     }
+    if (best != null) nav.style.setProperty('--cat-gap', `${best.toFixed(1)}px`);
   };
+  /* Text size changes (Dynamic Type, Android font scale) resize the tiles
+     without resizing the window. */
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => peek()); const hook = () => { const n = $('cats'); if (n && n.firstElementChild) ro.observe(n.firstElementChild); }; hook(); setTimeout(hook, 500); }
   window.addEventListener('resize', peek);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(peek);
 

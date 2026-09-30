@@ -403,10 +403,10 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 
 /* Chips: pills. Selected = ink fill plus a check mark. */
 .wa-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-.wa-chips--scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 4px var(--gutter); scroll-padding: 0 var(--gutter); }
+.wa-chips--scroll { scroll-snap-type: x proximity; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 4px var(--gutter); scroll-padding: 0 var(--gutter); }
 .wa-chips--scroll::-webkit-scrollbar { display: none; }
 .wa-chip {
-  flex: none; display: inline-flex; align-items: center; gap: 7px;
+  flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 7px;
   min-height: 40px; padding: 0 16px;
   border: 1px solid var(--line); border-radius: var(--r-pill);
   background: var(--paper); color: var(--ink);
@@ -466,14 +466,20 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 }
 .wa-cats.is-more-start, .wa-chips--scroll.is-more-start { --fade-l: 44px; }
 .wa-cats.is-more-end, .wa-chips--scroll.is-more-end { --fade-r: 44px; }
-.wa-cats.is-more-end { --fade-r: 14px; }
+.wa-cats.is-more-end { --fade-r: 30px; }
 
 /* Category bar: pictogram over label, underline on the chosen one. */
+@media (max-width: 1023px) {
+  /* Narrow tiles, so five kinds sit fully in view on a phone and the sixth
+     shows about half behind the fade (home.js peek() sets the gap). */
+  .wa-cats { scroll-snap-type: x proximity; }
+  .wa-cat { scroll-snap-align: start; }
+}
 .wa-cats { display: flex; gap: var(--cat-gap, var(--s-1)); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); scroll-padding: 0 var(--gutter); }
 .wa-cats::-webkit-scrollbar { display: none; }
 /* Kinds sit on their own tinted tiles, the pictogram tier of the
    system; the chosen one gets an ink ring rather than a tab underline. */
-.wa-cat { flex: none; position: relative; display: grid; justify-items: center; gap: 6px; min-width: 68px; padding: 6px 6px 10px; border: 0; background: none; text-decoration: none; color: var(--ink-2); font-size: var(--fs-small); font-weight: 500; white-space: nowrap; }
+.wa-cat { flex: none; position: relative; display: grid; justify-items: center; gap: 6px; min-width: 56px; padding: 6px 2px 10px; border: 0; background: none; text-decoration: none; color: var(--ink-2); font-size: var(--fs-small); font-weight: 500; white-space: nowrap; }
 .wa-cat .wa-picto { width: 48px; height: 48px; border-radius: var(--r-md); transition: transform var(--t-med) var(--spring), box-shadow var(--t-med) var(--ease); }
 .wa-cat .wa-picto svg { width: 68%; height: 68%; }
 .wa-cat:hover { color: var(--ink); }
