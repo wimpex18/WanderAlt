@@ -41,6 +41,10 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 - **`_redirects`:** never add a bare-path to `.html` redirect; Pages already serves pretty URLs and it would loop.
 - **Voice:** handles start with `@`; no exclamation marks, no marketing register, never "discover" as a verb.
 
+## Linear tracking
+
+Linear is the durable backlog for bugs, feature ideas, improvements and deferred follow-up. Create or update an issue only when the work should survive the current session; do not mirror implementation history. If work starts from a Linear issue, keep its issue ID in the branch or PR. Keep implementation details in Git/PRs and durable product and technical truth in repository docs.
+
 ## Working here
 
 - Read `git log -10` and the relevant doc before changing an area. Docs describe the current state only: update them in the same change, and delete what is no longer true.
