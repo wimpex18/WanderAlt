@@ -182,7 +182,7 @@ GitHub pauses scheduled workflows in a public repository after 60 days without a
 | Function | `verify_jwt` | Used by |
 |---|---|---|
 | `og-image` | false | `functions/_middleware.js` share cards (satori 0.33.4, resvg-wasm 2.6.2) |
-| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. |
+| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
 
 Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing the function's existing `verify_jwt` (the tool defaults it to true). Committing does not deploy, and deleting a directory does not undeploy. The share surface fails open with a valid card, so judge the rendered card; `og-image?…&debug=1` returns the error instead.
 
