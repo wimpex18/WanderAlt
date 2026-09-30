@@ -36,6 +36,25 @@ export async function reconcilePlaces(db: Db, places: Place[], dry = false) {
   return plan;
 }
 
+/** Places created from a source's Russian phrase ("в театре Сюдалинна") carry
+ *  no identity: no OpenStreetMap id, no coordinates. They are removed, and the
+ *  events that named them keep the rest of their facts without a venue. */
+export async function retireForeignScriptPlaces(db: Db, places: Place[], dry = false): Promise<Place[]> {
+  const junk = places.filter(p => /[\u0400-\u04ff]/.test(p.name) && !p.osm_id && !(p.osm_ids ?? []).length && p.lat == null);
+  for (const p of junk) {
+    if (dry) continue;
+    try {
+      const id = encodeURIComponent(p.id);
+      await db.patch(`events?place_id=eq.${id}`, { place_id: null, venue_name: null });
+      await db.req('DELETE', `places?id=eq.${id}`);
+      console.log(`[places] removed ${p.id} "${p.name}": a Cyrillic phrase, not a venue name`);
+    } catch (e) {
+      console.log(`[places] could not remove ${p.id}: ${(e as Error).message}`);
+    }
+  }
+  return places.filter(p => !junk.includes(p));
+}
+
 export async function refreshLiveness(db: Db, places: Place[], dry = false, limit = 50) {
   const checks = await checkPlaces(places, new Date().toISOString(), limit);
   for (const { place, patch } of checks) {

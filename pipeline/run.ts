@@ -29,7 +29,7 @@ import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl } from './util.ts';
 import { tallinnDay } from './time.ts';
-import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, verifyPlaces } from './maintenance.ts';
+import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -265,6 +265,7 @@ async function main() {
 
   // ── 5. places and events ──
   let existingPlaces = db ? await loadPlaces(db, CITY) : [];
+  if (db) existingPlaces = await retireForeignScriptPlaces(db, existingPlaces);
   if (db) {
     const plan = await reconcilePlaces(db, existingPlaces);
     if (plan.some(p => p.match.action === 'merge')) existingPlaces = await loadPlaces(db, CITY);
@@ -528,7 +529,7 @@ async function main() {
   await refreshEnglish(db, english, CITY, 40);
   if (!flag('--no-posters')) {
     try {
-      const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 15));
+      const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 30));
       if (n) log(`posters: ${n} events got the picture their own page attaches to them`);
     } catch (e) { log(`posters failed: ${(e as Error).message}`); }
   }

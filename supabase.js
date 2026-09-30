@@ -82,13 +82,16 @@
   ]);
   const isPublicPick = (r) => !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
 
+  /* A venue or area printed in Cyrillic is a source's phrase, not a place's
+     name (the pipeline retires those places); it is left out, not shown. */
+  const CYRILLIC = /[\u0400-\u04ff]/;
   const toPick = (r) => ({
     id:            r.id,
     city:          r.city,
     title:         r.title,
-    venue:         r.venue,
-    venueId:       r.venue_id || null,
-    neighborhood:  r.neighborhood,
+    venue:         CYRILLIC.test(r.venue || '') ? null : r.venue,
+    venueId:       CYRILLIC.test(r.venue || '') ? null : (r.venue_id || null),
+    neighborhood:  CYRILLIC.test(r.neighborhood || '') ? null : r.neighborhood,
     kind:          r.kind,
     day:           r.day,
     time:          r.time,
@@ -242,7 +245,7 @@
       window.WA.catalog     = all.filter(e => e.city === CITY);
     }
     if (venues) {
-      const allVenues = venues.filter(r => VENUE_KINDS.has(r.kind)).map(toVenue);
+      const allVenues = venues.filter(r => VENUE_KINDS.has(r.kind) && !CYRILLIC.test(r.name || '')).map(toVenue);
       window.WA._venuesAll = allVenues;
       window.WA.venues     = allVenues.filter(v => v.city === CITY);
     }

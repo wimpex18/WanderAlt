@@ -39,7 +39,7 @@
       return;
     }
     document.title = `${s.name} · WanderAlt`;
-    const venues = new Set(s.picks.map(e => R().real(e.venue)).filter(Boolean)).size;
+    const venues = new Set(s.picks.map(e => R().latin(e.venue)).filter(Boolean)).size;
     const list = s.picks.slice().sort(window.WA.Geo.bySoonestThenDistance());
     main().innerHTML = `<header class="wa-pagehead">
         <p class="wa-kicker">${s.via === 'handle' ? 'A source we read' : 'Venue'}</p>
