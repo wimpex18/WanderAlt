@@ -19,6 +19,7 @@ import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile } from './instagram.ts';
+import { collectInstagram } from './sources/instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
@@ -62,7 +63,7 @@ export function loadSources(city = CITY): Source[] {
   return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).map(s => ({ ...s, active: true } as Source));
 }
 
-async function collect(source: Source): Promise<RawItem[]> {
+async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
   switch (source.kind) {
     case 'fienta': return fienta.collect(source);
     case 'jsonld': return jsonld.collect(source);
@@ -71,13 +72,14 @@ async function collect(source: Source): Promise<RawItem[]> {
     case 'telegram': return collectTelegram(source);
     case 'html': return collectPage(source);
     case 'rss': return collectRss(source);
+    case 'instagram': return collectInstagram(source, db);
   }
 }
 
 /** Posters read per run; each costs about 35 Workers AI neurons. */
 const posters = { left: Number(opt('--max-posters') ?? 30) };
 
-const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || s.kind === 'rss';
+const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || s.kind === 'rss' || s.kind === 'instagram';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
 async function read(item: RawItem, source: Source, models: Models): Promise<Candidate[] | null> {
@@ -85,18 +87,20 @@ async function read(item: RawItem, source: Source, models: Models): Promise<Cand
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
   if (!models.ready) return null;
-  const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[] };
+  const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string };
   // A post's poster often carries the date, time and venue its text leaves out.
   const poster = p.photos?.[0] && posters.left > 0 && usage.neurons < models.neuronBudget - 50 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
   const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
   const found = await extractEvents(models, {
-    text, source: `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
+    text, source: source.kind === 'instagram' ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
     images: p.photos ?? [], pageUrl: item.url ?? null,
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
   const venue = source.config.venue_name as string | undefined;
+  // A venue's own Instagram post names no other place: it is at that venue.
+  if (source.kind === 'instagram' && p.venue_name) return found.map(c => ({ ...c, venue_name: c.venue_name || p.venue_name }));
   return venue ? found.map(c => ({ ...c, venue_name: venue })) : found;
 }
 
@@ -204,8 +208,10 @@ async function main() {
   const health: Record<string, { ok: boolean; yield: number; error?: string }> = {};
   for (const source of sources) {
     try {
-      const items = await collect(source);
+      const items = await collect(source, db);
       health[source.id] = { ok: true, yield: items.length };
+      // Quiet accounts (or no Instagram secrets) are not a broken source.
+      if (source.kind === 'instagram' && !items.length) delete health[source.id];
       if (!db) { pending.push(...items.map(item => ({ rawId: null, item, source }))); log(`${source.id}: ${items.length} items`); continue; }
       const known = new Map<string, string>();
       for (const part of chunks(items.map(i => i.external_id), 150)) {

@@ -170,5 +170,15 @@
     "config": {
       "area": "Tallinn"
     }
+  },
+  {
+    "id": "instagram-venues",
+    "city": "tallinn",
+    "kind": "instagram",
+    "url": "https://www.instagram.com/",
+    "handle": "@wanderalt",
+    "label": "Instagram (venue accounts)",
+    "curated": false,
+    "config": { "max_age_days": 14, "accounts_per_run": 15 }
   }
 ]
