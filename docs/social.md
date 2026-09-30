@@ -29,6 +29,10 @@ Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.ym
 - **Instagram** (`graph.facebook.com/v26.0`, Facebook Login path): `POST /{ig}/media` then `POST /{ig}/media_publish`. JPEG only, at a public address while Instagram fetches it; 100 API posts per 24 hours (`/content_publishing_limit`); the container is polled until `FINISHED`; captions up to 2,200 characters; `alt_text` is supported for images.
 - Instagram has no anonymous profile access and no public free-text search. Hashtag search and Page search need App Review features that are not requested.
 
+## First check (30 September 2026)
+
+`social check` showed: the Instagram lookup works and publishing quota is 0/100; the Threads token for `@wanderalt` was refreshed (valid 60 days) and stored; Threads keyword search answered with an error 500 and profile lookup of @instagram was refused. Those two need `threads_keyword_search` / `threads_profile_discovery` on the token and, for other people's content, App Review. The system user in the portfolio has Threads assigned, which gives the Facebook/Instagram token no Threads access; Threads uses only its own token.
+
 ## Using what Threads search finds
 
 Posts are written by strangers. Anything found goes through the review queue with its link, is escaped like every listing, and is never republished on the site. Meta's terms for Threads content apply.

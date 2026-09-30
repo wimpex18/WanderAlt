@@ -75,3 +75,14 @@ test('an Instagram post is JPEG, within quota, polled and published', async () =
   const full = (async () => json({ data: [{ quota_usage: 100, config: { quota_total: 100 } }] })) as never;
   await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'https://x.ee/a.jpg', caption: 'c' }, full, 0), /quota used/);
 });
+
+test('a failed keyword search is retried plainly and reports both answers', async () => {
+  const urls: string[] = [];
+  const failing = (async (u: string) => { urls.push(u); return json({ error: { code: 500, message: 'boom' } }, 500); }) as never;
+  await assert.rejects(threads.keywordSearch('tok', 'Tallinn', failing), /full query: .*500 boom; plain query: .*500 boom/);
+  assert.equal(urls.length, 2);
+  assert.ok(!urls[1].includes('search_type'));
+  let n = 0;
+  const flaky = (async () => ++n === 1 ? json({ error: { code: 100, message: 'bad param' } }, 400) : json({ data: [{ id: '1' }] })) as never;
+  assert.equal((await threads.keywordSearch('tok', 'Tallinn', flaky)).length, 1);
+});

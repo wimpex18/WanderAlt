@@ -37,9 +37,20 @@ export const me = (token: string, fetcher: typeof fetch = fetch) =>
 
 export interface SearchHit { id: string; username?: string; text?: string; permalink?: string }
 export async function keywordSearch(token: string, q: string, fetcher: typeof fetch = fetch): Promise<SearchHit[]> {
-  const r = await call<{ data?: SearchHit[] }>('GET', `${VERSION}/keyword_search`, {
-    q, search_type: 'RECENT', limit: '10', fields: 'id,username,text,permalink', access_token: token }, fetcher);
-  return r.data ?? [];
+  // The full query first; if Threads answers with an error, the plainest one
+  // (only q), so a bad optional parameter is told apart from a refused permission.
+  try {
+    const r = await call<{ data?: SearchHit[] }>('GET', `${VERSION}/keyword_search`, {
+      q, search_type: 'RECENT', limit: '10', fields: 'id,username,text,permalink', access_token: token }, fetcher);
+    return r.data ?? [];
+  } catch (first) {
+    try {
+      const r = await call<{ data?: SearchHit[] }>('GET', `${VERSION}/keyword_search`, { q, access_token: token }, fetcher);
+      return r.data ?? [];
+    } catch (second) {
+      throw new Error(`full query: ${(first as Error).message}; plain query: ${(second as Error).message}`);
+    }
+  }
 }
 
 export async function profileLookup(token: string, username: string, fetcher: typeof fetch = fetch): Promise<{ username: string; follower_count?: number } | null> {
