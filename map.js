@@ -178,12 +178,44 @@
     }
   };
 
+  /* Street level: from here on, things at one spot fan out instead of counting. */
+  const FAN_ZOOM = 16, FAN_MAX = 6;
+  const sameSpot = (a, b) => Math.hypot((a.lat - b.lat) * 111320, (a.lng - b.lng) * 111320 * Math.cos(a.lat * Math.PI / 180)) < 12;
+
   const placePins = () => {
     hovered = '';
     const t = T();
     if (!t || !t.isReady()) return;
     const CL = 42;
-    const items = shown().map(it => ({ it, p: t.project(it.x._c.lng, it.x._c.lat) })).filter(o => o.p);
+    const zoom = t.getMap() ? t.getMap().getZoom() : 0;
+    let items = shown().map(it => ({ it, p: t.project(it.x._c.lng, it.x._c.lat) })).filter(o => o.p);
+
+    /* Things at one address (a venue and the show in it, two shows in one
+       hall) can never be told apart by zooming. From street level they fan
+       out around their shared point, each pin its own; further out they
+       stay a count, and a tap zooms in until they do. */
+    let fans = '';
+    if (zoom >= FAN_ZOOM) {
+      const groups = [];
+      for (const o of items) {
+        const g = groups.find(g => sameSpot(g[0].it.x._c, o.it.x._c));
+        if (g) g.push(o); else groups.push([o]);
+      }
+      const spread = new Set();
+      for (const g of groups) {
+        if (g.length < 2 || g.length > FAN_MAX) continue;   // a cinema's whole week stays a count
+        const n = g.length, r = n === 2 ? 56 : 46 + 9 * n, cx = g[0].p.x, cy = g[0].p.y;
+        g.forEach((o, i) => {
+          const a = (n === 2 ? Math.PI * i : -Math.PI / 2 + (2 * Math.PI * i) / n);
+          const p = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+          fans += `<span class="wa-fan__stem" style="left:${cx}px;top:${cy}px;width:${r}px;transform:rotate(${a}rad)"></span>`;
+          fans += pinFor(o.it, p);
+          spread.add(o);
+        });
+        fans += `<span class="wa-fan__dot" style="left:${cx}px;top:${cy}px"></span>`;
+      }
+      items = items.filter(o => !spread.has(o));
+    }
     clusters = [];
     for (const o of items) {
       if (o.it.x.id === state.active) { clusters.push({ ...o, members: [o.it] }); continue; }
@@ -193,6 +225,7 @@
     let html = clusters.map((c, i) => c.members.length > 1
       ? `<button class="wa-pin wa-pin--cluster" type="button" data-cluster="${i}" aria-label="${esc(`${c.members.length} here, zoom in`)}" style="left:${c.p.x}px;top:${c.p.y}px"><span class="wa-pin__count">${c.members.length}</span></button>`
       : pinFor(c.it, c.p)).join('');
+    html += fans;
     if (me) { const p = t.project(me.lng, me.lat); if (p) html += `<span class="wa-pin wa-pin--me" style="left:${p.x}px;top:${p.y}px"><span></span></span>`; }
     $('map-pins').innerHTML = html;
   };
@@ -367,7 +400,15 @@
     const c = hit('[data-cluster]');
     if (c) {
       const cl = clusters[Number(c.dataset.cluster)];
-      if (cl) T().fitToPicks(cl.members.map(m => m.x._c), { maxZoom: 17, padding: 90 });
+      if (!cl) return;
+      const pts = cl.members.map(m => m.x._c);
+      /* One address: a fit has no area to fit, so go straight to street level. */
+      if (pts.every(q => sameSpot(q, pts[0]))) {
+        const z = T().getMap() ? T().getMap().getZoom() : 0;
+        /* Already at street level and still a count: the drawer lists what is here. */
+        if (z >= FAN_ZOOM) setDrawer('half'); else T().flyTo(pts[0].lng, pts[0].lat, FAN_ZOOM + 1);
+      }
+      else T().fitToPicks(pts, { maxZoom: FAN_ZOOM + 3, padding: 90 });
       return;
     }
     const p = hit('[data-pin]');

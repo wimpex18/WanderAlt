@@ -43,9 +43,9 @@ test('explicit own-site closure in English, Estonian and Russian needs review, n
   }
 });
 
-test('weekly homepage checks rotate, cap at ten distinct hosts and respect manual review and closure', () => {
-  const rows = Array.from({ length: 20 }, (_, i) => venue({ id: String(i).padStart(2, '0'), website: `https://site${i}.example/` }));
-  assert.equal(dueWebsites(rows, Date.parse(now), 50).length, 10);
+test('weekly homepage checks rotate, cap at forty distinct hosts and respect manual review and closure', () => {
+  const rows = Array.from({ length: 60 }, (_, i) => venue({ id: String(i).padStart(2, '0'), website: `https://site${i}.example/` }));
+  assert.equal(dueWebsites(rows, Date.parse(now), 50).length, 40);
   const excluded = [
     venue({ status: 'closed' }), venue({ status: 'hidden' }), venue({ merged_into: 'another' }),
     venue({ website: 'broken URL' }),
