@@ -21,10 +21,15 @@ async function call<T>(method: 'GET' | 'POST', path: string, params: Record<stri
     method, headers: { 'user-agent': UA, ...(method === 'POST' ? { 'content-type': 'application/x-www-form-urlencoded' } : {}) },
     body: method === 'POST' ? qs.toString() : undefined, signal: AbortSignal.timeout(30_000),
   });
-  const body = await r.json().catch(() => ({})) as T & { error?: { message?: string; code?: number; type?: string; error_subcode?: number } };
+  const raw = await r.text().catch(() => '');
+  let body = {} as T & { error?: { message?: string; code?: number; type?: string; error_subcode?: number; fbtrace_id?: string } };
+  try { body = JSON.parse(raw); } catch { /* a 500 from the edge may carry no JSON */ }
   if (!r.ok || body.error) {
     const e = body.error;
-    throw new Error(`Threads ${path.split('/').pop()}: HTTP ${r.status}, code ${e?.code ?? '-'}${e?.error_subcode ? `/${e.error_subcode}` : ''}${e?.type ? ` ${e.type}` : ''} ${String(e?.message ?? '').slice(0, 160)}`);
+    // The trace id is what Meta's support asks for; the raw text shows a body that is not JSON.
+    const trace = e?.fbtrace_id ?? r.headers.get('x-fb-trace-id');
+    const plain = e ? '' : raw.replace(/access_token=[^&\s"]+/g, 'access_token=…').replace(/\s+/g, ' ').slice(0, 120);
+    throw new Error(`Threads ${path.split('/').pop()}: HTTP ${r.status}, code ${e?.code ?? '-'}${e?.error_subcode ? `/${e.error_subcode}` : ''}${e?.type ? ` ${e.type}` : ''} ${String(e?.message ?? '').slice(0, 160)}${trace ? ` [trace ${trace}]` : ''}${plain ? ` [body "${plain}"]` : ''}`.replace(/\s+\[/g, ' ['));
   }
   return body;
 }
