@@ -310,7 +310,9 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
  *  unless it is tiny, a weak one (header link, declared icon) only after its
  *  size was read: 48 px for a header logo, 128 px and square for an icon. */
 export async function pickLogo(candidates: { url: string; weak: boolean; icon?: boolean }[], probe: typeof probeImage = probeImage): Promise<string | null> {
-  for (const c of candidates.slice(0, 5)) {
+  // The city portal's mark on a school's or a youth centre's page is the
+  // city's, not the venue's.
+  for (const c of candidates.filter(x => !PORTAL_LOGO.test(bareHost(x.url))).slice(0, 5)) {
     const size = await probe(c.url);
     // A wordmark may be wide; an icon must be square-ish and 128 px or more.
     if (size ? (c.icon ? usableSize(size, 128, 2) : usableSize(size, 48)) : !c.weak) return c.url;
@@ -318,6 +320,8 @@ export async function pickLogo(candidates: { url: string; weak: boolean; icon?: 
   return null;
 }
 
+/** Hosts whose logo says who runs the site, not what the venue is. */
+const PORTAL_LOGO = /(^|\.)tallinn\.ee$/i;
 const FB_RESERVED = /^(pages|people|profile\.php|groups|events|public|share|sharer|p|watch|marketplace|login|policies|tr)$/i;
 /** The page name of a Facebook page link, when it names a page (not a group,
  *  an event or a numeric profile). */
@@ -382,8 +386,13 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
   // Last resort: the venue's own Facebook page picture, for a link its record
   // or its site gave (handleFits already tied a site link to the venue).
   if (opts.facebook !== false && !p.image_url && !patch.image_url) {
-    const page = facebookPage(patch.facebook ?? p.facebook);
-    const url = page ? await facebookPicture(page) : null;
+    const link = patch.facebook ?? p.facebook;
+    const page = facebookPage(link);
+    // A named page must share a distinctive word with the venue (a numeric
+    // page id carries no name to test and is taken from the record as is).
+    const named = page && !/^\d+$/.test(page);
+    const fits = !named || handleFits(link!, p.name, p.website ?? 'https://invalid.example/');
+    const url = page && fits ? await facebookPicture(page) : null;
     if (url) { patch.image_url = url; patch.image_attr = "Profile picture of the venue's Facebook page"; patch.image_source = 'logo'; }
   }
   return patch;

@@ -133,6 +133,7 @@ test('image sizes are read from the file header, and only real marks pass', asyn
   const sizes: Record<string, { width: number; height: number } | null> = { 'https://a/f.ico': { width: 16, height: 16 }, 'https://a/t.png': { width: 180, height: 180 }, 'https://a/gone.png': null };
   const probe = async (u: string) => sizes[u] ?? null;
   assert.equal(await pickLogo([{ url: 'https://a/f.ico', weak: true, icon: true }, { url: 'https://a/t.png', weak: true, icon: true }], probe as never), 'https://a/t.png');
+  assert.equal(await pickLogo([{ url: 'https://www.tallinn.ee/themes/main_site/logo.svg', weak: false }], probe as never), null);   // the city's mark
   assert.equal(await pickLogo([{ url: 'https://a/gone.png', weak: true }], probe as never), null);      // unreadable weak candidate
   assert.equal(await pickLogo([{ url: 'https://a/gone.png', weak: false }], probe as never), 'https://a/gone.png');
 });
