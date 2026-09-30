@@ -35,7 +35,7 @@ From a terminal with the secrets in `.env`: `npm run social -- check`, `npm run 
 
 | Source | Known venue account | Unknown accounts, free-text search |
 |---|---|---|
-| Instagram | Works. `business_discovery` returns the profile and its recent posts (caption, date, link) for a public Business or Creator account. Posts are read for event announcements; they are not republished. | Hashtag search needs "Instagram Public Content Access" (App Review). Not requested. |
+| Instagram | Works, and is used: the pipeline source `instagram-venues` reads the recent posts of known venue accounts for events (`docs/data.md`, *Instagram venue posts*). `business_discovery` returns caption, date and link for a public Business or Creator account; posts are not republished. | Hashtag search needs "Instagram Public Content Access" (App Review). Not requested. |
 | Facebook | Events and posts of a Page we do not manage need "Page Public Content Access" (App Review). | Open event search is gone from the API. |
 | Threads | `profile_lookup` needs `threads_profile_discovery`; standard access reaches only Meta's own accounts, and review limits it to public profiles with 100+ followers. | `keyword_search` needs `threads_keyword_search`; without review it returns only our own posts. |
 

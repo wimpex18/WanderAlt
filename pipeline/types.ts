@@ -2,7 +2,7 @@
 // (type stripping), so only erasable TypeScript is allowed: no enums,
 // namespaces or parameter properties.
 
-export type SourceKind = 'fienta' | 'jsonld' | 'wordpress' | 'telegram' | 'rss' | 'html' | 'osm';
+export type SourceKind = 'fienta' | 'jsonld' | 'wordpress' | 'telegram' | 'rss' | 'html' | 'osm' | 'instagram';
 
 export interface Source {
   id: string;
