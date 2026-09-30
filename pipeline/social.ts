@@ -6,7 +6,7 @@
 // Nothing is posted without --publish. See docs/social.md.
 
 import { Db } from './db.ts';
-import { instagramConfig, lookupProfile } from './instagram.ts';
+import { instagramConfig, lookupProfile, recentPosts } from './instagram.ts';
 import * as threads from './social/threads.ts';
 import * as instagram from './social/instagram.ts';
 
@@ -53,6 +53,10 @@ async function main() {
   if (cmd === 'check') {
     const cfg = instagramConfig();
     log(cfg ? `Instagram lookup @laine.bar: ${(await lookupProfile('laine.bar', cfg)).kind}` : 'Instagram: secrets not set');
+    if (cfg) {
+      const posts = await recentPosts('laine.bar', cfg, 10);
+      log(posts ? `Instagram posts of @laine.bar: ${posts.length} read, newest ${posts[0]?.timestamp?.slice(0, 10) ?? 'none'}, ${posts.filter(p => p.caption).length} with a caption` : 'Instagram posts of @laine.bar: not readable');
+    }
     if (cfg) { try { const q = await instagram.publishingLimit(cfg); log(`Instagram publishing quota: ${q.used}/${q.total} used in 24 hours`); } catch (e) { log(`Instagram publishing: ${(e as Error).message}`); } }
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? new Db() : null;
     const token = await threadsToken(db);

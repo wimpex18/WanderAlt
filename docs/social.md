@@ -21,6 +21,26 @@ WanderAlt has a Meta setup and a small set of scripts for Threads and Instagram.
 
 Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) is manual only: `check`, `tonight-preview`, `tonight-threads`.
 
+## How to run it (nothing posts on its own)
+
+All of it is manual. From GitHub: **Actions → social → Run workflow**, then choose:
+
+- `check`: reads the secrets and reports, posting nothing. Shows the Instagram lookup, the posts readable from a known venue account, the publishing quota, the Threads token (refreshed and stored when under 30 days remain), Threads keyword search and profile lookup.
+- `tonight-preview`: prints the "Tonight in Tallinn" text and its character count. Nothing is sent.
+- `tonight-threads`: the only choice that posts (to Threads). Do not choose it until the preview has been approved.
+
+From a terminal with the secrets in `.env`: `npm run social -- check`, `npm run social -- tonight`, and `npm run social -- tonight --publish threads` or `npm run social -- instagram --image https://…/a.jpg --caption "…" --publish`. Without `--publish` every command only prints.
+
+## What can find events and places
+
+| Source | Known venue account | Unknown accounts, free-text search |
+|---|---|---|
+| Instagram | Works. `business_discovery` returns the profile and its recent posts (caption, date, link) for a public Business or Creator account. Posts are read for event announcements; they are not republished. | Hashtag search needs "Instagram Public Content Access" (App Review). Not requested. |
+| Facebook | Events and posts of a Page we do not manage need "Page Public Content Access" (App Review). | Open event search is gone from the API. |
+| Threads | `profile_lookup` needs `threads_profile_discovery`; standard access reaches only Meta's own accounts, and review limits it to public profiles with 100+ followers. | `keyword_search` needs `threads_keyword_search`; without review it returns only our own posts. |
+
+Finding venues we do not know yet still comes from open data (OpenStreetMap, Overture Maps, Wikidata) and from venue websites and ticket sites; social is for watching accounts we already know.
+
 ## Meta's rules the code follows (September 2026)
 
 - **Threads** (`graph.threads.net/v1.0`): a post is 1–500 characters with at most 5 links, 250 posts per 24 hours; a container is created (`POST /{user}/threads`), rests about 30 seconds and is published (`POST /{user}/threads_publish`). Images are JPEG or PNG up to 8 MB.
@@ -28,6 +48,10 @@ Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.ym
 - **Threads search:** `GET /keyword_search` (`q`, `search_type` TOP/RECENT, `search_mode` KEYWORD/TAG, `since`, `until`, `author_username`, up to 100 results, 2,200 queries per 24 hours). Without App Review it returns only the token owner's own posts. `GET /profile_lookup?username=` works for Meta's own accounts until review, and only returns public profiles with 100 followers or more; 1,000 requests per 24 hours.
 - **Instagram** (`graph.facebook.com/v26.0`, Facebook Login path): `POST /{ig}/media` then `POST /{ig}/media_publish`. JPEG only, at a public address while Instagram fetches it; 100 API posts per 24 hours (`/content_publishing_limit`); the container is polled until `FINISHED`; captions up to 2,200 characters; `alt_text` is supported for images.
 - Instagram has no anonymous profile access and no public free-text search. Hashtag search and Page search need App Review features that are not requested.
+
+## First check (30 September 2026)
+
+`social check` showed: the Instagram lookup works and publishing quota is 0/100; the Threads token for `@wanderalt` was refreshed (valid 60 days) and stored; Threads keyword search answered with an error 500 and profile lookup of @instagram was refused. Those two need `threads_keyword_search` / `threads_profile_discovery` on the token and, for other people's content, App Review. The system user in the portfolio has Threads assigned, which gives the Facebook/Instagram token no Threads access; Threads uses only its own token.
 
 ## Using what Threads search finds
 
