@@ -1,0 +1,155 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createContext, runInContext } from 'node:vm';
+
+const source = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
+const tick = () => new Promise<void>(r => setImmediate(r));
+
+function api() {
+  const now = Date.parse('2026-09-30T22:01:00Z'); // Already October 1 in Tallinn.
+  class Clock extends Date { constructor(value?: any) { super(value === undefined ? now : value); } }
+  const stored = new Map<string, Response>();
+  const calls: any[] = [];
+  let output: any = { when: 'tonight', day: '', kinds: [], must: [], any: [] };
+  const context = createContext({ Date: Clock, Intl, Request, Response, URL,
+    caches: { default: { match: async (r: Request) => stored.get(r.url)?.clone(), put: async (r: Request, v: Response) => { stored.set(r.url, v); } } },
+  });
+  runInContext(source('functions/api/ask.js').replace('export async function', 'async function'), context);
+  const request = async (today = '2026-09-30') => {
+    const waits: Promise<any>[] = [];
+    const r = await context.onRequestGet({ request: new Request(`https://wanderalt.app/api/ask?q=quiet+tonight&today=${today}`, { headers: { 'sec-fetch-site': 'same-origin' } }),
+      env: { AI: { run: async (_: string, p: any) => { calls.push(p); return { response: output }; } } }, waitUntil: (p: Promise<any>) => waits.push(p) });
+    await Promise.all(waits); return r;
+  };
+  return { request, calls, stored, output: (v: any) => { output = v; } };
+}
+
+test('model filters use the Tallinn server date; caller dates cannot bypass the cache', async () => {
+  const a = api();
+  assert.equal((await a.request('2040-99-99')).status, 200);
+  await a.request('1900-01-01');
+  assert.equal(a.calls.length, 1);
+  assert.match(a.calls[0].messages[0].content, /Today is 2026-10-01/);
+  assert.match([...a.stored.keys()][0], /today=2026-10-01/);
+  // Workers AI takes the JSON Schema directly, unlike the OpenRouter wrapper.
+  assert.equal(a.calls[0].response_format.json_schema.type, 'object');
+  assert.equal(a.calls[0].response_format.json_schema.properties.must.type, 'array');
+});
+
+test('invalid calendar dates and untrusted model fields cannot become authoritative filters', async () => {
+  const a = api();
+  a.output({ day: '2027-02-30', when: 'tonight', kinds: ['film', 'film', 'hacked'], free: 'true', english: 1, maxPrice: 9000,
+    must: [{ malicious: true }, 'Kalamaja'], any: ['jazz', 'jazz'], note: '<script>alert(1)</script>!', url: 'javascript:bad' });
+  const j = await (await a.request()).json();
+  assert.equal(j.day, ''); assert.equal(j.when, 'tonight');
+  assert.deepEqual(j.kinds, ['film']); assert.deepEqual(j.must, ['kalamaja']); assert.deepEqual(j.any, ['jazz']);
+  assert.equal(j.free, false); assert.equal(j.english, false); assert.equal(j.maxPrice, null);
+  assert.equal(j.url, undefined); assert.doesNotMatch(j.note, /[<>!]/);
+});
+
+test('malformed model responses fail without entering the cache', async () => {
+  const a = api(); a.output([null]);
+  assert.equal((await a.request()).status, 502); assert.equal(a.stored.size, 0);
+});
+
+test('search client cache changes at midnight and clears its timeout after a fetch failure', async () => {
+  let today = '2026-09-30', calls = 0, cleared = 0;
+  const WA: any = { when: { todayKey: () => today } };
+  const context = createContext({ window: { WA }, AbortController,
+    setTimeout: () => 1, clearTimeout: () => { cleared++; },
+    fetch: async () => { calls++; if (calls === 3) throw new Error('offline'); return new Response(JSON.stringify({ day: today, kinds: [], must: [], any: [] })); },
+  });
+  runInContext(source('ask.js'), context);
+  await WA.Ask.remote('on Friday'); await WA.Ask.remote('on Friday');
+  assert.equal(calls, 1);
+  today = '2026-10-01';
+  assert.equal((await WA.Ask.remote('on Friday')).day, today);
+  assert.equal(calls, 2);
+  assert.equal(await WA.Ask.remote('another sentence'), null);
+  assert.equal(cleared, 3);
+});
+
+test('weekdays in each search language resolve locally without model date arithmetic', () => {
+  const WA: any = { when: { keyPlus: (n: number) => new Date(Date.UTC(2026, 8, 30 + n)).toISOString().slice(0, 10) } };
+  runInContext(source('ask.js'), createContext({ window: { WA } }));
+  for (const q of ['film on Friday', 'kino reedel', 'кино в пятницу']) {
+    const p = WA.Ask.local(q);
+    assert.equal(p.day, '2026-10-02'); assert.equal(p.when, '');
+    assert.deepEqual(Array.from(p.kinds), ['film']); assert.equal(p.must.length, 0);
+  }
+});
+
+function programme() {
+  const listeners = new Map<string, any>(), elements = new Map<string, any>(), timers = new Map<number, () => void>();
+  let timerId = 0, release!: (p: any) => void;
+  const list = [{ kind: 'film', free: true, eventLanguages: ['en'], priceMin: 0 }, { kind: 'gig', free: false, eventLanguages: [], priceMin: 20 }];
+  const WA: any = { UI: { esc: (s: any) => String(s ?? '') }, Icon: () => '', Picto: { kind: () => '' },
+    R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: () => '', isFree: (e: any) => e.free,
+      kindLabel: (s: string) => s, dayName: () => '', dow: () => '', dom: () => '', isFollowed: () => false },
+    when: { matches: () => true, isOnDate: () => true, todayKey: () => '2026-09-30', keyPlus: () => '2026-10-02' },
+    Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0 }, Hours: {}, Seen: { count: () => 0 },
+  };
+  const context = createContext({ window: { WA, addEventListener: () => {} }, location: { search: '', pathname: '/discover' },
+    history: { replaceState: () => {} }, URLSearchParams, AbortController,
+    requestAnimationFrame: () => 1, getComputedStyle: () => ({ position: 'static' }),
+    setTimeout: (cb: () => void) => { timers.set(++timerId, cb); return timerId; }, clearTimeout: (id: number) => timers.delete(id),
+    document: { readyState: 'loading', activeElement: null, documentElement: { style: { setProperty: () => {} } }, addEventListener: (n: string, cb: any) => listeners.set(n, cb),
+      getElementById: (id: string) => { if (!elements.has(id)) elements.set(id, { style: {}, value: '' }); return elements.get(id); } },
+  });
+  runInContext(source('ask.js'), context);
+  WA.Ask.remote = () => new Promise(r => { release = r; });
+  runInContext(source('programme.js'), context);
+  const query = (q: string) => listeners.get('input')({ target: { id: 'q', value: q } });
+  const start = () => { for (const [id, cb] of [...timers]) { timers.delete(id); cb(); } };
+  const click = (selector: string, data: any = {}) => listeners.get('click')({ target: { closest: (s: string) => s.split(',').map(s => s.trim()).includes(selector) ? { dataset: data } : null } });
+  return { query, start, click, finish: (p: any) => release({ ...WA.Ask.empty(), ...p }), elements };
+}
+
+test('an in-flight model cannot undo Search the words or later manual filters', async () => {
+  for (const selector of ['[data-act]', '[data-kind]']) {
+    const p = programme(); p.query('something beautifully calm'); p.start();
+    p.click(selector, selector === '[data-act]' ? { act: 'undo-read' } : { kind: 'film' });
+    const before = p.elements.get('summary').innerHTML;
+    p.finish({ kinds: ['gig'], note: 'Unwanted late answer' }); await tick();
+    assert.equal(p.elements.get('summary').innerHTML, before);
+    assert.doesNotMatch(p.elements.get('ask-note').innerHTML, /Unwanted/);
+  }
+});
+
+test('model interpretation retains locally understood day, kind, free, language and price constraints', async () => {
+  const p = programme(); p.query('free film tonight in English under 10 quiet'); p.start();
+  p.finish({ when: 'tomorrow', day: '2026-10-02', kinds: ['gig'], maxPrice: 99, note: 'Paid gigs Friday' }); await tick();
+  assert.match(p.elements.get('summary').innerHTML, /1 listing/);
+  assert.match(p.elements.get('summary').innerHTML, /tonight.*film/);
+  assert.match(p.elements.get('quick').innerHTML, /Remove Free/);
+  assert.match(p.elements.get('quick').innerHTML, /Remove In English/);
+  assert.match(p.elements.get('quick').innerHTML, /Under €10/);
+  assert.doesNotMatch(p.elements.get('ask-note').innerHTML, /Paid gigs Friday/);
+});
+
+test('changing away and back to the same text does not revive an obsolete model request', async () => {
+  const p = programme(); p.query('something beautifully calm'); p.start();
+  p.query('different words'); p.query('something beautifully calm');
+  const before = p.elements.get('summary').innerHTML;
+  p.finish({ kinds: ['gig'] }); await tick();
+  assert.equal(p.elements.get('summary').innerHTML, before);
+});
+
+test('mandatory model place words cannot be relaxed into an OR search to manufacture results', async () => {
+  const p = programme(); p.query('something beautifully calm'); p.start();
+  p.finish({ must: ['kalamaja'], any: ['jazz'], note: 'In Kalamaja' }); await tick();
+  assert.match(p.elements.get('summary').innerHTML, /0 listings/);
+});
+
+test('primary domain redirects work on Function routes and preserve query strings without looping', async () => {
+  const context = createContext({ Request, Response, URL });
+  runInContext(source('functions/_middleware.js').replace('export async function', 'async function'), context);
+  for (const host of ['www.wanderalt.app', 'wanderalt.com', 'www.wanderalt.com']) {
+    const r = await context.onRequest({ request: new Request(`https://${host}/detail?id=a%26b`), next: () => { throw new Error('Must redirect before serving'); } });
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get('location'), 'https://wanderalt.app/detail?id=a%26b');
+  }
+  const r = await context.onRequest({ request: new Request('https://wanderalt.app/discover?q=jazz'), next: async () => new Response('asset') });
+  assert.equal(r.status, 200); assert.equal(await r.text(), 'asset');
+});

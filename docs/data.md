@@ -76,7 +76,7 @@ Eligible matches are ranked by closest time, strongest title overlap, then id. S
 
 ### Place liveness
 
-The check calls Overpass on up to three mirrors in turn. If all fail, the run logs it, skips the venue catalogue and retries next run; it does not turn the run red, because it is maintenance, not a source. Four mirrors are tried in turn.
+The check calls Overpass on up to four mirrors in turn. If all fail, the run logs it, skips the venue catalogue and retries next run; it does not turn the run red, because it is maintenance, not a source.
 
 `pipeline/place-liveness.ts` re-queries stored node/way/relation ids, without category filters that could hide disused objects. Each identified canonical place is due every seven days; each pipeline run checks the oldest 50 due places in one Overpass request. Unidentified places need a manual check or later Nominatim identification. This confirms what OSM currently records, not independently that a business is operating.
 

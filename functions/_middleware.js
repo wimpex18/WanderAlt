@@ -84,7 +84,12 @@ const rewrite = (res, { title, description, image, photo }) => {
 /* _headers only covers static responses. This middleware runs on every
    route, including rewritten social previews and API responses. */
 export async function onRequest(context) {
-  const response = await pageResponse(context);
+  /* _redirects excludes routes handled by Functions. Keep the primary
+     domain rules here so the all-page middleware honors them. */
+  const url = new URL(context.request.url);
+  const alias = ['www.wanderalt.app', 'wanderalt.com', 'www.wanderalt.com'].includes(url.hostname);
+  if (alias) { url.protocol = 'https:'; url.hostname = 'wanderalt.app'; url.port = ''; }
+  const response = alias ? Response.redirect(url.href, 301) : await pageResponse(context);
   const secured = new Response(response.body, response);
   const headers = secured.headers;
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
