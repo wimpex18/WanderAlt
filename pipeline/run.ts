@@ -19,7 +19,7 @@ import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
-import { Models, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
+import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
 import { attachPosters } from './posters.ts';
 import { fetchOverture, matchPlace } from './overture.ts';
@@ -132,8 +132,13 @@ async function main() {
   // Keep some Workers AI allocation for new events' English copy after writes.
   const callBudget = Number(process.env.LLM_CALL_BUDGET ?? 60);
   const englishBudget = DRY ? 0 : Math.min(6, Math.max(0, callBudget));
-  const models = new Models(undefined, Math.max(0, callBudget - englishBudget),
-    Math.max(0, Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 1500) - (DRY ? 0 : 500)));
+  // Three readers share one neuron counter, each with a ceiling inside the
+  // run's allowance R: prose extraction up to R/2, classification (a smaller,
+  // cheaper Workers AI model) up to 3R/4, English copy up to R.
+  const runCap = Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 2400);
+  const models = new Models(undefined, Math.max(0, callBudget - englishBudget), DRY ? runCap : Math.round(runCap / 2));
+  const sorter = new Models(lanes(process.env.WORKERS_AI_CLASSIFY_MODEL?.trim() || '@cf/openai/gpt-oss-20b'),
+    Math.max(0, callBudget - englishBudget), DRY ? runCap : Math.round(runCap * .75));
   if (flag('--models')) {
     for (const l of models.available) {
       try {
@@ -148,6 +153,7 @@ async function main() {
   const sources = loadSources().filter(s => !ONLY || s.id === ONLY);
   const db = DRY ? null : new Db();
   const english = englishModels(englishBudget);
+  english.neuronBudget = runCap;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -159,10 +165,11 @@ async function main() {
       const spent = (await db.select<{ neurons: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=neurons`))
         .reduce((a, r) => a + Number(r.neurons || 0), 0);
       const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
-      models.neuronBudget = Math.max(0, Math.min(models.neuronBudget, daily - spent));
+      const left = Math.max(0, daily - spent);
+      for (const m of [models, sorter, english]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
-      log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(models.neuronBudget)} allowed this run`);
+      log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(Math.min(runCap, left))} allowed this run`);
     } catch (e) {
       log(`pipeline_runs unavailable, daily budget not applied: ${(e as Error).message}`);
     }
@@ -254,7 +261,7 @@ async function main() {
   }
 
   // ── 4. classify ──
-  const enrich = await classify(models, found.map(f => f.c));
+  const enrich = await classify(sorter, found.map(f => f.c));
 
   // ── 5. places and events ──
   let existingPlaces = db ? await loadPlaces(db, CITY) : [];
@@ -286,8 +293,17 @@ async function main() {
       if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
     } catch (e) {
-      health[osm.id] = { ok: false, yield: 0, error: (e as Error).message };
-      log(`${osm.id}: failed: ${(e as Error).message}`);
+      // The public Overpass servers time out now and then. The catalogue
+      // changes slowly, so a run stays green while the last good read is under
+      // two days old; after that the source counts as failing.
+      const [prev] = db ? await db.select<{ last_ok_at: string | null }>(`sources?id=eq.${encodeURIComponent(osm.id)}&select=last_ok_at`).catch(() => []) : [];
+      if (prev?.last_ok_at && Date.now() - Date.parse(prev.last_ok_at) < 48 * 3600_000) {
+        delete health[osm.id];
+        log(`${osm.id}: read failed, last good read ${prev.last_ok_at}; kept: ${(e as Error).message}`);
+      } else {
+        health[osm.id] = { ok: false, yield: 0, error: (e as Error).message };
+        log(`${osm.id}: failed: ${(e as Error).message}`);
+      }
     }
   }
   // Areas a visitor knows (Kalamaja, not Põhja-Tallinna) for places that
@@ -417,9 +433,9 @@ async function main() {
   // Venues OpenStreetMap could not name get a kind from the model, judged
   // by their name, address and the events held there.
   const unnamed = places.all().filter(p => !p.kind).slice(0, 90);
-  if (unnamed.length && models.ready) {
+  if (unnamed.length && sorter.ready) {
     const held = (id: string) => [...events.values()].filter(e => e.place_id === id).map(e => String(e.title));
-    const kinds = await classifyPlaces(models, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })));
+    const kinds = await classifyPlaces(sorter, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })));
     kinds.forEach((k, i) => {
       const p = unnamed[i];
       if (!k) return;
@@ -436,7 +452,7 @@ async function main() {
     const out = opt('--out');
     const rows = [...events.values()].sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
     if (out) writeFileSync(out, JSON.stringify({ events: rows, places: places.created, health }, null, 2));
-    log(`${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+    log(`${models.calls + sorter.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
     for (const e of rows.slice(0, Number(opt('--show') ?? 15))) {
       log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
     }
@@ -490,11 +506,11 @@ async function main() {
   }
 
   // Events written before any model was available get classified now.
-  if (models.ready) {
+  if (sorter.ready) {
     const waiting = await db.select<{ id: string; title: string; venue_name: string | null; description: string | null; starts_at: string; status_note: string | null }>(
       `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,status_note.not.like.manual*)&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
     const cands = waiting.map(w => ({ title: w.title, venue_name: w.venue_name, description: w.description, starts_at: w.starts_at, has_time: true, engine: 'db' }) as Candidate);
-    const late = await classify(models, cands);
+    const late = await classify(sorter, cands);
     let n = 0;
     for (let i = 0; i < waiting.length; i++) {
       const e = late[i];
@@ -521,7 +537,7 @@ async function main() {
   await db.patch(`events?archived_at=is.null&or=(and(ends_at.is.null,starts_at.lt.${cutoff}),ends_at.lt.${now})`, { archived_at: now });
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
-  if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 10));
+  if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 30));
 
   for (const [id, h] of Object.entries(health)) {
     const [prev] = await db.select<{ consecutive_failures: number }>(`sources?id=eq.${encodeURIComponent(id)}&select=consecutive_failures`);
@@ -529,10 +545,10 @@ async function main() {
       ? { last_run_at: now, last_ok_at: now, last_yield: h.yield, consecutive_failures: 0, last_error: null }
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls + sorter.calls + english.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
-      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls,
+      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls + sorter.calls + english.calls,
       events_new: fresh.length, events_seen: existing.size, ok: !Object.values(health).some(h => !h.ok),
     });
   }

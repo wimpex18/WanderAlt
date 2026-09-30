@@ -58,7 +58,7 @@ export function homepageEvidence(p: Place, html: string, finalUrl: string, now =
   return result('unverified', 'Venue identity matched, but no recent dated event evidence in supported markup.');
 }
 
-export const dueWebsites = (places: Place[], now = Date.now(), limit = 10) => {
+export const dueWebsites = (places: Place[], now = Date.now(), limit = 30) => {
   const origins = new Set<string>();
   return places.filter(p => !p.merged_into && (p.status ?? 'active') === 'active' && httpUrl(p.website) &&
     !(p.verification_source === 'manual' && p.verification_state === 'review') &&
@@ -66,7 +66,7 @@ export const dueWebsites = (places: Place[], now = Date.now(), limit = 10) => {
     (!p.website_checked_at || now - Date.parse(p.website_checked_at) >= WEEK))
     .sort((a, b) => (a.website_checked_at ?? '').localeCompare(b.website_checked_at ?? '') || a.id.localeCompare(b.id))
     .filter(p => { const h = host(p.website!); if (origins.has(h)) return false; origins.add(h); return true; })
-    .slice(0, Math.max(0, Math.min(10, limit)));
+    .slice(0, Math.max(0, Math.min(40, limit)));
 };
 
 export async function checkWebsite(p: Place, now = new Date().toISOString()): Promise<Verification> {

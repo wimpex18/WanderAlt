@@ -34,3 +34,21 @@ test('a run\'s Workers AI budget can be lowered after construction', () => {
   m.neuronBudget = 0;
   assert.equal(m.neuronBudget, 0);
 });
+
+test('a classification batch that is cut off is read again in halves', async () => {
+  const asked: number[] = [];
+  const lane = {
+    name: 'test', model: 'm', key: 'k',
+    call: async (_s: string, user: string) => {
+      const items = JSON.parse(user) as { i: number }[];
+      asked.push(items.length);
+      if (items.length > 2) throw new Error('answer cut off at max_tokens');
+      return JSON.stringify({ items: items.map(x => ({ i: x.i, kind: 'gig', tags: ['jazz'], relevance: 0.8 })) });
+    },
+  };
+  const { classify } = await import('../llm.ts');
+  const cands = Array.from({ length: 4 }, (_, i) => ({ title: `Show ${i}`, description: null, starts_at: '2026-10-01T18:00:00Z', has_time: true, engine: 't' })) as never[];
+  const out = await classify(new Models([lane], 20, 0), cands, 4);
+  assert.deepEqual(asked, [4, 2, 2]);
+  assert.ok(out.every(e => e.relevance === 0.8 && e.kind === 'gig'));
+});
