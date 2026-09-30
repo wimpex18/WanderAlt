@@ -49,6 +49,21 @@ export class Db {
       ? this.req('POST', `${table}?on_conflict=${onConflict}`, rows, 'resolution=merge-duplicates,return=minimal')
       : null;
   }
+  /** Put a file into a public Storage bucket (service role); its public address. */
+  async storageUpload(bucket: string, path: string, bytes: Uint8Array, contentType: string): Promise<string> {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey: this.key,
+        ...(this.key.startsWith('eyJ') ? { authorization: `Bearer ${this.key}` } : {}),
+        'content-type': contentType, 'x-upsert': 'true', 'cache-control': 'max-age=86400',
+      },
+      body: Buffer.from(bytes),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) throw new Error(`storage upload ${path} → ${r.status} ${(await r.text()).slice(0, 200)}`);
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+  }
   patch(path: string, values: unknown) { return this.req('PATCH', path, values, 'return=minimal'); }
 }
 
