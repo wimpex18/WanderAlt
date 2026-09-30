@@ -65,10 +65,13 @@
      localhost, where the Worker is not wired. */
   const proxifyImage = (url) => {
     if (!url || typeof url !== 'string') return url;
+    const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+    /* A Facebook page's picture is fetched by our own function, so the reader
+       never contacts Facebook and the signed CDN address is never stored. */
+    const fb = /^https:\/\/graph\.facebook\.com\/([A-Za-z0-9.\-_]{3,80})\/picture(?:\?|$)/.exec(url);
+    if (fb) return local ? url : '/img/fb/' + fb[1];
     if (!/wikimedia\.org|wikipedia\.org/i.test(url))    return url;
-    if (location.hostname === 'localhost' ||
-        location.hostname === '127.0.0.1' ||
-        location.hostname === '')                       return url;
+    if (local)                                          return url;
     return '/img/wm/' + encodeURIComponent(url);
   };
 

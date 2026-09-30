@@ -10,8 +10,9 @@
 
 import { createHash } from 'node:crypto';
 import type { Place } from './places.ts';
-import { UA, get, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
+import { UA, get, getHtml, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
 import { closureReason, overpass, type OsmElement } from './osm.ts';
+import { probeImage, usableSize } from './imageprobe.ts';
 
 export interface VenueDetails {
   website?: string | null;
@@ -23,6 +24,9 @@ export interface VenueDetails {
   image_url?: string | null;
   image_attr?: string | null;
   image_source?: string | null;
+  /** Other pictures the site offers as its mark, best first; `weak` ones (a
+   *  logo linked to the homepage, a declared icon) are checked for size first. */
+  image_candidates?: { url: string; weak: boolean; icon?: boolean }[];
 }
 
 export type RichPlace = Place & VenueDetails;
@@ -215,20 +219,57 @@ export function ownLogoImg(html: string, base: string): string | null {
   return null;
 }
 
-/** The site's own touch icon (180 px and up): its mark, when it declares no logo. */
-export function siteIcon(html: string, base: string): string | null {
-  let best: { u: string; size: number } | null = null;
+/** An image inside a link to the site's own homepage: the logo in the header,
+ *  which is how nearly every site marks itself. Partner and sponsor images are
+ *  not wrapped in a link to the venue's own front page. */
+export function homeLinkImg(html: string, base: string): string | null {
+  const home = new URL(base);
+  for (const m of html.slice(0, 200_000).matchAll(/<a\b([^>]*)>([\s\S]{0,1500}?)<\/a>/gi)) {
+    const href = /\bhref=["']([^"']*)["']/i.exec(m[1])?.[1];
+    if (href == null) continue;
+    let target: URL;
+    try { target = new URL(decodeEntities(href), base); } catch { continue; }
+    const isHome = bareHost(target.href) === bareHost(base) && (target.pathname === '/' || target.pathname === home.pathname || /^\/(index|home|et|en|ee)\/?(\.html?)?$/i.test(target.pathname)) && !target.search;
+    if (!isHome) continue;
+    const img = /<img\b[^>]*>/i.exec(m[2])?.[0];
+    if (!img) continue;
+    const srcset = /\bsrcset=["']([^"']+)["']/i.exec(img)?.[1]?.split(',').map(x => x.trim().split(/\s+/)[0]).filter(Boolean).pop();
+    const src = /\b(?:data-src|src)=["']([^"']+)["']/i.exec(img)?.[1];
+    const u = httpUrl(decodeEntities(srcset ?? src ?? ''), base);
+    if (!u || /^data:/i.test(src ?? '')) continue;
+    const alt = /\balt=["']([^"']*)["']/i.exec(img)?.[1] ?? '';
+    if (NOT_A_LOGO.test(fileOf(u)) || NOT_A_LOGO.test(alt) || !/\.(svg|png|webp|jpe?g|gif)(\?|$)/i.test(new URL(u).pathname + '.png')) continue;
+    return u;
+  }
+  return null;
+}
+
+/** Cargo sites draw their pages from JSON, with no <img>: the header's media
+ *  item that links to "home" is the logo. Its file is served by Cargo's CDN. */
+export function cargoHomeLogo(html: string): string | null {
+  if (!/freight\.cargo\.site/.test(html)) return null;
+  const item = /(?:<|\\u003c)media-item\b[^>]*?\bhash=\\?"([A-Z]\d+)\\?"[^>]*?\bhref=\\?"(?:home|\/)\\?"/i.exec(html)
+    ?? /(?:<|\\u003c)media-item\b[^>]*?\bhref=\\?"(?:home|\/)\\?"[^>]*?\bhash=\\?"([A-Z]\d+)\\?"/i.exec(html);
+  if (!item) return null;
+  const name = new RegExp(`"name":"([^"]+)","hash":"${item[1]}"`).exec(html)?.[1];
+  return name && /\.(png|jpe?g|webp|svg)$/i.test(name) && !NOT_A_LOGO.test(name)
+    ? `https://freight.cargo.site/w/600/q/75/i/${item[1]}/${encodeURIComponent(name)}` : null;
+}
+
+/** Icons the site declares for itself, largest first. Small favicons fail the
+ *  size check later; a 180 px touch icon or a 182 px .ico is a mark. */
+export function declaredIcons(html: string, base: string): string[] {
+  const out: { u: string; size: number }[] = [];
   for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
     const tag = m[0];
     const rel = /\brel=["']([^"']+)["']/i.exec(tag)?.[1] ?? '';
     if (!/\b(apple-touch-icon(-precomposed)?|icon)\b/i.test(rel) || /mask-icon/i.test(rel)) continue;
     const href = httpUrl(decodeEntities(/\bhref=["']([^"']+)["']/i.exec(tag)?.[1] ?? ''), base);
-    if (!href || /\.(ico|svg)(\?|$)/i.test(href)) continue;
-    const touch = /apple-touch-icon/i.test(rel);
-    const size = Number(/sizes=["'](\d+)x\d+/i.exec(tag)?.[1] ?? (touch ? 180 : 0));
-    if (size >= 120 && (!best || size > best.size)) best = { u: href, size };
+    if (!href || /\.svg(\?|$)/i.test(href)) continue;
+    const size = Number(/sizes=["'](\d+)x\d+/i.exec(tag)?.[1] ?? (/apple-touch/i.test(rel) ? 180 : 0));
+    out.push({ u: href, size });
   }
-  return best?.u ?? null;
+  return [...new Map(out.sort((a, b) => b.size - a.size).map(x => [x.u, x])).keys()];
 }
 
 /** Homepage metadata identifies the website, not necessarily the venue:
@@ -247,22 +288,66 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
   const og = httpUrl(decodeEntities(meta('og:image') ?? ''), base);
   const filename = og ? (new URL(og).pathname.split('/').pop() ?? '').replace(/%20/gi, ' ') : '';
   const logo = LOGO_FILE.test(filename);
-  const image = (logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null)
-    ?? jsonLdLogo(html, base) ?? ownLogoImg(html, base) ?? siteIcon(html, base);
+  const strong = [(logo && !/placeholder|default[-_ ]?image/i.test(filename) ? og : null), jsonLdLogo(html, base), ownLogoImg(html, base)];
+  const header = [homeLinkImg(html, base), cargoHomeLogo(html)];
+  const candidates = [...new Map([...strong.filter((u): u is string => !!u).map(url => ({ url, weak: false })),
+    ...header.filter((u): u is string => !!u).map(url => ({ url, weak: true })),
+    ...declaredIcons(html, base).map(url => ({ url, weak: true, icon: true }))].map(c => [c.url, c])).values()];
+  const image = candidates[0]?.url ?? null;
   const desc = meta('og:description') ?? meta('description');
   return {
     instagram: first('instagram.com'),
     facebook: first('facebook.com'),
     image_url: image,
+    image_candidates: candidates,
     image_attr: image ? `Logo from ${new URL(base).hostname.replace(/^www\./, '')}` : null,
     image_source: image ? 'logo' : null,
     description: desc ? clip(decodeEntities(desc).trim(), 400) : null,
   };
 }
 
+/** The first candidate that is a real mark: a strong one (named logo, JSON-LD)
+ *  unless it is tiny, a weak one (header link, declared icon) only after its
+ *  size was read: 48 px for a header logo, 128 px and square for an icon. */
+export async function pickLogo(candidates: { url: string; weak: boolean; icon?: boolean }[], probe: typeof probeImage = probeImage): Promise<string | null> {
+  for (const c of candidates.slice(0, 5)) {
+    const size = await probe(c.url);
+    // A wordmark may be wide; an icon must be square-ish and 128 px or more.
+    if (size ? (c.icon ? usableSize(size, 128, 2) : usableSize(size, 48)) : !c.weak) return c.url;
+  }
+  return null;
+}
+
+const FB_RESERVED = /^(pages|people|profile\.php|groups|events|public|share|sharer|p|watch|marketplace|login|policies|tr)$/i;
+/** The page name of a Facebook page link, when it names a page (not a group,
+ *  an event or a numeric profile). */
+export function facebookPage(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (!/(^|\.)facebook\.com$/i.test(u.hostname)) return null;
+    const seg = u.pathname.split('/').filter(Boolean)[0] ?? '';
+    return /^[A-Za-z0-9.\-_]{3,80}$/.test(seg) && !FB_RESERVED.test(seg) ? seg : null;
+  } catch { return null; }
+}
+
+/** A Facebook page's public profile picture through Facebook's documented
+ *  Graph API picture endpoint (no login, no token, one request), for a page
+ *  the venue's own site or record links. Not a silhouette, at least 100 px. */
+export async function facebookPicture(page: string, fetcher: typeof fetch = fetch): Promise<string | null> {
+  try {
+    const r = await fetcher(`https://graph.facebook.com/${encodeURIComponent(page)}/picture?redirect=false&type=large`, {
+      headers: { 'user-agent': UA }, signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) return null;
+    const d = (await r.json() as { data?: { is_silhouette?: boolean; width?: number; height?: number } }).data;
+    if (!d || d.is_silhouette !== false || Math.min(d.width ?? 0, d.height ?? 0) < 100) return null;
+    return `https://graph.facebook.com/${encodeURIComponent(page)}/picture?type=large`;
+  } catch { return null; }
+}
+
 /** Fill what a place lacks; never overwrite what it has. Wikidata's photo
  *  beats a website's logo. */
-export async function enrichPlace(p: RichPlace): Promise<Partial<RichPlace>> {
+export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {}): Promise<Partial<RichPlace>> {
   const patch: Partial<RichPlace> = {};
   const take = (d: VenueDetails) => {
     for (const k of ['website', 'instagram', 'facebook', 'description'] as const) {
@@ -276,9 +361,26 @@ export async function enrichPlace(p: RichPlace): Promise<Partial<RichPlace>> {
   const site = patch.website ?? p.website;
   if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description)) {
     try {
-      const html = await (await get(site, { accept: 'text/html', timeoutMs: 15_000 })).text();
-      take(fromHomepage(html.slice(0, 400_000), site, p.name));
-    } catch { /* an unreachable site leaves the place as it was */ }
+      const html = await getHtml(site, { timeoutMs: 15_000 });
+      const d = fromHomepage(html.slice(0, 400_000), site, p.name);
+      // Which of the site's candidate marks is big enough to be one.
+      if (!p.image_url && !patch.image_url && d.image_candidates?.length) {
+        const url = await pickLogo(d.image_candidates);
+        d.image_url = url;
+        if (!url) { d.image_attr = null; d.image_source = null; }
+      }
+      take(d);
+    } catch (e) {
+      // An unreachable site leaves the place as it was; the run says how many.
+      console.warn(`[venues] ${p.name}: homepage not read (${(e as Error).message.slice(0, 80)})`);
+    }
+  }
+  // Last resort: the venue's own Facebook page picture, for a link its record
+  // or its site gave (handleFits already tied a site link to the venue).
+  if (opts.facebook !== false && !p.image_url && !patch.image_url) {
+    const page = facebookPage(patch.facebook ?? p.facebook);
+    const url = page ? await facebookPicture(page) : null;
+    if (url) { patch.image_url = url; patch.image_attr = "Profile picture of the venue's Facebook page"; patch.image_source = 'logo'; }
   }
   return patch;
 }

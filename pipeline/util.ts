@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 
 export const UA = 'WanderAlt/0.9 (+https://wanderalt.app; events for Tallinn)';
 
@@ -13,6 +14,21 @@ export async function get(url: string, opts: { timeoutMs?: number; accept?: stri
   });
   if (!r.ok) throw new Error(`${r.status} ${url}`);
   return r;
+}
+
+/** A page's HTML. Some hosts refuse Node's TLS handshake with a 403 and serve
+ *  the same page to curl, with the same honest user agent; a page that gave a
+ *  403 is asked for once more with curl. Anything else is thrown as before. */
+export async function getHtml(url: string, opts: { timeoutMs?: number } = {}): Promise<string> {
+  try {
+    return await (await get(url, { accept: 'text/html', timeoutMs: opts.timeoutMs })).text();
+  } catch (e) {
+    if (!/^403 /.test((e as Error).message)) throw e;
+    const r = spawnSync('curl', ['-sS', '-L', '--fail', '--max-time', String(Math.ceil((opts.timeoutMs ?? 20_000) / 1000)),
+      '--max-filesize', '3000000', '-A', UA, '-H', 'accept: text/html', url], { encoding: 'utf8', maxBuffer: 4 << 20 });
+    if (r.status !== 0 || !r.stdout) throw e;
+    return r.stdout;
+  }
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };

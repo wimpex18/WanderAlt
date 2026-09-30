@@ -131,7 +131,7 @@ interface Pending { rawId: number | null; item: RawItem; source: Source }
 async function main() {
   // Keep some Workers AI allocation for new events' English copy after writes.
   const callBudget = Number(process.env.LLM_CALL_BUDGET ?? 60);
-  const englishBudget = DRY ? 0 : Math.min(6, Math.max(0, callBudget));
+  const englishBudget = DRY ? 0 : Math.min(10, Math.max(0, callBudget));
   // Three readers share one neuron counter, each with a ceiling inside the
   // run's allowance R: prose extraction up to R/2, classification (a smaller,
   // cheaper Workers AI model) up to 3R/4, English copy up to R.
@@ -382,12 +382,12 @@ async function main() {
 
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    // A place with no picture is looked at again after a month: sites add logos.
-    const monthAgo = Date.now() - 30 * 86_400_000;
-    const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website)
-      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < monthAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
+    // A place with no picture is looked at again after a week: sites add logos.
+    const weekAgo = Date.now() - 7 * 86_400_000;
+    const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website || p.facebook)
+      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
     for (const p of due) {
-      Object.assign(p, await enrichPlace(p), { enriched_at: new Date().toISOString() });
+      Object.assign(p, await enrichPlace(p, { facebook: !flag('--no-facebook') }), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
     }
     if (due.length) log(`enriched ${due.length} places`);

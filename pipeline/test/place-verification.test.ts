@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Place } from '../places.ts';
-import { checkWebsite, dueWebsites, homepageEvidence } from '../place-verification.ts';
+import { checkWebsite, dueWebsites, homepageEvidence, programmeLink } from '../place-verification.ts';
 import { verifyPlaces } from '../maintenance.ts';
 import type { Db } from '../db.ts';
 
@@ -67,8 +67,9 @@ test('homepage requests are bounded and never retry rate limits or accept non-HT
     assert.equal(calls, 1);
     globalThis.fetch = (async () => new Response('{}', { headers: { 'content-type': 'application/json' } })) as typeof fetch;
     await assert.rejects(checkWebsite(venue(), now), /not HTML/);
-    globalThis.fetch = (async () => new Response('x'.repeat(400_001), { headers: { 'content-type': 'text/html' } })) as typeof fetch;
-    await assert.rejects(checkWebsite(venue(), now), /size limit/);
+    // A page over 400 KB is read as far as that, not refused.
+    globalThis.fetch = (async () => new Response(html(event()) + 'x'.repeat(500_000), { headers: { 'content-type': 'text/html' } })) as typeof fetch;
+    assert.equal((await checkWebsite(venue(), now)).state, 'verified');
     globalThis.fetch = (async () => new Response(html(event()), { headers: { 'content-type': 'text/html' } })) as typeof fetch;
     assert.equal((await checkWebsite(venue(), now)).state, 'verified');
   } finally { globalThis.fetch = original; }
@@ -88,5 +89,28 @@ test('website outages preserve verification; failed database writes fail mainten
     globalThis.fetch = (async () => new Response(html(event()), { headers: { 'content-type': 'text/html' } })) as typeof fetch;
     await assert.rejects(verifyPlaces(db, 'tallinn'), /Database write failed/);
     assert.equal(patches.length, 1);
+  } finally { globalThis.fetch = original; }
+});
+
+test('a homepage without dated events is followed to the venue\'s own events page, once', async () => {
+  const original = globalThis.fetch;
+  const asked: string[] = [];
+  const home = '<h1>Test Venue</h1><a href="/about">About</a><a href="/kava">Kava</a><a href="https://other.example/events">Elsewhere</a>';
+  try {
+    assert.equal(programmeLink(home, 'https://venue.example/'), 'https://venue.example/kava');
+    assert.equal(programmeLink('<a href="https://other.example/events">Events</a>', 'https://venue.example/'), null);
+    globalThis.fetch = (async (u: string | URL | Request) => {
+      asked.push(String(u));
+      return new Response(String(u).endsWith('/kava') ? html(event()) : home, { headers: { 'content-type': 'text/html' } });
+    }) as typeof fetch;
+    const result = await checkWebsite(venue(), now);
+    assert.equal(result.state, 'verified');
+    assert.match(result.note, /events page/);
+    assert.deepEqual(asked, ['https://venue.example/', 'https://venue.example/kava']);
+    // No events page either: the homepage's answer stands and no third page is read.
+    asked.length = 0;
+    globalThis.fetch = (async (u: string | URL | Request) => { asked.push(String(u)); return new Response(home, { headers: { 'content-type': 'text/html' } }); }) as typeof fetch;
+    assert.equal((await checkWebsite(venue(), now)).state, 'unverified');
+    assert.equal(asked.length, 2);
   } finally { globalThis.fetch = original; }
 });
