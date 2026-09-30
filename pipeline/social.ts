@@ -65,6 +65,7 @@ async function main() {
     log(`Threads token belongs to @${who.username}`);
     const hits = await threads.keywordSearch(token, 'Tallinn').catch(e => { log(`Threads keyword search: ${(e as Error).message}`); return null; });
     if (hits) log(`Threads keyword search "Tallinn": ${hits.length} posts, ${hits.filter(h => h.username && h.username !== who.username).length} from other accounts${hits.length && !hits.some(h => h.username && h.username !== who.username) ? ' (own posts only: public search needs App Review)' : ''}`);
+    for (const line of await threads.probe(token, who.username)) log(`Threads probe, ${line}`);
     const lookup = await threads.profileLookup(token, 'instagram');
     log(`Threads profile lookup @instagram: ${lookup ? 'works' : 'refused'}; ${await threads.profileLookup(token, 'laine.bar') ? 'a venue profile was found' : 'a venue profile is not available yet'}`);
     return;
