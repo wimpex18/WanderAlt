@@ -16,12 +16,26 @@
   const toast = (m, l, u) => { if (window.WA.Toast) window.WA.Toast.show(m, l, u); };
 
   let listFilter = '';
+  const details = new Map();
+  const pending = new Set();
+  const failed = new Set();
+
+  const loadMissing = (id) => {
+    if (pending.has(id) || failed.has(id) || !window.WA.byId) return;
+    pending.add(id);
+    window.WA.byId(id).then(found => {
+      details.set(id, found);
+    }).catch(() => { failed.add(id); }).finally(() => {
+      pending.delete(id);
+      render();
+    });
+  };
 
   const gather = () => {
     const ids = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {});
     const picks = window.WA._catalogAll || [];
     const venues = window.WA._venuesAll || [];
-    const out = { dated: [], places: [], gone: [] };
+    const out = { dated: [], places: [], gone: [], unavailable: [] };
     for (const id of ids) {
       const p = picks.find(e => e.id === id);
       if (p) {
@@ -31,8 +45,19 @@
       }
       const v = venues.find(x => x.id === id);
       if (v) { out.places.push(v); continue; }
-      /* Not in the loaded set: say the honest minimum only once data is live. */
-      if (window.WA.DATA_LIVE) out.gone.push({ id, title: '', why: 'the source stopped listing it' });
+      /* Recommendations exclude unverified places and archived events.
+         A narrower catalogue is not evidence that a save is gone. */
+      if (details.has(id)) {
+        const found = details.get(id);
+        if (found?.kind === 'place') { out.places.push(found.e); continue; }
+        if (found?.kind === 'event') {
+          if (found.archivedAt || W().hasEnded(found.e)) out.gone.push({ id, title: found.e.title, why: 'it is no longer in the programme' });
+          else out.dated.push(found.e);
+          continue;
+        }
+        if (window.WA.DATA_LIVE) { out.gone.push({ id, title: '', why: 'it is no longer listed' }); continue; }
+      } else loadMissing(id);
+      out.unavailable.push({ id, failed: failed.has(id) });
     }
     out.dated.sort(window.WA.Geo.byDateThenSoonest());
     return out;
@@ -75,7 +100,7 @@
 
   const render = () => {
     const all = gather();
-    const total = all.dated.length + all.places.length + all.gone.length;
+    const total = all.dated.length + all.places.length + all.gone.length + all.unavailable.length;
     const L = window.WA.Lists;
     const viewing = listFilter && L ? L.byId(listFilter) : null;
     $('saved-title').textContent = viewing ? viewing.name : total ? `${total} saved` : 'Saved';
@@ -98,6 +123,11 @@
         ${places.length ? `<ul>${places.map(v => R().placeRow(v, { drop: true })).join('')}</ul>`
           : '<p class="wa-note">Save a record shop or a gallery from its page and it waits here for a free afternoon.</p>'}</section>
     </div>
+    ${all.unavailable.filter(inList).length ? `<section class="wa-sect" aria-live="polite">${R().sect({ title: 'Saved listings awaiting details', n: all.unavailable.filter(inList).length })}
+      <p class="wa-note">These saves are kept. Their details ${pending.size ? 'are loading' : 'could not load'}.</p>
+      ${all.unavailable.filter(inList).map(g => `<div class="wa-gone"><span>A saved listing</span>
+        <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}
+      ${!pending.size ? '<button class="wa-btn" type="button" data-retry-saved>Try again</button>' : ''}</section>` : ''}
     ${!viewing && all.gone.length ? `<section class="wa-sect">${R().sect({ title: 'Over since you saved it', n: all.gone.length })}
       ${all.gone.map(g => `<div class="wa-gone"><span><span class="wa-gone__title">${esc(g.title || 'A listing')}</span>, ${esc(g.why)}.</span>
         <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}</section>` : ''}`;
@@ -116,6 +146,7 @@
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
+    if (hit('[data-retry-saved]')) { details.clear(); failed.clear(); render(); return; }
     if (hit('#sheet-close')) { $('sheet').close(); return; }
     if (hit('#new-list')) { openNew(); return; }
     if (hit('#list-create')) {
@@ -147,8 +178,9 @@
 
   const pre = () => { $('saved-body').innerHTML = R().skelRows(3); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
-  document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
+  document.addEventListener('wa:catalog-ready', () => { details.clear(); failed.clear(); render(); R().locateIfGranted(); });
   document.addEventListener('wa:data-live', render);
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:bookmarks-synced', render);
+  window.addEventListener('online', () => { details.clear(); failed.clear(); render(); });
 })();

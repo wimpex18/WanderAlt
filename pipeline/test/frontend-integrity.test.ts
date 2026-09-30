@@ -84,6 +84,17 @@ test('unverified and closed places never appear in shared recommendations, even 
   assert.deepEqual(Array.from(p.WA.R.places(), (v: any) => v.id), ['open']);
 });
 
+test('an event without a supplied time does not claim to run all day', () => {
+  const p = page();
+  p.WA.Geo.startMinutes = () => null;
+  p.WA.Icon = Object.assign(() => '', { kind: () => '' });
+  p.WA.Picto = { kind: () => '' };
+  p.load('when.js'); p.load('render.js');
+  const markup = p.WA.R.row({ id: 'untimed', title: 'Open Mic', kind: 'gig', startsAt: '2026-10-01T09:00:00Z' });
+  assert.match(markup, /Time not listed/);
+  assert.doesNotMatch(markup, /All day|wa-now/);
+});
+
 test('event pictures stay event-specific in the catalogue and direct details', async () => {
   const picks = [
     { id: 'artwork', city: 'tallinn', title: 'Own artwork', venue_id: 'venue', kind: 'gig', image_url: 'https://event.example/poster.jpg' },

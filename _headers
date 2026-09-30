@@ -1,4 +1,5 @@
-# Cloudflare Pages headers config — applied to every response.
+# Cloudflare Pages headers config — static responses only.
+# functions/_middleware.js sets the same security policy on Function responses.
 # Docs: https://developers.cloudflare.com/pages/configuration/headers/
 # Order matters: more specific paths override less specific.
 

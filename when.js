@@ -100,6 +100,7 @@
 
   const isTonight = (e) => {
     if (!e) return false;
+    if (e.startsAt && !isNaN(Date.parse(e.startsAt))) return resolveKey(e) === todayKey();
     if (e.tonight === true) return true;
     if (norm(e.day) === 'ton') return true;
     return resolveKey(e) === todayKey();
@@ -108,6 +109,10 @@
   /* "This week" is the coming seven days. */
   const isThisWeek = (e) => {
     if (!e) return false;
+    if (e.startsAt && !isNaN(Date.parse(e.startsAt))) {
+      const k = resolveKey(e);
+      return k >= todayKey() && k <= keyPlus(6);
+    }
     if (e.thisWeek === true) return true;
     /* Anything on tonight is trivially in the coming week. */
     if (isTonight(e)) return true;

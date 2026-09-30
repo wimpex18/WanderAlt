@@ -250,7 +250,7 @@
       top = `<span class="wa-row__time wa-row__time--word">${esc(word)}</span>${clock ? `<span class="wa-row__time">${esc(clock)}</span>` : ''}`;
     }
     else if (clock) top = `<span class="wa-row__time">${esc(clock)}</span>`;
-    else top = `<span class="wa-row__time wa-row__time--word">${key ? 'All day' : 'Open'}</span>`;
+    else top = `<span class="wa-row__time wa-row__time--word">${key ? 'Time not listed' : 'Open'}</span>`;
 
     const m = walk(e);
     const bottom = m != null

@@ -162,3 +162,14 @@ test('stored copies join after venue canonicalisation; different screenings, dat
   const seen = new Seen([{ id: 'later', title: 'Murdja', where: 'salme', start: 20_000 }, { id: 'near', title: 'Murdja', where: 'salme', start: 10_000 }]);
   assert.equal(seen.match('Murdja', 'salme', 11_000), 'near');
 });
+
+test('screening boilerplate cannot merge different films in the same room', () => {
+  const start = Date.parse('2026-10-02T15:00:00Z');
+  const seen = new Seen([{ id: 'nightborn', title: 'Screening at Kai Cinema: Nightborn', where: 'kai', start }]);
+  assert.equal(seen.match('Screening at Kai Cinema: Sisters', 'kai', start), null);
+  assert.equal(seen.match('Special screening at Kai Cinema: Nightborn', 'kai', start), 'nightborn');
+  assert.equal(seen.match('Nightborn', 'kai', start), 'nightborn');
+  const et = new Seen([{ id: 'oolaps', title: 'Linastus Kai kinos: Öölaps', where: 'kai', start }]);
+  assert.equal(et.match('Linastus Kai kinos: Sinu nimi', 'kai', start), null);
+  assert.equal(et.match('Öölaps', 'kai', start), 'oolaps');
+});

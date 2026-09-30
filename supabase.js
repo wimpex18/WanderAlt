@@ -30,12 +30,18 @@
   window.WA.canonicalId = (id) => redirects.get(id) || id;
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+  let catalogueCached = false;
 
-  const get = (table, qs, signal) =>
+  const get = (table, qs, signal, lookup = false) =>
     fetch(`${BASE}/rest/v1/${table}?${qs}`, { headers, ...(signal ? { signal } : {}) })
       .then(r => {
         if (!r.ok) throw new Error(`${table} ${r.status}`);
-        return r.json();
+        const cached = !!r.headers?.get('x-wa-cached-at');
+        if (cached) catalogueCached = true;
+        return r.json().then(rows => {
+          if (lookup && cached && !rows.length) throw new Error('Cached lookup cannot confirm a missing listing');
+          return rows;
+        });
       });
 
   /* Same as get(), but walks PostgREST's 1000-row ceiling with
@@ -312,8 +318,8 @@
 
     /* Saved's change-watch gates its destructive "no longer listed"
        detection on this: without live data every bookmark looks "gone". */
-    window.WA.DATA_LIVE = picksOk;
-    if (picksOk && venuesOk) writeSnapshot(same ? null : body, sig);
+    window.WA.DATA_LIVE = picksOk && !catalogueCached;
+    if (picksOk && venuesOk && !catalogueCached) writeSnapshot(same ? null : body, sig);
 
     if (snap && !picksOk) return;                     /* offline: keep what is drawn */
     if (same) {                                       /* the snapshot was right */
@@ -342,19 +348,22 @@
       } catch (_) { /* the direct row lookup still works */ }
     }
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
+    let lookupError = null;
     try {
-      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`);
+      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`, undefined, true);
       if (picks && picks[0]) {
         return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
       }
-    } catch (_) { /* fall through to venues */ }
+    } catch (error) { lookupError = error; }
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status`
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status`, undefined, true
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
-    } catch (_) { /* nothing more to try */ }
+    } catch (error) { lookupError = error; }
+    /* A failed request is not evidence that a saved listing disappeared. */
+    if (lookupError) throw lookupError;
     return null;
   };
 

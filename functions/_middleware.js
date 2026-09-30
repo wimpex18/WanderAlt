@@ -81,7 +81,22 @@ const rewrite = (res, { title, description, image, photo }) => {
   return rw.transform(res);
 };
 
+/* _headers only covers static responses. This middleware runs on every
+   route, including rewritten social previews and API responses. */
 export async function onRequest(context) {
+  const response = await pageResponse(context);
+  const secured = new Response(response.body, response);
+  const headers = secured.headers;
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'SAMEORIGIN');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), payment=(), usb=(), geolocation=(self)');
+  headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://tiles.openfreemap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'");
+  return secured;
+}
+
+async function pageResponse(context) {
   const { request, next } = context;
   const url = new URL(request.url);
   const p = url.pathname;

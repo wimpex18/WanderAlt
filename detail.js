@@ -449,11 +449,17 @@
   const lookUp = async () => {
     if (lookedUp) return;
     lookedUp = true;
-    const found = window.WA.byId ? await window.WA.byId(param('id')) : null;
+    let found;
+    try { found = window.WA.byId ? await window.WA.byId(param('id')) : null; }
+    catch (_) {
+      main().innerHTML = R().empty({ icon: 'calendar', title: 'This listing could not load.',
+        body: 'Check your connection and try again.', actions: [{ label: 'Try again', act: 'retry-detail' }] });
+      return;
+    }
     if (!found) { deadEnd('We have no listing at that address.', 'The link may be mistyped, or it may be older than a change here.'); return; }
     if (found.archivedAt) {
       const d = new Date(found.archivedAt);
-      deadEnd('That listing has closed down.', `Listings expire, which is normal.${isNaN(d) ? '' : ` This one came off on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`}`);
+      deadEnd('That event is no longer in the programme.', `It may have already happened.${isNaN(d) ? '' : ` It came off on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`}`);
       return;
     }
     extra = { ...found, requestedId: param('id') };
@@ -506,6 +512,7 @@
 
   document.addEventListener('click', (ev) => {
     const hit = (s) => ev.target.closest && ev.target.closest(s);
+    if (hit('[data-act="retry-detail"]')) { lookedUp = false; skeleton(); render(); return; }
     const id = param('id');
     const L = window.WA.Lists;
     const sheet = document.getElementById('sheet');
