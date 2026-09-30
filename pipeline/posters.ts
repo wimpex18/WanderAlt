@@ -98,7 +98,7 @@ export function pagesFor(ev: PosterEvent, extra: string[] = []): string[] {
 
 /** Give up to `limit` upcoming published events without artwork the poster
  *  their own page attaches to them. Returns how many were set. */
-export async function attachPosters(db: Db, city: string, limit = 15): Promise<number> {
+export async function attachPosters(db: Db, city: string, limit = 30): Promise<number> {
   const now = new Date().toISOString();
   const events = await db.select<PosterEvent>(
     `events?city=eq.${city}&status=eq.published&archived_at=is.null&merged_into=is.null&image_url=is.null&starts_at=gte.${now}` +
@@ -109,6 +109,10 @@ export async function attachPosters(db: Db, city: string, limit = 15): Promise<n
   const extra = new Map<string, string[]>();
   for (const s of srcs) if (s.url) extra.set(s.event_id, [...(extra.get(s.event_id) ?? []), s.url]);
 
+  // Events whose page attaches no picture stay in the query, so the soonest
+  // ones would use every attempt every run. Each run tries them in a fresh
+  // order instead, and over a day reaches them all.
+  for (let i = events.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [events[i], events[j]] = [events[j], events[i]]; }
   let set = 0, tried = 0;
   const lastHit = new Map<string, number>();
   for (const ev of events) {

@@ -230,6 +230,7 @@ Return every event the text announces that takes place in Tallinn on a stated da
 Rules:
 - Copy facts; never invent a date, time, venue, price or link. Use null when the text does not say.
 - venue is the place where it happens (a club, gallery, hall, street address). Never the event's own name or the festival's name; null if no place is given.
+- venue and address are written in Latin script, as the place is named in Tallinn (Estonian or English): for a Russian text give "Estonia Theatre", not "театр «Эстония»", in the nominative case, without prepositions. If you cannot tell the Latin-script name, use null.
 - Resolve dates like "28.09" or "this Friday" against the posting date you are given. Include past dated announcements too; the caller filters dates after checking whether the post covers several events.
 - A multi-day run with separate dated shows is one entry per date; an exhibition open over a span is one entry with start and end dates.
 - state is "scheduled" unless the text says this event is "cancelled", "postponed", "sold_out", or "few_left" (last tickets, 80% sold). A cancelled event is still returned.
@@ -253,6 +254,12 @@ export function chunkText(text: string, size = 5000): string[] {
   if (cur) parts.push(cur);
   return parts;
 }
+
+/** A venue or address in Cyrillic is the source's phrase, not a place's name. */
+export const latinOnly = (v: string | null | undefined): string | null => {
+  const t = v?.trim();
+  return t && !/[\u0400-\u04ff]/.test(t) ? t : null;
+};
 
 export async function extractEvents(
   models: Models,
@@ -287,8 +294,8 @@ export async function extractEvents(
       starts_at: starts,
       ends_at: e.end ? tallinnToIso(e.end) : null,
       has_time: /\d{1,2}:\d{2}/.test(e.start ?? ''),
-      venue_name: e.venue?.trim() || null,
-      address: e.address?.trim() || null,
+      venue_name: latinOnly(e.venue),
+      address: latinOnly(e.address),
       is_free: free ? true : nums.length ? false : null,
       price_min: free ? 0 : nums.length ? Math.min(...nums) : null,
       price_max: nums.length > 1 ? Math.max(...nums) : null,

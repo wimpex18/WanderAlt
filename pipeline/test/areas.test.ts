@@ -52,3 +52,25 @@ test('a classification batch that is cut off is read again in halves', async () 
   assert.deepEqual(asked, [4, 2, 2]);
   assert.ok(out.every(e => e.relevance === 0.8 && e.kind === 'gig'));
 });
+
+test('a Cyrillic venue is never a place', async () => {
+  const { latinOnly } = await import('../llm.ts');
+  const { Places } = await import('../places.ts');
+  const { retireForeignScriptPlaces } = await import('../maintenance.ts');
+  assert.equal(latinOnly('Нымме'), null);
+  assert.equal(latinOnly(' Kanuti Gildi SAAL '), 'Kanuti Gildi SAAL');
+  assert.equal(latinOnly(null), null);
+  const places = new Places([], 'tallinn', 0);
+  assert.equal(await places.resolve({ venue_name: 'театр «Эстония»' } as never, false), null);
+  const calls: string[] = [];
+  const db = {
+    patch: async (path: string) => { calls.push(`PATCH ${path}`); },
+    req: async (method: string, path: string) => { calls.push(`${method} ${path}`); },
+  };
+  const kept = await retireForeignScriptPlaces(db as never, [
+    { id: 'tallinn--4', city: 'tallinn', name: 'Нымме', aliases: [], lat: null } as never,
+    { id: 'tallinn-nomme', city: 'tallinn', name: 'Nõmme Kultuurikeskus', aliases: [], lat: 59.3 } as never,
+  ]);
+  assert.deepEqual(kept.map(p => p.id), ['tallinn-nomme']);
+  assert.deepEqual(calls, ['PATCH events?place_id=eq.tallinn--4', 'DELETE places?id=eq.tallinn--4']);
+});

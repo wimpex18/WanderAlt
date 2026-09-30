@@ -60,14 +60,14 @@ test('titles and pages', () => {
     ['https://fienta.com/x']);
 });
 
-import { commonsUrl, siteIcon, placeFromOsm } from '../venues.ts';
+import { commonsUrl, declaredIcons, placeFromOsm, homeLinkImg, cargoHomeLogo, pickLogo, facebookPage, facebookPicture } from '../venues.ts';
+import { imageSize, usableSize } from '../imageprobe.ts';
 
 test('a vector logo is asked for as a PNG; the site icon is a logo of last resort', () => {
   assert.match(commonsUrl('Some logo.svg'), /\/thumb\/.+\/Some_logo\.svg\/512px-Some_logo\.svg\.png$/);
   assert.match(commonsUrl('Photo.jpg'), /commons\/[0-9a-f]\/[0-9a-f]{2}\/Photo\.jpg$/);
   const head = '<link rel="icon" href="/f-32.png" sizes="32x32"><link rel="icon" href="/f-192.png" sizes="192x192"><link rel="apple-touch-icon" href="/touch.png">';
-  assert.equal(siteIcon(head, 'https://venue.example/'), 'https://venue.example/f-192.png');
-  assert.equal(siteIcon('<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/t.png" sizes="32x32">', 'https://venue.example/'), null);
+  assert.deepEqual(declaredIcons(head, 'https://venue.example/'), ['https://venue.example/f-192.png', 'https://venue.example/touch.png', 'https://venue.example/f-32.png']);
   assert.equal(fromHomepage(head, 'https://venue.example/', 'X').image_source, 'logo');
 });
 
@@ -99,4 +99,53 @@ test('a used-up daily allocation is not retried or waited for', async () => {
   await m.ask('s', 'u', {});
   assert.equal(calls, 1);                       // asked once, then skipped
   assert.ok(Date.now() - t0 < 2000);            // no 20 s waits
+});
+
+test('the logo in the header link to the homepage counts; a sponsor ribbon does not', () => {
+  const site = 'https://venue.example/';
+  const header = '<header><a href="/" class="brand"><img src="/media/mark.png" alt="Venue"></a></header><footer><a href="https://sponsor.example/"><img src="/media/sponsor.png"></a></footer>';
+  assert.equal(homeLinkImg(header, site), 'https://venue.example/media/mark.png');
+  assert.equal(homeLinkImg('<a href="https://sponsor.example/"><img src="/x.png"></a>', site), null);
+  assert.equal(homeLinkImg('<a href="/tickets"><img src="/x.png"></a>', site), null);
+  assert.equal(homeLinkImg('<a href="/"><img src="/img/sponsor-logo.png"></a>', site), null);
+  assert.equal(homeLinkImg('<a href="/"><img data-src="//cdn.example/logo-wide.png" alt="x"></a>', site), 'https://cdn.example/logo-wide.png');
+});
+
+test('a Cargo site\'s logo is the media item that links home', () => {
+  const html = String.raw`freight.cargo.site {"content":"\u003ccolumn-unit slot=\"0\">\u003cmedia-item animate=\"5\" class=\"linked\" hash=\"T2595851025356290867978134038983\" href=\"home\" rel=\"history\">\u003c/media-item>"} {"display_name":"214x.png","name":"214x.png","hash":"T2595851025356290867978134038983","width":2382}`;
+  assert.equal(cargoHomeLogo(html), 'https://freight.cargo.site/w/600/q/75/i/T2595851025356290867978134038983/214x.png');
+  assert.equal(cargoHomeLogo('<media-item hash="T1" href="about">'), null);
+  assert.equal(cargoHomeLogo('<a href="/">no cargo here</a>'), null);
+});
+
+test('image sizes are read from the file header, and only real marks pass', async () => {
+  const png = (w: number, h: number) => { const b = new Uint8Array(24); b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); new DataView(b.buffer).setUint32(16, w); new DataView(b.buffer).setUint32(20, h); return b; };
+  const ico = (w: number) => { const b = new Uint8Array(22); b.set([0, 0, 1, 0, 1, 0, w, w]); return b; };
+  assert.deepEqual(imageSize(png(300, 200)), { width: 300, height: 200 });
+  assert.deepEqual(imageSize(ico(182)), { width: 182, height: 182 });
+  assert.equal(imageSize(ico(16))!.width, 16);
+  assert.equal(imageSize(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>'))!.vector, true);
+  assert.equal(imageSize(new TextEncoder().encode('hello')), null);
+  assert.equal(usableSize({ width: 182, height: 182 }, 128), true);
+  assert.equal(usableSize({ width: 32, height: 32 }, 128), false);
+  assert.equal(usableSize({ width: 1200, height: 200 }, 48), true);         // a wide wordmark
+  assert.equal(usableSize({ width: 2000, height: 100 }, 48), false);        // a strip
+  const sizes: Record<string, { width: number; height: number } | null> = { 'https://a/f.ico': { width: 16, height: 16 }, 'https://a/t.png': { width: 180, height: 180 }, 'https://a/gone.png': null };
+  const probe = async (u: string) => sizes[u] ?? null;
+  assert.equal(await pickLogo([{ url: 'https://a/f.ico', weak: true, icon: true }, { url: 'https://a/t.png', weak: true, icon: true }], probe as never), 'https://a/t.png');
+  assert.equal(await pickLogo([{ url: 'https://www.tallinn.ee/themes/main_site/logo.svg', weak: false }], probe as never), null);   // the city's mark
+  assert.equal(await pickLogo([{ url: 'https://a/gone.png', weak: true }], probe as never), null);      // unreadable weak candidate
+  assert.equal(await pickLogo([{ url: 'https://a/gone.png', weak: false }], probe as never), 'https://a/gone.png');
+});
+
+test('a Facebook page picture only for a page link, never a silhouette', async () => {
+  assert.equal(facebookPage('https://www.facebook.com/uuslaine'), 'uuslaine');
+  assert.equal(facebookPage('https://www.facebook.com/events/123'), null);
+  assert.equal(facebookPage('https://www.facebook.com/profile.php?id=5'), null);
+  assert.equal(facebookPage('https://evil.example/uuslaine'), null);
+  const reply = (data: unknown) => (async () => new Response(JSON.stringify({ data }))) as typeof fetch;
+  assert.equal(await facebookPicture('uuslaine', reply({ is_silhouette: false, width: 200, height: 200 })), 'https://graph.facebook.com/uuslaine/picture?type=large');
+  assert.equal(await facebookPicture('uuslaine', reply({ is_silhouette: true, width: 200, height: 200 })), null);
+  assert.equal(await facebookPicture('uuslaine', reply({ is_silhouette: false, width: 50, height: 50 })), null);
+  assert.equal(await facebookPicture('nosuch', (async () => new Response('{}', { status: 400 })) as typeof fetch), null);
 });

@@ -3,7 +3,7 @@
 import type { Place } from './places.ts';
 import { placeNames } from './place-match.ts';
 import { parkedHomepage } from './venues.ts';
-import { UA, htmlToText, httpUrl, nameKey } from './util.ts';
+import { UA, getHtml, htmlToText, httpUrl, nameKey } from './util.ts';
 
 const WEEK = 7 * 86_400_000;
 const DAY = 86_400_000;
@@ -69,11 +69,13 @@ export const dueWebsites = (places: Place[], now = Date.now(), limit = 30) => {
     .slice(0, Math.max(0, Math.min(40, limit)));
 };
 
-export async function checkWebsite(p: Place, now = new Date().toISOString()): Promise<Verification> {
-  const url = httpUrl(p.website);
-  if (!url) throw new Error('No public website');
+/** The first `max` bytes of a page. A longer page is read as far as that, not
+ *  refused: its head holds the name and usually its structured data. */
+async function fetchHtml(url: string): Promise<{ html: string; url: string }> {
   // No cookies, contact details, external search, retries or parallel load.
   const response = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html' }, signal: AbortSignal.timeout(10_000) });
+  // Some hosts refuse Node's handshake with a 403 and serve curl (see getHtml).
+  if (response.status === 403) { const page = await getHtml(url, { timeoutMs: 10_000 }); return { html: page.html.slice(0, MAX_BYTES), url: page.url }; }
   if (!response.ok) throw new Error(`website HTTP ${response.status}`);
   if (!/text\/html|application\/xhtml\+xml/i.test(response.headers.get('content-type') ?? '')) throw new Error('Website is not HTML');
   const reader = response.body?.getReader();
@@ -81,13 +83,47 @@ export async function checkWebsite(p: Place, now = new Date().toISOString()): Pr
   const chunks: Uint8Array[] = [];
   let length = 0;
   try {
-    while (true) {
+    while (length < MAX_BYTES) {
       const { done, value } = await reader.read();
       if (done) break;
-      length += value.length;
-      if (length > MAX_BYTES) throw new Error('Website exceeds evidence size limit');
       chunks.push(value);
+      length += value.length;
     }
   } finally { await reader.cancel().catch(() => {}); }
-  return homepageEvidence(p, Buffer.concat(chunks).toString('utf8'), response.url || url, now);
+  return { html: Buffer.concat(chunks).subarray(0, MAX_BYTES).toString('utf8'), url: response.url || url };
+}
+
+const PROGRAMME = /(?:^|[/\s_-])(events?|programm?e?|program|kava|kalender|calendar|schedule|repertuaar|repertoire|whats-on|upcoming|sündmused|syndmused|üritused|uritused|afisha|kontserdid|etendused|näitused)(?:$|[/\s_.-])/i;
+
+/** The venue's own events page, linked from its homepage: the same site, a
+ *  link or link text that says events or programme. One page only. */
+export function programmeLink(html: string, pageUrl: string): string | null {
+  const own = host(pageUrl);
+  let best: { url: string; score: number } | null = null;
+  for (const m of html.matchAll(/<a\b[^>]*\bhref=["']([^"'#][^"']*)["'][^>]*>([\s\S]{0,200}?)<\/a>/gi)) {
+    const u = httpUrl(m[1].replace(/&amp;/g, '&'), pageUrl);
+    if (!u || host(u) !== own || new URL(u).pathname === new URL(pageUrl).pathname) continue;
+    const text = htmlToText(m[2]);
+    const score = (PROGRAMME.test(new URL(u).pathname) ? 2 : 0) + (PROGRAMME.test(text) ? 1 : 0);
+    if (score && (!best || score > best.score)) best = { url: u, score };
+  }
+  return best?.url ?? null;
+}
+
+export async function checkWebsite(p: Place, now = new Date().toISOString()): Promise<Verification> {
+  const url = httpUrl(p.website);
+  if (!url) throw new Error('No public website');
+  const home = await fetchHtml(url);
+  const result = homepageEvidence(p, home.html, home.url, now);
+  if (result.state !== 'unverified') return result;
+  // Identity matched but the homepage carries no dated event: the venue's own
+  // events page, one link away, is read under the same rules.
+  const next = programmeLink(home.html, home.url);
+  if (!next) return result;
+  try {
+    const page = await fetchHtml(next);
+    const second = homepageEvidence(p, page.html, page.url, now);
+    if (second.state === 'verified') return { ...second, note: 'Recent dated event on the venue’s own events page, at this venue.' };
+  } catch { /* the events page is a bonus: the homepage's answer stands */ }
+  return result;
 }

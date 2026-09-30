@@ -99,7 +99,7 @@
   const directions = (x, title) => {
     const c = G().coordsFor(x);
     if (c) return `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=walking`;
-    const q = [title, R().real(x.address), R().real(x.venue), 'Tallinn'].filter(Boolean).join(', ');
+    const q = [title, R().real(x.address), R().latin(x.venue), 'Tallinn'].filter(Boolean).join(', ');
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}&travelmode=walking`;
   };
 
@@ -285,7 +285,7 @@
     const cal = !ended && !off && e.startsAt ? ics(e) : '';
     const soldOut = e.flag === 'sold_out';
     const v = window.WA.venueFor(e);
-    const venueName = R().real(e.venue) || (v && v.name) || '';
+    const venueName = R().latin(e.venue) || (v && v.name) || '';
 
     const venueCard = () => {
       if (!venueName) return '';
@@ -576,7 +576,7 @@
       const h = resolve();
       if (!h || !window.WA.Share) return;
       const t = h.e.title || h.e.name || 'WanderAlt';
-      window.WA.Share.url({ title: t, text: [t, R().real(h.e.venue)].filter(Boolean).join(' · '), url: location.href }).then((r) => {
+      window.WA.Share.url({ title: t, text: [t, R().latin(h.e.venue)].filter(Boolean).join(' · '), url: location.href }).then((r) => {
         if (r !== 'copied' && r !== 'failed') return;
         sh.setAttribute('aria-label', r === 'copied' ? 'Link copied' : 'Could not copy the link');
         const was = sh.innerHTML;

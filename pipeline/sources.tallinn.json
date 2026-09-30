@@ -75,7 +75,7 @@
     "handle": "@vabalava",
     "label": "Vaba Lava",
     "curated": true,
-    "config": {}
+    "config": { "venue_name": "Vaba Lava", "venue_site": "https://vabalava.ee/" }
   },
   {
     "id": "kultuurikatel",
@@ -132,7 +132,7 @@
     "handle": "@kanutigildisaal",
     "label": "Kanuti Gildi SAAL",
     "curated": true,
-    "config": {}
+    "config": { "venue_name": "Kanuti Gildi Saal", "venue_site": "https://saal.ee/" }
   },
   {
     "id": "uuslaine",

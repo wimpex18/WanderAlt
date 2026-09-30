@@ -191,9 +191,9 @@ export async function refreshEnglish(db: Pick<Db, 'all' | 'patch'>, models: Mode
   const rows = await db.all<EnglishInput>(`events?city=eq.${encodeURIComponent(city)}&status=eq.published&archived_at=is.null&merged_into=is.null&select=id,title,description,venue_name,kind,url,original_url,title_en,language,english_input_hash&order=starts_at.asc,id.asc`);
   const due = rows.filter(e => e.english_input_hash !== englishHash(e)).slice(0, limit);
   let count = 0;
-  for (let offset = 0; offset < due.length && models.ready; offset += 10) {
+  for (let offset = 0; offset < due.length && models.ready; offset += 5) {
     try {
-      const copies = await editEnglish(models, due.slice(offset, offset + 10));
+      const copies = await editEnglish(models, due.slice(offset, offset + 5));
       for (const [id, copy] of copies) {
         // Only editorial fields: times, images, publication decisions stay intact.
         await db.patch(`events?id=eq.${encodeURIComponent(id)}`, copy);

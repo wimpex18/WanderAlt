@@ -29,6 +29,10 @@
     return s && !PLACEHOLDER.test(s) ? s : '';
   };
 
+  /* Names print in Latin script (English or Estonian). A Cyrillic name in a
+     venue or area field is a source's phrase, not the place's name. */
+  const latin = (v) => { const s = real(v); return s && !/[\u0400-\u04ff]/.test(s) ? s : ''; };
+
   const fold = (t) => String(t || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   /* ── Areas ───────────────────────────────────────────────────
@@ -37,21 +41,34 @@
      every area is printed in the name a visitor would use. */
   const AREA = {
     'pohja-tallinna': 'Põhja-Tallinn', 'pohja-tallinn': 'Põhja-Tallinn',
-    'kalamaja': 'Kalamaja', 'telliskivi': 'Telliskivi', 'pelgulinn': 'Pelgulinn', 'kopli': 'Kopli',
-    'noblessner': 'Noblessner', 'sadama': 'Sadama',
-    'kesklinna': 'City centre', 'kesklinn': 'City centre', 'rotermanni': 'Rotermann',
+    'kalamaja': 'Kalamaja', 'telliskivi': 'Telliskivi', 'kopli': 'Kopli', 'noblessner': 'Noblessner',
+    'kesklinna': 'City centre', 'kesklinn': 'City centre',
     'all-linn': 'Old Town', 'vanalinn': 'Old Town', 'old town': 'Old Town',
-    'kadriorg': 'Kadriorg', 'uus maailm': 'Uus Maailm', 'kassisaba': 'Kassisaba',
-    'kristiine': 'Kristiine', 'nomme': 'Nõmme', 'pirita': 'Pirita',
-    'lasnamae': 'Lasnamäe', 'mustamae': 'Mustamäe', 'haabersti': 'Haabersti',
+    'kristiine': 'Kristiine', 'pirita': 'Pirita', 'lasnamae': 'Lasnamäe', 'mustamae': 'Mustamäe', 'nomme': 'Nõmme',
   };
-  /* What each area holds, for the Tonight area list. */
+  /* Small asum names fold into the area a visitor would look under, so the
+     Tonight list stays short: the city centre's quarters, the rest of
+     Põhja-Tallinn, and so on. Only names whose district is certain are here;
+     any other name is printed as filed. */
+  const FOLD = {
+    'City centre': ['sudalinn', 'sadama', 'rotermanni', 'kompassi', 'tonismae', 'veerenni', 'kadriorg', 'uus maailm', 'maakri',
+      'tatari', 'keldrimae', 'juhkentali', 'raua', 'kassisaba', 'torupilli', 'sibulakula', 'rotermann'],
+    'Old Town': ['toompea'],
+    'Põhja-Tallinn': ['pelgulinn', 'karjamaa', 'kelmikula', 'sitsi', 'paljassaare', 'pelguranna', 'merimetsa', 'volta', 'stroomi'],
+    'Kristiine': ['lillekula', 'tondi', 'jarve'],
+    'Lasnamäe': ['laagna', 'tondiraba', 'ulemiste', 'sikupilli', 'saase', 'priisle', 'kurepolle', 'vao', 'pae', 'katleri', 'mustakivi'],
+    'Õismäe': ['vaike-oismae', 'oismae', 'haabersti'],
+    'Nõmme': ['hiiu', 'rahumae', 'paaskula', 'kitsekula', 'liiva', 'kivimae', 'raudalu'],
+  };
+  for (const [group, names] of Object.entries(FOLD)) for (const n of names) AREA[n] = group;
+  /* The areas people look for, west to east and north to south, for the
+     Tonight list; anything else is reachable by search or the programme. */
+  const AREA_LIST = ['Old Town', 'City centre', 'Kalamaja', 'Telliskivi', 'Noblessner', 'Kopli', 'Põhja-Tallinn', 'Kristiine',
+    'Pirita', 'Lasnamäe', 'Mustamäe', 'Õismäe', 'Nõmme'];
   const AREA_SUB = {
-    'Põhja-Tallinn': 'Kalamaja, Telliskivi, Kopli',
+    'Põhja-Tallinn': 'Pelgulinn, Paljassaare, Karjamaa',
+    'City centre': 'Rotermann, Kadriorg, Uus Maailm',
     'Old Town': 'Inside the walls',
-    'City centre': 'Rotermann, Uus Maailm',
-    'Noblessner': 'The harbour at Kalamaja',
-    'Kadriorg': 'Park and palace side',
   };
   const area = (raw) => {
     const s = real(raw);
@@ -290,7 +307,7 @@
     const kind = kindLabel(e.kind);
     const endsAt = r.live ? endClock(e) : '';
     const meta = [
-      real(e.venue),
+      latin(e.venue),
       r.areaInRail ? '' : areaOf(e),
       price(e),
       r.live && endsAt ? `till ${endsAt}` : '',
@@ -351,7 +368,7 @@
     const { src, logo } = art(e);
     const b = badgeFor(e);
     const m = walk(e);
-    const line1 = [real(e.venue), areaOf(e)].filter(Boolean).join(' · ');
+    const line1 = [latin(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
@@ -517,7 +534,7 @@
   }, true);
 
   window.WA.R = {
-    esc, url, real, fold, area, areaOf, AREA_SUB, kindLabel, whyTag, isFree, price,
+    esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,

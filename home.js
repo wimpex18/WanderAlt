@@ -254,16 +254,17 @@
           : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}</section>`;
     }
 
-    /* Areas: where this week's listings are, in the names people use. */
+    /* Areas: where this week's listings are, folded into the few areas a
+       visitor looks under (render.js AREA_LIST), west to east. Places count
+       too, so a quiet week still shows where the venues are. */
     const counts = new Map();
     for (const e of all.filter(x => W().matches(x, 'thisweek'))) {
       const a = R().areaOf(e);
-      if (a) counts.set(a, (counts.get(a) || 0) + 1);
+      if (a && R().AREA_LIST.includes(a)) counts.set(a, (counts.get(a) || 0) + 1);
     }
-    const areas = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
-    const areaHtml = areas.length ? `<section class="wa-sect">${R().sect({ title: 'By area', sub: 'This week' })}
-      <div class="wa-areas">${areas.map(([a, n]) => `<a class="wa-area" href="discover.html?area=${esc(encodeURIComponent(a))}&time=thisweek">
-        <span>${esc(a)}${R().AREA_SUB[a] ? `<span class="wa-area__sub">${esc(R().AREA_SUB[a])}</span>` : ''}</span><span class="wa-area__n">${n}</span></a>`).join('')}</div></section>` : '';
+    const areas = R().AREA_LIST.filter(a => counts.has(a)).map(a => [a, counts.get(a)]);
+    const areaHtml = areas.length ? `<section class="wa-sect">${R().sect({ title: 'By area', sub: 'This week', href: 'discover.html?time=thisweek', more: 'All' })}
+      <div class="wa-areas">${areas.map(([a, n]) => `<a class="wa-area" href="discover.html?area=${esc(encodeURIComponent(a))}&time=thisweek" title="${esc(R().AREA_SUB[a] || '')}">${esc(a)}<span class="wa-area__n">${n}</span></a>`).join('')}</div></section>` : '';
 
     const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">

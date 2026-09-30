@@ -181,7 +181,7 @@ export class Places {
   /** The place a candidate happens at, creating it on first sight. */
   async resolve(c: Candidate, geocode = true): Promise<Place | null> {
     const name = c.venue_name?.split(',')[0]?.trim();
-    if (!name || ONLINE.test(name)) return null;
+    if (!name || ONLINE.test(name) || /[\u0400-\u04ff]/.test(name)) return null;
     const incoming: Place = { id: '', city: this.city, name, aliases: [nameKey(name)],
       address: c.address ?? null, lat: c.lat ?? null, lng: c.lng ?? null };
     const hit = this.find(incoming);

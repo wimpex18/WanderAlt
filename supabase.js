@@ -65,10 +65,13 @@
      localhost, where the Worker is not wired. */
   const proxifyImage = (url) => {
     if (!url || typeof url !== 'string') return url;
+    const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+    /* A Facebook page's picture is fetched by our own function, so the reader
+       never contacts Facebook and the signed CDN address is never stored. */
+    const fb = /^https:\/\/graph\.facebook\.com\/([A-Za-z0-9.\-_]{3,80})\/picture(?:\?|$)/.exec(url);
+    if (fb) return local ? url : '/img/fb/' + fb[1];
     if (!/wikimedia\.org|wikipedia\.org/i.test(url))    return url;
-    if (location.hostname === 'localhost' ||
-        location.hostname === '127.0.0.1' ||
-        location.hostname === '')                       return url;
+    if (local)                                          return url;
     return '/img/wm/' + encodeURIComponent(url);
   };
 
@@ -82,13 +85,16 @@
   ]);
   const isPublicPick = (r) => !(FOOD_PLACE_KINDS.has(r.kind) && !r.day);
 
+  /* A venue or area printed in Cyrillic is a source's phrase, not a place's
+     name (the pipeline retires those places); it is left out, not shown. */
+  const CYRILLIC = /[\u0400-\u04ff]/;
   const toPick = (r) => ({
     id:            r.id,
     city:          r.city,
     title:         r.title,
-    venue:         r.venue,
-    venueId:       r.venue_id || null,
-    neighborhood:  r.neighborhood,
+    venue:         CYRILLIC.test(r.venue || '') ? null : r.venue,
+    venueId:       CYRILLIC.test(r.venue || '') ? null : (r.venue_id || null),
+    neighborhood:  CYRILLIC.test(r.neighborhood || '') ? null : r.neighborhood,
     kind:          r.kind,
     day:           r.day,
     time:          r.time,
@@ -242,7 +248,7 @@
       window.WA.catalog     = all.filter(e => e.city === CITY);
     }
     if (venues) {
-      const allVenues = venues.filter(r => VENUE_KINDS.has(r.kind)).map(toVenue);
+      const allVenues = venues.filter(r => VENUE_KINDS.has(r.kind) && !CYRILLIC.test(r.name || '')).map(toVenue);
       window.WA._venuesAll = allVenues;
       window.WA.venues     = allVenues.filter(v => v.city === CITY);
     }

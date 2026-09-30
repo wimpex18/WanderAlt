@@ -149,9 +149,12 @@
   const areaCounts = () => {
     const pool = apply(base(), 'area');
     const m = new Map();
-    for (const e of pool) { const a = R().areaOf(e); if (a) m.set(a, (m.get(a) || 0) + 1); }
+    /* The areas people look under (render.js AREA_LIST) in geographic order;
+       any other filed name shows only while it is the chosen one. */
+    for (const e of pool) { const a = R().areaOf(e); if (a && (R().AREA_LIST.includes(a) || a === state.area)) m.set(a, (m.get(a) || 0) + 1); }
     if (state.area && !m.has(state.area)) m.set(state.area, 0);
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    const rank = (a) => { const i = R().AREA_LIST.indexOf(a); return i < 0 ? 99 : i; };
+    return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
   };
 
   let datesOpen = false, refocus = '';
