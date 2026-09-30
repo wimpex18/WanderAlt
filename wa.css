@@ -1191,3 +1191,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* A landscape poster keeps its own shape in the hero instead of being cropped to it. */
 .det-media--wide { aspect-ratio: auto; max-height: none; }
 .det-media--wide img { height: auto; object-fit: contain; }
+
+/* Things at one address, fanned out from their shared point at street level. */
+.wa-fan__stem { position: absolute; height: 0; border-top: 1.5px solid rgba(140,140,146,.85); transform-origin: 0 0; pointer-events: none; }
+.wa-fan__dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #1c1c1e; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
