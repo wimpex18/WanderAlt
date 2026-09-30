@@ -21,8 +21,11 @@ async function call<T>(method: 'GET' | 'POST', path: string, params: Record<stri
     method, headers: { 'user-agent': UA, ...(method === 'POST' ? { 'content-type': 'application/x-www-form-urlencoded' } : {}) },
     body: method === 'POST' ? qs.toString() : undefined, signal: AbortSignal.timeout(30_000),
   });
-  const body = await r.json().catch(() => ({})) as T & { error?: { message?: string; code?: number } };
-  if (!r.ok || body.error) throw new Error(`Threads ${path.split('/').pop()}: ${body.error?.code ?? r.status} ${String(body.error?.message ?? '').slice(0, 160)}`);
+  const body = await r.json().catch(() => ({})) as T & { error?: { message?: string; code?: number; type?: string; error_subcode?: number } };
+  if (!r.ok || body.error) {
+    const e = body.error;
+    throw new Error(`Threads ${path.split('/').pop()}: HTTP ${r.status}, code ${e?.code ?? '-'}${e?.error_subcode ? `/${e.error_subcode}` : ''}${e?.type ? ` ${e.type}` : ''} ${String(e?.message ?? '').slice(0, 160)}`);
+  }
   return body;
 }
 
@@ -51,6 +54,30 @@ export async function keywordSearch(token: string, q: string, fetcher: typeof fe
       throw new Error(`full query: ${(first as Error).message}; plain query: ${(second as Error).message}`);
     }
   }
+}
+
+/** Several small requests with the same token, to tell a missing permission
+ *  (this token never received it) from a restriction on the endpoint (no
+ *  review yet) or a fault on Meta's side. Reads only; one line per probe. */
+export async function probe(token: string, username: string, fetcher: typeof fetch = fetch): Promise<string[]> {
+  const probes: [string, string, Record<string, string>][] = [
+    ['own profile (threads_basic)', 'me', { fields: 'id,username' }],
+    ['own posts (threads_basic)', 'me/threads', { fields: 'id', limit: '1' }],
+    ['own insights (threads_manage_insights)', 'me/threads_insights', { metric: 'views' }],
+    ['publishing limit (threads_content_publish)', 'me/threads_publishing_limit', { fields: 'quota_usage' }],
+    ['search, q only', 'keyword_search', { q: 'tallinn' }],
+    ['search, q and own username', 'keyword_search', { q: 'tallinn', author_username: username }],
+    ['search, tag mode', 'keyword_search', { q: 'tallinn', search_mode: 'TAG' }],
+    ['search, recent and since', 'keyword_search', { q: 'tallinn', search_type: 'RECENT', since: String(Math.floor(Date.now() / 1000) - 7 * 86400) }],
+  ];
+  const out: string[] = [];
+  for (const [label, path, params] of probes) {
+    try {
+      const r = await call<{ data?: unknown[] }>('GET', `${VERSION}/${path}`, { ...params, access_token: token }, fetcher);
+      out.push(`${label}: ok${Array.isArray(r.data) ? `, ${r.data.length} items` : ''}`);
+    } catch (e) { out.push(`${label}: ${(e as Error).message.replace(/^Threads [^:]+: /, '')}`); }
+  }
+  return out;
 }
 
 export async function profileLookup(token: string, username: string, fetcher: typeof fetch = fetch): Promise<{ username: string; follower_count?: number } | null> {
