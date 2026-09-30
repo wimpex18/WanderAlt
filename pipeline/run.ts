@@ -18,6 +18,7 @@ import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
+import { instagramConfig, attachInstagramPictures, lookupProfile } from './instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
@@ -147,6 +148,17 @@ async function main() {
       } catch (e) { log(`lane ${l.name} (${l.model}) failed: ${(e as Error).message}`); }
     }
     if (!models.available.length) log('no model lane has a key; see docs/models.md');
+    return;
+  }
+
+  // A look at the Instagram token alone: two real lookups, nothing written.
+  if (flag('--instagram-check')) {
+    const cfg = instagramConfig();
+    if (!cfg) { log('instagram: INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ID is not set'); return; }
+    for (const handle of ['kanutigildisaal', 'laine.bar']) {
+      const r = await lookupProfile(handle, cfg);
+      log(`instagram check @${handle}: ${r.kind}${r.kind === 'found' ? ` (username ${r.username}, picture address received)` : ` (${r.reason})`}`);
+    }
     return;
   }
 
@@ -391,6 +403,17 @@ async function main() {
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
     }
     if (due.length) log(`enriched ${due.length} places`);
+  }
+
+  // Last resort for a picture: the venue's Instagram profile picture through
+  // Meta's Graph API, copied into our own bucket. Needs both secrets.
+  const instagram = instagramConfig();
+  if (db && instagram && !flag('--no-instagram')) {
+    try {
+      for (const p of await attachInstagramPictures(db, places.all(), instagram, Number(opt('--max-instagram') ?? 20))) {
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    } catch (e) { log(`instagram failed: ${(e as Error).message}`); }
   }
 
   // Upcoming events already stored, so a second source's copy of a show joins it.
