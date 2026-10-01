@@ -159,7 +159,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 /* ── Liquid Glass ─────────────────────────────────────────────────
    One recipe. Reduce Transparency, or a browser without backdrop
    filters, gets the same shape on solid paper. */
-.wa-glass, .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select {
+.wa-glass, .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .map-when select {
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -965,10 +965,10 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-grid__main { display: grid; gap: var(--s-6); }
 
 /* ── Sheet: the one modal ───────────────────────────────────────── */
-.wa-sheet { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; height: 100%; max-width: none; max-height: none; background: transparent; color: var(--ink); overflow: hidden; }
+.wa-sheet { position: fixed; inset: 0; top: var(--vv-top, 0px); margin: 0; padding: 0; border: 0; width: 100%; height: var(--vv-h, 100%); max-width: none; max-height: none; background: transparent; color: var(--ink); overflow: hidden; }
 .wa-sheet::backdrop { background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .wa-sheet[open] { display: flex; align-items: flex-end; justify-content: center; }
-.wa-sheet__panel { position: relative; width: 100%; max-height: min(92dvh, 860px); display: flex; flex-direction: column; background: var(--paper); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: var(--shadow-3); animation: wa-sheet-in 420ms var(--spring); padding-bottom: env(safe-area-inset-bottom); }
+.wa-sheet__panel { position: relative; width: 100%; max-height: min(92dvh, var(--vv-h, 100dvh), 860px); display: flex; flex-direction: column; background: var(--paper); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: var(--shadow-3); animation: wa-sheet-in 420ms var(--spring); padding-bottom: env(safe-area-inset-bottom); }
 @keyframes wa-sheet-in { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .wa-sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-5) var(--s-4) var(--s-3) var(--s-6); }
 .wa-sheet__head::before { content: ""; position: absolute; left: 50%; margin-left: -18px; top: 8px; width: 36px; height: 5px; border-radius: 3px; background: var(--line); }
@@ -1219,3 +1219,152 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-inbox__title { font-weight: 600; }
 .wa-inbox__body { font-size: var(--fs-meta); color: var(--ink-2); white-space: pre-line; line-height: 1.5; }
 .wa-inbox__when { font-size: var(--fs-small); color: var(--ink-3); }
+
+
+/* ── Home Screen invitation (install.js) ──────────────────────────
+   The nudge is the glass recipe, sitting where the toast sits, so it
+   reads as part of the tab bar's family. It rises on the spring and
+   leaves quickly. The sheet's steps arrive one by one; the Share chip
+   rings until the reader moves on; a Home Screen tile pops into a grid
+   of ghosts. Reduced motion shows the finished state. */
+.wa-install { position: fixed; z-index: 50; left: 12px; right: 12px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s-2)); display: flex; align-items: center; gap: var(--s-3); padding: 8px 4px 8px 8px; border-radius: var(--r-pill); animation: wa-install-in 620ms var(--spring) both; }
+.wa-install.is-leaving { animation: wa-install-out 240ms var(--ease) forwards; }
+.wa-install__icon { flex: none; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.18); animation: wa-install-icon 900ms 260ms var(--spring) both; }
+.wa-install__icon svg { display: block; width: 100%; height: 100%; }
+.wa-install__text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.wa-install__title { font-weight: 650; font-size: .9375rem; letter-spacing: -.01em; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-install__sub { font-size: var(--fs-small); color: var(--ink-2); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-install__go { flex: none; min-height: 40px; padding: 0 15px; border: 0; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-weight: 650; font-size: .875rem; }
+.wa-install__x { flex: none; width: 32px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--ink-3); display: grid; place-items: center; }
+@media (min-width: 1024px) { .wa-install { left: auto; right: var(--s-6); bottom: var(--s-6); width: 400px; } }
+@keyframes wa-install-in { from { opacity: 0; transform: translateY(28px) scale(.94); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes wa-install-out { to { opacity: 0; transform: translateY(14px) scale(.97); filter: blur(4px); } }
+@keyframes wa-install-icon { 0% { transform: scale(.6) rotate(-10deg); } 60% { transform: scale(1.08) rotate(3deg); } 100% { transform: none; } }
+
+.wa-howto__stage { display: grid; grid-template-columns: repeat(4, 56px); gap: 14px; justify-content: center; align-items: center; padding: var(--s-4) 0 var(--s-2); position: relative; }
+.wa-howto__ghost { width: 56px; height: 56px; border-radius: 15px; background: var(--paper-2); }
+.wa-howto__tile { width: 56px; height: 56px; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 22px rgba(216,58,20,.35); animation: wa-howto-tile 6s var(--spring) 600ms infinite both; }
+.wa-howto__tile svg { display: block; width: 100%; height: 100%; }
+@keyframes wa-howto-tile { 0%, 12% { transform: scale(0) rotate(-14deg); opacity: 0; } 24% { transform: scale(1.12) rotate(3deg); opacity: 1; } 32%, 86% { transform: none; opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
+.wa-howto__steps { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: var(--s-3); }
+.wa-howto__steps li { display: grid; grid-template-columns: 44px 1fr; gap: var(--s-4); align-items: center; animation: wa-howto-rise 640ms var(--spring) both; animation-delay: calc(240ms + var(--i) * 110ms); }
+.wa-howto__chip { position: relative; width: 44px; height: 44px; border-radius: 14px; background: var(--paper-2); color: var(--ink); display: grid; place-items: center; }
+.wa-howto__chip.is-ping::after { content: ""; position: absolute; inset: -4px; border-radius: 17px; border: 2px solid var(--accent); opacity: 0; animation: wa-howto-ping 2.4s var(--ease) 900ms infinite; }
+.wa-howto__copy { display: grid; gap: 2px; }
+.wa-howto__copy strong { font-weight: 650; letter-spacing: -.01em; }
+.wa-howto__copy span { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.4; }
+.wa-howto__carry { margin-top: var(--s-5); padding: var(--s-4); border-radius: var(--r-md); background: var(--accent-soft); display: grid; gap: var(--s-3); justify-items: start; }
+.wa-howto__carry p { font-size: var(--fs-meta); line-height: 1.45; }
+@keyframes wa-howto-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes wa-howto-ping { 0% { opacity: .9; transform: scale(.92); } 70%, 100% { opacity: 0; transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) {
+  .wa-howto__tile { animation: none; opacity: 1; }
+  .wa-howto__chip.is-ping::after { animation: none; opacity: .9; transform: none; }
+}
+
+/* Notifications and App rows on You. */
+.wa-state { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); margin-bottom: var(--s-2); }
+.wa-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.wa-state.is-on { color: var(--ink); }
+.wa-state.is-on::before { background: #2e9e5b; box-shadow: 0 0 0 3px color-mix(in oklab, #2e9e5b 22%, transparent); }
+
+
+/* Bar diagnostics readout (tabbar.js). Hidden unless switched on by holding the wordmark. */
+.wa-brand { -webkit-touch-callout: none; }
+.wa-hud { position: fixed; z-index: 200; right: 8px; top: calc(var(--topbar-h) + env(safe-area-inset-top) + 6px); margin: 0; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.72); color: #fff; font: 11px/1.35 var(--f-mono); white-space: pre; pointer-events: none; }
+.wa-hud[data-bad="1"] { background: rgba(190,30,10,.88); }
+
+/* The phone tab bar gets its own compositing layer. On an iPhone Home Screen app it has been
+   seen floating mid-screen during momentum scrolling; a fixed layer WebKit has to re-pin on
+   its own is the likeliest cause, so it is pinned from the start. Phones only: from 1024 the
+   bar is the masthead nav and stays an ordinary fixed element. */
+@media (max-width: 1023px) {
+  .wa-tabbar { transform: translateZ(0); will-change: transform; }
+}
+
+/* A short viewport (an iPhone in a Safari tab) keeps the steps and the sign-in note on one screen. */
+@media (max-height: 780px) { .wa-howto__stage { display: none; } }
+
+
+/* ── You: sign-in card and milestones ─────────────────────────────
+   Quiet surfaces on the page's own paper. The card is a soft vermilion
+   wash, never a dark block; its buttons are small pills. */
+.you-join { display: flex; gap: var(--s-4); align-items: flex-start; padding: var(--s-5); border-radius: var(--r-xl); border: 1px solid var(--hair);
+  background: radial-gradient(120% 140% at 0% 0%, var(--accent-soft), transparent 62%), var(--paper-2); }
+.you-join__mark { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--accent-ink); background: var(--paper); box-shadow: var(--shadow-1); }
+.you-join__mark .wa-ic { width: 20px; height: 20px; }
+.you-join__text { min-width: 0; display: grid; gap: 2px; }
+.you-join__title { font-size: 1.0625rem; font-weight: 650; letter-spacing: -.02em; line-height: 1.25; }
+.you-join__sub { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.4; }
+.you-join__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.you-join .wa-btn--sm { min-height: 36px; padding: 0 14px; font-size: .875rem; font-weight: 600; background: var(--paper); }
+.you-join .wa-btn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.you-mile { margin-top: var(--s-6); display: grid; gap: var(--s-3); }
+.you-mile__head { display: flex; align-items: baseline; justify-content: space-between; }
+.you-mile__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.you-mile__bar { height: 4px; border-radius: 2px; background: var(--paper-3); overflow: hidden; }
+.you-mile__bar span { display: block; height: 100%; border-radius: 2px; background: var(--accent); transition: width 600ms var(--spring); }
+.you-mile__grid { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3) var(--s-2); }
+.you-mile__item { display: grid; justify-items: center; gap: 6px; text-align: center; opacity: .5; transition: opacity var(--t-med); }
+.you-mile__ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); color: var(--ink-3); }
+.you-mile__ic .wa-ic { width: 20px; height: 20px; }
+.you-mile__name { font-size: var(--fs-small); font-weight: 600; line-height: 1.2; }
+.you-mile__item.is-on { opacity: 1; }
+.you-mile__item.is-on .you-mile__ic { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent); animation: you-pop 520ms var(--spring) both; }
+.you-mile__next { font-size: var(--fs-small); color: var(--ink-3); }
+@keyframes you-pop { from { transform: scale(.7); } to { transform: none; } }
+@media (min-width: 768px) { .you-mile__grid { grid-template-columns: repeat(6, 1fr); } }
+
+/* ── Sheets: calm footers and name ideas ──────────────────────────
+   Page-level calls to action keep the vermilion; a sheet's own button is a small ink pill, right-aligned, with a quiet Cancel. */
+.wa-sheet__foot { justify-content: flex-end; }
+.wa-sheet__foot .wa-btn { min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); font-size: .9375rem; }
+.wa-sheet__foot .wa-btn--primary, .wa-sheet__foot .wa-btn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.wa-sheet__foot .wa-btn--primary:hover, .wa-sheet__foot .wa-btn--ink:hover { background: color-mix(in oklab, var(--ink) 88%, var(--paper)); }
+.wa-sheet__foot .wa-btn--quiet { padding: 0 12px; }
+.wa-sheet .wa-input { height: 48px; border-radius: var(--r-md); }
+.wa-ideas { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.wa-ideas__chip { min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: .875rem; font-weight: 500; }
+.wa-ideas__chip:active { transform: scale(.97); background: var(--paper-3); }
+
+.wa-lists:empty { display: none; }
+.wa-lists + .wa-btn { margin-top: var(--s-1); }
+.wa-sect:has(> .wa-lists) { margin-bottom: var(--s-6); }
+
+
+/* ── Light motion ────────────────────────────────────────────────────
+   Compositor-only (transform and opacity), short, and bounded: a handful of
+   elements per screen, never an endless loop. Three ideas: the first listings
+   rise in one after another, section headings ease up as they scroll in (never on first paint: only below the fold), and
+   things you press answer the finger. All of it is off for reduced motion. The
+   entrance only runs while html[data-enter] is set (view-transition.js). */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-enter] .wa-rows > li:nth-child(-n+5),
+  html[data-enter] .wa-shelf > :nth-child(-n+4),
+  html[data-enter] .wa-lists > * {
+    animation: wa-settle 260ms var(--ease) both;
+    animation-delay: calc(var(--n, 0) * 30ms);
+  }
+  html[data-enter] .wa-rows > li:nth-child(2), html[data-enter] .wa-shelf > :nth-child(2) { --n: 1; }
+  html[data-enter] .wa-rows > li:nth-child(3), html[data-enter] .wa-shelf > :nth-child(3) { --n: 2; }
+  html[data-enter] .wa-rows > li:nth-child(4), html[data-enter] .wa-shelf > :nth-child(4) { --n: 3; }
+  html[data-enter] .wa-rows > li:nth-child(5) { --n: 4; }
+
+  /* Press: rows and cards sink a hair under the finger. */
+  .wa-row, .wa-poster__link, .wa-place { transition: transform 160ms var(--ease); }
+  .wa-row:active, .wa-poster__link:active, .wa-place:active { transform: scale(.985); }
+
+  /* Open now: the dot breathes three times, then rests. */
+  .wa-open--yes { position: relative; }
+  .wa-open--yes::after { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: currentColor; pointer-events: none; animation: wa-live 2.4s var(--ease) 3 1.2s both; }
+
+  /* Headings ease up as they scroll into view (Safari 26+, Chrome 115+; elsewhere they simply sit). */
+  @supports (animation-timeline: view()) {
+    .wa-sect__head { animation: wa-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  }
+}
+/* The entrance never hides anything: it starts nearly opaque and a few pixels low, so the content is readable from the first frame and loading is never held back. */
+@keyframes wa-settle { from { opacity: .72; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wa-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes wa-live { from { opacity: .55; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }

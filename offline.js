@@ -4,6 +4,10 @@
    Saves are localStorage-first; sw.js caches the shell and the last
    listings response; distances degrade as they do without location
    permission. The banner prints how old the cached listings are.
+
+   Freshness lives here too: a tab left open overnight, or an installed
+   app resumed the next morning, reloads itself when it comes back, so
+   "tonight" is tonight and the list is today's without a pull to refresh.
    ============================================================ */
 (() => {
   'use strict';
@@ -86,4 +90,60 @@
   } else {
     sync();
   }
+
+  /* ── Warm the Map ────────────────────────────────────────────
+     The Map is one tap from every page and its MapLibre bundles are the
+     heaviest thing it needs (about 290 KB compressed). Once a page has
+     loaded and the browser is idle, fetch them through the worker so the
+     first Map visit opens from the cache. Skipped on the Map itself, on
+     Data Saver and on slow connections, and once the bundle is cached. */
+  const warmMap = async () => {
+    try {
+      if (document.body && document.body.dataset.page === 'map') return;
+      const c = navigator.connection;
+      if (c && (c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || ''))) return;
+      if (!('caches' in window) || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+      if (await caches.match('./vendor/maplibre-gl.mjs')) return;
+      const dusk = document.documentElement.dataset.theme === 'dusk';
+      const urls = ['./vendor/maplibre-gl.mjs', './vendor/maplibre-gl-shared.mjs', './vendor/maplibre-gl-worker.mjs',
+        './vendor/maplibre-gl.css', dusk ? './map-style-dusk.json' : './map-style.json'];
+      for (const u of urls) await fetch(u, { priority: 'low' }).catch(() => {});
+      fetch('https://tiles.openfreemap.org/planet', { mode: 'cors', priority: 'low' }).catch(() => {});
+    } catch (_) { /* a warm-up that fails changes nothing */ }
+  };
+  const idleWarm = () => (window.requestIdleCallback ? requestIdleCallback(warmMap, { timeout: 8000 }) : setTimeout(warmMap, 4000));
+  if (document.readyState === 'complete') setTimeout(idleWarm, 3000);
+  else window.addEventListener('load', () => setTimeout(idleWarm, 3000), { once: true });
+
+  /* ── Freshness ───────────────────────────────────────────────
+     A page is stale when the Tallinn calendar day has turned since it
+     loaded, or when it was put away and has been out of sight for a while.
+     It reloads only when nobody is mid-task: no open sheet, no focused
+     field. The address keeps its filters, so the reader lands where they were. */
+  const STALE_AFTER = 30 * 60 * 1000;
+  const dayKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn' }).format(new Date());
+  const loadedDay = dayKey();
+  let hiddenAt = 0;
+
+  const idle = () => {
+    if (document.querySelector('dialog[open]')) return false;
+    const a = document.activeElement;
+    return !(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) && !(a && a.isContentEditable);
+  };
+
+  const check = (resumed) => {
+    if (document.visibilityState !== 'visible' || navigator.onLine === false) return;
+    /* Pick up a new deploy while we are here; the reload below then runs it. */
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+    const away = hiddenAt && Date.now() - hiddenAt > STALE_AFTER;
+    if ((dayKey() !== loadedDay || (resumed && away)) && idle()) location.reload();
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+    else { check(true); hiddenAt = 0; }
+  });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) check(true); });
+  window.addEventListener('online', () => check(false));
+  setInterval(() => check(false), 60 * 1000);   /* a tab left in view as midnight passes */
 })();

@@ -127,4 +127,26 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(SCROLLERS).forEach(edges));
 
   window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField };
+
+  /* On iPhone the on-screen keyboard shrinks the visual viewport and leaves
+     the layout viewport alone, so a bottom sheet stays where it was and its
+     fields and its button end up under the keys. Publish the visual
+     viewport's box as --vv-top and --vv-h; .wa-sheet sizes itself to it.
+     Without a keyboard both stay unset and the sheet fills the page. */
+  (() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const sync = () => {
+      const covered = window.innerHeight - vv.height > 80;
+      if (covered) { root.style.setProperty('--vv-top', `${vv.offsetTop}px`); root.style.setProperty('--vv-h', `${vv.height}px`); }
+      else { root.style.removeProperty('--vv-top'); root.style.removeProperty('--vv-h'); }
+    };
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    /* A focused field inside an open sheet is brought into view once the keyboard is up. */
+    document.addEventListener('focusin', (e) => {
+      if (e.target.closest && e.target.closest('dialog.wa-sheet')) setTimeout(() => e.target.scrollIntoView({ block: 'nearest' }), 350);
+    });
+  })();
 })();

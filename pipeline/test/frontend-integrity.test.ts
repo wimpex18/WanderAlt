@@ -193,3 +193,75 @@ test('a failed original-description request stays retryable and does not cache t
   assert.equal(e.originalLoadFailed, false);
   assert.equal(originals, 2);
 });
+
+test('sheets follow the visual viewport so the keyboard never covers a field or its button', () => {
+  const props = new Map<string, string>();
+  const listeners: Record<string, () => void> = {};
+  const vv = { height: 800, offsetTop: 0, addEventListener: (e: string, f: () => void) => { listeners[e] = f; } };
+  const root = { style: { setProperty: (k: string, v: string) => props.set(k, v), removeProperty: (k: string) => props.delete(k) } };
+  const context = createContext({ window: { WA: {}, visualViewport: vv, innerHeight: 800 }, document: { documentElement: root, addEventListener: () => {}, querySelectorAll: () => [], readyState: 'complete' } });
+  runInContext(readFileSync(new URL('../../ui-helpers.js', import.meta.url), 'utf8'), context);
+  vv.height = 480; listeners.resize();                    // keyboard up
+  assert.equal(props.get('--vv-h'), '480px');
+  assert.equal(props.get('--vv-top'), '0px');
+  vv.height = 800; listeners.resize();                    // keyboard down
+  assert.equal(props.has('--vv-h'), false);
+  const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
+  assert.match(css, /\.wa-sheet \{[^}]*height: var\(--vv-h, 100%\)/);
+});
+
+test('the name sheets get their suggestions from Lists', () => {
+  const p = page(); p.load('lists.js');
+  assert.match(String(p.WA.Lists.suggestions()), /data-suggest="Saturday night"/);
+});
+
+test('the entrance gate opens at page start and closes after the first listings, or after five seconds', () => {
+  for (const fire of [true, false]) {
+    const attrs = new Set<string>(); const timers: Array<[number, () => void]> = []; const listeners: Record<string, () => void> = {};
+    const root = { setAttribute: (k: string) => attrs.add(k), removeAttribute: (k: string) => attrs.delete(k), hasAttribute: (k: string) => attrs.has(k) };
+    const context = createContext({
+      matchMedia: () => ({ matches: false }), navigator: {},
+      setTimeout: (f: () => void, ms: number) => { timers.push([ms, f]); return 0; },
+      document: { documentElement: root, querySelectorAll: () => [], addEventListener: (e: string, f: () => void) => { listeners[e] = f; } },
+      window: { addEventListener: () => {} }, addEventListener: () => {},
+    });
+    runInContext(readFileSync(new URL('../../view-transition.js', import.meta.url), 'utf8'), context);
+    assert.equal(attrs.has('data-enter'), true);
+    if (fire) { listeners['wa:catalog-ready'](); timers.filter(([ms]) => ms === 1200).forEach(([, f]) => f()); }
+    else timers.filter(([ms]) => ms === 5000).forEach(([, f]) => f());
+    assert.equal(attrs.has('data-enter'), false);
+  }
+  const reduced = new Set<string>();
+  const ctx = createContext({ matchMedia: () => ({ matches: true }), navigator: {}, setTimeout: () => 0,
+    document: { documentElement: { setAttribute: (k: string) => reduced.add(k), removeAttribute: () => {} }, querySelectorAll: () => [], addEventListener: () => {} }, window: { addEventListener: () => {} }, addEventListener: () => {} });
+  runInContext(readFileSync(new URL('../../view-transition.js', import.meta.url), 'utf8'), ctx);
+  assert.equal(reduced.size, 0);
+});
+
+test('a run that began before today and has not ended is filed under today, with its dates in the rail', () => {
+  const p = page();
+  p.WA.Icon = Object.assign(() => '', { kind: () => '' }); p.WA.Picto = Object.assign(() => '', { kind: () => '' });
+  p.WA.UI.price = () => ''; p.WA.UI.guard = (s: string) => s;
+  p.WA.Geo.startMinutes = () => null;                     // no stated time, as for an exhibition
+  p.load('when.js');
+  const today = p.WA.when.todayKey();
+  const day = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - 3 * 3600000 + n * 86400000).toISOString();   // midnight in Tallinn: a date, no stated time
+  p.load('render.js');
+  const run = { id: 'ev_run', title: 'An exhibition', kind: 'exhibition', startsAt: day(-2), endsAt: day(2) };
+  const gone = { id: 'ev_gone', title: 'Over', kind: 'gig', startsAt: day(-2), endsAt: day(-1) };
+  const next = { id: 'ev_next', title: 'Next', kind: 'gig', startsAt: day(1) };
+  const html = String(p.WA.R.grouped([run, next], {}));
+  assert.equal((html.match(/wa-day__name/g) || []).length, 2);          // today, tomorrow: no heading for the day it started
+  assert.ok(html.indexOf('An exhibition') < html.indexOf('Next'));
+  assert.match(html, / to /);
+  assert.equal(String(p.WA.R.grouped([gone], {})).includes(' to '), false);
+});
+
+test('a date-only run is still on all of its last day, and ends when that day does', () => {
+  const p = page(); p.WA.Geo.startMinutes = () => null; p.load('when.js');
+  const today = p.WA.when.todayKey();
+  const midnight = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - 3 * 3600000 + n * 86400000).toISOString();   // local midnight, Tallinn
+  const run = { startsAt: midnight(-4), endsAt: midnight(0) };      // its last day is today
+  assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(0)) + 10 * 3600000), false);
+  assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(1)) + 3600000), true);
+});

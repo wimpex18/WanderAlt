@@ -185,4 +185,54 @@
     },
   });
   if (drop) addEventListener('pageshow', (e) => { if (e.persisted) drop.reset(); });
+
+  /* ── Bar diagnostics ───────────────────────────────────────────
+     The bar sometimes floats mid-screen on an iPhone and cannot be made to
+     happen on demand. Press and hold the wordmark for 1.5 s to switch a small
+     readout on or off. It prints what the page believes (viewport heights,
+     the safe-area inset, how far the bar's bottom edge is from the bottom of
+     the layout viewport) so a screen recording of the bad moment says whether
+     the layout is wrong or only what is drawn. Off by default, kept per device. */
+  const HUD_KEY = 'wa:hud';
+  let hud = null, probe = null, worst = 0, hudRaf = 0;
+  const hudOn = () => { try { return localStorage.getItem(HUD_KEY) === '1'; } catch (_) { return false; } };
+  const hudPaint = () => {
+    hudRaf = 0;
+    if (!hud) return;
+    const vv = window.visualViewport;
+    const r = bar.getBoundingClientRect();
+    const inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+    const gap = window.innerHeight - r.bottom, want = 10 + inset, off = Math.round(gap - want);
+    if (Math.abs(off) > Math.abs(worst)) worst = off;
+    const standalone = (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) ? 'app' : 'tab';
+    hud.textContent = `${standalone} inner ${Math.round(innerHeight)} vv ${Math.round(vv ? vv.height : 0)}/${Math.round(vv ? vv.offsetTop : 0)}\n` +
+      `inset ${inset} gap ${Math.round(gap)} want ${want} off ${off} worst ${worst}\nscroll ${Math.round(scrollY)} bar-top ${Math.round(r.top)}`;
+    hud.dataset.bad = Math.abs(off) > 2 ? '1' : '0';
+  };
+  const hudTick = () => { if (hud && !hudRaf) hudRaf = requestAnimationFrame(hudPaint); };
+  const hudShow = (on) => {
+    try { localStorage.setItem(HUD_KEY, on ? '1' : '0'); } catch (_) { /* private mode */ }
+    if (!on) { if (hud) { hud.remove(); probe.remove(); hud = probe = null; } return; }
+    if (hud) return;
+    probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)';
+    hud = document.createElement('pre');
+    hud.className = 'wa-hud';
+    hud.setAttribute('aria-hidden', 'true');
+    document.body.append(probe, hud);
+    worst = 0; hudTick();
+  };
+  ['scroll', 'resize', 'touchmove', 'touchend', 'orientationchange'].forEach(e => addEventListener(e, hudTick, { passive: true }));
+  if (window.visualViewport) { visualViewport.addEventListener('resize', hudTick); visualViewport.addEventListener('scroll', hudTick); }
+  setInterval(hudTick, 500);
+  const brand = document.querySelector('.wa-brand');
+  if (brand) {
+    let held = 0, fired = false;
+    brand.addEventListener('pointerdown', () => { fired = false; held = setTimeout(() => { fired = true; hudShow(!hud); }, 1500); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(e => brand.addEventListener(e, () => clearTimeout(held)));
+    brand.addEventListener('click', (e) => { if (fired) { e.preventDefault(); fired = false; } });
+    brand.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  if (hudOn()) hudShow(true);
 })();

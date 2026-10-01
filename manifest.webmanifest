@@ -1,15 +1,81 @@
 {
   "name": "WanderAlt",
   "short_name": "WanderAlt",
+  "id": "/",
   "description": "What's on in Tallinn, with a time and a walking distance on every listing.",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#111110",
   "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en",
+  "categories": [
+    "entertainment",
+    "lifestyle",
+    "travel"
+  ],
+  "shortcuts": [
+    {
+      "name": "Tonight",
+      "short_name": "Tonight",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/brand/pwa/icon-192.png?v=route-w",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Programme",
+      "short_name": "Programme",
+      "url": "/discover",
+      "icons": [
+        {
+          "src": "/brand/pwa/icon-192.png?v=route-w",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Map",
+      "short_name": "Map",
+      "url": "/map",
+      "icons": [
+        {
+          "src": "/brand/pwa/icon-192.png?v=route-w",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
   "icons": [
-    { "src": "/brand/pwa/icon-192.png?v=route-w",      "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/brand/pwa/icon-512.png?v=route-w",      "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/brand/pwa/icon-maskable.png?v=route-w", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/brand/pwa/icon-mono.png?v=route-w",     "sizes": "512x512", "type": "image/png", "purpose": "monochrome" }
+    {
+      "src": "/brand/pwa/icon-192.png?v=route-w",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/pwa/icon-512.png?v=route-w",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/pwa/icon-maskable.png?v=route-w",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/brand/pwa/icon-mono.png?v=route-w",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
   ]
 }

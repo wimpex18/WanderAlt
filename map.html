@@ -9,6 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg?v=route-w" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico?v=route-w" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png?v=route-w" />
+  <meta name="apple-mobile-web-app-title" content="WanderAlt" />
   <link rel="manifest" href="./manifest.webmanifest?v=route-w" />
   <link rel="canonical" href="https://wanderalt.app/map.html" />
 
@@ -29,11 +30,13 @@
   <link rel="modulepreload" href="./vendor/maplibre-gl.mjs" />
   <link rel="modulepreload" href="./vendor/maplibre-gl-shared.mjs" />
   <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="preload" as="fetch" href="https://tiles.openfreemap.org/planet" crossorigin />
   <link rel="stylesheet" href="wa.css" />
   <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
   <!-- Pre-paint, so there is no flash of the wrong theme. -->
   <script src="./theme.js"></script>
   <script src="./brand-reveal.js"></script>
+  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./icons.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./geo.js"></script>
@@ -52,7 +55,6 @@
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
-  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
   <script defer src="./map.js"></script>
 </head>

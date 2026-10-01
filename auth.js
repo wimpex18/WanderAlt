@@ -8,15 +8,18 @@
      .session         — { access_token, user_id, email, expires_at } | null
      .isSignedIn()    — bool
      .getAuthHeaders()— { apikey, Authorization: 'Bearer …' }
-     .signOut()       — clears session + dispatches 'wa:signed-out'
+     .signOut()       — drops this device's push subscription, revokes the
+                        session, dispatches 'wa:signed-out' (returns a promise)
+     .deleteAccount() — deletes the account and its data, then wipes the device
+     .wipeDevice()    — forgets everything WanderAlt keeps in this browser
 
    Dispatches on document:
      'wa:signed-in'   — after token parse, restore, or sign-up
      'wa:signed-out'  — after signOut()
 
-   Injects .auth-btn into .topbar__right (creates the wrapper
-   if absent). Overlay is a .wa-sheet dialog re-rendered per state:
-     sign-in | sign-up | forgot | set-password | account
+   The sign-in overlay is a .wa-sheet dialog re-rendered per state
+   (sign-in | sign-up | forgot | set-password). You opens it through
+   .openSignIn(); a password-recovery link opens it by itself.
 
    Load order (all HTML files):
      city.js → supabase.js → auth.js → …
@@ -35,7 +38,9 @@
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (s.expires_at && Date.now() / 1000 > s.expires_at) {
+      /* An expired token with a refresh token is not signed out: it is
+         renewed below before anything reads the session. */
+      if (s.expires_at && Date.now() / 1000 > s.expires_at && !s.refresh_token) {
         localStorage.removeItem(SESSION_KEY);
         return null;
       }
@@ -50,10 +55,10 @@
     } catch { return null; }
   };
 
-  const sessionFromToken = (token) => {
+  const sessionFromToken = (token, refresh) => {
     const p = decodeJWT(token);
     if (!p) return null;
-    return { access_token: token, user_id: p.sub, email: p.email || '', expires_at: p.exp || null };
+    return { access_token: token, refresh_token: refresh || '', user_id: p.sub, email: p.email || '', expires_at: p.exp || null };
   };
 
   /* ── Parse URL hash (set by Supabase after auth redirect) ── */
@@ -64,9 +69,16 @@
     const params = new URLSearchParams(hash);
     const token  = params.get('access_token');
     const type   = params.get('type');   /* 'recovery' | 'signup' | 'magiclink' */
-    if (!token) return null;
+    if (!token) {
+      /* A refused or cancelled sign-in comes back as #error=…; say so. */
+      if (params.get('error')) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return { error: params.get('error_description') || params.get('error') };
+      }
+      return null;
+    }
     history.replaceState(null, '', window.location.pathname + window.location.search);
-    return { session: sessionFromToken(token), type };
+    return { session: sessionFromToken(token, params.get('refresh_token')), type };
   };
 
   /* ── Public Auth object ──────────────────────────────────── */
@@ -84,33 +96,128 @@
       const tok = window.WA.Auth.session ? window.WA.Auth.session.access_token : key;
       return { apikey: key, Authorization: `Bearer ${tok}` };
     },
-    signOut: () => {
+    signOut: async () => {
+      /* The push subscription belongs to this device, not the account: drop it
+         first (it needs the session to remove its row) so the next person on a
+         shared device is not sent this reader's alerts. */
+      if (window.WA.Push) await Promise.race([window.WA.Push.disable(), new Promise(r => setTimeout(r, 3000))]).catch(() => {});
+      /* Revoke on the server too, so a copied token stops working. */
+      const tok = window.WA.Auth.session && window.WA.Auth.session.access_token;
+      if (tok) fetch(`${window.WA.BASE_URL || ''}/auth/v1/logout`, { method: 'POST', keepalive: true,
+        headers: { apikey: window.WA.ANON_KEY || '', Authorization: `Bearer ${tok}` } }).catch(() => {});
+      clearTimeout(refreshTimer);
       window.WA.Auth.session = null;
       window.WA.Auth.recoverySession = null;
       localStorage.removeItem(SESSION_KEY);
-      updateBtn();
       document.dispatchEvent(new CustomEvent('wa:signed-out'));
+    },
+    /* Everything this browser keeps for WanderAlt: saves, lists, follows,
+       interests, history, the cached catalogue and the service worker's data. */
+    wipeDevice: async () => {
+      if (window.WA.Push) await Promise.race([window.WA.Push.disable(), new Promise(r => setTimeout(r, 3000))]).catch(() => {});
+      try {
+        Object.keys(localStorage).filter(k => /^(wa:|wanderalt:)/.test(k)).forEach(k => localStorage.removeItem(k));
+        Object.keys(sessionStorage).filter(k => /^(wa:|wanderalt:)/.test(k)).forEach(k => sessionStorage.removeItem(k));
+      } catch {}
+      try { if (window.caches) await Promise.all((await caches.keys()).map(k => caches.delete(k))); } catch {}
+    },
+    /* Deletes the account and, through cascades, everything it owns. True when
+       the server confirms; the caller reloads. */
+    deleteAccount: async () => {
+      const A = window.WA.Auth;
+      if (!A.session) return false;
+      const sub = window.WA.Push ? window.WA.Push.disable() : null;   /* while the session can still remove its row */
+      if (sub) await Promise.race([sub, new Promise(r => setTimeout(r, 3000))]).catch(() => {});
+      try {
+        const r = await fetch(`${BASE()}/functions/v1/delete-account`, { method: 'POST', headers: A.getAuthHeaders() });
+        if (r.status !== 204) return false;
+      } catch { return false; }
+      clearTimeout(refreshTimer);
+      A.session = null; A.recoverySession = null;
+      await A.wipeDevice();
+      return true;
     },
     openSignIn: () => openOverlay('sign-in'),
   };
 
   /* ── Restore or parse session ────────────────────────────── */
 
+  /* Supabase access tokens last an hour. Without a refresh the reader would
+     be signed out once an hour, so the refresh token renews the session. */
+  let refreshTimer = null;
+  const announce = () => document.dispatchEvent(new CustomEvent('wa:signed-in'));
+
+  const refresh = async () => {
+    const cur = window.WA.Auth.session || loadSession();
+    if (!cur || !cur.refresh_token) return false;
+    try {
+      const r = await fetch(`${window.WA.BASE_URL || ''}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { apikey: window.WA.ANON_KEY || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: cur.refresh_token }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.access_token) {
+        const s = sessionFromToken(d.access_token, d.refresh_token || cur.refresh_token);
+        const was = !!window.WA.Auth.session;
+        window.WA.Auth.session = s; saveSession(s); schedule();
+        if (!was) announce();
+        return true;
+      }
+      /* 4xx: the refresh token is spent or revoked, so sign out for real.
+         A network error or 5xx leaves the session for the next try. */
+      if (r.status >= 400 && r.status < 500) {
+        window.WA.Auth.session = null;
+        try { localStorage.removeItem(SESSION_KEY); } catch {}
+        document.dispatchEvent(new CustomEvent('wa:signed-out'));
+      }
+    } catch {}
+    return false;
+  };
+
+  function schedule() {
+    clearTimeout(refreshTimer);
+    const s = window.WA.Auth.session;
+    if (!s || !s.refresh_token || !s.expires_at) return;
+    const ms = Math.max(5000, (s.expires_at - 120) * 1000 - Date.now());
+    refreshTimer = setTimeout(refresh, Math.min(ms, 2 ** 31 - 1));
+  }
+
+  /* A second tab renewing or signing out is picked up here. */
+  window.addEventListener('storage', (e) => {
+    if (e.key !== SESSION_KEY) return;
+    const next = loadSession();
+    const had = !!window.WA.Auth.session;
+    window.WA.Auth.session = next && !(next.expires_at && Date.now() / 1000 > next.expires_at) ? next : null;
+    if (window.WA.Auth.session) { schedule(); if (!had) announce(); }
+    else if (had) document.dispatchEvent(new CustomEvent('wa:signed-out'));
+  });
+
   const parsed = parseHash();
-  if (parsed) {
+  if (parsed && parsed.error) {
+    window.WA.Auth.signInError = parsed.error;
+  } else if (parsed) {
     if (parsed.type === 'recovery' && parsed.session) {
       window.WA.Auth.recoverySession = parsed.session;
       /* Do NOT log in — show set-password form instead. */
     } else if (parsed.session) {
       window.WA.Auth.session = parsed.session;
       saveSession(parsed.session);
-      Promise.resolve().then(() => document.dispatchEvent(new CustomEvent('wa:signed-in')));
+      schedule();
+      Promise.resolve().then(announce);
     }
   } else {
     const stored = loadSession();
     if (stored) {
-      window.WA.Auth.session = stored;
-      Promise.resolve().then(() => document.dispatchEvent(new CustomEvent('wa:signed-in')));
+      const stale = stored.expires_at && Date.now() / 1000 > stored.expires_at - 30;
+      if (stale) {
+        /* Renew first; the reader is announced signed in once it works. */
+        refresh();
+      } else {
+        window.WA.Auth.session = stored;
+        schedule();
+        Promise.resolve().then(announce);
+      }
     }
   }
 
@@ -133,7 +240,6 @@
   /* ── Overlay ─────────────────────────────────────────────── */
 
   let overlay = null;
-  let btn     = null;
 
   /* The auth surface is the system's sheet: a <dialog class="wa-sheet">
      opened with showModal(), which supplies the backdrop, focus trapping
@@ -182,7 +288,7 @@
 
   const render = (state) => {
     const renderers = { 'sign-in': renderSignIn, 'sign-up': renderSignUp,
-      'forgot': renderForgot, 'set-password': renderSetPassword, 'account': renderAccount };
+      'forgot': renderForgot, 'set-password': renderSetPassword };
     (renderers[state] || renderSignIn)(panel());
   };
 
@@ -226,12 +332,13 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Sign in</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Sign in</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-forgot').addEventListener('click', () => render('forgot'));
     p.querySelector('#auth-to-signup').addEventListener('click', () => render('sign-up'));
     p.querySelector('#auth-submit').addEventListener('click', doSignIn);
     p.querySelector('#auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') doSignIn(); });
+    p.querySelector('#auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); p.querySelector('#auth-password').focus(); } });
     p.querySelector('#auth-email').focus();
   };
 
@@ -246,8 +353,8 @@
     try {
       const { ok, data } = await authFetch('POST', '/auth/v1/token?grant_type=password', { email, password });
       if (ok && data.access_token) {
-        const s = sessionFromToken(data.access_token);
-        window.WA.Auth.session = s; saveSession(s); updateBtn(); closeOverlay();
+        const s = sessionFromToken(data.access_token, data.refresh_token);
+        window.WA.Auth.session = s; saveSession(s); schedule(); closeOverlay();
         document.dispatchEvent(new CustomEvent('wa:signed-in'));
       } else {
         setStatus(data.error_description || data.msg || 'Invalid email or password.', true);
@@ -275,7 +382,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Create account</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Create account</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-signin').addEventListener('click', () => render('sign-in'));
     p.querySelector('#auth-submit').addEventListener('click', doSignUp);
@@ -298,8 +405,8 @@
       if (ok) {
         if (data.access_token) {
           /* Email confirmations disabled — logged in immediately. */
-          const s = sessionFromToken(data.access_token);
-          window.WA.Auth.session = s; saveSession(s); updateBtn(); closeOverlay();
+          const s = sessionFromToken(data.access_token, data.refresh_token);
+          window.WA.Auth.session = s; saveSession(s); schedule(); closeOverlay();
           document.dispatchEvent(new CustomEvent('wa:signed-in'));
         } else {
           setStatus('Check your inbox to confirm your email, then sign in.');
@@ -328,7 +435,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Send reset link</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Send reset link</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-signin').addEventListener('click', () => render('sign-in'));
     p.querySelector('#auth-submit').addEventListener('click', doForgot);
@@ -366,7 +473,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Update password</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Update password</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-submit').addEventListener('click', doSetPassword);
     p.querySelector('#auth-password').focus();
@@ -387,7 +494,7 @@
         const s = window.WA.Auth.recoverySession;
         window.WA.Auth.session = s;
         window.WA.Auth.recoverySession = null;
-        saveSession(s); updateBtn();
+        saveSession(s);
         setStatus('Password updated. You are now signed in.');
         document.dispatchEvent(new CustomEvent('wa:signed-in'));
         setTimeout(closeOverlay, 1500);
@@ -398,113 +505,8 @@
     } catch { setStatus('Network error.', true); btn.disabled = false; }
   };
 
-  /* ── Account ───────────────────────────────────────────────── */
-  const renderAccount = (p) => {
-    const email = window.WA.Auth.session?.email || 'Your account';
-    title('Account');
-    body().innerHTML = `
-      <div class="wa-cells" style="margin-top:0">
-        <div class="wa-cell"><span class="wa-cell__label">Signed in as</span>
-          <span class="wa-cell__value">${window.WA.UI.esc(email)}</span></div>
-      </div>
-      <p style="margin:var(--s-5) 0 0">
-        <button class="wa-linkbtn" type="button" id="auth-signout">Sign out</button>
-      </p>
-      <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
-    foot().innerHTML = `
-      <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Close</button>
-      <a class="wa-btn wa-btn--primary" href="./profile.html" style="flex:1">View profile</a>`;
-    p.querySelector('#auth-close').addEventListener('click', closeOverlay);
-    p.querySelector('#auth-signout').addEventListener('click', () => {
-      window.WA.Auth.signOut();
-      closeOverlay();
-    });
-  };
-
-  /* ── Topbar button ───────────────────────────────────────── */
-
-  /* Leading glyphs for the masthead marketing links — same stroke .ic
-     family as the nav/return-bar icons. Icon + label keeps them legible. */
-  const ICON_ABOUT = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.75h.01"/></svg>';
-  const ICON_USER  = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3.5-6 7-6s7 2 7 6"/></svg>';
-
-  const updateBtn = () => {
-    if (!btn) return;
-    if (window.WA.Auth.isSignedIn()) {
-      /* Hide entirely when signed in — the Profile nav tab serves
-         the same role, so two entry points add only confusion. */
-      btn.hidden = true;
-    } else {
-      btn.hidden = false;
-      btn.innerHTML = `${ICON_USER}<span>Sign in</span>`;
-      btn.setAttribute('aria-label', 'Sign in');
-    }
-  };
-
-  const injectUI = () => {
-    const inner = document.querySelector('.topbar__inner');
-    if (!inner) return;
-    let right = inner.querySelector('.topbar__right');
-    if (!right) {
-      right = document.createElement('div');
-      right.className = 'topbar__right';
-      const cityBtn = inner.querySelector('.city-selector');
-      inner.appendChild(right);
-      if (cityBtn) right.appendChild(cityBtn);
-    }
-    btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'auth-btn';
-    updateBtn();
-    right.prepend(btn);
-
-    /* About link — first item in the right group so signed-out
-       first-time visitors have an obvious "what is this" entry that
-       doesn't depend on the colophon. Stays visible when signed in
-       (unlike the auth button). Skipped on the About page itself. */
-    if (document.body.dataset.page !== 'about') {
-      const about = document.createElement('a');
-      about.className = 'topbar__about';
-      about.href = './about.html';
-      about.innerHTML = `${ICON_ABOUT}<span>About</span>`;
-      about.setAttribute('aria-label', 'About');
-      right.prepend(about);
-    }
-
-    btn.addEventListener('click', () => {
-      if (window.WA.Auth.isSignedIn()) {
-        window.location.href = './profile.html';
-      } else if (window.WA.Auth.recoverySession) {
-        openOverlay('set-password');
-      } else {
-        openOverlay('sign-in');
-      }
-    });
-
-    /* Profile nav tab (bottom dock + masthead) shares the topbar button's
-       gate: signed-in lets the link open profile.html; otherwise intercept
-       and open the auth modal instead of bouncing through profile.html's
-       redirect. Delegated so it covers every page that ships the nav. */
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest && e.target.closest('[data-nav="profile"]');
-      if (!link) return;
-      if (window.WA.Auth.isSignedIn()) return;   // authed → navigate normally
-      e.preventDefault();
-      openOverlay(window.WA.Auth.recoverySession ? 'set-password' : 'sign-in');
-    });
-
-    document.addEventListener('wa:signed-in',  updateBtn);
-    document.addEventListener('wa:signed-out', updateBtn);
-
-    /* Auto-open set-password panel if a recovery link was clicked. */
-    if (window.WA.Auth.recoverySession) {
-      setTimeout(() => openOverlay('set-password'), 120);
-    }
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectUI);
-  } else {
-    injectUI();
-  }
+  /* A recovery link lands on any page; ask for the new password at once. */
+  const openRecovery = () => { if (window.WA.Auth.recoverySession) setTimeout(() => openOverlay('set-password'), 120); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openRecovery);
+  else openRecovery();
 })();

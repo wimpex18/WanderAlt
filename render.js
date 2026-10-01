@@ -256,12 +256,22 @@
      opts.day: the list is not grouped by day, so the rail names it.
      opts.noThumb: skip the picture column.
      opts.drop: an id for a remove key (Saved). */
+  /* A run that began before today and has not ended (an exhibition, a festival pass) is still on: its
+     first and last day, else null. It is filed under today, not under the day it started,
+     and its rail says from when to when. */
+  const runningSpan = (e) => {
+    if (!e || !e.startsAt || !e.endsAt) return null;
+    const from = W().resolveKey(e), to = W().resolveKey({ startsAt: e.endsAt });
+    return from && to && from < W().todayKey() && to >= W().todayKey() ? { from, to } : null;
+  };
   const rail = (e, opts) => {
     const clock = clockOf(e);
     const key = W().resolveKey(e);
     const liveNow = isLive(e);
     let top;
+    const span = runningSpan(e);
     if (liveNow) top = '<span class="wa-now">Now</span>';
+    else if (span) top = `<span class="wa-row__time wa-row__time--word">${esc(dom(span.from))} ${esc(MON[keyDate(span.from).getUTCMonth()])} to ${esc(dom(span.to))} ${esc(MON[keyDate(span.to).getUTCMonth()])}</span>`;
     else if (opts.day && key) {
       const word = key === W().todayKey() ? 'Today' : key === W().keyPlus(1) ? 'Tmrw' : `${dow(key)} ${dom(key)}`;
       top = `<span class="wa-row__time wa-row__time--word">${esc(word)}</span>${clock ? `<span class="wa-row__time">${esc(clock)}</span>` : ''}`;
@@ -449,7 +459,7 @@
   const byDay = (list) => {
     const groups = new Map();
     for (const e of list) {
-      const k = W().resolveKey(e) || 'ongoing';
+      const k = runningSpan(e) ? W().todayKey() : (W().resolveKey(e) || 'ongoing');
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k).push(e);
     }

@@ -84,6 +84,17 @@ export function composeChanges(events: readonly EventRow[], token: string): Mail
 
 export interface PushMessage { title: string; body: string; url: string; tag: string }
 
+/** What goes over the wire. Safari 18.4 and later read the `web_push: 8030` object and show it themselves,
+ *  with no service worker run, which is more reliable on a phone. Every other browser, and older Safari,
+ *  hands the same JSON to `sw.js`, which reads the flat title, body, url and tag beside it. */
+export function pushPayload(m: PushMessage, origin = 'https://wanderalt.app') {
+  return {
+    web_push: 8030,
+    notification: { title: m.title, body: m.body, navigate: new URL(m.url, origin).href, lang: 'en', dir: 'ltr' },
+    title: m.title, body: m.body, url: m.url, tag: m.tag,
+  };
+}
+
 /** A change note as a notification. Null when nothing changed. */
 export function pushChanges(events: readonly EventRow[]): PushMessage | null {
   if (!events.length) return null;

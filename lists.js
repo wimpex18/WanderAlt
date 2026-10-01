@@ -191,7 +191,27 @@ window.WA.Lists = (() => {
 
   document.addEventListener('wa:signed-in', () => syncFromCloud());
 
+
+  /* The name sheets (Saved, and Add to a list on an event page) share two small conveniences:
+     tapping a suggestion fills the name, and Return creates the list. */
+  const SUGGEST = ['Saturday night', 'Date night', 'Rainy day', 'Out of town guests'];
+  const suggestions = () => `<div class="wa-ideas" role="group" aria-label="Name ideas">${SUGGEST.map(s =>
+    `<button class="wa-ideas__chip" type="button" data-suggest="${s}">${s}</button>`).join('')}</div>`;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-suggest]');
+    const input = document.getElementById('list-name');
+    if (!b || !input) return;
+    input.value = b.dataset.suggest;
+    input.focus();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || !e.target || e.target.id !== 'list-name') return;
+    const go = document.getElementById('list-create');
+    if (go) { e.preventDefault(); go.click(); }
+  });
+
   return {
+    suggestions,
     all, forCity, byId, items, listsFor,
     create, rename, remove, add, removeItem, purge,
     syncFromCloud,
