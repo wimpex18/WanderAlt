@@ -193,7 +193,7 @@
   /* ── Follows, interests, the last visit ─────────────────── */
   const isFollowed = (e) => {
     const F = window.WA.Follows;
-    return !!(F && (F.has(e.venue) || F.has(e.handle)));
+    return !!(F && F.matchesEvent(e));
   };
 
   const INTERESTS = [

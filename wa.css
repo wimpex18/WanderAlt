@@ -888,6 +888,13 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-original { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
 .det-original > summary { min-height: 48px; padding: var(--s-3) 0; cursor: pointer; font-weight: 600; }
 .det-original > summary:hover { color: var(--accent); }
+/* Flag a problem: a quiet disclosure under the provenance line. */
+.det-flag { margin-top: var(--s-3); }
+.det-flag > summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; color: var(--muted); font-size: var(--t-sm, .875rem); }
+.det-flag > summary:hover { color: var(--accent); }
+.det-flag form { display: grid; gap: var(--s-3); max-width: 420px; padding-bottom: var(--s-3); }
+.det-flag__reasons { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
+.det-flag__reason { display: flex; align-items: center; gap: var(--s-2); min-height: 40px; }
 .det-original__body { display: grid; gap: var(--s-3); padding-bottom: var(--s-5); }
 .det-notice { display: flex; gap: var(--s-3); align-items: start; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); }
 .det-notice strong { display: block; }

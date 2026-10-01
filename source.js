@@ -39,16 +39,28 @@
       return;
     }
     document.title = `${s.name} · WanderAlt`;
+    const F = window.WA.Follows;
+    const fid = s.via === 'handle' && F ? F.sourceId(s.name) : '';
+    const following = !!fid && F.has(fid);
+    const feed = following ? F.feedUrl(fid) : '';
     const venues = new Set(s.picks.map(e => R().latin(e.venue)).filter(Boolean)).size;
     const list = s.picks.slice().sort(window.WA.Geo.bySoonestThenDistance());
     main().innerHTML = `<header class="wa-pagehead">
         <p class="wa-kicker">${s.via === 'handle' ? 'A source we read' : 'Venue'}</p>
         <h1 class="wa-h1">${esc(s.name)}</h1>
         <p class="wa-lede">${esc(`${list.length} listed${s.via === 'handle' ? ` across ${venues} ${venues === 1 ? 'venue' : 'venues'}` : ''}, soonest first.`)}</p>
+        ${fid ? `<p class="det-actions__row"><button class="wa-btn" type="button" id="follow-source" aria-pressed="${following}">${window.WA.Icon(following ? 'check' : 'follow')}<span>${following ? 'Following' : 'Follow'}</span></button>${feed ? `<a class="wa-btn" href="${esc(feed.replace(/^https?:/, 'webcal:'))}">${window.WA.Icon('calendar')}<span>Calendar</span></a>` : ''}</p>` : ''}
       </header>
       ${R().grouped(list)}`;
   };
 
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('#follow-source');
+    const s = b && resolve();
+    if (!s || !window.WA.Follows) return;
+    window.WA.Follows.toggle(window.WA.Follows.sourceId(s.name), s.name);
+    render();
+  });
   document.addEventListener('wa:catalog-ready', render);
   const pre = () => { main().innerHTML = R().skelRows(5); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();

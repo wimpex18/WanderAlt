@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929160000_places_website_source.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001120000_problem_reports.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -18,6 +18,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `pipeline_runs` | One row per run: neurons and model calls spent, events written, whether every source was healthy. Also the daily Workers AI budget | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
+| `problem_reports` | Problems readers flag on an event: fixed reason, optional 280-character note, status `open` / `fixed` / `dismissed` | no (insert only; read at `/review` with the secret key) |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
 `picks` and `venues` are read-only views shaped like the old tables, so the current pages, `functions/_middleware.js`, `og-image` and `calendar-feed` read the new data unchanged. They go away with the front-end rebuild.
@@ -183,7 +184,7 @@ GitHub pauses scheduled workflows in a public repository after 60 days without a
 | Function | `verify_jwt` | Used by |
 |---|---|---|
 | `og-image` | false | `functions/_middleware.js` share cards (satori 0.33.4, resvg-wasm 2.6.2) |
-| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
+| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?place=<places.id>` and `?handle=@source` narrow the feed to one venue or source (a malformed place is 400). `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
 
 Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing the function's existing `verify_jwt` (the tool defaults it to true). Committing does not deploy, and deleting a directory does not undeploy. The share surface fails open with a valid card, so judge the rendered card; `og-image?…&debug=1` returns the error instead.
 

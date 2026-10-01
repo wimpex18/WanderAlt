@@ -364,6 +364,17 @@
             ${link ? `<a href="${esc(url(link))}" target="_blank" rel="noopener noreferrer">${esc(host(link))} ${I('out', 'wa-ic--sm')}</a>` : ''}
             ${via ? `<a href="source.html?handle=${esc(encodeURIComponent(e.handle))}">Everything from ${esc(via)}</a>` : ''}
           </div>
+          ${window.WA.Report ? `<details class="det-flag" id="flag-box">
+            <summary>Flag a problem</summary>
+            <form id="flag-form" data-id="${esc(e.id)}">
+              <fieldset class="det-flag__reasons"><legend class="wa-field__label">What is wrong</legend>
+                ${window.WA.Report.REASONS.map((r, i) => `<label class="det-flag__reason"><input type="radio" name="reason" value="${esc(r.id)}"${i === 0 ? ' checked' : ''}> ${esc(r.label)}</label>`).join('')}
+              </fieldset>
+              <div class="wa-field"><label class="wa-field__label" for="flag-note">Note, optional</label>
+                <input class="wa-input" id="flag-note" name="note" type="text" maxlength="280" autocomplete="off"></div>
+              <button class="wa-btn" type="submit">Send</button>
+            </form>
+          </details>` : ''}
         </section>
       </div>
     </div>`;
@@ -372,7 +383,7 @@
   /* ── The venue page ─────────────────────────────────────────── */
   const placePage = (v) => {
     const o = R().openState(v);
-    const following = window.WA.Follows && window.WA.Follows.has(v.name);
+    const following = window.WA.Follows && window.WA.Follows.has(window.WA.Follows.placeId(v));
     const links = [['globe', 'Website', v.website], ['instagram', 'Instagram', v.instagram], ['facebook', 'Facebook', v.facebook]]
       .map(([ic, label, href]) => [ic, label, href ? url(href) : '']).filter(x => x[2]);
     const list = picksAt(v);
@@ -408,6 +419,7 @@
             <button class="wa-btn" type="button" id="follow" aria-pressed="${!!following}">${I(following ? 'check' : 'follow')}<span>${following ? 'Following' : 'Follow'}</span></button>
             <a class="wa-btn" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">${I('walk')}<span>Walk there</span></a>
             ${saveBtn(v.id)}
+            ${following && window.WA.Follows.feedUrl(window.WA.Follows.placeId(v)) ? `<a class="wa-btn" href="${esc(window.WA.Follows.feedUrl(window.WA.Follows.placeId(v)).replace(/^https?:/, 'webcal:'))}" aria-label="Add ${esc(v.name || 'this venue')} to your calendar">${I('calendar')}<span>Calendar</span></a>` : ''}
           </div>
           ${links.length ? `<div class="det-links">${links.map(([ic, label, href]) =>
             `<a class="det-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`${label} (opens ${host(href)})`)}">${I(ic)}<span>${esc(label)}</span>${I('out', 'wa-ic--sm')}</a>`).join('')}</div>` : ''}
@@ -510,6 +522,19 @@
     d.showModal();
   };
 
+  document.addEventListener('submit', async (ev) => {
+    const form = ev.target.closest && ev.target.closest('#flag-form');
+    if (!form || !window.WA.Report) return;
+    ev.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    const data = new FormData(form);
+    const ok = await window.WA.Report.send(form.dataset.id, String(data.get('reason') || ''), String(data.get('note') || ''));
+    if (btn) btn.disabled = false;
+    if (ok) { form.reset(); const box = document.getElementById('flag-box'); if (box) box.open = false; }
+    toast(ok ? 'Thanks. We will check the source' : 'Could not send. Try again later');
+  });
+
   document.addEventListener('click', (ev) => {
     const hit = (s) => ev.target.closest && ev.target.closest(s);
     if (hit('[data-act="retry-detail"]')) { lookedUp = false; skeleton(); render(); return; }
@@ -561,9 +586,11 @@
     if (hit('#follow')) {
       const h = resolve();
       if (!h || !window.WA.Follows) return;
-      const on = window.WA.Follows.toggle(h.e.name);
+      const F = window.WA.Follows, fid = F.placeId(h.e);
+      if (!fid) return;
+      const on = F.toggle(fid, h.e.name);
       render();
-      toast(on ? `Following ${h.e.name}` : `Stopped following ${h.e.name}`, 'Undo', () => { window.WA.Follows.set(h.e.name, !on); render(); });
+      toast(on ? `Following ${h.e.name}` : `Stopped following ${h.e.name}`, 'Undo', () => { F.set(fid, !on, h.e.name); render(); });
       return;
     }
     if (hit('[data-original-retry]')) {

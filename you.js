@@ -23,7 +23,16 @@
     const venues = window.WA._venuesAll || [];
     const byId = new Map(pool().map(x => [x.id, x]));
     const opened = window.WA.Seen.ids().slice().reverse().map(id => byId.get(id)).filter(Boolean).slice(0, 8);
-    const followed = follows.map(k => venues.find(v => String(v.name).toLowerCase().trim() === k) || { name: k, __raw: true });
+    const F = window.WA.Follows;
+    const followed = follows.map(k => {
+      if (k.startsWith('place:')) return venues.find(v => v.id === k.slice(6)) || { name: F.label(k) || 'A venue', __raw: true, key: k };
+      if (k.startsWith('src:')) return { name: F.label(k) || `@${k.slice(4)}`, __raw: true, key: k, source: k.slice(4) };
+      return venues.find(v => String(v.name).toLowerCase().trim() === k) || { name: k, __raw: true, key: k };
+    });
+    const cal = (k) => {
+      const u = F.feedUrl(k);
+      return u ? `<a class="wa-btn wa-btn--sm wa-btn--quiet" href="${esc(u.replace(/^https?:/, 'webcal:'))}" aria-label="Add this to your calendar">${I('calendar')}<span>Calendar</span></a>` : '';
+    };
 
     $('you-body').innerHTML = `
       <div class="wa-stats">
@@ -45,8 +54,8 @@
 
         <section class="wa-sect">${R().sect({ title: 'Following', n: follows.length || null, sub: follows.length ? '' : 'Follow a venue from its page and its listings are marked for you.' })}
           ${followed.length ? `<ul>${followed.map(v => v.__raw
-            ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${esc(v.name)}</span></span><span class="wa-place__side"><button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.name)}">Unfollow</button></span></li>`
-            : R().placeRow(v)).join('')}</ul>` : ''}
+            ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${v.source ? `<a href="source.html?handle=${esc(encodeURIComponent(`@${v.source}`))}">${esc(v.name)}</a>` : esc(v.name)}</span></span><span class="wa-place__side">${cal(v.key)}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.key)}">Unfollow</button></span></li>`
+            : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : ''}
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'Opened earlier', n: opened.length || null, sub: opened.length ? 'Newest first' : 'Nothing opened yet.' })}

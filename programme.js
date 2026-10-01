@@ -202,6 +202,7 @@
         <input class="wa-range" type="range" data-within min="0" max="4000" step="250" value="${state.within}" aria-label="Maximum walking distance" />
         <span class="wa-field__consequence" data-within-note>${withinNote()}</span>
       </div>
+      ${anchorField()}
       <div class="wa-field">
         <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
           <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free in this view</span></span>
@@ -225,7 +226,21 @@
   };
   const withinNote = () => (state.within
     ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot`
-    : 'Anywhere in the city') + (G().currentLoc() ? '' : '. Needs your location');
+    : 'Anywhere in the city') + (G().anchor() ? `, from ${G().anchor().label || 'your chosen spot'}` : G().currentLoc() ? '' : '. Needs your location or a spot below');
+
+  /* A named spot to measure from, picked from places we hold, so walking
+     times work without location permission (a hotel, a friend's street). */
+  const anchorField = () => {
+    const spots = (window.WA._venuesAll || []).filter(v => v.name && v.lat != null && v.lng != null && !v.isClosed)
+      .map(v => v.name).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => a.localeCompare(b)).slice(0, 400);
+    const a = G().anchor();
+    return `<div class="wa-field">
+      <label class="wa-field__label" for="anchor">Measure from</label>
+      <input class="wa-input" id="anchor" list="anchor-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
+      <datalist id="anchor-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <span class="wa-field__consequence">${a ? 'Saved in this browser. Clear the box to use your location.' : 'Pick a place you know, such as where you are staying, to skip the location prompt.'}</span>
+    </div>`;
+  };
 
   const activeCount = () => (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
@@ -517,6 +532,12 @@
   });
   document.addEventListener('change', (e) => {
     if (!e.target.matches) return;
+    if (e.target.id === 'anchor') {
+      const name = e.target.value.trim().toLowerCase();
+      const v = name ? (window.WA._venuesAll || []).find(x => String(x.name).toLowerCase() === name && x.lat != null && x.lng != null) : null;
+      G().setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
+      return;
+    }
     if (e.target.matches('[data-within]')) { render(); return; }
     if (e.target.matches('[data-date]')) {
       cancelAsk();

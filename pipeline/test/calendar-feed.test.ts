@@ -49,3 +49,11 @@ test('the deployed single-event download stays single-event, validates ids and d
   assert.equal((await f.request('id=malformed')).status, 400);
   assert.equal((await feed([]).request(`id=${id}`)).status, 404);
 });
+
+test('a venue calendar filters by place id, validates it and names the calendar after the venue', async () => {
+  const f = feed([event]);
+  const s = await (await f.request('city=tallinn&place=tallinn-kino-soprus')).text();
+  assert.match(f.query(), /venue_id=eq.tallinn-kino-soprus/);
+  assert.match(s, /X-WR-CALNAME:WanderAlt — Venue/);
+  assert.equal((await feed([]).request('city=tallinn&place=a%26b')).status, 400);
+});
