@@ -265,3 +265,30 @@ test('a date-only run is still on all of its last day, and ends when that day do
   assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(0)) + 10 * 3600000), false);
   assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(1)) + 3600000), true);
 });
+
+test('the Home Screen nudge appears once, ever, after about 75 seconds of looking at a listing page', () => {
+  const store = new Map<string, string>(); const session = new Map<string, string>();
+  let tickers: Array<() => void> = []; let appended = 0;
+  const make = (page: string) => {
+    tickers = []; appended = 0;
+    const el = () => ({ className: '', setAttribute() {}, querySelector: () => ({ addEventListener() {}, set textContent(_v: string) {} }), set innerHTML(_v: string) {}, classList: { add() {} }, remove() {} });
+    const context = createContext({
+      navigator: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 Version/27.0 Mobile/15E148 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 },
+      localStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) },
+      sessionStorage: { getItem: (k: string) => session.get(k) ?? null, setItem: (k: string, v: string) => session.set(k, v) },
+      matchMedia: () => ({ matches: false }), Intl, CustomEvent: class {},
+      setInterval: (f: () => void) => { tickers.push(f); return tickers.length; }, clearInterval: () => {}, setTimeout: () => 0,
+      addEventListener: () => {}, window: { WA: { Auth: {}, Follows: { keys: () => [] } }, addEventListener: () => {}, matchMedia: () => ({ matches: false }) },
+      document: { readyState: 'complete', visibilityState: 'visible', body: { dataset: { page }, appendChild: () => { appended++; } }, activeElement: null, querySelector: () => null, createElement: el, addEventListener: () => {}, dispatchEvent: () => {} },
+    });
+    runInContext(readFileSync(new URL('../../install.js', import.meta.url), 'utf8'), context);
+  };
+  make('tonight');
+  for (let i = 0; i < 14; i++) tickers.forEach(f => f());      // 70 s
+  assert.equal(appended, 0);
+  tickers.forEach(f => f());                                      // 75 s
+  assert.equal(appended, 1);
+  session.clear(); make('tonight');                               // a later visit
+  for (let i = 0; i < 30; i++) tickers.forEach(f => f());
+  assert.equal(appended, 0);
+});

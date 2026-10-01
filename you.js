@@ -18,6 +18,7 @@
   /* Notification switches for this device. A missing table (migration not
      applied) leaves `prefs` null and hides the section. */
   let jumped = false;
+  const foldOpen = new Set();   /* which folds the reader opened, kept across redraws */
   let pushState = '';   /* '' until asked; then what WA.Push.state() says */
   let prefs;   /* undefined: not asked yet; null: unavailable; else { weekly, changes } */
   const authHeaders = () => window.WA.Auth.getAuthHeaders();
@@ -47,25 +48,27 @@
   const pushRows = () => {
     const I = window.WA.Install;
     if (pushState === 'install') return `<p class="wa-state">Needs the Home Screen app</p>
-      <p class="wa-note">iPhone only sends web notifications from an app on the Home Screen.</p>
+      <p class="wa-note">Alerts need the app on your Home Screen.</p>
       <p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" id="install-open" data-from="push">Add to Home Screen</button></p>`;
     if (pushState === 'denied') return `<p class="wa-state">Blocked</p><p class="wa-note">${I && I.standalone() ? 'Open Settings, then Notifications, then WanderAlt, and allow notifications.' : 'Notifications are blocked for this site in your browser settings.'}</p>`;
     if (pushState !== 'on' && pushState !== 'off') return '';
     const on = pushState === 'on' && !!prefs.push;
     return `<p class="wa-state${on ? ' is-on' : ''}">${on ? 'On for this device' : 'Off'}</p>
       <button class="wa-switch" type="button" data-push aria-pressed="${on}">
-        <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">Changes to your events arrive here too</span></span><span class="wa-switch__track"></span></button>
+        <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">When a saved plan changes</span></span><span class="wa-switch__track"></span></button>
       <button class="wa-switch" type="button" data-digest="tonight" aria-pressed="${on && !!prefs.tonight}"${on ? '' : ' disabled'}>
-        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One notification at 16:00, only when something starts today</span></span><span class="wa-switch__track"></span></button>
+        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One note at 16:00, only when something starts</span></span><span class="wa-switch__track"></span></button>
       ${on ? '<p><button class="wa-linkbtn" type="button" id="push-test">Send a test notification</button></p>' : ''}`;
   };
 
-  /* Add to Home Screen, for anyone reading in a browser tab that can offer it. */
+  /* Add to Home Screen: one slim row near the top for anyone in a browser tab that can offer it. */
   const appSection = () => {
     const I = window.WA.Install;
-    if (!I || !I.canOpen()) return '';
-    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: I.kind() === 'ios' ? 'Full screen, and the only way iPhone gets notifications.' : 'Its own icon, one tap from your Home screen.' })}
-      <button class="wa-btn wa-btn--sm" type="button" id="install-open" data-from="you">Add to Home Screen</button></section>`;
+    if (!I || !I.canOffer()) return '';
+    return `<button class="you-app" type="button" id="install-open" data-from="you">
+      <span class="you-app__ic">${window.WA.Icon('plus')}</span>
+      <span class="you-app__text"><strong>${esc(I.label())}</strong><span>${esc(I.benefit())}</span></span>
+      ${window.WA.Icon('chevron')}</button>`;
   };
 
   /* The inbox: notes the alert job wrote for this account. Rows are read
@@ -84,10 +87,10 @@
     if (notes && notes.some(n => !n.read_at)) window.WA.Inbox.markRead();
   };
   const inboxSection = (signedIn) => {
-    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in to hear here when a saved event is cancelled.' })}</section>`;
+    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in to get cancellations here.' })}</section>`;
     if (notes === undefined) { loadNotes(); return ''; }
     if (!notes) return '';
-    return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet. Save an event or follow a place.' })}
+    return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet.' })}
       ${notes.length ? `<ul class="wa-inbox">${notes.map(n => `<li><a class="wa-inbox__row${n.read_at ? '' : ' is-new'}" href="${esc(window.WA.UI.safeUrl(n.url) || '#')}">
         <span class="wa-inbox__title">${esc(n.title)}</span><span class="wa-inbox__body">${esc(n.body)}</span><span class="wa-inbox__when">${esc(ago(n.created_at))}</span></a></li>`).join('')}</ul>
         <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="inbox-clear">Clear inbox</button></p>` : ''}
@@ -100,7 +103,7 @@
     if (prefs === undefined) { loadPrefs(); return ''; }
     if (!prefs) return '';
     const rows = pushRows();
-    return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app.' })}${rows}</section>` : '';
+    return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications' })}${rows}</section>` : '';
   };
 
   /* A few quiet milestones, worked out from what is already kept on the device. Nothing is stored for them. */
@@ -112,18 +115,15 @@
     const all = [
       { icon: 'save', name: 'First save', hint: 'Save a listing', ok: saved >= 1 },
       { icon: 'list', name: 'Curator', hint: 'Save five listings', ok: saved >= 5 },
-      { icon: 'programme', name: 'Explorer', hint: 'Open ten listings', ok: opened >= 10 },
       { icon: 'pin', name: 'Local', hint: 'Follow a place', ok: follows >= 1 },
-      { icon: 'calendar', name: 'Planner', hint: 'Make a list', ok: lists >= 1 },
       { icon: 'walk', name: 'Going out', hint: 'Say you are going to something', ok: going >= 1 },
     ];
     const done = all.filter(m => m.ok).length;
     const next = all.find(m => !m.ok);
-    return `<section class="wa-sect you-mile" aria-label="Milestones">
-      <div class="you-mile__head"><h2 class="wa-sect__title">Milestones</h2><span class="you-mile__n">${done} of ${all.length}</span></div>
+    return `<section class="you-mile" aria-label="Milestones">
+      <div class="you-mile__head"><h2 class="you-mile__title">Milestones</h2><span class="you-mile__n">${next ? `${done} of ${all.length} · next: ${esc(next.hint.toLowerCase())}` : 'All four'}</span></div>
       <div class="you-mile__bar" role="progressbar" aria-valuemin="0" aria-valuemax="${all.length}" aria-valuenow="${done}"><span style="width:${Math.round(done / all.length * 100)}%"></span></div>
       <ul class="you-mile__grid">${all.map(m => `<li class="you-mile__item${m.ok ? ' is-on' : ''}" title="${esc(m.hint)}"><span class="you-mile__ic">${I(m.icon)}</span><span class="you-mile__name">${esc(m.name)}</span><span class="wa-sr">${m.ok ? 'Done' : esc(m.hint)}</span></li>`).join('')}</ul>
-      <p class="you-mile__next">${next ? `Next: ${esc(next.hint.toLowerCase())}` : 'All six. Nicely done.'}</p>
     </section>`;
   };
 
@@ -147,40 +147,44 @@
       return u ? `<a class="wa-btn wa-btn--sm wa-btn--quiet" href="${esc(u.replace(/^https?:/, 'webcal:'))}" aria-label="Add this to your calendar">${I('calendar')}<span>Calendar</span></a>` : '';
     };
 
+    const theme = window.WA.Theme.get();
+    const AUTO = '<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>';
+    const themeIcon = { auto: AUTO, day: I('sun'), dusk: I('moon') };
+    const fold = (id, title, n, body) => `<details class="you-fold" id="${id}"${foldOpen.has(id) ? ' open' : ''}><summary><span class="you-fold__t">${esc(title)}</span>${n ? `<span class="you-fold__n">${n}</span>` : ''}${I('chevron')}</summary><div class="you-fold__b">${body}</div></details>`;
+
     $('you-body').innerHTML = `
       <div class="wa-stats">
         <div class="wa-stat"><span class="wa-stat__n">${window.WA.Seen.count()}</span><span class="wa-stat__label">Opened</span></div>
         <div class="wa-stat"><span class="wa-stat__n">${saved}</span><span class="wa-stat__label">Saved</span></div>
         <div class="wa-stat"><span class="wa-stat__n">${follows.length}</span><span class="wa-stat__label">Following</span></div>
       </div>
+      ${appSection()}
       ${milestones(saved, follows.length)}
 
       <div class="you-cols">
         ${inboxSection(signedIn)}
-        <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: 'Up to three get a shelf on Tonight.' })}
-          <div class="wa-chips" style="margin-top:var(--s-3)">${R().interests.OPTIONS.map(o =>
+        <section class="wa-sect you-int" id="interests">
+          <div class="wa-sect__head"><h2 class="wa-sect__title">Interests</h2><span class="you-int__n">${ids.length} of 3 on Tonight</span></div>
+          <div class="wa-chips wa-chips--scroll you-int__row">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
         </section>
 
-        <section class="wa-sect">${R().sect({ title: 'Appearance', sub: `Auto follows your device, or goes dark at ${window.WA.Theme.duskLabel()}.` })}
-          <div class="wa-seg" style="margin-top:var(--s-3);max-width:420px">${window.WA.Theme.OPTIONS.map(o =>
-            `<button class="wa-seg__opt" type="button" data-theme-set="${esc(o.value)}" aria-pressed="${window.WA.Theme.get() === o.value}">${esc(o.label)}</button>`).join('')}</div>
+        <section class="wa-sect you-look">
+          <h2 class="wa-sect__title">Appearance</h2>
+          <div class="you-look__seg" role="group" aria-label="Appearance">${window.WA.Theme.OPTIONS.map(o =>
+            `<button class="you-look__opt" type="button" data-theme-set="${esc(o.value)}" aria-pressed="${theme === o.value}" aria-label="${esc(o.value === 'auto' ? 'Follow my device' : o.label)}" title="${esc(o.value === 'auto' ? `Follow my device, dark from ${window.WA.Theme.duskLabel()}` : o.label)}">${themeIcon[o.value] || ''}</button>`).join('')}</div>
         </section>
 
-        <section class="wa-sect">${R().sect({ title: 'Following', n: follows.length || null, sub: follows.length ? '' : 'Follow a venue from its page.' })}
-          ${followed.length ? `<ul>${followed.map(v => v.__raw
-            ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${v.source ? `<a href="source.html?handle=${esc(encodeURIComponent(`@${v.source}`))}">${esc(v.name)}</a>` : esc(v.name)}</span></span><span class="wa-place__side">${cal(v.key)}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.key)}">Unfollow</button></span></li>`
-            : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : ''}
-        </section>
-
-        <section class="wa-sect">${R().sect({ title: 'Opened earlier', n: opened.length || null, sub: opened.length ? 'Newest first' : 'Nothing opened yet.' })}
-          ${opened.length ? `<ul class="wa-rows">${opened.map(x => x.title ? R().row(x, { day: true, noThumb: true }) : '').join('')}</ul>
-            <ul>${opened.filter(x => !x.title).map(v => R().placeRow(v)).join('')}</ul>
-            <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : ''}
-        </section>
-
-        ${appSection()}
         ${pushSection(signedIn)}
+
+        <section class="wa-sect you-folds">
+          ${fold('fold-following', 'Following', follows.length || null, followed.length ? `<ul>${followed.map(v => v.__raw
+            ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${v.source ? `<a href="source.html?handle=${esc(encodeURIComponent(`@${v.source}`))}">${esc(v.name)}</a>` : esc(v.name)}</span></span><span class="wa-place__side">${cal(v.key)}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.key)}">Unfollow</button></span></li>`
+            : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : '<p class="wa-note">Follow a venue from its page.</p>')}
+          ${fold('fold-opened', 'Opened earlier', opened.length || null, opened.length ? `<ul class="wa-rows">${opened.map(x => x.title ? R().row(x, { day: true, noThumb: true }) : '').join('')}</ul>
+            <ul>${opened.filter(x => !x.title).map(v => R().placeRow(v)).join('')}</ul>
+            <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : '<p class="wa-note">Nothing opened yet.</p>')}
+        </section>
 
         <section class="wa-sect">
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
@@ -200,10 +204,10 @@
             </div>`}
         </section>
 
-        <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Saves, lists, follows, interests and history stay in this browser. Signed in, they also live in your account, with your alert settings and inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
-          <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
-          <p><button class="wa-linkbtn" type="button" id="wipe-device">Forget everything on this device</button></p>
+        <section class="wa-sect you-folds">
+          ${fold('fold-store', 'Data and privacy', null, `<p class="wa-note">Saves, lists, follows, interests and history stay in this browser. Signed in, they also live in your account, with your alert settings and inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
+            <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
+            <p><button class="wa-linkbtn" type="button" id="wipe-device">Forget everything on this device</button></p>`)}
         </section>
       </div>
       <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
@@ -232,6 +236,11 @@
     d.addEventListener('cancel', (ev) => { ev.preventDefault(); done(false); });
     d.showModal();
   });
+
+  document.addEventListener('toggle', (e) => {
+    const d = e.target;
+    if (d && d.classList && d.classList.contains('you-fold')) { if (d.open) foldOpen.add(d.id); else foldOpen.delete(d.id); }
+  }, true);
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
