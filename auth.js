@@ -35,7 +35,9 @@
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (s.expires_at && Date.now() / 1000 > s.expires_at) {
+      /* An expired token with a refresh token is not signed out: it is
+         renewed below before anything reads the session. */
+      if (s.expires_at && Date.now() / 1000 > s.expires_at && !s.refresh_token) {
         localStorage.removeItem(SESSION_KEY);
         return null;
       }
@@ -50,10 +52,10 @@
     } catch { return null; }
   };
 
-  const sessionFromToken = (token) => {
+  const sessionFromToken = (token, refresh) => {
     const p = decodeJWT(token);
     if (!p) return null;
-    return { access_token: token, user_id: p.sub, email: p.email || '', expires_at: p.exp || null };
+    return { access_token: token, refresh_token: refresh || '', user_id: p.sub, email: p.email || '', expires_at: p.exp || null };
   };
 
   /* ── Parse URL hash (set by Supabase after auth redirect) ── */
@@ -64,9 +66,16 @@
     const params = new URLSearchParams(hash);
     const token  = params.get('access_token');
     const type   = params.get('type');   /* 'recovery' | 'signup' | 'magiclink' */
-    if (!token) return null;
+    if (!token) {
+      /* A refused or cancelled sign-in comes back as #error=…; say so. */
+      if (params.get('error')) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return { error: params.get('error_description') || params.get('error') };
+      }
+      return null;
+    }
     history.replaceState(null, '', window.location.pathname + window.location.search);
-    return { session: sessionFromToken(token), type };
+    return { session: sessionFromToken(token, params.get('refresh_token')), type };
   };
 
   /* ── Public Auth object ──────────────────────────────────── */
@@ -85,6 +94,11 @@
       return { apikey: key, Authorization: `Bearer ${tok}` };
     },
     signOut: () => {
+      /* Revoke on the server too, so a copied token stops working. */
+      const tok = window.WA.Auth.session && window.WA.Auth.session.access_token;
+      if (tok) fetch(`${window.WA.BASE_URL || ''}/auth/v1/logout`, { method: 'POST', keepalive: true,
+        headers: { apikey: window.WA.ANON_KEY || '', Authorization: `Bearer ${tok}` } }).catch(() => {});
+      clearTimeout(refreshTimer);
       window.WA.Auth.session = null;
       window.WA.Auth.recoverySession = null;
       localStorage.removeItem(SESSION_KEY);
@@ -96,21 +110,82 @@
 
   /* ── Restore or parse session ────────────────────────────── */
 
+  /* Supabase access tokens last an hour. Without a refresh the reader would
+     be signed out once an hour, so the refresh token renews the session. */
+  let refreshTimer = null;
+  const announce = () => document.dispatchEvent(new CustomEvent('wa:signed-in'));
+
+  const refresh = async () => {
+    const cur = window.WA.Auth.session || loadSession();
+    if (!cur || !cur.refresh_token) return false;
+    try {
+      const r = await fetch(`${window.WA.BASE_URL || ''}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { apikey: window.WA.ANON_KEY || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: cur.refresh_token }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.access_token) {
+        const s = sessionFromToken(d.access_token, d.refresh_token || cur.refresh_token);
+        const was = !!window.WA.Auth.session;
+        window.WA.Auth.session = s; saveSession(s); schedule();
+        if (!was) announce();
+        return true;
+      }
+      /* 4xx: the refresh token is spent or revoked, so sign out for real.
+         A network error or 5xx leaves the session for the next try. */
+      if (r.status >= 400 && r.status < 500) {
+        window.WA.Auth.session = null;
+        try { localStorage.removeItem(SESSION_KEY); } catch {}
+        document.dispatchEvent(new CustomEvent('wa:signed-out'));
+      }
+    } catch {}
+    return false;
+  };
+
+  function schedule() {
+    clearTimeout(refreshTimer);
+    const s = window.WA.Auth.session;
+    if (!s || !s.refresh_token || !s.expires_at) return;
+    const ms = Math.max(5000, (s.expires_at - 120) * 1000 - Date.now());
+    refreshTimer = setTimeout(refresh, Math.min(ms, 2 ** 31 - 1));
+  }
+
+  /* A second tab renewing or signing out is picked up here. */
+  window.addEventListener('storage', (e) => {
+    if (e.key !== SESSION_KEY) return;
+    const next = loadSession();
+    const had = !!window.WA.Auth.session;
+    window.WA.Auth.session = next && !(next.expires_at && Date.now() / 1000 > next.expires_at) ? next : null;
+    if (window.WA.Auth.session) { schedule(); if (!had) announce(); }
+    else if (had) document.dispatchEvent(new CustomEvent('wa:signed-out'));
+  });
+
   const parsed = parseHash();
-  if (parsed) {
+  if (parsed && parsed.error) {
+    window.WA.Auth.signInError = parsed.error;
+  } else if (parsed) {
     if (parsed.type === 'recovery' && parsed.session) {
       window.WA.Auth.recoverySession = parsed.session;
       /* Do NOT log in — show set-password form instead. */
     } else if (parsed.session) {
       window.WA.Auth.session = parsed.session;
       saveSession(parsed.session);
-      Promise.resolve().then(() => document.dispatchEvent(new CustomEvent('wa:signed-in')));
+      schedule();
+      Promise.resolve().then(announce);
     }
   } else {
     const stored = loadSession();
     if (stored) {
-      window.WA.Auth.session = stored;
-      Promise.resolve().then(() => document.dispatchEvent(new CustomEvent('wa:signed-in')));
+      const stale = stored.expires_at && Date.now() / 1000 > stored.expires_at - 30;
+      if (stale) {
+        /* Renew first; the reader is announced signed in once it works. */
+        refresh();
+      } else {
+        window.WA.Auth.session = stored;
+        schedule();
+        Promise.resolve().then(announce);
+      }
     }
   }
 
@@ -246,8 +321,8 @@
     try {
       const { ok, data } = await authFetch('POST', '/auth/v1/token?grant_type=password', { email, password });
       if (ok && data.access_token) {
-        const s = sessionFromToken(data.access_token);
-        window.WA.Auth.session = s; saveSession(s); updateBtn(); closeOverlay();
+        const s = sessionFromToken(data.access_token, data.refresh_token);
+        window.WA.Auth.session = s; saveSession(s); schedule(); updateBtn(); closeOverlay();
         document.dispatchEvent(new CustomEvent('wa:signed-in'));
       } else {
         setStatus(data.error_description || data.msg || 'Invalid email or password.', true);
@@ -298,8 +373,8 @@
       if (ok) {
         if (data.access_token) {
           /* Email confirmations disabled — logged in immediately. */
-          const s = sessionFromToken(data.access_token);
-          window.WA.Auth.session = s; saveSession(s); updateBtn(); closeOverlay();
+          const s = sessionFromToken(data.access_token, data.refresh_token);
+          window.WA.Auth.session = s; saveSession(s); schedule(); updateBtn(); closeOverlay();
           document.dispatchEvent(new CustomEvent('wa:signed-in'));
         } else {
           setStatus('Check your inbox to confirm your email, then sign in.');

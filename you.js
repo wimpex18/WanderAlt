@@ -143,11 +143,12 @@
         ${pushSection(signedIn)}
 
         <section class="wa-sect">
-          ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in. Your saves sync between devices.</p>
+          ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
             <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>`
           : `<div class="wa-card wa-card--ink">
               <h2 class="wa-card__title">Keep your saves on every device.</h2>
               <p class="wa-note">Everything works signed out. An account only carries your shortlist between your phone and your laptop.</p>
+              ${window.WA.Auth && window.WA.Auth.signInError ? `<p class="wa-note" role="alert">Sign-in did not finish: ${esc(window.WA.Auth.signInError)}</p>` : ''}
               <div class="wa-btns">
                 <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
                 <a class="wa-btn" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}">Continue with Google</a>
@@ -156,7 +157,7 @@
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and and notification switches are also kept in your account, with the notes in your inbox. No location history, no analytics, no third-party scripts.</p>
+          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and notification switches are also kept in your account, with the notes in your inbox. No location history, no analytics, no third-party scripts.</p>
           <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
         </section>
       </div>
