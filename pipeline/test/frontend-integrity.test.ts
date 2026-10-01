@@ -237,3 +237,22 @@ test('the entrance gate opens at page start and closes after the first listings,
   runInContext(readFileSync(new URL('../../view-transition.js', import.meta.url), 'utf8'), ctx);
   assert.equal(reduced.size, 0);
 });
+
+test('a run that began before today and has not ended is filed under today, with its dates in the rail', () => {
+  const p = page();
+  p.WA.Icon = Object.assign(() => '', { kind: () => '' }); p.WA.Picto = Object.assign(() => '', { kind: () => '' });
+  p.WA.UI.price = () => ''; p.WA.UI.guard = (s: string) => s;
+  p.WA.Geo.startMinutes = () => null;                     // no stated time, as for an exhibition
+  p.load('when.js');
+  const today = p.WA.when.todayKey();
+  const day = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - 3 * 3600000 + n * 86400000).toISOString();   // midnight in Tallinn: a date, no stated time
+  p.load('render.js');
+  const run = { id: 'ev_run', title: 'An exhibition', kind: 'exhibition', startsAt: day(-2), endsAt: day(2) };
+  const gone = { id: 'ev_gone', title: 'Over', kind: 'gig', startsAt: day(-2), endsAt: day(-1) };
+  const next = { id: 'ev_next', title: 'Next', kind: 'gig', startsAt: day(1) };
+  const html = String(p.WA.R.grouped([run, next], {}));
+  assert.equal((html.match(/wa-day__name/g) || []).length, 2);          // today, tomorrow: no heading for the day it started
+  assert.ok(html.indexOf('An exhibition') < html.indexOf('Next'));
+  assert.match(html, / to /);
+  assert.equal(String(p.WA.R.grouped([gone], {})).includes(' to '), false);
+});
