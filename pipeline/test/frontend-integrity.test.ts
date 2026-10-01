@@ -214,3 +214,26 @@ test('the name sheets get their suggestions from Lists', () => {
   const p = page(); p.load('lists.js');
   assert.match(String(p.WA.Lists.suggestions()), /data-suggest="Saturday night"/);
 });
+
+test('the entrance gate opens at page start and closes after the first listings, or after five seconds', () => {
+  for (const fire of [true, false]) {
+    const attrs = new Set<string>(); const timers: Array<[number, () => void]> = []; const listeners: Record<string, () => void> = {};
+    const root = { setAttribute: (k: string) => attrs.add(k), removeAttribute: (k: string) => attrs.delete(k), hasAttribute: (k: string) => attrs.has(k) };
+    const context = createContext({
+      matchMedia: () => ({ matches: false }), navigator: {},
+      setTimeout: (f: () => void, ms: number) => { timers.push([ms, f]); return 0; },
+      document: { documentElement: root, querySelectorAll: () => [], addEventListener: (e: string, f: () => void) => { listeners[e] = f; } },
+      window: { addEventListener: () => {} }, addEventListener: () => {},
+    });
+    runInContext(readFileSync(new URL('../../view-transition.js', import.meta.url), 'utf8'), context);
+    assert.equal(attrs.has('data-enter'), true);
+    if (fire) { listeners['wa:catalog-ready'](); timers.filter(([ms]) => ms === 1200).forEach(([, f]) => f()); }
+    else timers.filter(([ms]) => ms === 5000).forEach(([, f]) => f());
+    assert.equal(attrs.has('data-enter'), false);
+  }
+  const reduced = new Set<string>();
+  const ctx = createContext({ matchMedia: () => ({ matches: true }), navigator: {}, setTimeout: () => 0,
+    document: { documentElement: { setAttribute: (k: string) => reduced.add(k), removeAttribute: () => {} }, querySelectorAll: () => [], addEventListener: () => {} }, window: { addEventListener: () => {} }, addEventListener: () => {} });
+  runInContext(readFileSync(new URL('../../view-transition.js', import.meta.url), 'utf8'), ctx);
+  assert.equal(reduced.size, 0);
+});
