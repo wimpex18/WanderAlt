@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001150000_tighten_new_table_grants.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001160000_inbox.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -20,6 +20,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `going` | Who marked "I'm going" on which pick | own rows only |
 | `problem_reports` | Problems readers flag on an event: fixed reason, optional 280-character note, status `open` / `fixed` / `dismissed` | no (insert only; read at `/review` with the secret key) |
 | `follows` | A signed-in reader's follows: `place:<id>` or `src:<handle>`, a label and city | own rows only |
+| `notifications` | A reader's inbox: kind (`change` or `week`), title, body, relative link, dedupe key, `read_at`. Own rows only; a reader may set `read_at` and delete, the alert job writes. |
 | `digest_prefs` | Per reader: four switches, all default off (weekly digest, change notes, push, tonight note), the unsubscribe token and send clocks; readers may write only the switches | own row, select only; switches writable |
 | `push_subscriptions` | A signed-in reader's allowed devices: push endpoint and keys | own rows only |
 | `change_notices` | Which cancelled or postponed events a reader was already told about | no (service role only) |
@@ -215,16 +216,15 @@ Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted 
 
 The source `instagram-venues` (`pipeline/sources/instagram.ts`, kind `instagram`) reads event announcements on the Instagram accounts of venues we already know. Each run it picks 15 places at random whose record carries an Instagram profile (`accounts_per_run`), asks the Graph API for their latest 10 posts (`business_discovery`; Business and Creator accounts only, anything else gives nothing), keeps captions of at least 20 characters from the last 14 days (`max_age_days`), and stores each as a raw item (`ig:<username>:<post code>`, the post link as its URL). A model then reads the caption like a Telegram post, told which venue's account it is. An event it finds gets that venue unless the caption names another place. The source is not curated, so events go through classification and the review queue like any other untrusted source; they carry the post link as their source. Posts are read for facts, never republished, and pictures are not taken from them. Without the two Instagram secrets, in `--dry-run`, or when no account has recent posts, the source yields nothing and does not turn the run red.
 
-## Email alerts
+## Alerts
 
-`pipeline/digest.ts` (logic in `digest-core.ts`) runs daily on GitHub Actions (`.github/workflows/digest.yml`, 13:30 UTC; manual runs default to a dry run). Only readers who switched an alert on in You are mailed.
+`pipeline/digest.ts` (logic in `digest-core.ts`) runs daily on GitHub Actions (`.github/workflows/digest.yml`, 13:30 UTC; manual runs default to a dry run). The main channel is the in-app inbox; push and email are opt-in extras.
 
-- **Change note:** a cancelled or postponed event the reader saved or marked going, once per `(event, flag)` (`change_notices`). Runs every day.
-- **Weekly digest:** the next seven days at followed places and sources (`follows`), soonest first, cancelled and postponed events left out. Sent Thursday to Saturday to readers not mailed in the last six days.
-- **Never empty.** No matching event, no mail. At most `DIGEST_DAILY_CAP` (default 90) mails a run, under Resend's free 100 a day; the rest follow the next day.
-- **Unsubscribe.** Every mail has a `List-Unsubscribe` header with one-click POST and a visible link to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`). Opening the link shows a button; the POST calls the `unsubscribe` edge function (verify_jwt false; it holds the service-role key from its own environment) which turns every switch off.
+- **Inbox** (`notifications`, shown on You with an unread dot on the You button, `inbox.js`): a row for every signed-in reader when an event they saved or marked going is cancelled or postponed (`change:<event>:<flag>`), and one a week, Thursday to Saturday, for the next seven days at followed places, sources and searches (`week:<n>`). The unique `(user_id, dedupe)` makes each told once however often the job runs. Rows are read-only to readers apart from `read_at` and delete; the job clears rows older than 30 days. Nothing is written when there is nothing to say.
+- **Push** (opt-in, see below): change notes, and the 16:00 tonight note.
+- **Email** (dormant): the code for a weekly digest and change mail stays, behind the `weekly` and `changes` switches in `digest_prefs`, but You no longer shows those switches and nothing is mailed unless `RESEND_API_KEY` is set. If it comes back: Resend free 3,000 a month and 100 a day (`DIGEST_DAILY_CAP`, default 90), `List-Unsubscribe` one-click to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`, which POSTs to the `unsubscribe` edge function; verify_jwt false, holds the service-role key in its own environment).
 - **Matching** is by place id and source handle, never by a typed name. There is no model call anywhere in sending.
-- **Secrets:** repository secret `RESEND_API_KEY` (and the existing `SUPABASE_SERVICE_ROLE_KEY`); the Pages project needs no secret. Sender `digest@wanderalt.app` must be verified in Resend (`DIGEST_FROM` overrides it). Run `npm run digest:dry` to preview.
+- **Secrets:** `SUPABASE_SERVICE_ROLE_KEY`, plus `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` for push. The Pages project needs none. Run `npm run digest:dry` to preview.
 
 ### Saved searches and push
 

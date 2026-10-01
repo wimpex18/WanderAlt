@@ -1,6 +1,6 @@
-# Sends the email alerts (pipeline/digest.ts). Daily: change notes go out as they
-# appear, the weekly digest on Thursday to Saturday, the 16:00 tonight note as a
-# push. Needs RESEND_API_KEY (email) and the VAPID pair (push).
+# Writes the in-app inbox and sends push (pipeline/digest.ts). Daily: change notes
+# as they appear, the weekly note Thursday to Saturday, the 16:00 tonight note as
+# a push. Push needs the VAPID pair; email stays off without RESEND_API_KEY.
 name: digest
 
 on:

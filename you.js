@@ -15,8 +15,8 @@
 
   const pool = () => [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
 
-  /* Email alerts: two switches, both off until turned on. A missing table
-     (migration not applied) leaves `prefs` null and hides the section. */
+  /* Notification switches for this device. A missing table (migration not
+     applied) leaves `prefs` null and hides the section. */
   let pushState = '';   /* '' until asked; then what WA.Push.state() says */
   let prefs;   /* undefined: not asked yet; null: unavailable; else { weekly, changes } */
   const authHeaders = () => window.WA.Auth.getAuthHeaders();
@@ -54,17 +54,39 @@
         <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One notification at 16:00, only when something starts today</span></span><span class="wa-switch__track"></span></button>`;
   };
 
-  const emailSection = (signedIn) => {
-    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: 'Sign in to get a weekly note of what is new at places you follow, if you want one.' })}</section>`;
+  /* The inbox: notes the alert job wrote for this account. Rows are read
+     once, shown with the unread dot, and marked read as they appear. */
+  let notes;   /* undefined: not asked yet; null: unavailable; else rows */
+  const ago = (iso) => {
+    const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+    if (m < 60) return m < 2 ? 'Just now' : `${m} min ago`;
+    if (m < 1440) return `${Math.round(m / 60)} h ago`;
+    return `${Math.round(m / 1440)} d ago`;
+  };
+  const loadNotes = async () => {
+    notes = null;
+    if (window.WA.Inbox) notes = await window.WA.Inbox.list();
+    render();
+    if (notes && notes.some(n => !n.read_at)) window.WA.Inbox.markRead();
+  };
+  const inboxSection = (signedIn) => {
+    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in and WanderAlt tells you here when an event you saved is cancelled, and once a week what is on at places you follow.' })}</section>`;
+    if (notes === undefined) { loadNotes(); return ''; }
+    if (!notes) return '';
+    return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet. Save an event or follow a place and changes land here.' })}
+      ${notes.length ? `<ul class="wa-inbox">${notes.map(n => `<li><a class="wa-inbox__row${n.read_at ? '' : ' is-new'}" href="${esc(window.WA.UI.safeUrl(n.url) || '#')}">
+        <span class="wa-inbox__title">${esc(n.title)}</span><span class="wa-inbox__body">${esc(n.body)}</span><span class="wa-inbox__when">${esc(ago(n.created_at))}</span></a></li>`).join('')}</ul>
+        <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="inbox-clear">Clear inbox</button></p>` : ''}
+    </section>`;
+  };
+
+  /* Notifications on this device: opt-in, hidden until the push key is set. */
+  const pushSection = (signedIn) => {
+    if (!signedIn) return '';
     if (prefs === undefined) { loadPrefs(); return ''; }
     if (!prefs) return '';
-    const sw = (key, title, sub) => `<button class="wa-switch" type="button" data-digest="${key}" aria-pressed="${!!prefs[key]}">
-      <span class="wa-switch__text"><span class="wa-switch__title">${esc(title)}</span><span class="wa-switch__sub">${esc(sub)}</span></span><span class="wa-switch__track"></span></button>`;
-    return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: `Sent to ${(window.WA.Auth.session && window.WA.Auth.session.email) || 'your account'}. Off until you turn them on, and never when there is nothing to say.` })}
-      ${sw('weekly', 'Weekly digest', 'Thursday: the next seven days at venues and sources you follow')}
-      ${sw('changes', 'Changes to your events', 'Only when something you saved or marked going is cancelled or postponed')}
-      ${pushRows()}
-    </section>`;
+    const rows = pushRows();
+    return rows ? `<section class="wa-sect">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app; the inbox works without it.' })}${rows}</section>` : '';
   };
 
   const render = () => {
@@ -95,6 +117,7 @@
       </div>
 
       <div class="you-cols">
+        ${inboxSection(signedIn)}
         <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: ids.length ? 'They get their own shelf on Tonight. Nothing else is hidden.' : 'Pick up to three and Tonight gives them a shelf.' })}
           <div class="wa-chips" style="margin-top:var(--s-3)">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
@@ -117,7 +140,7 @@
             <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : ''}
         </section>
 
-        ${emailSection(signedIn)}
+        ${pushSection(signedIn)}
 
         <section class="wa-sect">
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in. Your saves sync between devices.</p>
@@ -133,7 +156,7 @@
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and two email switches are also kept in your account. No location history, no analytics, no third-party scripts.</p>
+          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and and notification switches are also kept in your account, with the notes in your inbox. No location history, no analytics, no third-party scripts.</p>
           <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
         </section>
       </div>
@@ -168,6 +191,10 @@
       })();
       return;
     }
+    if (hit('#inbox-clear')) {
+      (async () => { if (await window.WA.Inbox.clear()) { notes = []; render(); } else toast('Could not clear. Try again later'); })();
+      return;
+    }
     const dg = hit('[data-digest]');
     if (dg && prefs) { savePrefs({ ...prefs, [dg.dataset.digest]: !prefs[dg.dataset.digest] }); return; }
     const uf = hit('[data-unfollow]');
@@ -186,6 +213,6 @@
   document.addEventListener('wa:catalog-ready', render);
   document.addEventListener('wa:seen-changed', render);
   document.addEventListener('wa:signed-in', render);
-  document.addEventListener('wa:signed-out', () => { prefs = undefined; pushState = ''; render(); });
+  document.addEventListener('wa:signed-out', () => { prefs = undefined; notes = undefined; pushState = ''; render(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
 })();

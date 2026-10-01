@@ -64,3 +64,15 @@ test('push notes: one change names the event, several are counted; tonight lists
   assert.deepEqual(list.map(e => e.id), ['a']);
   assert.match(pushTonight(list)!.title, /^Tonight: /);
 });
+
+test('the inbox gets one row per changed event and one a week, each told once by its key', async () => {
+  const { inboxChanges, inboxWeek, weekKey } = await import('../digest-core.ts');
+  const rows = inboxChanges([ev({ id: 'ev_2', title: 'Gig', flag: 'cancelled' }), ev({ id: 'ev_3', flag: null })]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].title, 'Cancelled: Gig'); assert.equal(rows[0].dedupe, 'change:ev_2:cancelled'); assert.equal(rows[0].url, '/detail.html?id=ev_2');
+  assert.equal(inboxWeek([], now), null);
+  const w = inboxWeek([ev({}), ev({ id: 'b', title: 'Other' })], now)!;
+  assert.match(w.title, /^2 things this week/); assert.equal(w.dedupe, `week:${weekKey(now)}`);
+  assert.equal(weekKey(new Date('2026-10-01T05:00:00Z')), weekKey(new Date('2026-10-04T20:00:00Z')));
+  assert.notEqual(weekKey(new Date('2026-10-04T20:00:00Z')), weekKey(new Date('2026-10-05T01:00:00Z')));
+});

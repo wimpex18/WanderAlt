@@ -106,3 +106,37 @@ export function pushTonight(events: readonly EventRow[]): PushMessage | null {
 export function tonightEvents(follows: ReadonlySet<string>, events: readonly EventRow[], now: Date, endOfDay: Date): EventRow[] {
   return weeklyEvents(follows, events, now, (endOfDay.getTime() - now.getTime()) / 86_400_000);
 }
+
+export interface InboxItem { kind: 'change' | 'week'; title: string; body: string; url: string; dedupe: string }
+
+const shortDay = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short' }).format(new Date(iso));
+const detailUrl = (e: EventRow) => `/detail.html?id=${encodeURIComponent(e.id)}`;
+
+/** One inbox row per cancelled or postponed event, told once per (event, flag). */
+export function inboxChanges(events: readonly EventRow[]): InboxItem[] {
+  return events.filter(e => e.flag === 'cancelled' || e.flag === 'postponed').map(e => ({
+    kind: 'change' as const,
+    title: `${e.flag === 'cancelled' ? 'Cancelled' : 'Postponed'}: ${e.title}`.slice(0, 200),
+    body: [`${shortDay(e.starts_at)} ${clock(e)}`, e.venue].filter(Boolean).join(', ') + '. The source says this has changed. Check the listing before you go.',
+    url: detailUrl(e),
+    dedupe: `change:${e.id}:${e.flag}`,
+  }));
+}
+
+/** Monday-based week number counted from the epoch, so one row a week however often the job runs. */
+export const weekKey = (now: Date) => Math.floor((now.getTime() / 86_400_000 + 3) / 7);
+
+/** The weekly row: what is on in the next seven days at followed places. Null when nothing is. */
+export function inboxWeek(events: readonly EventRow[], now: Date): InboxItem | null {
+  if (!events.length) return null;
+  const n = events.length;
+  const lines = events.slice(0, 5).map(e => `${shortDay(e.starts_at)} ${clock(e)} ${e.title}${e.venue ? `, ${e.venue}` : ''}`);
+  if (n > 5) lines.push(`and ${n - 5} more`);
+  return {
+    kind: 'week',
+    title: `${n} ${n === 1 ? 'thing' : 'things'} this week at places you follow`,
+    body: lines.join('\n').slice(0, 600),
+    url: '/discover.html',
+    dedupe: `week:${weekKey(now)}`,
+  };
+}

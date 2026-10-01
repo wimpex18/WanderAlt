@@ -1,8 +1,10 @@
-// Sends the email alerts: a weekly digest of what is coming up at the venues
-// and sources a reader follows, and a note when a saved or going event is
-// cancelled or postponed. Runs daily on GitHub Actions (.github/workflows/
-// digest.yml). Only readers who switched an alert on are mailed; an empty
-// mail is never sent; every mail carries a one-click unsubscribe.
+// Tells readers what changed. The main channel is the in-app inbox (the
+// notifications table): a row when a saved or going event is cancelled or
+// postponed, and one a week for what is on at places, sources and searches a
+// reader follows. Web push and email are opt-in extras on top. Runs daily on
+// GitHub Actions (.github/workflows/digest.yml). Nothing is written when there
+// is nothing to say; email carries a one-click unsubscribe and goes out only
+// when RESEND_API_KEY is set.
 //
 //   node pipeline/digest.ts [--dry-run] [--weekly]
 //
@@ -14,8 +16,8 @@
 // address is DIGEST_FROM (default "WanderAlt <digest@wanderalt.app>"), and
 // DIGEST_DAILY_CAP (default 90) keeps a day under Resend's free 100.
 
-import { Db, SUPABASE_URL } from './db.ts';
-import { composeChanges, composeWeekly, pushChanges, pushTonight, tonightEvents, unsubscribeUrl, weeklyEvents, type EventRow, type Mail, type PushMessage } from './digest-core.ts';
+import { Db, SUPABASE_URL, chunks } from './db.ts';
+import { composeChanges, composeWeekly, inboxChanges, inboxWeek, type InboxItem, pushChanges, pushTonight, tonightEvents, unsubscribeUrl, weeklyEvents, type EventRow, type Mail, type PushMessage } from './digest-core.ts';
 import { sendPush, type PushSubscription, type Vapid } from './webpush.ts';
 import { tallinnToIso } from './time.ts';
 
@@ -85,32 +87,71 @@ async function send(to: string, mail: Mail, token: string): Promise<boolean> {
 
 const inList = (ids: string[]) => `in.(${ids.map(i => `"${i}"`).join(',')})`;
 
+/** Writes inbox rows; a row already there for the same (reader, dedupe) is left alone. */
+async function toInbox(userId: string, items: InboxItem[]) {
+  if (!items.length) return;
+  if (dry) { for (const i of items) console.log(`[dry-run] inbox of ${userId.slice(0, 8)}: ${i.title}`); return; }
+  await db.req('POST', 'notifications?on_conflict=user_id,dedupe', items.map(i => ({ user_id: userId, ...i })), 'resolution=ignore-duplicates,return=minimal');
+}
+
 async function changes() {
-  const prefs = await db.select<Prefs>(`digest_prefs?or=(changes.eq.true,push.eq.true)&select=${PREFS}`);
-  if (!prefs.length) return;
   const changed = await db.all<EventRow>(`picks?flag=in.(cancelled,postponed)&archived_at=is.null&starts_at=gte.${now.toISOString()}&select=${COLS}&order=starts_at.asc`);
   if (!changed.length) return;
   const byId = new Map(changed.map(e => [e.id, e]));
-  for (const p of prefs) {
-    const [saved, going, told] = await Promise.all([
-      db.select<{ pick_id: string }>(`bookmarks?user_id=eq.${p.user_id}&select=pick_id`),
-      db.select<{ pick_id: string }>(`going?user_id=eq.${p.user_id}&select=pick_id`),
-      db.select<{ pick_id: string; flag: string }>(`change_notices?user_id=eq.${p.user_id}&select=pick_id,flag`),
-    ]);
+  /* Who saved or marked going a changed event. */
+  const mineBy = new Map<string, Set<string>>();
+  for (const table of ['bookmarks', 'going']) {
+    for (const ids of chunks([...byId.keys()], 100)) {
+      const rows = await db.all<{ user_id: string; pick_id: string }>(`${table}?pick_id=${inList(ids)}&select=user_id,pick_id&order=user_id.asc,pick_id.asc`);
+      for (const r of rows) mineBy.set(r.user_id, (mineBy.get(r.user_id) ?? new Set()).add(r.pick_id));
+    }
+  }
+  if (!mineBy.size) return;
+  const prefs = new Map((await db.all<Prefs>(`digest_prefs?select=${PREFS}&order=user_id.asc`)).map(p => [p.user_id, p]));
+  for (const [userId, pickIds] of mineBy) {
+    const events = [...pickIds].map(id => byId.get(id)!);
+    await toInbox(userId, inboxChanges(events));
+    const p = prefs.get(userId);
+    if (!p || !(p.changes || p.push)) continue;
+    const told = await db.select<{ pick_id: string; flag: string }>(`change_notices?user_id=eq.${userId}&select=pick_id,flag`);
     const done = new Set(told.map(t => `${t.pick_id}|${t.flag}`));
-    const mine = [...new Set([...saved, ...going].map(r => r.pick_id))].map(id => byId.get(id))
-      .filter((e): e is EventRow => !!e && !done.has(`${e.id}|${e.flag}`));
+    const mine = events.filter(e => !done.has(`${e.id}|${e.flag}`));
     if (!mine.length) continue;
     let told_ = false;
     const note = p.push ? pushChanges(mine) : null;
-    if (note && await pushTo(p.user_id, note)) told_ = true;
-    const mail = p.changes && sent < CAP ? composeChanges(mine, p.unsubscribe_token) : null;
+    if (note && await pushTo(userId, note)) told_ = true;
+    const mail = p.changes && sent < CAP && process.env.RESEND_API_KEY ? composeChanges(mine, p.unsubscribe_token) : null;
     if (mail) {
-      const to = await emailOf(p.user_id);
+      const to = await emailOf(userId);
       if (to && await send(to, mail, p.unsubscribe_token)) { sent++; told_ = true; }
     }
-    if (told_ && !dry) await db.insert('change_notices', mine.map(e => ({ user_id: p.user_id, pick_id: e.id, flag: e.flag })));
+    if (told_ && !dry) await db.insert('change_notices', mine.map(e => ({ user_id: userId, pick_id: e.id, flag: e.flag })));
   }
+}
+
+/** Once a week: what is on in the next seven days at followed places, sources and searches. */
+async function inboxWeekly() {
+  if (!weeklyDay) return;
+  const events = await weekEvents();
+  if (!events.length) return;
+  const rows = await db.all<{ user_id: string; follow_id: string }>('follows?select=user_id,follow_id&order=user_id.asc,follow_id.asc');
+  const byUser = new Map<string, Set<string>>();
+  for (const r of rows) byUser.set(r.user_id, (byUser.get(r.user_id) ?? new Set()).add(r.follow_id));
+  for (const [userId, follows] of byUser) {
+    const item = inboxWeek(weeklyEvents(follows, events, now), now);
+    if (item) await toInbox(userId, [item]);
+  }
+}
+
+/** Clears rows older than 30 days. */
+async function tidy() {
+  if (dry) return;
+  await db.req('DELETE', `notifications?created_at=lt.${new Date(now.getTime() - 30 * 86_400_000).toISOString()}`, undefined, 'return=minimal');
+}
+
+let weekCache: EventRow[] | null = null;
+async function weekEvents() {
+  return weekCache ??= await db.all<EventRow>(`picks?archived_at=is.null&starts_at=gte.${now.toISOString()}&starts_at=lt.${new Date(now.getTime() + 8 * 86_400_000).toISOString()}&select=${COLS}&order=starts_at.asc`);
 }
 
 /** One notification at about 16:00 Tallinn time: what starts today at followed places, sources and searches. */
@@ -138,12 +179,12 @@ async function weekly() {
   const prefs = (await db.select<Prefs>(`digest_prefs?weekly=eq.true&select=${PREFS}`))
     .filter(p => !p.last_weekly_at || p.last_weekly_at < due);
   if (!prefs.length) return;
-  const events = await db.all<EventRow>(`picks?archived_at=is.null&starts_at=gte.${now.toISOString()}&starts_at=lt.${new Date(now.getTime() + 8 * 86_400_000).toISOString()}&select=${COLS}&order=starts_at.asc`);
+  const events = await weekEvents();
   const rows = await db.select<{ user_id: string; follow_id: string }>(`follows?user_id=${inList(prefs.map(p => p.user_id))}&select=user_id,follow_id&limit=5000`);
   for (const p of prefs) {
     if (sent >= CAP) return;
     const follows = new Set(rows.filter(r => r.user_id === p.user_id).map(r => r.follow_id));
-    const mail = composeWeekly(weeklyEvents(follows, events, now), p.unsubscribe_token);
+    const mail = process.env.RESEND_API_KEY || dry ? composeWeekly(weeklyEvents(follows, events, now), p.unsubscribe_token) : null;
     if (!mail) continue;
     const to = await emailOf(p.user_id);
     if (!to || !await send(to, mail, p.unsubscribe_token)) continue;
@@ -153,6 +194,8 @@ async function weekly() {
 }
 
 await changes();
+await inboxWeekly();
 await tonight();
 await weekly();
+await tidy();
 console.log(`${dry ? 'would send' : 'sent'} ${sent} mail${sent === 1 ? '' : 's'} (cap ${CAP}${weeklyDay ? '' : ', not a weekly day'})`);
