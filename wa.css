@@ -1331,3 +1331,40 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-lists:empty { display: none; }
 .wa-lists + .wa-btn { margin-top: var(--s-1); }
 .wa-sect:has(> .wa-lists) { margin-bottom: var(--s-6); }
+
+
+/* ── Light motion ────────────────────────────────────────────────────
+   Compositor-only (transform and opacity), short, and bounded: a handful of
+   elements per screen, never an endless loop. Three ideas: the first listings
+   rise in one after another, section headings ease up as they scroll in (never on first paint: only below the fold), and
+   things you press answer the finger. All of it is off for reduced motion. The
+   entrance only runs while html[data-enter] is set (view-transition.js). */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-enter] .wa-rows > li:nth-child(-n+5),
+  html[data-enter] .wa-shelf > :nth-child(-n+4),
+  html[data-enter] .wa-lists > * {
+    animation: wa-settle 260ms var(--ease) both;
+    animation-delay: calc(var(--n, 0) * 30ms);
+  }
+  html[data-enter] .wa-rows > li:nth-child(2), html[data-enter] .wa-shelf > :nth-child(2) { --n: 1; }
+  html[data-enter] .wa-rows > li:nth-child(3), html[data-enter] .wa-shelf > :nth-child(3) { --n: 2; }
+  html[data-enter] .wa-rows > li:nth-child(4), html[data-enter] .wa-shelf > :nth-child(4) { --n: 3; }
+  html[data-enter] .wa-rows > li:nth-child(5) { --n: 4; }
+
+  /* Press: rows and cards sink a hair under the finger. */
+  .wa-row, .wa-poster__link, .wa-place { transition: transform 160ms var(--ease); }
+  .wa-row:active, .wa-poster__link:active, .wa-place:active { transform: scale(.985); }
+
+  /* Open now: the dot breathes three times, then rests. */
+  .wa-open--yes { position: relative; }
+  .wa-open--yes::after { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: currentColor; pointer-events: none; animation: wa-live 2.4s var(--ease) 3 1.2s both; }
+
+  /* Headings ease up as they scroll into view (Safari 26+, Chrome 115+; elsewhere they simply sit). */
+  @supports (animation-timeline: view()) {
+    .wa-sect__head { animation: wa-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  }
+}
+/* The entrance never hides anything: it starts nearly opaque and a few pixels low, so the content is readable from the first frame and loading is never held back. */
+@keyframes wa-settle { from { opacity: .72; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wa-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes wa-live { from { opacity: .55; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }

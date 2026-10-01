@@ -36,4 +36,18 @@
   /* Back/forward (bfcache) restore: drop any leftover inline name so the
      next click cannot collide with a stale one. */
   window.addEventListener('pageshow', clearAll);
+
+  /* Entrance gate for the listing animations in wa.css. They only play while
+     html[data-enter] is set: from the start of the page until a moment after the
+     first listings are drawn (or five seconds, whichever is first). A list drawn
+     again later, a filter changing or the five-minute refresh, does not replay them.
+     Off for reduced motion and Data Saver. */
+  const root = document.documentElement;
+  const c = navigator.connection;
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !(c && c.saveData)) {
+    root.setAttribute('data-enter', '');
+    const stop = () => root.removeAttribute('data-enter');
+    document.addEventListener('wa:catalog-ready', () => setTimeout(stop, 1200), { once: true });
+    setTimeout(stop, 5000);
+  }
 })();
