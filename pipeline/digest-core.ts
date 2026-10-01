@@ -81,3 +81,28 @@ export function composeChanges(events: readonly EventRow[], token: string): Mail
     'The source says one of the events you saved or marked going has changed. Check the listing before you go.',
     events, token, e => (e.flag === 'cancelled' ? 'Cancelled' : 'Postponed'));
 }
+
+export interface PushMessage { title: string; body: string; url: string; tag: string }
+
+/** A change note as a notification. Null when nothing changed. */
+export function pushChanges(events: readonly EventRow[]): PushMessage | null {
+  if (!events.length) return null;
+  const e = events[0], what = e.flag === 'cancelled' ? 'Cancelled' : 'Postponed';
+  return events.length === 1
+    ? { title: `${what}: ${e.title}`, body: 'The source says this has changed. Check the listing before you go.', url: `/detail.html?id=${encodeURIComponent(e.id)}`, tag: `change-${e.id}` }
+    : { title: `${events.length} of your events have changed`, body: events.slice(0, 3).map(x => x.title).join(', '), url: '/saved.html', tag: 'change-many' };
+}
+
+/** The 16:00 note: what starts today at places, sources and searches the reader follows. Null when nothing does. */
+export function pushTonight(events: readonly EventRow[]): PushMessage | null {
+  if (!events.length) return null;
+  const e = events[0];
+  return events.length === 1
+    ? { title: `Tonight: ${e.title}`, body: [clock(e), e.venue].filter(Boolean).join(' · '), url: `/detail.html?id=${encodeURIComponent(e.id)}`, tag: 'tonight' }
+    : { title: `${events.length} things tonight at places you follow`, body: events.slice(0, 3).map(x => `${clock(x)} ${x.title}`).join(', '), url: '/index.html', tag: 'tonight' };
+}
+
+/** Events starting between `now` and `endOfDay`, at followed places, sources or searches, not cancelled or postponed. */
+export function tonightEvents(follows: ReadonlySet<string>, events: readonly EventRow[], now: Date, endOfDay: Date): EventRow[] {
+  return weeklyEvents(follows, events, now, (endOfDay.getTime() - now.getTime()) / 86_400_000);
+}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { composeChanges, composeWeekly, matchesFollow, unsubscribeUrl, weeklyEvents, type EventRow } from '../digest-core.ts';
+import { pushChanges, pushTonight, tonightEvents, composeChanges, composeWeekly, matchesFollow, unsubscribeUrl, weeklyEvents, type EventRow } from '../digest-core.ts';
 
 const now = new Date('2026-10-01T12:00:00Z');
 const ev = (o: Partial<EventRow>): EventRow => ({ id: 'ev_1', title: 'Night', venue: 'Kino Sõprus', venue_id: 'tallinn-kino-soprus',
@@ -51,4 +51,16 @@ test('a saved search follow matches by kind, free entry and language, the way fo
   assert.equal(matchesFollow(f, ev({ kind: 'film', is_free: true })), false);
   assert.equal(matchesFollow(new Set(['search:english=1']), ev({ event_languages: ['en', 'et'] })), true);
   assert.equal(matchesFollow(new Set(['search:']), ev({ kind: 'gig' })), false);   // an empty search never matches everything
+});
+
+test('push notes: one change names the event, several are counted; tonight lists only what starts before midnight', () => {
+  assert.equal(pushChanges([]), null); assert.equal(pushTonight([]), null);
+  const one = pushChanges([ev({ id: 'ev_9', title: 'Gig', flag: 'cancelled' })])!;
+  assert.equal(one.title, 'Cancelled: Gig'); assert.equal(one.url, '/detail.html?id=ev_9');
+  assert.match(pushChanges([ev({ flag: 'postponed' }), ev({ id: 'b', flag: 'postponed' })])!.title, /^2 of your events/);
+  const f = new Set(['place:tallinn-kino-soprus']);
+  const list = tonightEvents(f, [ev({ id: 'a', starts_at: '2026-10-01T16:00:00Z' }), ev({ id: 'b', starts_at: '2026-10-02T16:00:00Z' })],
+    now, new Date('2026-10-01T20:59:59Z'));
+  assert.deepEqual(list.map(e => e.id), ['a']);
+  assert.match(pushTonight(list)!.title, /^Tonight: /);
 });

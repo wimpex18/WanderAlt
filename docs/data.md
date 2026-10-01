@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001130000_email_digest.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001140000_web_push.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -20,7 +20,8 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `going` | Who marked "I'm going" on which pick | own rows only |
 | `problem_reports` | Problems readers flag on an event: fixed reason, optional 280-character note, status `open` / `fixed` / `dismissed` | no (insert only; read at `/review` with the secret key) |
 | `follows` | A signed-in reader's follows: `place:<id>` or `src:<handle>`, a label and city | own rows only |
-| `digest_prefs` | Per reader: weekly digest and change-note switches (both default off), the unsubscribe token and last send; readers may write only the two switches | own row, select only; switches writable |
+| `digest_prefs` | Per reader: four switches, all default off (weekly digest, change notes, push, tonight note), the unsubscribe token and send clocks; readers may write only the switches | own row, select only; switches writable |
+| `push_subscriptions` | A signed-in reader's allowed devices: push endpoint and keys | own rows only |
 | `change_notices` | Which cancelled or postponed events a reader was already told about | no (service role only) |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
@@ -223,3 +224,9 @@ The source `instagram-venues` (`pipeline/sources/instagram.ts`, kind `instagram`
 - **Unsubscribe.** Every mail has a `List-Unsubscribe` header with one-click POST and a visible link to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`). Opening the link shows a button; the POST turns both switches off.
 - **Matching** is by place id and source handle, never by a typed name. There is no model call anywhere in sending.
 - **Secrets:** repository secret `RESEND_API_KEY` (and the existing `SUPABASE_SERVICE_ROLE_KEY`); the Pages project needs `SUPABASE_SERVICE_ROLE_KEY` for the unsubscribe function. Sender `digest@wanderalt.app` must be verified in Resend (`DIGEST_FROM` overrides it). Run `npm run digest:dry` to preview.
+
+### Saved searches and push
+
+- **Saved searches** are follows too: `search:kind=club,gig&free=1&english=1` (kinds sorted; only these three filters, because they are facts on the event). `follow.js`, `digest-core.ts` and `calendar-feed` (`?kind=&free=1&english=1`) each read the same id, and the tests keep them in agreement. An empty search matches nothing.
+- **Web push** (`pipeline/webpush.ts`, no dependency): RFC 8291 encryption and RFC 8292 VAPID on `node:crypto`; the RFC's example message is a test. Change notes go to every channel a reader has on (email if `changes`, push if `push`); the **tonight** note is push only, one a day at about 16:00 Tallinn (`last_tonight_on`), and only when something starts that day at a followed place, source or search. A push that answers 404 or 410 deletes that subscription.
+- **Setup:** `npx web-push generate-vapid-keys` once. The public key goes into `VAPID_PUBLIC` in `push.js` (until it is set the switch stays hidden); the private key is the repository secret `VAPID_PRIVATE_KEY` and the public key also `VAPID_PUBLIC_KEY`. Optional `VAPID_SUBJECT` (default `mailto:hello@wanderalt.app`).

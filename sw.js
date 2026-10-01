@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v39';
+const VERSION = 'wa-v40';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -33,7 +33,7 @@ const SHELL_URLS = [
   './theme.js', './brand-reveal.js', './icons.js', './when.js', './geo.js', './hours.js',
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
-  './follow.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './ask.js',
+  './follow.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js',
   './finder.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js',
@@ -155,5 +155,31 @@ self.addEventListener('message', (e) => {
     } catch (_) { /* no cache yet */ }
     (e.source ? [e.source] : await self.clients.matchAll())
       .forEach(cl => cl.postMessage({ type: 'wa:cache-age', at: newest || null }));
+  })());
+});
+
+/* ── Notifications ───────────────────────────────────────────
+   pipeline/digest.ts sends { title, body, url }. The notification opens that
+   page on this site; any other address is ignored. */
+self.addEventListener('push', (e) => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch (_) { /* a plain-text push still shows */ }
+  e.waitUntil(self.registration.showNotification(String(m.title || 'WanderAlt').slice(0, 80), {
+    body: String(m.body || '').slice(0, 200),
+    icon: './apple-touch-icon.png',
+    tag: String(m.tag || 'wanderalt'),
+    data: { url: String(m.url || './index.html') },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = new URL((e.notification.data && e.notification.data.url) || './index.html', self.location.origin);
+  const url = target.origin === self.location.origin ? target.href : self.location.origin;
+  e.waitUntil((async () => {
+    for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) {
+      if (c.url === url && 'focus' in c) return c.focus();
+    }
+    return self.clients.openWindow(url);
   })());
 });

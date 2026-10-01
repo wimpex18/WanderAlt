@@ -25,7 +25,7 @@ const tokenOf = (request) => {
 export const onRequestGet = async ({ request }) => {
   const t = tokenOf(request);
   if (!t) return page('<p>This link is not valid.</p>', 400);
-  return page(`<p>Stop the weekly digest and the change notes?</p><form method="post" action="/api/unsubscribe?t=${t}"><button type="submit" style="font:inherit;padding:10px 18px">Stop all email</button></form>`);
+  return page(`<p>Stop the weekly digest, the change notes and the notifications?</p><form method="post" action="/api/unsubscribe?t=${t}"><button type="submit" style="font:inherit;padding:10px 18px">Stop all email</button></form>`);
 };
 
 export const onRequestPost = async ({ request, env }) => {
@@ -36,7 +36,7 @@ export const onRequestPost = async ({ request, env }) => {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/digest_prefs?unsubscribe_token=eq.${t}`, {
     method: 'PATCH',
     headers: { apikey: key, ...(key.startsWith('eyJ') ? { authorization: `Bearer ${key}` } : {}), 'content-type': 'application/json', prefer: 'return=minimal' },
-    body: JSON.stringify({ weekly: false, changes: false, updated_at: new Date().toISOString() }),
+    body: JSON.stringify({ weekly: false, changes: false, push: false, tonight: false, updated_at: new Date().toISOString() }),
   });
   if (!r.ok) return page('<p>That did not work. Write to hello@wanderalt.app and we will stop it by hand.</p>', 502);
   return page('<p>Done. No more email from WanderAlt. You can switch alerts on again from You.</p>');

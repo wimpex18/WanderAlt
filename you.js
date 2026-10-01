@@ -17,14 +17,16 @@
 
   /* Email alerts: two switches, both off until turned on. A missing table
      (migration not applied) leaves `prefs` null and hides the section. */
+  let pushState = '';   /* '' until asked; then what WA.Push.state() says */
   let prefs;   /* undefined: not asked yet; null: unavailable; else { weekly, changes } */
   const authHeaders = () => window.WA.Auth.getAuthHeaders();
   const loadPrefs = async () => {
     prefs = null;
     try {
-      const r = await fetch(`${window.WA.BASE_URL}/rest/v1/digest_prefs?select=weekly,changes`, { headers: authHeaders() });
+      const r = await fetch(`${window.WA.BASE_URL}/rest/v1/digest_prefs?select=weekly,changes,push,tonight`, { headers: authHeaders() });
       if (r.ok) { const rows = await r.json(); prefs = rows[0] || { weekly: false, changes: false }; }
     } catch (_) { /* offline */ }
+    if (window.WA.Push) pushState = await window.WA.Push.state();
     render();
   };
   const savePrefs = async (next) => {
@@ -34,11 +36,24 @@
       const r = await fetch(`${window.WA.BASE_URL}/rest/v1/digest_prefs?on_conflict=user_id`, {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ weekly: next.weekly, changes: next.changes }),
+        body: JSON.stringify({ weekly: !!next.weekly, changes: !!next.changes, push: !!next.push, tonight: !!next.tonight }),
       });
       if (!r.ok) throw new Error(String(r.status));
     } catch (_) { prefs = before; render(); toast('Could not save. Try again later'); }
   };
+  /* Notifications on this device. Hidden until the push key is set; an
+     iPhone that has not added the site to the Home Screen is told why. */
+  const pushRows = () => {
+    if (pushState === 'install') return '<p class="wa-note">On iPhone, add WanderAlt to the Home Screen first, then notifications can be switched on here.</p>';
+    if (pushState === 'denied') return '<p class="wa-note">Notifications are blocked for this site in your browser settings.</p>';
+    if (pushState !== 'on' && pushState !== 'off') return '';
+    const on = pushState === 'on' && !!prefs.push;
+    return `<button class="wa-switch" type="button" data-push aria-pressed="${on}">
+        <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">Changes to your events arrive here too</span></span><span class="wa-switch__track"></span></button>
+      <button class="wa-switch" type="button" data-digest="tonight" aria-pressed="${on && !!prefs.tonight}"${on ? '' : ' disabled'}>
+        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One notification at 16:00, only when something starts today</span></span><span class="wa-switch__track"></span></button>`;
+  };
+
   const emailSection = (signedIn) => {
     if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: 'Sign in to get a weekly note of what is new at places you follow, if you want one.' })}</section>`;
     if (prefs === undefined) { loadPrefs(); return ''; }
@@ -48,6 +63,7 @@
     return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: `Sent to ${(window.WA.Auth.session && window.WA.Auth.session.email) || 'your account'}. Off until you turn them on, and never when there is nothing to say.` })}
       ${sw('weekly', 'Weekly digest', 'Thursday: the next seven days at venues and sources you follow')}
       ${sw('changes', 'Changes to your events', 'Only when something you saved or marked going is cancelled or postponed')}
+      ${pushRows()}
     </section>`;
   };
 
@@ -138,6 +154,20 @@
       if (again) again.focus();
       return;
     }
+    if (hit('[data-push]') && prefs && window.WA.Push) {
+      (async () => {
+        if (pushState === 'on' && prefs.push) {
+          await window.WA.Push.disable(); pushState = 'off';
+          savePrefs({ ...prefs, push: false, tonight: false });
+        } else if (await window.WA.Push.enable()) {
+          pushState = 'on'; savePrefs({ ...prefs, push: true });
+        } else {
+          pushState = await window.WA.Push.state(); render();
+          toast('Notifications were not allowed');
+        }
+      })();
+      return;
+    }
     const dg = hit('[data-digest]');
     if (dg && prefs) { savePrefs({ ...prefs, [dg.dataset.digest]: !prefs[dg.dataset.digest] }); return; }
     const uf = hit('[data-unfollow]');
@@ -156,6 +186,6 @@
   document.addEventListener('wa:catalog-ready', render);
   document.addEventListener('wa:seen-changed', render);
   document.addEventListener('wa:signed-in', render);
-  document.addEventListener('wa:signed-out', () => { prefs = undefined; render(); });
+  document.addEventListener('wa:signed-out', () => { prefs = undefined; pushState = ''; render(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
 })();

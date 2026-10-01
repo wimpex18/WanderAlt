@@ -23,7 +23,7 @@ test('the POST switches both alerts off by token, with the secret kept server si
     const r = await onRequestPost({ request: req(T, 'POST'), env: { SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_x' } });
     assert.equal(r.status, 200);
     assert.match(seen!.url, new RegExp(`digest_prefs\\?unsubscribe_token=eq\\.${T}$`));
-    assert.match(String(seen!.init.body), /"weekly":false,"changes":false/);
+    assert.match(String(seen!.init.body), /"weekly":false,"changes":false,"push":false,"tonight":false/);
     assert.doesNotMatch(await r.text(), /sb_secret_x/);
     assert.equal((await onRequestPost({ request: req(T, 'POST'), env: {} })).status, 503);
     assert.equal((await onRequestPost({ request: req('x', 'POST'), env: { SUPABASE_SERVICE_ROLE_KEY: 'k' } })).status, 400);
