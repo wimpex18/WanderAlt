@@ -46,6 +46,10 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 
 Linear is the durable backlog for bugs, feature ideas, improvements and deferred follow-up. Create or update an issue only when the work should survive the current session; do not mirror implementation history. If work starts from a Linear issue, keep its issue ID in the branch or PR. Keep implementation details in Git/PRs and durable product and technical truth in repository docs.
 
+- Linear team: Development (DEV).
+- Project: WanderAlt. Never create WanderAlt issues under PM.
+- New issue titles start with `WA —`.
+
 ## Working here
 
 - Read `git log -10` and the relevant doc before changing an area. Docs describe the current state only: update them in the same change, and delete what is no longer true.

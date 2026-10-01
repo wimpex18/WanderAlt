@@ -91,6 +91,30 @@
     sync();
   }
 
+  /* ── Warm the Map ────────────────────────────────────────────
+     The Map is one tap from every page and its MapLibre bundles are the
+     heaviest thing it needs (about 290 KB compressed). Once a page has
+     loaded and the browser is idle, fetch them through the worker so the
+     first Map visit opens from the cache. Skipped on the Map itself, on
+     Data Saver and on slow connections, and once the bundle is cached. */
+  const warmMap = async () => {
+    try {
+      if (document.body && document.body.dataset.page === 'map') return;
+      const c = navigator.connection;
+      if (c && (c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || ''))) return;
+      if (!('caches' in window) || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+      if (await caches.match('./vendor/maplibre-gl.mjs')) return;
+      const dusk = document.documentElement.dataset.theme === 'dusk';
+      const urls = ['./vendor/maplibre-gl.mjs', './vendor/maplibre-gl-shared.mjs', './vendor/maplibre-gl-worker.mjs',
+        './vendor/maplibre-gl.css', dusk ? './map-style-dusk.json' : './map-style.json'];
+      for (const u of urls) await fetch(u, { priority: 'low' }).catch(() => {});
+      fetch('https://tiles.openfreemap.org/planet', { mode: 'cors', priority: 'low' }).catch(() => {});
+    } catch (_) { /* a warm-up that fails changes nothing */ }
+  };
+  const idleWarm = () => (window.requestIdleCallback ? requestIdleCallback(warmMap, { timeout: 8000 }) : setTimeout(warmMap, 4000));
+  if (document.readyState === 'complete') setTimeout(idleWarm, 3000);
+  else window.addEventListener('load', () => setTimeout(idleWarm, 3000), { once: true });
+
   /* ── Freshness ───────────────────────────────────────────────
      A page is stale when the Tallinn calendar day has turned since it
      loaded, or when it was put away and has been out of sight for a while.

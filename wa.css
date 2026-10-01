@@ -1267,3 +1267,17 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
 .wa-state.is-on { color: var(--ink); }
 .wa-state.is-on::before { background: #2e9e5b; box-shadow: 0 0 0 3px color-mix(in oklab, #2e9e5b 22%, transparent); }
+
+
+/* Bar diagnostics readout (tabbar.js). Hidden unless switched on by holding the wordmark. */
+.wa-brand { -webkit-touch-callout: none; }
+.wa-hud { position: fixed; z-index: 200; right: 8px; top: calc(var(--topbar-h) + env(safe-area-inset-top) + 6px); margin: 0; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.72); color: #fff; font: 11px/1.35 var(--f-mono); white-space: pre; pointer-events: none; }
+.wa-hud[data-bad="1"] { background: rgba(190,30,10,.88); }
+
+/* The phone tab bar gets its own compositing layer. On an iPhone Home Screen app it has been
+   seen floating mid-screen during momentum scrolling; a fixed layer WebKit has to re-pin on
+   its own is the likeliest cause, so it is pinned from the start. Phones only: from 1024 the
+   bar is the masthead nav and stays an ordinary fixed element. */
+@media (max-width: 1023px) {
+  .wa-tabbar { transform: translateZ(0); will-change: transform; }
+}

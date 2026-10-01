@@ -30,11 +30,13 @@
   <link rel="modulepreload" href="./vendor/maplibre-gl.mjs" />
   <link rel="modulepreload" href="./vendor/maplibre-gl-shared.mjs" />
   <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="preload" as="fetch" href="https://tiles.openfreemap.org/planet" crossorigin />
   <link rel="stylesheet" href="wa.css" />
   <link rel="stylesheet" href="./vendor/maplibre-gl.css" />
   <!-- Pre-paint, so there is no flash of the wrong theme. -->
   <script src="./theme.js"></script>
   <script src="./brand-reveal.js"></script>
+  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./icons.js"></script>
   <script defer src="./when.js"></script>
   <script defer src="./geo.js"></script>
@@ -53,7 +55,6 @@
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
-  <script defer src="./maplibre-loader.js"></script>
   <script defer src="./map-tiles.js"></script>
   <script defer src="./map.js"></script>
 </head>

@@ -6,7 +6,10 @@
      navigations   network-first, cache fallback. Nothing is content-
                    hashed, so cache-first HTML would serve stale pages.
 
-     static        stale-while-revalidate. CSS, JS, fonts, the sprite.
+     static        stale-while-revalidate. CSS, JS (including the .mjs MapLibre
+                   bundles in vendor/), fonts, the sprite. The bundles are not
+                   precached: the first Map visit, or an idle moment on another
+                   page (offline.js), fills the cache.
 
      listings      picks, venues and venue_details: network-first with a
                    timestamped cache fallback, so the banner can say how
@@ -17,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v46';
+const VERSION = 'wa-v49';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -36,7 +39,7 @@ const SHELL_URLS = [
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js', './install.js',
   './finder.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
-  './maplibre-loader.js', './map-tiles.js',
+  './maplibre-loader.js', './map-tiles.js', './vendor/maplibre-gl.css',
   './map-style.json', './map-style-dusk.json',
   './fonts/geologica-latin.woff2',
   './fonts/geologica-latin-ext.woff2',
@@ -71,7 +74,7 @@ const isData = (url) => url.origin === PUBLIC_ORIGIN &&
   /^\/rest\/v1\/(picks|venues|venue_details|catalogue_redirects)$/.test(url.pathname);
 
 const isStatic = (url) =>
-  /\.(css|js|svg|woff2|json|png|ico|webmanifest)$/.test(url.pathname);
+  /\.(css|js|mjs|svg|woff2|json|png|ico|webmanifest)$/.test(url.pathname);
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
