@@ -389,6 +389,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
   transition: background var(--t-fast), transform var(--t-fast) var(--spring);
 }
 .wa-iconbtn:hover { background: var(--paper-2); }
+.wa-iconbtn[data-unread] { position: relative; }
+.wa-iconbtn[data-unread]::after { content: ""; position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--paper); }
 .wa-iconbtn:active { transform: scale(.92); }
 .wa-iconbtn .wa-ic { width: 20px; height: 20px; }
 .wa-iconbtn--fill { background: var(--paper-2); }
@@ -888,6 +890,15 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-original { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
 .det-original > summary { min-height: 48px; padding: var(--s-3) 0; cursor: pointer; font-weight: 600; }
 .det-original > summary:hover { color: var(--accent); }
+/* Flag a problem: a quiet disclosure under the provenance line. */
+.det-flag { margin-top: var(--s-3); }
+.det-flag > summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; color: var(--muted); font-size: var(--t-sm, .875rem); }
+.det-flag > summary:hover { color: var(--accent); }
+.det-flag form { display: grid; gap: var(--s-3); max-width: 420px; padding-bottom: var(--s-3); }
+.det-flag__reasons { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
+.det-flag__reason { display: flex; align-items: center; gap: var(--s-2); min-height: 40px; }
+.prog-summary__act { margin: var(--s-1) 0 0; display: flex; gap: var(--s-4); flex-wrap: wrap; }
+.prog-summary__act:empty { display: none; }
 .det-original__body { display: grid; gap: var(--s-3); padding-bottom: var(--s-5); }
 .det-notice { display: flex; gap: var(--s-3); align-items: start; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); }
 .det-notice strong { display: block; }
@@ -1200,3 +1211,11 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* Things at one address, fanned out from their shared point at street level. */
 .wa-fan__stem { position: absolute; height: 0; border-top: 1.5px solid rgba(140,140,146,.85); transform-origin: 0 0; pointer-events: none; }
 .wa-fan__dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #1c1c1e; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+
+/* Inbox on You: one row per note, unread ones marked with the accent dot. */
+.wa-inbox { list-style: none; margin: var(--s-3) 0 0; padding: 0; }
+.wa-inbox__row { position: relative; display: grid; gap: 2px; padding: 14px 0 14px 18px; border-bottom: 1px solid var(--hair); text-decoration: none; color: inherit; }
+.wa-inbox__row.is-new::before { content: ""; position: absolute; left: 0; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.wa-inbox__title { font-weight: 600; }
+.wa-inbox__body { font-size: var(--fs-meta); color: var(--ink-2); white-space: pre-line; line-height: 1.5; }
+.wa-inbox__when { font-size: var(--fs-small); color: var(--ink-3); }

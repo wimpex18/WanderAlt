@@ -50,7 +50,25 @@
      callers degrade to the area label rather than hiding the row. */
   let _loc = null, _denied = false, _pending = null;
 
+  /* An anchor is a place the reader picked to measure from (a hotel, a
+     friend's street), saved in this browser. It stands in for the device
+     position, so walking times work with no location permission. */
+  const AKEY = 'wa:anchor:v1';
+  let _anchor = null;
+  try {
+    const a = JSON.parse(localStorage.getItem(AKEY) || 'null');
+    if (a && isFinite(a.lat) && isFinite(a.lng)) _anchor = { lat: +a.lat, lng: +a.lng, label: String(a.label || '').slice(0, 80) };
+  } catch (_) { /* blocked or corrupt: no anchor */ }
+
+  const anchor = () => _anchor;
+  const setAnchor = (a) => {
+    _anchor = a && isFinite(a.lat) && isFinite(a.lng) ? { lat: +a.lat, lng: +a.lng, label: String(a.label || '').slice(0, 80) } : null;
+    try { if (_anchor) localStorage.setItem(AKEY, JSON.stringify(_anchor)); else localStorage.removeItem(AKEY); } catch (_) { /* kept for this page only */ }
+    document.dispatchEvent(new CustomEvent('wa:location-ready', { detail: _anchor || _loc }));
+  };
+
   const userLoc = () => {
+    if (_anchor) return Promise.resolve(_anchor);
     if (_loc)    return Promise.resolve(_loc);
     if (_denied || !navigator.geolocation) return Promise.resolve(null);
     if (_pending) return _pending;
@@ -71,11 +89,11 @@
 
   /* Synchronous read for render paths — null until the prompt resolves,
      at which point 'wa:location-ready' asks the page to re-render. */
-  const currentLoc  = () => _loc;
+  const currentLoc  = () => _anchor || _loc;
 
   /* Metres from the reader to an entry, or null if either end is unknown. */
   const distanceTo = (entry, from) => {
-    const a = from || _loc;
+    const a = from || _anchor || _loc;
     const b = coordsFor(entry);
     if (!a || !b) return null;
     return haversineM(a.lat, a.lng, b.lat, b.lng);
@@ -144,7 +162,7 @@
   };
 
   const withinFilter = (list, metres, from) => {
-    const a = from || _loc;
+    const a = from || _anchor || _loc;
     if (!metres || !a) return list;             /* off, or position unknown */
     return list.filter((e) => {
       const d = distanceTo(e, a);
@@ -155,7 +173,7 @@
   window.WA.Geo = {
     WALK_M_PER_MIN,
     walkMinutes, format,
-    coordsFor, userLoc, currentLoc,
+    coordsFor, userLoc, currentLoc, anchor, setAnchor,
     distanceTo, distanceLabel,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,

@@ -30,6 +30,25 @@
 
   const when = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+  /* Problems flagged on event pages: open ones, oldest first. A missing
+     table (migration not applied) just hides the section. */
+  const reports = async () => {
+    try {
+      const rows = await api('GET', 'problem_reports?status=eq.open&order=created_at.asc&limit=100&select=id,pick_id,reason,note,created_at');
+      if (!rows.length) return '';
+      return `<h2 class="wa-h2" style="margin-top:var(--s-6)">Flagged by readers</h2>
+        <ul class="review__list">${rows.map(r => `<li class="review__item" data-report="${esc(String(r.id))}">
+          <p class="wa-note">${esc([r.reason, new Date(r.created_at).toLocaleDateString('en-GB')].join(' · '))}</p>
+          ${r.note ? `<p class="review__desc">${esc(r.note)}</p>` : ''}
+          <div class="review__actions">
+            <a class="wa-btn wa-btn--quiet" href="detail.html?id=${esc(encodeURIComponent(r.pick_id))}">Open the event</a>
+            <button class="wa-btn" type="button" data-report-set="fixed">Fixed</button>
+            <button class="wa-btn" type="button" data-report-set="dismissed">Dismiss</button>
+          </div>
+        </li>`).join('')}</ul>`;
+    } catch { return ''; }
+  };
+
   const render = async () => {
     const host = $('queue');
     if (!key()) { host.innerHTML = ''; return; }
@@ -49,7 +68,7 @@
             <button class="wa-btn" type="button" data-set="rejected">Reject</button>
             ${url(e.url || e.ticket_url) ? `<a class="wa-btn wa-btn--quiet" href="${esc(url(e.url || e.ticket_url))}" target="_blank" rel="noopener noreferrer">Source &nearr;</a>` : ''}
           </div>
-        </li>`).join('')}</ul>`;
+        </li>`).join('')}</ul>${await reports()}`;
     } catch (err) {
       try { sessionStorage.removeItem(KEY); } catch { /* nothing kept */ }
       $('key-form').hidden = false;
@@ -66,6 +85,16 @@
   });
 
   document.addEventListener('click', async (e) => {
+    const rb = e.target.closest && e.target.closest('[data-report-set]');
+    if (rb) {
+      const row = rb.closest('[data-report]');
+      rb.disabled = true;
+      try {
+        await api('PATCH', `problem_reports?id=eq.${encodeURIComponent(row.dataset.report)}`, { status: rb.dataset.reportSet });
+        row.remove();
+      } catch (err) { rb.disabled = false; alert(`Not saved: ${err.message}`); }
+      return;
+    }
     const b = e.target.closest && e.target.closest('[data-set]');
     if (!b) return;
     const row = b.closest('[data-id]');

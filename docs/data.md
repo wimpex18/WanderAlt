@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20260929160000_places_website_source.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001160000_inbox.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -18,6 +18,12 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `pipeline_runs` | One row per run: neurons and model calls spent, events written, whether every source was healthy. Also the daily Workers AI budget | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
+| `problem_reports` | Problems readers flag on an event: fixed reason, optional 280-character note, status `open` / `fixed` / `dismissed` | no (insert only; read at `/review` with the secret key) |
+| `follows` | A signed-in reader's follows: `place:<id>` or `src:<handle>`, a label and city | own rows only |
+| `notifications` | A reader's inbox: kind (`change` or `week`), title, body, relative link, dedupe key, `read_at`. Own rows only; a reader may set `read_at` and delete, the alert job writes. |
+| `digest_prefs` | Per reader: four switches, all default off (weekly digest, change notes, push, tonight note), the unsubscribe token and send clocks; readers may write only the switches | own row, select only; switches writable |
+| `push_subscriptions` | A signed-in reader's allowed devices: push endpoint and keys | own rows only |
+| `change_notices` | Which cancelled or postponed events a reader was already told about | no (service role only) |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
 `picks` and `venues` are read-only views shaped like the old tables, so the current pages, `functions/_middleware.js`, `og-image` and `calendar-feed` read the new data unchanged. They go away with the front-end rebuild.
@@ -183,7 +189,8 @@ GitHub pauses scheduled workflows in a public repository after 60 days without a
 | Function | `verify_jwt` | Used by |
 |---|---|---|
 | `og-image` | false | `functions/_middleware.js` share cards (satori 0.33.4, resvg-wasm 2.6.2) |
-| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
+| `unsubscribe` | false | POST `{t}` with a mail's unsubscribe token turns every alert switch off for that reader (service role inside the function). Called only by `functions/api/unsubscribe.js`; the token is the secret. |
+| `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?place=<places.id>` and `?handle=@source` narrow the feed to one venue or source (a malformed place is 400). `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
 
 Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing the function's existing `verify_jwt` (the tool defaults it to true). Committing does not deploy, and deleting a directory does not undeploy. The share surface fails open with a valid card, so judge the rendered card; `og-image?…&debug=1` returns the error instead.
 
@@ -208,3 +215,19 @@ Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted 
 ## Instagram venue posts
 
 The source `instagram-venues` (`pipeline/sources/instagram.ts`, kind `instagram`) reads event announcements on the Instagram accounts of venues we already know. Each run it picks 15 places at random whose record carries an Instagram profile (`accounts_per_run`), asks the Graph API for their latest 10 posts (`business_discovery`; Business and Creator accounts only, anything else gives nothing), keeps captions of at least 20 characters from the last 14 days (`max_age_days`), and stores each as a raw item (`ig:<username>:<post code>`, the post link as its URL). A model then reads the caption like a Telegram post, told which venue's account it is. An event it finds gets that venue unless the caption names another place. The source is not curated, so events go through classification and the review queue like any other untrusted source; they carry the post link as their source. Posts are read for facts, never republished, and pictures are not taken from them. Without the two Instagram secrets, in `--dry-run`, or when no account has recent posts, the source yields nothing and does not turn the run red.
+
+## Alerts
+
+`pipeline/digest.ts` (logic in `digest-core.ts`) runs daily on GitHub Actions (`.github/workflows/digest.yml`, 13:30 UTC; manual runs default to a dry run). The main channel is the in-app inbox; push and email are opt-in extras.
+
+- **Inbox** (`notifications`, shown on You with an unread dot on the You button, `inbox.js`): a row for every signed-in reader when an event they saved or marked going is cancelled or postponed (`change:<event>:<flag>`), and one a week, Thursday to Saturday, for the next seven days at followed places, sources and searches (`week:<n>`). The unique `(user_id, dedupe)` makes each told once however often the job runs. Rows are read-only to readers apart from `read_at` and delete; the job clears rows older than 30 days. Nothing is written when there is nothing to say.
+- **Push** (opt-in, see below): change notes, and the 16:00 tonight note.
+- **Email** (dormant): the code for a weekly digest and change mail stays, behind the `weekly` and `changes` switches in `digest_prefs`, but You no longer shows those switches and nothing is mailed unless `RESEND_API_KEY` is set. If it comes back: Resend free 3,000 a month and 100 a day (`DIGEST_DAILY_CAP`, default 90), `List-Unsubscribe` one-click to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`, which POSTs to the `unsubscribe` edge function; verify_jwt false, holds the service-role key in its own environment).
+- **Matching** is by place id and source handle, never by a typed name. There is no model call anywhere in sending.
+- **Secrets:** `SUPABASE_SERVICE_ROLE_KEY`, plus `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` for push. The Pages project needs none. Run `npm run digest:dry` to preview.
+
+### Saved searches and push
+
+- **Saved searches** are follows too: `search:kind=club,gig&free=1&english=1` (kinds sorted; only these three filters, because they are facts on the event). `follow.js`, `digest-core.ts` and `calendar-feed` (`?kind=&free=1&english=1`) each read the same id, and the tests keep them in agreement. An empty search matches nothing.
+- **Web push** (`pipeline/webpush.ts`, no dependency): RFC 8291 encryption and RFC 8292 VAPID on `node:crypto`; the RFC's example message is a test. Change notes go to every channel a reader has on (email if `changes`, push if `push`); the **tonight** note is push only, one a day at about 16:00 Tallinn (`last_tonight_on`), and only when something starts that day at a followed place, source or search. A push that answers 404 or 410 deletes that subscription.
+- **Setup:** `npx web-push generate-vapid-keys` once. The public key goes into `VAPID_PUBLIC` in `push.js` (until it is set the switch stays hidden); the private key is the repository secret `VAPID_PRIVATE_KEY` and the public key also `VAPID_PUBLIC_KEY`. Optional `VAPID_SUBJECT` (default `mailto:hello@wanderalt.app`).
