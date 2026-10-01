@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v43';
+const VERSION = 'wa-v44';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 

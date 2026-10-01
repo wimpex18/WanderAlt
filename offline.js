@@ -4,6 +4,10 @@
    Saves are localStorage-first; sw.js caches the shell and the last
    listings response; distances degrade as they do without location
    permission. The banner prints how old the cached listings are.
+
+   Freshness lives here too: a tab left open overnight, or an installed
+   app resumed the next morning, reloads itself when it comes back, so
+   "tonight" is tonight and the list is today's without a pull to refresh.
    ============================================================ */
 (() => {
   'use strict';
@@ -86,4 +90,36 @@
   } else {
     sync();
   }
+
+  /* ── Freshness ───────────────────────────────────────────────
+     A page is stale when the Tallinn calendar day has turned since it
+     loaded, or when it was put away and has been out of sight for a while.
+     It reloads only when nobody is mid-task: no open sheet, no focused
+     field. The address keeps its filters, so the reader lands where they were. */
+  const STALE_AFTER = 30 * 60 * 1000;
+  const dayKey = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn' }).format(new Date());
+  const loadedDay = dayKey();
+  let hiddenAt = 0;
+
+  const idle = () => {
+    if (document.querySelector('dialog[open]')) return false;
+    const a = document.activeElement;
+    return !(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) && !(a && a.isContentEditable);
+  };
+
+  const check = (resumed) => {
+    if (document.visibilityState !== 'visible' || navigator.onLine === false) return;
+    /* Pick up a new deploy while we are here; the reload below then runs it. */
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+    const away = hiddenAt && Date.now() - hiddenAt > STALE_AFTER;
+    if ((dayKey() !== loadedDay || (resumed && away)) && idle()) location.reload();
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+    else { check(true); hiddenAt = 0; }
+  });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) check(true); });
+  window.addEventListener('online', () => check(false));
+  setInterval(() => check(false), 60 * 1000);   /* a tab left in view as midnight passes */
 })();

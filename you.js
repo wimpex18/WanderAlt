@@ -144,7 +144,8 @@
 
         <section class="wa-sect">
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
-            <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>`
+            <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button>
+              <button class="wa-linkbtn" type="button" id="delete-account" style="margin-left:var(--s-4)">Delete account</button></p>`
           : `<div class="wa-card wa-card--ink">
               <h2 class="wa-card__title">Keep your saves on every device.</h2>
               <p class="wa-note">Everything works signed out. An account only carries your shortlist between your phone and your laptop.</p>
@@ -157,12 +158,34 @@
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and notification switches are also kept in your account, with the notes in your inbox. No location history, no analytics, no third-party scripts.</p>
+          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, lists, going marks, follows and notification switches are also kept in your account, with the notes in your inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
           <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
+          <p><button class="wa-linkbtn" type="button" id="wipe-device">Forget everything on this device</button></p>
         </section>
       </div>
       <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
   };
+
+  /* A destructive choice gets its own sheet and its own words, and the
+     default focus lands on Cancel. Resolves true only on the action. */
+  const confirmSheet = ({ title, text, action }) => new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'wa-sheet';
+    d.setAttribute('aria-labelledby', 'confirm-title');
+    d.innerHTML = `<div class="wa-sheet__panel">
+      <div class="wa-sheet__head"><h2 class="wa-sheet__title" id="confirm-title">${esc(title)}</h2></div>
+      <div class="wa-sheet__body"><p class="wa-note">${esc(text)}</p><p class="wa-field__consequence" id="confirm-status" aria-live="polite" role="status"></p></div>
+      <div class="wa-sheet__foot">
+        <button class="wa-btn wa-btn--quiet" type="button" id="confirm-no" autofocus>Cancel</button>
+        <button class="wa-btn wa-btn--primary" type="button" id="confirm-yes" style="flex:1">${esc(action)}</button>
+      </div></div>`;
+    document.body.appendChild(d);
+    const done = (v) => { if (d.open) d.close(); d.remove(); resolve(v); };
+    d.querySelector('#confirm-no').addEventListener('click', () => done(false));
+    d.querySelector('#confirm-yes').addEventListener('click', () => done(true));
+    d.addEventListener('cancel', (ev) => { ev.preventDefault(); done(false); });
+    d.showModal();
+  });
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
@@ -208,7 +231,24 @@
       return;
     }
     if (hit('#signin')) { if (window.WA.Auth.openSignIn) window.WA.Auth.openSignIn(); return; }
-    if (hit('#signout')) { window.WA.Auth.signOut(); render(); }
+    if (hit('#signout')) { window.WA.Auth.signOut().then(render); return; }
+    if (hit('#delete-account')) {
+      (async () => {
+        if (!await confirmSheet({ title: 'Delete your account?', text: 'This removes your account and everything kept in it: saves, lists, follows, going marks, notification settings and your inbox. It also forgets what this device holds. It cannot be undone.', action: 'Delete account' })) return;
+        if (await window.WA.Auth.deleteAccount()) { location.assign('./index.html'); }
+        else toast('Could not delete the account. Nothing was changed');
+      })();
+      return;
+    }
+    if (hit('#wipe-device')) {
+      (async () => {
+        if (!await confirmSheet({ title: 'Forget everything on this device?', text: 'Saves, lists, follows, interests, what you opened and the saved listings are removed from this browser, and you are signed out here. An account, if you have one, keeps its saves and you can sign in again to get them back.', action: 'Forget everything' })) return;
+        await window.WA.Auth.signOut();
+        await window.WA.Auth.wipeDevice();
+        location.assign('./index.html');
+      })();
+      return;
+    }
   });
 
   document.addEventListener('wa:catalog-ready', render);
