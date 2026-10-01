@@ -188,6 +188,7 @@ GitHub pauses scheduled workflows in a public repository after 60 days without a
 | Function | `verify_jwt` | Used by |
 |---|---|---|
 | `og-image` | false | `functions/_middleware.js` share cards (satori 0.33.4, resvg-wasm 2.6.2) |
+| `unsubscribe` | false | POST `{t}` with a mail's unsubscribe token turns every alert switch off for that reader (service role inside the function). Called only by `functions/api/unsubscribe.js`; the token is the secret. |
 | `calendar-feed` | false | the About page's calendar subscription. Reads `picks` with the anon key, so only published events appear, with their real `starts_at`/`ends_at` for the next 30 days. `?place=<places.id>` and `?handle=@source` narrow the feed to one venue or source (a malformed place is 400). `?id=ev_…` downloads one event; invalid ids are 400 and missing records 404. Cancelled entries retain their UID with `STATUS:CANCELLED`, postponed entries are tentative with an explicit notice. Text escapes all newline forms and folds at 75 UTF-8 octets. |
 
 Deploy only through the Supabase MCP `deploy_edge_function` tool, always passing the function's existing `verify_jwt` (the tool defaults it to true). Committing does not deploy, and deleting a directory does not undeploy. The share surface fails open with a valid card, so judge the rendered card; `og-image?…&debug=1` returns the error instead.
@@ -221,9 +222,9 @@ The source `instagram-venues` (`pipeline/sources/instagram.ts`, kind `instagram`
 - **Change note:** a cancelled or postponed event the reader saved or marked going, once per `(event, flag)` (`change_notices`). Runs every day.
 - **Weekly digest:** the next seven days at followed places and sources (`follows`), soonest first, cancelled and postponed events left out. Sent Thursday to Saturday to readers not mailed in the last six days.
 - **Never empty.** No matching event, no mail. At most `DIGEST_DAILY_CAP` (default 90) mails a run, under Resend's free 100 a day; the rest follow the next day.
-- **Unsubscribe.** Every mail has a `List-Unsubscribe` header with one-click POST and a visible link to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`). Opening the link shows a button; the POST turns both switches off.
+- **Unsubscribe.** Every mail has a `List-Unsubscribe` header with one-click POST and a visible link to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`). Opening the link shows a button; the POST calls the `unsubscribe` edge function (verify_jwt false; it holds the service-role key from its own environment) which turns every switch off.
 - **Matching** is by place id and source handle, never by a typed name. There is no model call anywhere in sending.
-- **Secrets:** repository secret `RESEND_API_KEY` (and the existing `SUPABASE_SERVICE_ROLE_KEY`); the Pages project needs `SUPABASE_SERVICE_ROLE_KEY` for the unsubscribe function. Sender `digest@wanderalt.app` must be verified in Resend (`DIGEST_FROM` overrides it). Run `npm run digest:dry` to preview.
+- **Secrets:** repository secret `RESEND_API_KEY` (and the existing `SUPABASE_SERVICE_ROLE_KEY`); the Pages project needs no secret. Sender `digest@wanderalt.app` must be verified in Resend (`DIGEST_FROM` overrides it). Run `npm run digest:dry` to preview.
 
 ### Saved searches and push
 

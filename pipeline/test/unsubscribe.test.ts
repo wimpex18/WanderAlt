@@ -16,16 +16,17 @@ test('opening the link only shows a button, so a mail scanner cannot unsubscribe
   } finally { globalThis.fetch = realFetch; }
 });
 
-test('the POST switches both alerts off by token, with the secret kept server side', async () => {
+test('the POST asks the unsubscribe function with the token and holds no secret itself', async () => {
   const realFetch = globalThis.fetch; let seen: { url: string; init: RequestInit } | null = null;
   globalThis.fetch = (async (url: string, init: RequestInit) => { seen = { url, init }; return new Response(null, { status: 204 }); }) as typeof fetch;
   try {
-    const r = await onRequestPost({ request: req(T, 'POST'), env: { SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_x' } });
+    const r = await onRequestPost({ request: req(T, 'POST'), env: {} });
     assert.equal(r.status, 200);
-    assert.match(seen!.url, new RegExp(`digest_prefs\\?unsubscribe_token=eq\\.${T}$`));
-    assert.match(String(seen!.init.body), /"weekly":false,"changes":false,"push":false,"tonight":false/);
-    assert.doesNotMatch(await r.text(), /sb_secret_x/);
-    assert.equal((await onRequestPost({ request: req(T, 'POST'), env: {} })).status, 503);
-    assert.equal((await onRequestPost({ request: req('x', 'POST'), env: { SUPABASE_SERVICE_ROLE_KEY: 'k' } })).status, 400);
+    assert.match(seen!.url, /\/functions\/v1\/unsubscribe$/);
+    assert.equal(String(seen!.init.body), JSON.stringify({ t: T }));
+    assert.equal(new Headers(seen!.init.headers).get('authorization'), null);
+    assert.equal((await onRequestPost({ request: req('x', 'POST'), env: {} })).status, 400);
+    globalThis.fetch = (async () => new Response(null, { status: 502 })) as typeof fetch;
+    assert.equal((await onRequestPost({ request: req(T, 'POST'), env: {} })).status, 502);
   } finally { globalThis.fetch = realFetch; }
 });
