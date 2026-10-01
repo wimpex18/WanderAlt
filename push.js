@@ -19,7 +19,7 @@
 
   /* The public half of the VAPID pair (`npx web-push generate-vapid-keys`,
      private half in the repository secret VAPID_PRIVATE_KEY). Public by design. */
-  const VAPID_PUBLIC = '';
+  const VAPID_PUBLIC = 'BDu_04wwyI096KtNP-7MHZ7od3Z_M38GDR0WvCekbrKKt8NV_GZ0_1AlVFbvr5oTJ1oWmBKM_u0pHPdnmNMorh0';
 
   const base = () => window.WA.BASE_URL || '';
   const authed = () => !!(window.WA.Auth && window.WA.Auth.isSignedIn && window.WA.Auth.isSignedIn());
