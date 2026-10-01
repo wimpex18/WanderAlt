@@ -17,6 +17,7 @@
 
   /* Notification switches for this device. A missing table (migration not
      applied) leaves `prefs` null and hides the section. */
+  let jumped = false;
   let pushState = '';   /* '' until asked; then what WA.Push.state() says */
   let prefs;   /* undefined: not asked yet; null: unavailable; else { weekly, changes } */
   const authHeaders = () => window.WA.Auth.getAuthHeaders();
@@ -44,14 +45,27 @@
   /* Notifications on this device. Hidden until the push key is set; an
      iPhone that has not added the site to the Home Screen is told why. */
   const pushRows = () => {
-    if (pushState === 'install') return '<p class="wa-note">On iPhone, add WanderAlt to the Home Screen first, then notifications can be switched on here.</p>';
-    if (pushState === 'denied') return '<p class="wa-note">Notifications are blocked for this site in your browser settings.</p>';
+    const I = window.WA.Install;
+    if (pushState === 'install') return `<p class="wa-state">Needs the Home Screen app</p>
+      <p class="wa-note">iPhone only sends web notifications from an app on the Home Screen.</p>
+      <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="install-open" data-from="push">Add to Home Screen</button></p>`;
+    if (pushState === 'denied') return `<p class="wa-state">Blocked</p><p class="wa-note">${I && I.standalone() ? 'Open Settings, then Notifications, then WanderAlt, and allow notifications.' : 'Notifications are blocked for this site in your browser settings.'}</p>`;
     if (pushState !== 'on' && pushState !== 'off') return '';
     const on = pushState === 'on' && !!prefs.push;
-    return `<button class="wa-switch" type="button" data-push aria-pressed="${on}">
+    return `<p class="wa-state${on ? ' is-on' : ''}">${on ? 'On for this device' : 'Off'}</p>
+      <button class="wa-switch" type="button" data-push aria-pressed="${on}">
         <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">Changes to your events arrive here too</span></span><span class="wa-switch__track"></span></button>
       <button class="wa-switch" type="button" data-digest="tonight" aria-pressed="${on && !!prefs.tonight}"${on ? '' : ' disabled'}>
-        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One notification at 16:00, only when something starts today</span></span><span class="wa-switch__track"></span></button>`;
+        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One notification at 16:00, only when something starts today</span></span><span class="wa-switch__track"></span></button>
+      ${on ? '<p><button class="wa-linkbtn" type="button" id="push-test">Send a test notification</button></p>' : ''}`;
+  };
+
+  /* Add to Home Screen, for anyone reading in a browser tab that can offer it. */
+  const appSection = () => {
+    const I = window.WA.Install;
+    if (!I || !I.canOpen()) return '';
+    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: 'Full screen, its own icon, and the only way iPhone can send notifications.' })}
+      <button class="wa-btn" type="button" id="install-open" data-from="you">Add to Home Screen</button></section>`;
   };
 
   /* The inbox: notes the alert job wrote for this account. Rows are read
@@ -86,7 +100,7 @@
     if (prefs === undefined) { loadPrefs(); return ''; }
     if (!prefs) return '';
     const rows = pushRows();
-    return rows ? `<section class="wa-sect">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app; the inbox works without it.' })}${rows}</section>` : '';
+    return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app; the inbox works without it.' })}${rows}</section>` : '';
   };
 
   const render = () => {
@@ -140,6 +154,7 @@
             <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : ''}
         </section>
 
+        ${appSection()}
         ${pushSection(signedIn)}
 
         <section class="wa-sect">
@@ -164,6 +179,9 @@
         </section>
       </div>
       <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
+    /* A link from the Home Screen invitation lands on the notifications once their rows exist. */
+    const target = location.hash === '#notifications' && !jumped && document.getElementById('notifications');
+    if (target) { jumped = true; target.scrollIntoView({ block: 'start' }); }
   };
 
   /* A destructive choice gets its own sheet and its own words, and the
@@ -228,6 +246,12 @@
       window.WA.Seen.clear();
       render();
       toast('Forgot what you opened', 'Undo', () => { had.forEach(id => window.WA.Seen.mark(id)); render(); });
+      return;
+    }
+    if (hit('#install-open')) { window.WA.Install.open(hit('#install-open').dataset.from || 'you'); return; }
+    if (hit('#push-test')) {
+      const b = hit('#push-test');
+      window.WA.Push.test().then((ok) => { b.textContent = ok ? 'Sent' : 'Could not send'; setTimeout(() => { b.textContent = 'Send a test notification'; }, 2500); });
       return;
     }
     if (hit('#signin')) { if (window.WA.Auth.openSignIn) window.WA.Auth.openSignIn(); return; }

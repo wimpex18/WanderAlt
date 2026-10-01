@@ -21,6 +21,10 @@
       if (unread > 0) { a.setAttribute('data-unread', String(unread)); a.setAttribute('aria-label', `You, ${unread} unread`); }
       else { a.removeAttribute('data-unread'); a.setAttribute('aria-label', 'You'); }
     });
+    /* The Home Screen icon carries the same count (installed apps only; elsewhere this is a no-op). */
+    try {
+      if (navigator.setAppBadge) (unread > 0 ? navigator.setAppBadge(unread) : navigator.clearAppBadge()).catch(() => {});
+    } catch (_) { /* no Badging API */ }
   };
 
   const refresh = async () => {

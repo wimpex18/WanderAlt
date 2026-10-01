@@ -17,7 +17,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v44';
+const VERSION = 'wa-v45';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -33,7 +33,7 @@ const SHELL_URLS = [
   './theme.js', './brand-reveal.js', './icons.js', './when.js', './geo.js', './hours.js',
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
-  './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js',
+  './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js', './install.js',
   './finder.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js',
@@ -164,19 +164,32 @@ self.addEventListener('message', (e) => {
 self.addEventListener('push', (e) => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (_) { /* a plain-text push still shows */ }
-  e.waitUntil(self.registration.showNotification(String(m.title || 'WanderAlt').slice(0, 80), {
-    body: String(m.body || '').slice(0, 200),
-    icon: './apple-touch-icon.png',
-    tag: String(m.tag || 'wanderalt'),
-    data: { url: String(m.url || './index.html') },
-  }));
+  e.waitUntil((async () => {
+    await self.registration.showNotification(String(m.title || 'WanderAlt').slice(0, 80), {
+      body: String(m.body || '').slice(0, 200),
+      icon: './apple-touch-icon.png',
+      tag: String(m.tag || 'wanderalt'),
+      data: { url: String(m.url || './index.html') },
+    });
+    await badge();
+  })());
 });
+
+/* The Home Screen icon counts what is waiting. The page sets the exact
+   unread count when it opens; until then, the notifications still showing. */
+const badge = async () => {
+  try {
+    const n = (await self.registration.getNotifications()).length;
+    if (self.navigator.setAppBadge) await (n ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge());
+  } catch (_) { /* no Badging API here */ }
+};
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const target = new URL((e.notification.data && e.notification.data.url) || './index.html', self.location.origin);
   const url = target.origin === self.location.origin ? target.href : self.location.origin;
   e.waitUntil((async () => {
+    await badge();
     for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) {
       if (c.url === url && 'focus' in c) return c.focus();
     }

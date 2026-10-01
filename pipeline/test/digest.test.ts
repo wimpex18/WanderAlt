@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pushChanges, pushTonight, tonightEvents, composeChanges, composeWeekly, matchesFollow, unsubscribeUrl, weeklyEvents, type EventRow } from '../digest-core.ts';
+import { pushPayload, pushChanges, pushTonight, tonightEvents, composeChanges, composeWeekly, matchesFollow, unsubscribeUrl, weeklyEvents, type EventRow } from '../digest-core.ts';
 
 const now = new Date('2026-10-01T12:00:00Z');
 const ev = (o: Partial<EventRow>): EventRow => ({ id: 'ev_1', title: 'Night', venue: 'Kino Sõprus', venue_id: 'tallinn-kino-soprus',
@@ -75,4 +75,13 @@ test('the inbox gets one row per changed event and one a week, each told once by
   assert.match(w.title, /^2 things this week/); assert.equal(w.dedupe, `week:${weekKey(now)}`);
   assert.equal(weekKey(new Date('2026-10-01T05:00:00Z')), weekKey(new Date('2026-10-04T20:00:00Z')));
   assert.notEqual(weekKey(new Date('2026-10-04T20:00:00Z')), weekKey(new Date('2026-10-05T01:00:00Z')));
+});
+
+test('push payload carries the declarative Safari form and the flat fields for the service worker', () => {
+  const m = pushTonight([ev({ id: 'ev_1', title: 'Gig' })])!;
+  const p = pushPayload(m);
+  assert.equal(p.web_push, 8030);
+  assert.equal(p.notification.navigate, 'https://wanderalt.app/detail.html?id=ev_1');
+  assert.equal(p.notification.title, m.title);
+  assert.deepEqual([p.title, p.body, p.url, p.tag], [m.title, m.body, m.url, m.tag]);
 });

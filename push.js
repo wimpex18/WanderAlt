@@ -78,5 +78,20 @@
     } catch (_) { /* the browser forgets it either way */ }
   };
 
-  window.WA.Push = { state, enable, disable };
+  /* A notification made on this device, to show what one looks like and to
+     prove the permission and the worker. Nothing is sent from a server. */
+  const test = async () => {
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+      const reg = await registration();
+      if (!reg) return false;
+      await reg.showNotification('WanderAlt', {
+        body: 'This is what a notification looks like. Nothing to do.',
+        icon: './apple-touch-icon.png', tag: 'wanderalt-test', data: { url: './profile.html' },
+      });
+      return true;
+    } catch (_) { return false; }
+  };
+
+  window.WA.Push = { state, enable, disable, test };
 })();

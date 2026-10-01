@@ -17,7 +17,7 @@
 // DIGEST_DAILY_CAP (default 90) keeps a day under Resend's free 100.
 
 import { Db, SUPABASE_URL, chunks } from './db.ts';
-import { composeChanges, composeWeekly, inboxChanges, inboxWeek, type InboxItem, pushChanges, pushTonight, tonightEvents, unsubscribeUrl, weeklyEvents, type EventRow, type Mail, type PushMessage } from './digest-core.ts';
+import { pushPayload, composeChanges, composeWeekly, inboxChanges, inboxWeek, type InboxItem, pushChanges, pushTonight, tonightEvents, unsubscribeUrl, weeklyEvents, type EventRow, type Mail, type PushMessage } from './digest-core.ts';
 import { sendPush, type PushSubscription, type Vapid } from './webpush.ts';
 import { tallinnToIso } from './time.ts';
 
@@ -45,7 +45,7 @@ async function pushTo(userId: string, m: PushMessage): Promise<boolean> {
   let delivered = false;
   for (const sub of subs) {
     if (dry) { console.log(`[dry-run] push to a device of ${userId.slice(0, 8)}: ${m.title} / ${m.body}`); delivered = true; continue; }
-    const r = await sendPush(sub, m, vapid).catch(() => 'failed' as const);
+    const r = await sendPush(sub, pushPayload(m), vapid).catch(() => 'failed' as const);
     if (r === 'ok') delivered = true;
     else if (r === 'gone') await db.req('DELETE', `push_subscriptions?user_id=eq.${userId}&endpoint=eq.${encodeURIComponent(sub.endpoint)}`, undefined, 'return=minimal');
   }

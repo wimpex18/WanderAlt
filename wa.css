@@ -159,7 +159,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 /* ── Liquid Glass ─────────────────────────────────────────────────
    One recipe. Reduce Transparency, or a browser without backdrop
    filters, gets the same shape on solid paper. */
-.wa-glass, .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select {
+.wa-glass, .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .map-when select {
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -1219,3 +1219,51 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-inbox__title { font-weight: 600; }
 .wa-inbox__body { font-size: var(--fs-meta); color: var(--ink-2); white-space: pre-line; line-height: 1.5; }
 .wa-inbox__when { font-size: var(--fs-small); color: var(--ink-3); }
+
+
+/* ── Home Screen invitation (install.js) ──────────────────────────
+   The nudge is the glass recipe, sitting where the toast sits, so it
+   reads as part of the tab bar's family. It rises on the spring and
+   leaves quickly. The sheet's steps arrive one by one; the Share chip
+   rings until the reader moves on; a Home Screen tile pops into a grid
+   of ghosts. Reduced motion shows the finished state. */
+.wa-install { position: fixed; z-index: 50; left: 12px; right: 12px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s-2)); display: flex; align-items: center; gap: var(--s-3); padding: 8px 4px 8px 8px; border-radius: var(--r-pill); animation: wa-install-in 620ms var(--spring) both; }
+.wa-install.is-leaving { animation: wa-install-out 240ms var(--ease) forwards; }
+.wa-install__icon { flex: none; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.18); animation: wa-install-icon 900ms 260ms var(--spring) both; }
+.wa-install__icon svg { display: block; width: 100%; height: 100%; }
+.wa-install__text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.wa-install__title { font-weight: 650; font-size: .9375rem; letter-spacing: -.01em; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-install__sub { font-size: var(--fs-small); color: var(--ink-2); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-install__go { flex: none; min-height: 40px; padding: 0 15px; border: 0; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-weight: 650; font-size: .875rem; }
+.wa-install__x { flex: none; width: 32px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--ink-3); display: grid; place-items: center; }
+@media (min-width: 1024px) { .wa-install { left: auto; right: var(--s-6); bottom: var(--s-6); width: 400px; } }
+@keyframes wa-install-in { from { opacity: 0; transform: translateY(28px) scale(.94); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes wa-install-out { to { opacity: 0; transform: translateY(14px) scale(.97); filter: blur(4px); } }
+@keyframes wa-install-icon { 0% { transform: scale(.6) rotate(-10deg); } 60% { transform: scale(1.08) rotate(3deg); } 100% { transform: none; } }
+
+.wa-howto__stage { display: grid; grid-template-columns: repeat(4, 56px); gap: 14px; justify-content: center; align-items: center; padding: var(--s-4) 0 var(--s-2); position: relative; }
+.wa-howto__ghost { width: 56px; height: 56px; border-radius: 15px; background: var(--paper-2); }
+.wa-howto__tile { width: 56px; height: 56px; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 22px rgba(216,58,20,.35); animation: wa-howto-tile 6s var(--spring) 600ms infinite both; }
+.wa-howto__tile svg { display: block; width: 100%; height: 100%; }
+@keyframes wa-howto-tile { 0%, 12% { transform: scale(0) rotate(-14deg); opacity: 0; } 24% { transform: scale(1.12) rotate(3deg); opacity: 1; } 32%, 86% { transform: none; opacity: 1; } 100% { transform: scale(.9); opacity: 0; } }
+.wa-howto__steps { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: var(--s-3); }
+.wa-howto__steps li { display: grid; grid-template-columns: 44px 1fr; gap: var(--s-4); align-items: center; animation: wa-howto-rise 640ms var(--spring) both; animation-delay: calc(240ms + var(--i) * 110ms); }
+.wa-howto__chip { position: relative; width: 44px; height: 44px; border-radius: 14px; background: var(--paper-2); color: var(--ink); display: grid; place-items: center; }
+.wa-howto__chip.is-ping::after { content: ""; position: absolute; inset: -4px; border-radius: 17px; border: 2px solid var(--accent); opacity: 0; animation: wa-howto-ping 2.4s var(--ease) 900ms infinite; }
+.wa-howto__copy { display: grid; gap: 2px; }
+.wa-howto__copy strong { font-weight: 650; letter-spacing: -.01em; }
+.wa-howto__copy span { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.4; }
+.wa-howto__carry { margin-top: var(--s-5); padding: var(--s-4); border-radius: var(--r-md); background: var(--accent-soft); display: grid; gap: var(--s-3); justify-items: start; }
+.wa-howto__carry p { font-size: var(--fs-meta); line-height: 1.45; }
+@keyframes wa-howto-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes wa-howto-ping { 0% { opacity: .9; transform: scale(.92); } 70%, 100% { opacity: 0; transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) {
+  .wa-howto__tile { animation: none; opacity: 1; }
+  .wa-howto__chip.is-ping::after { animation: none; opacity: .9; transform: none; }
+}
+
+/* Notifications and App rows on You. */
+.wa-state { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); margin-bottom: var(--s-2); }
+.wa-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.wa-state.is-on { color: var(--ink); }
+.wa-state.is-on::before { background: #2e9e5b; box-shadow: 0 0 0 3px color-mix(in oklab, #2e9e5b 22%, transparent); }
