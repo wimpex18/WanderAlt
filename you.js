@@ -48,7 +48,7 @@
     const I = window.WA.Install;
     if (pushState === 'install') return `<p class="wa-state">Needs the Home Screen app</p>
       <p class="wa-note">iPhone only sends web notifications from an app on the Home Screen.</p>
-      <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="install-open" data-from="push">Add to Home Screen</button></p>`;
+      <p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" id="install-open" data-from="push">Add to Home Screen</button></p>`;
     if (pushState === 'denied') return `<p class="wa-state">Blocked</p><p class="wa-note">${I && I.standalone() ? 'Open Settings, then Notifications, then WanderAlt, and allow notifications.' : 'Notifications are blocked for this site in your browser settings.'}</p>`;
     if (pushState !== 'on' && pushState !== 'off') return '';
     const on = pushState === 'on' && !!prefs.push;
@@ -64,8 +64,8 @@
   const appSection = () => {
     const I = window.WA.Install;
     if (!I || !I.canOpen()) return '';
-    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: I.kind() === 'ios' ? 'Full screen, its own icon, and the only way iPhone can send notifications.' : 'Its own icon and window, one tap from your Home screen.' })}
-      <button class="wa-btn" type="button" id="install-open" data-from="you">Add to Home Screen</button></section>`;
+    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: I.kind() === 'ios' ? 'Full screen, and the only way iPhone gets notifications.' : 'Its own icon, one tap from your Home screen.' })}
+      <button class="wa-btn wa-btn--sm" type="button" id="install-open" data-from="you">Add to Home Screen</button></section>`;
   };
 
   /* The inbox: notes the alert job wrote for this account. Rows are read
@@ -84,10 +84,10 @@
     if (notes && notes.some(n => !n.read_at)) window.WA.Inbox.markRead();
   };
   const inboxSection = (signedIn) => {
-    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in and WanderAlt tells you here when an event you saved is cancelled, and once a week what is on at places you follow.' })}</section>`;
+    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in to hear here when a saved event is cancelled.' })}</section>`;
     if (notes === undefined) { loadNotes(); return ''; }
     if (!notes) return '';
-    return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet. Save an event or follow a place and changes land here.' })}
+    return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet. Save an event or follow a place.' })}
       ${notes.length ? `<ul class="wa-inbox">${notes.map(n => `<li><a class="wa-inbox__row${n.read_at ? '' : ' is-new'}" href="${esc(window.WA.UI.safeUrl(n.url) || '#')}">
         <span class="wa-inbox__title">${esc(n.title)}</span><span class="wa-inbox__body">${esc(n.body)}</span><span class="wa-inbox__when">${esc(ago(n.created_at))}</span></a></li>`).join('')}</ul>
         <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="inbox-clear">Clear inbox</button></p>` : ''}
@@ -100,7 +100,31 @@
     if (prefs === undefined) { loadPrefs(); return ''; }
     if (!prefs) return '';
     const rows = pushRows();
-    return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app; the inbox works without it.' })}${rows}</section>` : '';
+    return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications', sub: 'Optional. A nudge outside the app.' })}${rows}</section>` : '';
+  };
+
+  /* A few quiet milestones, worked out from what is already kept on the device. Nothing is stored for them. */
+  const milestones = (saved, follows) => {
+    const L = window.WA.Lists, G = window.WA.Going;
+    const lists = L ? L.forCity(window.WA.CITY).length : 0;
+    const going = G ? G.ids().length : 0;
+    const opened = window.WA.Seen.count();
+    const all = [
+      { icon: 'save', name: 'First save', hint: 'Save a listing', ok: saved >= 1 },
+      { icon: 'list', name: 'Curator', hint: 'Save five listings', ok: saved >= 5 },
+      { icon: 'programme', name: 'Explorer', hint: 'Open ten listings', ok: opened >= 10 },
+      { icon: 'pin', name: 'Local', hint: 'Follow a place', ok: follows >= 1 },
+      { icon: 'calendar', name: 'Planner', hint: 'Make a list', ok: lists >= 1 },
+      { icon: 'walk', name: 'Going out', hint: 'Say you are going to something', ok: going >= 1 },
+    ];
+    const done = all.filter(m => m.ok).length;
+    const next = all.find(m => !m.ok);
+    return `<section class="wa-sect you-mile" aria-label="Milestones">
+      <div class="you-mile__head"><h2 class="wa-sect__title">Milestones</h2><span class="you-mile__n">${done} of ${all.length}</span></div>
+      <div class="you-mile__bar" role="progressbar" aria-valuemin="0" aria-valuemax="${all.length}" aria-valuenow="${done}"><span style="width:${Math.round(done / all.length * 100)}%"></span></div>
+      <ul class="you-mile__grid">${all.map(m => `<li class="you-mile__item${m.ok ? ' is-on' : ''}" title="${esc(m.hint)}"><span class="you-mile__ic">${I(m.icon)}</span><span class="you-mile__name">${esc(m.name)}</span><span class="wa-sr">${m.ok ? 'Done' : esc(m.hint)}</span></li>`).join('')}</ul>
+      <p class="you-mile__next">${next ? `Next: ${esc(next.hint.toLowerCase())}` : 'All six. Nicely done.'}</p>
+    </section>`;
   };
 
   const render = () => {
@@ -129,20 +153,21 @@
         <div class="wa-stat"><span class="wa-stat__n">${saved}</span><span class="wa-stat__label">Saved</span></div>
         <div class="wa-stat"><span class="wa-stat__n">${follows.length}</span><span class="wa-stat__label">Following</span></div>
       </div>
+      ${milestones(saved, follows.length)}
 
       <div class="you-cols">
         ${inboxSection(signedIn)}
-        <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: ids.length ? 'They get their own shelf on Tonight. Nothing else is hidden.' : 'Pick up to three and Tonight gives them a shelf.' })}
+        <section class="wa-sect" id="interests">${R().sect({ title: 'Interests', sub: 'Up to three get a shelf on Tonight.' })}
           <div class="wa-chips" style="margin-top:var(--s-3)">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
         </section>
 
-        <section class="wa-sect">${R().sect({ title: 'Appearance', sub: `Auto follows your device, else it turns dark at ${window.WA.Theme.duskLabel()} in Tallinn.` })}
+        <section class="wa-sect">${R().sect({ title: 'Appearance', sub: `Auto follows your device, or goes dark at ${window.WA.Theme.duskLabel()}.` })}
           <div class="wa-seg" style="margin-top:var(--s-3);max-width:420px">${window.WA.Theme.OPTIONS.map(o =>
             `<button class="wa-seg__opt" type="button" data-theme-set="${esc(o.value)}" aria-pressed="${window.WA.Theme.get() === o.value}">${esc(o.label)}</button>`).join('')}</div>
         </section>
 
-        <section class="wa-sect">${R().sect({ title: 'Following', n: follows.length || null, sub: follows.length ? '' : 'Follow a venue from its page and its listings are marked for you.' })}
+        <section class="wa-sect">${R().sect({ title: 'Following', n: follows.length || null, sub: follows.length ? '' : 'Follow a venue from its page.' })}
           ${followed.length ? `<ul>${followed.map(v => v.__raw
             ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${v.source ? `<a href="source.html?handle=${esc(encodeURIComponent(`@${v.source}`))}">${esc(v.name)}</a>` : esc(v.name)}</span></span><span class="wa-place__side">${cal(v.key)}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.key)}">Unfollow</button></span></li>`
             : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : ''}
@@ -159,21 +184,24 @@
 
         <section class="wa-sect">
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
-            <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button>
+            <p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" id="signout">Sign out</button>
               <button class="wa-linkbtn" type="button" id="delete-account" style="margin-left:var(--s-4)">Delete account</button></p>`
-          : `<div class="wa-card wa-card--ink">
-              <h2 class="wa-card__title">Keep your saves on every device.</h2>
-              <p class="wa-note">Everything works signed out. An account only carries your shortlist between your phone and your laptop.</p>
-              ${window.WA.Auth && window.WA.Auth.signInError ? `<p class="wa-note" role="alert">Sign-in did not finish: ${esc(window.WA.Auth.signInError)}</p>` : ''}
-              <div class="wa-btns">
-                <button class="wa-btn wa-btn--primary" type="button" id="signin">Continue with email</button>
-                <a class="wa-btn" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}">Continue with Google</a>
+          : `<div class="you-join">
+              <span class="you-join__mark" aria-hidden="true">${I('save')}</span>
+              <div class="you-join__text">
+                <h2 class="you-join__title">Saves that follow you</h2>
+                <p class="you-join__sub">Sign in to keep your list on every device.</p>
+                ${window.WA.Auth && window.WA.Auth.signInError ? `<p class="you-join__sub" role="alert">Sign-in did not finish: ${esc(window.WA.Auth.signInError)}</p>` : ''}
+                <div class="you-join__actions">
+                  <a class="wa-btn wa-btn--sm" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}"><svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.566 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Google</a>
+                  <button class="wa-btn wa-btn--sm wa-btn--ink" type="button" id="signin">Email</button>
+                </div>
               </div>
             </div>`}
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, lists, going marks, follows and notification switches are also kept in your account, with the notes in your inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
+          <p class="wa-note">Saves, lists, follows, interests and history stay in this browser. Signed in, they also live in your account, with your alert settings and inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
           <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
           <p><button class="wa-linkbtn" type="button" id="wipe-device">Forget everything on this device</button></p>
         </section>
@@ -195,7 +223,7 @@
       <div class="wa-sheet__body"><p class="wa-note">${esc(text)}</p><p class="wa-field__consequence" id="confirm-status" aria-live="polite" role="status"></p></div>
       <div class="wa-sheet__foot">
         <button class="wa-btn wa-btn--quiet" type="button" id="confirm-no" autofocus>Cancel</button>
-        <button class="wa-btn wa-btn--primary" type="button" id="confirm-yes" style="flex:1">${esc(action)}</button>
+        <button class="wa-btn wa-btn--primary" type="button" id="confirm-yes" >${esc(action)}</button>
       </div></div>`;
     document.body.appendChild(d);
     const done = (v) => { if (d.open) d.close(); d.remove(); resolve(v); };
@@ -258,7 +286,7 @@
     if (hit('#signout')) { window.WA.Auth.signOut().then(render); return; }
     if (hit('#delete-account')) {
       (async () => {
-        if (!await confirmSheet({ title: 'Delete your account?', text: 'This removes your account and everything kept in it: saves, lists, follows, going marks, notification settings and your inbox. It also forgets what this device holds. It cannot be undone.', action: 'Delete account' })) return;
+        if (!await confirmSheet({ title: 'Delete your account?', text: 'Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.', action: 'Delete account' })) return;
         if (await window.WA.Auth.deleteAccount()) { location.assign('./index.html'); }
         else toast('Could not delete the account. Nothing was changed');
       })();
@@ -266,7 +294,7 @@
     }
     if (hit('#wipe-device')) {
       (async () => {
-        if (!await confirmSheet({ title: 'Forget everything on this device?', text: 'Saves, lists, follows, interests, what you opened and the saved listings are removed from this browser, and you are signed out here. An account, if you have one, keeps its saves and you can sign in again to get them back.', action: 'Forget everything' })) return;
+        if (!await confirmSheet({ title: 'Forget everything on this device?', text: 'Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.', action: 'Forget everything' })) return;
         await window.WA.Auth.signOut();
         await window.WA.Auth.wipeDevice();
         location.assign('./index.html');

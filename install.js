@@ -167,7 +167,7 @@
         ${carry && k === 'ios' ? `<div class="wa-howto__carry"><p>The app starts empty. Sign in first and your saves come with you.</p>
           <button class="wa-btn" type="button" id="howto-signin">Sign in first</button></div>` : ''}`;
     } else if (k === 'chromium') {
-      body = '<p class="wa-note">Install WanderAlt to open it in its own window, one tap from your Home Screen or dock.</p>';
+      body = '<p class="wa-note">Install it for its own window, one tap away.</p>';
     } else {
       body = '<p class="wa-note">This browser cannot install WanderAlt.</p>';
     }
@@ -177,9 +177,9 @@
         <button class="wa-sheet__close" type="button" id="howto-x" aria-label="Close">${IC.close}</button></div>
       <div class="wa-sheet__body">${body}</div>
       <div class="wa-sheet__foot">${k === 'chromium'
-        ? '<button class="wa-btn wa-btn--quiet" type="button" id="howto-no">Not now</button><button class="wa-btn wa-btn--primary" type="button" id="howto-go" style="flex:1">Install</button>'
+        ? '<button class="wa-btn wa-btn--quiet" type="button" id="howto-no">Not now</button><button class="wa-btn wa-btn--primary" type="button" id="howto-go">Install</button>'
         : (k === 'ios' && !webview()) || k === 'menu'
-          ? '<button class="wa-btn wa-btn--quiet" type="button" id="howto-no">Not now</button><button class="wa-btn wa-btn--primary" type="button" id="howto-done" style="flex:1">I have added it</button>'
+          ? '<button class="wa-btn wa-btn--quiet" type="button" id="howto-no">Not now</button><button class="wa-btn wa-btn--primary" type="button" id="howto-done">I have added it</button>'
           : ''}</div></div>`;
     document.body.appendChild(d);
     const close = () => { if (d.open) d.close(); d.remove(); };

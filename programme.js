@@ -266,7 +266,7 @@
     const best = drops.find(d => d.n > 0);
     if (state.q && drops.length === 1) {
       return R().empty({ icon: 'search', title: 'No listings match this search.',
-        body: 'Search reads English and original titles, venues, areas and tags, with or without Estonian letters.',
+        body: 'Searches English and original titles, venues and areas, with or without Estonian letters.',
         actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'Search places' }] });
     }
     if (best) {

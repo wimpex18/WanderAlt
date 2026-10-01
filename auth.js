@@ -332,7 +332,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Sign in</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Sign in</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-forgot').addEventListener('click', () => render('forgot'));
     p.querySelector('#auth-to-signup').addEventListener('click', () => render('sign-up'));
@@ -382,7 +382,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Create account</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Create account</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-signin').addEventListener('click', () => render('sign-in'));
     p.querySelector('#auth-submit').addEventListener('click', doSignUp);
@@ -435,7 +435,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Send reset link</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Send reset link</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-to-signin').addEventListener('click', () => render('sign-in'));
     p.querySelector('#auth-submit').addEventListener('click', doForgot);
@@ -473,7 +473,7 @@
       <p class="wa-field__consequence" id="auth-status" aria-live="polite" style="margin-top:var(--s-4)"></p>`;
     foot().innerHTML = `
       <button class="wa-btn wa-btn--quiet" type="button" id="auth-close">Cancel</button>
-      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit" style="flex:1">Update password</button>`;
+      <button class="wa-btn wa-btn--primary" type="button" id="auth-submit">Update password</button>`;
     p.querySelector('#auth-close').addEventListener('click', closeOverlay);
     p.querySelector('#auth-submit').addEventListener('click', doSetPassword);
     p.querySelector('#auth-password').focus();

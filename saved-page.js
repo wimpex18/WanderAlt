@@ -92,8 +92,9 @@
             ${mosaic(l.items || [])}<span class="wa-listcard__name">${esc(l.name)}</span>
             <span class="wa-listcard__sub">${esc(`${n} saved${gone ? ` · ${gone} over` : ''}`)}</span></button>`;
         }).join('')}
-        <button class="wa-listcard wa-listcard--new" type="button" id="new-list"><span class="wa-listcard__mosaic">${I('plus', 'wa-ic--lg')}</span><span class="wa-listcard__name">New list</span></button>
+        ${lists.length ? `<button class="wa-listcard wa-listcard--new" type="button" id="new-list"><span class="wa-listcard__mosaic">${I('plus', 'wa-ic--lg')}</span><span class="wa-listcard__name">New list</span></button>` : ''}
       </div>
+      ${lists.length ? '' : `<button class="wa-btn wa-btn--sm" type="button" id="new-list">${I('plus')}<span>New list</span></button>`}
       ${listFilter ? '<p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" data-list="">Show everything saved</button></p>' : ''}
     </section>`;
   };
@@ -104,11 +105,11 @@
     const L = window.WA.Lists;
     const viewing = listFilter && L ? L.byId(listFilter) : null;
     $('saved-title').textContent = viewing ? viewing.name : total ? `${total} saved` : 'Saved';
-    $('saved-sub').textContent = viewing ? 'Only what is in this list.' : total ? 'Soonest to expire first. It stays in this browser and works signed out.' : 'Your shortlist stays in this browser.';
+    $('saved-sub').textContent = viewing ? 'Only what is in this list.' : total ? 'Soonest first. Stays in this browser.' : 'Your shortlist. Stays in this browser.';
 
     if (!total && !(L && L.forCity(window.WA.CITY).length)) {
       $('saved-body').innerHTML = R().empty({ icon: 'save', title: 'Nothing saved yet.',
-        body: 'Save anything from its page and it waits here, even offline. Nothing is sent anywhere.',
+        body: 'Save from any listing. It waits here, even offline.',
         actions: [{ href: 'index.html', label: "What's on tonight" }, { href: 'places.html', label: 'Places' }] });
       return;
     }
@@ -121,7 +122,7 @@
           : '<p class="wa-note">Nothing dated is saved. Events you save land here, soonest first.</p>'}</section>
       <section class="wa-sect">${R().sect({ title: 'Places', n: places.length })}
         ${places.length ? `<ul>${places.map(v => R().placeRow(v, { drop: true })).join('')}</ul>`
-          : '<p class="wa-note">Save a record shop or a gallery from its page and it waits here for a free afternoon.</p>'}</section>
+          : '<p class="wa-note">Save a shop or a gallery. It waits here for a free afternoon.</p>'}</section>
     </div>
     ${all.unavailable.filter(inList).length ? `<section class="wa-sect" aria-live="polite">${R().sect({ title: 'Saved listings awaiting details', n: all.unavailable.filter(inList).length })}
       <p class="wa-note">These saves are kept. Their details ${pending.size ? 'are loading' : 'could not load'}.</p>
@@ -136,10 +137,10 @@
   /* ── The new-list sheet ───────────────────────────────────── */
   const openNew = () => {
     $('sheet-title').textContent = 'New list';
-    $('sheet-body').innerHTML = `<div class="wa-field"><label class="wa-field__label" for="list-name">Name</label>
-      <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off"></div>
-      <p class="wa-note">Add things to it from their pages.</p>`;
-    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="list-create">Create list</button>';
+    $('sheet-body').innerHTML = `<div class="wa-field"><label class="wa-field__label" for="list-name">Name it</label>
+      <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off" enterkeyhint="done"></div>
+      ${window.WA.Lists.suggestions()}`;
+    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--quiet" type="button" id="sheet-cancel">Cancel</button><button class="wa-btn wa-btn--ink" type="button" id="list-create">Create</button>';
     $('sheet').showModal();
     $('list-name').focus();
   };
@@ -147,7 +148,7 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('[data-retry-saved]')) { details.clear(); failed.clear(); render(); return; }
-    if (hit('#sheet-close')) { $('sheet').close(); return; }
+    if (hit('#sheet-close') || hit('#sheet-cancel')) { $('sheet').close(); return; }
     if (hit('#new-list')) { openNew(); return; }
     if (hit('#list-create')) {
       const L = window.WA.Lists;

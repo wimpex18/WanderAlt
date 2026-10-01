@@ -209,3 +209,8 @@ test('sheets follow the visual viewport so the keyboard never covers a field or 
   const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
   assert.match(css, /\.wa-sheet \{[^}]*height: var\(--vv-h, 100%\)/);
 });
+
+test('the name sheets get their suggestions from Lists', () => {
+  const p = page(); p.load('lists.js');
+  assert.match(String(p.WA.Lists.suggestions()), /data-suggest="Saturday night"/);
+});

@@ -435,7 +435,7 @@
           ${week ? `<div class="hours">${week.map(d => `<div class="hours__row${d.isToday ? ' hours__row--today' : ''}">
               <span class="hours__day">${esc(d.day)}</span><span class="hours__val">${esc(d.text)}</span>${d.isToday ? '<span class="hours__today">Today</span>' : '<span></span>'}
             </div>`).join('')}</div>`
-            : '<p class="wa-note">Not filed. About half the places we list carry hours; for the rest we would rather leave a gap than guess.</p>'}
+            : '<p class="wa-note">Not filed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
         </section>
 
         ${R().real(v.address) || G().coordsFor(v) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
@@ -516,9 +516,10 @@
         : '<p class="wa-note" style="margin-bottom:var(--s-4)">No lists yet. Name one and this goes straight in.</p>'}
       <div class="wa-field">
         <label class="wa-field__label" for="list-name">New list</label>
-        <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off">
-      </div>`;
-    document.getElementById('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="list-create">Create and add</button>';
+        <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off" enterkeyhint="done">
+      </div>
+      ${lists.length ? '' : L.suggestions()}`;
+    document.getElementById('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--quiet" type="button" id="sheet-cancel">Cancel</button><button class="wa-btn wa-btn--ink" type="button" id="list-create">Create and add</button>';
     d.showModal();
   };
 
@@ -542,7 +543,7 @@
     const L = window.WA.Lists;
     const sheet = document.getElementById('sheet');
 
-    if (hit('#sheet-close')) { if (sheet.open) sheet.close(); return; }
+    if (hit('#sheet-close') || hit('#sheet-cancel')) { if (sheet.open) sheet.close(); return; }
     /* Back returns to the list you came from when there is one. */
     if (hit('#back') && document.referrer.startsWith(location.origin) && history.length > 1) { ev.preventDefault(); history.back(); return; }
     if (hit('#addlist')) { listSheet(id); return; }

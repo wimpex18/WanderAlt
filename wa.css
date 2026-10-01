@@ -1284,3 +1284,50 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 
 /* A short viewport (an iPhone in a Safari tab) keeps the steps and the sign-in note on one screen. */
 @media (max-height: 780px) { .wa-howto__stage { display: none; } }
+
+
+/* ── You: sign-in card and milestones ─────────────────────────────
+   Quiet surfaces on the page's own paper. The card is a soft vermilion
+   wash, never a dark block; its buttons are small pills. */
+.you-join { display: flex; gap: var(--s-4); align-items: flex-start; padding: var(--s-5); border-radius: var(--r-xl); border: 1px solid var(--hair);
+  background: radial-gradient(120% 140% at 0% 0%, var(--accent-soft), transparent 62%), var(--paper-2); }
+.you-join__mark { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--accent-ink); background: var(--paper); box-shadow: var(--shadow-1); }
+.you-join__mark .wa-ic { width: 20px; height: 20px; }
+.you-join__text { min-width: 0; display: grid; gap: 2px; }
+.you-join__title { font-size: 1.0625rem; font-weight: 650; letter-spacing: -.02em; line-height: 1.25; }
+.you-join__sub { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.4; }
+.you-join__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.you-join .wa-btn--sm { min-height: 36px; padding: 0 14px; font-size: .875rem; font-weight: 600; background: var(--paper); }
+.you-join .wa-btn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.you-mile { margin-top: var(--s-6); display: grid; gap: var(--s-3); }
+.you-mile__head { display: flex; align-items: baseline; justify-content: space-between; }
+.you-mile__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.you-mile__bar { height: 4px; border-radius: 2px; background: var(--paper-3); overflow: hidden; }
+.you-mile__bar span { display: block; height: 100%; border-radius: 2px; background: var(--accent); transition: width 600ms var(--spring); }
+.you-mile__grid { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3) var(--s-2); }
+.you-mile__item { display: grid; justify-items: center; gap: 6px; text-align: center; opacity: .5; transition: opacity var(--t-med); }
+.you-mile__ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); color: var(--ink-3); }
+.you-mile__ic .wa-ic { width: 20px; height: 20px; }
+.you-mile__name { font-size: var(--fs-small); font-weight: 600; line-height: 1.2; }
+.you-mile__item.is-on { opacity: 1; }
+.you-mile__item.is-on .you-mile__ic { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent); animation: you-pop 520ms var(--spring) both; }
+.you-mile__next { font-size: var(--fs-small); color: var(--ink-3); }
+@keyframes you-pop { from { transform: scale(.7); } to { transform: none; } }
+@media (min-width: 768px) { .you-mile__grid { grid-template-columns: repeat(6, 1fr); } }
+
+/* ── Sheets: calm footers and name ideas ──────────────────────────
+   Page-level calls to action keep the vermilion; a sheet's own button is a small ink pill, right-aligned, with a quiet Cancel. */
+.wa-sheet__foot { justify-content: flex-end; }
+.wa-sheet__foot .wa-btn { min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); font-size: .9375rem; }
+.wa-sheet__foot .wa-btn--primary, .wa-sheet__foot .wa-btn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.wa-sheet__foot .wa-btn--primary:hover, .wa-sheet__foot .wa-btn--ink:hover { background: color-mix(in oklab, var(--ink) 88%, var(--paper)); }
+.wa-sheet__foot .wa-btn--quiet { padding: 0 12px; }
+.wa-sheet .wa-input { height: 48px; border-radius: var(--r-md); }
+.wa-ideas { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.wa-ideas__chip { min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: .875rem; font-weight: 500; }
+.wa-ideas__chip:active { transform: scale(.97); background: var(--paper-3); }
+
+.wa-lists:empty { display: none; }
+.wa-lists + .wa-btn { margin-top: var(--s-1); }
+.wa-sect:has(> .wa-lists) { margin-bottom: var(--s-6); }
