@@ -14,13 +14,13 @@
      the follow   inside the installed app, one invitation to switch
                   notifications on, for a signed-in reader who has not
 
-   Interest means a second visit on another day, or something saved or
-   followed, and never the first page of a session. A dismissal waits 14
-   days, then 45, then stops for good; "I've added it" stops it at once.
-   Chrome and Edge on Android and desktop use the browser's own install
-   prompt when it offers one. Samsung Internet (27 and later) fires none, so
-   it gets the menu steps and the nudge; other Android browsers get the menu
-   steps from You only. Everything else stays silent.
+   The nudge appears once, ever, after about a minute and a quarter of
+   actual use (time spent looking at the app, added up across pages),
+   never on the first screen and never twice. A quiet entry on Tonight and
+   on You stays for anyone who wants it. Guidance follows the platform:
+   iPhone and iPad Safari (Share), Samsung Internet and other Android
+   browsers (the browser menu), Chrome and Edge (the browser's own prompt).
+   Everything else stays silent.
    ============================================================ */
 (() => {
   'use strict';
@@ -28,7 +28,8 @@
 
   const KEY = 'wa:install:v1';
   const DAY = 86400000;
-  const WAIT = [14 * DAY, 45 * DAY, 3650 * DAY];   /* after the 1st, 2nd, 3rd dismissal */
+  const WAIT = [14 * DAY, 45 * DAY, 3650 * DAY];   /* notification invitation: after the 1st, 2nd, 3rd dismissal */
+  const USE_SECONDS = 75;                           /* looked-at time before the Home Screen nudge, once */
   const PAGES = ['tonight', 'programme', 'saved'];    /* data-page values that may show the nudge */
   const ua = navigator.userAgent || '';
 
@@ -42,8 +43,8 @@
   const samsung = () => /SamsungBrowser/i.test(ua);
 
   let deferred = null;   /* Chromium's install prompt, when it offers one */
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
-  window.addEventListener('appinstalled', () => { deferred = null; save({ done: true }); drop(); });
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; document.dispatchEvent(new CustomEvent('wa:install-ready')); });
+  window.addEventListener('appinstalled', () => { deferred = null; save({ done: true }); drop(); document.dispatchEvent(new CustomEvent('wa:install-ready')); });
 
   /* 'standalone' | 'ios' | 'chromium' (the browser offered its prompt) | 'menu' (Android, install from the
      browser's menu) | 'none' */
@@ -63,20 +64,20 @@
     return { days: days.length, views: v };
   };
 
-  const interested = (visit) => {
-    const saves = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get && window.WA.Bookmarks.get()) || {}).length;
-    const follows = window.WA.Follows ? window.WA.Follows.keys().length : 0;
-    return visit.views >= 2 && (visit.days >= 2 || saves > 0 || follows > 0);
-  };
-
-  const quiet = (field) => {
-    const s = read();
-    return !!s.done || Date.now() < (+s[field] || 0);
-  };
   const dismissed = (count, until) => {
     const s = read(), n = (+s[count] || 0) + 1;
     save({ [count]: n, [until]: Date.now() + WAIT[Math.min(n, WAIT.length) - 1] });
   };
+
+  const ipad = () => /ipad/i.test(ua) || (!/iphone|ipod/i.test(ua) && ios());
+  /* What it gets the reader, in the platform's own words. */
+  const benefit = () => {
+    const k = kind();
+    if (k === 'ios') return 'Opens in one tap, full screen, and tells you when a plan changes.';
+    if (k === 'menu') return 'Opens in one tap from your Home screen, and tells you when a plan changes.';
+    return 'Opens in its own window, one tap away.';
+  };
+  const label = () => (kind() === 'ios' ? 'Add to Home Screen' : kind() === 'chromium' ? 'Install the app' : 'Add to Home screen');
 
   /* ── Markup ──────────────────────────────────────────────── */
 
@@ -129,9 +130,11 @@
            { ic: IC.add,  title: 'Install app', text: 'Choose Install app, or Add to Home screen.' },
            { ic: IC.web,  title: 'Confirm', text: 'Tap Install or Add.' }];
     }
-    const share = otherIos()
-      ? 'Tap Share, the square with an arrow, in the toolbar or address bar.'
-      : 'Tap the menu beside the address bar (≡ or ⋯), then Share.';
+    const share = ipad()
+      ? 'Tap Share, the square with an arrow, at the top of the screen.'
+      : otherIos()
+        ? 'Tap Share, the square with an arrow, in the toolbar or address bar.'
+        : 'Tap the menu beside the address bar (≡ or ⋯), then Share.';
     return [
       { ic: IC.share, title: 'Share', text: share, ping: true },
       { ic: IC.add,   title: 'Add to Home Screen', text: 'Scroll the list. Not there? Tap Edit Actions at the bottom.' },
@@ -157,7 +160,7 @@
     } else if (webview()) {
       body = `<p class="wa-note">This in-app browser cannot add WanderAlt to the Home Screen. Open <strong>wanderalt.app</strong> in ${ios() ? 'Safari' : 'your browser'}, then come back to this page.</p>`;
     } else if (k === 'ios' || k === 'menu') {
-      body = `<p class="wa-note">${k === 'menu' ? 'Its own icon and window, one tap from your Home screen, and notifications as a real app.' : from === 'push' ? 'iPhone only sends web notifications from the Home Screen.' : 'Full screen, no browser bars, and the only way iPhone can send notifications.'}</p>
+      body = `<p class="wa-note">${from === 'push' && k === 'ios' ? `${ipad() ? 'iPad' : 'iPhone'} only sends alerts to an app on the Home Screen.` : benefit()}</p>
         <div class="wa-howto__stage" aria-hidden="true">
           <i class="wa-howto__ghost"></i><i class="wa-howto__ghost"></i><i class="wa-howto__ghost"></i>
           <span class="wa-howto__tile">${MARK}</span>
@@ -167,13 +170,13 @@
         ${carry && k === 'ios' ? `<div class="wa-howto__carry"><p>The app starts empty. Sign in first and your saves come with you.</p>
           <button class="wa-btn" type="button" id="howto-signin">Sign in first</button></div>` : ''}`;
     } else if (k === 'chromium') {
-      body = '<p class="wa-note">Install it for its own window, one tap away.</p>';
+      body = `<p class="wa-note">${benefit()}</p>`;
     } else {
       body = '<p class="wa-note">This browser cannot install WanderAlt.</p>';
     }
 
     d.innerHTML = `<div class="wa-sheet__panel">
-      <div class="wa-sheet__head"><h2 class="wa-sheet__title" id="howto-title">${k === 'standalone' ? 'Already installed' : k === 'menu' ? 'Add to Home screen' : 'Add to Home Screen'}</h2>
+      <div class="wa-sheet__head"><h2 class="wa-sheet__title" id="howto-title">${k === 'standalone' ? 'Already installed' : label()}</h2>
         <button class="wa-sheet__close" type="button" id="howto-x" aria-label="Close">${IC.close}</button></div>
       <div class="wa-sheet__body">${body}</div>
       <div class="wa-sheet__foot">${k === 'chromium'
@@ -190,7 +193,7 @@
     d.addEventListener('close', () => d.remove());
     const on = (id, fn) => { const el = d.querySelector(id); if (el) el.addEventListener('click', fn); };
     on('#howto-x', close);
-    on('#howto-no', () => { close(); if (from === 'nudge') dismissed('count', 'until'); });
+    on('#howto-no', close);
     on('#howto-done', () => { save({ done: true }); close(); drop(); });
     on('#howto-signin', () => { close(); if (A && A.openSignIn) A.openSignIn(); });
     on('#howto-go', async () => {
@@ -247,22 +250,33 @@
       return;
     }
 
-    if (!PAGES.includes(page) || quiet('until') || !interested(visit)) return;
-    const ask = () => {
+    /* Once, ever: after about a minute and a quarter of use, on a listing page, at a calm moment. */
+    if (read().done || read().shown) return;
+    const KEY_S = 'wa:install:secs';
+    let secs = 0;
+    try { secs = +sessionStorage.getItem(KEY_S) || 0; } catch (_) { /* counted on this page only */ }
+    const tick = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      secs += 5;
+      try { sessionStorage.setItem(KEY_S, String(secs)); } catch (_) { /* ignore */ }
+      if (secs < USE_SECONDS || !PAGES.includes(page) || !calm()) return;
       const kk = kind();
-      if (kk === 'none' || kk === 'standalone' || (kk === 'ios' && webview()) || (kk === 'menu' && !samsung())) return;
+      if (read().done || read().shown || kk === 'none' || kk === 'standalone' || webview() || (kk === 'menu' && !samsung())) { if (read().done || read().shown || kk === 'standalone') clearInterval(tick); return; }
+      clearInterval(tick);
+      save({ shown: true });
       showNudge({
         title: 'Make it an app',
-        sub: kk === 'chromium' ? 'Install in one tap' : 'Add to Home Screen',
+        sub: kk === 'ios' ? 'Full screen, alerts, one tap' : kk === 'menu' ? 'One tap, and alerts' : 'Its own window, one tap',
         go: kk === 'chromium' ? 'Install' : 'Show me',
-        onGo: () => { save({ until: Date.now() + 7 * DAY }); open('nudge'); },
-        onNo: () => dismissed('count', 'until'),
+        onGo: () => open('nudge'),
+        onNo: () => {},
       });
-    };
-    whenCalm(ask);
+    }, 5000);
   };
 
-  window.WA.Install = { kind, open, standalone, webview, canOpen: () => ['ios', 'chromium', 'menu'].includes(kind()) && !webview() };
+  /* canOffer: a quiet entry (Tonight, You) is worth showing: a browser that can add the app, not yet added. */
+  const canOffer = () => ['ios', 'chromium', 'menu'].includes(kind()) && !webview() && !read().done;
+  window.WA.Install = { kind, open, standalone, webview, benefit, label, canOffer, canOpen: canOffer };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true }); else start();
 })();

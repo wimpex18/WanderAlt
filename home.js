@@ -135,7 +135,9 @@
     const near = here ? '' : nearOff
       ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span>`
       : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`;
-    host.innerHTML = `${near}<button class="wa-act" type="button" data-interests-open>${I('kinds')}${n ? `Your kinds · ${n}` : 'Pick your kinds'}</button>`
+    const app = window.WA.Install && window.WA.Install.canOffer()
+      ? `<button class="wa-act wa-act--quiet" type="button" data-install>${I('plus')}${esc(window.WA.Install.label())}</button>` : '';
+    host.innerHTML = `${near}<button class="wa-act" type="button" data-interests-open>${I('kinds')}${n ? `Your kinds · ${n}` : 'Pick your kinds'}</button>${app}`
       + (!here && nearOff ? '<p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>' : '');
   };
 
@@ -306,6 +308,7 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('[data-interests-open]')) { openInterests(); return; }
+    if (hit('[data-install]')) { window.WA.Install.open('home'); return; }
     if (hit('[data-near]')) {
       nearBusy = true; acts();
       G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
@@ -340,6 +343,7 @@
   $('home-search').addEventListener('submit', search);
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
+  document.addEventListener('wa:install-ready', acts);
   /* The clock ticks; the lists redraw every five minutes so "on now"
      and "starting soon" stay true on a phone left open. */
   setInterval(() => { $('hero-clock').textContent = clockText(); }, 30000);
