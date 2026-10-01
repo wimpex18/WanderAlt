@@ -64,7 +64,7 @@
   const appSection = () => {
     const I = window.WA.Install;
     if (!I || !I.canOpen()) return '';
-    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: 'Full screen, its own icon, and the only way iPhone can send notifications.' })}
+    return `<section class="wa-sect" id="app">${R().sect({ title: 'App', sub: I.kind() === 'ios' ? 'Full screen, its own icon, and the only way iPhone can send notifications.' : 'Its own icon and window, one tap from your Home screen.' })}
       <button class="wa-btn" type="button" id="install-open" data-from="you">Add to Home Screen</button></section>`;
   };
 
