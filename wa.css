@@ -1433,3 +1433,5 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 
 .you-cols { grid-template-columns: minmax(0, 1fr); }
 .you-cols > * { min-width: 0; }
+
+.you-cols { margin-top: 0; }

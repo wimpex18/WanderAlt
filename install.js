@@ -73,8 +73,8 @@
   /* What it gets the reader, in the platform's own words. */
   const benefit = () => {
     const k = kind();
-    if (k === 'ios') return 'Opens in one tap, full screen, and tells you when a plan changes.';
-    if (k === 'menu') return 'Opens in one tap from your Home screen, and tells you when a plan changes.';
+    if (k === 'ios') return 'One tap, full screen, and alerts when a plan changes.';
+    if (k === 'menu') return 'One tap from your Home screen, and alerts when a plan changes.';
     return 'Opens in its own window, one tap away.';
   };
   const label = () => (kind() === 'ios' ? 'Add to Home Screen' : kind() === 'chromium' ? 'Install the app' : 'Add to Home screen');

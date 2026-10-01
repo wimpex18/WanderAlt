@@ -24,6 +24,16 @@
     }
   };
 
+  /* A link to #calendar-feed, #privacy or #terms opens the fold it points at. */
+  const openHash = () => {
+    const t = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    const d = t && (t.tagName === 'DETAILS' ? t : t.closest('details'));
+    if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ block: 'start' }), 50); }
+  };
+  window.addEventListener('hashchange', openHash);
+  document.addEventListener('DOMContentLoaded', openHash, { once: true });
+  if (document.readyState !== 'loading') openHash();
+
   document.addEventListener('wa:catalog-ready', render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
 })();
