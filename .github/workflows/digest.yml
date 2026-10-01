@@ -1,0 +1,36 @@
+# Sends the email alerts (pipeline/digest.ts). Daily: change notes go out as they
+# appear, the weekly digest on Thursday to Saturday. Needs RESEND_API_KEY.
+name: digest
+
+on:
+  schedule:
+    - cron: '30 13 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print what would be sent, send nothing'
+        type: boolean
+        default: true
+      weekly:
+        description: 'Send the weekly digest even on a day it does not go out'
+        type: boolean
+        default: false
+
+concurrency:
+  group: digest
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Send
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: node pipeline/digest.ts ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }} ${{ inputs.weekly && '--weekly' || '' }}

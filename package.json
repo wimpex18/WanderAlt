@@ -15,7 +15,9 @@
     "typecheck": "tsc -p pipeline",
     "build:brand": "node .scripts/build-brand.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
-    "build:map-styles": "node .scripts/build-map-styles.js"
+    "build:map-styles": "node .scripts/build-map-styles.js",
+    "digest": "node --env-file-if-exists=.env pipeline/digest.ts",
+    "digest:dry": "node --env-file-if-exists=.env pipeline/digest.ts --dry-run"
   },
   "devDependencies": {
     "@types/node": "^24.19.0",

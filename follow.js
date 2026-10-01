@@ -81,6 +81,27 @@ window.WA.Follows = (() => {
     detail: { source: String(id), following: !!on },
   }));
 
+  /* ── The account copy ───────────────────────────────────────
+     Signed in, an id follow is also a row in `follows` (own rows only), so
+     the email alerts know what to watch. A bare name is never synced. */
+  const signedIn = () => !!(window.WA.Auth && window.WA.Auth.isSignedIn && window.WA.Auth.isSignedIn());
+  const base = () => window.WA.BASE_URL || '';
+  const cloud = async (id, on, text) => {
+    if (!signedIn() || !isId(String(id))) return;
+    const headers = window.WA.Auth.getAuthHeaders();
+    try {
+      if (on) {
+        await fetch(`${base()}/rest/v1/follows`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          body: JSON.stringify({ follow_id: String(id), label: typeof text === 'string' ? text.slice(0, 80) : null, city: city() }),
+        });
+      } else {
+        await fetch(`${base()}/rest/v1/follows?follow_id=eq.${encodeURIComponent(String(id))}`, { method: 'DELETE', headers });
+      }
+    } catch (_) { /* the local follow stands */ }
+  };
+
   const set = (id, on, label) => {
     const k = keyOf(id);
     if (!k) return false;
@@ -88,6 +109,7 @@ window.WA.Follows = (() => {
     if (on) all[k] = (typeof label === 'string' && label.trim()) ? label.trim().slice(0, 80) : (all[k] || true);
     else delete all[k];
     writeAll(all);
+    cloud(String(id), !!on, typeof all[k] === 'string' ? all[k] : label);
     changed(id, on);
     return !!on;
   };
@@ -142,6 +164,24 @@ window.WA.Follows = (() => {
     if (s.startsWith('src:')) return `${base}&handle=${encodeURIComponent(`@${s.slice(4)}`)}`;
     return '';
   };
+
+  /* Signing in sends this browser's follows up and brings the account's
+     follows down, like saves and going. */
+  document.addEventListener('wa:signed-in', async () => {
+    const mine = get();
+    Object.keys(mine).filter(isId).forEach(id => cloud(id, true, mine[id]));
+    try {
+      const r = await fetch(`${base()}/rest/v1/follows?select=follow_id,label&city=eq.${encodeURIComponent(city())}`, { headers: window.WA.Auth.getAuthHeaders() });
+      if (!r.ok) return;
+      const all = readAll();
+      let n = 0;
+      for (const row of await r.json()) {
+        const k = keyOf(row.follow_id);
+        if (k && !all[k]) { all[k] = row.label || true; n++; }
+      }
+      if (n) { writeAll(all); changed('', true); }
+    } catch (_) { /* offline: the local follows stand */ }
+  });
 
   document.addEventListener('wa:catalog-ready', () => {
     migrate((window.WA._venuesAll || []).length ? window.WA._venuesAll : (window.WA.venues || []));

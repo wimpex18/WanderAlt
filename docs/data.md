@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001120000_problem_reports.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261001130000_email_digest.sql`; `20260927185820_pipeline_runs.sql` adds the run history. Add changes as new, later-dated migration files.
 
 ## Tables
 
@@ -19,6 +19,9 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |
 | `going` | Who marked "I'm going" on which pick | own rows only |
 | `problem_reports` | Problems readers flag on an event: fixed reason, optional 280-character note, status `open` / `fixed` / `dismissed` | no (insert only; read at `/review` with the secret key) |
+| `follows` | A signed-in reader's follows: `place:<id>` or `src:<handle>`, a label and city | own rows only |
+| `digest_prefs` | Per reader: weekly digest and change-note switches (both default off), the unsubscribe token and last send; readers may write only the two switches | own row, select only; switches writable |
+| `change_notices` | Which cancelled or postponed events a reader was already told about | no (service role only) |
 | `going_counts` | How many are going to each pick, kept by a trigger on `going` | yes |
 
 `picks` and `venues` are read-only views shaped like the old tables, so the current pages, `functions/_middleware.js`, `og-image` and `calendar-feed` read the new data unchanged. They go away with the front-end rebuild.
@@ -209,3 +212,14 @@ Wikimedia images are served through `functions/img/wm/[[path]].js` (allowlisted 
 ## Instagram venue posts
 
 The source `instagram-venues` (`pipeline/sources/instagram.ts`, kind `instagram`) reads event announcements on the Instagram accounts of venues we already know. Each run it picks 15 places at random whose record carries an Instagram profile (`accounts_per_run`), asks the Graph API for their latest 10 posts (`business_discovery`; Business and Creator accounts only, anything else gives nothing), keeps captions of at least 20 characters from the last 14 days (`max_age_days`), and stores each as a raw item (`ig:<username>:<post code>`, the post link as its URL). A model then reads the caption like a Telegram post, told which venue's account it is. An event it finds gets that venue unless the caption names another place. The source is not curated, so events go through classification and the review queue like any other untrusted source; they carry the post link as their source. Posts are read for facts, never republished, and pictures are not taken from them. Without the two Instagram secrets, in `--dry-run`, or when no account has recent posts, the source yields nothing and does not turn the run red.
+
+## Email alerts
+
+`pipeline/digest.ts` (logic in `digest-core.ts`) runs daily on GitHub Actions (`.github/workflows/digest.yml`, 13:30 UTC; manual runs default to a dry run). Only readers who switched an alert on in You are mailed.
+
+- **Change note:** a cancelled or postponed event the reader saved or marked going, once per `(event, flag)` (`change_notices`). Runs every day.
+- **Weekly digest:** the next seven days at followed places and sources (`follows`), soonest first, cancelled and postponed events left out. Sent Thursday to Saturday to readers not mailed in the last six days.
+- **Never empty.** No matching event, no mail. At most `DIGEST_DAILY_CAP` (default 90) mails a run, under Resend's free 100 a day; the rest follow the next day.
+- **Unsubscribe.** Every mail has a `List-Unsubscribe` header with one-click POST and a visible link to `/api/unsubscribe?t=<token>` (`functions/api/unsubscribe.js`). Opening the link shows a button; the POST turns both switches off.
+- **Matching** is by place id and source handle, never by a typed name. There is no model call anywhere in sending.
+- **Secrets:** repository secret `RESEND_API_KEY` (and the existing `SUPABASE_SERVICE_ROLE_KEY`); the Pages project needs `SUPABASE_SERVICE_ROLE_KEY` for the unsubscribe function. Sender `digest@wanderalt.app` must be verified in Resend (`DIGEST_FROM` overrides it). Run `npm run digest:dry` to preview.

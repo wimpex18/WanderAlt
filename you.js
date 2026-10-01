@@ -15,6 +15,42 @@
 
   const pool = () => [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])];
 
+  /* Email alerts: two switches, both off until turned on. A missing table
+     (migration not applied) leaves `prefs` null and hides the section. */
+  let prefs;   /* undefined: not asked yet; null: unavailable; else { weekly, changes } */
+  const authHeaders = () => window.WA.Auth.getAuthHeaders();
+  const loadPrefs = async () => {
+    prefs = null;
+    try {
+      const r = await fetch(`${window.WA.BASE_URL}/rest/v1/digest_prefs?select=weekly,changes`, { headers: authHeaders() });
+      if (r.ok) { const rows = await r.json(); prefs = rows[0] || { weekly: false, changes: false }; }
+    } catch (_) { /* offline */ }
+    render();
+  };
+  const savePrefs = async (next) => {
+    const before = prefs;
+    prefs = next; render();
+    try {
+      const r = await fetch(`${window.WA.BASE_URL}/rest/v1/digest_prefs?on_conflict=user_id`, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ weekly: next.weekly, changes: next.changes }),
+      });
+      if (!r.ok) throw new Error(String(r.status));
+    } catch (_) { prefs = before; render(); toast('Could not save. Try again later'); }
+  };
+  const emailSection = (signedIn) => {
+    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: 'Sign in to get a weekly note of what is new at places you follow, if you want one.' })}</section>`;
+    if (prefs === undefined) { loadPrefs(); return ''; }
+    if (!prefs) return '';
+    const sw = (key, title, sub) => `<button class="wa-switch" type="button" data-digest="${key}" aria-pressed="${!!prefs[key]}">
+      <span class="wa-switch__text"><span class="wa-switch__title">${esc(title)}</span><span class="wa-switch__sub">${esc(sub)}</span></span><span class="wa-switch__track"></span></button>`;
+    return `<section class="wa-sect">${R().sect({ title: 'Email alerts', sub: `Sent to ${(window.WA.Auth.session && window.WA.Auth.session.email) || 'your account'}. Off until you turn them on, and never when there is nothing to say.` })}
+      ${sw('weekly', 'Weekly digest', 'Thursday: the next seven days at venues and sources you follow')}
+      ${sw('changes', 'Changes to your events', 'Only when something you saved or marked going is cancelled or postponed')}
+    </section>`;
+  };
+
   const render = () => {
     const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
     const follows = window.WA.Follows ? window.WA.Follows.keys() : [];
@@ -64,6 +100,8 @@
             <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : ''}
         </section>
 
+        ${emailSection(signedIn)}
+
         <section class="wa-sect">
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in. Your saves sync between devices.</p>
             <p style="margin-top:var(--s-3)"><button class="wa-btn" type="button" id="signout">Sign out</button></p>`
@@ -78,7 +116,7 @@
         </section>
 
         <section class="wa-sect">${R().sect({ title: 'What we store' })}
-          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. No location history, no analytics, no third-party scripts.</p>
+          <p class="wa-note">Your saves, lists, follows, interests and what you open, in this browser. Signed in, your saves, going marks, follows and two email switches are also kept in your account. No location history, no analytics, no third-party scripts.</p>
           <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
         </section>
       </div>
@@ -99,6 +137,8 @@
       if (again) again.focus();
       return;
     }
+    const dg = hit('[data-digest]');
+    if (dg && prefs) { savePrefs({ ...prefs, [dg.dataset.digest]: !prefs[dg.dataset.digest] }); return; }
     const uf = hit('[data-unfollow]');
     if (uf) { window.WA.Follows.set(uf.dataset.unfollow, false); render(); return; }
     if (hit('#reset')) {
@@ -115,6 +155,6 @@
   document.addEventListener('wa:catalog-ready', render);
   document.addEventListener('wa:seen-changed', render);
   document.addEventListener('wa:signed-in', render);
-  document.addEventListener('wa:signed-out', render);
+  document.addEventListener('wa:signed-out', () => { prefs = undefined; render(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
 })();
