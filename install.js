@@ -131,7 +131,7 @@
     }
     const share = otherIos()
       ? 'Tap Share, the square with an arrow, in the toolbar or address bar.'
-      : 'Tap Share in the toolbar. Only see ⋯? Tap it, then Share.';
+      : 'Tap the menu beside the address bar (≡ or ⋯), then Share.';
     return [
       { ic: IC.share, title: 'Share', text: share, ping: true },
       { ic: IC.add,   title: 'Add to Home Screen', text: 'Scroll the list. Not there? Tap Edit Actions at the bottom.' },

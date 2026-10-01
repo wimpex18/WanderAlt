@@ -338,6 +338,7 @@
     p.querySelector('#auth-to-signup').addEventListener('click', () => render('sign-up'));
     p.querySelector('#auth-submit').addEventListener('click', doSignIn);
     p.querySelector('#auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') doSignIn(); });
+    p.querySelector('#auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); p.querySelector('#auth-password').focus(); } });
     p.querySelector('#auth-email').focus();
   };
 

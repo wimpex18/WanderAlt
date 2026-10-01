@@ -193,3 +193,19 @@ test('a failed original-description request stays retryable and does not cache t
   assert.equal(e.originalLoadFailed, false);
   assert.equal(originals, 2);
 });
+
+test('sheets follow the visual viewport so the keyboard never covers a field or its button', () => {
+  const props = new Map<string, string>();
+  const listeners: Record<string, () => void> = {};
+  const vv = { height: 800, offsetTop: 0, addEventListener: (e: string, f: () => void) => { listeners[e] = f; } };
+  const root = { style: { setProperty: (k: string, v: string) => props.set(k, v), removeProperty: (k: string) => props.delete(k) } };
+  const context = createContext({ window: { WA: {}, visualViewport: vv, innerHeight: 800 }, document: { documentElement: root, addEventListener: () => {}, querySelectorAll: () => [], readyState: 'complete' } });
+  runInContext(readFileSync(new URL('../../ui-helpers.js', import.meta.url), 'utf8'), context);
+  vv.height = 480; listeners.resize();                    // keyboard up
+  assert.equal(props.get('--vv-h'), '480px');
+  assert.equal(props.get('--vv-top'), '0px');
+  vv.height = 800; listeners.resize();                    // keyboard down
+  assert.equal(props.has('--vv-h'), false);
+  const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
+  assert.match(css, /\.wa-sheet \{[^}]*height: var\(--vv-h, 100%\)/);
+});
