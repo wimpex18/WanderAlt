@@ -193,7 +193,15 @@
   const ASSUMED_MS = 3 * 3600 * 1000;
   const endsAtMs = (e) => {
     if (!e) return null;
-    if (e.endsAt) { const t = Date.parse(e.endsAt); if (!isNaN(t)) return t; }
+    if (e.endsAt) {
+      const t = Date.parse(e.endsAt);
+      if (!isNaN(t)) {
+        /* A date-only run ("29 Sep to 3 Oct") stores its last day as local midnight and means
+           through that whole day, so it ends a day later. A stated end time is taken as written. */
+        const midnight = dayKey(new Date(t)) !== dayKey(new Date(t - 1));
+        return midnight && statedMinutes(e) == null ? t + 24 * 3600 * 1000 : t;
+      }
+    }
     if (!e.startsAt) return null;
     const t = Date.parse(e.startsAt);
     if (isNaN(t)) return null;

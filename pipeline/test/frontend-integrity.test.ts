@@ -256,3 +256,12 @@ test('a run that began before today and has not ended is filed under today, with
   assert.match(html, / to /);
   assert.equal(String(p.WA.R.grouped([gone], {})).includes(' to '), false);
 });
+
+test('a date-only run is still on all of its last day, and ends when that day does', () => {
+  const p = page(); p.WA.Geo.startMinutes = () => null; p.load('when.js');
+  const today = p.WA.when.todayKey();
+  const midnight = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - 3 * 3600000 + n * 86400000).toISOString();   // local midnight, Tallinn
+  const run = { startsAt: midnight(-4), endsAt: midnight(0) };      // its last day is today
+  assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(0)) + 10 * 3600000), false);
+  assert.equal(p.WA.when.hasEnded(run, Date.parse(midnight(1)) + 3600000), true);
+});
