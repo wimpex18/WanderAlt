@@ -57,3 +57,13 @@ test('a venue calendar filters by place id, validates it and names the calendar 
   assert.match(s, /X-WR-CALNAME:WanderAlt — Venue/);
   assert.equal((await feed([]).request('city=tallinn&place=a%26b')).status, 400);
 });
+
+test('a saved-search calendar filters by kind, free entry and English, and rejects odd kinds', async () => {
+  const f = feed([event]);
+  const s = await (await f.request('city=tallinn&kind=gig,club&free=1&english=1')).text();
+  assert.match(f.query(), /kind=in\.\(gig,club\)/);
+  assert.match(f.query(), /or=\(is_free\.eq\.true,price_min\.eq\.0\)/);
+  assert.match(f.query(), /event_languages=cs\.%7Ben%7D/);
+  assert.match(s, /X-WR-CALNAME:WanderAlt — gig\\, club\\, free\\, in English/);
+  assert.equal((await feed([]).request('city=tallinn&kind=gig;drop')).status, 400);
+});

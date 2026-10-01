@@ -387,6 +387,21 @@
     if (state.q && !state.read) bits.push(`matching “${state.q}”`);
     bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
     put($('summary'), `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
+    searchAct();
+  };
+
+  /* Follow this search: kinds, free entry and English are facts on the
+     event, so a saved search can be a calendar and an email without any
+     reading of words. Shown only when one of them is set. */
+  const searchLabel = () => [[...state.kinds].map(k => R().kindLabel(k)).join(', '), state.free ? 'free' : '', state.english ? 'in English' : ''].filter(Boolean).join(' · ');
+  const searchAct = () => {
+    const el = $('search-act');
+    const F = window.WA.Follows;
+    if (!el || !F) return;
+    const id = F.searchId({ kinds: state.kinds, free: state.free, english: state.english });
+    if (!id) { put(el, ''); return; }
+    const on = F.has(id), feed = on ? F.feedUrl(id) : '';
+    put(el, `<button class="wa-linkbtn" type="button" data-follow-search="${esc(id)}" aria-pressed="${on}">${esc(on ? 'Following this search' : 'Follow this search')}</button>${feed ? ` <a class="wa-linkbtn" href="${esc(feed.replace(/^https?:/, 'webcal:'))}">Add to calendar</a>` : ''}`);
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
@@ -449,6 +464,13 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     if (hit('[data-kind], [data-when], [data-area], [data-sort], [data-doors], [data-toggle], [data-clear], [data-act], [data-dates], #q-clear')) cancelAsk();
+    const fs = hit('[data-follow-search]');
+    if (fs && window.WA.Follows) {
+      const on = window.WA.Follows.toggle(fs.dataset.followSearch, searchLabel());
+      searchAct();
+      if (window.WA.Toast) window.WA.Toast.show(on ? 'Following this search' : 'Stopped following this search');
+      return;
+    }
     if (hit('#open-filters')) {
       $('sheet-title').textContent = 'Filters';
       put($('sheet-body'), panel());

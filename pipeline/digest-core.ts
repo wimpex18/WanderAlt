@@ -4,16 +4,29 @@
 export interface EventRow {
   id: string; title: string; venue: string | null; venue_id: string | null;
   handle: string | null; starts_at: string; time: string | null; flag: string | null;
+  kind?: string | null; is_free?: boolean | null; price_min?: number | null; event_languages?: string[] | null;
 }
 
 const ORIGIN = 'https://wanderalt.app';
 const fold = (s: unknown) => String(s ?? '').toLowerCase().trim();
 
 /** A follow id is place:<places.id> or src:<handle without @>. */
-export function matchesFollow(follows: ReadonlySet<string>, e: Pick<EventRow, 'venue_id' | 'handle'>): boolean {
+export function matchesFollow(follows: ReadonlySet<string>, e: Pick<EventRow, 'venue_id' | 'handle'> & Partial<EventRow>): boolean {
   if (e.venue_id && follows.has(`place:${e.venue_id}`)) return true;
   const h = fold(e.handle).replace(/^@/, '');
-  return !!h && follows.has(`src:${h}`);
+  if (h && follows.has(`src:${h}`)) return true;
+  for (const f of follows) if (f.startsWith('search:') && matchesSearch(f, e)) return true;
+  return false;
+}
+
+/** search:kind=gig,club&free=1&english=1, the same shape follow.js writes. */
+export function matchesSearch(id: string, e: Partial<EventRow>): boolean {
+  const p = new URLSearchParams(id.replace(/^search:/, ''));
+  const kinds = (p.get('kind') || '').split(',').filter(Boolean);
+  if (kinds.length && !kinds.includes(fold(e.kind))) return false;
+  if (p.get('free') === '1' && !(e.is_free === true || (e.price_min != null && Number(e.price_min) === 0))) return false;
+  if (p.get('english') === '1' && !(e.event_languages || []).includes('en')) return false;
+  return !!(kinds.length || p.get('free') === '1' || p.get('english') === '1');
 }
 
 /** Events in the next `days` days at followed places or sources, soonest first.

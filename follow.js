@@ -22,7 +22,8 @@
      placeId(place), sourceId(handle) → the ids above
      matchesEvent(e)     → true when e's venue or source is followed
      migrate(places)     → bare names to ids; returns how many changed
-     feedUrl(id)         → calendar-feed URL for a place or source follow
+     feedUrl(id)         → calendar-feed URL for a place, source or saved search
+     searchId(state)     → search:… for kinds / free / English, '' when none is set
    ============================================================ */
 window.WA = window.WA || {};
 
@@ -42,7 +43,27 @@ window.WA.Follows = (() => {
     const h = fold(handle).replace(/^@/, '');
     return h ? `src:${h}` : '';
   };
-  const isId = (k) => k.startsWith('place:') || k.startsWith('src:');
+  const isId = (k) => k.startsWith('place:') || k.startsWith('src:') || k.startsWith('search:');
+
+  /* A saved search is a follow too: search:kind=gig,club&free=1&english=1.
+     Kinds sorted, so the same search is always the same id. Only these three
+     filters, because they are facts on the event and the calendar feed and
+     the email can read them the same way. */
+  const searchId = (s) => {
+    const kinds = [...((s && s.kinds) || [])].map(k => String(k).toLowerCase().trim()).filter(k => /^[a-z_]{2,20}$/.test(k)).sort();
+    const parts = [];
+    if (kinds.length) parts.push(`kind=${kinds.join(',')}`);
+    if (s && s.free) parts.push('free=1');
+    if (s && s.english) parts.push('english=1');
+    return parts.length ? `search:${parts.join('&')}` : '';
+  };
+  const parseSearch = (id) => {
+    const p = new URLSearchParams(String(id || '').replace(/^search:/, ''));
+    return { kinds: (p.get('kind') || '').split(',').filter(Boolean), free: p.get('free') === '1', english: p.get('english') === '1' };
+  };
+  const matchesSearch = (e, spec) => !!e && (!spec.kinds.length || spec.kinds.includes(String(e.kind || '').toLowerCase())) &&
+    (!spec.free || e.isFree === true || (e.priceMin != null && Number(e.priceMin) === 0)) &&
+    (!spec.english || (e.eventLanguages || []).includes('en'));
 
   /* An id is stored as given; a bare name is lowercased and trimmed. */
   const keyOf = (id) => {
@@ -125,7 +146,8 @@ window.WA.Follows = (() => {
 
   const matchesEvent = (e) => !!e && (
     has(placeId({ id: e.venueId })) || has(sourceId(e.handle)) ||
-    (!!e.venue && has(e.venue)) || (!!e.handle && has(e.handle)));
+    (!!e.venue && has(e.venue)) || (!!e.handle && has(e.handle)) ||
+    keys().some(k => k.startsWith('search:') && matchesSearch(e, parseSearch(k))));
 
   /* Bare names from before ids. A name that matches exactly one place
      becomes place:<id>; an @handle becomes src:<handle>. A name that
@@ -162,6 +184,7 @@ window.WA.Follows = (() => {
     const base = `${(window.WA && window.WA.BASE_URL) || ''}/functions/v1/calendar-feed?city=${encodeURIComponent(city())}`;
     if (s.startsWith('place:')) return `${base}&place=${encodeURIComponent(s.slice(6))}`;
     if (s.startsWith('src:')) return `${base}&handle=${encodeURIComponent(`@${s.slice(4)}`)}`;
+    if (s.startsWith('search:')) return `${base}&${s.slice(7)}`;
     return '';
   };
 
@@ -187,5 +210,5 @@ window.WA.Follows = (() => {
     migrate((window.WA._venuesAll || []).length ? window.WA._venuesAll : (window.WA.venues || []));
   });
 
-  return { get, has, set, toggle, keys, label, keyOf, placeId, sourceId, matchesEvent, migrate, feedUrl };
+  return { get, has, set, toggle, keys, label, keyOf, placeId, sourceId, matchesEvent, migrate, feedUrl, searchId, parseSearch, matchesSearch };
 })();

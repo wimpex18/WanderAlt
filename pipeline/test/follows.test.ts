@@ -6,7 +6,7 @@ import { createContext, runInContext } from 'node:vm';
 function load() {
   const values = new Map<string, string>();
   const WA: Record<string, any> = { CITY: 'tallinn', BASE_URL: 'https://x.example' };
-  const context = createContext({ window: { WA }, localStorage: {
+  const context = createContext({ URLSearchParams, window: { WA }, localStorage: {
     getItem: (k: string) => values.get(k) ?? null,
     setItem: (k: string, v: string) => values.set(k, v),
   }, CustomEvent: class { detail: unknown; constructor(_t: string, o: any) { this.detail = o?.detail; } },
@@ -42,4 +42,16 @@ test('calendar links per follow carry the id, never a typed name', () => {
   assert.equal(F.feedUrl('place:tallinn-kino-soprus'), 'https://x.example/functions/v1/calendar-feed?city=tallinn&place=tallinn-kino-soprus');
   assert.match(F.feedUrl('src:sigmundtells'), /handle=%40sigmundtells$/);
   assert.equal(F.feedUrl('some name'), '');
+});
+
+test('a saved search is a follow: canonical id, matches by event facts, feed carries the same filters', () => {
+  const { F } = load();
+  assert.equal(F.searchId({ kinds: new Set(['Club', 'gig']), free: true }), 'search:kind=club,gig&free=1');
+  assert.equal(F.searchId({ kinds: new Set(), free: false, english: false }), '');
+  assert.equal(F.searchId({ kinds: ['bad kind!'] }), '');
+  F.set('search:kind=club,gig&free=1', true, 'Club nights, gigs · free');
+  assert.equal(F.matchesEvent({ kind: 'gig', isFree: true }), true);
+  assert.equal(F.matchesEvent({ kind: 'gig', priceMin: 12 }), false);
+  assert.equal(F.matchesEvent({ kind: 'film', isFree: true }), false);
+  assert.equal(F.feedUrl('search:kind=club,gig&free=1'), 'https://x.example/functions/v1/calendar-feed?city=tallinn&kind=club,gig&free=1');
 });

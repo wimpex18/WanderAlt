@@ -5,7 +5,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // Serves text/calendar built from published upcoming events, per city
 // and optionally filtered to one source. About prints the URL.
 //
-// GET ?city=tallinn[&handle=@sigmundtells][&place=<places.id>]
+// GET ?city=tallinn[&handle=@sigmundtells][&place=<places.id>][&kind=gig,club][&free=1][&english=1]
 // GET ?id=ev_… — one event, for Add to calendar
 //
 // verify_jwt stays FALSE and must: a calendar app subscribes to this URL
@@ -55,6 +55,11 @@ Deno.serve(async (req: Request) => {
   const city   = (u.searchParams.get('city') || 'tallinn').toLowerCase();
   const handle = (u.searchParams.get('handle') || '').trim();
   const place  = (u.searchParams.get('place') || '').trim();
+  /* A saved search: kinds, free entry, English. Each is a fact on the event. */
+  const kinds  = (u.searchParams.get('kind') || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+  if (kinds.length > 12 || kinds.some(k => !/^[a-z_]{2,20}$/.test(k))) return new Response('unknown kind', { status: 400 });
+  const free   = u.searchParams.get('free') === '1';
+  const english = u.searchParams.get('english') === '1';
   const one = (u.searchParams.get('id') || '').trim();
   if (place && !/^[a-z0-9][a-z0-9-]{0,80}$/.test(place)) return new Response('unknown place', { status: 400 });
   if (one && !/^ev_[0-9a-f]{16}$/.test(one)) return new Response('unknown event', { status: 400 });
@@ -69,6 +74,9 @@ Deno.serve(async (req: Request) => {
     `&select=id,title,venue,neighborhood,quote,handle,time,starts_at,ends_at,flag&order=starts_at.asc&limit=300`;
   if (handle && !one) url += `&handle=eq.${encodeURIComponent(handle)}`;
   if (place && !one) url += `&venue_id=eq.${encodeURIComponent(place)}`;
+  if (kinds.length && !one) url += `&kind=in.(${kinds.join(',')})`;
+  if (free && !one) url += '&or=(is_free.eq.true,price_min.eq.0)';
+  if (english && !one) url += '&event_languages=cs.%7Ben%7D';
 
   const r = await fetch(url, {
     headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
@@ -78,7 +86,8 @@ Deno.serve(async (req: Request) => {
   if (one && !picks.length) return new Response('unknown event', { status: 404 });
 
   const calName = one ? `WanderAlt — ${picks[0].title}` : place && picks[0]?.venue
-    ? `WanderAlt — ${picks[0].venue}` : handle
+    ? `WanderAlt — ${picks[0].venue}` : (kinds.length || free || english)
+    ? `WanderAlt — ${[...kinds, free ? 'free' : '', english ? 'in English' : ''].filter(Boolean).join(', ')}` : handle
     ? `WanderAlt — ${handle}`
     : `WanderAlt — ${cap(city)}`;
   const now = new Date();

@@ -895,6 +895,8 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-flag form { display: grid; gap: var(--s-3); max-width: 420px; padding-bottom: var(--s-3); }
 .det-flag__reasons { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
 .det-flag__reason { display: flex; align-items: center; gap: var(--s-2); min-height: 40px; }
+.prog-summary__act { margin: var(--s-1) 0 0; display: flex; gap: var(--s-4); flex-wrap: wrap; }
+.prog-summary__act:empty { display: none; }
 .det-original__body { display: grid; gap: var(--s-3); padding-bottom: var(--s-5); }
 .det-notice { display: flex; gap: var(--s-3); align-items: start; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); }
 .det-notice strong { display: block; }

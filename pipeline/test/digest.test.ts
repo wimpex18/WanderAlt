@@ -42,3 +42,13 @@ test('every mail carries the one-click unsubscribe and escapes listing text', ()
   const c = composeChanges([ev({ flag: 'postponed' })], token)!;
   assert.match(c.text, /Postponed/); assert.match(c.subject, /has changed/);
 });
+
+test('a saved search follow matches by kind, free entry and language, the way follow.js reads it', () => {
+  const f = new Set(['search:kind=club,gig&free=1']);
+  assert.equal(matchesFollow(f, ev({ kind: 'gig', is_free: true })), true);
+  assert.equal(matchesFollow(f, ev({ kind: 'gig', is_free: false, price_min: 0 })), true);
+  assert.equal(matchesFollow(f, ev({ kind: 'gig', is_free: false, price_min: 10 })), false);
+  assert.equal(matchesFollow(f, ev({ kind: 'film', is_free: true })), false);
+  assert.equal(matchesFollow(new Set(['search:english=1']), ev({ event_languages: ['en', 'et'] })), true);
+  assert.equal(matchesFollow(new Set(['search:']), ev({ kind: 'gig' })), false);   // an empty search never matches everything
+});

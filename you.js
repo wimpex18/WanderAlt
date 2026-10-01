@@ -62,6 +62,7 @@
     const F = window.WA.Follows;
     const followed = follows.map(k => {
       if (k.startsWith('place:')) return venues.find(v => v.id === k.slice(6)) || { name: F.label(k) || 'A venue', __raw: true, key: k };
+      if (k.startsWith('search:')) return { name: F.label(k) || 'A saved search', __raw: true, key: k };
       if (k.startsWith('src:')) return { name: F.label(k) || `@${k.slice(4)}`, __raw: true, key: k, source: k.slice(4) };
       return venues.find(v => String(v.name).toLowerCase().trim() === k) || { name: k, __raw: true, key: k };
     });

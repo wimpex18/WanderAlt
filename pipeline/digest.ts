@@ -24,7 +24,7 @@ const weeklyDay = args.has('--weekly') || ['Thu', 'Fri', 'Sat'].includes(WEEKDAY
 
 interface Prefs { user_id: string; weekly: boolean; changes: boolean; unsubscribe_token: string; last_weekly_at: string | null }
 
-const COLS = 'id,title,venue,venue_id,handle,starts_at,time,flag';
+const COLS = 'id,title,venue,venue_id,handle,starts_at,time,flag,kind,is_free,price_min,event_languages';
 const db = new Db();
 const now = new Date();
 let sent = 0;
