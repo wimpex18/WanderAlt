@@ -1404,3 +1404,48 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 
 .you-cols { grid-template-columns: minmax(0, 1fr); }
 .you-cols > * { min-width: 0; }
+
+/* ── The evening (route.js, route-page.js) ───────────────────────
+   A route is a spine: a time, a square node, a stop. The event is the
+   one filled node; walks between stops are dotted. */
+.rt-sect { margin-top: var(--s-5); }
+.rt-card { display: grid; gap: var(--s-2); padding: var(--s-5); border-radius: var(--r-lg); background: var(--paper-2); color: var(--ink); text-decoration: none; transition: transform var(--t-fast) var(--ease); }
+.rt-card:active { transform: scale(.985); }
+.rt-card__eyebrow { font-size: var(--fs-small); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.rt-card__title { font-size: var(--fs-h2); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.rt-card__stops { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; }
+.rt-card__stop { display: grid; grid-template-columns: 3.4rem 1.4rem 1fr; padding-bottom: var(--s-3); position: relative; }
+.rt-card__stop time { font-weight: 700; font-variant-numeric: tabular-nums; font-size: var(--fs-meta); padding-top: 1px; }
+.rt-card__dot { position: relative; width: 12px; height: 12px; margin-top: 4px; border: 2px solid var(--ink); border-radius: 3px; background: var(--paper-2); }
+.rt-card__stop.is-event .rt-card__dot { background: var(--accent); border-color: var(--ink); }
+.rt-card__stop:not(:last-child) .rt-card__dot::after { content: ""; position: absolute; left: 3px; top: 12px; height: calc(100% + 26px); border-left: 2px solid var(--ink); }
+.rt-card__what { display: grid; min-width: 0; }
+.rt-card__what b { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.rt-card__what small { font-size: var(--fs-small); color: var(--ink-2); }
+.rt-card__go { display: inline-flex; align-items: center; gap: 6px; padding-top: var(--s-3); border-top: 1px solid var(--line); font-weight: 600; color: var(--accent-ink); }
+.rt-card__go .wa-ic { width: 18px; height: 18px; }
+.rt-back { display: inline-flex; margin-bottom: var(--s-2); }
+.rt { list-style: none; margin: var(--s-6) 0 0; padding: 0; display: grid; max-width: 40rem; }
+.rt__stop, .rt__walk { display: grid; grid-template-columns: 3.6rem 1.6rem 1fr; }
+.rt__time { font-weight: 700; font-variant-numeric: tabular-nums; padding-top: 14px; }
+.rt__rail { position: relative; }
+.rt__rail::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; border-left: 2px solid var(--ink); }
+.rt__stop:first-child .rt__rail::before { top: 22px; }
+.rt__stop:last-of-type .rt__rail::before { bottom: auto; height: 22px; }
+.rt__rail--dash::before { border-left-style: dotted; }
+.rt__node { position: absolute; left: 0; top: 16px; width: 14px; height: 14px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); }
+.is-event .rt__node { background: var(--accent); }
+.rt__body { display: grid; grid-template-columns: 56px 1fr; gap: var(--s-3); padding: var(--s-3) 0; color: inherit; text-decoration: none; }
+.rt__art .wa-picto { width: 56px; height: 56px; }
+.rt__logo { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: var(--paper-2); }
+.rt__logo.is-logo { background: #fff; }
+.rt__logo img { width: 100%; height: 100%; object-fit: cover; }
+.rt__logo.is-logo img { object-fit: contain; padding: 6px; box-sizing: border-box; }
+.rt__text { display: grid; gap: 2px; min-width: 0; align-content: start; }
+.rt__name { font-weight: 600; font-size: 1.0625rem; line-height: 1.25; overflow-wrap: anywhere; }
+.rt__meta { font-size: var(--fs-meta); color: var(--ink-2); }
+.rt__note { font-size: var(--fs-meta); line-height: 1.45; margin-top: 2px; }
+@media (hover: hover) { .rt__body:hover .rt__name { text-decoration: underline; text-underline-offset: 3px; } }
+.rt__walk > :last-child { display: inline-flex; align-items: center; gap: 6px; padding: 2px 0 6px; font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); }
+.rt__walk .wa-ic { width: 15px; height: 15px; }
+.rt-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-6) 0 var(--s-3); }

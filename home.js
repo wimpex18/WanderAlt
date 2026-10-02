@@ -232,6 +232,9 @@
 
     const nearby = nearShelf(tonight, next);
     if (nearby) out.unshift(nearby);
+    /* An evening in a few stops, when tonight has one worth walking. */
+    const evening = window.WA.Route && window.WA.Route.compose();
+    if (evening) out.unshift(`<section class="wa-sect rt-sect">${window.WA.Route.card(evening)}</section>`);
     $('home-main').innerHTML = out.join('');
     return all;
   };
