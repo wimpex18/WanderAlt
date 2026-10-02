@@ -270,7 +270,7 @@
     if (state.q && drops.length === 1) {
       return R().empty({ icon: 'search', title: 'No listings match this search.',
         body: 'Searches English and original titles, venues and areas, with or without Estonian letters.',
-        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'Search places' }] });
+        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
     }
     if (best) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
@@ -282,7 +282,7 @@
         body: 'Try a different day or start a new search.', actions: [{ act: 'clear-all', label: 'Start over' }] });
     }
     return R().empty({ icon: 'calendar', title: `Nothing is listed in ${R().cityName()} for the coming days.`,
-      body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] });
+      body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] });
   };
 
   /* ── Reading a sentence ─────────────────────────────────────

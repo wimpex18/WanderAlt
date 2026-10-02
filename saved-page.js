@@ -110,7 +110,7 @@
     if (!total && !(L && L.forCity(window.WA.CITY).length)) {
       $('saved-body').innerHTML = R().empty({ icon: 'save', title: 'Nothing saved yet.',
         body: 'Save from any listing. It waits here, even offline.',
-        actions: [{ href: 'index.html', label: "What's on tonight" }, { href: 'places.html', label: 'Places' }] });
+        actions: [{ href: 'index.html', label: "What's on tonight" }, { href: 'places.html', label: 'Guide' }] });
       return;
     }
     const dated = all.dated.filter(inList);
