@@ -186,12 +186,11 @@
 
   /* The small card on Tonight: the stops, no more. */
   const card = (route) => `<a class="rt-card" href="route.html?s=${esc(param(route))}" aria-label="${esc(`Tonight's route: ${route.title}`)}">
-      <span class="rt-card__eyebrow">Tonight's route${route.area ? ` · ${esc(route.area)}` : ''}</span>
+      <span class="rt-card__head"><span class="rt-card__eyebrow">Tonight's route${route.area ? ` · ${esc(route.area)}` : ''}</span><span class="rt-card__go">Open ${window.WA.Icon('arrow')}</span></span>
       <span class="rt-card__title">${esc(route.title)}</span>
       <ol class="rt-card__stops">${route.stops.map((s, i) => `<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}">
         <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
-        <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(i && s.walk ? `${s.walk} min walk` : stopSub(s))}</small></span></li>`).join('')}</ol>
-      <span class="rt-card__go">Open route ${window.WA.Icon('arrow')}</span></a>`;
+        <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(i && s.walk ? `${s.walk} min walk` : stopSub(s))}</small></span></li>`).join('')}</ol></a>`;
 
   window.WA.Route = { compose, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText };
 })();

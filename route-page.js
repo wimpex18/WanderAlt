@@ -70,7 +70,7 @@
     $('rt-sub').textContent = '';
     $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: 'Nothing fits together tonight.',
       body: 'A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.',
-      actions: [{ href: 'index.html', label: 'Tonight' }, { href: 'places.html', label: 'Places' }] });
+      actions: [{ href: 'index.html', label: 'Tonight' }, { href: 'places.html', label: 'Guide' }] });
   };
 
   const boot = () => {
