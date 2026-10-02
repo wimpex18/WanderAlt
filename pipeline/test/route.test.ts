@@ -80,3 +80,9 @@ test('a route travels in a URL and comes back the same; bad input is refused', (
   for (const bad of ['', 'place:shop:1000', 'place:nope:1000,event:e1:1140', 'drop:shop:1,event:e1:2', 'place:shop;x:1000,event:e1:1140']) assert.equal(Route.fromParam(bad), null, bad);
   assert.match(Route.mapsUrl(r), /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&travelmode=walking&destination=[\d.,]+&waypoints=[\d.,%7C]+$/);
 });
+
+test('a place before the listing is worth at least half an hour', () => {
+  // Now is 18:40, the listing starts at 19:00 and the shop is a 3 minute walk away: no time to browse.
+  const Route = world(18 * 60 + 40, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('shop', 'record store', 59.4402, 24.7334), place('bar', 'bar', 59.4406, 24.7340)]);
+  eq(Route.compose().stops.map((s: any) => s.id), ['e1', 'bar']);
+});

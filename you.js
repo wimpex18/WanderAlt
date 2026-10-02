@@ -106,6 +106,19 @@
     return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications' })}${rows}</section>` : '';
   };
 
+  /* A named place to measure from (a hotel, a friend's street), picked from the
+     places we hold, so walking times and routes work without location. */
+  const startField = () => {
+    const G = window.WA.Geo;
+    const a = G && G.anchor();
+    const spots = (window.WA._venuesAll || []).filter(v => v.name && v.lat != null && v.lng != null && !v.isClosed)
+      .map(v => v.name).filter((n, i, all) => all.indexOf(n) === i).sort((x, y) => x.localeCompare(y)).slice(0, 400);
+    return `<label class="wa-field__label wa-sr" for="you-anchor">Place to start from</label>
+      <input class="wa-input" id="you-anchor" list="you-anchor-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
+      <datalist id="you-anchor-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <p class="wa-note">${a ? 'Walking times and routes start here. Clear the box to use your location.' : 'Staying somewhere? Pick a place you know and walking times start there, with no location prompt.'}</p>`;
+  };
+
   const render = () => {
     const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
     const follows = window.WA.Follows ? window.WA.Follows.keys() : [];
@@ -155,6 +168,11 @@
           <div class="wa-sect__head"><h2 class="wa-sect__title">Your taste</h2><span class="you-int__n">${ids.length} of 3 · routes lean this way</span></div>
           <div class="wa-chips wa-chips--scroll you-int__row">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
+        </section>
+
+        <section class="wa-sect you-start">
+          <h2 class="wa-sect__title">Start from</h2>
+          ${startField()}
         </section>
 
         <section class="wa-sect you-look">
@@ -288,6 +306,14 @@
       })();
       return;
     }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (!e.target || e.target.id !== 'you-anchor') return;
+    const name = e.target.value.trim().toLowerCase();
+    const v = name ? (window.WA._venuesAll || []).find(x => String(x.name).toLowerCase() === name && x.lat != null && x.lng != null) : null;
+    window.WA.Geo.setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
+    render();
   });
 
   document.addEventListener('wa:catalog-ready', render);

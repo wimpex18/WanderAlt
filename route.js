@@ -109,6 +109,7 @@
         const d = metres(v, e), w = walk(d);
         if (w == null || w > MAX_BEFORE) continue;
         const minute = Math.max(round5(now + 10), round5(start - w - 60));
+        if (minute + 30 + w > start) continue;                      /* at least half an hour there */
         const h = hoursAt(v, minute);
         if (h === 'shut' || (h === 'open' && hoursAt(v, Math.min(start - w - 10, minute + 30)) === 'shut')) continue;
         const s = (h === 'open' ? 2 : 1) - w / 30 + (v.pickNote ? .2 : 0);
