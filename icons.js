@@ -99,35 +99,41 @@
 
   window.WA.Icon = Icon;
 
-  /* ── Pictograms ─────────────────────────────────────────────
-     The second tier, after 24px UI icons: 48px line drawings for kinds
-     and cities, each on a tinted tile in its own hue (set in wa.css by
-     .wa-picto--<name>). Hue is decoration here, never the only signal:
-     every pictogram sits beside its word. */
-  const PICTO = {
-    all:      '<path d="M30 10a13 13 0 1 0 8 23 15 15 0 0 1-8-23z"/><path d="M34 8v5M31.5 10.5h5M40 17v3M38.5 18.5h3"/><path d="M6 40c3-2 6-2 9 0s6 2 9 0 6-2 9 0 6 2 9 0"/>',
-    gig:      '<rect x="15" y="6" width="10" height="16" rx="5"/><path d="M11 18a9 9 0 0 0 18 0M20 27v9M14 40h12"/><path d="M33 12v14"/><circle cx="30.5" cy="27" r="2.5" fill="currentColor"/><path d="M33 12l6 2"/>',
-    club:     '<path d="M24 4v6"/><circle cx="24" cy="21" r="11"/><path d="M13 21h22M24 10v22M15.5 14.5h17M15.5 27.5h17M19 11a20 20 0 0 0 0 20M29 11a20 20 0 0 1 0 20"/><path d="M8 38l2-4 2 4-4-2h4zM38 40l1.5-3 1.5 3-3-1.5h3" stroke-width="1.5"/>',
-    film:     '<rect x="7" y="18" width="34" height="22" rx="3"/><path d="M7 18l30-8 1.6 6M13.5 16.3l4 5.2M21.5 14.2l4 5.2M29.5 12l4 5.2"/><path d="M21 25v9l8-4.5z" fill="currentColor"/>',
-    theatre:  '<path d="M7 9h17v11a8.5 8.5 0 0 1-17 0z"/><path d="M12 15h.1M19 15h.1M12 22a5 5 0 0 0 7 0"/><path d="M26 17h15v10a7.5 7.5 0 0 1-12.6 5.5"/><path d="M31 23h.1M36 23h.1M30.5 30a5 5 0 0 1 6 0"/>',
-    art:      '<rect x="8" y="7" width="32" height="26" rx="2"/><path d="M8 27l9-8 7 6 5-4 11 9"/><circle cx="30" cy="15" r="3" fill="currentColor"/><path d="M17 33l-4 9M31 33l4 9M24 33v5"/>',
-    talk:     '<path d="M6 10h24a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H17l-7 6v-6H6a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3z"/><path d="M36 17h6a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-2v5l-6-5h-9a3 3 0 0 1-3-3v-1"/><path d="M11 17h16M11 22h10"/>',
-    workshop: '<path d="M31 6l11 11-16 16-6 1 1-6z"/><path d="M28 9l11 11"/><path d="M20 28c-5 0-9 3-9 8 0 2-2 4-5 4 3 2 10 3 14-1 3-3 3-7 0-11z" fill="currentColor" fill-opacity=".18"/>',
-    festival: '<path d="M4 12c7 5 13 6 20 6s13-1 20-6"/><path d="M8 15l2 7 3-5M16 17l1.5 7 3.5-6M26 18l2 7 2.5-7M35 16.5l2.5 6.5 2-7" stroke-linejoin="round"/><path d="M12 42l12-14 12 14z"/><path d="M24 28v14"/>',
-    market:   '<path d="M6 18l4-10h28l4 10"/><path d="M6 18a4.5 4.5 0 0 0 9 0 4.5 4.5 0 0 0 9 0 4.5 4.5 0 0 0 9 0 4.5 4.5 0 0 0 9 0"/><path d="M9 22v19h30V22"/><path d="M20 41V30h8v11"/>',
-    records:  '<rect x="4" y="10" width="26" height="28" rx="2"/><circle cx="30" cy="24" r="14" fill="var(--picto-bg, #fff)"/><circle cx="30" cy="24" r="14"/><circle cx="30" cy="24" r="4" fill="currentColor"/><path d="M30 14a10 10 0 0 1 10 10"/>',
-    books:    '<path d="M6 12c6-2 12-2 18 2v26c-6-4-12-4-18-2z"/><path d="M42 12c-6-2-12-2-18 2v26c6-4 12-4 18-2z"/><path d="M10 19c3-.8 6-.6 9 .6M10 25c3-.8 6-.6 9 .6M29 19.6c3-1.2 6-1.4 9-.6"/>',
-    thrift:   '<path d="M24 12a3.5 3.5 0 1 0-3.5-3.5"/><path d="M24 12v3L6 28a2 2 0 0 0 1.2 3.6h33.6A2 2 0 0 0 42 28L24 15"/><path d="M13 31.6V42h22V31.6"/>',
-    centre:   '<path d="M5 18L24 7l19 11z"/><path d="M9 18v18M17 18v18M31 18v18M39 18v18M5 40h38M7 36h34"/><circle cx="24" cy="13.5" r="1.6" fill="currentColor"/>',
-    bar:      '<path d="M8 8h26L21 23z"/><path d="M21 23v15M14 40h14"/><path d="M28 8l6-5"/><circle cx="37" cy="19" r="5"/><path d="M37 14v-2"/>',
-    place:    '<path d="M24 43s13-11.2 13-22a13 13 0 0 0-26 0c0 10.8 13 22 13 22z"/><circle cx="24" cy="21" r="5" fill="currentColor"/>',
-    nearby:   '<path d="M40 8L8 22l14 4 4 14z"/>',
-    /* Cities: a landmark over water or trees, the way a visitor knows them. */
-    tallinn:  '<path d="M14 36V22l3-10 3 10v14M26 36V14l3-10 3 10v22"/><path d="M8 36v-8h6M20 36v-9h6M32 36v-6h8v6"/><path d="M4 36h40"/><path d="M4 41c3.3-2 6.7-2 10 0s6.7 2 10 0 6.7-2 10 0 6.7 2 10 0"/>',
-    riga:     '<path d="M24 36V20l-2-3 2-13 2 13-2 3M18 36V24h12v12"/><path d="M8 36V28h10M30 30h10v6"/><path d="M4 36h40"/><path d="M4 41c3.3-2 6.7-2 10 0s6.7 2 10 0 6.7 2 10 0 6.7-2 10 0"/>',
-    helsinki: '<path d="M14 36V24h20v12M16 24a8 8 0 0 1 16 0M24 16v-4M22 12h4"/><path d="M8 36v-7h6M34 29h6v7"/><path d="M4 36h40"/><path d="M4 41c3.3-2 6.7-2 10 0s6.7 2 10 0 6.7 2 10 0 6.7-2 10 0"/>',
-    vilnius:  '<path d="M6 40c6-8 12-11 18-11s12 3 18 11"/><path d="M20 30V16h8v14M19 16h10M20 16v-3h2v2h4v-2h2v3"/><path d="M36 28l3-8 3 8zM39 28v4M8 30l2.5-7 2.5 7zM10.5 30v4"/>',
+  /* ── Labels ─────────────────────────────────────────────────
+     The second tier, after 24px UI icons: round, flat discs for kinds and
+     cities, each one Tallinn object on a muted ground with a faint groove
+     ring like a record. They stand in for a picture when there is none, and
+     a logo or photo sits in the same circle when there is one. Drawn on a
+     64 grid; colours are fixed (the discs paint pictures, not the interface,
+     so they do not follow the theme or the accent). Every disc sits beside
+     its word. */
+  const L = '#E6DCC8', B = '#B7CAD3', S = '#1F4A3F', R = '#C4573A', D = '#33406A', G = '#A9BBA0', K = '#101216', H = '#F28A4B';
+  const DISC = {
+    record:   [R, `<rect x="11" y="22" width="11" height="28" fill="${L}"/><rect x="23" y="17" width="11" height="33" fill="${B}"/><circle cx="43" cy="28" r="13" fill="${K}"/><circle cx="43" cy="28" r="8.5" fill="none" stroke="${L}" stroke-opacity=".3" stroke-width=".8"/><circle cx="43" cy="28" r="4" fill="${H}"/><circle cx="43" cy="28" r=".9" fill="${K}"/><rect x="7" y="40" width="50" height="20" fill="${K}"/><rect x="24" y="46" width="16" height="6" fill="${H}"/>`],
+    cinema:   [D, `<rect x="14" y="14" width="36" height="22" fill="${L}"/><path d="M29 20 29 30 38 25Z" fill="${D}"/><rect x="14" y="38" width="36" height="2" fill="${H}"/><path d="M4 64V55a6 6 0 0 1 12 0V64Z" fill="${K}"/><path d="M24 64V57a8 8 0 0 1 16 0V64Z" fill="${K}"/><path d="M48 64V55a6 6 0 0 1 12 0V64Z" fill="${K}"/>`],
+    gig:      [S, `<path d="M32 0 8 64H56Z" fill="${H}" fill-opacity=".22"/><rect x="31" y="30" width="2.6" height="24" fill="${K}"/><circle cx="32" cy="23" r="9" fill="${G}"/><rect x="24" y="22" width="16" height="3" fill="${K}" fill-opacity=".45"/><rect x="21" y="53" width="22" height="4" rx="2" fill="${K}"/><rect y="58" width="64" height="6" fill="${K}" fill-opacity=".35"/>`],
+    club:     [K, `<rect x="31" width="2" height="15" fill="${L}"/><circle cx="32" cy="31" r="16" fill="${L}"/><path d="M16 31h32M32 15v32M20 20c8 4 16 4 24 0M20 42c8-4 16-4 24 0" fill="none" stroke="${D}" stroke-width="1.4"/><rect x="8" y="14" width="4" height="4" fill="${H}"/><rect x="52" y="10" width="3" height="3" fill="${H}"/><rect x="53" y="46" width="4" height="4" fill="${H}"/><rect x="9" y="47" width="3" height="3" fill="${H}"/>`],
+    theatre:  [L, `<rect y="50" width="64" height="14" fill="${K}"/><path d="M0 0H25C20 14 22 32 13 50H0Z" fill="${R}"/><path d="M64 0H39C44 14 42 32 51 50H64Z" fill="${R}"/><rect width="64" height="7" fill="${K}" fill-opacity=".22"/><ellipse cx="32" cy="53" rx="12" ry="3" fill="${H}"/><circle cx="32" cy="33" r="3.6" fill="${K}"/><path d="M26 52 28 39Q32 36 36 39L38 52Z" fill="${K}"/>`],
+    gallery:  [B, `<rect x="13" y="10" width="38" height="31" fill="${K}"/><rect x="16" y="13" width="32" height="25" fill="${L}"/><circle cx="37" cy="22" r="5" fill="${R}"/><path d="M16 38 26 27 33 34 39 29 48 38Z" fill="${S}"/><rect x="18" y="50" width="28" height="4" fill="${K}"/><rect x="21" y="54" width="3" height="10" fill="${K}"/><rect x="40" y="54" width="3" height="10" fill="${K}"/>`],
+    books:    [G, `<rect y="52" width="64" height="12" fill="${K}" fill-opacity=".25"/><rect x="10" y="41" width="44" height="11" fill="${D}"/><rect x="14" y="44" width="7" height="5" fill="${H}"/><rect x="14" y="30" width="38" height="11" fill="${R}"/><rect x="18" y="19" width="30" height="11" fill="${L}"/><rect x="22" y="22" width="6" height="5" fill="${D}"/>`],
+    bar:      [D, `<path d="M14 13H50L32 36Z" fill="${L}"/><path d="M19 18H45L32 33Z" fill="${R}"/><rect x="31" y="36" width="2" height="15" fill="${L}"/><rect x="22" y="50" width="20" height="3" rx="1.5" fill="${L}"/><circle cx="40" cy="15" r="3" fill="${G}"/><path d="M40 15 47 6" stroke="${H}" stroke-width="1.6"/><rect y="56" width="64" height="8" fill="${K}" fill-opacity=".35"/>`],
+    thrift:   [S, `<path d="M32 19V15a3.5 3.5 0 1 1 3.5 3.5" fill="none" stroke="${L}" stroke-width="2.4" stroke-linecap="round"/><path d="M32 19 11 31H53Z" fill="none" stroke="${L}" stroke-width="2.4" stroke-linejoin="round"/><path d="M15 33 23 29Q32 37 41 29L49 33 44 41 42 39V57H22V39L20 41Z" fill="${R}"/>`],
+    spire:    [D, `<circle cx="51" cy="13" r="5" fill="${H}"/><path d="M32 4 36 28H28Z" fill="${L}"/><rect x="28" y="28" width="8" height="26" fill="${L}"/><circle cx="32" cy="36" r="2.2" fill="${D}"/><path d="M15 24 21 40H9Z" fill="${L}"/><rect x="10" y="40" width="10" height="14" fill="${L}"/><path d="M49 26 55 40H43Z" fill="${L}"/><rect x="44" y="40" width="10" height="14" fill="${L}"/><rect y="54" width="64" height="10" fill="${K}"/>`],
+    all:      [D, `<path d="M40 10a19 19 0 1 0 14 31 16 16 0 0 1-14-31Z" fill="${L}"/><rect x="12" y="14" width="3.5" height="3.5" fill="${H}"/><rect x="24" y="8" width="3" height="3" fill="${H}"/><rect x="52" y="26" width="3" height="3" fill="${H}"/><rect y="50" width="64" height="14" fill="${K}" fill-opacity=".4"/><path d="M0 52c8-3 12 3 21 0s12 3 21 0 12 3 22 0" fill="none" stroke="${L}" stroke-opacity=".55" stroke-width="1.6"/>`],
+    talk:     [B, `<path d="M16 8H48a4 4 0 0 1 4 4V24a4 4 0 0 1-4 4H35L28 35V28H16a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4Z" fill="${L}"/><rect x="20" y="14" width="24" height="2.4" fill="${D}"/><rect x="20" y="20" width="16" height="2.4" fill="${D}"/><path d="M18 40H46L43 58H21Z" fill="${K}"/><rect y="58" width="64" height="6" fill="${K}" fill-opacity=".3"/>`],
+    workshop: [G, `<path d="M12 52 16 40 42 14 50 22 24 48Z" fill="${R}"/><path d="M12 52 16 40 24 48Z" fill="${L}"/><path d="M12 52 14 46 18 50Z" fill="${K}"/><path d="M42 14 46 10 54 18 50 22Z" fill="${K}" fill-opacity=".6"/><rect y="56" width="64" height="8" fill="${K}" fill-opacity=".25"/>`],
+    festival: [S, `<path d="M4 12Q32 28 60 12" fill="none" stroke="${L}" stroke-width="1.6"/><path d="M12 16 18 16 15 23Z" fill="${H}"/><path d="M26 20 32 20 29 27Z" fill="${L}"/><path d="M42 20 48 20 45 27Z" fill="${H}"/><path d="M8 52 32 22 56 52Z" fill="${L}"/><path d="M26 52 32 36 38 52Z" fill="${K}"/><rect y="52" width="64" height="12" fill="${K}" fill-opacity=".4"/>`],
+    market:   [L, `<path d="M8 14h8v14H8zM24 14h8v14h-8zM40 14h8v14h-8z" fill="${R}"/><path d="M16 14h8v14h-8zM32 14h8v14h-8zM48 14h8v14h-8z" fill="#fff"/><rect x="10" y="28" width="44" height="3" fill="${K}" fill-opacity=".25"/><rect x="8" y="42" width="48" height="6" fill="${K}"/><rect x="12" y="34" width="10" height="8" fill="${D}"/><rect x="26" y="32" width="10" height="10" fill="${G}"/><rect x="40" y="35" width="10" height="7" fill="${H}"/><rect x="10" y="48" width="4" height="16" fill="${K}"/><rect x="50" y="48" width="4" height="16" fill="${K}"/>`],
+    centre:   [B, `<path d="M6 26 32 10 58 26Z" fill="${L}"/><rect x="12" y="28" width="6" height="22" fill="${L}"/><rect x="24" y="28" width="6" height="22" fill="${L}"/><rect x="36" y="28" width="6" height="22" fill="${L}"/><rect x="48" y="28" width="6" height="22" fill="${L}"/><rect x="6" y="50" width="52" height="6" fill="${K}"/><circle cx="32" cy="20" r="2.4" fill="${H}"/>`],
+    place:    [G, `<ellipse cx="32" cy="55" rx="14" ry="3.5" fill="${K}" fill-opacity=".25"/><path d="M32 54C32 54 47 40 47 27a15 15 0 0 0-30 0C17 40 32 54 32 54Z" fill="${R}"/><circle cx="32" cy="27" r="5.5" fill="${L}"/>`],
+    nearby:   [D, `<path d="M47 13 15 29 29 34 34 49Z" fill="${L}"/><circle cx="32" cy="32" r="24" fill="none" stroke="${L}" stroke-opacity=".3" stroke-width="1"/><circle cx="32" cy="32" r="1.6" fill="${H}"/>`],
+    riga:     [B, `<path d="M20 22 26 8 32 22Z" fill="${K}"/><rect x="21" y="22" width="10" height="30" fill="${L}"/><path d="M38 28 44 14 50 28Z" fill="${K}"/><rect x="39" y="28" width="10" height="24" fill="${L}"/><rect x="6" y="38" width="12" height="14" fill="${L}"/><rect y="52" width="64" height="12" fill="${K}" fill-opacity=".4"/>`],
+    helsinki: [L, `<circle cx="32" cy="26" r="13" fill="${B}"/><rect x="19" y="26" width="26" height="24" fill="${B}"/><path d="M32 8v8M29 11h6" stroke="${K}" stroke-width="1.8"/><rect x="22" y="32" width="4" height="10" fill="${K}" fill-opacity=".5"/><rect x="30" y="32" width="4" height="10" fill="${K}" fill-opacity=".5"/><rect x="38" y="32" width="4" height="10" fill="${K}" fill-opacity=".5"/><rect y="50" width="64" height="14" fill="${D}"/>`],
+    vilnius:  [S, `<rect x="26" y="20" width="12" height="32" fill="${L}"/><path d="M24 20h16L32 8Z" fill="${R}"/><rect x="29" y="28" width="6" height="8" fill="${S}"/><path d="M8 52 22 36 36 52Z" fill="${G}" fill-opacity=".6"/><path d="M34 52 48 38 62 52Z" fill="${G}" fill-opacity=".6"/><rect y="52" width="64" height="12" fill="${K}" fill-opacity=".4"/>`],
   };
+  const GROOVE = '<circle cx="32" cy="32" r="29" fill="none" stroke="#101216" stroke-opacity=".16" stroke-width=".8"/>';
+  /* The names the rest of the site asks for, and the disc each one gets. */
+  const DISC_FOR = { films: 'cinema', film: 'cinema', art: 'gallery', records: 'record', tallinn: 'spire' };
   const PICTO_KIND = {
     gig: 'gig', concert: 'gig', club: 'club', party: 'club', film: 'film', cinema: 'film',
     theatre: 'theatre', dance: 'theatre', exhibition: 'art', gallery: 'art', museum: 'art', art: 'art',
@@ -135,8 +141,10 @@
     'record store': 'records', bookshop: 'books', thrift: 'thrift', 'arts centre': 'centre', community: 'centre', bar: 'bar',
   };
   const Picto = (name, cls) => {
-    const n = PICTO[name] ? name : 'place';
-    return `<span class="wa-picto wa-picto--${n}${cls ? ` ${cls}` : ''}" aria-hidden="true"><svg viewBox="0 0 48 48" focusable="false">${PICTO[n]}</svg></span>`;
+    const key = DISC_FOR[name] || name;
+    const d = DISC[key] || DISC.place;
+    const n = DISC[key] ? name : 'place';
+    return `<span class="wa-picto wa-picto--${n}${cls ? ` ${cls}` : ''}" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><rect width="64" height="64" fill="${d[0]}"/>${d[1]}${GROOVE}</svg></span>`;
   };
   Picto.kind = (kind, cls) => Picto(PICTO_KIND[String(kind || '').toLowerCase().trim()] || 'place', cls);
   window.WA.Picto = Picto;
