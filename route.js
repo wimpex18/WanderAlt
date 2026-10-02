@@ -201,6 +201,7 @@
     const entry = anchor && (window.WA.catalog || []).find(e => e.id === anchor.id);
     if (!entry || R().isOff(entry) || W().hasEnded(entry)) return null;
     if (off === 0 && anchor.minute < nowMin() + 10) return null;
+    if (off === 0 && r.stops[0].minute < nowMin() - 15) return null;                 /* it would already have begun */
     return Object.assign(r, { id: row.id, day: row.day, off, title: row.title, blurb: row.blurb || '', engine: row.engine, saved: true });
   };
   const upcoming = () => (stored || []).map(fromRow).filter(Boolean);

@@ -10,12 +10,13 @@
      rest ("something quiet with a drink", "где послушать джаз").
      It answers null when the model is unavailable; local stands.
 
-   Shape: { when, day, kinds[], free, english, maxPrice, must[], any[], note }
+   Shape: { intent, when, day, kinds[], placeKinds[], free, english, openNow, maxPrice, must[], any[], note }
+   intent: listings | places | evening (the model's reading; the page reads plan words itself)
    when: tonight | tomorrow | weekend | thisweek | '' ; day: YYYY-MM-DD | ''
    must: words that all have to match; any: at least one has to.
 
    window.WA.Ask: .local(q) .remote(q) → Promise .isQuestion(q) .match(e, parsed)
-                  .places(q) → { kinds, show, only }: the place kinds a query names
+                  .places(q) → { kinds, show, only, plan }: the place kinds a query names
    ============================================================ */
 (() => {
   'use strict';
@@ -57,7 +58,7 @@
     'free english in english tallinn please good best nice cool fun uritus uritused ' +
     'мероприятие мероприятия события событие пожалуйста').split(' '));
 
-  const empty = () => ({ when: '', day: '', kinds: [], free: false, english: false, maxPrice: null, must: [], any: [], note: '' });
+  const empty = () => ({ intent: 'listings', when: '', day: '', kinds: [], placeKinds: [], free: false, english: false, openNow: false, maxPrice: null, must: [], any: [], note: '' });
 
   const dayKeyFor = (dow) => {
     const W = window.WA.when;
@@ -107,7 +108,8 @@
      "vinyl shop" wants record shops, not the Market kind. places(q) reads
      the place kinds a query names. `show` means a places block belongs
      above the listings; `only` means the query is a shop word with no
-     event or day in it, so the listings narrow to those places too. */
+     event or day in it, so the listings narrow to those places too; `plan`
+     means it asks for an evening or a plan. */
   const PLACE_KINDS = [
     ['record store', w('record shops?|record stores?|vinyl|records?|plaadipoed?|plaadipood\\p{L}*|пластинк\\p{L}*|винил\\p{L}*')],
     ['bookshop', w('book ?shops?|book ?stores?|books?|raamatupood\\p{L}*|книжн\\p{L}*|книг\\p{L}*')],
@@ -120,9 +122,11 @@
   ];
   const SHOP_WORD = w('shops?|stores?|book ?shops?|book ?stores?|\\p{L}*pood\\p{L}*|магазин\\p{L}*|thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*');
   const EVENT_WORD = w('gigs?|concerts?|events?|party|parties|workshops?|festivals?|fair|flea|markets?|screenings?|talks?|lectures?|readings?|performances?|plays?|exhibitions?|openings?|live|show|shows');
+  /* Words that ask for a plan, not a listing: the page answers with evenings. */
+  const PLAN = w('plan|plans|planning|itinerary|things to do|what to do|night out|date night|plaan|план|что делать');
   const places = (raw) => {
     const q = ` ${fold(raw)} `;
-    const out = { kinds: [], show: false, only: false };
+    const out = { kinds: [], show: false, only: false, plan: PLAN.test(q) };
     for (const [k, re] of PLACE_KINDS) if (re.test(q)) out.kinds.push(k);
     if (!out.kinds.length) return out;
     const p = local(raw);

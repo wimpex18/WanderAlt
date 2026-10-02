@@ -30,7 +30,7 @@
   };
   /* Places that answer the query (by name, or by the kind a word names) and,
      for a shop word, the set of them that the listings narrow to. */
-  let placeHits = [], placeOnly = null;
+  let placeHits = [], placeOnly = null, evenings = [];
   /* The list is paged: a screenful of days first, more on request. Running
      exhibitions show five until asked. Both reset when any filter changes. */
   const PAGE = 30;
@@ -320,6 +320,23 @@
   /* Places first: picked ones, then the rest, names before kinds. */
   const GROUP = { 'record store': 'records', bookshop: 'books', gallery: 'galleries', 'arts centre': 'galleries', thrift: 'thrift', cinema: 'cinema',
     club: 'clubs', bar: 'clubs', theatre: 'theatres', community: 'community' };
+  /* Evenings for a plan question: the stored ones that still hold, for the
+     day the words name (today when they name none), else one worked out here. */
+  const eveningsFor = (p) => {
+    const R2 = window.WA.Route;
+    if (!R2) return [];
+    const all = R2.upcoming();
+    const dow = (k) => new Date(`${k}T12:00:00`).getDay();
+    let pick = all;
+    if (p && p.day) pick = all.filter(r => r.day === p.day);
+    else if (p && p.when === 'tomorrow') pick = all.filter(r => r.off === 1);
+    else if (p && p.when === 'weekend') pick = all.filter(r => dow(r.day) === 6 || dow(r.day) === 0);
+    else pick = all.filter(r => r.off === 0);
+    if (!pick.length && (!p || (!p.day && p.when !== 'tomorrow' && p.when !== 'weekend'))) { const one = R2.compose(); if (one) pick = [one]; }
+    return pick.slice(0, 3);
+  };
+  const dayWord = (r) => (r.off === 0 || r.off == null ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
+
   const findPlaces = (q, P) => {
     const f = A().fold(q).trim();
     const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
@@ -338,6 +355,12 @@
     const P = q ? A().places(q) : null;
     placeHits = P ? findPlaces(q, P) : [];
     placeOnly = P && P.only && placeHits.length ? new Set(placeHits.map(v => v.id)) : null;
+    evenings = [];
+    if (P && P.plan && window.WA.Route) {
+      const local = A().local(q);
+      window.WA.Route.loadStored();
+      evenings = eveningsFor(local);
+    }
     if (placeOnly) { /* a shop word asks for places; it is not a kind of listing */ }
     else if (q && A().isQuestion(q)) {
       const p = A().local(q);
@@ -376,6 +399,13 @@
        jazz into Kalamaja OR jazz just to fill an empty result. */
     /* The model's reading must find something, or the page's stands. */
     if (!count()) { unread(); adopt(mine, 'page'); if (!count()) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] }; if (!count() && literal(q)) unread(); }
+    /* What the model says about places and plans, shown beside the listings. */
+    const kinds = Array.isArray(p.placeKinds) ? p.placeKinds : [];
+    if (kinds.length || p.intent === 'places') {
+      const found = findPlaces(q, { kinds, show: true, only: false }).filter(v => !p.openNow || R().openState(v).open === true);
+      if (found.length) { placeHits = found; placeOnly = p.intent === 'places' && !state.kinds.size ? new Set(found.map(v => v.id)) : null; }
+    }
+    if (p.intent === 'evening' && window.WA.Route) { window.WA.Route.loadStored(); evenings = eveningsFor(reading); }
     render();
   };
 
@@ -428,6 +458,10 @@
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
+  const eveningsBlock = () => {
+    if (!state.q || !evenings.length || !window.WA.Route) return '';
+    return `<section class="prog-places" aria-label="Evenings"><h2 class="wa-kicker">Evenings</h2>${evenings.map(r => `<div class="rt-more__item">${window.WA.Route.card(r, dayWord(r))}</div>`).join('')}</section>`;
+  };
   const placesBlock = (listLen) => {
     if (!state.q || !placeHits.length) return '';
     const shown = placeHits.slice(0, 4);
@@ -438,13 +472,13 @@
       (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
   };
   const listHtml = (list) => {
-    if (!list.length) return state.q && placeHits.length
-      ? `${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
+    if (!list.length) return state.q && (placeHits.length || evenings.length)
+      ? `${eveningsBlock()}${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
     const days = list.filter(e => !R().isRun(e));
     const rest = days.length - limit;
     const more = rest > 0 ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, rest)} more</button><span class="wa-note">${rest} more after these</span></div>` : '';
-    if (state.sort === 'nearest' && G().currentLoc()) return `${placesBlock(list.length)}<ul class="wa-rows">${list.slice(0, limit).map(e => R().row(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
-    return placesBlock(list.length) + R().grouped(list, { since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
+    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="wa-rows">${list.slice(0, limit).map(e => R().row(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
+    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
@@ -631,4 +665,5 @@
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:follows-changed', render);
+  document.addEventListener('wa:routes-ready', () => { if (evenings.length || (state.q && A().places(state.q).plan)) { evenings = eveningsFor(A().local(state.q)); render(); } });
 })();
