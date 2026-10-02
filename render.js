@@ -348,8 +348,9 @@
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
       <span class="wa-place__glyph${photo && v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
-        <span class="wa-place__name">${esc(v.name || '')}</span>
+        <span class="wa-place__name">${esc(v.name || '')}${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
         <span class="wa-place__meta">${esc(meta)}</span>
+        ${v.pickNote ? `<span class="wa-place__why">${esc(v.pickNote)}</span>` : ''}
         ${openBadge(v)}
       </span>
       <span class="wa-place__side">

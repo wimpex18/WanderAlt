@@ -28,6 +28,9 @@
     english: false, maxPrice: null,
     read: null,       /* the sentence's reading: { must, any, note, by } */
   };
+  /* Places that answer the query (by name, or by the kind a word names) and,
+     for a shop word, the set of them that the listings narrow to. */
+  let placeHits = [], placeOnly = null;
   const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
   const KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -101,7 +104,7 @@
     if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
     if (skip !== 'english' && state.english) out = out.filter(e => (e.eventLanguages || []).includes('en'));
     if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin != null && Number(e.priceMin) <= state.maxPrice));
-    if (skip !== 'q' && state.q) out = out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
+    if (skip !== 'q' && state.q) out = placeOnly ? out.filter(e => placeOnly.has(e.venueId)) : out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
     return out;
   };
 
@@ -310,6 +313,17 @@
   const count = () => apply(base()).length;
   const literal = (q) => base().filter(e => R().matches(e, q)).length;
 
+  /* Places first: picked ones, then the rest, names before kinds. */
+  const GROUP = { 'record store': 'records', bookshop: 'books', gallery: 'galleries', 'arts centre': 'galleries', thrift: 'thrift', cinema: 'cinema',
+    club: 'clubs', bar: 'clubs', theatre: 'theatres', community: 'community' };
+  const findPlaces = (q, P) => {
+    const f = A().fold(q).trim();
+    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
+    const named = (v) => f.length >= 3 && A().fold(v.name).includes(f);
+    return venues.filter(v => named(v) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
+      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || Number(named(b)) - Number(named(a)) || String(a.name).localeCompare(String(b.name), 'et'));
+  };
+
   const onQuery = (raw, now) => {
     const q = String(raw || '').trim();
     state.q = q;
@@ -317,7 +331,11 @@
     $('ask-try').hidden = !!q || document.activeElement !== $('q');
     cancelAsk();
     unread();
-    if (q && A().isQuestion(q)) {
+    const P = q ? A().places(q) : null;
+    placeHits = P ? findPlaces(q, P) : [];
+    placeOnly = P && P.only && placeHits.length ? new Set(placeHits.map(v => v.id)) : null;
+    if (placeOnly) { /* a shop word asks for places; it is not a kind of listing */ }
+    else if (q && A().isQuestion(q)) {
       const p = A().local(q);
       adopt(p, 'page');
       const strict = count();
@@ -386,7 +404,8 @@
     if (state.area) bits.push(`in ${state.area}`);
     if (state.q && !state.read) bits.push(`matching “${state.q}”`);
     bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
-    put($('summary'), `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
+    const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
+    put($('summary'), `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
     searchAct();
   };
 
@@ -405,10 +424,20 @@
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
+  const placesBlock = (listLen) => {
+    if (!state.q || !placeHits.length) return '';
+    const shown = placeHits.slice(0, 4);
+    const groups = new Set(placeHits.map(v => GROUP[String(v.kind || '').toLowerCase()]).filter(Boolean));
+    const all = placeHits.length > shown.length
+      ? `<a class="wa-linkbtn" href="places.html${groups.size === 1 ? `?kind=${[...groups][0]}` : ''}">All ${placeHits.length} places</a>` : '';
+    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v)).join('')}</ul>${all}</section>` +
+      (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
+  };
   const listHtml = (list) => {
-    if (!list.length) return emptyState();
-    if (state.sort === 'nearest' && G().currentLoc()) return `<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`;
-    return R().grouped(list, { since });
+    if (!list.length) return state.q && placeHits.length
+      ? `${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
+    if (state.sort === 'nearest' && G().currentLoc()) return `${placesBlock(list.length)}<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`;
+    return placesBlock(list.length) + R().grouped(list, { since });
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its

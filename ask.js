@@ -15,6 +15,7 @@
    must: words that all have to match; any: at least one has to.
 
    window.WA.Ask: .local(q) .remote(q) → Promise .isQuestion(q) .match(e, parsed)
+                  .places(q) → { kinds, show, only }: the place kinds a query names
    ============================================================ */
 (() => {
   'use strict';
@@ -102,6 +103,35 @@
     return s.split(/\s+/).length >= 3 || !!(p.when || p.day || p.kinds.length || p.free || p.english || p.maxPrice);
   };
 
+  /* ── Places: a shop word asks for somewhere to go ─────────────
+     "vinyl shop" wants record shops, not the Market kind. places(q) reads
+     the place kinds a query names. `show` means a places block belongs
+     above the listings; `only` means the query is a shop word with no
+     event or day in it, so the listings narrow to those places too. */
+  const PLACE_KINDS = [
+    ['record store', w('record shops?|record stores?|vinyl|records?|plaadipoed?|plaadipood\\p{L}*|пластинк\\p{L}*|винил\\p{L}*')],
+    ['bookshop', w('book ?shops?|book ?stores?|books?|raamatupood\\p{L}*|книжн\\p{L}*|книг\\p{L}*')],
+    ['thrift', w('thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*')],
+    ['gallery', w('galler(?:y|ies)|galerii\\p{L}*|галере\\p{L}*')],
+    ['cinema', w('cinemas?|kino|кинотеатр\\p{L}*')],
+    ['club', w('clubs?|klubi\\p{L}*|клуб\\p{L}*')],
+    ['bar', w('bars?|pubs?|baar\\p{L}*|бар\\p{L}*')],
+    ['theatre', w('theat(?:re|er)s?|teater\\p{L}*|театр\\p{L}*')],
+  ];
+  const SHOP_WORD = w('shops?|stores?|book ?shops?|book ?stores?|\\p{L}*pood\\p{L}*|магазин\\p{L}*|thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*');
+  const EVENT_WORD = w('gigs?|concerts?|events?|party|parties|workshops?|festivals?|fair|flea|markets?|screenings?|talks?|lectures?|readings?|performances?|plays?|exhibitions?|openings?|live|show|shows');
+  const places = (raw) => {
+    const q = ` ${fold(raw)} `;
+    const out = { kinds: [], show: false, only: false };
+    for (const [k, re] of PLACE_KINDS) if (re.test(q)) out.kinds.push(k);
+    if (!out.kinds.length) return out;
+    const p = local(raw);
+    const timed = !!(p.when || p.day);
+    out.show = !timed;
+    out.only = out.show && SHOP_WORD.test(q) && !EVENT_WORD.test(q);
+    return out;
+  };
+
   const cache = new Map();
   const remote = async (q) => {
     const query = fold(q).trim().slice(0, 140);
@@ -131,5 +161,5 @@
     return true;
   };
 
-  window.WA.Ask = { local, remote, isQuestion, match, empty };
+  window.WA.Ask = { local, remote, isQuestion, match, empty, places, fold };
 })();
