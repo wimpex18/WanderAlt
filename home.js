@@ -27,15 +27,15 @@
   const clockText = () => {
     const k = W().todayKey();
     const m = window.WA.Hours.cityNow().minutes;
-    return `${R().dateShort(k)} · ${window.WA.Hours.clock(m)}${heroCount ? ` · ${heroCount} on` : ''}`;
+    return `${R().dateShort(k)} · ${window.WA.Hours.clock(m)}${heroCount ? ` · ${heroCount}` : ''}`;
   };
 
-  let heroCount = 0;
+  let heroCount = '';
   const hero = (tonight, liveNow, next) => {
     $('hero-kicker').textContent = R().cityName();
     const t = $('hero-title');
     const n = tonight.length;
-    heroCount = liveNow.length || n;
+    heroCount = liveNow.length ? `${liveNow.length} on now` : n ? `${n} tonight` : '';
     if (isLate() && (liveNow.length || n)) t.textContent = 'Still going';
     else if (n) t.textContent = 'Tonight';
     else t.textContent = next ? 'Quiet tonight' : "What's on tonight";

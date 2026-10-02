@@ -456,22 +456,49 @@
       ${n != null ? `<span class="wa-day__n">${esc(String(n))}</span>` : ''}
     </div>`;
 
-  /* Group a sorted list by day key; undated items land in "Ongoing". */
+  /* Group a sorted list by day key. A run that began earlier and is still on
+     (an exhibition, a festival pass) is its own group, "Running", right after
+     today's, so a day's heading counts only what starts on that day.
+     Undated items land in "Ongoing". */
+  const isRun = (e) => !!runningSpan(e);
   const byDay = (list) => {
     const groups = new Map();
     for (const e of list) {
-      const k = runningSpan(e) ? W().todayKey() : (W().resolveKey(e) || 'ongoing');
+      const k = isRun(e) ? 'running' : (W().resolveKey(e) || 'ongoing');
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k).push(e);
     }
-    return [...groups.entries()].sort((a, b) => (a[0] === 'ongoing') - (b[0] === 'ongoing') || a[0].localeCompare(b[0]));
+    const today = W().todayKey();
+    const rank = (k) => (k === 'ongoing' ? 3 : k === 'running' ? 1 : k <= today ? 0 : 2);
+    return [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]));
   };
 
-  const grouped = (list, opts = {}) => byDay(list).map(([k, items]) =>
-    `${k === 'ongoing'
-      ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Ongoing</span><span class="wa-day__date">No date filed</span><span class="wa-day__n">${items.length}</span></div>`
-      : dayHead(k, items.length)}
-     <ul class="wa-rows">${items.map(e => row(e, opts)).join('')}</ul>`).join('');
+  /* opts.limit: at most this many rows from the days (Running and Ongoing
+     aside); opts.runningLimit: at most this many Running rows, with a key
+     for the rest. Headings always count the whole group. */
+  const grouped = (list, opts = {}) => {
+    let budget = opts.limit == null ? Infinity : opts.limit;
+    const out = [];
+    for (const [k, all] of byDay(list)) {
+      let items = all, more = '';
+      if (k === 'running' || k === 'ongoing') {
+        if (k === 'running' && opts.runningLimit != null && all.length > opts.runningLimit) {
+          items = all.slice(0, opts.runningLimit);
+          more = `<button class="wa-linkbtn wa-day__all" type="button" data-act="more-running">Show all ${all.length} running</button>`;
+        }
+      } else if (budget !== Infinity) {
+        if (budget <= 0) break;
+        items = all.slice(0, budget); budget -= items.length;
+      }
+      const head = k === 'ongoing'
+        ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Ongoing</span><span class="wa-day__date">No date filed</span><span class="wa-day__n">${all.length}</span></div>`
+        : k === 'running'
+          ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Running</span><span class="wa-day__date">Started earlier, still on</span><span class="wa-day__n">${all.length}</span></div>`
+          : dayHead(k, all.length);
+      out.push(`${head}<ul class="wa-rows">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
+    }
+    return out.join('');
+  };
 
   /* ── Skeletons match the real row exactly ───────────────── */
   const skelRows = (n = 5) => `<ul class="wa-rows" aria-hidden="true">${Array.from({ length: n }, () => `
@@ -548,7 +575,7 @@
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped,
+    openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt,
   };
 })();

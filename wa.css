@@ -1430,3 +1430,5 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-me__text span { font-size: var(--fs-meta); color: var(--ink-2); overflow-wrap: anywhere; }
 .rt-more { margin-top: var(--s-8); max-width: 40rem; }
 .rt-more__item { margin-top: var(--s-3); }
+.prog-more { display: flex; align-items: center; gap: var(--s-3); margin: var(--s-4) 0 var(--s-6); flex-wrap: wrap; }
+.wa-day__all { margin: var(--s-2) 0 var(--s-4); }

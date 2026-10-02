@@ -31,6 +31,10 @@
   /* Places that answer the query (by name, or by the kind a word names) and,
      for a shop word, the set of them that the listings narrow to. */
   let placeHits = [], placeOnly = null;
+  /* The list is paged: a screenful of days first, more on request. Running
+     exhibitions show five until asked. Both reset when any filter changes. */
+  const PAGE = 30;
+  let limit = PAGE, runsOpen = false, lastSig = '';
   const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
   const KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -436,8 +440,11 @@
   const listHtml = (list) => {
     if (!list.length) return state.q && placeHits.length
       ? `${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
-    if (state.sort === 'nearest' && G().currentLoc()) return `${placesBlock(list.length)}<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`;
-    return placesBlock(list.length) + R().grouped(list, { since });
+    const days = list.filter(e => !R().isRun(e));
+    const rest = days.length - limit;
+    const more = rest > 0 ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, rest)} more</button><span class="wa-note">${rest} more after these</span></div>` : '';
+    if (state.sort === 'nearest' && G().currentLoc()) return `${placesBlock(list.length)}<ul class="wa-rows">${list.slice(0, limit).map(e => R().row(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
+    return placesBlock(list.length) + R().grouped(list, { since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
@@ -464,7 +471,11 @@
       if (el) el.focus();
     }
   };
+  const filterSig = () => JSON.stringify([state.q, state.day, state.dayTo, state.when, [...state.kinds], state.area, state.sort, state.within, state.doors,
+    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice]);
   const render = () => {
+    const sig = filterSig();
+    if (sig !== lastSig) { lastSig = sig; limit = PAGE; runsOpen = false; }
     const list = latest = results();
     quick();
     askNote();
@@ -554,6 +565,8 @@
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
       if (x === 'undo-read') { unread(); asked = state.q; }
+      if (x === 'more') limit += PAGE;
+      if (x === 'more-running') runsOpen = true;
       if (x === 'clear-doors') state.doors = 'any';
       if (x === 'clear-within') state.within = 0;
       if (x === 'clear-seen') state.hideSeen = false;
