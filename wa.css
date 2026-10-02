@@ -1136,10 +1136,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* ── You / About ───────────────────────────────────────────────── */
 .you-cols { display: grid; margin-top: var(--s-8); }
 @media (min-width: 1024px) { .you-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--s-9); } .you-cols > .wa-sect:nth-child(2) { margin-top: 0; } }
-.wa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
-.wa-stat { padding: 16px; border-radius: var(--r-lg); background: var(--paper-2); }
-.wa-stat__n { display: block; font-size: 1.75rem; font-weight: 650; letter-spacing: -.03em; line-height: 1.1; }
-.wa-stat__label { font-size: var(--fs-small); color: var(--ink-3); }
 .wa-card { padding: var(--s-6); border-radius: var(--r-xl); display: grid; gap: var(--s-3); background: var(--paper-2); }
 .wa-card--ink { background: var(--ink); color: var(--paper); }
 .wa-card--ink .wa-btn:not(.wa-btn--primary) { background: transparent; color: var(--paper); border-color: color-mix(in oklab, var(--paper) 35%, var(--ink)); }
@@ -1235,10 +1231,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 }
 
 /* Notifications and App rows on You. */
-.wa-state { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); margin-bottom: var(--s-2); }
-.wa-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
-.wa-state.is-on { color: var(--ink); }
-.wa-state.is-on::before { background: #2e9e5b; box-shadow: 0 0 0 3px color-mix(in oklab, #2e9e5b 22%, transparent); }
 
 
 /* Bar diagnostics readout (tabbar.js). Hidden unless switched on by holding the wordmark. */
@@ -1261,32 +1253,9 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* ── You: sign-in card and milestones ─────────────────────────────
    Quiet surfaces on the page's own paper. The card is a soft vermilion
    wash, never a dark block; its buttons are small pills. */
-.you-join { display: flex; gap: var(--s-4); align-items: flex-start; padding: var(--s-5); border-radius: var(--r-xl); border: 1px solid var(--hair);
   background: radial-gradient(120% 140% at 0% 0%, var(--accent-soft), transparent 62%), var(--paper-2); }
-.you-join__mark { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--accent-ink); background: var(--paper); box-shadow: var(--shadow-1); }
-.you-join__mark .wa-ic { width: 20px; height: 20px; }
-.you-join__text { min-width: 0; display: grid; gap: 2px; }
-.you-join__title { font-size: 1.0625rem; font-weight: 650; letter-spacing: -.02em; line-height: 1.25; }
-.you-join__sub { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.4; }
-.you-join__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
-.you-join .wa-btn--sm { min-height: 36px; padding: 0 14px; font-size: .875rem; font-weight: 600; background: var(--paper); }
-.you-join .wa-btn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-.you-mile { margin-top: var(--s-6); display: grid; gap: var(--s-3); }
-.you-mile__head { display: flex; align-items: baseline; justify-content: space-between; }
-.you-mile__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.you-mile__bar { height: 4px; border-radius: 2px; background: var(--paper-3); overflow: hidden; }
-.you-mile__bar span { display: block; height: 100%; border-radius: 2px; background: var(--accent); transition: width 600ms var(--spring); }
-.you-mile__grid { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3) var(--s-2); }
-.you-mile__item { display: grid; justify-items: center; gap: 6px; text-align: center; opacity: .5; transition: opacity var(--t-med); }
-.you-mile__ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); color: var(--ink-3); }
-.you-mile__ic .wa-ic { width: 20px; height: 20px; }
-.you-mile__name { font-size: var(--fs-small); font-weight: 600; line-height: 1.2; }
-.you-mile__item.is-on { opacity: 1; }
-.you-mile__item.is-on .you-mile__ic { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent); animation: you-pop 520ms var(--spring) both; }
-.you-mile__next { font-size: var(--fs-small); color: var(--ink-3); }
 @keyframes you-pop { from { transform: scale(.7); } to { transform: none; } }
-@media (min-width: 768px) { .you-mile__grid { grid-template-columns: repeat(6, 1fr); } }
 
 /* ── Sheets: calm footers and name ideas ──────────────────────────
    Page-level calls to action keep the vermilion; a sheet's own button is a small ink pill, right-aligned, with a quiet Cancel. */
@@ -1347,10 +1316,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
    interests one scrolling row, appearance three icons, and the long lists fold away. */
 .you-cols > .wa-sect { margin-top: var(--s-6); }
 .you-cols { margin-top: var(--s-5); }
-.wa-stats { gap: var(--s-2); }
-.wa-stat { padding: 10px 14px; border-radius: var(--r-md); display: flex; align-items: baseline; gap: 8px; }
-.wa-stat__n { font-size: 1.25rem; display: inline; }
-.wa-stat__label { font-size: var(--fs-small); }
 
 .you-app { display: flex; align-items: center; gap: var(--s-3); width: 100%; margin-top: var(--s-3); padding: 10px 14px 10px 10px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--paper); text-align: left; }
 .you-app__ic { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
@@ -1360,15 +1325,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-app__text span { font-size: var(--fs-small); color: var(--ink-2); line-height: 1.3; }
 .you-app > .wa-ic { flex: none; width: 16px; height: 16px; color: var(--ink-3); }
 
-.you-mile { margin-top: var(--s-5); gap: var(--s-2); }
-.you-mile__title { font-size: 1rem; font-weight: 650; letter-spacing: -.015em; }
-.you-mile__head { gap: var(--s-3); }
-.you-mile__n { text-align: right; }
-.you-mile__grid { grid-template-columns: repeat(4, 1fr); margin-top: var(--s-1); gap: var(--s-2); }
-.you-mile__ic { width: 38px; height: 38px; }
-.you-mile__ic .wa-ic { width: 18px; height: 18px; }
-.you-mile__name { font-size: .75rem; }
-@media (min-width: 768px) { .you-mile__grid { grid-template-columns: repeat(4, 1fr); } }
 
 .you-int .wa-sect__head { margin-bottom: var(--s-1); min-height: 32px; justify-content: space-between; }
 .you-int__n { font-size: var(--fs-small); color: var(--ink-3); }
@@ -1459,3 +1415,16 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-tab[disabled] { opacity: .35; cursor: default; }
 .home-day__more { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s-3); font-weight: 600; }
 .home-day__more .wa-ic { width: 18px; height: 18px; }
+
+/* You: a short page. Signed out it opens on one card; signed in, on who you are. */
+.you-join { display: grid; gap: var(--s-2); padding: var(--s-5); border-radius: var(--r-lg); background: var(--paper-2); }
+.you-join__title { font-size: 1.1875rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.you-join__sub { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.45; }
+.you-join__actions { display: grid; gap: var(--s-2); margin-top: var(--s-3); }
+.you-join .wa-btn { width: 100%; justify-content: center; min-height: 48px; }
+@media (min-width: 640px) { .you-join { max-width: 32rem; } }
+.you-me { display: flex; align-items: center; gap: var(--s-4); }
+.you-me__mark { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 1.375rem; font-weight: 700; }
+.you-me__text { display: grid; min-width: 0; }
+.you-me__text strong { font-size: 1.25rem; letter-spacing: -.02em; }
+.you-me__text span { font-size: var(--fs-meta); color: var(--ink-2); overflow-wrap: anywhere; }
