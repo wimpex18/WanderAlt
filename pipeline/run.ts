@@ -32,6 +32,7 @@ import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl } from './util.ts';
 import { tallinnDay } from './time.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
+import { composeRoutes } from './routes.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -568,6 +569,13 @@ async function main() {
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
   if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 30));
+  // Evenings for the next few days. The model reads a short brief per day; with no model the same routes are titled by rule.
+  if (!flag('--no-routes')) {
+    try {
+      const rows = await composeRoutes(db, CITY, new Models(undefined, 4, runCap), {});
+      if (rows.length) log(`routes: ${rows.length} evenings for the next few days`);
+    } catch (e) { log(`routes failed: ${(e as Error).message}`); }
+  }
 
   for (const [id, h] of Object.entries(health)) {
     const [prev] = await db.select<{ consecutive_failures: number }>(`sources?id=eq.${encodeURIComponent(id)}&select=consecutive_failures`);

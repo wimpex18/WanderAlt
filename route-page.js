@@ -55,14 +55,27 @@
     document.title = `${route.title} · WanderAlt`;
     $('rt-kicker').textContent = [R().dayName(window.WA.when.todayKey()), route.area, `${route.stops.length} stops`].filter(Boolean).join(' · ');
     $('rt-title').textContent = route.title;
-    $('rt-sub').textContent = `About ${window.WA.Route.lengthText(route)}. Chosen from picked places and what is listed; check hours before you go.`;
+    $('rt-sub').textContent = `${route.blurb ? `${route.blurb} ` : ''}About ${window.WA.Route.lengthText(route)}. Check hours before you go.`;
     const maps = window.WA.Route.mapsUrl(route);
     $('rt-body').innerHTML = `<ol class="rt">${startLine(route.stops[0])}${route.stops.map((s, i) => stopHtml(s, i, route)).join('')}</ol>
       <div class="rt-actions">
         ${maps ? `<a class="wa-btn wa-btn--primary" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">${I('walk')}Open in Maps</a>` : ''}
         <button class="wa-btn" type="button" id="rt-share">${I('share')}Share</button>
       </div>
-      <p class="wa-note">Walking times are straight-line distances at a normal pace. Each stop's page says where its listing came from.</p>`;
+      <p class="wa-note">${route.engine && route.engine !== 'rules' ? 'The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data. ' : ''}Walking times are straight-line distances at a normal pace. Each stop's page says where its listing came from.</p>
+      <div id="rt-more"></div>`;
+    more(route);
+  };
+
+  /* Other evenings put together for today and the next days. */
+  const more = (route) => {
+    const host = $('rt-more');
+    if (!host) return;
+    const R2 = window.WA.Route;
+    const list = R2.upcoming().filter(r => R2.param(r) !== R2.param(route)).slice(0, 6);
+    if (!list.length) { host.innerHTML = ''; return; }
+    const day = (r) => (r.off === 0 ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
+    host.innerHTML = `<section class="wa-sect rt-more"><h2 class="wa-sect__title">More evenings</h2>${list.map(r => `<div class="rt-more__item">${R2.card(r, day(r))}</div>`).join('')}</section>`;
   };
 
   const none = () => {
@@ -74,9 +87,14 @@
   };
 
   const boot = () => {
-    const s = new URLSearchParams(location.search).get('s');
-    const route = s ? window.WA.Route.fromParam(s) : window.WA.Route.compose();
-    if (route) draw(route); else none();
+    const q = new URLSearchParams(location.search);
+    const s = q.get('s');
+    const route = s ? window.WA.Route.fromParam(s) : window.WA.Route.best();
+    if (!route) { none(); return; }
+    /* A stored evening keeps its own title and note, once the table has answered. */
+    const t = q.get('t');
+    const row = t && window.WA.Route.upcoming().find(r => r.id === t);
+    draw(row && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { title: row.title, blurb: row.blurb, engine: row.engine }) : route);
   };
 
   document.addEventListener('click', async (e) => {
@@ -85,6 +103,7 @@
     if (r === 'copied' && window.WA.Toast) window.WA.Toast.show('Link copied');
   });
 
-  document.addEventListener('wa:catalog-ready', boot);
+  document.addEventListener('wa:catalog-ready', () => { boot(); window.WA.Route.loadStored(); });
+  document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) boot(); });
   document.addEventListener('wa:location-ready', () => { if (document.getElementById('rt-body').children.length) boot(); });
 })();

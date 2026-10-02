@@ -16,6 +16,8 @@
     "build:brand": "node .scripts/build-brand.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "build:map-styles": "node .scripts/build-map-styles.js",
+    "routes": "node --env-file-if-exists=.env pipeline/routes.ts",
+    "routes:dry": "node --env-file-if-exists=.env pipeline/routes.ts --dry-run",
     "digest": "node --env-file-if-exists=.env pipeline/digest.ts",
     "digest:dry": "node --env-file-if-exists=.env pipeline/digest.ts --dry-run"
   },

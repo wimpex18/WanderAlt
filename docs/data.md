@@ -14,6 +14,7 @@ Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is 
 | `place_redirects`, `event_redirects` | Retained ids pointing to canonical rows | yes; event targets must be published |
 | `place_match_reviews` | Uncertain pairs, evidence, and `pending` / `separate` / `merged` decisions | no |
 | `place_verification_reviews` (view) | Canonical venues awaiting activity evidence or review, including expired confirmations | no |
+| `routes` | Evenings the pipeline composes for the next three days: day, area, a plain title, one sentence (`blurb`), `stops` (type, id, minute), score, engine | yes (public read; the pipeline writes with the service role) |
 | `place_merge_log`, `event_merge_log`, `place_liveness_log` | Before/after snapshots, provenance, moved events and undo history | no |
 | `pipeline_runs` | One row per run: neurons and model calls spent, events written, whether every source was healthy. Also the daily Workers AI budget | no |
 | `bookmarks`, `saved_lists`, `saved_list_items` | Each user's saves | own rows only |

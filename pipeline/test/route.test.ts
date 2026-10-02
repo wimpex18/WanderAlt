@@ -45,7 +45,7 @@ const ev = (id: string, min: number, lat: number, lng: number, extra: any = {}) 
 
 test('an evening is a picked place before a timed listing and a bar after it, in that order', () => {
   const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)],
-    [place('shop', 'record store', 59.4402, 24.7334), place('bar', 'bar', 59.4406, 24.7340), place('far', 'bookshop', 59.4700, 24.8000)]);
+    [place('shop', 'record store', 59.4430, 24.7340), place('bar', 'bar', 59.4370, 24.7340), place('far', 'bookshop', 59.4700, 24.8000)]);
   const r = Route.compose();
   eq(r.stops.map((s: any) => s.id), ['shop', 'e1', 'bar']);
   eq(r.stops.map((s: any) => s.type), ['place', 'event', 'place']);
@@ -54,7 +54,7 @@ test('an evening is a picked place before a timed listing and a bar after it, in
 });
 
 test('a place that is shut when you would be there is left out, an unknown one is kept', () => {
-  const places = [place('shut', 'record store', 59.4402, 24.7334), place('unsure', 'bookshop', 59.4401, 24.7336, { openingHours: null })];
+  const places = [place('shut', 'record store', 59.4430, 24.7340), place('unsure', 'bookshop', 59.4435, 24.7345, { openingHours: null })];
   const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)], places, (p) => (p.id === 'shut' ? 'shut' : 'open'));
   const r = Route.compose();
   eq(r.stops.map((s: any) => s.id), ['unsure', 'e1']);
@@ -62,18 +62,18 @@ test('a place that is shut when you would be there is left out, an unknown one i
 });
 
 test('only picked places and a listing that has not started can make a route', () => {
-  assert.equal(world(17 * 60, [ev('e1', 19 * 60, 59.44, 24.734)], [place('shop', 'record store', 59.4402, 24.7334, { picked: false })]).compose(), null);
-  assert.equal(world(17 * 60, [ev('e1', 17 * 60 + 5, 59.44, 24.734)], [place('shop', 'record store', 59.4402, 24.7334)]).compose(), null);
+  assert.equal(world(17 * 60, [ev('e1', 19 * 60, 59.44, 24.734)], [place('shop', 'record store', 59.4430, 24.7340, { picked: false })]).compose(), null);
+  assert.equal(world(17 * 60, [ev('e1', 17 * 60 + 5, 59.44, 24.734)], [place('shop', 'record store', 59.4430, 24.7340)]).compose(), null);
   assert.equal(world(17 * 60, [ev('e1', 19 * 60, 59.44, 24.734)], [place('far', 'record store', 59.5, 24.9)]).compose(), null);
 });
 
 test("the listing's own venue is never its own before or after", () => {
-  const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { venueId: 'host' })], [place('host', 'bar', 59.4400, 24.7340), place('shop', 'thrift', 59.4401, 24.7336)]);
+  const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { venueId: 'host' })], [place('host', 'bar', 59.4400, 24.7340), place('shop', 'thrift', 59.4430, 24.7340)]);
   eq(Route.compose().stops.map((s: any) => s.id), ['shop', 'e1']);
 });
 
 test('a route travels in a URL and comes back the same; bad input is refused', () => {
-  const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('shop', 'record store', 59.4402, 24.7334), place('bar', 'bar', 59.4406, 24.7340)]);
+  const Route = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('shop', 'record store', 59.4430, 24.7340), place('bar', 'bar', 59.4370, 24.7340)]);
   const r = Route.compose();
   const again = Route.fromParam(Route.param(r));
   eq(again.stops.map((s: any) => [s.id, s.minute]), r.stops.map((s: any) => [s.id, s.minute]));
@@ -83,6 +83,16 @@ test('a route travels in a URL and comes back the same; bad input is refused', (
 
 test('a place before the listing is worth at least half an hour', () => {
   // Now is 18:40, the listing starts at 19:00 and the shop is a 3 minute walk away: no time to browse.
-  const Route = world(18 * 60 + 40, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('shop', 'record store', 59.4402, 24.7334), place('bar', 'bar', 59.4406, 24.7340)]);
+  const Route = world(18 * 60 + 40, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('shop', 'record store', 59.4430, 24.7340), place('bar', 'bar', 59.4370, 24.7340)]);
   eq(Route.compose().stops.map((s: any) => s.id), ['e1', 'bar']);
+});
+
+test('a bar waits until four, a club until nine, and nothing is the same building', () => {
+  // The listing ends about 17:00; a bar is fine after four but a club is not.
+  const early = world(12 * 60, [ev('e1', 15 * 60, 59.4400, 24.7340)], [place('club', 'club', 59.4370, 24.7340), place('bar', 'bar', 59.4360, 24.7340)]);
+  eq(early.compose().stops.map((s: any) => s.id), ['e1', 'bar']);
+  const lateNight = world(12 * 60, [ev('e1', 20 * 60, 59.4400, 24.7340)], [place('club', 'club', 59.4370, 24.7340)]);
+  eq(lateNight.compose().stops.map((s: any) => s.id), ['e1', 'club']);
+  const sameBuilding = world(12 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('annex', 'bar', 59.44005, 24.73402)]);
+  assert.equal(sameBuilding.compose(), null);
 });

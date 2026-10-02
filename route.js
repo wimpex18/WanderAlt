@@ -8,8 +8,15 @@
    places and listings; nothing is invented. A route is its stops, so it
    travels in a URL: route.html?s=place:<id>:<minute>,event:<id>:<minute>
 
+   The pipeline also composes evenings for the next few days with a free
+   model (pipeline/routes.ts) and stores them in `routes`; the page reads
+   them, checks every stop again, and shows the ones that still hold.
+
    window.WA.Route:
-     .compose()          → the best evening for tonight, or null
+     .compose()          → the best evening for tonight, worked out here, or null
+     .best()             → tonight's best: a stored one that still holds, else compose()
+     .loadStored()       → Promise of the stored routes (cached; 'wa:routes-ready' when they arrive)
+     .upcoming()         → stored routes that still hold, soonest day first, best first
      .fromParam(s)       → a route from the URL's stops, or null
      .param(route)       → the URL's `s` value
      .mapsUrl(route)     → a walking route in Google Maps
@@ -27,7 +34,7 @@
   const MAX_BEFORE = 15, MAX_AFTER = 12, DAY = 24 * 60;
 
   const nowMin = () => H().cityNow().minutes;
-  const at = (minute) => new Date(Date.now() + (minute - nowMin()) * 60000);
+  const at = (minute, offset = 0) => new Date(Date.now() + (minute - nowMin() + offset * DAY) * 60000);
   const metres = (a, b) => {
     const ca = G().coordsFor(a), cb = G().coordsFor(b);
     return ca && cb ? G().distanceTo(a, cb) : null;
@@ -36,8 +43,8 @@
   const round5 = (m) => Math.round(m / 5) * 5;
 
   /* Is a place open at this minute: 'open', 'shut' or 'unknown' (hours not filed). */
-  const hoursAt = (v, minute) => {
-    const s = v && v.openingHours ? H().state(v.openingHours, at(minute)) : null;
+  const hoursAt = (v, minute, offset = 0) => {
+    const s = v && v.openingHours ? H().state(v.openingHours, at(minute, offset)) : null;
     return !s || !s.known ? 'unknown' : s.open ? 'open' : 'shut';
   };
 
@@ -107,7 +114,7 @@
       for (const v of places) {
         if (!BEFORE.has(v.kind) || (host && v.id === host.id)) continue;
         const d = metres(v, e), w = walk(d);
-        if (w == null || w > MAX_BEFORE) continue;
+        if (w == null || w < 2 || w > MAX_BEFORE) continue;
         const minute = Math.max(round5(now + 10), round5(start - w - 60));
         if (minute + 30 + w > start) continue;                      /* at least half an hour there */
         const h = hoursAt(v, minute);
@@ -121,8 +128,9 @@
       for (const v of places) {
         if (!AFTER.has(v.kind) || (host && v.id === host.id)) continue;
         const d = metres(v, e), w = walk(d);
-        if (w == null || w > MAX_AFTER) continue;
+        if (w == null || w < 2 || w > MAX_AFTER) continue;
         const minute = round5(end + 15 + w);
+        if (minute > 23 * 60 + 30 || minute < (v.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   /* a club after nine, a bar after four */
         const h = hoursAt(v, minute);
         if (h === 'shut') continue;
         const s = (h === 'open' ? 1.5 : .8) - w / 30;
@@ -143,7 +151,7 @@
 
   /* ── The route as a URL ───────────────────────────────────── */
   const param = (route) => route.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(',');
-  const fromParam = (str) => {
+  const fromParam = (str, offset = 0) => {
     const parts = String(str || '').split(',').slice(0, 6).map(x => x.split(':'));
     if (parts.length < 2 || parts.some(p => p.length !== 3 || !/^(place|event)$/.test(p[0]) || !/^[\w.-]{1,80}$/.test(p[1]) || !/^\d{1,4}$/.test(p[2]))) return null;
     const stops = [];
@@ -155,7 +163,7 @@
       if (!entry) return null;
       const prev = stops[stops.length - 1];
       const prevM = prev ? (type === 'place' ? metres(entry, prev) : metres(prev, entry)) : null;
-      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute)) : eventStop(entry, minute, prevM));
+      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset)) : eventStop(entry, minute, prevM));
     }
     return build(stops);
   };
@@ -167,6 +175,36 @@
     const dest = pts[pts.length - 1], via = pts.slice(0, -1);
     return `https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${dest}&waypoints=${via.join('%7C')}`;
   };
+
+  /* ── Evenings the pipeline composed ─────────────────────────── */
+  let stored = null, pending = null;
+  const loadStored = () => {
+    if (pending) return pending;
+    const h = window.WA.ANON_KEY ? { apikey: window.WA.ANON_KEY, Authorization: `Bearer ${window.WA.ANON_KEY}` } : {};
+    const q = `routes?city=eq.${encodeURIComponent(window.WA.CITY || 'tallinn')}&day=gte.${W().todayKey()}&order=day.asc,score.desc&limit=30&select=id,day,area,title,blurb,stops,score,engine`;
+    pending = fetch(`${window.WA.BASE_URL || ''}/rest/v1/${q}`, { headers: h }).then(r => (r.ok ? r.json() : [])).catch(() => [])
+      .then((rows) => { stored = Array.isArray(rows) ? rows : []; document.dispatchEvent(new CustomEvent('wa:routes-ready')); return stored; });
+    return pending;
+  };
+  const dayOffset = (day) => { for (let i = 0; i < 7; i++) if (W().keyPlus(i) === day) return i; return -1; };
+
+  /* A stored route, checked against the page's own data: every stop is still
+     there, the listing has not started, and no place is shut when you would
+     be there. Anything else, and it is simply not shown. */
+  const fromRow = (row) => {
+    const off = dayOffset(row.day);
+    if (off < 0 || !Array.isArray(row.stops)) return null;
+    const r = fromParam(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), off);
+    if (!r) return null;
+    if (r.stops.some(s => s.hours === 'shut')) return null;
+    const anchor = r.stops.find(s => s.type === 'event');
+    const entry = anchor && (window.WA.catalog || []).find(e => e.id === anchor.id);
+    if (!entry || R().isOff(entry) || W().hasEnded(entry)) return null;
+    if (off === 0 && anchor.minute < nowMin() + 10) return null;
+    return Object.assign(r, { id: row.id, day: row.day, off, title: row.title, blurb: row.blurb || '', engine: row.engine, saved: true });
+  };
+  const upcoming = () => (stored || []).map(fromRow).filter(Boolean);
+  const best = () => upcoming().find(r => r.off === 0) || compose();
 
   /* ── Markup shared by Tonight's card and the route page ───── */
   const esc = (x) => window.WA.UI.esc(x);
@@ -186,12 +224,12 @@
   };
 
   /* The small card on Tonight: the stops, no more. */
-  const card = (route) => `<a class="rt-card" href="route.html?s=${esc(param(route))}" aria-label="${esc(`Tonight's route: ${route.title}`)}">
-      <span class="rt-card__head"><span class="rt-card__eyebrow">Tonight's route${route.area ? ` · ${esc(route.area)}` : ''}</span><span class="rt-card__go">Open ${window.WA.Icon('arrow')}</span></span>
+  const card = (route, label) => `<a class="rt-card" href="route.html?s=${esc(param(route))}${route.id ? `&t=${esc(encodeURIComponent(route.id))}` : ''}" aria-label="${esc(`${label || "Tonight's route"}: ${route.title}`)}">
+      <span class="rt-card__head"><span class="rt-card__eyebrow">${esc(label || "Tonight's route")}${route.area ? ` · ${esc(route.area)}` : ''}</span><span class="rt-card__go">Open ${window.WA.Icon('arrow')}</span></span>
       <span class="rt-card__title">${esc(route.title)}</span>
       <ol class="rt-card__stops">${route.stops.map((s, i) => `<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}">
         <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
         <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(i && s.walk ? `${s.walk} min walk` : stopSub(s))}</small></span></li>`).join('')}</ol></a>`;
 
-  window.WA.Route = { compose, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText };
+  window.WA.Route = { compose, best, loadStored, upcoming, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText };
 })();

@@ -1428,3 +1428,5 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-me__text { display: grid; min-width: 0; }
 .you-me__text strong { font-size: 1.25rem; letter-spacing: -.02em; }
 .you-me__text span { font-size: var(--fs-meta); color: var(--ink-2); overflow-wrap: anywhere; }
+.rt-more { margin-top: var(--s-8); max-width: 40rem; }
+.rt-more__item { margin-top: var(--s-3); }

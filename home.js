@@ -145,7 +145,7 @@
     const list = lists[tab];
     const out = [];
     /* An evening in a few stops, when tonight has one worth walking. */
-    const evening = window.WA.Route && window.WA.Route.compose();
+    const evening = window.WA.Route && window.WA.Route.best();
     if (evening) out.push(`<section class="wa-sect rt-sect">${window.WA.Route.card(evening)}</section>`);
 
     if (all.length) {
@@ -226,7 +226,8 @@
     if (f !== scrolled) { scrolled = f; document.body.classList.toggle('is-scrolled', f); }
   }, { passive: true });
   $('home-search').addEventListener('submit', search);
-  document.addEventListener('wa:catalog-ready', boot);
+  document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
+  document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
   document.addEventListener('wa:location-ready', render);
   /* The clock ticks; the lists redraw every five minutes so "on now"
      and "starting soon" stay true on a phone left open. */
