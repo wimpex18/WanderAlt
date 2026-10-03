@@ -87,7 +87,7 @@
     gig: 'Gig', club: 'Club night', film: 'Film', theatre: 'Theatre', workshop: 'Workshop',
     exhibition: 'Exhibition', talk: 'Talk', festival: 'Festival', market: 'Market',
     'record store': 'Record shop', bookshop: 'Bookshop', gallery: 'Gallery', thrift: 'Thrift shop',
-    'arts centre': 'Arts centre', cinema: 'Cinema', community: 'Community centre', bar: 'Bar', museum: 'Museum',
+    'arts centre': 'Arts centre', cinema: 'Cinema', community: 'Community centre', bar: 'Bar', museum: 'Museum', taproom: 'Craft beer',
   };
   const PLACE_KIND = { club: 'Club', theatre: 'Theatre' };
   const kindLabel = (k, isPlace) => {

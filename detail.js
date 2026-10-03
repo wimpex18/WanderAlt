@@ -417,6 +417,7 @@
       ${route ? `<a class="wa-btn wa-btn--pill" href="route.html?s=${esc(Rt.param(route))}">Plan the next hours from here</a>` : ''}</section>`;
   };
 
+  const HOURS_FROM = { osm: 'OpenStreetMap', site: 'the venue\'s own site', facebook: 'its Facebook page', instagram: 'its Instagram bio', manual: 'a check by us' };
   const placePage = (v) => {
     const o = R().openState(v);
     const following = window.WA.Follows && window.WA.Follows.has(window.WA.Follows.placeId(v));
@@ -485,8 +486,8 @@
 
         <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
           <div class="det-prov">${v.osmId
-            ? `<span>Address and links from OpenStreetMap; hours from there or from the venue's own site.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
-            : '<span>Details from the venue.</span>'}</div>
+            ? `<span>Address and links from OpenStreetMap${v.openingHours ? `; hours from ${HOURS_FROM[v.hoursSource] || 'OpenStreetMap'}` : ''}.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
+            : `<span>Details from the venue${v.openingHours && HOURS_FROM[v.hoursSource] ? `; hours from ${HOURS_FROM[v.hoursSource]}` : ''}.</span>`}</div>
         </section>
       </div>
     </div>`;

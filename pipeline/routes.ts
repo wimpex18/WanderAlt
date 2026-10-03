@@ -26,7 +26,7 @@ export interface RouteRow { id: string; city: string; day: string; area: string;
 
 const ANCHORS = new Set(['gig', 'club', 'film', 'theatre', 'talk', 'workshop', 'festival', 'exhibition']);
 const BEFORE = new Set(['record store', 'bookshop', 'gallery', 'thrift', 'arts centre', 'cinema']);
-const AFTER = new Set(['bar', 'club']);
+const AFTER = new Set(['bar', 'club', 'taproom']);
 // Keep these in step with route.js and geo.js: one walking pace, the same walks and rules.
 const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80;
 

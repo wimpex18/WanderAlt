@@ -29,6 +29,7 @@
     { id: 'browse', label: { en: 'Browse' },  hint: { en: 'Records, books, thrift' },    listing: ['market'],                        place: ['record store', 'bookshop', 'thrift'] },
     { id: 'make',   label: { en: 'Make' },    hint: { en: 'Workshops and talks' },       listing: ['workshop', 'talk'],              place: [] },
     { id: 'listen', label: { en: 'Listen' },  hint: { en: 'Gigs, jazz, live rooms' },    listing: ['gig'],                           place: ['bar', 'club'] },
+    { id: 'drink',  label: { en: 'Drink' },   hint: { en: 'Craft beer, taprooms' },       listing: [], place: ['taproom'], from: 12 * H, until: 2 * H },
     { id: 'dance',  label: { en: 'Dance' },   hint: { en: 'Club nights' },               listing: ['club'],                          place: ['club'], from: 20 * H, until: 5 * H },
     { id: 'join',   label: { en: 'Join in' }, hint: { en: 'Quiz, chess, craft nights' }, listing: [], tags: ['easy-alone'],        place: [], list: true },
   ];

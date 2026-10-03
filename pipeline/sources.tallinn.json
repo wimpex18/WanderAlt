@@ -168,7 +168,18 @@
     "label": "OpenStreetMap",
     "curated": true,
     "config": {
-      "area": "Tallinn"
+      "area": "Tallinn",
+      "craft_beer": [
+        "node/6180784703",
+        "node/2408088880",
+        "node/10560458975",
+        "node/4097949863",
+        "node/4841070221",
+        "node/1837843613",
+        "node/11465700066",
+        "node/11975356084",
+        "node/436177124"
+      ]
     }
   },
   {

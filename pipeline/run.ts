@@ -34,6 +34,7 @@ import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
+import { fillHours } from './hours-sources.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -309,7 +310,7 @@ async function main() {
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
   if (osm && !skipCatalogue) {
     try {
-      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'));
+      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
       for (const p of catalogue) places.merge(p);
       if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
@@ -402,10 +403,10 @@ async function main() {
 
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    // A place with no picture, or a picked one with no hours, is looked at again after a week: sites add logos and hours.
+    // A place with no picture is looked at again after a week: sites add logos.
     const weekAgo = Date.now() - 7 * 86_400_000;
     const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website || p.facebook)
-      && (!p.enriched_at || ((!p.image_url || (p.picked && !p.opening_hours)) && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
+      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p, { facebook: !flag('--no-facebook') }), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -422,6 +423,16 @@ async function main() {
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
       }
     } catch (e) { log(`instagram failed: ${(e as Error).message}`); }
+  }
+
+  // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its
+  // Instagram bio (hours-sources.ts). A few a run, none for a place looked at in the last fortnight.
+  if (!flag('--no-hours')) {
+    try {
+      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30))) {
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    } catch (e) { log(`hours failed: ${(e as Error).message}`); }
   }
 
   // Upcoming events already stored, so a second source's copy of a show joins it.

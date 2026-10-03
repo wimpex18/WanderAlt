@@ -13,7 +13,6 @@ import type { Place } from './places.ts';
 import { UA, get, getHtml, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
 import { closureReason, overpass, type OsmElement } from './osm.ts';
 import { probeImage, usableSize } from './imageprobe.ts';
-import { siteHours } from './site-hours.ts';
 
 export interface VenueDetails {
   website?: string | null;
@@ -57,23 +56,33 @@ export function socialUrl(host: 'instagram.com' | 'facebook.com', v: string | un
   return `https://www.${host}/${handle}`;
 }
 
-const QUERY = (area: string) => `[out:json][timeout:45];
+/** `node(id:1,2); way(id:3);` for a city's curated OSM references ("node/123"), or nothing. */
+const byRef = (refs: readonly string[]) => ['node', 'way', 'relation']
+  .map(type => ({ type, ids: refs.filter(r => r.startsWith(`${type}/`)).map(r => r.slice(type.length + 1)).filter(i => /^\d+$/.test(i)) }))
+  .filter(g => g.ids.length).map(g => `  ${g.type}(id:${g.ids.join(',')});`).join('\n');
+
+const QUERY = (area: string, craft: readonly string[] = []) => `[out:json][timeout:45];
 area["name"="${area}"]["admin_level"="7"]->.t;
 (
   nwr(area.t)["shop"~"^(music|books|second_hand|charity|art)$"]["name"];
   nwr(area.t)["amenity"~"^(arts_centre|cinema|nightclub|community_centre|social_centre|theatre)$"]["name"];
   nwr(area.t)["tourism"="gallery"]["name"];
+${byRef(craft)}
 );
 out center tags;`;
 
-export async function osmCatalogue(city = 'tallinn', area = 'Tallinn'): Promise<RichPlace[]> {
-  const elements = await overpass(QUERY(area));
-  return elements.map(el => placeFromOsm(el, city)).filter((p): p is RichPlace => !!p);
+/** `craft`: OSM references ("node/123") of the craft beer bars, taprooms and bottle shops we chose for
+ *  a city (the `craft_beer` list of its osm source). They are kind 'taproom'; nothing else is, so no
+ *  pub or off-licence is added by accident. */
+export async function osmCatalogue(city = 'tallinn', area = 'Tallinn', craft: readonly string[] = []): Promise<RichPlace[]> {
+  const elements = await overpass(QUERY(area, craft));
+  const taprooms = new Set(craft);
+  return elements.map(el => placeFromOsm(el, city, taprooms)).filter((p): p is RichPlace => !!p);
 }
 
-export function placeFromOsm(el: OsmElement, city: string): RichPlace | null {
+export function placeFromOsm(el: OsmElement, city: string, taprooms: ReadonlySet<string> = new Set()): RichPlace | null {
   const t = el.tags ?? {};
-  const kind = osmKind(t);
+  const kind = taprooms.has(`${el.type}/${el.id}`) ? 'taproom' : osmKind(t);
   const name = t['name:et'] ?? t.name;
   if (!kind || !name || closureReason(t, kind)) return null;
   const lat = el.lat ?? el.center?.lat, lng = el.lon ?? el.center?.lon;
@@ -92,6 +101,7 @@ export function placeFromOsm(el: OsmElement, city: string): RichPlace | null {
     instagram: socialUrl('instagram.com', t['contact:instagram'] ?? t.instagram),
     facebook: socialUrl('facebook.com', t['contact:facebook'] ?? t.facebook),
     opening_hours: t.opening_hours ?? null,
+    hours_source: t.opening_hours ? 'osm' : null,
     description: t['description:en'] ?? t.description ?? null,
     wikidata_id: /^Q\d+$/.test(t.wikidata ?? '') ? t.wikidata : null,
   };
@@ -364,7 +374,7 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
   };
   if (p.wikidata_id) take(await fromWikidata(p.wikidata_id).catch(() => ({})));
   const site = patch.website ?? p.website;
-  if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description || !p.opening_hours)) {
+  if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description)) {
     try {
       const page = await getHtml(site, { timeoutMs: 15_000 });
       // A site that now redirects to another host (a domain that changed
@@ -379,8 +389,6 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
         if (!url) { d.image_attr = null; d.image_source = null; }
       }
       take(d);
-      // Hours the venue's own page publishes as structured data; OpenStreetMap's, when present, win.
-      if (!p.opening_hours && same) { const h = siteHours(page.html.slice(0, 400_000)); if (h) patch.opening_hours = h; }
     } catch (e) {
       // An unreachable site leaves the place as it was; the run says how many.
       console.warn(`[venues] ${p.name}: homepage not read (${(e as Error).message.slice(0, 80)})`);

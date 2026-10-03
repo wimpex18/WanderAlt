@@ -122,3 +122,27 @@ export async function recentPosts(handle: string, cfg: InstagramConfig, limit = 
     return (body.business_discovery?.media?.data ?? []).map(m => ({ caption: m.caption ?? null, timestamp: m.timestamp, permalink: m.permalink, mediaType: m.media_type }));
   } catch { return null; }
 }
+
+export type Bio =
+  | { kind: 'found'; username: string; biography: string }
+  | { kind: 'none'; reason: string }
+  | { kind: 'stop'; reason: string };
+
+/** The bio of a public Business or Creator account, through the same business_discovery call. */
+export async function lookupBio(handle: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<Bio> {
+  const url = `${API}/${encodeURIComponent(cfg.businessId)}?` + new URLSearchParams({
+    fields: `business_discovery.username(${handle}){username,biography}`, access_token: cfg.token,
+  });
+  try {
+    const r = await fetcher(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+    const body = await r.json() as { business_discovery?: { username?: string; biography?: string }; error?: { code?: number; message?: string } };
+    if (body.error) {
+      return [190, 10, 200, 4, 17, 32, 613].includes(Number(body.error.code))
+        ? { kind: 'stop', reason: `Meta refused (code ${body.error.code}): ${String(body.error.message).slice(0, 120)}` }
+        : { kind: 'none', reason: `code ${body.error.code}` };
+    }
+    const d = body.business_discovery;
+    if (!d?.username || d.username.toLowerCase() !== handle.toLowerCase()) return { kind: 'none', reason: 'another username' };
+    return d.biography ? { kind: 'found', username: d.username, biography: d.biography } : { kind: 'none', reason: 'no bio' };
+  } catch (e) { return { kind: 'stop', reason: `request failed: ${(e as Error).message}` }; }
+}

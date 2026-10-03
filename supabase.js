@@ -146,7 +146,7 @@
      picked or freshly verified places show. Exposed as WA.VENUE_KINDS. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club', 'thrift',
-    'arts centre', 'cinema', 'community', 'theatre', 'bar', 'museum',
+    'arts centre', 'cinema', 'community', 'theatre', 'bar', 'museum', 'taproom',
   ]);
   window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
@@ -187,6 +187,7 @@
     /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
        "hours not filed", never as "closed". */
     openingHours: r.opening_hours || null,
+    hoursSource:  r.hours_source || '',
     isClosed:     r.status === 'closed',
     isVerified:   r.status === 'active',
     /* Chosen by hand for the guide, with one English line on why. */
@@ -301,7 +302,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source` +
         `&order=name.asc,id.asc`,
         abort.signal
       ),
@@ -368,7 +369,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note`, undefined, true
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source`, undefined, true
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (error) { lookupError = error; }
