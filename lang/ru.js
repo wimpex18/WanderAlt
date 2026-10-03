@@ -294,6 +294,9 @@ window.WA.dict.ru = {
   "Right by you": "Прямо рядом с вами",
   "Kind": "Вид",
   "Moods": "Настроения",
+  "Kind of place": "Тип места",
+  "nearest to you first": "сначала ближайшие к вам",
+  "nearest the centre first": "сначала ближайшие к центру",
   "Change": "Изменить",
   "Today's events and the places open now, by walking time.": "События сегодня и открытые сейчас места по времени пешком.",
   "Ticket price limit": "Предел цены билета",
@@ -893,6 +896,10 @@ window.WA.dict.ru = {
   [
    "{n} open now",
    "открыто сейчас: {n}"
+  ],
+  [
+   "{n} open",
+   "открыто: {n}"
   ],
   [
    "{n} min ago",

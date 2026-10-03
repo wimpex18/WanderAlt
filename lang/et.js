@@ -294,6 +294,9 @@ window.WA.dict.et = {
   "Right by you": "Kohe sinu kõrval",
   "Kind": "Liik",
   "Moods": "Meeleolud",
+  "Kind of place": "Koha liik",
+  "nearest to you first": "lähimad sinu juurest ees",
+  "nearest the centre first": "kesklinnale lähimad ees",
   "Change": "Muuda",
   "Today's events and the places open now, by walking time.": "Tänased sündmused ja praegu avatud kohad jalutusaja järgi.",
   "Ticket price limit": "Piletihinna piir",
@@ -878,6 +881,10 @@ window.WA.dict.et = {
   [
    "{n} open now",
    "{n} praegu avatud"
+  ],
+  [
+   "{n} open",
+   "{n} avatud"
   ],
   [
    "{n} min ago",

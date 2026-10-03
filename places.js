@@ -15,18 +15,8 @@
   const G = () => window.WA.Geo;
   const esc = (s) => window.WA.UI.esc(s);
 
-  /* `picto` is the Label disc on the chip (icons.js). */
-  const GROUPS = [
-    { id: 'records',   label: 'Records',        picto: 'records',  kinds: ['record store'] },
-    { id: 'books',     label: 'Books',          picto: 'books',    kinds: ['bookshop'] },
-    { id: 'galleries', label: 'Galleries',      picto: 'gallery',  kinds: ['gallery', 'arts centre', 'museum'] },
-    { id: 'thrift',    label: 'Thrift',         picto: 'thrift',   kinds: ['thrift'] },
-    { id: 'beer',      label: 'Craft beer',     picto: 'beer',     kinds: ['taproom'] },
-    { id: 'clubs',     label: 'Clubs and bars', picto: 'club',     kinds: ['club', 'bar'] },
-    { id: 'cinema',    label: 'Cinema',         picto: 'cinema',   kinds: ['cinema'] },
-    { id: 'theatres',  label: 'Theatres',       picto: 'theatre',  kinds: ['theatre'] },
-    { id: 'community', label: 'Community',      picto: 'centre',   kinds: ['community'] },
-  ];
+  /* The place types (render.js), each with the Label disc its chip shows. */
+  const GROUPS = window.WA.R.placeGroups;
   /* Older links named a mood. */
   const FROM_MOOD = { browse: 'records', look: 'galleries', drink: 'beer', listen: 'clubs', dance: 'clubs' };
 
