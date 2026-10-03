@@ -30,3 +30,8 @@ test('writeHours refuses what the reader cannot evaluate', () => {
   assert.equal(writeHours(new Map([['Mo', ['25:00-26:00']]])), null);
   assert.equal(writeHours(new Map([['Mo', ['10:00-18:00']], ['Tu', ['10:00-18:00']]])), 'Mo,Tu 10:00-18:00');
 });
+
+test('a real bio with emoji, "Thur" and a midnight close (Purtse resto)', () => {
+  const bio = 'Restaurant\nPurtse resto | Restaurant & taproom in Telliskivi Park\n📍 Telliskivi 60/2\n🕓 Tue-Thur 12-22 | Fri 12-00 | Sat 14-00\n✍️ info@purtseresto.ee';
+  assert.equal(bioHours(bio), 'Tu,We,Th 12:00-22:00; Fr 12:00-24:00; Sa 14:00-24:00');
+});
