@@ -16,6 +16,17 @@ test('a place gets hours from its site first and says so', async () => {
   assert.equal(p.opening_hours, 'Mo-Fr 10:00-18:00'); assert.equal(p.hours_source, 'site'); assert.equal(asked, 0);
 });
 
+test('a site with no structured data is read as text, on its homepage or its contact page', async () => {
+  const p = place({ website: 'https://x.ee/', instagram: 'https://www.instagram.com/x' });
+  const pages: Record<string, string> = {
+    'https://x.ee/': '<p>Records and coffee</p><a href="/kontakt">Kontakt</a>',
+    'https://x.ee/kontakt': '<h2>Lahtiolekuajad</h2><p>E-R 11-19</p><p>L 11-17</p><p>P suletud</p>',
+  };
+  let asked = 0;
+  await fillHours([p], cfg, 30, { ...quiet, html: async (u: string) => pages[u] ?? null, bio: async () => { asked++; return { kind: 'none', reason: 'x' }; } });
+  assert.deepEqual([p.opening_hours, p.hours_source, asked], ['Mo,Tu,We,Th,Fr 11:00-19:00; Sa 11:00-17:00', 'site', 0]);
+});
+
 test('falls through to Facebook, then to the Instagram bio', async () => {
   const fbOnly = place({ id: 'a', facebook: 'https://www.facebook.com/venuea' });
   const igOnly = place({ id: 'b', facebook: 'https://www.facebook.com/venueb', instagram: 'https://www.instagram.com/venueb' });

@@ -71,7 +71,8 @@ test('ended, cancelled, postponed and date-only events never read On now; sold o
   assert.equal(p.WA.R.openState({ isClosed: true, openingHours: '24/7' }).open, false);
   assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).open, false);
   assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).text, 'Status unverified');
-  assert.equal(p.WA.R.endClock({ endsAt: '2026-10-04T15:00:00Z' }), 'Sun 4 Oct · 18:00');
+  /* An end on another day than today carries its date; 2030 is never today. */
+  assert.equal(p.WA.R.endClock({ endsAt: '2030-10-04T15:00:00Z' }), 'Fri 4 Oct · 18:00');
 });
 
 test('unverified and closed places never appear in shared recommendations, even with open hours', () => {
