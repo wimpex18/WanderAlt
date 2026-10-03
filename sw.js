@@ -70,8 +70,10 @@ self.addEventListener('activate', (e) => {
    anonymity. Keep these in sync with supabase.js. */
 const PUBLIC_ORIGIN = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 const PUBLIC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
-const isData = (url) => url.origin === PUBLIC_ORIGIN &&
-  /^\/rest\/v1\/(picks|venues|venue_details|catalogue_redirects)$/.test(url.pathname);
+const DATA_TABLES = /^(picks|venues|venue_details|catalogue_redirects)$/;
+/* The same public reads, through our own edge cache (functions/api/rest/[table].js): same origin, no keys. */
+const isEdge = (url) => url.origin === location.origin && /^\/api\/rest\/[a-z_]+$/.test(url.pathname) && DATA_TABLES.test(url.pathname.split('/').pop());
+const isData = (url) => isEdge(url) || (url.origin === PUBLIC_ORIGIN && /^\/rest\/v1\/[a-z_]+$/.test(url.pathname) && DATA_TABLES.test(url.pathname.split('/').pop()));
 
 const isStatic = (url) =>
   /\.(css|js|mjs|svg|woff2|json|png|ico|webmanifest)$/.test(url.pathname);
@@ -104,7 +106,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   if (isData(url)) {
-    if (auth !== `Bearer ${PUBLIC_KEY}` || apiKey !== PUBLIC_KEY) return;
+    if (!isEdge(url) && (auth !== `Bearer ${PUBLIC_KEY}` || apiKey !== PUBLIC_KEY)) return;
     e.respondWith((async () => {
       const c = await caches.open(DATA);
       try {

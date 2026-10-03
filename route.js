@@ -315,9 +315,8 @@
   let stored = null, pending = null;
   const loadStored = () => {
     if (pending) return pending;
-    const h = window.WA.ANON_KEY ? { apikey: window.WA.ANON_KEY, Authorization: `Bearer ${window.WA.ANON_KEY}` } : {};
-    const q = `routes?city=eq.${encodeURIComponent(window.WA.CITY || 'tallinn')}&day=gte.${W().todayKey()}&order=day.asc,score.desc&limit=30&select=id,day,area,title,blurb,stops,score,engine`;
-    pending = fetch(`${window.WA.BASE_URL || ''}/rest/v1/${q}`, { headers: h }).then(r => (r.ok ? r.json() : [])).catch(() => [])
+    const qs = `city=eq.${encodeURIComponent(window.WA.CITY || 'tallinn')}&day=gte.${W().todayKey()}&order=day.asc,score.desc&limit=30&select=id,day,area,title,blurb,stops,score,engine`;
+    pending = (window.WA.read ? window.WA.read('routes', qs) : Promise.reject(new Error('no reader'))).then(r => (r.ok ? r.json() : [])).catch(() => [])
       .then((rows) => { stored = Array.isArray(rows) ? rows : []; document.dispatchEvent(new CustomEvent('wa:routes-ready')); return stored; });
     return pending;
   };

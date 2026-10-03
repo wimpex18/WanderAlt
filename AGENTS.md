@@ -29,7 +29,7 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 - `supabase/migrations/` is the schema. `supabase/functions/` holds `og-image` and `calendar-feed`.
 - Pages: `index.html` Now (`home.js`), `discover.html` Programme (`programme.js`, every listing, not a tab), `places.html` the Guide, `route.html` one route (`route-page.js`), `map.html`, `detail.html` event and venue, `saved.html`, `profile.html` You, `source.html`, `about.html`, `404.html`. Four tabs: Now, Guide, Map, Saved. `wa.css` is the whole stylesheet. `render.js` holds every shared piece of markup, `icons.js` the UI icons and the round Labels, `route.js` the next few hours (composed in the page, or read from the `routes` table), `moods.js` what you are in the mood for, `finder.js` the search sheet, `ask.js` the sentence reader behind search (`functions/api/ask.js` asks the model only when the page cannot read a search). `supabase.js` loads data; `ui-helpers.js` has `WA.UI.esc` and `WA.UI.safeUrl`.
 - `pipeline/social.ts` with `social/` posts to Threads and Instagram by hand and checks their tokens; `instagram.ts` fetches venue profile pictures. See `docs/social.md`.
-- `functions/` are Cloudflare Pages Functions (OG tags, Wikimedia image proxy, `api/ask`). `vendor/` is MapLibre GL 6.11.2, self-hosted; upgrade by swapping its four files from the npm package's `dist/`.
+- `functions/` are Cloudflare Pages Functions (OG tags, Wikimedia image proxy, `api/ask`, `api/rest/<table>`, the edge cache for the public reads). `vendor/` is MapLibre GL 6.11.2, self-hosted; upgrade by swapping its four files from the npm package's `dist/`.
 
 ## Rules
 

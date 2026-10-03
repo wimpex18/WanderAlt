@@ -32,8 +32,21 @@
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
   let catalogueCached = false;
 
+  /* Public reads go through our own edge cache (functions/api/rest/[table].js) so Supabase is asked
+     once per few minutes per query, not once per visitor. A local server has no Functions, and a
+     failing Function must not take the page down: both read Supabase directly. */
+  const EDGE = new Set(['picks', 'venues', 'venue_details', 'routes', 'catalogue_redirects']);
+  const local = () => ['localhost', '127.0.0.1', ''].includes(location.hostname);
+  const read = (table, qs, signal) => {
+    const direct = () => fetch(`${BASE}/rest/v1/${table}?${qs}`, { headers, ...(signal ? { signal } : {}) });
+    if (!EDGE.has(table) || local()) return direct();
+    return fetch(`/api/rest/${table}?${qs}`, signal ? { signal } : undefined)
+      .then(r => (r.ok ? r : direct()), (e) => { if (e && e.name === 'AbortError') throw e; return direct(); });
+  };
+  window.WA.read = read;
+
   const get = (table, qs, signal, lookup = false) =>
-    fetch(`${BASE}/rest/v1/${table}?${qs}`, { headers, ...(signal ? { signal } : {}) })
+    read(table, qs, signal)
       .then(r => {
         if (!r.ok) throw new Error(`${table} ${r.status}`);
         const cached = !!r.headers?.get('x-wa-cached-at');

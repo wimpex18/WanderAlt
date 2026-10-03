@@ -53,6 +53,13 @@ test('worker only caches exact public catalogue paths on the configured backend'
   assert.equal(w.stored.size, 1);
 });
 
+test('the same-origin edge cache path is kept for offline like the backend path, and only for public tables', async () => {
+  const w = worker();
+  for (const path of ['/api/rest/social_tokens', '/api/rest/bookmarks', '/api/ask']) assert.equal(await w.request(`https://wanderalt.pages.dev${path}`), undefined);
+  assert.equal((await w.request('https://wanderalt.pages.dev/api/rest/picks?select=id'))?.status, 200);
+  assert.equal(w.stored.size, 1);
+});
+
 test('offline and 503 catalogue responses preserve the last good body and its original timestamp', async () => {
   const w = worker(), u = `${publicOrigin}/rest/v1/picks`;
   await w.request(u, anon);
