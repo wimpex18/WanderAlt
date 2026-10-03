@@ -1,8 +1,11 @@
-# Posts to Threads and Instagram, or checks the tokens. Manual only: nothing
-# here runs on a schedule, and nothing is posted unless "publish" is chosen.
+# Posts to Threads and Instagram, or checks the tokens. Only `check` runs on a
+# schedule (twice a month, which keeps the 60-day Threads token refreshed) and it
+# posts nothing; every posting choice is manual and needs "publish" in its name.
 name: social
 
 on:
+  schedule:
+    - cron: '17 6 1,15 * *'
   workflow_dispatch:
     inputs:
       action:
@@ -30,7 +33,7 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
-          ACTION: ${{ inputs.action }}
+          ACTION: ${{ inputs.action || 'check' }}
         run: |
           case "$ACTION" in
             check) node pipeline/social.ts check ;;
