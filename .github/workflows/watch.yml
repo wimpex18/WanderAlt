@@ -1,0 +1,49 @@
+# Every three hours: is the data fresh and are the site, its edge-cached data, its sitemap and
+# Supabase answering? A problem fails the run (GitHub emails the owner) and opens, or comments on,
+# one issue labelled `monitor`. The next good run closes it.
+name: watch
+
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Check
+        id: check
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set +e
+          node pipeline/watch.ts | tee watch.log
+          echo "status=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Open or update the issue, or close it when all is well
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ steps.check.outputs.status }}
+        run: |
+          gh label create monitor --color B60205 --description "Opened by the watch workflow" --force >/dev/null
+          open=$(gh issue list --label monitor --state open --json number --jq '.[0].number // empty')
+          if [ "$STATUS" != "0" ]; then
+            body=$(printf 'The watch run found a problem:\n\n```\n%s\n```\n\nRun: %s/%s/actions/runs/%s' "$(grep PROBLEM watch.log)" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+            if [ -n "$open" ]; then gh issue comment "$open" --body "$body"; else gh issue create --label monitor --title "Watch: the site or its data needs a look" --body "$body"; fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "The watch run is clean again."
+          fi
+          exit "$STATUS"
