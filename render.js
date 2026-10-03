@@ -132,9 +132,11 @@
   const price = (e) => (UI().priceLabel ? UI().priceLabel(e) : '');
 
   /* ── Time ────────────────────────────────────────────────── */
-  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const DAYFULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  /* Names for dates in the page's language (i18n.js loads first; English when it is absent). */
+  const LANG = window.WA.Lang;
+  const DOW = LANG ? LANG.days() : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DAYFULL = LANG ? LANG.daysFull() : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MON = LANG ? LANG.months() : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const keyDate = (key) => new Date(`${key}T12:00:00Z`);
   const dow = (key) => DOW[keyDate(key).getUTCDay()];
   const dom = (key) => keyDate(key).getUTCDate();

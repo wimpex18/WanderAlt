@@ -17,6 +17,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
+      # lang/et.js and lang/ru.js are generated from lang/*.tsv: a hand edit or a forgotten rebuild fails here.
+      - run: python3 tools/build-lang.py && git diff --exit-code -- lang
 
   # The newest sources, collected without keys: the log shows each one's
   # item count. Informational; never fails the check.
