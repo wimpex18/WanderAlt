@@ -119,6 +119,8 @@
     ['club', w('clubs?|klubi\\p{L}*|клуб\\p{L}*')],
     ['bar', w('bars?|pubs?|baar\\p{L}*|бар\\p{L}*')],
     ['theatre', w('theat(?:re|er)s?|teater\\p{L}*|театр\\p{L}*')],
+    ['museum', w('museums?|muuseum\\p{L}*|музе\\p{L}*')],
+    ['taproom', w('craft ?beers?|beers?|taprooms?|tap ?rooms?|breweries|brewery|olu\\p{L}*|olle\\p{L}*|пив\\p{L}*')],
   ];
   const SHOP_WORD = w('shops?|stores?|book ?shops?|book ?stores?|\\p{L}*pood\\p{L}*|магазин\\p{L}*|thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*');
   const EVENT_WORD = w('gigs?|concerts?|events?|party|parties|workshops?|festivals?|fair|flea|markets?|screenings?|talks?|lectures?|readings?|performances?|plays?|exhibitions?|openings?|live|show|shows');

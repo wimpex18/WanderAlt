@@ -29,7 +29,7 @@ import { Places, isDistrict, type Place } from './places.ts';
 import { Seen } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
-import { sha, nameKey, scrubContacts, httpUrl } from './util.ts';
+import { sha, nameKey, scrubContacts, httpUrl, lastBy } from './util.ts';
 import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
@@ -223,7 +223,7 @@ async function main() {
           `raw_items?source_id=eq.${encodeURIComponent(source.id)}&external_id=in.${encodeURIComponent(inList(part))}&select=external_id,content_hash`);
         for (const r of rows) known.set(r.external_id, r.content_hash);
       }
-      const fresh = items
+      const fresh = lastBy(items, i => i.external_id)
         .map(i => ({ ...i, content_hash: sha(JSON.stringify(i.payload)) }))
         .filter(i => known.get(i.external_id) !== i.content_hash);
       for (const part of chunks(fresh, 200)) {
