@@ -8,33 +8,69 @@
    suits, so a new city shows what it has and Tallinn never offers a
    dance floor at noon. The words are per language; the rules are per city.
 
-   A mood with `list: true` is answered with a list, not a walk (Join in: nights, not stops).
+   You may pick several moods, or none (anything). A mood can be narrowed by
+   its `subs` (Records inside Records & books, Comedy inside Art & film);
+   with none of its subs chosen a mood means all of it. A sub with `only`
+   reads its tags on those listing kinds alone (Jazz is a gig tagged jazz).
 
    window.WA.Moods:
-     .available()        → [{ id, label, hint, count }] for this hour, in the order of DEFS
+     .available()        → [{ id, label, hint, picto, count, subs: [{ id, label, count }] }] for this hour
      .get(id)            → the definition, or null
-     .matchesEvent(id,e) / .matchesPlace(id,v)
-     .pref()             → { mood, cap }   (mood '' = anything, cap null = any price)
+     .matchesEvent(id,e) / .matchesPlace(id,v)   one mood, all of it
+     .wantsEvent(p,e) / .wantsPlace(p,v)         a choice: any chosen mood, narrowed by its chosen subs
+     .pref()             → { moods: [], subs: [], cap }   (no moods = anything, cap null = any price)
      .setPref(p)         → saves, then fires 'wa:mood-changed'
-     .summary()          → "Look · up to €10", "Any mood · any price"
+     .summary()          → "Records, Jazz · up to €20", "Any mood · any price"
+     .CAPS               → the price limits offered, [0, 20]
    ============================================================ */
 (() => {
   'use strict';
   window.WA = window.WA || {};
 
   const H = 60;
-  /* Words by language (English first; add a language by adding its keys). */
+  /* Words by language (English first; add a language by adding its keys).
+     `picto` is the Label disc the sheet shows (icons.js). */
   const DEFS = [
-    { id: 'look',   label: { en: 'Look' },    hint: { en: 'Shows, galleries, film' },    listing: ['exhibition', 'film', 'theatre'], place: ['gallery', 'arts centre', 'cinema', 'museum', 'theatre'] },
-    { id: 'browse', label: { en: 'Browse' },  hint: { en: 'Records, books, thrift' },    listing: ['market'],                        place: ['record store', 'bookshop', 'thrift'] },
-    { id: 'make',   label: { en: 'Make' },    hint: { en: 'Workshops and talks' },       listing: ['workshop', 'talk'],              place: [] },
-    { id: 'listen', label: { en: 'Listen' },  hint: { en: 'Gigs, jazz, live rooms' },    listing: ['gig'],                           place: ['bar', 'club'] },
-    { id: 'drink',  label: { en: 'Drink' },   hint: { en: 'Craft beer, taprooms' },       listing: [], place: ['taproom'], from: 12 * H, until: 2 * H },
-    { id: 'dance',  label: { en: 'Dance' },   hint: { en: 'Club nights' },               listing: ['club'],                          place: ['club'], from: 20 * H, until: 5 * H },
-    { id: 'join',   label: { en: 'Join in' }, hint: { en: 'Quiz, chess, craft nights' }, listing: [], tags: ['easy-alone'],        place: [], list: true },
+    { id: 'look', label: { en: 'Art & film' }, hint: { en: 'Galleries, cinema, stage, comedy' }, picto: 'gallery',
+      listing: ['exhibition', 'film', 'theatre'], place: ['gallery', 'arts centre', 'cinema', 'museum', 'theatre'],
+      subs: [
+        { id: 'art', label: { en: 'Art' }, listing: ['exhibition'], place: ['gallery', 'museum', 'arts centre'] },
+        { id: 'film', label: { en: 'Film' }, listing: ['film'], place: ['cinema'] },
+        { id: 'stage', label: { en: 'Stage' }, listing: ['theatre'], place: ['theatre'] },
+        { id: 'comedy', label: { en: 'Comedy' }, tags: ['comedy', 'standup', 'stand-up', 'improv'] },
+      ] },
+    { id: 'listen', label: { en: 'Live music' }, hint: { en: 'Gigs, jazz, concerts' }, picto: 'gig',
+      listing: ['gig'], place: ['bar', 'club'],
+      subs: [
+        { id: 'jazz', label: { en: 'Jazz' }, only: ['gig'], tags: ['jazz'] },
+        { id: 'rock', label: { en: 'Indie & rock' }, only: ['gig'], tags: ['indie', 'rock', 'punk', 'metal', 'diy'] },
+        { id: 'classical', label: { en: 'Classical' }, only: ['gig'], tags: ['classical', 'piano', 'choir'] },
+      ] },
+    { id: 'dance', label: { en: 'Club nights' }, hint: { en: 'Techno, house, DJs' }, picto: 'club',
+      listing: ['club'], place: ['club'], from: 20 * H, until: 5 * H, subs: [] },
+    { id: 'browse', label: { en: 'Records & books' }, hint: { en: 'Vinyl, books, thrift, markets' }, picto: 'record',
+      listing: ['market'], place: ['record store', 'bookshop', 'thrift'],
+      subs: [
+        { id: 'records', label: { en: 'Records' }, place: ['record store'], tags: ['vinyl'] },
+        { id: 'books', label: { en: 'Books' }, place: ['bookshop'], tags: ['literature', 'zine', 'poetry'] },
+        { id: 'thrift', label: { en: 'Thrift' }, place: ['thrift'] },
+        { id: 'markets', label: { en: 'Markets' }, listing: ['market'] },
+      ] },
+    { id: 'make', label: { en: 'Workshops & talks' }, hint: { en: 'Make, learn, meet people' }, picto: 'workshop',
+      listing: ['workshop', 'talk'], tags: ['easy-alone'], place: [],
+      subs: [
+        { id: 'workshops', label: { en: 'Workshops' }, listing: ['workshop'] },
+        { id: 'talks', label: { en: 'Talks' }, listing: ['talk'] },
+        { id: 'alone', label: { en: 'Easy alone' }, tags: ['easy-alone'] },
+      ] },
+    { id: 'drink', label: { en: 'Craft beer' }, hint: { en: 'Taprooms and brewery bars' }, picto: 'beer',
+      listing: [], place: ['taproom'], from: 12 * H, until: 2 * H, subs: [] },
   ];
+  /* Older choices that were moods of their own. */
+  const RENAMED = { join: { mood: 'make', sub: 'alone' } };
   /* Per city: which moods to consider and how much must be behind one. */
   const CITY = { default: { min: 3 }, tallinn: { min: 3 } };
+  const CAPS = [0, 20];
 
   const lang = () => String(document.documentElement.lang || 'en').slice(0, 2).toLowerCase();
   const say = (o) => (o && (o[lang()] || o.en)) || '';
@@ -42,18 +78,40 @@
   const nowMin = () => (window.WA.Hours ? window.WA.Hours.cityNow().minutes : 12 * H);
 
   const get = (id) => DEFS.find(d => d.id === id) || null;
+  const subOf = (id) => { for (const d of DEFS) { const s = d.subs.find(x => x.id === id); if (s) return { mood: d, sub: s }; } return null; };
   const lc = (x) => String(x || '').toLowerCase();
-  const matchesEvent = (id, e) => {
-    const d = get(id);
-    if (!d || !e) return false;
-    if (d.listing.includes(lc(e.kind))) return true;
+
+  /* One rule (a mood or a sub) against a listing or a place. */
+  const hitsEvent = (r, e) => {
+    if (!r || !e) return false;
+    if (r.only && !r.only.includes(lc(e.kind))) return false;
+    if ((r.listing || []).includes(lc(e.kind))) return true;
+    if (!r.tags) return false;
     const tags = (e.tags || []).map(lc);
-    return !!(d.tags && d.tags.some(t => tags.includes(t)));
+    return r.tags.some(t => tags.includes(t));
   };
-  const matchesPlace = (id, v) => {
-    const d = get(id);
-    return !!(d && v && d.place.includes(lc(v.kind)));
+  const hitsPlace = (r, v) => !!(r && v && (r.place || []).includes(lc(v.kind)));
+
+  /* A mood is all of itself and all of its subs. */
+  const matchesEvent = (id, e) => { const d = get(id); return !!d && (hitsEvent(d, e) || d.subs.some(s => hitsEvent(s, e))); };
+  const matchesPlace = (id, v) => { const d = get(id); return !!d && (hitsPlace(d, v) || d.subs.some(s => hitsPlace(s, v))); };
+
+  /* A choice matches when any chosen mood does; a mood with chosen subs means those subs only. */
+  const wants = (p, x, isEvent) => {
+    const moods = (p && p.moods) || [];
+    if (!moods.length) return true;
+    const subs = (p && p.subs) || [];
+    return moods.some((id) => {
+      const d = get(id);
+      if (!d) return false;
+      const chosen = d.subs.filter(s => subs.includes(s.id));
+      if (chosen.length) return chosen.some(s => (isEvent ? hitsEvent(s, x) : hitsPlace(s, x)));
+      return isEvent ? matchesEvent(id, x) : matchesPlace(id, x);
+    });
   };
+  const wantsEvent = (p, e) => wants(p, e, true);
+  const wantsPlace = (p, v) => wants(p, v, false);
+
   const inHours = (d, m) => d.from == null || (d.from > d.until ? (m >= d.from || m < d.until) : (m >= d.from && m < d.until));
 
   const available = () => {
@@ -61,31 +119,60 @@
     const events = R ? R.live() : [], places = R ? R.places().filter(v => v.picked) : [];
     const m = nowMin(), min = rule().min;
     return DEFS.filter(d => inHours(d, m)).map((d) => ({
-      id: d.id, label: say(d.label), hint: say(d.hint),
+      id: d.id, label: say(d.label), hint: say(d.hint), picto: d.picto,
       count: events.filter(e => matchesEvent(d.id, e)).length + places.filter(v => matchesPlace(d.id, v)).length,
+      subs: d.subs.map(s => ({ id: s.id, label: say(s.label), count: events.filter(e => hitsEvent(s, e)).length + places.filter(v => hitsPlace(s, v)).length }))
+        .filter(s => s.count > 0),
     })).filter(x => x.count >= min);
   };
 
   const KEY = 'wa:mood:v1';
+  const clean = (p) => {
+    const moods = [], subs = [];
+    const raw = [].concat((p && p.moods) || [], p && p.mood ? [p.mood] : []);
+    for (const id of raw) {
+      const was = RENAMED[id];
+      const m = was ? was.mood : id;
+      if (get(m) && !moods.includes(m)) moods.push(m);
+      if (was && !subs.includes(was.sub)) subs.push(was.sub);
+    }
+    for (const id of [].concat((p && p.subs) || [])) {
+      const s = subOf(id);
+      if (s && moods.includes(s.mood.id) && !subs.includes(id)) subs.push(id);
+    }
+    const cap = p && p.cap != null && CAPS.includes(Number(p.cap)) ? Number(p.cap) : null;
+    return { moods, subs, cap };
+  };
   let saved = null;
   const read = () => {
     if (saved) return saved;
     let p = {};
     try { p = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (_) { /* blocked or corrupt */ }
-    saved = { mood: get(p.mood) ? p.mood : '', cap: p.cap != null && [0, 10, 20].includes(Number(p.cap)) ? Number(p.cap) : null };
+    saved = clean(p);
     return saved;
   };
-  const pref = () => ({ ...read() });
+  const pref = () => { const p = read(); return { moods: p.moods.slice(), subs: p.subs.slice(), cap: p.cap }; };
   const setPref = (p) => {
-    saved = { mood: get(p && p.mood) ? p.mood : '', cap: p && p.cap != null && [0, 10, 20].includes(Number(p.cap)) ? Number(p.cap) : null };
+    saved = clean(p);
     try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) { /* kept for this page only */ }
     document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: pref() }));
   };
   const capText = (c) => (c == null ? 'any price' : c === 0 ? 'free' : `up to €${c}`);
+  /* The words for a choice: the narrower picks where there are any, the moods otherwise. */
+  const words = (p) => {
+    const out = [];
+    for (const id of p.moods) {
+      const d = get(id);
+      const chosen = d.subs.filter(s => p.subs.includes(s.id));
+      if (chosen.length) chosen.forEach(s => out.push(say(s.label))); else out.push(say(d.label));
+    }
+    return out;
+  };
   const summary = () => {
-    const p = read(), d = get(p.mood);
-    return `${d ? say(d.label) : 'Any mood'} · ${capText(p.cap)}`;
+    const p = read(), w = words(p);
+    const what = !w.length ? 'Any mood' : w.length <= 2 ? w.join(', ') : `${w[0]} +${w.length - 1}`;
+    return `${what} · ${capText(p.cap)}`;
   };
 
-  window.WA.Moods = { available, get, matchesEvent, matchesPlace, pref, setPref, summary, capText };
+  window.WA.Moods = { available, get, matchesEvent, matchesPlace, wantsEvent, wantsPlace, pref, setPref, summary, capText, words, CAPS };
 })();

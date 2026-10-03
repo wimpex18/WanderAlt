@@ -319,7 +319,7 @@
 
   /* Places first: picked ones, then the rest, names before kinds. */
   const GROUP = { 'record store': 'records', bookshop: 'books', gallery: 'galleries', 'arts centre': 'galleries', thrift: 'thrift', cinema: 'cinema',
-    club: 'clubs', bar: 'clubs', theatre: 'theatres', community: 'community' };
+    club: 'clubs', bar: 'clubs', taproom: 'beer', museum: 'galleries', theatre: 'theatres', community: 'community' };
   /* Evenings for a plan question: the stored ones that still hold, for the
      day the words name (today when they name none), else one worked out here. */
   const eveningsFor = (p) => {

@@ -71,7 +71,8 @@ test('ended, cancelled, postponed and date-only events never read On now; sold o
   assert.equal(p.WA.R.openState({ isClosed: true, openingHours: '24/7' }).open, false);
   assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).open, false);
   assert.equal(p.WA.R.openState({ isVerified: false, openingHours: '24/7' }).text, 'Status unverified');
-  assert.equal(p.WA.R.endClock({ endsAt: '2026-10-04T15:00:00Z' }), 'Sun 4 Oct · 18:00');
+  /* An end on another day than today carries its date; 2030 is never today. */
+  assert.equal(p.WA.R.endClock({ endsAt: '2030-10-04T15:00:00Z' }), 'Fri 4 Oct · 18:00');
 });
 
 test('unverified and closed places never appear in shared recommendations, even with open hours', () => {
@@ -292,4 +293,24 @@ test('the Home Screen nudge appears once, ever, after about 75 seconds of lookin
   session.clear(); make('tonight');                               // a later visit
   for (let i = 0; i < 30; i++) tickers.forEach(f => f());
   assert.equal(appended, 0);
+});
+
+test('inline icons on the static pages are named and match icons.js', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { readdirSync, readFileSync: read } = await import('node:fs');
+  const root = new URL('../../', import.meta.url);
+  for (const f of readdirSync(root).filter(x => x.endsWith('.html'))) {
+    const html = read(new URL(f, root), 'utf8');
+    for (const m of html.matchAll(/<svg class="wa-ic[^"]*"[^>]*>/g)) assert.match(m[0], /data-ic="[a-z0-9]+"/, `${f}: ${m[0]}`);
+  }
+  execFileSync(process.execPath, [new URL('../../.scripts/sync-icons.js', import.meta.url).pathname, '--check']);
+});
+
+test('the tab bar has three tabs on every page and no empty slot', () => {
+  const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
+  assert.match(css, /\.wa-tabbar \{[^}]*grid-auto-flow: column/);
+  for (const f of ['index.html', 'map.html', 'saved.html', 'places.html', 'discover.html']) {
+    const html = readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+    assert.equal((html.match(/class="wa-tabbar__item"/g) || []).length, 3, f);
+  }
 });

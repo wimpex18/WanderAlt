@@ -262,15 +262,38 @@ Walking times are on	Jalutusajad on sees	Время пешком включен�
 Show walking times from where you are	Näita jalutusaegu sinu asukohast	Показывать время пешком от вашего места
 Only sources I follow	Ainult allikad, mida jälgin	Только источники, на которые я подписан
 I'm going	Ma lähen	Я иду
-Walking times need location. Allow it for this site in your browser settings.	Jalutusaegade jaoks on vaja asukohta. Luba see selle saidi jaoks brauseri seadetes.	Для времени пешком нужна геолокация. Разрешите её для этого сайта в настройках браузера.
-Moods follow the hour and what the city has. Leave it on Anything and the route decides.	Meeleolud järgivad kellaaega ja seda, mis linnas on. Jäta see peale Mis tahes ja marsruut otsustab.	Настроения зависят от часа и от того, что есть в городе. Оставьте «Что угодно», и маршрут решит сам.
-Tickets up to	Piletid kuni	Билеты до
-With a limit set, shows with no price listed stay in and say “Price not listed”. Shops and bars have no price, so only tickets count.	Piirmäära korral jäävad sisse ka sündmused, mille hind pole teada, ja neil on kirjas „Hind pole teada“. Poodidel ja baaridel hinda pole, seega loevad ainult piletid.	При заданном пределе события без цены остаются в списке с пометкой «Цена не указана». У магазинов и баров цены нет, поэтому учитываются только билеты.
 Show the next few hours	Näita järgmisi tunde	Показать ближайшие часы
-Nights built for people who turn up on their own, or in two. We read the format from the title; the organiser has not confirmed it.	Õhtud inimestele, kes tulevad üksi või kahekesi. Vormingu loeme pealkirjast; korraldaja pole seda kinnitanud.	Вечера для тех, кто приходит один или вдвоём. Формат мы определяем по названию; организатор его не подтверждал.
+What's the mood?	Mis tuju on?	Какое настроение?
+Pick one or a few. None means anything.	Vali üks või mitu. Kui ühtki ei vali, sobib kõik.	Выберите одно или несколько. Ничего не выбрано — подойдёт всё.
+Up to €20	Kuni 20 €	До 20 €
+Shows with no listed price stay in.	Sündmused, mille hind pole teada, jäävad sisse.	События без указанной цены остаются в списке.
+Narrow it down	Täpsusta	Уточнить
+Art & film	Kunst ja film	Искусство и кино
+Galleries, cinema, stage, comedy	Galeriid, kino, lava, komöödia	Галереи, кино, сцена, комедия
+Stage	Lava	Сцена
+Live music	Elav muusika	Живая музыка
+Gigs, jazz, concerts	Kontserdid, džäss, live	Концерты, джаз, живые выступления
+Indie & rock	Indie ja rokk	Инди и рок
+Techno, house, DJs	Tehno, house, DJd	Техно, хаус, диджеи
+Records & books	Plaadid ja raamatud	Пластинки и книги
+Vinyl, books, thrift, markets	Vinüül, raamatud, kaltsukad, laadad	Винил, книги, секонд-хенд, ярмарки
+Markets	Laadad	Ярмарки
+Workshops & talks	Töötoad ja vestlused	Мастер-классы и лекции
+Make, learn, meet people	Tee, õpi, kohtu inimestega	Делать, учиться, знакомиться
+Taprooms and brewery bars	Õllebaarid ja pruulikodade baarid	Пивные и бары пивоварен
+any price	mis tahes hind	любая цена
+free	tasuta	бесплатно
+Walking from you needs location. Allow it for this site in your browser settings.	Sinu juurest jalutamiseks on vaja asukohta. Luba see selle saidi jaoks brauseri seadetes.	Чтобы считать путь от вас, нужна геолокация. Разрешите её для этого сайта в настройках браузера.
+Nothing is a short walk from you. Turn Near me off for the whole city.	Sinu lähedal pole midagi. Lülita „Minu lähedal“ välja, et näha kogu linna.	Рядом с вами ничего нет. Выключите «Рядом со мной», чтобы видеть весь город.
+Nearest first, walking from you	Lähimad ees, jalutades sinu juurest	Сначала ближайшие, пешком от вас
+Right by you	Kohe sinu kõrval	Прямо рядом с вами
+Kind	Liik	Вид
+Moods	Meeleolud	Настроения
+Kind of place	Koha liik	Тип места
+nearest to you first	lähimad sinu juurest ees	сначала ближайшие к вам
+nearest the centre first	kesklinnale lähimad ees	сначала ближайшие к центру
 Change	Muuda	Изменить
 Today's events and the places open now, by walking time.	Tänased sündmused ja praegu avatud kohad jalutusaja järgi.	События сегодня и открытые сейчас места по времени пешком.
-Mood	Meeleolu	Настроение
 Ticket price limit	Piletihinna piir	Предел цены билета
 Day	Päev	День
 Still going	Veel käimas	Ещё идёт
@@ -278,8 +301,6 @@ The next few hours	Järgmised tunnid	Ближайшие часы
 Quiet tonight	Täna õhtul vaikne	Сегодня вечером тихо
 Finding you	Otsin sind	Определяем, где вы
 Near me	Minu lähedal	Рядом со мной
-Let the route decide	Las marsruut otsustab	Пусть решит маршрут
-What are you in the mood for?	Mis tuju sul on?	Какое у вас настроение?
 Nothing fits that right now.	Praegu ei sobi miski.	Сейчас ничего не подходит.
 No route for the next few hours.	Järgmisteks tundideks marsruuti pole.	На ближайшие часы маршрута нет.
 Try another mood or a higher price limit.	Proovi teist meeleolu või kõrgemat hinnapiiri.	Попробуйте другое настроение или более высокий предел цены.
@@ -345,21 +366,8 @@ Show everything	Näita kõike	Показать всё
 Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.	Pillid on sündmused koos algusajaga. Ümar nööpnõel on koht; vermilioni rõngas tähendab, et see on praegu avatud.	Таблетки — это события со временем начала. Круглая метка — место; киноварное кольцо значит, что оно открыто сейчас.
 Nothing in view	Vaates pole midagi	В кадре ничего нет
 Location is off in this browser, so the list is ordered by time	Asukoht on selles brauseris välja lülitatud, seega on nimekiri aja järgi	Геолокация в этом браузере выключена, поэтому список упорядочен по времени
-Look	Vaata	Смотреть
-Shows, galleries, film	Etendused, galeriid, film	Спектакли, галереи, кино
-Browse	Sirvi	Копаться
-Records, books, thrift	Plaadid, raamatud, kaltsukad	Пластинки, книги, секонд-хенд
-Make	Tee	Делать
-Workshops and talks	Töötoad ja vestlused	Мастер-классы и лекции
-Listen	Kuula	Слушать
-Gigs, jazz, live rooms	Kontserdid, džäss, live-klubid	Концерты, джаз, живые залы
-Drink	Joo	Выпить
-Craft beer, taprooms	Käsitööõlu, õllebaarid	Крафтовое пиво, пивные
 Dance	Tantsi	Танцевать
-Join in	Liitu	Присоединяйтесь
-Quiz, chess, craft nights	Viktoriinid, male, käsitööõhtud	Квизы, шахматы, вечера рукоделия
 Any mood	Mis tahes meeleolu	Любое настроение
-Look · up to €10	Vaata · kuni 10 €	Смотреть · до 10 €
 Any mood · any price	Mis tahes meeleolu · mis tahes hind	Любое настроение · любая цена
 On this week	Sel nädalal	На этой неделе
 Remove this filter	Eemalda see filter	Убрать этот фильтр
