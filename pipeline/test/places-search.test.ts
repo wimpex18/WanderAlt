@@ -42,3 +42,12 @@ test('a plan or an evening is asked for in plain words, in each search language'
   for (const q of ['plan my Friday evening', 'what to do tonight', 'things to do in Kalamaja', 'a night out', 'план на вечер', 'õhtu plaan']) assert.equal(places(q).plan, true, q);
   for (const q of ['jazz this evening', 'free jazz tonight', 'vinyl shop', 'Kino Sõprus']) assert.equal(places(q).plan, false, q);
 });
+
+test('museums and craft beer are places too, in English, Estonian and Russian', () => {
+  for (const [q, kind] of [['museum', 'museum'], ['muuseumid', 'museum'], ['музей', 'museum'], ['craft beer', 'taproom'], ['taproom', 'taproom'], ['õlu', 'taproom'], ['пиво', 'taproom']]) {
+    const p = places(q);
+    assert.ok(p.kinds.includes(kind), q);
+    assert.equal(p.show, true, q);
+  }
+  assert.equal(places('craft beer tonight').show, false);   // a day makes it a question about listings
+});

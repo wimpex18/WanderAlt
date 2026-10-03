@@ -101,3 +101,10 @@ export function scrubContacts(s: string | null | undefined): string | null {
     .filter(Boolean)
     .join('\n') || null;
 }
+
+/** One row per key, the last one wins: a bulk upsert that names a row twice is refused by Postgres
+ *  ("ON CONFLICT DO UPDATE command cannot affect row a second time"). A collab post shared by two
+ *  venue accounts arrives twice with the same id. */
+export function lastBy<T>(rows: readonly T[], key: (row: T) => string): T[] {
+  return [...new Map(rows.map(r => [key(r), r] as const)).values()];
+}

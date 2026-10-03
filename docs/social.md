@@ -19,11 +19,11 @@ WanderAlt has a Meta setup and a small set of scripts for Threads and Instagram.
 | Threads text or image post | `pipeline/social/threads.ts` | manual |
 | Instagram JPEG post | `pipeline/social/instagram.ts`, `social.ts instagram --image … --caption … --publish` | manual |
 
-Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) is manual only: `check`, `tonight-preview`, `tonight-threads`.
+Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) runs `check` on the 1st and 15th of each month, which posts nothing and keeps the Threads token (60 days) refreshed; `tonight-preview` and `tonight-threads` are manual only.
 
 ## How to run it (nothing posts on its own)
 
-All of it is manual. From GitHub: **Actions → social → Run workflow**, then choose:
+Posting is manual; `check` also runs twice a month. From GitHub: **Actions → social → Run workflow**, then choose:
 
 - `check`: reads the secrets and reports, posting nothing. Shows the Instagram lookup, the posts readable from a known venue account, the publishing quota, the Threads token (refreshed and stored when under 30 days remain), Threads keyword search and profile lookup.
 - `tonight-preview`: prints the "Tonight in Tallinn" text and its character count. Nothing is sent.
