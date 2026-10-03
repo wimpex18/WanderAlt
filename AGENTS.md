@@ -1,11 +1,11 @@
 # WanderAlt
 
-What's on tonight in Tallinn for travellers, expats and locals who want independent and alternative culture: gigs, club nights, arthouse film, contemporary art and dance, talks, markets. Every listing carries a time, a walking distance and the source it came from. Tallinn is the only city with data; other cities come later. Not yet launched: no users, so large breaking changes are fine.
+What's on tonight in Tallinn, and what to do around it, for travellers, expats and locals who want independent and alternative culture: gigs, club nights, arthouse film, contemporary art and dance, talks, markets, and a hand-picked set of places (record shops, bookshops, galleries, bars). The unit is the evening: a short walking route of places and one listing. Every listing carries a time, a walking distance and the source it came from. Tallinn is the only city with data; other cities come later. Not yet launched: no users, so large breaking changes are fine.
 
 Two halves:
 
 - **Pipeline** (`pipeline/`): collects Tallinn sources into Supabase every six hours on GitHub Actions, reads prose with free models (Workers AI, then OpenRouter `:free`), classifies and deduplicates events. See `docs/data.md` and `docs/models.md`.
-- **Site** (repo root): static HTML, CSS and vanilla JS on Cloudflare Pages at `wanderalt.app`, reading Supabase REST with the public anon key. See `docs/frontend.md` for the design system and `docs/design-brief.md` for the direction.
+- **Site** (repo root): static HTML, CSS and vanilla JS on Cloudflare Pages at `wanderalt.app`, reading Supabase REST with the public anon key. See `docs/frontend.md` for the design system and `docs/design-brief.md` for the direction, what users said and what is open.
 
 ## Commands
 
@@ -16,6 +16,7 @@ npm start                 # site on http://localhost:5173 (no CSP locally)
 npm run pipeline:dry      # collect and read every source, print, write nothing
 npm run pipeline          # full run; needs SUPABASE_SERVICE_ROLE_KEY
 npm run pipeline:models   # probe each configured model lane
+npm run routes:dry        # compose the next days' evenings and print them (`routes` writes)
 npm test                  # pipeline tests (node:test, fixtures, no network)
 npm run typecheck
 ```
@@ -24,9 +25,9 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 
 ## Map
 
-- `pipeline/run.ts` orchestrates; `sources/` has one collector per kind (`fienta.ts`, `jsonld.ts`, `wordpress.ts`, `text.ts`); `venues.ts` reads the OpenStreetMap venue catalogue and fills venue links and photos; `llm.ts` holds the model lanes and prompts; `places.ts` resolves and geocodes venues; `dedupe.ts` merges one show listed by two sources; `sources.tallinn.json` lists the sources.
+- `pipeline/run.ts` orchestrates; `sources/` has one collector per kind (`fienta.ts`, `jsonld.ts`, `wordpress.ts`, `text.ts`); `venues.ts` reads the OpenStreetMap venue catalogue and fills venue links and photos; `llm.ts` holds the model lanes and prompts; `places.ts` resolves and geocodes venues; `dedupe.ts` merges one show listed by two sources; `routes.ts` (with `hours.ts`, which loads the site's `hours.js`) composes evenings with a free model; `sources.tallinn.json` lists the sources.
 - `supabase/migrations/` is the schema. `supabase/functions/` holds `og-image` and `calendar-feed`.
-- Pages: `index.html` Tonight (`home.js`), `discover.html` Programme (`programme.js`), `map.html`, `places.html`, `detail.html`, `saved.html`, `profile.html` You, `source.html`, `about.html`, `404.html`. `wa.css` is the whole stylesheet. `render.js` holds every shared piece of markup, `icons.js` the icons and pictograms, `finder.js` the search sheet, `ask.js` the sentence reader behind search (`functions/api/ask.js` asks the model only when the page cannot read a search). `supabase.js` loads data; `ui-helpers.js` has `WA.UI.esc` and `WA.UI.safeUrl`.
+- Pages: `index.html` Tonight (`home.js`), `discover.html` Programme (`programme.js`, every listing, not a tab), `places.html` the Guide, `route.html` one evening (`route-page.js`), `map.html`, `detail.html` event and venue, `saved.html`, `profile.html` You, `source.html`, `about.html`, `404.html`. Four tabs: Tonight, Guide, Map, Saved. `wa.css` is the whole stylesheet. `render.js` holds every shared piece of markup, `icons.js` the UI icons and the round Labels, `route.js` the evening (composed in the page, or read from the `routes` table), `finder.js` the search sheet, `ask.js` the sentence reader behind search (`functions/api/ask.js` asks the model only when the page cannot read a search). `supabase.js` loads data; `ui-helpers.js` has `WA.UI.esc` and `WA.UI.safeUrl`.
 - `pipeline/social.ts` with `social/` posts to Threads and Instagram by hand and checks their tokens; `instagram.ts` fetches venue profile pictures. See `docs/social.md`.
 - `functions/` are Cloudflare Pages Functions (OG tags, Wikimedia image proxy, `api/ask`). `vendor/` is MapLibre GL 6.11.2, self-hosted; upgrade by swapping its four files from the npm package's `dist/`.
 
@@ -38,6 +39,7 @@ Local keys go in a git-ignored `.env`; in CI they are repository secrets (`docs/
 - **Supabase.** Revoke EXECUTE from `anon, authenticated, public` on any SECURITY DEFINER function in the same migration. Keep `pg_net` uninstalled. Own-row policies use `(select auth.uid())`.
 - **Edge functions** deploy only through the Supabase MCP `deploy_edge_function`, passing the function's current `verify_jwt`. Committing does not deploy.
 - **Free models only**: Workers AI and OpenRouter `:free`, no Gemini, no paid plans; free tiers for every other service too. Re-check model ids against live catalogues before pinning (`docs/models.md`).
+- **Picked places.** A place shows in the Guide when `places.picked` is set, with a one-line English `pick_note` taken from its own text or a checked fact, never invented. Hours, prices and reviews are shown only when we hold them.
 - **Photos by identity.** Never guess a venue or event photo from a name; no photo is better than a wrong one.
 - **`_redirects`:** never add a bare-path to `.html` redirect; Pages already serves pretty URLs and it would loop.
 - **Voice:** handles start with `@`; no exclamation marks, no marketing register, never "discover" as a verb.
