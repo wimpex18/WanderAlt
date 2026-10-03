@@ -55,11 +55,44 @@ const sbGet = async (path) => {
   return r.ok ? r.json() : [];
 };
 
+/* JSON-LD for crawlers. The values come from rows strangers wrote, so the text is made unable to close
+   the script element or start a comment, and only http(s) addresses are kept. */
+const ldText = (o) => JSON.stringify(o).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+const httpUrl = (v) => { try { const u = new URL(String(v)); return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : undefined; } catch { return undefined; } };
+const SITE = 'https://wanderalt.app';
+const PLACE_TYPE = { 'record store': 'Store', bookshop: 'BookStore', thrift: 'Store', gallery: 'ArtGallery', museum: 'Museum', cinema: 'MovieTheater',
+  theatre: 'PerformingArtsTheater', bar: 'BarOrPub', taproom: 'BarOrPub', club: 'NightClub' };
+const placeLd = (v, id) => ({
+  '@context': 'https://schema.org', '@type': PLACE_TYPE[String(v.kind || '').toLowerCase()] || 'LocalBusiness',
+  name: v.name, url: `${SITE}/detail?id=${encodeURIComponent(id)}`,
+  description: v.pick_note || undefined, image: httpUrl(v.image_url),
+  address: v.address ? { '@type': 'PostalAddress', streetAddress: String(v.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined,
+  geo: Number.isFinite(v.lat) && Number.isFinite(v.lng) ? { '@type': 'GeoCoordinates', latitude: v.lat, longitude: v.lng } : undefined,
+  sameAs: [v.website, v.instagram, v.facebook].map(httpUrl).filter(Boolean),
+});
+const eventLd = (e, id) => ({
+  '@context': 'https://schema.org', '@type': 'Event', name: e.title, url: `${SITE}/detail?id=${encodeURIComponent(id)}`,
+  startDate: e.time && e.starts_at ? e.starts_at : (e.day || undefined),
+  endDate: e.ends_at || undefined,
+  eventStatus: e.flag === 'cancelled' ? 'https://schema.org/EventCancelled' : e.flag === 'postponed' ? 'https://schema.org/EventPostponed' : 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  location: e.venue ? { '@type': 'Place', name: e.venue, address: e.address ? { '@type': 'PostalAddress', streetAddress: String(e.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined } : undefined,
+  image: httpUrl(e.image_url), description: e.quote || undefined,
+  offers: e.is_free === true || Number.isFinite(e.price_min)
+    ? { '@type': 'Offer', price: e.is_free === true ? 0 : e.price_min, priceCurrency: e.currency || 'EUR', url: httpUrl(e.ticket_url),
+        availability: e.flag === 'sold_out' ? 'https://schema.org/SoldOut' : undefined } : undefined,
+});
+
 /* Rewrite the OG/Twitter meta on the streamed HTML. When `photo` is true
    the og:image is a real photo of unknown aspect, so the declared
    width/height metas are stripped. */
-const rewrite = (res, { title, description, image, photo }) => {
+const rewrite = (res, { title, description, image, photo, canonical, jsonld }) => {
   let rw = new HTMLRewriter();
+  if (canonical) {
+    rw = rw.on('link[rel="canonical"]', { element(el) { el.remove(); } });
+    rw = rw.on('head', { element(el) { el.append(`<link rel="canonical" href="${canonical.replace(/"/g, '%22')}">`, { html: true }); } });
+  }
+  if (jsonld) rw = rw.on('head', { element(el) { el.append(`<script type="application/ld+json">${ldText(jsonld)}</script>`, { html: true }); } });
   const set = (sel, val) => { rw = rw.on(sel, { element(el) { el.setAttribute('content', val); } }); };
   if (title) {
     set('meta[property="og:title"]', title);
@@ -123,18 +156,20 @@ async function pageResponse(context) {
   try {
     if (isPick) {
       const rows = await sbGet(
-        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time&limit=1`);
+        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time,day,starts_at,ends_at,address,ticket_url,is_free,price_min,currency,flag&limit=1`);
       const pick = rows[0];
       if (!pick) {
         /* Not a listing: a place of the Guide shares the same address shape (detail?id=<place id>).
            Everything shown comes from the row, never from the query string. */
         const [place] = await sbGet(
-          `venues?id=eq.${encodeURIComponent(id)}&status=eq.active&select=name,kind,city,neighborhood,pick_note,image_url&limit=1`);
+          `venues?id=eq.${encodeURIComponent(id)}&status=eq.active&select=name,kind,city,neighborhood,pick_note,image_url,address,lat,lng,website,instagram,facebook&limit=1`);
         if (!place || !place.name) return res;         // unknown id → default OG
         const kind = String(place.kind || '').replace(/^./, c => c.toUpperCase());
         const where = [kind, place.neighborhood].map(v => (v == null ? '' : String(v).trim())).filter(Boolean).join(' · ');
         return rewrite(res, {
           title:       `${place.name} · WanderAlt`,
+          canonical:   `${SITE}/detail?id=${encodeURIComponent(id)}`,
+          jsonld:      placeLd(place, id),
           description: (place.pick_note && String(place.pick_note).trim()) || where,
           image:       place.image_url || '',
           photo:       !!place.image_url,
@@ -156,6 +191,8 @@ async function pageResponse(context) {
 
       return rewrite(res, {
         title:       `WanderAlt — ${pick.title} · ${city}`,
+        canonical:   `${SITE}/detail?id=${encodeURIComponent(id)}`,
+        jsonld:      eventLd(pick, id),
         description: said || facts.join(' · '),
         image:       photo
           ? pick.image_url
