@@ -1423,6 +1423,20 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .mood-seg button[aria-pressed="true"] { background: var(--glass-strong); color: var(--accent-ink); font-weight: 600; box-shadow: 0 4px 12px rgba(150, 70, 50, .18), inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 1px color-mix(in oklab, var(--accent) 18%, transparent); }
 .mood-seg + .wa-note { margin-top: var(--s-2); }
 
+/* The Guide's lens, and the one removable chip an older ?kind= link leaves. */
+.places-lens-host { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); }
+.places-lens-host:empty { display: none; }
+.places-lens { flex: 1 1 auto; max-width: 30rem; overflow-x: auto; scrollbar-width: none; }
+.places-lens::-webkit-scrollbar { display: none; }
+.places-lens button { flex: 1 0 auto; padding: 0 14px; }
+.places-kind .wa-ic { width: 16px; height: 16px; }
+
+/* Easy to join alone, on an event page. */
+.det-easy .det-block__title { display: flex; align-items: center; gap: var(--s-2); }
+.det-easy .det-block__title .wa-ic { width: 22px; height: 22px; color: var(--accent-ink); }
+.mood-title { font-size: var(--fs-h2); font-weight: 650; letter-spacing: -.02em; }
+#plan .mood-lead { margin-top: var(--s-1); }
+
 /* After this: picked places close by, one per mood. */
 .det-next-list { list-style: none; margin: var(--s-2) 0 var(--s-4); padding: 0; display: grid; }
 .det-next { display: grid; grid-template-columns: 52px 1fr; gap: var(--s-3); padding: var(--s-3) 0; border-top: 1px solid var(--hair); color: inherit; text-decoration: none; }

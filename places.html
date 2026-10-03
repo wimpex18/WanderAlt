@@ -49,6 +49,7 @@
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
+  <script defer src="./moods.js"></script>
   <script defer src="./places.js"></script>
 </head>
 <body data-page="places">
@@ -76,7 +77,7 @@
       <p class="wa-lede" id="places-lede">Picked places in Tallinn. Not every bar, only the ones worth the walk.</p>
     </header>
     <div class="places-from" id="from"></div>
-    <div class="wa-chips wa-chips--scroll" id="kinds" role="group" aria-label="Kind"></div>
+    <div class="places-lens-host" id="kinds"></div>
     <div class="prog-summary">
       <p class="prog-summary__text" id="summary" aria-live="polite"></p>
       <button class="wa-chip" type="button" id="open-now" aria-pressed="false">Open now</button>

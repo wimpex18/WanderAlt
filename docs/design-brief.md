@@ -39,17 +39,17 @@ Live data: about 600 events a fortnight, about 430 places (31 picked), all Talli
 | A ceiling of about €20 a person, or free only | Built: Tickets up to (Free, €10, €20, Any) in the mood sheet; it narrows the route and the list, keeps listings with no price (two in five) and says so, and counts tickets only because places carry no price. The Programme keeps its Free switch and typed "under 20". |
 | Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: the next few hours (evenings and, by day, places on foot), After this on venue and event pages (up to three picked places within ten minutes, one per mood, each with its own words) and Plan from here. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
 | Onboarding by mood: listen or dance, craft bar, board games | Built as a sheet, not onboarding: Look, Browse, Make, Listen, Dance (after 20:00) from data we hold. Craft bar and board games wait for picks (see below). |
-| (noticed here) craft beer bars and board games | Not covered. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom); no board-game place or event exists. Drink needs those picked with a reason; Join in (quiz, chess, craft nights, for people on their own) needs the pipeline to write an `easy-alone` tag and a person to check each organiser, because keyword matches also catch adult-themed workshops and drawing nights called "DnD". A mood shows only with three behind it, so neither appears until the data does. |
+| (noticed here) craft beer bars and board games | Not covered. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom); no board-game place or event exists. Drink needs those picked with a reason; Join in (quiz, chess, craft nights, for people on their own) is live from the `easy-alone` rule, which reads formats from titles and leaves out adult-themed and group-of-friends listings (drawing nights called "DnD" are caught by their venue's name). A mood shows only with three behind it, so Drink does not appear until two more craft-beer places are picked. |
 
 ## Open questions
 
-- Join in: who checks each organiser, and where does the `easy-alone` flag live (pipeline tag, or hand-set like `picked`)? Until it exists the mood stays hidden.
+- Join in is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
 - Drink and Play: which three to five venues, picked by someone who knows the scene, with a stated reason each.
-- Daytime places: the Guide shows only ten kinds of place. Museums (23 held) and cafés (13 held) are not in `VENUE_KINDS`, and only picked or freshly verified places show. Which to pick first?
+- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Cafés (13 held) are not shown.
 - Hours: 28 of 40 Guide places show "hours not filed", so "open now" is often unanswerable. Where do hours come from beyond OpenStreetMap?
 - Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
 - Languages and cities: route titles are templates over kinds so they can be translated in the browser; listing text and pick notes need a per-language table before a second reading language. See the Scale board on the canvas.
-- The Guide: a mood lens (Browse, Look, Listen) over the kind chips, and whether "Plan from here" on every place row is too much. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
+- The Guide has the lens; whether "Plan from here" belongs on every place row is open. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
 - Visible complexity is the cost of every idea above. Fewer elements wins.
 
 ## Constraints

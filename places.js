@@ -1,11 +1,11 @@
 /* ============================================================
    places.js — Places: the shops, rooms and stages.
    ------------------------------------------------------------
-   Kind chips (a kind with nothing in it is not offered), an Open now toggle,
-   picked places first and then nearest first, from where you are, a place you
+   A lens (Look, Browse, Listen, Dance: the moods that have three picked
+   places behind them), an Open now toggle, picked places first and then nearest first, from where you are, a place you
    chose, or the city's centre, always said in one line under the heading.
    Each row says whether it is open and how much is listed there.
-   URL: ?kind= ?open=1
+   URL: ?mood= ?open=1 (?kind= from older links still filters, as one removable chip)
    ============================================================ */
 (() => {
   'use strict';
@@ -26,18 +26,28 @@
     { id: 'community', label: 'Community',      icon: 'centre',   kinds: ['community'] },
   ];
 
-  const state = { group: '', open: false };
+  const state = { mood: '', group: '', open: false };
   const sp = new URLSearchParams(location.search);
   if (GROUPS.some(g => g.id === sp.get('kind'))) state.group = sp.get('kind');
+  if (/^[a-z]{3,8}$/.test(sp.get('mood') || '')) state.mood = sp.get('mood');
   if (sp.get('open') === '1') state.open = true;
 
   const write = () => {
     const q = new URLSearchParams();
+    if (state.mood) q.set('mood', state.mood);
     if (state.group) q.set('kind', state.group);
     if (state.open) q.set('open', '1');
     history.replaceState(null, '', q.toString() ? `?${q}` : location.pathname);
   };
 
+  const M = () => window.WA.Moods;
+  const LENS = ['look', 'browse', 'listen', 'dance'];
+  const lensMoods = () => {
+    if (!M()) return [];
+    const picked = R().places().filter(v => v.picked);
+    return LENS.map(id => ({ id, def: M().get(id), n: picked.filter(v => M().matchesPlace(id, v)).length })).filter(x => x.def && x.n >= 3);
+  };
+  const inLens = (v) => !state.mood || (M() && M().matchesPlace(state.mood, v));
   const inGroup = (v, id) => { const g = GROUPS.find(x => x.id === id); return !g || g.kinds.includes(String(v.kind || '').toLowerCase()); };
   const isOpen = (v) => R().openState(v).open === true;
 
@@ -77,16 +87,15 @@
   const render = () => {
     const all = R().places();
     const pool = state.open ? all.filter(isOpen) : all;
-    $('kinds').innerHTML = `<button class="wa-chip" type="button" data-group="" aria-pressed="${!state.group}">All <span class="wa-chip__n">${pool.length}</span></button>` +
-      GROUPS.map(g => {
-        const n = pool.filter(v => inGroup(v, g.id)).length;
-        if (!n && state.group !== g.id) return '';
-        return `<button class="wa-chip" type="button" data-group="${esc(g.id)}" aria-pressed="${state.group === g.id}">${window.WA.Picto(g.icon === "club" ? "club" : g.icon)}${esc(g.label)} <span class="wa-chip__n">${n}</span></button>`;
-      }).join('');
-
-    const list = sort(pool.filter(v => inGroup(v, state.group)));
-    const openN = all.filter(v => inGroup(v, state.group)).filter(isOpen).length;
+    const lens = lensMoods();
+    if (state.mood && !lens.some(x => x.id === state.mood)) state.mood = '';
     const g = GROUPS.find(x => x.id === state.group);
+    $('kinds').innerHTML = lens.length ? `<div class="mood-seg places-lens" role="group" aria-label="What to look for">
+        <button type="button" data-mood="" aria-pressed="${!state.mood}">All</button>${lens.map(x => `<button type="button" data-mood="${esc(x.id)}" aria-pressed="${state.mood === x.id}">${esc(x.def.label.en)}</button>`).join('')}</div>` : ''
+      + (g ? `<button class="wa-chip places-kind" type="button" data-group="">${esc(g.label)} ${window.WA.Icon('close')}<span class="wa-sr">Remove this filter</span></button>` : '');
+
+    const list = sort(pool.filter(v => inGroup(v, state.group) && inLens(v)));
+    const openN = all.filter(v => inGroup(v, state.group) && inLens(v)).filter(isOpen).length;
     const noun = g ? g.label.toLowerCase() : 'places';
     const o = origin();
     $('summary').innerHTML = `<strong>${list.length} ${list.length === 1 && !g ? 'place' : esc(noun)}</strong> · nearest first${state.open ? '' : ` · ${openN} open now`}`;
@@ -99,7 +108,7 @@
       return;
     }
     if (!list.length) {
-      const without = all.filter(v => inGroup(v, state.group)).length;
+      const without = all.filter(v => inGroup(v, state.group) && inLens(v)).length;
       $('list').innerHTML = state.open && without
         ? R().empty({ icon: 'clock', title: 'None with filed hours are open now.',
           body: `Places without filed hours aren't included. ${without} ${noun} are listed in all.`,
@@ -120,9 +129,11 @@
     const hit = (s) => e.target.closest && e.target.closest(s);
     const gb = hit('[data-group]');
     if (gb) { state.group = gb.dataset.group; render(); return; }
+    const mb = hit('[data-mood]');
+    if (mb) { state.mood = mb.dataset.mood; render(); return; }
     if (hit('#open-now')) { state.open = !state.open; render(); return; }
     if (hit('[data-act="all-hours"]')) { state.open = false; render(); return; }
-    if (hit('[data-act="all-kinds"]')) { state.group = ''; render(); return; }
+    if (hit('[data-act="all-kinds"]')) { state.group = ''; state.mood = ''; render(); return; }
     if (hit('[data-act="reload"]')) location.reload();
     if (hit('[data-near]')) G().userLoc().then(() => render());
   });

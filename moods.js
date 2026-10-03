@@ -8,6 +8,8 @@
    suits, so a new city shows what it has and Tallinn never offers a
    dance floor at noon. The words are per language; the rules are per city.
 
+   A mood with `list: true` is answered with a list, not a walk (Join in: nights, not stops).
+
    window.WA.Moods:
      .available()        → [{ id, label, hint, count }] for this hour, in the order of DEFS
      .get(id)            → the definition, or null
@@ -23,12 +25,12 @@
   const H = 60;
   /* Words by language (English first; add a language by adding its keys). */
   const DEFS = [
-    { id: 'look',   label: { en: 'Look' },    hint: { en: 'Shows, galleries, film' },    listing: ['exhibition', 'film', 'theatre'], place: ['gallery', 'arts centre', 'cinema', 'museum'] },
+    { id: 'look',   label: { en: 'Look' },    hint: { en: 'Shows, galleries, film' },    listing: ['exhibition', 'film', 'theatre'], place: ['gallery', 'arts centre', 'cinema', 'museum', 'theatre'] },
     { id: 'browse', label: { en: 'Browse' },  hint: { en: 'Records, books, thrift' },    listing: ['market'],                        place: ['record store', 'bookshop', 'thrift'] },
     { id: 'make',   label: { en: 'Make' },    hint: { en: 'Workshops and talks' },       listing: ['workshop', 'talk'],              place: [] },
     { id: 'listen', label: { en: 'Listen' },  hint: { en: 'Gigs, jazz, live rooms' },    listing: ['gig'],                           place: ['bar', 'club'] },
     { id: 'dance',  label: { en: 'Dance' },   hint: { en: 'Club nights' },               listing: ['club'],                          place: ['club'], from: 20 * H, until: 5 * H },
-    { id: 'join',   label: { en: 'Join in' }, hint: { en: 'Quiz, chess, craft nights' }, listing: [], tags: ['easy-alone'],        place: [] },
+    { id: 'join',   label: { en: 'Join in' }, hint: { en: 'Quiz, chess, craft nights' }, listing: [], tags: ['easy-alone'],        place: [], list: true },
   ];
   /* Per city: which moods to consider and how much must be behind one. */
   const CITY = { default: { min: 3 }, tallinn: { min: 3 } };

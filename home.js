@@ -96,13 +96,16 @@
   const readPlans = () => {
     const p = M() ? M().pref() : { mood: '', cap: null };
     const key = `${p.mood}|${p.cap}`;
-    const next = window.WA.Route.plan({ mood: p.mood || '', cap: p.cap });
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    const next = def && def.list ? [] : window.WA.Route.plan({ mood: p.mood || '', cap: p.cap });
     if (key !== planKey || !plans.length) planIdx = 0;
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
     return p;
   };
   const planCard = (p) => {
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    if (def && def.list) return `<h2 class="mood-title">${esc(def.label.en)}</h2><p class="mood-lead">Nights built for people who turn up on their own, or in two. We read the format from the title; the organiser has not confirmed it.</p>`;
     if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1 });
     const narrowed = p.mood || p.cap != null;
     return `<section class="rt-card rt-card--empty"><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
@@ -120,10 +123,14 @@
      no time listed. Tomorrow and the weekend are one tap away; everything else is the
      Programme. When today is empty the next day listed opens instead. */
   let dayTab = '';
-  const DAYS = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
+  /* A list-led mood (Join in) looks a week ahead: its nights are few and recur. */
+  const DAYS_DEFAULT = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
+  const DAYS_WEEK = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['thisweek', 'This week']];
+  let DAYS = DAYS_DEFAULT;
   const dayList = (all, tab, p) => {
     let list = tab === 'tonight' ? sortSoon(all.filter(e => W().isTonight(e)))
-      : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
+      : tab === 'thisweek' ? sortSoon(all.filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'tomorrow')))
+        : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
     if (p.mood && M()) list = list.filter(e => M().matchesEvent(p.mood, e));
     if (p.cap != null) list = list.filter(e => R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);
     const timed = (e) => W().statedMinutes(e) != null;
@@ -139,6 +146,9 @@
     hero(tonight, liveNow, next);
     acts();
     const p = readPlans();
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    DAYS = def && def.list ? DAYS_WEEK : DAYS_DEFAULT;
+    if (dayTab && !DAYS.some(([k]) => k === dayTab)) dayTab = '';
 
     const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k, p)]));
     const tab = dayTab && lists[dayTab] ? dayTab : (DAYS.find(([k]) => lists[k].length) || DAYS[0])[0];

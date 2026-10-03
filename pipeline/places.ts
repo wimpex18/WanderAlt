@@ -23,6 +23,7 @@ export interface Place {
   status?: 'active' | 'closed' | 'hidden';
   merged_into?: string | null;
   created_at?: string;
+  picked?: boolean;
   osm_checked_at?: string | null;
   osm_last_seen_at?: string | null;
   osm_missing_count?: number;

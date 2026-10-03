@@ -110,6 +110,7 @@
     improv: 'Improv', satire: 'Satire', political: 'Political', design: 'Design', fashion: 'Fashion',
     sauna: 'Sauna', climate: 'Climate', photography: 'Photography', printmaking: 'Print', illustration: 'Illustration',
     'open mic': 'Open mic', karaoke: 'Karaoke', 'live drawing': 'Life drawing', nude: 'Life drawing',
+    'easy-alone': 'Easy alone',
   };
   const VENUE_WHY = [
     [/sõprus|soprus|artis|kai art/i, 'Arthouse'],

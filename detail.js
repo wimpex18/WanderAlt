@@ -287,6 +287,18 @@
     const v = window.WA.venueFor(e);
     const venueName = R().latin(e.venue) || (v && v.name) || '';
 
+    /* A format built for people who turn up on their own: said once, with its reason, and as our reading. */
+    const FORMATS = [[/quiz|viktoriin|trivia/i, 'a quiz'], [/chess|board ?game|lauam[aä]ng/i, 'a game night'], [/knit|crochet|yarn/i, 'a craft club'],
+      [/open[- ]mic/i, 'an open stage'], [/draw|paint/i, 'a drawing night'], [/language|keelekohvik/i, 'a language night'], [/friend/i, 'a night for meeting people'],
+      [/book club|raamatuklubi|film club/i, 'a club night']];
+    const easyBlock = () => {
+      if (!(e.tags || []).includes('easy-alone')) return '';
+      const hay = `${e.title || ''} ${e.venue || ''}`;
+      const f = (FORMATS.find(([re]) => re.test(hay)) || [])[1] || 'a night';
+      return `<section class="det-block det-easy"><h2 class="det-block__title">${I('join')}Easy to join alone</h2>
+        <p>The format is ${esc(f)}, built for people who turn up on their own to mix. This is our reading of the listing; the organiser has not confirmed it.</p></section>`;
+    };
+
     const venueCard = () => {
       if (!venueName) return '';
       const id = e.venueId || (v && v.id) || '';
@@ -346,6 +358,7 @@
         </div>
         ${goingRow(e)}`}
 
+        ${easyBlock()}
         ${venueCard()}
         ${afterHere(e, venueName || e.title)}
 
