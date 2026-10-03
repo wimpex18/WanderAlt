@@ -125,7 +125,21 @@ async function pageResponse(context) {
       const rows = await sbGet(
         `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time&limit=1`);
       const pick = rows[0];
-      if (!pick) return res;                            // unknown id → default OG
+      if (!pick) {
+        /* Not a listing: a place of the Guide shares the same address shape (detail?id=<place id>).
+           Everything shown comes from the row, never from the query string. */
+        const [place] = await sbGet(
+          `venues?id=eq.${encodeURIComponent(id)}&status=eq.active&select=name,kind,city,neighborhood,pick_note,image_url&limit=1`);
+        if (!place || !place.name) return res;         // unknown id → default OG
+        const kind = String(place.kind || '').replace(/^./, c => c.toUpperCase());
+        const where = [kind, place.neighborhood].map(v => (v == null ? '' : String(v).trim())).filter(Boolean).join(' · ');
+        return rewrite(res, {
+          title:       `${place.name} · WanderAlt`,
+          description: (place.pick_note && String(place.pick_note).trim()) || where,
+          image:       place.image_url || '',
+          photo:       !!place.image_url,
+        });
+      }
       const photo = !!pick.image_url;
       /* City is a lowercase slug in the DB ('tallinn'). */
       const city = pick.city
