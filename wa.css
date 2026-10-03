@@ -660,7 +660,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 }
 @media (hover: hover) { .wa-row:hover .wa-row__title { text-decoration: underline; text-underline-offset: 3px; } }
 
-.wa-day { position: sticky; top: calc(var(--topbar-h) + var(--sticky-extra, 0px)); z-index: 5; display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-5) 0 var(--s-3); background: color-mix(in oklab, var(--paper) 96%, transparent); border-bottom: 1px solid var(--hair); }
+.wa-day { position: sticky; top: calc(var(--topbar-h) + var(--sticky-extra, 0px)); z-index: 5; display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-5) 0 var(--s-3); background-color: var(--paper); background-image: var(--daybreak); background-attachment: fixed; border-bottom: 1px solid var(--hair); }
 .wa-day__name { font-size: 1.25rem; font-weight: 650; letter-spacing: -.02em; }
 .wa-day__date { font-size: var(--fs-meta); color: var(--ink-3); }
 .wa-day__n { margin-left: auto; font-size: var(--fs-small); color: var(--ink-3); }
