@@ -126,7 +126,84 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan, { once: true }); else scan();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(SCROLLERS).forEach(edges));
 
-  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField };
+  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField, edges: scan };
+
+  /* Every bottom sheet follows the finger. On a phone the grip, the head and,
+     when its list is at the top, the body drag the panel down; let go past a
+     third of its height (or with a flick) and it closes, otherwise it springs
+     back. Upwards it gives a little and no more. Dismissal goes through a
+     cancelable 'cancel' event, as Escape does, so a sheet that answers its
+     own Cancel (a confirm) hears it. A tap on the backdrop closes too. */
+  (() => {
+    const phone = window.matchMedia ? window.matchMedia('(max-width: 767px)') : { matches: true };
+    let drag = null;
+    const dismiss = (d) => {
+      if (!d.open) return;
+      const ev = new Event('cancel', { cancelable: true });
+      if (d.dispatchEvent(ev) && d.open) d.close();
+    };
+    const settle = (panel, to, done) => {
+      panel.style.transition = `transform ${to ? 220 : 380}ms ${to ? 'var(--ease)' : 'var(--spring)'}`;
+      panel.style.transform = to ? 'translateY(110%)' : '';
+      setTimeout(() => {
+        panel.style.transition = '';
+        if (to) { if (done) done(); panel.style.transform = ''; }
+        /* The entrance animation was held while dragging; give it back for the next opening. */
+        const d = panel.closest('dialog');
+        if (d && !d.open) panel.style.animation = '';
+        else if (d) d.addEventListener('close', () => { panel.style.animation = ''; }, { once: true });
+      }, to ? 200 : 380);
+    };
+    const start = (e, y) => {
+      if (!phone.matches) return;
+      const d = e.target.closest && e.target.closest('dialog.wa-sheet[open]');
+      const panel = d && d.querySelector('.wa-sheet__panel');
+      if (!panel || !panel.contains(e.target)) return;
+      if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+      const head = !!e.target.closest('.wa-sheet__head');
+      const body = e.target.closest('.wa-sheet__body');
+      if (!head && !body) return;
+      drag = { d, panel, body, y0: y, y, t: performance.now(), v: 0, moving: false };
+    };
+    const move = (e, y) => {
+      if (!drag) return;
+      const dy = y - drag.y0;
+      if (!drag.moving) {
+        if (Math.abs(dy) < 8) return;
+        /* From the body, only a pull down while the list is at its top moves the sheet. */
+        if (drag.body && (dy < 0 || drag.body.scrollTop > 0)) { drag = null; return; }
+        drag.moving = true;
+        drag.panel.style.transition = 'none';
+        drag.panel.style.animation = 'none';
+      }
+      if (e.cancelable) e.preventDefault();
+      const now = performance.now();
+      drag.v = (y - drag.y) / Math.max(1, now - drag.t);
+      drag.y = y; drag.t = now;
+      drag.panel.style.transform = `translateY(${dy > 0 ? dy : -Math.sqrt(-dy) * 2}px)`;
+    };
+    const end = () => {
+      if (!drag) return;
+      const g = drag; drag = null;
+      if (!g.moving) return;
+      const dy = g.y - g.y0;
+      if (dy > Math.min(160, g.panel.offsetHeight / 3) || (g.v > 0.6 && dy > 24)) settle(g.panel, true, () => dismiss(g.d));
+      else settle(g.panel, false);
+    };
+    document.addEventListener('touchstart', (e) => start(e, e.touches[0].clientY), { passive: true });
+    document.addEventListener('touchmove', (e) => move(e, e.touches[0].clientY), { passive: false });
+    document.addEventListener('touchend', end);
+    document.addEventListener('touchcancel', end);
+    /* A press that lands outside the panel is a press on the backdrop. */
+    document.addEventListener('click', (e) => {
+      const d = e.target;
+      if (!(d instanceof HTMLDialogElement) || !d.classList.contains('wa-sheet') || !d.open) return;
+      const box = d.querySelector('.wa-sheet__panel');
+      if (!box) return;
+      const r = box.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dismiss(d);
+    });
+  })();
 
   /* On iPhone the on-screen keyboard shrinks the visual viewport and leaves
      the layout viewport alone, so a bottom sheet stays where it was and its

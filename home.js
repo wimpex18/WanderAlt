@@ -3,9 +3,11 @@
    ------------------------------------------------------------
    The search field, then one answer: the next few hours as a short walk
    (route.js plan()), with Walk it and Another. One key opens the mood
-   and price sheet (moods.js); there is no row of kinds to scroll. Under
-   the answer, the day's listings in time order, those with no time last.
-   Never empty: when today has nothing, the next listed day takes its place.
+   and price sheet (moods.js); Near me turns walking from where you are on
+   and off. Under the answer, the day's listings in time order (nearest first
+   with Near me), those with no time last, with one row of the kinds in them.
+   A day tab with nothing in it is not shown. Never empty: when today has
+   nothing, the next listed day takes its place.
    ============================================================ */
 (() => {
   'use strict';
@@ -53,40 +55,75 @@
   };
 
   /* ── Near me ───────────────────────────────────────────────────
-     One key under the headline. It asks for the location (only on a tap);
-     once known, walking times appear on every row and the picked places
-     beside the list come closest first. */
+     One key under the headline, a switch. On, it asks for the location (only
+     on a tap) and then everything walks from you: the route starts a short
+     walk away and says how far, the day's list comes nearest first with a
+     walk on every row, and the picked places come closest first. Off, the
+     list is back in time order. The choice is kept (wa:near:v1). */
+  const NEAR_KEY = 'wa:near:v1';
+  let near = (() => { try { return localStorage.getItem(NEAR_KEY) === '1'; } catch (_) { return false; } })();
+  const setNear = (on) => {
+    near = on;
+    try { if (on) localStorage.setItem(NEAR_KEY, '1'); else localStorage.removeItem(NEAR_KEY); } catch (_) { /* this page only */ }
+  };
+  const nearOn = () => near && !!G().currentLoc();
+  /* The key's words, each its own piece so the page's language can read it:
+     "Records, Jazz · up to €20", "Art & film +2 · free", "Any mood · any price". */
+  const moodSet = () => { const p = pref(); return !!(p.moods.length || p.cap != null); };
+  const moodWords = () => {
+    const p = pref(), w = M().words(p);
+    const what = !w.length ? '<span>Any mood</span>'
+      : w.length <= 2 ? w.map(x => `<span>${esc(x)}</span>`).join(', ')
+        : `<span>${esc(w[0])}</span> +${w.length - 1}`;
+    return `${what} · <span>${esc(M().capText(p.cap))}</span>`;
+  };
   let nearBusy = false, nearOff = false;
   const acts = () => {
     const host = $('home-acts');
     if (!host) return;
-    const here = !!G().currentLoc();
-    const mood = M() ? `<button class="wa-chip home-mood__key" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${esc(M().summary())}</span></button>` : '';
-    host.innerHTML = mood + (here ? '' : (nearOff
-      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>`
-      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`));
+    const on = nearOn();
+    const mood = M() ? `<button class="wa-chip home-mood__key${moodSet() ? ' is-set' : ''}" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${moodWords()}</span></button>` : '';
+    host.innerHTML = mood + (nearOff
+      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking from you needs location. Allow it for this site in your browser settings.</p>`
+      : `<button class="wa-act${on ? ' is-on' : ''}" type="button" data-near aria-pressed="${on}"${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}${on ? I('check') : ''}</button>`);
   };
 
-  /* ── Mood and price: one key, one sheet ─────────────────────── */
+  /* ── Mood and price: one key, one sheet ─────────────────────────
+     Moods as a short list, each with its Label disc; tap one or a few (none
+     means anything). A chosen mood opens its narrower picks as chips under
+     it (Records, Books…), all optional. Then Tickets: Free, Up to €20, Any. */
   let draft = null;
-  const CAPS = [[0, 'Free'], [10, '€10'], [20, '€20'], [null, 'Any']];
+  const CAPS = [[0, 'Free'], [20, 'Up to €20'], [null, 'Any']];
+  /* The choice as it stands at this hour: a mood the hour does not offer (Club nights at noon) is set aside, not lost. */
+  const pref = () => {
+    if (!M()) return { moods: [], subs: [], cap: null };
+    const p = M().pref(), here = new Set(M().available().map(m => m.id));
+    return { moods: p.moods.filter(id => here.has(id)), subs: p.subs, cap: p.cap };
+  };
   const sheetBody = () => {
     const moods = M().available();
-    const tile = (id, icon, label, hint) => `<button class="mood-tile" type="button" data-mood="${esc(id)}" aria-pressed="${draft.mood === id}"><span class="mood-tile__d mood-tile__d--${esc(id || 'any')}">${I(icon)}</span><b>${esc(label)}</b><small>${esc(hint)}</small></button>`;
-    return `<p class="mood-lead">Moods follow the hour and what the city has. Leave it on Anything and the route decides.</p>
-      <div class="mood-grid" role="group" aria-label="Mood">${tile('', 'shuffle', 'Anything', 'Let the route decide')}${moods.map(m => tile(m.id, m.id, m.label, m.hint)).join('')}</div>
-      <h3 class="mood-h">Tickets up to</h3>
+    const P = window.WA.Picto;
+    const item = (m) => {
+      const on = draft.moods.includes(m.id);
+      const subs = m.subs.length > 1 ? `<div class="mood-subs" data-subs-of="${esc(m.id)}" role="group" aria-label="Narrow it down"${on ? '' : ' hidden'}>${m.subs.map(x =>
+        `<button class="wa-chip" type="button" data-sub="${esc(x.id)}" aria-pressed="${draft.subs.includes(x.id)}">${esc(x.label)}</button>`).join('')}</div>` : '';
+      return `<li class="mood-item"><button class="mood-row" type="button" data-mood="${esc(m.id)}" aria-pressed="${on}">${P(m.picto)}<span class="mood-row__t"><b>${esc(m.label)}</b><small>${esc(m.hint)}</small></span><span class="mood-row__tick">${I('check')}</span></button>${subs}</li>`;
+    };
+    return `<p class="mood-lead">Pick one or a few. None means anything.</p>
+      <ul class="mood-list" role="group" aria-label="Moods">${moods.map(item).join('')}</ul>
+      <h3 class="mood-h">Tickets</h3>
       <div class="mood-seg" role="group" aria-label="Ticket price limit">${CAPS.map(([c, label]) => `<button type="button" data-cap="${c == null ? '' : c}" aria-pressed="${draft.cap === c}">${label}</button>`).join('')}</div>
-      <p class="wa-note">With a limit set, shows with no price listed stay in and say “Price not listed”. Shops and bars have no price, so only tickets count.</p>`;
+      <p class="wa-note">Shows with no listed price stay in.</p>`;
   };
+  const sheetFoot = () => `${draft.moods.length || draft.cap != null ? '<button class="wa-btn wa-btn--quiet" type="button" id="mood-clear">Clear</button>' : ''}<button class="wa-btn wa-btn--primary" type="button" id="mood-apply">Show the next few hours</button>`;
   const openSheet = () => {
     if (!M()) return;
-    draft = M().pref();
+    draft = pref();
     const sheet = $('sheet');
     sheet.classList.add('wa-sheet--mood');
-    $('sheet-title').textContent = 'What are you in the mood for?';
+    $('sheet-title').textContent = "What's the mood?";
     $('sheet-body').innerHTML = sheetBody();
-    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="mood-apply">Show the next few hours</button>';
+    $('sheet-foot').innerHTML = sheetFoot();
     sheet.addEventListener('close', () => sheet.classList.remove('wa-sheet--mood'), { once: true });
     sheet.showModal();
   };
@@ -94,22 +131,19 @@
   /* ── The next few hours ─────────────────────────────────────── */
   let plans = [], planIdx = 0, planKey = '';
   const readPlans = () => {
-    const p = M() ? M().pref() : { mood: '', cap: null };
-    const key = `${p.mood}|${p.cap}`;
-    const def = p.mood && M() ? M().get(p.mood) : null;
-    const next = def && def.list ? [] : window.WA.Route.plan({ mood: p.mood || '', cap: p.cap });
+    const p = pref();
+    const key = `${p.moods}|${p.subs}|${p.cap}|${nearOn()}`;
+    const next = window.WA.Route.plan({ want: p, cap: p.cap, near: nearOn() });
     if (key !== planKey || !plans.length) planIdx = 0;
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
     return p;
   };
   const planCard = (p) => {
-    const def = p.mood && M() ? M().get(p.mood) : null;
-    if (def && def.list) return `<h2 class="mood-title">${esc(def.label.en)}</h2><p class="mood-lead">Nights built for people who turn up on their own, or in two. We read the format from the title; the organiser has not confirmed it.</p>`;
     if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1 });
-    const narrowed = p.mood || p.cap != null;
+    const narrowed = p.moods.length || p.cap != null || nearOn();
     return `<section class="rt-card rt-card--empty"><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
-      <p class="rt-card__sub">${narrowed ? 'Try another mood or a higher price limit.' : 'The Guide has the places; the Programme has the listings.'}</p>
+      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from you. Turn Near me off for the whole city.' : 'Try another mood or a higher price limit.') : 'The Guide has the places; the Programme has the listings.'}</p>
       <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-mood-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
   };
 
@@ -120,23 +154,51 @@
   };
 
   /* Today is a list, in time order: what is on now, then what starts, then what has
-     no time listed. Tomorrow and the weekend are one tap away; everything else is the
-     Programme. When today is empty the next day listed opens instead. */
+     no time listed. Tomorrow and one more stretch are a tap away: the weekend from
+     Monday to Thursday, the rest of the week from Friday, when the weekend is
+     already today or tomorrow. A tab with nothing in it is not shown; everything
+     else is the Programme. When today is empty the next day listed opens instead. */
   let dayTab = '';
-  /* A list-led mood (Join in) looks a week ahead: its nights are few and recur. */
-  const DAYS_DEFAULT = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
-  const DAYS_WEEK = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['thisweek', 'This week']];
-  let DAYS = DAYS_DEFAULT;
+  const days = () => {
+    const dow = new Date(`${W().todayKey()}T12:00:00Z`).getUTCDay();
+    return [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], dow >= 1 && dow <= 4 ? ['weekend', 'Weekend'] : ['thisweek', 'This week']];
+  };
   const dayList = (all, tab, p) => {
-    let list = tab === 'tonight' ? sortSoon(all.filter(e => W().isTonight(e)))
-      : tab === 'thisweek' ? sortSoon(all.filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'tomorrow')))
-        : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
-    if (p.mood && M()) list = list.filter(e => M().matchesEvent(p.mood, e));
+    let list = tab === 'tonight' ? all.filter(e => W().isTonight(e))
+      : tab === 'tomorrow' ? all.filter(e => W().matches(e, 'tomorrow') && !W().isTonight(e))
+        : all.filter(e => W().matches(e, tab) && !W().isTonight(e) && !W().matches(e, 'tomorrow'));
+    list = sortSoon(list);
+    if (M() && p.moods.length) list = list.filter(e => M().wantsEvent(p, e));
     if (p.cap != null) list = list.filter(e => R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);
     const timed = (e) => W().statedMinutes(e) != null;
-    return [...list.filter(e => !R().isOff(e) && timed(e)), ...list.filter(e => !R().isOff(e) && !timed(e)), ...list.filter(e => R().isOff(e))];
+    const ordered = [...list.filter(e => !R().isOff(e) && timed(e)), ...list.filter(e => !R().isOff(e) && !timed(e)), ...list.filter(e => R().isOff(e))];
+    if (!nearOn()) return ordered;
+    /* Near me: nearest first; a listing we cannot place goes last, in time order. */
+    const far = (e) => { const d = R().isOff(e) ? null : G().distanceTo(e); return d == null ? Infinity : d; };
+    return ordered.map((e, i) => [e, far(e), i]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
   const SHOWN = 12;
+
+  /* One row of the kinds in the day's list, with how many of each, so all the
+     workshops or all the comedy are a tap away. Only kinds that are there, most
+     first; none when the list holds one kind. Comedy is read from tags, since
+     sources file it under theatre or nothing. */
+  const COMEDY = ['comedy', 'standup', 'stand-up', 'improv'];
+  const FACETS = [
+    ['gig', 'Gigs'], ['club', 'Club nights'], ['film', 'Film'], ['theatre', 'Stage'], ['comedy', 'Comedy'],
+    ['exhibition', 'Art'], ['workshop', 'Workshops'], ['talk', 'Talks'], ['festival', 'Festivals'], ['market', 'Markets'],
+  ];
+  const inFacet = (id, e) => (id === 'comedy'
+    ? (e.tags || []).some(t => COMEDY.includes(String(t).toLowerCase()))
+    : String(e.kind || '').toLowerCase() === id);
+  let facet = '';
+  const facets = (list) => FACETS.map(([id, label]) => [id, label, list.filter(e => inFacet(id, e)).length]).filter(x => x[2] > 0).sort((a, b) => b[2] - a[2]);
+  const facetRow = (list, shown) => {
+    if (shown.length < 2) return '';
+    const P = window.WA.Picto;
+    const chip = (id, label, n, art) => `<button class="wa-chip" type="button" data-facet="${esc(id)}" aria-pressed="${facet === id}">${art}${esc(label)} <span class="wa-chip__n">${n}</span></button>`;
+    return `<div class="wa-chips wa-chips--scroll home-kinds" role="group" aria-label="Kind">${chip('', 'All', list.length, '')}${shown.map(([id, label, n]) => chip(id, label, n, P.kind(id === 'comedy' ? 'theatre' : id))).join('')}</div>`;
+  };
 
   const main = () => {
     const all = R().live();
@@ -146,21 +208,26 @@
     hero(tonight, liveNow, next);
     acts();
     const p = readPlans();
-    const def = p.mood && M() ? M().get(p.mood) : null;
-    DAYS = def && def.list ? DAYS_WEEK : DAYS_DEFAULT;
-    if (dayTab && !DAYS.some(([k]) => k === dayTab)) dayTab = '';
-
+    const DAYS = days();
     const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k, p)]));
-    const tab = dayTab && lists[dayTab] ? dayTab : (DAYS.find(([k]) => lists[k].length) || DAYS[0])[0];
-    const list = lists[tab];
+    const tabs = DAYS.filter(([k]) => lists[k].length);
+    const tab = dayTab && lists[dayTab] && lists[dayTab].length ? dayTab : (tabs[0] || DAYS[0])[0];
+    const full = lists[tab];
+    const shown = facets(full);
+    if (facet && !shown.some(([id]) => id === facet)) facet = '';
+    const list = facet ? full.filter(e => inFacet(facet, e)) : full;
     const out = [`<section class="wa-sect rt-sect" id="plan">${planCard(p)}</section>`];
 
     if (all.length) {
-      const href = tab === 'tonight' ? 'discover.html?time=tonight' : `discover.html?time=${tab}`;
+      const q = new URLSearchParams({ time: tab });
+      if (facet === 'comedy') q.set('q', 'comedy'); else if (facet) q.set('cat', facet);
+      if (nearOn()) q.set('sort', 'nearest');
       out.push(`<section class="wa-sect home-day">
-        <div class="home-tabs" role="tablist" aria-label="Day">${DAYS.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}"${lists[k].length ? '' : ' disabled'}>${label}</button>`).join('')}</div>
+        ${tabs.length ? `<div class="home-tabs" role="tablist" aria-label="Day">${tabs.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}">${label}</button>`).join('')}</div>` : ''}
+        ${facetRow(full, shown)}
+        ${nearOn() && list.length ? '<p class="wa-note home-day__note">Nearest first, walking from you</p>' : ''}
         ${list.length ? `<ul class="wa-rows">${list.slice(0, SHOWN).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
-        <a class="wa-linkbtn home-day__more" href="${href}">${list.length > SHOWN ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a>
+        <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > SHOWN ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a>
       </section>`);
     } else {
       out.push(R().empty(window.WA.DATA_LIVE === false
@@ -168,6 +235,7 @@
         : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] }));
     }
     $('home-main').innerHTML = out.join('');
+    if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
   };
 
@@ -176,7 +244,7 @@
     if (plans.length < 2) return;
     planIdx = (planIdx + 1) % plans.length;
     const host = $('plan');
-    if (host) { host.dataset.again = '1'; host.innerHTML = planCard(M() ? M().pref() : { mood: '', cap: null }); }
+    if (host) { host.dataset.again = '1'; host.innerHTML = planCard(pref()); }
   };
 
   /* ── Side: picked places, and the map ───────────────────────── */
@@ -220,25 +288,51 @@
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
     if (dt) { dayTab = dt.dataset.day; main(); return; }
+    const fc = hit('[data-facet]');
+    if (fc) { facet = facet === fc.dataset.facet ? '' : fc.dataset.facet; main(); return; }
     if (hit('[data-near]')) {
+      if (nearOn()) { setNear(false); render(); return; }
+      setNear(true);
+      if (G().currentLoc()) { render(); return; }
       nearBusy = true; acts();
-      G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
+      G().userLoc().then((loc) => { nearBusy = false; if (!loc) { nearOff = true; setNear(false); } render(); });
       return;
     }
     if (hit('[data-mood-open]')) { openSheet(); return; }
-    const mt = hit('.mood-tile');
+    const mt = hit('.mood-row');
     if (mt && draft) {
-      draft.mood = mt.dataset.mood;
-      $('sheet-body').querySelectorAll('.mood-tile').forEach(b => b.setAttribute('aria-pressed', String(b === mt)));
+      const id = mt.dataset.mood, on = !draft.moods.includes(id);
+      draft.moods = on ? [...draft.moods, id] : draft.moods.filter(x => x !== id);
+      const subs = $('sheet-body').querySelector(`[data-subs-of="${CSS.escape(id)}"]`);
+      if (!on && subs) { const mine = [...subs.querySelectorAll('[data-sub]')].map(b => b.dataset.sub); draft.subs = draft.subs.filter(x => !mine.includes(x)); subs.querySelectorAll('[data-sub]').forEach(b => b.setAttribute('aria-pressed', 'false')); }
+      mt.setAttribute('aria-pressed', String(on));
+      if (subs) subs.hidden = !on;
+      $('sheet-foot').innerHTML = sheetFoot();
+      return;
+    }
+    const sb = hit('.mood-subs [data-sub]');
+    if (sb && draft) {
+      const id = sb.dataset.sub, on = !draft.subs.includes(id);
+      draft.subs = on ? [...draft.subs, id] : draft.subs.filter(x => x !== id);
+      sb.setAttribute('aria-pressed', String(on));
       return;
     }
     const cp = hit('.mood-seg [data-cap]');
     if (cp && draft) {
       draft.cap = cp.dataset.cap === '' ? null : Number(cp.dataset.cap);
       $('sheet-body').querySelectorAll('.mood-seg [data-cap]').forEach(b => b.setAttribute('aria-pressed', String(b === cp)));
+      $('sheet-foot').innerHTML = sheetFoot();
       return;
     }
-    if (hit('#mood-apply')) { M().setPref(draft); $('sheet').close(); return; }
+    if (hit('#mood-clear') && draft) { draft = { moods: [], subs: [], cap: null }; $('sheet-body').innerHTML = sheetBody(); $('sheet-foot').innerHTML = sheetFoot(); return; }
+    if (hit('#mood-apply')) {
+      /* Moods set aside for this hour stay chosen; only what the sheet showed changes. */
+      const was = M().pref(), here = new Set(M().available().map(m => m.id));
+      const kept = was.moods.filter(id => !here.has(id));
+      M().setPref({ moods: [...draft.moods, ...kept], subs: [...draft.subs, ...was.subs.filter(x => kept.some(k => M().get(k).subs.some(s => s.id === x)))], cap: draft.cap });
+      $('sheet').close();
+      return;
+    }
     if (hit('[data-another]')) { another(); return; }
     if (hit('#sheet-done') || hit('#sheet-close')) { $('sheet').close(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
