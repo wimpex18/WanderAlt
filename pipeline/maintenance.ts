@@ -94,10 +94,16 @@ export async function reconcileEvents(db: Db, city: string, dry = false) {
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
   const plan = duplicateEvents(rows, new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id))));
   if (!dry) for (const { duplicate, canonical } of plan) {
-    const change = await db.req<number>('POST', 'rpc/merge_events', {
-      p_duplicate: duplicate.id, p_canonical: canonical.id,
-    });
-    console.log(`[events] merge ${duplicate.id} → ${canonical.id}; undo id ${change}`);
+    // One pair the database refuses (a rule the planner did not foresee) is logged and left alone;
+    // it must not stop the run that collects every other source.
+    try {
+      const change = await db.req<number>('POST', 'rpc/merge_events', {
+        p_duplicate: duplicate.id, p_canonical: canonical.id,
+      });
+      console.log(`[events] merge ${duplicate.id} → ${canonical.id}; undo id ${change}`);
+    } catch (e) {
+      console.log(`[events] merge ${duplicate.id} → ${canonical.id} refused: ${(e as Error).message.slice(0, 160)}`);
+    }
   }
   return plan;
 }
