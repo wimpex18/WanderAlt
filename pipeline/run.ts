@@ -17,6 +17,7 @@ import type { Candidate, Enrichment, RawItem, Source } from './types.ts';
 import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
+import * as vabalava from './sources/vabalava.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile } from './instagram.ts';
 import { collectInstagram } from './sources/instagram.ts';
@@ -74,7 +75,7 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
     case 'wordpress': return wordpress.collect(source);
     case 'osm': return [];            // places, not events: step 5
     case 'telegram': return collectTelegram(source);
-    case 'html': return collectPage(source);
+    case 'html': return source.config.shape === 'vabalava' ? vabalava.collect(source) : collectPage(source);
     case 'rss': return collectRss(source);
     case 'instagram': return collectInstagram(source, db);
   }
@@ -83,13 +84,14 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
 /** Posters read per run; each costs about 35 Workers AI neurons. */
 const posters = { left: Number(opt('--max-posters') ?? 30) };
 
-const needsModel = (s: Source) => s.kind === 'telegram' || s.kind === 'html' || s.kind === 'rss' || s.kind === 'instagram';
+const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && s.config.shape !== 'vabalava') || s.kind === 'rss' || s.kind === 'instagram';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
 async function read(item: RawItem, source: Source, models: Models): Promise<Candidate[] | null> {
   if (source.kind === 'fienta') return fienta.extract(item);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
+  if (source.kind === 'html' && source.config.shape === 'vabalava') return vabalava.extract(item, source);
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string };
   // A post's poster often carries the date, time and venue its text leaves out.
