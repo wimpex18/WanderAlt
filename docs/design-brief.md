@@ -4,27 +4,27 @@ For a Claude Design session or anyone redesigning a screen. Current state only: 
 
 ## Product
 
-WanderAlt answers: *what is worth walking to in Tallinn tonight, and what do I do after it?* Independent and alternative culture (DIY gigs, club nights, arthouse film, contemporary art and dance, talks, record and flea markets) and the places around it (record shops, bookshops, galleries, thrift, small cinemas, clubs, theatres, bars).
+WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, and what do I do after it?* Independent and alternative culture (DIY gigs, club nights, arthouse film, contemporary art and dance, talks, record and flea markets) and the places around it (record shops, bookshops, galleries, thrift, small cinemas, clubs, theatres, bars). It is as much a day-trip guide as a night guide: bars and clubs are the smaller job.
 
-**Audience, in order:** travellers staying 2–5 days; English-reading expats; locals who don't follow every channel. They decide on the day, on a phone, often already out.
+**Audience, in order:** travellers staying 2–5 days, often on a day trip; English-reading expats; locals who don't follow every channel. People on their own, in two, or in a group: most venues and events suit all of them, and where a format is built for strangers to mix (quiz, chess, craft nights) it says so. They decide on the day, on a phone, often already out.
 
 **Every row answers four things:** when (a time), how far (walking minutes), what it is (kind, price), who says so (the venue or channel it came from).
 
-**The idea (Night Guide):** the unit is the *evening* (two to four stops on foot), not the event card. Places carry the guide and events give it a clock. Fienta and the like are the cashier we link to; we are the guide. Not every bar: places are **picked** by hand, with one honest line on why.
+**The idea (Night Guide):** the unit is the walk (two to four stops on foot), not the event card. Places carry the guide and events give it a clock. Fienta and the like are the cashier we link to; we are the guide. Not every bar: places are **picked** by hand, with one honest line on why.
 
-## Identity (decided 2 Oct 2026)
+## Identity (decided 2 Oct 2026, revised 3 Oct)
 
-- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. Not black and yellow.
-- **Labels:** round flat discs of Tallinn objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Not Meetup's offset stickers, not Airbnb's 3D.
-- A route is a spine: time, square node, stop; the listing is the one filled node.
-- No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it). Four tabs: Tonight, Guide, Map, Saved; You is the avatar. Sign-in is one sheet, link first.
-- Design canvas from the first pass: https://claude.ai/artifact/41QjFPZyhwnY68ugNeespd (25 boards, light and night; it predates some shipped details).
+- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is a violet-blue gradient, not flat black. Glass only where it floats; it bends a gradient, never a photo.
+- **Labels:** round flat discs of objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Moods use neutral objects (a framed picture, a record sleeve, a pencil, headphones, a mirror ball, two stools) so they mean the same in any city. Not Meetup's offset stickers, not Airbnb's 3D. A few hand-drawn sketches (the Old Town skyline on the route card) with a small wobble, one line weight, where a screen has room and a job.
+- A route is a spine: time, square node, stop; the listing is the one filled node. The thread is a vermilion gradient.
+- No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it); search uses the glass. Four tabs: Now, Guide, Map, Saved; You is the avatar. Sign-in is one sheet, link first.
+- Design canvas: https://claude.ai/artifact/9UrJzeMvP9vtHz6MdaJUV4 (the second look: audit, data check, research, designs, questions; supersedes the first pass at https://claude.ai/artifact/41QjFPZyhwnY68ugNeespd).
 
 ## What exists
 
-Tonight (route card, day tabs, a time-ordered list, Near me) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places by kind) · Map · Route page · Event and venue pages · Saved · You · sign-in sheet. Details: `docs/frontend.md`.
+Now (one answer, a mood and price key, Walk it, Another, the day's list) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places nearest first, from a stated start) · Map · Route page · Event and venue pages (each ending in After this) · Saved · You · sign-in sheet. Details: `docs/frontend.md`.
 
-Live data: about 600 events a fortnight, about 430 places (31 picked), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. Half the venues have hours, a minority photos, 58% of events a price. **Design for missing data**: no photo, no hours, no time, no price.
+Live data: about 600 events a fortnight, about 430 places (31 picked), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. About a fifth of listings have a date and no time; two in five no price; a quarter of places have hours; a minority photos. **Design for missing data**: no photo, no hours, no time, no price.
 
 ## What users told us
 
@@ -34,31 +34,34 @@ Live data: about 600 events a fortnight, about 430 places (31 picked), all Talli
 
 | They said | Now |
 |---|---|
-| Tapping an event's title should open its details | Every row and card is one link to its page; the route card opens the route, not its stops, and nothing shows that a row is tappable. Which screen they tried is unknown. |
-| Don't make me scroll filter chips (gigs, club nights, film…); I often don't know what I want. Austria took hours | Tonight still opens with a row of kind chips. Routes and the plan search help, but there is no mood-led start. |
-| A ceiling of about €20 a person, or free only | A Free switch on the Programme; "under 20" works in a typed sentence. Nothing on Tonight, and routes show no cost. 47 events are free, 298 priced, 251 have no price listed. Places carry no price. |
-| Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: route card, More evenings, plan words in search. Not built: "what next from here" on an event or place page (designed on the canvas), options by mood. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
-| Onboarding by mood: listen or dance, craft bar, board games | None. "Your taste" on You holds up to three kinds. |
-| (noticed here) craft beer bars and board games | Not covered. The OSM catalogue reads arts, cinema, clubs, community, theatre, galleries and shops; bars only appear as event hosts. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom). No board-game place or event exists. Needs new sources and kinds, then moods. |
+| Tapping an event's title should open its details | Every row and card is one link to its page; the route card opens the route and now has an explicit Walk it. Which screen they tried is unknown; ask again. |
+| Don't make me scroll filter chips (gigs, club nights, film…); I often don't know what I want. Austria took hours | Built: Now opens with one answer (a short walk) and one key for mood and price; no row of kinds. Another gives the next route. Check with someone who does not know what they want. |
+| A ceiling of about €20 a person, or free only | Built: Tickets up to (Free, €10, €20, Any) in the mood sheet; it narrows the route and the list, keeps listings with no price (two in five) and says so, and counts tickets only because places carry no price. The Programme keeps its Free switch and typed "under 20". |
+| Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: the next few hours (evenings and, by day, places on foot), After this on venue and event pages (up to three picked places within ten minutes, one per mood, each with its own words) and Plan from here. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
+| Onboarding by mood: listen or dance, craft bar, board games | Built as a sheet, not onboarding: Look, Browse, Make, Listen, Dance (after 20:00) from data we hold. Craft bar and board games wait for picks (see below). |
+| (noticed here) craft beer bars and board games | Not covered. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom); no board-game place or event exists. Drink needs those picked with a reason; Join in (quiz, chess, craft nights, for people on their own) is live from the `easy-alone` rule, which reads formats from titles and leaves out adult-themed and group-of-friends listings (drawing nights called "DnD" are caught by their venue's name). A mood shows only with three behind it, so Drink does not appear until two more craft-beer places are picked. |
 
 ## Open questions
 
-- Moods: how many, what are they, and do they replace the kind chips on Tonight? Each mood should map to listing kinds and place kinds and feed the route.
-- Budget: one control (free / up to €10 / up to €20) or a default cap on You? Unknown prices must be handled honestly, not hidden or assumed free.
-- A "what next from here" block on event and place pages: how many options, nearby how far, by mood?
-- The Guide page: neighbourhood chips, nearest first, add to a route. To be challenged before it is built.
+- Join in is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
+- Drink and Play: which three to five venues, picked by someone who knows the scene, with a stated reason each.
+- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Cafés (13 held) are not shown.
+- Hours: 28 of 40 Guide places show "hours not filed", so "open now" is often unanswerable. Where do hours come from beyond OpenStreetMap?
+- Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
+- Languages and cities: route titles are templates over kinds so they can be translated in the browser; listing text and pick notes need a per-language table before a second reading language. See the Scale board on the canvas.
+- The Guide has the lens; whether "Plan from here" belongs on every place row is open. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
 - Visible complexity is the cost of every idea above. Fewer elements wins.
 
 ## Constraints
 
 - Static HTML, one stylesheet (`wa.css`, tokens as CSS variables), vanilla JS; no framework, so `/design-sync` (React components) doesn't apply. Strict CSP: no inline scripts, no third-party scripts or analytics, self-hosted fonts.
-- WCAG 2.2 AA: 44 px targets, visible focus, `prefers-reduced-motion`. Listing text is untrusted: titles may run three lines, be all caps or Cyrillic.
+- WCAG 2.2 AA: 44 px targets (chips, keys and segments are 44 px high), visible focus, `prefers-reduced-motion`. Listing text is untrusted: titles may run three lines, be all caps or Cyrillic.
 - Free tiers and free models only. Never guess a photo from a name.
 - Check at 390 and 1440 px, light and dark.
 
 ## Do not use
 
-Cream backgrounds, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients, anything that looks like Google Maps or a booking site.
+Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients as decoration (the dusk theme is the one deliberate exception: a low-contrast violet to plum behind glass), anything that looks like Google Maps or a booking site.
 
 ## Voice
 

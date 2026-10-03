@@ -17,7 +17,11 @@ export const addressKey = (s: string | null | undefined) => nameKey((s ?? '').sp
   .replace(/\b(tänav|tn)\.?\s*/gi, ' ').replace(/\bmaantee\b/gi, 'mnt').replace(/\bpuiestee\b/gi, 'pst'));
 
 const GENERIC = new Set(('tallinn tallinna eesti estonia sa ou mtu as club klubi kino cinema galerii gallery ' +
-  'theatre teater baar bar pub cafe kohvik shop store raamatupood raamatukauplus').split(' '));
+  'theatre teater baar bar pub cafe kohvik shop store raamatupood raamatukauplus jazz').split(' '));
+// OpenStreetMap files one room as a bar, a club or a pub depending on who tagged it: the same
+// kind of place, so two such rows at one address are compatible. Other kinds stay distinct.
+const NIGHT = new Set(['bar', 'club', 'pub']);
+const sameKind = (a?: string | null, b?: string | null) => !a || !b || a === b || (NIGHT.has(a) && NIGHT.has(b));
 export const core = (s: string) => nameKey(s).split(' ').filter(w => !GENERIC.has(w)).join(' ');
 const roomNumbers = (s: string) => nameKey(s).match(/\b\d+\b/g)?.join(' ') ?? '';
 
@@ -57,7 +61,7 @@ export function comparePlaces(a: Place, b: Place): PlaceMatch | null {
   if (!near && !sameAddress) return null;
   if (distance != null && distance > 150) return null; // conflicting coordinates beat an address label
   const distinctive = ca.length >= 4 && cb.length >= 4;
-  const compatible = !a.kind || !b.kind || a.kind === b.kind;
+  const compatible = sameKind(a.kind, b.kind);
   const numbersAgree = roomNumbers(a.name) === roomNumbers(b.name);
   const addressConflict = !!aa && !!ab && !sameAddress;
   const strong = exact || (distinctive && ca === cb) ||
@@ -72,8 +76,10 @@ export function comparePlaces(a: Place, b: Place): PlaceMatch | null {
   return null;
 }
 
-/** Oldest stored id wins; a lexical tie-break makes every run agree. */
+/** A picked place wins (the pick is editorial and a merge does not carry it); then the
+ *  oldest stored id; a lexical tie-break makes every run agree. */
 export const canonicalOrder = (a: Place, b: Place) =>
+  Number(!!b.picked) - Number(!!a.picked) ||
   (a.created_at ?? '9999').localeCompare(b.created_at ?? '9999') || a.id.localeCompare(b.id);
 
 export const pairKey = (a: string, b: string) => [a, b].sort().join('|');

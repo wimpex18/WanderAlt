@@ -1,10 +1,11 @@
 /* ============================================================
-   home.js — Tonight, the home screen.
+   home.js — Now, the home screen.
    ------------------------------------------------------------
-   The search field and the category bar first. Then card shelves: what is on now, what starts soon (or late, after
-   21:30), what fits your interests, this weekend, and on the side the
-   places open now and the areas. Never empty: when tonight has
-   nothing, the next listed day takes its place.
+   The search field, then one answer: the next few hours as a short walk
+   (route.js plan()), with Walk it and Another. One key opens the mood
+   and price sheet (moods.js); there is no row of kinds to scroll. Under
+   the answer, the day's listings in time order, those with no time last.
+   Never empty: when today has nothing, the next listed day takes its place.
    ============================================================ */
 (() => {
   'use strict';
@@ -13,6 +14,7 @@
   const R = () => window.WA.R;
   const W = () => window.WA.when;
   const G = () => window.WA.Geo;
+  const M = () => window.WA.Moods;
   const esc = (s) => window.WA.UI.esc(s);
   const I = (n, c) => window.WA.Icon(n, c);
 
@@ -35,63 +37,12 @@
     $('hero-kicker').textContent = R().cityName();
     const t = $('hero-title');
     const n = tonight.length;
-    heroCount = liveNow.length ? `${liveNow.length} on now` : n ? `${n} tonight` : '';
+    heroCount = liveNow.length ? `${liveNow.length} on now` : n ? `${n} today` : '';
     if (isLate() && (liveNow.length || n)) t.textContent = 'Still going';
-    else if (n) t.textContent = 'Tonight';
-    else t.textContent = next ? 'Quiet tonight' : "What's on tonight";
+    else if (n || nowMin() < 21 * 60) t.textContent = 'The next few hours';
+    else t.textContent = next ? 'Quiet tonight' : "What's on";
     $('hero-clock').textContent = clockText();
   };
-
-  /* ── The pill and the category bar ──────────────────────── */
-  const CATS = [
-    ['all', 'All', 'discover.html'], ['gig', 'Gigs', 'discover.html?cat=gig'], ['club', 'Club nights', 'discover.html?cat=club'],
-    ['film', 'Film', 'discover.html?cat=film'], ['theatre', 'Stage', 'discover.html?cat=theatre'],
-    ['art', 'Art', 'discover.html?cat=exhibition'], ['talk', 'Talks', 'discover.html?cat=talk'],
-    ['workshop', 'Workshops', 'discover.html?cat=workshop'], ['festival', 'Festivals', 'discover.html?cat=festival'],
-    ['records', 'Places', 'places.html'],
-  ];
-  const cats = () => {
-    const host = $('cats');
-    if (!host || host.childElementCount) return;
-    host.innerHTML = CATS.map(([p, label, href], i) => `<a class="wa-cat" href="${esc(href)}"${i === 0 ? ' aria-current="true"' : ''}>${window.WA.Picto(p)}<span>${esc(label)}</span></a>`).join('');
-    peek();
-  };
-
-  /* The kind row must show that it goes on. Whatever the screen width, the
-     first item that does not fit is left half in view: the gap between the
-     kinds is set so it lands about half over the edge (2 to 24px). From 1024
-     the whole row fits and the gap is left alone. */
-  const peek = () => {
-    const nav = $('cats');
-    if (!nav || !nav.childElementCount) return;
-    nav.style.removeProperty('--cat-gap');
-    if (matchMedia('(min-width: 1024px)').matches) return;
-    const items = [...nav.children];
-    const w = items.map(a => a.getBoundingClientRect().width);
-    const g0 = parseFloat(getComputedStyle(nav).columnGap) || 4;
-    const edge = nav.clientWidth;
-    const pad = parseFloat(getComputedStyle(nav).paddingLeft) || 0;
-    /* Which item to leave half in view: the first that does not fit, or one
-       either side when the gap would leave 2..24px. The kinds differ in width
-       (labels, text size), so this is worked out from what is on screen. */
-    const total = w.reduce((x, y) => x + y, 0) + g0 * (items.length - 1) + 2 * pad;
-    if (total <= edge + 1) return;
-    let k0 = 0, left = pad;
-    while (k0 < items.length && left + w[k0] <= edge + 1) { left += w[k0] + g0; k0++; }
-    let best = null;
-    for (const k of [k0, k0 - 1, k0 + 1]) {
-      if (k < 1 || k >= items.length) continue;
-      const before = w.slice(0, k).reduce((x, y) => x + y, 0);
-      const g = (edge - w[k] * 0.5 - pad - before) / k;
-      if (g >= 2 && g <= 24) { best = g; break; }
-    }
-    if (best != null) nav.style.setProperty('--cat-gap', `${best.toFixed(1)}px`);
-  };
-  /* Text size changes (Dynamic Type, Android font scale) resize the tiles
-     without resizing the window. */
-  if (window.ResizeObserver) { const ro = new ResizeObserver(() => peek()); const hook = () => { const n = $('cats'); if (n && n.firstElementChild) ro.observe(n.firstElementChild); }; hook(); setTimeout(hook, 500); }
-  window.addEventListener('resize', peek);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(peek);
 
   /* The field is a real one: Enter or the key sends the words to the
      Programme, whose ask field reads a sentence as well as a title. */
@@ -110,9 +61,56 @@
     const host = $('home-acts');
     if (!host) return;
     const here = !!G().currentLoc();
-    host.innerHTML = here ? '' : (nearOff
+    const mood = M() ? `<button class="wa-chip home-mood__key" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${esc(M().summary())}</span></button>` : '';
+    host.innerHTML = mood + (here ? '' : (nearOff
       ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>`
-      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`);
+      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`));
+  };
+
+  /* ── Mood and price: one key, one sheet ─────────────────────── */
+  let draft = null;
+  const CAPS = [[0, 'Free'], [10, '€10'], [20, '€20'], [null, 'Any']];
+  const sheetBody = () => {
+    const moods = M().available();
+    const tile = (id, icon, label, hint) => `<button class="mood-tile" type="button" data-mood="${esc(id)}" aria-pressed="${draft.mood === id}"><span class="mood-tile__d mood-tile__d--${esc(id || 'any')}">${I(icon)}</span><b>${esc(label)}</b><small>${esc(hint)}</small></button>`;
+    return `<p class="mood-lead">Moods follow the hour and what the city has. Leave it on Anything and the route decides.</p>
+      <div class="mood-grid" role="group" aria-label="Mood">${tile('', 'shuffle', 'Anything', 'Let the route decide')}${moods.map(m => tile(m.id, m.id, m.label, m.hint)).join('')}</div>
+      <h3 class="mood-h">Tickets up to</h3>
+      <div class="mood-seg" role="group" aria-label="Ticket price limit">${CAPS.map(([c, label]) => `<button type="button" data-cap="${c == null ? '' : c}" aria-pressed="${draft.cap === c}">${label}</button>`).join('')}</div>
+      <p class="wa-note">With a limit set, shows with no price listed stay in and say “Price not listed”. Shops and bars have no price, so only tickets count.</p>`;
+  };
+  const openSheet = () => {
+    if (!M()) return;
+    draft = M().pref();
+    const sheet = $('sheet');
+    sheet.classList.add('wa-sheet--mood');
+    $('sheet-title').textContent = 'What are you in the mood for?';
+    $('sheet-body').innerHTML = sheetBody();
+    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="mood-apply">Show the next few hours</button>';
+    sheet.addEventListener('close', () => sheet.classList.remove('wa-sheet--mood'), { once: true });
+    sheet.showModal();
+  };
+
+  /* ── The next few hours ─────────────────────────────────────── */
+  let plans = [], planIdx = 0, planKey = '';
+  const readPlans = () => {
+    const p = M() ? M().pref() : { mood: '', cap: null };
+    const key = `${p.mood}|${p.cap}`;
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    const next = def && def.list ? [] : window.WA.Route.plan({ mood: p.mood || '', cap: p.cap });
+    if (key !== planKey || !plans.length) planIdx = 0;
+    planKey = key; plans = next;
+    if (planIdx >= plans.length) planIdx = 0;
+    return p;
+  };
+  const planCard = (p) => {
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    if (def && def.list) return `<h2 class="mood-title">${esc(def.label.en)}</h2><p class="mood-lead">Nights built for people who turn up on their own, or in two. We read the format from the title; the organiser has not confirmed it.</p>`;
+    if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1 });
+    const narrowed = p.mood || p.cap != null;
+    return `<section class="rt-card rt-card--empty"><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
+      <p class="rt-card__sub">${narrowed ? 'Try another mood or a higher price limit.' : 'The Guide has the places; the Programme has the listings.'}</p>
+      <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-mood-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
   };
 
   /* The next day after today with anything listed. */
@@ -121,15 +119,22 @@
     return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
   };
 
-  /* Tonight is a list, in time order: what is on now, then what starts.
-     Tomorrow and the weekend are one tap away; everything else is the
-     Programme. When tonight is empty the next day listed opens instead. */
+  /* Today is a list, in time order: what is on now, then what starts, then what has
+     no time listed. Tomorrow and the weekend are one tap away; everything else is the
+     Programme. When today is empty the next day listed opens instead. */
   let dayTab = '';
-  const DAYS = [['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
-  const dayList = (all, tab) => {
-    const list = tab === 'tonight' ? sortSoon(all.filter(e => W().isTonight(e)))
-      : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
-    return [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))];
+  /* A list-led mood (Join in) looks a week ahead: its nights are few and recur. */
+  const DAYS_DEFAULT = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
+  const DAYS_WEEK = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['thisweek', 'This week']];
+  let DAYS = DAYS_DEFAULT;
+  const dayList = (all, tab, p) => {
+    let list = tab === 'tonight' ? sortSoon(all.filter(e => W().isTonight(e)))
+      : tab === 'thisweek' ? sortSoon(all.filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'tomorrow')))
+        : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
+    if (p.mood && M()) list = list.filter(e => M().matchesEvent(p.mood, e));
+    if (p.cap != null) list = list.filter(e => R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);
+    const timed = (e) => W().statedMinutes(e) != null;
+    return [...list.filter(e => !R().isOff(e) && timed(e)), ...list.filter(e => !R().isOff(e) && !timed(e)), ...list.filter(e => R().isOff(e))];
   };
   const SHOWN = 12;
 
@@ -139,14 +144,16 @@
     const liveNow = tonight.filter(e => R().isLive(e));
     const next = nextDay(all);
     hero(tonight, liveNow, next);
+    acts();
+    const p = readPlans();
+    const def = p.mood && M() ? M().get(p.mood) : null;
+    DAYS = def && def.list ? DAYS_WEEK : DAYS_DEFAULT;
+    if (dayTab && !DAYS.some(([k]) => k === dayTab)) dayTab = '';
 
-    const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k)]));
+    const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k, p)]));
     const tab = dayTab && lists[dayTab] ? dayTab : (DAYS.find(([k]) => lists[k].length) || DAYS[0])[0];
     const list = lists[tab];
-    const out = [];
-    /* An evening in a few stops, when tonight has one worth walking. */
-    const evening = window.WA.Route && window.WA.Route.best();
-    if (evening) out.push(`<section class="wa-sect rt-sect">${window.WA.Route.card(evening)}</section>`);
+    const out = [`<section class="wa-sect rt-sect" id="plan">${planCard(p)}</section>`];
 
     if (all.length) {
       const href = tab === 'tonight' ? 'discover.html?time=tonight' : `discover.html?time=${tab}`;
@@ -164,6 +171,14 @@
     return all;
   };
 
+  /* Another: the next route in line, the card drawn again. Only the card changes. */
+  const another = () => {
+    if (plans.length < 2) return;
+    planIdx = (planIdx + 1) % plans.length;
+    const host = $('plan');
+    if (host) { host.dataset.again = '1'; host.innerHTML = planCard(M() ? M().pref() : { mood: '', cap: null }); }
+  };
+
   /* ── Side: picked places, and the map ───────────────────────── */
   const side = () => {
     const picked = R().places().filter(v => v.picked);
@@ -176,7 +191,7 @@
     const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">Tonight's events and the places open now, by walking time.</span></span></a></section>`;
+      <span class="wa-mapcard__sub">Today's events and the places open now, by walking time.</span></span></a></section>`;
     $('home-side').innerHTML = places + mapCard;
   };
 
@@ -195,7 +210,6 @@
 
   /* ── Render and events ─────────────────────────────────────── */
   const render = () => {
-    cats();
     acts();
     const all = main();
     side();
@@ -211,6 +225,21 @@
       G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
       return;
     }
+    if (hit('[data-mood-open]')) { openSheet(); return; }
+    const mt = hit('.mood-tile');
+    if (mt && draft) {
+      draft.mood = mt.dataset.mood;
+      $('sheet-body').querySelectorAll('.mood-tile').forEach(b => b.setAttribute('aria-pressed', String(b === mt)));
+      return;
+    }
+    const cp = hit('.mood-seg [data-cap]');
+    if (cp && draft) {
+      draft.cap = cp.dataset.cap === '' ? null : Number(cp.dataset.cap);
+      $('sheet-body').querySelectorAll('.mood-seg [data-cap]').forEach(b => b.setAttribute('aria-pressed', String(b === cp)));
+      return;
+    }
+    if (hit('#mood-apply')) { M().setPref(draft); $('sheet').close(); return; }
+    if (hit('[data-another]')) { another(); return; }
     if (hit('#sheet-done') || hit('#sheet-close')) { $('sheet').close(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
     const r = hit('[data-row]');
@@ -228,6 +257,7 @@
   $('home-search').addEventListener('submit', search);
   document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
   document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
+  document.addEventListener('wa:mood-changed', () => { if (window.WA.catalog) main(); });
   document.addEventListener('wa:location-ready', render);
   /* The clock ticks; the lists redraw every five minutes so "on now"
      and "starting soon" stay true on a phone left open. */
@@ -236,7 +266,6 @@
 
   const skeleton = () => {
     $('hero-clock').textContent = clockText();
-    cats();
     acts();
     $('home-main').innerHTML = `<section class="wa-sect">${R().skelRows(5)}</section>`;
   };

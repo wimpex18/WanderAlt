@@ -110,6 +110,7 @@
     improv: 'Improv', satire: 'Satire', political: 'Political', design: 'Design', fashion: 'Fashion',
     sauna: 'Sauna', climate: 'Climate', photography: 'Photography', printmaking: 'Print', illustration: 'Illustration',
     'open mic': 'Open mic', karaoke: 'Karaoke', 'live drawing': 'Life drawing', nude: 'Life drawing',
+    'easy-alone': 'Easy alone',
   };
   const VENUE_WHY = [
     [/sõprus|soprus|artis|kai art/i, 'Arthouse'],
@@ -342,7 +343,7 @@
 
   /* ── The place row ───────────────────────────────────────── */
   const placeRow = (v, opts = {}) => {
-    const m = walk(v);
+    const m = opts.from ? G().walkMinutes(G().distanceTo(v, opts.from)) : walk(v);
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">

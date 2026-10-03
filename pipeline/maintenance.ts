@@ -9,7 +9,7 @@ import { duplicateEvents, type StoredEvent } from './dedupe.ts';
 import { checkWebsite, dueWebsites } from './place-verification.ts';
 
 export const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id', 'osm_ids',
-  'status', 'merged_into', 'created_at', 'website', 'website_source', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
+  'status', 'merged_into', 'created_at', 'picked', 'website', 'website_source', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
   'image_url', 'image_attr', 'image_source', 'enriched_at', 'osm_checked_at', 'osm_last_seen_at', 'osm_missing_count',
   'osm_state', 'osm_note', 'osm_closed_by_check', 'osm_auto_close', 'verification_state', 'verification_checked_at',
   'website_checked_at', 'verified_at', 'verification_source', 'verification_url', 'verification_note'];

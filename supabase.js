@@ -141,11 +141,12 @@
      Places surfaces the kinds a reader walks into for culture: the
      OpenStreetMap catalogue's record shops, bookshops, galleries, thrift
      shops, arts centres, cinemas, clubs, community centres and theatres,
-     plus the bars that host listed events. Museums, libraries and the like
-     still surface as event venues on picks. Exposed as WA.VENUE_KINDS. */
+     plus the bars that host listed events, and the museums we have picked.
+     Libraries and the like still surface as event venues on picks. Only
+     picked or freshly verified places show. Exposed as WA.VENUE_KINDS. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club', 'thrift',
-    'arts centre', 'cinema', 'community', 'theatre', 'bar',
+    'arts centre', 'cinema', 'community', 'theatre', 'bar', 'museum',
   ]);
   window.WA.VENUE_KINDS = [...VENUE_KINDS];
 

@@ -173,3 +173,14 @@ test('screening boilerplate cannot merge different films in the same room', () =
   assert.equal(et.match('Linastus Kai kinos: Sinu nimi', 'kai', start), null);
   assert.equal(et.match('Öölaps', 'kai', start), 'oolaps');
 });
+
+test('one room filed as a bar and as a jazz club joins, and the picked row is the one that stays', () => {
+  const bar = place('philly', { name: "Philly Joe's", aliases: ["philly joe's"], kind: 'bar', address: 'Vabaduse väljak 10', lat: 59.4342453, lng: 24.7443919, created_at: '2026-09-27' });
+  const club = place('philly-jazz', { name: "Philly Joe's Jazz Club", aliases: [], kind: 'club', address: 'Vabaduse väljak 10, 10146 Tallinn', lat: 59.434303, lng: 24.7441568, created_at: '2026-09-28', picked: true });
+  assert.equal(comparePlaces(bar, club)?.action, 'merge');
+  const [dup] = duplicatePlaces([bar, club]);
+  assert.equal(dup.canonical.id, 'philly-jazz', 'the pick is kept');
+  assert.equal(dup.duplicate.id, 'philly');
+  // a club and a record shop at one address are still different places
+  assert.equal(comparePlaces(bar, place('shop', { name: "Philly Joe's Records", kind: 'record store', address: 'Vabaduse väljak 10', lat: 59.4342, lng: 24.7443 }))?.action === 'merge', false);
+});

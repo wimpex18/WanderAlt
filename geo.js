@@ -131,8 +131,11 @@
     return m ? +m[1] * 60 + +m[2] : null;
   };
 
+  /* A listing with a date and no time is stored at local midnight; it must not
+     lead the day as if it began at 00:00. `when.statedMinutes` says whether a time was given. */
+  const clockOrNull = (e) => (window.WA.when && window.WA.when.statedMinutes ? window.WA.when.statedMinutes(e) : startMinutes(e));
   const bySoonestThenDistance = (from) => (a, b) => {
-    const ta = startMinutes(a), tb = startMinutes(b);
+    const ta = clockOrNull(a), tb = clockOrNull(b);
     if (ta != null && tb != null && ta !== tb) return ta - tb;
     if (ta != null && tb == null) return -1;
     if (ta == null && tb != null) return 1;

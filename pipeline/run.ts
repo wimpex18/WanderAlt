@@ -31,6 +31,7 @@ import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl } from './util.ts';
 import { tallinnDay } from './time.ts';
+import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
 
@@ -451,7 +452,7 @@ async function main() {
     if (events.has(id)) { const had = events.get(id)!; had.flag = worse(had.flag as never, state); continue; }
     events.set(id, {
       id, city: CITY, title: c.title, title_en: e.title_en, summary_en: e.summary_en, description: scrubContacts(c.description),
-      kind: e.kind, tags: e.tags, place_id: place?.id ?? null, venue_name: c.venue_name ?? null, address: c.address ?? null,
+      kind: e.kind, tags: withEasyAlone(e.tags, c.title, c.venue_name), place_id: place?.id ?? null, venue_name: c.venue_name ?? null, address: c.address ?? null,
       lat: c.lat ?? null, lng: c.lng ?? null, starts_at: c.starts_at, ends_at: c.ends_at ?? null, has_time: c.has_time,
       is_free: c.is_free ?? null, price_min: c.price_min ?? null, price_max: c.price_max ?? null, currency: c.currency ?? null,
       ticket_url: c.ticket_url ?? null, url: c.url ?? null, image_url: c.image_url ?? null, language: c.language ?? null,
@@ -499,7 +500,7 @@ async function main() {
       // Liveness/visibility fields belong to their atomic RPC, not a
       // stale bulk snapshot. New rows receive the database defaults.
       ...Object.fromEntries(PLACE_COLUMNS.filter(k => !k.startsWith('osm_') || ['osm_id','osm_ids'].includes(k))
-        .filter(k => !['status','merged_into','created_at','verified_at','website_checked_at'].includes(k) && !k.startsWith('verification_'))
+        .filter(k => !['status','merged_into','created_at','picked','verified_at','website_checked_at'].includes(k) && !k.startsWith('verification_'))
         .map(k => [k, (p as unknown as Record<string, unknown>)[k] ?? null])),
       aliases: p.aliases ?? [], osm_ids: p.osm_ids ?? [], updated_at: new Date().toISOString(),
     })), 'id');
@@ -548,7 +549,7 @@ async function main() {
       if (Number.isNaN(e.relevance)) continue;
       const { status, note } = decide(e, (waiting[i].status_note ?? '').startsWith('trusted'));
       await db.patch(`events?id=eq.${encodeURIComponent(waiting[i].id)}`, {
-        kind: e.kind, tags: e.tags, relevance: e.relevance, status, status_note: note,
+        kind: e.kind, tags: withEasyAlone(e.tags, waiting[i].title, waiting[i].venue_name), relevance: e.relevance, status, status_note: note,
       });
       n++;
     }
