@@ -75,7 +75,16 @@
     "handle": "@vabalava",
     "label": "Vaba Lava",
     "curated": true,
-    "config": { "venue_name": "Vaba Lava", "venue_site": "https://vabalava.ee/" }
+    "config": {
+      "shape": "vabalava",
+      "venue_name": "Vaba Lava",
+      "venue_site": "https://vabalava.ee/",
+      "days": 120,
+      "venue_map": [
+        ["black box|salme|suur saal|väike saal|stuudiosaal", "Vaba Lava"],
+        ["sakala", "Sakala 3 Teatrimaja"]
+      ]
+    }
   },
   {
     "id": "kultuurikatel",
