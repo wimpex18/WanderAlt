@@ -1,5 +1,6 @@
 /* ============================================================
-   review.js — the review queue: events with status 'review'.
+   review.js — the review queue: events with status 'review', facts about places that may have
+   changed (place_fact_flags), possible duplicate places (place_match_reviews), reader reports.
    ------------------------------------------------------------
    Reads and writes with the Supabase secret key the reviewer types in,
    held in sessionStorage for this tab only. Publish or reject sets the
@@ -28,6 +29,21 @@
     return method === 'GET' ? r.json() : null;
   };
 
+  /* A function call, answered with JSON (merge_places returns the undo id). */
+  const rpc = async (name, body) => {
+    const r = await fetch(`${BASE}/rest/v1/rpc/${name}`, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 160)}`);
+    return r.json().catch(() => null);
+  };
+  const inList = (ids) => `(${ids.map(i => `"${String(i).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')})`;
+  const placesById = async (ids) => {
+    const uniq = [...new Set(ids)];
+    if (!uniq.length) return new Map();
+    const rows = await api('GET', `places?id=in.${encodeURIComponent(inList(uniq))}&select=id,name,kind,address,opening_hours,hours_source,website,instagram,picked,status`);
+    return new Map(rows.map(p => [p.id, p]));
+  };
+  const placeLine = (p) => p ? [p.name, p.kind, p.address, p.picked ? 'picked' : ''].filter(Boolean).join(' · ') : '';
+
   const when = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   /* Problems flagged on event pages: open ones, oldest first. A missing
@@ -46,6 +62,59 @@
             <button class="wa-btn" type="button" data-report-set="dismissed">Dismiss</button>
           </div>
         </li>`).join('')}</ul>`;
+    } catch { return ''; }
+  };
+
+  /* What a venue's own bio says that differs from what we hold (pipeline/drift.ts). Nothing was changed
+     for these: using the new value, or flagging the place for a closer look, is the decision made here. */
+  const FIELD = { hours: 'Opening hours', address: 'Address', closure: 'Closed or moved?' };
+  const flags = async () => {
+    try {
+      const rows = await api('GET', 'place_fact_flags?state=eq.open&order=created_at.asc&limit=100&select=id,place_id,field,stored,found,source,created_at');
+      if (!rows.length) return '';
+      const places = await placesById(rows.map(r => r.place_id));
+      return `<h2 class="wa-h2" style="margin-top:var(--s-6)">Facts that may have changed</h2>
+        <ul class="review__list">${rows.map(r => {
+          const p = places.get(r.place_id);
+          return `<li class="review__item" data-flag="${esc(String(r.id))}" data-place="${esc(r.place_id)}" data-field="${esc(r.field)}" data-found="${esc(r.found)}">
+            <p class="review__title">${esc(p ? p.name : r.place_id)}</p>
+            <p class="wa-note">${esc(`${FIELD[r.field] || r.field} · from its ${r.source} · ${new Date(r.created_at).toLocaleDateString('en-GB')}`)}</p>
+            ${r.field === 'closure' ? '' : `<p class="review__desc">${esc(`We hold: ${r.stored || 'nothing'}`)}</p>`}
+            <p class="review__desc">${esc(`It says: ${r.found}`)}</p>
+            <div class="review__actions">
+              ${r.field === 'closure'
+                ? '<button class="wa-btn wa-btn--primary" type="button" data-flag-set="review">Withhold the place</button>'
+                : '<button class="wa-btn wa-btn--primary" type="button" data-flag-set="use">Use the new value</button>'}
+              <button class="wa-btn" type="button" data-flag-set="dismissed">Keep what we hold</button>
+              <a class="wa-btn wa-btn--quiet" href="detail.html?id=${esc(encodeURIComponent(r.place_id))}">Open the place</a>
+            </div>
+          </li>`;
+        }).join('')}</ul>`;
+    } catch { return ''; }
+  };
+
+  /* Two place rows the pipeline thinks may be one place. Merging moves the listings to the one kept; keep
+     the picked one, because a merge does not carry the pick. */
+  const dupes = async () => {
+    try {
+      const rows = await api('GET', 'place_match_reviews?state=eq.pending&order=updated_at.asc&limit=60&select=place_a,place_b,reason');
+      if (!rows.length) return '';
+      const places = await placesById(rows.flatMap(r => [r.place_a, r.place_b]));
+      return `<h2 class="wa-h2" style="margin-top:var(--s-6)">Possible duplicate places</h2>
+        <ul class="review__list">${rows.map(r => {
+          const a = places.get(r.place_a), b = places.get(r.place_b);
+          if (!a || !b) return '';
+          return `<li class="review__item" data-a="${esc(a.id)}" data-b="${esc(b.id)}">
+            <p class="review__desc">${esc(placeLine(a))}</p>
+            <p class="review__desc">${esc(placeLine(b))}</p>
+            <p class="wa-note">${esc(r.reason || '')}</p>
+            <div class="review__actions">
+              <button class="wa-btn wa-btn--primary" type="button" data-merge="b">${esc(`Merge into ${a.name}`)}</button>
+              <button class="wa-btn wa-btn--primary" type="button" data-merge="a">${esc(`Merge into ${b.name}`)}</button>
+              <button class="wa-btn" type="button" data-merge="separate">Different places</button>
+            </div>
+          </li>`;
+        }).join('')}</ul>`;
     } catch { return ''; }
   };
 
@@ -68,7 +137,7 @@
             <button class="wa-btn" type="button" data-set="rejected">Reject</button>
             ${url(e.url || e.ticket_url) ? `<a class="wa-btn wa-btn--quiet" href="${esc(url(e.url || e.ticket_url))}" target="_blank" rel="noopener noreferrer">Source &nearr;</a>` : ''}
           </div>
-        </li>`).join('')}</ul>${await reports()}`;
+        </li>`).join('')}</ul>${await flags()}${await dupes()}${await reports()}`;
     } catch (err) {
       try { sessionStorage.removeItem(KEY); } catch { /* nothing kept */ }
       $('key-form').hidden = false;
@@ -85,6 +154,41 @@
   });
 
   document.addEventListener('click', async (e) => {
+    const fb = e.target.closest && e.target.closest('[data-flag-set]');
+    if (fb) {
+      const row = fb.closest('[data-flag]');
+      const { place, field, found } = row.dataset, choice = fb.dataset.flagSet;
+      fb.disabled = true;
+      try {
+        if (choice === 'use') {
+          const value = field === 'hours' ? { opening_hours: found, hours_source: 'manual' }
+            : { address: /,/.test(found) ? found : `${found}, Tallinn` };
+          await api('PATCH', `places?id=eq.${encodeURIComponent(place)}`, value);
+        } else if (choice === 'review') {
+          await rpc('record_place_verification', { p_id: place, p_state: 'review', p_source: 'manual', p_url: null, p_note: `Its bio says: ${found}`.slice(0, 400) });
+        }
+        await api('PATCH', `place_fact_flags?id=eq.${encodeURIComponent(row.dataset.flag)}`, { state: choice === 'dismissed' ? 'dismissed' : 'accepted' });
+        row.remove();
+      } catch (err) { fb.disabled = false; alert(`Not saved: ${err.message}`); }
+      return;
+    }
+    const mb = e.target.closest && e.target.closest('[data-merge]');
+    if (mb) {
+      const row = mb.closest('[data-a]');
+      const a = row.dataset.a, b = row.dataset.b, how = mb.dataset.merge;
+      mb.disabled = true;
+      try {
+        if (how === 'separate') {
+          await api('PATCH', `place_match_reviews?place_a=eq.${encodeURIComponent(a < b ? a : b)}&place_b=eq.${encodeURIComponent(a < b ? b : a)}`, { state: 'separate' });
+        } else {
+          /* data-merge="b" keeps a and folds b into it; "a" keeps b. */
+          const [duplicate, canonical] = how === 'b' ? [b, a] : [a, b];
+          await rpc('merge_places', { p_duplicate: duplicate, p_canonical: canonical, p_reason: 'manual review' });
+        }
+        row.remove();
+      } catch (err) { mb.disabled = false; alert(`Not saved: ${err.message}`); }
+      return;
+    }
     const rb = e.target.closest && e.target.closest('[data-report-set]');
     if (rb) {
       const row = rb.closest('[data-report]');
