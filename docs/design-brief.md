@@ -1,149 +1,65 @@
-# Design brief: WanderAlt redesign
+# Design brief
 
-The brief for a Claude Design session (`/design` in Claude Code). Keep it current: when a design is chosen, record the decision at the end.
+For a Claude Design session or anyone redesigning a screen. Current state only: when a decision changes, change it here.
 
 ## Product
 
-WanderAlt answers one question: *what's on tonight in Tallinn that's worth walking to?* It covers independent and alternative culture: DIY gigs, club nights, arthouse film, contemporary art and dance, talks, record and flea markets, and the venues that host them (record shops, bookshops, galleries, thrift shops, small cinemas, arts centres, clubs, theatres).
+WanderAlt answers: *what is worth walking to in Tallinn tonight, and what do I do after it?* Independent and alternative culture (DIY gigs, club nights, arthouse film, contemporary art and dance, talks, record and flea markets) and the places around it (record shops, bookshops, galleries, thrift, small cinemas, clubs, theatres, bars).
 
-**Audience, in order:**
-1. Travellers staying 2–5 days.
-2. Expats who read English, not Estonian.
-3. Locals who don't follow every channel.
+**Audience, in order:** travellers staying 2–5 days; English-reading expats; locals who don't follow every channel. They decide on the day, on a phone, often already out.
 
-They decide on the day, on a phone, often while already out.
+**Every row answers four things:** when (a time), how far (walking minutes), what it is (kind, price), who says so (the venue or channel it came from).
 
-**Every row answers four things:** when (a time), how far (walking minutes), what it is (kind, price), and who says so (the venue or channel it came from). Those four facts are the product; everything else serves them.
+**The idea (Night Guide):** the unit is the *evening* (two to four stops on foot), not the event card. Places carry the guide and events give it a clock. Fienta and the like are the cashier we link to; we are the guide. Not every bar: places are **picked** by hand, with one honest line on why.
 
-## What exists (keep the structure, redesign the look)
+## Identity (decided 2 Oct 2026)
 
-- **Explore** (`index.html`): search field; Where / When / What capsule; tabs All · Events · Places; sections "Tonight", "Open right now", "Places".
-- **Tonight** (`discover.html`): seven-day density strip, list of rows, filter sheet, map mode.
-- **Event page** (`detail.html?id=ev_…`):
-  - photo;
-  - English title, original title under it;
-  - English one-line summary;
-  - cells: doors · entry · walk;
-  - buttons: Tickets · Walk me there · Add to calendar · Save · Add to a list;
-  - "In their words" (the source's own text), address;
-  - **The venue** row linking to the venue page;
-  - "Where this came from".
-- **Venue page** (`detail.html?id=tallinn-…`):
-  - photo;
-  - kind · area;
-  - cells: closes · entry · walk;
-  - Website / Instagram / Facebook;
-  - **Listed here next** (its programme);
-  - opening hours week;
-  - provenance.
-- **Saved**, **You**, **About**, **404**.
+- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. Not black and yellow.
+- **Labels:** round flat discs of Tallinn objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Not Meetup's offset stickers, not Airbnb's 3D.
+- A route is a spine: time, square node, stop; the listing is the one filled node.
+- No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it). Four tabs: Tonight, Guide, Map, Saved; You is the avatar. Sign-in is one sheet, link first.
+- Design canvas from the first pass: https://claude.ai/artifact/41QjFPZyhwnY68ugNeespd (25 boards, light and night; it predates some shipped details).
 
-Live data: about 400 events a fortnight and about 220 venues, all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added by the pipeline. About half of venues have opening hours, and a minority have photos. **Design for missing data**: no photo, no hours, no time (date only), no price.
+## What exists
 
-Real examples to design with (from the live database, September 2026):
-- "Lai Tsung Yun (TW) | Sander Saarmets | Glitch Korts" · gig · Uus Laine, Kalamaja · Thu 19:00 · €10 · via @fienta
-- "Öömaaeg" (English title to come) · theatre · Von Krahl, Telliskivi · Mon 19:00 · €25
-- "Screening at Kai Cinema: Sisters" · film · Kai Art Center, Noblessner · Sun 18:00 · €6
-- "Heldeke Vinyl Sessions" · gig · Heldeke!, Kalamaja · Wed 17:00 · free
-- Venues: Kino Sõprus (cinema, Old Town), Biit (record store), Raamatukoi (bookshop), Tütar gallery, Helitehas (club), Kultuurikatel (arts centre)
+Tonight (route card, day tabs, a time-ordered list, Near me) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places by kind) · Map · Route page · Event and venue pages · Saved · You · sign-in sheet. Details: `docs/frontend.md`.
 
-## What users told us is wrong (end-user review, 27 Sep 2026)
+Live data: about 600 events a fortnight, about 430 places (31 picked), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. Half the venues have hours, a minority photos, 58% of events a price. **Design for missing data**: no photo, no hours, no time, no price.
 
-1. **English doesn't lead.** A visitor can't tell a premiere from a children's show.
-2. **Nothing to search.** Search was hidden in a sheet. It's now a field on Explore; make it the first thing.
-3. **Empty at night.** "Nothing we can confirm is open" appears exactly when people look. At night the answer should be "still going" and "late": clubs, bars, films starting after 21:00.
-4. **The map is weak.** Near-black in dark mode, events only. It needs venues too, as a clearly different layer.
-5. **Areas.** People know Kalamaja, Telliskivi, the Old Town, Noblessner, not district names. Areas now arrive as asum names; give them a role.
-6. **No reason to come back.** No interests, nothing new since last visit.
+## What users told us
 
-## Screens to design
+**27 Sep, first review:** English must lead; search first; an empty night must say "still going"; a weak map; area names people know; no reason to come back. Mostly addressed; the map and return reasons are still thin.
 
-At 390 px (primary) and 1440 px, each in light and dark:
+**2 Oct, two interviews, shown the version before the redesign** (so some of this may already be answered; ask them again on the new one):
 
-1. **Home / Tonight**
-   - A search field on top.
-   - "Starting soon" and "Still going" (after 22:00).
-   - "This weekend".
-   - Venues open now nearby.
-   - One screen that is never empty.
-2. **Event row and event card**
-   - Time and walk on a rail.
-   - English title first, original title quiet underneath.
-   - Venue · area · price.
-   - One tag that says why it's listed ("arthouse", "DIY", "techno").
-3. **Event page**
-   - Tickets as the primary action.
-   - Add to calendar, Walk me there, Save.
-   - The venue as a small card with its photo.
-4. **Venue page**
-   - Identity (photo, or a strong typographic fallback when there's none).
-   - Open now or closed, with the week's hours.
-   - Instagram, Facebook and Website as icons.
-   - Programme grouped by day.
-   - Follow.
-5. **Map**
-   - A light basemap by default.
-   - Two layers with distinct pin shapes: events tonight and venues open now.
-   - A drawer listing what's in view by walking time.
-6. **Places list**
-   - Filter by kind: records, books, galleries, thrift, cinema, clubs, theatres.
-   - Sorted by distance, then open now.
-7. **Interests** (optional first run): three taps, skippable.
-8. **States:**
-   - loading skeleton;
-   - offline;
-   - an event that has ended;
-   - a venue with nothing listed;
-   - no location permission;
-   - a search with no match.
+| They said | Now |
+|---|---|
+| Tapping an event's title should open its details | Every row and card is one link to its page; the route card opens the route, not its stops, and nothing shows that a row is tappable. Which screen they tried is unknown. |
+| Don't make me scroll filter chips (gigs, club nights, film…); I often don't know what I want. Austria took hours | Tonight still opens with a row of kind chips. Routes and the plan search help, but there is no mood-led start. |
+| A ceiling of about €20 a person, or free only | A Free switch on the Programme; "under 20" works in a typed sentence. Nothing on Tonight, and routes show no cost. 47 events are free, 298 priced, 251 have no price listed. Places carry no price. |
+| Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: route card, More evenings, plan words in search. Not built: "what next from here" on an event or place page (designed on the canvas), options by mood. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
+| Onboarding by mood: listen or dance, craft bar, board games | None. "Your taste" on You holds up to three kinds. |
+| (noticed here) craft beer bars and board games | Not covered. The OSM catalogue reads arts, cinema, clubs, community, theatre, galleries and shops; bars only appear as event hosts. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom). No board-game place or event exists. Needs new sources and kinds, then moods. |
 
-## Direction
+## Open questions
 
-- **Mood:** the paper culture of Tallinn's scene: gig posters on Telliskivi walls, zines, risograph flyers, cinema programmes. It should read like a well-made club listings sheet, not a travel app and not a map app.
-- **Show three distinct directions first** (typography, colour and density), each applied to the same Home and event page, before going deeper on one.
-- **Typography:**
-  - Plus Jakarta Sans, Fraunces and Geist Mono are self-hosted today and can be replaced.
-  - Estonian, Latvian and Russian characters must render (õ, ä, ö, ü, š, ž, Cyrillic).
-- **Colour:** one accent. The current one is petrol `#055959`, with lime meaning "now". Colour never carries meaning alone.
-- **Do not use:**
-  - a cream or off-white background;
-  - italic accent words in headlines;
-  - numbered "01/02/03" section labels;
-  - monospace for every small label;
-  - pill-shaped buttons everywhere;
-  - glassmorphism beyond the two existing bars;
-  - purple-to-blue gradients;
-  - emoji;
-  - a generic grid of identical rounded cards;
-  - anything that looks like Google Maps or a booking site.
-- **Voice** (from `AGENTS.md`):
-  - handles start with `@`;
-  - no exclamation marks;
-  - no marketing register;
-  - never "discover" as a verb;
-  - metadata reads "Area · kind · day + time".
+- Moods: how many, what are they, and do they replace the kind chips on Tonight? Each mood should map to listing kinds and place kinds and feed the route.
+- Budget: one control (free / up to €10 / up to €20) or a default cap on You? Unknown prices must be handled honestly, not hidden or assumed free.
+- A "what next from here" block on event and place pages: how many options, nearby how far, by mood?
+- The Guide page: neighbourhood chips, nearest first, add to a route. To be challenged before it is built.
+- Visible complexity is the cost of every idea above. Fewer elements wins.
 
-## Constraints for the build
+## Constraints
 
-- The site is static HTML, one stylesheet (`wa.css`, design tokens as CSS variables) and vanilla JS. There is no framework, so Claude Design's `/design-sync` (which needs React components) does not apply. Design freely; the handoff is implemented against `wa.css` and the page scripts.
-- Strict Content Security Policy:
-  - no inline scripts;
-  - no third-party scripts, analytics or web fonts from a CDN (fonts are self-hosted).
-- WCAG 2.2 AA:
-  - tap targets of at least 44 px;
-  - visible focus;
-  - respect `prefers-reduced-motion`.
-- Listing text is untrusted. Designs must survive very long titles (three lines), all-caps titles, and titles in Cyrillic.
+- Static HTML, one stylesheet (`wa.css`, tokens as CSS variables), vanilla JS; no framework, so `/design-sync` (React components) doesn't apply. Strict CSP: no inline scripts, no third-party scripts or analytics, self-hosted fonts.
+- WCAG 2.2 AA: 44 px targets, visible focus, `prefers-reduced-motion`. Listing text is untrusted: titles may run three lines, be all caps or Cyrillic.
+- Free tiers and free models only. Never guess a photo from a name.
+- Check at 390 and 1440 px, light and dark.
 
-## Handoff
+## Do not use
 
-When a direction is chosen, export it and "Send to Claude Code". Claude Code then implements it page by page and checks each page at 390 and 1440 px in both themes. Record the chosen direction and its tokens below.
+Cream backgrounds, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients, anything that looks like Google Maps or a booking site.
 
-## Decisions
+## Voice
 
-- **28 Sep 2026: "Airbnb calm, Liquid Glass chrome".** Chosen by Sergey after a first listings-sheet direction (black ink, heavy rules) was built and set aside. Inspiration: Airbnb mobile and desktop (September 2026), Apple Liquid Glass (iOS / macOS 27), and the Dropbox brand framework (logo, type, colour, icon tiers, voice).
-  - This replaces two items in "Do not use" above: glass is allowed on everything that floats over content (top bar, tab bar, map controls, sheets, the ticket bar, card badges), and chips, search and pins are pills. Content itself is never glass.
-  - Tokens: paper `#ffffff` / dusk `#111113`, ink `#1c1c1e`, accent `#d83a14`, radii 8 / 12 / 16 / 20 / 28 and pill, Geologica 500–700.
-  - Icons in two tiers: 24px UI icons and 48px pictograms for kinds and cities on tinted tiles.
-  - Logo: a route that spells a W and ends under a night spark, white on a vermilion tile (wander, then something worth the walk), with a lowercase "wanderalt" wordmark.
-  - The system is written down in `docs/frontend.md`.
+Handles start with `@`; no exclamation marks; no marketing register; never "discover" as a verb; metadata reads "Area · kind · day + time".

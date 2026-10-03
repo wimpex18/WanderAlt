@@ -1,6 +1,6 @@
 # Front end and design system
 
-Plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). No framework and no build step. The direction is recorded in `docs/design-brief.md` under Decisions.
+Plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). No framework and no build step. The direction, what users said and what is open are in `docs/design-brief.md`.
 
 ## Pages
 
