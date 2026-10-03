@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- WanderAlt sitemap. Static pages only — detail and source
-     URLs are excluded because their content is dynamic, the catalog
-     rotates weekly, and crawl budget is better spent on the editorial
-     landing surfaces. Update the lastmod when content materially
-     changes (new city, new About copy). -->
+<!-- The fallback sitemap. The live one is functions/sitemap.xml.js: these pages plus every
+     picked place and upcoming listing, cached an hour; this file is served only when Supabase
+     does not answer. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://wanderalt.app/</loc>
