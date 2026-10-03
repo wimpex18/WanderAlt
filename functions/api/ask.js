@@ -19,7 +19,7 @@ const MODEL = '@cf/openai/gpt-oss-20b';
 const KINDS = ['gig', 'club', 'film', 'exhibition', 'talk', 'theatre', 'market', 'workshop', 'festival'];
 const WHEN = ['', 'tonight', 'tomorrow', 'weekend', 'thisweek'];
 const INTENTS = ['listings', 'places', 'evening'];
-const PLACE_KINDS = ['record store', 'bookshop', 'gallery', 'thrift', 'cinema', 'club', 'bar', 'theatre', 'arts centre'];
+const PLACE_KINDS = ['record store', 'bookshop', 'gallery', 'thrift', 'cinema', 'club', 'bar', 'theatre', 'arts centre', 'museum', 'taproom'];
 
 const SCHEMA = {
   type: 'object',
@@ -44,7 +44,7 @@ const SCHEMA = {
 const system = (today) => `You turn a search on WanderAlt, a guide to independent culture in Tallinn, into filters. Today is ${today} (${new Date(`${today}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' })}).
 intent: "places" when the search wants somewhere to go (a shop, gallery, bar, club, cinema, theatre) and no event; "evening" when it asks for a plan, an evening, a day or what to do ("plan my Friday", "something to do with friends"); otherwise "listings" (things happening). A search for where to hear or see something may name both kinds and places.
 Kinds of listing: gig (live music), club (club nights, DJs, parties), film, exhibition (art), talk (talks, readings, lectures, meetings with authors or artists), theatre (theatre and dance), market (markets, fairs, record and craft sales), workshop, festival.
-placeKinds: the kinds of place the search wants, else []: record store, bookshop, gallery, thrift, cinema, club, bar, theatre, arts centre.
+placeKinds: the kinds of place the search wants, else []: record store, bookshop, gallery, thrift, cinema, club, bar, theatre, arts centre, museum, taproom (craft beer bars and taprooms).
 Fields:
 - when: "tonight" for today or tonight, "tomorrow", "weekend", "thisweek", else "". day: the next matching date in YYYY-MM-DD for a named weekday or date, never a weekday name, else "".
 - kinds: every kind of listing the search asks for; [] when it names none. A mood ("something chill") picks the kinds that fit it.
