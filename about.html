@@ -70,28 +70,21 @@
   <main class="wa-shell" id="main">
     <header class="wa-pagehead">
       <p class="wa-kicker">About</p>
-      <h1 class="wa-hero" style="max-width:14ch">We read the sources so you don't open nine tabs.</h1>
+      <h1 class="wa-h1">We read the sources so you don't open nine tabs.</h1>
+      <p class="wa-lede">Independent culture in Tallinn. A time, a walk and a source on every listing.</p>
     </header>
-    <div class="you-cols">
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">What this is</h2></div>
-        <p class="wa-prose">WanderAlt collects what's on in Tallinn's independent scene: DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. Every listing carries a time, a walking distance and the source it came from. No hosts, no bookings, no commission. If a listing is wrong, a venue's own page is wrong, and we say where we read it.</p>
-        <div class="wa-stats" id="about-counts" style="margin-top:var(--s-5)"></div>
-      </section>
-      <section class="wa-sect" id="calendar">
-        <div class="wa-sect__head"><h2 class="wa-sect__title" id="calendar-feed">The week as a calendar</h2></div>
-        <p class="wa-note">Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.</p>
-        <div id="about-feeds" style="margin-top:var(--s-4)"></div>
-      </section>
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">What we store</h2></div>
-        <p class="wa-note">Saves, interests and what you open stay in your browser. Signed in, your saves, lists, follows, going marks and alert settings also live in your account, with your inbox, until you delete it from You. Google sign-in gives us your email address and nothing else. Alerts stay in the app: the inbox, and an optional push on a device you allow. We send no email announcements. No cookies to consent to, no analytics, no third-party scripts.</p>
-      </section>
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">Terms, briefly</h2></div>
-        <p class="wa-note">Listings belong to the venues and sources they came from, and we link to each one. We print what the source said and when we read it. We cannot promise a door will be open.</p>
-      </section>
-    </div>
+    <div class="wa-stats" id="about-counts"></div>
+    <section class="wa-sect you-folds about-folds">
+      <details class="you-fold" id="what" open><summary><span class="you-fold__t">What this is</span><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></summary>
+        <div class="you-fold__b"><p class="wa-note">DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. No hosts, no bookings, no commission. If a listing is wrong, the venue's own page is wrong, and we say where we read it.</p></div></details>
+      <details class="you-fold" id="calendar"><summary><span class="you-fold__t" id="calendar-feed">The week as a calendar</span><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></summary>
+        <div class="you-fold__b"><p class="wa-note">Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.</p>
+          <div id="about-feeds" style="margin-top:var(--s-3)"></div></div></details>
+      <details class="you-fold" id="privacy"><summary><span class="you-fold__t">Privacy</span><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></summary>
+        <div class="you-fold__b"><p class="wa-note">Saves, interests and what you open stay in your browser. Signed in, your saves, lists, follows, going marks and alert settings also live in your account, with your inbox, until you delete it from <a href="./profile.html">You</a>. Google sign-in gives us your email address and nothing else. Alerts stay in the app, and a push goes only to a device you allow. We send no email announcements. No cookies to consent to, no analytics, no third-party scripts.</p></div></details>
+      <details class="you-fold" id="terms"><summary><span class="you-fold__t">Terms, briefly</span><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></summary>
+        <div class="you-fold__b"><p class="wa-note">Listings belong to the venues and sources they came from, and we link to each one. We print what the source said and when we read it. We cannot promise a door will be open.</p></div></details>
+    </section>
     <footer class="wa-foot"><span>WanderAlt · Tallinn</span><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a><a href="./profile.html">You</a></footer>
   </main>
 

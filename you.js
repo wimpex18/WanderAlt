@@ -200,8 +200,7 @@
         </section>
 
         <section class="wa-sect you-folds">
-          ${fold('fold-store', 'Data and privacy', null, `<p class="wa-note">Saves, lists, follows, interests and history stay in this browser. Signed in, they also live in your account, with your alert settings and inbox, until you delete it here. No location history, no analytics, no third-party scripts.</p>
-            <p style="margin-top:var(--s-3)"><a class="wa-link" href="about.html#calendar-feed">Take the week as a calendar feed</a></p>
+          ${fold('fold-store', 'Data and privacy', null, `<p class="wa-note">Your saves and history stay in this browser. Signed in, they also live in your account until you delete it here. <a class="wa-link" href="about.html#privacy">The full note</a> · <a class="wa-link" href="about.html#calendar-feed">Calendar feed</a></p>
             <p><button class="wa-linkbtn" type="button" id="wipe-device">Forget everything on this device</button></p>`)}
         </section>
       </div>

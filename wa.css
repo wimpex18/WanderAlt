@@ -1432,3 +1432,4 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-more__item { margin-top: var(--s-3); }
 .prog-more { display: flex; align-items: center; gap: var(--s-3); margin: var(--s-4) 0 var(--s-6); flex-wrap: wrap; }
 .wa-day__all { margin: var(--s-2) 0 var(--s-4); }
+.you-cols { margin-top: 0; }
