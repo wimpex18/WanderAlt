@@ -177,7 +177,10 @@
     const far = (e) => { const d = R().isOff(e) ? null : G().distanceTo(e); return d == null ? Infinity : d; };
     return ordered.map((e, i) => [e, far(e), i]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
-  const SHOWN = 12;
+  /* The list is short on purpose: the next five, then "Show N more" opens the rest
+     here (up to thirty; past that the Programme). A kind chosen above shows all of it. */
+  const SHOWN = 5, MOST = 30;
+  let expanded = false;
 
   /* One row of the kinds in the day's list, with how many of each, so all the
      workshops or all the comedy are a tap away. Only kinds that are there, most
@@ -216,6 +219,7 @@
     const shown = facets(full);
     if (facet && !shown.some(([id]) => id === facet)) facet = '';
     const list = facet ? full.filter(e => inFacet(facet, e)) : full;
+    const cap = expanded || facet ? MOST : SHOWN;
     const out = [`<section class="wa-sect rt-sect" id="plan">${planCard(p)}</section>`];
 
     if (all.length) {
@@ -226,8 +230,9 @@
         ${tabs.length ? `<div class="home-tabs" role="tablist" aria-label="Day">${tabs.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}">${label}</button>`).join('')}</div>` : ''}
         ${facetRow(full, shown)}
         ${nearOn() && list.length ? '<p class="wa-note home-day__note">Nearest first, walking from you</p>' : ''}
-        ${list.length ? `<ul class="wa-rows">${list.slice(0, SHOWN).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
-        <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > SHOWN ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a>
+        ${list.length ? `<ul class="wa-rows">${list.slice(0, cap).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
+        <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
+        <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > cap ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a></div>
       </section>`);
     } else {
       out.push(R().empty(window.WA.DATA_LIVE === false
@@ -287,9 +292,16 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
-    if (dt) { dayTab = dt.dataset.day; main(); return; }
+    if (dt) { dayTab = dt.dataset.day; expanded = false; main(); return; }
     const fc = hit('[data-facet]');
-    if (fc) { facet = facet === fc.dataset.facet ? '' : fc.dataset.facet; main(); return; }
+    if (fc) { facet = facet === fc.dataset.facet ? '' : fc.dataset.facet; expanded = false; main(); return; }
+    if (hit('[data-day-all]')) {
+      expanded = true; main();
+      const rows = document.querySelectorAll('.home-day .wa-rows > li');
+      const first = rows[SHOWN] && rows[SHOWN].querySelector('a');
+      if (first) first.focus({ preventScroll: true });
+      return;
+    }
     if (hit('[data-near]')) {
       if (nearOn()) { setNear(false); render(); return; }
       setNear(true);

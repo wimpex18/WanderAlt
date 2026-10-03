@@ -1491,7 +1491,15 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-kinds .wa-chip { min-height: var(--tap); padding: 0 14px; font-size: .875rem; flex: none; }
 .home-kinds .wa-chip .wa-picto { width: 20px; height: 20px; }
 .home-day__note { margin: 0 0 var(--s-1); }
-.home-day__more { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s-3); font-weight: 600; }
+/* Now's list is a preview: tighter rows, a smaller picture, titles to two lines. */
+.home-day .wa-row { padding: var(--s-3) 0; gap: var(--s-3); }
+.home-day .wa-row__thumb { width: 60px; height: 60px; border-radius: 12px; }
+.home-day .wa-row__title { font-size: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.home-day .wa-row__top { margin-bottom: 0; }
+.home-day__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); }
+.home-day__all { min-height: var(--tap); background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
+.home-day__all .wa-ic { width: 18px; height: 18px; }
+.home-day__more { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .home-day__more .wa-ic { width: 18px; height: 18px; }
 
 /* You: a short page. Signed out it opens on one card; signed in, on who you are. */

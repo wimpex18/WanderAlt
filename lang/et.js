@@ -784,6 +784,10 @@ window.WA.dict.et = {
    "Näita veel {n}"
   ],
   [
+   "All {n}",
+   "Kõik {n}"
+  ],
+  [
    "Show all {n} running",
    "Näita kõiki {n} käimasolevat"
   ],
