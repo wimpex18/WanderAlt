@@ -357,3 +357,8 @@ test('Kai: English post kept, screenings split, school trips and closures skippe
     globalThis.fetch = realFetch;
   }
 });
+
+test('lastBy keeps one row per id, the last, in first-seen order', async () => {
+  const { lastBy } = await import('../util.ts');
+  assert.deepEqual(lastBy([{ id: 'a', n: 1 }, { id: 'b', n: 2 }, { id: 'a', n: 3 }], r => r.id), [{ id: 'a', n: 3 }, { id: 'b', n: 2 }]);
+});

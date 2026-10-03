@@ -78,7 +78,9 @@ export function duplicateEvents(events: StoredEvent[], separate = new Set<string
   const seen = new Seen(), byId = new Map<string, StoredEvent>(), out: { duplicate: StoredEvent; canonical: StoredEvent }[] = [];
   for (const e of sorted) {
     const same = seen.matchUrl(e.title, e.url, Date.parse(e.starts_at));
-    if (same && !separate.has([same, e.id].sort().join('|'))) { out.push({ duplicate: e, canonical: byId.get(same)! }); continue; }
+    const twin = same ? byId.get(same) : undefined;
+    // merge_events also needs the canonical row to have a place and the same date-only or timed kind.
+    if (twin && twin.place_id && twin.has_time === e.has_time && !separate.has([same!, e.id].sort().join('|'))) { out.push({ duplicate: e, canonical: twin }); continue; }
     if (e.url) { seen.add({ id: e.id, title: e.title, where: '', start: Date.parse(e.starts_at), url: e.url }); byId.set(e.id, e); }
     if (!e.place_id) continue;
     // Date-only listings cannot prove they describe a timed occurrence.
