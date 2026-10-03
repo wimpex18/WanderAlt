@@ -25,12 +25,12 @@ const PALETTES = {
   },
   dusk: {
     file: 'map-style-dusk.json', name: 'WanderAlt night',
-    land: '#1b1c1f', residential: '#1e1f22', wood: '#1d2b21', grass: '#202f24', park: '#213325',
-    cemetery: '#222a22', sand: '#2b2820', wetland: '#1e2a26', hospital: '#2b2123', school: '#26241f',
-    water: '#12273a', waterLabel: '#6c9cc6', building: '#25262a', buildingEdge: '#2d2e33',
-    casing: '#26272b', minor: '#303136', major: '#3a3b41', primary: '#4a4232', primaryCasing: '#3a3428',
-    motorway: '#5a4a30', motorwayCasing: '#43382a', path: '#4c4c52', rail: '#3c3c42',
-    label: '#dcdce0', area: '#9a9aa2', halo: '#1b1c1f', parkLabel: '#8fb98a',
+    land: '#2e2a58', residential: '#312d5d', wood: '#2f4d4c', grass: '#335350', park: '#325553',
+    cemetery: '#35505a', sand: '#4a4062', wetland: '#2f4d58', hospital: '#4a3760', school: '#443d66',
+    water: '#244c80', waterLabel: '#a4c8f0', building: '#3b3669', buildingEdge: '#463f7a',
+    casing: '#3a3668', minor: '#4b457f', major: '#58518e', primary: '#74605e', primaryCasing: '#5f4f66',
+    motorway: '#8c6c50', motorwayCasing: '#6e5750', path: '#7a74ae', rail: '#5c5792',
+    label: '#f3f0fd', area: '#c0bbe4', halo: '#2e2a58', parkLabel: '#b0dcb6',
   },
 };
 

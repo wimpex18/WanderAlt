@@ -45,6 +45,10 @@ export interface Place {
   instagram?: string | null;
   facebook?: string | null;
   opening_hours?: string | null;
+  /** Where opening_hours came from: 'osm', 'site', 'facebook' or 'instagram'. */
+  hours_source?: string | null;
+  hours_checked_at?: string | null;
+  facts_checked_at?: string | null;
   description?: string | null;
   wikidata_id?: string | null;
   image_url?: string | null;
@@ -54,7 +58,7 @@ export interface Place {
 }
 
 const DETAIL_FIELDS = ['kind', 'address', 'lat', 'lng', 'osm_id', 'website', 'instagram', 'facebook',
-  'opening_hours', 'description', 'wikidata_id', 'neighborhood', 'image_url', 'image_attr', 'image_source'] as const;
+  'opening_hours', 'hours_source', 'description', 'wikidata_id', 'neighborhood', 'image_url', 'image_attr', 'image_source'] as const;
 
 interface NominatimHit {
   lat: string;

@@ -20,7 +20,7 @@ const GENERIC = new Set(('tallinn tallinna eesti estonia sa ou mtu as club klubi
   'theatre teater baar bar pub cafe kohvik shop store raamatupood raamatukauplus jazz').split(' '));
 // OpenStreetMap files one room as a bar, a club or a pub depending on who tagged it: the same
 // kind of place, so two such rows at one address are compatible. Other kinds stay distinct.
-const NIGHT = new Set(['bar', 'club', 'pub']);
+const NIGHT = new Set(['bar', 'club', 'pub', 'taproom']);
 const sameKind = (a?: string | null, b?: string | null) => !a || !b || a === b || (NIGHT.has(a) && NIGHT.has(b));
 export const core = (s: string) => nameKey(s).split(' ').filter(w => !GENERIC.has(w)).join(' ');
 const roomNumbers = (s: string) => nameKey(s).match(/\b\d+\b/g)?.join(' ') ?? '';

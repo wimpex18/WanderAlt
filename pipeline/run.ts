@@ -34,6 +34,8 @@ import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
+import { fillHours } from './hours-sources.ts';
+import { checkDrift } from './drift.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -309,7 +311,7 @@ async function main() {
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
   if (osm && !skipCatalogue) {
     try {
-      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'));
+      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
       for (const p of catalogue) places.merge(p);
       if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
@@ -424,12 +426,34 @@ async function main() {
     } catch (e) { log(`instagram failed: ${(e as Error).message}`); }
   }
 
+  // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its
+  // Instagram bio (hours-sources.ts). A few a run, none for a place looked at in the last fortnight.
+  const bios = new Map<string, string>();
+  if (!flag('--no-hours')) {
+    try {
+      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30), { bios })) {
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    } catch (e) { log(`hours failed: ${(e as Error).message}`); }
+  }
+
+  // What a venue's Instagram bio says about itself (a new address, new hours, "we have moved") against
+  // what we hold, about once a month per place. Differences become rows in place_fact_flags for a person
+  // to review; no stored fact is changed (drift.ts).
+  if (instagram && !flag('--no-drift')) {
+    try {
+      const { looked, found } = await checkDrift(places.all(), instagram, Number(opt('--max-drift') ?? 30), { bios });
+      for (const p of looked) if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      if (db && found.length) await db.insertIgnore('place_fact_flags', found.map(f => ({ place_id: f.placeId, field: f.field, stored: f.stored, found: f.found, source: 'instagram' })), 'place_id,field,found');
+    } catch (e) { log(`drift failed: ${(e as Error).message}`); }
+  }
+
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const seen = new Seen(db
-    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string }>(
-        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at&order=id.asc`))
-        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at) }))
+    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string; url: string | null }>(
+        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at,url&order=id.asc`))
+        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at), url: k.url }))
     : []);
 
   const events = new Map<string, Record<string, unknown>>();
@@ -440,8 +464,8 @@ async function main() {
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
-    const id = seen.match(c.title, where, start) ?? eventId(CITY, c, place?.id ?? null);
-    seen.add({ id, title: c.title, where, start });
+    const id = seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
+    seen.add({ id, title: c.title, where, start, url: c.url });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     // Any source saying a show is off or sold out wins over one that doesn't.

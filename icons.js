@@ -60,6 +60,7 @@
     browse:   '<rect x="5" y="4" width="14" height="16" rx="1.5"/><circle cx="12" cy="13" r="3.5"/><circle cx="12" cy="13" r=".8"/>',
     make:     '<path d="m5 19 1-4 9.5-9.5a2 2 0 0 1 3 3L9 18z"/>',
     listen:   '<path d="M5 14v-2a7 7 0 0 1 14 0v2"/><rect x="3.5" y="13" width="4" height="6" rx="1.5"/><rect x="16.5" y="13" width="4" height="6" rx="1.5"/>',
+    drink:    '<path d="M6 8.5h9V18a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2zM15 10.5h2.2a1.8 1.8 0 0 1 0 3.6H15M6.6 8.5C6.6 6.8 8 5.6 9.4 5.6c.6-1 2-1.4 3-.8 1.2.2 2.1 1.4 2 3.7"/>',
     dance:    '<circle cx="12" cy="13" r="6.5"/><path d="M12 3.5v3M5.5 13h13M7 9.5c3 1.5 7 1.5 10 0M7 16.5c3-1.5 7-1.5 10 0"/>',
     join:     '<path d="M3.5 8.5h7M4.8 8.5 4 19M9.2 8.5l.8 10.5M4.4 14h5.2M13.5 8.5h7M14.8 8.5 14 19M19.2 8.5l.8 10.5M14.4 14h5.2"/>',
     /* Kinds */
@@ -94,7 +95,7 @@
     bookshop: 'books', books: 'books', library: 'books',
     'record store': 'records', records: 'records', vinyl: 'records',
     festival: 'festival',
-    bar: 'bar', pub: 'bar', cafe: 'bar',
+    bar: 'bar', pub: 'bar', cafe: 'bar', taproom: 'bar',
     'arts centre': 'centre', community: 'centre',
   };
 
@@ -147,7 +148,7 @@
     gig: 'gig', concert: 'gig', club: 'club', party: 'club', film: 'film', cinema: 'film',
     theatre: 'theatre', dance: 'theatre', exhibition: 'art', gallery: 'art', museum: 'art', art: 'art',
     talk: 'talk', lecture: 'talk', workshop: 'workshop', festival: 'festival', market: 'market',
-    'record store': 'records', bookshop: 'books', thrift: 'thrift', 'arts centre': 'centre', community: 'centre', bar: 'bar',
+    'record store': 'records', bookshop: 'books', thrift: 'thrift', 'arts centre': 'centre', community: 'centre', bar: 'bar', taproom: 'bar',
   };
   const Picto = (name, cls) => {
     const key = DISC_FOR[name] || name;

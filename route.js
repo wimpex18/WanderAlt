@@ -32,7 +32,7 @@
   const W = () => window.WA.when, G = () => window.WA.Geo, H = () => window.WA.Hours, R = () => window.WA.R;
 
   const BEFORE = new Set(['record store', 'bookshop', 'gallery', 'thrift', 'arts centre', 'cinema']);
-  const AFTER = new Set(['bar', 'club']);
+  const AFTER = new Set(['bar', 'club', 'taproom']);
   const MAX_BEFORE = 15, MAX_AFTER = 12, DAY = 24 * 60;
 
   const nowMin = () => H().cityNow().minutes;

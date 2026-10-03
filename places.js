@@ -1,7 +1,7 @@
 /* ============================================================
    places.js — Places: the shops, rooms and stages.
    ------------------------------------------------------------
-   A lens (Look, Browse, Listen, Dance: the moods that have three picked
+   A lens (Look, Browse, Drink, Listen, Dance: the moods that have three picked
    places behind them), an Open now toggle, picked places first and then nearest first, from where you are, a place you
    chose, or the city's centre, always said in one line under the heading.
    Each row says whether it is open and how much is listed there.
@@ -21,7 +21,7 @@
     { id: 'galleries', label: 'Galleries',      icon: 'art',      kinds: ['gallery', 'arts centre', 'museum'] },
     { id: 'thrift',    label: 'Thrift',         icon: 'thrift',   kinds: ['thrift'] },
     { id: 'cinema',    label: 'Cinema',         icon: 'film',     kinds: ['cinema'] },
-    { id: 'clubs',     label: 'Clubs and bars', icon: 'club',     kinds: ['club', 'bar'] },
+    { id: 'clubs',     label: 'Clubs and bars', icon: 'club',     kinds: ['club', 'bar', 'taproom'] },
     { id: 'theatres',  label: 'Theatres',       icon: 'theatre',  kinds: ['theatre'] },
     { id: 'community', label: 'Community',      icon: 'centre',   kinds: ['community'] },
   ];
@@ -41,7 +41,7 @@
   };
 
   const M = () => window.WA.Moods;
-  const LENS = ['look', 'browse', 'listen', 'dance'];
+  const LENS = ['look', 'browse', 'drink', 'listen', 'dance'];
   const lensMoods = () => {
     if (!M()) return [];
     const picked = R().places().filter(v => v.picked);

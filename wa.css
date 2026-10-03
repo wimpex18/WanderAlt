@@ -1416,6 +1416,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .mood-tile__d--make { background: radial-gradient(circle at 30% 25%, #fff, #f8cdd8 70%); color: #a03a5a; }
 .mood-tile__d--listen { background: radial-gradient(circle at 30% 25%, #fff, #c9d9f3 70%); color: #2e5f8a; }
 .mood-tile__d--dance { background: radial-gradient(circle at 30% 25%, #fff, #e0d2f3 70%); color: #6a4a8c; }
+.mood-tile__d--drink { background: radial-gradient(circle at 30% 25%, #fff, #f6e0a8 70%); color: #8f6310; }
 .mood-tile__d--join { background: radial-gradient(circle at 30% 25%, #fff, #cfe8d3 70%); color: #2d6a4a; }
 .mood-h { font-size: 1rem; font-weight: 700; margin: var(--s-5) 0 var(--s-2); }
 .mood-seg { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-pill); background: color-mix(in oklab, var(--accent) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 10%, transparent); }

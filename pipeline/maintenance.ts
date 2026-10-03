@@ -9,7 +9,7 @@ import { duplicateEvents, type StoredEvent } from './dedupe.ts';
 import { checkWebsite, dueWebsites } from './place-verification.ts';
 
 export const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id', 'osm_ids',
-  'status', 'merged_into', 'created_at', 'picked', 'website', 'website_source', 'instagram', 'facebook', 'opening_hours', 'description', 'wikidata_id',
+  'status', 'merged_into', 'created_at', 'picked', 'website', 'website_source', 'instagram', 'facebook', 'opening_hours', 'hours_source', 'hours_checked_at', 'facts_checked_at', 'description', 'wikidata_id',
   'image_url', 'image_attr', 'image_source', 'enriched_at', 'osm_checked_at', 'osm_last_seen_at', 'osm_missing_count',
   'osm_state', 'osm_note', 'osm_closed_by_check', 'osm_auto_close', 'verification_state', 'verification_checked_at',
   'website_checked_at', 'verified_at', 'verification_source', 'verification_url', 'verification_note'];
@@ -90,7 +90,7 @@ export async function verifyPlaces(db: Db, city: string, websiteLimit = 10) {
 }
 
 export async function reconcileEvents(db: Db, city: string, dry = false) {
-  const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,first_seen_at,status,has_time&order=id.asc`);
+  const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,url,first_seen_at,status,has_time&order=id.asc`);
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
   const plan = duplicateEvents(rows, new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id))));
   if (!dry) for (const { duplicate, canonical } of plan) {

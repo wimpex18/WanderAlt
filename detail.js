@@ -417,6 +417,7 @@
       ${route ? `<a class="wa-btn wa-btn--pill" href="route.html?s=${esc(Rt.param(route))}">Plan the next hours from here</a>` : ''}</section>`;
   };
 
+  const HOURS_FROM = { osm: 'OpenStreetMap', site: 'the venue\'s own site', facebook: 'its Facebook page', instagram: 'its Instagram bio', manual: 'a check by us' };
   const placePage = (v) => {
     const o = R().openState(v);
     const following = window.WA.Follows && window.WA.Follows.has(window.WA.Follows.placeId(v));
@@ -473,7 +474,9 @@
           ${week ? `<div class="hours">${week.map(d => `<div class="hours__row${d.isToday ? ' hours__row--today' : ''}">
               <span class="hours__day">${esc(d.day)}</span><span class="hours__val">${esc(d.text)}</span>${d.isToday ? '<span class="hours__today">Today</span>' : '<span></span>'}
             </div>`).join('')}</div>`
-            : '<p class="wa-note">Not filed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
+            : /^(theatre|club|bar|arts centre|cinema)$/.test(String(v.kind || '')) && list.length
+              ? '<p class="wa-note">No fixed hours filed. This room opens when something is on; the listings above carry the times.</p>'
+              : '<p class="wa-note">Not filed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
         </section>
 
         ${R().real(v.address) || G().coordsFor(v) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
@@ -483,8 +486,8 @@
 
         <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
           <div class="det-prov">${v.osmId
-            ? `<span>Address, hours and links from OpenStreetMap.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
-            : '<span>Details from the venue.</span>'}</div>
+            ? `<span>Address and links from OpenStreetMap${v.openingHours ? `; hours from ${HOURS_FROM[v.hoursSource] || 'OpenStreetMap'}` : ''}.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
+            : `<span>Details from the venue${v.openingHours && HOURS_FROM[v.hoursSource] ? `; hours from ${HOURS_FROM[v.hoursSource]}` : ''}.</span>`}</div>
         </section>
       </div>
     </div>`;

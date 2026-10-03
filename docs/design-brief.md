@@ -45,7 +45,7 @@ Live data: about 600 events a fortnight, about 430 places (31 picked), all Talli
 
 - Join in is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
 - Drink and Play: which three to five venues, picked by someone who knows the scene, with a stated reason each.
-- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Cafés (13 held) are not shown.
+- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them.
 - Hours: 28 of 40 Guide places show "hours not filed", so "open now" is often unanswerable. Where do hours come from beyond OpenStreetMap?
 - Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
 - Languages and cities: route titles are templates over kinds so they can be translated in the browser; listing text and pick notes need a per-language table before a second reading language. See the Scale board on the canvas.
