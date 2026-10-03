@@ -137,9 +137,13 @@
   };
 
   const cache = new Map();
+  /* When the model answers with an error (the day's free allowance is gone, or it is down), stop asking
+     for five minutes and let the page read the sentence itself, instead of waiting on every search. */
+  let offUntil = 0;
   const remote = async (q) => {
     const query = fold(q).trim().slice(0, 140);
     if (!query) return null;
+    if (Date.now() < offUntil) return null;
     const today = window.WA.when.todayKey();
     const key = `${today}:${query}`;
     if (cache.has(key)) return cache.get(key);
@@ -147,7 +151,7 @@
     const t = setTimeout(() => ctl.abort(), 6000);
     try {
       const r = await fetch(`/api/ask?q=${encodeURIComponent(query)}&today=${encodeURIComponent(today)}`, { signal: ctl.signal });
-      if (!r.ok) return null;
+      if (!r.ok) { if (r.status >= 429) offUntil = Date.now() + 5 * 60_000; return null; }
       const j = await r.json();
       const out = { ...empty(), ...j, kinds: Array.isArray(j.kinds) ? j.kinds : [], must: Array.isArray(j.must) ? j.must : [], any: Array.isArray(j.any) ? j.any : [] };
       cache.set(key, out);

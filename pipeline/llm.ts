@@ -20,6 +20,8 @@ export interface Lane {
   model: string;
   key: string | undefined;
   minGapMs?: number;            // free tiers cap requests per minute
+  /** Requests this lane may make in one run: a free tier's daily limit shared out over the day's runs. */
+  maxCalls?: number;
   call: (system: string, user: string, schema: object) => Promise<string>;
 }
 
@@ -114,7 +116,9 @@ export function lanes(workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-1
         env('CLOUDFLARE_API_TOKEN'), workers, false),
     },
     {
-      name: 'openrouter', model: openrouter, key: env('OPENROUTER_API_KEY'), minGapMs: 3_100,
+      // The free models allow 50 requests a day without credits (HTTP 429 "free-models-per-day"), shared by
+      // four runs a day: 12 each, so the first run does not spend the day's.
+      name: 'openrouter', model: openrouter, key: env('OPENROUTER_API_KEY'), minGapMs: 3_100, maxCalls: Number(env('OPENROUTER_RUN_CAP') ?? 12),
       // OpenRouter moves to the next model in `models` when one is
       // rate-limited upstream, which the free ones often are.
       call: openaiStyle('https://openrouter.ai/api/v1/chat/completions', env('OPENROUTER_API_KEY'), openrouter, true, {
@@ -137,6 +141,7 @@ export function parseJson(s: string): unknown {
 export class Models {
   private failures = new Map<string, number>();
   private lastCall = new Map<string, number>();
+  private laneCalls = new Map<string, number>();
   calls = 0;
   readonly budget: number;
   readonly available: Lane[];
@@ -154,6 +159,7 @@ export class Models {
 
   get ready(): boolean {
     return this.calls < this.budget && this.available.some(l => (this.failures.get(l.name) ?? 0) < 2
+      && (l.maxCalls == null || (this.laneCalls.get(l.name) ?? 0) < l.maxCalls)
       && (l.name !== 'workers-ai' || usage.neurons < this.neuronBudget));
   }
 
@@ -163,12 +169,14 @@ export class Models {
     for (const lane of this.available) {
       if ((this.failures.get(lane.name) ?? 0) >= 2) continue;
       if (lane.name === 'workers-ai' && usage.neurons >= this.neuronBudget) continue;
+      if (lane.maxCalls != null && (this.laneCalls.get(lane.name) ?? 0) >= lane.maxCalls) continue;
       if (this.calls >= this.budget) throw new Error('model call budget spent for this run');
       // A 429 is the free tier's per-minute cap, not a broken lane: wait and try again.
       for (let attempt = 0; attempt < 3; attempt++) {
         const gap = (lane.minGapMs ?? 0) - (Date.now() - (this.lastCall.get(lane.name) ?? 0));
         if (gap > 0) await sleep(gap);
         this.lastCall.set(lane.name, Date.now());
+        this.laneCalls.set(lane.name, (this.laneCalls.get(lane.name) ?? 0) + 1);
         this.calls++;
         try {
           const data = parseJson(await lane.call(system, user, schema));
@@ -178,9 +186,9 @@ export class Models {
           const err = e as Error & { status?: number; retryAfter?: number };
           // Workers AI's daily free allocation (error 4006) does not come back
           // within the run: stop asking instead of waiting and asking again.
-          if (err.status === 429 && /"code":\s*(4006|3036)|daily free allocation/.test(err.message)) {
+          if (err.status === 429 && /"code":\s*(4006|3036)|daily free allocation|free-models-per-day/.test(err.message)) {
             this.failures.set(lane.name, 2);
-            console.warn(`[llm] ${lane.name}: daily free allocation used up on this account; skipped for the rest of the run`);
+            console.warn(`[llm] ${lane.name}: today's free allowance is used up; skipped for the rest of the run`);
             break;
           }
           if (err.status === 429 && attempt < 2 && this.calls < this.budget) {

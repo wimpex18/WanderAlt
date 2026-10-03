@@ -8,7 +8,7 @@
    Workers Free plan: 10,000 neurons a day; one question costs about
    25). Answers are cached for a day per question and date, so a
    popular question costs once. With a KV binding named ASK_KV the number
-   of fresh questions a day is capped (ASK_DAILY_CAP, default 400), so the
+   of fresh questions a day is capped (ASK_DAILY_CAP, default 100, about 2,500 neurons of the 10,000 a day), so the
    search cannot spend the pipeline's share of the allowance. Without the
    AI binding it answers 503 and the page keeps its own reading (ask.js). The question is a
    stranger's text: the answer is checked field by field, and only
@@ -107,7 +107,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   /* A daily cap on fresh questions, when a KV namespace is bound. Reads and
      writes are not atomic, so it is a budget and not a lock: close enough to
      keep the search from emptying the day's allowance. */
-  const capKey = `ask:${today}`, cap = Number(env.ASK_DAILY_CAP) || 400;
+  const capKey = `ask:${today}`, cap = Number(env.ASK_DAILY_CAP) || 100;
   if (env.ASK_KV) {
     const used = Number(await env.ASK_KV.get(capKey)) || 0;
     if (used >= cap) return json({ error: 'busy' }, 429);
