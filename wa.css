@@ -172,7 +172,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 /* ── Liquid Glass ─────────────────────────────────────────────────
    One recipe. Reduce Transparency, or a browser without backdrop
    filters, gets the same shape on solid paper. */
-.wa-glass, .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .map-when select {
+.wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .map-when select {
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -180,10 +180,10 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
   border: 1px solid var(--glass-edge);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .wa-glass, .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select { background: var(--glass-strong); }
+  .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select { background: var(--glass-strong); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .wa-glass, .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select, .wa-topbar, .home-top, .prog-controls, .wa-day { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .wa-tabbar, .wa-bar, .map-ctrl, .map-seg, .map-when select, .wa-topbar, .home-top, .prog-controls, .wa-day { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* ── Chrome ──────────────────────────────────────────────────── */
@@ -201,7 +201,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 
 .wa-brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--accent); font-weight: 700; font-size: 1.3125rem; letter-spacing: -.045em; line-height: 1; min-height: var(--tap); }
 .wa-brand__mark { width: 30px; height: 30px; flex: none; }
-.wa-brand__city { display: none; }
 :root[data-theme="dusk"] .wa-brand { color: var(--ink); }
 
 /* The opening, every time the app is opened (brand-reveal.js). The cover exists only
@@ -350,8 +349,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-h2 { font-size: var(--fs-h2); font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
 .wa-lede { font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); max-width: var(--read); }
 .wa-prose { max-width: var(--read); font-size: 1.0625rem; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
-.wa-quiet { color: var(--ink-3); }
-.wa-mono { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .wa-link { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .wa-note { font-size: var(--fs-meta); color: var(--ink-2); max-width: var(--read); line-height: 1.5; }
 .wa-note a { color: var(--ink); font-weight: 600; }
@@ -475,9 +472,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-pill:has(.wa-pill__input) { cursor: text; }
 .wa-pill:has(.wa-pill__input):active { transform: none; }
 .wa-pill:has(.wa-pill__input:focus) { box-shadow: 0 0 0 2px var(--ink), 0 6px 22px rgba(0,0,0,.14); }
-.wa-pill__main { flex: 1; min-width: 0; display: grid; }
-.wa-pill__title { font-weight: 600; font-size: 1rem; }
-.wa-pill__sub { font-size: var(--fs-small); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wa-pill__go { flex: none; display: grid; padding: 0; border: 0; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
 .wa-pill__go .wa-ic { stroke-width: 2.4; }
 .wa-pill--slots { max-width: 860px; margin: 0 auto; padding: 8px; gap: 0; }
@@ -501,11 +495,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-search__input::placeholder { color: var(--ink-3); font-weight: 400; }
 .wa-search__input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 .wa-search__input::-webkit-search-cancel-button { display: none; }
-.wa-search__clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
-.wa-search--compact .wa-search__input { height: 48px; border-radius: var(--r-pill); background: var(--paper-2); border-color: transparent; }
-.wa-search--compact .wa-search__input:focus { background: var(--paper); border-color: var(--ink); }
 
-.wa-suggest { margin-top: var(--s-2); border-radius: var(--r-lg); background: var(--paper); overflow: hidden; border: 1px solid var(--hair); }
 .wa-suggest__item { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: var(--s-3); padding: 8px var(--s-3); min-height: 64px; text-decoration: none; border-radius: var(--r-md); }
 .wa-suggest__item:hover, .wa-suggest__item:focus-visible { background: var(--paper-2); outline: none; }
 .wa-suggest__glyph { display: grid; }
@@ -513,7 +503,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-suggest__title { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .wa-suggest__meta { font-size: var(--fs-small); color: var(--ink-3); }
 .wa-suggest__side { font-size: var(--fs-small); color: var(--ink-2); white-space: nowrap; }
-.wa-suggest__all { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: 14px var(--s-4); min-height: 52px; font-weight: 600; text-decoration: none; border-top: 1px solid var(--hair); }
 .wa-suggest__empty { padding: var(--s-4); color: var(--ink-2); font-size: var(--fs-meta); }
 
 /* The finder: Where / When / What as stacked cards, one open at a time. */
@@ -693,11 +682,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-open--unknown { color: var(--ink-3); }
 .wa-open--unknown::before { border-style: dashed; }
 
-.wa-areas { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-.wa-area { display: inline-flex; align-items: baseline; gap: 8px; min-height: var(--tap); align-items: center; padding: 0 14px 0 16px; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 600; font-size: .9375rem; text-decoration: none; transition: background var(--t-fast), transform var(--t-fast) var(--spring); }
-.wa-area:hover { background: var(--paper-3); }
-.wa-area:active { transform: scale(.97); }
-.wa-area__n { font-size: var(--fs-small); font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
 .wa-since { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); padding: 12px 16px; min-height: 52px; border-radius: var(--r-md); background: var(--paper-2); border: 0; text-decoration: none; font-weight: 500; }
 .wa-since .wa-ic:last-child { margin-left: auto; }
@@ -1128,9 +1112,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* ── You / About ───────────────────────────────────────────────── */
 .you-cols { display: grid; margin-top: var(--s-8); }
 @media (min-width: 1024px) { .you-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--s-9); } .you-cols > .wa-sect:nth-child(2) { margin-top: 0; } }
-.wa-card { padding: var(--s-6); border-radius: var(--r-xl); display: grid; gap: var(--s-3); background: var(--paper-2); }
-.wa-card--ink { background: linear-gradient(150deg, color-mix(in oklab, var(--accent) 16%, var(--paper)), color-mix(in oklab, #b8a0ff 22%, var(--paper))); box-shadow: inset 0 0 0 1px var(--glass-edge); }
-.wa-card__title { font-size: 1.375rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.2; }
 .wa-feed-url { display: block; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); font: 500 .8125rem/1.5 var(--f-mono); overflow-wrap: anywhere; text-decoration: none; }
 
 .wa-foot { margin-top: var(--s-10); padding-top: var(--s-5); border-top: 1px solid var(--hair); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); align-items: center; font-size: var(--fs-small); color: var(--ink-3); }
@@ -1339,8 +1320,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-fold__b { padding: 0 0 var(--s-4); }
 .you-cols .wa-sect.you-folds + .wa-sect.you-folds { margin-top: 0; }
 
-.wa-act--quiet { background: none; color: var(--ink-2); padding-left: 6px; min-height: 36px; font-weight: 500; }
-.wa-act--quiet:hover { background: var(--paper-2); }
 
 .you-cols .wa-sect__head { min-height: 32px; margin-bottom: var(--s-1); }
 .you-cols .wa-sect__title { font-size: 1.125rem; }

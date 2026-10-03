@@ -1,14 +1,14 @@
 # WanderAlt
 
-What's on tonight in Tallinn, for travellers, expats and locals who want independent culture rather than the mainstream: gigs, club nights, arthouse film, contemporary art and dance, talks, markets. Every listing shows a time, a walking distance and the venue or channel it came from.
+What is worth walking to in Tallinn in the next few hours, and what to do around it, for travellers, expats and locals who want independent culture rather than the mainstream: gigs, club nights, arthouse film, contemporary art and dance, talks, markets, and a hand-picked set of places (record shops, bookshops, galleries, bars). The unit is the walk: a short route of places and, when something is on, one listing. Every listing shows a time, a walking distance and the venue or channel it came from. The interface is English, Estonian and Russian.
 
 Status: Tallinn only, not launched. Version in `package.json`.
 
 ## How it works
 
-1. **Pipeline** (`pipeline/`). Every six hours a GitHub Actions job reads the Tallinn sources in `pipeline/sources.tallinn.json`: the Fienta events API, venue sites with schema.org markup, venue programme pages and public Telegram channels. Structured sources are parsed directly; prose is read by a free model (Cloudflare Workers AI, falling back to OpenRouter's free models). Each event is classified for fit, given an English title and summary, tied to a geocoded venue, and published, held for review, or rejected.
-2. **Database**. Supabase Postgres: sources, raw items, places, events and their provenance.
-3. **Site**. Static HTML, CSS and vanilla JS on Cloudflare Pages at [wanderalt.app](https://wanderalt.app) (also [wanderalt.pages.dev](https://wanderalt.pages.dev)), reading Supabase with the public anon key. MapLibre GL over OpenFreeMap tiles for the map. The apex and `www.wanderalt.app` are bound to Pages with proxied CNAME records. Primary-domain redirects are implemented in Pages middleware as well as `_redirects`, because Functions bypass the static redirect file.
+1. **Pipeline** (`pipeline/`). Every six hours a GitHub Actions job reads the Tallinn sources in `pipeline/sources.tallinn.json`: the Fienta events API, venue sites with schema.org markup, venue programme pages and public Telegram channels. Structured sources are parsed directly; prose is read by a free model (Cloudflare Workers AI, falling back to OpenRouter's free models). Each event is classified for fit, given an English title and summary, tied to a geocoded venue, and published, held for review, or rejected. Venues come from OpenStreetMap, Wikidata, Overture and the venues' own sites and Instagram, with opening hours from the best source each offers.
+2. **Database**. Supabase Postgres: sources, raw items, places, events and their provenance, routes, and what readers save. A weekly backup goes to a private bucket.
+3. **Site**. Static HTML, CSS and vanilla JS on Cloudflare Pages at [wanderalt.app](https://wanderalt.app) (also [wanderalt.pages.dev](https://wanderalt.pages.dev)), reading Supabase's public views with the anon key through an edge cache (`/api/rest/<table>`). MapLibre GL over OpenFreeMap tiles for the map. The apex and `www.wanderalt.app` are bound to Pages with proxied CNAME records. Primary-domain redirects are implemented in Pages middleware as well as `_redirects`, because Functions bypass the static redirect file.
 
 ## Running it
 
@@ -26,8 +26,10 @@ A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`, plus `CLOUDFLARE_ACCOUNT_
 - [`AGENTS.md`](AGENTS.md): conventions for anyone (or any agent) changing the code.
 - [`docs/data.md`](docs/data.md): schema, pipeline, sources, security.
 - [`docs/models.md`](docs/models.md): which models, why, and how to re-check them.
-- [`docs/frontend.md`](docs/frontend.md): the current site's design system and patterns.
+- [`docs/frontend.md`](docs/frontend.md): the current site's pages, design system and patterns.
+- [`docs/design-brief.md`](docs/design-brief.md): the product direction, what users said and what is open.
+- [`docs/social.md`](docs/social.md): the Meta accounts, what Threads, Instagram and Facebook can and cannot do for us.
 
 ## Deploying
 
-The site deploys on every push to `main` (Cloudflare Pages, no build step, output `/`). Edge functions deploy separately through Supabase. The pipeline needs no deploy: the workflow runs whatever is on `main`.
+The site deploys on every push to `main` (Cloudflare Pages, no build step, output `/`). Supabase edge functions deploy separately through the Supabase MCP, and a migration is applied separately from a push. The pipeline needs no deploy: the workflow runs whatever is on `main`.

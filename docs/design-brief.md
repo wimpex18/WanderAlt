@@ -22,9 +22,9 @@ WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, a
 
 ## What exists
 
-Now (one answer, a mood and price key, Walk it, Another, the day's list) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places nearest first, from a stated start) · Map · Route page · Event and venue pages (each ending in After this) · Saved · You · sign-in sheet. Details: `docs/frontend.md`.
+Now (one answer, a mood and price key, Walk it, Another, the day's list; moods Look, Browse, Make, Listen, Drink, Dance, Join in) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places nearest first, from a stated start) · Map · Route page · Event and venue pages (each ending in After this) · Saved · You · sign-in sheet. The interface is English, Estonian and Russian. Details: `docs/frontend.md`.
 
-Live data: about 600 events a fortnight, about 430 places (31 picked), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. About a fifth of listings have a date and no time; two in five no price; a quarter of places have hours; a minority photos. **Design for missing data**: no photo, no hours, no time, no price.
+Live data (3 October): about 400 events a fortnight, about 440 places (44 picked: three museums, ten craft beer places), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. About a fifth of upcoming listings have a date and no time; a third no price; three in ten no picture; about half of the picked places have hours. **Design for missing data**: no photo, no hours, no time, no price.
 
 ## What users told us
 
@@ -38,17 +38,17 @@ Live data: about 600 events a fortnight, about 430 places (31 picked), all Talli
 | Don't make me scroll filter chips (gigs, club nights, film…); I often don't know what I want. Austria took hours | Built: Now opens with one answer (a short walk) and one key for mood and price; no row of kinds. Another gives the next route. Check with someone who does not know what they want. |
 | A ceiling of about €20 a person, or free only | Built: Tickets up to (Free, €10, €20, Any) in the mood sheet; it narrows the route and the list, keeps listings with no price (two in five) and says so, and counts tickets only because places carry no price. The Programme keeps its Free switch and typed "under 20". |
 | Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: the next few hours (evenings and, by day, places on foot), After this on venue and event pages (up to three picked places within ten minutes, one per mood, each with its own words) and Plan from here. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
-| Onboarding by mood: listen or dance, craft bar, board games | Built as a sheet, not onboarding: Look, Browse, Make, Listen, Dance (after 20:00) from data we hold. Craft bar and board games wait for picks (see below). |
-| (noticed here) craft beer bars and board games | Not covered. Three craft-beer places exist unpicked (Beer&Barrel, Hiiu Õlletuba, Pühaste Taproom); no board-game place or event exists. Drink needs those picked with a reason; Join in (quiz, chess, craft nights, for people on their own) is live from the `easy-alone` rule, which reads formats from titles and leaves out adult-themed and group-of-friends listings (drawing nights called "DnD" are caught by their venue's name). A mood shows only with three behind it, so Drink does not appear until two more craft-beer places are picked. |
+| Onboarding by mood: listen or dance, craft bar, board games | Built as a sheet, not onboarding: Look, Browse, Make, Listen, Drink (craft beer), Dance (after 20:00) and Join in. Board games sit under Join in. |
+| (noticed here) craft beer bars and board games | Craft beer: ten places are picked as the `taproom` kind (Põhjala, Põhja Konn, Pudel, Uba ja Humal, Pühaste, Koht, Brewklyn, Tuletorn, Hell Hunt, Purtse resto), so the Drink mood and a Guide lens exist. No board-game place exists; Join in (quiz, chess, craft nights, for people on their own) covers the events from the `easy-alone` rule, which reads formats from titles and leaves out adult-themed and group-of-friends listings. A mood shows only with three behind it. |
 
 ## Open questions
 
 - Join in is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
-- Drink and Play: which three to five venues, picked by someone who knows the scene, with a stated reason each.
-- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them.
-- Hours: 28 of 40 Guide places show "hours not filed", so "open now" is often unanswerable. Where do hours come from beyond OpenStreetMap?
+- Craft beer picks are ours from each place's own page; someone who knows the scene should confirm or change them, and say whether board-game cafés belong.
+- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them; craft beer bars are in because they are a culture stop.
+- Hours: about half the picked places have hours. They come from OpenStreetMap, then the venue's site, Facebook and Instagram bio (`docs/data.md`); Facebook returns other Pages' hours only after an App Review. Rooms that open for events say so instead of "hours not filed".
 - Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
-- Languages and cities: route titles are templates over kinds so they can be translated in the browser; listing text and pick notes need a per-language table before a second reading language. See the Scale board on the canvas.
+- Languages and cities: the interface is translated in the browser (`docs/frontend.md`, Languages); listing text and pick notes are English or the source's own language and need a per-language table before the next reading language. See the Scale board on the canvas.
 - The Guide has the lens; whether "Plan from here" belongs on every place row is open. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
 - Visible complexity is the cost of every idea above. Fewer elements wins.
 

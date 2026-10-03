@@ -19,7 +19,10 @@
     "routes": "node --env-file-if-exists=.env pipeline/routes.ts",
     "routes:dry": "node --env-file-if-exists=.env pipeline/routes.ts --dry-run",
     "digest": "node --env-file-if-exists=.env pipeline/digest.ts",
-    "digest:dry": "node --env-file-if-exists=.env pipeline/digest.ts --dry-run"
+    "digest:dry": "node --env-file-if-exists=.env pipeline/digest.ts --dry-run",
+    "backup": "node --env-file-if-exists=.env pipeline/backup.ts",
+    "watch": "node --env-file-if-exists=.env pipeline/watch.ts",
+    "build:lang": "python3 .scripts/build-lang.py"
   },
   "devDependencies": {
     "@types/node": "^24.19.0",

@@ -1,4 +1,4 @@
--- Run with Supabase MCP execute_sql after the migration. Nothing commits.
+-- Run with Supabase MCP execute_sql after a migration (docs/data.md, "Database checks"). Nothing commits.
 begin;
 do $$
 declare pm bigint; pm2 bigint; em bigint;
@@ -8,6 +8,9 @@ begin
   assert not has_table_privilege('anon','public.place_merge_log','SELECT');
   assert not has_table_privilege('anon','public.place_liveness_log','SELECT');
   assert not has_table_privilege('anon','public.event_merge_log','SELECT');
+  assert not has_table_privilege('anon','public.place_fact_flags','SELECT');
+  assert not has_table_privilege('authenticated','public.place_fact_flags','SELECT');
+  assert not has_table_privilege('anon','public.social_tokens','SELECT');
 
   insert into public.places(id,city,name,aliases,kind,status,osm_id,osm_ids,website)
     values('qa-integrity-a','tallinn','CatHouse',array['cathouse'],'club','active','node/1',array['node/1'],'https://a.example'),
@@ -81,6 +84,26 @@ begin
   perform public.undo_place_merge(pm);
   assert (select place_id='qa-integrity-b' from public.events where id='qa-integrity-e2');
   assert (select count(*)=0 from public.place_redirects where id in ('qa-integrity-a','qa-integrity-b'));
+end;
+$$;
+-- One show listed at two places: events join when both rows carry the same listing address, never otherwise.
+do $$
+declare em bigint;
+begin
+  insert into public.places(id,city,name,status) values('qa-url-a','tallinn','Hall A','active'),('qa-url-b','tallinn','Hall B','active');
+  insert into public.events(id,city,title,place_id,starts_at,status,url) values
+    ('qa-url-e1','tallinn','Design Street','qa-url-a','2026-10-01 16:00Z','published','https://show.example/design'),
+    ('qa-url-e2','tallinn','Design Street','qa-url-b','2026-10-01 16:00Z','published','https://show.example/design');
+  em := public.merge_events('qa-url-e2','qa-url-e1');
+  assert (select merged_into='qa-url-e1' from public.events where id='qa-url-e2');
+  perform public.undo_event_merge(em);
+  update public.events set url='https://other.example/x' where id='qa-url-e2';
+  begin
+    perform public.merge_events('qa-url-e2','qa-url-e1');
+    raise exception 'a different page at another place must be refused';
+  exception when others then
+    assert sqlerrm like 'Events need the same canonical venue%';
+  end;
 end;
 $$;
 rollback;
