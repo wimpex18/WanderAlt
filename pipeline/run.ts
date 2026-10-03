@@ -139,6 +139,11 @@ export function decide(e: Enrichment, trusted: boolean): { status: string; note:
 
 interface Pending { rawId: number | null; item: RawItem; source: Source }
 
+/** What a crashed run can still record: the neurons it spent. A run that dies writes nothing at its end,
+ *  and the daily allowance sums these rows, so an unrecorded crash let the next run spend the same neurons again. */
+const current: { db: Db | null; runId: number | null; calls: () => number } = { db: null, runId: null, calls: () => 0 };
+const perSource = new Map<string, number>();
+
 async function main() {
   // Keep some Workers AI allocation for new events' English copy after writes.
   const callBudget = Number(process.env.LLM_CALL_BUDGET ?? 60);
@@ -176,6 +181,7 @@ async function main() {
   const db = DRY ? null : new Db();
   const english = englishModels(englishBudget);
   english.neuronBudget = runCap;
+  current.calls = () => models.calls + sorter.calls + english.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -191,6 +197,7 @@ async function main() {
       for (const m of [models, sorter, english]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
+      current.db = db; current.runId = runId;
       log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(Math.min(runCap, left))} allowed this run`);
     } catch (e) {
       log(`pipeline_runs unavailable, daily budget not applied: ${(e as Error).message}`);
@@ -265,7 +272,9 @@ async function main() {
   const wasRead = new Set<Pending>();
   for (const p of pending) {
     try {
+      const before = models.calls;
       const cands = await read(p.item, p.source, models);
+      if (models.calls > before) perSource.set(p.source.id, (perSource.get(p.source.id) ?? 0) + models.calls - before);
       if (cands === null) continue;               // waits for a model
       wasRead.add(p);
       cands.forEach(c => found.push({ c, p }));
@@ -610,6 +619,7 @@ async function main() {
       ? { last_run_at: now, last_ok_at: now, last_yield: h.yield, consecutive_failures: 0, last_error: null }
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
+  if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls + sorter.calls + english.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
@@ -628,5 +638,13 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(e => { console.error('[pipeline] failed:', e); process.exit(1); });
+  main().catch(async (e) => {
+    console.error('[pipeline] failed:', e);
+    if (current.db && current.runId != null) {
+      try {
+        await current.db.patch(`pipeline_runs?id=eq.${current.runId}`, { finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(), ok: false });
+      } catch { /* the failure above is the one that matters */ }
+    }
+    process.exit(1);
+  });
 }
