@@ -402,10 +402,10 @@ async function main() {
 
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    // A place with no picture is looked at again after a week: sites add logos.
+    // A place with no picture, or a picked one with no hours, is looked at again after a week: sites add logos and hours.
     const weekAgo = Date.now() - 7 * 86_400_000;
     const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website || p.facebook)
-      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
+      && (!p.enriched_at || ((!p.image_url || (p.picked && !p.opening_hours)) && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p, { facebook: !flag('--no-facebook') }), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);

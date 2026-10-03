@@ -13,6 +13,7 @@ import type { Place } from './places.ts';
 import { UA, get, getHtml, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
 import { closureReason, overpass, type OsmElement } from './osm.ts';
 import { probeImage, usableSize } from './imageprobe.ts';
+import { siteHours } from './site-hours.ts';
 
 export interface VenueDetails {
   website?: string | null;
@@ -363,7 +364,7 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
   };
   if (p.wikidata_id) take(await fromWikidata(p.wikidata_id).catch(() => ({})));
   const site = patch.website ?? p.website;
-  if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description)) {
+  if (site && (!p.instagram || !p.facebook || !p.image_url || !p.description || !p.opening_hours)) {
     try {
       const page = await getHtml(site, { timeoutMs: 15_000 });
       // A site that now redirects to another host (a domain that changed
@@ -378,6 +379,8 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
         if (!url) { d.image_attr = null; d.image_source = null; }
       }
       take(d);
+      // Hours the venue's own page publishes as structured data; OpenStreetMap's, when present, win.
+      if (!p.opening_hours && same) { const h = siteHours(page.html.slice(0, 400_000)); if (h) patch.opening_hours = h; }
     } catch (e) {
       // An unreachable site leaves the place as it was; the run says how many.
       console.warn(`[venues] ${p.name}: homepage not read (${(e as Error).message.slice(0, 80)})`);
