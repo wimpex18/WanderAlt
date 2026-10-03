@@ -87,7 +87,7 @@
     if (notes && notes.some(n => !n.read_at)) window.WA.Inbox.markRead();
   };
   const inboxSection = (signedIn) => {
-    if (!signedIn) return `<section class="wa-sect">${R().sect({ title: 'Inbox', sub: 'Sign in to get cancellations here.' })}</section>`;
+    if (!signedIn) return '';
     if (notes === undefined) { loadNotes(); return ''; }
     if (!notes) return '';
     return `<section class="wa-sect" id="inbox">${R().sect({ title: 'Inbox', n: notes.length || null, sub: notes.length ? 'Kept for 30 days' : 'Nothing yet.' })}
@@ -106,25 +106,17 @@
     return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications' })}${rows}</section>` : '';
   };
 
-  /* A few quiet milestones, worked out from what is already kept on the device. Nothing is stored for them. */
-  const milestones = (saved, follows) => {
-    const L = window.WA.Lists, G = window.WA.Going;
-    const lists = L ? L.forCity(window.WA.CITY).length : 0;
-    const going = G ? G.ids().length : 0;
-    const opened = window.WA.Seen.count();
-    const all = [
-      { icon: 'save', name: 'First save', hint: 'Save a listing', ok: saved >= 1 },
-      { icon: 'list', name: 'Curator', hint: 'Save five listings', ok: saved >= 5 },
-      { icon: 'pin', name: 'Local', hint: 'Follow a place', ok: follows >= 1 },
-      { icon: 'walk', name: 'Going out', hint: 'Say you are going to something', ok: going >= 1 },
-    ];
-    const done = all.filter(m => m.ok).length;
-    const next = all.find(m => !m.ok);
-    return `<section class="you-mile" aria-label="Milestones">
-      <div class="you-mile__head"><h2 class="you-mile__title">Milestones</h2><span class="you-mile__n">${next ? `${done} of ${all.length} · next: ${esc(next.hint.toLowerCase())}` : 'All four'}</span></div>
-      <div class="you-mile__bar" role="progressbar" aria-valuemin="0" aria-valuemax="${all.length}" aria-valuenow="${done}"><span style="width:${Math.round(done / all.length * 100)}%"></span></div>
-      <ul class="you-mile__grid">${all.map(m => `<li class="you-mile__item${m.ok ? ' is-on' : ''}" title="${esc(m.hint)}"><span class="you-mile__ic">${I(m.icon)}</span><span class="you-mile__name">${esc(m.name)}</span><span class="wa-sr">${m.ok ? 'Done' : esc(m.hint)}</span></li>`).join('')}</ul>
-    </section>`;
+  /* A named place to measure from (a hotel, a friend's street), picked from the
+     places we hold, so walking times and routes work without location. */
+  const startField = () => {
+    const G = window.WA.Geo;
+    const a = G && G.anchor();
+    const spots = (window.WA._venuesAll || []).filter(v => v.name && v.lat != null && v.lng != null && !v.isClosed)
+      .map(v => v.name).filter((n, i, all) => all.indexOf(n) === i).sort((x, y) => x.localeCompare(y)).slice(0, 400);
+    return `<label class="wa-field__label wa-sr" for="you-anchor">Place to start from</label>
+      <input class="wa-input" id="you-anchor" list="you-anchor-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
+      <datalist id="you-anchor-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <p class="wa-note">${a ? 'Walking times and routes start here. Clear the box to use your location.' : 'Staying somewhere? Pick a place you know and walking times start there, with no location prompt.'}</p>`;
   };
 
   const render = () => {
@@ -152,21 +144,35 @@
     const themeIcon = { auto: AUTO, day: I('sun'), dusk: I('moon') };
     const fold = (id, title, n, body) => `<details class="you-fold" id="${id}"${foldOpen.has(id) ? ' open' : ''}><summary><span class="you-fold__t">${esc(title)}</span>${n ? `<span class="you-fold__n">${n}</span>` : ''}${I('chevron')}</summary><div class="you-fold__b">${body}</div></details>`;
 
+    const email = window.WA.Auth.session && window.WA.Auth.session.email;
+    const head = signedIn
+      ? `<section class="you-me"><span class="you-me__mark" aria-hidden="true">${esc(((email || 'You')[0] || 'Y').toUpperCase())}</span>
+          <span class="you-me__text"><strong>You</strong>${email ? `<span>${esc(email)}</span>` : ''}</span></section>`
+      : `<section class="you-join">
+          <h2 class="you-join__title">Keep what you find</h2>
+          <p class="you-join__sub">Save places and routes, and get a note when a show you saved changes. No password.</p>
+          ${window.WA.Auth && window.WA.Auth.signInError ? `<p class="you-join__sub" role="alert">Sign-in did not finish: ${esc(window.WA.Auth.signInError)}</p>` : ''}
+          <div class="you-join__actions">
+            <a class="wa-btn" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}"><svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.566 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Google</a>
+            <button class="wa-btn wa-btn--primary" type="button" id="signin">Email me a link</button>
+          </div>
+        </section>`;
+
     $('you-body').innerHTML = `
-      <div class="wa-stats">
-        <div class="wa-stat"><span class="wa-stat__n">${window.WA.Seen.count()}</span><span class="wa-stat__label">Opened</span></div>
-        <div class="wa-stat"><span class="wa-stat__n">${saved}</span><span class="wa-stat__label">Saved</span></div>
-        <div class="wa-stat"><span class="wa-stat__n">${follows.length}</span><span class="wa-stat__label">Following</span></div>
-      </div>
+      ${head}
       ${appSection()}
-      ${milestones(saved, follows.length)}
 
       <div class="you-cols">
         ${inboxSection(signedIn)}
         <section class="wa-sect you-int" id="interests">
-          <div class="wa-sect__head"><h2 class="wa-sect__title">Interests</h2><span class="you-int__n">${ids.length} of 3 on Tonight</span></div>
+          <div class="wa-sect__head"><h2 class="wa-sect__title">Your taste</h2><span class="you-int__n">${ids.length} of 3 · routes lean this way</span></div>
           <div class="wa-chips wa-chips--scroll you-int__row">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
+        </section>
+
+        <section class="wa-sect you-start">
+          <h2 class="wa-sect__title">Start from</h2>
+          ${startField()}
         </section>
 
         <section class="wa-sect you-look">
@@ -190,18 +196,7 @@
           ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
             <p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" id="signout">Sign out</button>
               <button class="wa-linkbtn" type="button" id="delete-account" style="margin-left:var(--s-4)">Delete account</button></p>`
-          : `<div class="you-join">
-              <span class="you-join__mark" aria-hidden="true">${I('save')}</span>
-              <div class="you-join__text">
-                <h2 class="you-join__title">Saves that follow you</h2>
-                <p class="you-join__sub">Sign in to keep your list on every device.</p>
-                ${window.WA.Auth && window.WA.Auth.signInError ? `<p class="you-join__sub" role="alert">Sign-in did not finish: ${esc(window.WA.Auth.signInError)}</p>` : ''}
-                <div class="you-join__actions">
-                  <a class="wa-btn wa-btn--sm" href="${esc(window.WA.Auth && window.WA.Auth.googleHref ? window.WA.Auth.googleHref() : '#')}"><svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.566 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Google</a>
-                  <button class="wa-btn wa-btn--sm wa-btn--ink" type="button" id="signin">Email</button>
-                </div>
-              </div>
-            </div>`}
+          : ''}
         </section>
 
         <section class="wa-sect you-folds">
@@ -211,6 +206,7 @@
         </section>
       </div>
       <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
+    $('you-body').querySelectorAll('.wa-sect').forEach((s) => { if (!s.textContent.trim() && !s.querySelector('img, svg, button, a')) s.remove(); });
     /* A link from the Home Screen invitation lands on the notifications once their rows exist. */
     const target = location.hash === '#notifications' && !jumped && document.getElementById('notifications');
     if (target) { jumped = true; target.scrollIntoView({ block: 'start' }); }
@@ -310,6 +306,14 @@
       })();
       return;
     }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (!e.target || e.target.id !== 'you-anchor') return;
+    const name = e.target.value.trim().toLowerCase();
+    const v = name ? (window.WA._venuesAll || []).find(x => String(x.name).toLowerCase() === name && x.lat != null && x.lng != null) : null;
+    window.WA.Geo.setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
+    render();
   });
 
   document.addEventListener('wa:catalog-ready', render);

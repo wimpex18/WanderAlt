@@ -188,6 +188,9 @@
     openingHours: r.opening_hours || null,
     isClosed:     r.status === 'closed',
     isVerified:   r.status === 'active',
+    /* Chosen by hand for the guide, with one English line on why. */
+    picked:       r.picked === true,
+    pickNote:     r.pick_note || '',
   });
 
   /* A fast answer (the service worker's cache) can land between two
@@ -297,7 +300,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note` +
         `&order=name.asc,id.asc`,
         abort.signal
       ),
@@ -364,7 +367,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status`, undefined, true
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note`, undefined, true
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (error) { lookupError = error; }

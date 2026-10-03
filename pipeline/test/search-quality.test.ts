@@ -16,10 +16,10 @@ function api() {
     caches: { default: { match: async (r: Request) => stored.get(r.url)?.clone(), put: async (r: Request, v: Response) => { stored.set(r.url, v); } } },
   });
   runInContext(source('functions/api/ask.js').replace('export async function', 'async function'), context);
-  const request = async (today = '2026-09-30') => {
+  const request = async (today = '2026-09-30', extraEnv: any = {}, q = 'quiet+tonight') => {
     const waits: Promise<any>[] = [];
-    const r = await context.onRequestGet({ request: new Request(`https://wanderalt.app/api/ask?q=quiet+tonight&today=${today}`, { headers: { 'sec-fetch-site': 'same-origin' } }),
-      env: { AI: { run: async (_: string, p: any) => { calls.push(p); return { response: output }; } } }, waitUntil: (p: Promise<any>) => waits.push(p) });
+    const r = await context.onRequestGet({ request: new Request(`https://wanderalt.app/api/ask?q=${q}&today=${today}`, { headers: { 'sec-fetch-site': 'same-origin' } }),
+      env: { AI: { run: async (_: string, p: any) => { calls.push(p); return { response: output }; } }, ...extraEnv }, waitUntil: (p: Promise<any>) => waits.push(p) });
     await Promise.all(waits); return r;
   };
   return { request, calls, stored, output: (v: any) => { output = v; } };
@@ -152,4 +152,30 @@ test('primary domain redirects work on Function routes and preserve query string
   }
   const r = await context.onRequest({ request: new Request('https://wanderalt.app/discover?q=jazz'), next: async () => new Response('asset') });
   assert.equal(r.status, 200); assert.equal(await r.text(), 'asset');
+});
+
+test('the model may say a search wants places or an evening, and only known kinds of place survive', async () => {
+  const a = api();
+  a.output({ intent: 'places', when: '', day: '', kinds: [], placeKinds: ['record store', 'casino', 'bar', 'bar'], free: false, english: false, openNow: 'yes', maxPrice: 0, must: [], any: ['vinyl'], note: 'Record shops' });
+  const j = await (await a.request()).json();
+  assert.equal(j.intent, 'places');
+  assert.deepEqual(Array.from(j.placeKinds), ['record store', 'bar']);
+  assert.equal(j.openNow, false);                        // only a real boolean counts
+  a.output({ intent: 'party', kinds: [], placeKinds: 'bar', must: [], any: [] });
+  const k = await (await a.request('2026-09-30', {}, 'another+question')).json();
+  assert.equal(k.intent, 'listings');                    // an unknown intent is plain listings
+  assert.deepEqual(Array.from(k.placeKinds), []);
+  assert.equal(a.calls[0].response_format.json_schema.properties.intent.enum.length, 3);
+});
+
+test('fresh questions are capped a day when a KV namespace is bound, and a cached answer costs nothing', async () => {
+  const a = api();
+  const kv = new Map<string, string>();
+  const env = { ASK_KV: { get: async (k: string) => kv.get(k) ?? null, put: async (k: string, v: string) => { kv.set(k, v); } }, ASK_DAILY_CAP: '2' };
+  assert.equal((await a.request('2026-09-30', env, 'one+question')).status, 200);
+  assert.equal((await a.request('2026-09-30', env, 'two+question')).status, 200);
+  assert.equal((await a.request('2026-09-30', env, 'three+question')).status, 429);      // over the cap
+  assert.equal((await a.request('2026-09-30', env, 'one+question')).status, 200);        // answered from the cache
+  assert.equal(a.calls.length, 2);
+  assert.equal([...kv.values()][0], '2');
 });

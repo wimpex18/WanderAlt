@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v61';
+const VERSION = 'wa-v69';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -30,14 +30,14 @@ const DATA    = `${VERSION}-data`;
 const SHELL_URLS = [
   './',
   './index.html', './discover.html', './map.html', './places.html',
-  './saved.html', './detail.html', './source.html', './profile.html',
+  './saved.html', './route.html', './detail.html', './source.html', './profile.html',
   './about.html', './404.html',
   './wa.css',
   './theme.js', './brand-reveal.js', './icons.js', './when.js', './geo.js', './hours.js',
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js', './install.js',
-  './finder.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
+  './finder.js', './route.js', './route-page.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js', './vendor/maplibre-gl.css',
   './map-style.json', './map-style-dusk.json',

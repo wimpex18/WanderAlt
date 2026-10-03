@@ -28,6 +28,13 @@
     english: false, maxPrice: null,
     read: null,       /* the sentence's reading: { must, any, note, by } */
   };
+  /* Places that answer the query (by name, or by the kind a word names) and,
+     for a shop word, the set of them that the listings narrow to. */
+  let placeHits = [], placeOnly = null, evenings = [];
+  /* The list is paged: a screenful of days first, more on request. Running
+     exhibitions show five until asked. Both reset when any filter changes. */
+  const PAGE = 30;
+  let limit = PAGE, runsOpen = false, lastSig = '';
   const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
   const KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -101,7 +108,7 @@
     if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
     if (skip !== 'english' && state.english) out = out.filter(e => (e.eventLanguages || []).includes('en'));
     if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin != null && Number(e.priceMin) <= state.maxPrice));
-    if (skip !== 'q' && state.q) out = out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
+    if (skip !== 'q' && state.q) out = placeOnly ? out.filter(e => placeOnly.has(e.venueId)) : out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
     return out;
   };
 
@@ -267,7 +274,7 @@
     if (state.q && drops.length === 1) {
       return R().empty({ icon: 'search', title: 'No listings match this search.',
         body: 'Searches English and original titles, venues and areas, with or without Estonian letters.',
-        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'Search places' }] });
+        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
     }
     if (best) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
@@ -279,7 +286,7 @@
         body: 'Try a different day or start a new search.', actions: [{ act: 'clear-all', label: 'Start over' }] });
     }
     return R().empty({ icon: 'calendar', title: `Nothing is listed in ${R().cityName()} for the coming days.`,
-      body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] });
+      body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] });
   };
 
   /* ── Reading a sentence ─────────────────────────────────────
@@ -310,6 +317,34 @@
   const count = () => apply(base()).length;
   const literal = (q) => base().filter(e => R().matches(e, q)).length;
 
+  /* Places first: picked ones, then the rest, names before kinds. */
+  const GROUP = { 'record store': 'records', bookshop: 'books', gallery: 'galleries', 'arts centre': 'galleries', thrift: 'thrift', cinema: 'cinema',
+    club: 'clubs', bar: 'clubs', theatre: 'theatres', community: 'community' };
+  /* Evenings for a plan question: the stored ones that still hold, for the
+     day the words name (today when they name none), else one worked out here. */
+  const eveningsFor = (p) => {
+    const R2 = window.WA.Route;
+    if (!R2) return [];
+    const all = R2.upcoming();
+    const dow = (k) => new Date(`${k}T12:00:00`).getDay();
+    let pick = all;
+    if (p && p.day) pick = all.filter(r => r.day === p.day);
+    else if (p && p.when === 'tomorrow') pick = all.filter(r => r.off === 1);
+    else if (p && p.when === 'weekend') pick = all.filter(r => dow(r.day) === 6 || dow(r.day) === 0);
+    else pick = all.filter(r => r.off === 0);
+    if (!pick.length && (!p || (!p.day && p.when !== 'tomorrow' && p.when !== 'weekend'))) { const one = R2.compose(); if (one) pick = [one]; }
+    return pick.slice(0, 3);
+  };
+  const dayWord = (r) => (r.off === 0 || r.off == null ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
+
+  const findPlaces = (q, P) => {
+    const f = A().fold(q).trim();
+    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
+    const named = (v) => f.length >= 3 && A().fold(v.name).includes(f);
+    return venues.filter(v => named(v) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
+      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || Number(named(b)) - Number(named(a)) || String(a.name).localeCompare(String(b.name), 'et'));
+  };
+
   const onQuery = (raw, now) => {
     const q = String(raw || '').trim();
     state.q = q;
@@ -317,7 +352,17 @@
     $('ask-try').hidden = !!q || document.activeElement !== $('q');
     cancelAsk();
     unread();
-    if (q && A().isQuestion(q)) {
+    const P = q ? A().places(q) : null;
+    placeHits = P ? findPlaces(q, P) : [];
+    placeOnly = P && P.only && placeHits.length ? new Set(placeHits.map(v => v.id)) : null;
+    evenings = [];
+    if (P && P.plan && window.WA.Route) {
+      const local = A().local(q);
+      window.WA.Route.loadStored();
+      evenings = eveningsFor(local);
+    }
+    if (placeOnly) { /* a shop word asks for places; it is not a kind of listing */ }
+    else if (q && A().isQuestion(q)) {
       const p = A().local(q);
       adopt(p, 'page');
       const strict = count();
@@ -354,6 +399,13 @@
        jazz into Kalamaja OR jazz just to fill an empty result. */
     /* The model's reading must find something, or the page's stands. */
     if (!count()) { unread(); adopt(mine, 'page'); if (!count()) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] }; if (!count() && literal(q)) unread(); }
+    /* What the model says about places and plans, shown beside the listings. */
+    const kinds = Array.isArray(p.placeKinds) ? p.placeKinds : [];
+    if (kinds.length || p.intent === 'places') {
+      const found = findPlaces(q, { kinds, show: true, only: false }).filter(v => !p.openNow || R().openState(v).open === true);
+      if (found.length) { placeHits = found; placeOnly = p.intent === 'places' && !state.kinds.size ? new Set(found.map(v => v.id)) : null; }
+    }
+    if (p.intent === 'evening' && window.WA.Route) { window.WA.Route.loadStored(); evenings = eveningsFor(reading); }
     render();
   };
 
@@ -386,7 +438,8 @@
     if (state.area) bits.push(`in ${state.area}`);
     if (state.q && !state.read) bits.push(`matching “${state.q}”`);
     bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
-    put($('summary'), `<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
+    const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
+    put($('summary'), `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
     searchAct();
   };
 
@@ -405,10 +458,27 @@
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
+  const eveningsBlock = () => {
+    if (!state.q || !evenings.length || !window.WA.Route) return '';
+    return `<section class="prog-places" aria-label="Evenings"><h2 class="wa-kicker">Evenings</h2>${evenings.map(r => `<div class="rt-more__item">${window.WA.Route.card(r, dayWord(r))}</div>`).join('')}</section>`;
+  };
+  const placesBlock = (listLen) => {
+    if (!state.q || !placeHits.length) return '';
+    const shown = placeHits.slice(0, 4);
+    const groups = new Set(placeHits.map(v => GROUP[String(v.kind || '').toLowerCase()]).filter(Boolean));
+    const all = placeHits.length > shown.length
+      ? `<a class="wa-linkbtn" href="places.html${groups.size === 1 ? `?kind=${[...groups][0]}` : ''}">All ${placeHits.length} places</a>` : '';
+    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v)).join('')}</ul>${all}</section>` +
+      (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
+  };
   const listHtml = (list) => {
-    if (!list.length) return emptyState();
-    if (state.sort === 'nearest' && G().currentLoc()) return `<ul class="wa-rows">${list.map(e => R().row(e, { day: true, since })).join('')}</ul>`;
-    return R().grouped(list, { since });
+    if (!list.length) return state.q && (placeHits.length || evenings.length)
+      ? `${eveningsBlock()}${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
+    const days = list.filter(e => !R().isRun(e));
+    const rest = days.length - limit;
+    const more = rest > 0 ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, rest)} more</button><span class="wa-note">${rest} more after these</span></div>` : '';
+    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="wa-rows">${list.slice(0, limit).map(e => R().row(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
+    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
@@ -435,7 +505,11 @@
       if (el) el.focus();
     }
   };
+  const filterSig = () => JSON.stringify([state.q, state.day, state.dayTo, state.when, [...state.kinds], state.area, state.sort, state.within, state.doors,
+    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice]);
   const render = () => {
+    const sig = filterSig();
+    if (sig !== lastSig) { lastSig = sig; limit = PAGE; runsOpen = false; }
     const list = latest = results();
     quick();
     askNote();
@@ -525,6 +599,8 @@
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
       if (x === 'undo-read') { unread(); asked = state.q; }
+      if (x === 'more') limit += PAGE;
+      if (x === 'more-running') runsOpen = true;
       if (x === 'clear-doors') state.doors = 'any';
       if (x === 'clear-within') state.within = 0;
       if (x === 'clear-seen') state.hideSeen = false;
@@ -589,4 +665,5 @@
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:follows-changed', render);
+  document.addEventListener('wa:routes-ready', () => { if (evenings.length || (state.q && A().places(state.q).plan)) { evenings = eveningsFor(A().local(state.q)); render(); } });
 })();

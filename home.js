@@ -27,24 +27,19 @@
   const clockText = () => {
     const k = W().todayKey();
     const m = window.WA.Hours.cityNow().minutes;
-    return `${R().dateShort(k)} · ${window.WA.Hours.clock(m)}`;
+    return `${R().dateShort(k)} · ${window.WA.Hours.clock(m)}${heroCount ? ` · ${heroCount}` : ''}`;
   };
 
+  let heroCount = '';
   const hero = (tonight, liveNow, next) => {
     $('hero-kicker').textContent = R().cityName();
-    $('hero-clock').textContent = clockText();
     const t = $('hero-title');
     const n = tonight.length;
-    if (isLate() && (liveNow.length || n)) {
-      const k = liveNow.length || n;
-      t.innerHTML = `<em>${k}</em> ${k === 1 ? 'thing' : 'things'} still going`;
-    } else if (n) {
-      t.innerHTML = `<em>${n}</em> ${n === 1 ? 'thing' : 'things'} on tonight`;
-    } else if (next) {
-      t.innerHTML = `Quiet tonight. <em>${next.items.length}</em> on ${esc(R().dayName(next.key).toLowerCase() === 'tomorrow' ? 'tomorrow' : R().dayName(next.key))}`;
-    } else {
-      t.textContent = "What's on tonight";
-    }
+    heroCount = liveNow.length ? `${liveNow.length} on now` : n ? `${n} tonight` : '';
+    if (isLate() && (liveNow.length || n)) t.textContent = 'Still going';
+    else if (n) t.textContent = 'Tonight';
+    else t.textContent = next ? 'Quiet tonight' : "What's on tonight";
+    $('hero-clock').textContent = clockText();
   };
 
   /* ── The pill and the category bar ──────────────────────── */
@@ -106,62 +101,19 @@
     location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
   };
 
-  /* ── Interests ─────────────────────────────────────────────────
-     Optional and out of the way: no card on the page. The shelf, or a
-     quiet row at the end when there is none, opens a small sheet; each tap
-     is saved at once and the shelf behind it follows. */
-  const interestSheet = () => {
-    const ids = R().interests.ids();
-    const full = ids.length >= 3;
-    $('sheet').classList.remove('wa-sheet--finder');
-    $('sheet-title').textContent = 'Your kinds';
-    $('sheet-body').innerHTML = `<p class="wa-note">Pick up to three kinds and Tonight gives them a shelf. Nothing else is hidden.</p>
-      <div class="wa-chips" style="margin-top:var(--s-4)">${R().interests.OPTIONS.map(o => `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${full && !ids.includes(o.id) ? ' disabled' : ''}>${o.icon === 'globe' ? I('globe') : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>`;
-    $('sheet-foot').innerHTML = '<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="sheet-done">Done</button>';
-  };
-  const openInterests = () => { interestSheet(); if (!$('sheet').open) $('sheet').showModal(); };
-
-  /* ── Two keys under the headline ───────────────────────────────
-     Near me asks for the location (only on a tap) and puts a shelf of what
-     is closest on foot first. Pick your kinds opens the sheet above. Both
-     are in the accent's tint so they are seen; the row keeps its height
-     in every state, so nothing moves when it changes. */
+  /* ── Near me ───────────────────────────────────────────────────
+     One key under the headline. It asks for the location (only on a tap);
+     once known, walking times appear on every row and the picked places
+     beside the list come closest first. */
   let nearBusy = false, nearOff = false;
   const acts = () => {
     const host = $('home-acts');
     if (!host) return;
-    const n = R().interests.ids().length;
     const here = !!G().currentLoc();
-    const near = here ? '' : nearOff
-      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span>`
-      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`;
-    const app = window.WA.Install && window.WA.Install.canOffer()
-      ? `<button class="wa-act wa-act--quiet" type="button" data-install>${I('plus')}${esc(window.WA.Install.label())}</button>` : '';
-    host.innerHTML = `${near}<button class="wa-act" type="button" data-interests-open>${I('kinds')}${n ? `Your kinds · ${n}` : 'Pick your kinds'}</button>${app}`
-      + (!here && nearOff ? '<p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>' : '');
+    host.innerHTML = here ? '' : (nearOff
+      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking times need location. Allow it for this site in your browser settings.</p>`
+      : `<button class="wa-act" type="button" data-near${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}</button>`);
   };
-
-  /* Near you: what is on tonight (else the next listed day), closest on
-     foot first; within half an hour's walk when anything is. */
-  const nearShelf = (tonight, next) => {
-    if (!G().currentLoc()) return '';
-    const day = tonight.length ? null : next;
-    const pool = (day ? day.items : tonight).filter(e => !R().isOff(e));
-    const ranked = pool.map(e => [e, G().distanceTo(e)]).filter(([, d]) => d != null).sort((a, b) => a[1] - b[1]);
-    if (!ranked.length) return '';
-    const close = ranked.filter(([, d]) => G().walkMinutes(d) <= 30);
-    const list = (close.length ? close : ranked.slice(0, 6)).slice(0, 12).map(([e]) => e);
-    return shelf({
-      title: day ? `Near you, ${R().dayName(day.key)}` : 'Near you tonight', n: list.length,
-      sub: close.length ? 'Closest first, on foot from where you are' : 'Nothing within 30 min on foot. Closest first.',
-    }, list);
-  };
-
-  /* ── Sections ───────────────────────────────────────────────── */
-  const section = (head, body, cls) => `<section class="wa-sect${cls ? ` ${cls}` : ''}">${R().sect(head)}${body}</section>`;
-  /* A cancelled or postponed show stays listed, labelled, at the end. */
-  const cards = (list, opts) => [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))].map(e => R().poster(e, opts)).join('');
-  const shelf = (head, list) => R().shelf(head, cards(list, { compact: head.compact }));
 
   /* The next day after today with anything listed. */
   const nextDay = (all) => {
@@ -169,118 +121,63 @@
     return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
   };
 
+  /* Tonight is a list, in time order: what is on now, then what starts.
+     Tomorrow and the weekend are one tap away; everything else is the
+     Programme. When tonight is empty the next day listed opens instead. */
+  let dayTab = '';
+  const DAYS = [['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
+  const dayList = (all, tab) => {
+    const list = tab === 'tonight' ? sortSoon(all.filter(e => W().isTonight(e)))
+      : sortSoon(all.filter(e => W().matches(e, tab) && !W().isTonight(e)));
+    return [...list.filter(e => !R().isOff(e)), ...list.filter(e => R().isOff(e))];
+  };
+  const SHOWN = 12;
+
   const main = () => {
-    const shown = new Set();
-    const fresh = (list) => list.filter(e => !shown.has(e.id));
-    const draw = (head, list) => { list.forEach(e => shown.add(e.id)); return shelf(head, list); };
     const all = R().live();
     const tonight = sortSoon(all.filter(e => W().isTonight(e)));
     const liveNow = tonight.filter(e => R().isLive(e));
-    const later = tonight.filter(e => !R().isLive(e));
     const next = nextDay(all);
     hero(tonight, liveNow, next);
 
+    const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k)]));
+    const tab = dayTab && lists[dayTab] ? dayTab : (DAYS.find(([k]) => lists[k].length) || DAYS[0])[0];
+    const list = lists[tab];
     const out = [];
-    if (liveNow.length) {
-      out.push(draw({ title: 'On now', n: liveNow.length, sub: 'Started, and not over yet', compact: true }, liveNow.slice(0, 12)));
-    }
+    /* An evening in a few stops, when tonight has one worth walking. */
+    const evening = window.WA.Route && window.WA.Route.best();
+    if (evening) out.push(`<section class="wa-sect rt-sect">${window.WA.Route.card(evening)}</section>`);
 
-    if (later.length) {
-      const late = isLate();
-      /* Late means 21:00 on, or the small hours once past midnight. */
-      const lateOnes = later.filter(e => { const m = W().statedMinutes(e); return m == null || m >= 21 * 60 || m < 5 * 60; });
-      const list = late && lateOnes.length ? lateOnes : later;
-      out.push(draw({
-        title: late ? 'Starting late' : 'Starting soon', n: list.length,
-        href: 'discover.html?time=tonight', more: 'All tonight',
-      }, list.slice(0, 12)));
-    } else if (next) {
-      out.push(draw({
-        title: `${R().dayName(next.key)}, ${R().dateShort(next.key)}`, n: next.items.length,
-        sub: liveNow.length ? 'Nothing else starts tonight, so this is next.' : `Nothing is filed for tonight in ${R().cityName()}, so this is next.`,
-        href: `discover.html?date=${next.key}`, more: R().dateShort(next.key),
-      }, sortSoon(next.items).slice(0, 12)));
-    }
-
-    /* For you: this week's listings that match the chosen interests. */
-    const ids = R().interests.ids();
-    if (ids.length) {
-      const matches = all.filter(e => W().matches(e, 'thisweek') && R().interests.matches(e));
-      const mine = sortSoon(fresh(matches));
-      const names = R().interests.OPTIONS.filter(o => ids.includes(o.id)).map(o => o.label);
-      out.push(mine.length
-        ? draw({ title: 'For you this week', n: mine.length, sub: names.join(', ') }, mine.slice(0, 12))
-        : section({ title: 'For you this week' }, `<p class="wa-note">${matches.length ? 'Your matches are shown above.' : 'Nothing this week matches yet. New listings arrive every six hours.'}</p>`));
-    }
-
-    const weekend = sortSoon(fresh(all).filter(e => W().matches(e, 'weekend') && !W().isTonight(e)));
-    if (weekend.length) {
-      out.push(draw({ title: 'This weekend', n: weekend.length, href: 'discover.html?time=weekend', more: 'All weekend' }, weekend.slice(0, 12)));
-    }
-
-    /* Always a way into the rest of the week. */
-    const week = fresh(all).filter(e => W().matches(e, 'thisweek') && !W().isTonight(e) && !W().matches(e, 'weekend'));
-    if (week.length) {
-      out.push(draw({ title: 'Later this week', n: week.length, href: 'discover.html?time=thisweek', more: 'The week' }, sortSoon(week).slice(0, 12)));
-    }
-
-    if (!all.length) {
+    if (all.length) {
+      const href = tab === 'tonight' ? 'discover.html?time=tonight' : `discover.html?time=${tab}`;
+      out.push(`<section class="wa-sect home-day">
+        <div class="home-tabs" role="tablist" aria-label="Day">${DAYS.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}"${lists[k].length ? '' : ' disabled'}>${label}</button>`).join('')}</div>
+        ${list.length ? `<ul class="wa-rows">${list.slice(0, SHOWN).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
+        <a class="wa-linkbtn home-day__more" href="${href}">${list.length > SHOWN ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a>
+      </section>`);
+    } else {
       out.push(R().empty(window.WA.DATA_LIVE === false
         ? { icon: 'offline', title: "We can't reach the listings right now.", body: 'Your saves still work. Try again in a moment.', actions: [{ act: 'reload', label: 'Try again' }, { href: 'saved.html', label: 'Saved' }] }
-        : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places below are open regardless.', actions: [{ href: 'places.html', label: 'Places' }] }));
+        : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] }));
     }
-
-    const nearby = nearShelf(tonight, next);
-    if (nearby) out.unshift(nearby);
     $('home-main').innerHTML = out.join('');
     return all;
   };
 
-  /* ── Side: places open now, areas, the map ────────────────── */
-  const side = (all) => {
-    const venues = R().places();
-    const byWalk = (a, b) => {
-      const da = G().distanceTo(a), db = G().distanceTo(b);
-      if (da != null && db != null) return da - db;
-      return String(a.name).localeCompare(String(b.name));
-    };
-    const open = venues.filter(v => R().openState(v).open === true).sort(byWalk);
-    const later = venues.filter(v => { const o = R().openState(v); return o.open === false && o.s.opensAt != null; }).sort(byWalk);
-
-    let places;
-    if (open.length) {
-      places = `<section class="wa-sect">${R().sect({ title: 'Open now', n: open.length, href: 'places.html?open=1', more: 'All places' })}
-        <ul>${open.slice(0, 5).map(v => R().placeRow(v)).join('')}</ul></section>`;
-    } else {
-      /* Nothing confirmed open: say so once, then what opens later and
-         the places with listings tonight, which are the ones still going. */
-      const hosts = new Set(all.filter(e => W().isTonight(e)).map(e => (e.venueId || '') + '|' + String(e.venue || '').toLowerCase()));
-      const tonightVenues = venues.filter(v => hosts.has(`${v.id}|${String(v.name).toLowerCase()}`) || [...hosts].some(h => h.endsWith(`|${String(v.name).toLowerCase()}`)));
-      const list = [...later, ...tonightVenues.filter(v => !later.includes(v))].slice(0, 5);
-      places = `<section class="wa-sect">${R().sect({ title: list.length ? 'Open later' : 'Places', href: 'places.html', more: 'All places',
-        sub: 'None of the places with filed hours is open this minute.' })}
-        ${list.length ? `<ul>${list.map(v => R().placeRow(v, { extra: tonightVenues.includes(v) ? 'listing tonight' : '' })).join('')}</ul>`
-          : `<ul>${venues.slice().sort(byWalk).slice(0, 5).map(v => R().placeRow(v)).join('')}</ul>`}</section>`;
-    }
-
-    /* Areas: where this week's listings are, folded into the few areas a
-       visitor looks under (render.js AREA_LIST), west to east. Places count
-       too, so a quiet week still shows where the venues are. */
-    const counts = new Map();
-    for (const e of all.filter(x => W().matches(x, 'thisweek'))) {
-      const a = R().areaOf(e);
-      if (a && R().AREA_LIST.includes(a)) counts.set(a, (counts.get(a) || 0) + 1);
-    }
-    const areas = R().AREA_LIST.filter(a => counts.has(a)).map(a => [a, counts.get(a)]);
-    const areaHtml = areas.length ? `<section class="wa-sect">${R().sect({ title: 'By area', sub: 'This week', href: 'discover.html?time=thisweek', more: 'All' })}
-      <div class="wa-areas">${areas.map(([a, n]) => `<a class="wa-area" href="discover.html?area=${esc(encodeURIComponent(a))}&time=thisweek" title="${esc(R().AREA_SUB[a] || '')}">${esc(a)}<span class="wa-area__n">${n}</span></a>`).join('')}</div></section>` : '';
-
+  /* ── Side: picked places, and the map ───────────────────────── */
+  const side = () => {
+    const picked = R().places().filter(v => v.picked);
+    const rank = (v) => { const d = G().distanceTo(v); return d == null ? 1e9 : d; };
+    const list = picked.slice().sort((a, b) =>
+      G().currentLoc() ? rank(a) - rank(b)
+        : (R().openState(b).open === true) - (R().openState(a).open === true) || String(a.name).localeCompare(String(b.name), 'et')).slice(0, 5);
+    const places = list.length ? `<section class="wa-sect">${R().sect({ title: 'Worth the walk', sub: G().currentLoc() ? 'Picked places, closest first' : 'Picked places', href: 'places.html', more: 'The Guide' })}
+        <ul>${list.map(v => R().placeRow(v)).join('')}</ul></section>` : '';
     const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
       <span class="wa-mapcard__sub">Tonight's events and the places open now, by walking time.</span></span></a></section>`;
-
-    $('home-side').innerHTML = places + areaHtml + mapCard;
+    $('home-side').innerHTML = places + mapCard;
   };
 
   /* ── New since the last visit ──────────────────────────────── */
@@ -301,29 +198,17 @@
     cats();
     acts();
     const all = main();
-    side(all);
+    side();
     since(all);
   };
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    if (hit('[data-interests-open]')) { openInterests(); return; }
-    if (hit('[data-install]')) { window.WA.Install.open('home'); return; }
+    const dt = hit('[data-day]');
+    if (dt) { dayTab = dt.dataset.day; main(); return; }
     if (hit('[data-near]')) {
       nearBusy = true; acts();
       G().userLoc().then((loc) => { nearBusy = false; if (!loc) nearOff = true; acts(); });
-      return;
-    }
-    const chip = hit('[data-interest]');
-    if (chip) {
-      const id = chip.dataset.interest;
-      const ids = R().interests.ids();
-      R().interests.set(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id].slice(0, 3), false);
-      interestSheet();
-      main();
-      acts();
-      const again = document.querySelector(`[data-interest="${CSS.escape(id)}"]`);
-      if (again) again.focus();
       return;
     }
     if (hit('#sheet-done') || hit('#sheet-close')) { $('sheet').close(); return; }
@@ -341,9 +226,9 @@
     if (f !== scrolled) { scrolled = f; document.body.classList.toggle('is-scrolled', f); }
   }, { passive: true });
   $('home-search').addEventListener('submit', search);
-  document.addEventListener('wa:catalog-ready', boot);
+  document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
+  document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
   document.addEventListener('wa:location-ready', render);
-  document.addEventListener('wa:install-ready', acts);
   /* The clock ticks; the lists redraw every five minutes so "on now"
      and "starting soon" stay true on a phone left open. */
   setInterval(() => { $('hero-clock').textContent = clockText(); }, 30000);
@@ -353,7 +238,7 @@
     $('hero-clock').textContent = clockText();
     cats();
     acts();
-    $('home-main').innerHTML = `<section class="wa-sect">${R().sect({ title: 'Starting soon' })}${R().skelCards(4)}</section>`;
+    $('home-main').innerHTML = `<section class="wa-sect">${R().skelRows(5)}</section>`;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });
   else skeleton();

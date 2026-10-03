@@ -238,7 +238,7 @@ test('the entrance gate opens at page start and closes after the first listings,
   assert.equal(reduced.size, 0);
 });
 
-test('a run that began before today and has not ended is filed under today, with its dates in the rail', () => {
+test('a run that began before today and has not ended is its own Running group, with its dates in the rail', () => {
   const p = page();
   p.WA.Icon = Object.assign(() => '', { kind: () => '' }); p.WA.Picto = Object.assign(() => '', { kind: () => '' });
   p.WA.UI.price = () => ''; p.WA.UI.guard = (s: string) => s;
@@ -251,7 +251,8 @@ test('a run that began before today and has not ended is filed under today, with
   const gone = { id: 'ev_gone', title: 'Over', kind: 'gig', startsAt: day(-2), endsAt: day(-1) };
   const next = { id: 'ev_next', title: 'Next', kind: 'gig', startsAt: day(1) };
   const html = String(p.WA.R.grouped([run, next], {}));
-  assert.equal((html.match(/wa-day__name/g) || []).length, 2);          // today, tomorrow: no heading for the day it started
+  assert.equal((html.match(/wa-day__name/g) || []).length, 2);          // Running, tomorrow: no heading for the day it started
+  assert.match(html, /Running/);
   assert.ok(html.indexOf('An exhibition') < html.indexOf('Next'));
   assert.match(html, / to /);
   assert.equal(String(p.WA.R.grouped([gone], {})).includes(' to '), false);

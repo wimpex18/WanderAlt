@@ -2,13 +2,15 @@
    /api/ask — reads a search sentence into filters.
    ------------------------------------------------------------
    GET /api/ask?q=techno tonight in kalamaja&today=2026-09-28
-   → { when, day, kinds, free, english, maxPrice, must, any, note }
+   → { intent, when, day, kinds, placeKinds, free, english, openNow, maxPrice, must, any, note }
 
    A small free model on Workers AI (the Pages project's `AI` binding,
    Workers Free plan: 10,000 neurons a day; one question costs about
    25). Answers are cached for a day per question and date, so a
-   popular question costs once. Without the binding it answers 503 and
-   the page keeps its own reading (ask.js). The question is a
+   popular question costs once. With a KV binding named ASK_KV the number
+   of fresh questions a day is capped (ASK_DAILY_CAP, default 400), so the
+   search cannot spend the pipeline's share of the allowance. Without the
+   AI binding it answers 503 and the page keeps its own reading (ask.js). The question is a
    stranger's text: the answer is checked field by field, and only
    known values and short plain words go back.
    ============================================================ */
@@ -16,30 +18,37 @@
 const MODEL = '@cf/openai/gpt-oss-20b';
 const KINDS = ['gig', 'club', 'film', 'exhibition', 'talk', 'theatre', 'market', 'workshop', 'festival'];
 const WHEN = ['', 'tonight', 'tomorrow', 'weekend', 'thisweek'];
+const INTENTS = ['listings', 'places', 'evening'];
+const PLACE_KINDS = ['record store', 'bookshop', 'gallery', 'thrift', 'cinema', 'club', 'bar', 'theatre', 'arts centre'];
 
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
+    intent: { type: 'string', enum: INTENTS },
     when: { type: 'string', enum: WHEN },
     day: { type: 'string', description: 'YYYY-MM-DD for a named weekday or date, else ""' },
     kinds: { type: 'array', items: { type: 'string', enum: KINDS } },
+    placeKinds: { type: 'array', items: { type: 'string', enum: PLACE_KINDS } },
     free: { type: 'boolean' },
     english: { type: 'boolean' },
+    openNow: { type: 'boolean' },
     maxPrice: { type: 'integer', description: 'euros; 0 when no cap' },
     must: { type: 'array', items: { type: 'string' } },
     any: { type: 'array', items: { type: 'string' } },
     note: { type: 'string' },
   },
-  required: ['when', 'day', 'kinds', 'free', 'english', 'maxPrice', 'must', 'any', 'note'],
+  required: ['intent', 'when', 'day', 'kinds', 'placeKinds', 'free', 'english', 'openNow', 'maxPrice', 'must', 'any', 'note'],
 };
 
 const system = (today) => `You turn a search on WanderAlt, a guide to independent culture in Tallinn, into filters. Today is ${today} (${new Date(`${today}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' })}).
-Kinds: gig (live music), club (club nights, DJs, parties), film, exhibition (art), talk (talks, readings, lectures, meetings with authors or artists), theatre (theatre and dance), market (markets, fairs, record and craft sales), workshop, festival.
+intent: "places" when the search wants somewhere to go (a shop, gallery, bar, club, cinema, theatre) and no event; "evening" when it asks for a plan, an evening, a day or what to do ("plan my Friday", "something to do with friends"); otherwise "listings" (things happening). A search for where to hear or see something may name both kinds and places.
+Kinds of listing: gig (live music), club (club nights, DJs, parties), film, exhibition (art), talk (talks, readings, lectures, meetings with authors or artists), theatre (theatre and dance), market (markets, fairs, record and craft sales), workshop, festival.
+placeKinds: the kinds of place the search wants, else []: record store, bookshop, gallery, thrift, cinema, club, bar, theatre, arts centre.
 Fields:
 - when: "tonight" for today or tonight, "tomorrow", "weekend", "thisweek", else "". day: the next matching date in YYYY-MM-DD for a named weekday or date, never a weekday name, else "".
-- kinds: every kind the search asks for; [] when it names none. A mood ("something chill") picks the kinds that fit it.
-- free: only if free entry is asked. english: only if English language is asked. maxPrice: a stated price cap in euros, else 0.
+- kinds: every kind of listing the search asks for; [] when it names none. A mood ("something chill") picks the kinds that fit it.
+- free: only if free entry is asked. english: only if English language is asked. openNow: only if "open now" is asked. maxPrice: a stated price cap in euros, else 0.
 - must: place names in the search (a district like Kalamaja, Telliskivi, Old Town, Rotermann, Noblessner, Kopli, or a venue), lower case, as written.
 - any: up to 8 lower-case words a matching listing would contain: the topic and its close synonyms in English and Estonian (jazz → jazz, džäss; vinyl → vinyl, records, plaadid). Not the kind names, not the time or place words.
 - note: what you understood, at most 60 characters, plain, no exclamation mark, e.g. "Club nights in Kalamaja tonight, under €15".
@@ -53,11 +62,14 @@ const shape = (j, today) => {
   const validDay = typeof j.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(j.day) && Number.isFinite(Date.parse(`${j.day}T12:00:00Z`)) && new Date(`${j.day}T12:00:00Z`).toISOString().slice(0, 10) === j.day;
   const day = validDay && j.day >= today ? j.day : '';
   return {
+    intent: INTENTS.includes(j.intent) ? j.intent : 'listings',
     when: day ? '' : WHEN.includes(j.when) ? j.when : '',
     day,
     kinds: [...new Set((Array.isArray(j.kinds) ? j.kinds : []).filter(k => KINDS.includes(k)))],
+    placeKinds: [...new Set((Array.isArray(j.placeKinds) ? j.placeKinds : []).filter(k => PLACE_KINDS.includes(k)))],
     free: j.free === true,
     english: j.english === true,
+    openNow: j.openNow === true,
     maxPrice: Number.isInteger(j.maxPrice) && j.maxPrice > 0 && j.maxPrice < 1000 ? j.maxPrice : null,
     must: words(j.must, 3),
     any: words(j.any, 8),
@@ -91,6 +103,16 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const cache = caches.default;
   const hit = await cache.match(key);
   if (hit) return hit;
+
+  /* A daily cap on fresh questions, when a KV namespace is bound. Reads and
+     writes are not atomic, so it is a budget and not a lock: close enough to
+     keep the search from emptying the day's allowance. */
+  const capKey = `ask:${today}`, cap = Number(env.ASK_DAILY_CAP) || 400;
+  if (env.ASK_KV) {
+    const used = Number(await env.ASK_KV.get(capKey)) || 0;
+    if (used >= cap) return json({ error: 'busy' }, 429);
+    waitUntil(env.ASK_KV.put(capKey, String(used + 1), { expirationTtl: 172800 }));
+  }
 
   try {
     const out = await env.AI.run(env.ASK_MODEL || MODEL, {

@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>About · WanderAlt</title>
-  <meta name="description" content="How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed." />
+  <title>Route · WanderAlt</title>
+  <meta name="description" content="An evening on foot: a few stops, with walking times and where each one comes from." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg?v=route-w" />
   <link rel="icon" type="image/x-icon" href="./favicon.ico?v=route-w" sizes="any" />
   <link rel="apple-touch-icon" href="./brand/favicon/apple-touch-icon.png?v=route-w" />
   <meta name="apple-mobile-web-app-title" content="WanderAlt" />
   <link rel="manifest" href="./manifest.webmanifest?v=route-w" />
-  <link rel="canonical" href="https://wanderalt.app/about.html" />
 
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
-  <meta property="og:title"       content="About · WanderAlt" />
-  <meta property="og:description" content="How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed." />
+  <meta property="og:title"       content="Route · WanderAlt" />
+  <meta property="og:description" content="An evening on foot: a few stops, with walking times and where each one comes from." />
   <meta property="og:image"       content="https://wanderalt.app/brand/social/og-default.png?v=route-w" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
@@ -46,12 +45,15 @@
   <script defer src="./inbox.js"></script>
   <script defer src="./seen.js"></script>
   <script defer src="./toast.js"></script>
+  <script defer src="./install.js"></script>
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
-  <script defer src="./about.js"></script>
+  <script defer src="./share.js"></script>
+  <script defer src="./route.js"></script>
+  <script defer src="./route-page.js"></script>
 </head>
-<body data-page="about">
+<body data-page="route">
 
 
   <a class="wa-sr" href="#main">Skip to content</a>
@@ -68,31 +70,13 @@
   </header>
 
   <main class="wa-shell" id="main">
+    <a class="wa-linkbtn rt-back" href="./index.html">Tonight</a>
     <header class="wa-pagehead">
-      <p class="wa-kicker">About</p>
-      <h1 class="wa-hero" style="max-width:14ch">We read the sources so you don't open nine tabs.</h1>
+      <p class="wa-kicker" id="rt-kicker"></p>
+      <h1 class="wa-h1" id="rt-title">Route</h1>
+      <p class="wa-lede" id="rt-sub"></p>
     </header>
-    <div class="you-cols">
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">What this is</h2></div>
-        <p class="wa-prose">WanderAlt collects what's on in Tallinn's independent scene: DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. Every listing carries a time, a walking distance and the source it came from. No hosts, no bookings, no commission. If a listing is wrong, a venue's own page is wrong, and we say where we read it.</p>
-        <div class="wa-stats" id="about-counts" style="margin-top:var(--s-5)"></div>
-      </section>
-      <section class="wa-sect" id="calendar">
-        <div class="wa-sect__head"><h2 class="wa-sect__title" id="calendar-feed">The week as a calendar</h2></div>
-        <p class="wa-note">Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.</p>
-        <div id="about-feeds" style="margin-top:var(--s-4)"></div>
-      </section>
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">What we store</h2></div>
-        <p class="wa-note">Saves, interests and what you open stay in your browser. Signed in, your saves, lists, follows, going marks and alert settings also live in your account, with your inbox, until you delete it from You. Google sign-in gives us your email address and nothing else. Alerts stay in the app: the inbox, and an optional push on a device you allow. We send no email announcements. No cookies to consent to, no analytics, no third-party scripts.</p>
-      </section>
-      <section class="wa-sect">
-        <div class="wa-sect__head"><h2 class="wa-sect__title">Terms, briefly</h2></div>
-        <p class="wa-note">Listings belong to the venues and sources they came from, and we link to each one. We print what the source said and when we read it. We cannot promise a door will be open.</p>
-      </section>
-    </div>
-    <footer class="wa-foot"><span>WanderAlt · Tallinn</span><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a><a href="./profile.html">You</a></footer>
+    <div id="rt-body"></div>
   </main>
 
   <nav class="wa-tabbar" aria-label="Primary">
@@ -101,6 +85,17 @@
     <a class="wa-tabbar__item" href="./places.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>Guide</a>
     <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h11v17L12 16.6 6.5 20.5z"/></svg>Saved</a>
   </nav>
+
+  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="wa-sheet__panel">
+      <div class="wa-sheet__head">
+        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
+        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="wa-sheet__body" id="sheet-body"></div>
+      <div class="wa-sheet__foot" id="sheet-foot"></div>
+    </div>
+  </dialog>
 
 </body>
 </html>

@@ -55,6 +55,7 @@
   })();
 
   const sort = (list) => list.slice().sort((a, b) => {
+    if (a.picked !== b.picked) return a.picked ? -1 : 1;
     const da = G().distanceTo(a), db = G().distanceTo(b);
     if (da != null && db != null && Math.abs(da - db) > 1) return da - db;
     const oa = isOpen(a) ? 0 : 1, ob = isOpen(b) ? 0 : 1;
