@@ -23,6 +23,8 @@ interface Deps {
   bio?: typeof lookupBio;
   log?: (s: string) => void;
   now?: number;
+  /** Filled with each bio read (lower-case handle → text), so the drift check does not ask again. */
+  bios?: Map<string, string>;
 }
 
 const readSite = async (url: string): Promise<string | null> => {
@@ -65,7 +67,7 @@ export async function fillHours(places: Place[], cfg: InstagramConfig | null, li
     const handle = instagramHandle(p.instagram);
     if (!found && cfg && handle && !stopped.has('instagram')) {
       const r = await bio(handle, cfg);
-      if (r.kind === 'found') { const h = bioHours(r.biography); if (h) found = { hours: h, source: 'instagram' }; }
+      if (r.kind === 'found') { deps.bios?.set(handle.toLowerCase(), r.biography); const h = bioHours(r.biography); if (h) found = { hours: h, source: 'instagram' }; }
       else if (r.kind === 'stop') { stopped.add('instagram'); log(`[hours] instagram stopped: ${r.reason}`); }
     }
     p.hours_checked_at = new Date(now).toISOString();

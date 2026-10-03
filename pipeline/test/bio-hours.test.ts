@@ -35,3 +35,15 @@ test('a real bio with emoji, "Thur" and a midnight close (Purtse resto)', () => 
   const bio = 'Restaurant\nPurtse resto | Restaurant & taproom in Telliskivi Park\n📍 Telliskivi 60/2\n🕓 Tue-Thur 12-22 | Fri 12-00 | Sat 14-00\n✍️ info@purtseresto.ee';
   assert.equal(bioHours(bio), 'Tu,We,Th 12:00-22:00; Fr 12:00-24:00; Sa 14:00-24:00');
 });
+
+test('Russian days, "daily" and from–to wording', () => {
+  assert.equal(bioHours('Пн-Чт 12-22 | Пт 12-00 | Сб 14-00'), 'Mo,Tu,We,Th 12:00-22:00; Fr 12:00-24:00; Sa 14:00-24:00');
+  assert.equal(bioHours('Ежедневно 10:00-20:00'), 'Mo,Tu,We,Th,Fr,Sa,Su 10:00-20:00');
+  assert.equal(bioHours('Часы работы: Вт-Вс с 12 до 20'), 'Tu,We,Th,Fr,Sa,Su 12:00-20:00');
+  assert.equal(bioHours('Мы работаем с 10 до 18'), null);
+});
+
+test('Estonian words around the days', () => {
+  assert.equal(bioHours('Avatud T-L 12-20, P 12-16'), 'Tu,We,Th,Fr,Sa 12:00-20:00; Su 12:00-16:00');
+  assert.equal(bioHours('Iga päev 10-18'), 'Mo,Tu,We,Th,Fr,Sa,Su 10:00-18:00');
+});

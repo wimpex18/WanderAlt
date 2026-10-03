@@ -35,6 +35,7 @@ import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
+import { checkDrift } from './drift.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -427,12 +428,24 @@ async function main() {
 
   // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its
   // Instagram bio (hours-sources.ts). A few a run, none for a place looked at in the last fortnight.
+  const bios = new Map<string, string>();
   if (!flag('--no-hours')) {
     try {
-      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30))) {
+      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30), { bios })) {
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
       }
     } catch (e) { log(`hours failed: ${(e as Error).message}`); }
+  }
+
+  // What a venue's Instagram bio says about itself (a new address, new hours, "we have moved") against
+  // what we hold, about once a month per place. Differences become rows in place_fact_flags for a person
+  // to review; no stored fact is changed (drift.ts).
+  if (instagram && !flag('--no-drift')) {
+    try {
+      const { looked, found } = await checkDrift(places.all(), instagram, Number(opt('--max-drift') ?? 30), { bios });
+      for (const p of looked) if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      if (db && found.length) await db.insertIgnore('place_fact_flags', found.map(f => ({ place_id: f.placeId, field: f.field, stored: f.stored, found: f.found, source: 'instagram' })), 'place_id,field,found');
+    } catch (e) { log(`drift failed: ${(e as Error).message}`); }
   }
 
   // Upcoming events already stored, so a second source's copy of a show joins it.

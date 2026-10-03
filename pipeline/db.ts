@@ -44,6 +44,10 @@ export class Db {
     throw new Error('Paged read exceeded 100000 rows');
   }
   insert(table: string, rows: unknown[]) { return rows.length ? this.req('POST', table, rows, 'return=minimal') : null; }
+  /** Insert rows whose conflict key already exists as nothing: a reviewed row keeps its state. */
+  insertIgnore(table: string, rows: unknown[], onConflict: string) {
+    return rows.length ? this.req('POST', `${table}?on_conflict=${onConflict}`, rows, 'resolution=ignore-duplicates,return=minimal') : null;
+  }
   upsert(table: string, rows: unknown[], onConflict: string) {
     return rows.length
       ? this.req('POST', `${table}?on_conflict=${onConflict}`, rows, 'resolution=merge-duplicates,return=minimal')

@@ -48,6 +48,7 @@ export interface Place {
   /** Where opening_hours came from: 'osm', 'site', 'facebook' or 'instagram'. */
   hours_source?: string | null;
   hours_checked_at?: string | null;
+  facts_checked_at?: string | null;
   description?: string | null;
   wikidata_id?: string | null;
   image_url?: string | null;
