@@ -90,7 +90,7 @@ export async function verifyPlaces(db: Db, city: string, websiteLimit = 10) {
 }
 
 export async function reconcileEvents(db: Db, city: string, dry = false) {
-  const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,first_seen_at,status,has_time&order=id.asc`);
+  const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,url,first_seen_at,status,has_time&order=id.asc`);
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
   const plan = duplicateEvents(rows, new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id))));
   if (!dry) for (const { duplicate, canonical } of plan) {

@@ -184,3 +184,20 @@ test('one room filed as a bar and as a jazz club joins, and the picked row is th
   // a club and a record shop at one address are still different places
   assert.equal(comparePlaces(bar, place('shop', { name: "Philly Joe's Records", kind: 'record store', address: 'Vabaduse väljak 10', lat: 59.4342, lng: 24.7443 }))?.action === 'merge', false);
 });
+
+test('one page listing a show under venue names that disagree is one show; different shows on a page are not', () => {
+  const url = 'https://www.disainioo.ee/2026-program/design-street';
+  const rows = [
+    event('e1', { title: 'Design Street', place_id: 'pohjala-tehas', url, has_time: false, starts_at: '2026-10-02T21:00:00Z', first_seen_at: '2026-09-28T10:00:00Z' }),
+    event('e2', { title: 'Design Street', place_id: 'pihjala-factory', url, has_time: false, starts_at: '2026-10-02T21:00:00Z', first_seen_at: '2026-09-28T11:00:00Z' }),
+    event('e3', { title: 'Design Street', place_id: null, url, has_time: false, starts_at: '2026-10-02T21:00:00Z', first_seen_at: '2026-09-28T12:00:00Z' }),
+    event('e4', { title: 'Design Street', place_id: 'other', url, has_time: false, starts_at: '2026-10-03T21:00:00Z', first_seen_at: '2026-09-28T12:00:00Z' }),
+    event('e5', { title: 'A different talk', place_id: 'x', url, has_time: false, starts_at: '2026-10-02T21:00:00Z', first_seen_at: '2026-09-28T12:00:00Z' }),
+  ];
+  const plan = duplicateEvents(rows).map(p => `${p.duplicate.id}>${p.canonical.id}`).sort();
+  assert.deepEqual(plan, ['e2>e1', 'e3>e1']);
+  const seen = new Seen([{ id: 'e1', title: 'Design Street', where: 'a', start: Date.parse('2026-10-02T21:00:00Z'), url }]);
+  assert.equal(seen.matchUrl('Design Street', url, Date.parse('2026-10-02T21:00:00Z')), 'e1');
+  assert.equal(seen.matchUrl('Design Street', url, Date.parse('2026-10-03T21:00:00Z')), null);
+  assert.equal(seen.matchUrl('Design Street', null, Date.parse('2026-10-02T21:00:00Z')), null);
+});

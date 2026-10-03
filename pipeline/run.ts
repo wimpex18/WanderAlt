@@ -427,9 +427,9 @@ async function main() {
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const seen = new Seen(db
-    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string }>(
-        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at&order=id.asc`))
-        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at) }))
+    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string; url: string | null }>(
+        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at,url&order=id.asc`))
+        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at), url: k.url }))
     : []);
 
   const events = new Map<string, Record<string, unknown>>();
@@ -440,8 +440,8 @@ async function main() {
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
-    const id = seen.match(c.title, where, start) ?? eventId(CITY, c, place?.id ?? null);
-    seen.add({ id, title: c.title, where, start });
+    const id = seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
+    seen.add({ id, title: c.title, where, start, url: c.url });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = offTopic(c.title) ?? decide(e, trusted);
     // Any source saying a show is off or sold out wins over one that doesn't.
