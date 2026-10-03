@@ -203,7 +203,7 @@
     if (!n) { host.innerHTML = ''; return; }
     const d = new Date(prev);
     const when = (Date.now() - prev) < 86400000 * 6
-      ? d.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/Tallinn' })
+      ? d.toLocaleDateString((window.WA.Lang ? window.WA.Lang.locale() : 'en-GB'), { weekday: 'long', timeZone: 'Europe/Tallinn' })
       : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/Tallinn' });
     host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>new since ${esc(when)}</span>${I('arrow')}</a>`;
   };

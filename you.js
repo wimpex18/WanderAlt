@@ -175,6 +175,13 @@
           ${startField()}
         </section>
 
+        <section class="wa-sect you-lang">
+          <h2 class="wa-sect__title">Language</h2>
+          <div class="mood-seg" role="group" aria-label="Language" data-notranslate>${[['en', 'English'], ['et', 'Eesti'], ['ru', 'Русский']].map(([code, name]) =>
+            `<button type="button" lang="${code}" data-lang-set="${code}" aria-pressed="${window.WA.Lang.current() === code}">${name}</button>`).join('')}</div>
+          <p class="wa-note">The interface follows your choice. Listings stay in the language they were written in.</p>
+        </section>
+
         <section class="wa-sect you-look">
           <h2 class="wa-sect__title">Appearance</h2>
           <div class="you-look__seg" role="group" aria-label="Appearance">${window.WA.Theme.OPTIONS.map(o =>
@@ -239,6 +246,8 @@
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
+    const lg = hit('[data-lang-set]');
+    if (lg) { window.WA.Lang.set(lg.dataset.langSet); return; }
     const t = hit('[data-theme-set]');
     if (t) { window.WA.Theme.set(t.dataset.themeSet); render(); return; }
     const i = hit('[data-interest]');

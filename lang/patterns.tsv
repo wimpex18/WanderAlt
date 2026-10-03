@@ -1,0 +1,61 @@
+# English pattern	Estonian	Russian (plural forms one|few|many|other for {n})
+{n} on now	{n} praegu käimas	Сейчас идёт: {n}
+{n} places	{n} kohta	{n} место|{n} места|{n} мест|{n} места
+{n} place	{n} koht	{n} место
+{n} listed	{n} kuulutust	{n} событие|{n} события|{n} событий|{n} события
+{n} listings	{n} kuulutust	{n} событие|{n} события|{n} событий|{n} события
+{n} listing	{n} kuulutus	{n} событие
+{n} min	{n} min	{n} мин
+{n} min walk	{n} min jalgsi	{n} мин пешком
+{n} h	{n} h	{n} ч
+till {t}	kuni {t}	до {t}
+till {d}	kuni {d}	до {d}
+Until {t}	Kuni {t}	До {t}
+Until {d}	Kuni {d}	До {d}
+Open till {t}	Avatud kuni {t}	Открыто до {t}
+Opens {t}	Avaneb {t}	Откроется в {t}
+opens {t}	avaneb {t}	откроется в {t}
+Opens {d}	Avaneb {d}	Откроется {d}
+closes {t}	sulgub {t}	закроется в {t}
+{d} to {d2}	{d} kuni {d2}	{d} — {d2}
+from {d}	alates {d}	с {d}
+about {h} h {m}	umbes {h} h {m}	около {h} ч {m}
+about {h} h	umbes {h} h	около {h} ч
+about {m} min	umbes {m} min	около {m} мин
+tickets from {x}	piletid alates {x}	билеты от {x}
+Up to {x}, about {y}	Kuni {x}, umbes {y}	До {x}, около {y}
+up to {x}	kuni {x}	до {x}
+Show {n} more	Näita veel {n}	Показать ещё {n}
+Show all {n} running	Näita kõiki {n} käimasolevat	Показать все {n} идущих
+Added to {x}	Lisatud nimekirja {x}	Добавлено в {x}
+Remove {x} from saved	Eemalda {x} salvestatutest	Убрать {x} из сохранённого
+Also in {x}:	Ka piirkonnas {x}:	Также в районе {x}:
+After {x}	Pärast: {x}	После: {x}
+{n} of {m}	{n}/{m}	{n} из {m}
+{x} on the map	{x} kaardil	{x} на карте
+{x} (opens {y})	{x} (avaneb: {y})	{x} (откроется: {y})
+Logo from {x}, their logo	Logo saidilt {x}, nende enda logo	Логотип с {x}, их собственный
+Address and links from OpenStreetMap; hours from {x}.	Aadress ja lingid OpenStreetMapist; lahtiolekuajad: {x}.	Адрес и ссылки из OpenStreetMap; часы работы: {x}.
+Details from the venue; hours from {x}.	Üksikasjad kohalt; lahtiolekuajad: {x}.	Данные от заведения; часы работы: {x}.
+Everything from {x}	Kõik allikast {x}	Всё из {x}
+Following {x}	Jälgid: {x}	Вы подписаны: {x}
+Stopped following {x}	Enam ei jälgi: {x}	Вы больше не подписаны: {x}
+Nothing is listed in {x} for the coming days.	Piirkonnas {x} pole lähipäevadeks midagi kuulutatud.	В районе {x} на ближайшие дни ничего не объявлено.
+Nothing is listed in {x} yet.	Piirkonnas {x} pole veel midagi kuulutatud.	В районе {x} пока ничего не объявлено.
+Nothing from {x} is listed right now.	Allikast {x} pole praegu midagi kuulutatud.	От {x} сейчас ничего не объявлено.
+Follow my device, dark from {t}	Järgi minu seadet, tume alates {t}	Как на устройстве, тёмная с {t}
+Listed via {x}	Kuulutatud allika kaudu {x}	Объявлено через {x}
+It was on {d}	See toimus {d}	Это было {d}
+It came off on {d}	See lõppes {d}	Это закончилось {d}
+Tonight in {x}	Täna õhtul: {x}	Сегодня вечером: {x}
+{n} open now	{n} praegu avatud	открыто сейчас: {n}
+{n} min ago	{n} min tagasi	{n} мин назад
+{n} hour ago	{n} tund tagasi	{n} ч назад
+{n} hours ago	{n} tundi tagasi	{n} ч назад
+{n} day ago	{n} päev tagasi	{n} дн. назад
+{n} days ago	{n} päeva tagasi	{n} дн. назад
+{n} more listed here	Siin on veel {n} kuulutust	Здесь ещё {n}
+on {u}	allikas {u}	на {u}
+Listed via {x}, read {y}.	Kuulutatud allika kaudu {x}, loetud {y}.	Объявлено через {x}, прочитано {y}.
+It was on {d} at {t}.	See toimus {d} kell {t}.	Это было {d} в {t}.
+It was on {d}.	See toimus {d}.	Это было {d}.
