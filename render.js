@@ -342,7 +342,7 @@
 
   /* ── The place row ───────────────────────────────────────── */
   const placeRow = (v, opts = {}) => {
-    const m = walk(v);
+    const m = opts.from ? G().walkMinutes(G().distanceTo(v, opts.from)) : walk(v);
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">

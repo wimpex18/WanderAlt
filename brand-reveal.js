@@ -7,17 +7,22 @@
    little off the line before it settles. Then it holds until the page
    underneath is ready (catalogue drawn, fonts in, first pictures
    decoded), and the mark flies to its place in the top bar while the
-   cover lifts. Minimum about 1.7 s, never past 3.4 s.
-   Every opening plays it: a link from a message (event and source pages
-   included), a bookmark, the home-screen icon, a typed address, a reload.
+   cover lifts. Minimum about 0.6 s, never past 1.8 s.
+   An opening plays it: a link from a message (event and source pages
+   included), a bookmark, the home-screen icon, a typed address, a reload,
+   but not when the app was open under 30 minutes ago (`wa:opened`), so
+   someone checking a time between two stops never waits for it.
    Moving around inside the app does not: a page reached from another page
    of this site, or by Back and Forward, goes straight to its content.
    Skipped for reduced motion, prerendering, Back and Forward, the review
    queue and not found. CSS is in wa.css under .wa-splash.
    ============================================================ */
 (() => {
-  const MIN = 1700, MAX = 3400;
+  const MIN = 600, MAX = 1800, AGAIN = 30 * 60 * 1000;
   try {
+    // Every page load stamps the time, so "recently" counts from the last look.
+    const last = Number(localStorage.getItem('wa:opened')) || 0;
+    if (!document.prerendering) localStorage.setItem('wa:opened', String(Date.now()));
     if (document.prerendering) return;
     if (/\/(404|review)(\.html)?\/?$/.test(location.pathname)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -26,6 +31,7 @@
     const nav = performance.getEntriesByType('navigation')[0];
     if (nav && nav.type === 'back_forward') return;
     if ((!nav || nav.type !== 'reload') && document.referrer && new URL(document.referrer).origin === location.origin) return;
+    if (Date.now() - last < AGAIN) return;      // Recently here: no opening.
   } catch (_) { return; } // Cannot tell how the page was reached: go straight to it.
 
   const root = document.documentElement;

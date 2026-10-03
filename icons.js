@@ -53,6 +53,15 @@
     info:     '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.4"/>',
     ai:       '<path d="M11 3.5c.7 4.3 2.9 6.5 7.2 7.2-4.3.7-6.5 2.9-7.2 7.2-.7-4.3-2.9-6.5-7.2-7.2 4.3-.7 6.5-2.9 7.2-7.2z"/><path d="M18.5 15c.3 1.6 1 2.3 2.6 2.6-1.6.3-2.3 1-2.6 2.6-.3-1.6-1-2.3-2.6-2.6 1.6-.3 2.3-1 2.6-2.6z"/>',
     spark:    '<path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.6 2.6M15.4 15.4 18 18M6 18l2.6-2.6M15.4 8.6 18 6"/>',
+    refresh:  '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>',
+    shuffle:  '<path d="M4 7h3.5c4 0 5 10 9 10H20M4 17h3.5c1.6 0 2.7-1.6 3.7-3.4M20 7h-3.5c-1.4 0-2.4.9-3.2 2.1"/><path d="m17.5 4.5 2.5 2.5-2.5 2.5M17.5 14.5l2.5 2.5-2.5 2.5"/>',
+    /* Moods (moods.js): one object each, neutral enough to mean the same in any city. */
+    look:     '<rect x="4" y="5" width="16" height="13" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 5-4 3 2.5 3-3 3 3"/>',
+    browse:   '<rect x="5" y="4" width="14" height="16" rx="1.5"/><circle cx="12" cy="13" r="3.5"/><circle cx="12" cy="13" r=".8"/>',
+    make:     '<path d="m5 19 1-4 9.5-9.5a2 2 0 0 1 3 3L9 18z"/>',
+    listen:   '<path d="M5 14v-2a7 7 0 0 1 14 0v2"/><rect x="3.5" y="13" width="4" height="6" rx="1.5"/><rect x="16.5" y="13" width="4" height="6" rx="1.5"/>',
+    dance:    '<circle cx="12" cy="13" r="6.5"/><path d="M12 3.5v3M5.5 13h13M7 9.5c3 1.5 7 1.5 10 0M7 16.5c3-1.5 7-1.5 10 0"/>',
+    join:     '<path d="M3.5 8.5h7M4.8 8.5 4 19M9.2 8.5l.8 10.5M4.4 14h5.2M13.5 8.5h7M14.8 8.5 14 19M19.2 8.5l.8 10.5M14.4 14h5.2"/>',
     /* Kinds */
     gig:      '<path d="M9 18.5V6l10-2v12"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
     club:     '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/>',

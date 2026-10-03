@@ -347,6 +347,7 @@
         ${goingRow(e)}`}
 
         ${venueCard()}
+        ${afterHere(e, venueName || e.title)}
 
         <details class="det-original" id="original-description">
           <summary>${e.originalLanguage === 'en' ? 'Source description' : 'Original description'}${LANGUAGES[e.originalLanguage] ? ` · ${esc(LANGUAGES[e.originalLanguage])}` : ''}</summary>
@@ -381,6 +382,28 @@
   };
 
   /* ── The venue page ─────────────────────────────────────────── */
+  /* After this: a few picked places a short walk away, one per mood, and a route that
+     starts here. Only places we have picked, each with its own words. */
+  const afterHere = (x, name) => {
+    const Rt = window.WA.Route;
+    const next = Rt && Rt.nextFrom ? Rt.nextFrom(x, { limit: 3, max: 10 }) : [];
+    if (!next.length) return '';
+    const route = Rt.fromHere ? Rt.fromHere(x) : null;
+    const rows = next.map(n => {
+      const photo = n.v.imageUrl ? url(n.v.imageUrl) : '';
+      const hours = n.hours === 'open' ? 'open then' : n.hours === 'unknown' ? 'hours not filed' : '';
+      return `<li><a class="det-next" href="detail.html?id=${esc(encodeURIComponent(n.v.id))}">
+        <span class="det-next__glyph${photo && n.v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
+        <span class="det-next__body">${n.mood ? `<span class="det-next__mood">${esc(n.mood)}</span>` : ''}<span class="det-next__name">${esc(n.v.name || '')}</span>
+          <span class="det-next__meta">${esc([R().kindLabel(n.v.kind, true), `${n.w} min walk`, hours].filter(Boolean).join(' · '))}</span>
+          ${n.v.pickNote ? `<span class="det-next__why">${esc(n.v.pickNote)}</span>` : ''}</span></a></li>`;
+    }).join('');
+    return `<section class="det-block det-after"><h2 class="det-block__title">After ${esc(name || 'here')}</h2>
+      <p class="wa-note">Picked places within 10 minutes on foot.</p>
+      <ul class="det-next-list">${rows}</ul>
+      ${route ? `<a class="wa-btn wa-btn--pill" href="route.html?s=${esc(Rt.param(route))}">Plan the next hours from here</a>` : ''}</section>`;
+  };
+
   const placePage = (v) => {
     const o = R().openState(v);
     const following = window.WA.Follows && window.WA.Follows.has(window.WA.Follows.placeId(v));
@@ -430,6 +453,8 @@
           ${list.length ? R().grouped(list, { noThumb: false })
             : `<p class="wa-note">Nothing from ${esc(v.name)} is listed right now. ${links.length ? 'Their own channels above carry what we have not read.' : ''} ${following ? '' : 'Follow it and its listings are marked for you when they arrive.'}</p>${nearby()}`}
         </section>
+
+        ${afterHere(v, v.name)}
 
         <section class="det-block"><h2 class="det-block__title">Opening hours</h2>
           ${week ? `<div class="hours">${week.map(d => `<div class="hours__row${d.isToday ? ' hours__row--today' : ''}">

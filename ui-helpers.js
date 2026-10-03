@@ -106,7 +106,7 @@
   /* Rows that scroll sideways (the kind bar, the chip rows) fade out at the
      edge that has more behind it, so a row cut off by the screen reads as
      "there is more this way". The CSS reads .is-more-start / .is-more-end. */
-  const SCROLLERS = '.wa-cats, .wa-chips--scroll';
+  const SCROLLERS = '.wa-chips--scroll';
   const edges = (el) => {
     const room = el.scrollWidth - el.clientWidth;
     const x = Math.abs(el.scrollLeft);

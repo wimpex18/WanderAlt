@@ -2,7 +2,7 @@
    route-page.js — one evening, stop by stop.
    ------------------------------------------------------------
    route.html?s=place:<id>:<minute>,event:<id>:<minute>,...
-   With no `s`, tonight's best route is composed (route.js). Each stop
+   With no `s`, the best route for the next few hours is composed (route.js). Each stop
    links to its own page and says where its facts come from; the walks
    between stops are straight-line distance at the site's one walking
    pace. Hours are shown only when filed.
@@ -53,9 +53,10 @@
 
   const draw = (route) => {
     document.title = `${route.title} · WanderAlt`;
-    $('rt-kicker').textContent = [R().dayName(window.WA.when.todayKey()), route.area, `${route.stops.length} stops`].filter(Boolean).join(' · ');
+    $('rt-kicker').textContent = [R().dateShort(window.WA.when.todayKey()), route.area, `${route.stops.length} stops`].filter(Boolean).join(' · ');
     $('rt-title').textContent = route.title;
-    $('rt-sub').textContent = `${route.blurb ? `${route.blurb} ` : ''}About ${window.WA.Route.lengthText(route)}. Check hours before you go.`;
+    const cost = window.WA.Route.costText(route);
+    $('rt-sub').textContent = `${route.blurb ? `${route.blurb} ` : ''}About ${window.WA.Route.lengthText(route)}. ${cost ? `${cost.charAt(0).toUpperCase()}${cost.slice(1)}. ` : ''}Check hours before you go.`;
     const maps = window.WA.Route.mapsUrl(route);
     $('rt-body').innerHTML = `<ol class="rt">${startLine(route.stops[0])}${route.stops.map((s, i) => stopHtml(s, i, route)).join('')}</ol>
       <div class="rt-actions">
@@ -74,16 +75,16 @@
     const R2 = window.WA.Route;
     const list = R2.upcoming().filter(r => R2.param(r) !== R2.param(route)).slice(0, 6);
     if (!list.length) { host.innerHTML = ''; return; }
-    const day = (r) => (r.off === 0 ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
-    host.innerHTML = `<section class="wa-sect rt-more"><h2 class="wa-sect__title">More evenings</h2>${list.map(r => `<div class="rt-more__item">${R2.card(r, day(r))}</div>`).join('')}</section>`;
+    const day = (r) => (r.off === 0 ? 'Today' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
+    host.innerHTML = `<section class="wa-sect rt-more"><h2 class="wa-sect__title">More routes</h2>${list.map(r => `<div class="rt-more__item">${R2.card(r, { label: day(r) })}</div>`).join('')}</section>`;
   };
 
   const none = () => {
-    $('rt-title').textContent = 'No route tonight';
+    $('rt-title').textContent = 'No route right now';
     $('rt-sub').textContent = '';
-    $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: 'Nothing fits together tonight.',
+    $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: 'Nothing fits together right now.',
       body: 'A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.',
-      actions: [{ href: 'index.html', label: 'Tonight' }, { href: 'places.html', label: 'Guide' }] });
+      actions: [{ href: 'index.html', label: 'Now' }, { href: 'places.html', label: 'Guide' }] });
   };
 
   const boot = () => {
@@ -99,7 +100,7 @@
 
   document.addEventListener('click', async (e) => {
     if (!e.target.closest || !e.target.closest('#rt-share')) return;
-    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text: 'An evening on foot in Tallinn', url: location.href });
+    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text: 'A walk through Tallinn', url: location.href });
     if (r === 'copied' && window.WA.Toast) window.WA.Toast.show('Link copied');
   });
 

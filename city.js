@@ -22,7 +22,8 @@
      <city>-overview.svg. Tallinn is the only city the pipeline covers;
      the other plates stay on disk for when their sources are added. */
   const CITIES = [
-    { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg'  },
+    /* `centre` is where "Walking from" starts when we have neither a location nor a place the reader chose. */
+    { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg', centre: { lat: 59.4342, lng: 24.7436, label: 'Vabaduse väljak' } },
   ];
 
   const LS_KEY  = 'wa:city';

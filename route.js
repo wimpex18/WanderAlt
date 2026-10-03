@@ -14,13 +14,15 @@
 
    window.WA.Route:
      .compose()          → the best evening for tonight, worked out here, or null
-     .best()             → tonight's best: a stored one that still holds, else compose()
+     .plan(opts)         → routes for the next few hours, best first: { mood, cap } narrow them;
+                           a few picked places on foot when nothing is on soon, so daytime has an answer
+     .best()             → the first of plan(): a stored evening that still holds, else one worked out here
      .loadStored()       → Promise of the stored routes (cached; 'wa:routes-ready' when they arrive)
      .upcoming()         → stored routes that still hold, soonest day first, best first
      .fromParam(s)       → a route from the URL's stops, or null
      .param(route)       → the URL's `s` value
      .mapsUrl(route)     → a walking route in Google Maps
-   Route: { title, area, stops[], walkMin, metres }
+   Route: { title, area, stops[], walkMin, metres, cost }
    Stop:  { type, id, name, kind, area, minute, walk (min from the stop before), lat, lng, href, note, hours }
    ============================================================ */
 (() => {
@@ -71,41 +73,67 @@
     const c = G().coordsFor(e) || {};
     return { type: 'event', id: e.id, name: e.title || '', kind: e.kind, area: R().areaOf(e) || '', minute, walk: walk(prevM),
       lat: c.lat, lng: c.lng, href: `detail.html?id=${encodeURIComponent(e.id)}`, note: clip(e.description), hours: 'event',
-      venue: e.venue || '', price: R().isFree(e) ? 'Free' : '' };
+      venue: e.venue || '', price: R().isFree(e) ? 'Free' : '',
+      cost: R().isFree(e) ? 0 : (e.priceMin != null && isFinite(Number(e.priceMin)) ? Number(e.priceMin) : null) };
   };
 
   /* Words for the title, in the order of the evening. */
-  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film' };
+  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
   const ANCHOR_WORD = { gig: 'a gig', club: 'a club night', film: 'a film', theatre: 'a stage', talk: 'a talk', workshop: 'a workshop', exhibition: 'an opening', festival: 'a festival' };
+  const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const titleFor = (stops) => {
     const words = stops.map((s, i) => {
       if (s.type === 'event') return ANCHOR_WORD[String(s.kind || '').toLowerCase()] || 'a show';
-      if (i === 0) return BEFORE_WORD[s.kind] || 'A place';
+      if (BEFORE_WORD[s.kind]) return i === 0 ? BEFORE_WORD[s.kind] : lower(BEFORE_WORD[s.kind]);
+      if (i === 0) return 'A place';
       return s.minute >= 21 * 60 ? 'a late drink' : s.kind === 'club' ? 'a club' : 'a drink';
     });
     const t = words.join(', ');
     return t.charAt(0).toUpperCase() + t.slice(1);
   };
 
+  /* What the tickets cost, as far as we know: the cheapest price of each listing.
+     Places carry no price, so only listings count; an unknown stays unknown. */
+  const costOf = (stops) => {
+    const events = stops.filter(s => s.type === 'event');
+    const known = events.filter(s => s.cost != null);
+    return { events: events.length, tickets: known.reduce((n, s) => n + s.cost, 0), unknown: events.length - known.length };
+  };
+  const costText = (route) => {
+    const c = route.cost || costOf(route.stops);
+    if (!c.events) return '';
+    const eur = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
+    if (c.tickets > 0) return `tickets from ${eur(c.tickets)}${c.unknown ? ` · ${c.unknown} price not listed` : ''}`;
+    return c.unknown ? 'price not listed' : 'free';
+  };
+
   const build = (stops) => {
     let m = 0;
     for (let i = 1; i < stops.length; i++) m += metres(stops[i - 1], stops[i]) || 0;
     const anchor = stops.find(s => s.type === 'event') || stops[0];
-    return { title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m) };
+    return { title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m), cost: costOf(stops) };
   };
 
-  /* The best evening for the rest of tonight, or null. */
-  const compose = () => {
+  /* Moods and a price limit narrow what may anchor or fill a route. A route must
+     hold at least one stop of the chosen mood; a listing priced above the limit
+     is left out, and one with no price listed stays in and says so. */
+  const MOODS = () => window.WA.Moods || null;
+  const underCap = (e, cap) => cap == null || R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= cap;
+  const holdsMood = (mood, stops, entries) => !mood || !MOODS() || stops.some((s, i) => (s.type === 'event' ? MOODS().matchesEvent(mood, entries[i]) : MOODS().matchesPlace(mood, entries[i])));
+
+  /* Every evening worth walking for the rest of tonight, best first: a picked place
+     before a timed listing and, after it, a bar or club (or, before five, another
+     daytime place). Each listing makes at most one. */
+  const evenings = (opts = {}) => {
     const now = nowMin();
     const places = R().places().filter(v => v.picked && G().coordsFor(v));
-    if (!places.length) return null;
+    if (!places.length) return [];
     const anchors = R().live().filter(e => W().isTonight(e) && !R().isOff(e) && !R().isLive(e) && G().coordsFor(e)
-      && startOf(e) != null && startOf(e) >= now + 20 && startOf(e) < DAY);
+      && startOf(e) != null && startOf(e) >= now + 20 && startOf(e) < DAY && underCap(e, opts.cap));
     const me = G().currentLoc();
-    let best = null;
+    const found = [];
     for (const e of anchors) {
       const start = startOf(e), host = window.WA.venueFor ? window.WA.venueFor(e) : null;
-      const here = G().coordsFor(e);
       const stops = [];
       let score = 0;
 
@@ -119,34 +147,141 @@
         if (minute + 30 + w > start) continue;                      /* at least half an hour there */
         const h = hoursAt(v, minute);
         if (h === 'shut' || (h === 'open' && hoursAt(v, Math.min(start - w - 10, minute + 30)) === 'shut')) continue;
-        const s = (h === 'open' ? 2 : 1) - w / 30 + (v.pickNote ? .2 : 0);
+        const s = (h === 'open' ? 2 : 1) - w / 30 + (v.pickNote ? .2 : 0) + (opts.mood && MOODS() && MOODS().matchesPlace(opts.mood, v) ? 1.5 : 0);
         if (!bestBefore || s > bestBefore.s) bestBefore = { v, w, minute, h, s };
       }
-      /* A picked bar or club after it. */
+      /* A picked bar or club after it, or by day another place to browse. */
       const end = endOf(e, start);
       let bestAfter = null;
       for (const v of places) {
-        if (!AFTER.has(v.kind) || (host && v.id === host.id)) continue;
+        const dayPlace = BEFORE.has(v.kind);
+        if ((!AFTER.has(v.kind) && !dayPlace) || (host && v.id === host.id)) continue;
         const d = metres(v, e), w = walk(d);
         if (w == null || w < 2 || w > MAX_AFTER) continue;
         const minute = round5(end + 15 + w);
-        if (minute > 23 * 60 + 30 || minute < (v.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   /* a club after nine, a bar after four */
+        if (dayPlace) { if (minute >= 17 * 60) continue; }
+        else if (minute > 23 * 60 + 30 || minute < (v.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   /* a club after nine, a bar after four */
         const h = hoursAt(v, minute);
         if (h === 'shut') continue;
-        const s = (h === 'open' ? 1.5 : .8) - w / 30;
+        const s = (h === 'open' ? 1.5 : .8) - w / 30 + (opts.mood && MOODS() && MOODS().matchesPlace(opts.mood, v) ? 1.5 : 0);
         if (!bestAfter || s > bestAfter.s) bestAfter = { v, w, minute, h, s };
       }
       if (!bestBefore && !bestAfter) continue;
-      if (bestBefore) { stops.push(placeStop(bestBefore.v, bestBefore.minute, null, bestBefore.h)); score += 3 + bestBefore.s; }
-      stops.push(eventStop(e, start, bestBefore ? metres(bestBefore.v, e) : null));
-      if (bestAfter) { stops.push(placeStop(bestAfter.v, bestAfter.minute, metres(e, bestAfter.v), bestAfter.h)); score += 2 + bestAfter.s; }
+      const entries = [];
+      if (bestBefore) { stops.push(placeStop(bestBefore.v, bestBefore.minute, null, bestBefore.h)); entries.push(bestBefore.v); score += 3 + bestBefore.s; }
+      stops.push(eventStop(e, start, bestBefore ? metres(bestBefore.v, e) : null)); entries.push(e);
+      if (bestAfter) { stops.push(placeStop(bestAfter.v, bestAfter.minute, metres(e, bestAfter.v), bestAfter.h)); entries.push(bestAfter.v); score += 2 + bestAfter.s; }
+      if (!holdsMood(opts.mood, stops, entries)) continue;
       if (host && host.picked) score += 1;
       if (R().interests && R().interests.matches && R().interests.matches(e)) score += 1;
       score -= Math.max(0, (start - now) - 360) / 120;              /* prefer the next few hours */
       if (me) { const d = G().distanceTo(e); if (d != null) score -= d / 4000; }
-      if (!best || score > best.score) best = { score, stops };
+      found.push({ score, stops, start });
     }
-    return best ? build(best.stops) : null;
+    return found.sort((a, b) => b.score - a.score);
+  };
+  const compose = () => { const best = evenings()[0]; return best ? build(best.stops) : null; };
+
+  /* A few picked places on foot, for when nothing is on soon: open when you
+     would be there, each a short walk from the one before, never the same kind
+     of place twice running. Daytime kinds before five. */
+  const WALK_STEP = 10;
+  const walks = (opts = {}) => {
+    const now = nowMin();
+    const day = now < 17 * 60;
+    const kinds = (v) => (day ? BEFORE.has(v.kind) : BEFORE.has(v.kind) || AFTER.has(v.kind));
+    const pool = R().places().filter(v => v.picked && G().coordsFor(v) && kinds(v));
+    if (pool.length < 2) return [];
+    const me = G().currentLoc();
+    const found = [];
+    for (const first of pool) {
+      const toFirst = me ? walk(G().distanceTo(first)) : 0;
+      if (toFirst != null && toFirst > MAX_BEFORE) continue;
+      const m0 = round5(now + 10 + (toFirst || 0));
+      const h0 = hoursAt(first, m0);
+      if (h0 === 'shut') continue;
+      const stops = [placeStop(first, m0, null, h0)], entries = [first];
+      let score = (h0 === 'open' ? 2 : 1) + (first.pickNote ? .2 : 0) - (toFirst || 0) / 30;
+      let at = m0, prev = first;
+      for (let n = 0; n < 2; n++) {
+        let best = null;
+        for (const v of pool) {
+          if (stops.some(s => s.id === v.id) || v.kind === prev.kind) continue;
+          const w = walk(metres(prev, v));
+          if (w == null || w < 1 || w > WALK_STEP) continue;
+          const minute = round5(at + 40 + w);
+          if (minute > 22 * 60) continue;
+          const h = hoursAt(v, minute);
+          if (h === 'shut') continue;
+          const sc = (h === 'open' ? 1.5 : .8) - w / 30 + (v.pickNote ? .2 : 0) + (opts.mood && MOODS() && MOODS().matchesPlace(opts.mood, v) ? 1.5 : 0);
+          if (!best || sc > best.sc) best = { v, w, minute, h, sc };
+        }
+        if (!best) break;
+        stops.push(placeStop(best.v, best.minute, metres(prev, best.v), best.h)); entries.push(best.v);
+        score += best.sc; at = best.minute; prev = best.v;
+      }
+      if (stops.length < 2 || !holdsMood(opts.mood, stops, entries)) continue;
+      found.push({ score: score + (opts.mood && MOODS() && MOODS().matchesPlace(opts.mood, first) ? 1.5 : 0), stops });
+    }
+    return found.sort((a, b) => b.score - a.score);
+  };
+
+  /* The next few hours, best first. What starts soon leads (a stored evening or one
+     worked out here), then places on foot, then later evenings; no two are the same.
+     A stored evening leads only when nothing narrows the search. */
+  const plan = (opts = {}) => {
+    const out = [], seen = new Set();
+    const add = (r) => { if (r) { const k = param(r); if (!seen.has(k)) { seen.add(k); out.push(r); } } };
+    const now = nowMin(), soon = now + 150;
+    const stored = !opts.mood && opts.cap == null ? upcoming().filter(r => r.off === 0) : [];
+    stored.filter(r => r.stops[0].minute <= soon).forEach(add);
+    const evs = evenings(opts);
+    evs.filter(r => r.start <= soon + 30).forEach(r => add(build(r.stops)));
+    walks(opts).slice(0, 6).forEach(r => add(build(r.stops)));
+    stored.forEach(add);
+    evs.forEach(r => add(build(r.stops)));
+    return out.slice(0, 8);
+  };
+
+  /* Picked places within a short walk of somewhere, for "after this": one per mood
+     first (the nearest of each, so the choices differ), then the nearest of the rest,
+     closest first. Shut places are left out; unknown hours stay and say so. */
+  const nextFrom = (entry, o = {}) => {
+    const max = o.max || 10, limit = o.limit || 3, now = nowMin();
+    const moods = MOODS() ? MOODS().available() : [];
+    const rows = R().places().filter(v => v.picked && v.id !== entry.id && v.id !== entry.venueId && G().coordsFor(v))
+      .map(v => ({ v, w: walk(metres(entry, v)) })).filter(r => r.w != null && r.w <= max)
+      .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w) })).filter(r => r.hours !== 'shut')
+      .sort((a, b) => a.w - b.w);
+    const chosen = [];
+    for (const m of moods) {
+      const hit = rows.find(r => !chosen.includes(r) && MOODS().matchesPlace(m.id, r.v));
+      if (hit) { hit.mood = m.label; chosen.push(hit); }
+      if (chosen.length >= limit) break;
+    }
+    for (const r of rows) { if (chosen.length >= limit) break; if (!chosen.includes(r)) chosen.push(r); }
+    return chosen.sort((a, b) => a.w - b.w).slice(0, limit);
+  };
+
+  /* A route that starts at this place or listing and walks on: up to two picked
+     places after it, a short walk from the one before. */
+  const fromHere = (entry) => {
+    const isEvent = entry.title !== undefined;
+    const now = nowMin();
+    let start = isEvent ? startOf(entry) : round5(now + 5);
+    if (start == null) return null;
+    if (isEvent && !G().coordsFor(entry)) return null;
+    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start));
+    const stops = [first];
+    let prev = entry, at = isEvent ? endOf(entry, start) : start + 40;
+    for (let n = 0; n < 2; n++) {
+      const pick = nextFrom(prev, { limit: 3, max: 10 }).find(r => !stops.some(s => s.id === r.v.id) && hoursAt(r.v, at + r.w) !== 'shut');
+      if (!pick) break;
+      const minute = round5(at + 10 + pick.w);
+      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute)));
+      prev = pick.v; at = minute + 40;
+    }
+    return stops.length > 1 ? build(stops) : null;
   };
 
   /* ── The route as a URL ───────────────────────────────────── */
@@ -205,7 +340,7 @@
     return Object.assign(r, { id: row.id, day: row.day, off, title: row.title, blurb: row.blurb || '', engine: row.engine, saved: true });
   };
   const upcoming = () => (stored || []).map(fromRow).filter(Boolean);
-  const best = () => upcoming().find(r => r.off === 0) || compose();
+  const best = () => plan()[0] || compose();
 
   /* ── Markup shared by Tonight's card and the route page ───── */
   const esc = (x) => window.WA.UI.esc(x);
@@ -224,13 +359,26 @@
     return `${len}${dist}`;
   };
 
-  /* The small card on Tonight: the stops, no more. */
-  const card = (route, label) => `<a class="rt-card" href="route.html?s=${esc(param(route))}${route.id ? `&t=${esc(encodeURIComponent(route.id))}` : ''}" aria-label="${esc(`${label || "Tonight's route"}: ${route.title}`)}">
-      <span class="rt-card__head"><span class="rt-card__eyebrow">${esc(label || "Tonight's route")}${route.area ? ` · ${esc(route.area)}` : ''}</span><span class="rt-card__go">Open ${window.WA.Icon('arrow')}</span></span>
-      <span class="rt-card__title">${esc(route.title)}</span>
-      <ol class="rt-card__stops">${route.stops.map((s, i) => `<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}">
-        <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
-        <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(i && s.walk ? `${s.walk} min walk` : stopSub(s))}</small></span></li>`).join('')}</ol></a>`;
+  /* A hand-drawn Old Town skyline, inked in once when the card appears. */
+  const SKYLINE = `<svg class="rt-card__sketch" viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <defs><filter id="wa-wobble"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter></defs>
+      <g filter="url(#wa-wobble)"><path pathLength="1" d="M4 54H176"/><path pathLength="1" d="M20 54V30L27 6 34 30V54M23 30h8"/><path pathLength="1" d="M56 54V28q10-12 20 0V54M56 40h20"/><path pathLength="1" d="M96 54V32L108 12 120 32V54M108 12V4l7 3"/><path pathLength="1" d="M134 54V38l8-8 8 8V54M152 54V36l8-8 8 8v18"/></g></svg>`;
 
-  window.WA.Route = { compose, best, loadStored, upcoming, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText };
+  /* The card on Tonight and in lists of evenings: title, stops, walks between. The
+     title and stops open the route; Tonight's own card adds Walk it and Another. */
+  const card = (route, o = {}) => {
+    const opt = typeof o === 'string' ? { label: o } : o;
+    const href = `route.html?s=${esc(param(route))}${route.id ? `&t=${esc(encodeURIComponent(route.id))}` : ''}`;
+    const sub = [opt.label, route.area, `about ${lengthText(route).split(',')[0]}`, costText(route)].filter(Boolean).join(' · ');
+    const stops = route.stops.map((s, i) => `${i && s.walk ? `<li class="rt-card__walk" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(`${s.walk} min walk`)}</span></li>` : ''}<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}" style="--i:${i}">
+        <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
+        <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(stopSub(s))}</small></span></li>`).join('');
+    return `<section class="rt-card${opt.actions ? ' rt-card--now' : ''}" aria-label="${esc(route.title)}">
+      ${opt.actions ? SKYLINE : ''}
+      <a class="rt-card__main" href="${href}"><span class="rt-card__title">${esc(route.title)}</span><span class="rt-card__sub">${esc(sub)}</span>
+      <ol class="rt-card__stops">${stops}</ol></a>
+      ${opt.actions ? `<div class="rt-card__acts"><a class="wa-btn wa-btn--primary wa-btn--pill" href="${href}">Walk it</a>${opt.more ? `<button class="wa-btn wa-btn--pill" type="button" data-another>${window.WA.Icon('refresh')}Another</button>` : ''}</div>` : ''}</section>`;
+  };
+
+  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText, costText };
 })();
