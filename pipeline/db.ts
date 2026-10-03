@@ -68,6 +68,31 @@ export class Db {
     if (!r.ok) throw new Error(`storage upload ${path} → ${r.status} ${(await r.text()).slice(0, 200)}`);
     return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
   }
+  private storageHeaders(extra: Record<string, string> = {}) {
+    return { apikey: this.key, ...(this.key.startsWith('eyJ') ? { authorization: `Bearer ${this.key}` } : {}), ...extra };
+  }
+  /** File names in a Storage bucket under a prefix (service role; works for private buckets). */
+  async storageList(bucket: string, prefix = ''): Promise<string[]> {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${bucket}`, {
+      method: 'POST', headers: this.storageHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({ prefix, limit: 1000, sortBy: { column: 'name', order: 'asc' } }), signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) throw new Error(`storage list ${bucket} → ${r.status} ${(await r.text()).slice(0, 200)}`);
+    return ((await r.json()) as { name: string }[]).map(f => f.name);
+  }
+  async storageDelete(bucket: string, paths: string[]): Promise<void> {
+    if (!paths.length) return;
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}`, {
+      method: 'DELETE', headers: this.storageHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({ prefixes: paths }), signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) throw new Error(`storage delete ${bucket} → ${r.status} ${(await r.text()).slice(0, 200)}`);
+  }
+  async storageDownload(bucket: string, path: string): Promise<Uint8Array> {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, { headers: this.storageHeaders(), signal: AbortSignal.timeout(60_000) });
+    if (!r.ok) throw new Error(`storage download ${path} → ${r.status}`);
+    return new Uint8Array(await r.arrayBuffer());
+  }
   patch(path: string, values: unknown) { return this.req('PATCH', path, values, 'return=minimal'); }
 }
 
