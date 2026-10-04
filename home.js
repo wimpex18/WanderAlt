@@ -237,8 +237,8 @@
   };
   const viewSwitch = (nEvents, places) => {
     const open = places.filter(isOpen).length;
-    const btn = (id, label, n) => `<button type="button" data-view="${id}" aria-pressed="${view === id}">${label} <span class="home-view__n">${n}</span></button>`;
-    return `<div class="mood-seg home-view" role="group" aria-label="Show">${btn('events', 'Events', nEvents)}${places.length ? btn('places', 'Places', open ? `${open} open` : places.length) : ''}</div>`;
+    const btn = (id, label, n, cls = '') => `<button type="button" data-view="${id}" aria-pressed="${view === id}">${label} <span class="home-view__n${cls}">${n}</span></button>`;
+    return `<div class="mood-seg home-view" role="group" aria-label="Show">${btn('events', 'Events', nEvents)}${places.length ? btn('places', 'Places', open ? `${open} open` : places.length, open ? ' is-open' : '') : ''}</div>`;
   };
 
   const main = () => {

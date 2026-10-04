@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v87';
+const VERSION = 'wa-v88';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -53,7 +53,9 @@ self.addEventListener('install', (e) => {
     /* addAll rejects the whole batch if one URL 404s, which would leave
        the worker uninstalled and the failure invisible. One at a time,
        and a missing file is skipped rather than fatal. */
-    await Promise.all(SHELL_URLS.map(u => c.add(u).catch(() => {})));
+    /* cache: 'reload' skips the browser's HTTP cache (Pages sends max-age=14400), or a new worker
+       could store the stylesheet it is meant to replace and a deploy would not show for hours. */
+    await Promise.all(SHELL_URLS.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})));
     await self.skipWaiting();
   })());
 });
@@ -137,7 +139,7 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const c = await caches.open(SHELL);
       const hit = await c.match(req);
-      const net = fetch(req).then(async res => { if (res.ok) await c.put(req, res.clone()); return res; }).catch(() => null);
+      const net = fetch(req, { cache: 'no-cache' }).then(async res => { if (res.ok) await c.put(req, res.clone()); return res; }).catch(() => null);
       e.waitUntil(net.then(() => {}));
       return hit || (await net) || Response.error();
     })());

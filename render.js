@@ -339,11 +339,12 @@
     const why = whyTag(e);
     const kind = kindLabel(e.kind);
     const endsAt = r.live ? endClock(e) : '';
+    /* Escaped piece by piece, so "Free" can carry its green. */
     const meta = [
-      latin(e.venue),
-      r.areaInRail ? '' : areaOf(e),
-      price(e),
-      r.live && endsAt ? `till ${endsAt}` : '',
+      esc(latin(e.venue) || ''),
+      r.areaInRail ? '' : esc(areaOf(e) || ''),
+      isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || ''),
+      r.live && endsAt ? esc(`till ${endsAt}`) : '',
     ].filter(Boolean).join(' · ');
     const fresh = opts.since && isNewSince(e, opts.since);
     return `<li><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
@@ -356,7 +357,7 @@
           ${fresh ? '<span class="wa-new">New</span>' : ''}
         </span>
         <span class="wa-row__title">${esc(e.title || '')}</span>
-        ${meta ? `<span class="wa-row__meta">${esc(meta)}</span>` : ''}
+        ${meta ? `<span class="wa-row__meta">${meta}</span>` : ''}
       </span>
       ${opts.drop ? `<span class="wa-row__side"><button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button></span>`
                   : opts.noThumb ? '' : thumb(e)}
@@ -403,7 +404,7 @@
     const b = badgeFor(e);
     const m = walk(e);
     const line1 = [latin(e.venue), areaOf(e)].filter(Boolean).join(' · ');
-    const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
+    const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong${isFree(e) ? ' class="wa-free"' : ''}>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-poster__art${logoCls(logo, tone)}">
