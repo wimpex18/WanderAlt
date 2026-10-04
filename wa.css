@@ -1089,6 +1089,7 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 @media (min-width: 768px) { .wa-skel--thumb { width: 120px; height: 90px; } }
 
 .wa-offline { position: sticky; top: var(--topbar-h); z-index: 30; display: flex; gap: var(--s-3); align-items: center; padding: 10px var(--gutter); background: var(--glass-strong); color: var(--ink); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 -1px 0 var(--hair); font-size: var(--fs-small); }
+.wa-offline > .wa-btn { flex: none; margin-left: auto; }
 .wa-offline__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .wa-offline__age { color: var(--ink-2); }
 body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: calc(var(--topbar-h) + env(safe-area-inset-top)); }

@@ -53,7 +53,19 @@
 
   const paint = () => {
     if (!node) return;
-    const stale = ago(cachedAt);
+    const status = window.WA?.CatalogueStatus;
+    const stale = ago(status?.cachedAt || cachedAt);
+    if (navigator.onLine !== false && status?.stale) {
+      node.replaceChildren();
+      const text = document.createElement('span');
+      text.textContent = status.hasData ? "Couldn't refresh. Showing last loaded listings." : "We can't load listings right now.";
+      if (stale && status.hasData) { const age = document.createElement('span'); age.className = 'wa-offline__age'; age.textContent = ` ${stale}`; text.append(age); }
+      const retry = document.createElement('button');
+      retry.className = 'wa-btn'; retry.type = 'button'; retry.textContent = status.loading ? 'Trying again…' : 'Try again'; retry.disabled = !!status.loading;
+      retry.addEventListener('click', () => window.WA.refreshCatalogue?.());
+      node.append(text, retry);
+      return;
+    }
     node.innerHTML =
       '<span class="wa-offline__dot" aria-hidden="true"></span>' +
       `<span>No signal. Showing ${clock()}. Your saves work offline, and ` +
@@ -80,10 +92,13 @@
 
   const hide = () => { if (node) { node.remove(); node = null; } };
 
-  const sync = () => (navigator.onLine === false ? show() : hide());
+  const sync = () => {
+    if (navigator.onLine === false || window.WA?.CatalogueStatus?.stale) { show(); paint(); } else hide();
+  };
 
-  window.addEventListener('offline', show);
-  window.addEventListener('online', hide);
+  window.addEventListener('offline', sync);
+  window.addEventListener('online', () => { sync(); if (window.WA?.CatalogueStatus?.stale) window.WA.refreshCatalogue?.(); });
+  document.addEventListener('wa:catalog-status', sync);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', sync, { once: true });

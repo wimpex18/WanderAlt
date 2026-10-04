@@ -689,7 +689,10 @@ window.WA.dict.et = {
   "the city centre": "linna keskus",
   "Search places or listings": "Otsi kohti või sündmusi",
   "Try another area, a longer walk or another kind of place.": "Proovi teist piirkonda, pikemat jalutuskäiku või teist tüüpi kohta.",
-  "including closed places": "ka suletud kohad"
+  "including closed places": "ka suletud kohad",
+  "Couldn't refresh. Showing last loaded listings.": "Uuendamine ebaõnnestus. Kuvatakse viimati laaditud sündmused.",
+  "We can't load listings right now.": "Sündmusi ei saa praegu laadida.",
+  "Trying again…": "Proovime uuesti…"
  },
  "patterns": [
   [

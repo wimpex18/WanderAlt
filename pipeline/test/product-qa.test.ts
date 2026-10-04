@@ -89,9 +89,9 @@ function catalogue(fetcher: (u: string) => Promise<any>, values = new Map<string
   let ready!: () => void;
   const loaded = new Promise<void>(r => { ready = r; });
   const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
-    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
+    AbortController, setTimeout, clearTimeout, CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
     localStorage: { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v), removeItem: (k: string) => values.delete(k) },
-    document: { readyState: 'complete', dispatchEvent: ready }, fetch: fetcher });
+    document: { readyState: 'complete', dispatchEvent: (e: any) => { if (e.type === 'wa:catalog-ready') ready(); } }, fetch: fetcher });
   runInContext(source('supabase.js'), context);
   return { WA, loaded, values };
 }
@@ -191,4 +191,34 @@ test('Pages middleware applies the declared security policy on Function and API 
   const api = await context.onRequest({ request: new Request('https://wanderalt.pages.dev/api/ask?q=test'), next: async () => new Response('{}', { status: 503 }) });
   assert.equal(api.status, 503);
   assert.equal(api.headers.get('content-security-policy'), declared);
+});
+
+test('an online outage reports stale cached results, retains their age, and retries in place once', async () => {
+  const stamp=String(Date.now()-3600_000);
+  const picks=[{id:'old',city:'tallinn',title:'Old listing',kind:'gig'}];
+  const values=new Map([['wa:catalogue:at',stamp],['wa:catalogue:v2',JSON.stringify({sig:'old',picks,venues:[],redirects:[]})]]);
+  let fail=true, calls=0;
+  const p=catalogue(async (u) => { calls++; return fail ? new Response('',{status:503}) : Response.json(u.includes('/picks?') ? picks : []); },values);
+  await p.WA.refreshCatalogue();
+  assert.equal(p.WA.CatalogueStatus.stale,true); assert.equal(p.WA.CatalogueStatus.hasData,true);
+  assert.equal(p.WA.CatalogueStatus.cachedAt,Number(stamp)); assert.equal(p.WA.catalog[0].id,'old');
+  assert.equal(values.get('wa:catalogue:at'),stamp);
+  fail=false; const before=calls;
+  const first=p.WA.refreshCatalogue(), second=p.WA.refreshCatalogue(); assert.equal(first,second);
+  await first; assert.equal(calls-before,3); assert.equal(p.WA.CatalogueStatus.stale,false); assert.equal(p.WA.DATA_LIVE,true);
+  assert.notEqual(values.get('wa:catalogue:at'),stamp);
+});
+
+test('a first-load failure and a partial catalogue are never reported live', async () => {
+  for (const response of [() => new Response('',{status:503}), (u: string) => u.includes('/venues?') ? new Response('',{status:503}) : Response.json([]), (u: string) => u.includes('/catalogue_redirects?') ? new Response('',{status:503}) : Response.json([]), () => Response.json({error:'malformed'})]) {
+    const p=catalogue(async u => response(u)); await p.WA.refreshCatalogue();
+    assert.equal(p.WA.CatalogueStatus.stale,true); assert.equal(p.WA.CatalogueStatus.hasData,false); assert.equal(p.WA.DATA_LIVE,false);
+  }
+});
+
+test('a fresh retry clears the service-worker fallback flag rather than carrying it forever', async () => {
+  let cached=true;
+  const p=catalogue(async () => new Response('[]',{headers:cached ? {'x-wa-cached-at':String(Date.now()-60000)} : {}}));
+  await p.WA.refreshCatalogue(); assert.equal(p.WA.CatalogueStatus.stale,true);
+  cached=false; await p.WA.refreshCatalogue(); assert.equal(p.WA.CatalogueStatus.stale,false); assert.equal(p.WA.DATA_LIVE,true);
 });
