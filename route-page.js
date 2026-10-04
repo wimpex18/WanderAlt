@@ -22,7 +22,7 @@
     const v = venueOf(s);
     const src = v && v.imageUrl ? R().url(v.imageUrl) : '';
     if (!src) return window.WA.Picto.kind(s.kind);
-    return `<span class="rt__logo${v.imageSource === 'logo' ? ' is-logo' : ''}"><img src="${esc(src)}" alt="" loading="lazy"></span>`;
+    return `<span class="rt__logo${R().logoCls(v.imageSource === 'logo', v.imageTone)}"><img src="${esc(src)}" alt="" loading="lazy"></span>`;
   };
 
   const startLine = (first) => {

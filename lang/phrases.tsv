@@ -18,6 +18,7 @@ What this is	Mis see on	Что это
 The week as a calendar	Nädal kalendrina	Неделя в виде календаря
 Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.	Telli üks kord ja nädal püsib ajakohane. Sinu kalender loeb seda kaks korda päevas uuesti. Midagi ei saadeta peale ja kontot pole vaja.	Подпишитесь один раз, и неделя будет всегда актуальной. Ваш календарь обновляет её дважды в день. Ничего не рассылается, аккаунт не нужен.
 Privacy	Privaatsus	Конфиденциальность
+Venue data and removal	Kohtade andmed ja eemaldamine	Данные о местах и удаление
 Terms, briefly	Tingimused lühidalt	Условия вкратце
 How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed.	Kuidas WanderAlt Tallinna allikaid loeb, mida ta salvestab ja kuidas kalendrivoog töötab.	Как WanderAlt читает источники Таллина, что он хранит и как работает календарная лента.
 Filters	Filtrid	Фильтры
@@ -314,6 +315,9 @@ The Guide	Teejuht	Гид
 What's on	Mis toimub	Что идёт
 We can't reach the listings right now.	Kuulutusteni ei pääse praegu ligi.	Сейчас не удаётся получить события.
 Hours not filed	Lahtiolekuajad teadmata	Часы не указаны
+Open for events	Avatud ürituste ajal	Открыто во время событий
+Details from the venue; its own site says it opens for its events.	Üksikasjad kohalt; koha enda sait ütleb, et see on avatud ürituste ajal.	Сведения от самого места; его сайт говорит, что оно открыто во время событий.
+Address and links from OpenStreetMap; its own site says it opens for its events.	Aadress ja lingid OpenStreetMapist; koha enda sait ütleb, et see on avatud ürituste ajal.	Адрес и ссылки из OpenStreetMap; сайт места говорит, что оно открыто во время событий.
 Open 24 hours	Avatud ööpäevaringselt	Открыто круглосуточно
 Closed for the day	Täna suletud	На сегодня закрыто
 Unknown	Teadmata	Неизвестно

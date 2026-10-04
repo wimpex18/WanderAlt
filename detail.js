@@ -308,7 +308,7 @@
       const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art${img && v.imageSource === 'logo' ? ' is-logo' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art${img ? R().logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}
@@ -406,7 +406,7 @@
       const photo = n.v.imageUrl ? url(n.v.imageUrl) : '';
       const hours = n.hours === 'open' ? 'open then' : n.hours === 'unknown' ? 'hours not filed' : '';
       return `<li><a class="det-next" href="detail.html?id=${esc(encodeURIComponent(n.v.id))}">
-        <span class="det-next__glyph${photo && n.v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
+        <span class="det-next__glyph${photo ? R().logoCls(n.v.imageSource === 'logo', n.v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
         <span class="det-next__body">${n.mood ? `<span class="det-next__mood">${esc(n.mood)}</span>` : ''}<span class="det-next__name">${esc(n.v.name || '')}</span>
           <span class="det-next__meta">${esc([R().kindLabel(n.v.kind, true), `${n.w} min walk`, hours].filter(Boolean).join(' · '))}</span>
           ${n.v.pickNote ? `<span class="det-next__why">${esc(n.v.pickNote)}</span>` : ''}</span></a></li>`;
@@ -474,7 +474,7 @@
           ${week ? `<div class="hours">${week.map(d => `<div class="hours__row${d.isToday ? ' hours__row--today' : ''}">
               <span class="hours__day">${esc(d.day)}</span><span class="hours__val">${esc(d.text)}</span>${d.isToday ? '<span class="hours__today">Today</span>' : '<span></span>'}
             </div>`).join('')}</div>`
-            : /^(theatre|club|bar|arts centre|cinema)$/.test(String(v.kind || '')) && list.length
+            : v.hoursSource === 'events' || (/^(theatre|club|bar|arts centre|cinema)$/.test(String(v.kind || '')) && list.length)
               ? '<p class="wa-note">No fixed hours filed. This room opens when something is on; the listings above carry the times.</p>'
               : '<p class="wa-note">Not filed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
         </section>
@@ -486,8 +486,8 @@
 
         <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
           <div class="det-prov">${v.osmId
-            ? `<span>Address and links from OpenStreetMap${v.openingHours ? `; hours from ${HOURS_FROM[v.hoursSource] || 'OpenStreetMap'}` : ''}.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
-            : `<span>Details from the venue${v.openingHours && HOURS_FROM[v.hoursSource] ? `; hours from ${HOURS_FROM[v.hoursSource]}` : ''}.</span>`}</div>
+            ? `<span>Address and links from OpenStreetMap${v.openingHours ? `; hours from ${HOURS_FROM[v.hoursSource] || 'OpenStreetMap'}` : v.hoursSource === 'events' ? '; its own site says it opens for its events' : ''}.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
+            : `<span>Details from the venue${v.openingHours && HOURS_FROM[v.hoursSource] ? `; hours from ${HOURS_FROM[v.hoursSource]}` : ''}${!v.openingHours && v.hoursSource === 'events' ? '; its own site says it opens for its events' : ''}.</span>`}</div>
         </section>
       </div>
     </div>`;

@@ -14,7 +14,7 @@ WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, a
 
 ## Identity (decided 2 Oct 2026, revised 3 Oct)
 
-- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is a violet-blue gradient, not flat black. Glass only where it floats; it bends a gradient, never a photo.
+- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is warm charcoal like Claude's (`#262624`), not flat black and no longer violet (owner, 4 October). Glass only where it floats; it bends a gradient, never a photo.
 - **Labels:** round flat discs of objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Moods use the same discs (a framed picture, a microphone on stage, a mirror ball, a record player, a pencil, a pint of craft beer), so a mood looks like the rows it leads to. Not Meetup's offset stickers, not Airbnb's 3D. A few hand-drawn sketches (the Old Town skyline on the route card) with a small wobble, one line weight, where a screen has room and a job.
 - A route is a spine: time, square node, stop; the listing is the one filled node. The thread is a vermilion gradient.
 - No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it); search uses the glass. Three tabs: Now, Map, Saved; You is the avatar. UI icons are two-tone (a line and a soft body), solid when selected. Sign-in is one sheet, link first.
@@ -51,7 +51,7 @@ Live data (3 October): about 400 events a fortnight, about 440 places (44 picked
 - Easy alone is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
 - Craft beer picks are ours from each place's own page; someone who knows the scene should confirm or change them, and say whether board-game cafés belong.
 - Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them; craft beer bars are in because they are a culture stop.
-- Hours: about half the picked places have hours. They come from OpenStreetMap, then the venue's site, Facebook and Instagram bio (`docs/data.md`); Facebook returns other Pages' hours only after an App Review. Rooms that open for events say so instead of "hours not filed".
+- Hours: about half the picked places have hours. They come from OpenStreetMap, then the venue's site, Facebook and Instagram bio, then a free model reading that same text, checked against it (`docs/data.md`); Facebook returns other Pages' hours only after an App Review. Rooms that open for events read "Open for events" instead of "Hours not filed". Open: searching the web for a venue with no links needs a search API key the owner signs up for (Brave Search has a free tier); until then a place is found only through its own links, OpenStreetMap, Wikidata and Overture.
 - Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
 - Languages and cities: the interface is translated in the browser (`docs/frontend.md`, Languages); listing text and pick notes are English or the source's own language and need a per-language table before the next reading language. See the Scale board on the canvas.
 - Does Places on Now get used, or does the Map's Places do that job? Watch whether the Guide page is reached at all. The Guide has a row of place types; whether "Plan from here" belongs on every place row is open. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
@@ -66,7 +66,7 @@ Live data (3 October): about 400 events a fortnight, about 440 places (44 picked
 
 ## Do not use
 
-Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients as decoration (the dusk theme is the one deliberate exception: a low-contrast violet to plum behind glass), anything that looks like Google Maps or a booking site.
+Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients, anything that looks like Google Maps or a booking site.
 
 ## Voice
 

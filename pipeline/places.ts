@@ -45,7 +45,7 @@ export interface Place {
   instagram?: string | null;
   facebook?: string | null;
   opening_hours?: string | null;
-  /** Where opening_hours came from: 'osm', 'site', 'facebook' or 'instagram'. */
+  /** Where opening_hours came from: 'osm', 'site', 'facebook', 'instagram' or 'manual'; 'events' when the venue says it opens only for its events (no hours). */
   hours_source?: string | null;
   hours_checked_at?: string | null;
   facts_checked_at?: string | null;
@@ -54,7 +54,16 @@ export interface Place {
   image_url?: string | null;
   image_attr?: string | null;
   image_source?: string | null;
+  /** How the logo looks (logo-tone.ts), and the image_url it was measured on. */
+  image_tone?: string | null;
+  image_tone_url?: string | null;
   enriched_at?: string | null;
+  /** The Guide's one-line note. Never in PLACE_COLUMNS: the run writes it only into an empty
+   *  note (place-notes.ts), so a note written by hand is never overwritten. */
+  pick_note?: string | null;
+  /** 'manual' (or null) for a note written by hand, 'model' for one drafted from the place's own words. */
+  pick_note_source?: string | null;
+  note_checked_at?: string | null;
 }
 
 const DETAIL_FIELDS = ['kind', 'address', 'lat', 'lng', 'osm_id', 'website', 'instagram', 'facebook',

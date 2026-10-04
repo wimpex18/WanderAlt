@@ -8,6 +8,7 @@
     "pipeline:dry": "node --env-file-if-exists=.env pipeline/run.ts --dry-run",
     "pipeline:models": "node --env-file-if-exists=.env pipeline/run.ts --models",
     "social": "node --env-file-if-exists=.env pipeline/social.ts",
+    "facebook:check": "node --env-file-if-exists=.env pipeline/run.ts --facebook-check",
     "pipeline:english": "node --env-file-if-exists=.env pipeline/english.ts",
     "places:audit": "node --env-file-if-exists=.env pipeline/maintenance.ts --dry-run",
     "places:maintain": "node --env-file-if-exists=.env pipeline/maintenance.ts --check-osm --verify-websites",

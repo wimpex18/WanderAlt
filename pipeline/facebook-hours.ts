@@ -1,8 +1,11 @@
-// Opening hours from a venue's Facebook Page, through the Graph API's `hours` field. Meta
-// returns it for Pages our app administers and, for other businesses' Pages, only with Page
-// Public Metadata Access (an app review). Without that the call answers with a permission
-// error, which stops this source for the run; with it, the same code starts returning hours.
-import { UA } from './util.ts';
+// What a venue's Facebook Page says about itself, through the Graph API: its `hours`, its
+// `website`, its `about` line and whether it is `is_permanently_closed`. Meta returns these for
+// Pages our app administers and, for other businesses' Pages, only once the app has Page Public
+// Metadata Access (an App Review; docs/facebook.md says what to do). Without it the call answers
+// with a permission error (code 10), which stops this source for the run; with it, the same code
+// starts filling hours, a missing website and a missing description, and logs a closure.
+// `facebookCheck` probes each step with the real token and says which one is missing.
+import { UA, clip, httpUrl } from './util.ts';
 import { writeHours } from './site-hours.ts';
 import type { InstagramConfig } from './instagram.ts';
 
@@ -38,22 +41,79 @@ export function hoursFromGraph(h: Record<string, string> | undefined | null): st
 }
 
 export type FbHours =
-  | { kind: 'found'; hours: string }
+  | { kind: 'found'; hours: string | null; website?: string | null; about?: string | null; closed?: boolean }
   | { kind: 'none'; reason: string }
   | { kind: 'stop'; reason: string };
 
-export async function lookupFacebookHours(page: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<FbHours> {
-  const url = `${API}/${encodeURIComponent(page)}?` + new URLSearchParams({ fields: 'hours', access_token: cfg.token });
+/** A Page's "website" as one http(s) address of the venue's own site: never another social profile or a link page. */
+export function pageWebsite(raw: unknown): string | null {
+  for (const part of String(raw ?? '').split(/[\s,]+/)) {
+    const u = httpUrl(/^https?:/i.test(part) ? part : part ? `https://${part}` : '');
+    if (u && !/(^|\.)(facebook|instagram|tiktok|youtube|x|twitter|linktr|linkin|beacons|threads)\.(com|ee|net|bio|ai)$/i.test(new URL(u).hostname)) return u;
+  }
+  return null;
+}
+
+type Graph = { hours?: Record<string, string>; website?: string; about?: string; is_permanently_closed?: boolean; error?: { code?: number; message?: string } };
+const STOP = [190, 10, 200, 4, 17, 32, 613];
+const ask = async (page: string, fields: string, cfg: InstagramConfig, fetcher: typeof fetch): Promise<Graph> => {
+  const r = await fetcher(`${API}/${encodeURIComponent(page)}?` + new URLSearchParams({ fields, access_token: cfg.token }),
+    { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+  return await r.json() as Graph;
+};
+
+/** Hours, website, about and closure from a venue's Page. */
+export async function lookupFacebookPage(page: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<FbHours> {
   try {
-    const r = await fetcher(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
-    const body = await r.json() as { hours?: Record<string, string>; error?: { code?: number; message?: string } };
+    let body = await ask(page, 'hours,website,about,is_permanently_closed', cfg, fetcher);
+    // A field this Page type does not have (code 100) is no reason to lose the hours.
+    if (body.error?.code === 100) body = await ask(page, 'hours', cfg, fetcher);
     if (body.error) {
       // 10 and 200: a permission the app lacks (Page Public Metadata Access); 190: token; the rest are rate limits.
-      return [190, 10, 200, 4, 17, 32, 613].includes(Number(body.error.code))
+      return STOP.includes(Number(body.error.code))
         ? { kind: 'stop', reason: `Meta refused (code ${body.error.code}): ${String(body.error.message).slice(0, 120)}` }
         : { kind: 'none', reason: `code ${body.error.code}` };
     }
-    const hours = hoursFromGraph(body.hours);
-    return hours ? { kind: 'found', hours } : { kind: 'none', reason: 'no hours on the page' };
+    const hours = hoursFromGraph(body.hours), website = pageWebsite(body.website), about = body.about ? clip(body.about.trim(), 400) : null;
+    if (!hours && !website && !about && !body.is_permanently_closed) return { kind: 'none', reason: 'nothing on the page' };
+    return { kind: 'found', hours, website, about, closed: body.is_permanently_closed === true };
   } catch (e) { return { kind: 'stop', reason: `request failed: ${(e as Error).message}` }; }
+}
+
+/** Hours alone, for callers that want only them. */
+export async function lookupFacebookHours(page: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<FbHours> {
+  const r = await lookupFacebookPage(page, cfg, fetcher);
+  return r.kind === 'found' && !r.hours ? { kind: 'none', reason: 'no hours on the page' } : r;
+}
+
+/** Each step Facebook needs, tried with the real token, one line each; nothing is written.
+ *  Our own Page answers with the token alone; another venue's Page answers only after review. */
+export async function facebookCheck(cfg: InstagramConfig, venues: string[], fetcher: typeof fetch = fetch): Promise<string[]> {
+  const out: string[] = [];
+  const get = async (path: string, params: Record<string, string>) => {
+    try {
+      const r = await fetcher(`${API}/${path}?` + new URLSearchParams({ ...params, access_token: cfg.token }), { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+      return await r.json() as Record<string, unknown> & { error?: { code?: number; error_subcode?: number; message?: string } };
+    } catch (e) { return { error: { message: (e as Error).message } }; }
+  };
+  const said = (b: { error?: { code?: number; error_subcode?: number; message?: string } }) =>
+    `refused (code ${b.error?.code ?? '?'}${b.error?.error_subcode ? `/${b.error.error_subcode}` : ''}): ${String(b.error?.message ?? '').slice(0, 140)}`;
+  const me = await get('me', { fields: 'id,name' });
+  out.push(`token: ${me.error ? said(me) : `works, as ${String(me.name ?? me.id)}`}`);
+  const perms = await get('me/permissions', {});
+  const granted = Array.isArray(perms.data) ? (perms.data as { permission: string; status: string }[]).filter(p => p.status === 'granted').map(p => p.permission) : [];
+  out.push(`permissions: ${perms.error ? said(perms) : granted.join(', ') || 'none listed'}`);
+  const pages = await get('me/accounts', { fields: 'id,name' });
+  const own = Array.isArray(pages.data) ? (pages.data as { id: string; name: string }[])[0] : undefined;
+  if (own) {
+    const h = await get(own.id, { fields: 'name,hours,website' });
+    out.push(`our own Page ${own.name}: ${h.error ? said(h) : `readable${h.hours ? ', with hours' : ' (no hours set)'}`}`);
+  } else out.push(`our own Page: ${pages.error ? said(pages) : 'none assigned to this token'}`);
+  for (const v of venues) {
+    const b = await get(v, { fields: 'name,hours,website,about,is_permanently_closed' });
+    out.push(`venue Page ${v}: ${b.error ? said(b) : `readable as "${String(b.name)}"${b.hours ? ', hours ' + hoursFromGraph(b.hours as Record<string, string>) : ', no hours on the Page'}`}`);
+  }
+  const blocked = out.some(l => l.startsWith('venue Page') && /code 10\b|code 200\b/.test(l));
+  out.push(blocked ? 'verdict: venue Pages need Page Public Metadata Access (docs/facebook.md, steps 1-6).' : 'verdict: venue Pages are readable; the pipeline fills hours, websites and descriptions from them.');
+  return out;
 }
