@@ -601,7 +601,7 @@ window.WA.dict.et = {
   "Clear inbox": "Tühjenda postkast",
   "Place to start from": "Koht, kust alustada",
   "Keep what you find": "Hoia alles, mida leiad",
-  "Save places and routes, and get a note when a show you saved changes. No password.": "Salvesta kohti ja marsruute ning saa teade, kui salvestatud etendus muutub. Parooli pole.",
+  "Save places and listings, and get a note when a show you saved changes. No password.": "Salvesta kohti ja sündmusi ning saa teade, kui salvestatud etendus muutub. Parooli pole.",
   "Google": "Google",
   "Your taste": "Sinu maitse",
   "Start from": "Alusta alates",
@@ -680,7 +680,16 @@ window.WA.dict.et = {
   "Synced to your account.": "Sünkroonitud sinu kontoga.",
   "This walk is no longer available": "See jalutuskäik pole enam saadaval",
   "Choose a walk for today.": "Vali jalutuskäik tänaseks.",
-  "Its date or stops have changed. Now has walks for the next few hours.": "Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks."
+  "Its date or stops have changed. Now has walks for the next few hours.": "Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks.",
+  "Place types": "Kohtade tüübid",
+  "Only places with filed hours": "Ainult teadaolevate lahtiolekuaegadega kohad",
+  "All place types in the Guide": "Kõik kohtade tüübid teejuhis",
+  "Show all matching places": "Näita kõiki sobivaid kohti",
+  "picked first": "valitud kohad esimesena",
+  "the city centre": "linna keskus",
+  "Search places or listings": "Otsi kohti või sündmusi",
+  "Try another area, a longer walk or another kind of place.": "Proovi teist piirkonda, pikemat jalutuskäiku või teist tüüpi kohta.",
+  "including closed places": "ka suletud kohad"
  },
  "patterns": [
   [

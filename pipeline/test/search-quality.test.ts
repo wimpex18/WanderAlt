@@ -85,7 +85,7 @@ function programme(search = '', venues: any[] = []) {
   let timerId = 0, release!: (p: any) => void;
   const list = [{ kind: 'film', free: true, eventLanguages: ['en'], priceMin: 0 }, { kind: 'gig', free: false, eventLanguages: [], priceMin: 20 }];
   const WA: any = { UI: { esc: (s: any) => String(s ?? '') }, Icon: () => '', Picto: { kind: () => '' },
-    R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: () => '', isFree: (e: any) => e.free,
+    R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: (v: any) => v.area || '', AREA_LIST: ['Kalamaja','Old Town'], isFree: (e: any) => e.free,
       kindLabel: (s: string) => s, dayName: () => '', dow: () => '', dom: () => '', isFollowed: () => false,
       openState: (v: any) => ({ open: v.open }) },
     when: { matches: () => true, isOnDate: () => true, todayKey: () => '2026-09-30', keyPlus: () => '2026-10-02' },
@@ -229,4 +229,34 @@ test('fresh questions are capped a day when a KV namespace is bound, and a cache
   assert.equal((await a.request('2026-09-30', env, 'one+question')).status, 200);        // answered from the cache
   assert.equal(a.calls.length, 2);
   assert.equal([...kv.values()][0], '2');
+});
+
+test('place controls change the actual result set and an open-now override survives reopening', () => {
+  const shops=[{id:'open',name:'Open Books',kind:'bookshop',open:true},{id:'shut',name:'Shut Books',kind:'bookshop',open:false}];
+  const p=programme('',shops); p.query('bookshops open now');
+  assert.equal(p.elements.get('prog-title').textContent,'Places'); assert.equal(p.elements.get('to-map').hidden,true);
+  p.click('[data-place-open]');
+  assert.match(p.elements.get('summary').innerHTML,/2 places/);
+  assert.equal(new URLSearchParams(p.location.search).get('open'),'0');
+  const reopened=programme(p.location.search,shops); reopened.query('bookshops open now');
+  assert.match(reopened.elements.get('summary').innerHTML,/2 places/);
+  reopened.click('[data-area]',{area:'No matches'});
+  assert.match(reopened.elements.get('summary').innerHTML,/0 places/);
+  reopened.click('[data-act]',{act:'clear-place-filters'});
+  assert.match(reopened.elements.get('summary').innerHTML,/2 places/);
+  reopened.query(''); assert.equal(reopened.elements.get('prog-title').textContent,'Programme'); assert.equal(reopened.elements.get('to-map').hidden,false);
+});
+
+test('a named open-now search never includes closed places; open now alone offers all open places', () => {
+  const venues=[{id:'r',name:'Raamatukoi',kind:'bookshop',open:false},{id:'v',name:'Vinyl',kind:'record store',open:true}];
+  const p=programme('',venues); p.query('Raamatukoi open now'); assert.match(p.elements.get('summary').innerHTML,/0 places/);
+  p.query('open now'); assert.match(p.elements.get('summary').innerHTML,/1 place<\/strong>/);
+});
+
+test('an explicit Anywhere override survives a query naming an area', () => {
+  const venues=[{id:'k',name:'Books K',kind:'bookshop',area:'Kalamaja',open:true},{id:'o',name:'Books O',kind:'bookshop',area:'Old Town',open:true}];
+  const p=programme('',venues); p.query('bookshops in Kalamaja'); assert.match(p.elements.get('summary').innerHTML,/1 place<\/strong>/);
+  p.click('[data-area]',{area:''}); assert.match(p.elements.get('summary').innerHTML,/2 places/);
+  const url=p.location.search; assert.equal(new URLSearchParams(url).get('area'),'any');
+  const reopened=programme(url,venues); reopened.query('bookshops in Kalamaja'); assert.match(reopened.elements.get('summary').innerHTML,/2 places/);
 });

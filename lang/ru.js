@@ -601,7 +601,7 @@ window.WA.dict.ru = {
   "Clear inbox": "Очистить входящие",
   "Place to start from": "Место отсчёта",
   "Keep what you find": "Сохраняйте найденное",
-  "Save places and routes, and get a note when a show you saved changes. No password.": "Сохраняйте места и маршруты и получайте уведомление, когда сохранённое событие меняется. Без пароля.",
+  "Save places and listings, and get a note when a show you saved changes. No password.": "Сохраняйте места и события и получайте уведомление, когда сохранённое событие меняется. Без пароля.",
   "Google": "Google",
   "Your taste": "Ваш вкус",
   "Start from": "Начать с",
@@ -680,7 +680,16 @@ window.WA.dict.ru = {
   "Synced to your account.": "Синхронизировано с вашим аккаунтом.",
   "This walk is no longer available": "Эта прогулка больше недоступна",
   "Choose a walk for today.": "Выберите прогулку на сегодня.",
-  "Its date or stops have changed. Now has walks for the next few hours.": "Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы."
+  "Its date or stops have changed. Now has walks for the next few hours.": "Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы.",
+  "Place types": "Типы мест",
+  "Only places with filed hours": "Только места с указанными часами работы",
+  "All place types in the Guide": "Все типы мест в путеводителе",
+  "Show all matching places": "Показать все подходящие места",
+  "picked first": "сначала отобранные места",
+  "the city centre": "центр города",
+  "Search places or listings": "Искать места или события",
+  "Try another area, a longer walk or another kind of place.": "Попробуйте другой район, более длинную прогулку или другой тип места.",
+  "including closed places": "включая закрытые места"
  },
  "patterns": [
   [

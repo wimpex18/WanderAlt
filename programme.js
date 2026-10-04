@@ -9,7 +9,7 @@
    the model asked, and it too only sets filters. Every count comes from
    the same filter chain as the list, each facet skipping itself.
 
-   URL: ?q ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?free=1
+   URL: ?q ?open=0|1 ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?free=1
         ?english=1 ?price ?doors ?seen=hide ?followed=1 ?focus=search
    ============================================================ */
 (() => {
@@ -23,10 +23,10 @@
   const I = (n, c) => window.WA.Icon(n, c);
 
   const state = {
-    q: '', day: '', dayTo: '', when: 'all', kinds: new Set(), area: '',
+    q: '', day: '', dayTo: '', when: 'all', kinds: new Set(), area: '', areaExplicit: false,
     sort: 'soonest', within: 0, doors: 'any', free: false,
     hideSeen: false, followed: false, fresh: false,
-    english: false, maxPrice: null,
+    english: false, maxPrice: null, placeOpen: null,
     read: null,       /* the sentence's reading: { must, any, note, by } */
   };
   /* Places that answer the query (by name, or by the kind a word names) and,
@@ -50,10 +50,11 @@
     if (t && WHEN[t]) state.when = t;
     if (sp.get('q')) state.q = sp.get('q').trim().slice(0, 140);
     if (sp.get('cat')) sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));
-    if (sp.get('area')) state.area = sp.get('area');
+    if (sp.has('area')) { state.area = sp.get('area') === 'any' ? '' : sp.get('area'); state.areaExplicit = true; }
     if (sp.get('sort') === 'nearest') state.sort = 'nearest';
     if (sp.get('within')) state.within = G().parseWithin(sp.get('within'));
     if (sp.get('new') === '1') state.fresh = true;
+    if (['0', '1'].includes(sp.get('open'))) state.placeOpen = sp.get('open') === '1';
     state.free = sp.get('free') === '1';
     state.english = sp.get('english') === '1';
     state.hideSeen = sp.get('seen') === 'hide';
@@ -65,10 +66,11 @@
   const write = () => {
     const sp = new URLSearchParams();
     if (state.q) sp.set('q', state.q);
+    if (placeOnly && state.placeOpen != null) sp.set('open', state.placeOpen ? '1' : '0');
     if (state.day) { sp.set('date', state.day); if (state.dayTo) sp.set('to', state.dayTo); }
     else if (state.when !== 'all') sp.set('time', state.when);
     if (state.kinds.size) sp.set('cat', [...state.kinds].join(','));
-    if (state.area) sp.set('area', state.area);
+    if (state.area || (placeOnly && state.areaExplicit)) sp.set('area', state.area || 'any');
     if (state.sort !== 'soonest') sp.set('sort', state.sort);
     if (state.within) sp.set('within', String(state.within));
     if (state.fresh) sp.set('new', '1');
@@ -137,7 +139,7 @@
     return list.slice().sort(G().bySoonestThenDistance());
   };
   const base = () => R().live();
-  const results = () => sorted(apply(base()));
+  const results = () => placeOnly ? [] : sorted(apply(base()));
 
   /* ── Quick chips: what the sentence set, then when, then kinds ── */
   const QUICK_WHEN = [['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend'], ['thisweek', 'This week']];
@@ -179,8 +181,44 @@
     return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
   };
 
+  const placeOrigin = () => {
+    const here = G().currentLoc();
+    if (here) return { from: here, label: G().anchor?.()?.label || 'where you are' };
+    const centre = (window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.centre;
+    return { from: centre || null, label: centre?.label || 'the city centre' };
+  };
+  const wantsOpen = () => state.placeOpen ?? A().places(state.q).openNow;
+  const placeView = (skipArea = false) => {
+    const from = placeOrigin().from;
+    const distance = v => G().distanceTo?.(v, from);
+    return placeHits.filter(v => (!wantsOpen() || R().openState(v).open === true) &&
+      (skipArea || !state.area || R().areaOf(v) === state.area) &&
+      (!state.within || (distance(v) != null && distance(v) <= state.within)))
+      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) ||
+        ((distance(a) ?? Infinity) - (distance(b) ?? Infinity)) || String(a.name).localeCompare(String(b.name), 'et'));
+  };
+  const PLACE_QUERY = { records: 'record shops', books: 'bookshops', galleries: 'galleries museums', thrift: 'thrift shops',
+    beer: 'craft beer', clubs: 'clubs bars', cinema: 'cinemas', theatres: 'theatres' };
+  const placePanel = (scope) => {
+    const areas = [...new Set(placeView(true).map(v => R().areaOf(v)).filter(Boolean))];
+    if (state.area && !areas.includes(state.area)) areas.push(state.area);
+    const selected = A().places(state.q).kinds;
+    const groups = (R().placeGroups || []).filter(g => PLACE_QUERY[g.id] && (window.WA.venues || []).some(v => g.kinds.includes(v.kind)));
+    return `<div class="wa-field"><span class="wa-field__label">Place types</span><div class="wa-chips">${groups.map(g =>
+      `<button class="wa-chip" type="button" data-place-query="${esc(PLACE_QUERY[g.id])}" aria-pressed="${g.kinds.some(k => selected.includes(k))}">${esc(g.label)}</button>`).join('')}</div></div>
+      <div class="wa-field"><button class="wa-switch" type="button" data-place-open aria-pressed="${wantsOpen()}">
+        <span class="wa-switch__text"><span class="wa-switch__title">Open now</span><span class="wa-switch__sub">Only places with filed hours</span></span><span class="wa-switch__track"></span></button></div>
+      <div class="wa-field"><span class="wa-field__label">Area</span><div class="wa-chips"><button class="wa-chip" type="button" data-area="" aria-pressed="${!state.area}">Anywhere</button>${areas.map(a =>
+        `<button class="wa-chip" type="button" data-area="${esc(a)}" aria-pressed="${state.area === a}">${esc(a)}</button>`).join('')}</div></div>
+      <div class="wa-field"><span class="wa-field__label">Walking distance</span><input class="wa-range" type="range" data-within min="0" max="4000" step="250" value="${state.within}" aria-label="Maximum walking distance" />
+        <span class="wa-field__consequence" data-within-note>${placeWithinNote()}</span></div>
+      ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}<a class="wa-linkbtn" href="places.html">All place types in the Guide</a>`;
+  };
+  const placeWithinNote = () => `${state.within ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city'} · Walking from ${placeOrigin().label}`;
+
   let datesOpen = false, refocus = '';
-  const panel = () => {
+  const panel = (scope = 'aside') => {
+    if (state.q && placeOnly) return placePanel(scope);
     const whenPool = apply(base(), 'when');
     const freeN = apply(base(), 'free').filter(R().isFree).length;
     const follows = window.WA.Follows ? window.WA.Follows.keys().length : 0;
@@ -224,7 +262,7 @@
         <input class="wa-range" type="range" data-within min="0" max="4000" step="250" value="${state.within}" aria-label="Maximum walking distance" />
         <span class="wa-field__consequence" data-within-note>${withinNote()}</span>
       </div>
-      ${anchorField()}
+      ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}
       <div class="wa-field">
         <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
           <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free in this view</span></span>
@@ -252,28 +290,28 @@
 
   /* A named spot to measure from, picked from places we hold, so walking
      times work without location permission (a hotel, a friend's street). */
-  const anchorField = () => {
+  const anchorField = (id = 'anchor') => {
     const spots = (window.WA._venuesAll || []).filter(v => v.name && v.lat != null && v.lng != null && !v.isClosed)
       .map(v => v.name).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => a.localeCompare(b)).slice(0, 400);
     const a = G().anchor();
     return `<div class="wa-field">
-      <label class="wa-field__label" for="anchor">Measure from</label>
-      <input class="wa-input" id="anchor" list="anchor-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
-      <datalist id="anchor-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <label class="wa-field__label" for="${id}">Measure from</label>
+      <input class="wa-input" data-anchor id="${id}" list="${id}-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
+      <datalist id="${id}-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
       <span class="wa-field__consequence">${a ? 'Saved in this browser. Clear the box to use your location.' : 'Pick a place you know, such as where you are staying, to skip the location prompt.'}</span>
     </div>`;
   };
 
-  const activeCount = () => (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
+  const activeCount = () => placeOnly ? Number(!!wantsOpen()) + Number(!!state.area) + Number(!!state.within) : (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
     (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0) + (state.day ? 1 : 0);
 
   /* ── Empty state: name the filter, offer the drop that helps most ── */
   const emptyState = () => {
     if (state.q && placeOnly) {
-      return R().empty({ icon: 'store', title: A().places(state.q).openNow ? 'None with filed hours are open now.' : 'No places match this search.',
-        body: A().places(state.q).openNow ? "Places without filed hours aren't included." : 'Try a place name or another kind of place.',
-        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
+      return R().empty({ icon: 'store', title: wantsOpen() && !state.area && !state.within ? 'None with filed hours are open now.' : 'No places match this search.',
+        body: wantsOpen() && !state.area && !state.within ? "Places without filed hours aren't included." : 'Try another area, a longer walk or another kind of place.',
+        actions: [{ act: 'clear-place-filters', label: 'Show all matching places' }, { act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
     }
     const drops = [];
     const add = (on, label, act, skip) => { if (on) drops.push({ label, act, n: apply(base(), skip).length }); };
@@ -294,7 +332,7 @@
     if (state.q && drops.length === 1) {
       return R().empty({ icon: 'search', title: 'No listings match this search.',
         body: 'Searches English and original titles, venues and areas, with or without Estonian letters.',
-        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
+        actions: [{ act: 'clear-place-filters', label: 'Show all matching places' }, { act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
     }
     if (best) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
@@ -359,15 +397,16 @@
 
   const findPlaces = (q, P) => {
     const f = P.openNow ? A().local(q).must.join(' ') : A().fold(q).trim();
-    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false && (!P.openNow || R().openState(v).open === true));
+    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false && (!P.openNow || P.only || R().openState(v).open === true));
     const named = (v) => f.length >= 3 && A().fold(v.name).includes(f);
-    return venues.filter(v => named(v) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
+    return venues.filter(v => named(v) || (P.only && P.openNow && !f) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
       .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || Number(named(b)) - Number(named(a)) || String(a.name).localeCompare(String(b.name), 'et'));
   };
 
   const onQuery = (raw, now) => {
     const q = String(raw || '').trim().slice(0, 140);
     if (String(raw || '').length > 140) $('q').value = q;
+    if (q !== state.q) state.placeOpen = null;
     state.q = q;
     $('q-clear').hidden = !q;
     $('ask-try').hidden = !!q || document.activeElement !== $('q');
@@ -382,7 +421,11 @@
       window.WA.Route.loadStored();
       evenings = eveningsFor(local);
     }
-    if (placeOnly) { /* a shop word asks for places; it is not a kind of listing */ }
+    if (placeOnly) {
+      const words = A().fold(q);
+      const area = (R().AREA_LIST || []).find(a => words.includes(A().fold(a)));
+      if (!state.areaExplicit) state.area = area || '';
+    }
     else if (q && A().isQuestion(q)) {
       const p = A().local(q);
       adopt(p, 'page');
@@ -453,6 +496,11 @@
   /* ── Render ─────────────────────────────────────────────────── */
   const summary = (n) => {
     const bits = [];
+    if (placeOnly) {
+      const list = placeView();
+      put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(`Walking from ${placeOrigin().label}`)}`);
+      put($('search-act'), ''); return;
+    }
     if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'tonight' : `on ${R().dateShort(state.day)}`);
     else if (state.when !== 'all') bits.push(WHEN[state.when].toLowerCase());
     if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
@@ -487,15 +535,16 @@
   };
   const placesBlock = (listLen) => {
     if (!state.q || !placeHits.length) return '';
-    const shown = placeHits.slice(0, 4);
+    const pool = placeOnly ? placeView() : placeHits;
+    const shown = pool.slice(0, placeOnly ? limit : 4);
     const groups = new Set(placeHits.map(v => GROUP[String(v.kind || '').toLowerCase()]).filter(Boolean));
-    const all = placeHits.length > shown.length
+    const all = placeOnly ? (pool.length > shown.length ? `<button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, pool.length - shown.length)} more</button>` : '') : placeHits.length > shown.length
       ? `<a class="wa-linkbtn" href="places.html${groups.size === 1 ? `?kind=${[...groups][0]}` : ''}">All ${placeHits.length} places</a>` : '';
-    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v)).join('')}</ul>${all}</section>` +
+    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v, placeOnly ? { from: placeOrigin().from } : {})).join('')}</ul>${all}</section>` +
       (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
   };
   const listHtml = (list) => {
-    if (!list.length && state.q && placeOnly) return placeHits.length ? placesBlock(0) : emptyState();
+    if (state.q && placeOnly) return placeView().length ? placesBlock(0) : emptyState();
     if (!list.length) return state.q && (placeHits.length || evenings.length)
       ? `${eveningsBlock()}${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
     const days = list.filter(e => !R().isRun(e));
@@ -521,7 +570,7 @@
     put($('list'), listHtml(list));
     put($('aside'), panel());
     const sheet = $('sheet');
-    if (sheet && sheet.open) { put($('sheet-body'), panel()); put($('sheet-foot'), foot(list.length)); }
+    if (sheet && sheet.open) { put($('sheet-body'), panel('sheet')); put($('sheet-foot'), foot(list.length)); }
     if (refocus) {
       const at = sheet && sheet.open ? sheet : $('aside');
       const el = at.querySelector(`[data-date="${refocus}"]`);
@@ -530,7 +579,7 @@
     }
   };
   const filterSig = () => JSON.stringify([state.q, state.day, state.dayTo, state.when, [...state.kinds], state.area, state.sort, state.within, state.doors,
-    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice]);
+    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice, state.placeOpen]);
   const render = () => {
     const sig = filterSig();
     if (sig !== lastSig) { lastSig = sig; limit = PAGE; runsOpen = false; }
@@ -538,6 +587,11 @@
     quick();
     askNote();
     summary(list.length);
+    $('prog-title').textContent = placeOnly ? 'Places' : 'Programme';
+    document.title = `${placeOnly ? 'Places' : 'Programme'} · WanderAlt`;
+    const label = document.querySelector?.('label[for="q"]');
+    if (label) label.textContent = 'Search places or listings';
+    $('to-map').hidden = !!placeOnly;
     const fc = activeCount();
     $('filter-count').hidden = !fc;
     $('filter-count').textContent = fc ? String(fc) : '';
@@ -547,7 +601,7 @@
     write();
   };
 
-  const foot = (n) => `<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="sheet-apply">Show ${n} ${n === 1 ? 'listing' : 'listings'}</button>`;
+  const foot = (n) => { if (placeOnly) n = placeView().length; return `<button class="wa-btn wa-btn--primary wa-btn--wide" type="button" id="sheet-apply">Show ${n} ${placeOnly ? (n === 1 ? 'place' : 'places') : n === 1 ? 'listing' : 'listings'}</button>`; };
 
   /* Day headings stick under the controls, which stick under the top bar. */
   const stickyOffset = () => {
@@ -561,7 +615,7 @@
   const sheet = () => $('sheet');
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    if (hit('[data-kind], [data-when], [data-area], [data-sort], [data-doors], [data-toggle], [data-clear], [data-act], [data-dates], #q-clear')) cancelAsk();
+    if (hit('[data-kind], [data-when], [data-area], [data-sort], [data-doors], [data-place-open], [data-place-query], [data-toggle], [data-clear], [data-act], [data-dates], #q-clear')) cancelAsk();
     const fs = hit('[data-follow-search]');
     if (fs && window.WA.Follows) {
       const on = window.WA.Follows.toggle(fs.dataset.followSearch, searchLabel());
@@ -571,7 +625,7 @@
     }
     if (hit('#open-filters')) {
       $('sheet-title').textContent = 'Filters';
-      put($('sheet-body'), panel());
+      put($('sheet-body'), panel('sheet'));
       put($('sheet-foot'), foot(results().length));
       sheet().showModal();
       return;
@@ -596,25 +650,29 @@
     /* The chosen chip, tapped again, clears the filter. */
     if (w) { const v = w.dataset.when; state.when = !state.day && state.when === v ? 'all' : v; state.day = ''; state.dayTo = ''; datesOpen = false; render(); return; }
     const a = hit('[data-area]');
-    if (a) { state.area = a.dataset.area; render(); return; }
+    if (a) { state.area = a.dataset.area; state.areaExplicit = true; render(); return; }
     const s = hit('[data-sort]');
     if (s) {
       state.sort = s.dataset.sort;
       if (state.sort === 'nearest') G().userLoc().then(render);
       render(); return;
     }
+    const pq = hit('[data-place-query]');
+    if (pq) { const q = pq.dataset.placeQuery + (wantsOpen() ? ' open now' : ''); $('q').value = q; onQuery(q, true); return; }
+    if (hit('[data-place-open]')) { state.placeOpen = !wantsOpen(); render(); return; }
     const dr = hit('[data-doors]');
     if (dr) { state.doors = dr.dataset.doors; render(); return; }
     const t = hit('[data-toggle]');
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, read: null });
+      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', areaExplicit: false, sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, placeOpen: null, read: null });
       before = null; clearTimeout(askTimer); datesOpen = false;
       state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
     if (act) {
       const x = act.dataset.act;
+      if (x === 'clear-place-filters') { state.placeOpen = false; state.area = ''; state.areaExplicit = true; state.within = 0; }
       if (x === 'clear-q') { state.read = null; before = null; clearTimeout(askTimer); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') state.area = '';
@@ -641,8 +699,8 @@
     if (e.target.matches && e.target.matches('[data-within]')) {
       cancelAsk();
       state.within = parseInt(e.target.value, 10) || 0;
-      if (state.within) G().userLoc();
-      document.querySelectorAll('[data-within-note]').forEach(n => { n.textContent = withinNote(); });
+      if (state.within && !placeOnly) G().userLoc();
+      document.querySelectorAll('[data-within-note]').forEach(n => { n.textContent = placeOnly ? placeWithinNote() : withinNote(); });
       /* Redraw the list but leave the slider being dragged alone. */
       const list = latest = results();   /* a pending drawBig must not paint older results over this */
       summary(list.length);
@@ -654,7 +712,7 @@
   });
   document.addEventListener('change', (e) => {
     if (!e.target.matches) return;
-    if (e.target.id === 'anchor') {
+    if (e.target.matches('[data-anchor]')) {
       const name = e.target.value.trim().toLowerCase();
       const v = name ? (window.WA._venuesAll || []).find(x => String(x.name).toLowerCase() === name && x.lat != null && x.lng != null) : null;
       G().setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
