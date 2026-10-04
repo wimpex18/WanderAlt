@@ -214,7 +214,7 @@
   };
 
   window.WA.when = {
-    isTonight, stampAll, todayKey, keyPlus, resolveKey, isOnDate,
+    isTonight, stampAll, dayKey, todayKey, keyPlus, resolveKey, isOnDate,
     matches, statedMinutes, hasEnded,
   };
 })();

@@ -414,7 +414,7 @@
     return `<section class="det-block det-after"><h2 class="det-block__title">After ${esc(name || 'here')}</h2>
       <p class="wa-note">Picked places within 10 minutes on foot.</p>
       <ul class="det-next-list">${rows}</ul>
-      ${route ? `<a class="wa-btn wa-btn--pill" href="route.html?s=${esc(Rt.param(route))}">Plan the next hours from here</a>` : ''}</section>`;
+      ${route ? `<a class="wa-btn wa-btn--pill" href="${esc(Rt.href(route))}">Plan the next hours from here</a>` : ''}</section>`;
   };
 
   const HOURS_FROM = { osm: 'OpenStreetMap', site: 'the venue\'s own site', facebook: 'its Facebook page', instagram: 'its Instagram bio', manual: 'a check by us' };
