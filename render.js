@@ -90,6 +90,19 @@
     'arts centre': 'Arts centre', cinema: 'Cinema', community: 'Community centre', bar: 'Bar', museum: 'Museum', taproom: 'Craft beer',
   };
   const PLACE_KIND = { club: 'Club', theatre: 'Theatre' };
+  /* Place types, for the Guide's row and Now's Places: the kinds each covers and the
+     Label disc its chip shows (icons.js). */
+  const placeGroups = [
+    { id: 'records',   label: 'Records',        picto: 'records',  kinds: ['record store'] },
+    { id: 'books',     label: 'Books',          picto: 'books',    kinds: ['bookshop'] },
+    { id: 'galleries', label: 'Galleries',      picto: 'gallery',  kinds: ['gallery', 'arts centre', 'museum'] },
+    { id: 'thrift',    label: 'Thrift',         picto: 'thrift',   kinds: ['thrift'] },
+    { id: 'beer',      label: 'Craft beer',     picto: 'beer',     kinds: ['taproom'] },
+    { id: 'clubs',     label: 'Clubs and bars', picto: 'club',     kinds: ['club', 'bar'] },
+    { id: 'cinema',    label: 'Cinema',         picto: 'cinema',   kinds: ['cinema'] },
+    { id: 'theatres',  label: 'Theatres',       picto: 'theatre',  kinds: ['theatre'] },
+    { id: 'community', label: 'Community',      picto: 'centre',   kinds: ['community'] },
+  ];
   const kindLabel = (k, isPlace) => {
     const key = String(k || '').toLowerCase().trim();
     if (!real(key)) return '';
@@ -579,6 +592,6 @@
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
-    skelRows, empty, cityName, locateIfGranted, locPrompt,
+    skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
   };
 })();

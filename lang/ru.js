@@ -267,15 +267,38 @@ window.WA.dict.ru = {
   "Show walking times from where you are": "Показывать время пешком от вашего места",
   "Only sources I follow": "Только источники, на которые я подписан",
   "I'm going": "Я иду",
-  "Walking times need location. Allow it for this site in your browser settings.": "Для времени пешком нужна геолокация. Разрешите её для этого сайта в настройках браузера.",
-  "Moods follow the hour and what the city has. Leave it on Anything and the route decides.": "Настроения зависят от часа и от того, что есть в городе. Оставьте «Что угодно», и маршрут решит сам.",
-  "Tickets up to": "Билеты до",
-  "With a limit set, shows with no price listed stay in and say “Price not listed”. Shops and bars have no price, so only tickets count.": "При заданном пределе события без цены остаются в списке с пометкой «Цена не указана». У магазинов и баров цены нет, поэтому учитываются только билеты.",
   "Show the next few hours": "Показать ближайшие часы",
-  "Nights built for people who turn up on their own, or in two. We read the format from the title; the organiser has not confirmed it.": "Вечера для тех, кто приходит один или вдвоём. Формат мы определяем по названию; организатор его не подтверждал.",
+  "What's the mood?": "Какое настроение?",
+  "Pick one or a few. None means anything.": "Выберите одно или несколько. Ничего не выбрано — подойдёт всё.",
+  "Up to €20": "До 20 €",
+  "Shows with no listed price stay in.": "События без указанной цены остаются в списке.",
+  "Narrow it down": "Уточнить",
+  "Art & film": "Искусство и кино",
+  "Galleries, cinema, stage, comedy": "Галереи, кино, сцена, комедия",
+  "Stage": "Сцена",
+  "Live music": "Живая музыка",
+  "Gigs, jazz, concerts": "Концерты, джаз, живые выступления",
+  "Indie & rock": "Инди и рок",
+  "Techno, house, DJs": "Техно, хаус, диджеи",
+  "Records & books": "Пластинки и книги",
+  "Vinyl, books, thrift, markets": "Винил, книги, секонд-хенд, ярмарки",
+  "Markets": "Ярмарки",
+  "Workshops & talks": "Мастер-классы и лекции",
+  "Make, learn, meet people": "Делать, учиться, знакомиться",
+  "Taprooms and brewery bars": "Пивные и бары пивоварен",
+  "any price": "любая цена",
+  "free": "бесплатно",
+  "Walking from you needs location. Allow it for this site in your browser settings.": "Чтобы считать путь от вас, нужна геолокация. Разрешите её для этого сайта в настройках браузера.",
+  "Nothing is a short walk from you. Turn Near me off for the whole city.": "Рядом с вами ничего нет. Выключите «Рядом со мной», чтобы видеть весь город.",
+  "Nearest first, walking from you": "Сначала ближайшие, пешком от вас",
+  "Right by you": "Прямо рядом с вами",
+  "Kind": "Вид",
+  "Moods": "Настроения",
+  "Kind of place": "Тип места",
+  "nearest to you first": "сначала ближайшие к вам",
+  "nearest the centre first": "сначала ближайшие к центру",
   "Change": "Изменить",
   "Today's events and the places open now, by walking time.": "События сегодня и открытые сейчас места по времени пешком.",
-  "Mood": "Настроение",
   "Ticket price limit": "Предел цены билета",
   "Day": "День",
   "Still going": "Ещё идёт",
@@ -283,8 +306,6 @@ window.WA.dict.ru = {
   "Quiet tonight": "Сегодня вечером тихо",
   "Finding you": "Определяем, где вы",
   "Near me": "Рядом со мной",
-  "Let the route decide": "Пусть решит маршрут",
-  "What are you in the mood for?": "Какое у вас настроение?",
   "Nothing fits that right now.": "Сейчас ничего не подходит.",
   "No route for the next few hours.": "На ближайшие часы маршрута нет.",
   "Try another mood or a higher price limit.": "Попробуйте другое настроение или более высокий предел цены.",
@@ -350,21 +371,8 @@ window.WA.dict.ru = {
   "Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.": "Таблетки — это события со временем начала. Круглая метка — место; киноварное кольцо значит, что оно открыто сейчас.",
   "Nothing in view": "В кадре ничего нет",
   "Location is off in this browser, so the list is ordered by time": "Геолокация в этом браузере выключена, поэтому список упорядочен по времени",
-  "Look": "Смотреть",
-  "Shows, galleries, film": "Спектакли, галереи, кино",
-  "Browse": "Копаться",
-  "Records, books, thrift": "Пластинки, книги, секонд-хенд",
-  "Make": "Делать",
-  "Workshops and talks": "Мастер-классы и лекции",
-  "Listen": "Слушать",
-  "Gigs, jazz, live rooms": "Концерты, джаз, живые залы",
-  "Drink": "Выпить",
-  "Craft beer, taprooms": "Крафтовое пиво, пивные",
   "Dance": "Танцевать",
-  "Join in": "Присоединяйтесь",
-  "Quiz, chess, craft nights": "Квизы, шахматы, вечера рукоделия",
   "Any mood": "Любое настроение",
-  "Look · up to €10": "Смотреть · до 10 €",
   "Any mood · any price": "Любое настроение · любая цена",
   "On this week": "На этой неделе",
   "Remove this filter": "Убрать этот фильтр",
@@ -714,6 +722,10 @@ window.WA.dict.ru = {
    "{n} мин пешком"
   ],
   [
+   "{n} min walk from you",
+   "{n} мин пешком от вас"
+  ],
+  [
    "{n} h",
    "{n} ч"
   ],
@@ -788,6 +800,10 @@ window.WA.dict.ru = {
   [
    "Show {n} more",
    "Показать ещё {n}"
+  ],
+  [
+   "All {n}",
+   "Все {n}"
   ],
   [
    "Show all {n} running",
@@ -880,6 +896,10 @@ window.WA.dict.ru = {
   [
    "{n} open now",
    "открыто сейчас: {n}"
+  ],
+  [
+   "{n} open",
+   "открыто: {n}"
   ],
   [
    "{n} min ago",

@@ -137,14 +137,44 @@ test('a mood shows only when the city has three behind it, and only at the hours
   assert.ok(!thin.includes('dance'), 'two is not enough');
 });
 
-test('the chosen mood and price are remembered, and anything else is refused', () => {
+test('the chosen moods and price are remembered, and anything else is refused', () => {
   const { Moods } = world(12 * 60, [], []);
-  assert.deepEqual(plain(Moods.pref()), { mood: '', cap: null });
-  Moods.setPref({ mood: 'look', cap: 10 });
-  assert.equal(Moods.summary(), 'Look · up to €10');
-  Moods.setPref({ mood: 'nonsense', cap: 7 });
-  assert.deepEqual(plain(Moods.pref()), { mood: '', cap: null });
+  assert.deepEqual(plain(Moods.pref()), { moods: [], subs: [], cap: null });
+  Moods.setPref({ moods: ['look'], cap: 20 });
+  assert.equal(Moods.summary(), 'Art & film · up to €20');
+  Moods.setPref({ moods: ['browse', 'listen'], subs: ['records', 'jazz', 'film'], cap: 0 });
+  assert.deepEqual(plain(Moods.pref()), { moods: ['browse', 'listen'], subs: ['records', 'jazz'], cap: 0 }, 'a sub of a mood not chosen is dropped');
+  assert.equal(Moods.summary(), 'Records, Jazz · free');
+  Moods.setPref({ moods: ['look', 'listen', 'make'] });
+  assert.equal(Moods.summary(), 'Art & film +2 · any price');
+  Moods.setPref({ moods: ['nonsense'], cap: 10 });
+  assert.deepEqual(plain(Moods.pref()), { moods: [], subs: [], cap: null }, '€10 is no longer offered');
   assert.equal(Moods.summary(), 'Any mood · any price');
-  Moods.setPref({ mood: '', cap: 0 });
-  assert.equal(Moods.summary(), 'Any mood · free');
+  Moods.setPref({ mood: 'join' });
+  assert.deepEqual(plain(Moods.pref()), { moods: ['make'], subs: ['alone'], cap: null }, 'an older single mood still reads');
+});
+
+test('a choice is any of its moods, and a mood with subs chosen means those subs only', () => {
+  const { Moods } = world(12 * 60, [], []);
+  const jazz = { kind: 'gig', tags: ['jazz'] }, rock = { kind: 'gig', tags: ['indie'] }, diy = { kind: 'workshop', tags: ['diy'] }, joke = { kind: 'other', tags: ['standup'] };
+  const both = { moods: ['listen', 'look'], subs: [] };
+  assert.ok(Moods.wantsEvent(both, jazz) && Moods.wantsEvent(both, joke) && !Moods.wantsEvent(both, diy));
+  const onlyJazz = { moods: ['listen'], subs: ['jazz'] };
+  assert.ok(Moods.wantsEvent(onlyJazz, jazz) && !Moods.wantsEvent(onlyJazz, rock));
+  assert.ok(!Moods.wantsEvent({ moods: ['listen'], subs: ['rock'] }, diy), 'a genre sub reads tags on gigs only');
+  assert.ok(Moods.wantsEvent({ moods: [], subs: [] }, diy), 'nothing chosen is anything');
+  const shop = { kind: 'record store' }, books = { kind: 'bookshop' };
+  assert.ok(Moods.wantsPlace({ moods: ['browse'], subs: ['records'] }, shop) && !Moods.wantsPlace({ moods: ['browse'], subs: ['records'] }, books));
+});
+
+test('after midnight a walk never sends you to a shop, and an unfiled place waits for its usual hours', () => {
+  const unfiled = day().map(p => ({ ...p, openingHours: null }));
+  assert.deepEqual(plain(world(6, [], unfiled).Route.plan({})), [], 'no record shop or gallery at ten past midnight');
+  const bars = [place('bar1', 'bar', 59.4362, 24.7448, { openingHours: null }), place('beer', 'taproom', 59.4366, 24.7452)];
+  const late = plain(world(6, [], [...unfiled, ...bars], (p) => (p.openingHours ? 'open' : 'unknown')).Route.plan({}));
+  assert.ok(late.length >= 1, 'a bar and a taproom still make a late walk');
+  for (const r of late) for (const s of r.stops) assert.ok(['bar', 'taproom'].includes(s.kind), `${s.kind} at night`);
+  assert.ok(plain(world(14 * 60, [], unfiled, () => 'unknown').Route.plan({})).length >= 1, 'by day an unfiled shop can still be tried');
+  const cinema = [place('kino', 'cinema', 59.4362, 24.7448, { openingHours: null }), place('books', 'bookshop', 59.4364, 24.7450)];
+  for (const r of plain(world(14 * 60, [], cinema, (p) => (p.openingHours ? 'open' : 'unknown')).Route.plan({}))) assert.ok(!r.stops.some((s: any) => s.id === 'kino'), 'a cinema with no hours is no stop on its own');
 });

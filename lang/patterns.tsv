@@ -7,6 +7,7 @@
 {n} listing	{n} kuulutus	{n} событие
 {n} min	{n} min	{n} мин
 {n} min walk	{n} min jalgsi	{n} мин пешком
+{n} min walk from you	{n} min jalgsi sinu juurest	{n} мин пешком от вас
 {n} h	{n} h	{n} ч
 till {t}	kuni {t}	до {t}
 till {d}	kuni {d}	до {d}
@@ -26,6 +27,7 @@ tickets from {x}	piletid alates {x}	билеты от {x}
 Up to {x}, about {y}	Kuni {x}, umbes {y}	До {x}, около {y}
 up to {x}	kuni {x}	до {x}
 Show {n} more	Näita veel {n}	Показать ещё {n}
+All {n}	Kõik {n}	Все {n}
 Show all {n} running	Näita kõiki {n} käimasolevat	Показать все {n} идущих
 Added to {x}	Lisatud nimekirja {x}	Добавлено в {x}
 Remove {x} from saved	Eemalda {x} salvestatutest	Убрать {x} из сохранённого
@@ -49,6 +51,7 @@ It was on {d}	See toimus {d}	Это было {d}
 It came off on {d}	See lõppes {d}	Это закончилось {d}
 Tonight in {x}	Täna õhtul: {x}	Сегодня вечером: {x}
 {n} open now	{n} praegu avatud	открыто сейчас: {n}
+{n} open	{n} avatud	открыто: {n}
 {n} min ago	{n} min tagasi	{n} мин назад
 {n} hour ago	{n} tund tagasi	{n} ч назад
 {n} hours ago	{n} tundi tagasi	{n} ч назад
