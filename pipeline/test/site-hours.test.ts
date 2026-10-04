@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { siteHours } from '../site-hours.ts';
-import { textHours, hoursPages, visibleText } from '../site-text-hours.ts';
+import { textHours, hoursPages, visibleText, eventNights } from '../site-text-hours.ts';
 
 const page = (json: unknown) => `<html><head><script type="application/ld+json">${JSON.stringify(json)}</script></head></html>`;
 
@@ -39,11 +39,24 @@ test('text hours: "until midnight" is read, and a café listed under the museum 
 });
 
 test('text hours: a week with days left unsaid is not kept, and nothing is read without a cue', () => {
-  assert.equal(textHours('<p>Open during the exhibitions:</p><p>Wednesday - Saturday 12 - 18</p><p>Open also by appointment</p>'), null, 'Mon, Tue and Sun unsaid');
+  assert.equal(textHours('<p>Open during the exhibitions:</p><p>Wednesday - Saturday 12 - 18</p><p>Tickets at the door</p>'), null, 'Mon, Tue and Sun unsaid');
   assert.equal(textHours('<p>Programme</p><p>Fri 20-23</p><p>Sat 21-04</p>'), null);
   assert.equal(textHours('<p>Opening hours: Mon-Sun 12-22</p>'), 'Mo,Tu,We,Th,Fr,Sa,Su 12:00-22:00');
   assert.equal(textHours('<p>Avatud homme - 10:00.</p><p>Külastusinfo</p>'), null);
   assert.equal(textHours('<script>var x="Opening hours: Mon-Sun 12-22"</script>'), null, 'scripts are not text');
+});
+
+test('text hours: days not named are shut when the text says the rest is by appointment', () => {
+  // Studio Gallery K28, as its homepage writes it.
+  assert.equal(textHours('<p>Galerii on avatud näituste ajal:</p><p>K,N,R, L 12 - 18</p><p>Muul ajal oleme avatud kokkuleppel</p>'), 'We,Th,Fr,Sa 12:00-18:00');
+  assert.equal(textHours('<p>Open during the exhibitions:</p><p>Wednesday - Saturday 12 - 18</p><p>Open also by appointment</p>'), 'We,Th,Fr,Sa 12:00-18:00');
+});
+
+test('event nights: a venue that opens only for its events says so', () => {
+  assert.equal(eventNights('<h3>Working hours</h3><p>On event days, 6PM—2AM</p>'), true);
+  assert.equal(eventNights('<p>We are open on concert evenings. Opening hours may vary according to the programme.</p>'), true);
+  assert.equal(eventNights('<p>Avatud ürituste ajal</p>'), true);
+  assert.equal(eventNights('<p>Open Tue-Sat 12-20. Events most Fridays.</p>'), false);
 });
 
 test('hours pages: contact and visit links on the same site, two at most', () => {

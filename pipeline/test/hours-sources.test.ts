@@ -52,11 +52,11 @@ test('without Meta secrets only the site is tried', async () => {
 });
 
 test('due order: picked first, never one looked at in the last fortnight, none that already have hours', () => {
-  const now = Date.parse('2026-10-03T12:00:00Z');
+  const now = Date.parse('2026-10-12T12:00:00Z');
   const ps = [
     place({ id: 'plain', website: 'https://p.ee' }),
     place({ id: 'picked', website: 'https://q.ee', picked: true }),
-    place({ id: 'recent', website: 'https://r.ee', picked: true, hours_checked_at: '2026-09-28T00:00:00Z' }),
+    place({ id: 'recent', website: 'https://r.ee', picked: true, hours_checked_at: '2026-10-08T00:00:00Z' }),
     place({ id: 'old', website: 'https://s.ee', hours_checked_at: '2026-08-01T00:00:00Z' }),
     place({ id: 'has', website: 'https://t.ee', opening_hours: 'Mo 10:00-12:00' }),
     place({ id: 'nolinks' }),

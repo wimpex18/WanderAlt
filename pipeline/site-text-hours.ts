@@ -6,15 +6,22 @@
 // days followed by a line of times, or days that are closed. The block ends at the first
 // other line once hours have begun, so the café's hours under the museum's are not merged in.
 // A week is kept only when every day is accounted for, open or said to be closed; a day the
-// text leaves out would otherwise read as shut. Nothing is guessed and no model is asked.
+// text leaves out would otherwise read as shut, unless the line that ends the block says the
+// rest is by appointment or closed ("Muul ajal oleme avatud kokkuleppel"): those days are shut
+// to a walk-in. Nothing is guessed and no model is asked.
 import { bioHours } from './bio-hours.ts';
 import { DAY_ORDER, writeHours } from './site-hours.ts';
 
-const CUE = /(opening hours|open(?:ing)? times|we are open|\bopen\b|\bhours\b|avatud|lahtiolekuajad|lahti\b|töötame|часы работы|режим работы|открыто|мы открыты)/gi;
+export const HOURS_CUE = /(opening hours|open(?:ing)? times|we are open|\bopen\b|\bhours\b|avatud|lahtiolekuajad|lahti\b|töötame|часы работы|режим работы|открыто|мы открыты)/gi;
 const CLOSED = /^(?:closed|suletud|kinni|закрыто|выходной)\.?$/i;
 const TIMES = /^\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?(?:\s*(?:,|&|and)\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?)*$/i;
 const MIDNIGHT = /(?<![\p{L}])(?:südaöö|südaööni|midnight|полночь|полуночи)(?![\p{L}])/giu;
 const LINES_AFTER = 16, NOTES_BEFORE = 3;
+/* The rest of the week is by appointment or closed: no walk-in hours on the days not named. */
+const OTHERWISE = /(muul ajal|teistel päevadel|other (?:times|days)|otherwise|by appointment|kokkuleppel|в другое время|по договор[её]нности|по записи)/i;
+/* A venue that opens only for what is on says so: "On event days, 6PM—2AM", "We are open on
+   concert evenings", "avatud ürituste ajal". Such a place has no weekly hours to file. */
+const EVENT_NIGHTS = /(on event (?:days|nights)|on concert (?:days|evenings|nights)|open (?:only )?(?:during|for) (?:events|concerts|shows|performances)|(?:hours|opening hours) (?:may )?(?:vary|depend) (?:according to|on) the (?:programme|program|events)|(?:avatud|lahti) (?:ainult )?(?:ürituste|kontsertide|etenduste|sündmuste) ajal|ürituste päevadel|kontsertide päevadel|открыт[оы]? (?:только )?(?:во время|в дни) (?:мероприятий|концертов))/i;
 
 /** "Mo,Tu 10:00-18:00; Sa 11:00-16:00" back into days and their ranges. */
 const read = (osm: string): Map<string, string[]> => {
@@ -36,13 +43,13 @@ const dayList = (line: string): string[] | null => {
 export function textHours(html: string): string | null {
   const lines = visibleText(html).replace(MIDNIGHT, '24.00').replace(/[–—−]/g, '-').split('\n').map(l => l.trim()).filter(Boolean);
   for (let i = 0; i < lines.length; i++) {
-    CUE.lastIndex = 0;
-    const cue = CUE.exec(lines[i]);
+    HOURS_CUE.lastIndex = 0;
+    const cue = HOURS_CUE.exec(lines[i]);
     if (!cue) continue;
     const rest = lines[i].slice(cue.index + cue[0].length).replace(/^[\s:.-]+/, '');
     const block = [...(rest ? [rest] : []), ...lines.slice(i + 1, i + 1 + LINES_AFTER)];
     const week = new Map<string, string[]>(), closed = new Set<string>();
-    let pending: string[] | null = null, begun = false, notes = 0;
+    let pending: string[] | null = null, begun = false, notes = 0, otherwise = false;
     for (const raw of block) {
       const line = raw.replace(/[:.]$/, '').trim();
       const both = /\d/.test(line) ? bioHours(line) : null;
@@ -57,8 +64,9 @@ export function textHours(html: string): string | null {
         if (!h) break;
         for (const [d, t] of read(h)) week.set(d, [...(week.get(d) ?? []), ...t]);
         pending = null;
-      } else if (begun || ++notes > NOTES_BEFORE) break;
+      } else if (begun || ++notes > NOTES_BEFORE) { otherwise = begun && OTHERWISE.test(line); break; }
     }
+    if (week.size && otherwise) DAY_ORDER.filter(d => !week.has(d)).forEach(d => closed.add(d));
     if (week.size && DAY_ORDER.every(d => week.has(d) || closed.has(d))) {
       const kept = new Map([...week].filter(([d]) => !closed.has(d)));
       const h = writeHours(kept);
@@ -66,6 +74,12 @@ export function textHours(html: string): string | null {
     }
   }
   return null;
+}
+
+/** The venue says it opens only for its events (a club, a concert bar), in a line near a word
+ *  about hours or on its own. */
+export function eventNights(html: string): boolean {
+  return EVENT_NIGHTS.test(visibleText(html).replace(/[–—−]/g, '-').replace(/\s+/g, ' '));
 }
 
 const ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', ndash: '–', mdash: '—', quot: '"', apos: "'", lt: '<', gt: '>' };
@@ -93,7 +107,7 @@ export function hoursPages(html: string, base: string, max = 2): string[] {
     try { url = new URL(m[1], base).toString(); } catch { continue; }
     if (!/^https?:/.test(url) || host(url) !== host(base) || url === base || out.includes(url)) continue;
     const words = `${url} ${m[2].replace(/<[^>]+>/g, ' ')}`;
-    if (/kontakt|contact|külastus|kulastus|visit|lahtiolek|opening|hours|контакт|часы/i.test(words)) out.push(url);
+    if (/kontakt|contact|külastus|kulastus|visit|lahtiolek|opening|hours|koordinaadid|asukoht|location|find-us|find us|leia meid|контакт|часы/i.test(words)) out.push(url);
     if (out.length >= max) break;
   }
   return out;

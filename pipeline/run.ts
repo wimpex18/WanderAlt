@@ -36,6 +36,7 @@ import { withEasyAlone } from './easy.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
+import { wikidataNear } from './wikidata-near.ts';
 import { checkDrift } from './drift.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
@@ -380,6 +381,14 @@ async function main() {
       if (n) log(`wikidata: ${n} places matched by their OpenStreetMap id`);
     } catch (e) { log(`wikidata lookup failed: ${(e as Error).message}`); }
   }
+  // A place with no link at all: the one Wikidata item near it that names it (wikidata-near.ts).
+  if (!flag('--no-enrich') && !(DRY && !flag('--geocode'))) {
+    try {
+      const found = await wikidataNear(places.all(), Number(opt('--max-near') ?? 12));
+      for (const p of found) if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      if (found.length) log(`wikidata: ${found.length} places with no links matched by name and place (${found.map(p => `${p.name} ${p.wikidata_id}`).join(', ')})`);
+    } catch (e) { log(`wikidata near lookup failed: ${(e as Error).message}`); }
+  }
 
   // Websites and profiles for places that still have none, from Overture
   // Maps, when the DuckDB CLI is installed; every match is logged.
@@ -438,11 +447,11 @@ async function main() {
   }
 
   // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its
-  // Instagram bio (hours-sources.ts). A few a run, none for a place looked at in the last fortnight.
+  // Instagram bio, then a free model reading that same text (hours-sources.ts). A few a run.
   const bios = new Map<string, string>();
   if (!flag('--no-hours')) {
     try {
-      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30), { bios })) {
+      for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30), { bios, models: flag('--no-model-hours') ? null : models })) {
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
       }
     } catch (e) { log(`hours failed: ${(e as Error).message}`); }

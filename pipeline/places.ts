@@ -45,7 +45,7 @@ export interface Place {
   instagram?: string | null;
   facebook?: string | null;
   opening_hours?: string | null;
-  /** Where opening_hours came from: 'osm', 'site', 'facebook' or 'instagram'. */
+  /** Where opening_hours came from: 'osm', 'site', 'facebook', 'instagram' or 'manual'; 'events' when the venue says it opens only for its events (no hours). */
   hours_source?: string | null;
   hours_checked_at?: string | null;
   facts_checked_at?: string | null;

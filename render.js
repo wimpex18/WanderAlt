@@ -257,10 +257,14 @@
   const isNewSince = (e, t) => !!(t && e.createdAt && Date.parse(e.createdAt) > t);
 
   /* ── Venue open state ────────────────────────────────────── */
+  const EVENT_ROOMS = /^(cinema|theatre|concert hall)$/;
   const openState = (v) => {
     const s = H().state(v && v.openingHours);
     if (v?.isClosed) return { cls: 'no', text: 'Listed as closed', open: false, s: { ...s, known: false } };
     if (v?.isVerified === false) return { cls: 'unknown', text: 'Status unverified', open: false, s: { ...s, known: false } };
+    /* A room that opens for what is on (a cinema, a theatre, or a bar whose own site says it opens
+       only on event nights) has no weekly hours: say that instead of the gap. */
+    if (!s.known && (v?.hoursSource === 'events' || EVENT_ROOMS.test(String(v?.kind || '')))) return { cls: 'unknown', text: 'Open for events', open: null, s };
     if (!s.known) return { cls: 'unknown', text: 'Hours not filed', open: null, s };
     if (s.open) return { cls: 'yes', text: s.closesAt == null ? 'Open, 24 hours' : `Open till ${H().clock(s.closesAt)}`, open: true, s };
     if (s.opensAt != null) return { cls: 'no', text: `Opens ${H().clock(s.opensAt)}`, open: false, s };
