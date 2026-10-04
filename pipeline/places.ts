@@ -54,6 +54,9 @@ export interface Place {
   image_url?: string | null;
   image_attr?: string | null;
   image_source?: string | null;
+  /** How the logo looks (logo-tone.ts), and the image_url it was measured on. */
+  image_tone?: string | null;
+  image_tone_url?: string | null;
   enriched_at?: string | null;
 }
 

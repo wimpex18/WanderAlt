@@ -124,6 +124,7 @@
     venueImageUrl:    proxifyImage(r.venue_image_url) || null,
     venueImageAttr:   r.venue_image_attr || null,
     venueImageSource: r.venue_image_source || null,
+    venueImageTone:   r.venue_image_tone || null,
     tonight:       r.tonight,
     thisWeek:      r.this_week,
     lat:       r.lat       ?? null,
@@ -196,6 +197,8 @@
     /* Which mechanism wrote the picture. `logo` means the venue's own mark
        rather than a photograph (small, so surfaces must not stretch it). */
     imageSource:  r.image_source || null,
+    /* How a logo looks (pipeline/logo-tone.ts), so it can sit on either paper. */
+    imageTone:    r.image_tone || null,
     address:      r.address || null,
     description:  r.description || null,
     website:      r.website || null,
@@ -309,7 +312,7 @@
         `picks`,
         `archived_at=is.null` +
         `&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,` +
-                `image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,tonight,this_week,` +
+                `image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,venue_image_tone,tonight,this_week,` +
                 `lat,lng,address,source_url,` +
                 /* Lists read a 300-character teaser; originalDescription
                    fetches the bounded original only when opened. */
@@ -326,7 +329,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source` +
         `&order=name.asc,id.asc`,
         abort.signal
       ),
@@ -391,7 +394,7 @@
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
     let lookupError = null;
     try {
-      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`, undefined, true);
+      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,venue_image_tone,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`, undefined, true);
       if (picks && picks[0]) {
         return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
       }
@@ -399,7 +402,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source`, undefined, true
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source`, undefined, true
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (error) { lookupError = error; }

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fromHomepage, jsonLdLogo, ownLogoImg } from '../venues.ts';
 import { posterFromPage, sameTitle, pagesFor } from '../posters.ts';
+import { toneOf, fillLogoTones } from '../logo-tone.ts';
 
 // The shape of Südalinna Teater's real page: its own logo in the header, and a
 // ribbon of sponsors whose files sit on other hosts or under numbers.
@@ -148,4 +149,40 @@ test('a Facebook page picture only for a page link, never a silhouette', async (
   assert.equal(await facebookPicture('uuslaine', reply({ is_silhouette: true, width: 200, height: 200 })), null);
   assert.equal(await facebookPicture('uuslaine', reply({ is_silhouette: false, width: 50, height: 50 })), null);
   assert.equal(await facebookPicture('nosuch', (async () => new Response('{}', { status: 400 })) as typeof fetch), null);
+});
+
+// How a logo looks (logo-tone.ts), from its pixels.
+
+const image = (w: number, h: number, paint: (x: number, y: number) => [number, number, number, number]) => {
+  const d = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) d.set(paint(x, y), (y * w + x) * 4);
+  return d;
+};
+const inside = (x: number, y: number) => x > 8 && y > 8 && x < 24 && y < 24;
+
+test('logo tone: the ground at the edge and the ink inside decide it', () => {
+  const tone = (p: (x: number, y: number) => [number, number, number, number]) => toneOf(image(32, 32, p), 32, 32);
+  assert.equal(tone((x, y) => (inside(x, y) ? [10, 10, 10, 255] : [0, 0, 0, 0])), 'clear-dark-mono', 'black on nothing');
+  assert.equal(tone((x, y) => (inside(x, y) ? [150, 20, 20, 255] : [0, 0, 0, 0])), 'clear-dark-colour', 'dark red on nothing');
+  assert.equal(tone((x, y) => (inside(x, y) ? [250, 250, 245, 255] : [0, 0, 0, 0])), 'clear-light', 'white on nothing');
+  assert.equal(tone((x, y) => (inside(x, y) ? [20, 20, 20, 255] : [255, 255, 255, 255])), 'light-mono', 'black printed on white');
+  assert.equal(tone((x, y) => (inside(x, y) ? [200, 40, 30, 255] : [255, 255, 255, 255])), 'light-colour', 'red printed on white');
+  assert.equal(tone((x, y) => (inside(x, y) ? [240, 240, 240, 255] : [15, 15, 15, 255])), 'dark', 'on its own black');
+  assert.equal(tone((x, y) => (inside(x, y) ? [255, 255, 255, 255] : [220, 30, 30, 255])), 'colour', 'on its own red');
+  /* A black shape reaching the edges is still drawn on nothing when much of it is see-through. */
+  assert.equal(tone((x) => (x < 12 ? [0, 0, 0, 255] : [0, 0, 0, 0])), 'clear-dark-mono');
+});
+
+test('logo tones are measured once per image and a changed image is measured again', async () => {
+  const p = { id: 'tallinn-x', city: 'tallinn', name: 'X', aliases: [], kind: 'bar', image_source: 'logo', image_url: 'https://x.ee/a.png' } as any;
+  const photo = { ...p, id: 'tallinn-y', image_source: 'wikidata' };
+  let asked = 0;
+  const bytes = async () => { asked++; return null; };
+  await fillLogoTones([p, photo], 40, { bytes, log: () => {} });
+  assert.equal(asked, 1, 'only logos'); assert.equal(p.image_tone_url, 'https://x.ee/a.png');
+  await fillLogoTones([p], 40, { bytes, log: () => {} });
+  assert.equal(asked, 1, 'not again');
+  p.image_url = 'https://x.ee/b.png';
+  await fillLogoTones([p], 40, { bytes, log: () => {} });
+  assert.equal(asked, 2, 'a new image is measured');
 });

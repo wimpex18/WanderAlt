@@ -97,14 +97,14 @@
      sheet's order, one card each. Swiping the row moves the choice. */
   const card = (x) => {
     const isEvent = !!x.title;
-    const { src, logo } = R().art(x);
+    const { src, logo, tone } = R().art(x);
     const m = R().walk(x);
     const meta1 = isEvent ? R().badgeFor(x).text : R().openState(x).text;
     const meta2 = (isEvent ? [x.venue, R().price(x)] : [R().kindLabel(x.kind, true), R().areaOf(x)])
       .concat(m != null ? [`${R().walkLabel(m)} walk`] : []).filter(Boolean).join(' · ');
     return `<div class="map-preview__card${x.id === state.active ? ' is-active' : ''}" data-card="${esc(x.id)}">
         <a class="map-preview__link" href="detail.html?id=${esc(encodeURIComponent(x.id))}" data-row="${esc(x.id)}">
-          <span class="map-preview__art${logo ? ' is-logo' : ''}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
+          <span class="map-preview__art${R().logoCls(logo, tone)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
           <span class="map-preview__body">
             <span class="map-preview__title">${esc(isEvent ? x.title : x.name)}</span>
             <span class="map-preview__meta">${esc(meta1)}</span>
