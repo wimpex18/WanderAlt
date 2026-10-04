@@ -14,7 +14,7 @@ WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, a
 
 ## Identity (decided 2 Oct 2026, revised 3 Oct)
 
-- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is a violet-blue gradient, not flat black. Glass only where it floats; it bends a gradient, never a photo.
+- Vermilion `#d83a14` and white, Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is warm charcoal like Claude's (`#262624`), not flat black and no longer violet (owner, 4 October). Glass only where it floats; it bends a gradient, never a photo.
 - **Labels:** round flat discs of objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Moods use the same discs (a framed picture, a microphone on stage, a mirror ball, a record player, a pencil, a pint of craft beer), so a mood looks like the rows it leads to. Not Meetup's offset stickers, not Airbnb's 3D. A few hand-drawn sketches (the Old Town skyline on the route card) with a small wobble, one line weight, where a screen has room and a job.
 - A route is a spine: time, square node, stop; the listing is the one filled node. The thread is a vermilion gradient.
 - No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it); search uses the glass. Three tabs: Now, Map, Saved; You is the avatar. UI icons are two-tone (a line and a soft body), solid when selected. Sign-in is one sheet, link first.
@@ -66,7 +66,7 @@ Live data (3 October): about 400 events a fortnight, about 440 places (44 picked
 
 ## Do not use
 
-Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients as decoration (the dusk theme is the one deliberate exception: a low-contrast violet to plum behind glass), anything that looks like Google Maps or a booking site.
+Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients, anything that looks like Google Maps or a booking site.
 
 ## Voice
 
