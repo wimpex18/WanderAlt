@@ -1,134 +1,22 @@
-/* ============================================================
-   WanderAlt — bookmark store utility
-   ------------------------------------------------------------
-   Primary store: localStorage (always available, instant).
-   Secondary store: Supabase `bookmarks` table when signed in.
-
-   Public API (window.WA.Bookmarks):
-     get()           → { id: true, … }   — local state
-     set(id, val)    → write local; if signed in, sync to cloud
-     ids()           → [ id, … ]
-     syncFromCloud() → pull cloud state, merge into localStorage,
-                       dispatch 'wa:bookmarks-synced'
-
-   On 'wa:signed-in': syncFromCloud() is called automatically.
-   On 'wa:signed-out': cloud calls are silently skipped; local
-   state is kept (user can still bookmark while offline/guest).
-
-   Load order:
-     supabase.js → auth.js → bookmark.js → [page]
-   ============================================================ */
+/* Saves are instant locally; SaveStore retries account writes durably. */
 window.WA = window.WA || {};
-
 window.WA.Bookmarks = (() => {
-  const LOCAL_KEY = 'wanderalt:bookmarks:v1';
-  /* Read city dynamically — city.js sets WA.CITY before bookmark.js runs. */
-  const city = () => (window.WA && window.WA.CITY) || 'tallinn';
-
-  /* ── localStorage helpers ────────────────────────────────── */
-
-  const raw = () => {
-    try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); }
-    catch { return {}; }
-  };
-  const canonical = (id) => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
-  const get = () => Object.fromEntries(Object.entries(raw()).filter(([, on]) => on).map(([id]) => [canonical(id), true]));
-
-  const _save = (store) => {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(store)); } catch {}
-  };
-
-  const ids = () => {
-    const store = get();
-    return Object.keys(store).filter(id => store[id]);
-  };
-
-  /* ── Cloud helpers (no-op when not signed in) ────────────── */
-
-  const authHeaders = () => {
-    const auth = window.WA && window.WA.Auth;
-    if (!auth || !auth.isSignedIn()) return null;
-    return auth.getAuthHeaders();
-  };
-
-  const BASE_URL = () => (window.WA && window.WA.BASE_URL) || '';
-
-  const upsertCloud = async (id) => {
-    const headers = authHeaders();
-    if (!headers) return;
-    try {
-      await fetch(`${BASE_URL()}/rest/v1/bookmarks`, {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-          'Prefer':        'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ pick_id: id, city: city() }),
-      });
-    } catch { /* silent — local state is source of truth */ }
-  };
-
-  const deleteCloud = async (id) => {
-    const headers = authHeaders();
-    if (!headers) return;
-    const auth = window.WA.Auth;
-    if (!auth || !auth.session) return;
-    try {
-      await fetch(
-        `${BASE_URL()}/rest/v1/bookmarks?pick_id=eq.${encodeURIComponent(id)}&city=eq.${city()}`,
-        { method: 'DELETE', headers }
-      );
-    } catch { /* silent */ }
-  };
-
-  /* ── Public: set ─────────────────────────────────────────── */
-
+  const city = () => window.WA.CITY || 'tallinn';
+  const canonical = id => window.WA.canonicalId ? window.WA.canonicalId(id) : id;
+  const store = window.WA.SaveStore('wanderalt:bookmarks:v1', 'wa:bookmarks-synced', async request => {
+    const rows = await (await request('bookmarks?select=pick_id')).json();
+    return Object.fromEntries(rows.map(r => [r.pick_id, true]));
+  }, async (id, value, request, who) => {
+    if (value) await request('bookmarks', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' },
+      body: JSON.stringify({ user_id: who, pick_id: id, city: city() }) });
+    else await request(`bookmarks?pick_id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+  });
+  const get = () => Object.fromEntries(Object.entries(store.get()).filter(([, on]) => on).map(([id]) => [canonical(id), true]));
   const set = (id, val) => {
     id = canonical(id);
-    const store = raw();
-    const aliases = [...new Set([id, ...Object.keys(store).filter(key => canonical(key) === id)])];
-    if (val) store[id] = true;
-    else aliases.forEach(key => delete store[key]);
-    _save(store);
-
-    /* Unsaving has to drop the pick from every list too, or Saved shows
-       a list containing something the reader has just unsaved. Guarded
-       because bookmark.js loads on pages that do not carry lists.js. */
-    if (!val && window.WA.Lists) aliases.forEach(key => window.WA.Lists.purge(key));
-
-    if (val) upsertCloud(id);
-    else     aliases.forEach(deleteCloud);
+    const aliases = [...new Set([id, ...Object.keys(store.get()).filter(key => canonical(key) === id)])];
+    if (val) store.set(id, true);
+    else aliases.forEach(key => { store.set(key, null); if (window.WA.Lists) window.WA.Lists.purge(key); });
   };
-
-  /* ── Public: syncFromCloud ───────────────────────────────── */
-
-  const syncFromCloud = async () => {
-    const headers = authHeaders();
-    if (!headers) return;
-
-    try {
-      const res = await fetch(
-        `${BASE_URL()}/rest/v1/bookmarks?city=eq.${city()}&select=pick_id`,
-        { headers }
-      );
-      if (!res.ok) return;
-
-      const rows  = await res.json();
-      const store = raw();
-
-      /* Merge: cloud wins for adds; local removals are preserved.
-         (Simple merge — cloud is authoritative for items present.) */
-      rows.forEach(r => { store[r.pick_id] = true; });
-      _save(store);
-
-      document.dispatchEvent(new CustomEvent('wa:bookmarks-synced'));
-    } catch { /* silent */ }
-  };
-
-  /* ── Auto-sync on sign-in ────────────────────────────────── */
-
-  document.addEventListener('wa:signed-in', () => syncFromCloud());
-
-  return { get, set, ids, syncFromCloud };
+  return { get, set, ids: () => Object.keys(get()), syncConfirmed: store.confirmed, pendingSync: store.pending, syncFromCloud: store.sync };
 })();

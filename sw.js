@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v78';
+const VERSION = 'wa-v79';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -35,7 +35,7 @@ const SHELL_URLS = [
   './wa.css',
   './theme.js', './brand-reveal.js', './i18n.js', './lang/et.js', './lang/ru.js', './icons.js', './when.js', './geo.js', './hours.js',
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
-  './city.js', './supabase.js', './auth.js', './bookmark.js', './lists.js',
+  './city.js', './supabase.js', './auth.js', './save-store.js', './bookmark.js', './lists.js',
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js', './install.js',
   './finder.js', './moods.js', './route.js', './route-page.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './about.js', './notfound.js',
