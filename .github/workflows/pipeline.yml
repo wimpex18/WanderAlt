@@ -32,6 +32,8 @@ jobs:
         run: |
           curl -fsSL https://github.com/duckdb/duckdb/releases/latest/download/duckdb_cli-linux-amd64.zip -o duckdb.zip
           mkdir -p "$HOME/.local/bin" && unzip -o -q duckdb.zip -d "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install the image reader (sharp, for logo tones)
+        run: npm ci --no-audit --no-fund
       - name: Run the pipeline
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

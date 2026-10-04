@@ -1151,6 +1151,20 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
    Logos are drawn for light grounds, so the tile stays light in dark mode. */
 .wa-place__glyph.is-logo, .vcard__art.is-logo, .map-preview__art.is-logo, .wa-listcard__tile.is-logo, .wa-poster__art.is-logo, .wa-row__thumb.is-logo, .det-media--logo { background: #fff; }
 .wa-place__glyph.is-logo img, .vcard__art.is-logo img, .wa-listcard__tile.is-logo img, .wa-poster__art.is-logo img, .wa-row__thumb.is-logo img { object-fit: contain; padding: 8px; box-sizing: border-box; }
+/* How a logo sits on each paper, from its measured tone (pipeline/logo-tone.ts; render.js logoCls).
+   A logo with its own dark or coloured ground fills its box. In the light theme a white logo gets a
+   dark tile. In the dark theme no logo gets a white square: black or grey ink on nothing or on white
+   is turned light (the white ground drops out with it), dark colourful ink is brightened, light ink
+   is shown as it is; only a colourful logo printed on white keeps a softened tile. An unmeasured
+   logo keeps the white tile. */
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) { background: transparent; }
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) img { object-fit: cover; padding: 0; }
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-light { background: #2b2a27; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-clear-dark-colour, .tone-clear-light, .tone-clear-mid, .tone-light-mono) { background: transparent; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-light-mono) img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-dark-colour img { filter: brightness(1.8) saturate(1.1); }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour { background: #e6e4dc; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour img { filter: brightness(.92); }
 .map-preview__art.is-logo img { object-fit: contain; padding: 12px; box-sizing: border-box; }
 /* The white logo tile needs an edge on a white page. */
 .det-media--logo { box-shadow: inset 0 0 0 1px var(--line); }

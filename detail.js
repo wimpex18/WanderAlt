@@ -308,7 +308,7 @@
       const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art${img && v.imageSource === 'logo' ? ' is-logo' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art${img ? R().logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}
@@ -406,7 +406,7 @@
       const photo = n.v.imageUrl ? url(n.v.imageUrl) : '';
       const hours = n.hours === 'open' ? 'open then' : n.hours === 'unknown' ? 'hours not filed' : '';
       return `<li><a class="det-next" href="detail.html?id=${esc(encodeURIComponent(n.v.id))}">
-        <span class="det-next__glyph${photo && n.v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
+        <span class="det-next__glyph${photo ? R().logoCls(n.v.imageSource === 'logo', n.v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
         <span class="det-next__body">${n.mood ? `<span class="det-next__mood">${esc(n.mood)}</span>` : ''}<span class="det-next__name">${esc(n.v.name || '')}</span>
           <span class="det-next__meta">${esc([R().kindLabel(n.v.kind, true), `${n.w} min walk`, hours].filter(Boolean).join(' · '))}</span>
           ${n.v.pickNote ? `<span class="det-next__why">${esc(n.v.pickNote)}</span>` : ''}</span></a></li>`;

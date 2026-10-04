@@ -33,6 +33,7 @@ import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl, lastBy } from './util.ts';
 import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
+import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
@@ -444,6 +445,16 @@ async function main() {
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
       }
     } catch (e) { log(`instagram failed: ${(e as Error).message}`); }
+  }
+
+  // How each venue logo looks (logo-tone.ts), measured once per image, so the pages can draw it on
+  // light and dark paper without a white square around it.
+  if (!flag('--no-logo-tones')) {
+    try {
+      for (const p of await fillLogoTones(places.all(), Number(opt('--max-logo-tones') ?? 40))) {
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    } catch (e) { log(`logo tones failed: ${(e as Error).message}`); }
   }
 
   // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its

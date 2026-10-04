@@ -311,14 +311,17 @@
      was identified, never searched by name); without either, the kind's
      pictogram is drawn by the caller. */
   const art = (x) => {
-    if (x.imageUrl) return { src: url(x.imageUrl), logo: x.imageSource === 'logo', venue: false };
-    if (x.venueImageUrl) return { src: url(x.venueImageUrl), logo: x.venueImageSource === 'logo', venue: true, attr: x.venueImageAttr || '' };
+    if (x.imageUrl) return { src: url(x.imageUrl), logo: x.imageSource === 'logo', tone: x.imageTone || '', venue: false };
+    if (x.venueImageUrl) return { src: url(x.venueImageUrl), logo: x.venueImageSource === 'logo', tone: x.venueImageTone || '', venue: true, attr: x.venueImageAttr || '' };
     return { src: '', logo: false, venue: false };
   };
 
+  /* The classes a logo's box wears: is-logo, and its tone (wa.css draws each on light and dark paper). */
+  const logoCls = (logo, tone) => (logo ? ` is-logo${tone ? ` tone-${String(tone).replace(/[^a-z-]/g, '')}` : ''}` : '');
+
   const thumb = (e) => {
-    const { src, logo } = art(e);
-    return `<span class="wa-row__thumb${logo ? ' is-logo' : ''}">${src
+    const { src, logo, tone } = art(e);
+    return `<span class="wa-row__thumb${logoCls(logo, tone)}">${src
       ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
       : window.WA.Picto.kind(e.kind)}</span>`;
   };
@@ -366,7 +369,7 @@
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
     return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
-      <span class="wa-place__glyph${photo && v.imageSource === 'logo' ? ' is-logo' : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
+      <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span class="wa-place__name">${esc(v.name || '')}${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
         <span class="wa-place__meta">${esc(meta)}</span>
@@ -396,14 +399,14 @@
   };
 
   const poster = (e, opts = {}) => {
-    const { src, logo } = art(e);
+    const { src, logo, tone } = art(e);
     const b = badgeFor(e);
     const m = walk(e);
     const line1 = [latin(e.venue), areaOf(e)].filter(Boolean).join(' · ');
     const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong>${esc(price(e))}</strong>` : '', whyTag(e)]
       .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
-      <span class="wa-poster__art${logo ? ' is-logo' : ''}">
+      <span class="wa-poster__art${logoCls(logo, tone)}">
         ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
         <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(opts.compact && b.now ? 'On now' : b.text)}</span>
@@ -586,6 +589,7 @@
     const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
     const found = id && [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])].find(p => p.id === id);
     box.classList.remove('is-logo');
+    [...box.classList].filter(c => c.startsWith('tone-')).forEach(c => box.classList.remove(c));
     img.outerHTML = box.matches('.wa-poster__art')
       ? `<span class="wa-poster__type">${window.WA.Picto.kind(found && found.kind)}</span>`
       : window.WA.Picto.kind(found && found.kind);
@@ -595,7 +599,7 @@
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, placeRow, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
+    openState, openBadge, row, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
   };
 })();

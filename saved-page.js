@@ -73,8 +73,8 @@
     const tiles = found.length >= 4 ? found.slice(0, 4) : found.slice(0, 1);
     if (!tiles.length) return `<span class="wa-listcard__mosaic wa-listcard__mosaic--one"><span class="wa-listcard__tile">${I('save', 'wa-ic--lg')}</span></span>`;
     return `<span class="wa-listcard__mosaic${tiles.length === 1 ? ' wa-listcard__mosaic--one' : ''}">${tiles.map(x => {
-      const { src, logo } = R().art(x);
-      return `<span class="wa-listcard__tile${logo ? ' is-logo' : ''}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>`;
+      const { src, logo, tone } = R().art(x);
+      return `<span class="wa-listcard__tile${R().logoCls(logo, tone)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>`;
     }).join('')}</span>`;
   };
 
