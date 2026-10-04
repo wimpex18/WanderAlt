@@ -50,7 +50,7 @@
      Programme, whose ask field reads a sentence as well as a title. */
   const search = (e) => {
     e.preventDefault();
-    const q = $('home-q').value.trim();
+    const q = $('home-q').value.trim().slice(0, 140);
     location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
   };
 
@@ -83,9 +83,10 @@
     if (!host) return;
     const on = nearOn();
     const mood = M() ? `<button class="wa-chip home-mood__key${moodSet() ? ' is-set' : ''}" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${moodWords()}</span></button>` : '';
-    host.innerHTML = mood + (nearOff
+    const denied = nearOff && G().locationError() === 1;
+    host.innerHTML = mood + (denied
       ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking from you needs location. Allow it for this site in your browser settings.</p>`
-      : `<button class="wa-act${on ? ' is-on' : ''}" type="button" data-near aria-pressed="${on}"${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}${on ? I('check') : ''}</button>`);
+      : `<button class="wa-act${on ? ' is-on' : ''}" type="button" data-near aria-pressed="${on}"${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}${on ? I('check') : ''}</button>${nearOff && !nearBusy ? '<p class="wa-note home-acts__note">Could not find your location. Try Near me again, or choose a starting place on You.</p>' : ''}`);
   };
 
   /* ── Mood and price: one key, one sheet ─────────────────────────
@@ -351,7 +352,7 @@
       setNear(true);
       if (G().currentLoc()) { render(); return; }
       nearBusy = true; acts();
-      G().userLoc().then((loc) => { nearBusy = false; if (!loc) { nearOff = true; setNear(false); } render(); });
+      G().userLoc().then((loc) => { nearBusy = false; nearOff = !loc; if (!loc) setNear(false); render(); });
       return;
     }
     if (hit('[data-mood-open]')) { openSheet(); return; }

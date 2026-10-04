@@ -76,6 +76,15 @@ test('by day a listing that starts soon leads, with a place after it before five
   assert.ok(first.stops.some((s: any) => s.id === 'film'));
 });
 
+test('an event walk never revisits its before-stop, even when it is the only nearby place', () => {
+  const shop = place('thrift', 'thrift', 59.4430, 24.7340);
+  const event = ev('workshop', 13 * 60, 59.4400, 24.7340, { kind: 'workshop', endsAt: '2026-10-03T16:00:00Z' });
+  const plans = plain(world(10 * 60, [event], [shop]).Route.plan({}));
+  const route = plans.find((r: any) => r.stops.some((s: any) => s.id === event.id));
+  assert.ok(route, 'keep the valid shop and workshop walk');
+  assert.deepEqual(route.stops.map((s: any) => s.id), ['thrift', 'workshop']);
+});
+
 test('tickets are the cheapest price of each listing; an unknown price is said, never counted as free', () => {
   const places = [place('shop', 'record store', 59.4430, 24.7340), place('bar', 'bar', 59.4370, 24.7340)];
   const known = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { priceMin: 9 })], places).Route;
@@ -124,6 +133,17 @@ test('after this: picked places close by, one per mood, never the place itself, 
   const route = plain(w.Route.fromHere(home));
   assert.equal(route.stops[0].id, 'home');
   assert.ok(route.stops.length >= 2);
+});
+
+test('routes from a venue check the actual arrival time and exclude rooms with no hours', () => {
+  const home = place('home', 'bookshop', 59.4343, 24.7442);
+  const cinema = place('cinema', 'cinema', 59.4350, 24.7442, { openingHours: null });
+  const gallery = place('gallery', 'gallery', 59.4351, 24.7443);
+  const books = place('books', 'bookshop', 59.4352, 24.7444);
+  const w = world(14 * 60, [], [home, cinema, gallery, books], (p, minute) =>
+    p.id === 'cinema' ? 'unknown' : p.id === 'gallery' && minute >= 14 * 60 + 50 ? 'shut' : 'open');
+  const route = plain(w.Route.fromHere(home));
+  assert.deepEqual(route.stops.map((s: any) => s.id), ['home', 'books']);
 });
 
 test('a mood shows only when the city has three behind it, and only at the hours it suits', () => {

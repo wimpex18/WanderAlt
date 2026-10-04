@@ -83,7 +83,7 @@
     const openN = all.filter(v => inGroup(v, state.group)).filter(isOpen).length;
     const noun = g ? g.label.toLowerCase() : 'places';
     const o = origin();
-    $('summary').innerHTML = `<strong>${list.length} ${list.length === 1 && !g ? 'place' : esc(noun)}</strong> · nearest first${state.open ? '' : ` · ${openN} open now`}`;
+    $('summary').innerHTML = `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · nearest first${state.open ? '' : ` · ${openN} open now`}`;
     $('from').innerHTML = o.label ? `<span class="places-from__line">${window.WA.Icon('pin')}<span>Walking from <b>${esc(o.label)}</b></span></span>${o.own ? '' : '<button class="wa-linkbtn" type="button" data-near>Use my location</button>'}` : '';
     $('open-now').setAttribute('aria-pressed', String(state.open));
 

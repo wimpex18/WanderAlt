@@ -48,7 +48,7 @@
      One request per page, cached, and a denial is remembered so nothing
      re-prompts on every render. Resolves to null when unavailable —
      callers degrade to the area label rather than hiding the row. */
-  let _loc = null, _denied = false, _pending = null;
+  let _loc = null, _denied = false, _pending = null, _error = 0;
 
   /* An anchor is a place the reader picked to measure from (a hotel, a
      friend's street), saved in this browser. It stands in for the device
@@ -72,6 +72,7 @@
     if (_loc)    return Promise.resolve(_loc);
     if (_denied || !navigator.geolocation) return Promise.resolve(null);
     if (_pending) return _pending;
+    _error = 0;
     _pending = new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (p) => {
@@ -80,7 +81,7 @@
           document.dispatchEvent(new CustomEvent('wa:location-ready', { detail: _loc }));
           resolve(_loc);
         },
-        () => { _denied = true; _pending = null; resolve(null); },
+        (e) => { _error = e.code; _denied = e.code === 1; _pending = null; resolve(null); },
         { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 }
       );
     });
@@ -176,7 +177,7 @@
   window.WA.Geo = {
     WALK_M_PER_MIN,
     walkMinutes, format,
-    coordsFor, userLoc, currentLoc, anchor, setAnchor,
+    coordsFor, userLoc, currentLoc, anchor, setAnchor, locationError: () => _error,
     distanceTo, distanceLabel,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,

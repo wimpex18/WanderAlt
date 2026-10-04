@@ -80,18 +80,21 @@ test('weekdays in each search language resolve locally without model date arithm
   }
 });
 
-function programme() {
+function programme(search = '', venues: any[] = []) {
   const listeners = new Map<string, any>(), elements = new Map<string, any>(), timers = new Map<number, () => void>();
   let timerId = 0, release!: (p: any) => void;
   const list = [{ kind: 'film', free: true, eventLanguages: ['en'], priceMin: 0 }, { kind: 'gig', free: false, eventLanguages: [], priceMin: 20 }];
   const WA: any = { UI: { esc: (s: any) => String(s ?? '') }, Icon: () => '', Picto: { kind: () => '' },
     R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: () => '', isFree: (e: any) => e.free,
-      kindLabel: (s: string) => s, dayName: () => '', dow: () => '', dom: () => '', isFollowed: () => false },
+      kindLabel: (s: string) => s, dayName: () => '', dow: () => '', dom: () => '', isFollowed: () => false,
+      openState: (v: any) => ({ open: v.open }) },
     when: { matches: () => true, isOnDate: () => true, todayKey: () => '2026-09-30', keyPlus: () => '2026-10-02' },
-    Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0 }, Hours: {}, Seen: { count: () => 0 },
+    Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0, startMinutes: () => 22 * 60 },
+    Hours: { cityNow: () => ({ minutes: 12 * 60 }) }, Seen: { count: () => 0, filter: (rows: any[]) => rows }, venues,
   };
-  const context = createContext({ window: { WA, addEventListener: () => {} }, location: { search: '', pathname: '/discover' },
-    history: { replaceState: () => {} }, URLSearchParams, AbortController,
+  const location = { search, pathname: '/discover' };
+  const context = createContext({ window: { WA, addEventListener: () => {} }, location,
+    history: { replaceState: (_: any, __: any, url: string) => { location.search = url.startsWith('?') ? url : ''; } }, URLSearchParams, AbortController,
     requestAnimationFrame: () => 1, getComputedStyle: () => ({ position: 'static' }),
     setTimeout: (cb: () => void) => { timers.set(++timerId, cb); return timerId; }, clearTimeout: (id: number) => timers.delete(id),
     document: { readyState: 'loading', activeElement: null, documentElement: { style: { setProperty: () => {} } }, addEventListener: (n: string, cb: any) => listeners.set(n, cb),
@@ -103,8 +106,56 @@ function programme() {
   const query = (q: string) => listeners.get('input')({ target: { id: 'q', value: q } });
   const start = () => { for (const [id, cb] of [...timers]) { timers.delete(id); cb(); } };
   const click = (selector: string, data: any = {}) => listeners.get('click')({ target: { closest: (s: string) => s.split(',').map(s => s.trim()).includes(selector) ? { dataset: data } : null } });
-  return { query, start, click, finish: (p: any) => release({ ...WA.Ask.empty(), ...p }), elements };
+  return { query, start, click, finish: (p: any) => release({ ...WA.Ask.empty(), ...p }), elements, location };
 }
+
+test('manual Programme filters keep the same results and selected state after reopening their URL', () => {
+  for (const toggle of ['free', 'english', 'hideSeen', 'followed']) {
+    const p = programme(); p.query(''); p.click('[data-toggle]', { toggle });
+    assert.ok(p.location.search, `${toggle} must have a shareable URL`);
+    const fresh = programme(p.location.search); fresh.query('');
+    assert.equal(fresh.elements.get('summary').innerHTML, p.elements.get('summary').innerHTML, toggle);
+    assert.equal(fresh.elements.get('filter-count').textContent, '1', toggle);
+    assert.equal(fresh.location.search, p.location.search, toggle);
+  }
+  const p = programme('?free=1&english=1&doors=21%3A00&price=20'); p.query('');
+  assert.equal(p.elements.get('filter-count').textContent, '4');
+  assert.match(p.elements.get('quick').innerHTML, /Remove Free/);
+  assert.match(p.elements.get('quick').innerHTML, /Remove In English/);
+  assert.match(p.elements.get('quick').innerHTML, /Under €20/);
+  const fresh = programme(p.location.search); fresh.query('');
+  assert.equal(fresh.location.search, p.location.search);
+});
+
+test('malformed price and start-time URL filters are ignored', () => {
+  for (const search of ['?price=-1&doors=25%3A00', '?price=Infinity', '?price=2000', '?price=abc']) {
+    const p = programme(search); p.query('');
+    assert.equal(p.elements.get('filter-count').textContent, '');
+    assert.equal(p.location.search, '');
+  }
+});
+
+test('open-now shop searches exclude shut and unknown hours, including empty results', () => {
+  const shops = [{ id: 'open', name: 'Open Books', kind: 'bookshop', open: true },
+    { id: 'shut', name: 'Shut Books', kind: 'bookshop', open: false },
+    { id: 'unknown', name: 'Unknown Books', kind: 'bookshop', open: null }];
+  const p = programme('', shops); p.query('bookshops open now');
+  assert.match(p.elements.get('summary').innerHTML, /1 place<\/strong>/);
+  assert.doesNotMatch(p.elements.get('summary').innerHTML, /0 listings/);
+  assert.equal(p.elements.get('quick').hidden, true, 'hide irrelevant listing controls on a place search');
+  const none = programme('', shops.slice(1)); none.query('bookshops open now');
+  assert.match(none.elements.get('summary').innerHTML, /0 places/);
+  const named = programme('', shops); named.query('Open Books open now');
+  assert.match(named.elements.get('summary').innerHTML, /1 place<\/strong>/);
+});
+
+test('oversized queries are capped before rendering and writing the URL', () => {
+  const p = programme(); p.query('x'.repeat(2000));
+  assert.equal(new URLSearchParams(p.location.search).get('q')?.length, 140);
+  assert.equal(p.elements.get('q').value.length, 140);
+  const fresh = programme('?q=' + 'x'.repeat(2000)); fresh.query('x'.repeat(2000));
+  assert.equal(new URLSearchParams(fresh.location.search).get('q')?.length, 140);
+});
 
 test('an in-flight model cannot undo Search the words or later manual filters', async () => {
   for (const selector of ['[data-act]', '[data-kind]']) {

@@ -38,6 +38,16 @@ test('the matcher is stateless across calls', () => {
   for (let i = 0; i < 4; i++) assert.deepEqual(places('record store').kinds, ['record store']);
 });
 
+test('open now is an explicit place constraint in all three interface languages', () => {
+  for (const q of ['bookshops open now', 'record shops open right now', 'raamatupood praegu avatud', 'книжный магазин сейчас открыт', 'книжные магазины открыты сейчас']) {
+    const p = places(q);
+    assert.equal(p.openNow, true, q);
+    assert.equal(p.show, true, q);
+    assert.equal(context.window.WA.Ask.local(q).when, '', 'opening hours are not a listing date');
+  }
+  assert.equal(places('bookshop').openNow, false);
+});
+
 test('a plan or an evening is asked for in plain words, in each search language', () => {
   for (const q of ['plan my Friday evening', 'what to do tonight', 'things to do in Kalamaja', 'a night out', 'план на вечер', 'õhtu plaan']) assert.equal(places(q).plan, true, q);
   for (const q of ['jazz this evening', 'free jazz tonight', 'vinyl shop', 'Kino Sõprus']) assert.equal(places(q).plan, false, q);
