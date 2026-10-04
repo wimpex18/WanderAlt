@@ -689,7 +689,10 @@ window.WA.dict.ru = {
   "the city centre": "центр города",
   "Search places or listings": "Искать места или события",
   "Try another area, a longer walk or another kind of place.": "Попробуйте другой район, более длинную прогулку или другой тип места.",
-  "including closed places": "включая закрытые места"
+  "including closed places": "включая закрытые места",
+  "Couldn't refresh. Showing last loaded listings.": "Не удалось обновить. Показаны ранее загруженные события.",
+  "We can't load listings right now.": "Сейчас не удаётся загрузить события.",
+  "Trying again…": "Пробуем ещё раз…"
  },
  "patterns": [
   [

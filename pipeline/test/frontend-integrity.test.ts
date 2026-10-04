@@ -107,8 +107,8 @@ test('event pictures stay event-specific in the catalogue and direct details', a
   let ready!: () => void;
   const loaded = new Promise<void>(resolve => { ready = resolve; });
   const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
-    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
-    document: { readyState: 'complete', dispatchEvent: ready },
+    AbortController, setTimeout, clearTimeout, CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
+    document: { readyState: 'complete', dispatchEvent: (e: any) => { if (e.type === 'wa:catalog-ready') ready(); } },
     fetch: async (url: string) => {
       const u = new URL(url);
       const rows = u.pathname.endsWith('/picks') ? picks : u.pathname.endsWith('/venues') ? venues : [];
@@ -133,8 +133,8 @@ test('English titles and evidence languages reach every catalogue lookup; origin
   let ready!: () => void;
   const loaded = new Promise<void>(r => { ready = r; });
   const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
-    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
-    document: { readyState: 'complete', dispatchEvent: ready },
+    AbortController, setTimeout, clearTimeout, CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
+    document: { readyState: 'complete', dispatchEvent: (e: any) => { if (e.type === 'wa:catalog-ready') ready(); } },
     fetch: async (url: string) => {
       const u = new URL(url); paths.push(u.search);
       return { ok: true, json: async () => u.pathname.endsWith('/picks') ? [pick] : [] };
@@ -171,8 +171,8 @@ test('a failed original-description request stays retryable and does not cache t
   let originals = 0;
   const loaded = new Promise<void>(r => { ready = r; });
   const context = createContext({ window: { WA }, location: { hostname: 'localhost' }, console,
-    AbortController, setTimeout, clearTimeout, CustomEvent: class {},
-    document: { readyState: 'complete', dispatchEvent: ready },
+    AbortController, setTimeout, clearTimeout, CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
+    document: { readyState: 'complete', dispatchEvent: (e: any) => { if (e.type === 'wa:catalog-ready') ready(); } },
     fetch: async (url: string) => {
       const u = new URL(url);
       if (u.searchParams.get('select')?.includes('original_excerpt')) {

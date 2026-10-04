@@ -30,7 +30,8 @@
   window.WA.canonicalId = (id) => redirects.get(id) || id;
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
-  let catalogueCached = false;
+  let catalogueCached = false, fallbackAt = null;
+  window.WA.CatalogueStatus = { loading: false, stale: false, cachedAt: null, hasData: false };
 
   /* Public reads go through our own edge cache (functions/api/rest/[table].js) so Supabase is asked
      once per few minutes per query, not once per visitor. A local server has no Functions, and a
@@ -50,7 +51,11 @@
       .then(r => {
         if (!r.ok) throw new Error(`${table} ${r.status}`);
         const cached = !!r.headers?.get('x-wa-cached-at');
-        if (cached) catalogueCached = true;
+        if (cached && !lookup) {
+          catalogueCached = true;
+          const stamp = Number(r.headers.get('x-wa-cached-at'));
+          if (stamp > 0 && stamp <= Date.now()) fallbackAt = fallbackAt == null ? stamp : Math.min(fallbackAt, stamp);
+        }
         return r.json().then(rows => {
           if (lookup && cached && !rows.length) throw new Error('Cached lookup cannot confirm a missing listing');
           return rows;
@@ -65,7 +70,7 @@
     const out = [];
     for (let offset = 0; offset < 20000; offset += PAGE) {
       const page = await get(table, `${qs}&offset=${offset}&limit=${PAGE}`, signal);
-      if (!Array.isArray(page)) break;
+      if (!Array.isArray(page)) throw new Error(`${table} returned an invalid response`);
       out.push(...page);
       if (page.length < PAGE) return [...new Map(out.map(r => [r.id, r])).values()];
     }
@@ -272,7 +277,13 @@
     }
   };
 
+  const status = (state) => {
+    window.WA.CatalogueStatus = state;
+    document.dispatchEvent(new CustomEvent('wa:catalog-status'));
+  };
   const load = async () => {
+    status({ ...window.WA.CatalogueStatus, loading: true });
+    catalogueCached = false; fallbackAt = null;
     const snap = readSnapshot();
     if (snap) {
       apply(snap.picks, snap.venues, snap.redirects);
@@ -342,9 +353,15 @@
 
     /* Saved's change-watch gates its destructive "no longer listed"
        detection on this: without live data every bookmark looks "gone". */
-    window.WA.DATA_LIVE = picksOk && !catalogueCached;
-    if (picksOk && venuesOk && !catalogueCached) writeSnapshot(same ? null : body, sig);
+    window.WA.DATA_LIVE = picksOk && venuesOk && redirOk && !catalogueCached;
+    if (window.WA.DATA_LIVE) writeSnapshot(same ? null : body, sig);
 
+    let confirmedAt = null;
+    try { const n = Number(localStorage.getItem(SNAP_AT_KEY)); if (n > 0 && n <= Date.now()) confirmedAt = n; } catch {}
+    status({ loading: false, stale: !window.WA.DATA_LIVE,
+      cachedAt: fallbackAt || (snap ? confirmedAt : null),
+      hasData: !!snap || !!window.WA.catalog.length || !!window.WA.venues.length ||
+        (picksOk && !!picksResult.value.length) || (venuesOk && !!venuesResult.value.length) });
     if (snap && !picksOk) return;                     /* offline: keep what is drawn */
     if (same) {                                       /* the snapshot was right */
       /* Nothing to redraw, but pages that drew from it with DATA_LIVE
@@ -415,5 +432,10 @@
     }
   };
 
-  load();
+  let loading = null;
+  window.WA.refreshCatalogue = () => {
+    if (!loading) loading = load().finally(() => { loading = null; });
+    return loading;
+  };
+  window.WA.refreshCatalogue();
 })();
