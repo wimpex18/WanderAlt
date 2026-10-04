@@ -53,8 +53,9 @@
 
   const draw = (route) => {
     document.title = `${route.title} · WanderAlt`;
-    $('rt-kicker').textContent = [R().dateShort(window.WA.when.todayKey()), route.area, `${route.stops.length} stops`].filter(Boolean).join(' · ');
+    $('rt-kicker').textContent = [R().dateShort(route.day || window.WA.when.todayKey()), route.area, `${route.stops.length} stops`].filter(Boolean).join(' · ');
     $('rt-title').textContent = route.title;
+    if (!new URLSearchParams(location.search).has('d')) history.replaceState(null, '', window.WA.Route.href(route));
     const cost = window.WA.Route.costText(route);
     $('rt-sub').textContent = `${route.blurb ? `${route.blurb} ` : ''}About ${window.WA.Route.lengthText(route)}. ${cost ? `${cost.charAt(0).toUpperCase()}${cost.slice(1)}. ` : ''}Check hours before you go.`;
     const maps = window.WA.Route.mapsUrl(route);
@@ -79,23 +80,23 @@
     host.innerHTML = `<section class="wa-sect rt-more"><h2 class="wa-sect__title">More routes</h2>${list.map(r => `<div class="rt-more__item">${R2.card(r, { label: day(r) })}</div>`).join('')}</section>`;
   };
 
-  const none = () => {
-    $('rt-title').textContent = 'No route right now';
+  const none = (shared = false) => {
+    $('rt-title').textContent = shared ? 'This walk is no longer available' : 'No route right now';
     $('rt-sub').textContent = '';
-    $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: 'Nothing fits together right now.',
-      body: 'A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.',
+    $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: shared ? 'Choose a walk for today.' : 'Nothing fits together right now.',
+      body: shared ? 'Its date or stops have changed. Now has walks for the next few hours.' : 'A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.',
       actions: [{ href: 'index.html', label: 'Now' }, { href: 'places.html', label: 'Guide' }] });
   };
 
   const boot = () => {
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
-    const route = s ? window.WA.Route.fromParam(s) : window.WA.Route.best();
-    if (!route) { none(); return; }
+    const route = s ? window.WA.Route.fromURL(s, q.get('d')) : window.WA.Route.best();
+    if (!route) { none(!!s); return; }
     /* A stored evening keeps its own title and note, once the table has answered. */
     const t = q.get('t');
     const row = t && window.WA.Route.upcoming().find(r => r.id === t);
-    draw(row && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { title: row.title, blurb: row.blurb, engine: row.engine }) : route);
+    draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine }) : route);
   };
 
   document.addEventListener('click', async (e) => {

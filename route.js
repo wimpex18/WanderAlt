@@ -37,7 +37,18 @@
   const NEAR = 15;    /* Near me: the first stop within this many minutes on foot */
 
   const nowMin = () => H().cityNow().minutes;
-  const at = (minute, offset = 0) => new Date(Date.now() + (minute - nowMin() + offset * DAY) * 60000);
+  const at = (minute, offset = 0) => {
+    let date = new Date(Date.now() + (minute - nowMin() + offset * DAY) * 60000);
+    /* Match the Tallinn wall clock across 23/25-hour DST days. */
+    if (W().keyPlus && W().dayKey) {
+      const wall = Date.parse(`${W().keyPlus(offset)}T00:00:00Z`) + minute * 60000;
+      for (let i = 0; i < 2; i++) {
+        const seen = Date.parse(`${W().dayKey(date)}T00:00:00Z`) + H().cityNow(date).minutes * 60000;
+        date = new Date(+date + wall - seen);
+      }
+    }
+    return date;
+  };
   const metres = (a, b) => {
     const ca = G().coordsFor(a), cb = G().coordsFor(b);
     return ca && cb ? G().distanceTo(a, cb) : null;
@@ -134,7 +145,7 @@
     const anchor = stops.find(s => s.type === 'event') || stops[0];
     const me = G().currentLoc(), first = stops[0];
     const fromYou = me && first.lat != null ? walk(G().distanceTo(first)) : null;
-    return { title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m), cost: costOf(stops), fromYou };
+    return { day: W().todayKey?.(), title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m), cost: costOf(stops), fromYou };
   };
 
   /* Moods and a price limit narrow what may anchor or fill a route. A route must
@@ -287,11 +298,11 @@
      first (the nearest of each, so the choices differ), then the nearest of the rest,
      closest first. Shut places are left out; unknown hours stay and say so. */
   const nextFrom = (entry, o = {}) => {
-    const max = o.max || 10, limit = o.limit || 3, now = nowMin();
+    const max = o.max || 10, limit = o.limit || 3, now = o.minute ?? nowMin(), offset = o.offset || 0;
     const moods = MOODS() ? MOODS().available() : [];
     const rows = R().places().filter(v => v.picked && v.id !== entry.id && v.id !== entry.venueId && G().coordsFor(v))
       .map(v => ({ v, w: walk(metres(entry, v)) })).filter(r => r.w != null && r.w <= max)
-      .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w) })).filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
+      .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w, offset) })).filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
       .sort((a, b) => a.w - b.w);
     const chosen = [];
     for (const m of moods) {
@@ -307,43 +318,70 @@
      places after it, a short walk from the one before. */
   const fromHere = (entry) => {
     const isEvent = entry.title !== undefined;
+    const day = isEvent ? W().resolveKey?.(entry) : W().todayKey?.();
+    const offset = day ? dayOffset(day) : 0;
+    if (offset < 0) return null;
     const now = nowMin();
     let start = isEvent ? startOf(entry) : round5(now + 5);
     if (start == null) return null;
     if (isEvent && !G().coordsFor(entry)) return null;
-    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start));
+    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset));
     const stops = [first];
     let prev = entry, at = isEvent ? endOf(entry, start) : start + 40;
     for (let n = 0; n < 2; n++) {
-      const pick = nextFrom(prev, { limit: 3, max: 10 }).find(r => {
+      const pick = nextFrom(prev, { limit: 3, max: 10, minute: at + 10, offset }).find(r => {
         const arrival = round5(at + 10 + r.w);
-        return !stops.some(s => s.id === r.v.id) && fits(r.v, hoursAt(r.v, arrival), arrival);
+        return !stops.some(s => s.id === r.v.id) && fits(r.v, hoursAt(r.v, arrival, offset), arrival);
       });
       if (!pick) break;
       const minute = round5(at + 10 + pick.w);
-      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute)));
+      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset)));
       prev = pick.v; at = minute + 40;
     }
-    return stops.length > 1 ? build(stops) : null;
+    return stops.length > 1 ? Object.assign(build(stops), { day, off: offset }) : null;
   };
 
   /* ── The route as a URL ───────────────────────────────────── */
   const param = (route) => route.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(',');
   const fromParam = (str, offset = 0) => {
-    const parts = String(str || '').split(',').slice(0, 6).map(x => x.split(':'));
-    if (parts.length < 2 || parts.some(p => p.length !== 3 || !/^(place|event)$/.test(p[0]) || !/^[\w.-]{1,80}$/.test(p[1]) || !/^\d{1,4}$/.test(p[2]))) return null;
+    const parts = String(str || '').split(',').map(x => x.split(':'));
+    if (parts.length < 2 || parts.length > 6 || parts.some(p => p.length !== 3 || !/^(place|event)$/.test(p[0]) || !/^[\w.-]{1,80}$/.test(p[1]) || !/^\d{1,4}$/.test(p[2]))) return null;
     const stops = [];
+    const ids = new Set();
     for (const [type, id, min] of parts) {
       const minute = Number(min);
       let entry;
-      if (type === 'place') entry = (window.WA._venuesAll || []).find(v => v.id === id);
+      if (type === 'place') entry = (window.WA._venuesAll || []).find(v => v.id === id) || (window.WA._venuesAll || []).find(v => window.WA.canonicalId && v.id === window.WA.canonicalId(id));
       else entry = (window.WA.catalog || []).find(e => e.id === id) || (window.WA.catalog || []).find(e => window.WA.canonicalId && e.id === window.WA.canonicalId(id));
-      if (!entry) return null;
+      if (!entry || entry.isClosed || entry.isVerified === false || ids.has(entry.id) || minute >= 2880) return null;
+      ids.add(entry.id);
       const prev = stops[stops.length - 1];
+      if (prev && minute <= prev.minute) return null;
       const prevM = prev ? (type === 'place' ? metres(entry, prev) : metres(prev, entry)) : null;
       stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset)) : eventStop(entry, minute, prevM));
     }
-    return build(stops);
+    return Object.assign(build(stops), { day: W().keyPlus?.(offset), off: offset });
+  };
+
+  const href = (route) => `route.html?s=${encodeURIComponent(param(route))}&d=${encodeURIComponent(route.day || W().todayKey())}${route.id ? `&t=${encodeURIComponent(route.id)}` : ''}`;
+  const fromURL = (str, day) => {
+    /* Older event links can recover their day from the listing. A place-only
+       legacy link has no date evidence and keeps the old today behaviour. */
+    if (day == null) {
+      const eventId = String(str).split(',').find(x => x.startsWith('event:'))?.split(':')[1];
+      const event = eventId && (window.WA.catalog || []).find(e => e.id === eventId);
+      day = (event && W().resolveKey(event)) || W().todayKey();
+    }
+    const offset = dayOffset(day);
+    if (offset < 0) return null;
+    const route = fromParam(str, offset);
+    if (!route || (offset === 0 && route.stops[0].minute < nowMin() - 15)) return null;
+    if (route.stops.some(s => s.type === 'place' && !fits({ kind: s.kind }, s.hours, s.minute))) return null;
+    for (const stop of route.stops.filter(s => s.type === 'event')) {
+      const event = (window.WA.catalog || []).find(e => e.id === stop.id);
+      if (!event || R().isOff(event) || W().hasEnded(event) || W().resolveKey(event) !== W().keyPlus(offset + Math.floor(stop.minute / DAY))) return null;
+    }
+    return route;
   };
 
   /* A walking route in Google Maps; no origin, so it starts where you are. */
@@ -371,7 +409,7 @@
   const fromRow = (row) => {
     const off = dayOffset(row.day);
     if (off < 0 || !Array.isArray(row.stops)) return null;
-    const r = fromParam(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), off);
+    const r = fromURL(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), row.day);
     if (!r) return null;
     if (r.stops.some(s => s.hours === 'shut' || (s.type === 'place' && s.hours === 'unknown' && !usual(s.kind, s.minute)))) return null;
     const anchor = r.stops.find(s => s.type === 'event');
@@ -410,7 +448,7 @@
      title and stops open the route; Tonight's own card adds Walk it and Another. */
   const card = (route, o = {}) => {
     const opt = typeof o === 'string' ? { label: o } : o;
-    const href = `route.html?s=${esc(param(route))}${route.id ? `&t=${esc(encodeURIComponent(route.id))}` : ''}`;
+    const url = esc(href(route));
     const sub = [opt.label, route.area, `about ${lengthText(route).split(',')[0]}`, costText(route)].filter(Boolean).join(' · ');
     const lead = route.fromYou != null ? `<li class="rt-card__walk rt-card__walk--you" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(route.fromYou <= 1 ? 'Right by you' : `${route.fromYou} min walk from you`)}</span></li>` : '';
     const stops = lead + route.stops.map((s, i) => `${i && s.walk ? `<li class="rt-card__walk" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(`${s.walk} min walk`)}</span></li>` : ''}<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}" style="--i:${i}">
@@ -418,10 +456,10 @@
         <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(stopSub(s))}</small></span></li>`).join('');
     return `<section class="rt-card${opt.actions ? ' rt-card--now' : ''}" aria-label="${esc(route.title)}">
       ${opt.actions ? SKYLINE : ''}
-      <a class="rt-card__main" href="${href}"><span class="rt-card__title">${esc(route.title)}</span><span class="rt-card__sub">${esc(sub)}</span>
+      <a class="rt-card__main" href="${url}"><span class="rt-card__title">${esc(route.title)}</span><span class="rt-card__sub">${esc(sub)}</span>
       <ol class="rt-card__stops">${stops}</ol></a>
-      ${opt.actions ? `<div class="rt-card__acts"><a class="wa-btn wa-btn--primary wa-btn--pill" href="${href}">Walk it</a>${opt.more ? `<button class="wa-btn wa-btn--pill" type="button" data-another>${window.WA.Icon('refresh')}Another</button>` : ''}</div>` : ''}</section>`;
+      ${opt.actions ? `<div class="rt-card__acts"><a class="wa-btn wa-btn--primary wa-btn--pill" href="${url}">Walk it</a>${opt.more ? `<button class="wa-btn wa-btn--pill" type="button" data-another>${window.WA.Icon('refresh')}Another</button>` : ''}</div>` : ''}</section>`;
   };
 
-  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, param, mapsUrl, titleFor, card, stopSub, lengthText, costText };
+  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, lengthText, costText };
 })();

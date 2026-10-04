@@ -677,7 +677,10 @@ window.WA.dict.et = {
   "Places without filed hours aren't included.": "Teadmata lahtiolekuaegadega kohti ei näidata.",
   "Could not find your location. Try Near me again, or choose a starting place on You.": "Asukohta ei õnnestunud leida. Proovi uuesti nuppu Minu lähedal või vali alguskoht lehel Sina.",
   "Saved on this device. Waiting to sync.": "Salvestatud selles seadmes. Ootab sünkroonimist.",
-  "Synced to your account.": "Sünkroonitud sinu kontoga."
+  "Synced to your account.": "Sünkroonitud sinu kontoga.",
+  "This walk is no longer available": "See jalutuskäik pole enam saadaval",
+  "Choose a walk for today.": "Vali jalutuskäik tänaseks.",
+  "Its date or stops have changed. Now has walks for the next few hours.": "Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks."
  },
  "patterns": [
   [

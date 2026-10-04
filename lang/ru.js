@@ -677,7 +677,10 @@ window.WA.dict.ru = {
   "Places without filed hours aren't included.": "Места без указанных часов не включены.",
   "Could not find your location. Try Near me again, or choose a starting place on You.": "Не удалось определить местоположение. Попробуйте «Рядом со мной» ещё раз или выберите начальную точку на странице «Вы».",
   "Saved on this device. Waiting to sync.": "Сохранено на этом устройстве. Ожидает синхронизации.",
-  "Synced to your account.": "Синхронизировано с вашим аккаунтом."
+  "Synced to your account.": "Синхронизировано с вашим аккаунтом.",
+  "This walk is no longer available": "Эта прогулка больше недоступна",
+  "Choose a walk for today.": "Выберите прогулку на сегодня.",
+  "Its date or stops have changed. Now has walks for the next few hours.": "Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы."
  },
  "patterns": [
   [
