@@ -187,6 +187,7 @@
       const end = endOf(e, start);
       let bestAfter = null;
       for (const v of places) {
+        if (bestBefore && v.id === bestBefore.v.id) continue;
         const dayPlace = BEFORE.has(v.kind);
         if ((!AFTER.has(v.kind) && !dayPlace) || (host && v.id === host.id)) continue;
         const d = metres(v, e), w = walk(d);
@@ -314,7 +315,10 @@
     const stops = [first];
     let prev = entry, at = isEvent ? endOf(entry, start) : start + 40;
     for (let n = 0; n < 2; n++) {
-      const pick = nextFrom(prev, { limit: 3, max: 10 }).find(r => !stops.some(s => s.id === r.v.id) && hoursAt(r.v, at + r.w) !== 'shut');
+      const pick = nextFrom(prev, { limit: 3, max: 10 }).find(r => {
+        const arrival = round5(at + 10 + r.w);
+        return !stops.some(s => s.id === r.v.id) && fits(r.v, hoursAt(r.v, arrival), arrival);
+      });
       if (!pick) break;
       const minute = round5(at + 10 + pick.w);
       stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute)));

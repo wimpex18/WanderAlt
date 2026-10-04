@@ -671,7 +671,11 @@ window.WA.dict.et = {
   "SAT": "L",
   "SUN": "P",
   "soonest first": "varaseimad ees",
-  "nearest first": "lähimad ees"
+  "nearest first": "lähimad ees",
+  "No places match this search.": "Ükski koht ei vasta sellele otsingule.",
+  "Try a place name or another kind of place.": "Proovi koha nime või teist liiki kohta.",
+  "Places without filed hours aren't included.": "Teadmata lahtiolekuaegadega kohti ei näidata.",
+  "Could not find your location. Try Near me again, or choose a starting place on You.": "Asukohta ei õnnestunud leida. Proovi uuesti nuppu Minu lähedal või vali alguskoht lehel Sina."
  },
  "patterns": [
   [

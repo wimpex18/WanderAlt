@@ -73,6 +73,8 @@
     const out = empty();
     let q = ` ${fold(raw)} `;
     const take = (re) => { q = q.replace(re, ' '); };
+    const OPEN_NOW = w('open now|open right now|praegu avatud|avatud praegu|сеичас открыт\\p{L}*|открыт\\p{L}* сеичас', 'g');
+    if (OPEN_NOW.test(q)) { out.openNow = true; take(OPEN_NOW); }
     for (const [v, re] of WHEN) if (re.test(q)) { out.when = out.when || v; take(re); }
     for (const [dow, names] of WEEKDAYS) {
       const re = w(`(?:(?:on|sel|в|во) )?(?:${names})`);
@@ -128,7 +130,7 @@
   const PLAN = w('plan|plans|planning|itinerary|things to do|what to do|night out|date night|plaan|план|что делать');
   const places = (raw) => {
     const q = ` ${fold(raw)} `;
-    const out = { kinds: [], show: false, only: false, plan: PLAN.test(q) };
+    const out = { kinds: [], show: false, only: false, plan: PLAN.test(q), openNow: local(raw).openNow };
     for (const [k, re] of PLACE_KINDS) if (re.test(q)) out.kinds.push(k);
     if (!out.kinds.length) return out;
     const p = local(raw);

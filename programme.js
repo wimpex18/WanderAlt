@@ -9,7 +9,8 @@
    the model asked, and it too only sets filters. Every count comes from
    the same filter chain as the list, each facet skipping itself.
 
-   URL: ?q ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?focus=search
+   URL: ?q ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?free=1
+        ?english=1 ?price ?doors ?seen=hide ?followed=1 ?focus=search
    ============================================================ */
 (() => {
   'use strict';
@@ -47,12 +48,19 @@
     if (state.day && KEY.test(sp.get('to') || '') && sp.get('to') > state.day) state.dayTo = sp.get('to');
     const t = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
     if (t && WHEN[t]) state.when = t;
-    if (sp.get('q')) state.q = sp.get('q');
+    if (sp.get('q')) state.q = sp.get('q').trim().slice(0, 140);
     if (sp.get('cat')) sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));
     if (sp.get('area')) state.area = sp.get('area');
     if (sp.get('sort') === 'nearest') state.sort = 'nearest';
     if (sp.get('within')) state.within = G().parseWithin(sp.get('within'));
     if (sp.get('new') === '1') state.fresh = true;
+    state.free = sp.get('free') === '1';
+    state.english = sp.get('english') === '1';
+    state.hideSeen = sp.get('seen') === 'hide';
+    state.followed = sp.get('followed') === '1';
+    if (DOORS[sp.get('doors')]) state.doors = sp.get('doors');
+    const price = sp.get('price');
+    if (price != null && /^\d{1,3}$/.test(price)) state.maxPrice = Number(price);
   };
   const write = () => {
     const sp = new URLSearchParams();
@@ -64,6 +72,12 @@
     if (state.sort !== 'soonest') sp.set('sort', state.sort);
     if (state.within) sp.set('within', String(state.within));
     if (state.fresh) sp.set('new', '1');
+    if (state.free) sp.set('free', '1');
+    if (state.english) sp.set('english', '1');
+    if (state.hideSeen) sp.set('seen', 'hide');
+    if (state.followed) sp.set('followed', '1');
+    if (state.doors !== 'any') sp.set('doors', state.doors);
+    if (state.maxPrice != null) sp.set('price', String(state.maxPrice));
     const qs = sp.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
   };
@@ -136,6 +150,7 @@
     return [...m.entries()].sort((a, b) => Number(state.kinds.has(b[0])) - Number(state.kinds.has(a[0])) || b[1] - a[1] || a[0].localeCompare(b[0]));
   };
   const quick = () => {
+    $('quick').hidden = !!(state.q && placeOnly);
     const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" aria-pressed="true" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
     const set = [];
     if (state.day) set.push(on(daysLabel(), 'clear-when'));
@@ -255,6 +270,11 @@
 
   /* ── Empty state: name the filter, offer the drop that helps most ── */
   const emptyState = () => {
+    if (state.q && placeOnly) {
+      return R().empty({ icon: 'store', title: A().places(state.q).openNow ? 'None with filed hours are open now.' : 'No places match this search.',
+        body: A().places(state.q).openNow ? "Places without filed hours aren't included." : 'Try a place name or another kind of place.',
+        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
+    }
     const drops = [];
     const add = (on, label, act, skip) => { if (on) drops.push({ label, act, n: apply(base(), skip).length }); };
     add(state.q, 'Clear search', 'clear-q', 'q');
@@ -338,15 +358,16 @@
   const dayWord = (r) => (r.off === 0 || r.off == null ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
 
   const findPlaces = (q, P) => {
-    const f = A().fold(q).trim();
-    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
+    const f = P.openNow ? A().local(q).must.join(' ') : A().fold(q).trim();
+    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false && (!P.openNow || R().openState(v).open === true));
     const named = (v) => f.length >= 3 && A().fold(v.name).includes(f);
     return venues.filter(v => named(v) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
       .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || Number(named(b)) - Number(named(a)) || String(a.name).localeCompare(String(b.name), 'et'));
   };
 
   const onQuery = (raw, now) => {
-    const q = String(raw || '').trim();
+    const q = String(raw || '').trim().slice(0, 140);
+    if (String(raw || '').length > 140) $('q').value = q;
     state.q = q;
     $('q-clear').hidden = !q;
     $('ask-try').hidden = !!q || document.activeElement !== $('q');
@@ -354,7 +375,7 @@
     unread();
     const P = q ? A().places(q) : null;
     placeHits = P ? findPlaces(q, P) : [];
-    placeOnly = P && P.only && placeHits.length ? new Set(placeHits.map(v => v.id)) : null;
+    placeOnly = P && P.only ? new Set(placeHits.map(v => v.id)) : null;
     evenings = [];
     if (P && P.plan && window.WA.Route) {
       const local = A().local(q);
@@ -437,9 +458,11 @@
     if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
     if (state.area) bits.push(`in ${state.area}`);
     if (state.q && !state.read) bits.push(`matching “${state.q}”`);
-    bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
+    if (!(state.q && placeOnly && !n)) bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
     const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
-    put($('summary'), `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
+    put($('summary'), state.q && placeOnly && !n
+      ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> ${esc(bits.join(' · '))}`
+      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
     searchAct();
   };
 
@@ -472,6 +495,7 @@
       (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
   };
   const listHtml = (list) => {
+    if (!list.length && state.q && placeOnly) return placeHits.length ? placesBlock(0) : emptyState();
     if (!list.length) return state.q && (placeHits.length || evenings.length)
       ? `${eveningsBlock()}${placesBlock(0)}<p class="wa-note">${placeOnly ? 'Nothing is listed at these places in the coming days.' : 'No listings match this search.'}</p>` : emptyState();
     const days = list.filter(e => !R().isRun(e));
