@@ -74,7 +74,7 @@
         if (painted) return painted;
       }
     } catch (_) { /* an engine that dislikes this pre-paint — fall through */ }
-    return mode === 'day' ? '#ffffff' : '#111110';
+    return mode === 'day' ? '#ffffff' : '#262624';
   };
 
   const apply = () => {
