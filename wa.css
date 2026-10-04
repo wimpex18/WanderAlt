@@ -42,6 +42,12 @@
   --accent-ink:  #c2330f;
   --on-accent:   #ffffff;
   --accent-soft: color-mix(in oklab, var(--accent) 10%, var(--paper));
+  /* Two quiet companions to the vermilion, each with one meaning and used in few places:
+     green is "open" and "free"; blue is "you" (where you are, how far you walk). */
+  --go:        #19804f;
+  --go-soft:   color-mix(in oklab, var(--go) 12%, var(--paper));
+  --here:      #2563d9;
+  --here-soft: color-mix(in oklab, var(--here) 11%, var(--paper));
 
   /* Selection and the one primary action never use a black fill: a chosen
      thing is tinted glass with a vermilion ring, the primary action is a
@@ -110,6 +116,10 @@
   --accent:      #e0421b;
   --accent-ink:  #f0916f;
   --accent-soft: color-mix(in oklab, var(--accent) 20%, var(--paper));
+  --go:        #5fd39a;
+  --go-soft:   color-mix(in oklab, var(--go) 16%, var(--paper));
+  --here:      #7ab4ff;
+  --here-soft: color-mix(in oklab, var(--here) 16%, var(--paper));
   --select-bg:   linear-gradient(135deg, color-mix(in oklab, var(--accent) 30%, transparent), color-mix(in oklab, #f0916f 16%, transparent));
   --daybreak: radial-gradient(70vmax 50vmax at 100% -8%, rgba(224, 120, 87, .10), transparent 62%), linear-gradient(175deg, #2a2a27 0%, #262624 50%, #232321 100%);
   --glass-bg:     rgba(58, 57, 54, .62);
@@ -616,7 +626,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-poster__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
 .wa-poster__meta strong { color: var(--ink); font-weight: 600; }
 .wa-poster__walk { display: inline-flex; align-items: center; gap: 2px; color: var(--ink); font-weight: 600; vertical-align: bottom; }
-.wa-poster__walk .wa-ic { width: 15px; height: 15px; margin-left: -2px; }
+.wa-poster__walk .wa-ic { color: var(--here);  width: 15px; height: 15px; margin-left: -2px; }
 @media (max-width: 767px) {
   .wa-shelf--compact { grid-auto-columns: min(43vw, 162.5px); gap: var(--s-3); }
   .wa-shelf--compact .wa-poster__art { margin-bottom: var(--s-1); }
@@ -641,7 +651,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-row__time { display: block; font: 600 1rem/1.15 var(--f-sans); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .wa-row__time--word { font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 .wa-row__walk { display: inline-flex; align-items: center; gap: 2px; font-size: .8125rem; font-weight: 600; color: var(--ink); white-space: nowrap; }
-.wa-row__walk .wa-ic { width: 15px; height: 15px; margin-left: -2px; }
+.wa-row__walk .wa-ic { color: var(--here);  width: 15px; height: 15px; margin-left: -2px; }
 .wa-row__area { display: block; font-size: .6875rem; line-height: 1.25; color: var(--ink-3); overflow-wrap: break-word; }
 .wa-row__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .wa-row__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 1px; }
@@ -678,16 +688,15 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .prog-places .places-grid { margin-top: var(--s-1); }
 .wa-place__side { display: grid; justify-items: end; gap: 4px; }
 .wa-place__walk { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-meta); font-weight: 600; color: var(--ink); white-space: nowrap; }
-.wa-place__walk .wa-ic { width: 15px; height: 15px; }
+.wa-place__walk .wa-ic { color: var(--here);  width: 15px; height: 15px; }
 @media (hover: hover) { .wa-place:hover .wa-place__name { text-decoration: underline; text-underline-offset: 3px; } }
 .places-grid { display: grid; margin-top: var(--s-3); }
 @media (min-width: 1024px) { .places-grid { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); } }
 
 .wa-open { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); font-weight: 500; white-space: nowrap; color: var(--ink-2); }
 .wa-open::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
-.wa-open--yes { color: #19804f; font-weight: 600; }
+.wa-open--yes { color: var(--go); font-weight: 600; }
 .wa-open--yes::before { background: currentColor; }
-:root[data-theme="dusk"] .wa-open--yes { color: #5fd39a; }
 .wa-open--no::before { border-radius: 2px; }
 .wa-open--unknown { color: var(--ink-3); }
 .wa-open--unknown::before { border-style: dashed; }
@@ -926,7 +935,7 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 
 /* ── Sheet: the one modal ───────────────────────────────────────── */
 .wa-sheet { position: fixed; inset: 0; top: var(--vv-top, 0px); margin: 0; padding: 0; border: 0; width: 100%; height: var(--vv-h, 100%); max-width: none; max-height: none; background: transparent; color: var(--ink); overflow: hidden; }
-.wa-sheet::backdrop { background: linear-gradient(180deg, rgba(80, 50, 120, .22), rgba(150, 70, 60, .30)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.wa-sheet::backdrop { background: linear-gradient(180deg, rgba(60, 50, 45, .24), rgba(150, 70, 60, .30)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .wa-sheet[open] { display: flex; align-items: flex-end; justify-content: center; }
 .wa-sheet__panel { position: relative; width: 100%; max-height: min(92dvh, var(--vv-h, 100dvh), 860px); display: flex; flex-direction: column; background: linear-gradient(180deg, color-mix(in oklab, var(--paper) 90%, transparent), color-mix(in oklab, var(--accent) 5%, color-mix(in oklab, var(--paper) 84%, transparent))); -webkit-backdrop-filter: blur(34px) saturate(1.8); backdrop-filter: blur(34px) saturate(1.8); border: 1px solid var(--glass-edge); border-bottom: 0; border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -12px 50px rgba(120, 60, 90, .22), var(--glass-shine); animation: wa-sheet-in 420ms var(--spring); padding-bottom: env(safe-area-inset-bottom); }
 @keyframes wa-sheet-in { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -996,7 +1005,7 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 .wa-pin--place[aria-current="true"] .wa-pin__disc { transform: scale(1.25); }
 .wa-pin__count { display: grid; place-items: center; min-width: 38px; height: 38px; padding: 0 10px; border-radius: 19px; background: linear-gradient(135deg, #5d5952, #3d3a35); color: #fff; font: 650 .875rem var(--f-sans); box-shadow: 0 0 0 4px rgba(255,255,255,.7), 0 4px 12px rgba(0,0,0,.25); }
 .wa-pin--me { pointer-events: none; }
-.wa-pin--me span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #2f6bff; box-shadow: 0 0 0 3px #fff, 0 0 0 12px rgba(47,107,255,.18); }
+.wa-pin--me span { display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--here); box-shadow: 0 0 0 3px #fff, 0 0 0 12px color-mix(in oklab, var(--here) 22%, transparent); }
 
 /* The cards that rise when a pin is chosen: a row that snaps card by
    card, the next one peeking in from the edge. */
@@ -1382,9 +1391,9 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-card__rail { position: relative; }
 .rt-card__rail::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; border-left: 2px dotted color-mix(in oklab, var(--accent) 55%, transparent); }
 .rt-card__walk > :last-child { font-size: var(--fs-small); line-height: 26px; color: var(--ink-2); }
-.rt-card__walk--you .rt-card__rail::after { content: ""; position: absolute; left: 3px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent); }
+.rt-card__walk--you .rt-card__rail::after { content: ""; position: absolute; left: 3px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--here); box-shadow: 0 0 0 3px color-mix(in oklab, var(--here) 24%, transparent); }
 .rt-card__walk--you .rt-card__rail::before { top: 12px; }
-.rt-card__walk--you > :last-child { color: var(--accent-ink); font-weight: 600; }
+.rt-card__walk--you > :last-child { color: var(--here); font-weight: 600; }
 .rt-card__acts { display: flex; gap: var(--s-2); margin-top: var(--s-4); }
 .rt-card__acts .wa-btn { min-height: 48px; }
 .rt-card__acts .wa-btn--primary { flex: 1 1 0; }
@@ -1437,6 +1446,14 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-act.is-on { background: var(--select-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--select-ring); }
 .wa-act.is-on .wa-ic:first-child { color: var(--accent-ink); }
 .wa-act.is-on .wa-ic:last-child { width: 16px; height: 16px; stroke-width: 2.4; color: var(--accent-ink); }
+/* Near me is about where you are, so it wears the blue. */
+.wa-act[data-near] { background: var(--here-soft); color: var(--here); }
+.wa-act[data-near]:hover { background: color-mix(in oklab, var(--here) 20%, var(--paper)); }
+.wa-act[data-near].is-on { background: color-mix(in oklab, var(--here) 22%, var(--paper)); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--here) 55%, transparent); }
+.wa-act[data-near].is-on .wa-ic { color: var(--here); }
+/* Free is good news, said in green. */
+.wa-free { color: var(--go); font-weight: 600; }
+.home-view__n.is-open { color: var(--go); }
 .mood-h { font-size: 1rem; font-weight: 700; margin: var(--s-5) 0 var(--s-2); }
 .mood-seg { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-pill); background: color-mix(in oklab, var(--accent) 7%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 10%, transparent); }
 .mood-seg button { flex: 1 1 0; min-height: var(--tap); border: 0; border-radius: var(--r-pill); background: transparent; font-weight: 500; font-size: .9375rem; color: var(--ink); }
@@ -1473,7 +1490,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .places-from { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-4); margin: 0 0 var(--s-3); font-size: var(--fs-meta); color: var(--ink-2); }
 .places-from:empty { display: none; }
 .places-from__line { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); }
-.places-from__line .wa-ic { width: 18px; height: 18px; color: var(--accent-ink); }
+.places-from__line .wa-ic { width: 18px; height: 18px; color: var(--here); }
 .places-from b { color: var(--ink); font-weight: 600; }
 .places-from .wa-linkbtn { padding: 0; }
 
@@ -1506,6 +1523,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 @media (hover: hover) { .rt__body:hover .rt__name { text-decoration: underline; text-underline-offset: 3px; } }
 .rt__walk > :last-child { display: inline-flex; align-items: center; gap: 6px; padding: 2px 0 6px; font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); }
 .rt__walk .wa-ic { width: 15px; height: 15px; }
+.rt__walk--start > :last-child { color: var(--here); }
 .rt-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-6) 0 var(--s-3); }
 
 /* Tonight's list: day tabs, then rows in time order. */
