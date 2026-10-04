@@ -675,7 +675,9 @@ window.WA.dict.ru = {
   "No places match this search.": "Ни одно место не подходит под этот поиск.",
   "Try a place name or another kind of place.": "Попробуйте название места или другой тип места.",
   "Places without filed hours aren't included.": "Места без указанных часов не включены.",
-  "Could not find your location. Try Near me again, or choose a starting place on You.": "Не удалось определить местоположение. Попробуйте «Рядом со мной» ещё раз или выберите начальную точку на странице «Вы»."
+  "Could not find your location. Try Near me again, or choose a starting place on You.": "Не удалось определить местоположение. Попробуйте «Рядом со мной» ещё раз или выберите начальную точку на странице «Вы».",
+  "Saved on this device. Waiting to sync.": "Сохранено на этом устройстве. Ожидает синхронизации.",
+  "Synced to your account.": "Синхронизировано с вашим аккаунтом."
  },
  "patterns": [
   [

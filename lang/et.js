@@ -675,7 +675,9 @@ window.WA.dict.et = {
   "No places match this search.": "Ükski koht ei vasta sellele otsingule.",
   "Try a place name or another kind of place.": "Proovi koha nime või teist liiki kohta.",
   "Places without filed hours aren't included.": "Teadmata lahtiolekuaegadega kohti ei näidata.",
-  "Could not find your location. Try Near me again, or choose a starting place on You.": "Asukohta ei õnnestunud leida. Proovi uuesti nuppu Minu lähedal või vali alguskoht lehel Sina."
+  "Could not find your location. Try Near me again, or choose a starting place on You.": "Asukohta ei õnnestunud leida. Proovi uuesti nuppu Minu lähedal või vali alguskoht lehel Sina.",
+  "Saved on this device. Waiting to sync.": "Salvestatud selles seadmes. Ootab sünkroonimist.",
+  "Synced to your account.": "Sünkroonitud sinu kontoga."
  },
  "patterns": [
   [

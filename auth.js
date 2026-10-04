@@ -187,9 +187,10 @@
   window.addEventListener('storage', (e) => {
     if (e.key !== SESSION_KEY) return;
     const next = loadSession();
+    const previousUser = window.WA.Auth.session?.user_id;
     const had = !!window.WA.Auth.session;
     window.WA.Auth.session = next && !(next.expires_at && Date.now() / 1000 > next.expires_at) ? next : null;
-    if (window.WA.Auth.session) { schedule(); if (!had) announce(); }
+    if (window.WA.Auth.session) { schedule(); if (previousUser !== window.WA.Auth.session.user_id) announce(); }
     else if (had) document.dispatchEvent(new CustomEvent('wa:signed-out'));
   });
 

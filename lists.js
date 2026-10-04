@@ -5,62 +5,47 @@
    adding to a list also saves the pick, and removing a save removes it
    from every list.
 
-   Same model as bookmark.js: localStorage is the source of truth, cloud
-   is a copy once signed in, network calls are fire-and-forget. Changing
-   the stored shape means bumping the :v1 suffix and migrating here.
+   SaveStore keeps account data and pending edits locally until the cloud
+   confirms them. Concurrent edits to one list use the last synced version.
    ============================================================ */
 window.WA = window.WA || {};
 
 window.WA.Lists = (() => {
   'use strict';
 
-  const LOCAL_KEY = 'wa:lists:v1';
-  const city = () => (window.WA && window.WA.CITY) || 'tallinn';
-  const BASE_URL = () => (window.WA && window.WA.BASE_URL) || '';
-
-  /* ── localStorage ────────────────────────────────────────── */
-
-  const get = () => {
-    try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); }
-    catch { return {}; }
+  const city = () => window.WA.CITY || 'tallinn';
+  const store = window.WA.SaveStore('wa:lists:v1', 'wa:lists-changed', async request => {
+    const [lists, items] = await Promise.all([
+      request('saved_lists?select=id,name,city,created_at').then(r => r.json()),
+      request('saved_list_items?select=list_id,pick_id').then(r => r.json()),
+    ]);
+    return Object.fromEntries(lists.map(l => [l.id, { id: l.id, name: l.name, city: l.city,
+      createdAt: l.created_at, items: items.filter(r => r.list_id === l.id).map(r => r.pick_id) }]));
+  }, async (id, value, request, who) => {
+    const filter = `list_id=eq.${encodeURIComponent(id)}`;
+    if (!value) {
+      await request(`saved_list_items?${filter}`, { method: 'DELETE' });
+      await request(`saved_lists?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      return;
+    }
+    await request('saved_lists', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({ user_id: who, id, name: value.name, city: value.city, created_at: value.createdAt }) });
+    const rows = await (await request(`saved_list_items?${filter}&select=pick_id`)).json();
+    const wanted = value.items || [];
+    for (const row of rows) if (!wanted.includes(row.pick_id))
+      await request(`saved_list_items?${filter}&pick_id=eq.${encodeURIComponent(row.pick_id)}`, { method: 'DELETE' });
+    if (wanted.length) await request('saved_list_items', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' },
+      body: JSON.stringify(wanted.map(pick_id => ({ user_id: who, list_id: id, pick_id }))) });
+  });
+  const get = store.get;
+  /* Each changed list is an outbox entry; missing lists are tombstones. */
+  const _save = (next) => {
+    const prev = get();
+    new Set([...Object.keys(prev), ...Object.keys(next)]).forEach(id => {
+      if (JSON.stringify(prev[id]) !== JSON.stringify(next[id])) store.set(id, next[id] || null);
+    });
   };
-
-  const _save = (store) => {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(store)); } catch (_) { /* storage blocked */ }
-    document.dispatchEvent(new CustomEvent('wa:lists-changed'));
-  };
-
-  /* Client-generated, because a list has to be creatable signed out and
-     keep its identity if the reader signs in later. A server default
-     would mint a second id for a list that already exists here. */
   const newId = () => 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-
-  /* ── Cloud (no-op when signed out) ───────────────────────── */
-
-  const authHeaders = () => {
-    const auth = window.WA && window.WA.Auth;
-    if (!auth || !auth.isSignedIn()) return null;
-    return auth.getAuthHeaders();
-  };
-
-  const post = async (path, body) => {
-    const headers = authHeaders();
-    if (!headers) return;
-    try {
-      await fetch(`${BASE_URL()}/rest/v1/${path}`, {
-        method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
-        body: JSON.stringify(body),
-      });
-    } catch (_) { /* silent — local is the source of truth */ }
-  };
-
-  const del = async (path) => {
-    const headers = authHeaders();
-    if (!headers) return;
-    try { await fetch(`${BASE_URL()}/rest/v1/${path}`, { method: 'DELETE', headers }); }
-    catch (_) { /* silent */ }
-  };
 
   /* ── Reads ───────────────────────────────────────────────── */
 
@@ -93,7 +78,6 @@ window.WA.Lists = (() => {
     const l = { id: newId(), name: clean, city: city(), createdAt: new Date().toISOString(), items: [] };
     store[l.id] = l;
     _save(store);
-    post('saved_lists', { id: l.id, name: l.name, city: l.city });
     return l.id;
   };
 
@@ -103,7 +87,6 @@ window.WA.Lists = (() => {
     if (!store[id] || !clean) return;
     store[id].name = clean;
     _save(store);
-    post('saved_lists', { id, name: clean, city: store[id].city });
   };
 
   const remove = (id) => {
@@ -114,8 +97,6 @@ window.WA.Lists = (() => {
     /* The items go with it. Deleting the list does NOT unsave the
        picks — they fall back to the plain shortlist, which is what a
        reader expects from removing a folder rather than its contents. */
-    del(`saved_list_items?list_id=eq.${encodeURIComponent(id)}`);
-    del(`saved_lists?id=eq.${encodeURIComponent(id)}`);
   };
 
   const add = (listId, pickId) => {
@@ -128,17 +109,14 @@ window.WA.Lists = (() => {
     /* Adding to a list saves the pick. The two stores cannot be allowed
        to disagree about what is saved. */
     if (window.WA.Bookmarks) window.WA.Bookmarks.set(pickId, true);
-    post('saved_list_items', { list_id: listId, pick_id: pickId });
   };
 
   const removeItem = (listId, pickId) => {
     const store = get();
     const l = store[listId];
     if (!l) return;
-    const removed = (l.items || []).filter(x => canonical(x) === canonical(pickId));
     l.items = (l.items || []).filter(x => canonical(x) !== canonical(pickId));
     _save(store);
-    removed.forEach(id => del(`saved_list_items?list_id=eq.${encodeURIComponent(listId)}&pick_id=eq.${encodeURIComponent(id)}`));
   };
 
   /* Unsaving a pick has to drop it from every list, or Saved shows a
@@ -150,47 +128,10 @@ window.WA.Lists = (() => {
       if ((l.items || []).includes(pickId)) {
         l.items = l.items.filter(x => x !== pickId);
         touched = true;
-        del(`saved_list_items?pick_id=eq.${encodeURIComponent(pickId)}&list_id=eq.${encodeURIComponent(l.id)}`);
       }
     });
     if (touched) _save(store);
   };
-
-  /* ── Sync on sign-in ─────────────────────────────────────── */
-
-  const syncFromCloud = async () => {
-    const headers = authHeaders();
-    if (!headers) return;
-    try {
-      const [lr, ir] = await Promise.all([
-        fetch(`${BASE_URL()}/rest/v1/saved_lists?select=id,name,city,created_at`, { headers }),
-        fetch(`${BASE_URL()}/rest/v1/saved_list_items?select=list_id,pick_id`, { headers }),
-      ]);
-      if (!lr.ok) return;
-      const lists = await lr.json();
-      const rows  = ir.ok ? await ir.json() : [];
-      const store = get();
-
-      /* Cloud wins for presence, same merge rule bookmark.js uses: a
-         list that exists in either place exists. */
-      lists.forEach(l => {
-        store[l.id] = store[l.id] || { id: l.id, items: [] };
-        store[l.id].name = l.name;
-        store[l.id].city = l.city;
-        store[l.id].createdAt = l.created_at || store[l.id].createdAt || new Date().toISOString();
-      });
-      rows.forEach(r => {
-        const l = store[r.list_id];
-        if (!l) return;
-        l.items = l.items || [];
-        if (!l.items.includes(r.pick_id)) l.items.push(r.pick_id);
-      });
-      _save(store);
-    } catch (_) { /* silent */ }
-  };
-
-  document.addEventListener('wa:signed-in', () => syncFromCloud());
-
 
   /* The name sheets (Saved, and Add to a list on an event page) share two small conveniences:
      tapping a suggestion fills the name, and Return creates the list. */
@@ -214,6 +155,6 @@ window.WA.Lists = (() => {
     suggestions,
     all, forCity, byId, items, listsFor,
     create, rename, remove, add, removeItem, purge,
-    syncFromCloud,
+    pendingSync: store.pending, syncFromCloud: store.sync,
   };
 })();

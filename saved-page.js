@@ -106,6 +106,17 @@
     const viewing = listFilter && L ? L.byId(listFilter) : null;
     $('saved-title').textContent = viewing ? viewing.name : total ? `${total} saved` : 'Saved';
     $('saved-sub').textContent = viewing ? 'Only what is in this list.' : total ? 'Soonest first. Stays in this browser.' : 'Your shortlist. Stays in this browser.';
+    if (window.WA.Auth?.isSignedIn()) {
+      const waiting = (window.WA.Bookmarks.pendingSync?.() || 0) + (L?.pendingSync?.() || 0);
+      $('saved-sub').textContent = viewing ? 'Only what is in this list.' : waiting ? 'Saved on this device. Waiting to sync.' : window.WA.Bookmarks.syncConfirmed?.() ? 'Synced to your account.' : 'Stays in this browser.';
+      if (waiting) {
+        const retry = document.createElement('button');
+        retry.className = 'wa-btn'; retry.textContent = 'Try again';
+        retry.addEventListener('click', () => { window.WA.Bookmarks.syncFromCloud(); L?.syncFromCloud(); });
+        $('saved-sub').append(' ', retry);
+      }
+    }
+
 
     if (!total && !(L && L.forCity(window.WA.CITY).length)) {
       $('saved-body').innerHTML = R().empty({ icon: 'save', title: 'Nothing saved yet.',
@@ -183,5 +194,7 @@
   document.addEventListener('wa:data-live', render);
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:bookmarks-synced', render);
+  document.addEventListener('wa:lists-changed', render);
+  document.addEventListener('wa:signed-out', () => { listFilter = ''; render(); });
   window.addEventListener('online', () => { details.clear(); failed.clear(); render(); });
 })();

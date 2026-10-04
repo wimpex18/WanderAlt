@@ -1,6 +1,6 @@
 # Data and pipeline
 
-Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261004100000_backups_bucket.sql`. Add changes as new, later-dated migration files.
+Supabase project `aqnsmmbrspkbfcvougeh` (eu-west-1, Postgres 17). The schema is `supabase/migrations/`; the latest change is `20261004110000_saved_lists_update.sql`. Add changes as new, later-dated migration files.
 
 ## Tables
 

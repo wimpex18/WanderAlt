@@ -12,10 +12,11 @@ function page() {
     Hours: { state: () => ({ known: true, open: true }), clock: (n: number) => `${Math.floor(n / 60)}:00` },
     UI: { esc: (s: unknown) => String(s ?? ''), safeUrl: (s: string) => s },
   };
-  const context = createContext({ window: { WA }, localStorage: {
+  const context = createContext({ window: { WA, addEventListener: () => {} }, localStorage: {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value),
-  }, CustomEvent: class {}, document: { addEventListener: () => {}, dispatchEvent: () => {} } });
+    removeItem: (key: string) => values.delete(key),
+  }, CustomEvent: class {}, setTimeout, clearTimeout, AbortController, document: { addEventListener: () => {}, dispatchEvent: () => {} } });
   const load = (file: string) => runInContext(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'), context);
   return { WA, values, redirects, load };
 }
@@ -38,7 +39,7 @@ test('Estonian evening and Russian event sentences do not require generic words 
 });
 
 test('saved and going aliases collapse without rewriting raw ids; undo and unsaving remain possible', async () => {
-  const p = page(); p.load('bookmark.js'); p.load('going.js'); p.load('lists.js');
+  const p = page(); p.load('save-store.js'); p.load('bookmark.js'); p.load('going.js'); p.load('lists.js');
   p.values.set('wanderalt:bookmarks:v1', JSON.stringify({ 'old-event': true, event: true, 'old-place': true }));
   p.values.set('wa:going:v1', JSON.stringify({ 'old-event': 1, event: 2 }));
   p.values.set('wa:lists:v1', JSON.stringify({ list: { id: 'list', items: ['old-event', 'event', 'old-place'] } }));
@@ -48,7 +49,7 @@ test('saved and going aliases collapse without rewriting raw ids; undo and unsav
   assert.deepEqual(Array.from(p.WA.Bookmarks.ids()).sort(), ['event', 'place']);
   assert.deepEqual(Array.from(p.WA.Going.ids()), ['event']);
   assert.equal(p.WA.Going.has('old-event'), true);
-  assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1')!)['old-event'], true);
+  assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1:sync:guest')!).data['old-event'], true);
   p.redirects.clear();
   assert.equal(p.WA.Bookmarks.ids().length, 3);
   assert.equal(p.WA.Going.ids().length, 2);
@@ -56,7 +57,7 @@ test('saved and going aliases collapse without rewriting raw ids; undo and unsav
   p.WA.Bookmarks.set('event', false); await p.WA.Going.set('event', false);
   assert.equal(p.WA.Bookmarks.get().event, undefined);
   assert.equal(p.WA.Going.has('old-event'), false);
-  assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1')!)['old-event'], undefined);
+  assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1:sync:guest')!).data['old-event'], undefined);
 });
 
 test('ended, cancelled, postponed and date-only events never read On now; sold out can still be running', () => {
@@ -212,7 +213,7 @@ test('sheets follow the visual viewport so the keyboard never covers a field or 
 });
 
 test('the name sheets get their suggestions from Lists', () => {
-  const p = page(); p.load('lists.js');
+  const p = page(); p.load('save-store.js'); p.load('lists.js');
   assert.match(String(p.WA.Lists.suggestions()), /data-suggest="Saturday night"/);
 });
 
