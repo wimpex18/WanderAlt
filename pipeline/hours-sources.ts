@@ -1,6 +1,7 @@
 // Opening hours for places that have none, from the best source each place offers, in order:
 //   1. OpenStreetMap       (already on the row; the catalogue fills it)
-//   2. the venue's own site, as structured data   (siteHours)
+//   2. the venue's own site: structured data (siteHours), then hours written out as text on its
+//      homepage or on up to two of its contact or visit pages (textHours)
 //   3. its Facebook Page, through the Graph API   (lookupFacebookHours)
 //   4. its Instagram bio, through business_discovery, when a line states days and times (bioHours)
 // The first source that gives hours the site's own reader can evaluate wins, and the row
@@ -10,6 +11,7 @@
 import type { Place } from './places.ts';
 import { getHtml } from './util.ts';
 import { siteHours } from './site-hours.ts';
+import { textHours, hoursPages } from './site-text-hours.ts';
 import { bioHours } from './bio-hours.ts';
 import { facebookPage, lookupFacebookHours } from './facebook-hours.ts';
 import { instagramHandle, lookupBio, type InstagramConfig } from './instagram.ts';
@@ -27,11 +29,13 @@ interface Deps {
   bios?: Map<string, string>;
 }
 
+/* A page counts as the venue's own when it stays on the same site; a move between its own
+   subdomains (www.fotografiska.com to tallinn.fotografiska.com) still does. */
+const site = (u: string) => new URL(u).hostname.replace(/^www\./, '').split('.').slice(-2).join('.');
 const readSite = async (url: string): Promise<string | null> => {
   try {
     const page = await getHtml(url, { timeoutMs: 15_000 });
-    const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
-    return host(page.url) === host(url) ? page.html.slice(0, 400_000) : null;
+    return site(page.url) === site(url) ? page.html.slice(0, 400_000) : null;
   } catch { return null; }
 };
 
@@ -55,7 +59,12 @@ export async function fillHours(places: Place[], cfg: InstagramConfig | null, li
     let found: { hours: string; source: HoursSource } | null = null;
     if (p.website) {
       const page = await html(p.website);
-      const h = page && siteHours(page);
+      let h = page && (siteHours(page) || textHours(page));
+      for (const sub of page && !h ? hoursPages(page, p.website) : []) {
+        const more = await html(sub);
+        h = more && (siteHours(more) || textHours(more));
+        if (h) break;
+      }
       if (h) found = { hours: h, source: 'site' };
     }
     const page = facebookPage(p.facebook);
