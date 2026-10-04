@@ -58,6 +58,12 @@ export interface Place {
   image_tone?: string | null;
   image_tone_url?: string | null;
   enriched_at?: string | null;
+  /** The Guide's one-line note. Never in PLACE_COLUMNS: the run writes it only into an empty
+   *  note (place-notes.ts), so a note written by hand is never overwritten. */
+  pick_note?: string | null;
+  /** 'manual' (or null) for a note written by hand, 'model' for one drafted from the place's own words. */
+  pick_note_source?: string | null;
+  note_checked_at?: string | null;
 }
 
 const DETAIL_FIELDS = ['kind', 'address', 'lat', 'lng', 'osm_id', 'website', 'instagram', 'facebook',

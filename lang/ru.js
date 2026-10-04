@@ -23,6 +23,7 @@ window.WA.dict.ru = {
   "The week as a calendar": "Неделя в виде календаря",
   "Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.": "Подпишитесь один раз, и неделя будет всегда актуальной. Ваш календарь обновляет её дважды в день. Ничего не рассылается, аккаунт не нужен.",
   "Privacy": "Конфиденциальность",
+  "Venue data and removal": "Данные о местах и удаление",
   "Terms, briefly": "Условия вкратце",
   "How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed.": "Как WanderAlt читает источники Таллина, что он хранит и как работает календарная лента.",
   "Filters": "Фильтры",

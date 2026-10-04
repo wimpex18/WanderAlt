@@ -23,6 +23,7 @@ window.WA.dict.et = {
   "The week as a calendar": "Nädal kalendrina",
   "Subscribe once and the week stays current. Your calendar re-reads it twice a day. Nothing is pushed and no account is needed.": "Telli üks kord ja nädal püsib ajakohane. Sinu kalender loeb seda kaks korda päevas uuesti. Midagi ei saadeta peale ja kontot pole vaja.",
   "Privacy": "Privaatsus",
+  "Venue data and removal": "Kohtade andmed ja eemaldamine",
   "Terms, briefly": "Tingimused lühidalt",
   "How WanderAlt reads Tallinn's sources, what it stores, and the calendar feed.": "Kuidas WanderAlt Tallinna allikaid loeb, mida ta salvestab ja kuidas kalendrivoog töötab.",
   "Filters": "Filtrid",

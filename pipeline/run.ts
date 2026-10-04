@@ -37,7 +37,9 @@ import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
+import { facebookCheck } from './facebook-hours.ts';
 import { wikidataNear } from './wikidata-near.ts';
+import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
@@ -176,6 +178,14 @@ async function main() {
       const r = await lookupProfile(handle, cfg);
       log(`instagram check @${handle}: ${r.kind}${r.kind === 'found' ? ` (username ${r.username}, picture address received)` : ` (${r.reason})`}`);
     }
+    return;
+  }
+
+  // A look at what Facebook gives this token, step by step, nothing written (docs/facebook.md).
+  if (flag('--facebook-check')) {
+    const cfg = instagramConfig();
+    if (!cfg) { log('facebook: INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ID is not set'); return; }
+    for (const line of await facebookCheck(cfg, ['fotografiskatallinn', 'KanutiGildiSAAL', 'uuslaine'])) log(`facebook check ${line}`);
     return;
   }
 
@@ -425,10 +435,14 @@ async function main() {
 
   // Links and a photo for a few places a run, from sources that identify them.
   if (!flag('--no-enrich')) {
-    // A place with no picture is looked at again after a week: sites add logos.
-    const weekAgo = Date.now() - 7 * 86_400_000;
+    // A place with no picture is looked at again after a week: sites add logos. One missing a
+    // link (website, Instagram, Facebook) is looked at again after a month, since its site or its
+    // Wikidata item may have gained one; nobody has to fill links in by hand, in any city.
+    const weekAgo = Date.now() - 7 * 86_400_000, monthAgo = Date.now() - 30 * 86_400_000;
     const due = places.all().filter(p => (p.status ?? 'active') === 'active' && (p.wikidata_id || p.website || p.facebook)
-      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < weekAgo))).slice(0, Number(opt('--max-enrich') ?? 60));
+      && (!p.enriched_at || (!p.image_url && Date.parse(p.enriched_at) < weekAgo)
+        || ((!p.website || !p.instagram || !p.facebook) && Date.parse(p.enriched_at) < monthAgo)))
+      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked)).slice(0, Number(opt('--max-enrich') ?? 60));
     for (const p of due) {
       Object.assign(p, await enrichPlace(p, { facebook: !flag('--no-facebook') }), { enriched_at: new Date().toISOString() });
       if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -466,6 +480,20 @@ async function main() {
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
       }
     } catch (e) { log(`hours failed: ${(e as Error).message}`); }
+  }
+
+  // A picked place with no note gets one drafted from its own words (place-notes.ts), so a new
+  // city's picks show a line without anyone writing it. Written only into an empty note.
+  if (db && !flag('--no-notes')) {
+    try {
+      const bare = await db.select<Place>(`places?city=eq.${CITY}&picked=is.true&pick_note=is.null&merged_into=is.null&status=eq.active&order=id.asc&limit=200`
+        + '&select=id,city,name,kind,neighborhood,description,instagram,picked,status,note_checked_at');
+      for (const p of await draftNotes(bare, models, Number(opt('--max-notes') ?? 10), { bios })) {
+        const body = p.pick_note ? { pick_note: p.pick_note, pick_note_source: 'model', note_checked_at: p.note_checked_at } : { note_checked_at: p.note_checked_at };
+        if (DRY) log(`[notes] ${p.name}: ${p.pick_note ?? '(nothing kept)'}`);
+        else await db.req('PATCH', `places?id=eq.${encodeURIComponent(p.id)}&pick_note=is.null`, body, 'return=minimal');
+      }
+    } catch (e) { log(`notes failed: ${(e as Error).message}`); }
   }
 
   // What a venue's Instagram bio says about itself (a new address, new hours, "we have moved") against

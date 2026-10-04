@@ -14,6 +14,10 @@ on:
         description: 'Only test the Instagram token (two lookups, nothing written)'
         type: boolean
         default: false
+      facebook_check:
+        description: 'Only test what Facebook gives the token (own Page, venue Pages; nothing written)'
+        type: boolean
+        default: false
 
 concurrency:
   group: pipeline
@@ -43,4 +47,4 @@ jobs:
           WORKERS_AI_DAILY_NEURONS: ${{ secrets.WORKERS_AI_DAILY_NEURONS }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
-        run: node pipeline/run.ts ${{ inputs.source && format('--source {0}', inputs.source) || '' }} ${{ inputs.instagram_check && '--instagram-check' || '' }}
+        run: node pipeline/run.ts ${{ inputs.source && format('--source {0}', inputs.source) || '' }} ${{ inputs.instagram_check && '--instagram-check' || '' }} ${{ inputs.facebook_check && '--facebook-check' || '' }}

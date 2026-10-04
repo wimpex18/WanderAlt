@@ -12,7 +12,10 @@
 import { bioHours } from './bio-hours.ts';
 import { DAY_ORDER, writeHours } from './site-hours.ts';
 
-export const HOURS_CUE = /(opening hours|open(?:ing)? times|we are open|\bopen\b|\bhours\b|avatud|lahtiolekuajad|lahti\b|töötame|часы работы|режим работы|открыто|мы открыты)/gi;
+/* Words that announce hours, in the languages of the cities we read and the ones near them
+   (English, Estonian, Russian, Ukrainian, Latvian, Lithuanian, Finnish, Swedish, German, Polish).
+   Only the rules read Estonian, English and Russian day names; the model reads the rest. */
+export const HOURS_CUE = /(opening hours|open(?:ing)? times|we are open|\bopen\b|\bhours\b|avatud|lahtiolekuajad|lahti\b|töötame|часы работы|режим работы|открыто|мы открыты|години роботи|графік роботи|відчинено|darba laiks|atvērts|darbo laikas|atidaryta|aukioloajat|avoinna|öppettider|öppet|öffnungszeiten|geöffnet|godziny otwarcia|otwarte)/gi;
 const CLOSED = /^(?:closed|suletud|kinni|закрыто|выходной)\.?$/i;
 const TIMES = /^\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?(?:\s*(?:,|&|and)\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?)*$/i;
 const MIDNIGHT = /(?<![\p{L}])(?:südaöö|südaööni|midnight|полночь|полуночи)(?![\p{L}])/giu;
@@ -107,7 +110,7 @@ export function hoursPages(html: string, base: string, max = 2): string[] {
     try { url = new URL(m[1], base).toString(); } catch { continue; }
     if (!/^https?:/.test(url) || host(url) !== host(base) || url === base || out.includes(url)) continue;
     const words = `${url} ${m[2].replace(/<[^>]+>/g, ' ')}`;
-    if (/kontakt|contact|külastus|kulastus|visit|lahtiolek|opening|hours|koordinaadid|asukoht|location|find-us|find us|leia meid|контакт|часы/i.test(words)) out.push(url);
+    if (/kontakt|contact|külastus|kulastus|visit|lahtiolek|opening|hours|koordinaadid|asukoht|location|find-us|find us|leia meid|aukiolo|öppettider|oeffnungszeiten|öffnungszeiten|godziny|darba-laiks|kontakty|контакт|часы|контакти/i.test(words)) out.push(url);
     if (out.length >= max) break;
   }
   return out;

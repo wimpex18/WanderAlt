@@ -2,7 +2,8 @@
 //   1. OpenStreetMap       (already on the row; the catalogue fills it)
 //   2. the venue's own site: structured data (siteHours), then hours written out as text on its
 //      homepage or on up to two of its contact or visit pages (textHours)
-//   3. its Facebook Page, through the Graph API   (lookupFacebookHours)
+//   3. its Facebook Page, through the Graph API, which also fills a missing website and description
+//      (lookupFacebookPage; needs Page Public Metadata Access, docs/facebook.md)
 //   4. its Instagram bio, through business_discovery, when a line states days and times (bioHours)
 //   5. a free model reading the lines about hours from that same site or bio (model-hours.ts),
 //      kept only when every time it gives is written there; a few a run
@@ -19,7 +20,7 @@ import { textHours, hoursPages, eventNights } from './site-text-hours.ts';
 import { hoursWindow, modelHours } from './model-hours.ts';
 import type { Models } from './llm.ts';
 import { bioHours } from './bio-hours.ts';
-import { facebookPage, lookupFacebookHours } from './facebook-hours.ts';
+import { facebookPage, lookupFacebookPage } from './facebook-hours.ts';
 import { instagramHandle, lookupBio, type InstagramConfig } from './instagram.ts';
 
 export type HoursSource = 'osm' | 'site' | 'facebook' | 'instagram' | 'events';
@@ -32,7 +33,7 @@ const MODEL_PLACES = 8;
 
 interface Deps {
   html?: (url: string) => Promise<string | null>;
-  facebook?: typeof lookupFacebookHours;
+  facebook?: typeof lookupFacebookPage;
   bio?: typeof lookupBio;
   log?: (s: string) => void;
   now?: number;
@@ -63,7 +64,7 @@ export function dueForHours(places: Place[], now = Date.now()): Place[] {
 
 /** Look for hours for up to `limit` due places. Returns the places that changed. */
 export async function fillHours(places: Place[], cfg: InstagramConfig | null, limit = 30, deps: Deps = {}): Promise<Place[]> {
-  const html = deps.html ?? readSite, fb = deps.facebook ?? lookupFacebookHours, bio = deps.bio ?? lookupBio, log = deps.log ?? console.log;
+  const html = deps.html ?? readSite, fb = deps.facebook ?? lookupFacebookPage, bio = deps.bio ?? lookupBio, log = deps.log ?? console.log;
   const now = deps.now ?? Date.now();
   const ask = deps.modelHours ?? modelHours;
   let modelLeft = deps.models ? MODEL_PLACES : 0;
@@ -92,7 +93,13 @@ export async function fillHours(places: Place[], cfg: InstagramConfig | null, li
     const page = facebookPage(p.facebook);
     if (!found && cfg && page && !stopped.has('facebook')) {
       const r = await fb(page, cfg);
-      if (r.kind === 'found') found = { hours: r.hours, source: 'facebook' };
+      if (r.kind === 'found') {
+        if (r.hours) found = { hours: r.hours, source: 'facebook' };
+        // The Page is the venue's own (its record or its site gave the link): what it says fills gaps.
+        if (r.website && !p.website) { p.website = r.website; p.website_source = 'facebook'; }
+        if (r.about && !p.description) p.description = r.about;
+        if (r.closed) log(`[hours] ${p.name}: its Facebook Page says it is permanently closed; check it`);
+      }
       else if (r.kind === 'stop') { stopped.add('facebook'); log(`[hours] facebook stopped: ${r.reason}`); }
     }
     const handle = instagramHandle(p.instagram);
