@@ -56,4 +56,4 @@ Linear is the durable backlog for bugs, feature ideas, improvements and deferred
 
 - Read `git log -10` and the relevant doc before changing an area. Docs describe the current state only: update them in the same change, and delete what is no longer true.
 - Keep this file short and tool-neutral; it is the one instruction file for every coding agent (`CLAUDE.md` only imports it). Detail belongs in `docs/`.
-- Small PRs with a plain description; the owner merges. Run `npm test` and `npm run typecheck` before pushing. Check page changes in a browser at 390 and 1440 px in both themes; the service worker caches aggressively, so clear it when a change doesn't show.
+- One PR per session: everything a session does (several asks included) goes on one branch and one PR, with a plain description; the owner merges. Record what was learned in the relevant `.md` doc in that same PR. Run `npm test` and `npm run typecheck` before pushing. Check page changes in a browser at 390 and 1440 px in both themes; the service worker caches aggressively, so clear it when a change doesn't show.
