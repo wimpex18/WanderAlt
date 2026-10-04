@@ -16,7 +16,7 @@
    must: words that all have to match; any: at least one has to.
 
    window.WA.Ask: .local(q) .remote(q) → Promise .isQuestion(q) .match(e, parsed)
-                  .places(q) → { kinds, show, only, plan }: the place kinds a query names
+                  .places(q) → { kinds, show, only, plan, openNow }: the place kinds a query names
    ============================================================ */
 (() => {
   'use strict';
@@ -132,11 +132,11 @@
     const q = ` ${fold(raw)} `;
     const out = { kinds: [], show: false, only: false, plan: PLAN.test(q), openNow: local(raw).openNow };
     for (const [k, re] of PLACE_KINDS) if (re.test(q)) out.kinds.push(k);
-    if (!out.kinds.length) return out;
+    if (!out.kinds.length) { out.show = out.only = out.openNow && !out.plan && !EVENT_WORD.test(q); return out; }
     const p = local(raw);
     const timed = !!(p.when || p.day);
     out.show = !timed;
-    out.only = out.show && SHOP_WORD.test(q) && !EVENT_WORD.test(q);
+    out.only = out.show && !out.plan && !EVENT_WORD.test(q);
     return out;
   };
 

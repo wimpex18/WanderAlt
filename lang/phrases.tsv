@@ -596,7 +596,7 @@ Send a test notification	Saada testteavitus	Отправить тестовое 
 Clear inbox	Tühjenda postkast	Очистить входящие
 Place to start from	Koht, kust alustada	Место отсчёта
 Keep what you find	Hoia alles, mida leiad	Сохраняйте найденное
-Save places and routes, and get a note when a show you saved changes. No password.	Salvesta kohti ja marsruute ning saa teade, kui salvestatud etendus muutub. Parooli pole.	Сохраняйте места и маршруты и получайте уведомление, когда сохранённое событие меняется. Без пароля.
+Save places and listings, and get a note when a show you saved changes. No password.	Salvesta kohti ja sündmusi ning saa teade, kui salvestatud etendus muutub. Parooli pole.	Сохраняйте места и события и получайте уведомление, когда сохранённое событие меняется. Без пароля.
 Google	Google	Google
 Your taste	Sinu maitse	Ваш вкус
 Start from	Alusta alates	Начать с
@@ -676,3 +676,12 @@ Synced to your account.	Sünkroonitud sinu kontoga.	Синхронизирова
 This walk is no longer available	See jalutuskäik pole enam saadaval	Эта прогулка больше недоступна
 Choose a walk for today.	Vali jalutuskäik tänaseks.	Выберите прогулку на сегодня.
 Its date or stops have changed. Now has walks for the next few hours.	Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks.	Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы.
+Place types	Kohtade tüübid	Типы мест
+Only places with filed hours	Ainult teadaolevate lahtiolekuaegadega kohad	Только места с указанными часами работы
+All place types in the Guide	Kõik kohtade tüübid teejuhis	Все типы мест в путеводителе
+Show all matching places	Näita kõiki sobivaid kohti	Показать все подходящие места
+picked first	valitud kohad esimesena	сначала отобранные места
+the city centre	linna keskus	центр города
+Search places or listings	Otsi kohti või sündmusi	Искать места или события
+Try another area, a longer walk or another kind of place.	Proovi teist piirkonda, pikemat jalutuskäiku või teist tüüpi kohta.	Попробуйте другой район, более длинную прогулку или другой тип места.
+including closed places	ka suletud kohad	включая закрытые места

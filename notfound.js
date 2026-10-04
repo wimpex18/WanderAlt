@@ -6,7 +6,7 @@
   const R = () => window.WA.R;
 
   const render = () => {
-    const soon = R().live().filter(e => window.WA.when.matches(e, 'thisweek'))
+    const soon = R().live().filter(e => !R().isOff(e)).filter(e => window.WA.when.matches(e, 'thisweek'))
       .sort(window.WA.Geo.byDateThenSoonest()).slice(0, 5);
     const host = document.getElementById('preview');
     if (!host || !soon.length) return;

@@ -18,12 +18,12 @@ test('shop words ask for places and narrow the listings to them', () => {
   assert.deepEqual(places('bookshop').kinds, ['bookshop']);
 });
 
-test('a kind word shows places above the listings without hiding them', () => {
+test('a place type opens places; event words retain the listings', () => {
   for (const [q, kind] of [['records', 'record store'], ['books in english', 'bookshop'], ['bar', 'bar'], ['kino', 'cinema'], ['gallery opening', 'gallery']]) {
     const p = places(q);
     assert.deepEqual(p.kinds, [kind], q);
     assert.equal(p.show, true, q);
-    assert.equal(p.only, false, q);
+    assert.equal(p.only, q !== 'gallery opening', q);
   }
 });
 
