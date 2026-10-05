@@ -65,7 +65,7 @@ Meta changes its screens often; if a name differs, look for the nearest match. T
      3. Show the *facebook_check* workflow run in GitHub.
    - Data handling questions:
      - Data is processed by the WanderAlt server (GitHub Actions) and stored in Supabase.
-     - It is not shared with or sold to third parties.
+     - It is not sold. Disclose infrastructure and model processors that receive Platform Data; the pipeline runs on GitHub Actions, stores data in Supabase and may send source text to Cloudflare Workers AI or OpenRouter.
      - It is not used for advertising.
      - Data is deleted on request, within 30 days.
 6. **Submit**, then wait. Business verification and feature review are separate decisions. Meta may ask follow-up questions through the dashboard or the configured contact email (`dev@wanderalt.app`).
@@ -121,3 +121,19 @@ The usable setup is the known-venue Instagram reader (profile pictures, explicit
 The [manual CI check on 5 October](https://github.com/wimpex18/WanderAlt/actions/runs/37281150716) confirmed that the repository secrets can read the private token store, assigned Facebook Page feed, Instagram venue posts and own Threads account. Its successful workflow status means the check executed; its logs still report refused public Threads search/profile lookup. No post was published.
 
 The reauthorized [CI connection check](https://github.com/wimpex18/WanderAlt/actions/runs/37286804110) passed. Its logs confirm all seven token scopes, four successful search variants with zero results, Meta `@instagram` profile lookup, and working own-account/Instagram venue reads. No post was published.
+
+## App Review screen audit (5 October 2026)
+
+The existing **Not submitted** draft (`submission_id=28565420483109435`) contains only **Threads oEmbed Read** and **Meta oEmbed Read**. These embed posts and do not grant Page metadata or Threads search. Opening the draft shows **Submit for review** disabled and **Verification → Connect a verified business portfolio**; WanderAlt is connected but **Unverified**. Do not submit this draft as an event/venue-access application.
+
+Adding `threads_keyword_search` to App Review opens the irreversible **Become a Tech Provider** decision before the permission can be included. The screen requires business verification, access verification and App Review. No conversion or submission was made. Meta's [Tech Provider documentation](https://developers.facebook.com/docs/development/release/tech-providers/) describes providers as businesses providing services to other businesses. WanderAlt currently runs its own public city-guide pipeline; clarify the applicable route with Meta before claiming provider status.
+
+The **Manage Pages** permissions table still contains neither Page Public Metadata Access nor Page Public Content Access. **Add more to this use case** offers only Webhooks. Adding `pages_manage_metadata` or `pages_read_engagement` again will not replace the missing public feature.
+
+Developer Support → App Compliance → Individual Verification help says there is no support for Individual Verification at this time. Its information link currently redirects to [Meta Content Library and API](https://developers.facebook.com/docs/content-library-and-api), a controlled research environment; it does not provide a demonstrated individual-verification route for WanderAlt's Graph/Threads requests. This is not evidence that every Meta product forbids individual developers.
+
+The next eligibility question for Meta, prepared but not sent:
+
+> App 28564687799849370 (WanderAlt pipeline), owned by business portfolio 1643747897103867, powers our own free Tallinn culture guide at https://wanderalt.app. The operator is an individual without registered-business documents. We manage only our own social accounts, and seek public Page metadata for known venue links plus public Threads keyword/profile discovery. The review draft requires a verified business portfolio; adding threads_keyword_search requires irreversible Tech Provider status. Page Public Metadata Access and Page Public Content Access are absent from Manage Pages, including Add more. Is there a supported individual/operator verification and review route for this use? If so, which app configuration and accepted evidence are required, and how do we expose the Page public feature? We will not claim a registered entity or provider relationship we do not have.
+
+After eligibility is resolved, request only the implemented features, record a working end-to-end screencast, complete reviewer instructions and accurate data-handling answers, then submit and complete Publish if approved. Review materials must disclose actual processors (GitHub Actions, Supabase and any model providers receiving source text); do not assert that no third party processes the data.
