@@ -109,4 +109,12 @@ In **Threads → Permissions and features**, `threads_keyword_search` and `threa
 
 ## Local configuration
 
-The 5 October local `.env` had a Cloudflare token in `SUPABASE_SERVICE_ROLE_KEY`. This must be replaced with the actual Supabase service-role credential before local database commands can work. Tokens must be entered through private credential storage, never pasted into chat. GitHub has a separately configured secret; the local error does not establish that CI's value is wrong.
+On 5 October the local `.env` was corrected to use the existing Supabase server secret (`sb_secret_…`) for WanderAlt project `aqnsmmbrspkbfcvougeh`. The pipeline client supports this key type through the `apikey` header. A read of `places` and the private `social_tokens` table succeeded; the file is git-ignored and restricted to its owner. The stored Threads token is valid until 29 November 2026. GitHub has its own repository secret, independent of this local correction. Tokens must be entered through private credential storage, never pasted into chat.
+
+## Operating without a registered business
+
+The operator has no business documents and does not intend to register an FIE or OÜ just for Meta access. Keep business verification pending. A personal address alone does not satisfy Meta's legal-business-name evidence requirement; no identity details or verification application have been submitted.
+
+The usable setup is the existing known-venue Instagram reader (profile pictures, explicit bio facts and recent event announcements), Facebook profile pictures, and manual publishing to WanderAlt's own accounts. The `instagram-venues` source already runs in the scheduled pipeline; it does not need general event search. A read-only collection on 5 October asked 15 accounts, read 13 and found 60 recent announcements from 12 venues; it wrote no listings. Venue websites, ticket sources and OpenStreetMap supply the remaining facts. Do not mark another venue's Facebook About/feed access or public Threads search as connected: the live probes still refuse those calls. There is no demonstrated document-free exemption for these features in this app. Revisit approval only if Meta offers a supported individual route with evidence the operator actually holds.
+
+The [manual CI check on 5 October](https://github.com/wimpex18/WanderAlt/actions/runs/37281150716) confirmed that the repository secrets can read the private token store, assigned Facebook Page feed, Instagram venue posts and own Threads account. Its successful workflow status means the check executed; its logs still report refused public Threads search/profile lookup. No post was published.
