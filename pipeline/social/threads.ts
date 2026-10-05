@@ -1,4 +1,4 @@
-// Threads API (graph.threads.net, v1.0). A Threads user token is separate from
+// Threads API (graph.threads.com, v1.0). A Threads user token is separate from
 // the Facebook/Instagram system user token: it comes from Threads' own OAuth
 // (the app's Threads user token generator), lasts 60 days, and is refreshed
 // before it ends. Limits as documented by Meta in September 2026: a post is up
@@ -9,7 +9,7 @@
 
 import { UA, sleep } from '../util.ts';
 
-const API = 'https://graph.threads.net';
+const API = 'https://graph.threads.com';
 const VERSION = 'v1.0';
 
 export interface ThreadsToken { token: string; expiresAt: string | null }
@@ -42,6 +42,12 @@ export async function refreshToken(token: string, fetcher: typeof fetch = fetch,
 
 export const me = (token: string, fetcher: typeof fetch = fetch) =>
   call<{ id: string; username: string }>('GET', `${VERSION}/me`, { fields: 'id,username', access_token: token }, fetcher);
+
+/** A tester's token can inspect itself; never return the credential. */
+export async function tokenInfo(token: string, fetcher: typeof fetch = fetch): Promise<{ valid: boolean; scopes: string[]; expiresAt: number | null }> {
+  const out = await call<{ data: { is_valid: boolean; scopes?: string[]; expires_at?: number } }>('GET', `${VERSION}/debug_token`, { access_token: token, input_token: token }, fetcher);
+  return { valid: out.data.is_valid, scopes: out.data.scopes ?? [], expiresAt: out.data.expires_at ?? null };
+}
 
 export interface SearchHit { id: string; username?: string; text?: string; permalink?: string }
 export async function keywordSearch(token: string, q: string, fetcher: typeof fetch = fetch): Promise<SearchHit[]> {

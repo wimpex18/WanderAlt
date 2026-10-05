@@ -1,6 +1,6 @@
-# Posts to Threads and Instagram, or checks the tokens. Only `check` runs on a
+# Posts to Threads and Facebook, or checks the social tokens. Only `check` runs on a
 # schedule (twice a month, which keeps the 60-day Threads token refreshed) and it
-# posts nothing; every posting choice is manual and needs "publish" in its name.
+# posts nothing; posting requires an explicitly selected manual action.
 name: social
 
 on:
@@ -11,7 +11,7 @@ on:
       action:
         description: 'What to run'
         type: choice
-        options: [check, tonight-preview, tonight-threads]
+        options: [check, tonight-preview, tonight-threads, tonight-facebook]
         default: check
 
 concurrency:
@@ -32,6 +32,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           ACTION: ${{ inputs.action || 'check' }}
         run: |
@@ -39,4 +40,5 @@ jobs:
             check) node pipeline/social.ts check ;;
             tonight-preview) node pipeline/social.ts tonight ;;
             tonight-threads) node pipeline/social.ts tonight --publish threads ;;
+            tonight-facebook) node pipeline/social.ts tonight --publish facebook ;;
           esac

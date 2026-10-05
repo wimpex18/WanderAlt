@@ -3,8 +3,48 @@ import assert from 'node:assert/strict';
 import { threadsToken, tonightText } from '../social.ts';
 import * as threads from '../social/threads.ts';
 import * as instagram from '../social/instagram.ts';
+import * as facebook from '../social/facebook.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
+test('Threads scope diagnostics distinguish a valid token from missing search grants', async () => {
+  const info = await threads.tokenInfo('private-token', (async u => {
+    assert.equal(new URL(String(u)).hostname, 'graph.threads.com');
+    return json({ data: { is_valid: true, scopes: ['threads_basic'], expires_at: 100 } });
+  }) as typeof fetch);
+  assert.deepEqual(info, { valid: true, scopes: ['threads_basic'], expiresAt: 100 });
+  assert.ok(!JSON.stringify(info).includes('private-token'));
+});
+
+test('Facebook publishes only to the configured assigned Page with its Page token', async () => {
+  const cfg = { token: 'system-secret', businessId: '1784' };
+  const calls: { path: string; method?: string; auth: string | null; body: string }[] = [];
+  const fetcher = (async (u: string | URL | Request, init?: RequestInit) => {
+    const path = new URL(String(u)).pathname;
+    assert.ok(!String(u).includes('secret'));
+    calls.push({ path, method: init?.method, auth: new Headers(init?.headers).get('authorization'), body: String(init?.body ?? '') });
+    if (path.endsWith('/accounts')) return json({ data: [
+      { id: '11', name: 'Other Page', access_token: 'wrong-secret', tasks: ['MANAGE'] },
+      { id: '42', name: 'WanderAlt', access_token: 'page-secret', tasks: ['CREATE_CONTENT'] },
+    ] });
+    if (init?.method === 'GET') return json({ data: [] });
+    return json({ id: '42_123' });
+  }) as typeof fetch;
+  const page = await facebook.ownPage(cfg, '42', fetcher);
+  await facebook.checkPage(page, fetcher);
+  assert.equal(calls.filter(c => c.method === 'POST').length, 0);
+  assert.equal(await facebook.publishText(page, 'Tonight', fetcher), '42_123');
+  assert.equal(calls.at(-1)?.path, '/v26.0/42/feed');
+  assert.equal(calls.at(-1)?.auth, 'Bearer page-secret');
+  assert.equal(new URLSearchParams(calls.at(-1)?.body).get('message'), 'Tonight');
+  await assert.rejects(facebook.ownPage(cfg, '99', fetcher), /not assigned/);
+  await assert.rejects(facebook.ownPage(cfg, '', fetcher), /numeric/);
+  await assert.rejects(facebook.publishText(page, ' ', fetcher), /needs text/);
+  const denied = (async () => json({ data: [{ id: '42', name: 'WanderAlt', access_token: 'secret', tasks: ['ANALYZE'] }] })) as typeof fetch;
+  await assert.rejects(facebook.ownPage(cfg, '42', denied), /not assigned/);
+  const failure = (async () => json({ error: { code: 190, message: 'page-secret' } }, 400)) as typeof fetch;
+  await assert.rejects(facebook.publishText(page, 'Tonight', failure), e => e instanceof Error && /190/.test(e.message) && !e.message.includes('secret'));
+});
 
 test('the tonight post fits Threads, names the site once and keeps the voice', () => {
   const events = Array.from({ length: 12 }, (_, i) => ({ title: `Night number ${i} with a fairly long title`, venue: 'Heldeke!', starts_at: `2026-10-01T${String(15 + (i % 6)).padStart(2, '0')}:00:00Z` }));
@@ -96,4 +136,22 @@ test('recent posts of a known account are read through business_discovery', asyn
   }) as never);
   assert.deepEqual(posts, [{ caption: 'Gig', timestamp: '2026-09-30T10:00:00+0000', permalink: 'https://www.instagram.com/p/x/', mediaType: 'IMAGE' }]);
   assert.equal(await recentPosts('x', cfg, 5, (async () => json({ error: { code: 110 } })) as never), null);
+});
+
+test('Instagram never publishes an unfinished or failed image container', async () => {
+  const cfg = { token: 'private', businessId: '1784' };
+  for (const status of ['IN_PROGRESS', 'ERROR', 'EXPIRED']) {
+    let published = false;
+    const fetcher = (async (u: string) => {
+      const path = new URL(u).pathname;
+      if (path.endsWith('content_publishing_limit')) return json({ data: [{ quota_usage: 0, config: { quota_total: 100 } }] });
+      if (path.endsWith('/media')) return json({ id: 'pending' });
+      if (path.endsWith('/media_publish')) { published = true; return json({ id: 'unexpected' }); }
+      return json({ status_code: status });
+    }) as never;
+    await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'https://x.ee/a.jpg', caption: 'Tallinn' }, fetcher, 0), /still processing|ERROR|EXPIRED/);
+    assert.equal(published, false);
+  }
+  await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'file:///a.jpg', caption: 'Tallinn' }), /HTTP\(S\)/);
+  await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'https://x.ee/a.jpg', caption: ' ' }), /caption/);
 });

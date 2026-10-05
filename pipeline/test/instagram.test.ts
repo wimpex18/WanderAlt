@@ -1,10 +1,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attachInstagramPictures, instagramConfig, instagramHandle, lookupProfile, storePicture } from '../instagram.ts';
+import { attachInstagramPictures, instagramConfig, instagramHandle, lookupProfile, storePicture, hashtagPosts } from '../instagram.ts';
 import type { Place } from '../places.ts';
 
 const cfg = { token: 't', businessId: '1784' };
 const reply = (body: unknown) => (async () => new Response(JSON.stringify(body))) as typeof fetch;
+
+test('hashtag search fetches recent media with a bearer token and reports permission failures safely', async () => {
+  const fetcher = (async (raw: string | URL | Request, init?: RequestInit) => {
+    const u = new URL(String(raw));
+    assert.equal(u.searchParams.has('access_token'), false);
+    assert.equal(new Headers(init?.headers).get('authorization'), 'Bearer t');
+    return new Response(JSON.stringify(u.pathname.endsWith('ig_hashtag_search') ? { data: [{ id: '123' }] } : { data: [{ caption: 'Concert', timestamp: '2026-10-05T10:00:00Z', permalink: 'https://instagram.com/p/X/', media_type: 'IMAGE' }] }));
+  }) as typeof fetch;
+  assert.equal((await hashtagPosts('tallinn', cfg, 25, fetcher)).length, 1);
+  await assert.rejects(hashtagPosts('#tallinn', cfg, 25, fetcher), /without #/);
+  await assert.rejects(hashtagPosts('tallinn', cfg, 25, reply({ error: { code: 10, message: 'credential-secret' } })), e => e instanceof Error && /code 10/.test(e.message) && !e.message.includes('credential-secret'));
+});
+
+test('a failing larger hashtag batch retries five posts once, but permission failures are not retried', async () => {
+  const sizes: string[] = [];
+  const fetcher = (async (raw: string | URL | Request) => {
+    const u = new URL(String(raw));
+    if (u.pathname.endsWith('ig_hashtag_search')) return new Response(JSON.stringify({ data: [{ id: '123' }] }));
+    sizes.push(u.searchParams.get('limit')!);
+    return sizes.length === 1 ? new Response(JSON.stringify({ error: { code: 1 } }), { status: 500 }) : new Response(JSON.stringify({ data: [] }));
+  }) as typeof fetch;
+  assert.deepEqual(await hashtagPosts('tallinn', cfg, 25, fetcher), []);
+  assert.deepEqual(sizes, ['25', '5']);
+});
 
 test('only a profile link gives a username', () => {
   assert.equal(instagramHandle('https://www.instagram.com/laine.bar'), 'laine.bar');

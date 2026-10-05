@@ -1,14 +1,16 @@
-// Posts and checks for Threads and Instagram, run by hand:
+// Posts and checks for Threads, Instagram and Facebook, run by hand:
 //   node pipeline/social.ts check                      tokens and Threads search, nothing posted
 //   node pipeline/social.ts tonight                    print the "tonight" post, nothing posted
 //   node pipeline/social.ts tonight --publish threads  post it to Threads
+//   node pipeline/social.ts tonight --publish facebook post it to our Facebook Page
 //   node pipeline/social.ts instagram --image URL.jpg --caption "…" --publish
 // Nothing is posted without --publish. See docs/social.md.
 
 import { Db } from './db.ts';
-import { instagramConfig, lookupProfile, recentPosts } from './instagram.ts';
+import { instagramConfig, lookupProfile, recentPosts, hashtagPosts } from './instagram.ts';
 import * as threads from './social/threads.ts';
 import * as instagram from './social/instagram.ts';
+import * as facebook from './social/facebook.ts';
 
 const args = process.argv.slice(2);
 const flag = (k: string) => args.includes(k);
@@ -50,8 +52,23 @@ export function tonightText(events: { title: string; venue: string | null; start
 async function main() {
   const cmd = args[0];
   const publishTo = opt('--publish');
+  if (cmd === 'search-instagram') {
+    const cfg = instagramConfig(), tag = opt('--hashtag');
+    if (!cfg || !tag) throw new Error('search-instagram needs Instagram secrets and --hashtag (without #)');
+    const posts = await hashtagPosts(tag, cfg);
+    for (const p of posts) console.log(JSON.stringify({ date: p.timestamp, url: p.permalink, caption: p.caption }));
+    log(`${posts.length} recent hashtag posts read; nothing stored or published`);
+    return;
+  }
   if (cmd === 'check') {
     const cfg = instagramConfig();
+    if (cfg && process.env.FACEBOOK_PAGE_ID) {
+      try {
+        const page = await facebook.ownPage(cfg, process.env.FACEBOOK_PAGE_ID);
+        await facebook.checkPage(page);
+        log(`Facebook Page ${page.name}: assigned for publishing, feed readable (nothing posted)`);
+      } catch (e) { log(`Facebook: ${(e as Error).message}`); }
+    } else log('Facebook publishing: FACEBOOK_PAGE_ID or Instagram secrets not set');
     log(cfg ? `Instagram lookup @laine.bar: ${(await lookupProfile('laine.bar', cfg)).kind}` : 'Instagram: secrets not set');
     if (cfg) {
       const posts = await recentPosts('laine.bar', cfg, 10);
@@ -63,6 +80,12 @@ async function main() {
     if (!token) { log('Threads: no token (THREADS_ACCESS_TOKEN secret or a stored token is needed)'); return; }
     const who = await threads.me(token);
     log(`Threads token belongs to @${who.username}`);
+    try {
+      const info = await threads.tokenInfo(token);
+      log(`Threads token valid: ${info.valid}; granted scopes: ${info.scopes.join(', ')}`);
+      const missing = ['threads_keyword_search', 'threads_profile_discovery'].filter(s => !info.scopes.includes(s));
+      if (missing.length) log(`Threads token is missing ${missing.join(', ')}: dashboard permissions do not update an existing token; reauthorize before testing these endpoints. Public access also requires App Review.`);
+    } catch { log('Threads token scope diagnostic unavailable; endpoint probes follow'); }
     const hits = await threads.keywordSearch(token, 'Tallinn').catch(e => { log(`Threads keyword search: ${(e as Error).message}`); return null; });
     if (hits) log(`Threads keyword search "Tallinn": ${hits.length} posts, ${hits.filter(h => h.username && h.username !== who.username).length} from other accounts${hits.length && !hits.some(h => h.username && h.username !== who.username) ? ' (own posts only: public search needs App Review)' : ''}`);
     for (const line of await threads.probe(token, who.username)) log(`Threads probe, ${line}`);
@@ -71,14 +94,22 @@ async function main() {
     return;
   }
   if (cmd === 'tonight') {
+    if (publishTo && !['threads', 'facebook'].includes(publishTo)) throw new Error('--publish must be threads or facebook');
     const db = new Db();
     const now = new Date(Date.now()).toISOString();
-    const rows = await db.select<{ title: string; venue: string | null; starts_at: string }>(
-      `picks?tonight=is.true&starts_at=gte.${now}&order=starts_at.asc&limit=12&select=title,venue,starts_at`);
+    const rows = await db.select<{ title: string; venue: string | null; starts_at: string; has_time: boolean }>(
+      `picks?tonight=is.true&starts_at=gte.${now}&order=starts_at.asc&limit=12&select=title,venue,starts_at,has_time`);
     const text = tonightText(rows);
     if (!text) { log('nothing on tonight to post'); return; }
     console.log(`\n${text}\n\n(${text.length} characters)`);
-    if (publishTo !== 'threads') { if (publishTo) log(`--publish ${publishTo}: only threads takes this text`); return; }
+    if (!publishTo) return;
+    if (publishTo === 'facebook') {
+      const cfg = instagramConfig();
+      if (!cfg) throw new Error('Facebook needs Instagram secrets');
+      const page = await facebook.ownPage(cfg, process.env.FACEBOOK_PAGE_ID ?? '');
+      log(`posted to Facebook Page ${page.name}: ${await facebook.publishText(page, text)}`);
+      return;
+    }
     const token = await threadsToken(db);
     if (!token) throw new Error('no Threads token');
     const who = await threads.me(token);
@@ -93,7 +124,7 @@ async function main() {
     log(`posted to Instagram: ${await instagram.publishImage(cfg, { imageUrl: image, caption, altText: opt('--alt') })}`);
     return;
   }
-  log('usage: node pipeline/social.ts check | tonight [--publish threads] | instagram --image URL.jpg --caption "…" [--publish]');
+  log('usage: node pipeline/social.ts check | search-instagram --hashtag tallinn | tonight [--publish threads|facebook] | instagram --image URL.jpg --caption "…" [--publish]');
 }
 
 if (import.meta.main) main().catch(e => { console.error('[social]', (e as Error).message); process.exitCode = 1; });

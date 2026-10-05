@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectInstagram } from '../sources/instagram.ts';
+import { collectInstagram, collectHashtags } from '../sources/instagram.ts';
 import type { Source } from '../types.ts';
 
 const source = { id: 'instagram-venues', city: 'tallinn', kind: 'instagram', url: 'https://www.instagram.com/', handle: '@wanderalt', label: 'Instagram', curated: false, config: { max_age_days: 14, accounts_per_run: 15 } } as Source;
@@ -30,4 +30,26 @@ test('recent captions of readable venue accounts become raw items, the rest is s
 test('without the secrets or a database nothing is asked', async () => {
   assert.deepEqual(await collectInstagram(source, db, now, { cfg: null }), []);
   assert.deepEqual(await collectInstagram(source, null, now, { cfg }), []);
+});
+
+test('hashtag captions carry no inferred venue and reject invalid identities and dates', async () => {
+  const tagSource = { ...source, config: { hashtags: ['tallinn', 'tallinn'] } };
+  let requests = 0;
+  const post = { caption: 'A concert on Friday in Tallinn, doors at 20:00', timestamp: '2026-09-29T10:00:00Z', permalink: 'https://www.instagram.com/p/ABC/', mediaType: 'IMAGE' };
+  const posts = (async () => { requests++; return [post, post, { ...post, permalink: 'https://evil.example/p/X/' }, { ...post, timestamp: 'invalid' }, { ...post, timestamp: '2026-10-01T10:00:00Z' }]; }) as never;
+  const rows = await collectHashtags(tagSource, now, { cfg, posts, log: () => {} });
+  assert.equal(requests, 1);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].external_id, 'ig:hashtag:ABC');
+  assert.equal(rows[0].payload.venue_name, undefined);
+  assert.equal(rows[0].payload.hashtag, 'tallinn');
+  await assert.rejects(collectHashtags({ ...source, config: { hashtags: ['a', 'b', 'c', 'd'] } }, now, { cfg, posts }), /three fixed/);
+});
+
+test('venue account rotation reaches every account across consecutive six-hour runs', async () => {
+  const places = Array.from({ length: 7 }, (_, i) => ({ id: String(i), name: String(i), instagram: `https://instagram.com/venue${i}/` }));
+  const seen = new Set<string>();
+  for (let i = 0; i < 3; i++) await collectInstagram({ ...source, config: { accounts_per_run: 3 } }, { select: async () => [...places] } as never,
+    new Date(now.getTime() + i * 6 * 3_600_000), { cfg, posts: async h => { seen.add(h); return []; }, log: () => {} });
+  assert.equal(seen.size, 7);
 });
