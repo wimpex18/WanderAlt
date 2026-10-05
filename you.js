@@ -106,20 +106,9 @@
     return rows ? `<section class="wa-sect" id="notifications">${R().sect({ title: 'Notifications' })}${rows}</section>` : '';
   };
 
-  /* A named place to measure from (a hotel, a friend's street), picked from the
-     places we hold, so walking times and routes work without location. */
-  const startField = () => {
-    const G = window.WA.Geo;
-    const a = G && G.anchor();
-    const spots = (window.WA._venuesAll || []).filter(v => v.name && v.lat != null && v.lng != null && !v.isClosed)
-      .map(v => v.name).filter((n, i, all) => all.indexOf(n) === i).sort((x, y) => x.localeCompare(y)).slice(0, 400);
-    return `<label class="wa-field__label wa-sr" for="you-anchor">Place to start from</label>
-      <input class="wa-input" id="you-anchor" list="you-anchor-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
-      <datalist id="you-anchor-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
-      <p class="wa-note">${a ? 'Walking times and routes start here. Clear the box to use your location.' : 'Staying somewhere? Pick a place you know and walking times start there, with no location prompt.'}</p>`;
-  };
 
   const render = () => {
+    const editing = window.WA.StartFrom.editing();
     const saved = Object.keys((window.WA.Bookmarks && window.WA.Bookmarks.get()) || {}).length;
     const follows = window.WA.Follows ? window.WA.Follows.keys() : [];
     const signedIn = !!(window.WA.Auth && window.WA.Auth.isSignedIn && window.WA.Auth.isSignedIn());
@@ -169,7 +158,7 @@
 
         <section class="wa-sect you-start">
           <h2 class="wa-sect__title">Start from</h2>
-          ${startField()}
+          <div id="start-from-field">${window.WA.StartFrom.markup()}</div>
         </section>
 
         ${pushSection(signedIn)}
@@ -197,6 +186,7 @@
       </div>
       <footer class="wa-foot"><span>WanderAlt · ${esc(R().cityName())}</span><a href="about.html">About</a><a href="mailto:hello@wanderalt.app">hello@wanderalt.app</a></footer>`;
     $('you-body').querySelectorAll('.wa-sect').forEach((s) => { if (!s.textContent.trim() && !s.querySelector('img, svg, button, a')) s.remove(); });
+    window.WA.StartFrom.restore(editing);
     /* A link from the Home Screen invitation lands on the notifications once their rows exist. */
     const target = location.hash === '#notifications' && !jumped && document.getElementById('notifications');
     if (target) { jumped = true; target.scrollIntoView({ block: 'start' }); }
@@ -294,14 +284,6 @@
       })();
       return;
     }
-  });
-
-  document.addEventListener('change', (e) => {
-    if (!e.target || e.target.id !== 'you-anchor') return;
-    const name = e.target.value.trim().toLowerCase();
-    const v = name ? (window.WA._venuesAll || []).find(x => String(x.name).toLowerCase() === name && x.lat != null && x.lng != null) : null;
-    window.WA.Geo.setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
-    render();
   });
 
   document.addEventListener('wa:catalog-ready', render);

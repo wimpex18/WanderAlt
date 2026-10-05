@@ -3,9 +3,9 @@
    ------------------------------------------------------------
    The search field, then one answer: the next few hours as a short walk
    (route.js plan()), with Walk it and Another. One key opens the mood
-   and price sheet (moods.js); Near me turns walking from where you are on
-   and off. Under the answer, the day's listings in time order (nearest first
-   with Near me), those with no time last, with one row of the kinds in them.
+   and price sheet (moods.js); the route card holds the starting-point picker.
+   Under the answer, the day's listings in time order (nearest first
+   with a confirmed starting point), those with no time last, with one row of the kinds in them.
    A day tab with nothing in it is not shown. Never empty: when today has
    nothing, the next listed day takes its place.
    ============================================================ */
@@ -54,12 +54,8 @@
     location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
   };
 
-  /* ── Near me ───────────────────────────────────────────────────
-     One key under the headline, a switch. On, it asks for the location (only
-     on a tap) and then everything walks from you: the route starts a short
-     walk away and says how far, the day's list comes nearest first with a
-     walk on every row, and the picked places come closest first. Off, the
-     list is back in time order. The choice is kept (wa:near:v1). */
+  /* One starting-point key: opens the same venue/device picker as You.
+     A known origin orders nearby places and keeps the route within reach. */
   const NEAR_KEY = 'wa:near:v1';
   let near = (() => { try { return localStorage.getItem(NEAR_KEY) === '1'; } catch (_) { return false; } })();
   const setNear = (on) => {
@@ -77,16 +73,11 @@
         : `<span>${esc(w[0])}</span> +${w.length - 1}`;
     return `${what} · <span>${esc(M().capText(p.cap))}</span>`;
   };
-  let nearBusy = false, nearOff = false;
   const acts = () => {
     const host = $('home-acts');
     if (!host) return;
-    const on = nearOn();
     const mood = M() ? `<button class="wa-chip home-mood__key${moodSet() ? ' is-set' : ''}" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${moodWords()}</span></button>` : '';
-    const denied = nearOff && G().locationError() === 1;
-    host.innerHTML = mood + (denied
-      ? `<span class="wa-act wa-act--off">${I('nav')}Location is off</span><p class="wa-note home-acts__note">Walking from you needs location. Allow it for this site in your browser settings.</p>`
-      : `<button class="wa-act${on ? ' is-on' : ''}" type="button" data-near aria-pressed="${on}"${nearBusy ? ' disabled' : ''}>${I('nav')}${nearBusy ? 'Finding you' : 'Near me'}${on ? I('check') : ''}</button>${nearOff && !nearBusy ? '<p class="wa-note home-acts__note">Could not find your location. Try Near me again, or choose a starting place on You.</p>' : ''}`);
+    host.innerHTML = mood;
   };
 
   /* ── Mood and price: one key, one sheet ─────────────────────────
@@ -133,7 +124,8 @@
   let plans = [], planIdx = 0, planKey = '';
   const readPlans = () => {
     const p = pref();
-    const key = `${p.moods}|${p.subs}|${p.cap}|${nearOn()}`;
+    const origin = G().currentLoc();
+    const key = `${p.moods}|${p.subs}|${p.cap}|${nearOn()}|${origin ? origin.lat + ',' + origin.lng : ''}`;
     const next = window.WA.Route.plan({ want: p, cap: p.cap, near: nearOn() });
     if (key !== planKey || !plans.length) planIdx = 0;
     planKey = key; plans = next;
@@ -141,10 +133,10 @@
     return p;
   };
   const planCard = (p) => {
-    if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1 });
+    if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1, origin: window.WA.StartFrom.originMarkup() });
     const narrowed = p.moods.length || p.cap != null || nearOn();
-    return `<section class="rt-card rt-card--empty"><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
-      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from you. Turn Near me off for the whole city.' : 'Try another mood or a higher price limit.') : 'The Guide has the places; the Programme has the listings.'}</p>
+    return `<section class="rt-card rt-card--empty"><div class="rt-card__origin-wrap">${window.WA.StartFrom.originMarkup()}</div><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
+      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from here. Choose another starting point or Whole city.' : 'Try another mood or a higher price limit.') : 'The Guide has the places; the Programme has the listings.'}</p>
       <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-mood-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
   };
 
@@ -271,7 +263,7 @@
       out.push(`<section class="wa-sect home-day">${viewSwitch(full.length, places)}
         ${tabs.length ? `<div class="home-tabs" role="tablist" aria-label="Day">${tabs.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}">${label}</button>`).join('')}</div>` : ''}
         ${facetRow(full, shown)}
-        ${nearOn() && list.length ? '<p class="wa-note home-day__note">Nearest first, walking from you</p>' : ''}
+        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest first, walking from here' : 'Nearest first, walking from you'}</p>` : ''}
         ${list.length ? `<ul class="wa-rows">${list.slice(0, cap).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
         <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
         <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > cap ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a></div>
@@ -347,14 +339,7 @@
       if (first) first.focus({ preventScroll: true });
       return;
     }
-    if (hit('[data-near]')) {
-      if (nearOn()) { setNear(false); render(); return; }
-      setNear(true);
-      if (G().currentLoc()) { render(); return; }
-      nearBusy = true; acts();
-      G().userLoc().then((loc) => { nearBusy = false; nearOff = !loc; if (!loc) setNear(false); render(); });
-      return;
-    }
+    if (hit('[data-near]')) { window.WA.StartFrom.open(hit('[data-near]')); return; }
     if (hit('[data-mood-open]')) { openSheet(); return; }
     const mt = hit('.mood-row');
     if (mt && draft) {
@@ -409,7 +394,16 @@
   document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
   document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
   document.addEventListener('wa:mood-changed', () => { if (window.WA.catalog) main(); });
-  document.addEventListener('wa:location-ready', render);
+  document.addEventListener('wa:start-state', () => {
+    const origin = document.querySelector('.rt-card__origin-wrap');
+    if (origin) origin.innerHTML = window.WA.StartFrom.originMarkup(); else render();
+  });
+  document.addEventListener('wa:near-changed', (e) => { setNear(e.detail); render(); });
+  document.addEventListener('wa:location-ready', () => {
+    const city = !G().anchor() && G().deviceLoc() && window.WA.cityForLocation(G().deviceLoc());
+    if (city && city.id !== window.WA.CITY) { window.WA.setCity(city.id); return; }
+    render();
+  });
   /* The clock ticks; the lists redraw every five minutes so "on now"
      and "starting soon" stay true on a phone left open. */
   setInterval(() => { $('hero-clock').textContent = clockText(); }, 30000);

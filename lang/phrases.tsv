@@ -742,3 +742,14 @@ Another film	Veel üks film	Ещё один фильм	Ще один фільм
 Another gallery	Veel üks galerii	Ещё одна галерея	Ще одна галерея
 Source:	Allikas:	Источник:	Джерело:
 © OpenStreetMap contributors	© OpenStreetMapi kaastöölised	© Участники OpenStreetMap	© Учасники OpenStreetMap
+City or place	Linn või koht	Город или место	Місто або місце
+City centre. Pick a venue for a more precise starting point.	Kesklinn. Täpsema alguspunkti jaoks vali mõni koht.	Центр города. Выберите заведение для более точной точки отсчёта.	Центр міста. Виберіть заклад для точнішої точки відліку.
+Walking times and routes start at your current location.	Jalutusajad ja marsruudid algavad sinu praegusest asukohast.	Время пешком и маршруты отсчитываются от вашего текущего местоположения.	Час пішки й маршрути рахуються від вашого поточного місцезнаходження.
+Choose Tallinn or a place you know, or use your location.	Vali Tallinn või tuttav koht või kasuta oma asukohta.	Выберите Таллин или знакомое место либо используйте своё местоположение.	Виберіть Таллінн або знайоме місце чи використайте своє місцезнаходження.
+Location is blocked. Allow it in browser settings, or choose a place.	Asukoht on blokeeritud. Luba see brauseri seadetes või vali koht.	Геолокация заблокирована. Разрешите её в настройках браузера или выберите место.	Геолокацію заблоковано. Дозвольте її в налаштуваннях браузера або виберіть місце.
+Could not get your location. Try again or choose a place.	Asukohta ei õnnestunud määrata. Proovi uuesti või vali koht.	Не удалось определить местоположение. Попробуйте ещё раз или выберите место.	Не вдалося визначити місцезнаходження. Спробуйте ще раз або виберіть місце.
+Nothing is a short walk from here. Choose another starting point or Whole city.	Siit pole midagi lühikese jalutuskäigu kaugusel. Vali teine alguspunkt või Kogu linn.	Рядом ничего нет. Выберите другую точку отсчёта или Весь город.	Поруч нічого немає. Виберіть іншу точку відліку або Все місто.
+Whole city	Kogu linn	Весь город	Все місто
+Choose a place	Vali koht	Выберите место	Виберіть місце
+Right by here	Siinsamas	Совсем рядом	Зовсім поруч
+Nearest first, walking from here	Lähimad eespool, jalutades siit	Сначала ближайшие, пешком отсюда	Спочатку найближчі, пішки звідси
