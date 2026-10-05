@@ -177,7 +177,7 @@
 
         <section class="wa-sect you-lang">
           <h2 class="wa-sect__title">Language</h2>
-          <div class="mood-seg" role="group" aria-label="Language" data-notranslate>${[['en', 'English'], ['et', 'Eesti'], ['ru', 'Русский']].map(([code, name]) =>
+          <div class="mood-seg" role="group" aria-label="Language" data-notranslate>${[['en', 'English'], ['et', 'Eesti'], ['ru', 'Русский'], ['uk', 'Українська']].map(([code, name]) =>
             `<button type="button" lang="${code}" data-lang-set="${code}" aria-pressed="${window.WA.Lang.current() === code}">${name}</button>`).join('')}</div>
           <p class="wa-note">The interface follows your choice. Listings stay in the language they were written in.</p>
         </section>

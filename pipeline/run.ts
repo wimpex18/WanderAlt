@@ -24,6 +24,7 @@ import { collectInstagram } from './sources/instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
+import { localModels, refreshLocal } from './localize.ts';
 import { attachPosters } from './posters.ts';
 import { fetchOverture, matchPlace } from './overture.ts';
 import { Places, isDistrict, type Place } from './places.ts';
@@ -193,7 +194,10 @@ async function main() {
   const db = DRY ? null : new Db();
   const english = englishModels(englishBudget);
   english.neuronBudget = runCap;
-  current.calls = () => models.calls + sorter.calls + english.calls;
+  // Estonian and Russian copy (localize.ts): its own few calls, after English, from what is left.
+  const local = localModels(DRY || flag('--no-local') ? 0 : Number(opt('--local-calls') ?? 8));
+  local.neuronBudget = runCap;
+  current.calls = () => models.calls + sorter.calls + english.calls + local.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -641,6 +645,9 @@ async function main() {
 
   // ── 6. archive and health ──
   await refreshEnglish(db, english, CITY, 40);
+  if (local.budget) {
+    try { await refreshLocal(db, local, CITY, 40); } catch (e) { log(`local copy failed: ${(e as Error).message}`); }
+  }
   if (!flag('--no-posters')) {
     try {
       const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 30));
@@ -668,7 +675,7 @@ async function main() {
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls + sorter.calls + english.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls + sorter.calls + english.calls + local.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
       finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls + sorter.calls + english.calls,

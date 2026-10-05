@@ -465,7 +465,7 @@
         <section class="det-block">
           <h2 class="det-block__title">Listed here next${list.length ? ` · ${list.length}` : ''}</h2>
           ${list.length ? R().grouped(list, { noThumb: false })
-            : `<p class="wa-note">Nothing from ${esc(v.name)} is listed right now. ${links.length ? 'Their own channels above carry what we have not read.' : ''} ${following ? '' : 'Follow it and its listings are marked for you when they arrive.'}</p>${nearby()}`}
+            : `<p class="wa-note">${[`Nothing from ${v.name} is listed right now.`, links.length ? 'Their own channels above carry what we have not read.' : '', following ? '' : 'Follow it and its listings are marked for you when they arrive.'].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join(' ')}</p>${nearby()}`}
         </section>
 
         ${afterHere(v, v.name)}

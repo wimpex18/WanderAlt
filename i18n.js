@@ -1,8 +1,8 @@
 /* ============================================================
-   i18n.js — the interface in English, Estonian and Russian.
+   i18n.js — the interface in English, Estonian, Russian and Ukrainian.
    ------------------------------------------------------------
    English is the source language: every template in the pages is written in
-   English and stays so. A language is two tables (lang/et.js, lang/ru.js) of
+   English and stays so. A language is a table (lang/et.js, lang/ru.js, lang/uk.js) of
    exact phrases and patterns with {placeholders}; this file looks each piece
    of rendered text up in them. Text nodes and the aria-label, title,
    placeholder and alt attributes are translated as they appear (a
@@ -13,10 +13,13 @@
    mark an element data-notranslate to keep its text out of it.
 
    window.WA.Lang:
-     .supported          ['en', 'et', 'ru']
-     .current()          'en' | 'et' | 'ru'
+     .supported          ['en', 'et', 'ru', 'uk']
+     .current()          'en' | 'et' | 'ru' | 'uk'
      .set(lang)          saves the choice (wa:lang:v1) and reloads the page
-     .locale()           'en-GB' | 'et-EE' | 'ru-RU' for Intl
+   The language is, in order: ?lang= in the address (a shared link; it is then kept), the choice
+   saved on this device, the browser's own list (the first of en, et, ru, uk it names), English.
+   Every page gets a switch in the top bar (a globe and the code), built here.
+     .locale()           'en-GB' | 'et-EE' | 'ru-RU' | 'uk-UA' for Intl
      .t(text, vars)      one string through the tables: t('{n} min walk', { n: 5 })
      .days() .daysFull() .months()   Sunday-first and January-first names for the current language
    ============================================================ */
@@ -24,11 +27,19 @@
   'use strict';
   window.WA = window.WA || {};
 
-  const SUPPORTED = ['en', 'et', 'ru'];
-  const LOCALE = { en: 'en-GB', et: 'et-EE', ru: 'ru-RU' };
+  const SUPPORTED = ['en', 'et', 'ru', 'uk'];
+  const LOCALE = { en: 'en-GB', et: 'et-EE', ru: 'ru-RU', uk: 'uk-UA' };
   const KEY = 'wa:lang:v1';
 
+  const NAMES = { en: 'English', et: 'Eesti', ru: 'Русский', uk: 'Українська' };
+  /* What the switch shows: short codes. Ukrainian reads UA (UK would read as Britain). */
+  const CODES = { en: 'EN', et: 'ET', ru: 'RU', uk: 'UA' };
+
   const detect = () => {
+    try {
+      const q = new URLSearchParams(location.search).get('lang');
+      if (SUPPORTED.includes(q)) { try { localStorage.setItem(KEY, q); } catch (_) { /* this page only */ } return q; }
+    } catch (_) { /* no URL API */ }
     try { const s = localStorage.getItem(KEY); if (SUPPORTED.includes(s)) return s; } catch (_) { /* private mode */ }
     for (const l of (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'])) {
       const short = String(l).slice(0, 2).toLowerCase();
@@ -108,6 +119,10 @@
   const textOrig = new WeakMap(), textLast = new WeakMap();
   const attrOrig = new WeakMap(), attrLast = new WeakMap();
 
+  /* Pieces with letters that found no translation, for finding gaps: WA.Lang.missed(). Text from a
+     source (titles, names) lands here too, by design. */
+  const missed = new Set();
+  const miss = (s) => { const c = s.trim(); if (missed.size < 3000 && /\p{L}{2}/u.test(c)) missed.add(c); };
   const skipped = (node) => { const el = node.nodeType === 1 ? node : node.parentElement; return !el || !!el.closest(SKIP); };
 
   const text = (n) => {
@@ -116,7 +131,7 @@
     if (last !== undefined && cur === last) return;           // our own write
     const out = tr(cur);
     textOrig.set(n, cur);
-    if (out !== cur) { textLast.set(n, out); n.data = out; } else { textLast.delete(n); }
+    if (out !== cur) { textLast.set(n, out); n.data = out; } else { textLast.delete(n); miss(cur); }
   };
   const attr = (el, name) => {
     if (skipped(el)) return;
@@ -127,7 +142,7 @@
     const out = tr(cur);
     const origs = attrOrig.get(el) || {};
     origs[name] = cur; attrOrig.set(el, origs);
-    if (out !== cur) { lasts[name] = out; attrLast.set(el, lasts); el.setAttribute(name, out); } else if (lasts[name] !== undefined) { delete lasts[name]; }
+    if (out !== cur) { lasts[name] = out; attrLast.set(el, lasts); el.setAttribute(name, out); } else { if (lasts[name] !== undefined) delete lasts[name]; miss(cur); }
   };
   const walk = (root) => {
     if (root.nodeType === 3) { text(root); return; }
@@ -169,7 +184,44 @@
   const set = (next) => {
     if (!SUPPORTED.includes(next) || next === lang) return;
     try { localStorage.setItem(KEY, next); } catch (_) { /* kept for this page only */ }
+    /* A ?lang= in the address would win again on reload: it goes. */
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.has('lang')) { u.searchParams.delete('lang'); location.replace(u.toString()); return; }
+    } catch (_) { /* reload below */ }
     location.reload();
+  };
+
+  /* The switch in the top bar, left of the theme key: a globe and the current code. It opens a
+     small pill of codes; the full names are only for screen readers. Never translated. */
+  const GLOBE = '<circle class="t" cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="8.5"/><path class="k" d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.2 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.2-3.8-8.5S9.4 5.9 12 3.5z"/>';
+  const mountSwitch = () => {
+    const end = document.querySelector('.wa-topbar__end');
+    if (!end || end.querySelector('.wa-lang')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'wa-lang';
+    wrap.setAttribute('data-notranslate', '');
+    wrap.innerHTML = `<button class="wa-lang__key" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language: ${NAMES[lang]}">`
+      + `<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLOBE}</svg><span>${CODES[lang]}</span></button>`
+      + `<div class="wa-lang__menu" role="menu" hidden>${SUPPORTED.map(c => `<button type="button" role="menuitemradio" lang="${c}" data-lang-pick="${c}" aria-checked="${c === lang}" aria-label="${NAMES[c]}">${CODES[c]}</button>`).join('')}</div>`;
+    const key = wrap.querySelector('.wa-lang__key'), menu = wrap.querySelector('.wa-lang__menu');
+    const open = (on) => {
+      menu.hidden = !on; key.setAttribute('aria-expanded', String(on));
+      if (on) (menu.querySelector('[aria-checked="true"]') || menu.firstElementChild).focus();
+    };
+    key.addEventListener('click', () => open(menu.hidden));
+    menu.addEventListener('click', (e) => { const b = e.target.closest('[data-lang-pick]'); if (b) { open(false); set(b.dataset.langPick); } });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !wrap.contains(e.target)) open(false); });
+    wrap.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !menu.hidden) { open(false); key.focus(); }
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (step && !menu.hidden) {
+        e.preventDefault();
+        const items = [...menu.querySelectorAll('button')], i = items.indexOf(document.activeElement);
+        items[(i + step + items.length) % items.length].focus();
+      }
+    });
+    end.insertBefore(wrap, end.querySelector('.wa-theme') || end.querySelector('#account') || null);
   };
 
   /* Names for dates, from the browser's own data, in the current language. */
@@ -186,8 +238,9 @@
   const daysFull = () => (lang === 'en' ? EN.full : (cache.full = cache.full || names({ weekday: 'long' }, 7, i => new Date(Date.UTC(2023, 0, 1 + i)))));
   const months = () => (lang === 'en' ? EN.months : (cache.months = cache.months || names({ month: 'short' }, 12, i => new Date(Date.UTC(2023, i, 15)))));
 
-  window.WA.Lang = { supported: SUPPORTED, current: () => lang, set, locale: () => LOCALE[lang], t, tr, days, daysFull, months };
+  window.WA.Lang = { supported: SUPPORTED, names: NAMES, codes: CODES, current: () => lang, set, missed: () => [...missed], locale: () => LOCALE[lang], t, tr, days, daysFull, months };
   document.documentElement.lang = lang;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountSwitch, { once: true }); else mountSwitch();
 })();

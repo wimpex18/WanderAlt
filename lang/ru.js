@@ -696,7 +696,55 @@ window.WA.dict.ru = {
   "including closed places": "включая закрытые места",
   "Couldn't refresh. Showing last loaded listings.": "Не удалось обновить. Показаны ранее загруженные события.",
   "We can't load listings right now.": "Сейчас не удаётся загрузить события.",
-  "Trying again…": "Пробуем ещё раз…"
+  "Trying again…": "Пробуем ещё раз…",
+  "DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. No hosts, no bookings, no commission. If a listing is wrong, the venue's own page is wrong, and we say where we read it.": "DIY-концерты, клубные вечеринки, авторское кино, современное искусство и танец, лекции и маркеты, а также магазины и площадки, где всё это проходит. Без посредников, бронирований и комиссий. Если в событии ошибка, значит, она на странице самого места, и мы указываем, где это прочитали.",
+  "Saves, interests and what you open stay in your browser.": "Сохранённое, интересы и то, что вы открываете, остаются в вашем браузере.",
+  "Signed in, your saves, lists, follows, going marks and alert settings also live in your account, with your inbox, until you delete it.": "Если вы вошли в аккаунт, сохранённое, списки, подписки, отметки «пойду» и настройки уведомлений хранятся и в нём вместе со входящими, пока вы его не удалите.",
+  "Delete your account": "Удалить аккаунт",
+  "Google sign-in gives us your email address and nothing else.": "Вход через Google сообщает нам только ваш адрес электронной почты.",
+  "Alerts stay in the app, and a push goes only to a device you allow.": "Уведомления остаются в приложении, а push приходит только на устройство, которое вы разрешили.",
+  "We send no email announcements.": "Мы не рассылаем писем с объявлениями.",
+  "No cookies to consent to, no analytics, no third-party scripts.": "Никаких cookie-баннеров, аналитики и сторонних скриптов.",
+  "What we read about venues, including their public Facebook and Instagram business pages, and how a venue has it removed:": "Что мы читаем о местах, в том числе на их публичных бизнес-страницах в Facebook и Instagram, и как место может удалить эти данные:",
+  "Facts about venues (opening hours, website, a one-line description, a logo) come from the venue's own site, OpenStreetMap, Wikidata, and the public Facebook Page and Instagram business account of the venue, read through Meta's official API.": "Сведения о местах (часы работы, сайт, описание в одну строку, логотип) берутся с сайта самого места, из OpenStreetMap и Wikidata, а также с публичной страницы места в Facebook и его бизнес-аккаунта в Instagram через официальный API Meta.",
+  "We read business pages only, never a person's profile, and keep no contact details.": "Мы читаем только страницы организаций, никогда не профили людей, и не храним контактные данные.",
+  "A venue that wants a fact corrected or its details removed writes to us at": "Место, которое хочет исправить сведения о себе или удалить их, пишет нам на",
+  "We do it within 30 days and stop reading its pages.": "Мы делаем это в течение 30 дней и перестаём читать его страницы.",
+  "Signed-in visitors can delete their account and everything in it:": "Вошедшие пользователи могут удалить свой аккаунт и всё, что в нём:",
+  "Listings belong to the venues and sources they came from, and we link to each one.": "События принадлежат местам и источникам, откуда они взяты, и мы ссылаемся на каждый.",
+  "We print what the source said and when we read it.": "Мы показываем, что сказал источник и когда мы это прочитали.",
+  "We cannot promise a door will be open.": "Мы не можем обещать, что дверь будет открыта.",
+  "Another": "Другой",
+  "Any": "Любая",
+  "Open in Maps": "Открыть в Картах",
+  "Check hours before you go.": "Перед выходом проверьте часы работы.",
+  "Walking times are straight-line distances at a normal pace.": "Время пешком считается по прямой при обычном шаге.",
+  "Each stop's page says where its listing came from.": "На странице каждой остановки указано, откуда взяты сведения.",
+  "Was": "Прошло",
+  "closed": "закрыто",
+  "where you are": "вас",
+  "your chosen place": "выбранного места",
+  "your chosen spot": "выбранное место",
+  "Price not listed.": "Цена не указана.",
+  "Free.": "Бесплатно.",
+  "A bar": "Бар",
+  "A club": "Клуб",
+  "A gig": "Концерт",
+  "A club night": "Клубная ночь",
+  "A stage": "Спектакль",
+  "A talk": "Лекция",
+  "A workshop": "Мастер-класс",
+  "An opening": "Открытие",
+  "A festival": "Фестиваль",
+  "A show": "Событие",
+  "A late drink": "Поздний бокал",
+  "A drink": "Бокал",
+  "Another late drink": "Ещё один поздний бокал",
+  "Another drink": "Ещё бокал",
+  "Another club": "Ещё один клуб",
+  "Another bar": "Ещё один бар",
+  "Another film": "Ещё один фильм",
+  "Another gallery": "Ещё одна галерея"
  },
  "patterns": [
   [
@@ -965,6 +1013,123 @@ window.WA.dict.ru = {
   [
    "It was on {d}.",
    "Это было {d}."
+  ],
+  [
+   "{n} min on foot",
+   "{n} мин пешком"
+  ],
+  [
+   "{n} free in this view",
+   "Бесплатно в этом виде: {n}"
+  ],
+  [
+   "{n} opened or saved before",
+   "Ранее открыто или сохранено: {n}"
+  ],
+  [
+   "{n} more after these",
+   "Ещё {n} после этих"
+  ],
+  [
+   "{n}.{h} km",
+   "{n},{h} км"
+  ],
+  [
+   "{n} km",
+   "{n} км"
+  ],
+  [
+   "{n} m",
+   "{n} м"
+  ],
+  [
+   "{h} h {m}",
+   "{h} ч {m} мин"
+  ],
+  [
+   "{h} h",
+   "{h} ч"
+  ],
+  [
+   "About {a}, {b} on foot.",
+   "Около {a}, пешком {b}."
+  ],
+  [
+   "About {a}.",
+   "Около {a}."
+  ],
+  [
+   "about {a}",
+   "около {a}"
+  ],
+  [
+   "Tickets from {x}.",
+   "Билеты от {x}."
+  ],
+  [
+   "{n} price not listed",
+   "цена не указана: {n}"
+  ],
+  [
+   "{n} stops",
+   {
+    "one": "{n} остановка",
+    "few": "{n} остановки",
+    "many": "{n} остановок",
+    "other": "{n} остановки"
+   }
+  ],
+  [
+   "{x}, Open till {t}",
+   "{x}, открыто до {t}"
+  ],
+  [
+   "{x}, Opens {t}",
+   "{x}, откроется в {t}"
+  ],
+  [
+   "{x}, Shut today",
+   "{x}, сегодня закрыто"
+  ],
+  [
+   "{x}, Hours not filed",
+   "{x}, часы не указаны"
+  ],
+  [
+   "{x}, Open for events",
+   "{x}, открыто во время событий"
+  ],
+  [
+   "{x}, Open, 24 hours",
+   "{x}, открыто круглосуточно"
+  ],
+  [
+   "{x}, Listed as closed",
+   "{x}, отмечено как закрытое"
+  ],
+  [
+   "{x}, Status unverified",
+   "{x}, статус не подтверждён"
+  ],
+  [
+   "with {w}",
+   "со словом {w}"
+  ],
+  [
+   "Image from {u}",
+   "Изображение с {u}"
+  ],
+  [
+   "{a}. Needs your location or a spot below",
+   "{a}. Нужна ваша геолокация или место ниже"
+  ],
+  [
+   "{a}, from {b}",
+   "{a}, от точки: {b}"
+  ],
+  [
+   "{n} today",
+   "Сегодня: {n}"
   ]
  ]
 };

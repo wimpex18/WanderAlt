@@ -480,9 +480,9 @@
     const words = [...state.read.must, ...state.read.any].slice(0, 3).map(w => `“${w}”`).join(', ');
     const what = state.kinds.size ? [...state.kinds].map(k => R().kindLabel(k)).join(', ') : 'Anything';
     const when = state.day ? (state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : `on ${R().dateShort(state.day)}`) : state.when !== 'all' ? WHEN[state.when].toLowerCase() : '';
-    const text = state.read.note || [what, when, words ? `with ${words}` : ''].filter(Boolean).join(' ');
+    const parts = state.read.note ? [state.read.note] : [what, when, words ? `with ${words}` : ''].filter(Boolean);
     n.hidden = false;
-    n.innerHTML = `${state.read.by === 'model' ? I('ai') : ''}<span>${esc(text)}</span><button type="button" data-act="undo-read">Search the words</button>`;
+    n.innerHTML = `${state.read.by === 'model' ? I('ai') : ''}<span>${parts.map(t => `<span>${esc(t)}</span>`).join(' ')}</span><button type="button" data-act="undo-read">Search the words</button>`;
   };
 
   const TRY = ['Jazz tonight', 'Free art this weekend', 'Club night in Kalamaja', 'Talks in English'];
