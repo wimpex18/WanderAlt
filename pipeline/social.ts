@@ -7,7 +7,7 @@
 // Nothing is posted without --publish. See docs/social.md.
 
 import { Db } from './db.ts';
-import { instagramConfig, lookupProfile, recentPosts } from './instagram.ts';
+import { instagramConfig, lookupProfile, recentPosts, hashtagPosts } from './instagram.ts';
 import * as threads from './social/threads.ts';
 import * as instagram from './social/instagram.ts';
 import * as facebook from './social/facebook.ts';
@@ -52,6 +52,14 @@ export function tonightText(events: { title: string; venue: string | null; start
 async function main() {
   const cmd = args[0];
   const publishTo = opt('--publish');
+  if (cmd === 'search-instagram') {
+    const cfg = instagramConfig(), tag = opt('--hashtag');
+    if (!cfg || !tag) throw new Error('search-instagram needs Instagram secrets and --hashtag (without #)');
+    const posts = await hashtagPosts(tag, cfg);
+    for (const p of posts) console.log(JSON.stringify({ date: p.timestamp, url: p.permalink, caption: p.caption }));
+    log(`${posts.length} recent hashtag posts read; nothing stored or published`);
+    return;
+  }
   if (cmd === 'check') {
     const cfg = instagramConfig();
     if (cfg && process.env.FACEBOOK_PAGE_ID) {
@@ -72,6 +80,12 @@ async function main() {
     if (!token) { log('Threads: no token (THREADS_ACCESS_TOKEN secret or a stored token is needed)'); return; }
     const who = await threads.me(token);
     log(`Threads token belongs to @${who.username}`);
+    try {
+      const info = await threads.tokenInfo(token);
+      log(`Threads token valid: ${info.valid}; granted scopes: ${info.scopes.join(', ')}`);
+      const missing = ['threads_keyword_search', 'threads_profile_discovery'].filter(s => !info.scopes.includes(s));
+      if (missing.length) log(`Threads token is missing ${missing.join(', ')}: dashboard permissions do not update an existing token; reauthorize before testing these endpoints. Public access also requires App Review.`);
+    } catch { log('Threads token scope diagnostic unavailable; endpoint probes follow'); }
     const hits = await threads.keywordSearch(token, 'Tallinn').catch(e => { log(`Threads keyword search: ${(e as Error).message}`); return null; });
     if (hits) log(`Threads keyword search "Tallinn": ${hits.length} posts, ${hits.filter(h => h.username && h.username !== who.username).length} from other accounts${hits.length && !hits.some(h => h.username && h.username !== who.username) ? ' (own posts only: public search needs App Review)' : ''}`);
     for (const line of await threads.probe(token, who.username)) log(`Threads probe, ${line}`);
@@ -110,7 +124,7 @@ async function main() {
     log(`posted to Instagram: ${await instagram.publishImage(cfg, { imageUrl: image, caption, altText: opt('--alt') })}`);
     return;
   }
-  log('usage: node pipeline/social.ts check | tonight [--publish threads|facebook] | instagram --image URL.jpg --caption "…" [--publish]');
+  log('usage: node pipeline/social.ts check | search-instagram --hashtag tallinn | tonight [--publish threads|facebook] | instagram --image URL.jpg --caption "…" [--publish]');
 }
 
 if (import.meta.main) main().catch(e => { console.error('[social]', (e as Error).message); process.exitCode = 1; });

@@ -200,5 +200,15 @@
     "label": "Instagram (venue accounts)",
     "curated": false,
     "config": { "max_age_days": 14, "accounts_per_run": 15 }
+  },
+  {
+    "id": "instagram-hashtags",
+    "city": "tallinn",
+    "kind": "instagram",
+    "url": "https://www.instagram.com/explore/tags/tallinn/",
+    "handle": "#tallinn",
+    "label": "Instagram (Tallinn hashtag)",
+    "curated": false,
+    "config": { "hashtags": ["tallinn"] }
   }
 ]

@@ -107,6 +107,37 @@ export async function attachInstagramPictures(
 
 export interface InstagramPost { caption: string | null; timestamp: string; permalink: string; mediaType: string }
 
+/** Public hashtag captions. Meta limits an account to 30 unique tags in seven
+ * days; callers must use a small fixed list, never rotate through guessed tags. */
+export async function hashtagPosts(tag: string, cfg: InstagramConfig, limit = 25, fetcher: typeof fetch = fetch): Promise<InstagramPost[]> {
+  if (!/^[A-Za-z0-9_]{1,100}$/.test(tag)) throw new Error('Use a hashtag without #, spaces or punctuation');
+  const request = async (path: string, params: Record<string, string>) => {
+    const r = await fetcher(`${API}/${path}?${new URLSearchParams(params)}`, {
+      headers: { authorization: `Bearer ${cfg.token}`, 'user-agent': UA }, signal: AbortSignal.timeout(30_000),
+    });
+    const body = await r.json();
+    if (!r.ok || body.error) throw new Error(`Instagram hashtag access refused (HTTP ${r.status}, code ${body.error?.code ?? '-'})`);
+    return body;
+  };
+  const match = await request('ig_hashtag_search', { user_id: cfg.businessId, q: tag });
+  const id = match.data?.[0]?.id;
+  if (!id || !/^\d+$/.test(id)) return [];
+  const size = Math.min(25, Math.max(1, limit));
+  const read = (count: number) => request(`${id}/recent_media`, {
+    user_id: cfg.businessId, fields: 'id,caption,timestamp,permalink', limit: String(count),
+  });
+  let result;
+  try { result = await read(size); }
+  catch (e) {
+    // Meta sometimes times out or returns 500 on a larger batch. Retry once
+    // with five; never retry a permission refusal or consume another tag.
+    if (size <= 5 || !(/HTTP 5\d\d/.test((e as Error).message) || (e as Error).name === 'TimeoutError')) throw e;
+    result = await read(5);
+  }
+  return (result.data ?? []).map((m: { caption?: string; timestamp: string; permalink: string; media_type: string }) =>
+    ({ caption: m.caption ?? null, timestamp: m.timestamp, permalink: m.permalink, mediaType: m.media_type ?? '' }));
+}
+
 /** The latest posts of a public Business or Creator account, through the same
  *  business_discovery call. These are venue announcements to read for events,
  *  never to republish. */

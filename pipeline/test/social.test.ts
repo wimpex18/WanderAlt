@@ -7,6 +7,15 @@ import * as facebook from '../social/facebook.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
+test('Threads scope diagnostics distinguish a valid token from missing search grants', async () => {
+  const info = await threads.tokenInfo('private-token', (async u => {
+    assert.equal(new URL(String(u)).hostname, 'graph.threads.com');
+    return json({ data: { is_valid: true, scopes: ['threads_basic'], expires_at: 100 } });
+  }) as typeof fetch);
+  assert.deepEqual(info, { valid: true, scopes: ['threads_basic'], expiresAt: 100 });
+  assert.ok(!JSON.stringify(info).includes('private-token'));
+});
+
 test('Facebook publishes only to the configured assigned Page with its Page token', async () => {
   const cfg = { token: 'system-secret', businessId: '1784' };
   const calls: { path: string; method?: string; auth: string | null; body: string }[] = [];

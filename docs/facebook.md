@@ -83,7 +83,7 @@ The core use is venue identity, hours and event facts, not just posting to Wande
 - **Facebook profile images:** the existing public Graph picture endpoint worked for `uuslaine` on 5 October. This does not grant About, hours or feed access.
 - **Facebook facts:** [Page Public Metadata Access](https://developers.facebook.com/docs/features-reference/page-public-metadata-access/) permits aggregation of public About information, and requires business verification and App Review. It remains blocked for the three probed venue Pages.
 - **Facebook announcements:** [Page Public Content Access](https://developers.facebook.com/docs/features-reference/page-public-content-access/) permits analysis/display of public Page posts, also requires business verification and App Review, and supersedes Metadata Access. If reading venue announcements is the intended submission, review this feature instead of applying for both. A caption/post reader for Facebook is not implemented. This feature must not be described as unrestricted event search or as a guarantee that the Events endpoint becomes available.
-- With no operator documents, business verification cannot currently be completed from the evidence we hold. The unregistered UI route is not proof of a document-free exemption. The site, ticket sources, open data and working Instagram reader remain usable.
+- With no operator documents, business verification cannot currently be completed from the evidence we hold. The unregistered UI route is not proof of a document-free exemption. The site, ticket sources, open data and working Instagram readers remain usable. Instagram hashtag recent/top media also worked with the current token on 5 October; `docs/social.md` describes the new fixed-tag source.
 
 ## Own accounts and broader access
 
@@ -95,11 +95,11 @@ A read-only local check on 5 October 2026 confirmed:
 | Other venues' Facebook metadata | Refused, code 10; Page Public Metadata Access still needed |
 | Instagram known venue profile and recent posts | Work; publishing quota endpoint answers 0/100 |
 | Threads own profile, posts, insights and publishing limit | Work for `@wanderalt` |
-| Threads keyword search | Refused, HTTP 403 / code 10 |
+| Threads keyword search | Refused, HTTP 403 / code 10; current token lacks the search scope |
 
 Publishing permissions and quota reads do not prove a publication succeeds. No test post was published. Manual publishers exist for all three (`docs/social.md`). Facebook is pinned to WanderAlt Page `1374524315739646`; its Page token and feed read have been checked, with no publication attempted. No single token grants unrestricted access across all three services.
 
-In **Threads → Permissions and features**, `threads_keyword_search` and `threads_profile_discovery` are already configured as **Ready for testing**. Choosing **Actions → Add to App Review** for keyword search opens a **Become a Tech Provider** gate. Meta says this status cannot be reversed, and requires business verification, access verification, App Review and data-handling answers. It has not been accepted. Review therefore needs this explicit owner decision as well as operator evidence; simply adding scopes to a token is insufficient.
+In **Threads → Permissions and features**, `threads_keyword_search` and `threads_profile_discovery` are already configured as **Ready for testing**. Choosing **Actions → Add to App Review** for keyword search opens a **Become a Tech Provider** gate. Meta says this status cannot be reversed, and requires business verification, access verification, App Review and data-handling answers. It has not been accepted. Review therefore needs this explicit owner decision as well as operator evidence; The token debugger also confirms the current token lacks both search/discovery scopes. Reauthorize to test restricted own-post search; public search still needs review.
 
 ## What not to do
 

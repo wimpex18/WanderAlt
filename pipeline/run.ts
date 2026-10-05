@@ -20,7 +20,7 @@ import * as wordpress from './sources/wordpress.ts';
 import * as vabalava from './sources/vabalava.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile } from './instagram.ts';
-import { collectInstagram } from './sources/instagram.ts';
+import { collectInstagram, collectHashtags } from './sources/instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
@@ -82,7 +82,7 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
     case 'telegram': return collectTelegram(source);
     case 'html': return source.config.shape === 'vabalava' ? vabalava.collect(source) : collectPage(source);
     case 'rss': return collectRss(source);
-    case 'instagram': return collectInstagram(source, db);
+    case 'instagram': return source.config.hashtags ? collectHashtags(source) : collectInstagram(source, db);
   }
 }
 
@@ -104,7 +104,7 @@ async function read(item: RawItem, source: Source, models: Models): Promise<Cand
   const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
   const found = await extractEvents(models, {
-    text, source: source.kind === 'instagram' ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
+    text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
     images: p.photos ?? [], pageUrl: item.url ?? null,
   });
   // A single venue's own programme page: every event is at that venue,
