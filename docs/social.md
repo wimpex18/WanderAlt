@@ -9,6 +9,22 @@ WanderAlt has a Meta setup and a small set of scripts for Threads and Instagram.
 - Meta app **WanderAlt pipeline** (development mode; use cases: Instagram API, Pages API, Threads API, Messenger). A **system user** in the portfolio holds its assets, and its token never expires.
 - Repository secrets: `INSTAGRAM_ACCESS_TOKEN` (the system user token with `instagram_basic`, `instagram_manage_insights`, `pages_show_list`, `pages_read_engagement`), `INSTAGRAM_BUSINESS_ID`, and `THREADS_ACCESS_TOKEN` (see below). Tokens never go into the repository, a page, a log line or a chat.
 
+## Profile kit (what the accounts should say)
+
+None of this can be set through the APIs we hold: the Instagram Graph API and the Threads API have no endpoint for a profile picture, bio or link, and editing the Facebook Page needs `pages_manage_metadata`, which the token does not carry. Set it by hand in each app; the files are in `brand/social/`.
+
+| | Instagram `@wanderalt` | Facebook Page **WanderAlt** | Threads `@wanderalt` |
+|---|---|---|---|
+| Picture | `brand/social/avatar-1080.png` (1080 px, the mark on vermilion, safe inside the round crop) | the same | the same (Threads uses the Instagram picture unless changed) |
+| Cover | — | `brand/social/cover-facebook-1640x624.png` (everything centred, so a phone's crop keeps it) | — |
+| Name | WanderAlt | WanderAlt | WanderAlt |
+| Bio / intro | Independent culture in Tallinn, a walk at a time: gigs, club nights, arthouse film, art and the places around them. EN · ET · RU · UA (133 of 150) | Independent culture in Tallinn, a walk at a time: gigs, film, art and the places around them. (93 of 101) | What's on tonight in Tallinn, and what is worth the walk around it. Gigs, club nights, film, art. EN · ET · RU · UA (115 of 150) |
+| Link | https://wanderalt.app | Website: https://wanderalt.app | https://wanderalt.app |
+| Category | Arts & entertainment (shown off: Settings → Business tools → Profile display) | Website; second: Arts & entertainment | — |
+| Contact | hello@wanderalt.app (optional, as an email button) | Email hello@wanderalt.app; city Tallinn, no street address (no premises) | — |
+
+Facebook's longer *About* text can be the About page's first fold: "DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. No hosts, no bookings, no commission. If a listing is wrong, the venue's own page is wrong, and we say where we read it." The voice rules hold here too: no exclamation marks, no marketing words, never "discover".
+
 ## What exists
 
 | Job | Where | State |
