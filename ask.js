@@ -28,35 +28,35 @@
      words are written here without their accents (täna → tana). */
   const w = (alts, g = '') => new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts})(?![\\p{L}\\p{N}])`, `u${g}`);
   const WHEN = [
-    ['tonight', w('this evening|right now|tonight|today|tana ohtul|tana|сегодня вечером|сегодня|вечером', 'g')],
+    ['tonight', w('this evening|right now|tonight|today|tana ohtul|tana|сегодня вечером|сегодня|вечером|сьогодні ввечері|сьогодні|ввечері', 'g')],
     ['tomorrow', w('tomorrow|homme|завтра')],
-    ['weekend', w('(?:this )?weekend|nadalavahetusel?|на выходных|выходные')],
-    ['thisweek', w('this week|next few days|sel nadalal|на этой неделе')],
+    ['weekend', w('(?:this )?weekend|nadalavahetusel?|на выходных|выходные|на вихідних|вихідні')],
+    ['thisweek', w('this week|next few days|sel nadalal|на этой неделе|цього тижня')],
   ];
   const KINDS = [
-    ['gig', w('gigs?|concerts?|live music|bands?|jazz|punk|rock|metal|indie|folk|kontserd?t?|концерт\\p{L}*|джаз', 'g')],
-    ['club', w('club|clubbing|party|parties|rave|techno|house music|dj|klubi|pidu|клуб\\p{L}*|вечеринк\\p{L}*|техно', 'g')],
-    ['film', w('films?|movies?|cinema|screenings?|kino|кино|фильм\\p{L}*', 'g')],
-    ['exhibition', w('art|exhibitions?|gallery|galleries|naitus|kunst|выставк\\p{L}*', 'g')],
-    ['talk', w('talks?|lectures?|readings?|books?|authors?|discussions?|loeng|лекци\\p{L}*', 'g')],
-    ['theatre', w('theatre|theater|plays?|dance|performances?|teater|etendus|театр\\p{L}*|спектакл\\p{L}*', 'g')],
-    ['market', w('markets?|flea|fair|vinyl|records|turg|laat|ярмарк\\p{L}*|рын\\p{L}*', 'g')],
-    ['workshop', w('workshops?|class|masterclass|tootuba|мастер-?класс\\p{L}*', 'g')],
+    ['gig', w('gigs?|concerts?|live music|bands?|jazz|punk|rock|metal|indie|folk|kontserd?t?|концерт\\p{L}*|джаз\\p{L}*', 'g')],
+    ['club', w('club|clubbing|party|parties|rave|techno|house music|dj|klubi|pidu|клуб\\p{L}*|вечеринк\\p{L}*|вечірк\\p{L}*|техно', 'g')],
+    ['film', w('films?|movies?|cinema|screenings?|kino|кино|кіно|фильм\\p{L}*|фільм\\p{L}*', 'g')],
+    ['exhibition', w('art|exhibitions?|gallery|galleries|naitus|kunst|выставк\\p{L}*|виставк\\p{L}*|мистецтв\\p{L}*', 'g')],
+    ['talk', w('talks?|lectures?|readings?|books?|authors?|discussions?|loeng|лекци\\p{L}*|лекці\\p{L}*', 'g')],
+    ['theatre', w('theatre|theater|plays?|dance|performances?|teater|etendus|театр\\p{L}*|спектакл\\p{L}*|вистав(?:а|и|у|ою|і)', 'g')],
+    ['market', w('markets?|flea|fair|vinyl|records|turg|laat|ярмарк\\p{L}*|рын\\p{L}*|ярмар\\p{L}*|ринок', 'g')],
+    ['workshop', w('workshops?|class|masterclass|tootuba|мастер-?класс\\p{L}*|маистер-?клас\\p{L}*', 'g')],
     ['festival', w('festivals?|фестивал\\p{L}*', 'g')],
   ];
   const WEEKDAYS = [
-    [1, 'monday|esmaspaev(?:al)?|понедельник'],
-    [2, 'tuesday|teisipaev(?:al)?|вторник'],
-    [3, 'wednesday|kolmapaev(?:al)?|среда|среду'],
-    [4, 'thursday|neljapaev(?:al)?|четверг'],
-    [5, 'friday|reede|reedel|пятница|пятницу'],
-    [6, 'saturday|laupaev(?:al)?|суббота|субботу'],
-    [0, 'sunday|puhapaev(?:al)?|воскресенье'],
+    [1, 'monday|esmaspaev(?:al)?|понедельник|понеділок'],
+    [2, 'tuesday|teisipaev(?:al)?|вторник|вівторок'],
+    [3, 'wednesday|kolmapaev(?:al)?|среда|среду|середа|середу'],
+    [4, 'thursday|neljapaev(?:al)?|четверг|четвер'],
+    [5, 'friday|reede|reedel|пятница|пятницу|п[\'’]?ятниця|п[\'’]?ятницю'],
+    [6, 'saturday|laupaev(?:al)?|суббота|субботу|субота|суботу'],
+    [0, 'sunday|puhapaev(?:al)?|воскресенье|неділя|неділю'],
   ];
   const STOP = new Set(('a an the in at on for to of and or with near around something some any anything events event ' +
     'what whats what\'s is are there go going out me i want looking find show where cheap under below less than eur euro euros € ' +
     'free english in english tallinn please good best nice cool fun uritus uritused ' +
-    'мероприятие мероприятия события событие пожалуйста').split(' '));
+    'мероприятие мероприятия события событие пожалуйста подія події будь ласка').split(' '));
 
   const empty = () => ({ intent: 'listings', when: '', day: '', kinds: [], placeKinds: [], free: false, english: false, openNow: false, maxPrice: null, must: [], any: [], note: '' });
 
@@ -73,11 +73,11 @@
     const out = empty();
     let q = ` ${fold(raw)} `;
     const take = (re) => { q = q.replace(re, ' '); };
-    const OPEN_NOW = w('open now|open right now|praegu avatud|avatud praegu|сеичас открыт\\p{L}*|открыт\\p{L}* сеичас', 'g');
+    const OPEN_NOW = w('open now|open right now|praegu avatud|avatud praegu|сеичас открыт\\p{L}*|открыт\\p{L}* сеичас|зараз відчинен\\p{L}*|відчинен\\p{L}* зараз', 'g');
     if (OPEN_NOW.test(q)) { out.openNow = true; take(OPEN_NOW); }
     for (const [v, re] of WHEN) if (re.test(q)) { out.when = out.when || v; take(re); }
     for (const [dow, names] of WEEKDAYS) {
-      const re = w(`(?:(?:on|sel|в|во) )?(?:${names})`);
+      const re = w(`(?:(?:on|sel|в|во|у) )?(?:${names})`);
       if (re.test(q) && window.WA.when) { out.day = dayKeyFor(dow); out.when = ''; take(re); }
     }
     for (const [k, re] of KINDS) {
@@ -88,7 +88,7 @@
       m.forEach(x => { if (/jazz|punk|rock|metal|indie|folk|techno|house|vinyl|records|flea|book|author|джаз|техно/.test(x)) out.any.push(({ 'джаз': 'jazz', 'техно': 'techno' })[x.trim()] || x.trim()); });
       take(re);
     }
-    const FREE = w('free|tasuta|бесплатн\\p{L}*', 'g'), EN = w('in english|english|inglise keeles|на английском', 'g');
+    const FREE = w('free|tasuta|бесплатн\\p{L}*|безкоштовн\\p{L}*', 'g'), EN = w('in english|english|inglise keeles|на английском|англіиською', 'g');
     if (FREE.test(q)) { out.free = true; take(FREE); }
     if (EN.test(q)) { out.english = true; take(EN); }
     const cap = q.match(/(?:under|below|less than|up to|max|до|kuni)\s*€?\s*(\d{1,3})\s*(?:€|eur|euros?)?/) || q.match(/€\s*(\d{1,3})\b|\b(\d{1,3})\s*(?:€|eur)\b/);
@@ -113,21 +113,21 @@
      event or day in it, so the listings narrow to those places too; `plan`
      means it asks for an evening or a plan. */
   const PLACE_KINDS = [
-    ['record store', w('record shops?|record stores?|vinyl|records?|plaadipoed?|plaadipood\\p{L}*|пластинк\\p{L}*|винил\\p{L}*')],
-    ['bookshop', w('book ?shops?|book ?stores?|books?|raamatupood\\p{L}*|книжн\\p{L}*|книг\\p{L}*')],
-    ['thrift', w('thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*')],
+    ['record store', w('record shops?|record stores?|vinyl|records?|plaadipoed?|plaadipood\\p{L}*|пластинк\\p{L}*|винил\\p{L}*|платівк\\p{L}*|вініл\\p{L}*')],
+    ['bookshop', w('book ?shops?|book ?stores?|books?|raamatupood\\p{L}*|книжн\\p{L}*|книг\\p{L}*|книгарн\\p{L}*')],
+    ['thrift', w('thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*|вживан\\p{L}*')],
     ['gallery', w('galler(?:y|ies)|galerii\\p{L}*|галере\\p{L}*')],
-    ['cinema', w('cinemas?|kino|кинотеатр\\p{L}*')],
+    ['cinema', w('cinemas?|kino|кинотеатр\\p{L}*|кінотеатр\\p{L}*')],
     ['club', w('clubs?|klubi\\p{L}*|клуб\\p{L}*')],
     ['bar', w('bars?|pubs?|baar\\p{L}*|бар\\p{L}*')],
     ['theatre', w('theat(?:re|er)s?|teater\\p{L}*|театр\\p{L}*')],
-    ['museum', w('museums?|muuseum\\p{L}*|музе\\p{L}*')],
-    ['taproom', w('craft ?beers?|beers?|taprooms?|tap ?rooms?|breweries|brewery|olu\\p{L}*|olle\\p{L}*|пив\\p{L}*')],
+    ['museum', w('museums?|muuseum\\p{L}*|музе\\p{L}*|музеи\\p{L}*')],
+    ['taproom', w('craft ?beers?|beers?|taprooms?|tap ?rooms?|breweries|brewery|olu\\p{L}*|olle\\p{L}*|пив\\p{L}*|броварн\\p{L}*')],
   ];
   const SHOP_WORD = w('shops?|stores?|book ?shops?|book ?stores?|\\p{L}*pood\\p{L}*|магазин\\p{L}*|thrift|second-?hand|vintage|kaltsu\\p{L}*|секонд\\p{L}*');
   const EVENT_WORD = w('gigs?|concerts?|events?|party|parties|workshops?|festivals?|fair|flea|markets?|screenings?|talks?|lectures?|readings?|performances?|plays?|exhibitions?|openings?|live|show|shows');
   /* Words that ask for a plan, not a listing: the page answers with evenings. */
-  const PLAN = w('plan|plans|planning|itinerary|things to do|what to do|night out|date night|plaan|план|что делать');
+  const PLAN = w('plan|plans|planning|itinerary|things to do|what to do|night out|date night|plaan|план|что делать|що робити');
   const places = (raw) => {
     const q = ` ${fold(raw)} `;
     const out = { kinds: [], show: false, only: false, plan: PLAN.test(q), openNow: local(raw).openNow };

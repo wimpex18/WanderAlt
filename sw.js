@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v88';
+const VERSION = 'wa-v90';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -33,7 +33,7 @@ const SHELL_URLS = [
   './saved.html', './route.html', './detail.html', './source.html', './profile.html',
   './about.html', './404.html',
   './wa.css',
-  './theme.js', './brand-reveal.js', './i18n.js', './lang/et.js', './lang/ru.js', './icons.js', './when.js', './geo.js', './hours.js',
+  './theme.js', './brand-reveal.js', './i18n.js', './lang/et.js', './lang/ru.js', './lang/uk.js', './icons.js', './when.js', './geo.js', './hours.js',
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './save-store.js', './bookmark.js', './lists.js',
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './going.js', './report.js', './push.js', './ask.js', './install.js',

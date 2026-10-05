@@ -106,17 +106,24 @@
   /* A venue or area printed in Cyrillic is a source's phrase, not a place's
      name (the pipeline retires those places); it is left out, not shown. */
   const CYRILLIC = /[\u0400-\u04ff]/;
+  /* What we write ourselves comes in the interface language when the pipeline has it
+     (pipeline/localize.ts): title_et / quote_et and pick_note_et beside the English, and so on.
+     Only that language's columns are read; anything missing falls back to the English. */
+  const LANG = (window.WA.Lang && window.WA.Lang.current()) || 'en';
+  const OWN = LANG === 'en' ? '' : LANG;
+  const PICK_LANG = OWN ? `,title_${OWN},quote_${OWN}` : '';
+  const VENUE_LANG = OWN ? `,pick_note_${OWN}` : '';
   const toPick = (r) => ({
     id:            r.id,
     city:          r.city,
-    title:         r.title,
+    title:         (OWN && r[`title_${OWN}`]) || r.title,
     venue:         CYRILLIC.test(r.venue || '') ? null : r.venue,
     venueId:       CYRILLIC.test(r.venue || '') ? null : (r.venue_id || null),
     neighborhood:  CYRILLIC.test(r.neighborhood || '') ? null : r.neighborhood,
     kind:          r.kind,
     day:           r.day,
     time:          r.time,
-    quote:         r.quote,
+    quote:         (OWN && r[`quote_${OWN}`]) || r.quote,
     handle:        r.handle,
     imageUrl:      proxifyImage(r.image_url) || null,
     imageAttr:     r.image_attr    || null,
@@ -213,7 +220,7 @@
     isVerified:   r.status === 'active',
     /* Chosen by hand for the guide, with one English line on why. */
     picked:       r.picked === true,
-    pickNote:     r.pick_note || '',
+    pickNote:     (OWN && r[`pick_note_${OWN}`]) || r.pick_note || '',
   });
 
   /* A fast answer (the service worker's cache) can land between two
@@ -318,7 +325,7 @@
                    fetches the bounded original only when opened. */
                 `teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
                 /* Provenance freshness for the detail page's "read N ago". */
-                `last_seen_at,created_at` +
+                `last_seen_at,created_at${PICK_LANG}` +
         `&order=starts_at.asc,id.asc`,
         abort.signal
       ),
@@ -329,7 +336,7 @@
         `venues`,
         `status=eq.active` +
         `&kind=in.(${[...VENUE_KINDS].map(k => `"${k}"`).join(',')})` +
-        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source` +
+        `&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source${VENUE_LANG}` +
         `&order=name.asc,id.asc`,
         abort.signal
       ),
@@ -394,7 +401,7 @@
     const q = `id=eq.${encodeURIComponent(id)}&limit=1`;
     let lookupError = null;
     try {
-      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,venue_image_tone,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at`, undefined, true);
+      const picks = await get('picks', `${q}&select=id,city,title,venue,venue_id,neighborhood,kind,day,time,quote,handle,image_url,image_attr,venue_image_url,venue_image_attr,venue_image_source,venue_image_tone,lat,lng,address,source_url,teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,last_seen_at,created_at,archived_at${PICK_LANG}`, undefined, true);
       if (picks && picks[0]) {
         return { kind: 'event', e: toPick(picks[0]), archivedAt: picks[0].archived_at || null };
       }
@@ -402,7 +409,7 @@
     try {
       const venues = await get(
         'venues',
-        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source`, undefined, true
+        `${q}&select=id,city,name,neighborhood,kind,lat,lng,image_url,image_attr,image_source,image_tone,address,description,website,facebook,instagram,opening_hours,osm_id,status,picked,pick_note,hours_source${VENUE_LANG}`, undefined, true
       );
       if (venues && venues[0]) return { kind: 'place', e: toVenue(venues[0]), archivedAt: null };
     } catch (error) { lookupError = error; }

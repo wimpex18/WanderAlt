@@ -108,20 +108,25 @@
       cost: R().isFree(e) ? 0 : (e.priceMin != null && isFinite(Number(e.priceMin)) ? Number(e.priceMin) : null) };
   };
 
-  /* Words for the title, in the order of the evening. */
+  /* Words for the title, in the order of the evening. Each is written capitalised, looked up in the
+     interface language (lang/phrases.tsv), and lowered after the first; a word already used becomes
+     "another …" ("Craft beer, a late drink, another late drink"). */
   const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
   const FIRST_WORD = { taproom: 'Craft beer', bar: 'A bar', club: 'A club' };
-  const ANCHOR_WORD = { gig: 'a gig', club: 'a club night', film: 'a film', theatre: 'a stage', talk: 'a talk', workshop: 'a workshop', exhibition: 'an opening', festival: 'a festival' };
+  const ANCHOR_WORD = { gig: 'A gig', club: 'A club night', film: 'A film', theatre: 'A stage', talk: 'A talk', workshop: 'A workshop', exhibition: 'An opening', festival: 'A festival' };
+  const ANOTHER = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery' };
   const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+  const word = (w) => (window.WA.Lang ? window.WA.Lang.t(w) : w);
   const titleFor = (stops) => {
+    const used = new Set();
     const words = stops.map((s, i) => {
-      if (s.type === 'event') return ANCHOR_WORD[String(s.kind || '').toLowerCase()] || 'a show';
-      if (BEFORE_WORD[s.kind]) return i === 0 ? BEFORE_WORD[s.kind] : lower(BEFORE_WORD[s.kind]);
-      if (i === 0) return FIRST_WORD[s.kind] || 'A place';
-      return s.minute >= 21 * 60 ? 'a late drink' : s.kind === 'club' ? 'a club' : 'a drink';
+      let w = s.type === 'event' ? (ANCHOR_WORD[String(s.kind || '').toLowerCase()] || 'A show')
+        : BEFORE_WORD[s.kind] || (i === 0 ? FIRST_WORD[s.kind] || 'A place' : s.minute >= 21 * 60 ? 'A late drink' : s.kind === 'club' ? 'A club' : 'A drink');
+      if (used.has(w) && ANOTHER[w]) w = ANOTHER[w];
+      used.add(w);
+      return i === 0 ? word(w) : lower(word(w));
     });
-    const t = words.join(', ');
-    return t.charAt(0).toUpperCase() + t.slice(1);
+    return words.join(', ');
   };
 
   /* What the tickets cost, as far as we know: the cheapest price of each listing.
@@ -417,7 +422,11 @@
     if (!entry || R().isOff(entry) || W().hasEnded(entry)) return null;
     if (off === 0 && anchor.minute < nowMin() + 10) return null;
     if (off === 0 && r.stops[0].minute < nowMin() - 15) return null;                 /* it would already have begun */
-    return Object.assign(r, { id: row.id, day: row.day, off, title: row.title, blurb: row.blurb || '', engine: row.engine, saved: true });
+    /* The stored title and note are the model's English; in another language the evening keeps its
+       composed title, in that language, and no note. */
+    const en = !window.WA.Lang || window.WA.Lang.current() === 'en';
+    return Object.assign(r, { id: row.id, day: row.day, off, saved: true,
+      ...(en ? { title: row.title, blurb: row.blurb || '', engine: row.engine } : { blurb: '', engine: 'rules' }) });
   };
   const upcoming = () => (stored || []).map(fromRow).filter(Boolean);
   const best = () => plan()[0] || compose();

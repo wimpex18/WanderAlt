@@ -696,7 +696,55 @@ window.WA.dict.et = {
   "including closed places": "ka suletud kohad",
   "Couldn't refresh. Showing last loaded listings.": "Uuendamine ebaõnnestus. Kuvatakse viimati laaditud sündmused.",
   "We can't load listings right now.": "Sündmusi ei saa praegu laadida.",
-  "Trying again…": "Proovime uuesti…"
+  "Trying again…": "Proovime uuesti…",
+  "DIY gigs, club nights, arthouse film, contemporary art and dance, talks and markets, and the shops and rooms that host them. No hosts, no bookings, no commission. If a listing is wrong, the venue's own page is wrong, and we say where we read it.": "DIY-kontserdid, klubiõhtud, autorikino, kaasaegne kunst ja tants, vestlusõhtud ja turud ning poed ja ruumid, kus need toimuvad. Ei vahendajaid, broneeringuid ega vahendustasu. Kui kuulutuses on viga, on viga koha enda lehel, ja me ütleme, kust selle lugesime.",
+  "Saves, interests and what you open stay in your browser.": "Salvestatu, huvid ja see, mida avad, jäävad sinu brauserisse.",
+  "Signed in, your saves, lists, follows, going marks and alert settings also live in your account, with your inbox, until you delete it.": "Sisse logituna on sinu salvestused, nimekirjad, jälgimised, „lähen“ märked ja teavituste seaded ka sinu kontol koos postkastiga, kuni sa selle kustutad.",
+  "Delete your account": "Kustuta oma konto",
+  "Google sign-in gives us your email address and nothing else.": "Google'iga sisselogimine annab meile ainult sinu e-posti aadressi.",
+  "Alerts stay in the app, and a push goes only to a device you allow.": "Teavitused jäävad rakendusse ja tõuketeavitus läheb ainult seadmesse, mille oled lubanud.",
+  "We send no email announcements.": "Me ei saada e-posti teel teadaandeid.",
+  "No cookies to consent to, no analytics, no third-party scripts.": "Pole küpsiseid, millega nõustuda, analüütikat ega kolmandate osapoolte skripte.",
+  "What we read about venues, including their public Facebook and Instagram business pages, and how a venue has it removed:": "Mida me kohtade kohta loeme, sealhulgas nende avalikelt Facebooki ja Instagrami ärilehtedelt, ja kuidas koht saab andmed eemaldada:",
+  "Facts about venues (opening hours, website, a one-line description, a logo) come from the venue's own site, OpenStreetMap, Wikidata, and the public Facebook Page and Instagram business account of the venue, read through Meta's official API.": "Kohtade andmed (lahtiolekuajad, veebileht, üherealine kirjeldus, logo) pärinevad koha enda saidilt, OpenStreetMapist, Wikidatast ning koha avalikult Facebooki lehelt ja Instagrami ärikontolt, mida loeme Meta ametliku API kaudu.",
+  "We read business pages only, never a person's profile, and keep no contact details.": "Loeme ainult ettevõtete lehti, mitte kunagi inimeste profiile, ega hoia kontaktandmeid.",
+  "A venue that wants a fact corrected or its details removed writes to us at": "Koht, kes soovib andmeid parandada või eemaldada, kirjutab meile aadressil",
+  "We do it within 30 days and stop reading its pages.": "Teeme seda 30 päeva jooksul ja lõpetame selle lehtede lugemise.",
+  "Signed-in visitors can delete their account and everything in it:": "Sisse loginud külastajad saavad oma konto ja kõik selles kustutada:",
+  "Listings belong to the venues and sources they came from, and we link to each one.": "Kuulutused kuuluvad kohtadele ja allikatele, kust need pärinevad, ning me lingime igaühele.",
+  "We print what the source said and when we read it.": "Näitame, mida allikas ütles ja millal me seda lugesime.",
+  "We cannot promise a door will be open.": "Me ei saa lubada, et uks on lahti.",
+  "Another": "Veel üks",
+  "Any": "Mis tahes",
+  "Open in Maps": "Ava kaardirakenduses",
+  "Check hours before you go.": "Kontrolli enne minekut lahtiolekuaegu.",
+  "Walking times are straight-line distances at a normal pace.": "Jalutusajad on arvutatud linnulennult tavalise sammuga.",
+  "Each stop's page says where its listing came from.": "Iga peatuse lehel on kirjas, kust selle info pärineb.",
+  "Was": "Toimus",
+  "closed": "suletud",
+  "where you are": "sinu asukohast",
+  "your chosen place": "sinu valitud kohast",
+  "your chosen spot": "sinu valitud koht",
+  "Price not listed.": "Hind teadmata.",
+  "Free.": "Tasuta.",
+  "A bar": "Baar",
+  "A club": "Klubi",
+  "A gig": "Kontsert",
+  "A club night": "Klubiõhtu",
+  "A stage": "Etendus",
+  "A talk": "Vestlusõhtu",
+  "A workshop": "Töötuba",
+  "An opening": "Avamine",
+  "A festival": "Festival",
+  "A show": "Üritus",
+  "A late drink": "Hiline jook",
+  "A drink": "Jook",
+  "Another late drink": "Veel üks hiline jook",
+  "Another drink": "Veel üks jook",
+  "Another club": "Veel üks klubi",
+  "Another bar": "Veel üks baar",
+  "Another film": "Veel üks film",
+  "Another gallery": "Veel üks galerii"
  },
  "patterns": [
   [
@@ -950,6 +998,118 @@ window.WA.dict.et = {
   [
    "It was on {d}.",
    "See toimus {d}."
+  ],
+  [
+   "{n} min on foot",
+   "{n} min jalgsi"
+  ],
+  [
+   "{n} free in this view",
+   "Selles vaates tasuta: {n}"
+  ],
+  [
+   "{n} opened or saved before",
+   "Varem avatud või salvestatud: {n}"
+  ],
+  [
+   "{n} more after these",
+   "Pärast neid veel {n}"
+  ],
+  [
+   "{n}.{h} km",
+   "{n},{h} km"
+  ],
+  [
+   "{n} km",
+   "{n} km"
+  ],
+  [
+   "{n} m",
+   "{n} m"
+  ],
+  [
+   "{h} h {m}",
+   "{h} t {m} min"
+  ],
+  [
+   "{h} h",
+   "{h} t"
+  ],
+  [
+   "About {a}, {b} on foot.",
+   "Umbes {a}, jalgsi {b}."
+  ],
+  [
+   "About {a}.",
+   "Umbes {a}."
+  ],
+  [
+   "about {a}",
+   "umbes {a}"
+  ],
+  [
+   "Tickets from {x}.",
+   "Piletid alates {x}."
+  ],
+  [
+   "{n} price not listed",
+   "hind teadmata: {n}"
+  ],
+  [
+   "{n} stops",
+   "{n} peatust"
+  ],
+  [
+   "{x}, Open till {t}",
+   "{x}, avatud kuni {t}"
+  ],
+  [
+   "{x}, Opens {t}",
+   "{x}, avaneb {t}"
+  ],
+  [
+   "{x}, Shut today",
+   "{x}, täna suletud"
+  ],
+  [
+   "{x}, Hours not filed",
+   "{x}, lahtiolekuajad teadmata"
+  ],
+  [
+   "{x}, Open for events",
+   "{x}, avatud ürituste ajal"
+  ],
+  [
+   "{x}, Open, 24 hours",
+   "{x}, avatud ööpäevaringselt"
+  ],
+  [
+   "{x}, Listed as closed",
+   "{x}, märgitud suletuks"
+  ],
+  [
+   "{x}, Status unverified",
+   "{x}, olek kinnitamata"
+  ],
+  [
+   "with {w}",
+   "sõnaga {w}"
+  ],
+  [
+   "Image from {u}",
+   "Pilt saidilt {u}"
+  ],
+  [
+   "{a}. Needs your location or a spot below",
+   "{a}. Vaja on sinu asukohta või allpool valitud kohta"
+  ],
+  [
+   "{a}, from {b}",
+   "{a}, lähtekoht: {b}"
+  ],
+  [
+   "{n} today",
+   "{n} täna"
   ]
  ]
 };

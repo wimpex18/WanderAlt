@@ -330,7 +330,7 @@
         ${!ended && off ? `<div class="det-notice det-notice--off" role="status">${I('info')}<span><strong>${esc(e.flag === 'cancelled' ? 'Cancelled' : 'Postponed')}</strong>${esc(e.flag === 'cancelled' ? 'The source says this will not go ahead.' : 'The source says this is moving to a new date. Check there before you go.')}${link ? ` <a class="wa-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open the listing</a>` : ''}</span></div>` : ''}
         <header class="det-head">
           <p class="wa-kicker">${off ? '' : R().flagTag(e)}${liveNow && !off ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
-          <h1 class="wa-h1">${esc(title)}</h1>
+          <h1 class="wa-h1" translate="no">${esc(title)}</h1>
           ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
           ${spoken ? `<p class="wa-note">${I('globe', 'wa-ic--sm')} In ${esc(spoken)}</p>` : ''}
         </header>
@@ -440,7 +440,7 @@
         <header class="det-head">
           <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span>${esc(R().areaOf(v))}</span>` : ''}</p>
           ${v.isClosed ? '<div class="det-notice det-notice--off" role="status"><strong>This venue is listed as closed.</strong><span>Check with the venue before you go.</span></div>' : ''}
-          <h1 class="wa-h1">${esc(v.name || '')}</h1>
+          <h1 class="wa-h1" translate="no">${esc(v.name || '')}</h1>
           <p>${R().openBadge(v)}</p>
         </header>
 
@@ -465,7 +465,7 @@
         <section class="det-block">
           <h2 class="det-block__title">Listed here next${list.length ? ` · ${list.length}` : ''}</h2>
           ${list.length ? R().grouped(list, { noThumb: false })
-            : `<p class="wa-note">Nothing from ${esc(v.name)} is listed right now. ${links.length ? 'Their own channels above carry what we have not read.' : ''} ${following ? '' : 'Follow it and its listings are marked for you when they arrive.'}</p>${nearby()}`}
+            : `<p class="wa-note">${[`Nothing from ${v.name} is listed right now.`, links.length ? 'Their own channels above carry what we have not read.' : '', following ? '' : 'Follow it and its listings are marked for you when they arrive.'].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join(' ')}</p>${nearby()}`}
         </section>
 
         ${afterHere(v, v.name)}

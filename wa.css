@@ -429,6 +429,24 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 /* Light / Dark: a bare line icon, no disc, showing the mode a tap switches to. */
 .wa-topbar .wa-theme { background: transparent; }
 .wa-topbar .wa-theme:hover { background: var(--paper-2); }
+/* Language: a bare key like the theme's, a globe and the code; a small glass menu under it. */
+.wa-lang { position: relative; }
+.wa-lang__key { display: inline-flex; align-items: center; gap: 5px; height: var(--tap); padding: 0 12px 0 10px; border: 0; border-radius: var(--r-pill); background: color-mix(in oklab, var(--paper) 55%, transparent); box-shadow: inset 0 0 0 1px var(--glass-edge); color: var(--ink); font: 600 .8125rem/1 var(--f-sans); letter-spacing: .04em; cursor: pointer; transition: background var(--t-fast), transform var(--t-fast) var(--spring); }
+.wa-lang__key:hover, .wa-lang__key[aria-expanded="true"] { background: var(--paper-3); }
+.wa-lang__key:active { transform: scale(.94); }
+.wa-lang__key .wa-ic { width: 19px; height: 19px; }
+.wa-lang__menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; display: flex; gap: 2px; padding: 4px; border-radius: var(--r-pill); background: var(--paper); box-shadow: var(--shadow-2), inset 0 0 0 1px var(--hair); }
+.wa-lang__menu[hidden] { display: none; }
+.wa-lang__menu button { min-width: 44px; height: 36px; padding: 0 10px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--ink-2); font: 600 .8125rem/1 var(--f-sans); letter-spacing: .04em; cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.wa-lang__menu button:hover, .wa-lang__menu button:focus-visible { background: var(--paper-3); color: var(--ink); outline: none; }
+.wa-lang__menu button[aria-checked="true"] { background: var(--select-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--select-ring); }
+/* Phones: the key is a round code like its neighbours, and with four keys the word mark gives way
+   to the logo so nothing is pushed off the edge. */
+@media (max-width: 440px) {
+  .wa-lang__key { width: var(--tap); padding: 0; justify-content: center; }
+  .wa-lang__key .wa-ic { display: none; }
+  .wa-topbar:has(.wa-topbar__end > :nth-child(4)) .wa-brand span { display: none; }
+}
 .wa-topbar .wa-iconbtn[aria-current="page"] { background: var(--select-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--select-ring); }
 
 /* Chips: pills. Selected = ink fill plus a check mark. */
@@ -714,7 +732,7 @@ button.wa-since[disabled] { opacity: .6; }
    cannot shift under the finger and scroll anchoring has nothing to undo. */
 .home-top { position: sticky; top: var(--topbar-h); z-index: 30; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter); background: color-mix(in oklab, var(--paper) 86%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); border-bottom: 1px solid transparent; transition: border-color var(--t-fast); }
 .is-scrolled .home-top { border-bottom-color: var(--hair); }
-.home-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.home-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); min-width: 0; }
 .home-hero__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
 .home-acts:empty { display: none; }
 .wa-act { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 14px 0 10px; font-size: var(--fs-meta); border: 0; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent-ink); font-size: .9375rem; font-weight: 600; white-space: nowrap; transition: background var(--t-fast), transform var(--t-fast) var(--spring); }
@@ -724,7 +742,7 @@ button.wa-since[disabled] { opacity: .6; }
 .wa-act[disabled] { opacity: .6; pointer-events: none; }
 .wa-act--off { background: var(--paper-2); color: var(--ink-2); }
 .home-acts__note { flex-basis: 100%; }
-.home-hero { padding: var(--s-4) 0 var(--s-3); display: grid; gap: var(--s-1); }
+.home-hero { padding: var(--s-4) 0 var(--s-3); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-1); }
 .home-hero__clock { font-size: var(--fs-small); color: var(--ink-3); font-weight: 500; }
 .home-hero__title { font-size: var(--fs-h1); letter-spacing: -.03em; }
 .home-hero__title em { font-style: normal; color: var(--accent-ink); }
