@@ -744,7 +744,9 @@ window.WA.dict.et = {
   "Another club": "Veel üks klubi",
   "Another bar": "Veel üks baar",
   "Another film": "Veel üks film",
-  "Another gallery": "Veel üks galerii"
+  "Another gallery": "Veel üks galerii",
+  "Source:": "Allikas:",
+  "© OpenStreetMap contributors": "© OpenStreetMapi kaastöölised"
  },
  "patterns": [
   [

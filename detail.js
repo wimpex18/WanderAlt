@@ -6,13 +6,12 @@
 
    Event: photo, English title and short English highlights,
    summary, When · Entry · Walk, Tickets first, then calendar, walking
-   directions, save and lists; Going with the count; the venue as a
-   small card; the source's own words; who is in it; a small map;
-   where this came from.
+   directions, save and lists; the venue as a small card; the source's
+   own words; who is in it; a small map; a compact source link.
 
    Venue: photo or a typographic block, open now or shut, what is on
    next, Follow, Website / Instagram / Facebook as labelled links, the
-   programme grouped by day, the week's hours, a small map, provenance.
+   programme grouped by day, the week's hours, a small map, OSM credit.
    ============================================================ */
 (() => {
   'use strict';
@@ -109,16 +108,6 @@
     return t ? url(t) : '';
   };
 
-  const ago = (iso) => {
-    const ms = Date.now() - new Date(iso).getTime();
-    if (!iso || !isFinite(ms) || ms < 0) return '';
-    const m = Math.round(ms / 60000);
-    if (m < 60) return `${m} min ago`;
-    const h = Math.round(m / 60);
-    if (h < 24) return `${h} ${h === 1 ? 'hour' : 'hours'} ago`;
-    const d = Math.round(h / 24);
-    return `${d} ${d === 1 ? 'day' : 'days'} ago`;
-  };
   const host = (u) => String(u || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
 
   const key = (s) => String(s || '').toLowerCase().trim();
@@ -201,32 +190,6 @@
     } catch { el.remove(); miniState('error'); console.warn('[detail] Map preview could not initialise'); }
   };
   document.addEventListener('wa:maplibre-error', () => miniState('error'));
-
-  const goingRow = (e) => {
-    if (!window.WA.Going) return '';
-    const on = window.WA.Going.has(e.id);
-    return `<div class="det-going">
-      <span class="det-going__icon">${I('people')}</span>
-      <span class="det-going__text" id="going-text">${on ? 'You are going' : 'Going?'}</span>
-      <button class="wa-btn wa-btn--sm${on ? ' is-on' : ''}" type="button" id="going" aria-pressed="${on}">${I(on ? 'check' : 'follow')}<span>${on ? 'Going' : 'I’m going'}</span></button>
-    </div>`;
-  };
-  let goingN = { id: '', n: null };
-  const paintGoing = (id) => {
-    const t = document.getElementById('going-text');
-    if (!t) return;
-    const on = window.WA.Going.has(id);
-    const n = goingN.id === id ? goingN.n : null;
-    const others = n == null ? null : Math.max(n - (on && window.WA.Auth && window.WA.Auth.isSignedIn() ? 1 : 0), 0);
-    t.textContent = others == null ? (on ? 'You are going' : 'Going?')
-      : on ? (others ? `You and ${others} ${others === 1 ? 'other' : 'others'}` : 'You are going')
-      : others ? `${others} going` : 'Be the first to say you are going';
-  };
-  const fetchGoing = (id) => {
-    if (!window.WA.Going || goingN.id === id) { paintGoing(id); return; }
-    goingN = { id, n: null };
-    window.WA.Going.count(id).then((n) => { if (goingN.id === id) { goingN.n = n; paintGoing(id); } });
-  };
 
   /* ── Calendar file ─────────────────────────────────────────── */
   const icsDate = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
@@ -319,9 +282,8 @@
         </a></section>`;
     };
 
-    const link = e.permalink || e.ticketUrl || '';
+    const link = url(e.permalink) || url(e.ticketUrl);
     const via = R().real(e.handle) ? `@${String(e.handle).replace(/^@/, '')}` : '';
-    const seen = ago(e.lastSeenAt || e.createdAt);
 
     return `<div class="det-grid">
       <div class="det-grid__media">${media(e, title, e.kind)}</div>
@@ -355,8 +317,7 @@
             ${saveBtn(e.id)}
             <button class="wa-btn" type="button" id="addlist">${I('list')}<span>${esc(listLabel(e.id))}</span></button>
           </div>
-        </div>
-        ${goingRow(e)}`}
+        </div>`}
 
         ${easyBlock()}
         ${venueCard()}
@@ -372,12 +333,8 @@
           ${R().real(e.address) ? `<p>${esc(e.address)}</p>` : ''}
           <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
-        <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
-          <div class="det-prov">
-            <span>${esc([via ? `Listed via ${via}` : 'Filed by the venue', seen ? `read ${seen}` : ''].filter(Boolean).join(', '))}.</span>
-            ${link ? `<a href="${esc(url(link))}" target="_blank" rel="noopener noreferrer">${esc(host(link))} ${I('out', 'wa-ic--sm')}</a>` : ''}
-            ${via ? `<a href="source.html?handle=${esc(encodeURIComponent(e.handle))}">Everything from ${esc(via)}</a>` : ''}
-          </div>
+        <footer class="det-footer">
+          ${link ? `<a class="det-footer__source" href="${esc(link)}" target="_blank" rel="noopener noreferrer"><span>Source:</span> <span translate="no">${esc(via || host(link))}</span> ${I('out', 'wa-ic--sm')}</a>` : ''}
           ${window.WA.Report ? `<details class="det-flag" id="flag-box">
             <summary>Flag a problem</summary>
             <form id="flag-form" data-id="${esc(e.id)}">
@@ -389,7 +346,7 @@
               <button class="wa-btn" type="submit">Send</button>
             </form>
           </details>` : ''}
-        </section>
+        </footer>
       </div>
     </div>`;
   };
@@ -417,7 +374,6 @@
       ${route ? `<a class="wa-btn wa-btn--pill" href="${esc(Rt.href(route))}">Plan the next hours from here</a>` : ''}</section>`;
   };
 
-  const HOURS_FROM = { osm: 'OpenStreetMap', site: 'the venue\'s own site', facebook: 'its Facebook page', instagram: 'its Instagram bio', manual: 'a check by us' };
   const placePage = (v) => {
     const o = R().openState(v);
     const following = window.WA.Follows && window.WA.Follows.has(window.WA.Follows.placeId(v));
@@ -484,11 +440,7 @@
           ${R().real(v.address) ? `<p>${esc(v.address)}</p>` : ''}
           <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
-        <section class="det-block"><h2 class="det-block__title">Where this came from</h2>
-          <div class="det-prov">${v.osmId
-            ? `<span>Address and links from OpenStreetMap${v.openingHours ? `; hours from ${HOURS_FROM[v.hoursSource] || 'OpenStreetMap'}` : v.hoursSource === 'events' ? '; its own site says it opens for its events' : ''}.</span><a href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">openstreetmap.org ${I('out', 'wa-ic--sm')}</a>`
-            : `<span>Details from the venue${v.openingHours && HOURS_FROM[v.hoursSource] ? `; hours from ${HOURS_FROM[v.hoursSource]}` : ''}${!v.openingHours && v.hoursSource === 'events' ? '; its own site says it opens for its events' : ''}.</span>`}</div>
-        </section>
+        ${v.osmId ? `<footer class="det-footer"><a class="det-footer__source" href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors ${I('out', 'wa-ic--sm')}</a></footer>` : ''}
       </div>
     </div>`;
   };
@@ -540,7 +492,6 @@
     main().innerHTML = isEvent ? eventPage(e) : placePage(e);
     window.scrollTo(0, y);
     mountMini();
-    if (isEvent) fetchGoing(e.id);
   };
 
   /* ── The add-to-list sheet ─────────────────────────────────── */
@@ -614,15 +565,6 @@
       window.WA.Bookmarks.set(id, on);
       render();
       toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => { window.WA.Bookmarks.set(id, !on); render(); });
-      return;
-    }
-    if (hit('#going') && window.WA.Going) {
-      const on = !window.WA.Going.has(id);
-      const signed = window.WA.Auth && window.WA.Auth.isSignedIn();
-      window.WA.Going.set(id, on).then(() => { goingN = { id: '', n: null }; fetchGoing(id); });
-      render();
-      if (on && !signed && window.WA.Auth) toast('Marked here. Sign in to be counted', 'Sign in', () => window.WA.Auth.openSignIn());
-      else toast(on ? 'Marked as going' : 'Not going', 'Undo', () => { window.WA.Going.set(id, !on).then(() => { goingN = { id: '', n: null }; fetchGoing(id); }); render(); });
       return;
     }
     if (hit('#follow')) {
