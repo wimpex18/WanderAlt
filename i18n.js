@@ -115,7 +115,11 @@
 
   /* ── The page ───────────────────────────────────────────────── */
   const ATTRS = ['aria-label', 'title', 'placeholder', 'alt'];
-  const SKIP = 'script, style, noscript, textarea, code, pre, [translate="no"], [data-notranslate]';
+  /* Names and titles from a source or a person are never looked up: an event called "Festival" or
+     a bar called "Terminal" must not be "translated". Our own copy in them comes from the data. */
+  const SKIP = 'script, style, noscript, textarea, code, pre, [translate="no"], [data-notranslate], '
+    + '.wa-row__title, .wa-place__name, .wa-place__why, .wa-poster__title, .det-next__name, .det-next__why, .vcard__name, '
+    + '.map-preview__title, .rt__name, .rt-card__what b, .wa-gone__title, .wa-listcard__name, .det-summary';
   const textOrig = new WeakMap(), textLast = new WeakMap();
   const attrOrig = new WeakMap(), attrLast = new WeakMap();
 

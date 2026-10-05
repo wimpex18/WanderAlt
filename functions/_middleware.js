@@ -152,18 +152,23 @@ async function pageResponse(context) {
 
   const res = await next();
   if (!(res.headers.get('content-type') || '').includes('text/html')) return res;
+  /* A shared link may carry the sender's language (share.js): the card then uses our own words
+     in it (pipeline/localize.ts), falling back to the English. */
+  const lang = ['et', 'ru', 'uk'].includes(url.searchParams.get('lang')) ? url.searchParams.get('lang') : '';
 
   try {
     if (isPick) {
       const rows = await sbGet(
-        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time,day,starts_at,ends_at,address,ticket_url,is_free,price_min,currency,flag&limit=1`);
+        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time,day,starts_at,ends_at,address,ticket_url,is_free,price_min,currency,flag${lang ? `,title_${lang},quote_${lang}` : ''}&limit=1`);
       const pick = rows[0];
+      if (pick && lang) { pick.title = pick[`title_${lang}`] || pick.title; pick.quote = pick[`quote_${lang}`] || pick.quote; }
       if (!pick) {
         /* Not a listing: a place of the Guide shares the same address shape (detail?id=<place id>).
            Everything shown comes from the row, never from the query string. */
         const [place] = await sbGet(
-          `venues?id=eq.${encodeURIComponent(id)}&status=eq.active&select=name,kind,city,neighborhood,pick_note,image_url,address,lat,lng,website,instagram,facebook&limit=1`);
+          `venues?id=eq.${encodeURIComponent(id)}&status=eq.active&select=name,kind,city,neighborhood,pick_note,image_url,address,lat,lng,website,instagram,facebook${lang ? `,pick_note_${lang}` : ''}&limit=1`);
         if (!place || !place.name) return res;         // unknown id → default OG
+        if (lang) place.pick_note = place[`pick_note_${lang}`] || place.pick_note;
         const kind = String(place.kind || '').replace(/^./, c => c.toUpperCase());
         const where = [kind, place.neighborhood].map(v => (v == null ? '' : String(v).trim())).filter(Boolean).join(' · ');
         return rewrite(res, {

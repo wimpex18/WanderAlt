@@ -15,10 +15,15 @@
 
   /* ── Native share with graceful fallbacks ─────────────────── */
   async function shareUrl({ title, text, url } = {}) {
+    /* A link shared in another language carries it (?lang=et), so the preview and the page open
+       in the language the sender read; English links stay bare. */
+    let link = url || window.location.href;
+    const lang = window.WA.Lang && window.WA.Lang.current();
+    if (lang && lang !== 'en') { try { const u = new URL(link, location.href); u.searchParams.set('lang', lang); link = u.toString(); } catch (_) { /* as given */ } }
     const shareData = {
       title: title || 'WanderAlt',
       text:  text  || '',
-      url:   url   || window.location.href,
+      url:   link,
     };
     /* navigator.share is gated to secure contexts + (often) a user
        gesture; this is always called from a click handler. */
