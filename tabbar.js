@@ -105,7 +105,8 @@
     const lift = () => {
       if (!g || g.lifted) return;
       g.lifted = true;
-      try { bar.setPointerCapture(g.id); } catch (_) { /* pointer already gone */ }
+      // Capture stays on the pressed element. Transferring it here emits a
+      // bubbling lostpointercapture event and cancels the active gesture.
       bar.classList.add('is-lifted');
       const { r, k } = local();
       g.i = nearest((g.x - r.left) / k);
@@ -120,7 +121,8 @@
     bar.addEventListener('pointerdown', (e) => {
       if (g || !enabled() || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
       g = { id: e.pointerId, x0: e.clientX, x: e.clientX, lifted: false, i: -1 };
-      // Keep a quick tap targeted at its button/link; lift captures a slide on the bar.
+      // Capture once, on the pressed element: quick taps keep their native target
+      // and all captured slide events bubble to this bar without a handoff.
       try { e.target.setPointerCapture(g.id); } catch (_) { /* a tap still works */ }
       g.t = setTimeout(lift, HOLD);
     });
@@ -146,8 +148,9 @@
       const { lifted, i } = g;
       g = null;
       if (!lifted) return;          /* a tap: the option's own click follows */
-      swallow = true;
-      setTimeout(() => { swallow = false; }, 450);
+      // A pointercancel produces no follow-up click; allow the next tap immediately.
+      swallow = e.type !== 'pointercancel';
+      if (swallow) setTimeout(() => { swallow = false; }, 450);
       const now = cur();
       const to = cancelled ? now : i;
       aim(to < 0 ? 0 : box(to).cx);  /* a control can have no selected option */
