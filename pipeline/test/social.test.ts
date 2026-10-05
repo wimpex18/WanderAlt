@@ -3,8 +3,39 @@ import assert from 'node:assert/strict';
 import { threadsToken, tonightText } from '../social.ts';
 import * as threads from '../social/threads.ts';
 import * as instagram from '../social/instagram.ts';
+import * as facebook from '../social/facebook.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
+test('Facebook publishes only to the configured assigned Page with its Page token', async () => {
+  const cfg = { token: 'system-secret', businessId: '1784' };
+  const calls: { path: string; method?: string; auth: string | null; body: string }[] = [];
+  const fetcher = (async (u: string | URL | Request, init?: RequestInit) => {
+    const path = new URL(String(u)).pathname;
+    assert.ok(!String(u).includes('secret'));
+    calls.push({ path, method: init?.method, auth: new Headers(init?.headers).get('authorization'), body: String(init?.body ?? '') });
+    if (path.endsWith('/accounts')) return json({ data: [
+      { id: '11', name: 'Other Page', access_token: 'wrong-secret', tasks: ['MANAGE'] },
+      { id: '42', name: 'WanderAlt', access_token: 'page-secret', tasks: ['CREATE_CONTENT'] },
+    ] });
+    if (init?.method === 'GET') return json({ data: [] });
+    return json({ id: '42_123' });
+  }) as typeof fetch;
+  const page = await facebook.ownPage(cfg, '42', fetcher);
+  await facebook.checkPage(page, fetcher);
+  assert.equal(calls.filter(c => c.method === 'POST').length, 0);
+  assert.equal(await facebook.publishText(page, 'Tonight', fetcher), '42_123');
+  assert.equal(calls.at(-1)?.path, '/v26.0/42/feed');
+  assert.equal(calls.at(-1)?.auth, 'Bearer page-secret');
+  assert.equal(new URLSearchParams(calls.at(-1)?.body).get('message'), 'Tonight');
+  await assert.rejects(facebook.ownPage(cfg, '99', fetcher), /not assigned/);
+  await assert.rejects(facebook.ownPage(cfg, '', fetcher), /numeric/);
+  await assert.rejects(facebook.publishText(page, ' ', fetcher), /needs text/);
+  const denied = (async () => json({ data: [{ id: '42', name: 'WanderAlt', access_token: 'secret', tasks: ['ANALYZE'] }] })) as typeof fetch;
+  await assert.rejects(facebook.ownPage(cfg, '42', denied), /not assigned/);
+  const failure = (async () => json({ error: { code: 190, message: 'page-secret' } }, 400)) as typeof fetch;
+  await assert.rejects(facebook.publishText(page, 'Tonight', failure), e => e instanceof Error && /190/.test(e.message) && !e.message.includes('secret'));
+});
 
 test('the tonight post fits Threads, names the site once and keeps the voice', () => {
   const events = Array.from({ length: 12 }, (_, i) => ({ title: `Night number ${i} with a fairly long title`, venue: 'Heldeke!', starts_at: `2026-10-01T${String(15 + (i % 6)).padStart(2, '0')}:00:00Z` }));

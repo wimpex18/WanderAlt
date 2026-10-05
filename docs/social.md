@@ -1,17 +1,17 @@
 # Social accounts
 
-WanderAlt has a Meta setup and a small set of scripts for Threads and Instagram. Facebook Page posting is not built; it is the same system user token plus the `pages_manage_posts` permission, and a third publisher when wanted.
+WanderAlt has a Meta setup and manual publishers for Threads, Instagram and its Facebook Page. Facebook posting uses the existing system user token to obtain the Page token for the exact `FACEBOOK_PAGE_ID`; it never selects another assigned Page. Nothing posts without an explicit publishing command.
 
 ## Accounts
 
 - Business portfolio **WanderAlt** (business.facebook.com), owned by Sergey's Facebook profile, with the Facebook Page **WanderAlt**, the Instagram Business account **wanderalt** (linked to the Page) and the Threads account **wanderalt**.
 - Login email `social@wanderalt.app`, `hello@` and `dev@` are Cloudflare Email Routing addresses that forward to Sergey's Gmail. The app's contact email is `dev@wanderalt.app`.
 - Meta app **WanderAlt pipeline** (development mode; use cases: Instagram API, Pages API, Threads API, Messenger). A **system user** in the portfolio holds its assets, and its token never expires.
-- Repository secrets: `INSTAGRAM_ACCESS_TOKEN` (the system user token with `instagram_basic`, `instagram_manage_insights`, `pages_show_list`, `pages_read_engagement`), `INSTAGRAM_BUSINESS_ID`, and `THREADS_ACCESS_TOKEN` (see below). Tokens never go into the repository, a page, a log line or a chat.
+- Repository secrets: `INSTAGRAM_ACCESS_TOKEN` (the system user token with at least `instagram_basic`, `instagram_manage_insights`, `instagram_content_publish`, `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`), `INSTAGRAM_BUSINESS_ID`, `FACEBOOK_PAGE_ID` (the public ID of our own Page, also in `.env`), and `THREADS_ACCESS_TOKEN` (see below). Tokens never go into the repository, a page, a log line or a chat.
 
 ## Profile kit (what the accounts should say)
 
-None of this can be set through the APIs we hold: the Instagram Graph API and the Threads API have no endpoint for a profile picture, bio or link, and editing the Facebook Page needs `pages_manage_metadata`, which the token does not carry. Set it by hand in each app; the files are in `brand/social/`.
+The profile kit is set by hand: the Instagram Graph API and the Threads API have no endpoint for a profile picture, bio or link, and editing the Facebook Page needs `pages_manage_metadata` (present in the local token checked on 5 October 2026, but no profile-editing tool is implemented). Set it by hand in each app; the files are in `brand/social/`.
 
 | | Instagram `@wanderalt` | Facebook Page **WanderAlt** | Threads `@wanderalt` |
 |---|---|---|---|
@@ -31,21 +31,22 @@ Facebook's longer *About* text can be the About page's first fold: "DIY gigs, cl
 |---|---|---|
 | Venue profile pictures from Instagram | `pipeline/instagram.ts`, in the pipeline run | live (`business_discovery`) |
 | Check tokens and Threads search | `node pipeline/social.ts check`, workflow *social* → `check` | manual |
-| "Tonight" post text from the site's data | `node pipeline/social.ts tonight` | preview only unless `--publish threads` |
+| "Tonight" post text from the site's data | `node pipeline/social.ts tonight` | preview only unless `--publish threads` or `--publish facebook` |
 | Threads text or image post | `pipeline/social/threads.ts` | manual |
+| Facebook text post | `pipeline/social/facebook.ts`, `social.ts tonight --publish facebook` | manual; assigned Page token/feed read checked, no live post tested |
 | Instagram JPEG post | `pipeline/social/instagram.ts`, `social.ts instagram --image … --caption … --publish` | manual |
 
-Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) runs `check` on the 1st and 15th of each month, which posts nothing and keeps the Threads token (60 days) refreshed; `tonight-preview` and `tonight-threads` are manual only.
+Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) runs `check` on the 1st and 15th of each month, which posts nothing and keeps the Threads token (60 days) refreshed; `tonight-preview`, `tonight-threads` and `tonight-facebook` are manual only.
 
 ## How to run it (nothing posts on its own)
 
 Posting is manual; `check` also runs twice a month. From GitHub: **Actions → social → Run workflow**, then choose:
 
-- `check`: reads the secrets and reports, posting nothing. Shows the Instagram lookup, the posts readable from a known venue account, the publishing quota, the Threads token (refreshed and stored when under 30 days remain), Threads keyword search and profile lookup.
+- `check`: reads the secrets and reports, posting nothing. Shows the assigned Facebook Page and a read of its feed (no post created), the Instagram lookup, the posts readable from a known venue account, the publishing quota, the Threads token (refreshed and stored when under 30 days remain), Threads keyword search and profile lookup.
 - `tonight-preview`: prints the "Tonight in Tallinn" text and its character count. Nothing is sent.
-- `tonight-threads`: the only choice that posts (to Threads). Do not choose it until the preview has been approved.
+- `tonight-threads` / `tonight-facebook`: post the preview to the named service. Do not choose either until the preview has been approved.
 
-From a terminal with the secrets in `.env`: `npm run social -- check`, `npm run social -- tonight`, and `npm run social -- tonight --publish threads` or `npm run social -- instagram --image https://…/a.jpg --caption "…" --publish`. Without `--publish` every command only prints.
+From a terminal with the secrets in `.env`: `npm run social -- check`, `npm run social -- tonight`, and `npm run social -- tonight --publish threads`, `npm run social -- tonight --publish facebook`, or `npm run social -- instagram --image https://…/a.jpg --caption "…" --publish`. Without `--publish` every command only prints.
 
 ## What can find events and places
 
@@ -65,11 +66,11 @@ Finding venues we do not know yet still comes from open data (OpenStreetMap, Ove
 - **Instagram** (`graph.facebook.com/v26.0`, Facebook Login path): `POST /{ig}/media` then `POST /{ig}/media_publish`. JPEG only, at a public address while Instagram fetches it; 100 API posts per 24 hours (`/content_publishing_limit`); the container is polled until `FINISHED`; captions up to 2,200 characters; `alt_text` is supported for images.
 - Instagram has no anonymous profile access and no public free-text search. Hashtag search and Page search need App Review features that are not requested.
 
-## State of the checks (3 October 2026)
+## State of the checks (5 October 2026)
 
-`social check` shows: the Instagram lookup and `business_discovery` work (the pipeline reads 13 to 15 of its 15 venue accounts a run), the publishing quota is 0/100, and the Threads token for `@wanderalt` is valid (own profile, own posts, insights and the publishing limit answer). Threads keyword search and profile lookup do **not** work: every search variant answers HTTP 403, code 10, "Application does not have permission for this action" (on 30 September the same calls answered 500), and profile lookup of @instagram is refused. They need `threads_keyword_search` and `threads_profile_discovery` at Standard access, which means Meta App Review. On Facebook, reading another business's Page `hours`, website and about needs Page Public Metadata Access (also App Review); the pipeline's hours step logs the refusal and stops that source for the run. The code is ready and the owner's steps are in `docs/facebook.md`; `npm run facebook:check` (or *facebook_check* in the pipeline workflow) shows which step is missing. Nothing user-facing depends on Threads or Facebook search. The system user in the portfolio has Threads assigned, which gives the Facebook/Instagram token no Threads access; Threads uses only its own token. Do not read Threads' public pages with a crawler user agent: that poses as Meta's crawler, which this project does not do.
+`social check` shows: the Instagram lookup and `business_discovery` work (the pipeline reads 13 to 15 of its 15 venue accounts a run), the publishing quota is 0/100, and the Threads token for `@wanderalt` is valid (own profile, own posts, insights and the publishing limit answer). Threads keyword search and profile lookup do **not** work: every search variant answers HTTP 403, code 10, "Application does not have permission for this action" (on 30 September the same calls answered 500), and profile lookup of @instagram is refused. Those two permissions are configured in the dashboard as Ready for testing, but public access still needs the approval gates described below. On Facebook, reading another business's Page `hours`, website and about needs Page Public Metadata Access (also App Review); the pipeline's hours step logs the refusal and stops that source for the run. The code is ready and the owner's steps are in `docs/facebook.md`; `npm run facebook:check` (or *facebook_check* in the pipeline workflow) shows which step is missing. Nothing user-facing depends on Threads or Facebook search. The system user in the portfolio has Threads assigned, which gives the Facebook/Instagram token no Threads access; Threads uses only its own token. Do not read Threads' public pages with a crawler user agent: that poses as Meta's crawler, which this project does not do.
 
-To resume: submit one App Review for the three permissions once the privacy and data-use text are final, then run `social check`; if the search probes pass, keyword search works.
+To resume: follow the verified current dashboard steps in `docs/facebook.md`. Domain verification is complete. The business flow offers an unregistered individual route but still needs accepted evidence; Threads App Review additionally opens an irreversible Tech Provider gate. Page Public Metadata Access was absent from this app's Pages use case on 5 October. Prepare each actual data use separately and resolve these gates before submitting; token scopes alone do not unlock public access.
 
 `social check` runs a short probe set with the same token (own profile, own posts, insights, publishing limit, four search variants) and prints each result with its HTTP status, code, subcode, type, Meta's trace id (the `fbtrace_id` body field or `x-fb-trace-id` header) and the start of the body when it is not JSON.
 
