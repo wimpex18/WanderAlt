@@ -123,6 +123,9 @@ export function lanes(workers = env('WORKERS_AI_MODEL') ?? '@cf/openai/gpt-oss-1
       // rate-limited upstream, which the free ones often are.
       call: openaiStyle('https://openrouter.ai/api/v1/chat/completions', env('OPENROUTER_API_KEY'), openrouter, true, {
         models: [openrouter, ...OPENROUTER_FALLBACKS.filter(m => m !== openrouter)].slice(0, 3),   // OpenRouter's limit
+        // OpenRouter's own reasoning control reaches every model behind it; a thinking fallback
+        // left to think at length spent the whole 8,192 tokens and cut the answer off (5 Oct run).
+        reasoning: { effort: 'low', exclude: true },
       }),
     },
   ];

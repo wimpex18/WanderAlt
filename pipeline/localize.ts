@@ -131,14 +131,24 @@ export async function refreshLocal(db: Pick<Db, 'all' | 'patch'>, models: Models
   const rows = await db.all<LocalInput>(`events?city=eq.${encodeURIComponent(city)}&status=eq.published&archived_at=is.null&merged_into=is.null&title_en=not.is.null&starts_at=gte.${since}`
     + '&select=id,title,title_en,summary_en,language,original_language,original_excerpt,description,local_input_hash&order=starts_at.asc,id.asc');
   const due = rows.filter(e => e.local_input_hash !== localHash(e)).slice(0, limit);
-  for (let i = 0; i < due.length && models.ready; i += 5) {
+  /* A batch whose answer is cut off or unreadable is split in half and tried again, down to one
+     event, so a long listing costs its own call instead of four others their copy. */
+  const run = async (batch: LocalInput[]): Promise<void> => {
+    if (!batch.length || !models.ready) return;
     try {
-      for (const [id, copy] of await localizeEvents(models, due.slice(i, i + 5))) {
+      for (const [id, copy] of await localizeEvents(models, batch)) {
         await db.patch(`events?id=eq.${encodeURIComponent(id)}`, copy);
         count++;
       }
-    } catch (e) { console.warn(`[local] batch deferred: ${(e as Error).message}`); }
-  }
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (batch.length > 1 && /cut off|JSON/i.test(msg)) {
+        const half = Math.ceil(batch.length / 2);
+        await run(batch.slice(0, half)); await run(batch.slice(half));
+      } else console.warn(`[local] batch deferred: ${msg}`);
+    }
+  };
+  for (let i = 0; i < due.length && models.ready; i += 5) await run(due.slice(i, i + 5));
   console.log(`[local] ${count} written (${due.length} events due); ${models.calls} calls, ${Math.round(usage.neurons)} neurons`);
   return count;
 }
