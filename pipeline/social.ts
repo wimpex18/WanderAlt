@@ -97,8 +97,8 @@ async function main() {
     if (publishTo && !['threads', 'facebook'].includes(publishTo)) throw new Error('--publish must be threads or facebook');
     const db = new Db();
     const now = new Date(Date.now()).toISOString();
-    const rows = await db.select<{ title: string; venue: string | null; starts_at: string }>(
-      `picks?tonight=is.true&starts_at=gte.${now}&order=starts_at.asc&limit=12&select=title,venue,starts_at`);
+    const rows = await db.select<{ title: string; venue: string | null; starts_at: string; has_time: boolean }>(
+      `picks?tonight=is.true&starts_at=gte.${now}&order=starts_at.asc&limit=12&select=title,venue,starts_at,has_time`);
     const text = tonightText(rows);
     if (!text) { log('nothing on tonight to post'); return; }
     console.log(`\n${text}\n\n(${text.length} characters)`);

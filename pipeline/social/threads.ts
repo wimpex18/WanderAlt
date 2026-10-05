@@ -1,4 +1,4 @@
-// Threads API (graph.threads.net, v1.0). A Threads user token is separate from
+// Threads API (graph.threads.com, v1.0). A Threads user token is separate from
 // the Facebook/Instagram system user token: it comes from Threads' own OAuth
 // (the app's Threads user token generator), lasts 60 days, and is refreshed
 // before it ends. Limits as documented by Meta in September 2026: a post is up

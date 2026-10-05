@@ -137,3 +137,21 @@ test('recent posts of a known account are read through business_discovery', asyn
   assert.deepEqual(posts, [{ caption: 'Gig', timestamp: '2026-09-30T10:00:00+0000', permalink: 'https://www.instagram.com/p/x/', mediaType: 'IMAGE' }]);
   assert.equal(await recentPosts('x', cfg, 5, (async () => json({ error: { code: 110 } })) as never), null);
 });
+
+test('Instagram never publishes an unfinished or failed image container', async () => {
+  const cfg = { token: 'private', businessId: '1784' };
+  for (const status of ['IN_PROGRESS', 'ERROR', 'EXPIRED']) {
+    let published = false;
+    const fetcher = (async (u: string) => {
+      const path = new URL(u).pathname;
+      if (path.endsWith('content_publishing_limit')) return json({ data: [{ quota_usage: 0, config: { quota_total: 100 } }] });
+      if (path.endsWith('/media')) return json({ id: 'pending' });
+      if (path.endsWith('/media_publish')) { published = true; return json({ id: 'unexpected' }); }
+      return json({ status_code: status });
+    }) as never;
+    await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'https://x.ee/a.jpg', caption: 'Tallinn' }, fetcher, 0), /still processing|ERROR|EXPIRED/);
+    assert.equal(published, false);
+  }
+  await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'file:///a.jpg', caption: 'Tallinn' }), /HTTP\(S\)/);
+  await assert.rejects(instagram.publishImage(cfg, { imageUrl: 'https://x.ee/a.jpg', caption: ' ' }), /caption/);
+});

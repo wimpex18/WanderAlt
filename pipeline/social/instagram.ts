@@ -29,18 +29,22 @@ export async function publishingLimit(cfg: InstagramConfig, fetcher: typeof fetc
 
 /** Publish one JPEG with a caption (at most 2,200 characters). Returns the media id. */
 export async function publishImage(cfg: InstagramConfig, post: { imageUrl: string; caption: string; altText?: string }, fetcher: typeof fetch = fetch, pollMs = 20_000): Promise<string> {
-  if (!/\.jpe?g$/i.test(new URL(post.imageUrl).pathname)) throw new Error('Instagram takes JPEG only: the image address must end in .jpg or .jpeg');
+  const image = new URL(post.imageUrl);
+  if (!['http:', 'https:'].includes(image.protocol) || !/\.jpe?g$/i.test(image.pathname)) throw new Error('Instagram takes JPEG only: use a public HTTP(S) .jpg or .jpeg address');
+  if (!post.caption.trim()) throw new Error('Instagram post needs a caption');
   if (post.caption.length > 2200) throw new Error('Instagram caption is at most 2,200 characters');
   const { used, total } = await publishingLimit(cfg, fetcher);
   if (used >= total) throw new Error(`Instagram publishing quota used (${used}/${total} in 24 hours)`);
   const container = await call<{ id: string }>('POST', `${cfg.businessId}/media`, {
     image_url: post.imageUrl, caption: post.caption, ...(post.altText ? { alt_text: post.altText } : {}), access_token: cfg.token }, fetcher);
+  let ready = false;
   for (let i = 0; i < 15; i++) {
     const s = await call<{ status_code: string }>('GET', container.id, { fields: 'status_code', access_token: cfg.token }, fetcher);
-    if (s.status_code === 'FINISHED') break;
+    if (s.status_code === 'FINISHED') { ready = true; break; }
     if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') throw new Error(`Instagram container ${s.status_code}`);
     await sleep(pollMs);
   }
+  if (!ready) throw new Error(`Instagram container ${container.id} still processing; nothing published. Check its status before trying again.`);
   const out = await call<{ id: string }>('POST', `${cfg.businessId}/media_publish`, { creation_id: container.id, access_token: cfg.token }, fetcher);
   return out.id;
 }

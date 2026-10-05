@@ -33,7 +33,7 @@ Facebook's longer *About* text can be the About page's first fold: "DIY gigs, cl
 | Check tokens and Threads search | `node pipeline/social.ts check`, workflow *social* → `check` | manual |
 | "Tonight" post text from the site's data | `node pipeline/social.ts tonight` | preview only unless `--publish threads` or `--publish facebook` |
 | Threads text or image post | `pipeline/social/threads.ts` | manual |
-| Facebook text post | `pipeline/social/facebook.ts`, `social.ts tonight --publish facebook` | manual; assigned Page token/feed read checked, no live post tested |
+| Facebook text post | `pipeline/social/facebook.ts`, `social.ts tonight --publish facebook` | manual; first live post and permalink verified on 5 October |
 | Instagram JPEG post | `pipeline/social/instagram.ts`, `social.ts instagram --image … --caption … --publish` | manual |
 
 Nothing posts on a schedule. The workflow *social* (`.github/workflows/social.yml`) runs `check` on the 1st and 15th of each month, which posts nothing and keeps the Threads token (60 days) refreshed; `tonight-preview`, `tonight-threads` and `tonight-facebook` are manual only.
@@ -70,7 +70,7 @@ Finding venues we do not know yet still comes from open data (OpenStreetMap, Ove
 
 `social check` confirms Instagram lookup and `business_discovery` work (13 to 15 known venue accounts per run), with publishing quota 0/100. The reauthorized Threads token belongs to `@wanderalt` and has the original five permissions plus `threads_keyword_search` and `threads_profile_discovery`. Own profile, posts, insights and publishing quota work. Keyword search now responds successfully, returning zero Tallinn results under the unreviewed own-post restriction. Profile lookup of Meta's `@instagram` works; `@laine.bar` remains unavailable. Public venue discovery is not connected.
 
-The new long-lived token was verified and saved together in local `.env`, private Supabase `social_tokens`, and GitHub `THREADS_ACCESS_TOKEN`; it expires on 4 December 2026 and the existing check workflow refreshes it when fewer than 30 days remain. No post was published. On Facebook, another business's Page hours, website and about still need Page Public Metadata Access; the hours step logs the refusal and stops that source for the run. The system user's Threads asset assignment does not confer Threads API access: Threads uses its own token.
+The new long-lived token was verified and saved together in local `.env`, private Supabase `social_tokens`, and GitHub `THREADS_ACCESS_TOKEN`; it expires on 4 December 2026 and the existing check workflow refreshes it when fewer than 30 days remain. One introductory Instagram post and one Facebook post were published and verified on 5 October (links below). On Facebook, another business's Page hours, website and about still need Page Public Metadata Access; the hours step logs the refusal and stops that source for the run. The system user's Threads asset assignment does not confer Threads API access: Threads uses its own token.
 
 To resume: follow the verified current dashboard steps in `docs/facebook.md`. Domain verification is complete. The business flow offers an unregistered individual route but still needs accepted evidence; Threads App Review additionally opens an irreversible Tech Provider gate. Page Public Metadata Access was absent from this app's Pages use case on 5 October. Prepare each actual data use separately and resolve these gates before submitting; token scopes alone do not unlock public access.
 
@@ -97,3 +97,18 @@ The current [Threads authorization guide](https://developers.facebook.com/docume
 The authorization completed on 5 October with the owner's approval. Explorer produced a short-lived token with all seven intended permissions. For a long-lived token without exposing the app secret, use **Threads → Settings → User Token Generator** for the same tester. Its default OAuth request includes only five scopes: retain the generated callback/state and set `params[scope]` and `params[steps].read` to the same seven approved scopes. Verify the consent before continuing. The built-in callback exchanges the token to 60 days; `debug_token` confirmed all seven scopes and the expiry. Deletion, location tagging, mentions and cross-posting were excluded.
 
 Update private `social_tokens`, local `.env` and the repository secret together, then run the read-only checks. Updating `.env` alone leaves the stored token in use. Never publish credentials or OAuth codes in logs, screenshots or chat. Public search still needs review; a successful grant does not prove public discovery access.
+
+## Publication and integration audit (5 October 2026)
+
+The scheduled pipeline already reads `instagram-venues`: a fresh raw item was stored at 06:07 UTC and event-source records reference this source. It uses Instagram profiles for pictures, bio hours, website enrichment and drift checks. The fixed `instagram-hashtags` collector is dispatched by `run.ts` with the same secrets, and starts running on the schedule after PR #227 is merged. Facebook picture reads and the metadata fallback are wired in; metadata access remains refused. Threads is connected for own-account management, checks and manual publishing. It is not a public venue/event source while search and profile discovery remain restricted by review.
+
+The publisher now refuses to publish an Instagram container unless processing reports `FINISHED`; errors, expiry and processing timeouts leave it unpublished. Check the returned container ID before trying again after a timeout. Tonight previews load `has_time`, so an all-day listing is not assigned an invented midnight time.
+
+The owner requested one introductory post on each service. Published once, then read back through the APIs and checked in the browser:
+
+- [Instagram introduction](https://www.instagram.com/p/DeG1_CUijVk/), using `brand/social/intro-instagram.jpg` and factual introductory copy, with alt text.
+- [Facebook introduction](https://www.facebook.com/122097876891504823/posts/122097876873504823), on the configured WanderAlt Page.
+
+The JPEG is a format conversion of the existing OG artwork. Its public API-fetchable copy is in the existing image bucket at `venue-pictures/social/wanderalt-intro-20261005.jpg`; this prefix is brand material and never attached to a venue record.
+
+Instagram's desktop Edit profile screen disables Website and explicitly requires the mobile app to edit links. `wanderalt.app` was appended to the existing bio and read back successfully; this is plain text, not a clickable website link. To finish that field in the Instagram mobile app: **Profile → Edit profile → Links → Add external link**, URL `https://wanderalt.app`, title `WanderAlt`. The supported Graph API has no profile-link write endpoint.
