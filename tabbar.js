@@ -82,8 +82,13 @@
 
     const place = () => {
       bar.classList.add('is-placing');
-      if (cfg.dropWidth) drop.style.width = `${cfg.dropWidth(items.map((_, i) => box(i).w))}px`;
+      drop.style.width = `${cfg.dropWidth ? cfg.dropWidth(items.map((_, i) => box(i).w)) : box(0).w * 1.3}px`;
       copy.style.width = `${bar.clientWidth}px`; copy.style.height = `${bar.clientHeight}px`;
+      [...copy.children].forEach((a, i) => {
+        const original = items[i];
+        Object.assign(a.style, { position: 'absolute', left: `${original.offsetLeft}px`, top: `${original.offsetTop}px`,
+          width: `${original.offsetWidth}px`, height: `${original.offsetHeight}px` });
+      });
       const c = cur();
       rest(c); aim(c < 0 ? 0 : box(c).cx);
       requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.remove('is-placing')));
@@ -91,7 +96,7 @@
     fill();
     place();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
-    addEventListener('resize', place);
+    addEventListener('resize', () => reset());
 
     /* ── Press, slide, release ─────────────────────────────────── */
     let g = null, swallow = false;
@@ -113,8 +118,9 @@
     };
 
     bar.addEventListener('pointerdown', (e) => {
-      if (!enabled() || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (g || !enabled() || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
       g = { id: e.pointerId, x0: e.clientX, x: e.clientX, lifted: false, i: -1 };
+      try { bar.setPointerCapture(g.id); } catch (_) { /* a tap still works */ }
       g.t = setTimeout(lift, HOLD);
     });
 
@@ -143,7 +149,7 @@
       setTimeout(() => { swallow = false; }, 450);
       const now = cur();
       const to = cancelled ? now : i;
-      aim(box(to).cx);              /* settle on the nearest option */
+      aim(to < 0 ? 0 : box(to).cx);  /* a control can have no selected option */
       rest(to);
       bar.classList.remove('is-lifted');
       if (cancelled || to === now) return;
@@ -151,6 +157,17 @@
     };
     bar.addEventListener('pointerup', (e) => end(e, false));
     bar.addEventListener('pointercancel', (e) => end(e, true));
+    bar.addEventListener('lostpointercapture', (e) => end(e, true));
+
+    const reset = () => {
+      if (g) clearTimeout(g.t);
+      g = null; swallow = false;
+      bar.classList.remove('is-lifted', 'is-going');
+      items.forEach(a => a.classList.remove('is-to'));
+      place();
+    };
+    addEventListener('blur', reset);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
 
     /* The click after a slide belongs to the slide. A tap moves the pill
        first so the change reads as the same motion. */
@@ -163,7 +180,7 @@
 
     return {
       sync() { fill(); place(); },
-      reset() { bar.classList.remove('is-lifted', 'is-going'); items.forEach(a => a.classList.remove('is-to')); place(); },
+      reset,
     };
   };
   window.WA.glassDrop = glassDrop;

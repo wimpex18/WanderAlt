@@ -9,7 +9,8 @@
 // INSTAGRAM_BUSINESS_ID (the id of our Instagram account). Without both the
 // step does nothing.
 
-import { UA } from './util.ts';
+import { UA, clip, scrubContacts } from './util.ts';
+import { pageWebsite } from './facebook-hours.ts';
 import type { Db } from './db.ts';
 import type { Place } from './places.ts';
 
@@ -29,6 +30,7 @@ export function instagramHandle(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
     const u = new URL(url);
+    if (!/^https?:$/.test(u.protocol) || u.username || u.password) return null;
     if (!/(^|\.)instagram\.com$/i.test(u.hostname)) return null;
     const seg = u.pathname.split('/').filter(Boolean);
     if (seg.length !== 1) return null;
@@ -105,7 +107,7 @@ export async function attachInstagramPictures(
   return done;
 }
 
-export interface InstagramPost { caption: string | null; timestamp: string; permalink: string; mediaType: string }
+export interface InstagramPost { caption: string | null; timestamp: string; permalink: string; mediaType: string; imageUrl?: string; posterAvailable?: boolean }
 
 /** Public hashtag captions. Meta limits an account to 30 unique tags in seven
  * days; callers must use a small fixed list, never rotate through guessed tags. */
@@ -142,38 +144,84 @@ export async function hashtagPosts(tag: string, cfg: InstagramConfig, limit = 25
  *  business_discovery call. These are venue announcements to read for events,
  *  never to republish. */
 export async function recentPosts(handle: string, cfg: InstagramConfig, limit = 10, fetcher: typeof fetch = fetch): Promise<InstagramPost[] | null> {
-  const url = `${API}/${encodeURIComponent(cfg.businessId)}?` + new URLSearchParams({
-    fields: `business_discovery.username(${handle}){media.limit(${Math.min(Math.max(limit, 1), 25)}){caption,timestamp,permalink,media_type}}`,
-    access_token: cfg.token,
-  });
+  const result = await lookupPosts(handle, cfg, limit, fetcher);
+  return result.kind === 'found' ? result.posts : null;
+}
+
+export type PostLookup = { kind: 'found'; posts: InstagramPost[] } | { kind: 'none' | 'stop'; reason: string };
+
+/** Images are read only for poster text. Signed CDN addresses never become event artwork. */
+export async function lookupPosts(handle: string, cfg: InstagramConfig, limit = 10, fetcher: typeof fetch = fetch): Promise<PostLookup> {
+  const r = await discovery(handle, `username,media.limit(${Math.min(Math.max(limit, 1), 25)}){caption,timestamp,permalink,media_type,media_url,children.limit(3){media_type,media_url}}`, cfg, fetcher);
+  if (r.kind !== 'found') return r;
+  const media = r.data.media as { data?: { caption?: string; timestamp: string; permalink: string; media_type: string; media_url?: string; children?: { data?: { media_type: string; media_url?: string }[] } }[] } | undefined;
+  return { kind: 'found', posts: (media?.data ?? []).map(m => {
+    const image = m.media_type === 'IMAGE' ? m.media_url : m.children?.data?.find(c => c.media_type === 'IMAGE')?.media_url;
+    const imageUrl = instagramImage(image);
+    return { caption: m.caption ?? null, timestamp: m.timestamp, permalink: m.permalink, mediaType: m.media_type,
+      ...(imageUrl ? { imageUrl, posterAvailable: true } : {}) };
+  }) };
+}
+
+/** Only media served by Meta, never an arbitrary URL from a caption. */
+export function instagramImage(raw: unknown): string | null {
   try {
-    const r = await fetcher(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
-    const body = await r.json() as { business_discovery?: { media?: { data?: { caption?: string; timestamp: string; permalink: string; media_type: string }[] } }; error?: unknown };
-    if (body.error) return null;
-    return (body.business_discovery?.media?.data ?? []).map(m => ({ caption: m.caption ?? null, timestamp: m.timestamp, permalink: m.permalink, mediaType: m.media_type }));
+    const u = new URL(String(raw));
+    return u.protocol === 'https:' && !u.username && !u.password && /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(u.hostname) ? u.href : null;
   } catch { return null; }
 }
 
+async function discovery(handle: string, fields: string, cfg: InstagramConfig, fetcher: typeof fetch): Promise<
+  { kind: 'found'; data: Record<string, unknown> } | { kind: 'none' | 'stop'; reason: string }
+> {
+  if (!/^[A-Za-z0-9._]{2,30}$/.test(handle)) return { kind: 'none', reason: 'invalid username' };
+  try {
+    const r = await fetcher(`${API}/${encodeURIComponent(cfg.businessId)}?${new URLSearchParams({ fields: `business_discovery.username(${handle}){${fields}}` })}`,
+      { headers: { authorization: `Bearer ${cfg.token}`, 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
+    const body = await r.json() as { business_discovery?: Record<string, unknown>; error?: { code?: number } };
+    if (body.error || !r.ok) return { kind: [190, 10, 200, 4, 17, 32, 613].includes(Number(body.error?.code)) || r.status >= 500 ? 'stop' : 'none',
+      reason: `Meta HTTP ${r.status}, code ${body.error?.code ?? '-'}` };
+    const d = body.business_discovery;
+    if (!d || typeof d.username !== 'string' || d.username.toLowerCase() !== handle.toLowerCase()) return { kind: 'none', reason: 'account unavailable or identity mismatch' };
+    return { kind: 'found', data: d };
+  } catch { return { kind: 'stop', reason: 'request unavailable' }; }
+}
+
 export type Bio =
-  | { kind: 'found'; username: string; biography: string }
+  | { kind: 'found'; username: string; biography: string; website?: string | null }
   | { kind: 'none'; reason: string }
   | { kind: 'stop'; reason: string };
 
 /** The bio of a public Business or Creator account, through the same business_discovery call. */
 export async function lookupBio(handle: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<Bio> {
-  const url = `${API}/${encodeURIComponent(cfg.businessId)}?` + new URLSearchParams({
-    fields: `business_discovery.username(${handle}){username,biography}`, access_token: cfg.token,
-  });
-  try {
-    const r = await fetcher(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
-    const body = await r.json() as { business_discovery?: { username?: string; biography?: string }; error?: { code?: number; message?: string } };
-    if (body.error) {
-      return [190, 10, 200, 4, 17, 32, 613].includes(Number(body.error.code))
-        ? { kind: 'stop', reason: `Meta refused (code ${body.error.code}): ${String(body.error.message).slice(0, 120)}` }
-        : { kind: 'none', reason: `code ${body.error.code}` };
-    }
-    const d = body.business_discovery;
-    if (!d?.username || d.username.toLowerCase() !== handle.toLowerCase()) return { kind: 'none', reason: 'another username' };
-    return d.biography ? { kind: 'found', username: d.username, biography: d.biography } : { kind: 'none', reason: 'no bio' };
-  } catch (e) { return { kind: 'stop', reason: `request failed: ${(e as Error).message}` }; }
+  const r = await discovery(handle, 'username,biography,website', cfg, fetcher);
+  if (r.kind !== 'found') return r;
+  const biography = typeof r.data.biography === 'string' ? r.data.biography : '';
+  const website = pageWebsite(r.data.website);
+  return biography || website ? { kind: 'found', username: String(r.data.username), biography, website } : { kind: 'none', reason: 'no bio or website' };
+}
+
+/** Fill explicit profile facts even for places whose opening hours are already known. */
+export async function fillInstagramDetails(places: Place[], cfg: InstagramConfig, limit = 20,
+  deps: { bio?: typeof lookupBio; bios?: Map<string, string>; now?: number; log?: (s: string) => void } = {}): Promise<Place[]> {
+  const emptyDescription = (p: Place) => !p.description || /^cargo\.site$/i.test(p.description.trim());
+  const due = places.filter(p => (p.status ?? 'active') === 'active' && !p.merged_into && instagramHandle(p.instagram) && (!p.website || emptyDescription(p)))
+    .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || a.id.localeCompare(b.id));
+  const start = due.length ? Math.floor((deps.now ?? Date.now()) / (6 * 3_600_000)) * limit % due.length : 0;
+  const todo = [...due.slice(start), ...due.slice(0, start)].slice(0, limit);
+  const changed: Place[] = [];
+  for (const p of todo) {
+    const handle = instagramHandle(p.instagram)!;
+    const r = await (deps.bio ?? lookupBio)(handle, cfg);
+    if (r.kind === 'stop') { (deps.log ?? console.log)(`[instagram details] stopped: ${r.reason}`); break; }
+    if (r.kind !== 'found') continue;
+    deps.bios?.set(handle.toLowerCase(), r.biography);
+    let filled = false;
+    if (!p.website && r.website) { p.website = r.website; p.website_source = 'instagram'; p.enriched_at = null; filled = true; }
+    const description = clip(scrubContacts(r.biography)?.trim() ?? '', 400);
+    if (emptyDescription(p) && description) { p.description = description; filled = true; }
+    if (filled) changed.push(p);
+  }
+  (deps.log ?? console.log)(`[instagram details] ${todo.length} profiles selected, ${changed.length} places filled from explicit profile facts`);
+  return changed;
 }

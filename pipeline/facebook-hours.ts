@@ -49,7 +49,14 @@ export type FbHours =
 export function pageWebsite(raw: unknown): string | null {
   for (const part of String(raw ?? '').split(/[\s,]+/)) {
     const u = httpUrl(/^https?:/i.test(part) ? part : part ? `https://${part}` : '');
-    if (u && !/(^|\.)(facebook|instagram|tiktok|youtube|x|twitter|linktr|linkin|beacons|threads)\.(com|ee|net|bio|ai)$/i.test(new URL(u).hostname)) return u;
+    if (!u) continue;
+    const parsed = new URL(u);
+    if (parsed.username || parsed.password || !parsed.hostname.includes('.')) continue;
+    if (/(^|\.)(facebook|instagram|tiktok|youtube|x|twitter|linktr|linkin|beacons|threads|fienta|piletilevi|piletitasku)\.(com|ee|net|bio|ai)$/i.test(parsed.hostname)
+      || /(^|\.)(t\.me|wa\.me|wa\.link)$/.test(parsed.hostname)
+      || /(^|\.)(goo\.gl|maps\.app\.goo\.gl|g\.page|bit\.ly|maps\.google\.[a-z.]+)$/.test(parsed.hostname)
+      || /(^|\.)google\.[a-z.]+$/.test(parsed.hostname) && /^\/maps\b/.test(parsed.pathname)) continue;
+    return u;
   }
   return null;
 }

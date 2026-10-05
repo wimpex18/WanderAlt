@@ -131,8 +131,8 @@ test('recent posts of a known account are read through business_discovery', asyn
   const { recentPosts } = await import('../instagram.ts');
   const cfg = { token: 't', businessId: '1784' };
   const posts = await recentPosts('laine.bar', cfg, 50, (async (u: string) => {
-    assert.match(decodeURIComponent(u), /media\.limit\(25\)\{caption,timestamp,permalink,media_type\}/);
-    return json({ business_discovery: { media: { data: [{ caption: 'Gig', timestamp: '2026-09-30T10:00:00+0000', permalink: 'https://www.instagram.com/p/x/', media_type: 'IMAGE' }] } } });
+    assert.match(decodeURIComponent(u), /media\.limit\(25\)\{caption,timestamp,permalink,media_type,media_url,children/);
+    return json({ business_discovery: { username: 'laine.bar', media: { data: [{ caption: 'Gig', timestamp: '2026-09-30T10:00:00+0000', permalink: 'https://www.instagram.com/p/x/', media_type: 'IMAGE' }] } } });
   }) as never);
   assert.deepEqual(posts, [{ caption: 'Gig', timestamp: '2026-09-30T10:00:00+0000', permalink: 'https://www.instagram.com/p/x/', mediaType: 'IMAGE' }]);
   assert.equal(await recentPosts('x', cfg, 5, (async () => json({ error: { code: 110 } })) as never), null);

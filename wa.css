@@ -328,7 +328,8 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 }
 .wa-tabbar__copy, .map-seg__copy {
   position: absolute; top: 9px; left: 0;
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 5px;
+  /* tabbar.js mirrors each option's measured box, including variable-width Map options. */
+  display: block; padding: 0;
   color: var(--accent-ink); scale: 1.12;
   transition: left 460ms var(--spring);
 }
@@ -996,7 +997,7 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 .map-seg.is-lifted > .map-seg__opt { color: var(--ink-2); }
 .map-seg__pill { top: 3px; bottom: 3px; transition: transform 460ms var(--spring), width 460ms var(--spring), opacity 200ms var(--ease); }
 .map-seg__drop { top: -6px; bottom: -6px; width: 110px; }
-.map-seg__copy { top: 6px; display: flex; gap: 2px; padding: 3px; scale: 1.1; }
+.map-seg__copy { top: 6px; scale: 1.1; }
 .map-seg__n { font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .map-seg__opt[aria-pressed="true"] .map-seg__n, .map-seg__copy .map-seg__n { color: inherit; }
 .map-when { margin-left: auto; flex: none; }
@@ -1415,7 +1416,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-card__acts { display: flex; gap: var(--s-2); margin-top: var(--s-4); }
 .rt-card__acts .wa-btn { min-height: 48px; }
 .rt-card__acts .wa-btn--primary { flex: 1 1 0; }
-@media (min-width: 768px) { .rt-card__acts .wa-btn--primary { flex: 0 0 auto; min-width: 220px; } }
+@media (min-width: 600px) { .rt-card__acts .wa-btn--primary { flex: 0 0 auto; min-width: 220px; } }
 .rt-card__acts .wa-btn:not(.wa-btn--primary) { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
 .rt-card--empty { padding-bottom: var(--s-4); }
 .rt-card--empty .rt-card__title { padding-right: 0; }

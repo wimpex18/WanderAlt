@@ -19,8 +19,8 @@ import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import * as vabalava from './sources/vabalava.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
-import { instagramConfig, attachInstagramPictures, lookupProfile } from './instagram.ts';
-import { collectInstagram, collectHashtags } from './sources/instagram.ts';
+import { instagramConfig, attachInstagramPictures, lookupProfile, lookupPosts, fillInstagramDetails, type PostLookup } from './instagram.ts';
+import { collectInstagram, collectHashtags, instagramPostUrl } from './sources/instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
 import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
@@ -42,9 +42,13 @@ import { facebookCheck } from './facebook-hours.ts';
 import { wikidataNear } from './wikidata-near.ts';
 import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
+import { fillSourceLinks } from './venue-source-facts.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
+  if (String(row.status_note).startsWith('manual review: date and time read from Instagram poster')) {
+    return { id: row.id, last_seen_at: row.last_seen_at };
+  }
   const { status: _s, status_note: _n, relevance: _r, ...facts } = row;
   // English copy belongs to the separate editorial queue, including originals.
   delete facts.title_en; delete facts.summary_en;
@@ -70,7 +74,7 @@ const log = (...xs: unknown[]) => console.log('[pipeline]', ...xs);
 
 export function loadSources(city = CITY): Source[] {
   const url = new URL(`./sources.${city}.json`, import.meta.url);
-  return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).map(s => ({ ...s, active: true } as Source));
+  return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).filter(s => s.config.enabled !== false).map(s => ({ ...s, active: true } as Source));
 }
 
 async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
@@ -88,30 +92,50 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
 
 /** Posters read per run; each costs about 35 Workers AI neurons. */
 const posters = { left: Number(opt('--max-posters') ?? 30) };
+const instagramPosters = { left: 5 };
+const postCache = new Map<string, Promise<PostLookup>>();
 
 const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && s.config.shape !== 'vabalava') || s.kind === 'rss' || s.kind === 'instagram';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
-async function read(item: RawItem, source: Source, models: Models): Promise<Candidate[] | null> {
+export async function read(item: RawItem, source: Source, models: Models,
+  deps: { posts?: typeof lookupPosts; transcribe?: typeof transcribePoster; extract?: typeof extractEvents; canTranscribe?: boolean } = {},
+): Promise<Candidate[] | null> {
   if (source.kind === 'fienta') return fienta.extract(item);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
   if (source.kind === 'html' && source.config.shape === 'vabalava') return vabalava.extract(item, source);
   if (!models.ready) return null;
-  const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string };
+  const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string; poster_available?: boolean };
+  const isInstagram = source.kind === 'instagram';
+  let image = isInstagram ? undefined : p.photos?.[0];
+  // Resolve signed media URLs when reading, not when queuing: expiry must not change content hashes.
+  if (isInstagram && p.poster_available && p.handle && !/\b\d{1,2}[:.]\d{2}\b/.test(p.text ?? '')) {
+    const cfg = instagramConfig();
+    const vision = deps.canTranscribe ?? !!(process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID);
+    if (!cfg || !vision || instagramPosters.left <= 0 || posters.left <= 0 || usage.neurons >= models.neuronBudget - 50) return null;
+    if (!postCache.has(p.handle)) postCache.set(p.handle, (deps.posts ?? lookupPosts)(p.handle, cfg, 25));
+    const lookup = await postCache.get(p.handle)!;
+    if (lookup.kind !== 'found') throw new Error(`Instagram poster unavailable: ${lookup.reason}`);
+    image = lookup.posts.find(post => instagramPostUrl(post.permalink) === instagramPostUrl(item.url ?? ''))?.imageUrl;
+    if (!image) throw new Error('Instagram poster no longer available in recent posts; check the source manually');
+    instagramPosters.left--;
+  }
   // A post's poster often carries the date, time and venue its text leaves out.
-  const poster = p.photos?.[0] && posters.left > 0 && usage.neurons < models.neuronBudget - 50 ? (posters.left--, await transcribePoster(p.photos[0])) : null;
+  const poster = image && posters.left > 0 && usage.neurons < models.neuronBudget - 50 ? (posters.left--, await (deps.transcribe ?? transcribePoster)(image)) : null;
+  if (isInstagram && image && !poster) throw new Error('Instagram poster transcription unavailable; retry or check the source manually');
   const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
-  const found = await extractEvents(models, {
+  const found = await (deps.extract ?? extractEvents)(models, {
     text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
-    images: p.photos ?? [], pageUrl: item.url ?? null,
+    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null,
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
   const venue = source.config.venue_name as string | undefined;
   // A venue's own Instagram post names no other place: it is at that venue.
-  if (source.kind === 'instagram' && p.venue_name) return found.map(c => ({ ...c, venue_name: c.venue_name || p.venue_name }));
+  if (isInstagram) return found.map(c => ({ ...c, image_url: null, venue_name: c.venue_name || p.venue_name,
+    ...(poster ? { review_note: 'manual review: date and time read from Instagram poster' } : {}) }));
   return venue ? found.map(c => ({ ...c, venue_name: venue })) : found;
 }
 
@@ -371,15 +395,9 @@ async function main() {
 
   // A curated source that names its one venue may name that venue's own
   // site (`venue_site`): the place gets it when it has none.
-  for (const s of sources) {
-    const name = String(s.config.venue_name ?? ''), site = httpUrl(s.config.venue_site);
-    if (!name || !site) continue;
-    const p = places.all().find(x => [x.name, ...x.aliases].some(a => nameKey(a) === nameKey(name)));
-    if (p && !p.website) {
-      p.website = site; p.website_source = 'source'; p.enriched_at = null;
-      if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
-      log(`${s.id}: ${p.name} website from the source`);
-    }
+  for (const p of fillSourceLinks(places.all(), sources)) {
+    if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+    log(`source links: ${p.name} missing website/profile filled`);
   }
   // A Wikidata item that names a place's OpenStreetMap object as its own.
   if (!flag('--no-enrich') && !(DRY && !flag('--geocode'))) {
@@ -478,6 +496,13 @@ async function main() {
   // Opening hours for places that have none: the venue's own site, then its Facebook Page, then its
   // Instagram bio, then a free model reading that same text (hours-sources.ts). A few a run.
   const bios = new Map<string, string>();
+  if (instagram) {
+    try {
+      for (const p of await fillInstagramDetails(places.all(), instagram, 20, { bios })) {
+        if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
+      }
+    } catch (e) { log(`instagram details failed: ${(e as Error).message}`); }
+  }
   if (!flag('--no-hours')) {
     try {
       for (const p of await fillHours(places.all(), instagram, Number(opt('--max-hours') ?? 30), { bios, models: flag('--no-model-hours') ? null : models })) {
@@ -530,7 +555,7 @@ async function main() {
     const id = seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
     seen.add({ id, title: c.title, where, start, url: c.url });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
-    const { status, note } = offTopic(c.title) ?? decide(e, trusted);
+    const { status, note } = offTopic(c.title) ?? (c.review_note ? { status: 'review', note: c.review_note } : decide(e, trusted));
     // Any source saying a show is off or sold out wins over one that doesn't.
     const state = worse(c.flag, textFlag(c.title, c.description));
     const imagePage = httpUrl(c.url ?? p.item.url);
@@ -606,6 +631,10 @@ async function main() {
   const refresh = ids.filter(id => existing.has(id)).map(id => eventRefreshFacts(events.get(id)!));
   const byShape = new Map<string, Record<string, unknown>[]>();
   for (const r of refresh) {
+    if (Object.keys(r).length === 2 && r.id && r.last_seen_at) {
+      await db.patch(`events?id=eq.${encodeURIComponent(String(r.id))}`, { last_seen_at: r.last_seen_at });
+      continue;
+    }
     const shape = Object.keys(r).sort().join(',');
     byShape.set(shape, [...(byShape.get(shape) ?? []), r]);
   }

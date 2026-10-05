@@ -192,6 +192,24 @@
     }
   },
   {
+    "id": "heldeke-fienta",
+    "city": "tallinn",
+    "kind": "fienta",
+    "url": "https://fienta.com/api/v1/public/events/?venue=heldeke%7Cheldeke!%7CHeldeke!%20-%20Theatre%20and%20Bar&locale=en",
+    "handle": "@heldeke_theatre.bar",
+    "label": "Heldeke! (venue ticket calendar)",
+    "curated": true,
+    "config": {
+      "days": 45,
+      "venue_id": "tallinn-heldeke",
+      "venue_name": "Heldeke!",
+      "venue_site": "https://heldeke.ee/",
+      "venue_instagram": "https://www.instagram.com/heldeke_theatre.bar/",
+      "venue_facebook": "https://www.facebook.com/Heldeke",
+      "evidence_url": "https://heldeke.ee/tickets/"
+    }
+  },
+  {
     "id": "instagram-venues",
     "city": "tallinn",
     "kind": "instagram",
@@ -199,7 +217,7 @@
     "handle": "@wanderalt",
     "label": "Instagram (venue accounts)",
     "curated": false,
-    "config": { "max_age_days": 14, "accounts_per_run": 15 }
+    "config": { "max_age_days": 14, "accounts_per_run": 30 }
   },
   {
     "id": "instagram-hashtags",
@@ -209,6 +227,6 @@
     "handle": "#tallinn",
     "label": "Instagram (Tallinn hashtag)",
     "curated": false,
-    "config": { "hashtags": ["tallinn"] }
+    "config": { "hashtags": ["tallinn"], "enabled": false }
   }
 ]
