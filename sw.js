@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v93';
+const VERSION = 'wa-v94';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -38,7 +38,7 @@ const SHELL_URLS = [
   './city.js', './supabase.js', './auth.js', './save-store.js', './bookmark.js', './lists.js',
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './report.js', './push.js', './ask.js', './install.js',
   './finder.js', './moods.js', './route.js', './route-page.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
-  './detail.js', './source.js', './you.js', './about.js', './notfound.js',
+  './detail.js', './source.js', './you.js', './start-from.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js', './vendor/maplibre-gl.css',
   './map-style.json', './map-style-dusk.json',
   './fonts/geologica-latin.woff2',

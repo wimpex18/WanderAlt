@@ -1615,3 +1615,21 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 }
 
 .det-footer > .wa-linkbtn { min-height: 44px; }
+
+/* Start from: a compact location key and a local combobox. */
+.wa-start__control { display: flex; align-items: center; gap: var(--s-2); }
+.wa-start__search { position: relative; flex: 1; min-width: 0; }
+.wa-start__locate { flex: 0 0 44px; color: var(--here); }
+.wa-start__locate[disabled] { opacity: .5; }
+.wa-start__options { position: absolute; z-index: 5; top: calc(100% + 4px); inset-inline: 0; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--shadow-2); max-height: min(352px, 40vh); overflow-y: auto; overscroll-behavior: contain; }
+.wa-start__options button { display: block; width: 100%; min-height: 44px; padding: 10px 16px; text-align: start; color: var(--ink); background: transparent; }
+.wa-start__options button:hover, .wa-start__options button[aria-selected="true"] { background: var(--select-bg); }
+
+.rt-card__origin { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.rt-card__from { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; text-align: start; color: var(--here); }
+.rt-card__from > span { font-size: var(--fs-small); color: var(--ink-2); }
+.rt-card__from > b { font-size: var(--fs-small); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rt-card__from .wa-ic { width: 14px; height: 14px; flex: none; }
+.wa-sheet--start .wa-start__options { position: static; margin-top: 4px; }
+
+.wa-sheet--start .wa-start__control { align-items: flex-start; }

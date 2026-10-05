@@ -746,7 +746,18 @@ window.WA.dict.ru = {
   "Another film": "Ещё один фильм",
   "Another gallery": "Ещё одна галерея",
   "Source:": "Источник:",
-  "© OpenStreetMap contributors": "© Участники OpenStreetMap"
+  "© OpenStreetMap contributors": "© Участники OpenStreetMap",
+  "City or place": "Город или место",
+  "City centre. Pick a venue for a more precise starting point.": "Центр города. Выберите заведение для более точной точки отсчёта.",
+  "Walking times and routes start at your current location.": "Время пешком и маршруты отсчитываются от вашего текущего местоположения.",
+  "Choose Tallinn or a place you know, or use your location.": "Выберите Таллин или знакомое место либо используйте своё местоположение.",
+  "Location is blocked. Allow it in browser settings, or choose a place.": "Геолокация заблокирована. Разрешите её в настройках браузера или выберите место.",
+  "Could not get your location. Try again or choose a place.": "Не удалось определить местоположение. Попробуйте ещё раз или выберите место.",
+  "Nothing is a short walk from here. Choose another starting point or Whole city.": "Рядом ничего нет. Выберите другую точку отсчёта или Весь город.",
+  "Whole city": "Весь город",
+  "Choose a place": "Выберите место",
+  "Right by here": "Совсем рядом",
+  "Nearest first, walking from here": "Сначала ближайшие, пешком отсюда"
  },
  "patterns": [
   [
@@ -1132,6 +1143,10 @@ window.WA.dict.ru = {
   [
    "{n} today",
    "Сегодня: {n}"
+  ],
+  [
+   "{n} min walk from here",
+   "{n} мин пешком отсюда"
   ]
  ]
 };

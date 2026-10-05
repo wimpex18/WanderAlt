@@ -50,6 +50,17 @@
      callers degrade to the area label rather than hiding the row. */
   let _loc = null, _denied = false, _pending = null, _error = 0;
 
+  /* Share a recently requested device position across this tab's page navigations,
+     for five minutes. Never prompt at load or replace a chosen anchor. */
+  const PKEY = 'wa:position:v1', POSITION_AGE = 5 * 60 * 1000;
+  try {
+    const p = JSON.parse(sessionStorage.getItem(PKEY) || 'null');
+    const age = p && Date.now() - p.at;
+    if (p && Number.isFinite(p.lat) && Math.abs(p.lat) <= 90 && Number.isFinite(p.lng) && Math.abs(p.lng) <= 180 &&
+        age >= 0 && age < POSITION_AGE) _loc = { lat: p.lat, lng: p.lng };
+    else sessionStorage.removeItem(PKEY);
+  } catch (_) { /* blocked or stale: no position */ }
+
   /* An anchor is a place the reader picked to measure from (a hotel, a
      friend's street), saved in this browser. It stands in for the device
      position, so walking times work with no location permission. */
@@ -67,9 +78,10 @@
     document.dispatchEvent(new CustomEvent('wa:location-ready', { detail: _anchor || _loc }));
   };
 
-  const userLoc = () => {
-    if (_anchor) return Promise.resolve(_anchor);
-    if (_loc)    return Promise.resolve(_loc);
+  const userLoc = (device = false) => {
+    if (_anchor && !device) return Promise.resolve(_anchor);
+    if (_loc && !device) return Promise.resolve(_loc);
+    if (device) _denied = false;
     if (_denied || !navigator.geolocation) return Promise.resolve(null);
     if (_pending) return _pending;
     _error = 0;
@@ -77,6 +89,7 @@
       navigator.geolocation.getCurrentPosition(
         (p) => {
           _loc = { lat: p.coords.latitude, lng: p.coords.longitude };
+          try { sessionStorage.setItem(PKEY, JSON.stringify({ ..._loc, at: Date.now() })); } catch (_) { /* this page only */ }
           _pending = null;
           document.dispatchEvent(new CustomEvent('wa:location-ready', { detail: _loc }));
           resolve(_loc);
@@ -177,7 +190,7 @@
   window.WA.Geo = {
     WALK_M_PER_MIN,
     walkMinutes, format,
-    coordsFor, userLoc, currentLoc, anchor, setAnchor, locationError: () => _error,
+    coordsFor, userLoc, currentLoc, deviceLoc: () => _loc, anchor, setAnchor, locationError: () => _error,
     distanceTo, distanceLabel,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,

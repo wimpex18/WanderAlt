@@ -746,7 +746,18 @@ window.WA.dict.uk = {
   "Another film": "Ще один фільм",
   "Another gallery": "Ще одна галерея",
   "Source:": "Джерело:",
-  "© OpenStreetMap contributors": "© Учасники OpenStreetMap"
+  "© OpenStreetMap contributors": "© Учасники OpenStreetMap",
+  "City or place": "Місто або місце",
+  "City centre. Pick a venue for a more precise starting point.": "Центр міста. Виберіть заклад для точнішої точки відліку.",
+  "Walking times and routes start at your current location.": "Час пішки й маршрути рахуються від вашого поточного місцезнаходження.",
+  "Choose Tallinn or a place you know, or use your location.": "Виберіть Таллінн або знайоме місце чи використайте своє місцезнаходження.",
+  "Location is blocked. Allow it in browser settings, or choose a place.": "Геолокацію заблоковано. Дозвольте її в налаштуваннях браузера або виберіть місце.",
+  "Could not get your location. Try again or choose a place.": "Не вдалося визначити місцезнаходження. Спробуйте ще раз або виберіть місце.",
+  "Nothing is a short walk from here. Choose another starting point or Whole city.": "Поруч нічого немає. Виберіть іншу точку відліку або Все місто.",
+  "Whole city": "Все місто",
+  "Choose a place": "Виберіть місце",
+  "Right by here": "Зовсім поруч",
+  "Nearest first, walking from here": "Спочатку найближчі, пішки звідси"
  },
  "patterns": [
   [
@@ -1132,6 +1143,10 @@ window.WA.dict.uk = {
   [
    "{n} today",
    "Сьогодні: {n}"
+  ],
+  [
+   "{n} min walk from here",
+   "{n} хв пішки звідси"
   ]
  ]
 };

@@ -23,8 +23,36 @@
      the other plates stay on disk for when their sources are added. */
   const CITIES = [
     /* `centre` is where "Walking from" starts when we have neither a location nor a place the reader chose. */
-    { id: 'tallinn',  label: 'TALLINN',  status: 'live',     thumb: './assets/tallinn-overview.svg', centre: { lat: 59.4342, lng: 24.7436, label: 'Vabaduse väljak' } },
+    { id: 'tallinn',  label: 'TALLINN', name: 'Tallinn', aliases: ['Таллин', 'Таллінн'], languages: ['en', 'et', 'ru', 'uk'], status: 'live',     thumb: './assets/tallinn-overview.svg', centre: { lat: 59.4342, lng: 24.7436, label: 'Vabaduse väljak' } },
   ];
+
+  /* Add Helsinki (fi), Riga (lv), Vilnius (lt, pl) here when their data and
+     interface translations are ready. Only live cities enter suggestions. */
+  const fold = (s) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  window.WA.startSuggestions = (query, venues = []) => {
+    const q = fold(query);
+    if (!q) return [];
+    const cities = CITIES.filter(c => c.status === 'live' && c.centre &&
+      [c.name, c.label, ...(c.aliases || [])].some(n => fold(n).startsWith(q)))
+      .map(c => ({ label: c.name, lat: c.centre.lat, lng: c.centre.lng, city: true }));
+    const seen = new Set(cities.map(c => fold(c.label)));
+    const places = venues.filter(v => v.name && !v.isClosed && Number.isFinite(v.lat) && Number.isFinite(v.lng) &&
+      (!v.city || v.city === window.WA.CITY) && fold(v.name).includes(q))
+      .sort((a, b) => Number(!fold(a.name).startsWith(q)) - Number(!fold(b.name).startsWith(q)) || a.name.localeCompare(b.name))
+      .filter(v => { const k = fold(v.name); if (seen.has(k)) return false; seen.add(k); return true; })
+      .map(v => ({ label: v.name, lat: v.lat, lng: v.lng, city: false }));
+    return [...cities, ...places].slice(0, 8);
+  };
+
+  /* Only cities with live catalogue coverage may be selected from a position. */
+  window.WA.cityForLocation = (loc) => {
+    const G = window.WA.Geo;
+    if (!G || !loc) return null;
+    return CITIES.filter(c => c.status === 'live' && c.centre)
+      .map(c => ({ city: c, distance: G.distanceTo(c.centre, loc) }))
+      .filter(c => c.distance != null && c.distance < 25000)
+      .sort((a, b) => a.distance - b.distance)[0]?.city || null;
+  };
 
   const LS_KEY  = 'wa:city';
   const DEFAULT = 'tallinn';

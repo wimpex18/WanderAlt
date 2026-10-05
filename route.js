@@ -459,13 +459,14 @@
     const opt = typeof o === 'string' ? { label: o } : o;
     const url = esc(href(route));
     const sub = [opt.label, route.area, `about ${lengthText(route).split(',')[0]}`, costText(route)].filter(Boolean).join(' · ');
-    const lead = route.fromYou != null ? `<li class="rt-card__walk rt-card__walk--you" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(route.fromYou <= 1 ? 'Right by you' : `${route.fromYou} min walk from you`)}</span></li>` : '';
+    const lead = route.fromYou != null ? `<li class="rt-card__walk rt-card__walk--you" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(G().anchor() ? (route.fromYou <= 1 ? 'Right by here' : `${route.fromYou} min walk from here`) : (route.fromYou <= 1 ? 'Right by you' : `${route.fromYou} min walk from you`))}</span></li>` : '';
     const stops = lead + route.stops.map((s, i) => `${i && s.walk ? `<li class="rt-card__walk" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(`${s.walk} min walk`)}</span></li>` : ''}<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}" style="--i:${i}">
         <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
         <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(stopSub(s))}</small></span></li>`).join('');
     return `<section class="rt-card${opt.actions ? ' rt-card--now' : ''}" aria-label="${esc(route.title)}">
       ${opt.actions ? SKYLINE : ''}
       <a class="rt-card__main" href="${url}"><span class="rt-card__title">${esc(route.title)}</span><span class="rt-card__sub">${esc(sub)}</span>
+      ${opt.origin ? `</a><div class="rt-card__origin-wrap">${opt.origin}</div><a class="rt-card__main" href="${url}">` : ''}
       <ol class="rt-card__stops">${stops}</ol></a>
       ${opt.actions ? `<div class="rt-card__acts"><a class="wa-btn wa-btn--primary wa-btn--pill" href="${url}">Walk it</a>${opt.more ? `<button class="wa-btn wa-btn--pill" type="button" data-another>${window.WA.Icon('refresh')}Another</button>` : ''}</div>` : ''}</section>`;
   };

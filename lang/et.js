@@ -746,7 +746,18 @@ window.WA.dict.et = {
   "Another film": "Veel üks film",
   "Another gallery": "Veel üks galerii",
   "Source:": "Allikas:",
-  "© OpenStreetMap contributors": "© OpenStreetMapi kaastöölised"
+  "© OpenStreetMap contributors": "© OpenStreetMapi kaastöölised",
+  "City or place": "Linn või koht",
+  "City centre. Pick a venue for a more precise starting point.": "Kesklinn. Täpsema alguspunkti jaoks vali mõni koht.",
+  "Walking times and routes start at your current location.": "Jalutusajad ja marsruudid algavad sinu praegusest asukohast.",
+  "Choose Tallinn or a place you know, or use your location.": "Vali Tallinn või tuttav koht või kasuta oma asukohta.",
+  "Location is blocked. Allow it in browser settings, or choose a place.": "Asukoht on blokeeritud. Luba see brauseri seadetes või vali koht.",
+  "Could not get your location. Try again or choose a place.": "Asukohta ei õnnestunud määrata. Proovi uuesti või vali koht.",
+  "Nothing is a short walk from here. Choose another starting point or Whole city.": "Siit pole midagi lühikese jalutuskäigu kaugusel. Vali teine alguspunkt või Kogu linn.",
+  "Whole city": "Kogu linn",
+  "Choose a place": "Vali koht",
+  "Right by here": "Siinsamas",
+  "Nearest first, walking from here": "Lähimad eespool, jalutades siit"
  },
  "patterns": [
   [
@@ -1112,6 +1123,10 @@ window.WA.dict.et = {
   [
    "{n} today",
    "{n} täna"
+  ],
+  [
+   "{n} min walk from here",
+   "{n} min jalutuskäiku siit"
   ]
  ]
 };

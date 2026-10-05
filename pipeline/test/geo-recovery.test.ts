@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 
-function geo() {
+function geo(storage = new Map<string, string>(), anchors = new Map<string, string>()) {
   let requests = 0, success: any, failure: any;
   const WA: any = {};
   runInContext(readFileSync(new URL('../../geo.js', import.meta.url), 'utf8'), createContext({
-    window: { WA }, localStorage: { getItem: () => null },
+    window: { WA }, localStorage: { getItem: (k: string) => anchors.get(k) || null, setItem: (k: string, v: string) => anchors.set(k, v), removeItem: (k: string) => anchors.delete(k) },
+    sessionStorage: { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) },
     document: { dispatchEvent: () => {} }, CustomEvent: class {},
     navigator: { geolocation: { getCurrentPosition: (ok: any, fail: any) => { requests++; success = ok; failure = fail; } } },
   }));
@@ -30,4 +31,48 @@ test('permission denial is remembered so renders do not prompt again', async () 
   const g = geo(); const first = g.api.userLoc(); g.fail(1);
   assert.equal(await first, null); assert.equal(g.api.locationError(), 1);
   assert.equal(await g.api.userLoc(), null); assert.equal(g.requests(), 1);
+});
+
+test('a recent device position survives page navigation without a new request', async () => {
+  const storage = new Map<string, string>();
+  const first = geo(storage); const request = first.api.userLoc(); first.succeed(); await request;
+  const next = geo(storage);
+  assert.equal(next.api.deviceLoc().lat, 59.437);
+  assert.equal((await next.api.userLoc()).lng, 24.745);
+  assert.equal(next.requests(), 0);
+});
+
+test('stale, future, corrupt and invalid cached positions never become a location', () => {
+  for (const value of [
+    JSON.stringify({ lat: 59, lng: 24, at: Date.now() - 300001 }),
+    JSON.stringify({ lat: 59, lng: 24, at: Date.now() + 60000 }),
+    JSON.stringify({ lat: null, lng: 24, at: Date.now() }),
+    JSON.stringify({ lat: 99, lng: 24, at: Date.now() }),
+    JSON.stringify({ lat: 59, lng: 999, at: Date.now() }), 'broken',
+  ]) assert.equal(geo(new Map([['wa:position:v1', value]])).api.currentLoc(), null);
+});
+
+test('explicit device request bypasses the anchor, retaining it until success is confirmed', async () => {
+  const anchors = new Map<string, string>();
+  const g = geo(new Map(), anchors);
+  g.api.setAnchor({ lat: 59.4342, lng: 24.7436, label: 'Tallinn' });
+  await g.api.userLoc(); assert.equal(g.requests(), 0);
+  const failed = g.api.userLoc(true); g.fail(3); await failed;
+  assert.equal(g.api.anchor().label, 'Tallinn', 'failed lookup keeps the chosen starting place');
+  const retry = g.api.userLoc(true); g.succeed(); await retry;
+  g.api.setAnchor(null);
+  assert.equal(g.api.currentLoc().lat, 59.437);
+  assert.equal(anchors.size, 0);
+});
+
+test('blocked browser storage does not prevent using device location', async () => {
+  const storage = { get: () => { throw new Error('blocked'); }, set: () => { throw new Error('blocked'); }, delete: () => {} };
+  const g = geo(storage as any); const request = g.api.userLoc(); g.succeed();
+  assert.equal((await request).lat, 59.437);
+});
+
+test('an explicit location tap retries after permission settings changed', async () => {
+  const g = geo(); const denied = g.api.userLoc(true); g.fail(1); await denied;
+  const retry = g.api.userLoc(true); assert.equal(g.requests(), 2); g.succeed();
+  assert.equal((await retry).lat, 59.437);
 });
