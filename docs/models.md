@@ -43,7 +43,7 @@ For a picked place with no `pick_note`, up to ten a run: the model sees the plac
 
 ## Estonian, Russian and Ukrainian copy (`pipeline/localize.ts`)
 
-After the English step, its own `Models` with 8 calls a run and the run's neuron ceiling. Five events a call: the model sees each listing's original title and text (at most 3,000 characters), the title's language and the English title for reference, and returns a title and a 1–2 sentence summary in each of the three languages. Notes go fifteen a call. The checks are in `docs/data.md`; a failed batch is due again next run.
+After the English step, its own `Models` with 8 calls a run and the run's neuron ceiling. Five events a call: the model sees each listing's original title and text (at most 3,000 characters), the title's language and the English title for reference, and returns a title and a 1–2 sentence summary in each of the three languages. Notes go fifteen a call. The checks are in `docs/data.md`. A batch whose answer is cut off or unreadable is split in half and tried again, down to one event; any other failure leaves it due next run. It is held to the day's Workers AI allowance like the other readers (`WORKERS_AI_DAILY_NEURONS`). OpenRouter calls carry its own `reasoning: { effort: 'low', exclude: true }`, so a thinking fallback model does not spend the 8,192-token answer on reasoning (the 5 October run lost two batches and a route title that way).
 
 ## Routes (`pipeline/routes.ts`)
 

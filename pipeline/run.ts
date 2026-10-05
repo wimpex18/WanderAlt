@@ -210,7 +210,7 @@ async function main() {
         .reduce((a, r) => a + Number(r.neurons || 0), 0);
       const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
       const left = Math.max(0, daily - spent);
-      for (const m of [models, sorter, english]) m.neuronBudget = Math.min(m.neuronBudget, left);
+      for (const m of [models, sorter, english, local]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
       current.db = db; current.runId = runId;

@@ -47,3 +47,18 @@ test('one call per batch; answers matched by id, unknown ids ignored', async () 
   const out = await localizeEvents(models, [et]);
   assert.deepEqual([...out.keys()], ['e1']);
 });
+
+test('a batch cut off is split and tried again, not lost', async () => {
+  const { refreshLocal } = await import('../localize.ts');
+  const evs = [1, 2, 3, 4].map(n => ({ ...et, id: `e${n}` }));
+  const sizes: number[] = [];
+  const models = { ready: true, calls: 0, ask: async (_s: string, user: string) => {
+    const items = JSON.parse(user) as { id: string }[]; sizes.push(items.length);
+    if (items.length > 2) throw new Error('answer cut off at max_tokens');
+    return { data: { items: items.map(i => ({ id: i.id, ...answer })) }, engine: 'x' };
+  } } as unknown as Models;
+  const patched: string[] = [];
+  const db = { all: async (q: string) => (q.startsWith('places') ? [] : evs), patch: async (q: string) => { patched.push(q); } };
+  const n = await refreshLocal(db as never, models);
+  assert.equal(n, 4); assert.deepEqual(sizes, [4, 2, 2]);
+});
