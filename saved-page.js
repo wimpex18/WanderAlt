@@ -197,4 +197,5 @@
   document.addEventListener('wa:lists-changed', render);
   document.addEventListener('wa:signed-out', () => { listFilter = ''; render(); });
   window.addEventListener('online', () => { details.clear(); failed.clear(); render(); });
+  document.addEventListener('wa:language-changed', render);
 })();

@@ -108,22 +108,24 @@
   const CYRILLIC = /[\u0400-\u04ff]/;
   /* What we write ourselves comes in the interface language when the pipeline has it
      (pipeline/localize.ts): title_et / quote_et and pick_note_et beside the English, and so on.
-     Only that language's columns are read; anything missing falls back to the English. */
-  const LANG = (window.WA.Lang && window.WA.Lang.current()) || 'en';
-  const OWN = LANG === 'en' ? '' : LANG;
-  const PICK_LANG = OWN ? `,title_${OWN},quote_${OWN}` : '';
-  const VENUE_LANG = OWN ? `,pick_note_${OWN}` : '';
+     All three translations travel with the catalogue once; switching needs no new request. */
+  const PICK_LANG = ',title_et,quote_et,title_ru,quote_ru,title_uk,quote_uk';
+  const VENUE_LANG = ',pick_note_et,pick_note_ru,pick_note_uk';
+  const own = (row, field) => {
+    const lang = window.WA.Lang ? window.WA.Lang.current() : 'en';
+    return (lang !== 'en' && row[`${field}_${lang}`]) || row[field];
+  };
   const toPick = (r) => ({
     id:            r.id,
     city:          r.city,
-    title:         (OWN && r[`title_${OWN}`]) || r.title,
+    get title() { return own(r, 'title'); },
     venue:         CYRILLIC.test(r.venue || '') ? null : r.venue,
     venueId:       CYRILLIC.test(r.venue || '') ? null : (r.venue_id || null),
     neighborhood:  CYRILLIC.test(r.neighborhood || '') ? null : r.neighborhood,
     kind:          r.kind,
     day:           r.day,
     time:          r.time,
-    quote:         (OWN && r[`quote_${OWN}`]) || r.quote,
+    get quote() { return own(r, 'quote'); },
     handle:        r.handle,
     imageUrl:      proxifyImage(r.image_url) || null,
     imageAttr:     r.image_attr    || null,
@@ -220,7 +222,7 @@
     isVerified:   r.status === 'active',
     /* Chosen by hand for the guide, with one English line on why. */
     picked:       r.picked === true,
-    pickNote:     (OWN && r[`pick_note_${OWN}`]) || r.pick_note || '',
+    get pickNote() { return own(r, 'pick_note') || ''; },
   });
 
   /* A fast answer (the service worker's cache) can land between two
@@ -240,7 +242,7 @@
      trusted. The rows live under SNAP_KEY with a fingerprint of their
      text; the time of the last confirmation is its own small key, so an
      unchanged answer costs one tiny write, not a rewrite of the rows. */
-  const SNAP_KEY = 'wa:catalogue:v2';
+  const SNAP_KEY = 'wa:catalogue:v3';
   const SNAP_AT_KEY = 'wa:catalogue:at';
   const SNAP_MAX_AGE = 6 * 3600 * 1000;
   const fingerprint = (text) => {
@@ -265,7 +267,7 @@
       try { localStorage.removeItem(SNAP_KEY); localStorage.removeItem(SNAP_AT_KEY); } catch (__) { /* storage is off */ }
     }
   };
-  try { localStorage.removeItem('wa:catalogue:v1'); } catch (_) { /* storage is off */ }
+  try { localStorage.removeItem('wa:catalogue:v1'); localStorage.removeItem('wa:catalogue:v2'); } catch (_) { /* storage is off */ }
 
   /* Turn rows into the catalogue the pages read. */
   const apply = (picks, venues, redirectRows) => {

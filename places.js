@@ -125,4 +125,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
   document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
   document.addEventListener('wa:location-ready', render);
+  document.addEventListener('wa:language-changed', render);
 })();

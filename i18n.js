@@ -15,7 +15,7 @@
    window.WA.Lang:
      .supported          ['en', 'et', 'ru', 'uk']
      .current()          'en' | 'et' | 'ru' | 'uk'
-     .set(lang)          saves the choice (wa:lang:v1) and reloads the page
+     .set(lang)          saves the choice and updates the page in place
    The language is, in order: ?lang= in the address (a shared link; it is then kept), the choice
    saved on this device, the browser's own list (the first of en, et, ru, uk it names), English.
    Every page gets a switch in the top bar (a globe and the code), built here.
@@ -129,45 +129,53 @@
   const miss = (s) => { const c = s.trim(); if (missed.size < 3000 && /\p{L}{2}/u.test(c)) missed.add(c); };
   const skipped = (node) => { const el = node.nodeType === 1 ? node : node.parentElement; return !el || !!el.closest(SKIP); };
 
-  const text = (n) => {
+  const text = (n, force = false) => {
     if (skipped(n)) return;
     const cur = n.data, last = textLast.get(n);
-    if (last !== undefined && cur === last) return;           // our own write
-    const out = tr(cur);
-    textOrig.set(n, cur);
-    if (out !== cur) { textLast.set(n, out); n.data = out; } else { textLast.delete(n); miss(cur); }
+    if (!force && last !== undefined && cur === last) return; // our own write
+    const source = last !== undefined && cur === last ? textOrig.get(n) ?? cur : cur;
+    const out = tr(source);
+    textOrig.set(n, source);
+    if (out !== source) textLast.set(n, out); else textLast.delete(n);
+    if (out !== cur) n.data = out;
+    if (out === source) miss(source);
   };
-  const attr = (el, name) => {
+  const attr = (el, name, force = false) => {
     if (skipped(el)) return;
     const cur = el.getAttribute(name);
     if (cur == null) return;
     const lasts = attrLast.get(el) || {};
-    if (lasts[name] !== undefined && cur === lasts[name]) return;
-    const out = tr(cur);
+    if (!force && lasts[name] !== undefined && cur === lasts[name]) return;
     const origs = attrOrig.get(el) || {};
-    origs[name] = cur; attrOrig.set(el, origs);
-    if (out !== cur) { lasts[name] = out; attrLast.set(el, lasts); el.setAttribute(name, out); } else { if (lasts[name] !== undefined) delete lasts[name]; miss(cur); }
+    const source = lasts[name] !== undefined && cur === lasts[name] ? origs[name] ?? cur : cur;
+    const out = tr(source);
+    origs[name] = source; attrOrig.set(el, origs);
+    if (out !== source) lasts[name] = out; else delete lasts[name];
+    attrLast.set(el, lasts);
+    if (out !== cur) el.setAttribute(name, out);
+    if (out === source) miss(source);
   };
-  const walk = (root) => {
-    if (root.nodeType === 3) { text(root); return; }
+  const walk = (root, force = false) => {
+    if (!root) return;
+    if (root.nodeType === 3) { text(root, force); return; }
     if (root.nodeType !== 1) return;
     if (root.matches && root.matches(SKIP)) return;
-    for (const a of ATTRS) if (root.hasAttribute && root.hasAttribute(a)) attr(root, a);
+    for (const a of ATTRS) if (root.hasAttribute && root.hasAttribute(a)) attr(root, a, force);
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
       acceptNode: (n) => (n.nodeType === 1 && n.matches(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
     });
     for (let n = w.nextNode(); n; n = w.nextNode()) {
-      if (n.nodeType === 3) text(n);
-      else for (const a of ATTRS) if (n.hasAttribute(a)) attr(n, a);
+      if (n.nodeType === 3) text(n, force);
+      else for (const a of ATTRS) if (n.hasAttribute(a)) attr(n, a, force);
     }
   };
 
   let observer = null;
   const observe = () => {
-    if (observer || !table()) return;
+    if (observer) return;
     observer = new MutationObserver((records) => {
       for (const r of records) {
-        if (r.type === 'childList') r.addedNodes.forEach(walk);
+        if (r.type === 'childList') r.addedNodes.forEach(n => walk(n));
         else if (r.type === 'characterData') text(r.target);
         else if (r.type === 'attributes') attr(r.target, r.attributeName);
       }
@@ -175,11 +183,16 @@
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   };
 
-  const titleOf = () => { const o = document.title; const out = tr(o); if (out !== o) document.title = out; };
+  let titleOrig = '', titleLast = '';
+  const titleOf = () => {
+    const cur = document.title;
+    const source = cur === titleLast ? titleOrig : cur;
+    titleOrig = source; titleLast = tr(source);
+    if (titleLast !== cur) document.title = titleLast;
+  };
 
   const start = () => {
     document.documentElement.lang = lang;
-    if (!table()) return;
     walk(document.body);
     titleOf();
     observe();
@@ -187,13 +200,41 @@
 
   const set = (next) => {
     if (!SUPPORTED.includes(next) || next === lang) return;
-    try { localStorage.setItem(KEY, next); } catch (_) { /* kept for this page only */ }
-    /* A ?lang= in the address would win again on reload: it goes. */
+    /* Keep drafts, open disclosures and the reading position through page redraws. */
+    const fields = [...document.querySelectorAll('input[id], textarea[id], select[id]')].map(el =>
+      ({ id: el.id, value: el.value, checked: el.checked, start: el.selectionStart, end: el.selectionEnd }));
+    const folds = [...document.querySelectorAll('details[id]')].map(el => ({ id: el.id, open: el.open }));
+    const focus = document.activeElement && document.activeElement.id;
+    const position = [window.scrollX, window.scrollY];
+    if (observer) observer.disconnect();
+    lang = next; plural = null;
+    Object.keys(cache).forEach(k => delete cache[k]);
+    missed.clear();
+    try { localStorage.setItem(KEY, next); } catch (_) { /* this page only */ }
     try {
       const u = new URL(location.href);
-      if (u.searchParams.has('lang')) { u.searchParams.delete('lang'); location.replace(u.toString()); return; }
-    } catch (_) { /* reload below */ }
-    location.reload();
+      if (u.searchParams.has('lang')) { u.searchParams.delete('lang'); history.replaceState(history.state, '', u.toString()); }
+    } catch (_) { /* no history API */ }
+    document.documentElement.lang = next;
+    walk(document.body, true);
+    titleOf();
+    document.dispatchEvent(new CustomEvent('wa:language-changed', { detail: { lang: next } }));
+    // Page renderers regenerate localized dates and the catalogue's own copy.
+    walk(document.body, true);
+    titleOf();
+    fields.forEach(saved => {
+      const el = document.getElementById(saved.id);
+      if (!el) return;
+      el.value = saved.value;
+      if (typeof saved.checked === 'boolean') el.checked = saved.checked;
+      if (saved.start != null && el.setSelectionRange) { try { el.setSelectionRange(saved.start, saved.end); } catch (_) {} }
+    });
+    folds.forEach(saved => { const el = document.getElementById(saved.id); if (el) el.open = saved.open; });
+    if (focus) { const el = document.getElementById(focus); if (el) el.focus({ preventScroll: true }); }
+    window.scrollTo(...position);
+    requestAnimationFrame(() => window.scrollTo(...position));
+    if (observer) observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+    else observe();
   };
 
   /* The switch in the top bar, left of the theme key: a globe and the current code. It opens a
@@ -207,14 +248,25 @@
     wrap.setAttribute('data-notranslate', '');
     wrap.innerHTML = `<button class="wa-lang__key" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language: ${NAMES[lang]}">`
       + `<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLOBE}</svg><span>${CODES[lang]}</span></button>`
-      + `<div class="wa-lang__menu" role="menu" hidden>${SUPPORTED.map(c => `<button type="button" role="menuitemradio" lang="${c}" data-lang-pick="${c}" aria-checked="${c === lang}" aria-label="${NAMES[c]}">${CODES[c]}</button>`).join('')}</div>`;
+      + `<div class="wa-lang__menu" role="menu" hidden>${SUPPORTED.map(c => `<button type="button" class="wa-lang__opt" role="menuitemradio" lang="${c}" data-lang-pick="${c}" aria-checked="${c === lang}" aria-label="${NAMES[c]}">${CODES[c]}</button>`).join('')}</div>`;
     const key = wrap.querySelector('.wa-lang__key'), menu = wrap.querySelector('.wa-lang__menu');
+    let slider = null;
+    const sync = () => {
+      key.setAttribute('aria-label', `Language: ${NAMES[lang]}`);
+      key.querySelector('span').textContent = CODES[lang];
+      menu.querySelectorAll('[data-lang-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.langPick === lang)));
+      if (slider && !menu.hidden) slider.sync();
+    };
     const open = (on) => {
       menu.hidden = !on; key.setAttribute('aria-expanded', String(on));
-      if (on) (menu.querySelector('[aria-checked="true"]') || menu.firstElementChild).focus();
+      if (on) { if (slider) slider.reset(); (menu.querySelector('[aria-checked="true"]') || menu.querySelector('button')).focus(); }
+      else if (slider) slider.reset();
     };
+    const choose = (code) => { open(false); set(code); sync(); key.focus({ preventScroll: true }); };
+    if (window.WA.glassDrop) slider = window.WA.glassDrop(menu, { name: 'wa-lang', item: '[data-lang-pick]', itemClass: 'wa-lang__opt', current: () => SUPPORTED.indexOf(lang), enabled: () => !menu.hidden, commitSame: true, commit: (i) => choose(SUPPORTED[i]) });
+    document.addEventListener('wa:language-changed', sync);
     key.addEventListener('click', () => open(menu.hidden));
-    menu.addEventListener('click', (e) => { const b = e.target.closest('[data-lang-pick]'); if (b) { open(false); set(b.dataset.langPick); } });
+    menu.addEventListener('click', (e) => { const b = e.target.closest('[data-lang-pick]'); if (b) choose(b.dataset.langPick); });
     document.addEventListener('click', (e) => { if (!menu.hidden && !wrap.contains(e.target)) open(false); });
     wrap.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !menu.hidden) { open(false); key.focus(); }
@@ -246,5 +298,6 @@
   document.documentElement.lang = lang;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountSwitch, { once: true }); else mountSwitch();
+  // Deferred scripts run while readyState is interactive; wait for tabbar.js too.
+  if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', mountSwitch, { once: true }); else mountSwitch();
 })();

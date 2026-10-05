@@ -15,4 +15,5 @@
   };
 
   document.addEventListener('wa:catalog-ready', render);
+  document.addEventListener('wa:language-changed', render);
 })();

@@ -147,9 +147,10 @@
   /* ── Time ────────────────────────────────────────────────── */
   /* Names for dates in the page's language (i18n.js loads first; English when it is absent). */
   const LANG = window.WA.Lang;
-  const DOW = LANG ? LANG.days() : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const DAYFULL = LANG ? LANG.daysFull() : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const MON = LANG ? LANG.months() : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  let DOW = LANG ? LANG.days() : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let DAYFULL = LANG ? LANG.daysFull() : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  let MON = LANG ? LANG.months() : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  document.addEventListener('wa:language-changed', () => { if (LANG) { DOW = LANG.days(); DAYFULL = LANG.daysFull(); MON = LANG.months(); window.WA.R.DOW = DOW; } });
   const keyDate = (key) => new Date(`${key}T12:00:00Z`);
   const dow = (key) => DOW[keyDate(key).getUTCDay()];
   const dom = (key) => keyDate(key).getUTCDate();

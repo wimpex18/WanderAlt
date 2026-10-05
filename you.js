@@ -139,9 +139,6 @@
       return u ? `<a class="wa-btn wa-btn--sm wa-btn--quiet" href="${esc(u.replace(/^https?:/, 'webcal:'))}" aria-label="Add this to your calendar">${I('calendar')}<span>Calendar</span></a>` : '';
     };
 
-    const theme = window.WA.Theme.get();
-    const AUTO = '<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>';
-    const themeIcon = { auto: AUTO, day: I('sun'), dusk: I('moon') };
     const fold = (id, title, n, body) => `<details class="you-fold" id="${id}"${foldOpen.has(id) ? ' open' : ''}><summary><span class="you-fold__t">${esc(title)}</span>${n ? `<span class="you-fold__n">${n}</span>` : ''}${I('chevron')}</summary><div class="you-fold__b">${body}</div></details>`;
 
     const email = window.WA.Auth.session && window.WA.Auth.session.email;
@@ -173,19 +170,6 @@
         <section class="wa-sect you-start">
           <h2 class="wa-sect__title">Start from</h2>
           ${startField()}
-        </section>
-
-        <section class="wa-sect you-lang">
-          <h2 class="wa-sect__title">Language</h2>
-          <div class="mood-seg" role="group" aria-label="Language" data-notranslate>${[['en', 'English'], ['et', 'Eesti'], ['ru', 'Русский'], ['uk', 'Українська']].map(([code, name]) =>
-            `<button type="button" lang="${code}" data-lang-set="${code}" aria-pressed="${window.WA.Lang.current() === code}">${name}</button>`).join('')}</div>
-          <p class="wa-note">The interface follows your choice. Listings stay in the language they were written in.</p>
-        </section>
-
-        <section class="wa-sect you-look">
-          <h2 class="wa-sect__title">Appearance</h2>
-          <div class="you-look__seg" role="group" aria-label="Appearance">${window.WA.Theme.OPTIONS.map(o =>
-            `<button class="you-look__opt" type="button" data-theme-set="${esc(o.value)}" aria-pressed="${theme === o.value}" aria-label="${esc(o.value === 'auto' ? 'Follow my device' : o.label)}" title="${esc(o.value === 'auto' ? `Follow my device, dark from ${window.WA.Theme.duskLabel()}` : o.label)}">${themeIcon[o.value] || ''}</button>`).join('')}</div>
         </section>
 
         ${pushSection(signedIn)}
@@ -246,10 +230,6 @@
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    const lg = hit('[data-lang-set]');
-    if (lg) { window.WA.Lang.set(lg.dataset.langSet); return; }
-    const t = hit('[data-theme-set]');
-    if (t) { window.WA.Theme.set(t.dataset.themeSet); render(); return; }
     const i = hit('[data-interest]');
     if (i) {
       const ids = R().interests.ids();
@@ -329,4 +309,5 @@
   document.addEventListener('wa:signed-in', render);
   document.addEventListener('wa:signed-out', () => { prefs = undefined; notes = undefined; pushState = ''; render(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
+  document.addEventListener('wa:language-changed', render);
 })();

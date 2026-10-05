@@ -422,4 +422,5 @@
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });
   else skeleton();
+  document.addEventListener('wa:language-changed', () => { $('hero-clock').textContent = clockText(); render(); });
 })();

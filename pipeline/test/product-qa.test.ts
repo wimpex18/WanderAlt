@@ -98,7 +98,7 @@ function catalogue(fetcher: (u: string) => Promise<any>, values = new Map<string
 
 test('cached catalogue fallback never becomes live or renews the snapshot confirmation', async () => {
   const oldStamp = String(Date.now() - 3600_000);
-  const values = new Map([['wa:catalogue:at', oldStamp], ['wa:catalogue:v2', JSON.stringify({ sig: 'old', picks: [], venues: [], redirects: [] })]]);
+  const values = new Map([['wa:catalogue:at', oldStamp], ['wa:catalogue:v3', JSON.stringify({ sig: 'old', picks: [], venues: [], redirects: [] })]]);
   const p = catalogue(async () => new Response('[]', { headers: { 'x-wa-cached-at': oldStamp } }), values);
   await p.loaded; await tick();
   assert.equal(p.WA.DATA_LIVE, false);
@@ -196,7 +196,7 @@ test('Pages middleware applies the declared security policy on Function and API 
 test('an online outage reports stale cached results, retains their age, and retries in place once', async () => {
   const stamp=String(Date.now()-3600_000);
   const picks=[{id:'old',city:'tallinn',title:'Old listing',kind:'gig'}];
-  const values=new Map([['wa:catalogue:at',stamp],['wa:catalogue:v2',JSON.stringify({sig:'old',picks,venues:[],redirects:[]})]]);
+  const values=new Map([['wa:catalogue:at',stamp],['wa:catalogue:v3',JSON.stringify({sig:'old',picks,venues:[],redirects:[]})]]);
   let fail=true, calls=0;
   const p=catalogue(async (u) => { calls++; return fail ? new Response('',{status:503}) : Response.json(u.includes('/picks?') ? picks : []); },values);
   await p.WA.refreshCatalogue();
@@ -221,4 +221,24 @@ test('a fresh retry clears the service-worker fallback flag rather than carrying
   const p=catalogue(async () => new Response('[]',{headers:cached ? {'x-wa-cached-at':String(Date.now()-60000)} : {}}));
   await p.WA.refreshCatalogue(); assert.equal(p.WA.CatalogueStatus.stale,true);
   cached=false; await p.WA.refreshCatalogue(); assert.equal(p.WA.CatalogueStatus.stale,false); assert.equal(p.WA.DATA_LIVE,true);
+});
+
+test('catalogue switches its own translated copy without refetching or changing source identity', async () => {
+  let lang = 'en'; const requests: string[] = [];
+  const pick = { id:'show', city:'tallinn', title:'English title', title_et:'Eesti pealkiri', quote:'English summary', quote_ru:'Русское описание', venue:'Festival', kind:'gig', day:'2099-01-01', original_title:'Festival', original_language:'en' };
+  const place = { id:'venue', city:'tallinn', name:'Festival', kind:'gallery', picked:true, pick_note:'English note', pick_note_uk:'Українська нотатка' };
+  const p = catalogue(async u => { requests.push(u); return Response.json(u.includes('/picks?') ? [pick] : u.includes('/venues?') ? [place] : []); });
+  p.WA.Lang = { current: () => lang }; await p.loaded;
+  const event = p.WA.catalog[0], venue = p.WA.venues[0], count = requests.length;
+  assert.equal(event.title, pick.title);
+  lang = 'et'; assert.equal(event.title, pick.title_et); assert.equal(event.quote, pick.quote);
+  lang = 'ru'; assert.equal(event.quote, pick.quote_ru); assert.equal(event.title, pick.title);
+  lang = 'uk'; assert.equal(venue.pickNote, place.pick_note_uk);
+  lang = 'en'; assert.equal(venue.pickNote, place.pick_note);
+  assert.equal(event.originalTitle, 'Festival'); assert.equal(venue.name, 'Festival');
+  assert.equal(requests.length, count);
+  for (const code of ['et','ru','uk']) {
+    assert.ok(requests.find(u=>u.includes('/picks?'))!.includes(`quote_${code}`));
+    assert.ok(requests.find(u=>u.includes('/venues?'))!.includes(`pick_note_${code}`));
+  }
 });

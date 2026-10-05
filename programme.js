@@ -748,4 +748,5 @@
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:follows-changed', render);
   document.addEventListener('wa:routes-ready', () => { if (evenings.length || (state.q && A().places(state.q).plan)) { evenings = eveningsFor(A().local(state.q)); render(); } });
+  document.addEventListener('wa:language-changed', render);
 })();

@@ -1,6 +1,6 @@
 /* ============================================================
    tabbar.js — the glass drop: the phone tab bar's slider, and the
-   same one on the Map's Show control.
+   same one on the Map's Show control and the language picker.
    ------------------------------------------------------------
    At rest a tinted pill sits under the current option. Press the bar and
    the bar swells a little and a drop of clear glass lifts under the
@@ -12,8 +12,8 @@
    runs there.
 
    WA.glassDrop(bar, { name, item, itemClass, current, commit, enabled,
-   dropWidth }) wires any row of options; the tab bar is one, the Map's
-   Show control (map.js) is the other. It returns { sync }, to be called
+   dropWidth, commitSame }) wires any row of options; the tab bar is one, the Map's
+   Show control (map.js) and language picker use it too. It returns { sync, reset }, to be called
    when an option's text or the current option changes.
    ============================================================ */
 (() => {
@@ -120,7 +120,8 @@
     bar.addEventListener('pointerdown', (e) => {
       if (g || !enabled() || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
       g = { id: e.pointerId, x0: e.clientX, x: e.clientX, lifted: false, i: -1 };
-      try { bar.setPointerCapture(g.id); } catch (_) { /* a tap still works */ }
+      // Keep a quick tap targeted at its button/link; lift captures a slide on the bar.
+      try { e.target.setPointerCapture(g.id); } catch (_) { /* a tap still works */ }
       g.t = setTimeout(lift, HOLD);
     });
 
@@ -152,7 +153,7 @@
       aim(to < 0 ? 0 : box(to).cx);  /* a control can have no selected option */
       rest(to);
       bar.classList.remove('is-lifted');
-      if (cancelled || to === now) return;
+      if (cancelled || (to === now && !cfg.commitSame)) return;
       cfg.commit(to, items[to]);
     };
     bar.addEventListener('pointerup', (e) => end(e, false));
@@ -161,7 +162,7 @@
 
     const reset = () => {
       if (g) clearTimeout(g.t);
-      g = null; swallow = false;
+      g = null; // Closing a committing popover still needs to swallow the following click.
       bar.classList.remove('is-lifted', 'is-going');
       items.forEach(a => a.classList.remove('is-to'));
       place();
@@ -201,6 +202,7 @@
       if (still()) go(); else setTimeout(go, 200);
     },
   });
+  if (drop) document.addEventListener('wa:language-changed', () => drop.sync());
   if (drop) addEventListener('pageshow', (e) => { if (e.persisted) drop.reset(); });
 
   /* ── Bar diagnostics ───────────────────────────────────────────

@@ -64,4 +64,5 @@
   document.addEventListener('wa:catalog-ready', render);
   const pre = () => { main().innerHTML = R().skelRows(5); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
+  document.addEventListener('wa:language-changed', render);
 })();
