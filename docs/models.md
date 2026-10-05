@@ -97,3 +97,5 @@ npm run pipeline:dry        # full read of every source, nothing written
 ```
 
 Model ids disappear without notice. When a lane starts failing, run the probe, check the provider's catalogue, and re-pin. Before switching a pin, compare a dry run's output on the same day with both models.
+
+Instagram poster reading shares the existing vision model and neuron counter: at most five per run within the 30-poster limit, resolved from fresh official media URLs. Poster-derived event dates/times require manual review; no vision capacity leaves raw items pending. Signed Instagram media is never republished as event artwork.

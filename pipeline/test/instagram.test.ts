@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { fillInstagramDetails, lookupBio, lookupPosts } from '../instagram.ts';
 import { attachInstagramPictures, instagramConfig, instagramHandle, lookupProfile, storePicture, hashtagPosts } from '../instagram.ts';
 import type { Place } from '../places.ts';
 
@@ -81,4 +82,27 @@ test('the step fills places without a picture, skips the rest and stops when Met
   const none = await attachInstagramPictures({} as never, [place('ddd'), place('eee')], cfg, 20, { lookup: (async () => ({ kind: 'stop', reason: 'Meta refused (code 190)' })) as never, log: s => stop.push(s) });
   assert.equal(none.length, 0);
   assert.match(stop[0], /stopped: Meta refused/);
+});
+
+test('explicit Instagram facts fill missing fields, preserve checked facts and scrub contacts', async () => {
+  const places = [{ id: 'venue', name: 'Venue', city: 'tallinn', aliases: [], instagram: 'https://instagram.com/venue/',
+    opening_hours: 'Tu 12:00-18:00', website: 'https://venue.test/', description: 'cargo.site' }] as Place[];
+  const done = await fillInstagramDetails(places, cfg, 20, { now: 0, log: () => {}, bio: async () => ({ kind: 'found', username: 'venue', biography: 'Record shop. Tue 12–18. Email owner@venue.test', website: 'https://another.test/' }) });
+  assert.equal(done.length, 1); assert.equal(places[0].website, 'https://venue.test/');
+  assert.equal(places[0].opening_hours, 'Tu 12:00-18:00');
+  assert.match(places[0].description!, /Record shop/); assert.ok(!places[0].description!.includes('owner@'));
+});
+
+test('bio identity and URLs are checked; post artwork is restricted to Meta CDN', async () => {
+  assert.equal((await lookupBio('venue', cfg, reply({ business_discovery: { username: 'other', biography: 'x', website: 'https://other.test/' } }))).kind, 'none');
+  const bio = await lookupBio('venue', cfg, reply({ business_discovery: { username: 'venue', biography: 'A venue', website: 'javascript:alert(1)' } }));
+  assert.equal(bio.kind === 'found' && bio.website, null);
+  const map = await lookupBio('venue', cfg, reply({ business_discovery: { username: 'venue', biography: 'A venue', website: 'https://maps.app.goo.gl/ABCDE' } }));
+  assert.equal(map.kind === 'found' && map.website, null);
+  const r = await lookupPosts('venue', cfg, 3, reply({ business_discovery: { username: 'venue', media: { data: [
+    { media_type: 'IMAGE', media_url: 'https://evil.test/asset', timestamp: 'x', permalink: 'x' },
+    { media_type: 'CAROUSEL_ALBUM', children: { data: [{ media_type: 'IMAGE', media_url: 'https://s.cdninstagram.com/poster.jpg' }] }, timestamp: 'x', permalink: 'x' },
+  ] } } }));
+  assert.equal(r.kind, 'found');
+  if (r.kind === 'found') { assert.equal(r.posts[0].imageUrl, undefined); assert.equal(r.posts[1].posterAvailable, true); }
 });

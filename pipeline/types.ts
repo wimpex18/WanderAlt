@@ -53,6 +53,7 @@ export interface Candidate {
   kind_hint?: string | null;    // the source's own category words
   flag?: Flag | null;           // from structured fields; prose is read in run.ts
   engine: string;               // 'fienta', 'jsonld', or the model that read it
+  review_note?: string;         // uncertain source facts must be checked before publication
 }
 
 /** What the classifier adds to a candidate. */
