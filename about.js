@@ -36,4 +36,5 @@
 
   document.addEventListener('wa:catalog-ready', render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true }); else render();
+  document.addEventListener('wa:language-changed', render);
 })();

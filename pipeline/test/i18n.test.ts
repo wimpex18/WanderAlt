@@ -12,7 +12,7 @@ function load(lang: string) {
     localStorage: { getItem: () => null, setItem() {} },
     document: { readyState: 'loading', addEventListener() {}, documentElement: {} },
   });
-  for (const f of ['lang/et.js', 'lang/ru.js', 'i18n.js']) runInContext(readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8'), context);
+  for (const f of ['lang/et.js', 'lang/ru.js', 'lang/uk.js', 'i18n.js']) runInContext(readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8'), context);
   return window.WA as { Lang: { t: (s: string, v?: Record<string, unknown>) => string; current: () => string; days: () => string[]; months: () => string[]; locale: () => string }; dict: any };
 }
 
@@ -77,4 +77,55 @@ test('the tables are well formed: same phrases for both languages, placeholders 
       assert.match(v, /[А-Яа-яЁё]/, `Russian value for "${k}" has no Cyrillic`);
     }
   }
+});
+
+test('hot switching restores English originals, updates dates and keeps drafts without navigation', () => {
+  const listeners = new Map<string, Function[]>(), storage = new Map<string, string>();
+  const element = (skip = false) => ({ nodeType: 1, matches: () => skip, closest: () => skip ? {} : null,
+    attrs: { 'aria-label': 'Search' } as Record<string,string>, hasAttribute(name: string) { return name in this.attrs; },
+    getAttribute(name: string) { return this.attrs[name]; }, setAttribute(name: string, value: string) { this.attrs[name] = value; } });
+  const parent = element(), excluded = element(true);
+  const text = { nodeType: 3, data: 'Open now', parentElement: parent };
+  const venue = { nodeType: 3, data: 'Festival', parentElement: excluded };
+  const field = { id: 'draft', value: 'my unfinished search', checked: true, selectionStart: 3, selectionEnd: 6,
+    focus() {}, setSelectionRange(a: number, b: number) { this.selectionStart = a; this.selectionEnd = b; } };
+  const fold = { id: 'fold', open: true };
+  let replaced = '', observed = 0, scrolled: number[] = [];
+  const document = { readyState: 'loading', documentElement: { lang: '' }, body: parent, title: 'You', activeElement: field,
+    querySelector: () => null,
+    querySelectorAll: (s: string) => s.startsWith('input') ? [field] : [fold],
+    getElementById: (id: string) => id === field.id ? field : fold,
+    addEventListener(name: string, fn: Function) { listeners.set(name, [...(listeners.get(name) || []), fn]); },
+    dispatchEvent(e: any) { for (const f of listeners.get(e.type) || []) f(e); },
+    createTreeWalker() { const nodes = [text, venue]; return { nextNode: () => nodes.shift() }; } };
+  const window: any = { WA: {}, scrollX: 0, scrollY: 200, scrollTo: (...xy: number[]) => { scrolled = xy; } };
+  const context = createContext({ window, document, navigator: { languages: ['en'] }, Intl, URL, URLSearchParams,
+    location: { href: 'https://wanderalt.app/profile?lang=en&keep=yes#taste', search: '?lang=en&keep=yes' },
+    history: { state: {}, replaceState(_s: any, _t: string, url: string) { replaced = url; } },
+    localStorage: { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k,v) },
+    NodeFilter: { SHOW_TEXT: 4, SHOW_ELEMENT: 1, FILTER_REJECT: 2, FILTER_ACCEPT: 1 },
+    MutationObserver: class { observe() { observed++; } disconnect() {} },
+    CustomEvent: class { type: string; constructor(type: string) { this.type = type; } }, requestAnimationFrame: (f: Function) => f() });
+  for (const file of ['lang/et.js', 'lang/ru.js', 'lang/uk.js', 'i18n.js']) runInContext(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'), context);
+  document.dispatchEvent({ type: 'DOMContentLoaded' });
+  document.addEventListener('wa:language-changed', () => { field.value = ''; field.checked = false; fold.open = false; });
+  for (const lang of ['ru','et','uk','en']) {
+    window.WA.Lang.set(lang);
+    assert.equal(text.data, window.WA.Lang.t('Open now'));
+    assert.equal(parent.attrs['aria-label'], window.WA.Lang.t('Search'));
+    assert.equal(document.title, window.WA.Lang.t('You'));
+    assert.equal(venue.data, 'Festival');
+    assert.equal(field.value, 'my unfinished search'); assert.equal(field.checked, true);
+    assert.equal(field.selectionStart, 3); assert.equal(field.selectionEnd, 6); assert.equal(fold.open, true);
+    assert.deepEqual(scrolled, [0,200]);
+    assert.equal(document.documentElement.lang, lang);
+    assert.equal(storage.get('wa:lang:v1'), lang);
+  }
+  assert.equal(replaced, 'https://wanderalt.app/profile?keep=yes#taste');
+  assert.equal(observed, 5);
+  assert.equal(window.WA.Lang.days()[1], 'Mon');
+  window.WA.Lang.set('ru'); const ru = window.WA.Lang.days()[1];
+  window.WA.Lang.set('et'); assert.notEqual(window.WA.Lang.days()[1], ru);
+  // Newly authored English must replace the old original, even while Russian is selected.
+  text.data = 'Saved'; window.WA.Lang.set('en'); assert.equal(text.data, 'Saved');
 });

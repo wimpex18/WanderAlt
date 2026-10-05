@@ -110,4 +110,5 @@
   document.addEventListener('wa:catalog-ready', () => { boot(); window.WA.Route.loadStored(); });
   document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) boot(); });
   document.addEventListener('wa:location-ready', () => { if (document.getElementById('rt-body').children.length) boot(); });
+  document.addEventListener('wa:language-changed', boot);
 })();

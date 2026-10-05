@@ -307,12 +307,12 @@ test('inline icons on the static pages are named and match icons.js', async () =
   execFileSync(process.execPath, [new URL('../../.scripts/sync-icons.js', import.meta.url).pathname, '--check']);
 });
 
-test('the tab bar has three tabs on every page and no empty slot', () => {
+test('the tab bar has four tabs on every page and no empty slot', () => {
   const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
   assert.match(css, /\.wa-tabbar \{[^}]*grid-auto-flow: column/);
-  for (const f of ['index.html', 'map.html', 'saved.html', 'places.html', 'discover.html']) {
+  for (const f of ['index.html', 'map.html', 'saved.html', 'places.html', 'discover.html', 'profile.html', 'detail.html', 'route.html', 'source.html', 'about.html', '404.html']) {
     const html = readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
-    assert.equal((html.match(/class="wa-tabbar__item"/g) || []).length, 3, f);
+    assert.equal((html.match(/class="wa-tabbar__item"/g) || []).length, 4, f);
   }
 });
 

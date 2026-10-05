@@ -492,4 +492,5 @@
   start();
   document.addEventListener('wa:catalog-ready', boot);
   document.addEventListener('wa:location-ready', (e) => { me = e.detail || G().currentLoc(); lastDrawer = ''; draw(); });
+  document.addEventListener('wa:language-changed', () => { collect(); lastDrawer = ''; if (dataUp) draw(); });
 })();

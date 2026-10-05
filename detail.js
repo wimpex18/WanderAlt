@@ -334,6 +334,7 @@
           <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
         <footer class="det-footer">
+          <button class="wa-linkbtn" type="button" data-share>Share</button>
           ${link ? `<a class="det-footer__source" href="${esc(link)}" target="_blank" rel="noopener noreferrer"><span>Source:</span> <span translate="no">${esc(via || host(link))}</span> ${I('out', 'wa-ic--sm')}</a>` : ''}
           ${window.WA.Report ? `<details class="det-flag" id="flag-box">
             <summary>Flag a problem</summary>
@@ -440,7 +441,7 @@
           ${R().real(v.address) ? `<p>${esc(v.address)}</p>` : ''}
           <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
-        ${v.osmId ? `<footer class="det-footer"><a class="det-footer__source" href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors ${I('out', 'wa-ic--sm')}</a></footer>` : ''}
+        <footer class="det-footer"><button class="wa-linkbtn" type="button" data-share>Share</button>${v.osmId ? `<a class="det-footer__source" href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors ${I('out', 'wa-ic--sm')}</a>` : ''}</footer>
       </div>
     </div>`;
   };
@@ -608,4 +609,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true }); else skeleton();
   document.addEventListener('wa:catalog-ready', () => { render(); R().locateIfGranted(); });
   document.addEventListener('wa:location-ready', render);
+  document.addEventListener('wa:language-changed', render);
 })();
