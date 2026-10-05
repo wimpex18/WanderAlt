@@ -744,7 +744,9 @@ window.WA.dict.ru = {
   "Another club": "Ещё один клуб",
   "Another bar": "Ещё один бар",
   "Another film": "Ещё один фильм",
-  "Another gallery": "Ещё одна галерея"
+  "Another gallery": "Ещё одна галерея",
+  "Source:": "Источник:",
+  "© OpenStreetMap contributors": "© Участники OpenStreetMap"
  },
  "patterns": [
   [

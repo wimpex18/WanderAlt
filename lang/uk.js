@@ -744,7 +744,9 @@ window.WA.dict.uk = {
   "Another club": "Ще один клуб",
   "Another bar": "Ще один бар",
   "Another film": "Ще один фільм",
-  "Another gallery": "Ще одна галерея"
+  "Another gallery": "Ще одна галерея",
+  "Source:": "Джерело:",
+  "© OpenStreetMap contributors": "© Учасники OpenStreetMap"
  },
  "patterns": [
   [
