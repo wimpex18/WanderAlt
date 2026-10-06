@@ -685,6 +685,9 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-row__thumb { background: var(--paper-2); }
 .wa-row__thumb .wa-picto { width: 84%; height: 84%; }
 .wa-row__side { align-self: center; display: flex; gap: 2px; }
+.wa-saved-row { position:relative; }
+.wa-saved-row__space { width:var(--tap); height:var(--tap); }
+.wa-saved-row > .wa-iconbtn { position:absolute; right:0; top:50%; translate:0 -50%; }
 .wa-row--now .wa-row__time { color: var(--accent-ink); }
 @media (min-width: 768px) {
   .wa-row { grid-template-columns: 72px minmax(0, 1fr) auto; gap: var(--s-5); padding: var(--s-5) 0; }
@@ -1426,8 +1429,8 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* The mood key under Tonight's headline, and its sheet. */
 .home-mood__key { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
 .home-mood__key .wa-ic { color: var(--accent-ink); }
-/* A long choice is cut, so Near me keeps its place beside the key. */
-.home-acts:not(:has(.home-acts__note)) { flex-wrap: nowrap; }
+/* Long translated choices wrap onto another line rather than crowding Near me. */
+.home-acts:not(:has(.home-acts__note)) { flex-wrap: wrap; }
 .home-mood__key { flex: 0 1 auto; min-width: 0; }
 .home-mood__key > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-acts .wa-act { flex: none; }
@@ -1645,6 +1648,8 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-calendar { padding:0 10px; font-size:.875rem; gap:5px; }
 .home-calendar .wa-ic { width:18px; height:18px; }
 .home-calendar[aria-haspopup] { max-width:100%; }
+.home-calendar, .home-acts .home-mood__key, .discovery-near { max-width:100%; height:auto; min-height:var(--tap); min-width:0; }
+.home-calendar span, .home-acts .home-mood__key span, .discovery-near span { white-space:normal; overflow-wrap:anywhere; text-align:left; }
 .home-empty { padding-block:24px; }
 .home-empty .wa-linkbtn { margin-right:16px; }
 .discovery-near[aria-pressed="true"] { color:var(--here); }
@@ -1666,7 +1671,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-feed { max-width:42rem; display:grid; list-style:none; margin:0; padding:0; }
 .wa-feed__item { position:relative; padding:20px 0 24px; border-bottom:1px solid var(--hair); }
 .wa-feed__link { display:block; text-decoration:none; color:inherit; }
-.wa-feed__art { display:grid; place-items:center; width:100%; aspect-ratio:16/9; border-radius:18px; overflow:hidden; background:var(--paper-2); }
+.wa-feed__art { display:grid; place-items:center; width:100%; aspect-ratio:16/9; border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
 .wa-feed__art img { width:100%; height:100%; object-fit:cover; }
 .wa-feed__art.is-logo img { object-fit:contain; padding:20px; box-sizing:border-box; }
 .wa-feed__art.is-missing { aspect-ratio:auto; height:88px; background:color-mix(in oklab, var(--accent) 4%, var(--paper-2)); }

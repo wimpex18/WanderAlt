@@ -17,14 +17,16 @@
     }
     return { when: PRESETS.includes(raw.when) ? raw.when : 'tonight', date, to };
   };
-  let dateState = null, stateDay = '', near = false;
+  let dateState = null, stateDay = '', near = false, storedContext = false;
   const read = () => {
     if (dateState && stateDay === W().todayKey()) return dateState;
+    const previous = dateState, sameDay = stateDay === W().todayKey();
     stateDay = W().todayKey();
     try {
       const raw = JSON.parse(sessionStorage.getItem(KEY) || 'null');
-      dateState = clean(raw && raw.city === window.WA.CITY && (raw.date || raw.at === W().todayKey()) ? raw : {});
-    } catch (_) { dateState = clean(); }
+      storedContext = !!(raw && raw.city === window.WA.CITY && (validDate(raw.date) || PRESETS.includes(raw.when)));
+      dateState = clean(storedContext && (raw.date || raw.at === W().todayKey()) ? raw : {});
+    } catch (_) { dateState = clean(previous && (previous.date || sameDay) ? previous : {}); }
     return dateState;
   };
   try { near = localStorage.getItem('wa:near:v1') === '1'; } catch (_) { /* in memory */ }
@@ -97,10 +99,17 @@
   };
   window.WA.Discovery = { dates, setDates, fromQuery, writeURL, validDate, range, matchesDate,
     pref, matchesEvent, matchesPlace, nearOn, setNear, label, params };
-  fromQuery(new URLSearchParams(location.search));
+  // Programme uses the pure predicates; browsing search must not change Now's dates.
+  const discoveryPage = ['tonight','map'].includes(document.body?.dataset.page);
+  if (discoveryPage) {
+    const historyReturn = typeof performance !== 'undefined' && performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
+    read();
+    if (historyReturn && storedContext) writeURL();
+    else fromQuery(new URLSearchParams(location.search));
+  }
   document.addEventListener('wa:near-changed', e => setNear(e.detail));
-  addEventListener('popstate', () => { fromQuery(new URLSearchParams(location.search)); emit(); });
-  addEventListener('pageshow', e => { if (e.persisted) { dateState = null; read();
+  addEventListener('popstate', () => { if (discoveryPage) { fromQuery(new URLSearchParams(location.search)); emit(); } });
+  addEventListener('pageshow', e => { if (e.persisted && discoveryPage) { stateDay = ''; read(); writeURL();
     try { near = localStorage.getItem('wa:near:v1') === '1'; } catch (_) {}
     emit(); } });
 })();

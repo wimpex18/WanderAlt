@@ -124,6 +124,16 @@
     const ls = L ? L.listsFor(id) : [];
     return !ls.length ? 'List' : ls.length === 1 ? ls[0].name : `${ls.length} lists`;
   };
+  const refreshSave = (id) => {
+    const btn = document.getElementById('save');
+    const on = !!window.WA.Bookmarks.get()[id];
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(on));
+      btn.innerHTML = `${I(on ? 'hearted' : 'heart')}<span>${on ? 'Saved' : 'Save'}</span>`;
+    }
+    const label = document.getElementById('addlist')?.querySelector('span');
+    if (label) label.textContent = listLabel(id);
+  };
 
   /* A small map of the spot. The MapLibre canvas outlives re-renders:
      it is kept and put back into each new slot. */
@@ -562,10 +572,16 @@
       return;
     }
     if (hit('#save')) {
-      const on = !(window.WA.Bookmarks.get()[id]);
-      window.WA.Bookmarks.set(id, on);
-      render();
-      toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => { window.WA.Bookmarks.set(id, !on); render(); });
+      const saveId = resolve()?.e.id || id;
+      const on = !(window.WA.Bookmarks.get()[saveId]);
+      const lists = L ? L.listsFor(saveId).map(l => l.id) : [];
+      window.WA.Bookmarks.set(saveId, on);
+      refreshSave(saveId);
+      toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => {
+        window.WA.Bookmarks.set(saveId, !on);
+        if (!on && L) lists.forEach(l => L.add(l, saveId));
+        refreshSave(saveId);
+      });
       return;
     }
     if (hit('#follow')) {

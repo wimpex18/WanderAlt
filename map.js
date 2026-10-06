@@ -258,7 +258,8 @@
     const whenWord = D().label();
     $('drawer-title').textContent = evs.length || pls.length ? 'In view' : 'Nothing in view';
     $('drawer-sub').textContent = [
-      on.events ? `${evs.length} ${evs.length === 1 ? 'event' : 'events'} ${whenWord}` : '',
+      on.events ? `${evs.length} ${evs.length === 1 ? 'listing' : 'listings'}` : '',
+      on.events ? whenWord : '',
       on.places ? `${pls.length} ${pls.length === 1 ? 'place' : 'places'}` : '',
       D().nearOn() ? 'nearest first' : '',
     ].filter(Boolean).join(' · ');
@@ -267,7 +268,7 @@
     if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day: !!D().dates().date || D().dates().when !== 'tonight', noThumb: true })).join('')}</ul>`;
     if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
     if (!evs.length && !pls.length) {
-      html += `<p class="map-legend-note">Zoom out or move the map. ${events.length} ${events.length === 1 ? 'event is' : 'events are'} placed ${whenWord}${on.events ? '' : ', with the events layer off'}.</p>
+      html += `<p class="map-legend-note"><span>Zoom out or move the map.</span> <span>${events.length} listings on this map</span> · ${esc(whenWord)}${on.events ? '' : ' · <span>Events layer off</span>'}</p>
         <button class="wa-btn wa-btn--sm" type="button" data-act="fit">Show everything</button>`;
     }
     html += `<p class="map-legend-note">Place hours are for now.</p><p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;

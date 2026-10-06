@@ -774,7 +774,11 @@ window.WA.dict.et = {
   "Map of Tallinn": "Tallinna kaart",
   "No places match these choices.": "Nende valikutega kohti ei ole.",
   "nearest to your start first": "lähimad valitud alguspunktile eespool",
-  "The selected listings and places, by walking time.": "Valitud sündmused ja kohad jalutamisaja järgi."
+  "The selected listings and places, by walking time.": "Valitud sündmused ja kohad jalutamisaja järgi.",
+  "Browse map": "Vaata kaarti",
+  "Map uses your mood, price and Near me choices": "Kaart kasutab sinu meeleolu-, hinna- ja lähedusvalikuid",
+  "Zoom out or move the map.": "Vähenda suumi või liiguta kaarti.",
+  "Events layer off": "Sündmuste kiht on väljas"
  },
  "patterns": [
   [
@@ -902,8 +906,20 @@ window.WA.dict.et = {
    "Lisatud nimekirja {x}"
   ],
   [
-   "Remove {x} from saved",
-   "Eemalda {x} salvestatutest"
+   "Remove {rawTitle} from saved",
+   "Eemalda {rawTitle} salvestatutest"
+  ],
+  [
+   "Save: {rawTitle}",
+   "Salvesta: {rawTitle}"
+  ],
+  [
+   "Saved: {rawTitle}",
+   "Salvestatud: {rawTitle}"
+  ],
+  [
+   "new since {x}",
+   "lisatud pärast külastust ({x})"
   ],
   [
    "Also in {x}:",
@@ -1144,6 +1160,10 @@ window.WA.dict.et = {
   [
    "{n} min walk from here",
    "{n} min jalutuskäiku siit"
+  ],
+  [
+   "{n} listings on this map",
+   "Sellel kaardil: {n} kuulutust"
   ]
  ]
 };

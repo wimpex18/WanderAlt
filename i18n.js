@@ -80,7 +80,8 @@
       const m = p.re.exec(core);
       if (!m) continue;
       const vars = {};
-      p.names.forEach((n, i) => { const v = m[i + 1]; vars[n] = lookup(v) ?? v; });
+      // Source names stay literal even if one is also an interface word ("Festival").
+      p.names.forEach((n, i) => { const v = m[i + 1]; vars[n] = n.startsWith('raw') ? v : lookup(v) ?? v; });
       /* A pattern whose target is an object picks a plural form by the number in {n}. */
       const dst = typeof p.dst === 'string' ? p.dst : (p.dst[category(Number(m[p.names.indexOf('n') + 1]))] || p.dst.other);
       return fill(dst, vars);
@@ -118,7 +119,7 @@
   /* Names and titles from a source or a person are never looked up: an event called "Festival" or
      a bar called "Terminal" must not be "translated". Our own copy in them comes from the data. */
   const SKIP = 'script, style, noscript, textarea, code, pre, [translate="no"], [data-notranslate], '
-    + '.wa-row__title, .wa-place__name, .wa-place__why, .wa-poster__title, .det-next__name, .det-next__why, .vcard__name, '
+    + '.wa-row__title, .wa-feed__title, .wa-place__name, .wa-place__why, .wa-poster__title, .det-next__name, .det-next__why, .vcard__name, '
     + '.map-preview__title, .rt__name, .rt-card__what b, .wa-gone__title, .wa-listcard__name, .det-summary';
   const textOrig = new WeakMap(), textLast = new WeakMap();
   const attrOrig = new WeakMap(), attrLast = new WeakMap();

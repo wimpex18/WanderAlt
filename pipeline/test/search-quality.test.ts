@@ -86,13 +86,14 @@ function programme(search = '', venues: any[] = []) {
   const list = [{ kind: 'film', free: true, eventLanguages: ['en'], priceMin: 0 }, { kind: 'gig', free: false, eventLanguages: [], priceMin: 20 }];
   const WA: any = { UI: { esc: (s: any) => String(s ?? '') }, Icon: () => '', Picto: { kind: () => '' },
     R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: (v: any) => v.area || '', AREA_LIST: ['Kalamaja','Old Town'], isFree: (e: any) => e.free,
-      kindLabel: (s: string) => s, dayName: () => '', dow: () => '', dom: () => '', isFollowed: () => false,
+      kindLabel: (s: string) => s, dayName: () => '', dateShort: (s:string) => s, dow: () => '', dom: () => '', isFollowed: () => false,
       openState: (v: any) => ({ open: v.open }) },
     when: { matches: () => true, isOnDate: () => true, todayKey: () => '2026-09-30', keyPlus: () => '2026-10-02' },
     Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0, startMinutes: () => 22 * 60 },
     Hours: { cityNow: () => ({ minutes: 12 * 60 }) }, Seen: { count: () => 0, filter: (rows: any[]) => rows }, venues,
   };
-  WA.Discovery = { matchesDate: (e: any, s: any) => s.date ? WA.when.isOnDate(e, s.date) : WA.when.matches(e, s.when) };
+  WA.Discovery = { matchesDate: (e: any, s: any) => s.date ? WA.when.isOnDate(e, s.date) : WA.when.matches(e, s.when),
+    validDate: (s:any) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s };
   const location = { search, pathname: '/discover' };
   const context = createContext({ window: { WA, addEventListener: () => {} }, location,
     history: { replaceState: (_: any, __: any, url: string) => { location.search = url.startsWith('?') ? url : ''; } }, URLSearchParams, AbortController,
@@ -134,6 +135,17 @@ test('malformed price and start-time URL filters are ignored', () => {
     assert.equal(p.elements.get('filter-count').textContent, '');
     assert.equal(p.location.search, '');
   }
+});
+
+test('impossible shared calendar dates never become Programme selections', () => {
+  for (const search of ['?date=2027-02-30', '?date=2026-13-01&to=2026-10-08']) {
+    const p = programme(search); p.query('');
+    assert.equal(p.elements.get('filter-count').textContent, '');
+    assert.equal(p.location.search, '');
+  }
+  const valid = programme('?date=2026-10-08&to=2026-02-30'); valid.query('');
+  assert.match(valid.location.search, /date=2026-10-08/);
+  assert.doesNotMatch(valid.location.search, /to=/);
 });
 
 test('open-now shop searches exclude shut and unknown hours, including empty results', () => {

@@ -774,7 +774,11 @@ window.WA.dict.ru = {
   "Map of Tallinn": "Карта Таллинна",
   "No places match these choices.": "Нет мест по выбранным условиям.",
   "nearest to your start first": "сначала ближайшие к вашей точке отсчёта",
-  "The selected listings and places, by walking time.": "Выбранные события и места по времени пешком."
+  "The selected listings and places, by walking time.": "Выбранные события и места по времени пешком.",
+  "Browse map": "Открыть карту",
+  "Map uses your mood, price and Near me choices": "На карте действуют ваши фильтры настроения, цены и близости",
+  "Zoom out or move the map.": "Уменьшите масштаб или сдвиньте карту.",
+  "Events layer off": "Слой событий выключен"
  },
  "patterns": [
   [
@@ -917,8 +921,20 @@ window.WA.dict.ru = {
    "Добавлено в {x}"
   ],
   [
-   "Remove {x} from saved",
-   "Убрать {x} из сохранённого"
+   "Remove {rawTitle} from saved",
+   "Убрать {rawTitle} из сохранённого"
+  ],
+  [
+   "Save: {rawTitle}",
+   "Сохранить: {rawTitle}"
+  ],
+  [
+   "Saved: {rawTitle}",
+   "Сохранено: {rawTitle}"
+  ],
+  [
+   "new since {x}",
+   "добавлено после посещения ({x})"
   ],
   [
    "Also in {x}:",
@@ -1164,6 +1180,15 @@ window.WA.dict.ru = {
   [
    "{n} min walk from here",
    "{n} мин пешком отсюда"
+  ],
+  [
+   "{n} listings on this map",
+   {
+    "one": "На этой карте: {n} событие",
+    "few": "На этой карте: {n} события",
+    "many": "На этой карте: {n} событий",
+    "other": "На этой карте: {n} события"
+   }
   ]
  ]
 };

@@ -30,7 +30,10 @@ Show {n} more	Näita veel {n}	Показать ещё {n}	Показати ще 
 All {n}	Kõik {n}	Все {n}	Усі {n}
 Show all {n} running	Näita kõiki {n} käimasolevat	Показать все {n} идущих	Показати всі {n}, що тривають
 Added to {x}	Lisatud nimekirja {x}	Добавлено в {x}	Додано до {x}
-Remove {x} from saved	Eemalda {x} salvestatutest	Убрать {x} из сохранённого	Прибрати {x} зі збереженого
+Remove {rawTitle} from saved	Eemalda {rawTitle} salvestatutest	Убрать {rawTitle} из сохранённого	Прибрати {rawTitle} зі збереженого
+Save: {rawTitle}	Salvesta: {rawTitle}	Сохранить: {rawTitle}	Зберегти: {rawTitle}
+Saved: {rawTitle}	Salvestatud: {rawTitle}	Сохранено: {rawTitle}	Збережено: {rawTitle}
+new since {x}	lisatud pärast külastust ({x})	добавлено после посещения ({x})	додано після відвідування ({x})
 Also in {x}:	Ka piirkonnas {x}:	Также в районе {x}:	Також у районі {x}:
 After {x}	Pärast: {x}	После: {x}	Після: {x}
 {n} of {m}	{n}/{m}	{n} из {m}	{n} з {m}
@@ -91,3 +94,4 @@ Image from {u}	Pilt saidilt {u}	Изображение с {u}	Зображенн
 {a}, from {b}	{a}, lähtekoht: {b}	{a}, от точки: {b}	{a}, від точки: {b}
 {n} today	{n} täna	Сегодня: {n}	Сьогодні: {n}
 {n} min walk from here	{n} min jalutuskäiku siit	{n} мин пешком отсюда	{n} хв пішки звідси
+{n} listings on this map	Sellel kaardil: {n} kuulutust	На этой карте: {n} событие|На этой карте: {n} события|На этой карте: {n} событий|На этой карте: {n} события	На цій мапі: {n} подія|На цій мапі: {n} події|На цій мапі: {n} подій|На цій мапі: {n} події

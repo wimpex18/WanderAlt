@@ -169,15 +169,18 @@
   const toggleWalk = () => {
     const host = $('plan'), key = document.querySelector('[data-walk-toggle]');
     if (!host || !key) return;
+    const fromHeight = host.hidden ? 0 : host.getBoundingClientRect().height;
+    const fromOpacity = host.hidden ? 0 : Number(getComputedStyle(host).opacity);
     if (walkMotion) { walkMotion.cancel(); walkMotion = null; }
     walkOpen = !walkOpen; key.setAttribute('aria-expanded',walkOpen);
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const easing = getComputedStyle(key).getPropertyValue('--ease').trim();
     if (walkOpen) {
       host.hidden = false;
-      if (!still) walkMotion = host.animate([{ height:'0px', opacity:0 },{ height:host.offsetHeight + 'px', opacity:1 }], { duration:260, easing:'ease-out' });
+      if (!still) walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:host.offsetHeight + 'px', opacity:1 }], { duration:260, easing });
     } else if (still) host.hidden = true;
     else {
-      walkMotion = host.animate([{ height:host.offsetHeight + 'px', opacity:1 },{ height:'0px', opacity:0 }], { duration:140, easing:'ease-in' });
+      walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:'0px', opacity:0 }], { duration:140, easing });
       walkMotion.onfinish = () => { if (!walkOpen) host.hidden = true; };
     }
   };

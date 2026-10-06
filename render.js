@@ -349,7 +349,7 @@
       r.live && endsAt ? esc(`till ${endsAt}`) : '',
     ].filter(Boolean).join(' · ');
     const fresh = opts.since && isNewSince(e, opts.since);
-    return `<li><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+    return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">${r.html}</span>
       <span class="wa-row__body">
         <span class="wa-row__top">
@@ -361,9 +361,9 @@
         <span class="wa-row__title">${esc(e.title || '')}</span>
         ${meta ? `<span class="wa-row__meta">${meta}</span>` : ''}
       </span>
-      ${opts.drop ? `<span class="wa-row__side"><button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button></span>`
+      ${opts.drop ? '<span class="wa-row__side wa-saved-row__space" aria-hidden="true"></span>'
                   : opts.noThumb ? '' : thumb(e)}
-    </a></li>`;
+    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button>` : ''}</li>`;
   };
 
   /* Image first, facts below. No fabricated social proof or stock pictures.
@@ -371,7 +371,8 @@
   const feedItem = (e, opts = {}) => {
     const { src, logo, tone, venue } = art(e), kind = kindLabel(e.kind), why = whyTag(e);
     const r = rail(e, opts);
-    const facts = [latin(e.venue), areaOf(e)].filter(Boolean).map(esc).join(' · ');
+    const venueName = latin(e.venue);
+    const facts = [venueName ? `<span data-notranslate>${esc(venueName)}</span>` : '', esc(areaOf(e))].filter(Boolean).join(' · ');
     let source = e.handle || '';
     if (source && !source.startsWith('@')) source = `@${source}`;
     if (!source && url(e.permalink)) { try { source = new URL(url(e.permalink)).hostname.replace(/^www\./, ''); } catch (_) {} }
@@ -392,19 +393,19 @@
     const m = opts.from ? G().walkMinutes(G().distanceTo(v, opts.from)) : walk(v);
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
-    return `<li><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
+    return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
       <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
-        <span class="wa-place__name">${esc(v.name || '')}${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
+        <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
         <span class="wa-place__meta">${esc(meta)}</span>
         ${v.pickNote ? `<span class="wa-place__why">${esc(v.pickNote)}</span>` : ''}
         ${openBadge(v)}
       </span>
       <span class="wa-place__side">
-        ${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(v.id)}" aria-label="${esc(`Remove ${v.name || ''} from saved`)}">${I('close')}</button>`
+        ${opts.drop ? '<span class="wa-saved-row__space" aria-hidden="true"></span>'
           : m != null ? `<span class="wa-place__walk">${I('walk')}${esc(walkLabel(m))}</span>` : ''}
       </span>
-    </a></li>`;
+    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(v.id)}" aria-label="${esc(`Remove ${v.name || ''} from saved`)}">${I('close')}</button>` : ''}</li>`;
   };
 
   /* ── The event card ────────────────────────────────────────
@@ -497,8 +498,8 @@
     ${sub ? `<p class="wa-sect__sub">${esc(sub)}</p>` : ''}`;
 
   /* A day heading for grouped lists. */
-  const dayHead = (key, n) => `<div class="wa-day" role="heading" aria-level="2">
-      <span class="wa-day__name">${esc(dayName(key))}</span>
+  const dayHead = (key, n, opts = {}) => `<div class="wa-day" role="heading" aria-level="2">
+      <span class="wa-day__name">${esc(opts.feed && key === W().todayKey() ? 'Today' : dayName(key))}</span>
       <span class="wa-day__date">${esc(dateShort(key))}</span>
       ${n != null ? `<span class="wa-day__n">${esc(String(n))}</span>` : ''}
     </div>`;
@@ -541,7 +542,7 @@
         ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Ongoing</span><span class="wa-day__date">No date filed</span><span class="wa-day__n">${all.length}</span></div>`
         : k === 'running'
           ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Running</span><span class="wa-day__date">Started earlier, still on</span><span class="wa-day__n">${all.length}</span></div>`
-          : dayHead(k, all.length);
+          : dayHead(k, all.length, opts);
       out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : 'wa-rows'}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
     }
     return out.join('');

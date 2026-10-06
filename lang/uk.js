@@ -774,7 +774,11 @@ window.WA.dict.uk = {
   "Map of Tallinn": "Мапа Таллінна",
   "No places match these choices.": "Немає місць за вибраними умовами.",
   "nearest to your start first": "спочатку найближчі до вашої точки відліку",
-  "The selected listings and places, by walking time.": "Вибрані події та місця за часом пішки."
+  "The selected listings and places, by walking time.": "Вибрані події та місця за часом пішки.",
+  "Browse map": "Відкрити мапу",
+  "Map uses your mood, price and Near me choices": "На мапі діють ваші фільтри настрою, ціни та близькості",
+  "Zoom out or move the map.": "Зменште масштаб або посуньте мапу.",
+  "Events layer off": "Шар подій вимкнено"
  },
  "patterns": [
   [
@@ -917,8 +921,20 @@ window.WA.dict.uk = {
    "Додано до {x}"
   ],
   [
-   "Remove {x} from saved",
-   "Прибрати {x} зі збереженого"
+   "Remove {rawTitle} from saved",
+   "Прибрати {rawTitle} зі збереженого"
+  ],
+  [
+   "Save: {rawTitle}",
+   "Зберегти: {rawTitle}"
+  ],
+  [
+   "Saved: {rawTitle}",
+   "Збережено: {rawTitle}"
+  ],
+  [
+   "new since {x}",
+   "додано після відвідування ({x})"
   ],
   [
    "Also in {x}:",
@@ -1164,6 +1180,15 @@ window.WA.dict.uk = {
   [
    "{n} min walk from here",
    "{n} хв пішки звідси"
+  ],
+  [
+   "{n} listings on this map",
+   {
+    "one": "На цій мапі: {n} подія",
+    "few": "На цій мапі: {n} події",
+    "many": "На цій мапі: {n} подій",
+    "other": "На цій мапі: {n} події"
+   }
   ]
  ]
 };

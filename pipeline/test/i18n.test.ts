@@ -36,6 +36,10 @@ test('Russian: exact phrases, patterns with plural forms, typed placeholders and
   assert.equal(Lang.t('· nearest first · 10 open now'), '· сначала ближайшие · открыто сейчас: 10');
   assert.equal(Lang.t('Club · Old Town · 5 listed'), 'Клуб · Старый город · 5 событий');
   assert.equal(Lang.t('  Search  '), '  Поиск  ');                   // whitespace kept
+  assert.equal(Lang.t('Save: Festival'), 'Сохранить: Festival');
+  assert.equal(Lang.t('Saved: Festival'), 'Сохранено: Festival');
+  assert.equal(Lang.t('Remove Festival from saved'), 'Убрать Festival из сохранённого');
+  assert.equal(Lang.t('new since Monday'), 'добавлено после посещения (Понедельник)');
 });
 
 test('Estonian uses one form for a number', () => {
@@ -87,6 +91,8 @@ test('hot switching restores English originals, updates dates and keeps drafts w
   const parent = element(), excluded = element(true);
   const text = { nodeType: 3, data: 'Open now', parentElement: parent };
   const venue = { nodeType: 3, data: 'Festival', parentElement: excluded };
+  const feedParent = { ...element(), closest:(s:string) => s.split(',').some(x => x.trim() === '.wa-feed__title') ? {} : null };
+  const feedTitle = { nodeType:3, data:'Festival', parentElement:feedParent };
   const field = { id: 'draft', value: 'my unfinished search', checked: true, selectionStart: 3, selectionEnd: 6,
     focus() {}, setSelectionRange(a: number, b: number) { this.selectionStart = a; this.selectionEnd = b; } };
   const fold = { id: 'fold', open: true };
@@ -97,7 +103,7 @@ test('hot switching restores English originals, updates dates and keeps drafts w
     getElementById: (id: string) => id === field.id ? field : fold,
     addEventListener(name: string, fn: Function) { listeners.set(name, [...(listeners.get(name) || []), fn]); },
     dispatchEvent(e: any) { for (const f of listeners.get(e.type) || []) f(e); },
-    createTreeWalker() { const nodes = [text, venue]; return { nextNode: () => nodes.shift() }; } };
+    createTreeWalker() { const nodes = [text, venue, feedTitle]; return { nextNode: () => nodes.shift() }; } };
   const window: any = { WA: {}, scrollX: 0, scrollY: 200, scrollTo: (...xy: number[]) => { scrolled = xy; } };
   const context = createContext({ window, document, navigator: { languages: ['en'] }, Intl, URL, URLSearchParams,
     location: { href: 'https://wanderalt.app/profile?lang=en&keep=yes#taste', search: '?lang=en&keep=yes' },
@@ -115,6 +121,7 @@ test('hot switching restores English originals, updates dates and keeps drafts w
     assert.equal(parent.attrs['aria-label'], window.WA.Lang.t('Search'));
     assert.equal(document.title, window.WA.Lang.t('You'));
     assert.equal(venue.data, 'Festival');
+    assert.equal(feedTitle.data, 'Festival');
     assert.equal(field.value, 'my unfinished search'); assert.equal(field.checked, true);
     assert.equal(field.selectionStart, 3); assert.equal(field.selectionEnd, 6); assert.equal(fold.open, true);
     assert.deepEqual(scrolled, [0,200]);

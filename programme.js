@@ -39,7 +39,6 @@
   let limit = PAGE, runsOpen = false, lastSig = '';
   const WHEN = { tonight: 'Today', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
-  const KEY = /^\d{4}-\d{2}-\d{2}$/;
   const DOORS = { any: 'Any time', now: 'From now', '21:00': 'After 21:00', '23:00': 'After 23:00' };
 
   /* ── URL ───────────────────────────────────────────────────── */
@@ -51,8 +50,8 @@
       const subs = (sp.get('subs') || '').split(',').filter(id => validSubs.has(id));
       if (moods.length) state.taste = { moods, subs, cap:null };
     }
-    if (KEY.test(sp.get('date') || '')) state.day = sp.get('date');
-    if (state.day && KEY.test(sp.get('to') || '') && sp.get('to') > state.day) state.dayTo = sp.get('to');
+    if (window.WA.Discovery.validDate(sp.get('date'))) state.day = sp.get('date');
+    if (state.day && window.WA.Discovery.validDate(sp.get('to')) && sp.get('to') > state.day) state.dayTo = sp.get('to');
     const t = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
     if (t && WHEN[t]) state.when = t;
     if (sp.get('q')) state.q = sp.get('q').trim().slice(0, 140);
@@ -105,7 +104,7 @@
 
   /* One chosen day, or every day from the first to the last. */
   const onDays = e => window.WA.Discovery.matchesDate(e, { date:state.day, to:state.dayTo });
-  const dayLabel = (k) => (R().dayName(k) === 'Tonight' ? 'Today' : `${R().dow(k)} ${R().dom(k)}`);
+  const dayLabel = (k) => (k === W().todayKey() ? 'Today' : `${R().dateShort(k)}${k.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + k.slice(0,4)}`);
   const daysLabel = () => (state.dayTo ? `${dayLabel(state.day)} to ${dayLabel(state.dayTo)}` : dayLabel(state.day));
   const setDays = (from, to) => {
     if (!from && to) from = W().todayKey();

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 
 // Page lifetimes share storage, not JS closures. Real calendar/mood/render code.
-function page(store = new Map<string, string>(), search = '', blocked = false) {
+function page(store = new Map<string, string>(), search = '', blocked = false, navigation = 'navigate', pageName = 'tonight') {
   let now = Date.parse('2026-10-06T12:00:00Z');
   class Clock extends Date {
     constructor(value?: string | number) { super(value === undefined ? now : value); }
@@ -25,7 +25,7 @@ function page(store = new Map<string, string>(), search = '', blocked = false) {
       const parts = new Intl.DateTimeFormat('en-GB', { timeZone:'Europe/Tallinn', hour:'numeric', minute:'numeric', hourCycle:'h23' }).format(new Date(e.startsAt)).split(':').map(Number);
       return parts[0] * 60 + parts[1];
     } },
-    Hours: { cityNow: () => ({ minutes: 15 * 60 }), clock: () => '18:00' },
+    Hours: { cityNow: () => ({ minutes: 15 * 60 }), clock: () => '18:00', state: () => ({ known:false }) },
     Icon: Object.assign(() => '', { kind: () => '' }), Picto: { kind: () => '<svg></svg>' },
   };
   const location = { search, pathname: '/index.html', hash: '#list', origin: 'https://wanderalt.app' };
@@ -33,7 +33,8 @@ function page(store = new Map<string, string>(), search = '', blocked = false) {
   const window = { WA, addEventListener: on };
   const context = createContext({ window, Date: Clock, Intl, URL, URLSearchParams, location,
     history: { replaceState: (_: unknown, __: string, value: string) => { written = value; } },
-    document: { readyState: 'loading', addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type) },
+    document: { readyState: 'loading', body: { dataset:{ page:pageName } }, addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type) },
+    performance: { getEntriesByType: () => [{ type:navigation }] },
     addEventListener: on, localStorage: storage, sessionStorage: storage,
     CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
   });
@@ -60,6 +61,7 @@ test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent
   map.WA.Discovery.setNear(false);
   first.fire('pageshow', { persisted:true });
   assert.equal(first.WA.Discovery.dates().when, 'tomorrow');
+  assert.match(first.url(), /when=tomorrow/);
   assert.equal(first.WA.Moods.pref().subs[0], 'jazz');
   assert.equal(first.WA.Moods.pref().cap, 0);
   assert.equal(first.WA.Discovery.nearOn(), false);
@@ -69,6 +71,22 @@ test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent
   assert.match(linked.url(), /view=places/);
   assert.match(linked.url(), /date=2026-10-12/);
   assert.match(linked.url(), /#list$/);
+});
+
+test('history reloads use the latest discovery dates; new links override them and Programme stays independent', () => {
+  const start = page();
+  start.WA.Discovery.setDates({ when:'tonight' });
+  const returned = page(start.store, '?when=tomorrow', false, 'back_forward');
+  assert.equal(returned.WA.Discovery.dates().when, 'tonight');
+  assert.match(returned.url(), /when=tonight/);
+  const reloaded = page(start.store, new URL(returned.url(), 'https://wanderalt.app').search, false, 'reload');
+  assert.equal(reloaded.WA.Discovery.dates().when, 'tonight');
+  const search = page(start.store, '?time=weekend&date=2026-10-12', false, 'navigate', 'programme');
+  assert.equal(search.WA.Discovery.dates().when, 'tonight');
+  assert.equal(search.WA.Discovery.dates().date, '');
+  assert.equal(page(start.store, '?when=tomorrow').WA.Discovery.dates().when, 'tomorrow');
+  const noContext = page(new Map(), '?date=2026-10-12', false, 'back_forward');
+  assert.equal(noContext.WA.Discovery.dates().date, '2026-10-12');
 });
 
 test('bad calendar keys, reversed ranges, midnight expiry and blocked storage recover', () => {
@@ -93,6 +111,8 @@ test('bad calendar keys, reversed ranges, midnight expiry and blocked storage re
   privatePage.WA.Moods.setPref({ moods:['look'], cap:20 });
   assert.equal(privatePage.WA.Discovery.dates().date, '2026-10-09');
   assert.equal(privatePage.WA.Moods.pref().cap, 20);
+  privatePage.clock('2026-10-07T12:00:00Z');
+  assert.equal(privatePage.WA.Discovery.dates().date, '2026-10-09');
 });
 
 test('date ranges include overlapping runs and overnight shows, with inclusive date-only ends and DST', () => {
@@ -134,6 +154,7 @@ test('image-first feed preserves categories, provenance and missing facts; hosti
   assert.match(markup, /Film/); assert.match(markup, /Arthouse/);
   assert.match(markup, /Price not listed/); assert.match(markup, /Time not listed/);
   assert.match(markup, /is-missing/); assert.match(markup, /&lt;img/); assert.match(markup, /@evil&quot;/);
+  assert.match(markup, /data-notranslate>&lt;script&gt;place&lt;\/script&gt;/);
   assert.doesNotMatch(markup, /src="javascript:|<script>|onclick="|<a[^>]*<button/);
   const withPhoto = p.WA.R.feedItem({ id:'safe', title:'Safe', kind:'film', imageUrl:'https://images.example/film.jpg', permalink:'https://source.example/event' });
   assert.match(withPhoto, /width="640" height="360" loading="lazy"/);
@@ -151,4 +172,23 @@ test('image-first feed preserves categories, provenance and missing facts; hosti
   assert.equal(classes.has('is-logo'), false);
   assert.equal(classes.has('tone-film'), false);
   assert.equal(img.outerHTML, '<svg></svg>');
+});
+
+test('all-day discovery feeds say Today while compact evening headings retain Tonight', () => {
+  const p = page();
+  const listings = [{ id:'day', title:'Daytime film', kind:'film', startsAt:'2026-10-06T12:00:00Z', hasTime:true }];
+  assert.match(p.WA.R.grouped(listings, { feed:true }), /wa-day__name">Today</);
+  assert.match(p.WA.R.grouped(listings), /wa-day__name">Tonight</);
+});
+
+test('saved event and place removal actions are siblings of their navigation links', () => {
+  const p = page();
+  for (const markup of [p.WA.R.row({ id:'event', title:'<Festival>', kind:'film' }, { drop:true }),
+    p.WA.R.placeRow({ id:'place', name:'<Terminal>', kind:'bar' }, { drop:true })]) {
+    assert.match(markup, /<\/a><button[^>]+data-unsave=/);
+    assert.doesNotMatch(markup, /<a\b[^]*?<button[^]*?<\/a>/);
+    assert.match(markup, /aria-label="Remove &lt;/);
+  }
+  const picked = p.WA.R.placeRow({ id:'picked', name:'Festival', kind:'bar', picked:true });
+  assert.match(picked, /wa-place__name">Festival<\/span> <span class="wa-place__pick">Picked/);
 });
