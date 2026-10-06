@@ -34,12 +34,41 @@ test('Russian: exact phrases, patterns with plural forms, typed placeholders and
   assert.equal(Lang.t('{n} min walk', { n: 7 }), '7 мин пешком');
   assert.equal(Lang.t('Open till 04:00'), 'Открыто до 04:00');
   assert.equal(Lang.t('· nearest first · 10 open now'), '· сначала ближайшие · открыто сейчас: 10');
-  assert.equal(Lang.t('Club · Old Town · 5 listed'), 'Клуб · Старый город · 5 событий');
+  assert.equal(Lang.t('Club · Old Town · 5 listed'), 'Клуб · Old Town · 5 событий');
   assert.equal(Lang.t('  Search  '), '  Поиск  ');                   // whitespace kept
   assert.equal(Lang.t('Save: Festival'), 'Сохранить: Festival');
   assert.equal(Lang.t('Saved: Festival'), 'Сохранено: Festival');
   assert.equal(Lang.t('Remove Festival from saved'), 'Убрать Festival из сохранённого');
-  assert.equal(Lang.t('new since Monday'), 'добавлено после посещения (Понедельник)');
+  assert.equal(Lang.t('New since last visit'), 'Новое с прошлого визита');
+});
+
+test('short helpers cover all interface languages; geographic and source names stay literal', () => {
+  const helpers = ['New since last visit', 'Choose a nearby venue', 'Walks start here', 'Using your location',
+    'Choose a starting point', 'Starting point', 'Clear for device location', 'Show walking times',
+    'Unknown prices included', 'Dates use Tallinn time', 'Hours shown for now', 'Your saves carry over',
+    'No selection means all', 'Continue with Google', 'Shapes your walks', 'Follow from venue pages', 'Within 10 minutes’ walk', '3 opened or saved'];
+  for (const lang of ['en', 'et', 'ru', 'uk']) {
+    const { Lang } = load(lang);
+    for (const helper of helpers) {
+      const translated = Lang.t(helper);
+      if (lang !== 'en') assert.notEqual(translated, helper, `${lang}: ${helper}`);
+      assert.ok(translated.split(/\s+/).length <= 4, `${lang}: ${translated}`);
+    }
+    for (const name of ['Old Town', 'City centre', 'Kalamaja', 'Telliskivi', 'Põhja-Tallinn']) assert.equal(Lang.t(name), name);
+    assert.ok(Lang.t('Also in Kalamaja:').includes('Kalamaja'));
+    assert.ok(Lang.t('Following Festival').includes('Festival'));
+    assert.ok(Lang.t('Add Festival to your calendar').includes('Festival'));
+    assert.ok(Lang.t('Language: Українська').includes('Українська'));
+    if (lang !== 'en') {
+      assert.notEqual(Lang.t('since 20:15'), 'since 20:15');
+      assert.notEqual(Lang.t('Show 632 listings'), 'Show 632 listings');
+      assert.notEqual(Lang.t('3 here, zoom in'), '3 here, zoom in');
+      assert.notEqual(Lang.t('11 min walk from where you are'), '11 min walk from where you are');
+      assert.notEqual(Lang.t('cached 3 days ago'), 'cached 3 days ago');
+      assert.notEqual(Lang.t('Not saved: arbitrary diagnostic'), 'Not saved: arbitrary diagnostic');
+      assert.ok(Lang.t('Not saved: arbitrary diagnostic').endsWith('arbitrary diagnostic'));
+    }
+  }
 });
 
 test('Estonian uses one form for a number', () => {
@@ -58,20 +87,25 @@ test('a placeholder is typed: "till {t}" does not swallow a sentence, text that 
   assert.equal(Lang.t(''), '');
 });
 
-test('the tables are well formed: same phrases for both languages, placeholders kept, no markup, plural forms complete', () => {
+test('the tables are well formed: all languages agree, placeholders kept, no markup, plural forms complete', () => {
   const { dict } = load('et');
   const ru = load('ru').dict.ru, et = dict.et;
   assert.deepEqual(Object.keys(et.exact).sort(), Object.keys(ru.exact).sort());
   assert.equal(et.patterns.length, ru.patterns.length);
+  const uk = load('uk').dict.uk;
+  assert.deepEqual(Object.keys(et.exact).sort(), Object.keys(uk.exact).sort());
+  assert.equal(et.patterns.length, uk.patterns.length);
   const holes = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
   et.patterns.forEach(([src, dst]: [string, string], i: number) => {
     const forms = typeof ru.patterns[i][1] === 'string' ? [ru.patterns[i][1]] : Object.values(ru.patterns[i][1]) as string[];
     assert.equal(ru.patterns[i][0], src);
     assert.equal(holes(dst), holes(src), `et ${src}`);
     for (const f of forms) assert.equal(holes(f), holes(src), `ru ${src}`);
+    assert.equal(uk.patterns[i][0], src);
+    for (const f of typeof uk.patterns[i][1] === 'string' ? [uk.patterns[i][1]] : Object.values(uk.patterns[i][1]) as string[]) assert.equal(holes(f), holes(src), `uk ${src}`);
     if (typeof ru.patterns[i][1] !== 'string') assert.deepEqual(Object.keys(ru.patterns[i][1]).sort(), ['few', 'many', 'one', 'other']);
   });
-  for (const t of [et.exact, ru.exact]) for (const [k, v] of Object.entries(t) as [string, string][]) {
+  for (const t of [et.exact, ru.exact, uk.exact]) for (const [k, v] of Object.entries(t) as [string, string][]) {
     assert.doesNotMatch(v, /<\/?[a-z]/i, k);                // text, never markup
     assert.equal(v, v.trim(), k);
     assert.ok(v.length > 0, k);

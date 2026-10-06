@@ -125,7 +125,6 @@ window.WA.dict.et = {
   "Updating…": "Uuendan…",
   "Password updated. You are now signed in.": "Parool on uuendatud. Oled nüüd sisse logitud.",
   "Update failed.": "Uuendamine ebaõnnestus.",
-  "Vabaduse väljak": "Vabaduse väljak",
   "Select city": "Vali linn",
   "Coming soon": "Varsti tulemas",
   "Walking from": "Jalutuskaugus alates",
@@ -157,13 +156,13 @@ window.WA.dict.et = {
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Kindlaid lahtiolekuaegu pole. See ruum avatakse, kui midagi toimub; ajad on ülal kuulutustes.",
   "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.",
   "Your lists": "Sinu nimekirjad",
-  "No lists yet. Name one and this goes straight in.": "Nimekirju veel pole. Pane ühele nimi ja see läheb otse sinna.",
+  "Create your first list": "Loo esimene nimekiri",
   "New list": "Uus nimekiri",
   "Create and add": "Loo ja lisa",
   "Kalamaja on Saturday": "Kalamaja laupäeval",
   "Walk": "Jalutus",
   "Area": "Piirkond",
-  "Allow location for walking time": "Luba asukoht jalutusaja jaoks",
+  "Location for walking times": "Asukoht jalutusaegade jaoks",
   "Venue logo": "Koha logo",
   "Venue photo": "Koha foto",
   "Save": "Salvesta",
@@ -246,7 +245,7 @@ window.WA.dict.et = {
   "When?": "Millal?",
   "What are you after?": "Mida sa otsid?",
   "Clear all": "Tühjenda kõik",
-  "A venue, an area, a name": "Koht, piirkond, nimi",
+  "Venue, area or name": "Koht, piirkond või nimi",
   "Gigs": "Kontserdid",
   "Club nights": "Klubiõhtud",
   "Film": "Film",
@@ -254,7 +253,7 @@ window.WA.dict.et = {
   "Talks": "Vestlused",
   "Workshops": "Töötoad",
   "Festivals": "Festivalid",
-  "Old Town, Kalamaja, Telliskivi and the harbour": "Vanalinn, Kalamaja, Telliskivi ja sadam",
+  "Old Town, Kalamaja, Telliskivi and the harbour": "Old Town, Kalamaja, Telliskivi ja sadam",
   "Coming later": "Tulevad hiljem",
   "Riga, Latvia": "Riia, Läti",
   "Helsinki, Finland": "Helsingi, Soome",
@@ -265,14 +264,14 @@ window.WA.dict.et = {
   "Any day": "Mis tahes päev",
   "Anything": "Mis tahes",
   "Walking times are on": "Jalutusajad on sees",
-  "Show walking times from where you are": "Näita jalutusaegu sinu asukohast",
+  "Show walking times": "Näita jalutusaegu",
   "Only sources I follow": "Ainult allikad, mida jälgin",
   "I'm going": "Ma lähen",
   "Show the next few hours": "Näita järgmisi tunde",
   "What's the mood?": "Mis tuju on?",
-  "Pick one or a few. None means anything.": "Vali üks või mitu. Kui ühtki ei vali, sobib kõik.",
+  "No selection means all": "Valimata sobib kõik",
   "Up to €20": "Kuni 20 €",
-  "Shows with no listed price stay in.": "Sündmused, mille hind pole teada, jäävad sisse.",
+  "Unknown prices included": "Teadmata hinnaga sündmused kaasatud",
   "Narrow it down": "Täpsusta",
   "Art & film": "Kunst ja film",
   "Galleries, cinema, stage, comedy": "Galeriid, kino, lava, komöödia",
@@ -291,13 +290,13 @@ window.WA.dict.et = {
   "free": "tasuta",
   "Walking from you needs location. Allow it for this site in your browser settings.": "Sinu juurest jalutamiseks on vaja asukohta. Luba see selle saidi jaoks brauseri seadetes.",
   "Nothing is a short walk from you. Turn Near me off for the whole city.": "Sinu lähedal pole midagi. Lülita „Minu lähedal“ välja, et näha kogu linna.",
-  "Nearest first, walking from you": "Lähimad ees, jalutades sinu juurest",
+  "Nearest to you first": "Sulle lähimad ees",
   "Right by you": "Kohe sinu kõrval",
   "Kind": "Liik",
   "Moods": "Meeleolud",
   "Kind of place": "Koha liik",
   "nearest to you first": "lähimad sinu juurest ees",
-  "nearest the centre first": "kesklinnale lähimad ees",
+  "Nearest the centre first": "Kesklinnale lähimad ees",
   "Change": "Muuda",
   "Today's events and the places open now, by walking time.": "Tänased sündmused ja praegu avatud kohad jalutusaja järgi.",
   "Ticket price limit": "Piletihinna piir",
@@ -375,7 +374,7 @@ window.WA.dict.et = {
   "Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.": "Pillid on sündmused koos algusajaga. Ümar nööpnõel on koht; vermilioni rõngas tähendab, et see on praegu avatud.",
   "Nothing in view": "Vaates pole midagi",
   "Location is off in this browser, so the list is ordered by time": "Asukoht on selles brauseris välja lülitatud, seega on nimekiri aja järgi",
-  "Dance": "Tantsi",
+  "Dance": "Tants",
   "Any mood": "Mis tahes meeleolu",
   "Any mood · any price": "Mis tahes meeleolu · mis tahes hind",
   "On this week": "Sel nädalal",
@@ -400,17 +399,17 @@ window.WA.dict.et = {
   "From": "Alates",
   "Anywhere": "Kõikjal",
   "Order": "Järjestus",
-  "Soonest": "Varaseim",
-  "Nearest": "Lähim",
+  "Soonest": "Varaseimad",
+  "Nearest": "Lähimad",
   "Needs your location. Until you allow it, the list stays soonest first.": "Vajab sinu asukohta. Kuni seda ei luba, on nimekiri varaseimad ees.",
   "Starts": "Algab",
   "Walking distance": "Jalutuskaugus",
   "Free entry": "Tasuta sissepääs",
   "Hide what I've opened": "Peida avatud",
-  "Only places I follow": "Ainult kohad, mida jälgin",
-  "New since my last visit": "Uus alates viimasest külastusest",
+  "Followed places only": "Ainult jälgitavad kohad",
+  "New since last visit": "Uued pärast viimast külastust",
   "Clear all filters": "Tühjenda kõik filtrid",
-  "Measure from": "Mõõda alates",
+  "Measure from": "Alguspunkt",
   "Search the words": "Otsi sõnu",
   "Add to calendar": "Lisa kalendrisse",
   "Evenings": "Õhtud",
@@ -423,10 +422,10 @@ window.WA.dict.et = {
   "After 23:00": "Pärast 23:00",
   "In English": "Inglise keeles",
   "Pick dates": "Vali kuupäevad",
-  "Follow a venue from its page to use this": "Selle kasutamiseks jälgi kohta selle lehelt",
+  "Follow venues first": "Jälgi esmalt kohti",
   "Anywhere in the city": "Kõikjal linnas",
-  "Saved in this browser. Clear the box to use your location.": "Salvestatud sellesse brauserisse. Tühjenda väli, et kasutada oma asukohta.",
-  "Pick a place you know, such as where you are staying, to skip the location prompt.": "Vali tuttav koht, näiteks kus sa peatud, et asukohapäring vahele jätta.",
+  "Clear for device location": "Tühjenda oma asukoha kasutamiseks",
+  "Choose a starting point": "Vali alguspunkt",
   "Clear search": "Tühjenda otsing",
   "Any kind": "Mis tahes liik",
   "Include paid": "Kaasa tasulised",
@@ -443,7 +442,7 @@ window.WA.dict.et = {
   "Start over": "Alusta otsast",
   "Jazz tonight": "Džäss täna õhtul",
   "Free art this weekend": "Tasuta kunst sel nädalavahetusel",
-  "Club night in Kalamaja": "Klubiõhtu Kalamajas",
+  "Club night in Kalamaja": "Klubiõhtu: Kalamaja",
   "Talks in English": "Vestlused inglise keeles",
   "Following this search": "Jälgid seda otsingut",
   "Follow this search": "Jälgi seda otsingut",
@@ -458,20 +457,6 @@ window.WA.dict.et = {
   "Running": "Käimas",
   "Started earlier, still on": "Algas varem, käib endiselt",
   "Previous": "Eelmine",
-  "Põhja-Tallinn": "Põhja-Tallinn",
-  "Kalamaja": "Kalamaja",
-  "Telliskivi": "Telliskivi",
-  "Kopli": "Kopli",
-  "Noblessner": "Noblessner",
-  "City centre": "Kesklinn",
-  "Old Town": "Vanalinn",
-  "Kristiine": "Kristiine",
-  "Pirita": "Pirita",
-  "Lasnamäe": "Lasnamäe",
-  "Mustamäe": "Mustamäe",
-  "Nõmme": "Nõmme",
-  "Pelgulinn, Paljassaare, Karjamaa": "Pelgulinn, Paljassaare, Karjamaa",
-  "Rotermann, Kadriorg, Uus Maailm": "Rotermann, Kadriorg, Uus Maailm",
   "Inside the walls": "Müüride sees",
   "Club night": "Klubiõhtu",
   "Theatre": "Teater",
@@ -543,7 +528,6 @@ window.WA.dict.et = {
   "Tmrw": "Homme",
   "Time not listed": "Kellaaeg pole märgitud",
   "Open": "Avatud",
-  "Show walking times from where I am": "Näita jalutusaegu sealt, kus ma olen",
   "Location is off in this browser, so rows show the area instead": "Asukoht on selles brauseris välja lülitatud, seega näitavad read hoopis piirkonda",
   "You, signed in": "Sina, sisse logitud",
   "Põhja-Tallinna": "Põhja-Tallinna",
@@ -598,17 +582,17 @@ window.WA.dict.et = {
   "Alerts need the app on your Home Screen.": "Teavituste jaoks peab rakendus olema sinu avaekraanil.",
   "Blocked": "Blokeeritud",
   "Notifications on this device": "Teavitused sellel seadmel",
-  "When a saved plan changes": "Kui salvestatud plaan muutub",
-  "Tonight at places you follow": "Täna õhtul kohtades, mida jälgid",
+  "Saved plan changes": "Salvestatud plaani muutused",
+  "Tonight from followed places": "Täna õhtul jälgitavates kohtades",
   "One note at 16:00, only when something starts": "Üks teavitus kell 16:00, ainult siis, kui midagi algab",
   "Send a test notification": "Saada testteavitus",
   "Clear inbox": "Tühjenda postkast",
-  "Place to start from": "Koht, kust alustada",
+  "Starting point": "Alguspunkt",
   "Keep what you find": "Hoia alles, mida leiad",
   "Save places and listings, and get a note when a show you saved changes. No password.": "Salvesta kohti ja sündmusi ning saa teade, kui salvestatud etendus muutub. Parooli pole.",
   "Google": "Google",
   "Your taste": "Sinu maitse",
-  "Start from": "Alusta alates",
+  "Start from": "Alguspunkt",
   "Appearance": "Välimus",
   "Unfollow": "Lõpeta jälgimine",
   "Follow a venue from its page.": "Jälgi kohta selle lehelt.",
@@ -630,7 +614,7 @@ window.WA.dict.et = {
   "Kept for 30 days": "Säilitatakse 30 päeva",
   "Nothing yet.": "Veel pole midagi.",
   "Notifications": "Teavitused",
-  "Walking times and routes start here. Clear the box to use your location.": "Jalutusajad ja marsruudid algavad siit. Tühjenda väli, et kasutada oma asukohta.",
+  "Walks start here": "Jalutuskäigud algavad siit",
   "Staying somewhere? Pick a place you know and walking times start there, with no location prompt.": "Peatud kuskil? Vali tuttav koht ja jalutusajad algavad sealt, ilma asukohapäringuta.",
   "A venue": "Koht",
   "A saved search": "Salvestatud otsing",
@@ -654,7 +638,7 @@ window.WA.dict.et = {
   "Primary": "Peamine",
   "WanderAlt, Tallinn tonight": "WanderAlt, Tallinn täna õhtul",
   "Toggle attribution": "Näita või peida viited",
-  "routes lean this way": "marsruudid kalduvad selle poole",
+  "Shapes your walks": "Mõjutab sinu jalutuskäike",
   "Art": "Kunst",
   "Gig": "Kontsert",
   "Bar": "Baar",
@@ -686,7 +670,7 @@ window.WA.dict.et = {
   "Choose a walk for today.": "Vali jalutuskäik tänaseks.",
   "Its date or stops have changed. Now has walks for the next few hours.": "Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks.",
   "Place types": "Kohtade tüübid",
-  "Only places with filed hours": "Ainult teadaolevate lahtiolekuaegadega kohad",
+  "With known hours": "Teadaolevate lahtiolekuaegadega",
   "All place types in the Guide": "Kõik kohtade tüübid teejuhis",
   "Show all matching places": "Näita kõiki sobivaid kohti",
   "picked first": "valitud kohad esimesena",
@@ -748,16 +732,15 @@ window.WA.dict.et = {
   "Source:": "Allikas:",
   "© OpenStreetMap contributors": "© OpenStreetMapi kaastöölised",
   "City or place": "Linn või koht",
-  "City centre. Pick a venue for a more precise starting point.": "Kesklinn. Täpsema alguspunkti jaoks vali mõni koht.",
-  "Walking times and routes start at your current location.": "Jalutusajad ja marsruudid algavad sinu praegusest asukohast.",
-  "Choose Tallinn or a place you know, or use your location.": "Vali Tallinn või tuttav koht või kasuta oma asukohta.",
+  "Choose a nearby venue": "Vali lähedal asuv koht",
+  "Using your location": "Kasutan sinu asukohta",
   "Location is blocked. Allow it in browser settings, or choose a place.": "Asukoht on blokeeritud. Luba see brauseri seadetes või vali koht.",
   "Could not get your location. Try again or choose a place.": "Asukohta ei õnnestunud määrata. Proovi uuesti või vali koht.",
   "Nothing is a short walk from here. Choose another starting point or Whole city.": "Siit pole midagi lühikese jalutuskäigu kaugusel. Vali teine alguspunkt või Kogu linn.",
   "Whole city": "Kogu linn",
   "Choose a place": "Vali koht",
   "Right by here": "Siinsamas",
-  "Nearest first, walking from here": "Lähimad eespool, jalutades siit",
+  "Nearest to here first": "Siit lähimad ees",
   "A walk for now": "Jalutuskäik praegu",
   "Two or three stops on foot": "Kaks või kolm peatust jalgsi",
   "See the next few hours": "Vaata järgmisi tunde",
@@ -765,20 +748,79 @@ window.WA.dict.et = {
   "Date": "Kuupäev",
   "Date range": "Kuupäevavahemik",
   "Through": "Kuni",
-  "Dates are in Tallinn. Only filed listings are shown.": "Kuupäevad on Tallinna aja järgi. Näitame ainult teadaolevaid sündmusi.",
+  "Dates use Tallinn time": "Kuupäevad Tallinna aja järgi",
   "No listings match these choices.": "Nende valikutega sündmusi ei ole.",
   "Change filters": "Muuda filtreid",
   "Source": "Allikas",
   "Venue image": "Koha pilt",
-  "Place hours are for now.": "Kohtade lahtiolekuajad on praeguse hetke kohta.",
+  "Hours shown for now": "Lahtiolekuajad praeguse hetke järgi",
   "Map of Tallinn": "Tallinna kaart",
   "No places match these choices.": "Nende valikutega kohti ei ole.",
-  "nearest to your start first": "lähimad valitud alguspunktile eespool",
   "The selected listings and places, by walking time.": "Valitud sündmused ja kohad jalutamisaja järgi.",
   "Browse map": "Vaata kaarti",
-  "Map uses your mood, price and Near me choices": "Kaart kasutab sinu meeleolu-, hinna- ja lähedusvalikuid",
+  "Map uses shared filters": "Kaart kasutab samu filtreid",
   "Zoom out or move the map.": "Vähenda suumi või liiguta kaarti.",
-  "Events layer off": "Sündmuste kiht on väljas"
+  "Events layer off": "Sündmuste kiht on väljas",
+  "Location needed; showing soonest": "Asukoht vajalik; varaseimad ees",
+  "At 16:00 when listed": "Kell 16:00, kui toimub",
+  "After": "Pärast",
+  "Your saves carry over": "Sinu salvestused tulevad kaasa",
+  "No password needed": "Parooli pole vaja",
+  "Signed in": "Sisse logitud",
+  "Your saves sync between devices.": "Salvestused sünkroonitakse seadmete vahel.",
+  "Saved in this browser": "Salvestatud selles brauseris",
+  "Stays in this browser.": "Jääb sellesse brauserisse.",
+  "No signal": "Ühendus puudub",
+  "Showing last loaded listings": "Viimati laaditud sündmused",
+  "Saves work offline": "Salvestused toimivad võrguühenduseta",
+  "Distances won't update": "Kaugused ei uuene",
+  "cached just now": "äsja salvestatud",
+  "price not listed": "hind teadmata",
+  "it has already happened": "see on juba toimunud",
+  "it is no longer in the programme": "seda pole enam kavas",
+  "it is no longer listed": "seda pole enam nimekirjas",
+  "Details are loading": "Andmed laaditakse",
+  "Details could not load": "Andmeid ei saanud laadida",
+  "These saves are kept": "Need salvestused säilivad",
+  "No saved events yet": "Sündmusi pole veel salvestatud",
+  "No saved places yet": "Kohti pole veel salvestatud",
+  "This is our reading of the listing; the organiser has not confirmed it.": "See on meie tõlgendus kuulutusest; korraldaja pole seda kinnitanud.",
+  "a quiz": "viktoriin",
+  "a game night": "mänguõhtu",
+  "a craft club": "käsitööklubi",
+  "an open stage": "vaba lava",
+  "a drawing night": "joonistusõhtu",
+  "a language night": "keeleõhtu",
+  "a night for meeting people": "tutvumisõhtu",
+  "a club night": "klubiõhtu",
+  "a night": "õhtu",
+  "A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.": "Marsruudiks on vaja kindla algusajaga sündmust ja läheduses asuvat valitud kohta. Kohad leiad teejuhist, sündmused kavast.",
+  "Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.": "Sinu salvestused, nimekirjad, jälgimised, teavitused ja postkast kustutatakse ka sellest seadmest. Seda ei saa tagasi võtta.",
+  "Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.": "Salvestused, nimekirjad, jälgimised ja ajalugu kustutatakse sellest brauserist ning sind logitakse välja. Kontol säilivad salvestused; nende taastamiseks logi sisse.",
+  "Closed or moved?": "Suletud või kolinud?",
+  "Flagged by readers": "Lugejate teatatud",
+  "Facts that may have changed": "Võimalikud muutused",
+  "Different places": "Erinevad kohad",
+  "Open the event": "Ava sündmus",
+  "Open the place": "Ava koht",
+  "Withhold the place": "Peida koht",
+  "Use the new value": "Kasuta uut väärtust",
+  "Keep what we hold": "Säilita praegune",
+  "Fixed": "Parandatud",
+  "Dismiss": "Jäta kõrvale",
+  "Publish": "Avalda",
+  "Reject": "Lükka tagasi",
+  "Possible duplicate places": "Võimalikud topeltkohad",
+  "Review queue": "Ülevaatuse ootel",
+  "Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.": "Kogumisel ootele jäetud sündmused. Avalda sobivad, lükka ülejäänud tagasi; siin tehtud otsust kogumisprotsess ei muuda.",
+  "Supabase secret key": "Supabase’i salajane võti",
+  "Kept in this tab only (sessionStorage) and sent only to Supabase.": "Hoitud ainult selles vahekaardis (sessionStorage) ja saadetud ainult Supabase’i.",
+  "Open the queue": "Ava järjekord",
+  "Around here": "Siin lähedal",
+  "Follow from venue pages": "Jälgi kohtade lehtedelt",
+  "Within 10 minutes’ walk": "Kuni 10 minutit jalgsi",
+  "Continue with Google": "Jätka Google’iga",
+  "or": "või"
  },
  "patterns": [
   [
@@ -902,8 +944,8 @@ window.WA.dict.et = {
    "Näita kõiki {n} käimasolevat"
   ],
   [
-   "Added to {x}",
-   "Lisatud nimekirja {x}"
+   "Added to {rawName}",
+   "Lisatud nimekirja {rawName}"
   ],
   [
    "Remove {rawTitle} from saved",
@@ -918,32 +960,28 @@ window.WA.dict.et = {
    "Salvestatud: {rawTitle}"
   ],
   [
-   "new since {x}",
-   "lisatud pärast külastust ({x})"
+   "Also in {rawName}:",
+   "Ka piirkonnas {rawName}:"
   ],
   [
-   "Also in {x}:",
-   "Ka piirkonnas {x}:"
-  ],
-  [
-   "After {x}",
-   "Pärast: {x}"
+   "After {rawName}",
+   "Pärast: {rawName}"
   ],
   [
    "{n} of {m}",
    "{n}/{m}"
   ],
   [
-   "{x} on the map",
-   "{x} kaardil"
+   "{rawName} on the map",
+   "{rawName} kaardil"
   ],
   [
-   "{x} (opens {y})",
-   "{x} (avaneb: {y})"
+   "{rawName} (opens {y})",
+   "{rawName} (avaneb: {y})"
   ],
   [
-   "Logo from {x}, their logo",
-   "Logo saidilt {x}, nende enda logo"
+   "Logo from {rawName}, their logo",
+   "Logo saidilt {rawName}, nende enda logo"
   ],
   [
    "Address and links from OpenStreetMap; hours from {x}.",
@@ -954,36 +992,36 @@ window.WA.dict.et = {
    "Üksikasjad kohalt; lahtiolekuajad: {x}."
   ],
   [
-   "Everything from {x}",
-   "Kõik allikast {x}"
+   "Everything from {rawName}",
+   "Kõik allikast {rawName}"
   ],
   [
-   "Following {x}",
-   "Jälgid: {x}"
+   "Following {rawName}",
+   "Jälgid: {rawName}"
   ],
   [
-   "Stopped following {x}",
-   "Enam ei jälgi: {x}"
+   "Stopped following {rawName}",
+   "Enam ei jälgi: {rawName}"
   ],
   [
-   "Nothing is listed in {x} for the coming days.",
-   "Piirkonnas {x} pole lähipäevadeks midagi kuulutatud."
+   "Nothing is listed in {rawName} for the coming days.",
+   "Piirkonnas {rawName} pole lähipäevadeks midagi kuulutatud."
   ],
   [
-   "Nothing is listed in {x} yet.",
-   "Piirkonnas {x} pole veel midagi kuulutatud."
+   "Nothing is listed in {rawName} yet.",
+   "Piirkonnas {rawName} pole veel midagi kuulutatud."
   ],
   [
-   "Nothing from {x} is listed right now.",
-   "Allikast {x} pole praegu midagi kuulutatud."
+   "Nothing from {rawName} is listed right now.",
+   "Allikast {rawName} pole praegu midagi kuulutatud."
   ],
   [
    "Follow my device, dark from {t}",
    "Järgi minu seadet, tume alates {t}"
   ],
   [
-   "Listed via {x}",
-   "Kuulutatud allika kaudu {x}"
+   "Listed via {rawName}",
+   "Kuulutatud allika kaudu {rawName}"
   ],
   [
    "It was on {d}",
@@ -1034,8 +1072,8 @@ window.WA.dict.et = {
    "allikas {u}"
   ],
   [
-   "Listed via {x}, read {y}.",
-   "Kuulutatud allika kaudu {x}, loetud {y}."
+   "Listed via {rawName}, read {y}.",
+   "Kuulutatud allika kaudu {rawName}, loetud {y}."
   ],
   [
    "It was on {d} at {t}.",
@@ -1054,8 +1092,8 @@ window.WA.dict.et = {
    "Selles vaates tasuta: {n}"
   ],
   [
-   "{n} opened or saved before",
-   "Varem avatud või salvestatud: {n}"
+   "{n} opened or saved",
+   "Avatud või salvestatud: {n}"
   ],
   [
    "{n} more after these",
@@ -1106,36 +1144,36 @@ window.WA.dict.et = {
    "{n} peatust"
   ],
   [
-   "{x}, Open till {t}",
-   "{x}, avatud kuni {t}"
+   "{rawName}, Open till {t}",
+   "{rawName}, avatud kuni {t}"
   ],
   [
-   "{x}, Opens {t}",
-   "{x}, avaneb {t}"
+   "{rawName}, Opens {t}",
+   "{rawName}, avaneb {t}"
   ],
   [
-   "{x}, Shut today",
-   "{x}, täna suletud"
+   "{rawName}, Shut today",
+   "{rawName}, täna suletud"
   ],
   [
-   "{x}, Hours not filed",
-   "{x}, lahtiolekuajad teadmata"
+   "{rawName}, Hours not filed",
+   "{rawName}, lahtiolekuajad teadmata"
   ],
   [
-   "{x}, Open for events",
-   "{x}, avatud ürituste ajal"
+   "{rawName}, Open for events",
+   "{rawName}, avatud ürituste ajal"
   ],
   [
-   "{x}, Open, 24 hours",
-   "{x}, avatud ööpäevaringselt"
+   "{rawName}, Open, 24 hours",
+   "{rawName}, avatud ööpäevaringselt"
   ],
   [
-   "{x}, Listed as closed",
-   "{x}, märgitud suletuks"
+   "{rawName}, Listed as closed",
+   "{rawName}, märgitud suletuks"
   ],
   [
-   "{x}, Status unverified",
-   "{x}, olek kinnitamata"
+   "{rawName}, Status unverified",
+   "{rawName}, olek kinnitamata"
   ],
   [
    "with {w}",
@@ -1144,14 +1182,6 @@ window.WA.dict.et = {
   [
    "Image from {u}",
    "Pilt saidilt {u}"
-  ],
-  [
-   "{a}. Needs your location or a spot below",
-   "{a}. Vaja on sinu asukohta või allpool valitud kohta"
-  ],
-  [
-   "{a}, from {b}",
-   "{a}, lähtekoht: {b}"
   ],
   [
    "{n} today",
@@ -1164,6 +1194,98 @@ window.WA.dict.et = {
   [
    "{n} listings on this map",
    "Sellel kaardil: {n} kuulutust"
+  ],
+  [
+   "Language: {rawName}",
+   "Keel: {rawName}"
+  ],
+  [
+   "{n} free",
+   "{n} tasuta"
+  ],
+  [
+   "{n} from followed places",
+   "{n} jälgitavatest kohtadest"
+  ],
+  [
+   "{n} new listings",
+   "{n} uut sündmust"
+  ],
+  [
+   "Add {rawName} to your calendar",
+   "Lisa {rawName} kalendrisse"
+  ],
+  [
+   "Walking from {rawName}",
+   "Alguspunkt: {rawName}"
+  ],
+  [
+   "{n} here, zoom in",
+   "Siin {n}, suurenda"
+  ],
+  [
+   "{n} min walk from where you are",
+   "{n} min jalgsi sinust"
+  ],
+  [
+   "cached {x}",
+   "salvestatud {x}"
+  ],
+  [
+   "The format is {x}, built for people who turn up on their own to mix.",
+   "Formaat: {x}. Sobib üksi tulles inimestega tutvumiseks."
+  ],
+  [
+   "Sign-in did not finish: {rawError}",
+   "Sisselogimine ei õnnestunud: {rawError}"
+  ],
+  [
+   "Not saved: {rawError}",
+   "Ei salvestatud: {rawError}"
+  ],
+  [
+   "Merge into {rawName}",
+   "Ühenda: {rawName}"
+  ],
+  [
+   "We hold: {rawValue}",
+   "Praegu: {rawValue}"
+  ],
+  [
+   "It says: {rawValue}",
+   "Allikas: {rawValue}"
+  ],
+  [
+   "{n} waiting",
+   "{n} ootel"
+  ],
+  [
+   "from its {rawSource}",
+   "allikas: {rawSource}"
+  ],
+  [
+   "Supabase refused the key ({rawError}). Check it is the secret key, not the anon key or a Cloudflare token.",
+   "Supabase ei võtnud võtit vastu ({rawError}). Kontrolli, et see on salavõti, mitte anon-võti ega Cloudflare’i token."
+  ],
+  [
+   "Show {n} listing",
+   "Näita {n} kuulutus"
+  ],
+  [
+   "Show {n} listings",
+   "Näita {n} kuulutust"
+  ],
+  [
+   "Show {n} place",
+   "Näita {n} koht"
+  ],
+  [
+   "Show {n} places",
+   "Näita {n} kohta"
+  ],
+  [
+   "since {t}",
+   "alates {t}"
   ]
  ]
 };

@@ -1,6 +1,6 @@
 # Now and Map interaction review
 
-Reviewed 6 October 2026 against live WanderAlt, live Meetup web search, `docs/design-brief.md`, `docs/frontend.md`, and the current source. This is an expert review and a prototype, not a usability study or production deployment. The Cloudflare preview is checked separately.
+Reviewed 6 October 2026 against live WanderAlt, live Meetup web search, `docs/design-brief.md`, `docs/frontend.md`, and the current source. This is an expert review and a prototype, not a usability study or production deployment. The Cloudflare preview is checked separately. The interface-copy and Cyrillic typography audit is in [copy-typography-review.md](copy-typography-review.md).
 
 ## Observations and decisions
 

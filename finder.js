@@ -53,11 +53,11 @@
       const b = R().badgeFor(e);
       return `<a class="wa-suggest__item" href="detail.html?id=${esc(encodeURIComponent(e.id))}">
         <span class="wa-suggest__glyph">${window.WA.Picto.kind(e.kind)}</span>
-        <span><span class="wa-suggest__title">${esc(e.title)}</span><br><span class="wa-suggest__meta">${esc([e.venue, R().areaOf(e)].filter(Boolean).join(' · '))}</span></span>
+        <span><span class="wa-suggest__title" data-notranslate>${esc(e.title)}</span><br><span class="wa-suggest__meta"><span data-notranslate>${esc([e.venue, R().areaOf(e)].filter(Boolean).join(' · '))}</span></span></span>
         <span class="wa-suggest__side">${esc(b.text)}</span></a>`;
     }).join('')}${venues.slice(0, 3).map(v => `<a class="wa-suggest__item" href="detail.html?id=${esc(encodeURIComponent(v.id))}">
         <span class="wa-suggest__glyph">${window.WA.Picto.kind(v.kind)}</span>
-        <span><span class="wa-suggest__title">${esc(v.name)}</span><br><span class="wa-suggest__meta">${esc([R().kindLabel(v.kind, true), R().areaOf(v)].filter(Boolean).join(' · '))}</span></span>
+        <span><span class="wa-suggest__title" data-notranslate>${esc(v.name)}</span><br><span class="wa-suggest__meta">${esc(R().kindLabel(v.kind, true))}${R().areaOf(v) ? ` · <span data-notranslate>${esc(R().areaOf(v))}</span>` : ''}</span></span>
         <span class="wa-suggest__side">Place</span></a>`).join('')}</div>`;
   };
 
@@ -68,12 +68,12 @@
         <div class="wa-search">
           <label class="wa-sr" for="finder-q">Search listings, venues and areas</label>
           <span class="wa-search__icon">${I('search')}</span>
-          <input class="wa-search__input" id="finder-q" type="search" autocomplete="off" spellcheck="false" placeholder="A venue, an area, a name" value="${esc(st.q)}" />
+          <input class="wa-search__input" id="finder-q" type="search" autocomplete="off" spellcheck="false" placeholder="Venue, area or name" value="${esc(st.q)}" />
         </div>
         <div id="finder-results">${results()}</div>
         ${st.q ? '' : `<p class="wa-finder__label">Cities</p>
         <div>
-          <button class="wa-city" type="button" data-locate-near>${P('nearby')}<span><span class="wa-city__name">Nearby</span><span class="wa-city__sub">${G().currentLoc() ? 'Walking times are on' : 'Show walking times from where you are'}</span></span></button>
+          <button class="wa-city" type="button" data-locate-near>${P('nearby')}<span><span class="wa-city__name">Nearby</span><span class="wa-city__sub">${G().currentLoc() ? 'Walking times are on' : 'Show walking times'}</span></span></button>
           <button class="wa-city" type="button" data-fcity="tallinn" aria-pressed="true">${P('tallinn')}<span><span class="wa-city__name">Tallinn, Estonia</span><span class="wa-city__sub">${esc(CITY_SUB.tallinn)}</span></span></button>
           ${SOON.map(([id, name]) => `<button class="wa-city" type="button" disabled>${P(id)}<span><span class="wa-city__name">${esc(name)}</span><span class="wa-city__sub">We read Tallinn first</span></span><span class="wa-city__soon">Soon</span></button>`).join('')}
         </div>`}

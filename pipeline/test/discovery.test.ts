@@ -155,6 +155,7 @@ test('image-first feed preserves categories, provenance and missing facts; hosti
   assert.match(markup, /Price not listed/); assert.match(markup, /Time not listed/);
   assert.match(markup, /is-missing/); assert.match(markup, /&lt;img/); assert.match(markup, /@evil&quot;/);
   assert.match(markup, /data-notranslate>&lt;script&gt;place&lt;\/script&gt;/);
+  assert.match(markup, /data-notranslate>Kalamaja<\/span>/);
   assert.doesNotMatch(markup, /src="javascript:|<script>|onclick="|<a[^>]*<button/);
   const withPhoto = p.WA.R.feedItem({ id:'safe', title:'Safe', kind:'film', imageUrl:'https://images.example/film.jpg', permalink:'https://source.example/event' });
   assert.match(withPhoto, /width="640" height="360" loading="lazy"/);

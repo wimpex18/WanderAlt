@@ -32,11 +32,11 @@
   };
   const moodBody = () => {
     const moods = M().available({ allHours: true });
-    return `<p class="mood-lead">Pick one or a few. None means anything.</p><ul class="mood-list" role="group" aria-label="Moods">${moods.map(m => {
+    return `<p class="mood-lead">No selection means all</p><ul class="mood-list" role="group" aria-label="Moods">${moods.map(m => {
       const on = draft.moods.includes(m.id);
       return `<li class="mood-item"><button class="mood-row" type="button" data-mood="${esc(m.id)}" aria-pressed="${on}">${window.WA.Picto(m.picto)}<span class="mood-row__t"><b>${esc(m.label)}</b><small>${esc(m.hint)}</small></span><span class="mood-row__tick">${I('check')}</span></button>
         ${m.subs.length > 1 ? `<div class="mood-subs" data-subs-of="${esc(m.id)}" role="group" aria-label="Narrow it down"${on ? '' : ' hidden'}>${m.subs.map(s => `<button class="wa-chip" type="button" data-sub="${esc(s.id)}" aria-pressed="${draft.subs.includes(s.id)}">${esc(s.label)}</button>`).join('')}</div>` : ''}</li>`;
-    }).join('')}</ul><h3 class="mood-h">Tickets</h3><div class="mood-seg" role="group" aria-label="Ticket price limit">${[[0,'Free'],[20,'Up to €20'],[null,'Any']].map(([cap,label]) => `<button type="button" data-cap="${cap == null ? '' : cap}" aria-pressed="${cap === draft.cap}">${esc(label)}</button>`).join('')}</div><p class="wa-note">Shows with no listed price stay in.</p>`;
+    }).join('')}</ul><h3 class="mood-h">Tickets</h3><div class="mood-seg" role="group" aria-label="Ticket price limit">${[[0,'Free'],[20,'Up to €20'],[null,'Any']].map(([cap,label]) => `<button type="button" data-cap="${cap == null ? '' : cap}" aria-pressed="${cap === draft.cap}">${esc(label)}</button>`).join('')}</div><p class="wa-note">Unknown prices included</p>`;
   };
   const openMood = button => {
     draft = M().pref();
@@ -48,7 +48,7 @@
       <label class="wa-field"><span class="wa-field__label">Date</span><input class="wa-input" type="date" name="date" required min="${esc(today)}" value="${esc(s.date || D().range()[0])}"></label>
       <label class="discovery-range"><input type="checkbox" name="range"${s.to ? ' checked' : ''}> <span>Date range</span></label>
       <label class="wa-field" id="discovery-end"${s.to ? '' : ' hidden'}><span class="wa-field__label">Through</span><input class="wa-input" type="date" name="to" min="${esc(s.date || today)}" value="${esc(s.to)}"${s.to ? ' required' : ' disabled'}></label>
-      <p class="wa-note">Dates are in Tallinn. Only filed listings are shown.</p>`, '<button class="wa-btn wa-btn--quiet" type="button" data-discovery-close>Cancel</button><button class="wa-btn wa-btn--primary" type="submit">Show results</button>', 'dates');
+      <p class="wa-note">Dates use Tallinn time</p>`, '<button class="wa-btn wa-btn--quiet" type="button" data-discovery-close>Cancel</button><button class="wa-btn wa-btn--primary" type="submit">Show results</button>', 'dates');
   };
   document.addEventListener('click', e => {
     const hit = s => e.target.closest && e.target.closest(s);

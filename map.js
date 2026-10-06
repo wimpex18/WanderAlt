@@ -88,7 +88,7 @@
       const live = R().isLive(x);
       const t = live ? 'Now' : (R().clockOf(x) || R().dow(W().resolveKey(x) || W().todayKey()));
       return `<button class="wa-pin wa-pin--event${live ? ' wa-pin--live' : ''}" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
-        aria-label="${esc(`${x.title}, ${t}, ${x.venue || ''}`)}" style="left:${p.x}px;top:${p.y}px"><span class="wa-pin__tag">${esc(t)}</span></button>`;
+        aria-label="${esc(`${x.title}, ${window.WA.Lang ? window.WA.Lang.t(t) : t}, ${x.venue || ''}`)}" style="left:${p.x}px;top:${p.y}px"><span class="wa-pin__tag">${esc(t)}</span></button>`;
     }
     const o = R().openState(x);
     return `<button class="wa-pin wa-pin--place ${o.open === true ? 'is-open' : 'is-shut'}" type="button" data-pin="${esc(x.id)}" aria-current="${cur}"
@@ -102,15 +102,15 @@
     const { src, logo, tone } = R().art(x);
     const m = R().walk(x);
     const meta1 = isEvent ? R().badgeFor(x).text : R().openState(x).text;
-    const meta2 = (isEvent ? [x.venue, R().price(x)] : [R().kindLabel(x.kind, true), R().areaOf(x)])
-      .concat(m != null ? [`${R().walkLabel(m)} walk`] : []).filter(Boolean).join(' · ');
+    const meta2 = (isEvent ? [x.venue ? `<span data-notranslate>${esc(x.venue)}</span>` : '', esc(R().price(x))] : [esc(R().kindLabel(x.kind, true)), R().areaOf(x) ? `<span data-notranslate>${esc(R().areaOf(x))}</span>` : ''])
+      .concat(m != null ? [esc(`${R().walkLabel(m)} walk`)] : []).filter(Boolean).join(' · ');
     return `<div class="map-preview__card${x.id === state.active ? ' is-active' : ''}" data-card="${esc(x.id)}">
         <a class="map-preview__link" href="detail.html?id=${esc(encodeURIComponent(x.id))}" data-row="${esc(x.id)}">
           <span class="map-preview__art${R().logoCls(logo, tone)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
           <span class="map-preview__body">
             <span class="map-preview__title">${esc(isEvent ? x.title : x.name)}</span>
             <span class="map-preview__meta">${esc(meta1)}</span>
-            ${meta2 ? `<span class="map-preview__meta">${esc(meta2)}</span>` : ''}
+            ${meta2 ? `<span class="map-preview__meta">${meta2}</span>` : ''}
           </span>
         </a>
         ${R().heart(x.id, isEvent ? x.title : x.name)}
@@ -271,7 +271,7 @@
       html += `<p class="map-legend-note"><span>Zoom out or move the map.</span> <span>${events.length} listings on this map</span> · ${esc(whenWord)}${on.events ? '' : ' · <span>Events layer off</span>'}</p>
         <button class="wa-btn wa-btn--sm" type="button" data-act="fit">Show everything</button>`;
     }
-    html += `<p class="map-legend-note">Place hours are for now.</p><p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;
+    html += `<p class="map-legend-note">Hours shown for now</p><p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;
     if (html === lastDrawer) return;
     lastDrawer = html;
     $('drawer-list').innerHTML = html;

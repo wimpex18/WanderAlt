@@ -30,7 +30,7 @@
     if (!me || first.lat == null) return '';
     const d = G().distanceTo({ lat: first.lat, lng: first.lng });
     const w = G().walkMinutes(d);
-    return w == null ? '' : `<li class="rt__walk rt__walk--start"><span></span><span class="rt__rail" aria-hidden="true"></span><span>${esc(`${w} min walk from where you are`)}</span></li>`;
+    return w == null ? '' : `<li class="rt__walk rt__walk--start"><span></span><span class="rt__rail" aria-hidden="true"></span><span>${esc(`${w} min walk from ${G().anchor() ? 'here' : 'where you are'}`)}</span></li>`;
   };
 
   const stopHtml = (s, i, route) => {
@@ -45,7 +45,7 @@
           <span class="rt__art">${art(s)}</span>
           <span class="rt__text">
             <span class="rt__name">${esc(s.name)}</span>
-            <span class="rt__meta">${esc([sub, s.area].filter(Boolean).join(' · '))}</span>
+            <span class="rt__meta">${esc(sub)}${s.area ? ` · <span data-notranslate>${esc(s.area)}</span>` : ''}</span>
             ${s.note ? `<span class="rt__note">${esc(s.note)}</span>` : ''}
           </span>
         </a></li>${walk}`;

@@ -42,9 +42,10 @@
     const rows = await api('GET', `places?id=in.${encodeURIComponent(inList(uniq))}&select=id,name,kind,address,opening_hours,hours_source,website,instagram,picked,status`);
     return new Map(rows.map(p => [p.id, p]));
   };
-  const placeLine = (p) => p ? [p.name, p.kind, p.address, p.picked ? 'picked' : ''].filter(Boolean).join(' · ') : '';
+  const placeLine = (p) => p ? [p.name ? `<span data-notranslate>${esc(p.name)}</span>` : '',
+    esc(p.kind ? p.kind[0].toUpperCase() + p.kind.slice(1) : ''), p.address ? `<span data-notranslate>${esc(p.address)}</span>` : '', p.picked ? 'picked' : ''].filter(Boolean).join(' · ') : '';
 
-  const when = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const when = (iso) => new Date(iso).toLocaleString(window.WA.Lang.locale(), { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   /* Problems flagged on event pages: open ones, oldest first. A missing
      table (migration not applied) just hides the section. */
@@ -54,8 +55,8 @@
       if (!rows.length) return '';
       return `<h2 class="wa-h2" style="margin-top:var(--s-6)">Flagged by readers</h2>
         <ul class="review__list">${rows.map(r => `<li class="review__item" data-report="${esc(String(r.id))}">
-          <p class="wa-note">${esc([r.reason, new Date(r.created_at).toLocaleDateString('en-GB')].join(' · '))}</p>
-          ${r.note ? `<p class="review__desc">${esc(r.note)}</p>` : ''}
+          <p class="wa-note">${esc([r.reason, new Date(r.created_at).toLocaleDateString(window.WA.Lang.locale())].join(' · '))}</p>
+          ${r.note ? `<p class="review__desc" data-notranslate>${esc(r.note)}</p>` : ''}
           <div class="review__actions">
             <a class="wa-btn wa-btn--quiet" href="detail.html?id=${esc(encodeURIComponent(r.pick_id))}">Open the event</a>
             <button class="wa-btn" type="button" data-report-set="fixed">Fixed</button>
@@ -77,8 +78,8 @@
         <ul class="review__list">${rows.map(r => {
           const p = places.get(r.place_id);
           return `<li class="review__item" data-flag="${esc(String(r.id))}" data-place="${esc(r.place_id)}" data-field="${esc(r.field)}" data-found="${esc(r.found)}">
-            <p class="review__title">${esc(p ? p.name : r.place_id)}</p>
-            <p class="wa-note">${esc(`${FIELD[r.field] || r.field} · from its ${r.source} · ${new Date(r.created_at).toLocaleDateString('en-GB')}`)}</p>
+            <p class="review__title" data-notranslate>${esc(p ? p.name : r.place_id)}</p>
+            <p class="wa-note">${esc(`${FIELD[r.field] || r.field} · from its ${r.source} · ${new Date(r.created_at).toLocaleDateString(window.WA.Lang.locale())}`)}</p>
             ${r.field === 'closure' ? '' : `<p class="review__desc">${esc(`We hold: ${r.stored || 'nothing'}`)}</p>`}
             <p class="review__desc">${esc(`It says: ${r.found}`)}</p>
             <div class="review__actions">
@@ -105,8 +106,8 @@
           const a = places.get(r.place_a), b = places.get(r.place_b);
           if (!a || !b) return '';
           return `<li class="review__item" data-a="${esc(a.id)}" data-b="${esc(b.id)}">
-            <p class="review__desc">${esc(placeLine(a))}</p>
-            <p class="review__desc">${esc(placeLine(b))}</p>
+            <p class="review__desc">${placeLine(a)}</p>
+            <p class="review__desc">${placeLine(b)}</p>
             <p class="wa-note">${esc(r.reason || '')}</p>
             <div class="review__actions">
               <button class="wa-btn wa-btn--primary" type="button" data-merge="b">${esc(`Merge into ${a.name}`)}</button>
@@ -128,10 +129,10 @@
       $('key-form').hidden = true;
       host.innerHTML = `<p class="wa-note review__count">${esc(`${rows.length} waiting · soonest first`)}</p>
         <ul class="review__list">${rows.map(e => `<li class="review__item" data-id="${esc(e.id)}">
-          <p class="wa-note">${esc([when(e.starts_at), e.kind, e.venue_name, e.status_note].filter(Boolean).join(' · '))}</p>
-          <p class="review__title">${esc(e.title_en || e.title)}</p>
-          ${e.title_en && e.title_en !== e.title ? `<p class="wa-note">${esc(e.title)}</p>` : ''}
-          ${e.summary_en ? `<p class="review__desc">${esc(e.summary_en)}</p>` : ''}
+          <p class="wa-note">${[esc(when(e.starts_at)), esc(e.kind ? e.kind[0].toUpperCase() + e.kind.slice(1) : ''), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', e.status_note ? `<span data-notranslate>${esc(e.status_note)}</span>` : ''].filter(Boolean).join(' · ')}</p>
+          <p class="review__title" data-notranslate>${esc(e.title_en || e.title)}</p>
+          ${e.title_en && e.title_en !== e.title ? `<p class="wa-note" data-notranslate>${esc(e.title)}</p>` : ''}
+          ${e.summary_en ? `<p class="review__desc" data-notranslate>${esc(e.summary_en)}</p>` : ''}
           <div class="review__actions">
             <button class="wa-btn wa-btn--primary" type="button" data-set="published">Publish</button>
             <button class="wa-btn" type="button" data-set="rejected">Reject</button>
@@ -169,7 +170,7 @@
         }
         await api('PATCH', `place_fact_flags?id=eq.${encodeURIComponent(row.dataset.flag)}`, { state: choice === 'dismissed' ? 'dismissed' : 'accepted' });
         row.remove();
-      } catch (err) { fb.disabled = false; alert(`Not saved: ${err.message}`); }
+      } catch (err) { fb.disabled = false; alert(window.WA.Lang.t(`Not saved: ${err.message}`)); }
       return;
     }
     const mb = e.target.closest && e.target.closest('[data-merge]');
@@ -186,7 +187,7 @@
           await rpc('merge_places', { p_duplicate: duplicate, p_canonical: canonical, p_reason: 'manual review' });
         }
         row.remove();
-      } catch (err) { mb.disabled = false; alert(`Not saved: ${err.message}`); }
+      } catch (err) { mb.disabled = false; alert(window.WA.Lang.t(`Not saved: ${err.message}`)); }
       return;
     }
     const rb = e.target.closest && e.target.closest('[data-report-set]');
@@ -196,7 +197,7 @@
       try {
         await api('PATCH', `problem_reports?id=eq.${encodeURIComponent(row.dataset.report)}`, { status: rb.dataset.reportSet });
         row.remove();
-      } catch (err) { rb.disabled = false; alert(`Not saved: ${err.message}`); }
+      } catch (err) { rb.disabled = false; alert(window.WA.Lang.t(`Not saved: ${err.message}`)); }
       return;
     }
     const b = e.target.closest && e.target.closest('[data-set]');
@@ -209,7 +210,7 @@
       row.remove();
     } catch (err) {
       b.disabled = false;
-      alert(`Not saved: ${err.message}`);
+      alert(window.WA.Lang.t(`Not saved: ${err.message}`));
     }
   });
 

@@ -239,7 +239,7 @@
   };
 
   /* The switch in the top bar, left of the theme key: a globe and the current code. It opens a
-     small pill of codes; the full names are only for screen readers. Never translated. */
+     small pill of codes; language names remain native, the accessible label is localized. */
   const GLOBE = '<circle class="t" cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="8.5"/><path class="k" d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.2 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.2-3.8-8.5S9.4 5.9 12 3.5z"/>';
   const mountSwitch = () => {
     const end = document.querySelector('.wa-topbar__end');
@@ -247,13 +247,13 @@
     const wrap = document.createElement('div');
     wrap.className = 'wa-lang';
     wrap.setAttribute('data-notranslate', '');
-    wrap.innerHTML = `<button class="wa-lang__key" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Language: ${NAMES[lang]}">`
+    wrap.innerHTML = `<button class="wa-lang__key" type="button" aria-haspopup="true" aria-expanded="false" aria-label="${t(`Language: ${NAMES[lang]}`)}">`
       + `<svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLOBE}</svg><span>${CODES[lang]}</span></button>`
       + `<div class="wa-lang__menu" role="menu" hidden>${SUPPORTED.map(c => `<button type="button" class="wa-lang__opt" role="menuitemradio" lang="${c}" data-lang-pick="${c}" aria-checked="${c === lang}" aria-label="${NAMES[c]}">${CODES[c]}</button>`).join('')}</div>`;
     const key = wrap.querySelector('.wa-lang__key'), menu = wrap.querySelector('.wa-lang__menu');
     let slider = null;
     const sync = () => {
-      key.setAttribute('aria-label', `Language: ${NAMES[lang]}`);
+      key.setAttribute('aria-label', t(`Language: ${NAMES[lang]}`));
       key.querySelector('span').textContent = CODES[lang];
       menu.querySelectorAll('[data-lang-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.langPick === lang)));
       if (slider && !menu.hidden) slider.sync();

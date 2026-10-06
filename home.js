@@ -144,8 +144,8 @@
     const chip = (id, label, n, art) => `<button class="wa-chip" type="button" data-group="${esc(id)}" aria-pressed="${placeGroup === id}">${art}${esc(label)} <span class="wa-chip__n">${n}</span></button>`;
     const row = groups.length > 1 ? `<div class="wa-chips wa-chips--scroll home-kinds" role="group" aria-label="Kind of place">${chip('', 'All', all.length, '')}${groups.map(([g, n]) => chip(g.id, g.label, n, window.WA.Picto(g.picto))).join('')}</div>` : '';
     const from = (nearOn() ? G().currentLoc() : null) || centre();
-    const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'nearest to your start first' : 'nearest the centre first'}`;
-    return `${row}<p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Place hours are for now.</p>
+    const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'Nearest to here first' : 'Nearest the centre first'}`;
+    return `${row}<p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
       ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0, cap).map(v => R().placeRow(v, { from })).join('')}</ul>
       <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
       <a class="wa-linkbtn home-day__more" href="places.html${placeGroup ? `?kind=${esc(placeGroup)}` : ''}">The Guide ${I('arrow')}</a></div>`;
@@ -213,7 +213,7 @@
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
         <div class="home-tabs" role="group" aria-label="Day">${tabs.map(([k,label]) => `<button class="home-tab" type="button" data-day="${k}" aria-pressed="${k === tab}">${esc(label)}</button>`).join('')}${window.WA.DiscoveryControls.dateKey('home-calendar')}</div>
         ${facetRow(full, shown)}
-        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest first, walking from here' : 'Nearest first, walking from you'}</p>` : ''}
+        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
         ${list.length ? `<ul class="wa-feed">${list.slice(0,cap).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
         <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
         <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > cap ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a></div>
@@ -267,11 +267,7 @@
     const prev = visit.prev;
     const n = prev ? all.filter(e => R().isNewSince(e, prev)).length : 0;
     if (!n) { host.innerHTML = ''; return; }
-    const d = new Date(prev);
-    const when = (Date.now() - prev) < 86400000 * 6
-      ? d.toLocaleDateString((window.WA.Lang ? window.WA.Lang.locale() : 'en-GB'), { weekday: 'long', timeZone: 'Europe/Tallinn' })
-      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/Tallinn' });
-    host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>new since ${esc(when)}</span>${I('arrow')}</a>`;
+    host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>`;
   };
 
   /* ── Render and events ─────────────────────────────────────── */

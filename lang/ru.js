@@ -125,7 +125,6 @@ window.WA.dict.ru = {
   "Updating…": "Обновление…",
   "Password updated. You are now signed in.": "Пароль обновлён. Вы вошли в систему.",
   "Update failed.": "Не удалось обновить.",
-  "Vabaduse väljak": "площадь Свободы",
   "Select city": "Выберите город",
   "Coming soon": "Скоро",
   "Walking from": "Пешком от",
@@ -157,13 +156,13 @@ window.WA.dict.ru = {
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Постоянных часов нет. Зал открывается, когда что-то идёт; время указано в событиях выше.",
   "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.",
   "Your lists": "Ваши списки",
-  "No lists yet. Name one and this goes straight in.": "Списков пока нет. Назовите один, и это сразу попадёт в него.",
+  "Create your first list": "Создайте первый список",
   "New list": "Новый список",
   "Create and add": "Создать и добавить",
-  "Kalamaja on Saturday": "Каламая в субботу",
+  "Kalamaja on Saturday": "Kalamaja в субботу",
   "Walk": "Пешком",
   "Area": "Район",
-  "Allow location for walking time": "Разрешите геолокацию для времени пешком",
+  "Location for walking times": "Геолокация для времени пешком",
   "Venue logo": "Логотип места",
   "Venue photo": "Фото места",
   "Save": "Сохранить",
@@ -246,7 +245,7 @@ window.WA.dict.ru = {
   "When?": "Когда?",
   "What are you after?": "Что вы ищете?",
   "Clear all": "Очистить всё",
-  "A venue, an area, a name": "Место, район, название",
+  "Venue, area or name": "Место, район или название",
   "Gigs": "Концерты",
   "Club nights": "Клубные вечера",
   "Film": "Кино",
@@ -254,7 +253,7 @@ window.WA.dict.ru = {
   "Talks": "Лекции и встречи",
   "Workshops": "Мастер-классы",
   "Festivals": "Фестивали",
-  "Old Town, Kalamaja, Telliskivi and the harbour": "Старый город, Каламая, Теллискиви и порт",
+  "Old Town, Kalamaja, Telliskivi and the harbour": "Old Town, Kalamaja, Telliskivi и порт",
   "Coming later": "Появятся позже",
   "Riga, Latvia": "Рига, Латвия",
   "Helsinki, Finland": "Хельсинки, Финляндия",
@@ -265,14 +264,14 @@ window.WA.dict.ru = {
   "Any day": "Любой день",
   "Anything": "Что угодно",
   "Walking times are on": "Время пешком включено",
-  "Show walking times from where you are": "Показывать время пешком от вашего места",
+  "Show walking times": "Показать время пешком",
   "Only sources I follow": "Только источники, на которые я подписан",
   "I'm going": "Я иду",
   "Show the next few hours": "Показать ближайшие часы",
   "What's the mood?": "Какое настроение?",
-  "Pick one or a few. None means anything.": "Выберите одно или несколько. Ничего не выбрано — подойдёт всё.",
+  "No selection means all": "Без выбора подходят все",
   "Up to €20": "До 20 €",
-  "Shows with no listed price stay in.": "События без указанной цены остаются в списке.",
+  "Unknown prices included": "Без цены тоже показываем",
   "Narrow it down": "Уточнить",
   "Art & film": "Искусство и кино",
   "Galleries, cinema, stage, comedy": "Галереи, кино, сцена, комедия",
@@ -291,13 +290,13 @@ window.WA.dict.ru = {
   "free": "бесплатно",
   "Walking from you needs location. Allow it for this site in your browser settings.": "Чтобы считать путь от вас, нужна геолокация. Разрешите её для этого сайта в настройках браузера.",
   "Nothing is a short walk from you. Turn Near me off for the whole city.": "Рядом с вами ничего нет. Выключите «Рядом со мной», чтобы видеть весь город.",
-  "Nearest first, walking from you": "Сначала ближайшие, пешком от вас",
+  "Nearest to you first": "Сначала ближайшие к вам",
   "Right by you": "Прямо рядом с вами",
   "Kind": "Вид",
   "Moods": "Настроения",
   "Kind of place": "Тип места",
   "nearest to you first": "сначала ближайшие к вам",
-  "nearest the centre first": "сначала ближайшие к центру",
+  "Nearest the centre first": "Сначала ближайшие к центру",
   "Change": "Изменить",
   "Today's events and the places open now, by walking time.": "События сегодня и открытые сейчас места по времени пешком.",
   "Ticket price limit": "Предел цены билета",
@@ -375,12 +374,12 @@ window.WA.dict.ru = {
   "Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.": "Таблетки — это события со временем начала. Круглая метка — место; киноварное кольцо значит, что оно открыто сейчас.",
   "Nothing in view": "В кадре ничего нет",
   "Location is off in this browser, so the list is ordered by time": "Геолокация в этом браузере выключена, поэтому список упорядочен по времени",
-  "Dance": "Танцевать",
+  "Dance": "Танец",
   "Any mood": "Любое настроение",
   "Any mood · any price": "Любое настроение · любая цена",
   "On this week": "На этой неделе",
   "Remove this filter": "Убрать этот фильтр",
-  "Use my location": "Использовать моё местоположение",
+  "Use my location": "Использовать геолокацию",
   "What to look for": "Что искать",
   "Records": "Пластинки",
   "Books": "Книги",
@@ -400,22 +399,22 @@ window.WA.dict.ru = {
   "From": "От",
   "Anywhere": "Где угодно",
   "Order": "Порядок",
-  "Soonest": "Ближайшие",
-  "Nearest": "Ближайшие по расстоянию",
+  "Soonest": "Раньше по времени",
+  "Nearest": "Ближе к вам",
   "Needs your location. Until you allow it, the list stays soonest first.": "Нужна геолокация. Пока вы её не разрешите, список идёт по времени.",
   "Starts": "Начало",
   "Walking distance": "Расстояние пешком",
   "Free entry": "Вход свободный",
   "Hide what I've opened": "Скрыть открытое мной",
-  "Only places I follow": "Только места, на которые я подписан",
-  "New since my last visit": "Новое с моего прошлого визита",
+  "Followed places only": "Только ваши подписки",
+  "New since last visit": "Новое с прошлого визита",
   "Clear all filters": "Сбросить все фильтры",
-  "Measure from": "Считать от",
+  "Measure from": "Считать расстояние от",
   "Search the words": "Искать слова",
   "Add to calendar": "Добавить в календарь",
   "Evenings": "Вечера",
   "Maximum walking distance": "Максимальное расстояние пешком",
-  "My location": "Моё местоположение",
+  "My location": "Моя геолокация",
   "Everything ahead": "Всё впереди",
   "Any time": "В любое время",
   "From now": "С этого момента",
@@ -423,10 +422,10 @@ window.WA.dict.ru = {
   "After 23:00": "После 23:00",
   "In English": "На английском",
   "Pick dates": "Выбрать даты",
-  "Follow a venue from its page to use this": "Подпишитесь на место на его странице, чтобы это использовать",
+  "Follow venues first": "Сначала подпишитесь на места",
   "Anywhere in the city": "Где угодно в городе",
-  "Saved in this browser. Clear the box to use your location.": "Сохранено в этом браузере. Очистите поле, чтобы использовать вашу геолокацию.",
-  "Pick a place you know, such as where you are staying, to skip the location prompt.": "Выберите знакомое место, например где вы остановились, чтобы пропустить запрос геолокации.",
+  "Clear for device location": "Очистите поле для геолокации",
+  "Choose a starting point": "Выберите начальную точку",
   "Clear search": "Очистить поиск",
   "Any kind": "Любой вид",
   "Include paid": "Включая платные",
@@ -443,7 +442,7 @@ window.WA.dict.ru = {
   "Start over": "Начать заново",
   "Jazz tonight": "Джаз сегодня вечером",
   "Free art this weekend": "Бесплатное искусство в эти выходные",
-  "Club night in Kalamaja": "Клубный вечер в Каламае",
+  "Club night in Kalamaja": "Клубный вечер в Kalamaja",
   "Talks in English": "Лекции на английском",
   "Following this search": "Вы следите за этим поиском",
   "Follow this search": "Следить за этим поиском",
@@ -458,20 +457,6 @@ window.WA.dict.ru = {
   "Running": "Идёт",
   "Started earlier, still on": "Началось раньше, ещё идёт",
   "Previous": "Предыдущий",
-  "Põhja-Tallinn": "Северный Таллин",
-  "Kalamaja": "Каламая",
-  "Telliskivi": "Теллискиви",
-  "Kopli": "Копли",
-  "Noblessner": "Ноблесснер",
-  "City centre": "Центр города",
-  "Old Town": "Старый город",
-  "Kristiine": "Кристийне",
-  "Pirita": "Пирита",
-  "Lasnamäe": "Ласнамяэ",
-  "Mustamäe": "Мустамяэ",
-  "Nõmme": "Нымме",
-  "Pelgulinn, Paljassaare, Karjamaa": "Пельгулинн, Палъясааре, Карьямаа",
-  "Rotermann, Kadriorg, Uus Maailm": "Ротерманн, Кадриорг, Уус-Маайльм",
   "Inside the walls": "Внутри стен",
   "Club night": "Клубный вечер",
   "Theatre": "Театр",
@@ -543,7 +528,6 @@ window.WA.dict.ru = {
   "Tmrw": "Завтра",
   "Time not listed": "Время не указано",
   "Open": "Открыто",
-  "Show walking times from where I am": "Показывать время пешком от моего места",
   "Location is off in this browser, so rows show the area instead": "Геолокация в этом браузере выключена, поэтому в строках показан район",
   "You, signed in": "Вы, вход выполнен",
   "Põhja-Tallinna": "Северного Таллина",
@@ -598,17 +582,17 @@ window.WA.dict.ru = {
   "Alerts need the app on your Home Screen.": "Для уведомлений приложение должно быть на главном экране.",
   "Blocked": "Заблокировано",
   "Notifications on this device": "Уведомления на этом устройстве",
-  "When a saved plan changes": "Когда сохранённый план меняется",
-  "Tonight at places you follow": "Сегодня вечером в местах, на которые вы подписаны",
+  "Saved plan changes": "Изменения сохранённых планов",
+  "Tonight from followed places": "Сегодня у ваших подписок",
   "One note at 16:00, only when something starts": "Одно уведомление в 16:00, только если что-то начинается",
   "Send a test notification": "Отправить тестовое уведомление",
   "Clear inbox": "Очистить входящие",
-  "Place to start from": "Место отсчёта",
+  "Starting point": "Начальная точка",
   "Keep what you find": "Сохраняйте найденное",
   "Save places and listings, and get a note when a show you saved changes. No password.": "Сохраняйте места и события и получайте уведомление, когда сохранённое событие меняется. Без пароля.",
   "Google": "Google",
   "Your taste": "Ваш вкус",
-  "Start from": "Начать с",
+  "Start from": "Откуда идём",
   "Appearance": "Оформление",
   "Unfollow": "Отписаться",
   "Follow a venue from its page.": "Подпишитесь на место на его странице.",
@@ -630,7 +614,7 @@ window.WA.dict.ru = {
   "Kept for 30 days": "Хранится 30 дней",
   "Nothing yet.": "Пока ничего.",
   "Notifications": "Уведомления",
-  "Walking times and routes start here. Clear the box to use your location.": "Время пешком и маршруты отсчитываются отсюда. Очистите поле, чтобы использовать вашу геолокацию.",
+  "Walks start here": "Прогулки начинаются здесь",
   "Staying somewhere? Pick a place you know and walking times start there, with no location prompt.": "Остановились где-то? Выберите знакомое место, и время пешком будет считаться от него, без запроса геолокации.",
   "A venue": "Место",
   "A saved search": "Сохранённый поиск",
@@ -654,7 +638,7 @@ window.WA.dict.ru = {
   "Primary": "Основная",
   "WanderAlt, Tallinn tonight": "WanderAlt, Таллин сегодня вечером",
   "Toggle attribution": "Показать или скрыть источники",
-  "routes lean this way": "маршруты склоняются в эту сторону",
+  "Shapes your walks": "Влияет на ваши прогулки",
   "Art": "Искусство",
   "Gig": "Концерт",
   "Bar": "Бар",
@@ -686,7 +670,7 @@ window.WA.dict.ru = {
   "Choose a walk for today.": "Выберите прогулку на сегодня.",
   "Its date or stops have changed. Now has walks for the next few hours.": "Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы.",
   "Place types": "Типы мест",
-  "Only places with filed hours": "Только места с указанными часами работы",
+  "With known hours": "С известными часами работы",
   "All place types in the Guide": "Все типы мест в путеводителе",
   "Show all matching places": "Показать все подходящие места",
   "picked first": "сначала отобранные места",
@@ -748,16 +732,15 @@ window.WA.dict.ru = {
   "Source:": "Источник:",
   "© OpenStreetMap contributors": "© Участники OpenStreetMap",
   "City or place": "Город или место",
-  "City centre. Pick a venue for a more precise starting point.": "Центр города. Выберите заведение для более точной точки отсчёта.",
-  "Walking times and routes start at your current location.": "Время пешком и маршруты отсчитываются от вашего текущего местоположения.",
-  "Choose Tallinn or a place you know, or use your location.": "Выберите Таллин или знакомое место либо используйте своё местоположение.",
+  "Choose a nearby venue": "Выберите место поблизости",
+  "Using your location": "Используется ваша геолокация",
   "Location is blocked. Allow it in browser settings, or choose a place.": "Геолокация заблокирована. Разрешите её в настройках браузера или выберите место.",
   "Could not get your location. Try again or choose a place.": "Не удалось определить местоположение. Попробуйте ещё раз или выберите место.",
   "Nothing is a short walk from here. Choose another starting point or Whole city.": "Рядом ничего нет. Выберите другую точку отсчёта или Весь город.",
   "Whole city": "Весь город",
   "Choose a place": "Выберите место",
   "Right by here": "Совсем рядом",
-  "Nearest first, walking from here": "Сначала ближайшие, пешком отсюда",
+  "Nearest to here first": "Сначала ближайшие отсюда",
   "A walk for now": "Прогулка сейчас",
   "Two or three stops on foot": "Две или три остановки пешком",
   "See the next few hours": "Посмотреть ближайшие часы",
@@ -765,20 +748,79 @@ window.WA.dict.ru = {
   "Date": "Дата",
   "Date range": "Диапазон дат",
   "Through": "По",
-  "Dates are in Tallinn. Only filed listings are shown.": "Даты указаны по времени Таллинна. Показаны только известные события.",
+  "Dates use Tallinn time": "Даты по времени Таллинна",
   "No listings match these choices.": "Нет событий по выбранным условиям.",
   "Change filters": "Изменить фильтры",
   "Source": "Источник",
   "Venue image": "Фото места",
-  "Place hours are for now.": "Часы работы мест указаны на сейчас.",
+  "Hours shown for now": "Часы работы сейчас",
   "Map of Tallinn": "Карта Таллинна",
   "No places match these choices.": "Нет мест по выбранным условиям.",
-  "nearest to your start first": "сначала ближайшие к вашей точке отсчёта",
   "The selected listings and places, by walking time.": "Выбранные события и места по времени пешком.",
   "Browse map": "Открыть карту",
-  "Map uses your mood, price and Near me choices": "На карте действуют ваши фильтры настроения, цены и близости",
+  "Map uses shared filters": "Карта использует общие фильтры",
   "Zoom out or move the map.": "Уменьшите масштаб или сдвиньте карту.",
-  "Events layer off": "Слой событий выключен"
+  "Events layer off": "Слой событий выключен",
+  "Location needed; showing soonest": "Нужна геолокация; сначала ранние",
+  "At 16:00 when listed": "В 16:00, если запланировано",
+  "After": "После",
+  "Your saves carry over": "Сохранённое останется с вами",
+  "No password needed": "Пароль не нужен",
+  "Signed in": "Вы вошли",
+  "Your saves sync between devices.": "Сохранённое синхронизируется между устройствами.",
+  "Saved in this browser": "Сохранено в этом браузере",
+  "Stays in this browser.": "Хранится в этом браузере.",
+  "No signal": "Нет связи",
+  "Showing last loaded listings": "Последние загруженные события",
+  "Saves work offline": "Сохранённое доступно без сети",
+  "Distances won't update": "Расстояния не обновляются",
+  "cached just now": "только что загружено",
+  "price not listed": "цена не указана",
+  "it has already happened": "уже прошло",
+  "it is no longer in the programme": "больше нет в программе",
+  "it is no longer listed": "больше нет в списке",
+  "Details are loading": "Данные загружаются",
+  "Details could not load": "Не удалось загрузить данные",
+  "These saves are kept": "Сохранённое остаётся на месте",
+  "No saved events yet": "Пока нет сохранённых событий",
+  "No saved places yet": "Пока нет сохранённых мест",
+  "This is our reading of the listing; the organiser has not confirmed it.": "Это наше прочтение события; организатор его не подтвердил.",
+  "a quiz": "викторина",
+  "a game night": "вечер настольных игр",
+  "a craft club": "кружок рукоделия",
+  "an open stage": "открытая сцена",
+  "a drawing night": "вечер рисования",
+  "a language night": "языковой вечер",
+  "a night for meeting people": "вечер знакомств",
+  "a club night": "клубный вечер",
+  "a night": "вечер",
+  "A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.": "Для маршрута нужны событие со временем начала и выбранное место рядом. Места есть в гиде, события — в программе.",
+  "Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.": "Ваши сохранения, списки, подписки, уведомления и входящие будут удалены, в том числе с этого устройства. Отменить это нельзя.",
+  "Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.": "Сохранения, списки, подписки и история будут удалены из этого браузера, и вы выйдете из аккаунта. Сохранённое в аккаунте останется; войдите, чтобы вернуть его.",
+  "Closed or moved?": "Закрыто или переехало?",
+  "Flagged by readers": "Сообщения читателей",
+  "Facts that may have changed": "Возможные изменения",
+  "Different places": "Разные места",
+  "Open the event": "Открыть событие",
+  "Open the place": "Открыть место",
+  "Withhold the place": "Скрыть место",
+  "Use the new value": "Использовать новое значение",
+  "Keep what we hold": "Оставить текущие данные",
+  "Fixed": "Исправлено",
+  "Dismiss": "Отклонить",
+  "Publish": "Опубликовать",
+  "Reject": "Отклонить",
+  "Possible duplicate places": "Возможные дубликаты мест",
+  "Review queue": "Очередь проверки",
+  "Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.": "События, отложенные сборщиком. Публикуйте подходящие, отклоняйте остальные; сборщик не меняет принятые здесь решения.",
+  "Supabase secret key": "Секретный ключ Supabase",
+  "Kept in this tab only (sessionStorage) and sent only to Supabase.": "Хранится только в этой вкладке (sessionStorage) и отправляется только в Supabase.",
+  "Open the queue": "Открыть очередь",
+  "Around here": "Поблизости",
+  "Follow from venue pages": "Подписывайтесь на страницах мест",
+  "Within 10 minutes’ walk": "До 10 мин пешком",
+  "Continue with Google": "Продолжить с Google",
+  "or": "или"
  },
  "patterns": [
   [
@@ -917,8 +959,8 @@ window.WA.dict.ru = {
    "Показать все {n} идущих"
   ],
   [
-   "Added to {x}",
-   "Добавлено в {x}"
+   "Added to {rawName}",
+   "Добавлено в {rawName}"
   ],
   [
    "Remove {rawTitle} from saved",
@@ -933,32 +975,28 @@ window.WA.dict.ru = {
    "Сохранено: {rawTitle}"
   ],
   [
-   "new since {x}",
-   "добавлено после посещения ({x})"
+   "Also in {rawName}:",
+   "Также в районе {rawName}:"
   ],
   [
-   "Also in {x}:",
-   "Также в районе {x}:"
-  ],
-  [
-   "After {x}",
-   "После: {x}"
+   "After {rawName}",
+   "После: {rawName}"
   ],
   [
    "{n} of {m}",
    "{n} из {m}"
   ],
   [
-   "{x} on the map",
-   "{x} на карте"
+   "{rawName} on the map",
+   "{rawName} на карте"
   ],
   [
-   "{x} (opens {y})",
-   "{x} (откроется: {y})"
+   "{rawName} (opens {y})",
+   "{rawName} (откроется: {y})"
   ],
   [
-   "Logo from {x}, their logo",
-   "Логотип с {x}, их собственный"
+   "Logo from {rawName}, their logo",
+   "Логотип с {rawName}, их собственный"
   ],
   [
    "Address and links from OpenStreetMap; hours from {x}.",
@@ -969,36 +1007,36 @@ window.WA.dict.ru = {
    "Данные от заведения; часы работы: {x}."
   ],
   [
-   "Everything from {x}",
-   "Всё из {x}"
+   "Everything from {rawName}",
+   "Всё из {rawName}"
   ],
   [
-   "Following {x}",
-   "Вы подписаны: {x}"
+   "Following {rawName}",
+   "Вы подписаны: {rawName}"
   ],
   [
-   "Stopped following {x}",
-   "Вы больше не подписаны: {x}"
+   "Stopped following {rawName}",
+   "Вы больше не подписаны: {rawName}"
   ],
   [
-   "Nothing is listed in {x} for the coming days.",
-   "В районе {x} на ближайшие дни ничего не объявлено."
+   "Nothing is listed in {rawName} for the coming days.",
+   "В районе {rawName} на ближайшие дни ничего не объявлено."
   ],
   [
-   "Nothing is listed in {x} yet.",
-   "В районе {x} пока ничего не объявлено."
+   "Nothing is listed in {rawName} yet.",
+   "В районе {rawName} пока ничего не объявлено."
   ],
   [
-   "Nothing from {x} is listed right now.",
-   "От {x} сейчас ничего не объявлено."
+   "Nothing from {rawName} is listed right now.",
+   "От {rawName} сейчас ничего не объявлено."
   ],
   [
    "Follow my device, dark from {t}",
    "Как на устройстве, тёмная с {t}"
   ],
   [
-   "Listed via {x}",
-   "Объявлено через {x}"
+   "Listed via {rawName}",
+   "Объявлено через {rawName}"
   ],
   [
    "It was on {d}",
@@ -1049,8 +1087,8 @@ window.WA.dict.ru = {
    "на {u}"
   ],
   [
-   "Listed via {x}, read {y}.",
-   "Объявлено через {x}, прочитано {y}."
+   "Listed via {rawName}, read {y}.",
+   "Объявлено через {rawName}, прочитано {y}."
   ],
   [
    "It was on {d} at {t}.",
@@ -1069,8 +1107,8 @@ window.WA.dict.ru = {
    "Бесплатно в этом виде: {n}"
   ],
   [
-   "{n} opened or saved before",
-   "Ранее открыто или сохранено: {n}"
+   "{n} opened or saved",
+   "Открыто или сохранено: {n}"
   ],
   [
    "{n} more after these",
@@ -1126,36 +1164,36 @@ window.WA.dict.ru = {
    }
   ],
   [
-   "{x}, Open till {t}",
-   "{x}, открыто до {t}"
+   "{rawName}, Open till {t}",
+   "{rawName}, открыто до {t}"
   ],
   [
-   "{x}, Opens {t}",
-   "{x}, откроется в {t}"
+   "{rawName}, Opens {t}",
+   "{rawName}, откроется в {t}"
   ],
   [
-   "{x}, Shut today",
-   "{x}, сегодня закрыто"
+   "{rawName}, Shut today",
+   "{rawName}, сегодня закрыто"
   ],
   [
-   "{x}, Hours not filed",
-   "{x}, часы не указаны"
+   "{rawName}, Hours not filed",
+   "{rawName}, часы не указаны"
   ],
   [
-   "{x}, Open for events",
-   "{x}, открыто во время событий"
+   "{rawName}, Open for events",
+   "{rawName}, открыто во время событий"
   ],
   [
-   "{x}, Open, 24 hours",
-   "{x}, открыто круглосуточно"
+   "{rawName}, Open, 24 hours",
+   "{rawName}, открыто круглосуточно"
   ],
   [
-   "{x}, Listed as closed",
-   "{x}, отмечено как закрытое"
+   "{rawName}, Listed as closed",
+   "{rawName}, отмечено как закрытое"
   ],
   [
-   "{x}, Status unverified",
-   "{x}, статус не подтверждён"
+   "{rawName}, Status unverified",
+   "{rawName}, статус не подтверждён"
   ],
   [
    "with {w}",
@@ -1164,14 +1202,6 @@ window.WA.dict.ru = {
   [
    "Image from {u}",
    "Изображение с {u}"
-  ],
-  [
-   "{a}. Needs your location or a spot below",
-   "{a}. Нужна ваша геолокация или место ниже"
-  ],
-  [
-   "{a}, from {b}",
-   "{a}, от точки: {b}"
   ],
   [
    "{n} today",
@@ -1189,6 +1219,113 @@ window.WA.dict.ru = {
     "many": "На этой карте: {n} событий",
     "other": "На этой карте: {n} события"
    }
+  ],
+  [
+   "Language: {rawName}",
+   "Язык: {rawName}"
+  ],
+  [
+   "{n} free",
+   "{n} бесплатно"
+  ],
+  [
+   "{n} from followed places",
+   "{n} от ваших подписок"
+  ],
+  [
+   "{n} new listings",
+   {
+    "one": "{n} новое событие",
+    "few": "{n} новых события",
+    "many": "{n} новых событий",
+    "other": "{n} новых события"
+   }
+  ],
+  [
+   "Add {rawName} to your calendar",
+   "Добавить {rawName} в календарь"
+  ],
+  [
+   "Walking from {rawName}",
+   "Откуда: {rawName}"
+  ],
+  [
+   "{n} here, zoom in",
+   "Здесь {n}, приблизить"
+  ],
+  [
+   "{n} min walk from where you are",
+   "{n} мин пешком от вас"
+  ],
+  [
+   "cached {x}",
+   "загружено {x}"
+  ],
+  [
+   "The format is {x}, built for people who turn up on their own to mix.",
+   "Формат: {x}. Подходит, чтобы прийти одному и познакомиться с людьми."
+  ],
+  [
+   "Sign-in did not finish: {rawError}",
+   "Не удалось войти: {rawError}"
+  ],
+  [
+   "Not saved: {rawError}",
+   "Не сохранено: {rawError}"
+  ],
+  [
+   "Merge into {rawName}",
+   "Объединить в {rawName}"
+  ],
+  [
+   "We hold: {rawValue}",
+   "Текущие данные: {rawValue}"
+  ],
+  [
+   "It says: {rawValue}",
+   "В источнике: {rawValue}"
+  ],
+  [
+   "{n} waiting",
+   "Ожидают: {n}"
+  ],
+  [
+   "from its {rawSource}",
+   "источник: {rawSource}"
+  ],
+  [
+   "Supabase refused the key ({rawError}). Check it is the secret key, not the anon key or a Cloudflare token.",
+   "Supabase отклонил ключ ({rawError}). Проверьте, что это секретный ключ, а не anon-ключ или токен Cloudflare."
+  ],
+  [
+   "Show {n} listing",
+   "Показать {n} событие"
+  ],
+  [
+   "Show {n} listings",
+   {
+    "one": "Показать {n} событие",
+    "few": "Показать {n} события",
+    "many": "Показать {n} событий",
+    "other": "Показать {n} события"
+   }
+  ],
+  [
+   "Show {n} place",
+   "Показать {n} место"
+  ],
+  [
+   "Show {n} places",
+   {
+    "one": "Показать {n} место",
+    "few": "Показать {n} места",
+    "many": "Показать {n} мест",
+    "other": "Показать {n} места"
+   }
+  ],
+  [
+   "since {t}",
+   "с {t}"
   ]
  ]
 };

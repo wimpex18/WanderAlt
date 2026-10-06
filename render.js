@@ -303,7 +303,7 @@
     const m = walk(e);
     const bottom = m != null
       ? `<span class="wa-row__walk">${I('walk')}${esc(walkLabel(m))}</span>`
-      : (areaOf(e) ? `<span class="wa-row__area">${esc(areaOf(e))}</span>` : '');
+      : (areaOf(e) ? `<span class="wa-row__area" data-notranslate>${esc(areaOf(e))}</span>` : '');
     return { html: top + bottom, areaInRail: m == null && !!areaOf(e), live: liveNow };
   };
 
@@ -343,8 +343,8 @@
     const endsAt = r.live ? endClock(e) : '';
     /* Escaped piece by piece, so "Free" can carry its green. */
     const meta = [
-      esc(latin(e.venue) || ''),
-      r.areaInRail ? '' : esc(areaOf(e) || ''),
+      latin(e.venue) ? `<span data-notranslate>${esc(latin(e.venue))}</span>` : '',
+      r.areaInRail || !areaOf(e) ? '' : `<span data-notranslate>${esc(areaOf(e))}</span>`,
       isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || ''),
       r.live && endsAt ? esc(`till ${endsAt}`) : '',
     ].filter(Boolean).join(' · ');
@@ -372,7 +372,7 @@
     const { src, logo, tone, venue } = art(e), kind = kindLabel(e.kind), why = whyTag(e);
     const r = rail(e, opts);
     const venueName = latin(e.venue);
-    const facts = [venueName ? `<span data-notranslate>${esc(venueName)}</span>` : '', esc(areaOf(e))].filter(Boolean).join(' · ');
+    const facts = [venueName ? `<span data-notranslate>${esc(venueName)}</span>` : '', areaOf(e) ? `<span data-notranslate>${esc(areaOf(e))}</span>` : ''].filter(Boolean).join(' · ');
     let source = e.handle || '';
     if (source && !source.startsWith('@')) source = `@${source}`;
     if (!source && url(e.permalink)) { try { source = new URL(url(e.permalink)).hostname.replace(/^www\./, ''); } catch (_) {} }
@@ -392,12 +392,12 @@
   const placeRow = (v, opts = {}) => {
     const m = opts.from ? G().walkMinutes(G().distanceTo(v, opts.from)) : walk(v);
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
-    const meta = [kindLabel(v.kind, true), areaOf(v), opts.extra].filter(Boolean).join(' · ');
+    const meta = [esc(kindLabel(v.kind, true)), areaOf(v) ? `<span data-notranslate>${esc(areaOf(v))}</span>` : '', esc(opts.extra || '')].filter(Boolean).join(' · ');
     return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
       <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
-        <span class="wa-place__meta">${esc(meta)}</span>
+        <span class="wa-place__meta">${meta}</span>
         ${v.pickNote ? `<span class="wa-place__why">${esc(v.pickNote)}</span>` : ''}
         ${openBadge(v)}
       </span>
@@ -439,7 +439,7 @@
       </span>
       <span class="wa-poster__title">${esc(e.title || '')}</span>
       ${opts.compact && b.now && endClock(e) ? `<span class="wa-poster__meta">Until ${esc(endClock(e))}</span>` : ''}
-      ${line1 ? `<span class="wa-poster__meta">${esc(line1)}</span>` : ''}
+      ${line1 ? `<span class="wa-poster__meta" data-notranslate>${esc(line1)}</span>` : ''}
       ${line2 ? `<span class="wa-poster__meta">${line2}</span>` : ''}
     </a>${opts.noHeart ? '' : heart(e.id, e.title)}</div>`;
   };
@@ -583,7 +583,7 @@
     } catch (_) { /* no Permissions API: wait for a tap */ }
   };
   const locPrompt = (text) => (G().currentLoc() ? '' :
-    `<button class="wa-since" type="button" data-locate>${I('walk')}<span>${esc(text || 'Show walking times from where I am')}</span>${I('arrow')}</button>`);
+    `<button class="wa-since" type="button" data-locate>${I('walk')}<span>${esc(text || 'Show walking times')}</span>${I('arrow')}</button>`);
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('[data-locate]');
     if (!b) return;

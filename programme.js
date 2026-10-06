@@ -212,14 +212,20 @@
     return `<div class="wa-field"><span class="wa-field__label">Place types</span><div class="wa-chips">${groups.map(g =>
       `<button class="wa-chip" type="button" data-place-query="${esc(PLACE_QUERY[g.id])}" aria-pressed="${g.kinds.some(k => selected.includes(k))}">${esc(g.label)}</button>`).join('')}</div></div>
       <div class="wa-field"><button class="wa-switch" type="button" data-place-open aria-pressed="${wantsOpen()}">
-        <span class="wa-switch__text"><span class="wa-switch__title">Open now</span><span class="wa-switch__sub">Only places with filed hours</span></span><span class="wa-switch__track"></span></button></div>
+        <span class="wa-switch__text"><span class="wa-switch__title">Open now</span><span class="wa-switch__sub">With known hours</span></span><span class="wa-switch__track"></span></button></div>
       <div class="wa-field"><span class="wa-field__label">Area</span><div class="wa-chips"><button class="wa-chip" type="button" data-area="" aria-pressed="${!state.area}">Anywhere</button>${areas.map(a =>
         `<button class="wa-chip" type="button" data-area="${esc(a)}" aria-pressed="${state.area === a}">${esc(a)}</button>`).join('')}</div></div>
       <div class="wa-field"><span class="wa-field__label">Walking distance</span><input class="wa-range" type="range" data-within min="0" max="4000" step="250" value="${state.within}" aria-label="Maximum walking distance" />
         <span class="wa-field__consequence" data-within-note>${placeWithinNote()}</span></div>
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}<a class="wa-linkbtn" href="places.html">All place types in the Guide</a>`;
   };
-  const placeWithinNote = () => `${state.within ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city'} · Walking from ${placeOrigin().label}`;
+  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+  const placeOriginText = () => {
+    const label = placeOrigin().label;
+    const t = text => window.WA.Lang ? window.WA.Lang.t(text) : text;
+    const origin = ['where you are', 'the city centre'].includes(label) ? t(label) : label;
+    return t(`Walking from ${origin}`);
+  };
 
   let datesOpen = false, refocus = '';
   const panel = (scope = 'aside') => {
@@ -256,7 +262,7 @@
           <button class="wa-seg__opt" type="button" data-sort="soonest" aria-pressed="${state.sort === 'soonest'}">Soonest</button>
           <button class="wa-seg__opt" type="button" data-sort="nearest" aria-pressed="${state.sort === 'nearest'}">Nearest</button>
         </div>
-        ${state.sort === 'nearest' && !hasLoc ? '<span class="wa-field__consequence">Needs your location. Until you allow it, the list stays soonest first.</span>' : ''}
+        ${state.sort === 'nearest' && !hasLoc ? '<span class="wa-field__consequence">Location needed; showing soonest</span>' : ''}
       </div>
       <div class="wa-field">
         <span class="wa-field__label">Starts</span>
@@ -270,28 +276,27 @@
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}
       <div class="wa-field">
         <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
-          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free in this view</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free</span></span>
           <span class="wa-switch__track"></span>
         </button>
         <button class="wa-switch" type="button" data-toggle="hideSeen" aria-pressed="${state.hideSeen}">
-          <span class="wa-switch__text"><span class="wa-switch__title">Hide what I've opened</span><span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved before</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Hide what I've opened</span><span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved</span></span>
           <span class="wa-switch__track"></span>
         </button>
         <button class="wa-switch" type="button" data-toggle="followed" aria-pressed="${state.followed}"${follows || state.followed ? '' : ' disabled'}>
-          <span class="wa-switch__text"><span class="wa-switch__title">Only places I follow</span><span class="wa-switch__sub">${follows
-            ? `${fb.filter(R().isFollowed).length} of ${fb.length} from ${follows} you follow` : 'Follow a venue from its page to use this'}</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Followed places only</span><span class="wa-switch__sub">${follows
+            ? `${fb.filter(R().isFollowed).length} from followed places` : 'Follow venues first'}</span></span>
           <span class="wa-switch__track"></span>
         </button>
         ${since ? `<button class="wa-switch" type="button" data-toggle="fresh" aria-pressed="${state.fresh}">
-          <span class="wa-switch__text"><span class="wa-switch__title">New since my last visit</span><span class="wa-switch__sub">${apply(base(), 'fresh').filter(e => R().isNewSince(e, since)).length} arrived since</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">New since last visit</span><span class="wa-switch__sub">${apply(base(), 'fresh').filter(e => R().isNewSince(e, since)).length} new listings</span></span>
           <span class="wa-switch__track"></span>
         </button>` : ''}
       </div>
       <div class="wa-field"><button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-clear style="justify-self:start;padding:0">Clear all filters</button></div>`;
   };
-  const withinNote = () => (state.within
-    ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot`
-    : 'Anywhere in the city') + (G().anchor() ? `, from ${G().anchor().label || 'your chosen spot'}` : G().currentLoc() ? '' : '. Needs your location or a spot below');
+  const withinNote = () => !G().currentLoc() && state.within ? 'Choose a starting point' : state.within
+    ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
 
   /* A named spot to measure from, picked from places we hold, so walking
      times work without location permission (a hotel, a friend's street). */
@@ -303,7 +308,7 @@
       <label class="wa-field__label" for="${id}">Measure from</label>
       <input class="wa-input" data-anchor id="${id}" list="${id}-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
       <datalist id="${id}-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
-      <span class="wa-field__consequence">${a ? 'Saved in this browser. Clear the box to use your location.' : 'Pick a place you know, such as where you are staying, to skip the location prompt.'}</span>
+      <span class="wa-field__consequence">${a ? 'Clear for device location' : 'Choose a starting point'}</span>
     </div>`;
   };
 
@@ -503,7 +508,7 @@
     const bits = [];
     if (placeOnly) {
       const list = placeView();
-      put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(`Walking from ${placeOrigin().label}`)}`);
+      put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(placeOriginText())}`);
       put($('search-act'), ''); return;
     }
     if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'today' : `on ${R().dateShort(state.day)}`);
@@ -515,7 +520,7 @@
     const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
     put($('summary'), state.q && placeOnly && !n
       ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> ${esc(bits.join(' · '))}`
-      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}${state.maxPrice != null && !state.free ? '<br><span class="wa-note">Shows with no listed price stay in.</span>' : ''}`);
+      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}${state.maxPrice != null && !state.free ? '<br><span class="wa-note">Unknown prices included</span>' : ''}`);
     searchAct();
   };
 

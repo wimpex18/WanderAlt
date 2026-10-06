@@ -105,7 +105,8 @@
     const L = window.WA.Lists;
     const viewing = listFilter && L ? L.byId(listFilter) : null;
     $('saved-title').textContent = viewing ? viewing.name : total ? `${total} saved` : 'Saved';
-    $('saved-sub').textContent = viewing ? 'Only what is in this list.' : total ? 'Soonest first. Stays in this browser.' : 'Your shortlist. Stays in this browser.';
+    $('saved-title').toggleAttribute('data-notranslate', !!viewing);
+    $('saved-sub').textContent = viewing ? 'Only what is in this list.' : 'Saved in this browser';
     if (window.WA.Auth?.isSignedIn()) {
       const waiting = (window.WA.Bookmarks.pendingSync?.() || 0) + (L?.pendingSync?.() || 0);
       $('saved-sub').textContent = viewing ? 'Only what is in this list.' : waiting ? 'Saved on this device. Waiting to sync.' : window.WA.Bookmarks.syncConfirmed?.() ? 'Synced to your account.' : 'Stays in this browser.';
@@ -130,18 +131,18 @@
     $('saved-body').innerHTML = listsBlock(goneIds) + `<div class="saved-cols">
       <section class="wa-sect">${R().sect({ title: 'Coming up', n: dated.length })}
         ${dated.length ? `<ul class="wa-rows">${dated.map(e => R().row(e, { day: true, drop: true })).join('')}</ul>`
-          : '<p class="wa-note">Nothing dated is saved. Events you save land here, soonest first.</p>'}</section>
+          : '<p class="wa-note">No saved events yet</p>'}</section>
       <section class="wa-sect">${R().sect({ title: 'Places', n: places.length })}
         ${places.length ? `<ul>${places.map(v => R().placeRow(v, { drop: true })).join('')}</ul>`
-          : '<p class="wa-note">Save a shop or a gallery. It waits here for a free afternoon.</p>'}</section>
+          : '<p class="wa-note">No saved places yet</p>'}</section>
     </div>
     ${all.unavailable.filter(inList).length ? `<section class="wa-sect" aria-live="polite">${R().sect({ title: 'Saved listings awaiting details', n: all.unavailable.filter(inList).length })}
-      <p class="wa-note">These saves are kept. Their details ${pending.size ? 'are loading' : 'could not load'}.</p>
+      <p class="wa-note"><span>These saves are kept</span>. <span>${pending.size ? 'Details are loading' : 'Details could not load'}</span>.</p>
       ${all.unavailable.filter(inList).map(g => `<div class="wa-gone"><span>A saved listing</span>
         <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}
       ${!pending.size ? '<button class="wa-btn" type="button" data-retry-saved>Try again</button>' : ''}</section>` : ''}
     ${!viewing && all.gone.length ? `<section class="wa-sect">${R().sect({ title: 'Over since you saved it', n: all.gone.length })}
-      ${all.gone.map(g => `<div class="wa-gone"><span><span class="wa-gone__title">${esc(g.title || 'A listing')}</span>, ${esc(g.why)}.</span>
+      ${all.gone.map(g => `<div class="wa-gone"><span><span${g.title ? ' class="wa-gone__title"' : ''}>${esc(g.title || 'A listing')}</span>, <span>${esc(g.why)}</span>.</span>
         <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}</section>` : ''}`;
   };
 

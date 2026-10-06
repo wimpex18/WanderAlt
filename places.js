@@ -84,7 +84,7 @@
     const noun = g ? g.label.toLowerCase() : 'places';
     const o = origin();
     $('summary').innerHTML = `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · nearest first${state.open ? '' : ` · ${openN} open now`}`;
-    $('from').innerHTML = o.label ? `<span class="places-from__line">${window.WA.Icon('pin')}<span>Walking from <b>${esc(o.label)}</b></span></span>${o.own ? '' : '<button class="wa-linkbtn" type="button" data-near>Use my location</button>'}` : '';
+    $('from').innerHTML = o.label ? `<span class="places-from__line">${window.WA.Icon('pin')}<span>Walking from <b${G().anchor() || !o.own ? ' data-notranslate' : ''}>${esc(o.label)}</b></span></span>${o.own ? '' : '<button class="wa-linkbtn" type="button" data-near>Use my location</button>'}` : '';
     $('open-now').setAttribute('aria-pressed', String(state.open));
 
     if (!all.length) {
