@@ -820,7 +820,15 @@ window.WA.dict.et = {
   "Follow from venue pages": "Jälgi kohtade lehtedelt",
   "Within 10 minutes’ walk": "Kuni 10 minutit jalgsi",
   "Continue with Google": "Jätka Google’iga",
-  "or": "või"
+  "or": "või",
+  "We hold:": "Praegu:",
+  "Nothing filed": "Andmed puuduvad",
+  "Email alerts": "E-posti teavitused",
+  "This link is not valid.": "See link ei kehti.",
+  "Stop email and notifications?": "Lõpetada kirjad ja teavitused?",
+  "Stop alerts": "Lõpeta teavitused",
+  "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "See ei õnnestunud. Kirjuta aadressile hello@wanderalt.app ja lõpetame teavitused käsitsi.",
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada."
  },
  "patterns": [
   [

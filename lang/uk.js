@@ -820,7 +820,15 @@ window.WA.dict.uk = {
   "Follow from venue pages": "Підписуйтеся на сторінках місць",
   "Within 10 minutes’ walk": "До 10 хв пішки",
   "Continue with Google": "Продовжити з Google",
-  "or": "або"
+  "or": "або",
+  "We hold:": "Поточні дані:",
+  "Nothing filed": "Немає даних",
+  "Email alerts": "Сповіщення поштою",
+  "This link is not valid.": "Це посилання недійсне.",
+  "Stop email and notifications?": "Вимкнути листи та сповіщення?",
+  "Stop alerts": "Вимкнути сповіщення",
+  "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.",
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі."
  },
  "patterns": [
   [

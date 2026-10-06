@@ -13,7 +13,7 @@ const SUPABASE_URL = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 const TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const page = (body, status = 200) => new Response(
-  `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Email alerts · WanderAlt</title>` +
+  `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Email alerts · WanderAlt</title><script defer src="/lang/et.js"></script><script defer src="/lang/ru.js"></script><script defer src="/lang/uk.js"></script><script defer src="/i18n.js"></script>` +
   `<body style="font:16px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:15vh auto;padding:0 20px"><h1 style="font-size:1.4rem">Email alerts</h1>${body}` +
   `<p><a href="/profile.html">WanderAlt</a></p></body></html>`,
   { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
@@ -26,7 +26,7 @@ const tokenOf = (request) => {
 export const onRequestGet = async ({ request }) => {
   const t = tokenOf(request);
   if (!t) return page('<p>This link is not valid.</p>', 400);
-  return page(`<p>Stop the weekly digest, the change notes and the notifications?</p><form method="post" action="/api/unsubscribe?t=${t}"><button type="submit" style="font:inherit;padding:10px 18px">Stop all email</button></form>`);
+  return page(`<p>Stop email and notifications?</p><form method="post" action="/api/unsubscribe?t=${t}"><button type="submit" style="font:inherit;padding:10px 18px">Stop alerts</button></form>`);
 };
 
 export const onRequestPost = async ({ request }) => {

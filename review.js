@@ -43,7 +43,7 @@
     return new Map(rows.map(p => [p.id, p]));
   };
   const placeLine = (p) => p ? [p.name ? `<span data-notranslate>${esc(p.name)}</span>` : '',
-    esc(p.kind ? p.kind[0].toUpperCase() + p.kind.slice(1) : ''), p.address ? `<span data-notranslate>${esc(p.address)}</span>` : '', p.picked ? 'picked' : ''].filter(Boolean).join(' · ') : '';
+    esc(p.kind ? p.kind[0].toUpperCase() + p.kind.slice(1) : ''), p.address ? `<span data-notranslate>${esc(p.address)}</span>` : '', p.picked ? 'Picked' : ''].filter(Boolean).join(' · ') : '';
 
   const when = (iso) => new Date(iso).toLocaleString(window.WA.Lang.locale(), { timeZone: 'Europe/Tallinn', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -80,7 +80,7 @@
           return `<li class="review__item" data-flag="${esc(String(r.id))}" data-place="${esc(r.place_id)}" data-field="${esc(r.field)}" data-found="${esc(r.found)}">
             <p class="review__title" data-notranslate>${esc(p ? p.name : r.place_id)}</p>
             <p class="wa-note">${esc(`${FIELD[r.field] || r.field} · from its ${r.source} · ${new Date(r.created_at).toLocaleDateString(window.WA.Lang.locale())}`)}</p>
-            ${r.field === 'closure' ? '' : `<p class="review__desc">${esc(`We hold: ${r.stored || 'nothing'}`)}</p>`}
+            ${r.field === 'closure' ? '' : `<p class="review__desc">${r.stored ? esc(`We hold: ${r.stored}`) : '<span>We hold:</span> <span>Nothing filed</span>'}</p>`}
             <p class="review__desc">${esc(`It says: ${r.found}`)}</p>
             <div class="review__actions">
               ${r.field === 'closure'
@@ -136,7 +136,7 @@
           <div class="review__actions">
             <button class="wa-btn wa-btn--primary" type="button" data-set="published">Publish</button>
             <button class="wa-btn" type="button" data-set="rejected">Reject</button>
-            ${url(e.url || e.ticket_url) ? `<a class="wa-btn wa-btn--quiet" href="${esc(url(e.url || e.ticket_url))}" target="_blank" rel="noopener noreferrer">Source &nearr;</a>` : ''}
+            ${url(e.url || e.ticket_url) ? `<a class="wa-btn wa-btn--quiet" href="${esc(url(e.url || e.ticket_url))}" target="_blank" rel="noopener noreferrer"><span>Source</span> &nearr;</a>` : ''}
           </div>
         </li>`).join('')}</ul>${await flags()}${await dupes()}${await reports()}`;
     } catch (err) {

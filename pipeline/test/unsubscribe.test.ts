@@ -11,7 +11,11 @@ test('opening the link only shows a button, so a mail scanner cannot unsubscribe
   globalThis.fetch = (async () => { called = true; return new Response(null, { status: 204 }); }) as typeof fetch;
   try {
     const r = await onRequestGet({ request: req(T), env: { SUPABASE_SERVICE_ROLE_KEY: 'k' } });
-    assert.equal(r.status, 200); assert.match(await r.text(), /<form method="post"/); assert.equal(called, false);
+    const html = await r.text();
+    assert.equal(r.status, 200); assert.match(html, /<form method="post"/); assert.equal(called, false);
+    for (const asset of ['/lang/et.js', '/lang/ru.js', '/lang/uk.js', '/i18n.js']) assert.ok(html.includes(`src="${asset}"`));
+    assert.match(html, /Stop email and notifications\?/);
+    assert.match(html, /Stop alerts<\/button>/);
     assert.equal((await onRequestGet({ request: req('nope'), env: {} })).status, 400);
   } finally { globalThis.fetch = realFetch; }
 });

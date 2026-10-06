@@ -820,7 +820,15 @@ window.WA.dict.ru = {
   "Follow from venue pages": "Подписывайтесь на страницах мест",
   "Within 10 minutes’ walk": "До 10 мин пешком",
   "Continue with Google": "Продолжить с Google",
-  "or": "или"
+  "or": "или",
+  "We hold:": "Текущие данные:",
+  "Nothing filed": "Нет данных",
+  "Email alerts": "Уведомления по почте",
+  "This link is not valid.": "Эта ссылка недействительна.",
+  "Stop email and notifications?": "Отключить письма и уведомления?",
+  "Stop alerts": "Отключить уведомления",
+  "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.",
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле."
  },
  "patterns": [
   [
