@@ -125,7 +125,6 @@ window.WA.dict.uk = {
   "Updating…": "Оновлення…",
   "Password updated. You are now signed in.": "Пароль оновлено. Ви увійшли.",
   "Update failed.": "Не вдалося оновити.",
-  "Vabaduse väljak": "площа Свободи",
   "Select city": "Виберіть місто",
   "Coming soon": "Незабаром",
   "Walking from": "Пішки від",
@@ -157,13 +156,13 @@ window.WA.dict.uk = {
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Постійних годин немає. Зал відчиняється, коли щось відбувається; час указано в подіях вище.",
   "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.",
   "Your lists": "Ваші списки",
-  "No lists yet. Name one and this goes straight in.": "Списків поки немає. Назвіть один, і це одразу потрапить до нього.",
+  "Create your first list": "Створіть перший список",
   "New list": "Новий список",
   "Create and add": "Створити й додати",
-  "Kalamaja on Saturday": "Каламая в суботу",
+  "Kalamaja on Saturday": "Kalamaja в суботу",
   "Walk": "Пішки",
   "Area": "Район",
-  "Allow location for walking time": "Дозвольте геолокацію, щоб бачити час пішки",
+  "Location for walking times": "Геолокація для часу пішки",
   "Venue logo": "Логотип місця",
   "Venue photo": "Фото місця",
   "Save": "Зберегти",
@@ -246,7 +245,7 @@ window.WA.dict.uk = {
   "When?": "Коли?",
   "What are you after?": "Що ви шукаєте?",
   "Clear all": "Очистити все",
-  "A venue, an area, a name": "Місце, район, назва",
+  "Venue, area or name": "Місце, район або назва",
   "Gigs": "Концерти",
   "Club nights": "Клубні вечори",
   "Film": "Кіно",
@@ -254,7 +253,7 @@ window.WA.dict.uk = {
   "Talks": "Лекції та зустрічі",
   "Workshops": "Майстер-класи",
   "Festivals": "Фестивалі",
-  "Old Town, Kalamaja, Telliskivi and the harbour": "Старе місто, Каламая, Теллісківі та порт",
+  "Old Town, Kalamaja, Telliskivi and the harbour": "Old Town, Kalamaja, Telliskivi та порт",
   "Coming later": "З'являться пізніше",
   "Riga, Latvia": "Рига, Латвія",
   "Helsinki, Finland": "Гельсінкі, Фінляндія",
@@ -265,14 +264,14 @@ window.WA.dict.uk = {
   "Any day": "Будь-який день",
   "Anything": "Будь-що",
   "Walking times are on": "Час пішки увімкнено",
-  "Show walking times from where you are": "Показувати час пішки від того місця, де ви є",
+  "Show walking times": "Показати час пішки",
   "Only sources I follow": "Лише джерела, на які я підписаний",
   "I'm going": "Я йду",
   "Show the next few hours": "Показати найближчі години",
   "What's the mood?": "Який настрій?",
-  "Pick one or a few. None means anything.": "Оберіть один або кілька. Нічого не обрано — підійде все.",
+  "No selection means all": "Без вибору підходить усе",
   "Up to €20": "До 20 €",
-  "Shows with no listed price stay in.": "Події без указаної ціни лишаються в списку.",
+  "Unknown prices included": "Без ціни теж показуємо",
   "Narrow it down": "Уточнити",
   "Art & film": "Мистецтво і кіно",
   "Galleries, cinema, stage, comedy": "Галереї, кіно, сцена, комедія",
@@ -291,13 +290,13 @@ window.WA.dict.uk = {
   "free": "безкоштовно",
   "Walking from you needs location. Allow it for this site in your browser settings.": "Щоб рахувати шлях від вас, потрібна геолокація. Дозвольте її для цього сайту в налаштуваннях браузера.",
   "Nothing is a short walk from you. Turn Near me off for the whole city.": "Поруч із вами нічого немає. Вимкніть «Поруч зі мною», щоб бачити все місто.",
-  "Nearest first, walking from you": "Спершу найближчі, пішки від вас",
+  "Nearest to you first": "Спершу найближчі до вас",
   "Right by you": "Зовсім поруч із вами",
   "Kind": "Вид",
   "Moods": "Настрої",
   "Kind of place": "Тип місця",
   "nearest to you first": "спершу найближчі до вас",
-  "nearest the centre first": "спершу найближчі до центру",
+  "Nearest the centre first": "Спершу найближчі до центру",
   "Change": "Змінити",
   "Today's events and the places open now, by walking time.": "Події сьогодні й відкриті зараз місця за часом пішки.",
   "Ticket price limit": "Ліміт ціни квитка",
@@ -375,12 +374,12 @@ window.WA.dict.uk = {
   "Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.": "Пігулки — це події з часом початку. Кругла мітка — місце; кіноварне кільце означає, що воно відчинене зараз.",
   "Nothing in view": "У кадрі нічого немає",
   "Location is off in this browser, so the list is ordered by time": "Геолокацію в цьому браузері вимкнено, тому список упорядковано за часом",
-  "Dance": "Танцювати",
+  "Dance": "Танець",
   "Any mood": "Будь-який настрій",
   "Any mood · any price": "Будь-який настрій · будь-яка ціна",
   "On this week": "Цього тижня",
   "Remove this filter": "Прибрати цей фільтр",
-  "Use my location": "Використати моє місцезнаходження",
+  "Use my location": "Використати геолокацію",
   "What to look for": "Що шукати",
   "Records": "Платівки",
   "Books": "Книжки",
@@ -400,22 +399,22 @@ window.WA.dict.uk = {
   "From": "Від",
   "Anywhere": "Будь-де",
   "Order": "Порядок",
-  "Soonest": "Найближчі",
-  "Nearest": "Найближчі за відстанню",
+  "Soonest": "Раніше за часом",
+  "Nearest": "Ближче до вас",
   "Needs your location. Until you allow it, the list stays soonest first.": "Потрібна геолокація. Доки ви її не дозволите, список іде за часом.",
   "Starts": "Початок",
   "Walking distance": "Відстань пішки",
   "Free entry": "Вхід вільний",
   "Hide what I've opened": "Сховати відкрите мною",
-  "Only places I follow": "Лише місця, на які я підписаний",
-  "New since my last visit": "Нове з мого останнього візиту",
+  "Followed places only": "Лише ваші підписки",
+  "New since last visit": "Нові після останнього візиту",
   "Clear all filters": "Скинути всі фільтри",
-  "Measure from": "Рахувати від",
+  "Measure from": "Рахувати відстань від",
   "Search the words": "Шукати слова",
   "Add to calendar": "Додати в календар",
   "Evenings": "Вечори",
   "Maximum walking distance": "Максимальна відстань пішки",
-  "My location": "Моє місцезнаходження",
+  "My location": "Моя геолокація",
   "Everything ahead": "Усе попереду",
   "Any time": "Будь-коли",
   "From now": "Відтепер",
@@ -423,10 +422,10 @@ window.WA.dict.uk = {
   "After 23:00": "Після 23:00",
   "In English": "Англійською",
   "Pick dates": "Вибрати дати",
-  "Follow a venue from its page to use this": "Підпишіться на місце на його сторінці, щоб цим користуватися",
+  "Follow venues first": "Спершу підпишіться на місця",
   "Anywhere in the city": "Будь-де в місті",
-  "Saved in this browser. Clear the box to use your location.": "Збережено в цьому браузері. Очистьте поле, щоб використовувати вашу геолокацію.",
-  "Pick a place you know, such as where you are staying, to skip the location prompt.": "Виберіть знайоме місце, наприклад де ви зупинилися, щоб не відповідати на запит геолокації.",
+  "Clear for device location": "Очистьте поле для геолокації",
+  "Choose a starting point": "Виберіть початкову точку",
   "Clear search": "Очистити пошук",
   "Any kind": "Будь-який вид",
   "Include paid": "Разом із платними",
@@ -443,7 +442,7 @@ window.WA.dict.uk = {
   "Start over": "Почати знову",
   "Jazz tonight": "Джаз сьогодні ввечері",
   "Free art this weekend": "Безкоштовне мистецтво на цих вихідних",
-  "Club night in Kalamaja": "Клубний вечір у Каламая",
+  "Club night in Kalamaja": "Клубний вечір у Kalamaja",
   "Talks in English": "Лекції англійською",
   "Following this search": "Ви стежите за цим пошуком",
   "Follow this search": "Стежити за цим пошуком",
@@ -458,20 +457,6 @@ window.WA.dict.uk = {
   "Running": "Триває",
   "Started earlier, still on": "Почалося раніше, ще триває",
   "Previous": "Попередній",
-  "Põhja-Tallinn": "Північний Таллінн",
-  "Kalamaja": "Каламая",
-  "Telliskivi": "Теллісківі",
-  "Kopli": "Коплі",
-  "Noblessner": "Ноблесснер",
-  "City centre": "Центр міста",
-  "Old Town": "Старе місто",
-  "Kristiine": "Крістійне",
-  "Pirita": "Пірита",
-  "Lasnamäe": "Ласнамяе",
-  "Mustamäe": "Мустамяе",
-  "Nõmme": "Нимме",
-  "Pelgulinn, Paljassaare, Karjamaa": "Пельгулінн, Пальяссааре, Кар'ямаа",
-  "Rotermann, Kadriorg, Uus Maailm": "Ротерманн, Кадріорг, Уус-Маайльм",
   "Inside the walls": "У межах мурів",
   "Club night": "Клубний вечір",
   "Theatre": "Театр",
@@ -543,7 +528,6 @@ window.WA.dict.uk = {
   "Tmrw": "Завтра",
   "Time not listed": "Час не вказано",
   "Open": "Відчинено",
-  "Show walking times from where I am": "Показувати час пішки від того місця, де я",
   "Location is off in this browser, so rows show the area instead": "Геолокацію в цьому браузері вимкнено, тому в рядках показано район",
   "You, signed in": "Ви, вхід виконано",
   "Põhja-Tallinna": "Північного Таллінна",
@@ -598,17 +582,17 @@ window.WA.dict.uk = {
   "Alerts need the app on your Home Screen.": "Для сповіщень застосунок має бути на головному екрані.",
   "Blocked": "Заблоковано",
   "Notifications on this device": "Сповіщення на цьому пристрої",
-  "When a saved plan changes": "Коли збережений план змінюється",
-  "Tonight at places you follow": "Сьогодні ввечері в місцях, на які ви підписані",
+  "Saved plan changes": "Зміни збережених планів",
+  "Tonight from followed places": "Сьогодні у ваших підписок",
   "One note at 16:00, only when something starts": "Одне сповіщення о 16:00, лише якщо щось починається",
   "Send a test notification": "Надіслати тестове сповіщення",
   "Clear inbox": "Очистити вхідні",
-  "Place to start from": "Точка відліку",
+  "Starting point": "Початкова точка",
   "Keep what you find": "Зберігайте знайдене",
   "Save places and listings, and get a note when a show you saved changes. No password.": "Зберігайте місця й події та отримуйте сповіщення, коли збережена подія змінюється. Без пароля.",
   "Google": "Google",
   "Your taste": "Ваш смак",
-  "Start from": "Почати з",
+  "Start from": "Звідки йдемо",
   "Appearance": "Оформлення",
   "Unfollow": "Відписатися",
   "Follow a venue from its page.": "Підпишіться на місце на його сторінці.",
@@ -630,7 +614,7 @@ window.WA.dict.uk = {
   "Kept for 30 days": "Зберігається 30 днів",
   "Nothing yet.": "Поки нічого.",
   "Notifications": "Сповіщення",
-  "Walking times and routes start here. Clear the box to use your location.": "Час пішки й маршрути рахуються звідси. Очистьте поле, щоб використовувати вашу геолокацію.",
+  "Walks start here": "Прогулянки починаються тут",
   "Staying somewhere? Pick a place you know and walking times start there, with no location prompt.": "Зупинилися десь? Виберіть знайоме місце, і час пішки рахуватиметься від нього, без запиту геолокації.",
   "A venue": "Місце",
   "A saved search": "Збережений пошук",
@@ -654,7 +638,7 @@ window.WA.dict.uk = {
   "Primary": "Основна",
   "WanderAlt, Tallinn tonight": "WanderAlt, Таллінн сьогодні ввечері",
   "Toggle attribution": "Показати або сховати джерела",
-  "routes lean this way": "маршрути схиляються в цей бік",
+  "Shapes your walks": "Впливає на ваші прогулянки",
   "Art": "Мистецтво",
   "Gig": "Концерт",
   "Bar": "Бар",
@@ -686,7 +670,7 @@ window.WA.dict.uk = {
   "Choose a walk for today.": "Виберіть прогулянку на сьогодні.",
   "Its date or stops have changed. Now has walks for the next few hours.": "Дата або зупинки змінилися. У розділі «Зараз» є прогулянки на найближчі години.",
   "Place types": "Типи місць",
-  "Only places with filed hours": "Лише місця з вказаними годинами роботи",
+  "With known hours": "З відомими годинами роботи",
   "All place types in the Guide": "Усі типи місць у путівнику",
   "Show all matching places": "Показати всі відповідні місця",
   "picked first": "спершу вибрані місця",
@@ -748,16 +732,103 @@ window.WA.dict.uk = {
   "Source:": "Джерело:",
   "© OpenStreetMap contributors": "© Учасники OpenStreetMap",
   "City or place": "Місто або місце",
-  "City centre. Pick a venue for a more precise starting point.": "Центр міста. Виберіть заклад для точнішої точки відліку.",
-  "Walking times and routes start at your current location.": "Час пішки й маршрути рахуються від вашого поточного місцезнаходження.",
-  "Choose Tallinn or a place you know, or use your location.": "Виберіть Таллінн або знайоме місце чи використайте своє місцезнаходження.",
+  "Choose a nearby venue": "Виберіть місце поблизу",
+  "Using your location": "Використовується ваша геолокація",
   "Location is blocked. Allow it in browser settings, or choose a place.": "Геолокацію заблоковано. Дозвольте її в налаштуваннях браузера або виберіть місце.",
   "Could not get your location. Try again or choose a place.": "Не вдалося визначити місцезнаходження. Спробуйте ще раз або виберіть місце.",
   "Nothing is a short walk from here. Choose another starting point or Whole city.": "Поруч нічого немає. Виберіть іншу точку відліку або Все місто.",
   "Whole city": "Все місто",
   "Choose a place": "Виберіть місце",
   "Right by here": "Зовсім поруч",
-  "Nearest first, walking from here": "Спочатку найближчі, пішки звідси"
+  "Nearest to here first": "Спершу найближчі звідси",
+  "A walk for now": "Прогулянка зараз",
+  "Two or three stops on foot": "Дві або три зупинки пішки",
+  "See the next few hours": "Переглянути найближчі години",
+  "Show results": "Показати результати",
+  "Date": "Дата",
+  "Date range": "Діапазон дат",
+  "Through": "До",
+  "Dates use Tallinn time": "Дати за часом Таллінна",
+  "No listings match these choices.": "Немає подій за вибраними умовами.",
+  "Change filters": "Змінити фільтри",
+  "Source": "Джерело",
+  "Venue image": "Фото місця",
+  "Hours shown for now": "Години роботи зараз",
+  "Map of Tallinn": "Мапа Таллінна",
+  "No places match these choices.": "Немає місць за вибраними умовами.",
+  "The selected listings and places, by walking time.": "Вибрані події та місця за часом пішки.",
+  "Browse map": "Відкрити мапу",
+  "Map uses shared filters": "Мапа використовує спільні фільтри",
+  "Zoom out or move the map.": "Зменште масштаб або посуньте мапу.",
+  "Events layer off": "Шар подій вимкнено",
+  "Location needed; showing soonest": "Потрібна геолокація; спершу ранні",
+  "At 16:00 when listed": "О 16:00, якщо заплановано",
+  "After": "Після",
+  "Your saves carry over": "Збережене залишиться з вами",
+  "No password needed": "Пароль не потрібен",
+  "Signed in": "Ви ввійшли",
+  "Your saves sync between devices.": "Збережене синхронізується між пристроями.",
+  "Saved in this browser": "Збережено в цьому браузері",
+  "Stays in this browser.": "Зберігається в цьому браузері.",
+  "No signal": "Немає зв’язку",
+  "Showing last loaded listings": "Останні завантажені події",
+  "Saves work offline": "Збережене доступне без мережі",
+  "Distances won't update": "Відстані не оновлюються",
+  "cached just now": "щойно завантажено",
+  "price not listed": "ціну не вказано",
+  "it has already happened": "уже відбулося",
+  "it is no longer in the programme": "більше немає в програмі",
+  "it is no longer listed": "більше немає в списку",
+  "Details are loading": "Дані завантажуються",
+  "Details could not load": "Не вдалося завантажити дані",
+  "These saves are kept": "Збережене залишається на місці",
+  "No saved events yet": "Поки немає збережених подій",
+  "No saved places yet": "Поки немає збережених місць",
+  "This is our reading of the listing; the organiser has not confirmed it.": "Це наше прочитання події; організатор його не підтвердив.",
+  "a quiz": "вікторина",
+  "a game night": "вечір настільних ігор",
+  "a craft club": "гурток рукоділля",
+  "an open stage": "відкрита сцена",
+  "a drawing night": "вечір малювання",
+  "a language night": "мовний вечір",
+  "a night for meeting people": "вечір знайомств",
+  "a club night": "клубний вечір",
+  "a night": "вечір",
+  "A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.": "Для маршруту потрібні подія з часом початку та вибране місце поруч. Місця є в гіді, події — у програмі.",
+  "Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.": "Ваші збереження, списки, підписки, сповіщення та вхідні буде видалено, зокрема з цього пристрою. Скасувати це неможливо.",
+  "Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.": "Збереження, списки, підписки та історію буде видалено з цього браузера, і ви вийдете з облікового запису. Збережене в обліковому записі залишиться; увійдіть, щоб повернути його.",
+  "Closed or moved?": "Зачинено чи переїхало?",
+  "Flagged by readers": "Повідомлення читачів",
+  "Facts that may have changed": "Можливі зміни",
+  "Different places": "Різні місця",
+  "Open the event": "Відкрити подію",
+  "Open the place": "Відкрити місце",
+  "Withhold the place": "Приховати місце",
+  "Use the new value": "Використати нове значення",
+  "Keep what we hold": "Залишити поточні дані",
+  "Fixed": "Виправлено",
+  "Dismiss": "Відхилити",
+  "Publish": "Опублікувати",
+  "Reject": "Відхилити",
+  "Possible duplicate places": "Можливі дублікати місць",
+  "Review queue": "Черга перевірки",
+  "Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.": "Події, відкладені збирачем. Публікуйте відповідні, відхиляйте решту; збирач не змінює ухвалених тут рішень.",
+  "Supabase secret key": "Секретний ключ Supabase",
+  "Kept in this tab only (sessionStorage) and sent only to Supabase.": "Зберігається лише в цій вкладці (sessionStorage) і надсилається лише до Supabase.",
+  "Open the queue": "Відкрити чергу",
+  "Around here": "Поблизу",
+  "Follow from venue pages": "Підписуйтеся на сторінках місць",
+  "Within 10 minutes’ walk": "До 10 хв пішки",
+  "Continue with Google": "Продовжити з Google",
+  "or": "або",
+  "We hold:": "Поточні дані:",
+  "Nothing filed": "Немає даних",
+  "Email alerts": "Сповіщення поштою",
+  "This link is not valid.": "Це посилання недійсне.",
+  "Stop email and notifications?": "Вимкнути листи та сповіщення?",
+  "Stop alerts": "Вимкнути сповіщення",
+  "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.",
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі."
  },
  "patterns": [
   [
@@ -896,36 +967,44 @@ window.WA.dict.uk = {
    "Показати всі {n}, що тривають"
   ],
   [
-   "Added to {x}",
-   "Додано до {x}"
+   "Added to {rawName}",
+   "Додано до {rawName}"
   ],
   [
-   "Remove {x} from saved",
-   "Прибрати {x} зі збереженого"
+   "Remove {rawTitle} from saved",
+   "Прибрати {rawTitle} зі збереженого"
   ],
   [
-   "Also in {x}:",
-   "Також у районі {x}:"
+   "Save: {rawTitle}",
+   "Зберегти: {rawTitle}"
   ],
   [
-   "After {x}",
-   "Після: {x}"
+   "Saved: {rawTitle}",
+   "Збережено: {rawTitle}"
+  ],
+  [
+   "Also in {rawName}:",
+   "Також у районі {rawName}:"
+  ],
+  [
+   "After {rawName}",
+   "Після: {rawName}"
   ],
   [
    "{n} of {m}",
    "{n} з {m}"
   ],
   [
-   "{x} on the map",
-   "{x} на карті"
+   "{rawName} on the map",
+   "{rawName} на карті"
   ],
   [
-   "{x} (opens {y})",
-   "{x} (відчиниться: {y})"
+   "{rawName} (opens {y})",
+   "{rawName} (відчиниться: {y})"
   ],
   [
-   "Logo from {x}, their logo",
-   "Логотип із {x}, їхній власний"
+   "Logo from {rawName}, their logo",
+   "Логотип із {rawName}, їхній власний"
   ],
   [
    "Address and links from OpenStreetMap; hours from {x}.",
@@ -936,36 +1015,36 @@ window.WA.dict.uk = {
    "Дані від закладу; години роботи: {x}."
   ],
   [
-   "Everything from {x}",
-   "Усе з {x}"
+   "Everything from {rawName}",
+   "Усе з {rawName}"
   ],
   [
-   "Following {x}",
-   "Ви підписані: {x}"
+   "Following {rawName}",
+   "Ви підписані: {rawName}"
   ],
   [
-   "Stopped following {x}",
-   "Ви більше не підписані: {x}"
+   "Stopped following {rawName}",
+   "Ви більше не підписані: {rawName}"
   ],
   [
-   "Nothing is listed in {x} for the coming days.",
-   "У районі {x} на найближчі дні нічого не оголошено."
+   "Nothing is listed in {rawName} for the coming days.",
+   "У районі {rawName} на найближчі дні нічого не оголошено."
   ],
   [
-   "Nothing is listed in {x} yet.",
-   "У районі {x} поки нічого не оголошено."
+   "Nothing is listed in {rawName} yet.",
+   "У районі {rawName} поки нічого не оголошено."
   ],
   [
-   "Nothing from {x} is listed right now.",
-   "Від {x} зараз нічого не оголошено."
+   "Nothing from {rawName} is listed right now.",
+   "Від {rawName} зараз нічого не оголошено."
   ],
   [
    "Follow my device, dark from {t}",
    "Як на пристрої, темна з {t}"
   ],
   [
-   "Listed via {x}",
-   "Оголошено через {x}"
+   "Listed via {rawName}",
+   "Оголошено через {rawName}"
   ],
   [
    "It was on {d}",
@@ -1016,8 +1095,8 @@ window.WA.dict.uk = {
    "на {u}"
   ],
   [
-   "Listed via {x}, read {y}.",
-   "Оголошено через {x}, прочитано {y}."
+   "Listed via {rawName}, read {y}.",
+   "Оголошено через {rawName}, прочитано {y}."
   ],
   [
    "It was on {d} at {t}.",
@@ -1036,8 +1115,8 @@ window.WA.dict.uk = {
    "Безкоштовно в цьому вигляді: {n}"
   ],
   [
-   "{n} opened or saved before",
-   "Раніше відкрито або збережено: {n}"
+   "{n} opened or saved",
+   "Відкрито або збережено: {n}"
   ],
   [
    "{n} more after these",
@@ -1093,36 +1172,36 @@ window.WA.dict.uk = {
    }
   ],
   [
-   "{x}, Open till {t}",
-   "{x}, відчинено до {t}"
+   "{rawName}, Open till {t}",
+   "{rawName}, відчинено до {t}"
   ],
   [
-   "{x}, Opens {t}",
-   "{x}, відчиниться о {t}"
+   "{rawName}, Opens {t}",
+   "{rawName}, відчиниться о {t}"
   ],
   [
-   "{x}, Shut today",
-   "{x}, сьогодні зачинено"
+   "{rawName}, Shut today",
+   "{rawName}, сьогодні зачинено"
   ],
   [
-   "{x}, Hours not filed",
-   "{x}, години не вказано"
+   "{rawName}, Hours not filed",
+   "{rawName}, години не вказано"
   ],
   [
-   "{x}, Open for events",
-   "{x}, відчинено під час подій"
+   "{rawName}, Open for events",
+   "{rawName}, відчинено під час подій"
   ],
   [
-   "{x}, Open, 24 hours",
-   "{x}, відчинено цілодобово"
+   "{rawName}, Open, 24 hours",
+   "{rawName}, відчинено цілодобово"
   ],
   [
-   "{x}, Listed as closed",
-   "{x}, позначено як зачинене"
+   "{rawName}, Listed as closed",
+   "{rawName}, позначено як зачинене"
   ],
   [
-   "{x}, Status unverified",
-   "{x}, статус не підтверджено"
+   "{rawName}, Status unverified",
+   "{rawName}, статус не підтверджено"
   ],
   [
    "with {w}",
@@ -1133,20 +1212,128 @@ window.WA.dict.uk = {
    "Зображення з {u}"
   ],
   [
-   "{a}. Needs your location or a spot below",
-   "{a}. Потрібна ваша геолокація або місце нижче"
-  ],
-  [
-   "{a}, from {b}",
-   "{a}, від точки: {b}"
-  ],
-  [
    "{n} today",
    "Сьогодні: {n}"
   ],
   [
    "{n} min walk from here",
    "{n} хв пішки звідси"
+  ],
+  [
+   "{n} listings on this map",
+   {
+    "one": "На цій мапі: {n} подія",
+    "few": "На цій мапі: {n} події",
+    "many": "На цій мапі: {n} подій",
+    "other": "На цій мапі: {n} події"
+   }
+  ],
+  [
+   "Language: {rawName}",
+   "Мова: {rawName}"
+  ],
+  [
+   "{n} free",
+   "{n} безкоштовно"
+  ],
+  [
+   "{n} from followed places",
+   "{n} від ваших підписок"
+  ],
+  [
+   "{n} new listings",
+   {
+    "one": "{n} нова подія",
+    "few": "{n} нові події",
+    "many": "{n} нових подій",
+    "other": "{n} нові події"
+   }
+  ],
+  [
+   "Add {rawName} to your calendar",
+   "Додати {rawName} до календаря"
+  ],
+  [
+   "Walking from {rawName}",
+   "Звідки: {rawName}"
+  ],
+  [
+   "{n} here, zoom in",
+   "Тут {n}, наблизити"
+  ],
+  [
+   "{n} min walk from where you are",
+   "{n} хв пішки від вас"
+  ],
+  [
+   "cached {x}",
+   "завантажено {x}"
+  ],
+  [
+   "The format is {x}, built for people who turn up on their own to mix.",
+   "Формат: {x}. Підходить, щоб прийти наодинці й познайомитися з людьми."
+  ],
+  [
+   "Sign-in did not finish: {rawError}",
+   "Не вдалося ввійти: {rawError}"
+  ],
+  [
+   "Not saved: {rawError}",
+   "Не збережено: {rawError}"
+  ],
+  [
+   "Merge into {rawName}",
+   "Об’єднати в {rawName}"
+  ],
+  [
+   "We hold: {rawValue}",
+   "Поточні дані: {rawValue}"
+  ],
+  [
+   "It says: {rawValue}",
+   "У джерелі: {rawValue}"
+  ],
+  [
+   "{n} waiting",
+   "Очікують: {n}"
+  ],
+  [
+   "from its {rawSource}",
+   "джерело: {rawSource}"
+  ],
+  [
+   "Supabase refused the key ({rawError}). Check it is the secret key, not the anon key or a Cloudflare token.",
+   "Supabase відхилив ключ ({rawError}). Перевірте, що це секретний ключ, а не anon-ключ або токен Cloudflare."
+  ],
+  [
+   "Show {n} listing",
+   "Показати {n} подія"
+  ],
+  [
+   "Show {n} listings",
+   {
+    "one": "Показати {n} подія",
+    "few": "Показати {n} події",
+    "many": "Показати {n} подій",
+    "other": "Показати {n} події"
+   }
+  ],
+  [
+   "Show {n} place",
+   "Показати {n} місце"
+  ],
+  [
+   "Show {n} places",
+   {
+    "one": "Показати {n} місце",
+    "few": "Показати {n} місця",
+    "many": "Показати {n} місць",
+    "other": "Показати {n} місця"
+   }
+  ],
+  [
+   "since {t}",
+   "з {t}"
   ]
  ]
 };

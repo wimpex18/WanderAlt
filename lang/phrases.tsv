@@ -120,7 +120,6 @@ Session expired. Request a new reset link.	Seanss aegus. Telli uus lähtestamisl
 Updating…	Uuendan…	Обновление…	Оновлення…
 Password updated. You are now signed in.	Parool on uuendatud. Oled nüüd sisse logitud.	Пароль обновлён. Вы вошли в систему.	Пароль оновлено. Ви увійшли.
 Update failed.	Uuendamine ebaõnnestus.	Не удалось обновить.	Не вдалося оновити.
-Vabaduse väljak	Vabaduse väljak	площадь Свободы	площа Свободи
 Select city	Vali linn	Выберите город	Виберіть місто
 Coming soon	Varsti tulemas	Скоро	Незабаром
 Walking from	Jalutuskaugus alates	Пешком от	Пішки від
@@ -152,13 +151,13 @@ Today	Täna	Сегодня	Сьогодні
 No fixed hours filed. This room opens when something is on; the listings above carry the times.	Kindlaid lahtiolekuaegu pole. See ruum avatakse, kui midagi toimub; ajad on ülal kuulutustes.	Постоянных часов нет. Зал открывается, когда что-то идёт; время указано в событиях выше.	Постійних годин немає. Зал відчиняється, коли щось відбувається; час указано в подіях вище.
 Not filed. Half the places list their hours, and we would rather leave a gap than guess.	Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.	Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.	Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.
 Your lists	Sinu nimekirjad	Ваши списки	Ваші списки
-No lists yet. Name one and this goes straight in.	Nimekirju veel pole. Pane ühele nimi ja see läheb otse sinna.	Списков пока нет. Назовите один, и это сразу попадёт в него.	Списків поки немає. Назвіть один, і це одразу потрапить до нього.
+Create your first list	Loo esimene nimekiri	Создайте первый список	Створіть перший список
 New list	Uus nimekiri	Новый список	Новий список
 Create and add	Loo ja lisa	Создать и добавить	Створити й додати
-Kalamaja on Saturday	Kalamaja laupäeval	Каламая в субботу	Каламая в суботу
+Kalamaja on Saturday	Kalamaja laupäeval	Kalamaja в субботу	Kalamaja в суботу
 Walk	Jalutus	Пешком	Пішки
 Area	Piirkond	Район	Район
-Allow location for walking time	Luba asukoht jalutusaja jaoks	Разрешите геолокацию для времени пешком	Дозвольте геолокацію, щоб бачити час пішки
+Location for walking times	Asukoht jalutusaegade jaoks	Геолокация для времени пешком	Геолокація для часу пішки
 Venue logo	Koha logo	Логотип места	Логотип місця
 Venue photo	Koha foto	Фото места	Фото місця
 Save	Salvesta	Сохранить	Зберегти
@@ -241,7 +240,7 @@ Soon	Varsti	Скоро	Незабаром
 When?	Millal?	Когда?	Коли?
 What are you after?	Mida sa otsid?	Что вы ищете?	Що ви шукаєте?
 Clear all	Tühjenda kõik	Очистить всё	Очистити все
-A venue, an area, a name	Koht, piirkond, nimi	Место, район, название	Місце, район, назва
+Venue, area or name	Koht, piirkond või nimi	Место, район или название	Місце, район або назва
 Gigs	Kontserdid	Концерты	Концерти
 Club nights	Klubiõhtud	Клубные вечера	Клубні вечори
 Film	Film	Кино	Кіно
@@ -249,7 +248,7 @@ Theatre and dance	Teater ja tants	Театр и танец	Театр і тан�
 Talks	Vestlused	Лекции и встречи	Лекції та зустрічі
 Workshops	Töötoad	Мастер-классы	Майстер-класи
 Festivals	Festivalid	Фестивали	Фестивалі
-Old Town, Kalamaja, Telliskivi and the harbour	Vanalinn, Kalamaja, Telliskivi ja sadam	Старый город, Каламая, Теллискиви и порт	Старе місто, Каламая, Теллісківі та порт
+Old Town, Kalamaja, Telliskivi and the harbour	Old Town, Kalamaja, Telliskivi ja sadam	Old Town, Kalamaja, Telliskivi и порт	Old Town, Kalamaja, Telliskivi та порт
 Coming later	Tulevad hiljem	Появятся позже	З'являться пізніше
 Riga, Latvia	Riia, Läti	Рига, Латвия	Рига, Латвія
 Helsinki, Finland	Helsingi, Soome	Хельсинки, Финляндия	Гельсінкі, Фінляндія
@@ -260,14 +259,14 @@ The next seven days	Järgmised seitse päeva	Следующие семь дне�
 Any day	Mis tahes päev	Любой день	Будь-який день
 Anything	Mis tahes	Что угодно	Будь-що
 Walking times are on	Jalutusajad on sees	Время пешком включено	Час пішки увімкнено
-Show walking times from where you are	Näita jalutusaegu sinu asukohast	Показывать время пешком от вашего места	Показувати час пішки від того місця, де ви є
+Show walking times	Näita jalutusaegu	Показать время пешком	Показати час пішки
 Only sources I follow	Ainult allikad, mida jälgin	Только источники, на которые я подписан	Лише джерела, на які я підписаний
 I'm going	Ma lähen	Я иду	Я йду
 Show the next few hours	Näita järgmisi tunde	Показать ближайшие часы	Показати найближчі години
 What's the mood?	Mis tuju on?	Какое настроение?	Який настрій?
-Pick one or a few. None means anything.	Vali üks või mitu. Kui ühtki ei vali, sobib kõik.	Выберите одно или несколько. Ничего не выбрано — подойдёт всё.	Оберіть один або кілька. Нічого не обрано — підійде все.
+No selection means all	Valimata sobib kõik	Без выбора подходят все	Без вибору підходить усе
 Up to €20	Kuni 20 €	До 20 €	До 20 €
-Shows with no listed price stay in.	Sündmused, mille hind pole teada, jäävad sisse.	События без указанной цены остаются в списке.	Події без указаної ціни лишаються в списку.
+Unknown prices included	Teadmata hinnaga sündmused kaasatud	Без цены тоже показываем	Без ціни теж показуємо
 Narrow it down	Täpsusta	Уточнить	Уточнити
 Art & film	Kunst ja film	Искусство и кино	Мистецтво і кіно
 Galleries, cinema, stage, comedy	Galeriid, kino, lava, komöödia	Галереи, кино, сцена, комедия	Галереї, кіно, сцена, комедія
@@ -286,13 +285,13 @@ any price	mis tahes hind	любая цена	будь-яка ціна
 free	tasuta	бесплатно	безкоштовно
 Walking from you needs location. Allow it for this site in your browser settings.	Sinu juurest jalutamiseks on vaja asukohta. Luba see selle saidi jaoks brauseri seadetes.	Чтобы считать путь от вас, нужна геолокация. Разрешите её для этого сайта в настройках браузера.	Щоб рахувати шлях від вас, потрібна геолокація. Дозвольте її для цього сайту в налаштуваннях браузера.
 Nothing is a short walk from you. Turn Near me off for the whole city.	Sinu lähedal pole midagi. Lülita „Minu lähedal“ välja, et näha kogu linna.	Рядом с вами ничего нет. Выключите «Рядом со мной», чтобы видеть весь город.	Поруч із вами нічого немає. Вимкніть «Поруч зі мною», щоб бачити все місто.
-Nearest first, walking from you	Lähimad ees, jalutades sinu juurest	Сначала ближайшие, пешком от вас	Спершу найближчі, пішки від вас
+Nearest to you first	Sulle lähimad ees	Сначала ближайшие к вам	Спершу найближчі до вас
 Right by you	Kohe sinu kõrval	Прямо рядом с вами	Зовсім поруч із вами
 Kind	Liik	Вид	Вид
 Moods	Meeleolud	Настроения	Настрої
 Kind of place	Koha liik	Тип места	Тип місця
 nearest to you first	lähimad sinu juurest ees	сначала ближайшие к вам	спершу найближчі до вас
-nearest the centre first	kesklinnale lähimad ees	сначала ближайшие к центру	спершу найближчі до центру
+Nearest the centre first	Kesklinnale lähimad ees	Сначала ближайшие к центру	Спершу найближчі до центру
 Change	Muuda	Изменить	Змінити
 Today's events and the places open now, by walking time.	Tänased sündmused ja praegu avatud kohad jalutusaja järgi.	События сегодня и открытые сейчас места по времени пешком.	Події сьогодні й відкриті зараз місця за часом пішки.
 Ticket price limit	Piletihinna piir	Предел цены билета	Ліміт ціни квитка
@@ -370,12 +369,12 @@ Show everything	Näita kõike	Показать всё	Показати все
 Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.	Pillid on sündmused koos algusajaga. Ümar nööpnõel on koht; vermilioni rõngas tähendab, et see on praegu avatud.	Таблетки — это события со временем начала. Круглая метка — место; киноварное кольцо значит, что оно открыто сейчас.	Пігулки — це події з часом початку. Кругла мітка — місце; кіноварне кільце означає, що воно відчинене зараз.
 Nothing in view	Vaates pole midagi	В кадре ничего нет	У кадрі нічого немає
 Location is off in this browser, so the list is ordered by time	Asukoht on selles brauseris välja lülitatud, seega on nimekiri aja järgi	Геолокация в этом браузере выключена, поэтому список упорядочен по времени	Геолокацію в цьому браузері вимкнено, тому список упорядковано за часом
-Dance	Tantsi	Танцевать	Танцювати
+Dance	Tants	Танец	Танець
 Any mood	Mis tahes meeleolu	Любое настроение	Будь-який настрій
 Any mood · any price	Mis tahes meeleolu · mis tahes hind	Любое настроение · любая цена	Будь-який настрій · будь-яка ціна
 On this week	Sel nädalal	На этой неделе	Цього тижня
 Remove this filter	Eemalda see filter	Убрать этот фильтр	Прибрати цей фільтр
-Use my location	Kasuta minu asukohta	Использовать моё местоположение	Використати моє місцезнаходження
+Use my location	Kasuta minu asukohta	Использовать геолокацию	Використати геолокацію
 What to look for	Mida otsida	Что искать	Що шукати
 Records	Plaadid	Пластинки	Платівки
 Books	Raamatud	Книги	Книжки
@@ -395,22 +394,22 @@ Tonight's listings	Tänase õhtu kuulutused	События сегодняшне�
 From	Alates	От	Від
 Anywhere	Kõikjal	Где угодно	Будь-де
 Order	Järjestus	Порядок	Порядок
-Soonest	Varaseim	Ближайшие	Найближчі
-Nearest	Lähim	Ближайшие по расстоянию	Найближчі за відстанню
+Soonest	Varaseimad	Раньше по времени	Раніше за часом
+Nearest	Lähimad	Ближе к вам	Ближче до вас
 Needs your location. Until you allow it, the list stays soonest first.	Vajab sinu asukohta. Kuni seda ei luba, on nimekiri varaseimad ees.	Нужна геолокация. Пока вы её не разрешите, список идёт по времени.	Потрібна геолокація. Доки ви її не дозволите, список іде за часом.
 Starts	Algab	Начало	Початок
 Walking distance	Jalutuskaugus	Расстояние пешком	Відстань пішки
 Free entry	Tasuta sissepääs	Вход свободный	Вхід вільний
 Hide what I've opened	Peida avatud	Скрыть открытое мной	Сховати відкрите мною
-Only places I follow	Ainult kohad, mida jälgin	Только места, на которые я подписан	Лише місця, на які я підписаний
-New since my last visit	Uus alates viimasest külastusest	Новое с моего прошлого визита	Нове з мого останнього візиту
+Followed places only	Ainult jälgitavad kohad	Только ваши подписки	Лише ваші підписки
+New since last visit	Uued pärast viimast külastust	Новое с прошлого визита	Нові після останнього візиту
 Clear all filters	Tühjenda kõik filtrid	Сбросить все фильтры	Скинути всі фільтри
-Measure from	Mõõda alates	Считать от	Рахувати від
+Measure from	Alguspunkt	Считать расстояние от	Рахувати відстань від
 Search the words	Otsi sõnu	Искать слова	Шукати слова
 Add to calendar	Lisa kalendrisse	Добавить в календарь	Додати в календар
 Evenings	Õhtud	Вечера	Вечори
 Maximum walking distance	Maksimaalne jalutuskaugus	Максимальное расстояние пешком	Максимальна відстань пішки
-My location	Minu asukoht	Моё местоположение	Моє місцезнаходження
+My location	Minu asukoht	Моя геолокация	Моя геолокація
 Everything ahead	Kõik eesolev	Всё впереди	Усе попереду
 Any time	Mis tahes aeg	В любое время	Будь-коли
 From now	Alates praegu	С этого момента	Відтепер
@@ -418,10 +417,10 @@ After 21:00	Pärast 21:00	После 21:00	Після 21:00
 After 23:00	Pärast 23:00	После 23:00	Після 23:00
 In English	Inglise keeles	На английском	Англійською
 Pick dates	Vali kuupäevad	Выбрать даты	Вибрати дати
-Follow a venue from its page to use this	Selle kasutamiseks jälgi kohta selle lehelt	Подпишитесь на место на его странице, чтобы это использовать	Підпишіться на місце на його сторінці, щоб цим користуватися
+Follow venues first	Jälgi esmalt kohti	Сначала подпишитесь на места	Спершу підпишіться на місця
 Anywhere in the city	Kõikjal linnas	Где угодно в городе	Будь-де в місті
-Saved in this browser. Clear the box to use your location.	Salvestatud sellesse brauserisse. Tühjenda väli, et kasutada oma asukohta.	Сохранено в этом браузере. Очистите поле, чтобы использовать вашу геолокацию.	Збережено в цьому браузері. Очистьте поле, щоб використовувати вашу геолокацію.
-Pick a place you know, such as where you are staying, to skip the location prompt.	Vali tuttav koht, näiteks kus sa peatud, et asukohapäring vahele jätta.	Выберите знакомое место, например где вы остановились, чтобы пропустить запрос геолокации.	Виберіть знайоме місце, наприклад де ви зупинилися, щоб не відповідати на запит геолокації.
+Clear for device location	Tühjenda oma asukoha kasutamiseks	Очистите поле для геолокации	Очистьте поле для геолокації
+Choose a starting point	Vali alguspunkt	Выберите начальную точку	Виберіть початкову точку
 Clear search	Tühjenda otsing	Очистить поиск	Очистити пошук
 Any kind	Mis tahes liik	Любой вид	Будь-який вид
 Include paid	Kaasa tasulised	Включая платные	Разом із платними
@@ -438,7 +437,7 @@ Try a different day or start a new search.	Proovi teist päeva või alusta uut o
 Start over	Alusta otsast	Начать заново	Почати знову
 Jazz tonight	Džäss täna õhtul	Джаз сегодня вечером	Джаз сьогодні ввечері
 Free art this weekend	Tasuta kunst sel nädalavahetusel	Бесплатное искусство в эти выходные	Безкоштовне мистецтво на цих вихідних
-Club night in Kalamaja	Klubiõhtu Kalamajas	Клубный вечер в Каламае	Клубний вечір у Каламая
+Club night in Kalamaja	Klubiõhtu: Kalamaja	Клубный вечер в Kalamaja	Клубний вечір у Kalamaja
 Talks in English	Vestlused inglise keeles	Лекции на английском	Лекції англійською
 Following this search	Jälgid seda otsingut	Вы следите за этим поиском	Ви стежите за цим пошуком
 Follow this search	Jälgi seda otsingut	Следить за этим поиском	Стежити за цим пошуком
@@ -453,20 +452,6 @@ No date filed	Kuupäev teadmata	Дата не указана	Дату не вк�
 Running	Käimas	Идёт	Триває
 Started earlier, still on	Algas varem, käib endiselt	Началось раньше, ещё идёт	Почалося раніше, ще триває
 Previous	Eelmine	Предыдущий	Попередній
-Põhja-Tallinn	Põhja-Tallinn	Северный Таллин	Північний Таллінн
-Kalamaja	Kalamaja	Каламая	Каламая
-Telliskivi	Telliskivi	Теллискиви	Теллісківі
-Kopli	Kopli	Копли	Коплі
-Noblessner	Noblessner	Ноблесснер	Ноблесснер
-City centre	Kesklinn	Центр города	Центр міста
-Old Town	Vanalinn	Старый город	Старе місто
-Kristiine	Kristiine	Кристийне	Крістійне
-Pirita	Pirita	Пирита	Пірита
-Lasnamäe	Lasnamäe	Ласнамяэ	Ласнамяе
-Mustamäe	Mustamäe	Мустамяэ	Мустамяе
-Nõmme	Nõmme	Нымме	Нимме
-Pelgulinn, Paljassaare, Karjamaa	Pelgulinn, Paljassaare, Karjamaa	Пельгулинн, Палъясааре, Карьямаа	Пельгулінн, Пальяссааре, Кар'ямаа
-Rotermann, Kadriorg, Uus Maailm	Rotermann, Kadriorg, Uus Maailm	Ротерманн, Кадриорг, Уус-Маайльм	Ротерманн, Кадріорг, Уус-Маайльм
 Inside the walls	Müüride sees	Внутри стен	У межах мурів
 Club night	Klubiõhtu	Клубный вечер	Клубний вечір
 Theatre	Teater	Театр	Театр
@@ -538,7 +523,6 @@ Shut today	Täna suletud	Сегодня закрыто	Сьогодні зачи
 Tmrw	Homme	Завтра	Завтра
 Time not listed	Kellaaeg pole märgitud	Время не указано	Час не вказано
 Open	Avatud	Открыто	Відчинено
-Show walking times from where I am	Näita jalutusaegu sealt, kus ma olen	Показывать время пешком от моего места	Показувати час пішки від того місця, де я
 Location is off in this browser, so rows show the area instead	Asukoht on selles brauseris välja lülitatud, seega näitavad read hoopis piirkonda	Геолокация в этом браузере выключена, поэтому в строках показан район	Геолокацію в цьому браузері вимкнено, тому в рядках показано район
 You, signed in	Sina, sisse logitud	Вы, вход выполнен	Ви, вхід виконано
 Põhja-Tallinna	Põhja-Tallinna	Северного Таллина	Північного Таллінна
@@ -593,17 +577,17 @@ Needs the Home Screen app	Vajab avaekraani rakendust	Нужно приложен
 Alerts need the app on your Home Screen.	Teavituste jaoks peab rakendus olema sinu avaekraanil.	Для уведомлений приложение должно быть на главном экране.	Для сповіщень застосунок має бути на головному екрані.
 Blocked	Blokeeritud	Заблокировано	Заблоковано
 Notifications on this device	Teavitused sellel seadmel	Уведомления на этом устройстве	Сповіщення на цьому пристрої
-When a saved plan changes	Kui salvestatud plaan muutub	Когда сохранённый план меняется	Коли збережений план змінюється
-Tonight at places you follow	Täna õhtul kohtades, mida jälgid	Сегодня вечером в местах, на которые вы подписаны	Сьогодні ввечері в місцях, на які ви підписані
+Saved plan changes	Salvestatud plaani muutused	Изменения сохранённых планов	Зміни збережених планів
+Tonight from followed places	Täna õhtul jälgitavates kohtades	Сегодня у ваших подписок	Сьогодні у ваших підписок
 One note at 16:00, only when something starts	Üks teavitus kell 16:00, ainult siis, kui midagi algab	Одно уведомление в 16:00, только если что-то начинается	Одне сповіщення о 16:00, лише якщо щось починається
 Send a test notification	Saada testteavitus	Отправить тестовое уведомление	Надіслати тестове сповіщення
 Clear inbox	Tühjenda postkast	Очистить входящие	Очистити вхідні
-Place to start from	Koht, kust alustada	Место отсчёта	Точка відліку
+Starting point	Alguspunkt	Начальная точка	Початкова точка
 Keep what you find	Hoia alles, mida leiad	Сохраняйте найденное	Зберігайте знайдене
 Save places and listings, and get a note when a show you saved changes. No password.	Salvesta kohti ja sündmusi ning saa teade, kui salvestatud etendus muutub. Parooli pole.	Сохраняйте места и события и получайте уведомление, когда сохранённое событие меняется. Без пароля.	Зберігайте місця й події та отримуйте сповіщення, коли збережена подія змінюється. Без пароля.
 Google	Google	Google	Google
 Your taste	Sinu maitse	Ваш вкус	Ваш смак
-Start from	Alusta alates	Начать с	Почати з
+Start from	Alguspunkt	Откуда идём	Звідки йдемо
 Appearance	Välimus	Оформление	Оформлення
 Unfollow	Lõpeta jälgimine	Отписаться	Відписатися
 Follow a venue from its page.	Jälgi kohta selle lehelt.	Подпишитесь на место на его странице.	Підпишіться на місце на його сторінці.
@@ -625,7 +609,7 @@ Inbox	Postkast	Входящие	Вхідні
 Kept for 30 days	Säilitatakse 30 päeva	Хранится 30 дней	Зберігається 30 днів
 Nothing yet.	Veel pole midagi.	Пока ничего.	Поки нічого.
 Notifications	Teavitused	Уведомления	Сповіщення
-Walking times and routes start here. Clear the box to use your location.	Jalutusajad ja marsruudid algavad siit. Tühjenda väli, et kasutada oma asukohta.	Время пешком и маршруты отсчитываются отсюда. Очистите поле, чтобы использовать вашу геолокацию.	Час пішки й маршрути рахуються звідси. Очистьте поле, щоб використовувати вашу геолокацію.
+Walks start here	Jalutuskäigud algavad siit	Прогулки начинаются здесь	Прогулянки починаються тут
 Staying somewhere? Pick a place you know and walking times start there, with no location prompt.	Peatud kuskil? Vali tuttav koht ja jalutusajad algavad sealt, ilma asukohapäringuta.	Остановились где-то? Выберите знакомое место, и время пешком будет считаться от него, без запроса геолокации.	Зупинилися десь? Виберіть знайоме місце, і час пішки рахуватиметься від нього, без запиту геолокації.
 A venue	Koht	Место	Місце
 A saved search	Salvestatud otsing	Сохранённый поиск	Збережений пошук
@@ -649,7 +633,7 @@ Show the map	Näita kaarti	Показать карту	Показати карт
 Primary	Peamine	Основная	Основна
 WanderAlt, Tallinn tonight	WanderAlt, Tallinn täna õhtul	WanderAlt, Таллин сегодня вечером	WanderAlt, Таллінн сьогодні ввечері
 Toggle attribution	Näita või peida viited	Показать или скрыть источники	Показати або сховати джерела
-routes lean this way	marsruudid kalduvad selle poole	маршруты склоняются в эту сторону	маршрути схиляються в цей бік
+Shapes your walks	Mõjutab sinu jalutuskäike	Влияет на ваши прогулки	Впливає на ваші прогулянки
 Art	Kunst	Искусство	Мистецтво
 Gig	Kontsert	Концерт	Концерт
 Bar	Baar	Бар	Бар
@@ -681,7 +665,7 @@ This walk is no longer available	See jalutuskäik pole enam saadaval	Эта пр
 Choose a walk for today.	Vali jalutuskäik tänaseks.	Выберите прогулку на сегодня.	Виберіть прогулянку на сьогодні.
 Its date or stops have changed. Now has walks for the next few hours.	Selle kuupäev või peatused on muutunud. Praegu pakub jalutuskäike järgmisteks tundideks.	Дата или остановки изменились. В разделе «Сейчас» есть прогулки на ближайшие часы.	Дата або зупинки змінилися. У розділі «Зараз» є прогулянки на найближчі години.
 Place types	Kohtade tüübid	Типы мест	Типи місць
-Only places with filed hours	Ainult teadaolevate lahtiolekuaegadega kohad	Только места с указанными часами работы	Лише місця з вказаними годинами роботи
+With known hours	Teadaolevate lahtiolekuaegadega	С известными часами работы	З відомими годинами роботи
 All place types in the Guide	Kõik kohtade tüübid teejuhis	Все типы мест в путеводителе	Усі типи місць у путівнику
 Show all matching places	Näita kõiki sobivaid kohti	Показать все подходящие места	Показати всі відповідні місця
 picked first	valitud kohad esimesena	сначала отобранные места	спершу вибрані місця
@@ -743,13 +727,102 @@ Another gallery	Veel üks galerii	Ещё одна галерея	Ще одна �
 Source:	Allikas:	Источник:	Джерело:
 © OpenStreetMap contributors	© OpenStreetMapi kaastöölised	© Участники OpenStreetMap	© Учасники OpenStreetMap
 City or place	Linn või koht	Город или место	Місто або місце
-City centre. Pick a venue for a more precise starting point.	Kesklinn. Täpsema alguspunkti jaoks vali mõni koht.	Центр города. Выберите заведение для более точной точки отсчёта.	Центр міста. Виберіть заклад для точнішої точки відліку.
-Walking times and routes start at your current location.	Jalutusajad ja marsruudid algavad sinu praegusest asukohast.	Время пешком и маршруты отсчитываются от вашего текущего местоположения.	Час пішки й маршрути рахуються від вашого поточного місцезнаходження.
-Choose Tallinn or a place you know, or use your location.	Vali Tallinn või tuttav koht või kasuta oma asukohta.	Выберите Таллин или знакомое место либо используйте своё местоположение.	Виберіть Таллінн або знайоме місце чи використайте своє місцезнаходження.
+Choose a nearby venue	Vali lähedal asuv koht	Выберите место поблизости	Виберіть місце поблизу
+Using your location	Kasutan sinu asukohta	Используется ваша геолокация	Використовується ваша геолокація
 Location is blocked. Allow it in browser settings, or choose a place.	Asukoht on blokeeritud. Luba see brauseri seadetes või vali koht.	Геолокация заблокирована. Разрешите её в настройках браузера или выберите место.	Геолокацію заблоковано. Дозвольте її в налаштуваннях браузера або виберіть місце.
 Could not get your location. Try again or choose a place.	Asukohta ei õnnestunud määrata. Proovi uuesti või vali koht.	Не удалось определить местоположение. Попробуйте ещё раз или выберите место.	Не вдалося визначити місцезнаходження. Спробуйте ще раз або виберіть місце.
 Nothing is a short walk from here. Choose another starting point or Whole city.	Siit pole midagi lühikese jalutuskäigu kaugusel. Vali teine alguspunkt või Kogu linn.	Рядом ничего нет. Выберите другую точку отсчёта или Весь город.	Поруч нічого немає. Виберіть іншу точку відліку або Все місто.
 Whole city	Kogu linn	Весь город	Все місто
 Choose a place	Vali koht	Выберите место	Виберіть місце
 Right by here	Siinsamas	Совсем рядом	Зовсім поруч
-Nearest first, walking from here	Lähimad eespool, jalutades siit	Сначала ближайшие, пешком отсюда	Спочатку найближчі, пішки звідси
+Nearest to here first	Siit lähimad ees	Сначала ближайшие отсюда	Спершу найближчі звідси
+
+# Shared discovery controls and image-first feed
+A walk for now	Jalutuskäik praegu	Прогулка сейчас	Прогулянка зараз
+Two or three stops on foot	Kaks või kolm peatust jalgsi	Две или три остановки пешком	Дві або три зупинки пішки
+See the next few hours	Vaata järgmisi tunde	Посмотреть ближайшие часы	Переглянути найближчі години
+Show results	Näita tulemusi	Показать результаты	Показати результати
+Date	Kuupäev	Дата	Дата
+Date range	Kuupäevavahemik	Диапазон дат	Діапазон дат
+Through	Kuni	По	До
+Dates use Tallinn time	Kuupäevad Tallinna aja järgi	Даты по времени Таллинна	Дати за часом Таллінна
+No listings match these choices.	Nende valikutega sündmusi ei ole.	Нет событий по выбранным условиям.	Немає подій за вибраними умовами.
+Change filters	Muuda filtreid	Изменить фильтры	Змінити фільтри
+Source	Allikas	Источник	Джерело
+Venue image	Koha pilt	Фото места	Фото місця
+Hours shown for now	Lahtiolekuajad praeguse hetke järgi	Часы работы сейчас	Години роботи зараз
+Map of Tallinn	Tallinna kaart	Карта Таллинна	Мапа Таллінна
+No places match these choices.	Nende valikutega kohti ei ole.	Нет мест по выбранным условиям.	Немає місць за вибраними умовами.
+The selected listings and places, by walking time.	Valitud sündmused ja kohad jalutamisaja järgi.	Выбранные события и места по времени пешком.	Вибрані події та місця за часом пішки.
+Browse map	Vaata kaarti	Открыть карту	Відкрити мапу
+Map uses shared filters	Kaart kasutab samu filtreid	Карта использует общие фильтры	Мапа використовує спільні фільтри
+Zoom out or move the map.	Vähenda suumi või liiguta kaarti.	Уменьшите масштаб или сдвиньте карту.	Зменште масштаб або посуньте мапу.
+Events layer off	Sündmuste kiht on väljas	Слой событий выключен	Шар подій вимкнено
+Location needed; showing soonest	Asukoht vajalik; varaseimad ees	Нужна геолокация; сначала ранние	Потрібна геолокація; спершу ранні
+At 16:00 when listed	Kell 16:00, kui toimub	В 16:00, если запланировано	О 16:00, якщо заплановано
+After	Pärast	После	Після
+Your saves carry over	Sinu salvestused tulevad kaasa	Сохранённое останется с вами	Збережене залишиться з вами
+No password needed	Parooli pole vaja	Пароль не нужен	Пароль не потрібен
+Signed in	Sisse logitud	Вы вошли	Ви ввійшли
+Your saves sync between devices.	Salvestused sünkroonitakse seadmete vahel.	Сохранённое синхронизируется между устройствами.	Збережене синхронізується між пристроями.
+Saved in this browser	Salvestatud selles brauseris	Сохранено в этом браузере	Збережено в цьому браузері
+Stays in this browser.	Jääb sellesse brauserisse.	Хранится в этом браузере.	Зберігається в цьому браузері.
+No signal	Ühendus puudub	Нет связи	Немає зв’язку
+Showing last loaded listings	Viimati laaditud sündmused	Последние загруженные события	Останні завантажені події
+Saves work offline	Salvestused toimivad võrguühenduseta	Сохранённое доступно без сети	Збережене доступне без мережі
+Distances won't update	Kaugused ei uuene	Расстояния не обновляются	Відстані не оновлюються
+cached just now	äsja salvestatud	только что загружено	щойно завантажено
+price not listed	hind teadmata	цена не указана	ціну не вказано
+it has already happened	see on juba toimunud	уже прошло	уже відбулося
+it is no longer in the programme	seda pole enam kavas	больше нет в программе	більше немає в програмі
+it is no longer listed	seda pole enam nimekirjas	больше нет в списке	більше немає в списку
+Details are loading	Andmed laaditakse	Данные загружаются	Дані завантажуються
+Details could not load	Andmeid ei saanud laadida	Не удалось загрузить данные	Не вдалося завантажити дані
+These saves are kept	Need salvestused säilivad	Сохранённое остаётся на месте	Збережене залишається на місці
+No saved events yet	Sündmusi pole veel salvestatud	Пока нет сохранённых событий	Поки немає збережених подій
+No saved places yet	Kohti pole veel salvestatud	Пока нет сохранённых мест	Поки немає збережених місць
+This is our reading of the listing; the organiser has not confirmed it.	See on meie tõlgendus kuulutusest; korraldaja pole seda kinnitanud.	Это наше прочтение события; организатор его не подтвердил.	Це наше прочитання події; організатор його не підтвердив.
+a quiz	viktoriin	викторина	вікторина
+a game night	mänguõhtu	вечер настольных игр	вечір настільних ігор
+a craft club	käsitööklubi	кружок рукоделия	гурток рукоділля
+an open stage	vaba lava	открытая сцена	відкрита сцена
+a drawing night	joonistusõhtu	вечер рисования	вечір малювання
+a language night	keeleõhtu	языковой вечер	мовний вечір
+a night for meeting people	tutvumisõhtu	вечер знакомств	вечір знайомств
+a club night	klubiõhtu	клубный вечер	клубний вечір
+a night	õhtu	вечер	вечір
+A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.	Marsruudiks on vaja kindla algusajaga sündmust ja läheduses asuvat valitud kohta. Kohad leiad teejuhist, sündmused kavast.	Для маршрута нужны событие со временем начала и выбранное место рядом. Места есть в гиде, события — в программе.	Для маршруту потрібні подія з часом початку та вибране місце поруч. Місця є в гіді, події — у програмі.
+Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.	Sinu salvestused, nimekirjad, jälgimised, teavitused ja postkast kustutatakse ka sellest seadmest. Seda ei saa tagasi võtta.	Ваши сохранения, списки, подписки, уведомления и входящие будут удалены, в том числе с этого устройства. Отменить это нельзя.	Ваші збереження, списки, підписки, сповіщення та вхідні буде видалено, зокрема з цього пристрою. Скасувати це неможливо.
+Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.	Salvestused, nimekirjad, jälgimised ja ajalugu kustutatakse sellest brauserist ning sind logitakse välja. Kontol säilivad salvestused; nende taastamiseks logi sisse.	Сохранения, списки, подписки и история будут удалены из этого браузера, и вы выйдете из аккаунта. Сохранённое в аккаунте останется; войдите, чтобы вернуть его.	Збереження, списки, підписки та історію буде видалено з цього браузера, і ви вийдете з облікового запису. Збережене в обліковому записі залишиться; увійдіть, щоб повернути його.
+Closed or moved?	Suletud või kolinud?	Закрыто или переехало?	Зачинено чи переїхало?
+Flagged by readers	Lugejate teatatud	Сообщения читателей	Повідомлення читачів
+Facts that may have changed	Võimalikud muutused	Возможные изменения	Можливі зміни
+Different places	Erinevad kohad	Разные места	Різні місця
+Open the event	Ava sündmus	Открыть событие	Відкрити подію
+Open the place	Ava koht	Открыть место	Відкрити місце
+Withhold the place	Peida koht	Скрыть место	Приховати місце
+Use the new value	Kasuta uut väärtust	Использовать новое значение	Використати нове значення
+Keep what we hold	Säilita praegune	Оставить текущие данные	Залишити поточні дані
+Fixed	Parandatud	Исправлено	Виправлено
+Dismiss	Jäta kõrvale	Отклонить	Відхилити
+Publish	Avalda	Опубликовать	Опублікувати
+Reject	Lükka tagasi	Отклонить	Відхилити
+Possible duplicate places	Võimalikud topeltkohad	Возможные дубликаты мест	Можливі дублікати місць
+Review queue	Ülevaatuse ootel	Очередь проверки	Черга перевірки
+Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.	Kogumisel ootele jäetud sündmused. Avalda sobivad, lükka ülejäänud tagasi; siin tehtud otsust kogumisprotsess ei muuda.	События, отложенные сборщиком. Публикуйте подходящие, отклоняйте остальные; сборщик не меняет принятые здесь решения.	Події, відкладені збирачем. Публікуйте відповідні, відхиляйте решту; збирач не змінює ухвалених тут рішень.
+Supabase secret key	Supabase’i salajane võti	Секретный ключ Supabase	Секретний ключ Supabase
+Kept in this tab only (sessionStorage) and sent only to Supabase.	Hoitud ainult selles vahekaardis (sessionStorage) ja saadetud ainult Supabase’i.	Хранится только в этой вкладке (sessionStorage) и отправляется только в Supabase.	Зберігається лише в цій вкладці (sessionStorage) і надсилається лише до Supabase.
+Open the queue	Ava järjekord	Открыть очередь	Відкрити чергу
+Around here	Siin lähedal	Поблизости	Поблизу
+Follow from venue pages	Jälgi kohtade lehtedelt	Подписывайтесь на страницах мест	Підписуйтеся на сторінках місць
+Within 10 minutes’ walk	Kuni 10 minutit jalgsi	До 10 мин пешком	До 10 хв пішки
+Continue with Google	Jätka Google’iga	Продолжить с Google	Продовжити з Google
+or	või	или	або
+We hold:	Praegu:	Текущие данные:	Поточні дані:
+Nothing filed	Andmed puuduvad	Нет данных	Немає даних
+Email alerts	E-posti teavitused	Уведомления по почте	Сповіщення поштою
+This link is not valid.	See link ei kehti.	Эта ссылка недействительна.	Це посилання недійсне.
+Stop email and notifications?	Lõpetada kirjad ja teavitused?	Отключить письма и уведомления?	Вимкнути листи та сповіщення?
+Stop alerts	Lõpeta teavitused	Отключить уведомления	Вимкнути сповіщення
+That did not work. Write to hello@wanderalt.app and we will stop it by hand.	See ei õnnestunud. Kirjuta aadressile hello@wanderalt.app ja lõpetame teavitused käsitsi.	Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.	Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.
+Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.	Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada.	Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле.	Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі.

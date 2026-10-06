@@ -55,9 +55,9 @@
     const on = pushState === 'on' && !!prefs.push;
     return `<p class="wa-state${on ? ' is-on' : ''}">${on ? 'On for this device' : 'Off'}</p>
       <button class="wa-switch" type="button" data-push aria-pressed="${on}">
-        <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">When a saved plan changes</span></span><span class="wa-switch__track"></span></button>
+        <span class="wa-switch__text"><span class="wa-switch__title">Notifications on this device</span><span class="wa-switch__sub">Saved plan changes</span></span><span class="wa-switch__track"></span></button>
       <button class="wa-switch" type="button" data-digest="tonight" aria-pressed="${on && !!prefs.tonight}"${on ? '' : ' disabled'}>
-        <span class="wa-switch__text"><span class="wa-switch__title">Tonight at places you follow</span><span class="wa-switch__sub">One note at 16:00, only when something starts</span></span><span class="wa-switch__track"></span></button>
+        <span class="wa-switch__text"><span class="wa-switch__title">Tonight from followed places</span><span class="wa-switch__sub">At 16:00 when listed</span></span><span class="wa-switch__track"></span></button>
       ${on ? '<p><button class="wa-linkbtn" type="button" id="push-test">Send a test notification</button></p>' : ''}`;
   };
 
@@ -151,7 +151,7 @@
       <div class="you-cols">
         ${inboxSection(signedIn)}
         <section class="wa-sect you-int" id="interests">
-          <div class="wa-sect__head"><h2 class="wa-sect__title">Your taste</h2><span class="you-int__n">${ids.length} of 3 · routes lean this way</span></div>
+          <div class="wa-sect__head"><h2 class="wa-sect__title">Your taste</h2><span class="you-int__n">${ids.length} of 3 · Shapes your walks</span></div>
           <div class="wa-chips wa-chips--scroll you-int__row">${R().interests.OPTIONS.map(o =>
             `<button class="wa-chip" type="button" data-interest="${esc(o.id)}" aria-pressed="${ids.includes(o.id)}"${!ids.includes(o.id) && ids.length >= 3 ? ' disabled' : ''}>${o.icon === "globe" ? I("globe") : window.WA.Picto(o.icon)}${esc(o.label)}</button>`).join('')}</div>
         </section>
@@ -166,14 +166,14 @@
         <section class="wa-sect you-folds">
           ${fold('fold-following', 'Following', follows.length || null, followed.length ? `<ul>${followed.map(v => v.__raw
             ? `<li class="wa-place"><span class="wa-place__glyph">${I('place')}</span><span class="wa-place__body"><span class="wa-place__name">${v.source ? `<a href="source.html?handle=${esc(encodeURIComponent(`@${v.source}`))}">${esc(v.name)}</a>` : esc(v.name)}</span></span><span class="wa-place__side">${cal(v.key)}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(v.key)}">Unfollow</button></span></li>`
-            : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : '<p class="wa-note">Follow a venue from its page.</p>')}
+            : `${R().placeRow(v)}<p class="wa-note" style="margin:0 0 var(--s-3)">${cal(F.placeId(v))}<button class="wa-btn wa-btn--sm" type="button" data-unfollow="${esc(F.placeId(v))}">Unfollow</button></p>`).join('')}</ul>` : '<p class="wa-note">Follow from venue pages</p>')}
           ${fold('fold-opened', 'Opened earlier', opened.length || null, opened.length ? `<ul class="wa-rows">${opened.map(x => x.title ? R().row(x, { day: true, noThumb: true }) : '').join('')}</ul>
             <ul>${opened.filter(x => !x.title).map(v => R().placeRow(v)).join('')}</ul>
             <p style="margin-top:var(--s-3)"><button class="wa-linkbtn" type="button" id="reset">Forget what I've opened</button></p>` : '<p class="wa-note">Nothing opened yet.</p>')}
         </section>
 
         <section class="wa-sect">
-          ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note">Signed in${window.WA.Auth.session && window.WA.Auth.session.email ? ` as ${esc(window.WA.Auth.session.email)}` : ''}. Your saves sync between devices.</p>
+          ${signedIn ? `${R().sect({ title: 'Account' })}<p class="wa-note"><span>Signed in</span>${window.WA.Auth.session && window.WA.Auth.session.email ? ` · <span data-notranslate>${esc(window.WA.Auth.session.email)}</span>` : ''}. <span>Your saves sync between devices.</span></p>
             <p style="margin-top:var(--s-3)"><button class="wa-btn wa-btn--sm" type="button" id="signout">Sign out</button>
               <button class="wa-linkbtn" type="button" id="delete-account" style="margin-left:var(--s-4)">Delete account</button></p>`
           : ''}

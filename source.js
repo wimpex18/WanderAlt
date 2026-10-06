@@ -47,8 +47,8 @@
     const list = s.picks.slice().sort(window.WA.Geo.bySoonestThenDistance());
     main().innerHTML = `<header class="wa-pagehead">
         <p class="wa-kicker">${s.via === 'handle' ? 'A source we read' : 'Venue'}</p>
-        <h1 class="wa-h1">${esc(s.name)}</h1>
-        <p class="wa-lede">${esc(`${list.length} listed${s.via === 'handle' ? ` across ${venues} ${venues === 1 ? 'venue' : 'venues'}` : ''}, soonest first.`)}</p>
+        <h1 class="wa-h1" data-notranslate>${esc(s.name)}</h1>
+        <p class="wa-lede"><span>${list.length} listed</span>${s.via === 'handle' ? ` · <span>${venues} ${venues === 1 ? 'place' : 'places'}</span>` : ''} · <span>soonest first</span></p>
         ${fid ? `<p class="det-actions__row"><button class="wa-btn" type="button" id="follow-source" aria-pressed="${following}">${window.WA.Icon(following ? 'check' : 'follow')}<span>${following ? 'Following' : 'Follow'}</span></button>${feed ? `<a class="wa-btn" href="${esc(feed.replace(/^https?:/, 'webcal:'))}">${window.WA.Icon('calendar')}<span>Calendar</span></a>` : ''}</p>` : ''}
       </header>
       ${R().grouped(list)}`;

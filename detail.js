@@ -45,7 +45,7 @@
       <span class="det-fact__icon">${I(FACT_ICON[label] || 'info')}</span>
       <span class="det-fact__text">
         <span class="det-fact__label">${esc(label)}</span>
-        <span class="det-fact__value">${esc(value)}</span>
+        <span class="det-fact__value"${label === 'Area' ? ' data-notranslate' : ''}>${esc(value)}</span>
         ${sub ? `<span class="det-fact__sub">${esc(sub)}</span>` : ''}
       </span>
     </div>` : '';
@@ -54,7 +54,7 @@
     const m = G().distanceTo(x);
     if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(m));
     const a = R().areaOf(x);
-    return a ? fact('Area', a, 'Allow location for walking time') : '';
+    return a ? fact('Area', a, 'Location for walking times') : '';
   };
 
   /* A wide poster is shown whole: the square hero would crop the title. */
@@ -123,6 +123,16 @@
     const L = window.WA.Lists;
     const ls = L ? L.listsFor(id) : [];
     return !ls.length ? 'List' : ls.length === 1 ? ls[0].name : `${ls.length} lists`;
+  };
+  const refreshSave = (id) => {
+    const btn = document.getElementById('save');
+    const on = !!window.WA.Bookmarks.get()[id];
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(on));
+      btn.innerHTML = `${I(on ? 'hearted' : 'heart')}<span>${on ? 'Saved' : 'Save'}</span>`;
+    }
+    const label = document.getElementById('addlist')?.querySelector('span');
+    if (label) label.textContent = listLabel(id);
   };
 
   /* A small map of the spot. The MapLibre canvas outlives re-renders:
@@ -259,7 +269,7 @@
       const hay = `${e.title || ''} ${e.venue || ''}`;
       const f = (FORMATS.find(([re]) => re.test(hay)) || [])[1] || 'a night';
       return `<section class="det-block det-easy"><h2 class="det-block__title">${I('join')}Easy to join alone</h2>
-        <p>The format is ${esc(f)}, built for people who turn up on their own to mix. This is our reading of the listing; the organiser has not confirmed it.</p></section>`;
+        <p><span>The format is ${esc(f)}, built for people who turn up on their own to mix.</span> <span>This is our reading of the listing; the organiser has not confirmed it.</span></p></section>`;
     };
 
     const venueCard = () => {
@@ -268,13 +278,13 @@
       const href = id ? `detail.html?id=${encodeURIComponent(id)}` : `source.html?venue=${encodeURIComponent(venueName)}`;
       const more = picksAt({ id, name: venueName }).filter(p => p.id !== e.id).length;
       const img = v && v.imageUrl ? url(v.imageUrl) : '';
-      const meta = [v && R().kindLabel(v.kind, true), R().areaOf(v || e)].filter(Boolean).join(' · ');
+      const meta = [esc(v ? R().kindLabel(v.kind, true) : ''), R().areaOf(v || e) ? `<span data-notranslate>${esc(R().areaOf(v || e))}</span>` : ''].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
           <span class="vcard__art${img ? R().logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
-            ${meta ? `<span class="vcard__meta">${esc(meta)}</span>` : ''}
+            ${meta ? `<span class="vcard__meta">${meta}</span>` : ''}
             ${v && v.openingHours ? R().openBadge(v) : ''}
             <span class="vcard__meta">${esc(more ? `${more} more listed here` : 'Nothing else listed here yet')}</span>
           </span>
@@ -330,7 +340,7 @@
 
         ${R().real(e.address) || G().coordsFor(e) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
           ${miniSlot(e, title)}
-          ${R().real(e.address) ? `<p>${esc(e.address)}</p>` : ''}
+          ${R().real(e.address) ? `<p data-notranslate>${esc(e.address)}</p>` : ''}
           <a class="wa-link" href="${esc(directions(e, title))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
         <footer class="det-footer">
@@ -369,8 +379,8 @@
           <span class="det-next__meta">${esc([R().kindLabel(n.v.kind, true), `${n.w} min walk`, hours].filter(Boolean).join(' · '))}</span>
           ${n.v.pickNote ? `<span class="det-next__why">${esc(n.v.pickNote)}</span>` : ''}</span></a></li>`;
     }).join('');
-    return `<section class="det-block det-after"><h2 class="det-block__title">After ${esc(name || 'here')}</h2>
-      <p class="wa-note">Picked places within 10 minutes on foot.</p>
+    return `<section class="det-block det-after"><h2 class="det-block__title">${name ? `<span>After</span> <span data-notranslate>${esc(name)}</span>` : '<span>Around here</span>'}</h2>
+      <p class="wa-note">Within 10 minutes’ walk</p>
       <ul class="det-next-list">${rows}</ul>
       ${route ? `<a class="wa-btn wa-btn--pill" href="${esc(Rt.href(route))}">Plan the next hours from here</a>` : ''}</section>`;
   };
@@ -395,7 +405,7 @@
       <div class="det-grid__media">${media(v, v.name || '', v.kind)}</div>
       <div class="det-grid__main">
         <header class="det-head">
-          <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span>${esc(R().areaOf(v))}</span>` : ''}</p>
+          <p class="wa-kicker"><span class="wa-tag">${window.WA.Icon.kind(v.kind, 'wa-ic--sm')}${esc(R().kindLabel(v.kind, true) || 'Place')}</span>${R().areaOf(v) ? `<span data-notranslate>${esc(R().areaOf(v))}</span>` : ''}</p>
           ${v.isClosed ? '<div class="det-notice det-notice--off" role="status"><strong>This venue is listed as closed.</strong><span>Check with the venue before you go.</span></div>' : ''}
           <h1 class="wa-h1" translate="no">${esc(v.name || '')}</h1>
           <p>${R().openBadge(v)}</p>
@@ -438,7 +448,7 @@
 
         ${R().real(v.address) || G().coordsFor(v) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>
           ${miniSlot(v, v.name)}
-          ${R().real(v.address) ? `<p>${esc(v.address)}</p>` : ''}
+          ${R().real(v.address) ? `<p data-notranslate>${esc(v.address)}</p>` : ''}
           <a class="wa-link" href="${esc(directions(v, v.name))}" target="_blank" rel="noopener noreferrer">Walking directions</a></section>` : ''}
 
         <footer class="det-footer"><button class="wa-linkbtn" type="button" data-share>Share</button>${v.osmId ? `<a class="det-footer__source" href="https://www.openstreetmap.org/${esc(v.osmId)}" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors ${I('out', 'wa-ic--sm')}</a>` : ''}</footer>
@@ -505,8 +515,8 @@
     document.getElementById('sheet-title').textContent = 'Add to a list';
     document.getElementById('sheet-body').innerHTML = `
       ${lists.length ? `<div class="wa-field"><span class="wa-field__label">Your lists</span><div class="wa-chips">${lists.map(l =>
-        `<button class="wa-chip" type="button" data-toggle-list="${esc(l.id)}" aria-pressed="${inThem.has(l.id)}">${esc(l.name)}</button>`).join('')}</div></div>`
-        : '<p class="wa-note" style="margin-bottom:var(--s-4)">No lists yet. Name one and this goes straight in.</p>'}
+        `<button class="wa-chip" type="button" data-notranslate data-toggle-list="${esc(l.id)}" aria-pressed="${inThem.has(l.id)}">${esc(l.name)}</button>`).join('')}</div></div>`
+        : '<p class="wa-note" style="margin-bottom:var(--s-4)">Create your first list</p>'}
       <div class="wa-field">
         <label class="wa-field__label" for="list-name">New list</label>
         <input class="wa-input" id="list-name" type="text" maxlength="60" placeholder="Kalamaja on Saturday" autocomplete="off" enterkeyhint="done">
@@ -562,10 +572,16 @@
       return;
     }
     if (hit('#save')) {
-      const on = !(window.WA.Bookmarks.get()[id]);
-      window.WA.Bookmarks.set(id, on);
-      render();
-      toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => { window.WA.Bookmarks.set(id, !on); render(); });
+      const saveId = resolve()?.e.id || id;
+      const on = !(window.WA.Bookmarks.get()[saveId]);
+      const lists = L ? L.listsFor(saveId).map(l => l.id) : [];
+      window.WA.Bookmarks.set(saveId, on);
+      refreshSave(saveId);
+      toast(on ? 'Saved' : 'Removed from saved', 'Undo', () => {
+        window.WA.Bookmarks.set(saveId, !on);
+        if (!on && L) lists.forEach(l => L.add(l, saveId));
+        refreshSave(saveId);
+      });
       return;
     }
     if (hit('#follow')) {

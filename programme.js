@@ -10,7 +10,7 @@
    the same filter chain as the list, each facet skipping itself.
 
    URL: ?q ?open=0|1 ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?free=1
-        ?english=1 ?price ?doors ?seen=hide ?followed=1 ?focus=search
+        ?english=1 ?price ?doors ?seen=hide ?followed=1 ?focus=search ?moods ?subs
    ============================================================ */
 (() => {
   'use strict';
@@ -27,6 +27,7 @@
     sort: 'soonest', within: 0, doors: 'any', free: false,
     hideSeen: false, followed: false, fresh: false,
     english: false, maxPrice: null, placeOpen: null,
+    taste: null,     /* explicit mood context from Now; removable here */
     read: null,       /* the sentence's reading: { must, any, note, by } */
   };
   /* Places that answer the query (by name, or by the kind a word names) and,
@@ -36,16 +37,21 @@
      exhibitions show five until asked. Both reset when any filter changes. */
   const PAGE = 30;
   let limit = PAGE, runsOpen = false, lastSig = '';
-  const WHEN = { tonight: 'Tonight', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
+  const WHEN = { tonight: 'Today', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
   const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
-  const KEY = /^\d{4}-\d{2}-\d{2}$/;
   const DOORS = { any: 'Any time', now: 'From now', '21:00': 'After 21:00', '23:00': 'After 23:00' };
 
   /* ── URL ───────────────────────────────────────────────────── */
   const read = () => {
     const sp = new URLSearchParams(location.search);
-    if (KEY.test(sp.get('date') || '')) state.day = sp.get('date');
-    if (state.day && KEY.test(sp.get('to') || '') && sp.get('to') > state.day) state.dayTo = sp.get('to');
+    if (sp.has('moods')) {
+      const moods = sp.get('moods').split(',').filter(id => window.WA.Moods.get(id));
+      const validSubs = new Set(moods.flatMap(id => window.WA.Moods.get(id).subs.map(s => s.id)));
+      const subs = (sp.get('subs') || '').split(',').filter(id => validSubs.has(id));
+      if (moods.length) state.taste = { moods, subs, cap:null };
+    }
+    if (window.WA.Discovery.validDate(sp.get('date'))) state.day = sp.get('date');
+    if (state.day && window.WA.Discovery.validDate(sp.get('to')) && sp.get('to') > state.day) state.dayTo = sp.get('to');
     const t = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
     if (t && WHEN[t]) state.when = t;
     if (sp.get('q')) state.q = sp.get('q').trim().slice(0, 140);
@@ -66,6 +72,7 @@
   const write = () => {
     const sp = new URLSearchParams();
     if (state.q) sp.set('q', state.q);
+    if (state.taste) { sp.set('moods',state.taste.moods.join(',')); if (state.taste.subs.length) sp.set('subs',state.taste.subs.join(',')); }
     if (placeOnly && state.placeOpen != null) sp.set('open', state.placeOpen ? '1' : '0');
     if (state.day) { sp.set('date', state.day); if (state.dayTo) sp.set('to', state.dayTo); }
     else if (state.when !== 'all') sp.set('time', state.when);
@@ -96,12 +103,8 @@
   };
 
   /* One chosen day, or every day from the first to the last. */
-  const onDays = (e) => {
-    if (!state.dayTo) return W().isOnDate(e, state.day);
-    const k = W().resolveKey(e);
-    return k != null && k >= state.day && k <= state.dayTo;
-  };
-  const dayLabel = (k) => (R().dayName(k) === 'Tonight' ? 'Tonight' : `${R().dow(k)} ${R().dom(k)}`);
+  const onDays = e => window.WA.Discovery.matchesDate(e, { date:state.day, to:state.dayTo });
+  const dayLabel = (k) => (k === W().todayKey() ? 'Today' : `${R().dateShort(k)}${k.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + k.slice(0,4)}`);
   const daysLabel = () => (state.dayTo ? `${dayLabel(state.day)} to ${dayLabel(state.dayTo)}` : dayLabel(state.day));
   const setDays = (from, to) => {
     if (!from && to) from = W().todayKey();
@@ -112,8 +115,9 @@
   const apply = (list, skip) => {
     let out = list;
     if (skip !== 'when') {
-      out = state.day ? out.filter(e => onDays(e)) : out.filter(e => W().matches(e, state.when));
+      out = state.day ? out.filter(e => onDays(e)) : out.filter(e => state.when === 'all' || window.WA.Discovery.matchesDate(e, { when:state.when }));
     }
+    if (skip !== 'taste' && state.taste) out = out.filter(e => window.WA.Moods.wantsEvent(state.taste,e));
     if (skip !== 'kind' && state.kinds.size) out = out.filter(e => state.kinds.has(String(e.kind || '').toLowerCase()));
     if (skip !== 'area' && state.area) out = out.filter(e => R().areaOf(e) === state.area);
     if (skip !== 'free' && state.free) out = out.filter(R().isFree);
@@ -123,7 +127,7 @@
     if (skip !== 'followed' && state.followed) out = out.filter(R().isFollowed);
     if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
     if (skip !== 'english' && state.english) out = out.filter(e => (e.eventLanguages || []).includes('en'));
-    if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin != null && Number(e.priceMin) <= state.maxPrice));
+    if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin == null || Number(e.priceMin) <= state.maxPrice));
     if (skip !== 'q' && state.q) out = placeOnly ? out.filter(e => placeOnly.has(e.venueId)) : out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
     return out;
   };
@@ -142,7 +146,7 @@
   const results = () => placeOnly ? [] : sorted(apply(base()));
 
   /* ── Quick chips: what the sentence set, then when, then kinds ── */
-  const QUICK_WHEN = [['tonight', 'Tonight'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend'], ['thisweek', 'This week']];
+  const QUICK_WHEN = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend'], ['thisweek', 'This week']];
   const kindCounts = () => {
     const pool = apply(base(), 'kind');
     const m = new Map();
@@ -156,13 +160,14 @@
     const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" aria-pressed="true" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
     const set = [];
     if (state.day) set.push(on(daysLabel(), 'clear-when'));
+    if (state.taste) set.push(on(window.WA.Moods.words(state.taste).join(', '), 'clear-taste'));
     if (state.free) set.push(on('Free', 'clear-free'));
-    if (state.maxPrice != null) set.push(on(`Under €${state.maxPrice}`, 'clear-price'));
+    if (state.maxPrice != null) set.push(on(`Up to €${state.maxPrice}`, 'clear-price'));
     if (state.english) set.push(on('In English', 'clear-english'));
     if (state.area) set.push(on(state.area, 'clear-area'));
     const whenPool = apply(base(), 'when');
     const when = state.day ? [] : QUICK_WHEN.map(([v, label]) => {
-      const n = whenPool.filter(e => W().matches(e, v)).length;
+      const n = whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
       return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(label)}</button>`;
     });
     const kinds = kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))}</button>`);
@@ -207,14 +212,20 @@
     return `<div class="wa-field"><span class="wa-field__label">Place types</span><div class="wa-chips">${groups.map(g =>
       `<button class="wa-chip" type="button" data-place-query="${esc(PLACE_QUERY[g.id])}" aria-pressed="${g.kinds.some(k => selected.includes(k))}">${esc(g.label)}</button>`).join('')}</div></div>
       <div class="wa-field"><button class="wa-switch" type="button" data-place-open aria-pressed="${wantsOpen()}">
-        <span class="wa-switch__text"><span class="wa-switch__title">Open now</span><span class="wa-switch__sub">Only places with filed hours</span></span><span class="wa-switch__track"></span></button></div>
+        <span class="wa-switch__text"><span class="wa-switch__title">Open now</span><span class="wa-switch__sub">With known hours</span></span><span class="wa-switch__track"></span></button></div>
       <div class="wa-field"><span class="wa-field__label">Area</span><div class="wa-chips"><button class="wa-chip" type="button" data-area="" aria-pressed="${!state.area}">Anywhere</button>${areas.map(a =>
         `<button class="wa-chip" type="button" data-area="${esc(a)}" aria-pressed="${state.area === a}">${esc(a)}</button>`).join('')}</div></div>
       <div class="wa-field"><span class="wa-field__label">Walking distance</span><input class="wa-range" type="range" data-within min="0" max="4000" step="250" value="${state.within}" aria-label="Maximum walking distance" />
         <span class="wa-field__consequence" data-within-note>${placeWithinNote()}</span></div>
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}<a class="wa-linkbtn" href="places.html">All place types in the Guide</a>`;
   };
-  const placeWithinNote = () => `${state.within ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city'} · Walking from ${placeOrigin().label}`;
+  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+  const placeOriginText = () => {
+    const label = placeOrigin().label;
+    const t = text => window.WA.Lang ? window.WA.Lang.t(text) : text;
+    const origin = ['where you are', 'the city centre'].includes(label) ? t(label) : label;
+    return t(`Walking from ${origin}`);
+  };
 
   let datesOpen = false, refocus = '';
   const panel = (scope = 'aside') => {
@@ -228,7 +239,7 @@
       <div class="wa-field">
         <span class="wa-field__label">When</span>
         <div class="wa-chips">${SHEET_WHEN.map(v => {
-          const n = whenPool.filter(e => W().matches(e, v)).length;
+          const n = whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
           return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${!state.day && state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(WHEN[v])} <span class="wa-chip__n">${n}</span></button>`;
         }).join('')}
           <button class="wa-chip" type="button" data-dates aria-expanded="${datesOpen || !!state.day}" aria-pressed="${!!state.day}">${I('calendar')}${esc(state.day ? daysLabel() : 'Pick dates')}</button>
@@ -251,7 +262,7 @@
           <button class="wa-seg__opt" type="button" data-sort="soonest" aria-pressed="${state.sort === 'soonest'}">Soonest</button>
           <button class="wa-seg__opt" type="button" data-sort="nearest" aria-pressed="${state.sort === 'nearest'}">Nearest</button>
         </div>
-        ${state.sort === 'nearest' && !hasLoc ? '<span class="wa-field__consequence">Needs your location. Until you allow it, the list stays soonest first.</span>' : ''}
+        ${state.sort === 'nearest' && !hasLoc ? '<span class="wa-field__consequence">Location needed; showing soonest</span>' : ''}
       </div>
       <div class="wa-field">
         <span class="wa-field__label">Starts</span>
@@ -265,28 +276,27 @@
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}
       <div class="wa-field">
         <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
-          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free in this view</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free</span></span>
           <span class="wa-switch__track"></span>
         </button>
         <button class="wa-switch" type="button" data-toggle="hideSeen" aria-pressed="${state.hideSeen}">
-          <span class="wa-switch__text"><span class="wa-switch__title">Hide what I've opened</span><span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved before</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Hide what I've opened</span><span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved</span></span>
           <span class="wa-switch__track"></span>
         </button>
         <button class="wa-switch" type="button" data-toggle="followed" aria-pressed="${state.followed}"${follows || state.followed ? '' : ' disabled'}>
-          <span class="wa-switch__text"><span class="wa-switch__title">Only places I follow</span><span class="wa-switch__sub">${follows
-            ? `${fb.filter(R().isFollowed).length} of ${fb.length} from ${follows} you follow` : 'Follow a venue from its page to use this'}</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">Followed places only</span><span class="wa-switch__sub">${follows
+            ? `${fb.filter(R().isFollowed).length} from followed places` : 'Follow venues first'}</span></span>
           <span class="wa-switch__track"></span>
         </button>
         ${since ? `<button class="wa-switch" type="button" data-toggle="fresh" aria-pressed="${state.fresh}">
-          <span class="wa-switch__text"><span class="wa-switch__title">New since my last visit</span><span class="wa-switch__sub">${apply(base(), 'fresh').filter(e => R().isNewSince(e, since)).length} arrived since</span></span>
+          <span class="wa-switch__text"><span class="wa-switch__title">New since last visit</span><span class="wa-switch__sub">${apply(base(), 'fresh').filter(e => R().isNewSince(e, since)).length} new listings</span></span>
           <span class="wa-switch__track"></span>
         </button>` : ''}
       </div>
       <div class="wa-field"><button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-clear style="justify-self:start;padding:0">Clear all filters</button></div>`;
   };
-  const withinNote = () => (state.within
-    ? `Up to ${G().format(state.within)}, about ${G().walkMinutes(state.within)} min on foot`
-    : 'Anywhere in the city') + (G().anchor() ? `, from ${G().anchor().label || 'your chosen spot'}` : G().currentLoc() ? '' : '. Needs your location or a spot below');
+  const withinNote = () => !G().currentLoc() && state.within ? 'Choose a starting point' : state.within
+    ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
 
   /* A named spot to measure from, picked from places we hold, so walking
      times work without location permission (a hotel, a friend's street). */
@@ -298,11 +308,11 @@
       <label class="wa-field__label" for="${id}">Measure from</label>
       <input class="wa-input" data-anchor id="${id}" list="${id}-spots" type="text" autocomplete="off" placeholder="My location" value="${esc(a ? a.label : '')}" />
       <datalist id="${id}-spots">${spots.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
-      <span class="wa-field__consequence">${a ? 'Saved in this browser. Clear the box to use your location.' : 'Pick a place you know, such as where you are staying, to skip the location prompt.'}</span>
+      <span class="wa-field__consequence">${a ? 'Clear for device location' : 'Choose a starting point'}</span>
     </div>`;
   };
 
-  const activeCount = () => placeOnly ? Number(!!wantsOpen()) + Number(!!state.area) + Number(!!state.within) : (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
+  const activeCount = () => placeOnly ? Number(!!wantsOpen()) + Number(!!state.area) + Number(!!state.within) : (state.taste ? 1 : 0) + (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
     (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0) + (state.day ? 1 : 0);
 
@@ -498,10 +508,10 @@
     const bits = [];
     if (placeOnly) {
       const list = placeView();
-      put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(`Walking from ${placeOrigin().label}`)}`);
+      put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(placeOriginText())}`);
       put($('search-act'), ''); return;
     }
-    if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'tonight' : `on ${R().dateShort(state.day)}`);
+    if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'today' : `on ${R().dateShort(state.day)}`);
     else if (state.when !== 'all') bits.push(WHEN[state.when].toLowerCase());
     if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
     if (state.area) bits.push(`in ${state.area}`);
@@ -510,7 +520,7 @@
     const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
     put($('summary'), state.q && placeOnly && !n
       ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> ${esc(bits.join(' · '))}`
-      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}`);
+      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}${state.maxPrice != null && !state.free ? '<br><span class="wa-note">Unknown prices included</span>' : ''}`);
     searchAct();
   };
 
@@ -550,8 +560,8 @@
     const days = list.filter(e => !R().isRun(e));
     const rest = days.length - limit;
     const more = rest > 0 ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, rest)} more</button><span class="wa-note">${rest} more after these</span></div>` : '';
-    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="wa-rows">${list.slice(0, limit).map(e => R().row(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
-    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
+    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="wa-feed">${list.slice(0, limit).map(e => R().feedItem(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
+    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { feed:true, since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
@@ -579,7 +589,7 @@
     }
   };
   const filterSig = () => JSON.stringify([state.q, state.day, state.dayTo, state.when, [...state.kinds], state.area, state.sort, state.within, state.doors,
-    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice, state.placeOpen]);
+    state.free, state.hideSeen, state.followed, state.fresh, state.english, state.maxPrice, state.placeOpen, state.taste]);
   const render = () => {
     const sig = filterSig();
     if (sig !== lastSig) { lastSig = sig; limit = PAGE; runsOpen = false; }
@@ -596,7 +606,12 @@
     $('filter-count').hidden = !fc;
     $('filter-count').textContent = fc ? String(fc) : '';
     if (!bigFrame) bigFrame = requestAnimationFrame(() => setTimeout(drawBig, 0));
-    $('to-map').href = `map.html${state.day === W().todayKey() || state.when === 'tonight' ? '' : state.when === 'weekend' ? '?when=weekend' : ''}`;
+    const mapDates = new URLSearchParams();
+    if (state.day) {
+      mapDates.set('date', state.day);
+      if (state.dayTo) mapDates.set('to', state.dayTo);
+    } else mapDates.set('when', state.when || 'tonight');
+    $('to-map').href = `map.html?${mapDates}`;
     stickyOffset();
     write();
   };
@@ -665,7 +680,7 @@
     const t = hit('[data-toggle]');
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', areaExplicit: false, sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, placeOpen: null, read: null });
+      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', areaExplicit: false, sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, placeOpen: null, read: null, taste:null });
       before = null; clearTimeout(askTimer); datesOpen = false;
       state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
@@ -674,6 +689,7 @@
       const x = act.dataset.act;
       if (x === 'clear-place-filters') { state.placeOpen = false; state.area = ''; state.areaExplicit = true; state.within = 0; }
       if (x === 'clear-q') { state.read = null; before = null; clearTimeout(askTimer); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
+      if (x === 'clear-taste') state.taste = null;
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') state.area = '';
       if (x === 'clear-when') { state.day = ''; state.dayTo = ''; state.when = 'all'; datesOpen = false; }

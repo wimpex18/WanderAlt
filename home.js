@@ -1,14 +1,5 @@
-/* ============================================================
-   home.js — Now, the home screen.
-   ------------------------------------------------------------
-   The search field, then one answer: the next few hours as a short walk
-   (route.js plan()), with Walk it and Another. One key opens the mood
-   and price sheet (moods.js); the route card holds the starting-point picker.
-   Under the answer, the day's listings in time order (nearest first
-   with a confirmed starting point), those with no time last, with one row of the kinds in them.
-   A day tab with nothing in it is not shown. Never empty: when today has
-   nothing, the next listed day takes its place.
-   ============================================================ */
+/* Now: direct search, shared discovery filters, a compact walk disclosure,
+   then Events/Places. Explicit empty days stay selected. */
 (() => {
   'use strict';
 
@@ -54,70 +45,12 @@
     location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
   };
 
-  /* One starting-point key: opens the same venue/device picker as You.
-     A known origin orders nearby places and keeps the route within reach. */
-  const NEAR_KEY = 'wa:near:v1';
-  let near = (() => { try { return localStorage.getItem(NEAR_KEY) === '1'; } catch (_) { return false; } })();
-  const setNear = (on) => {
-    near = on;
-    try { if (on) localStorage.setItem(NEAR_KEY, '1'); else localStorage.removeItem(NEAR_KEY); } catch (_) { /* this page only */ }
-  };
-  const nearOn = () => near && !!G().currentLoc();
-  /* The key's words, each its own piece so the page's language can read it:
-     "Records, Jazz · up to €20", "Art & film +2 · free", "Any mood · any price". */
-  const moodSet = () => { const p = pref(); return !!(p.moods.length || p.cap != null); };
-  const moodWords = () => {
-    const p = pref(), w = M().words(p);
-    const what = !w.length ? '<span>Any mood</span>'
-      : w.length <= 2 ? w.map(x => `<span>${esc(x)}</span>`).join(', ')
-        : `<span>${esc(w[0])}</span> +${w.length - 1}`;
-    return `${what} · <span>${esc(M().capText(p.cap))}</span>`;
-  };
+  const D = () => window.WA.Discovery;
+  const pref = () => D().pref();
+  const nearOn = () => D().nearOn();
   const acts = () => {
     const host = $('home-acts');
-    if (!host) return;
-    const mood = M() ? `<button class="wa-chip home-mood__key${moodSet() ? ' is-set' : ''}" type="button" data-mood-open aria-haspopup="dialog">${I('filter')}<span>${moodWords()}</span></button>` : '';
-    host.innerHTML = mood;
-  };
-
-  /* ── Mood and price: one key, one sheet ─────────────────────────
-     Moods as a short list, each with its Label disc; tap one or a few (none
-     means anything). A chosen mood opens its narrower picks as chips under
-     it (Records, Books…), all optional. Then Tickets: Free, Up to €20, Any. */
-  let draft = null;
-  const CAPS = [[0, 'Free'], [20, 'Up to €20'], [null, 'Any']];
-  /* The choice as it stands at this hour: a mood the hour does not offer (Club nights at noon) is set aside, not lost. */
-  const pref = () => {
-    if (!M()) return { moods: [], subs: [], cap: null };
-    const p = M().pref(), here = new Set(M().available().map(m => m.id));
-    return { moods: p.moods.filter(id => here.has(id)), subs: p.subs, cap: p.cap };
-  };
-  const sheetBody = () => {
-    const moods = M().available();
-    const P = window.WA.Picto;
-    const item = (m) => {
-      const on = draft.moods.includes(m.id);
-      const subs = m.subs.length > 1 ? `<div class="mood-subs" data-subs-of="${esc(m.id)}" role="group" aria-label="Narrow it down"${on ? '' : ' hidden'}>${m.subs.map(x =>
-        `<button class="wa-chip" type="button" data-sub="${esc(x.id)}" aria-pressed="${draft.subs.includes(x.id)}">${esc(x.label)}</button>`).join('')}</div>` : '';
-      return `<li class="mood-item"><button class="mood-row" type="button" data-mood="${esc(m.id)}" aria-pressed="${on}">${P(m.picto)}<span class="mood-row__t"><b>${esc(m.label)}</b><small>${esc(m.hint)}</small></span><span class="mood-row__tick">${I('check')}</span></button>${subs}</li>`;
-    };
-    return `<p class="mood-lead">Pick one or a few. None means anything.</p>
-      <ul class="mood-list" role="group" aria-label="Moods">${moods.map(item).join('')}</ul>
-      <h3 class="mood-h">Tickets</h3>
-      <div class="mood-seg" role="group" aria-label="Ticket price limit">${CAPS.map(([c, label]) => `<button type="button" data-cap="${c == null ? '' : c}" aria-pressed="${draft.cap === c}">${label}</button>`).join('')}</div>
-      <p class="wa-note">Shows with no listed price stay in.</p>`;
-  };
-  const sheetFoot = () => `${draft.moods.length || draft.cap != null ? '<button class="wa-btn wa-btn--quiet" type="button" id="mood-clear">Clear</button>' : ''}<button class="wa-btn wa-btn--primary" type="button" id="mood-apply">Show the next few hours</button>`;
-  const openSheet = () => {
-    if (!M()) return;
-    draft = pref();
-    const sheet = $('sheet');
-    sheet.classList.add('wa-sheet--mood');
-    $('sheet-title').textContent = "What's the mood?";
-    $('sheet-body').innerHTML = sheetBody();
-    $('sheet-foot').innerHTML = sheetFoot();
-    sheet.addEventListener('close', () => sheet.classList.remove('wa-sheet--mood'), { once: true });
-    sheet.showModal();
+    if (host) host.innerHTML = window.WA.DiscoveryControls.keys();
   };
 
   /* ── The next few hours ─────────────────────────────────────── */
@@ -126,7 +59,8 @@
     const p = pref();
     const origin = G().currentLoc();
     const key = `${p.moods}|${p.subs}|${p.cap}|${nearOn()}|${origin ? origin.lat + ',' + origin.lng : ''}`;
-    const next = window.WA.Route.plan({ want: p, cap: p.cap, near: nearOn() });
+    const available = new Set(M().available().map(m => m.id));
+    const next = window.WA.Route.plan({ want: { ...p, moods: p.moods.filter(id => available.has(id)) }, cap: p.cap, near: nearOn() });
     if (key !== planKey || !plans.length) planIdx = 0;
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
@@ -137,7 +71,7 @@
     const narrowed = p.moods.length || p.cap != null || nearOn();
     return `<section class="rt-card rt-card--empty"><div class="rt-card__origin-wrap">${window.WA.StartFrom.originMarkup()}</div><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
       <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from here. Choose another starting point or Whole city.' : 'Try another mood or a higher price limit.') : 'The Guide has the places; the Programme has the listings.'}</p>
-      <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-mood-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
+      <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-filter-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
   };
 
   /* The next day after today with anything listed. */
@@ -146,29 +80,18 @@
     return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
   };
 
-  /* Today is a list, in time order: what is on now, then what starts, then what has
-     no time listed. Tomorrow and one more stretch are a tap away: the weekend from
-     Monday to Thursday, the rest of the week from Friday, when the weekend is
-     already today or tomorrow. A tab with nothing in it is not shown; everything
-     else is the Programme. When today is empty the next day listed opens instead. */
-  let dayTab = '';
+  /* Stable shortcuts; the calendar provides any other filed day. */
   const days = () => {
     const dow = new Date(`${W().todayKey()}T12:00:00Z`).getUTCDay();
     return [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], dow >= 1 && dow <= 4 ? ['weekend', 'Weekend'] : ['thisweek', 'This week']];
   };
-  const dayList = (all, tab, p) => {
-    let list = tab === 'tonight' ? all.filter(e => W().isTonight(e))
-      : tab === 'tomorrow' ? all.filter(e => W().matches(e, 'tomorrow') && !W().isTonight(e))
-        : all.filter(e => W().matches(e, tab) && !W().isTonight(e) && !W().matches(e, 'tomorrow'));
-    list = sortSoon(list);
-    if (M() && p.moods.length) list = list.filter(e => M().wantsEvent(p, e));
-    if (p.cap != null) list = list.filter(e => R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);
-    const timed = (e) => W().statedMinutes(e) != null;
+  const dayList = (all, date, p) => {
+    const list = sortSoon(all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p)));
+    const timed = e => W().statedMinutes(e) != null;
     const ordered = [...list.filter(e => !R().isOff(e) && timed(e)), ...list.filter(e => !R().isOff(e) && !timed(e)), ...list.filter(e => R().isOff(e))];
     if (!nearOn()) return ordered;
-    /* Near me: nearest first; a listing we cannot place goes last, in time order. */
-    const far = (e) => { const d = R().isOff(e) ? null : G().distanceTo(e); return d == null ? Infinity : d; };
-    return ordered.map((e, i) => [e, far(e), i]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
+    const far = e => R().isOff(e) ? Infinity : G().distanceTo(e) ?? Infinity;
+    return ordered.map((e,i) => [e,far(e),i]).sort((a,b) => a[1]-b[1] || a[2]-b[2]).map(x => x[0]);
   };
   /* The list is short on purpose: the next five, then "Show N more" opens the rest
      here (up to thirty; past that the Programme). A kind chosen above shows all of it. */
@@ -206,9 +129,9 @@
   const centre = () => { const c = (window.WA.CITIES || []).find(x => x.id === window.WA.CITY); return c && c.centre ? c.centre : null; };
   const isOpen = (v) => R().openState(v).open === true;
   const pickedPlaces = () => {
-    const from = G().currentLoc() || centre();
+    const from = (nearOn() ? G().currentLoc() : null) || centre();
     const d = (v) => { const m = from ? G().distanceTo(v, from) : null; return m == null ? 1e9 : m; };
-    return R().places().filter(v => v.picked)
+    return R().places().filter(v => v.picked && D().matchesPlace(v))
       .map(v => [v, isOpen(v) ? 0 : 1, d(v)]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
   const inGroup = (v, id) => { const g = R().placeGroups.find(x => x.id === id); return !g || g.kinds.includes(String(v.kind || '').toLowerCase()); };
@@ -220,17 +143,46 @@
     const openN = list.filter(isOpen).length;
     const chip = (id, label, n, art) => `<button class="wa-chip" type="button" data-group="${esc(id)}" aria-pressed="${placeGroup === id}">${art}${esc(label)} <span class="wa-chip__n">${n}</span></button>`;
     const row = groups.length > 1 ? `<div class="wa-chips wa-chips--scroll home-kinds" role="group" aria-label="Kind of place">${chip('', 'All', all.length, '')}${groups.map(([g, n]) => chip(g.id, g.label, n, window.WA.Picto(g.picto))).join('')}</div>` : '';
-    const from = G().currentLoc() || centre();
-    const note = `${openN ? `${openN} open now · ` : ''}${G().currentLoc() ? 'nearest to you first' : 'nearest the centre first'}`;
-    return `${row}<p class="wa-note home-day__note">${esc(note)}</p>
-      <ul class="home-places">${list.slice(0, cap).map(v => R().placeRow(v, { from })).join('')}</ul>
+    const from = (nearOn() ? G().currentLoc() : null) || centre();
+    const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'Nearest to here first' : 'Nearest the centre first'}`;
+    return `${row}<p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
+      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0, cap).map(v => R().placeRow(v, { from })).join('')}</ul>
       <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
       <a class="wa-linkbtn home-day__more" href="places.html${placeGroup ? `?kind=${esc(placeGroup)}` : ''}">The Guide ${I('arrow')}</a></div>`;
   };
-  const viewSwitch = (nEvents, places) => {
-    const open = places.filter(isOpen).length;
-    const btn = (id, label, n, cls = '') => `<button type="button" data-view="${id}" aria-pressed="${view === id}">${label} <span class="home-view__n${cls}">${n}</span></button>`;
-    return `<div class="mood-seg home-view" role="group" aria-label="Show">${btn('events', 'Events', nEvents)}${places.length ? btn('places', 'Places', open ? `${open} open` : places.length, open ? ' is-open' : '') : ''}</div>`;
+  // Keep one segment through redraws, including its gesture listeners.
+  const viewSwitch = document.createElement('div');
+  viewSwitch.className = 'map-seg home-view';
+  viewSwitch.setAttribute('role','group'); viewSwitch.setAttribute('aria-label','Show');
+  viewSwitch.innerHTML = '<button class="map-seg__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span><span class="home-view__n" id="home-events-n"></span></button><button class="map-seg__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span><span class="home-view__n" id="home-places-n"></span></button>';
+  const setView = value => {
+    view = value; expanded = false; main();
+    const q = new URLSearchParams(location.search);
+    if (view === 'places') q.set('view', 'places'); else q.delete('view');
+    history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
+  };
+  const viewGlass = window.WA.glassDrop(viewSwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt',
+    current: () => view === 'events' ? 0 : 1, commit: i => setView(i === 0 ? 'events' : 'places') });
+  let walkOpen = false;
+  const walkFold = p => `<section class="wa-sect rt-sect" id="plan-fold"><button class="home-walk__key" type="button" data-walk-toggle aria-expanded="${walkOpen}" aria-controls="plan">${I('walk')}<span><b>A walk for now</b><small>${esc(plans[planIdx] ? plans[planIdx].title || 'Two or three stops on foot' : 'See the next few hours')}</small></span>${I('down')}</button><div id="plan"${walkOpen ? '' : ' hidden'}>${planCard(p)}</div></section>`;
+  let walkMotion = null;
+  const toggleWalk = () => {
+    const host = $('plan'), key = document.querySelector('[data-walk-toggle]');
+    if (!host || !key) return;
+    const fromHeight = host.hidden ? 0 : host.getBoundingClientRect().height;
+    const fromOpacity = host.hidden ? 0 : Number(getComputedStyle(host).opacity);
+    if (walkMotion) { walkMotion.cancel(); walkMotion = null; }
+    walkOpen = !walkOpen; key.setAttribute('aria-expanded',walkOpen);
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const easing = getComputedStyle(key).getPropertyValue('--ease').trim();
+    if (walkOpen) {
+      host.hidden = false;
+      if (!still) walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:host.offsetHeight + 'px', opacity:1 }], { duration:260, easing });
+    } else if (still) host.hidden = true;
+    else {
+      walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:'0px', opacity:0 }], { duration:140, easing });
+      walkMotion.onfinish = () => { if (!walkOpen) host.hidden = true; };
+    }
   };
 
   const main = () => {
@@ -241,39 +193,48 @@
     hero(tonight, liveNow, next);
     acts();
     const p = readPlans();
-    const DAYS = days();
-    const lists = Object.fromEntries(DAYS.map(([k]) => [k, dayList(all, k, p)]));
-    const tabs = DAYS.filter(([k]) => lists[k].length);
-    const tab = dayTab && lists[dayTab] && lists[dayTab].length ? dayTab : (tabs[0] || DAYS[0])[0];
-    const full = lists[tab];
+    const date = D().dates(), tab = date.date ? 'custom' : date.when;
+    const tabs = days();
+    if (tab !== 'custom' && !tabs.some(([k]) => k === tab)) tabs.push([tab, D().label()]);
+    const full = dayList(all,date,p);
     const shown = facets(full);
     if (facet && !shown.some(([id]) => id === facet)) facet = '';
     const list = facet ? full.filter(e => inFacet(facet, e)) : full;
     const cap = expanded || facet ? MOST : SHOWN;
-    const out = [`<section class="wa-sect rt-sect" id="plan">${planCard(p)}</section>`];
+    const out = [walkFold(p)];
 
     const places = pickedPlaces();
-    if (!places.length && view === 'places') view = 'events';
     if (view === 'places') {
-      out.push(`<section class="wa-sect home-day">${viewSwitch(full.length, places)}${placesPart(places)}</section>`);
-    } else if (all.length) {
-      const q = new URLSearchParams({ time: tab });
+      out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>${placesPart(places)}</section>`);
+    } else {
+      const q = D().params();
       if (facet === 'comedy') q.set('q', 'comedy'); else if (facet) q.set('cat', facet);
       if (nearOn()) q.set('sort', 'nearest');
-      out.push(`<section class="wa-sect home-day">${viewSwitch(full.length, places)}
-        ${tabs.length ? `<div class="home-tabs" role="tablist" aria-label="Day">${tabs.map(([k, label]) => `<button class="home-tab" type="button" role="tab" data-day="${k}" aria-selected="${k === tab}">${label}</button>`).join('')}</div>` : ''}
+      out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
+        <div class="home-tabs" role="group" aria-label="Day">${tabs.map(([k,label]) => `<button class="home-tab" type="button" data-day="${k}" aria-pressed="${k === tab}">${esc(label)}</button>`).join('')}${window.WA.DiscoveryControls.dateKey('home-calendar')}</div>
         ${facetRow(full, shown)}
-        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest first, walking from here' : 'Nearest first, walking from you'}</p>` : ''}
-        ${list.length ? `<ul class="wa-rows">${list.slice(0, cap).map(e => R().row(e, { since: visit.prev })).join('')}</ul>` : ''}
+        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
+        ${list.length ? `<ul class="wa-feed">${list.slice(0,cap).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
         <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
         <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > cap ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a></div>
       </section>`);
-    } else {
-      out.push(R().empty(window.WA.DATA_LIVE === false
-        ? { icon: 'offline', title: "We can't reach the listings right now.", body: 'Your saves still work. Try again in a moment.', actions: [{ act: 'reload', label: 'Try again' }, { href: 'saved.html', label: 'Saved' }] }
-        : { icon: 'calendar', title: `Nothing is listed in ${R().cityName()} yet.`, body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] }));
     }
+    if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
+    const focused = document.activeElement;
+    const focusKey = focused && focused.dataset ? ['day','facet','group'].find(k => k in focused.dataset) : null;
+    const focusValue = focusKey ? focused.dataset[focusKey] : '';
+    const hadViewFocus = viewSwitch.contains(focused);
     $('home-main').innerHTML = out.join('');
+    const slot = $('home-view-slot');
+    if (slot) {
+      slot.replaceWith(viewSwitch);
+      $('home-events-n').textContent = String(full.length);
+      $('home-places-n').textContent = String(places.length);
+      viewSwitch.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',b.dataset.view === view));
+      viewGlass.sync();
+    }
+    if (focusKey) document.querySelector(`[data-${focusKey}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll:true });
+    if (hadViewFocus) focused.focus({ preventScroll:true });
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
   };
@@ -283,7 +244,12 @@
     if (plans.length < 2) return;
     planIdx = (planIdx + 1) % plans.length;
     const host = $('plan');
-    if (host) { host.dataset.again = '1'; host.innerHTML = planCard(pref()); }
+    if (host) {
+      const focused = !!document.activeElement?.matches('[data-another]');
+      host.dataset.again = '1'; host.innerHTML = planCard(pref());
+      document.querySelector('[data-walk-toggle] small').textContent = plans[planIdx].title || 'Two or three stops on foot';
+      if (focused) host.querySelector('[data-another]')?.focus({ preventScroll:true });
+    }
   };
 
   /* ── Side (desktop): the map ─────────────────────────────────── */
@@ -291,7 +257,7 @@
     const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">Today's events and the places open now, by walking time.</span></span></a></section>`;
+      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>`;
     $('home-side').innerHTML = mapCard;
   };
 
@@ -301,16 +267,11 @@
     const prev = visit.prev;
     const n = prev ? all.filter(e => R().isNewSince(e, prev)).length : 0;
     if (!n) { host.innerHTML = ''; return; }
-    const d = new Date(prev);
-    const when = (Date.now() - prev) < 86400000 * 6
-      ? d.toLocaleDateString((window.WA.Lang ? window.WA.Lang.locale() : 'en-GB'), { weekday: 'long', timeZone: 'Europe/Tallinn' })
-      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/Tallinn' });
-    host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>new since ${esc(when)}</span>${I('arrow')}</a>`;
+    host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>`;
   };
 
   /* ── Render and events ─────────────────────────────────────── */
   const render = () => {
-    acts();
     const all = main();
     side();
     since(all);
@@ -319,13 +280,11 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
-    if (dt) { dayTab = dt.dataset.day; expanded = false; main(); return; }
+    if (dt) { expanded = false; D().setDates({ when:dt.dataset.day }); D().writeURL(); return; }
+    if (hit('[data-walk-toggle]')) { toggleWalk(); return; }
     const vw = hit('[data-view]');
     if (vw) {
-      view = vw.dataset.view; expanded = false; main();
-      const q = new URLSearchParams(location.search);
-      if (view === 'places') q.set('view', 'places'); else q.delete('view');
-      history.replaceState(null, '', q.toString() ? `?${q}` : location.pathname);
+      setView(vw.dataset.view);
       return;
     }
     const gp = hit('[data-group]');
@@ -334,49 +293,13 @@
     if (fc) { facet = facet === fc.dataset.facet ? '' : fc.dataset.facet; expanded = false; main(); return; }
     if (hit('[data-day-all]')) {
       expanded = true; main();
-      const rows = document.querySelectorAll('.home-day .wa-rows > li, .home-places > li');
+      const rows = document.querySelectorAll('.home-day .wa-feed > li, .home-places > li');
       const first = rows[SHOWN] && rows[SHOWN].querySelector('a');
       if (first) first.focus({ preventScroll: true });
       return;
     }
     if (hit('[data-near]')) { window.WA.StartFrom.open(hit('[data-near]')); return; }
-    if (hit('[data-mood-open]')) { openSheet(); return; }
-    const mt = hit('.mood-row');
-    if (mt && draft) {
-      const id = mt.dataset.mood, on = !draft.moods.includes(id);
-      draft.moods = on ? [...draft.moods, id] : draft.moods.filter(x => x !== id);
-      const subs = $('sheet-body').querySelector(`[data-subs-of="${CSS.escape(id)}"]`);
-      if (!on && subs) { const mine = [...subs.querySelectorAll('[data-sub]')].map(b => b.dataset.sub); draft.subs = draft.subs.filter(x => !mine.includes(x)); subs.querySelectorAll('[data-sub]').forEach(b => b.setAttribute('aria-pressed', 'false')); }
-      mt.setAttribute('aria-pressed', String(on));
-      if (subs) subs.hidden = !on;
-      $('sheet-foot').innerHTML = sheetFoot();
-      return;
-    }
-    const sb = hit('.mood-subs [data-sub]');
-    if (sb && draft) {
-      const id = sb.dataset.sub, on = !draft.subs.includes(id);
-      draft.subs = on ? [...draft.subs, id] : draft.subs.filter(x => x !== id);
-      sb.setAttribute('aria-pressed', String(on));
-      return;
-    }
-    const cp = hit('.mood-seg [data-cap]');
-    if (cp && draft) {
-      draft.cap = cp.dataset.cap === '' ? null : Number(cp.dataset.cap);
-      $('sheet-body').querySelectorAll('.mood-seg [data-cap]').forEach(b => b.setAttribute('aria-pressed', String(b === cp)));
-      $('sheet-foot').innerHTML = sheetFoot();
-      return;
-    }
-    if (hit('#mood-clear') && draft) { draft = { moods: [], subs: [], cap: null }; $('sheet-body').innerHTML = sheetBody(); $('sheet-foot').innerHTML = sheetFoot(); return; }
-    if (hit('#mood-apply')) {
-      /* Moods set aside for this hour stay chosen; only what the sheet showed changes. */
-      const was = M().pref(), here = new Set(M().available().map(m => m.id));
-      const kept = was.moods.filter(id => !here.has(id));
-      M().setPref({ moods: [...draft.moods, ...kept], subs: [...draft.subs, ...was.subs.filter(x => kept.some(k => M().get(k).subs.some(s => s.id === x)))], cap: draft.cap });
-      $('sheet').close();
-      return;
-    }
     if (hit('[data-another]')) { another(); return; }
-    if (hit('#sheet-done') || hit('#sheet-close')) { $('sheet').close(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
     const r = hit('[data-row]');
     if (r) window.WA.Seen.mark(r.dataset.row);
@@ -398,7 +321,10 @@
     const origin = document.querySelector('.rt-card__origin-wrap');
     if (origin) origin.innerHTML = window.WA.StartFrom.originMarkup(); else render();
   });
-  document.addEventListener('wa:near-changed', (e) => { setNear(e.detail); render(); });
+  document.addEventListener('wa:discovery-changed', () => { if (window.WA.catalog) { expanded = false; render(); } });
+  document.addEventListener('wa:discovery-applied', () => {
+    if (viewSwitch.isConnected) viewSwitch.scrollIntoView({ block:'center', behavior:'auto' });
+  });
   document.addEventListener('wa:location-ready', () => {
     const city = !G().anchor() && G().deviceLoc() && window.WA.cityForLocation(G().deviceLoc());
     if (city && city.id !== window.WA.CITY) { window.WA.setCity(city.id); return; }

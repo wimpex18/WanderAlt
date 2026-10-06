@@ -5,8 +5,8 @@
    kinds and, where a pipeline tag exists, tags. It adds no data of its own.
    A mood appears only when the city has enough behind it right now
    (`min` upcoming listings plus picked places), and only at the hours it
-   suits, so a new city shows what it has and Tallinn never offers a
-   dance floor at noon. The words are per language; the rules are per city.
+   suits for a route. Discovery sheets request allHours so a future
+   club night can be chosen at noon. The words are per language; the rules are per city.
 
    You may pick several moods, or none (anything). A mood can be narrowed by
    its `subs` (Records inside Records & books, Comedy inside Art & film);
@@ -114,11 +114,11 @@
 
   const inHours = (d, m) => d.from == null || (d.from > d.until ? (m >= d.from || m < d.until) : (m >= d.from && m < d.until));
 
-  const available = () => {
+  const available = (opts = {}) => {
     const R = window.WA.R;
     const events = R ? R.live() : [], places = R ? R.places().filter(v => v.picked) : [];
     const m = nowMin(), min = rule().min;
-    return DEFS.filter(d => inHours(d, m)).map((d) => ({
+    return DEFS.filter(d => opts.allHours || inHours(d, m)).map((d) => ({
       id: d.id, label: say(d.label), hint: say(d.hint), picto: d.picto,
       count: events.filter(e => matchesEvent(d.id, e)).length + places.filter(v => matchesPlace(d.id, v)).length,
       subs: d.subs.map(s => ({ id: s.id, label: say(s.label), count: events.filter(e => hitsEvent(s, e)).length + places.filter(v => hitsPlace(s, v)).length }))
@@ -157,6 +157,11 @@
     try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) { /* kept for this page only */ }
     document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: pref() }));
   };
+  window.addEventListener('pageshow', e => {
+    if (!e.persisted) return;
+    try { saved = clean(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (_) { return; }
+    document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: pref() }));
+  });
   const capText = (c) => (c == null ? 'any price' : c === 0 ? 'free' : `up to €${c}`);
   /* The words for a choice: the narrower picks where there are any, the moods otherwise. */
   const words = (p) => {

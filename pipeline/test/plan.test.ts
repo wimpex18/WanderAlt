@@ -39,7 +39,7 @@ function world(now: number, events: any[], places: P[], open: (p: P, minute: num
     venueFor: (e: any) => byId.get(e.venueId) || null,
     _venuesAll: places, catalog: events,
   };
-  const context = createContext({ window: { WA }, document: { documentElement: { lang: 'en' }, dispatchEvent: () => {} }, localStorage: { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } }, CustomEvent: class { type: string; init?: any; constructor(type: string, init?: any) { this.type = type; this.init = init; } }, Date, Intl, JSON });
+  const context = createContext({ window: { WA, addEventListener: () => {} }, document: { documentElement: { lang: 'en' }, dispatchEvent: () => {} }, localStorage: { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } }, CustomEvent: class { type: string; init?: any; constructor(type: string, init?: any) { this.type = type; this.init = init; } }, Date, Intl, JSON });
   runInContext(readFileSync(new URL('../../moods.js', import.meta.url), 'utf8'), context);
   runInContext(readFileSync(new URL('../../route.js', import.meta.url), 'utf8'), context);
   return WA;

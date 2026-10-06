@@ -148,7 +148,12 @@ function saved(byId: (id: string) => Promise<any>) {
   };
   const context = createContext({ window: { WA, addEventListener: () => {} }, document: {
     readyState: 'complete', addEventListener: (n: string, cb: any) => listeners.set(n, cb),
-    getElementById: (id: string) => { if (!elements.has(id)) elements.set(id, {}); return elements.get(id); },
+    getElementById: (id: string) => {
+      if (!elements.has(id)) elements.set(id, { attributes: new Set<string>(), toggleAttribute(name: string, force: boolean) {
+        if (force) this.attributes.add(name); else this.attributes.delete(name);
+      } });
+      return elements.get(id);
+    },
   } });
   runInContext(source('saved-page.js'), context);
   listeners.get('wa:catalog-ready')();

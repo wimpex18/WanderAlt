@@ -196,6 +196,36 @@ test('a failed original-description request stays retryable and does not cache t
   assert.equal(originals, 2);
 });
 
+test('detail saves preserve source disclosure and button focus; alias unsave Undo restores list membership', () => {
+  const handlers = new Map<string, Function>();
+  let marked = true, inList = true, undo: Function | undefined;
+  const attrs = new Map<string,string>(), listLabel = { textContent:'Trip' };
+  const button = { innerHTML:'Saved', setAttribute: (k:string, v:string) => attrs.set(k,v) };
+  const main = { set innerHTML(_:string) { throw Error('Saving must not redraw the detail page'); } };
+  const WA = {
+    canonicalId: () => 'event', _catalogAll: [{ id:'event' }], Icon: () => '<svg></svg>',
+    Bookmarks: { get: () => marked ? { event:true } : {}, set: (id:string, on:boolean) => {
+      assert.equal(id,'event'); marked = on; if (!on) inList = false;
+    } },
+    Lists: { listsFor: () => inList ? [{ id:'trip', name:'Trip' }] : [], add: (id:string, entry:string) => {
+      assert.equal(id,'trip'); assert.equal(entry,'event'); inList = true;
+    } },
+    Toast: { show: (_:string, __:string, u:Function) => { undo = u; } },
+  };
+  const document = { readyState:'loading', activeElement:button,
+    addEventListener: (n:string, fn:Function) => handlers.set(n,fn),
+    getElementById: (id:string) => id === 'save' ? button : id === 'addlist' ? { querySelector: () => listLabel } : id === 'main' ? main : null,
+  };
+  runInContext(readFileSync(new URL('../../detail.js',import.meta.url),'utf8'), createContext({ window:{ WA }, document,
+    location:{ search:'?id=old-event' }, URLSearchParams }));
+  handlers.get('click')!({ target:{ closest:(s:string) => s === '#save' ? button : null } });
+  assert.equal(marked,false); assert.equal(attrs.get('aria-pressed'),'false');
+  assert.equal(listLabel.textContent,'List'); assert.equal(document.activeElement,button);
+  undo!();
+  assert.equal(marked,true); assert.equal(inList,true); assert.equal(listLabel.textContent,'Trip');
+  assert.equal(attrs.get('aria-pressed'),'true'); assert.equal(document.activeElement,button);
+});
+
 test('sheets follow the visual viewport so the keyboard never covers a field or its button', () => {
   const props = new Map<string, string>();
   const listeners: Record<string, () => void> = {};
@@ -316,10 +346,10 @@ test('the tab bar has four tabs on every page and no empty slot', () => {
   }
 });
 
-test('phones get smaller list pictures and Saved shows three lists a row; desktop sizes stay', () => {
+test('compact rows keep small pictures and Saved shows three lists a row; desktop sizes stay', () => {
   const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
   const phone = css.slice(css.lastIndexOf('@media (max-width: 767px)'));
-  assert.match(phone, /\.wa-row__thumb, \.home-day \.wa-row__thumb \{ width: 56px; height: 56px;/);
+  assert.match(phone, /\.wa-row__thumb \{ width: 56px; height: 56px;/);
   assert.match(phone, /\.wa-place__glyph, \.home-places \.wa-place__glyph \{ width: 48px; height: 48px;/);
   assert.match(phone, /\.wa-lists \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.wa-row__thumb \{ width: 120px; height: 90px; \}/, 'desktop rows keep their picture');

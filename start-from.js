@@ -51,15 +51,15 @@
   const startField = () => {
     const G = window.WA.Geo, a = G.anchor(), loc = G.deviceLoc();
     const cityAnchor = a && (window.WA.CITIES || []).some(c => c.name === a.label && c.centre.lat === a.lat && c.centre.lng === a.lng);
-    const note = startError || (cityAnchor ? 'City centre. Pick a venue for a more precise starting point.' : a
-      ? 'Walking times and routes start here. Clear the box to use your location.' : loc
-      ? 'Walking times and routes start at your current location.'
-      : 'Choose Tallinn or a place you know, or use your location.');
-    return `<label class="wa-field__label wa-sr" for="wa-start-input">Place to start from</label>
+    const note = startError || (cityAnchor ? 'Choose a nearby venue' : a
+      ? 'Walks start here' : loc
+      ? 'Using your location'
+      : 'Choose a starting point');
+    return `<label class="wa-field__label wa-sr" for="wa-start-input">Starting point</label>
       <div class="wa-start__control">
         <div class="wa-start__search">
           <input class="wa-input" id="wa-start-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="wa-start-options" aria-describedby="wa-start-note" autocomplete="off" placeholder="City or place" value="${esc(startDraft === null ? startValue() : startDraft)}" />
-          <div class="wa-start__options" id="wa-start-options" role="listbox" aria-label="Place to start from" hidden></div>
+          <div class="wa-start__options" id="wa-start-options" role="listbox" aria-label="Starting point" hidden></div>
         </div>
         <button class="wa-iconbtn wa-start__locate" id="wa-start-locate" type="button" aria-label="Use my location" title="Use my location"${locating ? ' disabled aria-busy="true"' : ''}>${I('locate')}</button>
       </div>

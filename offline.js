@@ -46,11 +46,6 @@
     return `cached ${Math.round(h / 24)} days ago`;
   };
 
-  const clock = () => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
-
   const paint = () => {
     if (!node) return;
     const status = window.WA?.CatalogueStatus;
@@ -66,12 +61,10 @@
       node.append(text, retry);
       return;
     }
-    node.innerHTML =
-      '<span class="wa-offline__dot" aria-hidden="true"></span>' +
-      `<span>No signal. Showing ${clock()}. Your saves work offline, and ` +
-      'listings stay as they last loaded. Distances won\'t update.' +
-      (stale ? ` <span class="wa-offline__age">${stale}</span>` : '') +
-      '</span>';
+    node.innerHTML = '<span class="wa-offline__dot" aria-hidden="true"></span>' +
+      '<span><span>No signal</span> · <span>Showing last loaded listings</span>. ' +
+      '<span>Saves work offline</span>. <span>Distances won\'t update</span>.' +
+      (stale ? ` <span class="wa-offline__age">${stale}</span>` : '') + '</span>';
   };
 
   /* Inserted directly after the top bar, not appended to <body>: the

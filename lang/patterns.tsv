@@ -29,24 +29,26 @@ up to {x}	kuni {x}	до {x}	до {x}
 Show {n} more	Näita veel {n}	Показать ещё {n}	Показати ще {n}
 All {n}	Kõik {n}	Все {n}	Усі {n}
 Show all {n} running	Näita kõiki {n} käimasolevat	Показать все {n} идущих	Показати всі {n}, що тривають
-Added to {x}	Lisatud nimekirja {x}	Добавлено в {x}	Додано до {x}
-Remove {x} from saved	Eemalda {x} salvestatutest	Убрать {x} из сохранённого	Прибрати {x} зі збереженого
-Also in {x}:	Ka piirkonnas {x}:	Также в районе {x}:	Також у районі {x}:
-After {x}	Pärast: {x}	После: {x}	Після: {x}
+Added to {rawName}	Lisatud nimekirja {rawName}	Добавлено в {rawName}	Додано до {rawName}
+Remove {rawTitle} from saved	Eemalda {rawTitle} salvestatutest	Убрать {rawTitle} из сохранённого	Прибрати {rawTitle} зі збереженого
+Save: {rawTitle}	Salvesta: {rawTitle}	Сохранить: {rawTitle}	Зберегти: {rawTitle}
+Saved: {rawTitle}	Salvestatud: {rawTitle}	Сохранено: {rawTitle}	Збережено: {rawTitle}
+Also in {rawName}:	Ka piirkonnas {rawName}:	Также в районе {rawName}:	Також у районі {rawName}:
+After {rawName}	Pärast: {rawName}	После: {rawName}	Після: {rawName}
 {n} of {m}	{n}/{m}	{n} из {m}	{n} з {m}
-{x} on the map	{x} kaardil	{x} на карте	{x} на карті
-{x} (opens {y})	{x} (avaneb: {y})	{x} (откроется: {y})	{x} (відчиниться: {y})
-Logo from {x}, their logo	Logo saidilt {x}, nende enda logo	Логотип с {x}, их собственный	Логотип із {x}, їхній власний
+{rawName} on the map	{rawName} kaardil	{rawName} на карте	{rawName} на карті
+{rawName} (opens {y})	{rawName} (avaneb: {y})	{rawName} (откроется: {y})	{rawName} (відчиниться: {y})
+Logo from {rawName}, their logo	Logo saidilt {rawName}, nende enda logo	Логотип с {rawName}, их собственный	Логотип із {rawName}, їхній власний
 Address and links from OpenStreetMap; hours from {x}.	Aadress ja lingid OpenStreetMapist; lahtiolekuajad: {x}.	Адрес и ссылки из OpenStreetMap; часы работы: {x}.	Адреса й посилання з OpenStreetMap; години роботи: {x}.
 Details from the venue; hours from {x}.	Üksikasjad kohalt; lahtiolekuajad: {x}.	Данные от заведения; часы работы: {x}.	Дані від закладу; години роботи: {x}.
-Everything from {x}	Kõik allikast {x}	Всё из {x}	Усе з {x}
-Following {x}	Jälgid: {x}	Вы подписаны: {x}	Ви підписані: {x}
-Stopped following {x}	Enam ei jälgi: {x}	Вы больше не подписаны: {x}	Ви більше не підписані: {x}
-Nothing is listed in {x} for the coming days.	Piirkonnas {x} pole lähipäevadeks midagi kuulutatud.	В районе {x} на ближайшие дни ничего не объявлено.	У районі {x} на найближчі дні нічого не оголошено.
-Nothing is listed in {x} yet.	Piirkonnas {x} pole veel midagi kuulutatud.	В районе {x} пока ничего не объявлено.	У районі {x} поки нічого не оголошено.
-Nothing from {x} is listed right now.	Allikast {x} pole praegu midagi kuulutatud.	От {x} сейчас ничего не объявлено.	Від {x} зараз нічого не оголошено.
+Everything from {rawName}	Kõik allikast {rawName}	Всё из {rawName}	Усе з {rawName}
+Following {rawName}	Jälgid: {rawName}	Вы подписаны: {rawName}	Ви підписані: {rawName}
+Stopped following {rawName}	Enam ei jälgi: {rawName}	Вы больше не подписаны: {rawName}	Ви більше не підписані: {rawName}
+Nothing is listed in {rawName} for the coming days.	Piirkonnas {rawName} pole lähipäevadeks midagi kuulutatud.	В районе {rawName} на ближайшие дни ничего не объявлено.	У районі {rawName} на найближчі дні нічого не оголошено.
+Nothing is listed in {rawName} yet.	Piirkonnas {rawName} pole veel midagi kuulutatud.	В районе {rawName} пока ничего не объявлено.	У районі {rawName} поки нічого не оголошено.
+Nothing from {rawName} is listed right now.	Allikast {rawName} pole praegu midagi kuulutatud.	От {rawName} сейчас ничего не объявлено.	Від {rawName} зараз нічого не оголошено.
 Follow my device, dark from {t}	Järgi minu seadet, tume alates {t}	Как на устройстве, тёмная с {t}	Як на пристрої, темна з {t}
-Listed via {x}	Kuulutatud allika kaudu {x}	Объявлено через {x}	Оголошено через {x}
+Listed via {rawName}	Kuulutatud allika kaudu {rawName}	Объявлено через {rawName}	Оголошено через {rawName}
 It was on {d}	See toimus {d}	Это было {d}	Це було {d}
 It came off on {d}	See lõppes {d}	Это закончилось {d}	Це завершилося {d}
 Tonight in {x}	Täna õhtul: {x}	Сегодня вечером: {x}	Сьогодні ввечері: {x}
@@ -59,12 +61,12 @@ Tonight in {x}	Täna õhtul: {x}	Сегодня вечером: {x}	Сьогод
 {n} days ago	{n} päeva tagasi	{n} дн. назад	{n} дн. тому
 {n} more listed here	Siin on veel {n} kuulutust	Здесь ещё {n}	Тут ще {n}
 on {u}	allikas {u}	на {u}	на {u}
-Listed via {x}, read {y}.	Kuulutatud allika kaudu {x}, loetud {y}.	Объявлено через {x}, прочитано {y}.	Оголошено через {x}, прочитано {y}.
+Listed via {rawName}, read {y}.	Kuulutatud allika kaudu {rawName}, loetud {y}.	Объявлено через {rawName}, прочитано {y}.	Оголошено через {rawName}, прочитано {y}.
 It was on {d} at {t}.	See toimus {d} kell {t}.	Это было {d} в {t}.	Це було {d} о {t}.
 It was on {d}.	See toimus {d}.	Это было {d}.	Це було {d}.
 {n} min on foot	{n} min jalgsi	{n} мин пешком	{n} хв пішки
 {n} free in this view	Selles vaates tasuta: {n}	Бесплатно в этом виде: {n}	Безкоштовно в цьому вигляді: {n}
-{n} opened or saved before	Varem avatud või salvestatud: {n}	Ранее открыто или сохранено: {n}	Раніше відкрито або збережено: {n}
+{n} opened or saved	Avatud või salvestatud: {n}	Открыто или сохранено: {n}	Відкрито або збережено: {n}
 {n} more after these	Pärast neid veel {n}	Ещё {n} после этих	Ще {n} після цих
 {n}.{h} km	{n},{h} km	{n},{h} км	{n},{h} км
 {n} km	{n} km	{n} км	{n} км
@@ -77,17 +79,39 @@ about {a}	umbes {a}	около {a}	близько {a}
 Tickets from {x}.	Piletid alates {x}.	Билеты от {x}.	Квитки від {x}.
 {n} price not listed	hind teadmata: {n}	цена не указана: {n}	ціну не вказано: {n}
 {n} stops	{n} peatust	{n} остановка|{n} остановки|{n} остановок|{n} остановки	{n} зупинка|{n} зупинки|{n} зупинок|{n} зупинки
-{x}, Open till {t}	{x}, avatud kuni {t}	{x}, открыто до {t}	{x}, відчинено до {t}
-{x}, Opens {t}	{x}, avaneb {t}	{x}, откроется в {t}	{x}, відчиниться о {t}
-{x}, Shut today	{x}, täna suletud	{x}, сегодня закрыто	{x}, сьогодні зачинено
-{x}, Hours not filed	{x}, lahtiolekuajad teadmata	{x}, часы не указаны	{x}, години не вказано
-{x}, Open for events	{x}, avatud ürituste ajal	{x}, открыто во время событий	{x}, відчинено під час подій
-{x}, Open, 24 hours	{x}, avatud ööpäevaringselt	{x}, открыто круглосуточно	{x}, відчинено цілодобово
-{x}, Listed as closed	{x}, märgitud suletuks	{x}, отмечено как закрытое	{x}, позначено як зачинене
-{x}, Status unverified	{x}, olek kinnitamata	{x}, статус не подтверждён	{x}, статус не підтверджено
+{rawName}, Open till {t}	{rawName}, avatud kuni {t}	{rawName}, открыто до {t}	{rawName}, відчинено до {t}
+{rawName}, Opens {t}	{rawName}, avaneb {t}	{rawName}, откроется в {t}	{rawName}, відчиниться о {t}
+{rawName}, Shut today	{rawName}, täna suletud	{rawName}, сегодня закрыто	{rawName}, сьогодні зачинено
+{rawName}, Hours not filed	{rawName}, lahtiolekuajad teadmata	{rawName}, часы не указаны	{rawName}, години не вказано
+{rawName}, Open for events	{rawName}, avatud ürituste ajal	{rawName}, открыто во время событий	{rawName}, відчинено під час подій
+{rawName}, Open, 24 hours	{rawName}, avatud ööpäevaringselt	{rawName}, открыто круглосуточно	{rawName}, відчинено цілодобово
+{rawName}, Listed as closed	{rawName}, märgitud suletuks	{rawName}, отмечено как закрытое	{rawName}, позначено як зачинене
+{rawName}, Status unverified	{rawName}, olek kinnitamata	{rawName}, статус не подтверждён	{rawName}, статус не підтверджено
 with {w}	sõnaga {w}	со словом {w}	зі словом {w}
 Image from {u}	Pilt saidilt {u}	Изображение с {u}	Зображення з {u}
-{a}. Needs your location or a spot below	{a}. Vaja on sinu asukohta või allpool valitud kohta	{a}. Нужна ваша геолокация или место ниже	{a}. Потрібна ваша геолокація або місце нижче
-{a}, from {b}	{a}, lähtekoht: {b}	{a}, от точки: {b}	{a}, від точки: {b}
 {n} today	{n} täna	Сегодня: {n}	Сьогодні: {n}
 {n} min walk from here	{n} min jalutuskäiku siit	{n} мин пешком отсюда	{n} хв пішки звідси
+{n} listings on this map	Sellel kaardil: {n} kuulutust	На этой карте: {n} событие|На этой карте: {n} события|На этой карте: {n} событий|На этой карте: {n} события	На цій мапі: {n} подія|На цій мапі: {n} події|На цій мапі: {n} подій|На цій мапі: {n} події
+Language: {rawName}	Keel: {rawName}	Язык: {rawName}	Мова: {rawName}
+{n} free	{n} tasuta	{n} бесплатно	{n} безкоштовно
+{n} from followed places	{n} jälgitavatest kohtadest	{n} от ваших подписок	{n} від ваших підписок
+{n} new listings	{n} uut sündmust	{n} новое событие|{n} новых события|{n} новых событий|{n} новых события	{n} нова подія|{n} нові події|{n} нових подій|{n} нові події
+Add {rawName} to your calendar	Lisa {rawName} kalendrisse	Добавить {rawName} в календарь	Додати {rawName} до календаря
+Walking from {rawName}	Alguspunkt: {rawName}	Откуда: {rawName}	Звідки: {rawName}
+{n} here, zoom in	Siin {n}, suurenda	Здесь {n}, приблизить	Тут {n}, наблизити
+{n} min walk from where you are	{n} min jalgsi sinust	{n} мин пешком от вас	{n} хв пішки від вас
+cached {x}	salvestatud {x}	загружено {x}	завантажено {x}
+The format is {x}, built for people who turn up on their own to mix.	Formaat: {x}. Sobib üksi tulles inimestega tutvumiseks.	Формат: {x}. Подходит, чтобы прийти одному и познакомиться с людьми.	Формат: {x}. Підходить, щоб прийти наодинці й познайомитися з людьми.
+Sign-in did not finish: {rawError}	Sisselogimine ei õnnestunud: {rawError}	Не удалось войти: {rawError}	Не вдалося ввійти: {rawError}
+Not saved: {rawError}	Ei salvestatud: {rawError}	Не сохранено: {rawError}	Не збережено: {rawError}
+Merge into {rawName}	Ühenda: {rawName}	Объединить в {rawName}	Об’єднати в {rawName}
+We hold: {rawValue}	Praegu: {rawValue}	Текущие данные: {rawValue}	Поточні дані: {rawValue}
+It says: {rawValue}	Allikas: {rawValue}	В источнике: {rawValue}	У джерелі: {rawValue}
+{n} waiting	{n} ootel	Ожидают: {n}	Очікують: {n}
+from its {rawSource}	allikas: {rawSource}	источник: {rawSource}	джерело: {rawSource}
+Supabase refused the key ({rawError}). Check it is the secret key, not the anon key or a Cloudflare token.	Supabase ei võtnud võtit vastu ({rawError}). Kontrolli, et see on salavõti, mitte anon-võti ega Cloudflare’i token.	Supabase отклонил ключ ({rawError}). Проверьте, что это секретный ключ, а не anon-ключ или токен Cloudflare.	Supabase відхилив ключ ({rawError}). Перевірте, що це секретний ключ, а не anon-ключ або токен Cloudflare.
+Show {n} listing	Näita {n} kuulutus	Показать {n} событие	Показати {n} подія
+Show {n} listings	Näita {n} kuulutust	Показать {n} событие|Показать {n} события|Показать {n} событий|Показать {n} события	Показати {n} подія|Показати {n} події|Показати {n} подій|Показати {n} події
+Show {n} place	Näita {n} koht	Показать {n} место	Показати {n} місце
+Show {n} places	Näita {n} kohta	Показать {n} место|Показать {n} места|Показать {n} мест|Показать {n} места	Показати {n} місце|Показати {n} місця|Показати {n} місць|Показати {n} місця
+since {t}	alates {t}	с {t}	з {t}

@@ -65,8 +65,9 @@
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
-  <script defer src="./finder.js"></script>
   <script defer src="./moods.js"></script>
+  <script defer src="./discovery-state.js"></script>
+  <script defer src="./discovery-controls.js"></script>
   <script defer src="./route.js"></script>
   <script defer src="./start-from.js"></script>
   <script defer src="./home.js"></script>
@@ -88,17 +89,11 @@
 
   <main class="wa-shell" id="main">
     <div class="home-top">
-      <form class="wa-pill home-pill--phone" role="search" id="home-search" autocomplete="off">
-        <label class="wa-sr" for="home-q">Search Tallinn, or ask for a night out</label>
-        <input class="wa-pill__input" id="home-q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search, or ask “jazz tonight”" />
-        <button class="wa-pill__go" type="submit" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></button>
+      <form class="home-search" role="search" id="home-search" autocomplete="off">
+        <label class="wa-sr" for="home-q">Search places or listings</label>
+        <input id="home-q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search places or listings" />
+        <button class="wa-iconbtn" type="submit" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></button>
       </form>
-      <div class="wa-pill wa-pill--slots home-pill--desk" role="search">
-        <button class="wa-pill__slot" type="button" data-finder="where"><span class="wa-pill__label">Where</span><span class="wa-pill__value">Tallinn, a venue or an area</span></button>
-        <button class="wa-pill__slot" type="button" data-finder="when"><span class="wa-pill__label">When</span><span class="wa-pill__value">Tonight</span></button>
-        <button class="wa-pill__slot" type="button" data-finder="what"><span class="wa-pill__label">What</span><span class="wa-pill__value">Gigs, film, art</span></button>
-        <button class="wa-pill__go" type="button" data-finder="where" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></button>
-      </div>
     </div>
 
     <section class="home-hero" aria-labelledby="hero-title">
@@ -120,16 +115,7 @@
     <a class="wa-tabbar__item" href="./profile.html" data-nav="profile"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="user"><circle class="t" cx="12" cy="8.3" r="3.8"/><path class="t" d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/><circle cx="12" cy="8.3" r="3.8"/><path d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/></svg>You</a>
   </nav>
 
-  <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
-    <div class="wa-sheet__panel">
-      <div class="wa-sheet__head">
-        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
-        <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="close"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
-      </div>
-      <div class="wa-sheet__body" id="sheet-body"></div>
-      <div class="wa-sheet__foot" id="sheet-foot"></div>
-    </div>
-  </dialog>
+
 
 </body>
 </html>
