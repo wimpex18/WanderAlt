@@ -9,7 +9,7 @@
    on phones it drags between peek, half and full. Pins cluster in screen
    space; the selected pin never clusters. Camera moves go through
    WA.MapTiles, which honours reduced motion.
-   URL: ?when=tonight|tomorrow|weekend|thisweek&show=events|places&pick=<id>
+   URL: ?when=tonight|tomorrow|weekend|thisweek or ?date=&to=, plus ?show=events|places&pick=<id>
    ============================================================ */
 (() => {
   'use strict';
@@ -21,13 +21,12 @@
   const T = () => window.WA.MapTiles;
   const esc = (s) => window.WA.UI.esc(s);
 
-  const state = { layer: 'all', when: 'tonight', active: '' };
+  const D = () => window.WA.Discovery;
+  const state = { layer:'all', active:'' };
   /* The drawer row the pointer is over; placePins rebuilds the pins, so it forgets it. */
   let hovered = '';
-  const WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
   const LAYERS = ['all', 'events', 'places'];
   const qp = new URLSearchParams(location.search);
-  if (WHEN.includes(qp.get('when'))) state.when = qp.get('when');
   if (LAYERS.includes(qp.get('show'))) state.layer = qp.get('show');
   /* ?pick=<id> arrives from an event or venue page: that pin is shown
      whatever the window, chosen, and the map opens on it. */
@@ -42,18 +41,21 @@
   const withCoords = (x) => { const c = G().coordsFor(x); return c ? Object.assign(x, { _c: c }) : null; };
 
   const collect = () => {
-    events = R().live().filter(e => W().matches(e, state.when) || e.id === pickId()).map(withCoords).filter(Boolean)
+    events = R().live().filter(e => (D().matchesDate(e) && D().matchesEvent(e)) || e.id === pickId()).map(withCoords).filter(Boolean)
       .sort(G().byDateThenSoonest());
     /* The places layer is what is open now, plus the rooms hosting an
        event in this window; the rest of the catalogue lives on Places. */
     const hosts = new Set(events.map(e => e.venueId).filter(Boolean));
     const hostNames = new Set(events.map(e => String(e.venue || '').toLowerCase().trim()));
-    places = R().places().filter(v => v.id === pickId() || R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))
+    places = R().places().filter(v => v.id === pickId() || (D().matchesPlace(v) && (R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))))
       .map(withCoords).filter(Boolean);
     $('n-events').textContent = String(events.length);
     $('n-places').textContent = String(places.length);
     document.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer)));
-    $('map-when').value = state.when;
+    $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
+    $('map-filters').innerHTML = window.WA.DiscoveryControls.keys();
+    $('map-dates').querySelector('[data-pick-dates] span').textContent = D().label();
+    document.querySelector('.map-page > h1').textContent = 'Map of Tallinn';
     if (seg) seg.sync();
   };
 
@@ -241,7 +243,7 @@
     };
   };
 
-  const byWalk = (list, fallback) => (G().currentLoc()
+  const byWalk = (list, fallback) => (D().nearOn()
     ? list.slice().sort((a, b) => (G().distanceTo(a) ?? 1e9) - (G().distanceTo(b) ?? 1e9))
     : list.slice().sort(fallback));
 
@@ -253,22 +255,22 @@
 
   const placeDrawer = () => {
     const { evs, pls } = ordered();
-    const whenWord = { tonight: 'tonight', tomorrow: 'tomorrow', weekend: 'this weekend', thisweek: 'this week' }[state.when];
+    const whenWord = D().label();
     $('drawer-title').textContent = evs.length || pls.length ? 'In view' : 'Nothing in view';
     $('drawer-sub').textContent = [
       on.events ? `${evs.length} ${evs.length === 1 ? 'event' : 'events'} ${whenWord}` : '',
       on.places ? `${pls.length} ${pls.length === 1 ? 'place' : 'places'}` : '',
-      G().currentLoc() ? 'nearest first' : '',
+      D().nearOn() ? 'nearest first' : '',
     ].filter(Boolean).join(' · ');
 
     let html = '';
-    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day: state.when !== 'tonight', noThumb: true })).join('')}</ul>`;
+    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day: !!D().dates().date || D().dates().when !== 'tonight', noThumb: true })).join('')}</ul>`;
     if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
     if (!evs.length && !pls.length) {
       html += `<p class="map-legend-note">Zoom out or move the map. ${events.length} ${events.length === 1 ? 'event is' : 'events are'} placed ${whenWord}${on.events ? '' : ', with the events layer off'}.</p>
         <button class="wa-btn wa-btn--sm" type="button" data-act="fit">Show everything</button>`;
     }
-    html += `<p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;
+    html += `<p class="map-legend-note">Place hours are for now.</p><p class="map-legend-note">Pills are events with their start time. A round pin is a place; a vermilion ring means it is open now.</p>`;
     if (html === lastDrawer) return;
     lastDrawer = html;
     $('drawer-list').innerHTML = html;
@@ -280,7 +282,7 @@
     const base = list || (on.events && events.length ? events : shown().map(i => i.x));
     const pts = base.map(x => ({ lat: x._c.lat, lng: x._c.lng }));
     const desk = matchMedia('(min-width: 1024px)').matches;
-    const pad = desk ? { top: 100, left: 90, right: 90, bottom: 80 } : { top: 130, left: 56, right: 56, bottom: 170 };
+    const pad = desk ? { top: 100, left: 90, right: 90, bottom: 80 } : { top: 180, left: 56, right: 56, bottom: 170 };
     /* No tween: a resize during the opening frames cancels an animated fit. */
     if (pts.length) t.fitToPicks(pts, { padding: pad, duration: 0 });
   };
@@ -393,7 +395,7 @@
     if (hit('#locate')) {
       G().userLoc().then((loc) => {
         if (!loc) { $('drawer-sub').textContent = 'Location is off in this browser, so the list is ordered by time'; setDrawer('half'); return; }
-        me = loc; T().flyTo(loc.lng, loc.lat, 14.5); draw();
+        me = loc; G().setAnchor(null); D().setNear(true); T().flyTo(loc.lng, loc.lat, 14.5); draw();
       });
       return;
     }
@@ -429,14 +431,12 @@
     const c = e.target.closest('[data-card]');
     if (c && c.dataset.card !== state.active && phone.matches && e.target.matches(':focus-visible')) centreCard(c);
   });
-  document.addEventListener('change', (e) => {
-    if (e.target.id !== 'map-when') return;
-    state.when = e.target.value; state.active = '';
-    const q = new URLSearchParams(location.search);
-    if (state.when === 'tonight') q.delete('when'); else q.set('when', state.when);
-    history.replaceState(null, '', q.toString() ? `?${q}` : location.pathname);
-    collect(); draw(); fit();
-  });
+  const refreshFilters = () => {
+    if (!dataUp) return;
+    state.active = ''; lastDrawer = ''; collect(); draw(); fit();
+  };
+  document.addEventListener('wa:discovery-changed', refreshFilters);
+  document.addEventListener('wa:mood-changed', refreshFilters);
   /* Hovering a drawer row lifts its pin, the cheap direction of the pairing. */
   document.addEventListener('pointerout', (e) => {
     const r = e.target.closest && e.target.closest('[data-row],[data-place]');
@@ -483,6 +483,7 @@
     T().on('moveend', placeDrawer);
   };
   const boot = () => {
+    me = G().deviceLoc();
     collect();
     dataUp = true;
     start();
@@ -491,6 +492,6 @@
   };
   start();
   document.addEventListener('wa:catalog-ready', boot);
-  document.addEventListener('wa:location-ready', (e) => { me = e.detail || G().currentLoc(); lastDrawer = ''; draw(); });
+  document.addEventListener('wa:location-ready', () => { me = G().deviceLoc(); lastDrawer = ''; collect(); draw(); });
   document.addEventListener('wa:language-changed', () => { collect(); lastDrawer = ''; if (dataUp) draw(); });
 })();

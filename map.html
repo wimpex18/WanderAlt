@@ -61,6 +61,10 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
   <script defer src="./map-tiles.js"></script>
+  <script defer src="./moods.js"></script>
+  <script defer src="./discovery-state.js"></script>
+  <script defer src="./start-from.js"></script>
+  <script defer src="./discovery-controls.js"></script>
   <script defer src="./map.js"></script>
 </head>
 <body data-page="map">
@@ -79,7 +83,7 @@
   </header>
 
   <main class="map-page" id="main">
-    <h1 class="wa-sr">Map of tonight in Tallinn</h1>
+    <h1 class="wa-sr">Map of Tallinn</h1>
     <div class="map-canvas" id="map-canvas"></div>
     <div class="map-pins" id="map-pins"></div>
     <div class="map-top">
@@ -88,14 +92,8 @@
         <button class="map-seg__opt" type="button" data-layer="events" aria-pressed="false">Events<span class="map-seg__n" id="n-events"></span></button>
         <button class="map-seg__opt" type="button" data-layer="places" aria-pressed="false">Places<span class="map-seg__n" id="n-places"></span></button>
       </div>
-      <label class="map-when"><span class="wa-sr">When</span>
-        <select id="map-when">
-          <option value="tonight">Tonight</option>
-          <option value="tomorrow">Tomorrow</option>
-          <option value="weekend">Weekend</option>
-          <option value="thisweek">This week</option>
-        </select>
-      </label>
+      <div class="map-dates" id="map-dates"></div>
+      <div class="map-filters" id="map-filters"></div>
     </div>
     <div class="map-preview" id="preview" data-open="false"></div>
     <button class="map-ctrl map-locate" type="button" id="locate" aria-label="Show where I am"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" data-ic="locate"><circle class="t" cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/></svg></button>

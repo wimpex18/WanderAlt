@@ -336,6 +336,7 @@
   const flagTag = (e, cls = '') => flagLabel(e) ? `<span class="wa-flag wa-flag--${esc(e.flag)}${cls}">${esc(flagLabel(e))}</span>` : '';
 
   const row = (e, opts = {}) => {
+    if (opts.feed) return feedItem(e, opts);
     const r = rail(e, opts);
     const why = whyTag(e);
     const kind = kindLabel(e.kind);
@@ -363,6 +364,27 @@
       ${opts.drop ? `<span class="wa-row__side"><button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button></span>`
                   : opts.noThumb ? '' : thumb(e)}
     </a></li>`;
+  };
+
+  /* Image first, facts below. No fabricated social proof or stock pictures.
+     Source text remains visible even when the artwork has failed. */
+  const feedItem = (e, opts = {}) => {
+    const { src, logo, tone, venue } = art(e), kind = kindLabel(e.kind), why = whyTag(e);
+    const r = rail(e, opts);
+    const facts = [latin(e.venue), areaOf(e)].filter(Boolean).map(esc).join(' · ');
+    let source = e.handle || '';
+    if (source && !source.startsWith('@')) source = `@${source}`;
+    if (!source && url(e.permalink)) { try { source = new URL(url(e.permalink)).hostname.replace(/^www\./, ''); } catch (_) {} }
+    return `<li class="wa-feed__item${isOff(e) ? ' is-off' : ''}"><a class="wa-feed__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+      <span class="wa-feed__art${src ? '' : ' is-missing'}${logoCls(logo,tone)}">${src ? `<img src="${esc(src)}" alt="" width="640" height="360" loading="lazy" decoding="async">` : window.WA.Picto.kind(e.kind)}</span>
+      ${venue && src ? '<span class="wa-feed__image-note">Venue image</span>' : ''}
+      <span class="wa-feed__body"><span class="wa-feed__kinds">${flagTag(e)}${kind ? `<span>${esc(kind)}</span>` : ''}${why ? `<span>${esc(why)}</span>` : ''}</span>
+        <span class="wa-feed__title">${esc(e.title || '')}</span>
+        <span class="wa-feed__when">${r.html}${r.live && clockOf(e) ? `<span class="wa-row__time">${esc(clockOf(e))}</span>` : ''}${opts.day && W().statedMinutes(e) == null ? '<span class="wa-feed__meta">Time not listed</span>' : ''}</span>
+        ${facts ? `<span class="wa-feed__meta">${facts}</span>` : ''}
+        <span class="wa-feed__price">${isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || 'Price not listed')}</span>
+        ${source ? `<span class="wa-feed__source"><span>Source</span> · ${esc(source)}</span>` : ''}
+      </span></a>${heart(e.id,e.title)}</li>`;
   };
 
   /* ── The place row ───────────────────────────────────────── */
@@ -520,7 +542,7 @@
         : k === 'running'
           ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Running</span><span class="wa-day__date">Started earlier, still on</span><span class="wa-day__n">${all.length}</span></div>`
           : dayHead(k, all.length);
-      out.push(`${head}<ul class="wa-rows">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
+      out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : 'wa-rows'}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
     }
     return out.join('');
   };
@@ -581,7 +603,7 @@
   /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
      dead image for the row's own pictogram (no inline handler: `error`
      does not bubble, so listen in the capture phase). */
-  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile';
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art';
   document.addEventListener('error', (e) => {
     const img = e.target;
     if (!img || img.tagName !== 'IMG') return;
@@ -591,6 +613,8 @@
     const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
     const found = id && [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])].find(p => p.id === id);
     box.classList.remove('is-logo');
+    // Keep the reserved photo height after a late failure, so the feed doesn't jump.
+    if (box.matches('.wa-feed__art')) box.classList.add('is-failed');
     [...box.classList].filter(c => c.startsWith('tone-')).forEach(c => box.classList.remove(c));
     img.outerHTML = box.matches('.wa-poster__art')
       ? `<span class="wa-poster__type">${window.WA.Picto.kind(found && found.kind)}</span>`
@@ -601,7 +625,7 @@
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
+    openState, openBadge, row, feedItem, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
   };
 })();

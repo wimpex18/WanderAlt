@@ -753,3 +753,22 @@ Whole city	Kogu linn	Весь город	Все місто
 Choose a place	Vali koht	Выберите место	Виберіть місце
 Right by here	Siinsamas	Совсем рядом	Зовсім поруч
 Nearest first, walking from here	Lähimad eespool, jalutades siit	Сначала ближайшие, пешком отсюда	Спочатку найближчі, пішки звідси
+
+# Shared discovery controls and image-first feed
+A walk for now	Jalutuskäik praegu	Прогулка сейчас	Прогулянка зараз
+Two or three stops on foot	Kaks või kolm peatust jalgsi	Две или три остановки пешком	Дві або три зупинки пішки
+See the next few hours	Vaata järgmisi tunde	Посмотреть ближайшие часы	Переглянути найближчі години
+Show results	Näita tulemusi	Показать результаты	Показати результати
+Date	Kuupäev	Дата	Дата
+Date range	Kuupäevavahemik	Диапазон дат	Діапазон дат
+Through	Kuni	По	До
+Dates are in Tallinn. Only filed listings are shown.	Kuupäevad on Tallinna aja järgi. Näitame ainult teadaolevaid sündmusi.	Даты указаны по времени Таллинна. Показаны только известные события.	Дати вказано за часом Таллінна. Показано лише відомі події.
+No listings match these choices.	Nende valikutega sündmusi ei ole.	Нет событий по выбранным условиям.	Немає подій за вибраними умовами.
+Change filters	Muuda filtreid	Изменить фильтры	Змінити фільтри
+Source	Allikas	Источник	Джерело
+Venue image	Koha pilt	Фото места	Фото місця
+Place hours are for now.	Kohtade lahtiolekuajad on praeguse hetke kohta.	Часы работы мест указаны на сейчас.	Години роботи місць вказано на зараз.
+Map of Tallinn	Tallinna kaart	Карта Таллинна	Мапа Таллінна
+No places match these choices.	Nende valikutega kohti ei ole.	Нет мест по выбранным условиям.	Немає місць за вибраними умовами.
+nearest to your start first	lähimad valitud alguspunktile eespool	сначала ближайшие к вашей точке отсчёта	спочатку найближчі до вашої точки відліку
+The selected listings and places, by walking time.	Valitud sündmused ja kohad jalutamisaja järgi.	Выбранные события и места по времени пешком.	Вибрані події та місця за часом пішки.

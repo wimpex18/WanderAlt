@@ -92,6 +92,7 @@ function programme(search = '', venues: any[] = []) {
     Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0, startMinutes: () => 22 * 60 },
     Hours: { cityNow: () => ({ minutes: 12 * 60 }) }, Seen: { count: () => 0, filter: (rows: any[]) => rows }, venues,
   };
+  WA.Discovery = { matchesDate: (e: any, s: any) => s.date ? WA.when.isOnDate(e, s.date) : WA.when.matches(e, s.when) };
   const location = { search, pathname: '/discover' };
   const context = createContext({ window: { WA, addEventListener: () => {} }, location,
     history: { replaceState: (_: any, __: any, url: string) => { location.search = url.startsWith('?') ? url : ''; } }, URLSearchParams, AbortController,
@@ -122,7 +123,7 @@ test('manual Programme filters keep the same results and selected state after re
   assert.equal(p.elements.get('filter-count').textContent, '4');
   assert.match(p.elements.get('quick').innerHTML, /Remove Free/);
   assert.match(p.elements.get('quick').innerHTML, /Remove In English/);
-  assert.match(p.elements.get('quick').innerHTML, /Under €20/);
+  assert.match(p.elements.get('quick').innerHTML, /Up to €20/);
   const fresh = programme(p.location.search); fresh.query('');
   assert.equal(fresh.location.search, p.location.search);
 });
@@ -172,10 +173,10 @@ test('model interpretation retains locally understood day, kind, free, language 
   const p = programme(); p.query('free film tonight in English under 10 quiet'); p.start();
   p.finish({ when: 'tomorrow', day: '2026-10-02', kinds: ['gig'], maxPrice: 99, note: 'Paid gigs Friday' }); await tick();
   assert.match(p.elements.get('summary').innerHTML, /1 listing/);
-  assert.match(p.elements.get('summary').innerHTML, /tonight.*film/);
+  assert.match(p.elements.get('summary').innerHTML, /today.*film/);
   assert.match(p.elements.get('quick').innerHTML, /Remove Free/);
   assert.match(p.elements.get('quick').innerHTML, /Remove In English/);
-  assert.match(p.elements.get('quick').innerHTML, /Under €10/);
+  assert.match(p.elements.get('quick').innerHTML, /Up to €10/);
   assert.doesNotMatch(p.elements.get('ask-note').innerHTML, /Paid gigs Friday/);
 });
 

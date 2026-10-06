@@ -757,7 +757,24 @@ window.WA.dict.et = {
   "Whole city": "Kogu linn",
   "Choose a place": "Vali koht",
   "Right by here": "Siinsamas",
-  "Nearest first, walking from here": "Lähimad eespool, jalutades siit"
+  "Nearest first, walking from here": "Lähimad eespool, jalutades siit",
+  "A walk for now": "Jalutuskäik praegu",
+  "Two or three stops on foot": "Kaks või kolm peatust jalgsi",
+  "See the next few hours": "Vaata järgmisi tunde",
+  "Show results": "Näita tulemusi",
+  "Date": "Kuupäev",
+  "Date range": "Kuupäevavahemik",
+  "Through": "Kuni",
+  "Dates are in Tallinn. Only filed listings are shown.": "Kuupäevad on Tallinna aja järgi. Näitame ainult teadaolevaid sündmusi.",
+  "No listings match these choices.": "Nende valikutega sündmusi ei ole.",
+  "Change filters": "Muuda filtreid",
+  "Source": "Allikas",
+  "Venue image": "Koha pilt",
+  "Place hours are for now.": "Kohtade lahtiolekuajad on praeguse hetke kohta.",
+  "Map of Tallinn": "Tallinna kaart",
+  "No places match these choices.": "Nende valikutega kohti ei ole.",
+  "nearest to your start first": "lähimad valitud alguspunktile eespool",
+  "The selected listings and places, by walking time.": "Valitud sündmused ja kohad jalutamisaja järgi."
  },
  "patterns": [
   [

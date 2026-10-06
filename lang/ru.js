@@ -757,7 +757,24 @@ window.WA.dict.ru = {
   "Whole city": "Весь город",
   "Choose a place": "Выберите место",
   "Right by here": "Совсем рядом",
-  "Nearest first, walking from here": "Сначала ближайшие, пешком отсюда"
+  "Nearest first, walking from here": "Сначала ближайшие, пешком отсюда",
+  "A walk for now": "Прогулка сейчас",
+  "Two or three stops on foot": "Две или три остановки пешком",
+  "See the next few hours": "Посмотреть ближайшие часы",
+  "Show results": "Показать результаты",
+  "Date": "Дата",
+  "Date range": "Диапазон дат",
+  "Through": "По",
+  "Dates are in Tallinn. Only filed listings are shown.": "Даты указаны по времени Таллинна. Показаны только известные события.",
+  "No listings match these choices.": "Нет событий по выбранным условиям.",
+  "Change filters": "Изменить фильтры",
+  "Source": "Источник",
+  "Venue image": "Фото места",
+  "Place hours are for now.": "Часы работы мест указаны на сейчас.",
+  "Map of Tallinn": "Карта Таллинна",
+  "No places match these choices.": "Нет мест по выбранным условиям.",
+  "nearest to your start first": "сначала ближайшие к вашей точке отсчёта",
+  "The selected listings and places, by walking time.": "Выбранные события и места по времени пешком."
  },
  "patterns": [
   [

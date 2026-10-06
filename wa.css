@@ -753,15 +753,13 @@ button.wa-since[disabled] { opacity: .6; }
 .home-hero__title em { font-style: normal; color: var(--accent-ink); }
 .home-grid { display: grid; }
 .home-main, .home-side { min-width: 0; }
+.home-main { max-width:42rem; }
 .home-side { margin-top: var(--s-8); display: grid; gap: var(--s-8); align-content: start; }
 .home-side .wa-sect { margin-top: 0; }
-.home-pill--desk { display: none !important; }
 @media (min-width: 1024px) {
   body[data-page="tonight"] .wa-topbar { border-bottom: 0; }
   .home-top { position: static; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-2) var(--gutter) var(--s-4); border-bottom: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .is-scrolled .home-top { border-bottom-color: transparent; }
-  .home-pill--phone { display: none !important; }
-  .home-pill--desk { display: flex !important; }
   .home-hero { padding: var(--s-8) 0 var(--s-6); }
   .home-grid { grid-template-columns: minmax(0, 1fr) 380px; gap: var(--s-9); align-items: start; }
   .home-side { margin-top: 0; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); }
@@ -984,7 +982,7 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 .map-page { position: fixed; inset: 0; }
 .map-canvas, .map-canvas.maplibregl-map { position: absolute; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 12px 0; border-radius: var(--r-lg); background: var(--paper-2); }
 .map-pins { position: absolute; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 12px 0; border-radius: var(--r-lg); pointer-events: none; overflow: hidden; overflow: clip; }
-.map-top { position: absolute; left: var(--s-3); right: var(--s-3); top: calc(var(--topbar-h) + env(safe-area-inset-top) + var(--s-3)); z-index: 3; display: flex; gap: var(--s-2); align-items: center; pointer-events: none; }
+.map-top { flex-wrap: wrap; position: absolute; left: var(--s-3); right: var(--s-3); top: calc(var(--topbar-h) + env(safe-area-inset-top) + var(--s-3)); z-index: 3; display: flex; gap: var(--s-2); align-items: center; pointer-events: none; }
 .map-top > * { pointer-events: auto; }
 /* What to show: the tab bar's glass slider in small (tabbar.js): a tinted
    pill marks the current option, and pressing the capsule lifts the drop.
@@ -1538,19 +1536,19 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-6) 0 var(--s-3); }
 
 /* Tonight's list: day tabs, then rows in time order. */
-.home-tabs { display: flex; gap: var(--s-5); border-bottom: 1px solid var(--hair); margin-bottom: var(--s-2); }
-.home-tab { appearance: none; background: none; border: 0; padding: var(--s-3) 0 calc(var(--s-3) - 3px); font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; border-bottom: 3px solid transparent; min-height: var(--tap); }
-.home-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.home-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-3); border-bottom: 1px solid var(--hair); margin-bottom: var(--s-2); }
+.home-tab { min-width:44px; appearance: none; background: none; border: 0; padding: var(--s-3) 0 calc(var(--s-3) - 3px); font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; border-bottom: 3px solid transparent; min-height: var(--tap); }
+.home-tab[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .home-tab[disabled] { opacity: .35; cursor: default; }
 .home-kinds { margin-bottom: var(--s-2); }
 .home-kinds .wa-chip { min-height: var(--tap); padding: 0 14px; font-size: .875rem; flex: none; }
 .home-kinds .wa-chip .wa-picto { width: 20px; height: 20px; }
 .home-day__note { margin: 0 0 var(--s-1); }
 /* Events | Places on Now: the one switch under the answer. */
-.home-view { margin-bottom: var(--s-3); }
-.home-view button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
+.home-view { margin-bottom: var(--s-3); width: 100%; box-sizing: border-box; height: 52px; }
+.home-view > button { display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
 .home-view__n { font-size: .8125rem; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.home-view button[aria-pressed="true"] .home-view__n { color: var(--accent-ink); }
+.home-view > button[aria-pressed="true"] .home-view__n { color: var(--accent-ink); }
 .home-places { display: grid; }
 .home-places .wa-place { grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--s-3); padding: 10px 0; }
 .home-places .wa-place__glyph { width: 56px; height: 56px; }
@@ -1561,11 +1559,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   /* Beside the map card the row keeps to its column. */
   .home-kinds { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; scroll-padding: 0; }
 }
-/* Now's list is a preview: tighter rows, a smaller picture, titles to two lines. */
-.home-day .wa-row { padding: var(--s-3) 0; gap: var(--s-3); }
-.home-day .wa-row__thumb { width: 60px; height: 60px; border-radius: 12px; }
-.home-day .wa-row__title { font-size: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.home-day .wa-row__top { margin-bottom: 0; }
 .home-day__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); }
 .home-day__all { min-height: var(--tap); background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
 .home-day__all .wa-ic { width: 18px; height: 18px; }
@@ -1599,7 +1592,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
    walks keep their size, and every control keeps its 44px. Desktop is unchanged. */
 @media (max-width: 767px) {
   .wa-row { gap: var(--s-3); padding: var(--s-3) 0; }
-  .wa-row__thumb, .home-day .wa-row__thumb { width: 56px; height: 56px; border-radius: 12px; }
+  .wa-row__thumb { width: 56px; height: 56px; border-radius: 12px; }
   .wa-place, .home-places .wa-place { grid-template-columns: 48px minmax(0, 1fr) auto; gap: var(--s-3); padding: 10px 0; }
   .wa-place__glyph, .home-places .wa-place__glyph { width: 48px; height: 48px; border-radius: 12px; }
   .wa-place__glyph .wa-picto, .home-places .wa-place__glyph .wa-picto { width: 48px; height: 48px; }
@@ -1633,3 +1626,90 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-sheet--start .wa-start__options { position: static; margin-top: 4px; }
 
 .wa-sheet--start .wa-start__control { align-items: flex-start; }
+
+/* Direct search at every width. The sticky surface is the control layer;
+   the field itself is quiet paper, with one 44px submit target. */
+.home-search { display:flex; align-items:center; gap:8px; background:var(--paper-2); border:1px solid var(--hair); border-radius:var(--r-pill); padding:3px 6px 3px 18px; max-width:42rem; }
+.home-search input { min-width:0; flex:1; background:none; border:0; padding:10px 0; font:inherit; font-size:1rem; color:var(--ink); }
+.home-search:focus-within { outline:2px solid var(--accent); outline-offset:2px; }
+.home-search input:focus { outline:none; }
+.home-search .wa-iconbtn { flex:none; color:var(--ink-2); }
+.home-walk__key { width:100%; display:flex; align-items:center; gap:12px; min-height:60px; padding:10px 0; text-align:left; color:var(--ink); background:none; border:0; border-block:1px solid var(--hair); }
+.home-walk__key > span { flex:1; min-width:0; display:grid; gap:3px; }
+.home-walk__key b { font-size:1rem; font-weight:600; }
+.home-walk__key small { color:var(--ink-2); font-size:.875rem; }
+.home-walk__key > .wa-ic:first-child { color:var(--accent-ink); }
+.home-walk__key[aria-expanded="true"] > .wa-ic:last-child { transform:rotate(180deg); }
+.home-walk__key .wa-ic { flex:none; }
+.home-walk__key + #plan { margin-top:12px; overflow:hidden; }
+.home-calendar { padding:0 10px; font-size:.875rem; gap:5px; }
+.home-calendar .wa-ic { width:18px; height:18px; }
+.home-calendar[aria-haspopup] { max-width:100%; }
+.home-empty { padding-block:24px; }
+.home-empty .wa-linkbtn { margin-right:16px; }
+.discovery-near[aria-pressed="true"] { color:var(--here); }
+.map-dates { margin-left:auto; min-width:0; }
+.map-dates .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); max-width:100%; height:auto; min-height:44px; }
+.map-dates .wa-chip span { max-width:15rem; white-space:normal; }
+.map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; pointer-events:auto; }
+.map-filters .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); font-size:.8125rem; padding-inline:10px; }
+.map-filters .home-mood__key { min-width:0; flex:1; }
+.map-filters .home-mood__key span { white-space:normal; text-align:left; }
+.wa-sheet--discovery form { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.wa-sheet--discovery .wa-sheet__body { overflow-y:auto; }
+.wa-sheet--discovery .wa-field { display:grid; gap:8px; }
+.wa-sheet--discovery input[type="date"] { color-scheme:light; min-width:0; }
+:root[data-theme="dusk"] .wa-sheet--discovery input[type="date"] { color-scheme:dark; }
+.discovery-range { display:flex; align-items:center; gap:8px; min-height:44px; margin-block:12px; }
+.discovery-range input { width:20px; height:20px; accent-color:var(--accent); }
+.discovery-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
+.wa-feed { max-width:42rem; display:grid; list-style:none; margin:0; padding:0; }
+.wa-feed__item { position:relative; padding:20px 0 24px; border-bottom:1px solid var(--hair); }
+.wa-feed__link { display:block; text-decoration:none; color:inherit; }
+.wa-feed__art { display:grid; place-items:center; width:100%; aspect-ratio:16/9; border-radius:18px; overflow:hidden; background:var(--paper-2); }
+.wa-feed__art img { width:100%; height:100%; object-fit:cover; }
+.wa-feed__art.is-logo img { object-fit:contain; padding:20px; box-sizing:border-box; }
+.wa-feed__art.is-missing { aspect-ratio:auto; height:88px; background:color-mix(in oklab, var(--accent) 4%, var(--paper-2)); }
+.wa-feed__art .wa-picto { width:68px; height:68px; }
+.wa-feed__body { display:grid; gap:6px; padding-top:14px; padding-right:44px; }
+.wa-feed__title { font-size:1.375rem; font-weight:650; line-height:1.25; letter-spacing:-.025em; overflow-wrap:anywhere; text-wrap:pretty; }
+.wa-feed__kinds { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:.875rem; font-weight:600; color:var(--accent-ink); }
+.wa-feed__kinds > span + span:not(.wa-flag)::before { content:"·"; margin-right:10px; color:var(--ink-3); }
+.wa-feed__when { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+.wa-feed__when .wa-row__time, .wa-feed__when .wa-row__walk { display:inline-flex; font-size:.9375rem; line-height:1.4; }
+.wa-feed__when .wa-row__area { display:none; }
+.wa-feed__meta, .wa-feed__price { color:var(--ink-2); font-size:.9375rem; line-height:1.45; overflow-wrap:anywhere; }
+.wa-feed__source, .wa-feed__image-note { color:var(--ink-3); font-size:.8125rem; line-height:1.4; }
+.wa-feed__image-note { display:block; margin-top:5px; }
+.wa-feed__item > .wa-heart { position:absolute; top:auto; right:0; bottom:24px; }
+.wa-feed__item.is-off .wa-feed__art { opacity:.5; filter:grayscale(1); }
+.wa-feed__item.is-off .wa-feed__title { text-decoration:line-through; }
+@media (min-width:1024px) {
+  .wa-feed__title { font-size:1.625rem; }
+  .map-filters { flex-basis:auto; }
+  .map-top { align-items:flex-start; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .home-view *, .home-walk__key .wa-ic { transition:none !important; }
+}
+
+/* Intermediate windows keep a readable feed and the touch navigation.
+   Landscape mini has room for a narrower sidebar, rather than a 440px drawer. */
+@media (min-width:600px) and (max-width:1023px) {
+  body[data-page="tonight"] .wa-shell { max-width:720px; }
+  .wa-sheet--discovery[open] { align-items:center; }
+  .wa-sheet--discovery .wa-sheet__panel { width:min(560px, calc(100% - 48px)); max-height:min(86dvh, 860px); border-radius:var(--r-xl); border-bottom:1px solid var(--glass-edge); }
+  .wa-sheet--discovery .wa-sheet__head::before { display:none; }
+}
+@media (min-width:1024px) and (max-width:1199px) {
+  .home-grid { grid-template-columns:minmax(0, 1fr) 260px; gap:var(--s-6); }
+  .map-canvas, .map-canvas.maplibregl-map, .map-pins { left:340px; }
+  .map-drawer { width:324px; }
+  .map-top { left:calc(340px + var(--s-4)); }
+  .map-preview { left:calc(324px + var(--s-5) - 8px); width:300px; }
+}
+@media (max-width:599px) {
+  .home-tabs { gap:6px 10px; }
+  .home-tab, .home-calendar { font-size:.875rem; }
+  .home-calendar { padding-inline:10px; }
+}
