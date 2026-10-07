@@ -861,7 +861,25 @@ window.WA.dict.ru = {
   "Change dates": "Изменить даты",
   "A day or a range": "День или период",
   "Walk and map": "Прогулка и карта",
-  "Mood": "Настроение"
+  "Mood": "Настроение",
+  "Keep your saves on every device": "Сохранённое на всех устройствах",
+  "Optional. No password.": "По желанию. Без пароля.",
+  "Saves sync to your account": "Сохранённое синхронизируется с аккаунтом",
+  "Not set": "Не выбрано",
+  "Your location": "Ваше местоположение",
+  "Recently opened": "Недавно открытые",
+  "Up to three. Walks lean toward them; nothing is hidden.": "До трёх. Прогулки учитывают их, ничего не скрывается.",
+  "Follow a place or a source from its page to hear when it lists something new.": "Подпишитесь на место или источник на его странице, чтобы узнавать о новых событиях.",
+  "Nothing yet. Notes about saved plans arrive here.": "Пока ничего. Сюда приходят заметки о сохранённых планах.",
+  "Your saves and history stay in this browser. Signed in, they also live in your account until you delete it.": "Сохранённое и история остаются в этом браузере. После входа они хранятся и в аккаунте, пока вы его не удалите.",
+  "On this device": "На этом устройстве",
+  "Waiting to sync": "Ожидает синхронизации",
+  "Synced": "Синхронизировано",
+  "Walk your saves": "Прогулка по сохранённому",
+  "Nothing in this list yet. Add saves to it from their pages.": "В этом списке пока пусто. Добавляйте сохранённое со страниц событий и мест.",
+  "Needs the app": "Нужно приложение",
+  "On": "Вкл.",
+  "Off": "Выкл."
  },
  "patterns": [
   [
@@ -1380,6 +1398,14 @@ window.WA.dict.ru = {
   [
    "{n} without a map location",
    "{n} без адреса на карте"
+  ],
+  [
+   "Dark from {t}",
+   "Тёмная с {t}"
+  ],
+  [
+   "All {n} open",
+   "Все открытые: {n}"
   ]
  ]
 };

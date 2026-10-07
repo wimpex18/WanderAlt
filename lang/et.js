@@ -861,7 +861,25 @@ window.WA.dict.et = {
   "Change dates": "Muuda kuupäevi",
   "A day or a range": "Päev või vahemik",
   "Walk and map": "Jalutuskäik ja kaart",
-  "Mood": "Meeleolu"
+  "Mood": "Meeleolu",
+  "Keep your saves on every device": "Hoia salvestatu igas seadmes",
+  "Optional. No password.": "Valikuline. Ilma paroolita.",
+  "Saves sync to your account": "Salvestatu sünkroonitakse kontoga",
+  "Not set": "Valimata",
+  "Your location": "Sinu asukoht",
+  "Recently opened": "Hiljuti avatud",
+  "Up to three. Walks lean toward them; nothing is hidden.": "Kuni kolm. Jalutuskäigud arvestavad neid, midagi ei peideta.",
+  "Follow a place or a source from its page to hear when it lists something new.": "Jälgi kohta või allikat selle lehelt, et kuulda, kui sinna lisandub midagi uut.",
+  "Nothing yet. Notes about saved plans arrive here.": "Veel mitte midagi. Siia jõuavad teated salvestatud plaanide kohta.",
+  "Your saves and history stay in this browser. Signed in, they also live in your account until you delete it.": "Salvestatu ja ajalugu jäävad sellesse brauserisse. Sisse logituna on need ka sinu kontol, kuni selle kustutad.",
+  "On this device": "Selles seadmes",
+  "Waiting to sync": "Ootab sünkroonimist",
+  "Synced": "Sünkroonitud",
+  "Walk your saves": "Jaluta salvestatu läbi",
+  "Nothing in this list yet. Add saves to it from their pages.": "Selles nimekirjas pole veel midagi. Lisa salvestatu siia nende lehtedelt.",
+  "Needs the app": "Vajab rakendust",
+  "On": "Sees",
+  "Off": "Väljas"
  },
  "patterns": [
   [
@@ -1335,6 +1353,14 @@ window.WA.dict.et = {
   [
    "{n} without a map location",
    "{n} kaardi asukohata"
+  ],
+  [
+   "Dark from {t}",
+   "Tume alates {t}"
+  ],
+  [
+   "All {n} open",
+   "Kõik {n} avatud"
   ]
  ]
 };

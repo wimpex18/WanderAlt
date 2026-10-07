@@ -230,7 +230,6 @@
 
   /* ── Render ─────────────────────────────────────────────────── */
   const wide = matchMedia('(min-width: 1024px)');
-  const pointer = matchMedia('(hover: hover) and (pointer: fine)');
   const main = () => {
     writeShown();
     const all = R().live();
@@ -250,7 +249,7 @@
     if (foldWatch) foldWatch.observe(browse);
     syncBrowse(list.length, { all: places.length, open: places.filter(isOpen).length });
     if (keep && focused.isConnected) focused.focus({ preventScroll: true });
-    side();
+    side(all);
     syncFold();
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
@@ -268,24 +267,34 @@
     if (next) { next.dataset.again = '1'; if (focused) next.querySelector('[data-another]')?.focus({ preventScroll: true }); }
   };
 
-  /* Wide windows keep the walk beside the list; a mouse also gets the map. */
-  const side = () => {
-    $('home-side').innerHTML = wide.matches ? `${walkCard()}${pointer.matches ? `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
-      <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
-      <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>` : ''}` : '';
+  /* Wide windows keep a side column beside the list: the walk, the picked
+     places open now (on Events) and what is new since the last visit. */
+  const openNow = () => {
+    if (view !== 'events') return '';
+    const open = pickedPlaces().filter(isOpen);
+    if (!open.length) return '';
+    const from = (nearOn() ? G().currentLoc() : null) || centre();
+    return `<section class="home-aside" aria-labelledby="home-open-title">
+      <h2 class="home-aside__title" id="home-open-title"><span>Open now</span><span class="home-aside__n">${open.length}</span></h2>
+      <ul class="home-aside__list">${open.slice(0, 4).map(v => {
+        const m = from ? G().walkMinutes(G().distanceTo(v, from)) : null;
+        return `<li><a class="home-aside__row" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">${window.WA.Picto.kind(v.kind)}
+          <span class="home-aside__text"><span class="home-aside__name">${esc(v.name || '')}</span><span class="home-aside__meta">${esc([R().kindLabel(v.kind, true), R().openState(v).text].filter(Boolean).join(' · '))}</span></span>
+          ${m != null ? `<span class="home-aside__walk">${I('walk')}${esc(R().walkLabel(m))}</span>` : ''}</a></li>`;
+      }).join('')}</ul>
+      ${open.length > 4 ? `<button class="wa-linkbtn home-aside__more" type="button" data-view="places">All ${open.length} open</button>` : ''}</section>`;
   };
-  wide.addEventListener('change', () => { if (window.WA.catalog) main(); });
-  pointer.addEventListener('change', side);
+  const newSince = (all) => {
+    const n = visit.prev ? all.filter(e => R().isNewSince(e, visit.prev)).length : 0;
+    return n ? `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>` : '';
+  };
+  const side = (all = R().live()) => {
+    $('home-side').innerHTML = wide.matches ? `${walkCard()}${openNow()}${newSince(all)}` : '';
+  };
+  wide.addEventListener('change', () => { if (window.WA.catalog) render(); });
 
-  /* ── New since the last visit ──────────────────────────────── */
-  const since = (all) => {
-    const host = $('since');
-    const prev = visit.prev;
-    const n = prev ? all.filter(e => R().isNewSince(e, prev)).length : 0;
-    if (!n) { host.innerHTML = ''; return; }
-    host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>`;
-  };
+  /* ── New since the last visit (phones and tablets; wide windows show it beside the list) ── */
+  const since = (all) => { $('since').innerHTML = wide.matches ? '' : newSince(all); };
 
   const render = () => { since(main()); };
 

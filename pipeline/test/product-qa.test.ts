@@ -171,7 +171,8 @@ test('Saved resolves unverified venues absent from recommendations without sayin
 test('Saved retains failed lookups with a recovery action instead of a disappearance claim', async () => {
   const p = saved(async () => { throw new Error('offline'); });
   await tick();
-  assert.equal(p.elements.get('saved-title').textContent, '1 saved');
+  assert.equal(p.elements.get('saved-title').textContent, 'Saved');
+  assert.equal(p.elements.get('saved-sub').textContent, '1 · On this device');
   assert.match(p.elements.get('saved-body').innerHTML, /Try again/);
   assert.doesNotMatch(p.elements.get('saved-body').innerHTML, /no longer listed|stopped listing/);
 });

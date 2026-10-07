@@ -213,31 +213,29 @@
     return !!(F && F.matchesEvent(e));
   };
 
-  const INTERESTS = [
-    { id: 'gigs',   label: 'Gigs',              icon: 'gig',      kinds: ['gig'] },
-    { id: 'club',   label: 'Club nights',       icon: 'club',     kinds: ['club'] },
-    { id: 'film',   label: 'Film',              icon: 'film',     kinds: ['film'] },
-    { id: 'stage',  label: 'Theatre and dance', icon: 'theatre',  kinds: ['theatre'] },
-    { id: 'art',    label: 'Art',               icon: 'art',      kinds: ['exhibition'] },
-    { id: 'talks',  label: 'Talks and workshops', icon: 'talk',   kinds: ['talk', 'workshop'] },
-    { id: 'fest',   label: 'Festivals',         icon: 'festival', kinds: ['festival'] },
-    { id: 'english', label: 'In English',       icon: 'globe',    tag: 'english' },
-  ];
+  /* Your taste (You): up to three moods, plus In English. It leans walks toward
+     what you like and never filters. Choices from the older list map onto moods. */
+  const TASTE_WAS = { gigs: 'listen', club: 'dance', film: 'look', stage: 'look', art: 'look', talks: 'make' };
   const IKEY = 'wa:interests:v1';
   const interests = {
-    OPTIONS: INTERESTS,
+    get OPTIONS() {
+      const M = window.WA.Moods;
+      return [...(M ? M.available({ allHours: true }).map(m => ({ id: m.id, label: m.label, picto: m.picto })) : []),
+        { id: 'english', label: 'In English', icon: 'globe' }];
+    },
     get() { try { return JSON.parse(localStorage.getItem(IKEY)) || null; } catch (_) { return null; } },
     set(ids, skipped) {
       try { localStorage.setItem(IKEY, JSON.stringify({ ids: ids || [], skipped: !!skipped, at: Date.now() })); } catch (_) {}
       document.dispatchEvent(new CustomEvent('wa:interests-changed'));
     },
-    ids() { const s = interests.get(); return (s && s.ids) || []; },
+    ids() {
+      const s = interests.get(), M = window.WA.Moods;
+      return [...new Set(((s && s.ids) || []).map(id => TASTE_WAS[id] || id))]
+        .filter(id => id === 'english' || !!(M && M.get(id)));
+    },
     matches(e) {
-      const ids = interests.ids();
-      if (!ids.length) return false;
-      const k = String(e.kind || '').toLowerCase();
-      return INTERESTS.some(o => ids.includes(o.id) &&
-        ((o.kinds && o.kinds.includes(k)) || (o.id === 'english' && (e.eventLanguages || []).includes('en'))));
+      const M = window.WA.Moods;
+      return interests.ids().some(id => id === 'english' ? (e.eventLanguages || []).includes('en') : !!(M && M.matchesEvent(id, e)));
     },
   };
 
@@ -398,7 +396,7 @@
     const m = opts.from ? G().walkMinutes(G().distanceTo(v, opts.from)) : walk(v);
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [esc(kindLabel(v.kind, true)), areaOf(v) ? `<span data-notranslate>${esc(areaOf(v))}</span>` : '', esc(opts.extra || '')].filter(Boolean).join(' · ');
-    return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
+    return `<li${opts.drop ? ' class="wa-saved-row"' : opts.heart ? ' class="wa-row-item wa-place-item"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
       <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked && opts.pickLabel !== false ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
@@ -410,7 +408,7 @@
         ${opts.drop ? '<span class="wa-saved-row__space" aria-hidden="true"></span>'
           : m != null ? `<span class="wa-place__walk">${I('walk')}${esc(walkLabel(m))}</span>` : ''}
       </span>
-    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(v.id)}" aria-label="${esc(`Remove ${v.name || ''} from saved`)}">${I('close')}</button>` : ''}</li>`;
+    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(v.id)}" aria-label="${esc(`Remove ${v.name || ''} from saved`)}">${I('close')}</button>` : opts.heart ? heart(v.id, v.name) : ''}</li>`;
   };
 
   /* ── The event card ────────────────────────────────────────
