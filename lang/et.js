@@ -737,7 +737,7 @@ window.WA.dict.et = {
   "Date": "Kuupäev",
   "Date range": "Kuupäevavahemik",
   "Through": "Kuni",
-  "Dates use Tallinn time": "Kuupäevad Tallinna aja järgi",
+  "Apply": "Rakenda",
   "No listings match these choices.": "Nende valikutega sündmusi ei ole.",
   "Change filters": "Muuda filtreid",
   "Source": "Allikas",

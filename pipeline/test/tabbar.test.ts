@@ -87,7 +87,7 @@ function touchControl(count: number, closeOnCommit = false) {
     lose:()=>{ pendingCapture=null; process(); }, capture:()=>currentCapture };
 }
 
-for (const [name,count,close] of [['footer',4,false],['language',4,true],['map',3,false]] as const) {
+for (const [name,count,close] of [['footer',4,false],['language',4,true],['map',3,false],['days',4,false]] as const) {
   test(`${name} touch sliding survives multiple moves from the icon and commits once on release`, () => {
     const p=touchControl(count,close);
     p.pointer('pointerdown',55);

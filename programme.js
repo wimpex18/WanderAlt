@@ -19,7 +19,6 @@
   const PAGE = 30;
   let limit = PAGE, runsOpen = false, lastSig = '';
   const WHEN = window.WA.SearchData.WHEN;
-  const SHEET_WHEN = ['all', 'tonight', 'tomorrow', 'weekend', 'thisweek'];
   const DOORS = window.WA.SearchData.DOORS;
   const write = () => {
     const qs = engine.params().toString();
@@ -28,11 +27,6 @@
   const since = R().previousVisit();
   const dayLabel = (k) => (k === W().todayKey() ? 'Today' : `${R().dateShort(k)}${k.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + k.slice(0,4)}`);
   const daysLabel = () => (state.dayTo ? `${dayLabel(state.day)} to ${dayLabel(state.dayTo)}` : dayLabel(state.day));
-  const setDays = (from, to) => {
-    if (!from && to) from = W().todayKey();
-    if (from && to && to <= from) to = '';
-    state.day = from || ''; state.dayTo = from ? (to || '') : ''; state.when = 'all';
-  };
 
   const apply = (list, skip) => engine.apply(list,skip);
   const base = () => R().live();
@@ -119,28 +113,14 @@
     return t(`Walking from ${origin}`);
   };
 
-  let datesOpen = false, advancedOpen = false, refocus = '';
+  let advancedOpen = false;
   const panel = (scope = 'sheet') => {
     if (state.q && placeOnly) return placePanel(scope);
-    const whenPool = apply(base(), 'when');
     const freeN = apply(base(), 'free').filter(R().isFree).length;
     const follows = window.WA.Follows ? window.WA.Follows.keys().length : 0;
     const fb = apply(base(), 'followed');
     const hasLoc = !!G().currentLoc();
     return `
-      <div class="wa-field">
-        <span class="wa-field__label">When</span>
-        <div class="wa-chips">${SHEET_WHEN.map(v => {
-          const n = v === 'all' ? whenPool.length : whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
-          return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${!state.day && state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(WHEN[v])} <span class="wa-chip__n">${n}</span></button>`;
-        }).join('')}
-          <button class="wa-chip" type="button" data-dates aria-expanded="${datesOpen || !!state.day}" aria-pressed="${!!state.day}">${I('calendar')}${esc(state.day ? daysLabel() : 'Pick dates')}</button>
-        </div>
-        ${datesOpen || state.day ? `<div class="prog-dates">
-          <label class="prog-dates__f"><span>From</span><input class="wa-input" type="date" data-date="from" min="${esc(W().todayKey())}" value="${esc(state.day)}" /></label>
-          <label class="prog-dates__f"><span>To</span><input class="wa-input" type="date" data-date="to" min="${esc(state.day || W().todayKey())}" value="${esc(state.dayTo)}" /></label>
-        </div>` : ''}
-      </div>
       <div class="wa-field"><span class="wa-field__label">Kind</span><div class="wa-chips">
         <button class="wa-chip" type="button" data-kind="" aria-pressed="${!state.kinds.size}">All</button>
         ${kindCounts().map(([k,n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n || state.kinds.has(k) ? '' : ' disabled'}>${esc(R().kindLabel(k))} <span class="wa-chip__n">${n}</span></button>`).join('')}
@@ -377,7 +357,7 @@
     const sheet = $('sheet');
     if (sheet && sheet.open) {
       const active = document.activeElement;
-      const key = active?.dataset && ['kind','when','area','sort','doors','toggle','placeOpen','placeQuery','within','price','advanced','followSearch'].find(k => k in active.dataset);
+      const key = active?.dataset && ['kind','area','sort','doors','toggle','placeOpen','placeQuery','within','price','advanced','followSearch'].find(k => k in active.dataset);
       const value = key && active.dataset[key];
       put($('sheet-body'), panel('sheet')); put($('sheet-foot'), foot(list.length));
       if (key) {
@@ -385,12 +365,6 @@
         const node = sheet.querySelector(`[data-${attr}="${CSS.escape(value || '')}"]`);
         (key === 'advanced' ? node?.querySelector('summary') : node)?.focus({ preventScroll:true });
       }
-    }
-    if (refocus) {
-      const at = sheet;
-      const el = at?.querySelector(`[data-date="${refocus}"]`);
-      refocus = '';
-      if (el) el.focus();
     }
   };
   const filterSig = () => JSON.stringify([state.q, state.day, state.dayTo, state.when, [...state.kinds], state.area, state.sort, state.within, state.doors,
@@ -434,7 +408,7 @@
   const sheet = () => $('sheet');
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    if (hit('[data-kind], [data-when], [data-area], [data-sort], [data-doors], [data-place-open], [data-place-query], [data-toggle], [data-clear], [data-act], [data-dates], #q-clear')) cancelAsk();
+    if (hit('[data-kind], [data-area], [data-sort], [data-doors], [data-place-open], [data-place-query], [data-toggle], [data-clear], [data-act], #q-clear')) cancelAsk();
     const fs = hit('[data-follow-search]');
     if (fs && window.WA.Follows) {
       const on = window.WA.Follows.toggle(fs.dataset.followSearch, searchLabel());
@@ -442,7 +416,17 @@
       if (window.WA.Toast) window.WA.Toast.show(on ? 'Following this search' : 'Stopped following this search');
       return;
     }
-    if (hit('#open-filters') || hit('#result-date')) {
+    if (hit('#result-date')) {
+      cancelAsk();
+      window.WA.DiscoveryControls.openDates(hit('#result-date'), {
+        dates:{ when:state.when, date:state.day, to:state.dayTo },
+        apply: value => {
+          state.when = value.when || 'all'; state.day = value.date || ''; state.dayTo = value.to || '';
+          engine.override('when'); render();
+        } });
+      return;
+    }
+    if (hit('#open-filters')) {
       $('sheet-title').textContent = 'Refine';
       put($('sheet-body'), panel('sheet'));
       put($('sheet-foot'), foot(results().length));
@@ -453,10 +437,6 @@
     if (hit('#sheet-close') || hit('#sheet-apply')) { sheet().close(); return; }
     if (hit('#q-clear')) { $('q').value = ''; onQuery(''); $('q').focus(); return; }
 
-    if (hit('[data-dates]')) {
-      if (state.day) { setDays('', ''); engine.override('when'); datesOpen = false; } else datesOpen = !datesOpen;
-      render(); return;
-    }
     const k = hit('[data-kind]');
     if (k) {
       const v = k.dataset.kind;
@@ -464,9 +444,6 @@
       else if (state.kinds.has(v)) state.kinds.delete(v); else state.kinds.add(v);
       engine.override('kind'); render(); return;
     }
-    const w = hit('[data-when]');
-    /* The chosen chip, tapped again, clears the filter. */
-    if (w) { const v = w.dataset.when; state.when = !state.day && state.when === v ? 'all' : v; state.day = ''; state.dayTo = ''; datesOpen = false; engine.override('when'); render(); return; }
     const a = hit('[data-area]');
     if (a) { state.area = a.dataset.area; state.areaExplicit = true; render(); return; }
     const s = hit('[data-sort]');
@@ -483,7 +460,7 @@
     const t = hit('[data-toggle]');
     if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; engine.override(t.dataset.toggle); render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      engine.reset(); syncPlaces(); evenings = []; datesOpen = false;
+      engine.reset(); syncPlaces(); evenings = [];
       $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
@@ -494,7 +471,7 @@
       if (x === 'clear-taste') state.taste = null;
       if (x === 'clear-kinds') state.kinds.clear();
       if (x === 'clear-area') { state.area = ''; state.areaExplicit = true; }
-      if (x === 'clear-when') { state.day = ''; state.dayTo = ''; state.when = 'all'; datesOpen = false; }
+      if (x === 'clear-when') { state.day = ''; state.dayTo = ''; state.when = 'all'; }
       if (x === 'clear-free') state.free = false;
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
@@ -551,16 +528,6 @@
       return;
     }
     if (e.target.matches('[data-within], [data-price]')) { render(); return; }
-    if (e.target.matches('[data-date]')) {
-      cancelAsk();
-      const box = e.target.closest('.prog-dates');
-      const val = (n) => (box.querySelector(`[data-date="${n}"]`).value || '');
-      const from = val('from'), to = val('to');
-      refocus = e.target.dataset.date;
-      /* The last day is only ever after the first. */
-      setDays(from, to); engine.override('when');
-      render();
-    }
   });
   document.addEventListener('submit', (e) => { if (e.target.id === 'search-form') { e.preventDefault(); onQuery($('q').value, true); $('q').blur(); } });
   /* Preserve the expanded list through detail-page round trips. */

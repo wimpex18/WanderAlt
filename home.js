@@ -72,11 +72,7 @@
     return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
   };
 
-  /* Stable shortcuts; the calendar provides any other filed day. */
-  const days = () => {
-    const dow = new Date(`${W().todayKey()}T12:00:00Z`).getUTCDay();
-    return [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], dow >= 1 && dow <= 4 ? ['weekend', 'Weekend'] : ['thisweek', 'This week']];
-  };
+  const days = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
   const dayList = (all, date, p) => {
     const list = sortSoon(all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p)));
     const timed = e => W().statedMinutes(e) != null;
@@ -134,6 +130,34 @@
   };
   const viewGlass = window.WA.glassDrop(viewSwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt',
     current: () => view === 'events' ? 0 : 1, commit: i => setView(i === 0 ? 'events' : 'places') });
+  // Preserve the day bar through renders so a slide keeps its pointer capture.
+  const daySwitch = document.createElement('div');
+  daySwitch.className = 'map-seg home-tabs';
+  daySwitch.setAttribute('role','group'); daySwitch.setAttribute('aria-label','Day');
+  daySwitch.innerHTML = days.map(([key,label]) => `<button class="map-seg__opt home-tab" type="button" data-day="${key}" aria-pressed="false"><span>${label}</span></button>`).join('')
+    + window.WA.DiscoveryControls.dateKey('map-seg__opt home-calendar');
+  const dayButtons = [...daySwitch.querySelectorAll('[data-day]')];
+  const calendar = daySwitch.querySelector('[data-pick-dates]');
+  const dayIndex = () => {
+    const s = D().dates(), i = s.date ? -1 : days.findIndex(([key]) => key === s.when);
+    return i < 0 ? days.length : i;
+  };
+  const chooseDay = button => { D().setDates({ when:button.dataset.day }); D().writeURL(); };
+  const touchDays = matchMedia('(max-width: 1023px), (pointer: coarse)');
+  const dayGlass = window.WA.glassDrop(daySwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt home-tab',
+    current:dayIndex, enabled:() => touchDays.matches, commitSame:true,
+    commit: (i, button) => {
+      if (i === days.length) { dayGlass.sync(); window.WA.DiscoveryControls.openDates(button); }
+      else chooseDay(button);
+    } });
+  touchDays.addEventListener('change', () => dayGlass.reset());
+  const syncDays = () => {
+    const i = dayIndex();
+    dayButtons.forEach((b,n) => b.setAttribute('aria-pressed',n === i));
+    calendar.setAttribute('aria-pressed',i === days.length);
+    calendar.querySelector('span').textContent = i === days.length ? D().label() : 'Pick dates';
+    dayGlass.sync();
+  };
   let walkOpen = false;
   const walkFold = p => `<section class="wa-sect rt-sect" id="plan-fold"><button class="home-walk__key" type="button" data-walk-toggle aria-expanded="${walkOpen}" aria-controls="plan">${I('walk')}<span><b>A walk for now</b><small>${esc(plans[planIdx] ? plans[planIdx].title || 'Two or three stops on foot' : 'See the next few hours')}</small></span>${I('down')}</button><div id="plan"${walkOpen ? '' : ' hidden'}>${planCard(p)}</div></section>`;
   let walkMotion = null;
@@ -166,8 +190,6 @@
     acts();
     const p = readPlans();
     const date = D().dates(), tab = date.date ? 'custom' : date.when;
-    const tabs = days();
-    if (tab !== 'custom' && !tabs.some(([k]) => k === tab)) tabs.push([tab, D().label()]);
     const list = dayList(all,date,p);
     const out = [walkFold(p)];
 
@@ -177,7 +199,7 @@
     } else {
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
         <div class="home-browse-head"><h2 class="wa-sr">Events</h2><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></div>
-        <div class="home-tabs" role="group" aria-label="Day">${tabs.map(([k,label]) => `<button class="home-tab" type="button" data-day="${k}" aria-pressed="${k === tab}">${esc(label)}</button>`).join('')}${window.WA.DiscoveryControls.dateKey('home-calendar')}</div>
+        <div id="home-day-slot"></div>
 
         ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
         ${list.length ? `<ul class="wa-feed">${list.slice(0,shown).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
@@ -186,8 +208,7 @@
     }
     if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
     const focused = document.activeElement;
-    const focusKey = focused && focused.dataset ? ['day'].find(k => k in focused.dataset) : null;
-    const focusValue = focusKey ? focused.dataset[focusKey] : '';
+    const hadDayFocus = daySwitch.contains(focused);
     const hadViewFocus = viewSwitch.contains(focused);
     $('home-main').innerHTML = out.join('');
     const slot = $('home-view-slot');
@@ -198,8 +219,9 @@
       viewSwitch.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',b.dataset.view === view));
       viewGlass.sync();
     }
-    if (focusKey) document.querySelector(`[data-${focusKey}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll:true });
-    if (hadViewFocus) focused.focus({ preventScroll:true });
+    const daySlot = $('home-day-slot');
+    if (daySlot) { daySlot.replaceWith(daySwitch); syncDays(); }
+    if (hadDayFocus || hadViewFocus) focused.focus({ preventScroll:true });
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
   };
@@ -246,7 +268,9 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
-    if (dt) { D().setDates({ when:dt.dataset.day }); D().writeURL(); return; }
+    if (dt) { chooseDay(dt); return; }
+    // Opening the calendar is an action, not a committed day selection.
+    if (hit('[data-pick-dates]') === calendar) dayGlass.sync();
     if (hit('[data-walk-toggle]')) { toggleWalk(); return; }
     const vw = hit('[data-view]');
     if (vw) {

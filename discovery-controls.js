@@ -3,7 +3,7 @@
   'use strict';
   const D = () => window.WA.Discovery, M = () => window.WA.Moods;
   const esc = s => window.WA.UI.esc(s), I = n => window.WA.Icon(n);
-  let sheet = null, opener = null, draft = null, applied = false;
+  let sheet = null, opener = null, draft = null, applied = false, applyDates = null;
   const keys = () => {
     const p = D().pref(), set = p.moods.length || p.cap != null;
     const anchor = window.WA.Geo.anchor(), words = M().words(p);
@@ -22,7 +22,7 @@
     sheet.innerHTML = `<div class="wa-sheet__panel"><div class="wa-sheet__head"><h2 id="discovery-title" class="wa-sheet__title">${esc(title)}</h2><button class="wa-iconbtn" type="button" data-discovery-close aria-label="Close">${I('close')}</button></div>
       <form id="discovery-form"><div class="wa-sheet__body" id="discovery-body">${body}</div><div class="wa-sheet__foot">${foot}</div></form></div>`;
     sheet.addEventListener('close', () => {
-      sheet.remove(); sheet = null; draft = null;
+      sheet.remove(); sheet = null; draft = null; applyDates = null;
       const result = applied && kind === 'mood' && document.querySelector('.home-view [aria-pressed="true"]');
       const target = result || (opener && opener.isConnected ? opener : document.querySelector(kind === 'dates' ? '[data-pick-dates]' : '[data-filter-open]'));
       if (target) target.focus({ preventScroll: true });
@@ -42,13 +42,15 @@
     draft = M().pref();
     open(button, "What's the mood?", moodBody(), '<button class="wa-btn wa-btn--quiet" type="button" data-mood-clear>Clear</button><button class="wa-btn wa-btn--primary" type="submit">Show results</button>', 'mood');
   };
-  const openDates = button => {
-    const s = D().dates(), today = window.WA.when.todayKey();
-    open(button, 'Pick dates', `<div class="discovery-presets" role="group" aria-label="Day">${[['tonight','Today'],['tomorrow','Tomorrow'],['weekend','Weekend'],['thisweek','This week']].map(([when,label]) => `<button class="wa-chip" type="button" data-date-preset="${when}" aria-pressed="${!s.date && s.when === when}">${label}</button>`).join('')}</div>
-      <label class="wa-field"><span class="wa-field__label">Date</span><input class="wa-input" type="date" name="date" required min="${esc(today)}" value="${esc(s.date || D().range()[0])}"></label>
+  // Search supplies its own dates/apply callback; the shared picker never copies
+  // a search selection into Now's stored discovery state.
+  const openDates = (button, options = {}) => {
+    if (sheet) return;
+    const s = options.dates || D().dates(), today = window.WA.when.todayKey();
+    applyDates = options.apply || (value => { D().setDates(value); D().writeURL(); });
+    open(button, 'Pick dates', `<label class="wa-field"><span class="wa-field__label">Date</span><input class="wa-input" type="date" name="date" required min="${esc(today)}" value="${esc(s.date || D().range(s)[0])}"></label>
       <label class="discovery-range"><input type="checkbox" name="range"${s.to ? ' checked' : ''}> <span>Date range</span></label>
-      <label class="wa-field" id="discovery-end"${s.to ? '' : ' hidden'}><span class="wa-field__label">Through</span><input class="wa-input" type="date" name="to" min="${esc(s.date || today)}" value="${esc(s.to)}"${s.to ? ' required' : ' disabled'}></label>
-      <p class="wa-note">Dates use Tallinn time</p>`, '<button class="wa-btn wa-btn--quiet" type="button" data-discovery-close>Cancel</button><button class="wa-btn wa-btn--primary" type="submit">Show results</button>', 'dates');
+      <label class="wa-field" id="discovery-end"${s.to ? '' : ' hidden'}><span class="wa-field__label">Through</span><input class="wa-input" type="date" name="to" min="${esc(s.date || today)}" value="${esc(s.to)}"${s.to ? ' required' : ' disabled'}></label>`, '<button class="wa-btn wa-btn--quiet" type="button" data-discovery-close>Cancel</button><button class="wa-btn wa-btn--primary" type="submit">Apply</button>', 'dates');
   };
   document.addEventListener('click', e => {
     const hit = s => e.target.closest && e.target.closest(s);
@@ -60,8 +62,6 @@
     }
     if (!sheet) return;
     if (hit('[data-discovery-close]')) { close(); return; }
-    const preset = hit('[data-date-preset]');
-    if (preset) { D().setDates({ when:preset.dataset.datePreset }); D().writeURL(); close(true); return; }
     if (sheet.dataset.kind !== 'mood') return;
     const mood = hit('[data-mood]'), sub = hit('[data-sub]'), cap = hit('[data-cap]');
     if (mood) {
@@ -92,11 +92,11 @@
     const kind = sheet.dataset.kind;
     if (kind === 'mood') M().setPref(draft);
     else {
-      const form = e.target, date = form.elements.date.value, to = form.elements.range.checked ? form.elements.to.value : '';
-      if (!D().validDate(date) || date < window.WA.when.todayKey() || (to && (!D().validDate(to) || to < date))) return;
-      D().setDates({ date, to }); D().writeURL();
+      const form = e.target, date = form.elements.date.value, ranged = form.elements.range.checked, to = ranged ? form.elements.to.value : '';
+      if (!D().validDate(date) || date < window.WA.when.todayKey() || (ranged && (!D().validDate(to) || to < date))) return;
+      applyDates({ date, to });
     }
     close(true);
   });
-  window.WA.DiscoveryControls = { keys, dateKey };
+  window.WA.DiscoveryControls = { keys, dateKey, openDates };
 })();

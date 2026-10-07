@@ -47,11 +47,27 @@ function page(store = new Map<string, string>(), search = '', blocked = false, n
 // Load the real Now, date and taste modules; stub only DOM/layout and row markup.
 function home(search = '') {
   const p = page(new Map(), search);
-  let focus = '', written = '';
+  let focus = '', written = '', openedDates = 0;
   const elements = new Map<string, any>();
-  const element = () => ({ innerHTML:'', textContent:'', isConnected:true, setAttribute:() => {},
-    replaceWith:() => {}, contains:() => false, querySelectorAll:() => [] });
-  for (const id of ['hero-kicker', 'hero-title', 'hero-clock', 'home-acts', 'home-main', 'home-side', 'since', 'home-view-slot', 'home-events-n', 'home-places-n']) elements.set(id, element());
+  const element = () => {
+    let html = '', buttons: any[] = [];
+    return { textContent:'', isConnected:true, className:'',
+      set innerHTML(value: string) {
+        html = value;
+        buttons = Array.from(value.matchAll(/<button\b([^>]+)>([\s\S]*?)<\/button>/g), ([,attrs,body]) => {
+          const attributes = new Map(Array.from(attrs.matchAll(/([\w-]+)="([^"]*)"/g), ([,k,v]) => [k,v]));
+          const span = { textContent:body.replace(/<[^>]*>/g,'') };
+          return { dataset:Object.fromEntries([...attributes].filter(([k]) => k.startsWith('data-')).map(([k,v]) => [k.slice(5),v])),
+            getAttribute:(k: string) => attributes.get(k), setAttribute:(k: string,v: unknown) => attributes.set(k,String(v)),
+            querySelector:() => span, focus:() => { document.activeElement = buttons.find(b => b.querySelector() === span); } };
+        });
+      }, get innerHTML() { return html; },
+      setAttribute:() => {}, replaceWith:() => {}, contains:(n: any) => buttons.includes(n),
+      querySelectorAll:(selector: string) => buttons.filter(b => selector === '[data-view]' ? 'view' in b.dataset : selector === '[data-day]' ? 'day' in b.dataset : true),
+      querySelector:() => buttons.find(b => !('day' in b.dataset)),
+    };
+  };
+  for (const id of ['hero-kicker', 'hero-title', 'hero-clock', 'home-acts', 'home-main', 'home-side', 'since', 'home-view-slot', 'home-day-slot', 'home-events-n', 'home-places-n']) elements.set(id, element());
   const document = p.context.document;
   document.documentElement = { lang:'en' };
   document.createElement = element;
@@ -71,8 +87,9 @@ function home(search = '') {
   p.WA.Geo.anchor = () => null;
   p.WA.Route = { plan:() => [], loadStored:() => {} };
   p.WA.StartFrom = { originMarkup:() => '' };
-  p.WA.glassDrop = () => ({ sync:() => {} });
-  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => '' };
+  const glasses = new Map<string, any>();
+  p.WA.glassDrop = (bar: any, config: any) => { glasses.set(bar.className,{bar,config}); return { sync:() => {}, reset:() => {} }; };
+  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => '<button data-pick-dates><span>Pick dates</span></button>', openDates:() => { openedDates++; } };
   p.WA.R.feedItem = (e: any) => `<li data-row="${e.id}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
   p.WA.R.placeRow = (v: any) => `<li data-row="${v.id}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
   const events = (n: number, date: string) => Array.from({ length:n }, (_, i) => ({ id:`${date}-${String(i).padStart(2,'0')}`,
@@ -82,7 +99,8 @@ function home(search = '') {
   runInContext(readFileSync(new URL('../../home.js', import.meta.url), 'utf8'), p.context);
   p.fire('wa:catalog-ready');
   const click = (selector: string, dataset = {}) => p.fire('click', { target: { closest:(s: string) => s === selector ? { dataset } : null } });
-  return { ...p, click, url:() => written, focus:() => focus, html:() => elements.get('home-main').innerHTML,
+  const day = glasses.get('map-seg home-tabs');
+  return { ...p, click, day, openedDates:() => openedDates, url:() => written, focus:() => focus, html:() => elements.get('home-main').innerHTML,
     rows:() => Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => m[1]) };
 }
 
@@ -105,6 +123,128 @@ test('Now shows 25 matching events and expands until exhausted, retaining order 
   assert.equal(p.rows().length, 81);
   assert.equal(new Set(p.rows()).size, 81);
   assert.doesNotMatch(p.html(), /data-day-all/);
+});
+
+test('Now day slider commits the same date as a tap, retains its controls through redraws and resets expansion', () => {
+  const p = home('?shown=50&when=tonight'), buttons = p.day.bar.querySelectorAll('.map-seg__opt');
+  assert.equal(p.day.config.current(),0);
+  p.day.config.commit(1,buttons[1]);
+  assert.equal(p.WA.Discovery.dates().when,'tomorrow');
+  assert.equal(p.day.config.current(),1);
+  assert.equal(buttons[1].getAttribute('aria-pressed'),'true');
+  assert.equal(p.rows().length,25);
+  assert.doesNotMatch(p.url(),/shown=/);
+  p.click('[data-day]',{ day:'weekend' });
+  assert.equal(p.day.config.current(),2);
+  assert.equal(p.day.bar.querySelectorAll('.map-seg__opt')[1],buttons[1]);
+  p.WA.Discovery.setDates({when:'thisweek'});
+  assert.equal(buttons.length,4);
+  assert.equal(p.day.config.current(),3);
+  assert.equal(buttons[3].querySelector().textContent,'This week');
+});
+
+test('sliding onto Pick dates and reopening a selected range are actions, not committed filter changes', () => {
+  const p = home('?shown=50&when=tonight'), calendar = p.day.bar.querySelectorAll('.map-seg__opt')[3];
+  p.day.config.commit(3,calendar);
+  assert.equal(p.openedDates(),1);
+  assert.equal(p.day.config.current(),0);
+  assert.equal(p.rows().length,50);
+  assert.match(p.url(),/shown=50/);
+  p.WA.Discovery.setDates({date:'2026-10-07',to:'2026-10-09'});
+  assert.equal(p.day.config.current(),3);
+  assert.equal(calendar.getAttribute('aria-pressed'),'true');
+  assert.equal(p.day.config.commitSame,true);
+  p.day.config.commit(3,calendar);
+  assert.equal(p.openedDates(),2);
+  assert.equal(p.WA.Discovery.dates().to,'2026-10-09');
+});
+
+// Real shared date-sheet controller, with native dialog/form behavior stubbed.
+function dateSheet() {
+  const p = page();
+  let current: any = null, focused = false;
+  const form = { id:'discovery-form', elements:{ date:{ value:'', min:'' }, range:{ checked:false }, to:{ value:'', min:'', disabled:true, required:false } } };
+  const end = { hidden:true };
+  const document = p.context.document;
+  document.body.append = (node: any) => { current = node; };
+  document.querySelector = () => null;
+  document.createElement = () => {
+    const handlers = new Map<string, Function>();
+    return { dataset:{}, innerHTML:'', open:false, setAttribute() {},
+      addEventListener:(name: string,fn: Function) => handlers.set(name,fn),
+      querySelector:(selector: string) => selector === '#discovery-end' ? end : form,
+      showModal() {
+        this.open = true;
+        for (const name of ['date','to'] as const) {
+          const attrs = this.innerHTML.match(new RegExp(`<input[^>]+name="${name}"[^>]+>`))![0];
+          form.elements[name].value = attrs.match(/value="([^"]*)"/)![1];
+          form.elements[name].min = attrs.match(/min="([^"]*)"/)![1];
+        }
+        form.elements.range.checked = /name="range" checked/.test(this.innerHTML);
+        end.hidden = !form.elements.range.checked;
+      },
+      close() { this.open = false; handlers.get('close')?.(); }, remove() {},
+    };
+  };
+  runInContext(readFileSync(new URL('../../discovery-controls.js',import.meta.url),'utf8'),p.context);
+  const button = { isConnected:true, focus:() => { focused = true; } };
+  return { ...p, form, end, open:(options?: any) => p.WA.DiscoveryControls.openDates(button,options), sheet:() => current,
+    cancel:() => current.close(), focus:() => focused,
+    change:() => p.fire('change'), submit:() => p.fire('submit',{target:form,preventDefault() {}}) };
+}
+
+test('custom date sheet keeps edits as a draft, prefills ranges and restores focus after cancellation', () => {
+  const p = dateSheet(); p.WA.Discovery.setDates({date:'2026-10-08',to:'2026-10-10'});
+  p.open();
+  assert.equal(p.form.elements.date.value,'2026-10-08');
+  assert.equal(p.form.elements.to.value,'2026-10-10');
+  assert.equal(p.form.elements.range.checked,true);
+  assert.doesNotMatch(p.sheet().innerHTML,/data-date-preset|Dates use Tallinn time/);
+  p.form.elements.date.value = '2026-10-09';
+  p.change();
+  assert.equal(p.form.elements.to.min,'2026-10-09');
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-08');
+  p.cancel();
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-08');
+  assert.equal(p.focus(),true);
+});
+
+test('date-sheet apply rejects past/reversed ranges; turning range off applies only the first date', () => {
+  const p = dateSheet(); p.open();
+  p.form.elements.range.checked = true; p.change();
+  assert.equal(p.end.hidden,false);
+  assert.equal(p.form.elements.to.disabled,false);
+  for (const [date,to] of [['2026-10-05','2026-10-09'],['2026-10-09','2026-10-08'],['2026-10-09','']]) {
+    p.form.elements.date.value = date; p.form.elements.to.value = to; p.submit();
+    assert.equal(p.sheet().open,true);
+    assert.equal(p.WA.Discovery.dates().when,'tonight');
+  }
+  p.form.elements.date.value = '2026-10-09';
+  p.form.elements.range.checked = false; p.change(); p.submit();
+  assert.equal(p.end.hidden,true);
+  assert.equal(p.form.elements.to.disabled,true);
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-09');
+  assert.equal(p.WA.Discovery.dates().to,'');
+  assert.equal(p.sheet().open,false);
+});
+
+test('the same date picker applies independent search dates and preserves manual overrides on the Map round trip', () => {
+  const p = dateSheet();
+  p.WA.Geo.bySoonestThenDistance = () => () => 0;
+  for (const file of ['ask.js','search-data.js']) runInContext(readFileSync(new URL(`../../${file}`,import.meta.url),'utf8'),p.context);
+  const engine = p.WA.SearchData.create('?q=jazz%20tomorrow'); engine.query(engine.state.q);
+  p.WA.Discovery.setDates({when:'weekend'});
+  p.open({ dates:{when:engine.state.when,date:engine.state.day,to:engine.state.dayTo}, apply:(value: any) => {
+    engine.state.when = 'all'; engine.state.day = value.date; engine.state.dayTo = value.to; engine.override('when');
+  } });
+  assert.equal(p.form.elements.date.value,'2026-10-07'); // search Tomorrow, not Now Weekend
+  p.form.elements.date.value = '2026-10-08'; p.form.elements.to.value = '2026-10-10';
+  p.form.elements.range.checked = true; p.change(); p.submit();
+  assert.equal(p.WA.Discovery.dates().when,'weekend');
+  const returned = p.WA.SearchData.create(engine.params().toString()); returned.query(returned.state.q);
+  assert.equal(returned.state.day,'2026-10-08');
+  assert.equal(returned.state.dayTo,'2026-10-10');
+  assert.equal(returned.state.overrides.has('when'),true);
 });
 
 test('Now restores expanded events on reload and cached Back navigation; new dates and taste reset expansion', () => {

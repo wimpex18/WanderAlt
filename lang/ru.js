@@ -737,7 +737,7 @@ window.WA.dict.ru = {
   "Date": "Дата",
   "Date range": "Диапазон дат",
   "Through": "По",
-  "Dates use Tallinn time": "Даты по времени Таллинна",
+  "Apply": "Применить",
   "No listings match these choices.": "Нет событий по выбранным условиям.",
   "Change filters": "Изменить фильтры",
   "Source": "Источник",

@@ -737,7 +737,7 @@ window.WA.dict.uk = {
   "Date": "Дата",
   "Date range": "Діапазон дат",
   "Through": "До",
-  "Dates use Tallinn time": "Дати за часом Таллінна",
+  "Apply": "Застосувати",
   "No listings match these choices.": "Немає подій за вибраними умовами.",
   "Change filters": "Змінити фільтри",
   "Source": "Джерело",
