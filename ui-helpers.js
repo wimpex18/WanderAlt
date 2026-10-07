@@ -223,7 +223,7 @@
     vv.addEventListener('scroll', sync);
     /* A focused field inside an open sheet is brought into view once the keyboard is up. */
     document.addEventListener('focusin', (e) => {
-      if (e.target.closest && e.target.closest('dialog.wa-sheet')) setTimeout(() => e.target.scrollIntoView({ block: 'nearest' }), 350);
+      if (e.target.closest && e.target.closest('dialog.wa-sheet, dialog.wa-search-dialog')) setTimeout(() => e.target.scrollIntoView({ block: 'nearest' }), 350);
     });
   })();
 })();

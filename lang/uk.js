@@ -828,7 +828,34 @@ window.WA.dict.uk = {
   "Stop email and notifications?": "Вимкнути листи та сповіщення?",
   "Stop alerts": "Вимкнути сповіщення",
   "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.",
-  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі."
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі.",
+  "Search events or places": "Пошук подій або місць",
+  "Close search": "Закрити пошук",
+  "All events": "Усі події",
+  "Search results": "Результати пошуку",
+  "All dates": "Усі дати",
+  "Refine": "Уточнити",
+  "Try a search": "Спробуйте пошук",
+  "Jazz tomorrow": "Джаз завтра",
+  "Record shops": "Магазини платівок",
+  "Free today": "Безкоштовно сьогодні",
+  "View all results": "Усі результати",
+  "No matches. Try another name or browse all events and places.": "Збігів немає. Спробуйте іншу назву або перегляньте всі події та місця.",
+  "Loading listings": "Завантаження подій",
+  "Walking distance unavailable": "Відстань пішки невідома",
+  "Selected filters": "Вибрані фільтри",
+  "Map these results": "Ці результати на мапі",
+  "Back to results": "Назад до результатів",
+  "With a listed language": "Із вказаною мовою",
+  "See this selection": "Відкрити цю добірку",
+  "All places and All events have the complete listings.": "Повні списки є в розділах «Усі місця» та «Усі події».",
+  "Price per ticket": "Ціна квитка",
+  "Maximum price per ticket": "Максимальна ціна квитка",
+  "More options": "Більше параметрів",
+  "Sources go quiet between programmes. All events has the full listing.": "Між подіями джерела затихають. Повний список є в розділі «Усі події».",
+  "Keywords": "Ключові слова",
+  "Filters from your search": "Фільтри з вашого запиту",
+  "Keep this search": "Зберегти цей пошук"
  },
  "patterns": [
   [
@@ -1334,6 +1361,19 @@ window.WA.dict.uk = {
   [
    "since {t}",
    "з {t}"
+  ],
+  [
+   "Show {n} more places",
+   {
+    "one": "Ще {n} місце",
+    "few": "Ще {n} місця",
+    "many": "Ще {n} місць",
+    "other": "Ще {n} місця"
+   }
+  ],
+  [
+   "{n} without a map location",
+   "{n} без адреси на мапі"
   ]
  ]
 };

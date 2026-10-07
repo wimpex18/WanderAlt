@@ -826,3 +826,32 @@ Stop email and notifications?	Lõpetada kirjad ja teavitused?	Отключить
 Stop alerts	Lõpeta teavitused	Отключить уведомления	Вимкнути сповіщення
 That did not work. Write to hello@wanderalt.app and we will stop it by hand.	See ei õnnestunud. Kirjuta aadressile hello@wanderalt.app ja lõpetame teavitused käsitsi.	Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.	Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.
 Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.	Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada.	Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле.	Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі.
+
+# Shared search and catalogue navigation
+Search events or places	Otsi sündmusi või kohti	Поиск событий или мест	Пошук подій або місць
+Close search	Sulge otsing	Закрыть поиск	Закрити пошук
+All events	Kõik sündmused	Все события	Усі події
+Search results	Otsingutulemused	Результаты поиска	Результати пошуку
+All dates	Kõik kuupäevad	Все даты	Усі дати
+Refine	Täpsusta	Уточнить	Уточнити
+Try a search	Proovi otsida	Попробуйте поиск	Спробуйте пошук
+Jazz tomorrow	Jazz homme	Джаз завтра	Джаз завтра
+Record shops	Plaadipoed	Магазины пластинок	Магазини платівок
+Free today	Täna tasuta	Бесплатно сегодня	Безкоштовно сьогодні
+View all results	Vaata kõiki tulemusi	Все результаты	Усі результати
+No matches. Try another name or browse all events and places.	Vasteid pole. Proovi teist nime või vaata kõiki sündmusi ja kohti.	Совпадений нет. Попробуйте другое название или откройте все события и места.	Збігів немає. Спробуйте іншу назву або перегляньте всі події та місця.
+Loading listings	Laadin sündmusi	Загрузка событий	Завантаження подій
+Walking distance unavailable	Kõndimiskaugus pole teada	Расстояние пешком неизвестно	Відстань пішки невідома
+Selected filters	Valitud filtrid	Выбранные фильтры	Вибрані фільтри
+Map these results	Tulemused kaardil	Эти результаты на карте	Ці результати на мапі
+Back to results	Tagasi tulemuste juurde	Назад к результатам	Назад до результатів
+With a listed language	Märgitud keelega	С указанным языком	Із вказаною мовою
+See this selection	Vaata seda valikut	Открыть эту подборку	Відкрити цю добірку
+All places and All events have the complete listings.	Kõik kohad ja Kõik sündmused sisaldavad täielikke loendeid.	Полные списки есть в разделах «Все места» и «Все события».	Повні списки є в розділах «Усі місця» та «Усі події».
+Price per ticket	Pileti hind	Цена билета	Ціна квитка
+Maximum price per ticket	Pileti kõrgeim hind	Максимальная цена билета	Максимальна ціна квитка
+More options	Veel valikuid	Больше параметров	Більше параметрів
+Sources go quiet between programmes. All events has the full listing.	Allikad vaikivad sündmuste vahel. Kõik sündmused sisaldab täielikku loendit.	Между событиями источники затихают. Полный список есть в разделе «Все события».	Між подіями джерела затихають. Повний список є в розділі «Усі події».
+Keywords	Märksõnad	Ключевые слова	Ключові слова
+Filters from your search	Filtrid sinu otsingust	Фильтры из вашего запроса	Фільтри з вашого запиту
+Keep this search	Hoia see otsing alles	Сохранить этот поиск	Зберегти цей пошук

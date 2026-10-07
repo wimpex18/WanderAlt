@@ -1,6 +1,6 @@
 # WanderAlt
 
-What is worth walking to in Tallinn in the next few hours, and what to do around it, for travellers, expats and locals who want independent culture rather than the mainstream: gigs, club nights, arthouse film, contemporary art and dance, talks, markets, and a hand-picked set of places (record shops, bookshops, galleries, bars). The unit is the walk: a short route of places and, when something is on, one listing. Every listing shows a time, a walking distance and the venue or channel it came from. The interface is English, Estonian and Russian.
+What is worth walking to in Tallinn in the next few hours, and what to do around it, for travellers, expats and locals who want independent culture rather than the mainstream: gigs, club nights, arthouse film, contemporary art and dance, talks, markets, and a hand-picked set of places (record shops, bookshops, galleries, bars). The unit is the walk: a short route of places and, when something is on, one listing. Every listing shows a time, a walking distance and the venue or channel it came from. The interface is English, Estonian, Russian and Ukrainian.
 
 Status: Tallinn only, not launched. Version in `package.json`.
 
@@ -9,6 +9,8 @@ Status: Tallinn only, not launched. Version in `package.json`.
 1. **Pipeline** (`pipeline/`). Every six hours a GitHub Actions job reads the Tallinn sources in `pipeline/sources.tallinn.json`: the Fienta events API, venue sites with schema.org markup, venue programme pages and public Telegram channels. Structured sources are parsed directly; prose is read by a free model (Cloudflare Workers AI, falling back to OpenRouter's free models). Each event is classified for fit, given an English title and summary, tied to a geocoded venue, and published, held for review, or rejected. Venues come from OpenStreetMap, Wikidata, Overture and the venues' own sites and Instagram, with opening hours from the best source each offers.
 2. **Database**. Supabase Postgres: sources, raw items, places, events and their provenance, routes, and what readers save. A weekly backup goes to a private bucket.
 3. **Site**. Static HTML, CSS and vanilla JS on Cloudflare Pages at [wanderalt.app](https://wanderalt.app) (also [wanderalt.pages.dev](https://wanderalt.pages.dev)), reading Supabase's public views with the anon key through an edge cache (`/api/rest/<table>`). MapLibre GL over OpenFreeMap tiles for the map. The apex and `www.wanderalt.app` are bound to Pages with proxied CNAME records. Primary-domain redirects are implemented in Pages middleware as well as `_redirects`, because Functions bypass the static redirect file.
+
+Four tabs: Now, Map, Saved, You. Now is the short walking shortlist; All events and All places hold the complete catalogues. One global Search opens a focused dialog, with full results and matching Map views.
 
 ## Running it
 

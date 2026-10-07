@@ -100,13 +100,14 @@ function programme(search = '', venues: any[] = []) {
     requestAnimationFrame: () => 1, getComputedStyle: () => ({ position: 'static' }),
     setTimeout: (cb: () => void) => { timers.set(++timerId, cb); return timerId; }, clearTimeout: (id: number) => timers.delete(id),
     document: { readyState: 'loading', activeElement: null, documentElement: { style: { setProperty: () => {} } }, addEventListener: (n: string, cb: any) => listeners.set(n, cb),
-      getElementById: (id: string) => { if (!elements.has(id)) elements.set(id, { style: {}, value: '' }); return elements.get(id); } },
+      getElementById: (id: string) => { if (!elements.has(id)) elements.set(id, { style: {}, value: '', focus:() => {}, blur:() => {} }); return elements.get(id); } },
   });
   runInContext(source('ask.js'), context);
   WA.Ask.remote = () => new Promise(r => { release = r; });
+  runInContext(source('search-data.js'), context);
   runInContext(source('programme.js'), context);
-  const query = (q: string) => listeners.get('input')({ target: { id: 'q', value: q } });
-  const start = () => { for (const [id, cb] of [...timers]) { timers.delete(id); cb(); } };
+  const query = (q: string) => { context.document.getElementById('q').value = q; listeners.get('input')({ target: { id: 'q', value: q } }); };
+  const start = () => listeners.get('submit')({ target:{ id:'search-form' }, preventDefault:() => {} });
   const click = (selector: string, data: any = {}) => listeners.get('click')({ target: { closest: (s: string) => s.split(',').map(s => s.trim()).includes(selector) ? { dataset: data } : null } });
   return { query, start, click, finish: (p: any) => release({ ...WA.Ask.empty(), ...p }), elements, location };
 }
@@ -155,7 +156,8 @@ test('open-now shop searches exclude shut and unknown hours, including empty res
   const p = programme('', shops); p.query('bookshops open now');
   assert.match(p.elements.get('summary').innerHTML, /1 place<\/strong>/);
   assert.doesNotMatch(p.elements.get('summary').innerHTML, /0 listings/);
-  assert.equal(p.elements.get('quick').hidden, true, 'hide irrelevant listing controls on a place search');
+  assert.match(p.elements.get('quick').innerHTML, /Remove Open now/);
+  assert.doesNotMatch(p.elements.get('quick').innerHTML, /data-kind/, 'only place refinements should appear');
   const none = programme('', shops.slice(1)); none.query('bookshops open now');
   assert.match(none.elements.get('summary').innerHTML, /0 places/);
   const named = programme('', shops); named.query('Open Books open now');
@@ -185,7 +187,8 @@ test('model interpretation retains locally understood day, kind, free, language 
   const p = programme(); p.query('free film tonight in English under 10 quiet'); p.start();
   p.finish({ when: 'tomorrow', day: '2026-10-02', kinds: ['gig'], maxPrice: 99, note: 'Paid gigs Friday' }); await tick();
   assert.match(p.elements.get('summary').innerHTML, /1 listing/);
-  assert.match(p.elements.get('summary').innerHTML, /today.*film/);
+  assert.match(p.elements.get('quick').innerHTML, /Remove Today/);
+  assert.match(p.elements.get('quick').innerHTML, /Remove film/i);
   assert.match(p.elements.get('quick').innerHTML, /Remove Free/);
   assert.match(p.elements.get('quick').innerHTML, /Remove In English/);
   assert.match(p.elements.get('quick').innerHTML, /Up to €10/);
@@ -247,7 +250,7 @@ test('fresh questions are capped a day when a KV namespace is bound, and a cache
 test('place controls change the actual result set and an open-now override survives reopening', () => {
   const shops=[{id:'open',name:'Open Books',kind:'bookshop',open:true},{id:'shut',name:'Shut Books',kind:'bookshop',open:false}];
   const p=programme('',shops); p.query('bookshops open now');
-  assert.equal(p.elements.get('prog-title').textContent,'Places'); assert.equal(p.elements.get('to-map').hidden,true);
+  assert.equal(p.elements.get('prog-title').textContent,'Places'); assert.equal(p.elements.get('to-map').hidden,false);
   p.click('[data-place-open]');
   assert.match(p.elements.get('summary').innerHTML,/2 places/);
   assert.equal(new URLSearchParams(p.location.search).get('open'),'0');
@@ -257,7 +260,7 @@ test('place controls change the actual result set and an open-now override survi
   assert.match(reopened.elements.get('summary').innerHTML,/0 places/);
   reopened.click('[data-act]',{act:'clear-place-filters'});
   assert.match(reopened.elements.get('summary').innerHTML,/2 places/);
-  reopened.query(''); assert.equal(reopened.elements.get('prog-title').textContent,'Programme'); assert.equal(reopened.elements.get('to-map').hidden,false);
+  reopened.query(''); assert.equal(reopened.elements.get('prog-title').textContent,'All events'); assert.equal(reopened.elements.get('to-map').hidden,false);
 });
 
 test('a named open-now search never includes closed places; open now alone offers all open places', () => {

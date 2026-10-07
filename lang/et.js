@@ -828,7 +828,34 @@ window.WA.dict.et = {
   "Stop email and notifications?": "Lõpetada kirjad ja teavitused?",
   "Stop alerts": "Lõpeta teavitused",
   "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "See ei õnnestunud. Kirjuta aadressile hello@wanderalt.app ja lõpetame teavitused käsitsi.",
-  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada."
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada.",
+  "Search events or places": "Otsi sündmusi või kohti",
+  "Close search": "Sulge otsing",
+  "All events": "Kõik sündmused",
+  "Search results": "Otsingutulemused",
+  "All dates": "Kõik kuupäevad",
+  "Refine": "Täpsusta",
+  "Try a search": "Proovi otsida",
+  "Jazz tomorrow": "Jazz homme",
+  "Record shops": "Plaadipoed",
+  "Free today": "Täna tasuta",
+  "View all results": "Vaata kõiki tulemusi",
+  "No matches. Try another name or browse all events and places.": "Vasteid pole. Proovi teist nime või vaata kõiki sündmusi ja kohti.",
+  "Loading listings": "Laadin sündmusi",
+  "Walking distance unavailable": "Kõndimiskaugus pole teada",
+  "Selected filters": "Valitud filtrid",
+  "Map these results": "Tulemused kaardil",
+  "Back to results": "Tagasi tulemuste juurde",
+  "With a listed language": "Märgitud keelega",
+  "See this selection": "Vaata seda valikut",
+  "All places and All events have the complete listings.": "Kõik kohad ja Kõik sündmused sisaldavad täielikke loendeid.",
+  "Price per ticket": "Pileti hind",
+  "Maximum price per ticket": "Pileti kõrgeim hind",
+  "More options": "Veel valikuid",
+  "Sources go quiet between programmes. All events has the full listing.": "Allikad vaikivad sündmuste vahel. Kõik sündmused sisaldab täielikku loendit.",
+  "Keywords": "Märksõnad",
+  "Filters from your search": "Filtrid sinu otsingust",
+  "Keep this search": "Hoia see otsing alles"
  },
  "patterns": [
   [
@@ -1294,6 +1321,14 @@ window.WA.dict.et = {
   [
    "since {t}",
    "alates {t}"
+  ],
+  [
+   "Show {n} more places",
+   "Näita veel {n} kohta"
+  ],
+  [
+   "{n} without a map location",
+   "{n} kaardi asukohata"
   ]
  ]
 };

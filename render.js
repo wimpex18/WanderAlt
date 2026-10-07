@@ -604,7 +604,7 @@
   /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
      dead image for the row's own pictogram (no inline handler: `error`
      does not bubble, so listen in the capture phase). */
-  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art';
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art, .wa-search-match__art';
   document.addEventListener('error', (e) => {
     const img = e.target;
     if (!img || img.tagName !== 'IMG') return;

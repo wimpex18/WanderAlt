@@ -99,8 +99,8 @@
   };
   window.WA.Discovery = { dates, setDates, fromQuery, writeURL, validDate, range, matchesDate,
     pref, matchesEvent, matchesPlace, nearOn, setNear, label, params };
-  // Programme uses the pure predicates; browsing search must not change Now's dates.
-  const discoveryPage = ['tonight','map'].includes(document.body?.dataset.page);
+  // Full results use pure predicates; browsing search must not change Now dates.
+  const discoveryPage = ['tonight','map'].includes(document.body?.dataset.page) && new URLSearchParams(location.search).get('context') !== 'search';
   if (discoveryPage) {
     const historyReturn = typeof performance !== 'undefined' && performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
     read();

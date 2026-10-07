@@ -10,7 +10,7 @@
       .sort(window.WA.Geo.byDateThenSoonest()).slice(0, 5);
     const host = document.getElementById('preview');
     if (!host || !soon.length) return;
-    host.innerHTML = `<section class="wa-sect">${R().sect({ title: 'On this week', href: 'discover.html', more: 'Programme' })}
+    host.innerHTML = `<section class="wa-sect">${R().sect({ title: 'On this week', href: 'discover.html', more: 'All events' })}
       <ul class="wa-rows">${soon.map(e => R().row(e, { day: true })).join('')}</ul></section>`;
   };
 

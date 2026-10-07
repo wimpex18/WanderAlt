@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Guide · WanderAlt Tallinn</title>
+  <title>All places · WanderAlt Tallinn</title>
   <meta name="description" content="Picked places in Tallinn: record shops, bookshops, galleries, thrift shops, small cinemas, clubs and theatres, with what's open now." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg?v=route-w" />
@@ -15,7 +15,7 @@
 
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
-  <meta property="og:title"       content="Guide · WanderAlt Tallinn" />
+  <meta property="og:title"       content="All places · WanderAlt Tallinn" />
   <meta property="og:description" content="Picked places in Tallinn: record shops, bookshops, galleries, thrift shops, small cinemas, clubs and theatres, with what's open now." />
   <meta property="og:image"       content="https://wanderalt.app/brand/social/og-default.png?v=route-w" />
   <meta property="og:image:width"  content="1200" />
@@ -55,6 +55,10 @@
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
   <script defer src="./moods.js"></script>
+  <script defer src="./ask.js"></script>
+  <script defer src="./discovery-state.js"></script>
+  <script defer src="./search-data.js"></script>
+  <script defer src="./search.js"></script>
   <script defer src="./places.js"></script>
 </head>
 <body data-page="places">
@@ -68,14 +72,15 @@
       <span>wanderalt</span>
     </a>
     <div class="wa-topbar__end">
-      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search the programme"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></a>
+      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search events or places"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></a>
     </div>
   </header>
 
   <main class="wa-shell" id="main">
+    <a class="wa-linkbtn prog-back" href="index.html">Back to Now</a>
     <header class="wa-pagehead">
       <div class="wa-pagehead__row">
-        <h1 class="wa-h1">Guide</h1>
+        <h1 class="wa-h1">All places</h1>
         <a class="wa-btn wa-btn--sm" href="./map.html" id="to-map"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="map"><path class="t" d="M9 4.5l6 2v13l-6-2z"/><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path class="k" d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
       </div>
       <p class="wa-lede" id="places-lede">Picked places in Tallinn. Not every bar, only the ones worth the walk.</p>
@@ -90,7 +95,7 @@
   </main>
 
   <nav class="wa-tabbar" aria-label="Primary">
-    <a class="wa-tabbar__item" href="./index.html" aria-current="page"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="clock"><circle class="t" cx="11" cy="13" r="7.5"/><circle cx="11" cy="13" r="7.5"/><path class="k" d="M11 9v4l2.8 1.8"/><path class="t" d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/><path d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/></svg>Now</a>
+    <a class="wa-tabbar__item" href="./index.html" aria-current="location"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="clock"><circle class="t" cx="11" cy="13" r="7.5"/><circle cx="11" cy="13" r="7.5"/><path class="k" d="M11 9v4l2.8 1.8"/><path class="t" d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/><path d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/></svg>Now</a>
     <a class="wa-tabbar__item" href="./map.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="map"><path class="t" d="M9 4.5l6 2v13l-6-2z"/><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path class="k" d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
     <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="save"><path class="t" d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L12 16.4l-6.5 4.1V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L12 16.4l-6.5 4.1V5A1.5 1.5 0 0 1 7 3.5z"/></svg>Saved</a>
     <a class="wa-tabbar__item" href="./profile.html" data-nav="profile"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="user"><circle class="t" cx="12" cy="8.3" r="3.8"/><path class="t" d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/><circle cx="12" cy="8.3" r="3.8"/><path d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/></svg>You</a>

@@ -67,6 +67,9 @@
   <script defer src="./tabbar.js"></script>
   <script defer src="./moods.js"></script>
   <script defer src="./discovery-state.js"></script>
+  <script defer src="./ask.js"></script>
+  <script defer src="./search-data.js"></script>
+  <script defer src="./search.js"></script>
   <script defer src="./discovery-controls.js"></script>
   <script defer src="./route.js"></script>
   <script defer src="./start-from.js"></script>
@@ -83,19 +86,11 @@
       <span>wanderalt</span>
     </a>
     <div class="wa-topbar__end">
-      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search the programme"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></a>
+      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search events or places"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></a>
     </div>
   </header>
 
   <main class="wa-shell" id="main">
-    <div class="home-top">
-      <form class="home-search" role="search" id="home-search" autocomplete="off">
-        <label class="wa-sr" for="home-q">Search places or listings</label>
-        <input id="home-q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search places or listings" />
-        <button class="wa-iconbtn" type="submit" aria-label="Search"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></button>
-      </form>
-    </div>
-
     <section class="home-hero" aria-labelledby="hero-title">
       <p class="home-hero__clock"><span id="hero-kicker">Tallinn</span> · <span id="hero-clock"></span></p>
       <div class="home-hero__row"><h1 class="wa-hero home-hero__title" id="hero-title">What's on tonight</h1><div class="home-acts" id="home-acts"></div></div>

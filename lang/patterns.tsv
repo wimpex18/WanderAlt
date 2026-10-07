@@ -115,3 +115,6 @@ Show {n} listings	Näita {n} kuulutust	Показать {n} событие|По�
 Show {n} place	Näita {n} koht	Показать {n} место	Показати {n} місце
 Show {n} places	Näita {n} kohta	Показать {n} место|Показать {n} места|Показать {n} мест|Показать {n} места	Показати {n} місце|Показати {n} місця|Показати {n} місць|Показати {n} місця
 since {t}	alates {t}	с {t}	з {t}
+
+Show {n} more places	Näita veel {n} kohta	Ещё {n} место|Ещё {n} места|Ещё {n} мест|Ещё {n} места	Ще {n} місце|Ще {n} місця|Ще {n} місць|Ще {n} місця
+{n} without a map location	{n} kaardi asukohata	{n} без адреса на карте	{n} без адреси на мапі

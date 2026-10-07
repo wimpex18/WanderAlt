@@ -1,82 +1,98 @@
 # Design brief
 
-For a Claude Design session or anyone redesigning a screen. Current state only: when a decision changes, change it here.
+Current product direction, evidence and unresolved questions. Implementation details live in [frontend.md](frontend.md), catalogue rules in [data.md](data.md), and model lanes in [models.md](models.md).
 
 ## Product
 
-WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, and what do I do after it?* Independent and alternative culture (DIY gigs, club nights, arthouse film, contemporary art and dance, talks, record and flea markets) and the places around it (record shops, bookshops, galleries, thrift, small cinemas, clubs, theatres, bars). It is as much a day-trip guide as a night guide: bars and clubs are the smaller job.
+WanderAlt answers: *what is worth walking to in Tallinn in the next few hours, and what do I do around it?* Independent and alternative culture: gigs, club nights, arthouse film, contemporary art and dance, talks and markets, alongside record shops, bookshops, galleries, thrift, small cinemas, theatres and craft beer places. Daytime culture matters as much as nightlife.
 
-**Audience, in order:** travellers staying 2–5 days, often on a day trip; English-reading expats; locals who don't follow every channel. People on their own, in two, or in a group: most venues and events suit all of them, and where a format is built for strangers to mix (quiz, chess, craft nights) it says so. They decide on the day, on a phone, often already out.
+Audience, in order: travellers staying two to five days, English-reading expats, and locals who do not follow every channel. They decide on the day, often on a phone while already out. Tallinn is the only city with data. The product has not launched; there are no usage or conversion results.
 
-**Every row answers four things:** when (a time), how far (walking minutes), what it is (kind, price), who says so (the venue or channel it came from).
+The unit is the walk: two to four places and, when something is on, a listing. Places carry the guide; events give it a clock. Ticket sellers handle booking. Picked places have an honest note based on their own words or a checked fact.
 
-**The idea (Night Guide):** the unit is the walk (two to four stops on foot), not the event card. Places carry the guide and events give it a clock. Fienta and the like are the cashier we link to; we are the guide. Not every bar: places are **picked** by hand, with one honest line on why.
+Every listing should answer when, how far, what kind and price, and who says so. Missing facts stay missing: unknown prices may pass a ticket cap with a note; Free requires known free entry, In English a stated performance language, and Open now known hours. An unlocated listing stays in results and is counted as omitted on Map. A missing picture gets its Label, never a guessed photo.
 
-## Identity (decided 2 Oct 2026, revised 3 Oct)
+## Identity
 
-- Vermilion `#d83a14` and white (with two small signals: green for open and free, blue for you and walking), Geologica, the glass bars, the splash. **No black surfaces**: ink `#24222c` is for type only; selection is tinted glass with a vermilion ring, the one primary action is a vermilion gradient, the page sits on a soft daybreak gradient, and the dark theme is warm charcoal like Claude's (`#262624`), not flat black and no longer violet (owner, 4 October). Glass only where it floats; it bends a gradient, never a photo.
-- **Labels:** round flat discs of objects with a faint groove ring (`icons.js`); a logo or photo wins, the disc is the fallback. Moods use the same discs (a framed picture, a microphone on stage, a mirror ball, a record player, a pencil, a pint of craft beer), so a mood looks like the rows it leads to. Not Meetup's offset stickers, not Airbnb's 3D. A few hand-drawn sketches (the Old Town skyline on the route card) with a small wobble, one line weight, where a screen has room and a job.
-- A route is a spine: time, square node, stop; the listing is the one filled node. The thread is a vermilion gradient.
-- No sparkle icon for "ask" (Airbnb, Meetup and Bend all use it); search uses the glass. Four tabs: Now, Map, Saved, You; the header holds search, language and theme. UI icons are two-tone (a line and a soft body), solid when selected. Sign-in is one sheet, link first.
-- Design canvas: https://claude.ai/artifact/9UrJzeMvP9vtHz6MdaJUV4 (the second look: audit, data check, research, designs, questions; supersedes the first pass at https://claude.ai/artifact/41QjFPZyhwnY68ugNeespd).
+- Vermilion `#d83a14`, Geologica, two-tone UI icons, round illustrated Labels, and the existing glass bars. Day surfaces are white paper over a soft gradient; dusk is warm charcoal. Green means open or free, blue means the reader or walking. No flat black, violet surfaces or decorative extra accents.
+- Glass belongs to floating controls and sheets. Feed pictures and content surfaces stay quiet. A logo or verified photo takes priority over a Label.
+- A walk is a spine of time, square nodes and stops, with the listing as the filled node and a vermilion thread. The collapsed A walk for now disclosure keeps it reachable without blocking someone looking for a listing.
+- Four tabs: Now, Map, Saved, You. The header holds Search, language and appearance. Sign-in is one sheet, link first.
+- Keep Geologica for Latin and Cyrillic. The bundled font covers the Ukrainian alphabet as well as Russian; helper-text length and wrapping are addressed in copy and layout. Interface translations cover English, Estonian, Russian and Ukrainian. A native-reader editorial pass remains useful.
 
-## What exists
+## Screen responsibilities
 
-Now (one search field, mood/price and Near keys, a compact walk disclosure opening Walk it and Another, one switch between the day's events (with a row of their kinds) and the picked places (with a row of place types); moods Art & film, Live music, Club nights, Records & books, Workshops & talks, Craft beer, several at once, each narrowable) · Programme (all listings, paged, filters, search that reads sentences) · Guide (`places.html`: picked places nearest first, from a stated start) · Map · Route page · Event and venue pages (each ending in After this) · Saved · You · sign-in sheet. The interface is English, Estonian, Russian and Ukrainian. Details: `docs/frontend.md`.
+| Surface | Reader's job | Controls shown first |
+|---|---|---|
+| Now | Choose a walk or a short list for the next few hours | Mood/ticket cap, Near, walk disclosure, Events/Places. The event preview has date choices. All events and All places open the complete catalogues. |
+| Search dialog | Find a name, format, event or place | One query, a scope line, separate Events/Places matches and a full-results action. The empty state offers real matching examples and catalogue links. |
+| All events / Search results | Browse any future date or refine a search | One query field, date, Refine with a count, and removable active filters. Refine starts with When, Kind and Price; More options holds less frequent choices and Follow this search. |
+| All places | Browse the Guide beyond Now's preview | Place types, known Open now, a stated walking origin. |
+| Map | Decide spatially from listings and places | Ordinary Map shares Now's dates and preferences. Map these results uses the complete search context, with Back to results and Clear search. |
+| Saved / You | Keep choices and manage personal state | Saves/lists; taste, starting point, follows and account. |
 
-Live data (3 October): about 400 events a fortnight, about 440 places (44 picked: three museums, ten craft beer places), all Tallinn. Titles arrive in Estonian or Russian with an English title and summary added. About a fifth of upcoming listings have a date and no time; a third no price; three in ten no picture; about half of the picked places have hours. **Design for missing data**: no photo, no hours, no time, no price.
+Search has one adaptive entry: a labelled compact button on phones and a field-shaped button on desktop. Both open the same native dialog. On phones it occupies the available screen above the keyboard; on desktop it is a bounded modal. The permanent Now query field and duplicate magnifier are removed. The results page uses its own query field as its sole entry.
 
-## What users told us
+All events retains `discover.html` and `programme.js` internally, with the visible title All events or Search results. It is a child destination of Now, reached through an explicit link and an explicit Back to Now action. The tab bar marks Now as the parent; it is not a fifth peer tab. All places has the same hierarchy. Now's kind/type strips are removed; deliberate catalogue browsing has those choices on its full destination.
 
-**27 Sep, first review:** English must lead; search first; an empty night must say "still going"; a weak map; area names people know; no reason to come back. Mostly addressed; the map and return reasons are still thin.
+Previews, complete results and Map use one query engine. Typing stays local. A submitted search may use the existing free model fallback when the local sentence reader cannot find matches. Dates, kind, budget, manual overrides and model readings travel in the URL. A chosen override survives refresh and the Map round trip. Clearing the query removes its automatic constraints. Search starts at All dates and does not silently inherit a narrow Now mood, price or day. See this selection deliberately carries Now's context.
 
-**2 Oct, two interviews, shown the version before the redesign** (so some of this may already be answered; ask them again on the new one):
+## Evidence and design rationale
 
-| They said | Now |
+The 7 October 2026 audit combined repository/docs inspection, the running app, read-only catalogue inspection, the owner's screenshots and recording, live competitor websites, and primary product documentation. The sample below is a comparison of product patterns, not a representative study of each country's customers. Native screens supplied by the owner are observations of those captured versions; web documentation does not establish every native-app gesture.
+
+| Product / market | Relevant observed or documented pattern | What it informs here |
+|---|---|---|
+| [DICE / UK](https://dicefm.zendesk.com/hc/en-gb/articles/22365220986897-How-to-find-events-you-ll-love-on-DICE) | Discovery by time, search and map serve different ways of finding a gig. | A time-led Now and a wider query can coexist when their scope is clear. |
+| [Resident Advisor / UK](https://ra.co/ra-guide) | A culture-specific guide connects events, date/genre choices and spatial browsing. | Preserve WanderAlt's culture and walking purpose rather than turn the home into a general marketplace. |
+| [Eventbrite / US](https://www.eventbrite.co.uk/help/en-us/articles/783059/how-to-use-the-eventbrite-app/) | Search sits within Discover; Saved, Tickets and Account have separate jobs. The supplied screens show a prominent field and richer controls after a query. | A persistent field is credible for a search-led catalogue, but its prominence is a product choice rather than a universal requirement. |
+| [Luma / US](https://help.luma.com/p/searching-for-events) | The supplied Home is a personal schedule; Discover has city/category browsing and a search icon, then a query/date/location screen. | Home and catalogue earn separation through different content ownership. WanderAlt's public Now does not need another public discovery tab. |
+| [Meetup / US](https://help.meetup.com/hc/en-us/articles/39235072484109-Finding-an-event) | Explore finds events/groups; the supplied Home contains personal groups and Going/Saved/Past. Search exposes event/group scope. | Label entity groups and avoid recreating a personal Home/Explore split before WanderAlt has that use case. |
+| [Fever / international, including UK, US, Singapore and Japan](https://play.google.com/store/apps/details?hl=en-IN&id=com.feverup.fever) | Curated experiences, date/time choices, favourites and map; the supplied web screens separate choosing a city from searching activities. | Keep location visible, but Tallinn-only does not need a city picker in every search. |
+| [Catch / Singapore](https://www.catch.sg/) | The inspected website exposes a search overlay across events/articles alongside its event browsing form. | A richer overlay can unify entity types, but retaining competing entries would preserve the problem. |
+| [Peatix / Singapore and Japan](https://apps.apple.com/sg/app/peatix/id561632513) | Publisher release notes describe nearby event browsing, See all and suggestions/topics. | Keep a short browse preview and a clear path to its complete set. |
+| [Secret Tel Aviv / Israel](https://secrettelaviv.app/) | The inspected web app combines city-guide content and labelled search; the [publisher's description](https://www.secrettelaviv.com/magazine/blog/toptens/meet-the-new-secret-tel-aviv-app-10-great-reasons-to-check-out-our-new-app) includes events and places. | One query can support both named venues and their listings without forcing an entity choice first. |
+| [Easy / Israel](https://easy.co.il/en/list/Events) | The inspected event page offers Today/Tomorrow/Weekend and more date/time and category facets. | Dates are valuable; the larger facet catalogue is a reason to disclose controls progressively. |
+| [Tokyo Art Beat / Japan](https://www.tokyoartbeat.com/articles/-/tokyoartbeat-design-renewal-news-202609) | The publisher's September redesign separates exhibition discovery, map and personal records. | Distinct jobs justify destinations; duplicated public feeds do not automatically justify a tab. |
+
+The recurring useful pattern is a short browse surface, a clearly scoped query/catalogue flow, and personal or spatial destinations with different jobs. The sample supports both a visible field and an icon entry, so it does not prove that a popup converts better. We choose a labelled compact phone entry to free room for the walk and feed, and retain a larger desktop affordance for recognition.
+
+The implementation follows [progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/) and [recognition over recall](https://www.nngroup.com/articles/recognition-and-recall/): show the current scope and selected constraints, reveal the complete choices on request, and label Search and catalogue exits. Suggestions are useful only when they lead to real matches. The [W3C modal-dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) informs focus, Escape, background isolation and focus return. These are design grounds, not WanderAlt usability findings.
+
+A floating draggable recommendation is still unnecessary for browsing: it would cover the feed and require positioning state. Persistence for an active walk can be reconsidered once real use is observed.
+
+## Existing qualitative feedback
+
+The first review on 27 September and two interviews on 2 October used earlier versions. Their needs remain evidence; whether the current screens satisfy them must be checked again. Owner feedback supplied the duplicate-search and hidden-Programme problems.
+
+| Need | Current response |
 |---|---|
-| Tapping an event's title should open its details | Every row and card is one link to its page; the route card opens the route and now has an explicit Walk it. Which screen they tried is unknown; ask again. |
-| Don't make me scroll filter chips (gigs, club nights, film…); I often don't know what I want. Austria took hours | Built: Now keeps a labelled short walk in a collapsed disclosure and one key for mood/price; kind facets sit with the listings. Another gives the next route. Check with someone who does not know what they want. |
-| A ceiling of about €20 a person, or free only | Built: Tickets up to (Free, Up to €20, Any) in the mood sheet; it narrows the route and the list, keeps listings with no price (two in five) and says so, and counts tickets only because places carry no price. The Programme keeps its Free switch and typed "under 20". |
-| Focus on today and tonight; plan the evening; after Philly Joe's, show a few real, reviewed places nearby by mood | Built: the next few hours (evenings and, by day, places on foot), After this on venue and event pages (up to three picked places within ten minutes, one per mood, each with its own words) and Plan from here. We hold no reviews and have no free source for them; "picked" plus a link out is the honest version. |
-| Onboarding by mood: listen or dance, craft bar, board games | Built as a sheet, not onboarding: Art & film, Live music, Club nights (hour-aware for a walk, available at any hour when filtering future listings), Records & books, Workshops & talks, Craft beer. Board games sit under Easy alone, inside Workshops & talks. |
-| 3 Oct (owner): eight mood tiles are too many; the sheet's grip does not drag; let me pick several moods; the price note is too long and €10 is not needed; the mood icons look off | Six moods as a list with their Label discs, several at once, each opening optional narrower picks; Free, Up to €20, Any with one short line; every sheet drags down to close. |
-| 3 Oct (owner): Still going at midnight sent me to Fotografiska and a record shop, both shut | Places on foot were treated as daytime after midnight, and a place with no filed hours was tried at any hour. Now an unfiled place is tried only in its kind's usual hours and nothing between 03:00 and 06:00. About two in five picked places still have no hours (`docs/data.md`). |
-| 3 Oct (owner): Near me changed nothing visible | It is a switch now: the route starts near you and says how far, the list goes nearest first. |
-| 3 Oct (owner): Weekend was grey; I cannot find all workshops or all comedy, or a bookshop or a techno club | Day shortcuts remain visible, including empty Today; the third is This week from Friday, followed by a date picker; Now has one row of the kinds in the day's list; the Guide's row is place types (Records, Books, Galleries, Craft beer, Clubs and bars…). |
-| 4 Oct (owner): the icons are plain; the tab bar has an empty slot after Saved; does the Guide earn a tab when Now's Worth the walk repeats it at the bottom of the page? | Icons redrawn in two tones, solid when selected. The bar had a five-column grid for four tabs. The Guide is no longer a tab: Now has Events \| Places under the answer, Places being the Guide in brief, and the Guide is its full page. Four tabs: Now, Map, Saved, You; You moved from the header on 5 October. |
-| (noticed here) craft beer bars and board games | Craft beer: ten places are picked as the `taproom` kind (Põhjala, Põhja Konn, Pudel, Uba ja Humal, Pühaste, Koht, Brewklyn, Tuletorn, Hell Hunt, Purtse resto), so the Craft beer mood and a Guide type exist. No board-game place exists; Easy alone (quiz, chess, craft nights, for people on their own) covers the events from the `easy-alone` rule, which reads formats from titles and leaves out adult-themed and group-of-friends listings. A mood shows only with three behind it; future-date discovery does not hide it just because of the current hour. |
+| English first; open details by tapping a listing | English catalogue fallback, complete row/card links, original text available on details. |
+| Do not make an undecided visitor scroll through lots of filters | A visible walk disclosure, one mood sheet, short previews, full controls in Refine. |
+| About €20 per ticket or free only | Ticket cap in the mood sheet and full results; unknown prices retained with a note, Free requires a known fact. |
+| Plan today/tonight and suggest real places after a show | Walk it, Another, After this and Plan from here, using picked places and verified source facts. No reviews are invented. |
+| Find a future workshop, comedy, record shop or techno club | All events defaults to every future date, including workshops and tag-based comedy. Search includes place types; All places provides the full Guide. |
+| Near must change something visible | Named or device origin, walking facts and nearest order, with permission requested through the location action. |
+| Late-night suggestions must not send people to shut daytime places | Hour-aware walk composition. Search Open now includes only known open hours; hours missing or opening only for events stay explicit. |
 
-## Discovery review, 6 October 2026
+## Validation still needed
 
-Now and Map share mood/submood, ticket cap, Near intent and a calendar day/range. Now's explicit date stays selected when empty. The walk remains the product unit, available in a labelled inline disclosure; it no longer forces listing-first visitors past a full route. Events/Places reuses the existing glass segment. Now and Programme have image-first feeds with essential facts below, retaining our type, palette, Labels and source evidence. A missing photo is a short Label panel, not a guessed picture. See `docs/discovery-review.md` for the critical assessment, sources and verification limits.
+The implementation is checked with automated query/context tests and responsive Chromium previews; those do not certify native keyboards or user comprehension. DEV-31 retains the physical iPhone/iPad mini/Android check and participant validation.
 
-Reject a draggable floating recommendation: production chat bubbles and Picture in Picture solve ongoing tasks, while our recommendation would obscure the feed and add positioning/accessibility state. Reconsider persistence for an active walk after use is observed. The compact walk and larger feed are hypotheses, not proven conversion improvements. Check whether undecided visitors still notice and use the walk, and whether long feeds remain easy to scan.
+Use a small moderated sample of seven prospective travellers, expats and locals, counterbalancing a labelled compact Search entry against one visible field. Measure task completion, time to first relevant result, wrong turns, search findability, and recovery. Tasks should include jazz tomorrow under €20; a record shop open nearby; a workshop next month; a venue with both an event and a place; a walk for today; a zero-result query; and refining, mapping and returning to the same selection. Observe whether people understand All dates versus Now's date, discover the walk, and keep their place after opening details. No participant results are claimed here.
 
-The mini uses the same system adapted to its current window: bounded content and centred sheets in portrait, narrower sidebar/side content in landscape. There is no separate iPad theme or device detection.
+Check real keyboards, text-size settings, reduced motion/transparency, dialog focus and return, long RU/UK labels, and landscape mini layouts. The system adapts to the current window; there is no separate iPad theme or device detection.
 
-## Open questions
+## Open product questions
 
-- Search and the full programme: the header magnifier and Now's field both open Programme, which overlaps Now and keeps its tab selected. The [7 October research](search-navigation-research.md) proposes one adaptive search entry and a clearly labelled All events destination under Now. It compares a compact mobile entry with one visible field; no interface change has shipped and participant validation remains open.
-- Easy alone is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
-- Craft beer picks are ours from each place's own page; someone who knows the scene should confirm or change them, and say whether board-game cafés belong.
-- Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them; craft beer bars are in because they are a culture stop.
-- Hours: about half the picked places have hours. They come from OpenStreetMap, then the venue's site, Facebook and Instagram bio, then a free model reading that same text, checked against it (`docs/data.md`); Facebook returns other Pages' hours only after an App Review. Rooms that open for events read "Open for events" instead of "Hours not filed". Open: searching the web for a venue with no links needs a search API key the owner signs up for (Brave Search has a free tier); until then a place is found only through its own links, OpenStreetMap, Wikidata and Overture.
-- Where to enter (courtyards, upstairs rooms) and how to get back after a late show: not held; the second needs transport data I have not checked.
-- Languages and cities: the interface is translated in the browser (`docs/frontend.md`, Languages); our event titles, summaries and pick notes use the pipeline translations when available; original source text keeps its own language. See the Scale board on the canvas.
-- Does Places on Now get used, or does the Map's Places do that job? Watch whether the Guide page is reached at all. The Guide has a row of place types; whether "Plan from here" belongs on every place row is open. Not built: neighbourhood chips (the wrong grain for Tallinn) and "add to a route" (a draft object nobody asked for).
-- Visible complexity is the cost of every idea above. Fewer elements wins.
+- Easy alone is a title/format rule, not organiser confirmation. Decide who verifies it and whether a confirmed format needs a stronger mark.
+- Local expertise should confirm or change craft beer and daytime place picks, including whether board-game cafés belong. Cafés and restaurants remain out of scope; craft beer can be a culture stop.
+- Hours, entrance details and late-night transport remain incomplete. Keep the sources and limitations in [data.md](data.md); do not hard-code a changing catalogue snapshot here.
+- Do people use Places on Now, All places and Map for different tasks? Observe before adding another tab or Plan from here to every row.
+- Catalogue translation quality and native interface editing remain separate tasks. Other cities need actual sources and language support before entering the interface.
 
-## Constraints
+## Constraints and voice
 
-- Static HTML, one stylesheet (`wa.css`, tokens as CSS variables), vanilla JS; no framework, so `/design-sync` (React components) doesn't apply. Strict CSP: no inline scripts, no third-party scripts or analytics, self-hosted fonts.
-- WCAG 2.2 AA: 44 px targets (chips, keys and segments are 44 px high), visible focus, `prefers-reduced-motion`. Listing text is untrusted: titles may run three lines, be all caps or Cyrillic.
-- Free tiers and free models only. Never guess a photo from a name.
-- Check at 390 and 1440 px, light and dark.
+Static HTML, vanilla JS, one stylesheet, self-hosted fonts, strict CSP, free tiers and free models only. Check 390 and 1440 px in both themes. Aim for WCAG 2.2 AA, 44 px targets, visible focus and reduced motion. Titles may be long, all caps or Cyrillic; source text is untrusted and must be escaped, URLs validated.
 
-## Do not use
-
-Cream backgrounds, black or near-black surfaces, tracked all-caps eyebrow lines, an arrow on every link, italic accent words, numbered section labels, monospace for every small label, a generic grid of identical rounded cards, emoji, purple-to-blue gradients, anything that looks like Google Maps or a booking site.
-
-## Voice
-
-Handles start with `@`; no exclamation marks; no marketing register; never "discover" as a verb; metadata reads "Area · kind · day + time".
+Handles start with `@`. No exclamation marks, marketing register or “discover” as a verb. Keep helper text brief without removing consequences, provenance or recovery instructions. Do not add cream page backgrounds, flat black surfaces, tracked all-caps eyebrows, decorative arrows, italic accent words, numbered section labels, emoji, purple-to-blue gradients or a generic booking-site identity.

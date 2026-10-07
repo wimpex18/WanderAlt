@@ -193,3 +193,13 @@ test('saved event and place removal actions are siblings of their navigation lin
   const picked = p.WA.R.placeRow({ id:'picked', name:'Festival', kind:'bar', picked:true });
   assert.match(picked, /wa-place__name">Festival<\/span> <span class="wa-place__pick">Picked/);
 });
+
+
+test('a temporary Map search context never replaces Now dates in shared storage', () => {
+  const now=page(); now.WA.Discovery.setDates({when:'tonight'});
+  const before=now.store.get('wa:discovery:v1');
+  const map=page(now.store,'?context=search&q=jazz&time=tomorrow&date=2026-10-12',false,'navigate','map');
+  assert.equal(map.WA.Discovery.dates().when,'tonight');
+  assert.equal(now.store.get('wa:discovery:v1'),before);
+  assert.equal(map.url(),'');
+});

@@ -828,7 +828,34 @@ window.WA.dict.ru = {
   "Stop email and notifications?": "Отключить письма и уведомления?",
   "Stop alerts": "Отключить уведомления",
   "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.",
-  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле."
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле.",
+  "Search events or places": "Поиск событий или мест",
+  "Close search": "Закрыть поиск",
+  "All events": "Все события",
+  "Search results": "Результаты поиска",
+  "All dates": "Все даты",
+  "Refine": "Уточнить",
+  "Try a search": "Попробуйте поиск",
+  "Jazz tomorrow": "Джаз завтра",
+  "Record shops": "Магазины пластинок",
+  "Free today": "Бесплатно сегодня",
+  "View all results": "Все результаты",
+  "No matches. Try another name or browse all events and places.": "Совпадений нет. Попробуйте другое название или откройте все события и места.",
+  "Loading listings": "Загрузка событий",
+  "Walking distance unavailable": "Расстояние пешком неизвестно",
+  "Selected filters": "Выбранные фильтры",
+  "Map these results": "Эти результаты на карте",
+  "Back to results": "Назад к результатам",
+  "With a listed language": "С указанным языком",
+  "See this selection": "Открыть эту подборку",
+  "All places and All events have the complete listings.": "Полные списки есть в разделах «Все места» и «Все события».",
+  "Price per ticket": "Цена билета",
+  "Maximum price per ticket": "Максимальная цена билета",
+  "More options": "Больше параметров",
+  "Sources go quiet between programmes. All events has the full listing.": "Между событиями источники затихают. Полный список есть в разделе «Все события».",
+  "Keywords": "Ключевые слова",
+  "Filters from your search": "Фильтры из вашего запроса",
+  "Keep this search": "Сохранить этот поиск"
  },
  "patterns": [
   [
@@ -1334,6 +1361,19 @@ window.WA.dict.ru = {
   [
    "since {t}",
    "с {t}"
+  ],
+  [
+   "Show {n} more places",
+   {
+    "one": "Ещё {n} место",
+    "few": "Ещё {n} места",
+    "many": "Ещё {n} мест",
+    "other": "Ещё {n} места"
+   }
+  ],
+  [
+   "{n} without a map location",
+   "{n} без адреса на карте"
   ]
  ]
 };

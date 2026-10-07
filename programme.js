@@ -1,17 +1,5 @@
-/* ============================================================
-   programme.js — Programme: the week, day by day.
-   ------------------------------------------------------------
-   One field for search and for a sentence, one row of quick chips
-   (when, then kinds), and one filter panel that is a sheet on phones
-   and a sidebar from 1024. A title or a venue is searched as typed. A
-   sentence ("free jazz tonight in Kalamaja") is read into those same
-   filters, in the page (ask.js); only when the page cannot read it is
-   the model asked, and it too only sets filters. Every count comes from
-   the same filter chain as the list, each facet skipping itself.
-
-   URL: ?q ?open=0|1 ?date ?to ?time ?cat ?area ?sort ?within ?new=1 ?free=1
-        ?english=1 ?price ?doors ?seen=hide ?followed=1 ?focus=search ?moods ?subs
-   ============================================================ */
+/* All events and search results: one query contract, removable active filters
+   and a Refine dialog at every width. Search previews and Map use SearchData. */
 (() => {
   'use strict';
 
@@ -22,88 +10,22 @@
   const esc = (s) => window.WA.UI.esc(s);
   const I = (n, c) => window.WA.Icon(n, c);
 
-  const state = {
-    q: '', day: '', dayTo: '', when: 'all', kinds: new Set(), area: '', areaExplicit: false,
-    sort: 'soonest', within: 0, doors: 'any', free: false,
-    hideSeen: false, followed: false, fresh: false,
-    english: false, maxPrice: null, placeOpen: null,
-    taste: null,     /* explicit mood context from Now; removable here */
-    read: null,       /* the sentence's reading: { must, any, note, by } */
-  };
-  /* Places that answer the query (by name, or by the kind a word names) and,
-     for a shop word, the set of them that the listings narrow to. */
-  let placeHits = [], placeOnly = null, evenings = [];
+  const engine = window.WA.SearchData.create(location.search);
+  const state = engine.state;
+  const submitted = new URLSearchParams(location.search).get('submit') === '1';
+  let placeHits = [], placeOnly = false, evenings = [];
   /* The list is paged: a screenful of days first, more on request. Running
      exhibitions show five until asked. Both reset when any filter changes. */
   const PAGE = 30;
   let limit = PAGE, runsOpen = false, lastSig = '';
-  const WHEN = { tonight: 'Today', tomorrow: 'Tomorrow', weekend: 'This weekend', thisweek: 'This week', all: 'Everything ahead' };
-  const SHEET_WHEN = ['tonight', 'tomorrow', 'weekend', 'thisweek'];
-  const DOORS = { any: 'Any time', now: 'From now', '21:00': 'After 21:00', '23:00': 'After 23:00' };
-
-  /* ── URL ───────────────────────────────────────────────────── */
-  const read = () => {
-    const sp = new URLSearchParams(location.search);
-    if (sp.has('moods')) {
-      const moods = sp.get('moods').split(',').filter(id => window.WA.Moods.get(id));
-      const validSubs = new Set(moods.flatMap(id => window.WA.Moods.get(id).subs.map(s => s.id)));
-      const subs = (sp.get('subs') || '').split(',').filter(id => validSubs.has(id));
-      if (moods.length) state.taste = { moods, subs, cap:null };
-    }
-    if (window.WA.Discovery.validDate(sp.get('date'))) state.day = sp.get('date');
-    if (state.day && window.WA.Discovery.validDate(sp.get('to')) && sp.get('to') > state.day) state.dayTo = sp.get('to');
-    const t = sp.get('time') === 'anytime' ? 'all' : sp.get('time');
-    if (t && WHEN[t]) state.when = t;
-    if (sp.get('q')) state.q = sp.get('q').trim().slice(0, 140);
-    if (sp.get('cat')) sp.get('cat').split(',').filter(Boolean).forEach(c => state.kinds.add(c.toLowerCase()));
-    if (sp.has('area')) { state.area = sp.get('area') === 'any' ? '' : sp.get('area'); state.areaExplicit = true; }
-    if (sp.get('sort') === 'nearest') state.sort = 'nearest';
-    if (sp.get('within')) state.within = G().parseWithin(sp.get('within'));
-    if (sp.get('new') === '1') state.fresh = true;
-    if (['0', '1'].includes(sp.get('open'))) state.placeOpen = sp.get('open') === '1';
-    state.free = sp.get('free') === '1';
-    state.english = sp.get('english') === '1';
-    state.hideSeen = sp.get('seen') === 'hide';
-    state.followed = sp.get('followed') === '1';
-    if (DOORS[sp.get('doors')]) state.doors = sp.get('doors');
-    const price = sp.get('price');
-    if (price != null && /^\d{1,3}$/.test(price)) state.maxPrice = Number(price);
-  };
+  const WHEN = window.WA.SearchData.WHEN;
+  const SHEET_WHEN = ['all', 'tonight', 'tomorrow', 'weekend', 'thisweek'];
+  const DOORS = window.WA.SearchData.DOORS;
   const write = () => {
-    const sp = new URLSearchParams();
-    if (state.q) sp.set('q', state.q);
-    if (state.taste) { sp.set('moods',state.taste.moods.join(',')); if (state.taste.subs.length) sp.set('subs',state.taste.subs.join(',')); }
-    if (placeOnly && state.placeOpen != null) sp.set('open', state.placeOpen ? '1' : '0');
-    if (state.day) { sp.set('date', state.day); if (state.dayTo) sp.set('to', state.dayTo); }
-    else if (state.when !== 'all') sp.set('time', state.when);
-    if (state.kinds.size) sp.set('cat', [...state.kinds].join(','));
-    if (state.area || (placeOnly && state.areaExplicit)) sp.set('area', state.area || 'any');
-    if (state.sort !== 'soonest') sp.set('sort', state.sort);
-    if (state.within) sp.set('within', String(state.within));
-    if (state.fresh) sp.set('new', '1');
-    if (state.free) sp.set('free', '1');
-    if (state.english) sp.set('english', '1');
-    if (state.hideSeen) sp.set('seen', 'hide');
-    if (state.followed) sp.set('followed', '1');
-    if (state.doors !== 'any') sp.set('doors', state.doors);
-    if (state.maxPrice != null) sp.set('price', String(state.maxPrice));
-    const qs = sp.toString();
-    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+    const qs = engine.params().toString();
+    history.replaceState({ ...history.state, resultLimit:limit, runningOpen:runsOpen }, '', qs ? `?${qs}` : location.pathname);
   };
-
-  /* ── The filter chain ──────────────────────────────────────── */
   const since = R().previousVisit();
-  const doorsPass = (e) => {
-    if (state.doors === 'any') return true;
-    const m = G().startMinutes(e);
-    if (m == null) return false;
-    if (state.doors === 'now') return !W().isTonight(e) || m >= window.WA.Hours.cityNow().minutes || R().isLive(e);
-    const [h, mm] = state.doors.split(':').map(Number);
-    return m >= h * 60 + mm;
-  };
-
-  /* One chosen day, or every day from the first to the last. */
-  const onDays = e => window.WA.Discovery.matchesDate(e, { date:state.day, to:state.dayTo });
   const dayLabel = (k) => (k === W().todayKey() ? 'Today' : `${R().dateShort(k)}${k.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + k.slice(0,4)}`);
   const daysLabel = () => (state.dayTo ? `${dayLabel(state.day)} to ${dayLabel(state.dayTo)}` : dayLabel(state.day));
   const setDays = (from, to) => {
@@ -112,69 +34,52 @@
     state.day = from || ''; state.dayTo = from ? (to || '') : ''; state.when = 'all';
   };
 
-  const apply = (list, skip) => {
-    let out = list;
-    if (skip !== 'when') {
-      out = state.day ? out.filter(e => onDays(e)) : out.filter(e => state.when === 'all' || window.WA.Discovery.matchesDate(e, { when:state.when }));
-    }
-    if (skip !== 'taste' && state.taste) out = out.filter(e => window.WA.Moods.wantsEvent(state.taste,e));
-    if (skip !== 'kind' && state.kinds.size) out = out.filter(e => state.kinds.has(String(e.kind || '').toLowerCase()));
-    if (skip !== 'area' && state.area) out = out.filter(e => R().areaOf(e) === state.area);
-    if (skip !== 'free' && state.free) out = out.filter(R().isFree);
-    if (skip !== 'doors') out = out.filter(doorsPass);
-    if (skip !== 'within' && state.within) out = G().withinFilter(out, state.within);
-    if (skip !== 'seen' && state.hideSeen) out = window.WA.Seen.filter(out);
-    if (skip !== 'followed' && state.followed) out = out.filter(R().isFollowed);
-    if (skip !== 'fresh' && state.fresh) out = out.filter(e => R().isNewSince(e, since));
-    if (skip !== 'english' && state.english) out = out.filter(e => (e.eventLanguages || []).includes('en'));
-    if (skip !== 'price' && state.maxPrice != null) out = out.filter(e => R().isFree(e) || (e.priceMin == null || Number(e.priceMin) <= state.maxPrice));
-    if (skip !== 'q' && state.q) out = placeOnly ? out.filter(e => placeOnly.has(e.venueId)) : out.filter(e => (state.read ? window.WA.Ask.match(e, state.read) : R().matches(e, state.q)));
-    return out;
-  };
-
-  const sorted = (list) => {
-    if (state.sort === 'nearest' && G().currentLoc()) {
-      return list.slice().sort((a, b) => {
-        const da = G().distanceTo(a), db = G().distanceTo(b);
-        if (da != null && db != null) return da - db;
-        return da != null ? -1 : db != null ? 1 : 0;
-      });
-    }
-    return list.slice().sort(G().bySoonestThenDistance());
-  };
+  const apply = (list, skip) => engine.apply(list,skip);
   const base = () => R().live();
-  const results = () => placeOnly ? [] : sorted(apply(base()));
+  const results = () => engine.events();
 
-  /* ── Quick chips: what the sentence set, then when, then kinds ── */
-  const QUICK_WHEN = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend'], ['thisweek', 'This week']];
+  /* Only selected filters occupy the page. The full choices live in Refine. */
   const kindCounts = () => {
     const pool = apply(base(), 'kind');
     const m = new Map();
     for (const e of base()) { const k = String(e.kind || '').toLowerCase(); if (R().real(k)) m.set(k, 0); }
     for (const e of pool) { const k = String(e.kind || '').toLowerCase(); if (m.has(k)) m.set(k, m.get(k) + 1); }
+    const comedy = pool.filter(e => window.WA.SearchData.kindMatches(e,new Set(['comedy']))).length;
+    if (base().some(e => window.WA.SearchData.kindMatches(e,new Set(['comedy'])))) m.set('comedy',comedy);
     for (const k of state.kinds) if (!m.has(k)) m.set(k, 0);
     return [...m.entries()].sort((a, b) => Number(state.kinds.has(b[0])) - Number(state.kinds.has(a[0])) || b[1] - a[1] || a[0].localeCompare(b[0]));
   };
   const quick = () => {
-    $('quick').hidden = !!(state.q && placeOnly);
-    const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" aria-pressed="true" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
-    const set = [];
-    if (state.day) set.push(on(daysLabel(), 'clear-when'));
-    if (state.taste) set.push(on(window.WA.Moods.words(state.taste).join(', '), 'clear-taste'));
-    if (state.free) set.push(on('Free', 'clear-free'));
-    if (state.maxPrice != null) set.push(on(`Up to €${state.maxPrice}`, 'clear-price'));
-    if (state.english) set.push(on('In English', 'clear-english'));
-    if (state.area) set.push(on(state.area, 'clear-area'));
-    const whenPool = apply(base(), 'when');
-    const when = state.day ? [] : QUICK_WHEN.map(([v, label]) => {
-      const n = whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
-      return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(label)}</button>`;
-    });
-    const kinds = kindCounts().map(([k, n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n === 0 && !state.kinds.has(k) ? ' disabled' : ''}>${window.WA.Picto.kind(k)}${esc(R().kindLabel(k))}</button>`);
-    put($('quick'), [...set, ...when].join('') + '<span class="prog-quick__sep" aria-hidden="true"></span>' + kinds.join(''));
+    const oldFocus = document.activeElement;
+    const restoreFocus = oldFocus && $('quick').contains?.(oldFocus);
+    const key = oldFocus?.dataset?.act ? 'act' : 'kind', value = oldFocus?.dataset?.[key];
+    const on = (label, act) => `<button class="wa-chip wa-chip--on" type="button" data-act="${esc(act)}" aria-label="${esc(`Remove ${label}`)}">${esc(label)}${I('close')}</button>`;
+    const chosen = [];
+    if (placeOnly) {
+      if (wantsOpen()) chosen.push(on('Open now','clear-open'));
+    } else {
+      if (state.day || state.when !== 'all') chosen.push(on(state.day ? daysLabel() : WHEN[state.when],'clear-when'));
+      for (const k of state.kinds) chosen.push(`<button class="wa-chip wa-chip--on" type="button" data-kind="${esc(k)}" aria-label="${esc(`Remove ${R().kindLabel(k)}`)}">${esc(R().kindLabel(k))}${I('close')}</button>`);
+      if (state.taste) chosen.push(on(window.WA.Moods.words(state.taste).join(', '),'clear-taste'));
+      if (state.free) chosen.push(on('Free','clear-free'));
+      if (state.maxPrice != null) chosen.push(on(`Up to €${state.maxPrice}`,'clear-price'));
+      if (state.english) chosen.push(on('In English','clear-english'));
+      if (state.doors !== 'any') chosen.push(on(DOORS[state.doors],'clear-doors'));
+      if (state.hideSeen) chosen.push(on("Hide what I've opened",'clear-seen'));
+      if (state.followed) chosen.push(on('Followed places only','clear-followed'));
+      if (state.fresh) chosen.push(on('New since last visit','clear-fresh'));
+    }
+    if (state.area) chosen.push(on(state.area,'clear-area'));
+    if (state.within) chosen.push(on(G().format(state.within),'clear-within'));
+    if (state.sort === 'nearest' && !placeOnly) chosen.push(on('Nearest','clear-sort'));
+    put($('quick'),chosen.join(''));
+    $('quick').hidden = !chosen.length;
+    if (restoreFocus) ($('quick').querySelector(`[data-${key}="${CSS.escape(value || '')}"]`) || $('open-filters')).focus({ preventScroll:true });
+    $('result-date').hidden = placeOnly;
+    $('result-date').querySelector?.('span').replaceChildren(document.createTextNode(state.day || state.when !== 'all' ? 'When' : 'All dates'));
   };
 
-  /* ── The filter panel (sheet on phones, sidebar on desktop) ── */
+  /* A single filter dialog for both desktop and mobile. */
   const areaCounts = () => {
     const pool = apply(base(), 'area');
     const m = new Map();
@@ -186,22 +91,9 @@
     return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
   };
 
-  const placeOrigin = () => {
-    const here = G().currentLoc();
-    if (here) return { from: here, label: G().anchor?.()?.label || 'where you are' };
-    const centre = (window.WA.CITIES || []).find(c => c.id === window.WA.CITY)?.centre;
-    return { from: centre || null, label: centre?.label || 'the city centre' };
-  };
-  const wantsOpen = () => state.placeOpen ?? A().places(state.q).openNow;
-  const placeView = (skipArea = false) => {
-    const from = placeOrigin().from;
-    const distance = v => G().distanceTo?.(v, from);
-    return placeHits.filter(v => (!wantsOpen() || R().openState(v).open === true) &&
-      (skipArea || !state.area || R().areaOf(v) === state.area) &&
-      (!state.within || (distance(v) != null && distance(v) <= state.within)))
-      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) ||
-        ((distance(a) ?? Infinity) - (distance(b) ?? Infinity)) || String(a.name).localeCompare(String(b.name), 'et'));
-  };
+  const placeOrigin = () => window.WA.SearchData.origin();
+  const wantsOpen = () => engine.wantsOpen();
+  const placeView = skipArea => engine.places(skipArea);
   const PLACE_QUERY = { records: 'record shops', books: 'bookshops', galleries: 'galleries museums', thrift: 'thrift shops',
     beer: 'craft beer', clubs: 'clubs bars', cinema: 'cinemas', theatres: 'theatres' };
   const placePanel = (scope) => {
@@ -227,8 +119,8 @@
     return t(`Walking from ${origin}`);
   };
 
-  let datesOpen = false, refocus = '';
-  const panel = (scope = 'aside') => {
+  let datesOpen = false, advancedOpen = false, refocus = '';
+  const panel = (scope = 'sheet') => {
     if (state.q && placeOnly) return placePanel(scope);
     const whenPool = apply(base(), 'when');
     const freeN = apply(base(), 'free').filter(R().isFree).length;
@@ -239,7 +131,7 @@
       <div class="wa-field">
         <span class="wa-field__label">When</span>
         <div class="wa-chips">${SHEET_WHEN.map(v => {
-          const n = whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
+          const n = v === 'all' ? whenPool.length : whenPool.filter(e => window.WA.Discovery.matchesDate(e, { when:v })).length;
           return `<button class="wa-chip" type="button" data-when="${esc(v)}" aria-pressed="${!state.day && state.when === v}"${n || state.when === v ? '' : ' disabled'}>${esc(WHEN[v])} <span class="wa-chip__n">${n}</span></button>`;
         }).join('')}
           <button class="wa-chip" type="button" data-dates aria-expanded="${datesOpen || !!state.day}" aria-pressed="${!!state.day}">${I('calendar')}${esc(state.day ? daysLabel() : 'Pick dates')}</button>
@@ -249,6 +141,20 @@
           <label class="prog-dates__f"><span>To</span><input class="wa-input" type="date" data-date="to" min="${esc(state.day || W().todayKey())}" value="${esc(state.dayTo)}" /></label>
         </div>` : ''}
       </div>
+      <div class="wa-field"><span class="wa-field__label">Kind</span><div class="wa-chips">
+        <button class="wa-chip" type="button" data-kind="" aria-pressed="${!state.kinds.size}">All</button>
+        ${kindCounts().map(([k,n]) => `<button class="wa-chip" type="button" data-kind="${esc(k)}" aria-pressed="${state.kinds.has(k)}"${n || state.kinds.has(k) ? '' : ' disabled'}>${esc(R().kindLabel(k))} <span class="wa-chip__n">${n}</span></button>`).join('')}
+      </div></div>
+      <div class="wa-field"><span class="wa-field__label">Price per ticket</span>
+        <input class="wa-range" type="range" data-price min="0" max="100" step="5" value="${state.maxPrice ?? 100}" aria-label="Maximum price per ticket" />
+        <span class="wa-field__consequence" data-price-note>${state.maxPrice == null ? 'Any price' : `Up to €${state.maxPrice}`}</span>
+        <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
+          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free</span></span>
+          <span class="wa-switch__track"></span>
+        </button>
+
+      </div>
+      <details class="prog-options" data-advanced${advancedOpen ? ' open' : ''}><summary>More options</summary>
       <div class="wa-field">
         <span class="wa-field__label">Area</span>
         <div class="wa-chips">
@@ -275,9 +181,8 @@
       </div>
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}
       <div class="wa-field">
-        <button class="wa-switch" type="button" data-toggle="free" aria-pressed="${state.free}">
-          <span class="wa-switch__text"><span class="wa-switch__title">Free entry</span><span class="wa-switch__sub">${freeN} free</span></span>
-          <span class="wa-switch__track"></span>
+        <button class="wa-switch" type="button" data-toggle="english" aria-pressed="${state.english}">
+          <span class="wa-switch__text"><span class="wa-switch__title">In English</span><span class="wa-switch__sub">With a listed language</span></span><span class="wa-switch__track"></span>
         </button>
         <button class="wa-switch" type="button" data-toggle="hideSeen" aria-pressed="${state.hideSeen}">
           <span class="wa-switch__text"><span class="wa-switch__title">Hide what I've opened</span><span class="wa-switch__sub">${window.WA.Seen.count()} opened or saved</span></span>
@@ -293,6 +198,8 @@
           <span class="wa-switch__track"></span>
         </button>` : ''}
       </div>
+      ${searchAct()}
+      </details>
       <div class="wa-field"><button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-clear style="justify-self:start;padding:0">Clear all filters</button></div>`;
   };
   const withinNote = () => !G().currentLoc() && state.within ? 'Choose a starting point' : state.within
@@ -312,7 +219,7 @@
     </div>`;
   };
 
-  const activeCount = () => placeOnly ? Number(!!wantsOpen()) + Number(!!state.area) + Number(!!state.within) : (state.taste ? 1 : 0) + (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
+  const activeCount = () => placeOnly ? Number(!!wantsOpen()) + Number(!!state.area) + Number(!!state.within) : state.kinds.size + (state.taste ? 1 : 0) + (state.english ? 1 : 0) + (state.maxPrice != null ? 1 : 0) + (state.area ? 1 : 0) + (state.within ? 1 : 0) + (state.doors !== 'any' ? 1 : 0) +
     (state.free ? 1 : 0) + (state.hideSeen ? 1 : 0) + (state.followed ? 1 : 0) + (state.fresh ? 1 : 0) +
     (state.sort !== 'soonest' ? 1 : 0) + (!state.day && state.when !== 'all' ? 1 : 0) + (state.day ? 1 : 0);
 
@@ -342,7 +249,7 @@
     if (state.q && drops.length === 1) {
       return R().empty({ icon: 'search', title: 'No listings match this search.',
         body: 'Searches English and original titles, venues and areas, with or without Estonian letters.',
-        actions: [{ act: 'clear-place-filters', label: 'Show all matching places' }, { act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'The Guide' }] });
+        actions: [{ act: 'clear-q', label: 'Clear search' }, { href: 'places.html', label: 'All places' }] });
     }
     if (best) {
       return R().empty({ icon: 'filter', title: 'Nothing matches all of that.',
@@ -364,30 +271,7 @@
      when words are left that the page could not place and nothing
      matches without them. */
   const A = () => window.WA.Ask;
-  let before = null, askTimer = 0, asked = '', askVersion = 0;
-  const cancelAsk = () => { askVersion++; clearTimeout(askTimer); };
-  const FILTER_KEYS = ['when', 'day', 'dayTo', 'free', 'english', 'maxPrice'];
-  const unread = () => {
-    if (!state.read) return;
-    if (before) { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
-    state.read = null; before = null;
-  };
-  const adopt = (p, by) => {
-    if (!before) before = { ...Object.fromEntries(FILTER_KEYS.map(k => [k, state[k]])), kinds: [...state.kinds] };
-    else { FILTER_KEYS.forEach(k => { state[k] = before[k]; }); state.kinds = new Set(before.kinds); }
-    if (p.day) { state.day = p.day; state.dayTo = ''; state.when = 'all'; } else if (p.when) { state.when = p.when; state.day = ''; state.dayTo = ''; }
-    if (p.kinds.length) state.kinds = new Set(p.kinds);
-    if (p.free) state.free = true;
-    if (p.english) state.english = true;
-    if (p.maxPrice != null) state.maxPrice = p.maxPrice;
-    state.read = { must: p.must, any: p.any, note: p.note || '', by };
-  };
-  const count = () => apply(base()).length;
-  const literal = (q) => base().filter(e => R().matches(e, q)).length;
-
-  /* Places first: picked ones, then the rest, names before kinds. */
-  const GROUP = { 'record store': 'records', bookshop: 'books', gallery: 'galleries', 'arts centre': 'galleries', thrift: 'thrift', cinema: 'cinema',
-    club: 'clubs', bar: 'clubs', taproom: 'beer', museum: 'galleries', theatre: 'theatres', community: 'community' };
+  const cancelAsk = () => engine.cancel();
   /* Evenings for a plan question: the stored ones that still hold, for the
      day the words name (today when they name none), else one worked out here. */
   const eveningsFor = (p) => {
@@ -405,123 +289,38 @@
   };
   const dayWord = (r) => (r.off === 0 || r.off == null ? 'Tonight' : r.off === 1 ? 'Tomorrow' : R().dayName(r.day));
 
-  const findPlaces = (q, P) => {
-    const f = P.openNow ? A().local(q).must.join(' ') : A().fold(q).trim();
-    const venues = (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false && (!P.openNow || P.only || R().openState(v).open === true));
-    const named = (v) => f.length >= 3 && A().fold(v.name).includes(f);
-    return venues.filter(v => named(v) || (P.only && P.openNow && !f) || (P.show && P.kinds.includes(String(v.kind || '').toLowerCase())))
-      .sort((a, b) => Number(!!b.picked) - Number(!!a.picked) || Number(named(b)) - Number(named(a)) || String(a.name).localeCompare(String(b.name), 'et'));
-  };
-
-  const onQuery = (raw, now) => {
-    const q = String(raw || '').trim().slice(0, 140);
-    if (String(raw || '').length > 140) $('q').value = q;
-    if (q !== state.q) state.placeOpen = null;
-    state.q = q;
-    $('q-clear').hidden = !q;
-    $('ask-try').hidden = !!q || document.activeElement !== $('q');
-    cancelAsk();
-    unread();
-    const P = q ? A().places(q) : null;
-    placeHits = P ? findPlaces(q, P) : [];
-    placeOnly = P && P.only ? new Set(placeHits.map(v => v.id)) : null;
-    evenings = [];
-    if (P && P.plan && window.WA.Route) {
-      const local = A().local(q);
-      window.WA.Route.loadStored();
-      evenings = eveningsFor(local);
-    }
-    if (placeOnly) {
-      const words = A().fold(q);
-      const area = (R().AREA_LIST || []).find(a => words.includes(A().fold(a)));
-      if (!state.areaExplicit) state.area = area || '';
-    }
-    else if (q && A().isQuestion(q)) {
-      const p = A().local(q);
-      adopt(p, 'page');
-      const strict = count();
-      if (!strict) {
-        /* Unplaced words that match nothing are dropped before giving up. */
-        if (state.read.must.length) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] };
-        if (!count() && literal(q)) unread();
-        /* Only then is the model asked, and only about this sentence once. */
-        if (p.must.length && asked !== q) {
-          const version = askVersion;
-          askTimer = setTimeout(() => ask(q, p, version), now ? 0 : 900);
-        }
-      }
+  const syncPlaces = () => { placeHits = engine.places(); placeOnly = engine.placeOnly; };
+  const onQuery = (raw, submit = false) => {
+    engine.query(raw);
+    if (String(raw || '').length > 140) $('q').value = state.q;
+    $('q-clear').hidden = !state.q;
+    syncPlaces(); evenings = [];
+    if (state.q && A().places(state.q).plan && window.WA.Route) {
+      window.WA.Route.loadStored(); evenings = eveningsFor(A().local(state.q));
     }
     render();
-  };
-
-  const ask = async (q, mine, version) => {
-    asked = q;
-    const p = await A().remote(q);
-    if (!p || state.q !== q || askVersion !== version) return;
-    /* Explicit constraints understood in the page remain authoritative. */
-    const reading = { ...p,
-      day: mine.day || (mine.when ? '' : p.day),
-      when: mine.day ? '' : mine.when || p.when,
-      kinds: mine.kinds.length ? mine.kinds : p.kinds,
-      free: mine.free || p.free, english: mine.english || p.english,
-      maxPrice: mine.maxPrice ?? p.maxPrice,
-      note: '', /* Render a summary of the filters actually applied. */
-    };
-    unread();
-    adopt(reading, 'model');
-    /* Model place constraints remain mandatory; don't turn Kalamaja and
-       jazz into Kalamaja OR jazz just to fill an empty result. */
-    /* The model's reading must find something, or the page's stands. */
-    if (!count()) { unread(); adopt(mine, 'page'); if (!count()) state.read = { ...state.read, any: [...state.read.any, ...state.read.must], must: [] }; if (!count() && literal(q)) unread(); }
-    /* What the model says about places and plans, shown beside the listings. */
-    const kinds = Array.isArray(p.placeKinds) ? p.placeKinds : [];
-    if (kinds.length || p.intent === 'places') {
-      const found = findPlaces(q, { kinds, show: true, only: false }).filter(v => !p.openNow || R().openState(v).open === true);
-      if (found.length) { placeHits = found; placeOnly = p.intent === 'places' && !state.kinds.size ? new Set(found.map(v => v.id)) : null; }
-    }
-    if (p.intent === 'evening' && window.WA.Route) { window.WA.Route.loadStored(); evenings = eveningsFor(reading); }
-    render();
+    if (submit) engine.enhance().then(changed => { if (changed) { syncPlaces(); render(); } });
   };
 
   const askNote = () => {
     const n = $('ask-note');
     if (!state.read) { n.hidden = true; n.innerHTML = ''; return; }
-    /* Plain words for what the sentence set: "Gigs tonight with “jazz”". */
     const words = [...state.read.must, ...state.read.any].slice(0, 3).map(w => `“${w}”`).join(', ');
-    const what = state.kinds.size ? [...state.kinds].map(k => R().kindLabel(k)).join(', ') : 'Anything';
-    const when = state.day ? (state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : `on ${R().dateShort(state.day)}`) : state.when !== 'all' ? WHEN[state.when].toLowerCase() : '';
-    const parts = state.read.note ? [state.read.note] : [what, when, words ? `with ${words}` : ''].filter(Boolean);
     n.hidden = false;
-    n.innerHTML = `${state.read.by === 'model' ? I('ai') : ''}<span>${parts.map(t => `<span>${esc(t)}</span>`).join(' ')}</span><button type="button" data-act="undo-read">Search the words</button>`;
-  };
-
-  const TRY = ['Jazz tonight', 'Free art this weekend', 'Club night in Kalamaja', 'Talks in English'];
-  const tryShow = () => {
-    const t = $('ask-try');
-    if (state.q) { t.hidden = true; return; }
-    t.innerHTML = TRY.map(x => `<button class="wa-chip" type="button" data-try="${esc(x)}">${I('ai')}${esc(x)}</button>`).join('');
-    t.hidden = false;
+    n.innerHTML = `<span>${words ? `<span>Keywords</span>: <span data-notranslate>${esc(words)}</span>` : '<span>Filters from your search</span>'}</span><button type="button" data-act="undo-read">Search the words</button>`;
   };
 
   /* ── Render ─────────────────────────────────────────────────── */
   const summary = (n) => {
-    const bits = [];
     if (placeOnly) {
       const list = placeView();
       put($('summary'), `<strong>${list.length} ${list.length === 1 ? 'place' : 'places'}</strong> · picked first${wantsOpen() ? ' · open now' : A().places(state.q).openNow ? ' · including closed places' : ''} · ${esc(placeOriginText())}`);
-      put($('search-act'), ''); return;
+      return;
     }
-    if (state.day) bits.push(state.dayTo ? `${R().dateShort(state.day)} to ${R().dateShort(state.dayTo)}` : R().dayName(state.day) === 'Tonight' ? 'today' : `on ${R().dateShort(state.day)}`);
-    else if (state.when !== 'all') bits.push(WHEN[state.when].toLowerCase());
-    if (state.kinds.size) bits.push([...state.kinds].map(k => R().kindLabel(k).toLowerCase()).join(', '));
-    if (state.area) bits.push(`in ${state.area}`);
-    if (state.q && !state.read) bits.push(`matching “${state.q}”`);
-    if (!(state.q && placeOnly && !n)) bits.push(state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first');
+    const order = state.sort === 'nearest' && G().currentLoc() ? 'nearest first' : 'soonest first';
     const pl = state.q && placeHits.length ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> and ` : '';
-    put($('summary'), state.q && placeOnly && !n
-      ? `<strong>${placeHits.length} ${placeHits.length === 1 ? 'place' : 'places'}</strong> ${esc(bits.join(' · '))}`
-      : `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> ${esc(bits.join(' · '))}${state.maxPrice != null && !state.free ? '<br><span class="wa-note">Unknown prices included</span>' : ''}`);
-    searchAct();
+    const unknown = state.maxPrice != null && !state.free && latest.some(e => !R().isFree(e) && e.priceMin == null);
+    put($('summary'), `${pl}<strong>${n} ${n === 1 ? 'listing' : 'listings'}</strong> · <span>${order}</span>${unknown ? '<br><span class="wa-note">Unknown prices included</span>' : ''}`);
   };
 
   /* Follow this search: kinds, free entry and English are facts on the
@@ -529,13 +328,12 @@
      reading of words. Shown only when one of them is set. */
   const searchLabel = () => [[...state.kinds].map(k => R().kindLabel(k)).join(', '), state.free ? 'free' : '', state.english ? 'in English' : ''].filter(Boolean).join(' · ');
   const searchAct = () => {
-    const el = $('search-act');
     const F = window.WA.Follows;
-    if (!el || !F) return;
+    if (!F) return '';
     const id = F.searchId({ kinds: state.kinds, free: state.free, english: state.english });
-    if (!id) { put(el, ''); return; }
+    if (!id) return '';
     const on = F.has(id), feed = on ? F.feedUrl(id) : '';
-    put(el, `<button class="wa-linkbtn" type="button" data-follow-search="${esc(id)}" aria-pressed="${on}">${esc(on ? 'Following this search' : 'Follow this search')}</button>${feed ? ` <a class="wa-linkbtn" href="${esc(feed.replace(/^https?:/, 'webcal:'))}">Add to calendar</a>` : ''}`);
+    return `<div class="wa-field"><span class="wa-field__label">Keep this search</span><button class="wa-linkbtn" type="button" data-follow-search="${esc(id)}" aria-pressed="${on}">${esc(on ? 'Following this search' : 'Follow this search')}</button>${feed ? ` <a class="wa-linkbtn" href="${esc(feed.replace(/^https?:/, 'webcal:'))}">Add to calendar</a>` : ''}</div>`;
   };
 
   /* Nearest order is one flat list; soonest order groups by day. */
@@ -546,11 +344,9 @@
   const placesBlock = (listLen) => {
     if (!state.q || !placeHits.length) return '';
     const pool = placeOnly ? placeView() : placeHits;
-    const shown = pool.slice(0, placeOnly ? limit : 4);
-    const groups = new Set(placeHits.map(v => GROUP[String(v.kind || '').toLowerCase()]).filter(Boolean));
-    const all = placeOnly ? (pool.length > shown.length ? `<button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, pool.length - shown.length)} more</button>` : '') : placeHits.length > shown.length
-      ? `<a class="wa-linkbtn" href="places.html${groups.size === 1 ? `?kind=${[...groups][0]}` : ''}">All ${placeHits.length} places</a>` : '';
-    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v, placeOnly ? { from: placeOrigin().from } : {})).join('')}</ul>${all}</section>` +
+    const shown = pool.slice(0,limit);
+    const all = pool.length > shown.length ? `<button class="wa-btn wa-btn--quiet" type="button" data-act="more-places">Show ${Math.min(PAGE,pool.length - shown.length)} more places</button>` : '';
+    return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v, { from: placeOrigin().from })).join('')}</ul>${all}</section>` +
       (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
   };
   const listHtml = (list) => {
@@ -566,7 +362,7 @@
 
   /* Write markup only when it changed, so an unchanged list keeps its
      pictures and scroll position instead of being rebuilt. The last string
-     is remembered on the element, so everything that fills #list, #aside,
+     is remembered on the element, so everything that fills #list,
      #sheet-body, #sheet-foot, #quick and #summary goes through here. */
   const put = (el, html) => { if (el && el.__html !== html) { el.innerHTML = html; el.__html = html; } };
 
@@ -578,12 +374,21 @@
     bigFrame = 0;
     const list = latest;
     put($('list'), listHtml(list));
-    put($('aside'), panel());
     const sheet = $('sheet');
-    if (sheet && sheet.open) { put($('sheet-body'), panel('sheet')); put($('sheet-foot'), foot(list.length)); }
+    if (sheet && sheet.open) {
+      const active = document.activeElement;
+      const key = active?.dataset && ['kind','when','area','sort','doors','toggle','placeOpen','placeQuery','within','price','advanced','followSearch'].find(k => k in active.dataset);
+      const value = key && active.dataset[key];
+      put($('sheet-body'), panel('sheet')); put($('sheet-foot'), foot(list.length));
+      if (key) {
+        const attr = key.replace(/[A-Z]/g,c => '-' + c.toLowerCase());
+        const node = sheet.querySelector(`[data-${attr}="${CSS.escape(value || '')}"]`);
+        (key === 'advanced' ? node?.querySelector('summary') : node)?.focus({ preventScroll:true });
+      }
+    }
     if (refocus) {
-      const at = sheet && sheet.open ? sheet : $('aside');
-      const el = at.querySelector(`[data-date="${refocus}"]`);
+      const at = sheet;
+      const el = at?.querySelector(`[data-date="${refocus}"]`);
       refocus = '';
       if (el) el.focus();
     }
@@ -593,25 +398,24 @@
   const render = () => {
     const sig = filterSig();
     if (sig !== lastSig) { lastSig = sig; limit = PAGE; runsOpen = false; }
+    syncPlaces();
     const list = latest = results();
     quick();
     askNote();
     summary(list.length);
-    $('prog-title').textContent = placeOnly ? 'Places' : 'Programme';
-    document.title = `${placeOnly ? 'Places' : 'Programme'} · WanderAlt`;
+    const title = placeOnly ? 'Places' : state.q ? 'Search results' : 'All events';
+    $('prog-title').textContent = title;
+    document.title = `${window.WA.Lang ? window.WA.Lang.t(title) : title} · WanderAlt`;
     const label = document.querySelector?.('label[for="q"]');
-    if (label) label.textContent = 'Search places or listings';
-    $('to-map').hidden = !!placeOnly;
+    if (label) label.textContent = 'Search events or places';
+    $('to-map').hidden = false;
     const fc = activeCount();
     $('filter-count').hidden = !fc;
     $('filter-count').textContent = fc ? String(fc) : '';
     if (!bigFrame) bigFrame = requestAnimationFrame(() => setTimeout(drawBig, 0));
-    const mapDates = new URLSearchParams();
-    if (state.day) {
-      mapDates.set('date', state.day);
-      if (state.dayTo) mapDates.set('to', state.dayTo);
-    } else mapDates.set('when', state.when || 'tonight');
-    $('to-map').href = `map.html?${mapDates}`;
+    const mapContext = engine.params();
+    mapContext.set('context','search');
+    $('to-map').href = `map.html?${mapContext}`;
     stickyOffset();
     write();
   };
@@ -634,24 +438,23 @@
     const fs = hit('[data-follow-search]');
     if (fs && window.WA.Follows) {
       const on = window.WA.Follows.toggle(fs.dataset.followSearch, searchLabel());
-      searchAct();
+      render();
       if (window.WA.Toast) window.WA.Toast.show(on ? 'Following this search' : 'Stopped following this search');
       return;
     }
-    if (hit('#open-filters')) {
-      $('sheet-title').textContent = 'Filters';
+    if (hit('#open-filters') || hit('#result-date')) {
+      $('sheet-title').textContent = 'Refine';
       put($('sheet-body'), panel('sheet'));
       put($('sheet-foot'), foot(results().length));
+      document.body.classList.add('search-open');
       sheet().showModal();
       return;
     }
     if (hit('#sheet-close') || hit('#sheet-apply')) { sheet().close(); return; }
-    if (hit('#q-clear')) { unread(); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; render(); $('q').focus(); return; }
-    const tr = hit('[data-try]');
-    if (tr) { $('q').value = tr.dataset.try; onQuery(tr.dataset.try, true); $('ask-try').hidden = true; return; }
+    if (hit('#q-clear')) { $('q').value = ''; onQuery(''); $('q').focus(); return; }
 
     if (hit('[data-dates]')) {
-      if (state.day) { setDays('', ''); datesOpen = false; } else datesOpen = !datesOpen;
+      if (state.day) { setDays('', ''); engine.override('when'); datesOpen = false; } else datesOpen = !datesOpen;
       render(); return;
     }
     const k = hit('[data-kind]');
@@ -659,11 +462,11 @@
       const v = k.dataset.kind;
       if (!v) state.kinds.clear();
       else if (state.kinds.has(v)) state.kinds.delete(v); else state.kinds.add(v);
-      render(); return;
+      engine.override('kind'); render(); return;
     }
     const w = hit('[data-when]');
     /* The chosen chip, tapped again, clears the filter. */
-    if (w) { const v = w.dataset.when; state.when = !state.day && state.when === v ? 'all' : v; state.day = ''; state.dayTo = ''; datesOpen = false; render(); return; }
+    if (w) { const v = w.dataset.when; state.when = !state.day && state.when === v ? 'all' : v; state.day = ''; state.dayTo = ''; datesOpen = false; engine.override('when'); render(); return; }
     const a = hit('[data-area]');
     if (a) { state.area = a.dataset.area; state.areaExplicit = true; render(); return; }
     const s = hit('[data-sort]');
@@ -678,40 +481,53 @@
     const dr = hit('[data-doors]');
     if (dr) { state.doors = dr.dataset.doors; render(); return; }
     const t = hit('[data-toggle]');
-    if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; render(); return; }
+    if (t) { state[t.dataset.toggle] = !state[t.dataset.toggle]; engine.override(t.dataset.toggle); render(); return; }
     if (hit('[data-clear]') || hit('[data-act="clear-all"]')) {
-      Object.assign(state, { q: '', day: '', dayTo: '', when: 'all', area: '', areaExplicit: false, sort: 'soonest', within: 0, doors: 'any', free: false, hideSeen: false, followed: false, fresh: false, english: false, maxPrice: null, placeOpen: null, read: null, taste:null });
-      before = null; clearTimeout(askTimer); datesOpen = false;
-      state.kinds.clear(); $('q').value = ''; $('q-clear').hidden = true; render(); return;
+      engine.reset(); syncPlaces(); evenings = []; datesOpen = false;
+      $('q').value = ''; $('q-clear').hidden = true; render(); return;
     }
     const act = hit('[data-act]');
     if (act) {
       const x = act.dataset.act;
       if (x === 'clear-place-filters') { state.placeOpen = false; state.area = ''; state.areaExplicit = true; state.within = 0; }
-      if (x === 'clear-q') { state.read = null; before = null; clearTimeout(askTimer); state.q = ''; $('q').value = ''; $('q-clear').hidden = true; }
+      if (x === 'clear-q') { $('q').value = ''; onQuery(''); return; }
       if (x === 'clear-taste') state.taste = null;
       if (x === 'clear-kinds') state.kinds.clear();
-      if (x === 'clear-area') state.area = '';
+      if (x === 'clear-area') { state.area = ''; state.areaExplicit = true; }
       if (x === 'clear-when') { state.day = ''; state.dayTo = ''; state.when = 'all'; datesOpen = false; }
       if (x === 'clear-free') state.free = false;
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
-      if (x === 'undo-read') { unread(); asked = state.q; }
-      if (x === 'more') limit += PAGE;
+      if (x === 'undo-read') engine.undo();
+      if (x === 'more' || x === 'more-places') limit += PAGE;
       if (x === 'more-running') runsOpen = true;
+      if (x === 'clear-open') state.placeOpen = false;
+      if (x === 'clear-sort') state.sort = 'soonest';
       if (x === 'clear-doors') state.doors = 'any';
       if (x === 'clear-within') state.within = 0;
       if (x === 'clear-seen') state.hideSeen = false;
       if (x === 'clear-followed') state.followed = false;
       if (x === 'clear-fresh') state.fresh = false;
+      const overrides = { 'clear-kinds':'kind','clear-when':'when','clear-free':'free','clear-price':'price','clear-english':'english' };
+      if (overrides[x]) engine.override(overrides[x]);
       render(); return;
     }
     const r = hit('[data-row]');
     if (r) window.WA.Seen.mark(r.dataset.row);
   });
 
+  document.addEventListener('toggle',e => { if (e.target.matches?.('[data-advanced]')) advancedOpen = e.target.open; },true);
+
   document.addEventListener('input', (e) => {
     if (e.target.id === 'q') { onQuery(e.target.value, false); return; }
+    if (e.target.matches && e.target.matches('[data-price]')) {
+      state.maxPrice = Number(e.target.value) === 100 ? null : Number(e.target.value);
+      engine.override('price');
+      document.querySelectorAll('[data-price-note]').forEach(n => { n.textContent = state.maxPrice == null ? 'Any price' : `Up to €${state.maxPrice}`; });
+      latest = results(); summary(latest.length); put($('list'),listHtml(latest)); quick(); write();
+      if (sheet()?.open) put($('sheet-foot'),foot(latest.length));
+      return;
+    }
     if (e.target.matches && e.target.matches('[data-within]')) {
       cancelAsk();
       state.within = parseInt(e.target.value, 10) || 0;
@@ -734,7 +550,7 @@
       G().setAnchor(v ? { lat: v.lat, lng: v.lng, label: v.name } : null);
       return;
     }
-    if (e.target.matches('[data-within]')) { render(); return; }
+    if (e.target.matches('[data-within], [data-price]')) { render(); return; }
     if (e.target.matches('[data-date]')) {
       cancelAsk();
       const box = e.target.closest('.prog-dates');
@@ -742,17 +558,18 @@
       const from = val('from'), to = val('to');
       refocus = e.target.dataset.date;
       /* The last day is only ever after the first. */
-      setDays(from, to);
+      setDays(from, to); engine.override('when');
       render();
     }
   });
   document.addEventListener('submit', (e) => { if (e.target.id === 'search-form') { e.preventDefault(); onQuery($('q').value, true); $('q').blur(); } });
-  document.addEventListener('focusin', (e) => { if (e.target.id === 'q') tryShow(); });
-  document.addEventListener('focusout', (e) => { if (e.target.id === 'q') setTimeout(() => { if (document.activeElement !== $('q')) $('ask-try').hidden = true; }, 150); });
-
-  /* ── Boot ───────────────────────────────────────────────────── */
-  read();
-  const boot = () => { if (state.q) onQuery(state.q, true); else render(); R().locateIfGranted(); };
+  /* Preserve the expanded list through detail-page round trips. */
+  const restore = history.state || {};
+  const boot = () => {
+    if (state.q) onQuery(state.q,submitted); else render();
+    if (restore.resultLimit > PAGE) { limit = restore.resultLimit; runsOpen = !!restore.runningOpen; render(); }
+    R().locateIfGranted();
+  };
   const pre = () => {
     $('q').value = state.q;
     $('q-clear').hidden = !state.q;
@@ -761,6 +578,8 @@
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pre, { once: true }); else pre();
   document.addEventListener('wa:catalog-ready', boot);
+  $('sheet').addEventListener?.('close',() => { document.body.classList.remove('search-open'); });
+  $('sheet').addEventListener?.('click',e => { if (e.target === $('sheet')) $('sheet').close(); });
   document.addEventListener('wa:location-ready', render);
   document.addEventListener('wa:follows-changed', render);
   document.addEventListener('wa:routes-ready', () => { if (evenings.length || (state.q && A().places(state.q).plan)) { evenings = eveningsFor(A().local(state.q)); render(); } });
