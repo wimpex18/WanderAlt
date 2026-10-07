@@ -1402,6 +1402,10 @@ window.WA.dict.ru = {
   [
    "Dark from {t}",
    "Тёмная с {t}"
+  ],
+  [
+   "All {n} open",
+   "Все открытые: {n}"
   ]
  ]
 };

@@ -674,12 +674,6 @@ button.wa-since[disabled] { opacity: .6; }
   .home-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: var(--s-9); align-items: start; }
   .home-side { display: grid; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); }
 }
-.wa-mapcard { position: relative; display: grid; align-content: end; min-height: 200px; padding: var(--s-4); border-radius: var(--r-xl); overflow: hidden; text-decoration: none; color: #1c1c1e; background: #e8ebe6; }
-.wa-mapcard__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease); }
-.wa-mapcard:hover .wa-mapcard__art { transform: scale(1.04); }
-.wa-mapcard__glass { position: relative; display: grid; gap: 2px; padding: 14px 16px; border-radius: var(--r-lg); background: rgba(255,255,255,.72); -webkit-backdrop-filter: blur(18px) saturate(1.8); backdrop-filter: blur(18px) saturate(1.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 20px rgba(0,0,0,.12); }
-.wa-mapcard__title { font-weight: 650; font-size: 1.0625rem; letter-spacing: -.015em; display: flex; align-items: center; gap: 8px; }
-.wa-mapcard__sub { font-size: var(--fs-small); color: #4a4a4f; }
 
 /* ── All events and search results ─────────────────────────────────────────────────── */
 .prog-controls { position: sticky; top: var(--topbar-h); z-index: 20; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter); display: grid; gap: var(--s-3); background: color-mix(in oklab, var(--paper) 90%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); border-bottom: 1px solid var(--hair); }
@@ -1029,7 +1023,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-gone { display: flex; align-items: center; gap: var(--s-3); justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); }
 .wa-gone__title { text-decoration: line-through; overflow-wrap: anywhere; }
 .saved-cols { display: grid; }
-@media (min-width: 1024px) { .saved-cols { grid-template-columns: 1fr 1fr; gap: var(--s-9); } .saved-cols > .wa-sect { margin-top: var(--s-8); } }
+
 
 /* ── You / About ───────────────────────────────────────────────── */
 .wa-feed-url { display: block; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); font: 500 .8125rem/1.5 var(--f-mono); overflow-wrap: anywhere; text-decoration: none; }
@@ -1592,7 +1586,6 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .wa-search-dialog__top { padding:20px; }
   .wa-search-dialog__body { flex:0 1 auto; max-height:60dvh; padding:20px 28px 28px; }
   .wa-search-dialog__foot { padding:16px 28px 20px; }
-  body[data-page="programme"] .wa-shell { max-width:960px; }
 }
 
 .prog-options { border-top:1px solid var(--hair); }
@@ -1800,3 +1793,73 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .wa-place-item > .wa-heart .wa-ic { width:22px; height:22px; fill:none; filter:none; }
 .wa-place-item > .wa-heart[aria-pressed="true"] .wa-ic { fill:var(--accent); stroke:var(--accent); }
 .home-walk__stops > span[data-notranslate] { max-width:13em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+
+/* ── Desktop ──────────────────────────────────────────────────────
+   One page width for the top bar and every page: a main column and, where
+   a page has one, a 360px side column. The top bar's brand and keys line
+   up with the content at any window width. */
+.wa-search-entry__key { display:none; }
+.home-aside { padding:14px 16px 8px; border-radius:var(--r-lg); background:var(--paper-2); }
+.home-aside__title { display:flex; align-items:baseline; gap:8px; margin:0 0 4px; font-size:1rem; font-weight:650; letter-spacing:-.01em; }
+.home-aside__n { font-size:var(--fs-small); font-weight:600; color:var(--go); }
+.home-aside__list { display:grid; margin:0; padding:0; list-style:none; }
+.home-aside__row { display:flex; align-items:center; gap:10px; min-height:52px; padding:6px 0; border-top:1px solid var(--hair); color:inherit; text-decoration:none; }
+.home-aside__list > li:first-child .home-aside__row { border-top:0; }
+.home-aside__row .wa-picto { flex:none; width:36px; height:36px; }
+.home-aside__text { flex:1; min-width:0; display:grid; gap:1px; }
+.home-aside__name { font-size:.9375rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-aside__meta { font-size:var(--fs-small); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-aside__walk { flex:none; display:inline-flex; align-items:center; gap:2px; font-size:var(--fs-small); font-weight:600; }
+.home-aside__walk .wa-ic { width:14px; height:14px; color:var(--here); }
+.home-aside__more { min-height:40px; padding:6px 0; font-size:var(--fs-small); }
+@media (hover:hover) { .home-aside__row:hover .home-aside__name { text-decoration:underline; text-underline-offset:3px; } }
+.home-side .wa-since { margin-top:0; }
+
+@media (min-width:1024px) {
+  :root { --page:1200px; --side:360px; --main:calc(var(--page) - var(--side) - var(--s-9)); }
+  .wa-shell { max-width:calc(var(--page) + 2 * var(--gutter)); }
+  .wa-topbar { padding-inline:max(var(--gutter), calc((100% - var(--page)) / 2)); }
+  .wa-search-entry__key { display:inline-grid; place-items:center; flex:none; margin-left:auto; min-width:22px; height:22px; padding:0 6px; border-radius:7px; border:1px solid var(--hair); font:600 .75rem/1 var(--f-sans); color:var(--ink-3); }
+
+  /* Now: the list beside a sticky side column; Events | Places and When stay in reach. */
+  .home-grid { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); }
+  .home-main { max-width:none; }
+  .home-side { gap:var(--s-4); }
+  .home-hero { padding-bottom:var(--s-3); }
+  .home-browse { position:sticky; top:var(--topbar-h); z-index:7; background-color:var(--paper); background-image:var(--daybreak); background-attachment:fixed; }
+  .home-list { --sticky-extra:49px; }
+  .home-rows .wa-row { grid-template-columns:60px minmax(0, 1fr) auto; border-radius:14px; transition:background-color var(--t-fast), box-shadow var(--t-fast); }
+  .home-rows .wa-row__thumb { width:88px; height:88px; }
+  .home-rows .wa-row__thumb img { transition:transform 420ms var(--ease); }
+
+  /* All events: the posters as a grid under one main-width search line. */
+  body[data-page="programme"] :is(.prog-back, .wa-pagehead, .prog-controls) { max-width:var(--main); }
+  .prog-list .wa-feed { max-width:none; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:var(--s-7); }
+  .prog-list .wa-feed__title { font-size:1.25rem; }
+
+  /* Saved: shows in the main column, places beside them. */
+  .saved-cols { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); align-items:start; }
+  .saved-side { position:sticky; top:calc(var(--topbar-h) + var(--s-5)); }
+  .saved-side > .wa-sect { margin-top:0; }
+
+  /* You: the settings in the main column, the account beside them. */
+  #you-body { max-width:none; display:grid; grid-template-columns:minmax(0, 1fr) var(--side); column-gap:var(--s-9); align-items:start; }
+  #you-body > :is(.you-join, .you-me) { grid-column:2; grid-row:1 / span 8; align-self:start; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); }
+  #you-body > .you-join { flex-direction:column; align-items:stretch; padding:20px; }
+  #you-body > .you-join .wa-btn { width:100%; justify-content:center; }
+  #you-body > :is(.you-group, .wa-foot) { grid-column:1; }
+  #you-body > .you-group:first-of-type { margin-top:0; }
+}
+@media (min-width:1280px) {
+  .prog-list .wa-feed { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width:1024px) and (hover:hover) {
+  .home-rows .wa-row:hover { background-color:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); }
+  .home-rows .wa-row:hover .wa-row__thumb img { transform:scale(1.05); }
+}
+:root { --row-hover:color-mix(in oklab, var(--ink) 4%, transparent); }
+@media (prefers-reduced-motion:reduce) { .home-rows .wa-row__thumb img { transition:none; } }
+@media (min-width:1024px) and (max-width:1199px) { :root { --side:300px; } .home-grid { gap:var(--s-7); } }
+@media (min-width:1024px) { .saved-side .home-places { grid-template-columns:minmax(0, 1fr); } }
+@media (min-width:1024px) { main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); } }

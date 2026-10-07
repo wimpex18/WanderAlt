@@ -1402,6 +1402,10 @@ window.WA.dict.uk = {
   [
    "Dark from {t}",
    "Темна з {t}"
+  ],
+  [
+   "All {n} open",
+   "Усі відчинені: {n}"
   ]
  ]
 };

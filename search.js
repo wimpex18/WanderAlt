@@ -103,12 +103,20 @@
     if (old) {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'wa-search-entry'; button.dataset.searchOpen = '';
-      button.setAttribute('aria-label','Search events or places'); button.setAttribute('aria-haspopup','dialog');
-      button.innerHTML = `${I('search')}<span class="wa-search-entry__short">Search</span><span class="wa-search-entry__long">Search events or places</span>`;
+      button.setAttribute('aria-label','Search events or places'); button.setAttribute('aria-haspopup','dialog'); button.setAttribute('aria-keyshortcuts','/');
+      button.innerHTML = `${I('search')}<span class="wa-search-entry__short">Search</span><span class="wa-search-entry__long">Search events or places</span><kbd class="wa-search-entry__key" aria-hidden="true">/</kbd>`;
       old.replaceWith(button);
     }
   };
   document.addEventListener('click', e => { const key = e.target.closest('[data-search-open]'); if (key) { e.preventDefault(); open(key); } });
+  /* "/" opens search from anywhere, unless you are already typing or a dialog is open. */
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) || document.querySelector('dialog[open]')) return;
+    const key = document.querySelector('[data-search-open]');
+    if (key) { e.preventDefault(); open(key); }
+  });
   document.addEventListener('wa:catalog-ready', () => { if (dialog?.open) { engine.query(input().value); previews(); } });
   document.addEventListener('wa:language-changed', () => { if (dialog?.open) previews(); });
   document.addEventListener('wa:location-ready', () => { if (dialog?.open) previews(); });

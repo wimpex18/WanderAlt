@@ -1357,6 +1357,10 @@ window.WA.dict.et = {
   [
    "Dark from {t}",
    "Tume alates {t}"
+  ],
+  [
+   "All {n} open",
+   "Kõik {n} avatud"
   ]
  ]
 };

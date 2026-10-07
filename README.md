@@ -16,7 +16,7 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 - Once the controls scroll away they fold into one key under the top bar that opens a quick panel.
 - Rows are compact with a thumbnail and save. Show up to 25 matching items, then batches of 25 until exhausted; `shown` preserves expansion on refresh and Back. Changing view or filters resets it.
 - All events opens the complete event catalogue; All places opens the picked Guide.
-- From 1024 px the walk sits in a side column at any pointer; the map card joins it with a fine pointer and hover.
+- From 1024 px the list sits beside a sticky side column (the walk, picked places open now and what is new since the last visit), and Events | Places with When stays pinned under the top bar. Every page shares one 1200 px width with the top bar; `/` opens search.
 
 ### Other pages
 

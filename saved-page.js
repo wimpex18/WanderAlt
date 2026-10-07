@@ -146,11 +146,11 @@
     }
     const dated = all.dated.filter(inList);
     const places = all.places.filter(inList);
-    $('saved-body').innerHTML = listsBar() + savedWalk(dated) + `<div class="saved-cols">
+    $('saved-body').innerHTML = `<div class="saved-cols"><div class="saved-main">${listsBar()}${savedWalk(dated)}
       ${dated.length ? `<section class="wa-sect saved-events" aria-label="Events">${byNight(dated)}</section>` : ''}
-      ${places.length ? `<section class="wa-sect saved-places">${R().sect({ title: 'Places', n: places.length })}
-        <ul class="home-places">${places.map(v => R().placeRow(v, { heart: true, pickLabel: false })).join('')}</ul></section>` : ''}
-      ${!dated.length && !places.length ? `<p class="wa-note">${viewing ? 'Nothing in this list yet. Add saves to it from their pages.' : 'Nothing saved yet.'}</p>` : ''}
+      ${!dated.length && !places.length ? `<p class="wa-note">${viewing ? 'Nothing in this list yet. Add saves to it from their pages.' : 'Nothing saved yet.'}</p>` : ''}</div>
+      ${places.length ? `<aside class="saved-side"><section class="wa-sect saved-places">${R().sect({ title: 'Places', n: places.length })}
+        <ul class="home-places">${places.map(v => R().placeRow(v, { heart: true, pickLabel: false })).join('')}</ul></section></aside>` : ''}
     </div>
     ${all.unavailable.filter(inList).length ? `<section class="wa-sect" aria-live="polite">${R().sect({ title: 'Saved listings awaiting details', n: all.unavailable.filter(inList).length })}
       <p class="wa-note"><span>These saves are kept</span>. <span>${pending.size ? 'Details are loading' : 'Details could not load'}</span>.</p>
