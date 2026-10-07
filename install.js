@@ -7,7 +7,7 @@
    quietly, then explains the steps.
 
    Three pieces:
-     the nudge    a glass capsule above the tab bar, on Tonight, Programme
+     the nudge    a glass capsule above the tab bar, on Now, All events
                   and Saved only, after the reader has shown interest
      the sheet    the steps, animated, opened from the nudge, from You and
                   from the notifications row on You

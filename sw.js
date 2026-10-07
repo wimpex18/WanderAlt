@@ -20,7 +20,7 @@
    ============================================================ */
 
 /* Bump this whenever the precache list changes. */
-const VERSION = 'wa-v98';
+const VERSION = 'wa-v102';
 const SHELL   = `${VERSION}-shell`;
 const DATA    = `${VERSION}-data`;
 
@@ -37,7 +37,7 @@ const SHELL_URLS = [
   './seen.js', './share.js', './offline.js', './ui-helpers.js',
   './city.js', './supabase.js', './auth.js', './save-store.js', './bookmark.js', './lists.js',
   './follow.js', './inbox.js', './toast.js', './render.js', './view-transition.js', './tabbar.js', './report.js', './push.js', './ask.js', './install.js',
-  './discovery-state.js', './discovery-controls.js', './finder.js', './moods.js', './route.js', './route-page.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
+  './discovery-state.js', './discovery-controls.js', './search-data.js', './search.js', './moods.js', './route.js', './route-page.js', './home.js', './programme.js', './map.js', './places.js', './saved-page.js',
   './detail.js', './source.js', './you.js', './start-from.js', './about.js', './notfound.js',
   './maplibre-loader.js', './map-tiles.js', './vendor/maplibre-gl.css',
   './map-style.json', './map-style-dusk.json',

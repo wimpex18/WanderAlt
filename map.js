@@ -9,7 +9,8 @@
    on phones it drags between peek, half and full. Pins cluster in screen
    space; the selected pin never clusters. Camera moves go through
    WA.MapTiles, which honours reduced motion.
-   URL: ?when=tonight|tomorrow|weekend|thisweek or ?date=&to=, plus ?show=events|places&pick=<id>
+   URL: shared discovery dates, ?show=events|places and ?pick=<id>.
+   ?context=search carries the independent SearchData query and filters.
    ============================================================ */
 (() => {
   'use strict';
@@ -27,6 +28,7 @@
   let hovered = '';
   const LAYERS = ['all', 'events', 'places'];
   const qp = new URLSearchParams(location.search);
+  const searchContext = qp.get('context') === 'search' ? window.WA.SearchData.create(location.search) : null;
   if (LAYERS.includes(qp.get('show'))) state.layer = qp.get('show');
   /* ?pick=<id> arrives from an event or venue page: that pin is shown
      whatever the window, chosen, and the map opens on it. */
@@ -39,22 +41,63 @@
   let events = [], places = [], clusters = [], me = null, lastDrawer = '';
 
   const withCoords = (x) => { const c = G().coordsFor(x); return c ? Object.assign(x, { _c: c }) : null; };
+  const dateText = key => `${R().dateShort(key)}${key.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + key.slice(0,4)}`;
+  const dateLabel = () => searchContext ? (searchContext.state.day ? dateText(searchContext.state.day) +
+    (searchContext.state.dayTo ? ` – ${dateText(searchContext.state.dayTo)}` : '') : window.WA.SearchData.WHEN[searchContext.state.when]) : D().label();
+
+  const searchCriteria = () => {
+    const s = searchContext.state, parts = [];
+    const add = (label,literal = false) => parts.push(`<span${literal ? ' data-notranslate' : ''}>${esc(label)}</span>`);
+    if (searchContext.placeOnly) { if (searchContext.wantsOpen()) add('Open now'); }
+    else {
+      add(dateLabel());
+      for (const kind of s.kinds) add(R().kindLabel(kind));
+      if (s.taste) for (const mood of window.WA.Moods.words(s.taste)) add(mood);
+      if (s.free) add('Free');
+      else if (s.maxPrice != null) add(`Up to €${s.maxPrice}`);
+      if (s.english) add('In English');
+      if (s.doors !== 'any') add(window.WA.SearchData.DOORS[s.doors]);
+      if (s.hideSeen) add("Hide what I've opened");
+      if (s.followed) add('Followed places only');
+      if (s.fresh) add('New since last visit');
+    }
+    if (s.area) add(s.area,true);
+    if (s.within) add(G().format(s.within));
+    return parts.join('');
+  };
 
   const collect = () => {
-    events = R().live().filter(e => (D().matchesDate(e) && D().matchesEvent(e)) || e.id === pickId()).map(withCoords).filter(Boolean)
+    if (searchContext) searchContext.query(searchContext.state.q);
+    const matching = searchContext ? searchContext.events() : R().live().filter(e => D().matchesDate(e) && D().matchesEvent(e));
+    if (requestedPick) {
+      const pick = R().live().find(e => e.id === pickId());
+      if (pick && !matching.includes(pick)) matching.push(pick);
+    }
+    events = matching.map(withCoords).filter(Boolean)
       .sort(G().byDateThenSoonest());
     /* The places layer is what is open now, plus the rooms hosting an
        event in this window; the rest of the catalogue lives on Places. */
     const hosts = new Set(events.map(e => e.venueId).filter(Boolean));
     const hostNames = new Set(events.map(e => String(e.venue || '').toLowerCase().trim()));
-    places = R().places().filter(v => v.id === pickId() || (D().matchesPlace(v) && (R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim()))))
+    const candidates = searchContext ? (searchContext.state.q ? searchContext.places() : []) : R().places().filter(v => D().matchesPlace(v) && (R().openState(v).open === true || hosts.has(v.id) || hostNames.has(String(v.name).toLowerCase().trim())));
+    if (requestedPick) {
+      const pick = R().places().find(v => v.id === pickId());
+      if (pick && !candidates.includes(pick)) candidates.push(pick);
+    }
+    places = candidates
       .map(withCoords).filter(Boolean);
     $('n-events').textContent = String(events.length);
     $('n-places').textContent = String(places.length);
     document.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer)));
-    $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
-    $('map-filters').innerHTML = window.WA.DiscoveryControls.keys();
-    $('map-dates').querySelector('[data-pick-dates] span').textContent = D().label();
+    if (searchContext) {
+      const q = searchContext.params(), count = matching.length - events.length + candidates.length - places.length;
+      $('map-dates').innerHTML = `<a class="wa-chip" href="discover.html${q.size ? '?' + esc(q.toString()) : ''}">${window.WA.Icon('back')}<span>Back to results</span></a>`;
+      $('map-filters').innerHTML = `<div class="map-search-context"><span${searchContext.state.q ? ' data-notranslate' : ''}>${esc(searchContext.state.q || 'All events')}</span>${searchCriteria()}${count ? `<span>${count} without a map location</span>` : ''}<a href="map.html">Clear search</a></div>`;
+    } else {
+      $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
+      $('map-filters').innerHTML = window.WA.DiscoveryControls.keys();
+      $('map-dates').querySelector('[data-pick-dates] span').textContent = D().label();
+    }
     document.querySelector('.map-page > h1').textContent = 'Map of Tallinn';
     if (seg) seg.sync();
   };
@@ -255,7 +298,7 @@
 
   const placeDrawer = () => {
     const { evs, pls } = ordered();
-    const whenWord = D().label();
+    const whenWord = dateLabel();
     $('drawer-title').textContent = evs.length || pls.length ? 'In view' : 'Nothing in view';
     $('drawer-sub').textContent = [
       on.events ? `${evs.length} ${evs.length === 1 ? 'listing' : 'listings'}` : '',
@@ -265,7 +308,8 @@
     ].filter(Boolean).join(' · ');
 
     let html = '';
-    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day: !!D().dates().date || D().dates().when !== 'tonight', noThumb: true })).join('')}</ul>`;
+    const dated = searchContext ? !!searchContext.state.day || searchContext.state.when !== 'tonight' : !!D().dates().date || D().dates().when !== 'tonight';
+    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day:dated, noThumb:true })).join('')}</ul>`;
     if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
     if (!evs.length && !pls.length) {
       html += `<p class="map-legend-note"><span>Zoom out or move the map.</span> <span>${events.length} listings on this map</span> · ${esc(whenWord)}${on.events ? '' : ' · <span>Events layer off</span>'}</p>

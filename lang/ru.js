@@ -30,8 +30,6 @@ window.WA.dict.ru = {
   "Back": "Назад",
   "Share": "Поделиться",
   "Close": "Закрыть",
-  "Programme": "Программа",
-  "Ask or search the programme": "Спросите или ищите в программе",
   "The week in Tallinn's independent scene, day by day, with a walking distance on every listing.": "Неделя независимой сцены Таллина по дням, у каждого события указано расстояние пешком.",
   "Show on the map": "Показать на карте",
   "Ask for a night out": "Спросить про вечер",
@@ -47,8 +45,6 @@ window.WA.dict.ru = {
   "What's on tonight": "Что сегодня вечером",
   "Search, or ask “jazz tonight”": "Поиск или вопрос: «джаз сегодня вечером»",
   "Search": "Поиск",
-  "Places and areas": "Места и районы",
-  "Map of tonight in Tallinn": "Карта вечера в Таллине",
   "All": "Все",
   "Events": "События",
   "Places": "Места",
@@ -168,11 +164,6 @@ window.WA.dict.ru = {
   "Save": "Сохранить",
   "List": "Список",
   "Map preview unavailable · Open map": "Предпросмотр карты недоступен · Открыть карту",
-  "You are going": "Вы идёте",
-  "Going?": "Пойдёте?",
-  "Going": "Идут",
-  "I’m going": "Я иду",
-  "Be the first to say you are going": "Скажите первым, что идёте",
   "English": "английский",
   "Estonian": "эстонский",
   "Russian": "русский",
@@ -309,9 +300,8 @@ window.WA.dict.ru = {
   "Nothing fits that right now.": "Сейчас ничего не подходит.",
   "No route for the next few hours.": "На ближайшие часы маршрута нет.",
   "Try another mood or a higher price limit.": "Попробуйте другое настроение или более высокий предел цены.",
-  "The Guide has the places; the Programme has the listings.": "В гиде места, в программе события.",
   "Your saves still work. Try again in a moment.": "Ваше сохранённое по-прежнему работает. Попробуйте через минуту.",
-  "The sources are read every six hours. The places are open regardless.": "Источники читаются каждые шесть часов. Места при этом открыты.",
+  "The sources are read every six hours. The Guide has picked places.": "Источники читаются каждые шесть часов. В гиде — отобранные места.",
   "Worth the walk": "Стоит прогулки",
   "Picked places, closest first": "Отобранные места, сначала ближайшие",
   "Picked places": "Отобранные места",
@@ -565,7 +555,6 @@ window.WA.dict.ru = {
   "Over since you saved it": "Закончилось после сохранения",
   "A listing": "Событие",
   "No source named.": "Источник не указан.",
-  "Sources go quiet between programmes. Everything else we read is in the Programme.": "Источники затихают между программами. Всё остальное, что мы читаем, есть в программе.",
   "This page needs a source to show.": "Этой странице нужен источник.",
   "A source we read": "Источник, который мы читаем",
   "Venue": "Место",
@@ -748,7 +737,7 @@ window.WA.dict.ru = {
   "Date": "Дата",
   "Date range": "Диапазон дат",
   "Through": "По",
-  "Dates use Tallinn time": "Даты по времени Таллинна",
+  "Apply": "Применить",
   "No listings match these choices.": "Нет событий по выбранным условиям.",
   "Change filters": "Изменить фильтры",
   "Source": "Источник",
@@ -794,7 +783,7 @@ window.WA.dict.ru = {
   "a night for meeting people": "вечер знакомств",
   "a club night": "клубный вечер",
   "a night": "вечер",
-  "A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.": "Для маршрута нужны событие со временем начала и выбранное место рядом. Места есть в гиде, события — в программе.",
+  "Try a different time or starting point, or browse the picked places in the Guide.": "Попробуйте другое время или отправную точку либо посмотрите отобранные места в гиде.",
   "Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.": "Ваши сохранения, списки, подписки, уведомления и входящие будут удалены, в том числе с этого устройства. Отменить это нельзя.",
   "Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.": "Сохранения, списки, подписки и история будут удалены из этого браузера, и вы выйдете из аккаунта. Сохранённое в аккаунте останется; войдите, чтобы вернуть его.",
   "Closed or moved?": "Закрыто или переехало?",
@@ -828,7 +817,33 @@ window.WA.dict.ru = {
   "Stop email and notifications?": "Отключить письма и уведомления?",
   "Stop alerts": "Отключить уведомления",
   "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.",
-  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле."
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле.",
+  "Search events or places": "Поиск событий или мест",
+  "Close search": "Закрыть поиск",
+  "All events": "Все события",
+  "Search results": "Результаты поиска",
+  "All dates": "Все даты",
+  "Refine": "Уточнить",
+  "Try a search": "Попробуйте поиск",
+  "Jazz tomorrow": "Джаз завтра",
+  "Record shops": "Магазины пластинок",
+  "Free today": "Бесплатно сегодня",
+  "View all results": "Все результаты",
+  "No matches. Try another name or browse all events and places.": "Совпадений нет. Попробуйте другое название или откройте все события и места.",
+  "Loading listings": "Загрузка событий",
+  "Walking distance unavailable": "Расстояние пешком неизвестно",
+  "Selected filters": "Выбранные фильтры",
+  "Map these results": "Эти результаты на карте",
+  "Back to results": "Назад к результатам",
+  "With a listed language": "С указанным языком",
+  "All places and All events have the complete listings.": "Полные списки есть в разделах «Все места» и «Все события».",
+  "Price per ticket": "Цена билета",
+  "Maximum price per ticket": "Максимальная цена билета",
+  "More options": "Больше параметров",
+  "Sources go quiet between programmes. All events has the full listing.": "Между событиями источники затихают. Полный список есть в разделе «Все события».",
+  "Keywords": "Ключевые слова",
+  "Filters from your search": "Фильтры из вашего запроса",
+  "Keep this search": "Сохранить этот поиск"
  },
  "patterns": [
   [
@@ -1334,6 +1349,19 @@ window.WA.dict.ru = {
   [
    "since {t}",
    "с {t}"
+  ],
+  [
+   "Show {n} more places",
+   {
+    "one": "Ещё {n} место",
+    "few": "Ещё {n} места",
+    "many": "Ещё {n} мест",
+    "other": "Ещё {n} места"
+   }
+  ],
+  [
+   "{n} without a map location",
+   "{n} без адреса на карте"
   ]
  ]
 };

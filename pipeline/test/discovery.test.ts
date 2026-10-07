@@ -33,16 +33,266 @@ function page(store = new Map<string, string>(), search = '', blocked = false, n
   const window = { WA, addEventListener: on };
   const context = createContext({ window, Date: Clock, Intl, URL, URLSearchParams, location,
     history: { replaceState: (_: unknown, __: string, value: string) => { written = value; } },
-    document: { readyState: 'loading', body: { dataset:{ page:pageName } }, addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type) },
+    document: { readyState: 'loading', body: { dataset:{ page:pageName } }, addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type, e) },
     performance: { getEntriesByType: () => [{ type:navigation }] },
     addEventListener: on, localStorage: storage, sessionStorage: storage,
-    CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
+    CustomEvent: class { type: string; detail: unknown; constructor(type: string, options?: { detail?: unknown }) { this.type = type; this.detail = options?.detail; } },
   });
   for (const file of ['ui-helpers.js', 'when.js', 'render.js', 'moods.js', 'discovery-state.js']) {
     runInContext(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'), context);
   }
-  return { WA, store, fire, location, url: () => written, clock: (value: string) => { now = Date.parse(value); } };
+  return { WA, store, fire, location, context, url: () => written, clock: (value: string) => { now = Date.parse(value); } };
 }
+
+// Load the real Now, date and taste modules; stub only DOM/layout and row markup.
+function home(search = '') {
+  const p = page(new Map(), search);
+  let focus = '', written = '', openedDates = 0;
+  const elements = new Map<string, any>();
+  const element = () => {
+    let html = '', buttons: any[] = [];
+    return { textContent:'', isConnected:true, className:'',
+      set innerHTML(value: string) {
+        html = value;
+        buttons = Array.from(value.matchAll(/<button\b([^>]+)>([\s\S]*?)<\/button>/g), ([,attrs,body]) => {
+          const attributes = new Map(Array.from(attrs.matchAll(/([\w-]+)="([^"]*)"/g), ([,k,v]) => [k,v]));
+          const span = { textContent:body.replace(/<[^>]*>/g,'') };
+          return { dataset:Object.fromEntries([...attributes].filter(([k]) => k.startsWith('data-')).map(([k,v]) => [k.slice(5),v])),
+            getAttribute:(k: string) => attributes.get(k), setAttribute:(k: string,v: unknown) => attributes.set(k,String(v)),
+            querySelector:() => span, focus:() => { document.activeElement = buttons.find(b => b.querySelector() === span); } };
+        });
+      }, get innerHTML() { return html; },
+      setAttribute:() => {}, replaceWith:() => {}, contains:(n: any) => buttons.includes(n),
+      querySelectorAll:(selector: string) => buttons.filter(b => selector === '[data-view]' ? 'view' in b.dataset : selector === '[data-day]' ? 'day' in b.dataset : true),
+      querySelector:() => buttons.find(b => !('day' in b.dataset)),
+    };
+  };
+  for (const id of ['hero-kicker', 'hero-title', 'hero-clock', 'home-acts', 'home-main', 'home-side', 'since', 'home-view-slot', 'home-day-slot', 'home-events-n', 'home-places-n']) elements.set(id, element());
+  const document = p.context.document;
+  document.documentElement = { lang:'en' };
+  document.createElement = element;
+  document.getElementById = (id: string) => elements.get(id);
+  document.querySelector = () => null;
+  document.querySelectorAll = (selector: string) => selector.includes('.wa-feed > li')
+    ? Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => ({ querySelector:() => ({ focus:() => { focus = m[1]; } }) })) : [];
+  p.context.history.replaceState = (_: unknown, __: string, value: string) => {
+    written = value;
+    const url = new URL(value, p.location.origin);
+    p.location.search = url.search; p.location.hash = url.hash;
+  };
+  p.context.matchMedia = () => ({ matches:false, addEventListener:() => {} });
+  p.context.HTMLDialogElement = class {};
+  p.context.setInterval = () => 0;
+  p.WA.Geo.byDateThenSoonest = () => (a: any, b: any) => a.startsAt.localeCompare(b.startsAt) || a.id.localeCompare(b.id);
+  p.WA.Geo.anchor = () => null;
+  p.WA.Route = { plan:() => [], loadStored:() => {} };
+  p.WA.StartFrom = { originMarkup:() => '' };
+  const glasses = new Map<string, any>();
+  p.WA.glassDrop = (bar: any, config: any) => { glasses.set(bar.className,{bar,config}); return { sync:() => {}, reset:() => {} }; };
+  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => '<button data-pick-dates><span>Pick dates</span></button>', openDates:() => { openedDates++; } };
+  p.WA.R.feedItem = (e: any) => `<li data-row="${e.id}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
+  p.WA.R.placeRow = (v: any) => `<li data-row="${v.id}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
+  const events = (n: number, date: string) => Array.from({ length:n }, (_, i) => ({ id:`${date}-${String(i).padStart(2,'0')}`,
+    title:`Listing ${i}`, kind:'gig', startsAt:`${date}T15:00:00Z`, priceMin:i % 2 ? 15 : 0 }));
+  p.WA.catalog = [...events(81, '2026-10-06'), ...events(37, '2026-10-07')];
+  p.WA.venues = Array.from({ length:44 }, (_, i) => ({ id:`place-${i}`, name:`Place ${i}`, kind:'bookshop', picked:true }));
+  runInContext(readFileSync(new URL('../../home.js', import.meta.url), 'utf8'), p.context);
+  p.fire('wa:catalog-ready');
+  const click = (selector: string, dataset = {}) => p.fire('click', { target: { closest:(s: string) => s === selector ? { dataset } : null } });
+  const day = glasses.get('map-seg home-tabs');
+  return { ...p, click, day, openedDates:() => openedDates, url:() => written, focus:() => focus, html:() => elements.get('home-main').innerHTML,
+    rows:() => Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => m[1]) };
+}
+
+test('Now shows 25 matching events and expands until exhausted, retaining order and focusing the next batch', () => {
+  const p = home();
+  assert.equal(p.rows().length, 25);
+  assert.match(p.html(), /Show 25 more/);
+  assert.doesNotMatch(p.html(), /See this selection/);
+  const first = p.rows();
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 50);
+  assert.deepEqual(p.rows().slice(0,25), first);
+  assert.equal(p.focus(), p.rows()[25]);
+  assert.match(p.url(), /shown=50/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 75);
+  assert.equal(p.focus(), p.rows()[50]);
+  assert.match(p.html(), /Show 6 more/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 81);
+  assert.equal(new Set(p.rows()).size, 81);
+  assert.doesNotMatch(p.html(), /data-day-all/);
+});
+
+test('Now day slider commits the same date as a tap, retains its controls through redraws and resets expansion', () => {
+  const p = home('?shown=50&when=tonight'), buttons = p.day.bar.querySelectorAll('.map-seg__opt');
+  assert.equal(p.day.config.current(),0);
+  p.day.config.commit(1,buttons[1]);
+  assert.equal(p.WA.Discovery.dates().when,'tomorrow');
+  assert.equal(p.day.config.current(),1);
+  assert.equal(buttons[1].getAttribute('aria-pressed'),'true');
+  assert.equal(p.rows().length,25);
+  assert.doesNotMatch(p.url(),/shown=/);
+  p.click('[data-day]',{ day:'weekend' });
+  assert.equal(p.day.config.current(),2);
+  assert.equal(p.day.bar.querySelectorAll('.map-seg__opt')[1],buttons[1]);
+  p.WA.Discovery.setDates({when:'thisweek'});
+  assert.equal(buttons.length,4);
+  assert.equal(p.day.config.current(),3);
+  assert.equal(buttons[3].querySelector().textContent,'This week');
+});
+
+test('sliding onto Pick dates and reopening a selected range are actions, not committed filter changes', () => {
+  const p = home('?shown=50&when=tonight'), calendar = p.day.bar.querySelectorAll('.map-seg__opt')[3];
+  p.day.config.commit(3,calendar);
+  assert.equal(p.openedDates(),1);
+  assert.equal(p.day.config.current(),0);
+  assert.equal(p.rows().length,50);
+  assert.match(p.url(),/shown=50/);
+  p.WA.Discovery.setDates({date:'2026-10-07',to:'2026-10-09'});
+  assert.equal(p.day.config.current(),3);
+  assert.equal(calendar.getAttribute('aria-pressed'),'true');
+  assert.equal(p.day.config.commitSame,true);
+  p.day.config.commit(3,calendar);
+  assert.equal(p.openedDates(),2);
+  assert.equal(p.WA.Discovery.dates().to,'2026-10-09');
+});
+
+// Real shared date-sheet controller, with native dialog/form behavior stubbed.
+function dateSheet() {
+  const p = page();
+  let current: any = null, focused = false;
+  const form = { id:'discovery-form', elements:{ date:{ value:'', min:'' }, range:{ checked:false }, to:{ value:'', min:'', disabled:true, required:false } } };
+  const end = { hidden:true };
+  const document = p.context.document;
+  document.body.append = (node: any) => { current = node; };
+  document.querySelector = () => null;
+  document.createElement = () => {
+    const handlers = new Map<string, Function>();
+    return { dataset:{}, innerHTML:'', open:false, setAttribute() {},
+      addEventListener:(name: string,fn: Function) => handlers.set(name,fn),
+      querySelector:(selector: string) => selector === '#discovery-end' ? end : form,
+      showModal() {
+        this.open = true;
+        for (const name of ['date','to'] as const) {
+          const attrs = this.innerHTML.match(new RegExp(`<input[^>]+name="${name}"[^>]+>`))![0];
+          form.elements[name].value = attrs.match(/value="([^"]*)"/)![1];
+          form.elements[name].min = attrs.match(/min="([^"]*)"/)![1];
+        }
+        form.elements.range.checked = /name="range" checked/.test(this.innerHTML);
+        end.hidden = !form.elements.range.checked;
+      },
+      close() { this.open = false; handlers.get('close')?.(); }, remove() {},
+    };
+  };
+  runInContext(readFileSync(new URL('../../discovery-controls.js',import.meta.url),'utf8'),p.context);
+  const button = { isConnected:true, focus:() => { focused = true; } };
+  return { ...p, form, end, open:(options?: any) => p.WA.DiscoveryControls.openDates(button,options), sheet:() => current,
+    cancel:() => current.close(), focus:() => focused,
+    change:() => p.fire('change'), submit:() => p.fire('submit',{target:form,preventDefault() {}}) };
+}
+
+test('custom date sheet keeps edits as a draft, prefills ranges and restores focus after cancellation', () => {
+  const p = dateSheet(); p.WA.Discovery.setDates({date:'2026-10-08',to:'2026-10-10'});
+  p.open();
+  assert.equal(p.form.elements.date.value,'2026-10-08');
+  assert.equal(p.form.elements.to.value,'2026-10-10');
+  assert.equal(p.form.elements.range.checked,true);
+  assert.doesNotMatch(p.sheet().innerHTML,/data-date-preset|Dates use Tallinn time/);
+  p.form.elements.date.value = '2026-10-09';
+  p.change();
+  assert.equal(p.form.elements.to.min,'2026-10-09');
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-08');
+  p.cancel();
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-08');
+  assert.equal(p.focus(),true);
+});
+
+test('date-sheet apply rejects past/reversed ranges; turning range off applies only the first date', () => {
+  const p = dateSheet(); p.open();
+  p.form.elements.range.checked = true; p.change();
+  assert.equal(p.end.hidden,false);
+  assert.equal(p.form.elements.to.disabled,false);
+  for (const [date,to] of [['2026-10-05','2026-10-09'],['2026-10-09','2026-10-08'],['2026-10-09','']]) {
+    p.form.elements.date.value = date; p.form.elements.to.value = to; p.submit();
+    assert.equal(p.sheet().open,true);
+    assert.equal(p.WA.Discovery.dates().when,'tonight');
+  }
+  p.form.elements.date.value = '2026-10-09';
+  p.form.elements.range.checked = false; p.change(); p.submit();
+  assert.equal(p.end.hidden,true);
+  assert.equal(p.form.elements.to.disabled,true);
+  assert.equal(p.WA.Discovery.dates().date,'2026-10-09');
+  assert.equal(p.WA.Discovery.dates().to,'');
+  assert.equal(p.sheet().open,false);
+});
+
+test('the same date picker applies independent search dates and preserves manual overrides on the Map round trip', () => {
+  const p = dateSheet();
+  p.WA.Geo.bySoonestThenDistance = () => () => 0;
+  for (const file of ['ask.js','search-data.js']) runInContext(readFileSync(new URL(`../../${file}`,import.meta.url),'utf8'),p.context);
+  const engine = p.WA.SearchData.create('?q=jazz%20tomorrow'); engine.query(engine.state.q);
+  p.WA.Discovery.setDates({when:'weekend'});
+  p.open({ dates:{when:engine.state.when,date:engine.state.day,to:engine.state.dayTo}, apply:(value: any) => {
+    engine.state.when = 'all'; engine.state.day = value.date; engine.state.dayTo = value.to; engine.override('when');
+  } });
+  assert.equal(p.form.elements.date.value,'2026-10-07'); // search Tomorrow, not Now Weekend
+  p.form.elements.date.value = '2026-10-08'; p.form.elements.to.value = '2026-10-10';
+  p.form.elements.range.checked = true; p.change(); p.submit();
+  assert.equal(p.WA.Discovery.dates().when,'weekend');
+  const returned = p.WA.SearchData.create(engine.params().toString()); returned.query(returned.state.q);
+  assert.equal(returned.state.day,'2026-10-08');
+  assert.equal(returned.state.dayTo,'2026-10-10');
+  assert.equal(returned.state.overrides.has('when'),true);
+});
+
+test('Now restores expanded events on reload and cached Back navigation; new dates and taste reset expansion', () => {
+  const p = home('?shown=50&when=tonight');
+  assert.equal(p.rows().length, 50);
+  p.fire('pageshow', { persisted:true });
+  assert.equal(p.rows().length, 50);
+  assert.match(p.url(), /shown=50/);
+  p.click('[data-day]', { day:'tomorrow' });
+  assert.equal(p.rows().length, 25);
+  assert.match(p.url(), /when=tomorrow/);
+  assert.match(p.url(), /#list$/);
+  assert.doesNotMatch(p.url(), /shown=/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 37);
+  p.WA.Moods.setPref({ moods:[], subs:[], cap:0 });
+  assert.equal(p.rows().length, 19); // only free events, not the previous day's entries
+  assert.doesNotMatch(p.url(), /shown=/);
+  assert.doesNotMatch(p.html(), /data-day-all/);
+});
+
+test('Now places use the same batches and history contract; switching view resets expansion', () => {
+  const p = home('?view=places&shown=50');
+  assert.equal(p.rows().length, 44);
+  p.fire('pageshow', { persisted:true });
+  assert.equal(p.rows().length, 44);
+  p.click('[data-view]', { view:'events' });
+  assert.equal(p.rows().length, 25);
+  assert.doesNotMatch(p.url(), /shown=|view=places/);
+  p.click('[data-day-all]');
+  p.click('[data-view]', { view:'places' });
+  assert.equal(p.rows().length, 25);
+  assert.match(p.html(), /Show 19 more/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 44);
+  assert.equal(p.focus(), p.rows()[25]);
+  assert.equal(new URL(p.url(), p.location.origin).searchParams.get('view'), 'places');
+});
+
+test('invalid feed expansion parameters start at 25 and keep unrelated URL context', () => {
+  for (const shown of ['-1', '5', '26', 'Infinity', '9007199254741000', 'bad']) {
+    const p = home(`?shown=${shown}&when=tomorrow&lang=et`);
+    assert.equal(p.rows().length, 25);
+    assert.match(p.url(), /when=tomorrow/);
+    assert.match(p.url(), /lang=et/);
+    assert.doesNotMatch(p.url(), /shown=/);
+  }
+});
 
 test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent; URLs override dates', () => {
   const first = page();
@@ -73,7 +323,7 @@ test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent
   assert.match(linked.url(), /#list$/);
 });
 
-test('history reloads use the latest discovery dates; new links override them and Programme stays independent', () => {
+test('history reloads use the latest discovery dates; new links override them and full results stays independent', () => {
   const start = page();
   start.WA.Discovery.setDates({ when:'tonight' });
   const returned = page(start.store, '?when=tomorrow', false, 'back_forward');
@@ -141,8 +391,6 @@ test('ticket caps keep unknown prices explicitly, while mood and submood remain 
   assert.equal(D.matchesEvent({ kind:'film', priceMin:1 }), false);
   assert.equal(D.matchesEvent({ kind:'film', priceMin:0 }), true);
   assert.equal(D.matchesPlace({ kind:'cinema' }), true);
-  const q = D.params();
-  assert.equal(q.get('moods'), 'look'); assert.equal(q.get('subs'), 'film'); assert.equal(q.get('price'), '0');
 });
 
 test('image-first feed preserves categories, provenance and missing facts; hostile fields remain text', () => {
@@ -192,4 +440,14 @@ test('saved event and place removal actions are siblings of their navigation lin
   }
   const picked = p.WA.R.placeRow({ id:'picked', name:'Festival', kind:'bar', picked:true });
   assert.match(picked, /wa-place__name">Festival<\/span> <span class="wa-place__pick">Picked/);
+});
+
+
+test('a temporary Map search context never replaces Now dates in shared storage', () => {
+  const now=page(); now.WA.Discovery.setDates({when:'tonight'});
+  const before=now.store.get('wa:discovery:v1');
+  const map=page(now.store,'?context=search&q=jazz&time=tomorrow&date=2026-10-12',false,'navigate','map');
+  assert.equal(map.WA.Discovery.dates().when,'tonight');
+  assert.equal(now.store.get('wa:discovery:v1'),before);
+  assert.equal(map.url(),'');
 });

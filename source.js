@@ -34,8 +34,8 @@
     if (!s || !s.picks.length) {
       main().innerHTML = R().empty({ icon: 'programme',
         title: s ? `Nothing from ${s.name} is listed right now.` : 'No source named.',
-        body: s ? 'Sources go quiet between programmes. Everything else we read is in the Programme.' : 'This page needs a source to show.',
-        actions: [{ href: 'discover.html', label: 'Programme' }, { href: 'index.html', label: 'Tonight' }] });
+        body: s ? 'Sources go quiet between programmes. All events has the full listing.' : 'This page needs a source to show.',
+        actions: [{ href: 'discover.html', label: 'All events' }, { href: 'index.html', label: 'Tonight' }] });
       return;
     }
     document.title = `${s.name} · WanderAlt`;

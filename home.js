@@ -1,4 +1,4 @@
-/* Now: direct search, shared discovery filters, a compact walk disclosure,
+/* Now: a walking shortlist, shared discovery filters, a compact walk disclosure,
    then Events/Places. Explicit empty days stay selected. */
 (() => {
   'use strict';
@@ -37,14 +37,6 @@
     $('hero-clock').textContent = clockText();
   };
 
-  /* The field is a real one: Enter or the key sends the words to the
-     Programme, whose ask field reads a sentence as well as a title. */
-  const search = (e) => {
-    e.preventDefault();
-    const q = $('home-q').value.trim().slice(0, 140);
-    location.href = q ? `discover.html?q=${encodeURIComponent(q)}` : 'discover.html?focus=search';
-  };
-
   const D = () => window.WA.Discovery;
   const pref = () => D().pref();
   const nearOn = () => D().nearOn();
@@ -70,7 +62,7 @@
     if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1, origin: window.WA.StartFrom.originMarkup() });
     const narrowed = p.moods.length || p.cap != null || nearOn();
     return `<section class="rt-card rt-card--empty"><div class="rt-card__origin-wrap">${window.WA.StartFrom.originMarkup()}</div><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
-      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from here. Choose another starting point or Whole city.' : 'Try another mood or a higher price limit.') : 'The Guide has the places; the Programme has the listings.'}</p>
+      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from here. Choose another starting point or Whole city.' : 'Try another mood or a higher price limit.') : 'All places and All events have the complete listings.'}</p>
       <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-filter-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
   };
 
@@ -80,11 +72,7 @@
     return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
   };
 
-  /* Stable shortcuts; the calendar provides any other filed day. */
-  const days = () => {
-    const dow = new Date(`${W().todayKey()}T12:00:00Z`).getUTCDay();
-    return [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], dow >= 1 && dow <= 4 ? ['weekend', 'Weekend'] : ['thisweek', 'This week']];
-  };
+  const days = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
   const dayList = (all, date, p) => {
     const list = sortSoon(all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p)));
     const timed = e => W().statedMinutes(e) != null;
@@ -93,39 +81,24 @@
     const far = e => R().isOff(e) ? Infinity : G().distanceTo(e) ?? Infinity;
     return ordered.map((e,i) => [e,far(e),i]).sort((a,b) => a[1]-b[1] || a[2]-b[2]).map(x => x[0]);
   };
-  /* The list is short on purpose: the next five, then "Show N more" opens the rest
-     here (up to thirty; past that the Programme). A kind chosen above shows all of it. */
-  const SHOWN = 5, MOST = 30;
-  let expanded = false;
-
-  /* One row of the kinds in the day's list, with how many of each, so all the
-     workshops or all the comedy are a tap away. Only kinds that are there, most
-     first; none when the list holds one kind. Comedy is read from tags, since
-     sources file it under theatre or nothing. */
-  const COMEDY = ['comedy', 'standup', 'stand-up', 'improv'];
-  const FACETS = [
-    ['gig', 'Gigs'], ['club', 'Club nights'], ['film', 'Film'], ['theatre', 'Stage'], ['comedy', 'Comedy'],
-    ['exhibition', 'Art'], ['workshop', 'Workshops'], ['talk', 'Talks'], ['festival', 'Festivals'], ['market', 'Markets'],
-  ];
-  const inFacet = (id, e) => (id === 'comedy'
-    ? (e.tags || []).some(t => COMEDY.includes(String(t).toLowerCase()))
-    : String(e.kind || '').toLowerCase() === id);
-  let facet = '';
-  const facets = (list) => FACETS.map(([id, label]) => [id, label, list.filter(e => inFacet(id, e)).length]).filter(x => x[2] > 0).sort((a, b) => b[2] - a[2]);
-  const facetRow = (list, shown) => {
-    if (shown.length < 2) return '';
-    const P = window.WA.Picto;
-    const chip = (id, label, n, art) => `<button class="wa-chip" type="button" data-facet="${esc(id)}" aria-pressed="${facet === id}">${art}${esc(label)} <span class="wa-chip__n">${n}</span></button>`;
-    return `<div class="wa-chips wa-chips--scroll home-kinds" role="group" aria-label="Kind">${chip('', 'All', list.length, '')}${shown.map(([id, label, n]) => chip(id, label, n, P.kind(id === 'comedy' ? 'theatre' : id))).join('')}</div>`;
+  /* Keep browsing the current selection in batches. The URL restores enough
+     rows for the browser to return to the same spot after opening a listing. */
+  const PAGE_SIZE = 25;
+  const readShown = () => {
+    const n = Number(new URLSearchParams(location.search).get('shown'));
+    return Number.isSafeInteger(n) && n >= PAGE_SIZE && n % PAGE_SIZE === 0 ? n : PAGE_SIZE;
   };
+  let shown = readShown();
+  const writeShown = () => {
+    const q = new URLSearchParams(location.search);
+    if (shown > PAGE_SIZE) q.set('shown', shown); else q.delete('shown');
+    history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
+  };
+  const more = (total) => total > shown ? `<div class="home-day__foot"><button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(PAGE_SIZE, total - shown)} more</button></div>` : '';
 
-  /* ── Events | Places ──────────────────────────────────────────
-     Under the answer, one switch: the day's listings, or the picked places
-     (the Guide in brief). Places come open-now first, then nearest (from you,
-     or the city's centre), with one row of place types; the Guide page holds
-     them all, as the Programme holds every listing. ?view=places opens on them. */
+  /* Events and picked places browse the current selection; All events and
+     All places open the complete catalogues. */
   let view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
-  let placeGroup = '';
   const centre = () => { const c = (window.WA.CITIES || []).find(x => x.id === window.WA.CITY); return c && c.centre ? c.centre : null; };
   const isOpen = (v) => R().openState(v).open === true;
   const pickedPlaces = () => {
@@ -134,21 +107,14 @@
     return R().places().filter(v => v.picked && D().matchesPlace(v))
       .map(v => [v, isOpen(v) ? 0 : 1, d(v)]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
-  const inGroup = (v, id) => { const g = R().placeGroups.find(x => x.id === id); return !g || g.kinds.includes(String(v.kind || '').toLowerCase()); };
-  const placesPart = (all) => {
-    const groups = R().placeGroups.map(g => [g, all.filter(v => inGroup(v, g.id)).length]).filter(x => x[1] > 0);
-    if (placeGroup && !groups.some(([g]) => g.id === placeGroup)) placeGroup = '';
-    const list = all.filter(v => inGroup(v, placeGroup));
-    const cap = expanded || placeGroup ? MOST : SHOWN;
+  const placesPart = (list) => {
     const openN = list.filter(isOpen).length;
-    const chip = (id, label, n, art) => `<button class="wa-chip" type="button" data-group="${esc(id)}" aria-pressed="${placeGroup === id}">${art}${esc(label)} <span class="wa-chip__n">${n}</span></button>`;
-    const row = groups.length > 1 ? `<div class="wa-chips wa-chips--scroll home-kinds" role="group" aria-label="Kind of place">${chip('', 'All', all.length, '')}${groups.map(([g, n]) => chip(g.id, g.label, n, window.WA.Picto(g.picto))).join('')}</div>` : '';
     const from = (nearOn() ? G().currentLoc() : null) || centre();
     const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'Nearest to here first' : 'Nearest the centre first'}`;
-    return `${row}<p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
-      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0, cap).map(v => R().placeRow(v, { from })).join('')}</ul>
-      <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
-      <a class="wa-linkbtn home-day__more" href="places.html${placeGroup ? `?kind=${esc(placeGroup)}` : ''}">The Guide ${I('arrow')}</a></div>`;
+    return `<div class="home-browse-head"><h2 class="wa-sr">Places</h2><a class="wa-linkbtn" href="places.html">All places ${I('arrow')}</a></div>
+      <p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
+      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0,shown).map(v => R().placeRow(v,{ from })).join('')}</ul>
+      ${more(list.length)}`;
   };
   // Keep one segment through redraws, including its gesture listeners.
   const viewSwitch = document.createElement('div');
@@ -156,13 +122,42 @@
   viewSwitch.setAttribute('role','group'); viewSwitch.setAttribute('aria-label','Show');
   viewSwitch.innerHTML = '<button class="map-seg__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span><span class="home-view__n" id="home-events-n"></span></button><button class="map-seg__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span><span class="home-view__n" id="home-places-n"></span></button>';
   const setView = value => {
-    view = value; expanded = false; main();
+    view = value; shown = PAGE_SIZE;
     const q = new URLSearchParams(location.search);
     if (view === 'places') q.set('view', 'places'); else q.delete('view');
     history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
+    main();
   };
   const viewGlass = window.WA.glassDrop(viewSwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt',
     current: () => view === 'events' ? 0 : 1, commit: i => setView(i === 0 ? 'events' : 'places') });
+  // Preserve the day bar through renders so a slide keeps its pointer capture.
+  const daySwitch = document.createElement('div');
+  daySwitch.className = 'map-seg home-tabs';
+  daySwitch.setAttribute('role','group'); daySwitch.setAttribute('aria-label','Day');
+  daySwitch.innerHTML = days.map(([key,label]) => `<button class="map-seg__opt home-tab" type="button" data-day="${key}" aria-pressed="false"><span>${label}</span></button>`).join('')
+    + window.WA.DiscoveryControls.dateKey('map-seg__opt home-calendar');
+  const dayButtons = [...daySwitch.querySelectorAll('[data-day]')];
+  const calendar = daySwitch.querySelector('[data-pick-dates]');
+  const dayIndex = () => {
+    const s = D().dates(), i = s.date ? -1 : days.findIndex(([key]) => key === s.when);
+    return i < 0 ? days.length : i;
+  };
+  const chooseDay = button => { D().setDates({ when:button.dataset.day }); D().writeURL(); };
+  const touchDays = matchMedia('(max-width: 1023px), (pointer: coarse)');
+  const dayGlass = window.WA.glassDrop(daySwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt home-tab',
+    current:dayIndex, enabled:() => touchDays.matches, commitSame:true,
+    commit: (i, button) => {
+      if (i === days.length) { dayGlass.sync(); window.WA.DiscoveryControls.openDates(button); }
+      else chooseDay(button);
+    } });
+  touchDays.addEventListener('change', () => dayGlass.reset());
+  const syncDays = () => {
+    const i = dayIndex();
+    dayButtons.forEach((b,n) => b.setAttribute('aria-pressed',n === i));
+    calendar.setAttribute('aria-pressed',i === days.length);
+    calendar.querySelector('span').textContent = i === days.length ? D().label() : 'Pick dates';
+    dayGlass.sync();
+  };
   let walkOpen = false;
   const walkFold = p => `<section class="wa-sect rt-sect" id="plan-fold"><button class="home-walk__key" type="button" data-walk-toggle aria-expanded="${walkOpen}" aria-controls="plan">${I('walk')}<span><b>A walk for now</b><small>${esc(plans[planIdx] ? plans[planIdx].title || 'Two or three stops on foot' : 'See the next few hours')}</small></span>${I('down')}</button><div id="plan"${walkOpen ? '' : ' hidden'}>${planCard(p)}</div></section>`;
   let walkMotion = null;
@@ -186,6 +181,7 @@
   };
 
   const main = () => {
+    writeShown();
     const all = R().live();
     const tonight = sortSoon(all.filter(e => W().isTonight(e)));
     const liveNow = tonight.filter(e => R().isLive(e));
@@ -194,47 +190,38 @@
     acts();
     const p = readPlans();
     const date = D().dates(), tab = date.date ? 'custom' : date.when;
-    const tabs = days();
-    if (tab !== 'custom' && !tabs.some(([k]) => k === tab)) tabs.push([tab, D().label()]);
-    const full = dayList(all,date,p);
-    const shown = facets(full);
-    if (facet && !shown.some(([id]) => id === facet)) facet = '';
-    const list = facet ? full.filter(e => inFacet(facet, e)) : full;
-    const cap = expanded || facet ? MOST : SHOWN;
+    const list = dayList(all,date,p);
     const out = [walkFold(p)];
 
     const places = pickedPlaces();
     if (view === 'places') {
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>${placesPart(places)}</section>`);
     } else {
-      const q = D().params();
-      if (facet === 'comedy') q.set('q', 'comedy'); else if (facet) q.set('cat', facet);
-      if (nearOn()) q.set('sort', 'nearest');
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
-        <div class="home-tabs" role="group" aria-label="Day">${tabs.map(([k,label]) => `<button class="home-tab" type="button" data-day="${k}" aria-pressed="${k === tab}">${esc(label)}</button>`).join('')}${window.WA.DiscoveryControls.dateKey('home-calendar')}</div>
-        ${facetRow(full, shown)}
+        <div class="home-browse-head"><h2 class="wa-sr">Events</h2><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></div>
+        <div id="home-day-slot"></div>
+
         ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
-        ${list.length ? `<ul class="wa-feed">${list.slice(0,cap).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
-        <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
-        <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">${list.length > cap ? `All ${list.length}` : 'Programme'} ${I('arrow')}</a></div>
+        ${list.length ? `<ul class="wa-feed">${list.slice(0,shown).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
+        ${more(list.length)}
       </section>`);
     }
     if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
     const focused = document.activeElement;
-    const focusKey = focused && focused.dataset ? ['day','facet','group'].find(k => k in focused.dataset) : null;
-    const focusValue = focusKey ? focused.dataset[focusKey] : '';
+    const hadDayFocus = daySwitch.contains(focused);
     const hadViewFocus = viewSwitch.contains(focused);
     $('home-main').innerHTML = out.join('');
     const slot = $('home-view-slot');
     if (slot) {
       slot.replaceWith(viewSwitch);
-      $('home-events-n').textContent = String(full.length);
+      $('home-events-n').textContent = String(list.length);
       $('home-places-n').textContent = String(places.length);
       viewSwitch.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',b.dataset.view === view));
       viewGlass.sync();
     }
-    if (focusKey) document.querySelector(`[data-${focusKey}="${CSS.escape(focusValue)}"]`)?.focus({ preventScroll:true });
-    if (hadViewFocus) focused.focus({ preventScroll:true });
+    const daySlot = $('home-day-slot');
+    if (daySlot) { daySlot.replaceWith(daySwitch); syncDays(); }
+    if (hadDayFocus || hadViewFocus) focused.focus({ preventScroll:true });
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
   };
@@ -253,13 +240,14 @@
   };
 
   /* ── Side (desktop): the map ─────────────────────────────────── */
+  const desktop = matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
   const side = () => {
-    const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
+    $('home-side').innerHTML = desktop.matches ? `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>`;
-    $('home-side').innerHTML = mapCard;
+      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>` : '';
   };
+  desktop.addEventListener('change', side);
 
   /* ── New since the last visit ──────────────────────────────── */
   const since = (all) => {
@@ -280,21 +268,20 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
-    if (dt) { expanded = false; D().setDates({ when:dt.dataset.day }); D().writeURL(); return; }
+    if (dt) { chooseDay(dt); return; }
+    // Opening the calendar is an action, not a committed day selection.
+    if (hit('[data-pick-dates]') === calendar) dayGlass.sync();
     if (hit('[data-walk-toggle]')) { toggleWalk(); return; }
     const vw = hit('[data-view]');
     if (vw) {
       setView(vw.dataset.view);
       return;
     }
-    const gp = hit('[data-group]');
-    if (gp) { placeGroup = placeGroup === gp.dataset.group ? '' : gp.dataset.group; expanded = false; main(); return; }
-    const fc = hit('[data-facet]');
-    if (fc) { facet = facet === fc.dataset.facet ? '' : fc.dataset.facet; expanded = false; main(); return; }
     if (hit('[data-day-all]')) {
-      expanded = true; main();
+      const previous = shown;
+      shown += PAGE_SIZE; main();
       const rows = document.querySelectorAll('.home-day .wa-feed > li, .home-places > li');
-      const first = rows[SHOWN] && rows[SHOWN].querySelector('a');
+      const first = rows[previous] && rows[previous].querySelector('a');
       if (first) first.focus({ preventScroll: true });
       return;
     }
@@ -313,15 +300,23 @@
     const f = window.scrollY > 4;
     if (f !== scrolled) { scrolled = f; document.body.classList.toggle('is-scrolled', f); }
   }, { passive: true });
-  $('home-search').addEventListener('submit', search);
   document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
   document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
-  document.addEventListener('wa:mood-changed', () => { if (window.WA.catalog) main(); });
+  document.addEventListener('wa:mood-changed', e => {
+    if (!window.WA.catalog) return;
+    shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    main();
+  });
   document.addEventListener('wa:start-state', () => {
     const origin = document.querySelector('.rt-card__origin-wrap');
     if (origin) origin.innerHTML = window.WA.StartFrom.originMarkup(); else render();
   });
-  document.addEventListener('wa:discovery-changed', () => { if (window.WA.catalog) { expanded = false; render(); } });
+  document.addEventListener('wa:discovery-changed', e => {
+    if (!window.WA.catalog) return;
+    shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    if (e.detail?.restore) view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
+    render();
+  });
   document.addEventListener('wa:discovery-applied', () => {
     if (viewSwitch.isConnected) viewSwitch.scrollIntoView({ block:'center', behavior:'auto' });
   });

@@ -18,8 +18,63 @@ function page() {
     removeItem: (key: string) => values.delete(key),
   }, CustomEvent: class {}, setTimeout, clearTimeout, AbortController, document: { addEventListener: () => {}, dispatchEvent: () => {} } });
   const load = (file: string) => runInContext(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'), context);
-  return { WA, values, redirects, load };
+  return { WA, values, redirects, load, context };
 }
+
+function guide() {
+  const p = page();
+  const elements = new Map<string, any>();
+  for (const id of ['list', 'kinds', 'summary', 'from', 'open-now']) elements.set(id, {
+    innerHTML: '', setAttribute: () => {},
+  });
+  const listeners = new Map<string, (e?: any) => void>();
+  p.context.document = { readyState: 'complete', getElementById: (id: string) => elements.get(id),
+    addEventListener: (name: string, fn: (e?: any) => void) => listeners.set(name, fn), dispatchEvent: () => {} };
+  p.context.location = { search: '', pathname: '/places.html' };
+  p.context.history = { replaceState: () => {} };
+  p.context.URLSearchParams = URLSearchParams;
+  p.WA.Geo.currentLoc = () => null; p.WA.Geo.anchor = () => null;
+  p.WA.Geo.walkMinutes = () => null;
+  p.WA.Icon = Object.assign(() => '', { kind: () => '' });
+  p.WA.Picto = Object.assign(() => '', { kind: () => '' });
+  p.load('when.js'); p.load('render.js'); p.load('places.js');
+  return { ...p, elements, render: () => listeners.get('wa:catalog-ready')!(),
+    openNow: () => listeners.get('click')!({ target: { closest: (s: string) => s === '#open-now' ? {} : null } }) };
+}
+
+test('the Guide recommends only picked active places and Open now requires known hours', () => {
+  const p = guide();
+  p.WA.Hours.state = (hours: string | undefined) => ({ known: hours === '24/7', open: hours === '24/7' ? true : null });
+  p.WA.venues = [
+    { id: 'picked-open', name: 'Picked Open', kind: 'bookshop', picked: true, isVerified: true, openingHours: '24/7' },
+    { id: 'picked-unknown', name: 'Picked Unknown', kind: 'bookshop', picked: true, isVerified: true },
+    { id: 'not-picked', name: 'Not Picked', kind: 'bookshop', isVerified: true, openingHours: '24/7' },
+    { id: 'closed', name: 'Closed', kind: 'bookshop', picked: true, isVerified: true, isClosed: true, openingHours: '24/7' },
+  ];
+  p.render();
+  assert.match(p.elements.get('summary').innerHTML, /2 places/);
+  assert.match(p.elements.get('list').innerHTML, /data-place="picked-open"/);
+  assert.match(p.elements.get('list').innerHTML, /data-place="picked-unknown"/);
+  assert.doesNotMatch(p.elements.get('list').innerHTML, /data-place="(?:not-picked|closed)"/);
+  p.openNow();
+  assert.match(p.elements.get('summary').innerHTML, /1 place/);
+  assert.doesNotMatch(p.elements.get('list').innerHTML, /picked-unknown/);
+});
+
+test('Guide listing counts follow each refreshed catalogue, including name-only matches and removals', () => {
+  const p = guide();
+  p.WA.venues = [{ id: 'venue', name: 'Venue', kind: 'gallery', picked: true, isVerified: true }];
+  const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+  p.WA.catalog = [{ id: 'first', venueId: 'venue', venue: 'Venue', startsAt }];
+  p.render();
+  assert.match(p.elements.get('list').innerHTML, /1 listed/);
+  p.WA.catalog = [...p.WA.catalog, { id: 'second', venue: ' Venue ', startsAt }];
+  p.render();
+  assert.match(p.elements.get('list').innerHTML, /2 listed/);
+  p.WA.catalog = [];
+  p.render();
+  assert.doesNotMatch(p.elements.get('list').innerHTML, /\d+ listed/);
+});
 
 test('Estonian evening and Russian event sentences do not require generic words to match a listing', () => {
   const p = page(); p.load('ask.js');
@@ -38,25 +93,20 @@ test('Estonian evening and Russian event sentences do not require generic words 
   assert.deepEqual(Array.from(en.any), ['jazz']);
 });
 
-test('saved and going aliases collapse without rewriting raw ids; undo and unsaving remain possible', async () => {
-  const p = page(); p.load('save-store.js'); p.load('bookmark.js'); p.load('going.js'); p.load('lists.js');
+test('saved aliases collapse without rewriting raw ids; undo and unsaving remain possible', () => {
+  const p = page(); p.load('save-store.js'); p.load('bookmark.js'); p.load('lists.js');
   p.values.set('wanderalt:bookmarks:v1', JSON.stringify({ 'old-event': true, event: true, 'old-place': true }));
-  p.values.set('wa:going:v1', JSON.stringify({ 'old-event': 1, event: 2 }));
   p.values.set('wa:lists:v1', JSON.stringify({ list: { id: 'list', items: ['old-event', 'event', 'old-place'] } }));
   assert.equal(p.WA.Lists.listsFor('event').length, 1);
   p.WA.Lists.removeItem('list', 'event');
   assert.deepEqual(Array.from(p.WA.Lists.items('list')), ['old-place']);
   assert.deepEqual(Array.from(p.WA.Bookmarks.ids()).sort(), ['event', 'place']);
-  assert.deepEqual(Array.from(p.WA.Going.ids()), ['event']);
-  assert.equal(p.WA.Going.has('old-event'), true);
   assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1:sync:guest')!).data['old-event'], true);
   p.redirects.clear();
   assert.equal(p.WA.Bookmarks.ids().length, 3);
-  assert.equal(p.WA.Going.ids().length, 2);
   p.redirects.set('old-event', 'event');
-  p.WA.Bookmarks.set('event', false); await p.WA.Going.set('event', false);
+  p.WA.Bookmarks.set('event', false);
   assert.equal(p.WA.Bookmarks.get().event, undefined);
-  assert.equal(p.WA.Going.has('old-event'), false);
   assert.equal(JSON.parse(p.values.get('wanderalt:bookmarks:v1:sync:guest')!).data['old-event'], undefined);
 });
 

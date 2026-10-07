@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Programme · WanderAlt Tallinn</title>
+  <title>All events · WanderAlt Tallinn</title>
   <meta name="description" content="The week in Tallinn's independent scene, day by day, with a walking distance on every listing." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="icon" type="image/svg+xml" href="./brand/favicon/favicon.svg?v=route-w" />
@@ -15,7 +15,7 @@
 
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="WanderAlt" />
-  <meta property="og:title"       content="Programme · WanderAlt Tallinn" />
+  <meta property="og:title"       content="All events · WanderAlt Tallinn" />
   <meta property="og:description" content="The week in Tallinn's independent scene, day by day, with a walking distance on every listing." />
   <meta property="og:image"       content="https://wanderalt.app/brand/social/og-default.png?v=route-w" />
   <meta property="og:image:width"  content="1200" />
@@ -55,11 +55,12 @@
   <script defer src="./render.js"></script>
   <script defer src="./view-transition.js"></script>
   <script defer src="./tabbar.js"></script>
-  <script defer src="./finder.js"></script>
   <script defer src="./ask.js"></script>
   <script defer src="./moods.js"></script>
   <script defer src="./discovery-state.js"></script>
+  <script defer src="./discovery-controls.js"></script>
   <script defer src="./route.js"></script>
+  <script defer src="./search-data.js"></script>
   <script defer src="./programme.js"></script>
 </head>
 <body data-page="programme">
@@ -73,42 +74,43 @@
       <span>wanderalt</span>
     </a>
     <div class="wa-topbar__end">
-      <a class="wa-iconbtn" href="./discover.html?focus=search" aria-label="Search the programme"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></a>
     </div>
   </header>
 
   <main class="wa-shell" id="main">
+    <a class="wa-linkbtn prog-back" href="index.html">Back to Now</a>
     <header class="wa-pagehead">
       <div class="wa-pagehead__row">
-        <h1 class="wa-h1" id="prog-title">Programme</h1>
-        <a class="wa-iconbtn wa-iconbtn--line" href="./map.html" id="to-map" aria-label="Browse map" title="Map uses shared filters"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="map"><path class="t" d="M9 4.5l6 2v13l-6-2z"/><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path class="k" d="M9 4.5v13M15 6.5v13"/></svg></a>
+        <h1 class="wa-h1" id="prog-title">All events</h1>
+        <a class="wa-linkbtn" href="./map.html?context=search" id="to-map"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="map"><path class="t" d="M9 4.5l6 2v13l-6-2z"/><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path class="k" d="M9 4.5v13M15 6.5v13"/></svg><span>Map these results</span></a>
       </div>
     </header>
 
     <div class="prog-controls" id="prog-controls">
       <form class="wa-ask" role="search" id="search-form" autocomplete="off">
-        <label class="wa-sr" for="q">Ask or search the programme</label>
+        <label class="wa-sr" for="q">Search events or places</label>
         <span class="wa-ask__mark"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="search"><circle class="t" cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 4.6 4.6"/></svg></span>
-        <input class="wa-ask__input" id="q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Ask for a night out" aria-describedby="ask-note" />
+        <input class="wa-ask__input" id="q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Search events or places" aria-describedby="ask-note" />
         <button class="wa-iconbtn wa-ask__clear" type="button" id="q-clear" aria-label="Clear" hidden><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="close"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
-        <button class="wa-iconbtn wa-ask__filters" type="button" id="open-filters" aria-label="Filters"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" data-ic="filter"><circle class="t" cx="16" cy="7" r="2.2"/><circle class="t" cx="9" cy="17" r="2.2"/><path d="M4 7h9.8M18.2 7H20M4 17h2.8M11.2 17H20"/><circle cx="16" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><span class="prog-badge" id="filter-count" hidden></span></button>
       </form>
-      <div class="wa-ask__try wa-chips wa-chips--scroll" id="ask-try" hidden></div>
-      <div class="wa-chips wa-chips--scroll prog-quick" id="quick" role="group" aria-label="When and what"></div>
+      <div class="prog-toolbar">
+        <button class="wa-chip" type="button" id="result-date" aria-haspopup="dialog"><span>All dates</span></button>
+        <button class="wa-chip" type="button" id="open-filters" ><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" data-ic="filter"><circle class="t" cx="16" cy="7" r="2.2"/><circle class="t" cx="9" cy="17" r="2.2"/><path d="M4 7h9.8M18.2 7H20M4 17h2.8M11.2 17H20"/><circle cx="16" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><span>Refine</span><span class="prog-badge" id="filter-count" hidden></span></button>
+      </div>
+      <div class="wa-chips prog-quick" id="quick" role="group" aria-label="Selected filters" hidden></div>
       <p class="prog-ask" id="ask-note" aria-live="polite" hidden></p>
     </div>
 
     <div class="prog-layout">
-      <aside class="prog-aside" id="aside" aria-label="Filters"></aside>
       <div class="prog-list">
-        <div class="prog-summary"><p class="prog-summary__text" id="summary" aria-live="polite"></p><p class="prog-summary__act" id="search-act"></p></div>
+        <div class="prog-summary"><p class="prog-summary__text" id="summary" aria-live="polite"></p></div>
         <div id="list"></div>
       </div>
     </div>
   </main>
 
   <nav class="wa-tabbar" aria-label="Primary">
-    <a class="wa-tabbar__item" href="./index.html" aria-current="page"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="clock"><circle class="t" cx="11" cy="13" r="7.5"/><circle cx="11" cy="13" r="7.5"/><path class="k" d="M11 9v4l2.8 1.8"/><path class="t" d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/><path d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/></svg>Now</a>
+    <a class="wa-tabbar__item" href="./index.html" aria-current="location"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="clock"><circle class="t" cx="11" cy="13" r="7.5"/><circle cx="11" cy="13" r="7.5"/><path class="k" d="M11 9v4l2.8 1.8"/><path class="t" d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/><path d="M19 2.6c.3 1.5 1 2.2 2.4 2.4-1.4.3-2.1 1-2.4 2.4-.3-1.4-1-2.1-2.4-2.4 1.4-.2 2.1-.9 2.4-2.4z"/></svg>Now</a>
     <a class="wa-tabbar__item" href="./map.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="map"><path class="t" d="M9 4.5l6 2v13l-6-2z"/><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path class="k" d="M9 4.5v13M15 6.5v13"/></svg>Map</a>
     <a class="wa-tabbar__item" href="./saved.html"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="save"><path class="t" d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L12 16.4l-6.5 4.1V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15.5L12 16.4l-6.5 4.1V5A1.5 1.5 0 0 1 7 3.5z"/></svg>Saved</a>
     <a class="wa-tabbar__item" href="./profile.html" data-nav="profile"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="user"><circle class="t" cx="12" cy="8.3" r="3.8"/><path class="t" d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/><circle cx="12" cy="8.3" r="3.8"/><path d="M4.6 20.3a7.4 7.4 0 0 1 14.8 0z"/></svg>You</a>
@@ -117,7 +119,7 @@
   <dialog class="wa-sheet" id="sheet" aria-labelledby="sheet-title">
     <div class="wa-sheet__panel">
       <div class="wa-sheet__head">
-        <h2 class="wa-sheet__title" id="sheet-title">Filters</h2>
+        <h2 class="wa-sheet__title" id="sheet-title">Refine</h2>
         <button class="wa-sheet__close" type="button" id="sheet-close" aria-label="Close"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-ic="close"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
       </div>
       <div class="wa-sheet__body" id="sheet-body"></div>

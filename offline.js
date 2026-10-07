@@ -19,7 +19,9 @@
      the one that owns the offline story, and it loads on every page.
      Silent on failure: a browser without service workers, or a page
      opened from the filesystem, must still work exactly as before. */
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  // Local previews need fresh assets on every reload. Offline caching belongs
+  // to deployed origins; an old local registration can be cleared in DevTools.
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !['localhost','127.0.0.1','[::1]'].includes(location.hostname)) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
     navigator.serviceWorker.addEventListener('message', (e) => {
       if (e.data && e.data.type === 'wa:cache-age') {

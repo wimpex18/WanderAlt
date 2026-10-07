@@ -30,8 +30,6 @@ window.WA.dict.uk = {
   "Back": "Назад",
   "Share": "Поділитися",
   "Close": "Закрити",
-  "Programme": "Програма",
-  "Ask or search the programme": "Запитайте або шукайте в програмі",
   "The week in Tallinn's independent scene, day by day, with a walking distance on every listing.": "Тиждень незалежної сцени Таллінна по днях, з відстанню пішки для кожної події.",
   "Show on the map": "Показати на мапі",
   "Ask for a night out": "Запитати про вечір",
@@ -47,8 +45,6 @@ window.WA.dict.uk = {
   "What's on tonight": "Що сьогодні ввечері",
   "Search, or ask “jazz tonight”": "Пошук або запитання: «джаз сьогодні ввечері»",
   "Search": "Пошук",
-  "Places and areas": "Місця та райони",
-  "Map of tonight in Tallinn": "Мапа вечора в Таллінні",
   "All": "Усе",
   "Events": "Події",
   "Places": "Місця",
@@ -168,11 +164,6 @@ window.WA.dict.uk = {
   "Save": "Зберегти",
   "List": "Список",
   "Map preview unavailable · Open map": "Попередній перегляд мапи недоступний · Відкрити мапу",
-  "You are going": "Ви йдете",
-  "Going?": "Підете?",
-  "Going": "Ідуть",
-  "I’m going": "Я йду",
-  "Be the first to say you are going": "Скажіть першими, що йдете",
   "English": "англійська",
   "Estonian": "естонська",
   "Russian": "російська",
@@ -309,9 +300,8 @@ window.WA.dict.uk = {
   "Nothing fits that right now.": "Зараз нічого не підходить.",
   "No route for the next few hours.": "На найближчі години маршруту немає.",
   "Try another mood or a higher price limit.": "Спробуйте інший настрій або вищий ліміт ціни.",
-  "The Guide has the places; the Programme has the listings.": "У гіді — місця, у програмі — події.",
   "Your saves still work. Try again in a moment.": "Ваше збережене й далі працює. Спробуйте за хвилину.",
-  "The sources are read every six hours. The places are open regardless.": "Джерела читаються кожні шість годин. Місця при цьому відкриті.",
+  "The sources are read every six hours. The Guide has picked places.": "Джерела читаються кожні шість годин. У гіді — вибрані місця.",
   "Worth the walk": "Варто прогулянки",
   "Picked places, closest first": "Вибрані місця, спершу найближчі",
   "Picked places": "Вибрані місця",
@@ -565,7 +555,6 @@ window.WA.dict.uk = {
   "Over since you saved it": "Завершилося після збереження",
   "A listing": "Подія",
   "No source named.": "Джерело не вказано.",
-  "Sources go quiet between programmes. Everything else we read is in the Programme.": "Джерела затихають між програмами. Усе інше, що ми читаємо, є в програмі.",
   "This page needs a source to show.": "Цій сторінці потрібне джерело.",
   "A source we read": "Джерело, яке ми читаємо",
   "Venue": "Місце",
@@ -748,7 +737,7 @@ window.WA.dict.uk = {
   "Date": "Дата",
   "Date range": "Діапазон дат",
   "Through": "До",
-  "Dates use Tallinn time": "Дати за часом Таллінна",
+  "Apply": "Застосувати",
   "No listings match these choices.": "Немає подій за вибраними умовами.",
   "Change filters": "Змінити фільтри",
   "Source": "Джерело",
@@ -794,7 +783,7 @@ window.WA.dict.uk = {
   "a night for meeting people": "вечір знайомств",
   "a club night": "клубний вечір",
   "a night": "вечір",
-  "A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.": "Для маршруту потрібні подія з часом початку та вибране місце поруч. Місця є в гіді, події — у програмі.",
+  "Try a different time or starting point, or browse the picked places in the Guide.": "Спробуйте інший час або початкову точку чи перегляньте вибрані місця в гіді.",
   "Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.": "Ваші збереження, списки, підписки, сповіщення та вхідні буде видалено, зокрема з цього пристрою. Скасувати це неможливо.",
   "Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.": "Збереження, списки, підписки та історію буде видалено з цього браузера, і ви вийдете з облікового запису. Збережене в обліковому записі залишиться; увійдіть, щоб повернути його.",
   "Closed or moved?": "Зачинено чи переїхало?",
@@ -828,7 +817,33 @@ window.WA.dict.uk = {
   "Stop email and notifications?": "Вимкнути листи та сповіщення?",
   "Stop alerts": "Вимкнути сповіщення",
   "That did not work. Write to hello@wanderalt.app and we will stop it by hand.": "Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.",
-  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі."
+  "Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.": "Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі.",
+  "Search events or places": "Пошук подій або місць",
+  "Close search": "Закрити пошук",
+  "All events": "Усі події",
+  "Search results": "Результати пошуку",
+  "All dates": "Усі дати",
+  "Refine": "Уточнити",
+  "Try a search": "Спробуйте пошук",
+  "Jazz tomorrow": "Джаз завтра",
+  "Record shops": "Магазини платівок",
+  "Free today": "Безкоштовно сьогодні",
+  "View all results": "Усі результати",
+  "No matches. Try another name or browse all events and places.": "Збігів немає. Спробуйте іншу назву або перегляньте всі події та місця.",
+  "Loading listings": "Завантаження подій",
+  "Walking distance unavailable": "Відстань пішки невідома",
+  "Selected filters": "Вибрані фільтри",
+  "Map these results": "Ці результати на мапі",
+  "Back to results": "Назад до результатів",
+  "With a listed language": "Із вказаною мовою",
+  "All places and All events have the complete listings.": "Повні списки є в розділах «Усі місця» та «Усі події».",
+  "Price per ticket": "Ціна квитка",
+  "Maximum price per ticket": "Максимальна ціна квитка",
+  "More options": "Більше параметрів",
+  "Sources go quiet between programmes. All events has the full listing.": "Між подіями джерела затихають. Повний список є в розділі «Усі події».",
+  "Keywords": "Ключові слова",
+  "Filters from your search": "Фільтри з вашого запиту",
+  "Keep this search": "Зберегти цей пошук"
  },
  "patterns": [
   [
@@ -1334,6 +1349,19 @@ window.WA.dict.uk = {
   [
    "since {t}",
    "з {t}"
+  ],
+  [
+   "Show {n} more places",
+   {
+    "one": "Ще {n} місце",
+    "few": "Ще {n} місця",
+    "many": "Ще {n} місць",
+    "other": "Ще {n} місця"
+   }
+  ],
+  [
+   "{n} without a map location",
+   "{n} без адреси на мапі"
   ]
  ]
 };

@@ -1,5 +1,5 @@
 # A weekly logical backup of the curated and user-made tables to the private Storage bucket
-# `backups` (newest 12 kept). Restore steps: docs/data.md, "Backups".
+# `backups` (newest 12 kept). Restore steps: README.md, "Deployment and data".
 name: backup
 
 on:

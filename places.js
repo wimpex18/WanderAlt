@@ -1,8 +1,8 @@
 /* ============================================================
    places.js — Places: the shops, rooms and stages.
    ------------------------------------------------------------
-   One row of place types (Records, Books, Galleries, Craft beer…, only those
-   the city has), an Open now toggle, picked places first and then nearest first,
+   One row of picked place types (Records, Books, Galleries, Craft beer…),
+   an Open now toggle and nearest-first ordering,
    from where you are, a place you chose, or the city's centre, always said in one
    line under the heading. Each row says whether it is open and how much is listed there.
    URL: ?kind= ?open=1
@@ -17,13 +17,9 @@
 
   /* The place types (render.js), each with the Label disc its chip shows. */
   const GROUPS = window.WA.R.placeGroups;
-  /* Older links named a mood. */
-  const FROM_MOOD = { browse: 'records', look: 'galleries', drink: 'beer', listen: 'clubs', dance: 'clubs' };
-
   const state = { group: '', open: false };
   const sp = new URLSearchParams(location.search);
   if (GROUPS.some(g => g.id === sp.get('kind'))) state.group = sp.get('kind');
-  else if (FROM_MOOD[sp.get('mood')]) state.group = FROM_MOOD[sp.get('mood')];
   if (sp.get('open') === '1') state.open = true;
 
   const write = () => {
@@ -37,19 +33,14 @@
   const isOpen = (v) => R().openState(v).open === true;
 
   /* How much is listed at a place, keyed like detail.js's programme. */
-  const listedAt = (() => {
-    let map = null;
-    return (v) => {
-      if (!map) {
-        map = new Map();
-        for (const e of R().live()) {
-          const k = e.venueId || `name:${String(e.venue || '').toLowerCase().trim()}`;
-          map.set(k, (map.get(k) || 0) + 1);
-        }
-      }
-      return (map.get(v.id) || 0) + (map.get(`name:${String(v.name || '').toLowerCase().trim()}`) || 0);
-    };
-  })();
+  const listingCounts = () => {
+    const counts = new Map();
+    for (const e of R().live()) {
+      const key = e.venueId || `name:${String(e.venue || '').toLowerCase().trim()}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return counts;
+  };
 
   /* Where walking times start: you, a place you chose, or the city's centre. */
   const origin = () => {
@@ -60,7 +51,6 @@
   };
 
   const sort = (list) => list.slice().sort((a, b) => {
-    if (a.picked !== b.picked) return a.picked ? -1 : 1;
     const from = origin().from;
     const da = G().distanceTo(a, from), db = G().distanceTo(b, from);
     if (da != null && db != null && Math.abs(da - db) > 1) return da - db;
@@ -70,7 +60,8 @@
   });
 
   const render = () => {
-    const all = R().places();
+    const all = R().places().filter(v => v.picked);
+    const counts = listingCounts();
     const pool = state.open ? all.filter(isOpen) : all;
     const have = GROUPS.filter(x => all.some(v => inGroup(v, x.id)));
     if (state.group && !have.some(x => x.id === state.group)) state.group = '';
@@ -104,8 +95,8 @@
       return;
     }
     $('list').innerHTML = `<ul class="places-grid">${list.map(v => {
-      const n = listedAt(v);
-      return R().placeRow(v, { extra: n ? `${n} listed` : '', from: o.from });
+      const n = (counts.get(v.id) || 0) + (counts.get(`name:${String(v.name || '').toLowerCase().trim()}`) || 0);
+      return R().placeRow(v, { extra: n ? `${n} listed` : '', from: o.from, pickLabel: false });
     }).join('')}</ul>`;
     write();
   };

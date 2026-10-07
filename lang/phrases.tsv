@@ -25,8 +25,6 @@ Filters	Filtrid	Фильтры	Фільтри
 Back	Tagasi	Назад	Назад
 Share	Jaga	Поделиться	Поділитися
 Close	Sulge	Закрыть	Закрити
-Programme	Kava	Программа	Програма
-Ask or search the programme	Küsi või otsi kavast	Спросите или ищите в программе	Запитайте або шукайте в програмі
 The week in Tallinn's independent scene, day by day, with a walking distance on every listing.	Nädal Tallinna sõltumatul sündmuste maastikul päev-päevalt, igal kuulutusel jalutuskaugus.	Неделя независимой сцены Таллина по дням, у каждого события указано расстояние пешком.	Тиждень незалежної сцени Таллінна по днях, з відстанню пішки для кожної події.
 Show on the map	Näita kaardil	Показать на карте	Показати на мапі
 Ask for a night out	Küsi õhtuplaani	Спросить про вечер	Запитати про вечір
@@ -42,8 +40,6 @@ Gigs, film, art	Kontserdid, film, kunst	Концерты, кино, искусс
 What's on tonight	Mis täna õhtul toimub	Что сегодня вечером	Що сьогодні ввечері
 Search, or ask “jazz tonight”	Otsi või küsi „džässi täna õhtul“	Поиск или вопрос: «джаз сегодня вечером»	Пошук або запитання: «джаз сьогодні ввечері»
 Search	Otsi	Поиск	Пошук
-Places and areas	Kohad ja piirkonnad	Места и районы	Місця та райони
-Map of tonight in Tallinn	Tänase õhtu kaart Tallinnas	Карта вечера в Таллине	Мапа вечора в Таллінні
 All	Kõik	Все	Усе
 Events	Sündmused	События	Події
 Places	Kohad	Места	Місця
@@ -163,11 +159,6 @@ Venue photo	Koha foto	Фото места	Фото місця
 Save	Salvesta	Сохранить	Зберегти
 List	Nimekiri	Список	Список
 Map preview unavailable · Open map	Kaardi eelvaade pole saadaval · Ava kaart	Предпросмотр карты недоступен · Открыть карту	Попередній перегляд мапи недоступний · Відкрити мапу
-You are going	Sa lähed	Вы идёте	Ви йдете
-Going?	Lähed?	Пойдёте?	Підете?
-Going	Lähevad	Идут	Ідуть
-I’m going	Ma lähen	Я иду	Я йду
-Be the first to say you are going	Ole esimene, kes ütleb, et lähed	Скажите первым, что идёте	Скажіть першими, що йдете
 English	inglise	английский	англійська
 Estonian	eesti	эстонский	естонська
 Russian	vene	русский	російська
@@ -304,9 +295,8 @@ Near me	Minu lähedal	Рядом со мной	Поруч зі мною
 Nothing fits that right now.	Praegu ei sobi miski.	Сейчас ничего не подходит.	Зараз нічого не підходить.
 No route for the next few hours.	Järgmisteks tundideks marsruuti pole.	На ближайшие часы маршрута нет.	На найближчі години маршруту немає.
 Try another mood or a higher price limit.	Proovi teist meeleolu või kõrgemat hinnapiiri.	Попробуйте другое настроение или более высокий предел цены.	Спробуйте інший настрій або вищий ліміт ціни.
-The Guide has the places; the Programme has the listings.	Teejuhis on kohad, kavas kuulutused.	В гиде места, в программе события.	У гіді — місця, у програмі — події.
 Your saves still work. Try again in a moment.	Sinu salvestatud töötavad endiselt. Proovi hetke pärast uuesti.	Ваше сохранённое по-прежнему работает. Попробуйте через минуту.	Ваше збережене й далі працює. Спробуйте за хвилину.
-The sources are read every six hours. The places are open regardless.	Allikaid loetakse iga kuue tunni järel. Kohad on avatud nii või naa.	Источники читаются каждые шесть часов. Места при этом открыты.	Джерела читаються кожні шість годин. Місця при цьому відкриті.
+The sources are read every six hours. The Guide has picked places.	Allikaid loetakse iga kuue tunni järel. Teejuhis on valitud kohad.	Источники читаются каждые шесть часов. В гиде — отобранные места.	Джерела читаються кожні шість годин. У гіді — вибрані місця.
 Worth the walk	Väärt jalutamist	Стоит прогулки	Варто прогулянки
 Picked places, closest first	Valitud kohad, lähimad ees	Отобранные места, сначала ближайшие	Вибрані місця, спершу найближчі
 Picked places	Valitud kohad	Отобранные места	Вибрані місця
@@ -560,7 +550,6 @@ Saved listings awaiting details	Salvestatud kuulutused, mis ootavad üksikasju	�
 Over since you saved it	Lõppenud pärast salvestamist	Закончилось после сохранения	Завершилося після збереження
 A listing	Kuulutus	Событие	Подія
 No source named.	Allikat pole nimetatud.	Источник не указан.	Джерело не вказано.
-Sources go quiet between programmes. Everything else we read is in the Programme.	Allikad vaikivad kavade vahel. Kõik muu, mida loeme, on kavas.	Источники затихают между программами. Всё остальное, что мы читаем, есть в программе.	Джерела затихають між програмами. Усе інше, що ми читаємо, є в програмі.
 This page needs a source to show.	See leht vajab näitamiseks allikat.	Этой странице нужен источник.	Цій сторінці потрібне джерело.
 A source we read	Allikas, mida loeme	Источник, который мы читаем	Джерело, яке ми читаємо
 Venue	Koht	Место	Місце
@@ -745,7 +734,7 @@ Show results	Näita tulemusi	Показать результаты	Показа�
 Date	Kuupäev	Дата	Дата
 Date range	Kuupäevavahemik	Диапазон дат	Діапазон дат
 Through	Kuni	По	До
-Dates use Tallinn time	Kuupäevad Tallinna aja järgi	Даты по времени Таллинна	Дати за часом Таллінна
+Apply	Rakenda	Применить	Застосувати
 No listings match these choices.	Nende valikutega sündmusi ei ole.	Нет событий по выбранным условиям.	Немає подій за вибраними умовами.
 Change filters	Muuda filtreid	Изменить фильтры	Змінити фільтри
 Source	Allikas	Источник	Джерело
@@ -791,7 +780,7 @@ a language night	keeleõhtu	языковой вечер	мовний вечір
 a night for meeting people	tutvumisõhtu	вечер знакомств	вечір знайомств
 a club night	klubiõhtu	клубный вечер	клубний вечір
 a night	õhtu	вечер	вечір
-A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.	Marsruudiks on vaja kindla algusajaga sündmust ja läheduses asuvat valitud kohta. Kohad leiad teejuhist, sündmused kavast.	Для маршрута нужны событие со временем начала и выбранное место рядом. Места есть в гиде, события — в программе.	Для маршруту потрібні подія з часом початку та вибране місце поруч. Місця є в гіді, події — у програмі.
+Try a different time or starting point, or browse the picked places in the Guide.	Proovi teist aega või lähtepunkti või vaata teejuhis valitud kohti.	Попробуйте другое время или отправную точку либо посмотрите отобранные места в гиде.	Спробуйте інший час або початкову точку чи перегляньте вибрані місця в гіді.
 Your saves, lists, follows, alerts and inbox are removed, and this device forgets them too. This cannot be undone.	Sinu salvestused, nimekirjad, jälgimised, teavitused ja postkast kustutatakse ka sellest seadmest. Seda ei saa tagasi võtta.	Ваши сохранения, списки, подписки, уведомления и входящие будут удалены, в том числе с этого устройства. Отменить это нельзя.	Ваші збереження, списки, підписки, сповіщення та вхідні буде видалено, зокрема з цього пристрою. Скасувати це неможливо.
 Saves, lists, follows and history are cleared from this browser and you are signed out. An account keeps its saves; sign in to bring them back.	Salvestused, nimekirjad, jälgimised ja ajalugu kustutatakse sellest brauserist ning sind logitakse välja. Kontol säilivad salvestused; nende taastamiseks logi sisse.	Сохранения, списки, подписки и история будут удалены из этого браузера, и вы выйдете из аккаунта. Сохранённое в аккаунте останется; войдите, чтобы вернуть его.	Збереження, списки, підписки та історію буде видалено з цього браузера, і ви вийдете з облікового запису. Збережене в обліковому записі залишиться; увійдіть, щоб повернути його.
 Closed or moved?	Suletud või kolinud?	Закрыто или переехало?	Зачинено чи переїхало?
@@ -826,3 +815,31 @@ Stop email and notifications?	Lõpetada kirjad ja teavitused?	Отключить
 Stop alerts	Lõpeta teavitused	Отключить уведомления	Вимкнути сповіщення
 That did not work. Write to hello@wanderalt.app and we will stop it by hand.	See ei õnnestunud. Kirjuta aadressile hello@wanderalt.app ja lõpetame teavitused käsitsi.	Не получилось. Напишите на hello@wanderalt.app, и мы отключим уведомления вручную.	Не вдалося. Напишіть на hello@wanderalt.app, і ми вимкнемо сповіщення вручну.
 Done. No more email or notifications from WanderAlt. You can switch alerts on again from You.	Valmis. WanderAlt ei saada enam kirju ega teavitusi. Saad need profiilis uuesti sisse lülitada.	Готово. Письма и уведомления WanderAlt отключены. Включить их снова можно в профиле.	Готово. Листи та сповіщення WanderAlt вимкнено. Увімкнути їх знову можна в профілі.
+
+# Shared search and catalogue navigation
+Search events or places	Otsi sündmusi või kohti	Поиск событий или мест	Пошук подій або місць
+Close search	Sulge otsing	Закрыть поиск	Закрити пошук
+All events	Kõik sündmused	Все события	Усі події
+Search results	Otsingutulemused	Результаты поиска	Результати пошуку
+All dates	Kõik kuupäevad	Все даты	Усі дати
+Refine	Täpsusta	Уточнить	Уточнити
+Try a search	Proovi otsida	Попробуйте поиск	Спробуйте пошук
+Jazz tomorrow	Jazz homme	Джаз завтра	Джаз завтра
+Record shops	Plaadipoed	Магазины пластинок	Магазини платівок
+Free today	Täna tasuta	Бесплатно сегодня	Безкоштовно сьогодні
+View all results	Vaata kõiki tulemusi	Все результаты	Усі результати
+No matches. Try another name or browse all events and places.	Vasteid pole. Proovi teist nime või vaata kõiki sündmusi ja kohti.	Совпадений нет. Попробуйте другое название или откройте все события и места.	Збігів немає. Спробуйте іншу назву або перегляньте всі події та місця.
+Loading listings	Laadin sündmusi	Загрузка событий	Завантаження подій
+Walking distance unavailable	Kõndimiskaugus pole teada	Расстояние пешком неизвестно	Відстань пішки невідома
+Selected filters	Valitud filtrid	Выбранные фильтры	Вибрані фільтри
+Map these results	Tulemused kaardil	Эти результаты на карте	Ці результати на мапі
+Back to results	Tagasi tulemuste juurde	Назад к результатам	Назад до результатів
+With a listed language	Märgitud keelega	С указанным языком	Із вказаною мовою
+All places and All events have the complete listings.	Kõik kohad ja Kõik sündmused sisaldavad täielikke loendeid.	Полные списки есть в разделах «Все места» и «Все события».	Повні списки є в розділах «Усі місця» та «Усі події».
+Price per ticket	Pileti hind	Цена билета	Ціна квитка
+Maximum price per ticket	Pileti kõrgeim hind	Максимальная цена билета	Максимальна ціна квитка
+More options	Veel valikuid	Больше параметров	Більше параметрів
+Sources go quiet between programmes. All events has the full listing.	Allikad vaikivad sündmuste vahel. Kõik sündmused sisaldab täielikku loendit.	Между событиями источники затихают. Полный список есть в разделе «Все события».	Між подіями джерела затихають. Повний список є в розділі «Усі події».
+Keywords	Märksõnad	Ключевые слова	Ключові слова
+Filters from your search	Filtrid sinu otsingust	Фильтры из вашего запроса	Фільтри з вашого запиту
+Keep this search	Hoia see otsing alles	Сохранить этот поиск	Зберегти цей пошук

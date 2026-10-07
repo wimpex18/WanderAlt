@@ -18,9 +18,7 @@
 (() => {
   window.WA = window.WA || {};
 
-  /* Each city has a static illustrated overview plate at /assets/
-     <city>-overview.svg. Tallinn is the only city the pipeline covers;
-     the other plates stay on disk for when their sources are added. */
+  /* Tallinn is the only city with catalogue coverage. */
   const CITIES = [
     /* `centre` is where "Walking from" starts when we have neither a location nor a place the reader chose. */
     { id: 'tallinn',  label: 'TALLINN', name: 'Tallinn', aliases: ['Таллин', 'Таллінн'], languages: ['en', 'et', 'ru', 'uk'], status: 'live',     thumb: './assets/tallinn-overview.svg', centre: { lat: 59.4342, lng: 24.7436, label: 'Vabaduse väljak' } },
@@ -57,10 +55,7 @@
   const LS_KEY  = 'wa:city';
   const DEFAULT = 'tallinn';
 
-  /* Expose for supabase.js and any page script that needs it. The list
-     itself is exposed too — the Where sheet renders city rows with their
-     plates and coverage, and hand-copying this table into a page script
-     is how the statuses drift. */
+  /* Shared catalogue coverage and starting-point suggestions. */
   window.WA        = window.WA || {};
   const stored = localStorage.getItem(LS_KEY);
   window.WA.CITY   = CITIES.some(c => c.id === stored) ? stored : DEFAULT;
@@ -72,8 +67,7 @@
     window.location.reload();
   };
 
-  /* The Where sheet replaces the old dropdown but must switch cities the
-     same way — one writer for the stored key. */
+  /* One writer for the stored city key. */
   window.WA.setCity = setCity;
 
   /* ── DOM wiring (runs after DOMContentLoaded) ────────────── */
