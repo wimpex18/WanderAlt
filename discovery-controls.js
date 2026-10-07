@@ -12,7 +12,23 @@
     return `<button class="wa-chip home-mood__key${set ? ' is-set' : ''}" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${summary}</span></button>
       <button class="wa-chip discovery-near" type="button" data-discovery-near aria-pressed="${D().nearOn()}" aria-haspopup="dialog">${I('locate')}<span${anchor ? ' data-notranslate' : ''}>${esc(anchor ? anchor.label : 'Near me')}</span></button>`;
   };
-  const dateKey = (cls = '') => `<button class="wa-chip discovery-date ${cls}" type="button" data-pick-dates aria-haspopup="dialog" aria-pressed="${!!D().dates().date}">${I('calendar')}<span>${esc(D().dates().date ? D().label() : 'Pick dates')}</span></button>`;
+  /* When: one key that pours out Today, Tomorrow, Weekend and Pick dates.
+     Each preset names the nights it covers; Pick dates opens the date sheet. */
+  const WHEN = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
+  const span = (s) => { const [a, b] = D().range(s), R = window.WA.R; return a === b ? R.dateShort(a) : `${R.dateShort(a)} – ${R.dateShort(b)}`; };
+  const dateKey = (cls = '') => {
+    const s = D().dates(), set = !!s.date || s.when !== 'tonight';
+    return `<button class="wa-chip discovery-date${set ? ' is-set' : ''} ${cls}" type="button" data-when-open aria-haspopup="dialog" aria-expanded="false">${I('calendar')}<span>${esc(D().label())}</span>${I('down')}</button>`;
+  };
+  const whenPanel = () => {
+    const s = D().dates(), panel = document.createElement('div');
+    panel.className = 'wa-when';
+    panel.setAttribute('aria-label', 'When');
+    panel.innerHTML = WHEN.map(([when, label]) => `<button class="wa-when__opt" type="button" data-when-pick="${when}" aria-pressed="${!s.date && s.when === when}"><b>${esc(label)}</b><small>${esc(span({ when }))}</small></button>`).join('')
+      + `<button class="wa-when__opt" type="button" data-when-dates aria-pressed="${!!s.date}">${I('calendar')}<b>${esc(s.date ? D().label() : 'Pick dates')}</b><small>${esc(s.date ? 'Change dates' : 'A day or a range')}</small></button>`;
+    return panel;
+  };
+  let whenKey = null;
   const close = (commit = false) => { applied = commit; if (sheet) sheet.close(); };
   const open = (button, title, body, foot, kind) => {
     if (sheet) return;
@@ -24,7 +40,7 @@
     sheet.addEventListener('close', () => {
       sheet.remove(); sheet = null; draft = null; applyDates = null;
       const result = applied && kind === 'mood' && document.querySelector('.home-view [aria-pressed="true"]');
-      const target = result || (opener && opener.isConnected ? opener : document.querySelector(kind === 'dates' ? '[data-pick-dates]' : '[data-filter-open]'));
+      const target = result || (opener && opener.isConnected ? opener : document.querySelector(kind === 'dates' ? '[data-when-open], [data-pick-dates]' : '[data-filter-open]'));
       if (target) target.focus({ preventScroll: true });
       if (applied) document.dispatchEvent(new CustomEvent('wa:discovery-applied', { detail:kind }));
     }, { once: true });
@@ -54,8 +70,24 @@
   };
   document.addEventListener('click', e => {
     const hit = s => e.target.closest && e.target.closest(s);
-    if (hit('[data-filter-open]')) { openMood(hit('[data-filter-open]')); return; }
+    if (hit('[data-filter-open]')) { window.WA.UI.genie.close(false); openMood(hit('[data-filter-open]')); return; }
     if (hit('[data-pick-dates]')) { openDates(hit('[data-pick-dates]')); return; }
+    if (hit('[data-when-open]')) {
+      const key = hit('[data-when-open]');
+      if (key.getAttribute('aria-expanded') === 'true') { window.WA.UI.genie.close(true); return; }
+      whenKey = key; window.WA.UI.genie(key, whenPanel());
+      return;
+    }
+    if (hit('[data-when-pick]')) {
+      window.WA.UI.genie.close(true);
+      D().setDates({ when: hit('[data-when-pick]').dataset.whenPick }); D().writeURL();
+      return;
+    }
+    if (hit('[data-when-dates]')) {
+      window.WA.UI.genie.close(false);
+      openDates(whenKey && whenKey.isConnected ? whenKey : document.querySelector('[data-when-open]'));
+      return;
+    }
     if (hit('[data-discovery-near]')) {
       if (D().nearOn()) D().setNear(false); else window.WA.StartFrom.open(hit('[data-discovery-near]'));
       return;

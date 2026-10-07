@@ -1,5 +1,6 @@
-/* Now: a walking shortlist, shared discovery filters, a compact walk disclosure,
-   then Events/Places. Explicit empty days stay selected. */
+/* Now: the night so far, a mood rail, one walk, then Events/Places. Tonight's
+   events read as a timeline (on now, starting soon, later); other dates group
+   by night. Filters fold into a key once the page scrolls past them. */
 (() => {
   'use strict';
 
@@ -8,44 +9,74 @@
   const W = () => window.WA.when;
   const G = () => window.WA.Geo;
   const M = () => window.WA.Moods;
+  const D = () => window.WA.Discovery;
   const esc = (s) => window.WA.UI.esc(s);
   const I = (n, c) => window.WA.Icon(n, c);
 
   const visit = window.WA.R.visit();
 
   const nowMin = () => window.WA.Hours.cityNow().minutes;
-  const isLate = () => { const m = nowMin(); return m >= 21 * 60 + 30 || m < 5 * 60; };
-
-  const sortSoon = (list) => list.slice().sort(G().byDateThenSoonest());
-
-  /* ── Hero ───────────────────────────────────────────────────── */
-  const clockText = () => {
-    const k = W().todayKey();
-    const m = window.WA.Hours.cityNow().minutes;
-    return `${R().dateShort(k)} · ${window.WA.Hours.clock(m)}${heroCount ? ` · ${heroCount}` : ''}`;
-  };
-
-  let heroCount = '';
-  const hero = (tonight, liveNow, next) => {
-    $('hero-kicker').textContent = R().cityName();
-    const t = $('hero-title');
-    const n = tonight.length;
-    heroCount = liveNow.length ? `${liveNow.length} on now` : n ? `${n} today` : '';
-    if (isLate() && (liveNow.length || n)) t.textContent = 'Still going';
-    else if (n || nowMin() < 21 * 60) t.textContent = 'The next few hours';
-    else t.textContent = next ? 'Quiet tonight' : "What's on";
-    $('hero-clock').textContent = clockText();
-  };
-
-  const D = () => window.WA.Discovery;
+  const isLate = () => { const m = nowMin(); return m >= 21 * 60 + 30 || m < W().NIGHT_END; };
+  const evening = () => { const m = nowMin(); return m >= 17 * 60 || m < W().NIGHT_END; };
+  const startMs = (e) => (e && e.startsAt ? Date.parse(e.startsAt) : NaN);
+  const timed = (e) => W().statedMinutes(e) != null && isFinite(startMs(e));
   const pref = () => D().pref();
   const nearOn = () => D().nearOn();
-  const acts = () => {
-    const host = $('home-acts');
-    if (host) host.innerHTML = window.WA.DiscoveryControls.keys();
+  const TONIGHT = { when: 'tonight' };
+
+  /* ── Hero: the state of the night, and where walking times start ── */
+  const hero = (all) => {
+    const tonight = all.filter(e => D().matchesDate(e, TONIGHT) && !R().isOff(e));
+    const t = $('hero-title');
+    if (isLate() && tonight.length) t.textContent = 'Still going';
+    else if (tonight.length || nowMin() < 21 * 60) t.textContent = 'The next few hours';
+    else t.textContent = all.some(e => W().nightKey(e) > W().nightToday()) ? 'Quiet tonight' : "What's on";
+    const a = G().anchor(), on = nearOn();
+    $('home-acts').innerHTML = `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`;
   };
 
-  /* ── The next few hours ─────────────────────────────────────── */
+  /* ── Mood rail: one tap for one mood; Filters holds several, subs and price ── */
+  const rail = document.createElement('div');
+  rail.className = 'home-moods wa-chips--scroll';
+  rail.setAttribute('role', 'group');
+  rail.setAttribute('aria-label', 'Mood');
+  let railKey = '';
+  const moodsShown = () => {
+    const p = pref(), now = M().available();
+    const extra = M().available({ allHours: true }).filter(m => p.moods.includes(m.id) && !now.some(x => x.id === m.id));
+    return [...now, ...extra];
+  };
+  const filterWord = (p) => p.cap == null ? 'Filters' : p.cap === 0 ? 'Free' : `Up to €${p.cap}`;
+  const syncRail = () => {
+    const p = pref(), moods = moodsShown(), key = moods.map(m => m.id).join();
+    if (key !== railKey) {
+      railKey = key;
+      rail.innerHTML = `<button class="home-mood" type="button" data-mood-pick="">${window.WA.Picto('tallinn')}<span>All</span></button>`
+        + moods.map(m => `<button class="home-mood" type="button" data-mood-pick="${esc(m.id)}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')
+        + `<button class="home-mood home-mood--more" type="button" data-filter-open aria-haspopup="dialog"><span class="home-mood__icon">${I('filter')}</span><span></span></button>`;
+    }
+    rail.querySelectorAll('[data-mood-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.moodPick ? p.moods.includes(b.dataset.moodPick) : !p.moods.length)));
+    const more = rail.querySelector('[data-filter-open]');
+    const narrowed = p.cap != null || p.subs.length > 0 || p.moods.length > 1;
+    more.classList.toggle('is-set', narrowed);
+    more.lastElementChild.textContent = filterWord(p);
+    more.setAttribute('aria-label', narrowed ? `More filters · ${M().summary()}` : 'More filters');
+    /* A mood chosen elsewhere (the folded panel, the sheet) slides into view. */
+    const on = rail.querySelector('[data-mood-pick][aria-pressed="true"]');
+    if (on && rail.isConnected) {
+      const box = rail.getBoundingClientRect(), b = on.getBoundingClientRect();
+      if (b.left < box.left || b.right > box.right) rail.scrollBy({ left: b.left - box.left - 24, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+    if (window.WA.UI.edges) window.WA.UI.edges();
+  };
+  const pickMood = (id) => {
+    const p = pref();
+    const only = id && !(p.moods.length === 1 && p.moods[0] === id);
+    const keep = only ? M().get(id).subs.map(s => s.id).filter(s => p.subs.includes(s)) : [];
+    M().setPref({ moods: only ? [id] : [], subs: keep, cap: p.cap });
+  };
+
+  /* ── A walk for now: the plan itself, not a label for it ── */
   let plans = [], planIdx = 0, planKey = '';
   const readPlans = () => {
     const p = pref();
@@ -56,31 +87,61 @@
     if (key !== planKey || !plans.length) planIdx = 0;
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
-    return p;
   };
-  const planCard = (p) => {
-    if (plans[planIdx]) return window.WA.Route.card(plans[planIdx], { actions: true, more: plans.length > 1, origin: window.WA.StartFrom.originMarkup() });
-    const narrowed = p.moods.length || p.cap != null || nearOn();
-    return `<section class="rt-card rt-card--empty"><div class="rt-card__origin-wrap">${window.WA.StartFrom.originMarkup()}</div><p class="rt-card__title">${narrowed ? 'Nothing fits that right now.' : 'No route for the next few hours.'}</p>
-      <p class="rt-card__sub">${narrowed ? (nearOn() && !p.moods.length && p.cap == null ? 'Nothing is a short walk from here. Choose another starting point or Whole city.' : 'Try another mood or a higher price limit.') : 'All places and All events have the complete listings.'}</p>
-      <div class="rt-card__acts">${narrowed ? '<button class="wa-btn wa-btn--pill" type="button" data-filter-open>Change</button>' : '<a class="wa-btn wa-btn--pill" href="places.html">Guide</a>'}</div></section>`;
+  const walkCard = () => {
+    const route = plans[planIdx];
+    if (!route) return '';
+    const Rt = window.WA.Route, first = route.stops[0];
+    const from = route.fromYou != null ? (route.fromYou <= 1 ? (G().anchor() ? 'Right by here' : 'Right by you') : `${route.fromYou} min walk from ${G().anchor() ? 'here' : 'you'}`) : '';
+    const meta = [route.area, `about ${Rt.lengthText(route).split(',')[0]}`, from].filter(Boolean).join(' · ');
+    return `<section class="home-walk" aria-labelledby="home-walk-title">
+      <div class="home-walk__head"><span class="home-walk__kicker">${I('walk')}<b>A walk for now</b><span class="home-walk__meta">${esc(meta)}</span></span>
+        ${plans.length > 1 ? `<button class="wa-iconbtn home-walk__again" type="button" data-another aria-label="Another walk">${I('refresh')}</button>` : ''}</div>
+      <a class="home-walk__main" href="${esc(Rt.href(route))}">
+        <span class="home-walk__title" id="home-walk-title">${esc(route.title || 'Two or three stops on foot')}</span>
+        <span class="home-walk__stops"><time>${esc(window.WA.Hours.clock(first.minute % 1440))}</time>${route.stops.map(s => `<span data-notranslate>${esc(s.name)}</span>`).join(`<span class="home-walk__to" aria-hidden="true">${I('arrow')}</span>`)}</span>
+      </a></section>`;
   };
 
-  /* The next day after today with anything listed. */
-  const nextDay = (all) => {
-    const groups = R().byDay(all.filter(e => { const k = W().resolveKey(e); return k && k > W().todayKey(); }));
-    return groups.length ? { key: groups[0][0], items: groups[0][1] } : null;
+  /* ── Events: tonight as a timeline, other dates by night ── */
+  const SOON_MS = 2 * 3600 * 1000;
+  const byStart = (a, b) => (startMs(a) - startMs(b)) || String(a.id).localeCompare(String(b.id));
+  const nearFirst = (list) => {
+    if (!nearOn()) return list;
+    const far = e => G().distanceTo(e) ?? Infinity;
+    return list.map((e, i) => [e, far(e), i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(x => x[0]);
   };
+  const dayName = (key) => key === W().nightToday() ? 'Today' : key === W().nightPlus(1) ? 'Tomorrow' : (window.WA.Lang ? window.WA.Lang.daysFull() : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])[new Date(`${key}T12:00:00Z`).getUTCDay()];
+  /* [{ id, name, sub, items }] in reading order; a list's rows keep that order. */
+  const groups = (list, date) => {
+    const out = [];
+    const add = (id, name, sub, items) => { if (items.length) out.push({ id, name, sub, items: nearFirst(items) }); };
+    const off = list.filter(e => R().isOff(e)), on = list.filter(e => !R().isOff(e));
+    if (!date.date && date.when === 'tonight') {
+      const now = Date.now();
+      const live = on.filter(e => R().isLive(e) && !R().isRun(e)).sort((a, b) => byStart(b, a));
+      const ahead = on.filter(e => !live.includes(e) && timed(e) && startMs(e) > now).sort(byStart);
+      add('live', 'On now', 'Latest start first', live);
+      add('soon', 'Starting soon', 'In the next two hours', ahead.filter(e => startMs(e) <= now + SOON_MS));
+      add('later', evening() ? 'Later tonight' : 'Later today', 'Until 05:00', ahead.filter(e => startMs(e) > now + SOON_MS));
+      add('also', 'Also today', 'No set time, or running', on.filter(e => !live.includes(e) && !ahead.includes(e)));
+    } else {
+      const [from] = D().range(date), days = new Map();
+      for (const e of on) {
+        const k = [W().nightKey(e) || from, from].sort().pop();
+        if (!days.has(k)) days.set(k, []);
+        days.get(k).push(e);
+      }
+      for (const [k, items] of [...days].sort((a, b) => a[0].localeCompare(b[0]))) {
+        const fresh = items.filter(e => timed(e) && W().nightKey(e) === k).sort(byStart);
+        add(k, dayName(k), R().dateShort(k), [...fresh, ...items.filter(e => !fresh.includes(e))]);
+      }
+    }
+    add('off', 'Cancelled or postponed', '', off);
+    return out;
+  };
+  const head = (g) => `<div class="wa-day home-day__head" role="heading" aria-level="2"><span class="wa-day__name">${esc(g.name)}</span>${g.sub ? `<span class="wa-day__date">${esc(g.sub)}</span>` : ''}<span class="wa-day__n">${g.items.length}</span></div>`;
 
-  const days = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
-  const dayList = (all, date, p) => {
-    const list = sortSoon(all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p)));
-    const timed = e => W().statedMinutes(e) != null;
-    const ordered = [...list.filter(e => !R().isOff(e) && timed(e)), ...list.filter(e => !R().isOff(e) && !timed(e)), ...list.filter(e => R().isOff(e))];
-    if (!nearOn()) return ordered;
-    const far = e => R().isOff(e) ? Infinity : G().distanceTo(e) ?? Infinity;
-    return ordered.map((e,i) => [e,far(e),i]).sort((a,b) => a[1]-b[1] || a[2]-b[2]).map(x => x[0]);
-  };
   /* Keep browsing the current selection in batches. The URL restores enough
      rows for the browser to return to the same spot after opening a listing. */
   const PAGE_SIZE = 25;
@@ -96,9 +157,26 @@
   };
   const more = (total) => total > shown ? `<div class="home-day__foot"><button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(PAGE_SIZE, total - shown)} more</button></div>` : '';
 
-  /* Events and picked places browse the current selection; All events and
-     All places open the complete catalogues. */
-  let view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
+  const eventsPart = (list, date) => {
+    if (!list.length) {
+      const tonight = !date.date && date.when === 'tonight', p = pref();
+      const narrowed = p.moods.length || p.cap != null;
+      return `<div class="home-empty"><p>${tonight ? (narrowed ? 'Nothing for this mood tonight.' : 'Nothing else listed tonight.') : 'No listings match these choices.'}</p>
+        ${tonight ? '<button class="wa-btn wa-btn--pill" type="button" data-when-pick="tomorrow">Tomorrow</button>' : ''}
+        ${narrowed ? '<button class="wa-linkbtn" type="button" data-mood-pick="">Any mood</button>' : ''}
+        <a class="wa-linkbtn" href="discover.html">All events</a></div>`;
+    }
+    let budget = shown;
+    const html = groups(list, date).map(g => {
+      if (budget <= 0) return '';
+      const items = g.items.slice(0, budget); budget -= items.length;
+      return `${head(g)}<ul class="wa-rows home-rows">${items.map(e => R().row(e, { since: visit.prev, heart: true, started: g.id === 'live' })).join('')}</ul>`;
+    }).join('');
+    return `${nearOn() ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}${html}${more(list.length)}
+      <p class="home-day__all-link"><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></p>`;
+  };
+
+  /* ── Places: picked, open first, nearest first ── */
   const centre = () => { const c = (window.WA.CITIES || []).find(x => x.id === window.WA.CITY); return c && c.centre ? c.centre : null; };
   const isOpen = (v) => R().openState(v).open === true;
   const pickedPlaces = () => {
@@ -108,19 +186,34 @@
       .map(v => [v, isOpen(v) ? 0 : 1, d(v)]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
   const placesPart = (list) => {
-    const openN = list.filter(isOpen).length;
     const from = (nearOn() ? G().currentLoc() : null) || centre();
-    const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'Nearest to here first' : 'Nearest the centre first'}`;
-    return `<div class="home-browse-head"><h2 class="wa-sr">Places</h2><a class="wa-linkbtn" href="places.html">All places ${I('arrow')}</a></div>
-      <p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
-      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0,shown).map(v => R().placeRow(v,{ from })).join('')}</ul>
-      ${more(list.length)}`;
+    if (!list.length) return '<div class="home-empty"><p>No places match these choices.</p><button class="wa-linkbtn" type="button" data-mood-pick="">Any mood</button></div>';
+    return `<p class="wa-note home-day__note">${esc(nearOn() ? 'Nearest to here first' : 'Nearest the centre first')}</p>
+      <ul class="home-places">${list.slice(0, shown).map(v => R().placeRow(v, { from, pickLabel: false })).join('')}</ul>
+      ${more(list.length)}<p class="home-day__all-link"><a class="wa-linkbtn" href="places.html">All places ${I('arrow')}</a></p>`;
   };
-  // Keep one segment through redraws, including its gesture listeners.
-  const viewSwitch = document.createElement('div');
-  viewSwitch.className = 'map-seg home-view';
-  viewSwitch.setAttribute('role','group'); viewSwitch.setAttribute('aria-label','Show');
-  viewSwitch.innerHTML = '<button class="map-seg__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span><span class="home-view__n" id="home-events-n"></span></button><button class="map-seg__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span><span class="home-view__n" id="home-places-n"></span></button>';
+
+  /* ── Events | Places and When: one line, kept through redraws ── */
+  let view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
+  const browse = document.createElement('div');
+  browse.className = 'home-browse';
+  browse.innerHTML = `<div class="home-view" role="group" aria-label="Show"><button class="home-view__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span> <span class="home-view__n" id="home-events-n"></span></button><button class="home-view__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span> <span class="home-view__n" id="home-places-n"></span></button></div><div class="home-browse__end"></div>`;
+  const syncBrowse = (events, places) => {
+    browse.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+    browse.querySelector('#home-events-n').textContent = String(events);
+    const n = browse.querySelector('#home-places-n');
+    n.textContent = places.open ? `${places.open} open` : String(places.all);
+    n.classList.toggle('is-open', places.open > 0);
+    /* The When key is kept, not redrawn, so focus and an open panel stay put. */
+    const end = browse.querySelector('.home-browse__end'), key = end.querySelector('[data-when-open]');
+    if (view !== 'events') end.innerHTML = '';
+    else if (!key) end.innerHTML = window.WA.DiscoveryControls.dateKey('home-when');
+    else {
+      const s = D().dates();
+      key.querySelector('span').textContent = D().label();
+      key.classList.toggle('is-set', !!s.date || s.when !== 'tonight');
+    }
+  };
   const setView = value => {
     view = value; shown = PAGE_SIZE;
     const q = new URLSearchParams(location.search);
@@ -128,126 +221,95 @@
     history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
     main();
   };
-  const viewGlass = window.WA.glassDrop(viewSwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt',
-    current: () => view === 'events' ? 0 : 1, commit: i => setView(i === 0 ? 'events' : 'places') });
-  // Preserve the day bar through renders so a slide keeps its pointer capture.
-  const daySwitch = document.createElement('div');
-  daySwitch.className = 'map-seg home-tabs';
-  daySwitch.setAttribute('role','group'); daySwitch.setAttribute('aria-label','Day');
-  daySwitch.innerHTML = days.map(([key,label]) => `<button class="map-seg__opt home-tab" type="button" data-day="${key}" aria-pressed="false"><span>${label}</span></button>`).join('')
-    + window.WA.DiscoveryControls.dateKey('map-seg__opt home-calendar');
-  const dayButtons = [...daySwitch.querySelectorAll('[data-day]')];
-  const calendar = daySwitch.querySelector('[data-pick-dates]');
-  const dayIndex = () => {
-    const s = D().dates(), i = s.date ? -1 : days.findIndex(([key]) => key === s.when);
-    return i < 0 ? days.length : i;
-  };
-  const chooseDay = button => { D().setDates({ when:button.dataset.day }); D().writeURL(); };
-  const touchDays = matchMedia('(max-width: 1023px), (pointer: coarse)');
-  const dayGlass = window.WA.glassDrop(daySwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt home-tab',
-    current:dayIndex, enabled:() => touchDays.matches, commitSame:true,
-    commit: (i, button) => {
-      if (i === days.length) { dayGlass.sync(); window.WA.DiscoveryControls.openDates(button); }
-      else chooseDay(button);
-    } });
-  touchDays.addEventListener('change', () => dayGlass.reset());
-  const syncDays = () => {
-    const i = dayIndex();
-    dayButtons.forEach((b,n) => b.setAttribute('aria-pressed',n === i));
-    calendar.setAttribute('aria-pressed',i === days.length);
-    calendar.querySelector('span').textContent = i === days.length ? D().label() : 'Pick dates';
-    dayGlass.sync();
-  };
-  let walkOpen = false;
-  const walkFold = p => `<section class="wa-sect rt-sect" id="plan-fold"><button class="home-walk__key" type="button" data-walk-toggle aria-expanded="${walkOpen}" aria-controls="plan">${I('walk')}<span><b>A walk for now</b><small>${esc(plans[planIdx] ? plans[planIdx].title || 'Two or three stops on foot' : 'See the next few hours')}</small></span>${I('down')}</button><div id="plan"${walkOpen ? '' : ' hidden'}>${planCard(p)}</div></section>`;
-  let walkMotion = null;
-  const toggleWalk = () => {
-    const host = $('plan'), key = document.querySelector('[data-walk-toggle]');
-    if (!host || !key) return;
-    const fromHeight = host.hidden ? 0 : host.getBoundingClientRect().height;
-    const fromOpacity = host.hidden ? 0 : Number(getComputedStyle(host).opacity);
-    if (walkMotion) { walkMotion.cancel(); walkMotion = null; }
-    walkOpen = !walkOpen; key.setAttribute('aria-expanded',walkOpen);
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const easing = getComputedStyle(key).getPropertyValue('--ease').trim();
-    if (walkOpen) {
-      host.hidden = false;
-      if (!still) walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:host.offsetHeight + 'px', opacity:1 }], { duration:260, easing });
-    } else if (still) host.hidden = true;
-    else {
-      walkMotion = host.animate([{ height:fromHeight + 'px', opacity:fromOpacity },{ height:'0px', opacity:0 }], { duration:140, easing });
-      walkMotion.onfinish = () => { if (!walkOpen) host.hidden = true; };
-    }
-  };
 
+  /* ── Folded filters: past the rail, the controls become one key ── */
+  const fold = document.createElement('button');
+  fold.type = 'button';
+  fold.className = 'home-fold';
+  fold.setAttribute('aria-haspopup', 'dialog');
+  fold.setAttribute('aria-expanded', 'false');
+  fold.hidden = true;
+  const foldText = () => {
+    const p = pref(), words = M().words(p);
+    return [view === 'events' ? D().label() : 'Places', words.length ? (words.length > 1 ? `${words[0]} +${words.length - 1}` : words[0]) : ''].filter(Boolean).join(' · ');
+  };
+  const syncFold = () => {
+    fold.innerHTML = `${I('filter')}<span>${esc(foldText())}</span>`;
+    fold.setAttribute('aria-label', `Filters · ${foldText()}`);
+    if (folded) document.body.style.setProperty('--fold-w', `${fold.offsetWidth}px`);
+  };
+  const quickPanel = () => {
+    const panel = document.createElement('div');
+    panel.className = 'home-quick';
+    panel.setAttribute('aria-label', 'Filters');
+    const p = pref(), s = D().dates();
+    panel.innerHTML = `<div class="home-quick__moods" role="group" aria-label="Mood">${[{ id: '', label: 'All', picto: 'tallinn' }, ...moodsShown()].map(m => `<button class="home-mood" type="button" data-mood-pick="${esc(m.id)}" aria-pressed="${m.id ? p.moods.includes(m.id) : !p.moods.length}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')}</div>
+      ${view === 'events' ? `<div class="home-quick__when" role="group" aria-label="When">${[['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']].map(([w, l]) => `<button class="wa-chip" type="button" data-when-pick="${w}" aria-pressed="${!s.date && s.when === w}">${esc(l)}</button>`).join('')}</div>` : ''}
+      <div class="home-quick__foot"><button class="wa-chip" type="button" data-near aria-pressed="${nearOn()}">${I('locate')}<span>${esc(G().anchor() ? G().anchor().label : nearOn() ? 'Near you' : 'Near me')}</span></button><button class="wa-chip" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${esc(filterWord(p))}</span></button></div>`;
+    return panel;
+  };
+  fold.addEventListener('click', () => {
+    if (fold.getAttribute('aria-expanded') === 'true') window.WA.UI.genie.close(true);
+    else window.WA.UI.genie(fold, quickPanel());
+  });
+  let folded = false;
+  const foldWatch = 'IntersectionObserver' in window ? new IntersectionObserver(([entry]) => {
+    folded = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    fold.hidden = !folded;
+    document.body.classList.toggle('home-folded', folded);
+    if (folded) document.body.style.setProperty('--fold-w', `${fold.offsetWidth}px`);
+    if (!folded && fold.getAttribute('aria-expanded') === 'true') window.WA.UI.genie.close(false);
+  }, { rootMargin: '-64px 0px 0px 0px' }) : null;
+
+  /* ── Render ─────────────────────────────────────────────────── */
+  const wide = matchMedia('(min-width: 1024px)');
+  const pointer = matchMedia('(hover: hover) and (pointer: fine)');
   const main = () => {
     writeShown();
     const all = R().live();
-    const tonight = sortSoon(all.filter(e => W().isTonight(e)));
-    const liveNow = tonight.filter(e => R().isLive(e));
-    const next = nextDay(all);
-    hero(tonight, liveNow, next);
-    acts();
-    const p = readPlans();
-    const date = D().dates(), tab = date.date ? 'custom' : date.when;
-    const list = dayList(all,date,p);
-    const out = [walkFold(p)];
-
+    hero(all);
+    syncRail();
+    readPlans();
+    const date = D().dates(), p = pref();
+    const list = all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p));
     const places = pickedPlaces();
-    if (view === 'places') {
-      out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>${placesPart(places)}</section>`);
-    } else {
-      out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
-        <div class="home-browse-head"><h2 class="wa-sr">Events</h2><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></div>
-        <div id="home-day-slot"></div>
-
-        ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
-        ${list.length ? `<ul class="wa-feed">${list.slice(0,shown).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
-        ${more(list.length)}
-      </section>`);
-    }
+    const out = [];
+    if (!wide.matches) out.push(walkCard());
+    out.push(`<section class="home-list" id="list" aria-label="${view === 'places' ? 'Places' : 'Events'}"><div id="home-browse-slot"></div>${view === 'places' ? placesPart(places) : eventsPart(list, date)}</section>`);
     if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
-    const focused = document.activeElement;
-    const hadDayFocus = daySwitch.contains(focused);
-    const hadViewFocus = viewSwitch.contains(focused);
+    const focused = document.activeElement, keep = browse.contains(focused);
     $('home-main').innerHTML = out.join('');
-    const slot = $('home-view-slot');
-    if (slot) {
-      slot.replaceWith(viewSwitch);
-      $('home-events-n').textContent = String(list.length);
-      $('home-places-n').textContent = String(places.length);
-      viewSwitch.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',b.dataset.view === view));
-      viewGlass.sync();
-    }
-    const daySlot = $('home-day-slot');
-    if (daySlot) { daySlot.replaceWith(daySwitch); syncDays(); }
-    if (hadDayFocus || hadViewFocus) focused.focus({ preventScroll:true });
+    $('home-browse-slot').replaceWith(browse);
+    if (foldWatch) foldWatch.observe(browse);
+    syncBrowse(list.length, { all: places.length, open: places.filter(isOpen).length });
+    if (keep && focused.isConnected) focused.focus({ preventScroll: true });
+    side();
+    syncFold();
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
   };
 
-  /* Another: the next route in line, the card drawn again. Only the card changes. */
+  /* Another: the next walk in line; only the card changes. */
   const another = () => {
     if (plans.length < 2) return;
     planIdx = (planIdx + 1) % plans.length;
-    const host = $('plan');
-    if (host) {
-      const focused = !!document.activeElement?.matches('[data-another]');
-      host.dataset.again = '1'; host.innerHTML = planCard(pref());
-      document.querySelector('[data-walk-toggle] small').textContent = plans[planIdx].title || 'Two or three stops on foot';
-      if (focused) host.querySelector('[data-another]')?.focus({ preventScroll:true });
-    }
+    const card = document.querySelector('.home-walk');
+    if (!card) return;
+    const focused = !!document.activeElement?.matches('[data-another]');
+    card.outerHTML = walkCard();
+    const next = document.querySelector('.home-walk');
+    if (next) { next.dataset.again = '1'; if (focused) next.querySelector('[data-another]')?.focus({ preventScroll: true }); }
   };
 
-  /* ── Side (desktop): the map ─────────────────────────────────── */
-  const desktop = matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+  /* Wide windows keep the walk beside the list; a mouse also gets the map. */
   const side = () => {
-    $('home-side').innerHTML = desktop.matches ? `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
+    $('home-side').innerHTML = wide.matches ? `${walkCard()}${pointer.matches ? `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>` : '';
+      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>` : ''}` : '';
   };
-  desktop.addEventListener('change', side);
+  wide.addEventListener('change', () => { if (window.WA.catalog) main(); });
+  pointer.addEventListener('change', side);
 
   /* ── New since the last visit ──────────────────────────────── */
   const since = (all) => {
@@ -258,34 +320,23 @@
     host.innerHTML = `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>`;
   };
 
-  /* ── Render and events ─────────────────────────────────────── */
-  const render = () => {
-    const all = main();
-    side();
-    since(all);
-  };
+  const render = () => { since(main()); };
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    const dt = hit('[data-day]');
-    if (dt) { chooseDay(dt); return; }
-    // Opening the calendar is an action, not a committed day selection.
-    if (hit('[data-pick-dates]') === calendar) dayGlass.sync();
-    if (hit('[data-walk-toggle]')) { toggleWalk(); return; }
+    const mood = hit('[data-mood-pick]');
+    if (mood) { if (mood.closest('.home-quick')) window.WA.UI.genie.close(true); pickMood(mood.dataset.moodPick); return; }
     const vw = hit('[data-view]');
-    if (vw) {
-      setView(vw.dataset.view);
-      return;
-    }
+    if (vw) { setView(vw.dataset.view); return; }
     if (hit('[data-day-all]')) {
       const previous = shown;
       shown += PAGE_SIZE; main();
-      const rows = document.querySelectorAll('.home-day .wa-feed > li, .home-places > li');
+      const rows = document.querySelectorAll('.home-list .wa-rows > li, .home-places > li');
       const first = rows[previous] && rows[previous].querySelector('a');
       if (first) first.focus({ preventScroll: true });
       return;
     }
-    if (hit('[data-near]')) { window.WA.StartFrom.open(hit('[data-near]')); return; }
+    if (hit('[data-near]')) { window.WA.UI.genie.close(false); window.WA.StartFrom.open(hit('[data-near]')); return; }
     if (hit('[data-another]')) { another(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
     const r = hit('[data-row]');
@@ -307,35 +358,33 @@
     shown = e.detail?.restore ? readShown() : PAGE_SIZE;
     main();
   });
-  document.addEventListener('wa:start-state', () => {
-    const origin = document.querySelector('.rt-card__origin-wrap');
-    if (origin) origin.innerHTML = window.WA.StartFrom.originMarkup(); else render();
-  });
+  document.addEventListener('wa:start-state', () => { if (window.WA.catalog) render(); });
   document.addEventListener('wa:discovery-changed', e => {
     if (!window.WA.catalog) return;
     shown = e.detail?.restore ? readShown() : PAGE_SIZE;
     if (e.detail?.restore) view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
     render();
   });
-  document.addEventListener('wa:discovery-applied', () => {
-    if (viewSwitch.isConnected) viewSwitch.scrollIntoView({ block:'center', behavior:'auto' });
-  });
+  /* After a filter changes from the folded key, show the top of the new list. */
+  const toList = () => { if (folded && browse.isConnected) browse.scrollIntoView({ block: 'start', behavior: 'auto' }); };
+  document.addEventListener('wa:discovery-applied', toList);
+  document.addEventListener('wa:mood-changed', toList);
+  document.addEventListener('wa:discovery-changed', toList);
   document.addEventListener('wa:location-ready', () => {
     const city = !G().anchor() && G().deviceLoc() && window.WA.cityForLocation(G().deviceLoc());
     if (city && city.id !== window.WA.CITY) { window.WA.setCity(city.id); return; }
     render();
   });
-  /* The clock ticks; the lists redraw every five minutes so "on now"
-     and "starting soon" stay true on a phone left open. */
-  setInterval(() => { $('hero-clock').textContent = clockText(); }, 30000);
+  /* The lists redraw every five minutes so "on now" and "starting soon"
+     stay true on a phone left open. */
   setInterval(() => { if (document.visibilityState === 'visible' && window.WA.catalog) render(); }, 300000);
 
   const skeleton = () => {
-    $('hero-clock').textContent = clockText();
-    acts();
+    $('home-moods').replaceWith(rail);
+    document.body.append(fold);
     $('home-main').innerHTML = `<section class="wa-sect">${R().skelRows(5)}</section>`;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });
   else skeleton();
-  document.addEventListener('wa:language-changed', () => { $('hero-clock').textContent = clockText(); render(); });
+  document.addEventListener('wa:language-changed', () => { railKey = ''; if (window.WA.catalog) render(); });
 })();

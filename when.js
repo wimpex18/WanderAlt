@@ -186,11 +186,57 @@
     return m;
   };
 
+  /* ── The night ───────────────────────────────────────────────
+     Nightlife runs past midnight. A club night at 01:00 and a gig whose
+     last set ends after midnight belong to the evening before, so until
+     05:00 "today" is still the night that began yesterday evening. Only a
+     stated start before 05:00 moves; a date-only entry keeps its day.
+     Routes and day labels keep calendar days; filters and Now use nights. */
+  const NIGHT_END = 5 * 60;
+  let clockFmt = null;
+  const minutesOf = (date) => {
+    try {
+      clockFmt = clockFmt || new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' });
+      const [h, m] = clockFmt.format(date).split(':').map(Number);
+      return h * 60 + m;
+    } catch { return date.getHours() * 60 + date.getMinutes(); }
+  };
+  let nightSec = -1, nightVal = '';
+  const nightToday = () => {
+    const sec = Math.floor(Date.now() / 1000);
+    if (sec !== nightSec) {
+      const now = new Date(sec * 1000);
+      nightVal = minutesOf(now) < NIGHT_END ? keyStep(dayKey(now), -1) : dayKey(now);
+      nightSec = sec;
+    }
+    return nightVal;
+  };
+  const nightPlus = (n) => keyStep(nightToday(), n);
+  const nightKey = (e) => {
+    const key = resolveKey(e);
+    if (!key) return null;
+    const m = statedMinutes(e);
+    return m != null && m < NIGHT_END ? keyStep(key, -1) : key;
+  };
+  /* The last night an entry is on, or null without a stated end. A stated
+     clock end before noon closes the night before it (a party until 06:00);
+     a date-only end includes that whole day. */
+  const nightEndKey = (e) => {
+    if (!e || !e.endsAt) return null;
+    const t = Date.parse(e.endsAt);
+    if (isNaN(t)) return null;
+    const midnight = dayKey(new Date(t)) !== dayKey(new Date(t - 1));
+    if (midnight && statedMinutes(e) == null) return dayKey(new Date(t));
+    const last = new Date(t - 1), key = dayKey(last), start = resolveKey(e);
+    return start && key > start && minutesOf(last) < 12 * 60 ? keyStep(key, -1) : key;
+  };
+
   /* ── Is it over? ─────────────────────────────────────────────
      A stated end wins. Without one, a timed event is taken to last three
-     hours (a film, a gig, a play); a date-only event runs to the end of
-     its day. Ended events drop out of lists and never read as NOW. */
-  const ASSUMED_MS = 3 * 3600 * 1000;
+     hours (a film, a gig, a play) and a club night six, as most run until
+     the early morning; a date-only event runs to the end of its day.
+     Ended events drop out of lists and never read as NOW. */
+  const ASSUMED_MS = 3 * 3600 * 1000, CLUB_MS = 6 * 3600 * 1000;
   const endsAtMs = (e) => {
     if (!e) return null;
     if (e.endsAt) {
@@ -205,7 +251,7 @@
     if (!e.startsAt) return null;
     const t = Date.parse(e.startsAt);
     if (isNaN(t)) return null;
-    if (statedMinutes(e) != null) return t + ASSUMED_MS;
+    if (statedMinutes(e) != null) return t + (String(e.kind || '').toLowerCase() === 'club' ? CLUB_MS : ASSUMED_MS);
     return t + 24 * 3600 * 1000;           // date-only: stored as local midnight
   };
   const hasEnded = (e, now = Date.now()) => {
@@ -214,7 +260,7 @@
   };
 
   window.WA.when = {
-    isTonight, stampAll, dayKey, todayKey, keyPlus, resolveKey, isOnDate,
-    matches, statedMinutes, hasEnded,
+    isTonight, stampAll, dayKey, todayKey, keyPlus, keyStep, resolveKey, isOnDate,
+    matches, statedMinutes, hasEnded, endsAtMs, nightToday, nightPlus, nightKey, nightEndKey, NIGHT_END,
   };
 })();

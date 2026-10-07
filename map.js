@@ -96,7 +96,6 @@
     } else {
       $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
       $('map-filters').innerHTML = window.WA.DiscoveryControls.keys();
-      $('map-dates').querySelector('[data-pick-dates] span').textContent = D().label();
     }
     document.querySelector('.map-page > h1').textContent = 'Map of Tallinn';
     if (seg) seg.sync();

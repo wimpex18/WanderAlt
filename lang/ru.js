@@ -843,7 +843,25 @@ window.WA.dict.ru = {
   "Sources go quiet between programmes. All events has the full listing.": "Между событиями источники затихают. Полный список есть в разделе «Все события».",
   "Keywords": "Ключевые слова",
   "Filters from your search": "Фильтры из вашего запроса",
-  "Keep this search": "Сохранить этот поиск"
+  "Keep this search": "Сохранить этот поиск",
+  "Near you": "Рядом с вами",
+  "More filters": "Ещё фильтры",
+  "Another walk": "Другая прогулка",
+  "Latest start first": "Сначала самые свежие",
+  "Starting soon": "Скоро начнётся",
+  "In the next two hours": "В ближайшие два часа",
+  "Later tonight": "Позже вечером",
+  "Later today": "Позже сегодня",
+  "Until 05:00": "До 05:00",
+  "Also today": "Также сегодня",
+  "No set time, or running": "Без времени или идёт несколько дней",
+  "Cancelled or postponed": "Отменено или перенесено",
+  "Nothing for this mood tonight.": "Сегодня вечером под это настроение ничего нет.",
+  "Nothing else listed tonight.": "На сегодняшний вечер больше ничего нет.",
+  "Change dates": "Изменить даты",
+  "A day or a range": "День или период",
+  "Walk and map": "Прогулка и карта",
+  "Mood": "Настроение"
  },
  "patterns": [
   [
