@@ -126,7 +126,75 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan, { once: true }); else scan();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(SCROLLERS).forEach(edges));
 
-  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField, edges: scan };
+  /* A small panel that pours out of the key that opened it and folds back
+     into it: a narrow column first, then its full width. One at a time; it
+     closes on Escape, an outside tap or a scroll of the page, and returns
+     focus to its key. Reduced motion fades. */
+  let genieOpen = null;
+  const genie = (key, panel, opts = {}) => {
+    if (genieOpen) genieOpen.close(false);
+    panel.classList.add('wa-genie');
+    panel.setAttribute('role', 'dialog');
+    document.body.append(panel);
+    const place = () => {
+      const k = key.getBoundingClientRect(), w = panel.offsetWidth, h = panel.offsetHeight;
+      const vw = document.documentElement.clientWidth, vh = window.innerHeight, pad = 12;
+      const left = Math.min(Math.max(pad, opts.align === 'start' ? k.left : k.right - w), vw - w - pad);
+      const below = k.bottom + 8 + h <= vh - pad || k.top - 8 - h < pad;
+      const top = below ? k.bottom + 8 : k.top - 8 - h;
+      panel.style.left = `${Math.round(left)}px`; panel.style.top = `${Math.round(top)}px`;
+      panel.style.transformOrigin = `${Math.round(k.left + k.width / 2 - left)}px ${Math.round(k.top + k.height / 2 - top)}px`;
+      return { sx: Math.max(.08, k.width / w), sy: Math.max(.06, k.height / h) };
+    };
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ease = 'cubic-bezier(.2, .9, .25, 1.12)';
+    const s = place();
+    let motion = still ? panel.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120 })
+      : panel.animate([
+        { transform: `scale(${s.sx}, ${s.sy})`, opacity: .2, borderRadius: '999px', filter: 'blur(3px)' },
+        { transform: `scale(${Math.min(1, s.sx * 1.6)}, .62)`, opacity: .9, borderRadius: '40px', filter: 'blur(1px)', offset: .42 },
+        { transform: 'none', opacity: 1, filter: 'blur(0)' },
+      ], { duration: 380, easing: ease });
+    key.setAttribute('aria-expanded', 'true');
+    const startY = window.scrollY;
+    const outside = (e) => { if (!panel.contains(e.target) && !key.contains(e.target)) api.close(false); };
+    const keys = (e) => { if (e.key === 'Escape') { e.preventDefault(); api.close(true); } };
+    const scrolled = () => { if (Math.abs(window.scrollY - startY) > 24) api.close(false); };
+    const api = {
+      panel, key,
+      close(refocus = true) {
+        if (genieOpen !== api) return;
+        genieOpen = null;
+        document.removeEventListener('pointerdown', outside, true);
+        document.removeEventListener('keydown', keys, true);
+        window.removeEventListener('scroll', scrolled);
+        window.removeEventListener('resize', place);
+        key.setAttribute('aria-expanded', 'false');
+        if (motion) motion.cancel();
+        const s2 = still ? null : place();
+        motion = still ? panel.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 100 })
+          : panel.animate([
+            { transform: 'none', opacity: 1 },
+            { transform: `scale(${Math.min(1, s2.sx * 1.6)}, .55)`, opacity: .8, borderRadius: '40px', offset: .5 },
+            { transform: `scale(${s2.sx}, ${s2.sy})`, opacity: 0, borderRadius: '999px' },
+          ], { duration: 220, easing: 'cubic-bezier(.4, 0, .9, .6)' });
+        motion.onfinish = () => panel.remove();
+        if (refocus && key.isConnected) key.focus({ preventScroll: true });
+        if (opts.onClose) opts.onClose();
+      },
+    };
+    genieOpen = api;
+    document.addEventListener('pointerdown', outside, true);
+    document.addEventListener('keydown', keys, true);
+    window.addEventListener('scroll', scrolled, { passive: true });
+    window.addEventListener('resize', place);
+    const first = panel.querySelector('[aria-pressed="true"], [aria-checked="true"]') || panel.querySelector('button, a, input');
+    if (first) first.focus({ preventScroll: true });
+    return api;
+  };
+  genie.close = (refocus) => { if (genieOpen) genieOpen.close(refocus); };
+
+  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField, edges: scan, genie };
 
   /* Every bottom sheet follows the finger. On a phone the grip, the head and,
      when its list is at the top, the body drag the panel down; let go past a

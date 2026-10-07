@@ -80,6 +80,11 @@
   };
   /* Worth walking to at this minute: open by its filed hours, or unfiled and inside its kind's usual ones. */
   const fits = (v, h, minute) => h === 'open' || (h === 'unknown' && usual(v.kind, minute));
+  /* Worth the visit, not only the arrival: it still fits five minutes before you
+     would leave, so no walk spends forty minutes at a shop that shuts in five. */
+  const STAY = 40;
+  const fitsStay = (v, minute, leave, offset = 0) => fits(v, hoursAt(v, minute, offset), minute)
+    && fits(v, hoursAt(v, leave - 5, offset), leave - 5);
 
   const startOf = (e) => G().startMinutes(e);
   const endOf = (e, start) => {
@@ -212,7 +217,7 @@
         if (dayPlace) { if (minute >= 17 * 60) continue; }
         else if (minute > 23 * 60 + 30 || minute < (v.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   /* a club after nine, a bar after four */
         const h = hoursAt(v, minute);
-        if (!fits(v, h, minute)) continue;
+        if (!fitsStay(v, minute, minute + STAY)) continue;
         const s = (h === 'open' ? 1.5 : .8) - w / 30 + (wantsPlace(opts, v) ? 1.5 : 0);
         if (!bestAfter || s > bestAfter.s) bestAfter = { v, w, minute, h, s };
       }
@@ -252,7 +257,7 @@
       if (toFirst != null && toFirst > (opts.near ? NEAR : MAX_BEFORE)) continue;
       const m0 = round5(now + 10 + (toFirst || 0));
       const h0 = hoursAt(first, m0);
-      if (asleep(m0) || !fits(first, h0, m0)) continue;
+      if (asleep(m0) || !fitsStay(first, m0, m0 + STAY)) continue;
       const stops = [placeStop(first, m0, null, h0)], entries = [first];
       let score = (h0 === 'open' ? 2 : 1) + (first.pickNote ? .2 : 0) - (toFirst || 0) / 30;
       let at = m0, prev = first;
@@ -262,9 +267,9 @@
           if (stops.some(s => s.id === v.id) || v.kind === prev.kind) continue;
           const w = walk(metres(prev, v));
           if (w == null || w < 1 || w > WALK_STEP) continue;
-          const minute = round5(at + 40 + w);
+          const minute = round5(at + STAY + w);
           const h = hoursAt(v, minute);
-          if (asleep(minute) || !fits(v, h, minute)) continue;
+          if (asleep(minute) || !fitsStay(v, minute, minute + STAY)) continue;
           if (day && minute >= 17 * 60 && !AFTER.has(v.kind) && h !== 'open') continue;
           const sc = (h === 'open' ? 1.5 : .8) - w / 30 + (v.pickNote ? .2 : 0) + (wantsPlace(opts, v) ? 1.5 : 0);
           if (!best || sc > best.sc) best = { v, w, minute, h, sc };
@@ -307,7 +312,10 @@
     const moods = MOODS() ? MOODS().available() : [];
     const rows = R().places().filter(v => v.picked && v.id !== entry.id && v.id !== entry.venueId && G().coordsFor(v))
       .map(v => ({ v, w: walk(metres(entry, v)) })).filter(r => r.w != null && r.w <= max)
-      .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w, offset) })).filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
+      .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w, offset) }))
+      .filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
+      /* Still open half an hour after you arrive. */
+      .filter(r => { const later = now + r.w + 25, h = hoursAt(r.v, later, offset); return h !== 'shut' && (h === 'open' || usual(r.v.kind, later) || !USUAL[r.v.kind]); })
       .sort((a, b) => a.w - b.w);
     const chosen = [];
     for (const m of moods) {
@@ -332,16 +340,16 @@
     if (isEvent && !G().coordsFor(entry)) return null;
     const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset));
     const stops = [first];
-    let prev = entry, at = isEvent ? endOf(entry, start) : start + 40;
+    let prev = entry, at = isEvent ? endOf(entry, start) : start + STAY;
     for (let n = 0; n < 2; n++) {
       const pick = nextFrom(prev, { limit: 3, max: 10, minute: at + 10, offset }).find(r => {
         const arrival = round5(at + 10 + r.w);
-        return !stops.some(s => s.id === r.v.id) && fits(r.v, hoursAt(r.v, arrival, offset), arrival);
+        return !stops.some(s => s.id === r.v.id) && fitsStay(r.v, arrival, arrival + STAY, offset);
       });
       if (!pick) break;
       const minute = round5(at + 10 + pick.w);
       stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset)));
-      prev = pick.v; at = minute + 40;
+      prev = pick.v; at = minute + STAY;
     }
     return stops.length > 1 ? Object.assign(build(stops), { day, off: offset }) : null;
   };
@@ -417,6 +425,13 @@
     const r = fromURL(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), row.day);
     if (!r) return null;
     if (r.stops.some(s => s.hours === 'shut' || (s.type === 'place' && s.hours === 'unknown' && !usual(s.kind, s.minute)))) return null;
+    /* Each place stays open until you would leave it for the next stop. */
+    if (r.stops.some((s, i) => {
+      if (s.type !== 'place') return false;
+      const v = (window.WA._venuesAll || []).find(x => x.id === s.id), next = r.stops[i + 1];
+      const leave = next ? next.minute - (next.walk || 0) : s.minute + STAY;
+      return !v || !fitsStay(v, s.minute, Math.max(leave, s.minute + 10), off);
+    })) return null;
     const anchor = r.stops.find(s => s.type === 'event');
     const entry = anchor && (window.WA.catalog || []).find(e => e.id === anchor.id);
     if (!entry || R().isOff(entry) || W().hasEnded(entry)) return null;

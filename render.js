@@ -276,7 +276,8 @@
   /* ── The event row ───────────────────────────────────────────
      opts.day: the list is not grouped by day, so the rail names it.
      opts.noThumb: skip the picture column.
-     opts.drop: an id for a remove key (Saved). */
+     opts.drop: an id for a remove key (Saved).
+     opts.unknownPrice: say "Price not listed" (a ticket cap keeps such rows). */
   /* A run that began before today and has not ended (an exhibition, a festival pass) is still on: its
      first and last day, else null. It is filed under today, not under the day it started,
      and its rail says from when to when. */
@@ -291,7 +292,10 @@
     const liveNow = isLive(e);
     let top;
     const span = runningSpan(e);
-    if (liveNow) top = '<span class="wa-now">Now</span>';
+    /* Under an "On now" heading the start says more than a second "Now";
+       a timeline names a run's days rather than calling a month "Now". */
+    if (liveNow && opts.started && clock && !span) top = `<span class="wa-row__time">${esc(clock)}</span>`;
+    else if (liveNow && !(span && opts.started !== undefined)) top = '<span class="wa-now">Now</span>';
     else if (span) top = `<span class="wa-row__time wa-row__time--word">${esc(dom(span.from))} ${esc(MON[keyDate(span.from).getUTCMonth()])} to ${esc(dom(span.to))} ${esc(MON[keyDate(span.to).getUTCMonth()])}</span>`;
     else if (opts.day && key) {
       const word = key === W().todayKey() ? 'Today' : key === W().keyPlus(1) ? 'Tmrw' : `${dow(key)} ${dom(key)}`;
@@ -345,11 +349,12 @@
     const meta = [
       latin(e.venue) ? `<span data-notranslate>${esc(latin(e.venue))}</span>` : '',
       r.areaInRail || !areaOf(e) ? '' : `<span data-notranslate>${esc(areaOf(e))}</span>`,
-      isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || ''),
+      isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || (opts.unknownPrice ? 'Price not listed' : '')),
       r.live && endsAt ? esc(`till ${endsAt}`) : '',
     ].filter(Boolean).join(' · ');
     const fresh = opts.since && isNewSince(e, opts.since);
-    return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
+    const cls = [opts.drop ? 'wa-saved-row' : '', opts.heart ? 'wa-row-item' : ''].filter(Boolean).join(' ');
+    return `<li${cls ? ` class="${cls}"` : ''}><a class="wa-row${r.live ? ' wa-row--now' : ''}${isOff(e) ? ' wa-row--off' : ''}" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-row__rail">${r.html}</span>
       <span class="wa-row__body">
         <span class="wa-row__top">
@@ -363,7 +368,7 @@
       </span>
       ${opts.drop ? '<span class="wa-row__side wa-saved-row__space" aria-hidden="true"></span>'
                   : opts.noThumb ? '' : thumb(e)}
-    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button>` : ''}</li>`;
+    </a>${opts.drop ? `<button class="wa-iconbtn" type="button" data-unsave="${esc(e.id)}" aria-label="${esc(`Remove ${e.title || ''} from saved`)}">${I('close')}</button>` : ''}${opts.heart && !opts.drop && !opts.noThumb ? heart(e.id, e.title) : ''}</li>`;
   };
 
   /* Image first, facts below. No fabricated social proof or stock pictures.

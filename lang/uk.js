@@ -843,7 +843,25 @@ window.WA.dict.uk = {
   "Sources go quiet between programmes. All events has the full listing.": "Між подіями джерела затихають. Повний список є в розділі «Усі події».",
   "Keywords": "Ключові слова",
   "Filters from your search": "Фільтри з вашого запиту",
-  "Keep this search": "Зберегти цей пошук"
+  "Keep this search": "Зберегти цей пошук",
+  "Near you": "Поруч із вами",
+  "More filters": "Більше фільтрів",
+  "Another walk": "Інша прогулянка",
+  "Latest start first": "Спершу найсвіжіші",
+  "Starting soon": "Незабаром почнеться",
+  "In the next two hours": "Протягом двох годин",
+  "Later tonight": "Пізніше ввечері",
+  "Later today": "Пізніше сьогодні",
+  "Until 05:00": "До 05:00",
+  "Also today": "Також сьогодні",
+  "No set time, or running": "Без часу або триває кілька днів",
+  "Cancelled or postponed": "Скасовано або перенесено",
+  "Nothing for this mood tonight.": "Сьогодні ввечері під цей настрій нічого немає.",
+  "Nothing else listed tonight.": "На сьогоднішній вечір більше нічого немає.",
+  "Change dates": "Змінити дати",
+  "A day or a range": "День або період",
+  "Walk and map": "Прогулянка і мапа",
+  "Mood": "Настрій"
  },
  "patterns": [
   [

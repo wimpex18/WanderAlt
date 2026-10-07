@@ -843,7 +843,25 @@ window.WA.dict.et = {
   "Sources go quiet between programmes. All events has the full listing.": "Allikad vaikivad sündmuste vahel. Kõik sündmused sisaldab täielikku loendit.",
   "Keywords": "Märksõnad",
   "Filters from your search": "Filtrid sinu otsingust",
-  "Keep this search": "Hoia see otsing alles"
+  "Keep this search": "Hoia see otsing alles",
+  "Near you": "Sinu lähedal",
+  "More filters": "Rohkem filtreid",
+  "Another walk": "Teine jalutuskäik",
+  "Latest start first": "Värskeimad eespool",
+  "Starting soon": "Algab varsti",
+  "In the next two hours": "Järgmise kahe tunni jooksul",
+  "Later tonight": "Hiljem täna õhtul",
+  "Later today": "Hiljem täna",
+  "Until 05:00": "Kuni 05:00",
+  "Also today": "Ka täna",
+  "No set time, or running": "Kellaajata või kestev",
+  "Cancelled or postponed": "Tühistatud või edasi lükatud",
+  "Nothing for this mood tonight.": "Selle meeleolu jaoks pole täna õhtul midagi.",
+  "Nothing else listed tonight.": "Täna õhtuks pole rohkem midagi kirjas.",
+  "Change dates": "Muuda kuupäevi",
+  "A day or a range": "Päev või vahemik",
+  "Walk and map": "Jalutuskäik ja kaart",
+  "Mood": "Meeleolu"
  },
  "patterns": [
   [

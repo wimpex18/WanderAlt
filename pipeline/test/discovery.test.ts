@@ -44,36 +44,59 @@ function page(store = new Map<string, string>(), search = '', blocked = false, n
   return { WA, store, fire, location, context, url: () => written, clock: (value: string) => { now = Date.parse(value); } };
 }
 
-// Load the real Now, date and taste modules; stub only DOM/layout and row markup.
-function home(search = '') {
-  const p = page(new Map(), search);
-  let focus = '', written = '', openedDates = 0;
-  const elements = new Map<string, any>();
-  const element = () => {
-    let html = '', buttons: any[] = [];
-    return { textContent:'', isConnected:true, className:'',
-      set innerHTML(value: string) {
-        html = value;
-        buttons = Array.from(value.matchAll(/<button\b([^>]+)>([\s\S]*?)<\/button>/g), ([,attrs,body]) => {
-          const attributes = new Map(Array.from(attrs.matchAll(/([\w-]+)="([^"]*)"/g), ([,k,v]) => [k,v]));
-          const span = { textContent:body.replace(/<[^>]*>/g,'') };
-          return { dataset:Object.fromEntries([...attributes].filter(([k]) => k.startsWith('data-')).map(([k,v]) => [k.slice(5),v])),
-            getAttribute:(k: string) => attributes.get(k), setAttribute:(k: string,v: unknown) => attributes.set(k,String(v)),
-            querySelector:() => span, focus:() => { document.activeElement = buttons.find(b => b.querySelector() === span); } };
-        });
-      }, get innerHTML() { return html; },
-      setAttribute:() => {}, replaceWith:() => {}, contains:(n: any) => buttons.includes(n),
-      querySelectorAll:(selector: string) => buttons.filter(b => selector === '[data-view]' ? 'view' in b.dataset : selector === '[data-day]' ? 'day' in b.dataset : true),
-      querySelector:() => buttons.find(b => !('day' in b.dataset)),
-    };
+// A small element model: innerHTML is parsed into tags so the selectors Now
+// uses (#id, .class, [attr], [attr="v"], tag) resolve against real markup.
+function dom(doc: any) {
+  const classes = (value = '') => {
+    const set = new Set(value.split(/\s+/).filter(Boolean));
+    return { toggle:(c: string, on?: boolean) => { if (on ?? !set.has(c)) set.add(c); else set.delete(c); }, add:(c: string) => set.add(c),
+      remove:(c: string) => set.delete(c), contains:(c: string) => set.has(c) };
   };
-  for (const id of ['hero-kicker', 'hero-title', 'hero-clock', 'home-acts', 'home-main', 'home-side', 'since', 'home-view-slot', 'home-day-slot', 'home-events-n', 'home-places-n']) elements.set(id, element());
+  const one = (n: any, sel: string) => Array.from(sel.matchAll(/([#.]?[\w-]+)|\[([\w-]+)(?:="([^"]*)")?\]/g)).every(([, simple, attr, value]) => {
+    if (attr) return value === undefined ? n.attrs.has(attr) : n.attrs.get(attr) === value;
+    if (simple.startsWith('#')) return n.attrs.get('id') === simple.slice(1);
+    if (simple.startsWith('.')) return n.classList.contains(simple.slice(1));
+    return n.tag === simple;
+  });
+  const matches = (n: any, sel: string) => sel.split(',').some(part => one(n, part.trim()));
+  const element = (tag = 'div', attrs = new Map<string, string>(), lenient = false): any => {
+    let html = '', nodes: any[] = [];
+    const self: any = { tag, attrs, textContent:'', isConnected:true, hidden:false, type:'', offsetWidth:100,
+      style:{ setProperty() {} }, classList:classes(attrs.get('class')),
+      get dataset() { return Object.fromEntries([...attrs].filter(([k]) => k.startsWith('data-')).map(([k, v]) => [k.slice(5).replace(/-(\w)/g, (_, c) => c.toUpperCase()), v])); },
+      set className(v: string) { attrs.set('class', v); self.classList = classes(v); }, get className() { return attrs.get('class') || ''; },
+      setAttribute:(k: string, v: unknown) => attrs.set(k, String(v)), getAttribute:(k: string) => attrs.get(k) ?? null,
+      addEventListener() {}, replaceWith() {}, focus() { doc.activeElement = self; },
+      getBoundingClientRect:() => ({ left:0, right:0, top:0, bottom:0, width:0, height:0 }),
+      set innerHTML(v: string) {
+        html = v;
+        nodes = Array.from(v.matchAll(/<([a-z][\w-]*)\b([^>]*)>/g), ([, t, a]) => element(t, new Map(Array.from(a.matchAll(/([\w-]+)(?:="([^"]*)")?/g), ([, k, val]) => [k, val ?? ''])), true));
+      },
+      get innerHTML() { return html; },
+      get lastElementChild() { return nodes[nodes.length - 1] || element(); },
+      querySelectorAll:(sel: string) => nodes.filter(n => matches(n, sel)),
+      querySelector:(sel: string) => nodes.find(n => matches(n, sel)) || (lenient && /^[a-z]+$/.test(sel) ? element() : null),
+      contains:(n: any) => n === self || nodes.includes(n),
+    };
+    return self;
+  };
+  return element;
+}
+
+// Load the real Now, date and taste modules; stub only layout, rows and the When key.
+function home(search = '', setup: (p: ReturnType<typeof page>) => void = () => {}) {
+  const p = page(new Map(), search);
+  let focus = '', written = '';
   const document = p.context.document;
+  const element = dom(document);
+  const elements = new Map<string, any>();
+  for (const id of ['hero-title', 'home-acts', 'home-moods', 'home-main', 'home-side', 'since', 'home-browse-slot']) elements.set(id, element());
+  const made: any[] = [];
   document.documentElement = { lang:'en' };
-  document.createElement = element;
+  document.createElement = (tag: string) => { const e = element(tag); made.push(e); return e; };
   document.getElementById = (id: string) => elements.get(id);
   document.querySelector = () => null;
-  document.querySelectorAll = (selector: string) => selector.includes('.wa-feed > li')
+  document.querySelectorAll = (selector: string) => selector.includes('wa-rows > li') || selector.includes('home-places > li')
     ? Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => ({ querySelector:() => ({ focus:() => { focus = m[1]; } }) })) : [];
   p.context.history.replaceState = (_: unknown, __: string, value: string) => {
     written = value;
@@ -83,32 +106,33 @@ function home(search = '') {
   p.context.matchMedia = () => ({ matches:false, addEventListener:() => {} });
   p.context.HTMLDialogElement = class {};
   p.context.setInterval = () => 0;
+  p.WA.Picto = Object.assign((name: string) => `<span class="wa-picto" data-picto="${name}"></span>`, { kind: () => '<svg></svg>' });
   p.WA.Geo.byDateThenSoonest = () => (a: any, b: any) => a.startsAt.localeCompare(b.startsAt) || a.id.localeCompare(b.id);
   p.WA.Geo.anchor = () => null;
   p.WA.Route = { plan:() => [], loadStored:() => {} };
   p.WA.StartFrom = { originMarkup:() => '' };
-  const glasses = new Map<string, any>();
-  p.WA.glassDrop = (bar: any, config: any) => { glasses.set(bar.className,{bar,config}); return { sync:() => {}, reset:() => {} }; };
-  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => '<button data-pick-dates><span>Pick dates</span></button>', openDates:() => { openedDates++; } };
-  p.WA.R.feedItem = (e: any) => `<li data-row="${e.id}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
-  p.WA.R.placeRow = (v: any) => `<li data-row="${v.id}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
+  runInContext(readFileSync(new URL('../../discovery-controls.js', import.meta.url), 'utf8'), p.context);
+  p.WA.R.row = (e: any, o: any = {}) => `<li data-row="${e.id}" data-started="${!!o.started}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
+  p.WA.R.placeRow = (v: any, o: any = {}) => `<li data-row="${v.id}" data-pick-label="${o.pickLabel}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
   const events = (n: number, date: string) => Array.from({ length:n }, (_, i) => ({ id:`${date}-${String(i).padStart(2,'0')}`,
     title:`Listing ${i}`, kind:'gig', startsAt:`${date}T15:00:00Z`, priceMin:i % 2 ? 15 : 0 }));
   p.WA.catalog = [...events(81, '2026-10-06'), ...events(37, '2026-10-07')];
   p.WA.venues = Array.from({ length:44 }, (_, i) => ({ id:`place-${i}`, name:`Place ${i}`, kind:'bookshop', picked:true }));
+  setup(p);
   runInContext(readFileSync(new URL('../../home.js', import.meta.url), 'utf8'), p.context);
   p.fire('wa:catalog-ready');
-  const click = (selector: string, dataset = {}) => p.fire('click', { target: { closest:(s: string) => s === selector ? { dataset } : null } });
-  const day = glasses.get('map-seg home-tabs');
-  return { ...p, click, day, openedDates:() => openedDates, url:() => written, focus:() => focus, html:() => elements.get('home-main').innerHTML,
-    rows:() => Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => m[1]) };
+  const click = (selector: string, dataset = {}) => p.fire('click', { target: { closest:(s: string) => s === selector ? { dataset, closest:() => null } : null } });
+  const html = () => elements.get('home-main').innerHTML;
+  return { ...p, click, url:() => written, focus:() => focus, html, elements,
+    browse:() => made.find(e => e.className === 'home-browse'), rail:() => made.find(e => e.className.includes('home-moods')),
+    heads:() => Array.from(html().matchAll(/wa-day__name">([^<]+)</g), (m: any) => m[1]),
+    rows:() => Array.from(html().matchAll(/<li data-row="([^"]+)"/g), (m: any) => m[1]) };
 }
 
 test('Now shows 25 matching events and expands until exhausted, retaining order and focusing the next batch', () => {
   const p = home();
   assert.equal(p.rows().length, 25);
   assert.match(p.html(), /Show 25 more/);
-  assert.doesNotMatch(p.html(), /See this selection/);
   const first = p.rows();
   p.click('[data-day-all]');
   assert.equal(p.rows().length, 50);
@@ -123,40 +147,61 @@ test('Now shows 25 matching events and expands until exhausted, retaining order 
   assert.equal(p.rows().length, 81);
   assert.equal(new Set(p.rows()).size, 81);
   assert.doesNotMatch(p.html(), /data-day-all/);
+  assert.deepEqual(p.heads(), ['Later today']); // 18:00 starts, read at 15:00
 });
 
-test('Now day slider commits the same date as a tap, retains its controls through redraws and resets expansion', () => {
-  const p = home('?shown=50&when=tonight'), buttons = p.day.bar.querySelectorAll('.map-seg__opt');
-  assert.equal(p.day.config.current(),0);
-  p.day.config.commit(1,buttons[1]);
-  assert.equal(p.WA.Discovery.dates().when,'tomorrow');
-  assert.equal(p.day.config.current(),1);
-  assert.equal(buttons[1].getAttribute('aria-pressed'),'true');
-  assert.equal(p.rows().length,25);
-  assert.doesNotMatch(p.url(),/shown=/);
-  p.click('[data-day]',{ day:'weekend' });
-  assert.equal(p.day.config.current(),2);
-  assert.equal(p.day.bar.querySelectorAll('.map-seg__opt')[1],buttons[1]);
-  p.WA.Discovery.setDates({when:'thisweek'});
-  assert.equal(buttons.length,4);
-  assert.equal(p.day.config.current(),3);
-  assert.equal(buttons[3].querySelector().textContent,'This week');
+test('tonight reads as a timeline: on now (latest first), soon, later until 05:00, then undated and called-off entries', () => {
+  const p = home('?when=tonight', (p) => {
+    p.clock('2026-10-06T20:30:00Z'); // Tue 23:30 in Tallinn
+    p.WA.Hours.cityNow = () => ({ minutes: 23 * 60 + 30 });
+    p.WA.catalog = [
+      { id:'gig-22', title:'Gig', kind:'gig', startsAt:'2026-10-06T19:00:00Z' },
+      { id:'club-23', title:'Club', kind:'club', startsAt:'2026-10-06T20:00:00Z' },
+      { id:'gig-0030', title:'Late gig', kind:'gig', startsAt:'2026-10-06T21:30:00Z' },
+      { id:'club-0230', title:'Late club', kind:'club', startsAt:'2026-10-06T23:30:00Z' },
+      { id:'wed-1900', title:'Tomorrow', kind:'gig', startsAt:'2026-10-07T16:00:00Z' },
+      { id:'show', title:'Show', kind:'exhibition', startsAt:'2026-10-05T21:00:00Z' },
+      { id:'off', title:'Off', kind:'gig', startsAt:'2026-10-06T21:15:00Z', flag:'cancelled' },
+    ];
+  });
+  assert.deepEqual(p.heads(), ['On now', 'Starting soon', 'Later tonight', 'Also today', 'Cancelled or postponed']);
+  assert.deepEqual(p.rows(), ['club-23', 'gig-22', 'gig-0030', 'club-0230', 'show', 'off']);
+  assert.match(p.html(), /data-row="club-23" data-started="true"/);
+  assert.match(p.html(), /data-row="gig-0030" data-started="false"/);
+  assert.equal(p.elements.get('hero-title').textContent, 'Still going');
 });
 
-test('sliding onto Pick dates and reopening a selected range are actions, not committed filter changes', () => {
-  const p = home('?shown=50&when=tonight'), calendar = p.day.bar.querySelectorAll('.map-seg__opt')[3];
-  p.day.config.commit(3,calendar);
-  assert.equal(p.openedDates(),1);
-  assert.equal(p.day.config.current(),0);
-  assert.equal(p.rows().length,50);
-  assert.match(p.url(),/shown=50/);
-  p.WA.Discovery.setDates({date:'2026-10-07',to:'2026-10-09'});
-  assert.equal(p.day.config.current(),3);
-  assert.equal(calendar.getAttribute('aria-pressed'),'true');
-  assert.equal(p.day.config.commitSame,true);
-  p.day.config.commit(3,calendar);
-  assert.equal(p.openedDates(),2);
-  assert.equal(p.WA.Discovery.dates().to,'2026-10-09');
+test('When changes regroup by night, reset expansion and keep one When key', () => {
+  const p = home('?shown=50&when=tonight');
+  assert.equal(p.rows().length, 50);
+  const key = p.browse().querySelector('.home-browse__end').querySelector('[data-when-open]');
+  assert.ok(key);
+  p.WA.Discovery.setDates({ when:'tomorrow' });
+  assert.equal(p.rows().length, 25);
+  assert.deepEqual(p.heads(), ['Tomorrow']);
+  assert.doesNotMatch(p.url(), /shown=/);
+  assert.equal(p.browse().querySelector('.home-browse__end').querySelector('[data-when-open]'), key);
+  assert.equal(key.classList.contains('is-set'), true);
+  p.click('[data-view]', { view:'places' });
+  assert.equal(p.browse().querySelector('.home-browse__end').innerHTML, '');
+});
+
+test('the mood rail picks one mood at a time, keeps price and that mood\'s own subs, and All clears', () => {
+  const p = home();
+  const pressed = () => p.rail().querySelectorAll('[data-mood-pick]').filter((b: any) => b.getAttribute('aria-pressed') === 'true').map((b: any) => b.dataset.moodPick);
+  assert.deepEqual(pressed(), ['']);
+  p.click('[data-mood-pick]', { moodPick:'listen' });
+  assert.deepEqual(JSON.parse(JSON.stringify(p.WA.Moods.pref())), { moods:['listen'], subs:[], cap:null });
+  assert.deepEqual(pressed(), ['listen']);
+  p.WA.Moods.setPref({ moods:['listen', 'browse'], subs:['jazz', 'books'], cap:20 });
+  assert.equal(p.rail().querySelector('[data-filter-open]').classList.contains('is-set'), true);
+  p.click('[data-mood-pick]', { moodPick:'listen' });
+  assert.deepEqual(JSON.parse(JSON.stringify(p.WA.Moods.pref())), { moods:['listen'], subs:['jazz'], cap:20 });
+  p.click('[data-mood-pick]', { moodPick:'listen' });
+  assert.deepEqual(JSON.parse(JSON.stringify(p.WA.Moods.pref())), { moods:[], subs:[], cap:20 });
+  p.WA.Moods.setPref({ moods:['browse'], subs:[], cap:null });
+  p.click('[data-mood-pick]', { moodPick:'' });
+  assert.deepEqual(p.WA.Moods.pref().moods.length, 0);
 });
 
 // Real shared date-sheet controller, with native dialog/form behavior stubbed.
@@ -253,7 +298,7 @@ test('Now restores expanded events on reload and cached Back navigation; new dat
   p.fire('pageshow', { persisted:true });
   assert.equal(p.rows().length, 50);
   assert.match(p.url(), /shown=50/);
-  p.click('[data-day]', { day:'tomorrow' });
+  p.WA.Discovery.setDates({ when:'tomorrow' }); p.WA.Discovery.writeURL();
   assert.equal(p.rows().length, 25);
   assert.match(p.url(), /when=tomorrow/);
   assert.match(p.url(), /#list$/);
@@ -266,9 +311,10 @@ test('Now restores expanded events on reload and cached Back navigation; new dat
   assert.doesNotMatch(p.html(), /data-day-all/);
 });
 
-test('Now places use the same batches and history contract; switching view resets expansion', () => {
+test('Now places use the same batches and history contract; switching view resets expansion; no repeated Picked label', () => {
   const p = home('?view=places&shown=50');
   assert.equal(p.rows().length, 44);
+  assert.match(p.html(), /data-pick-label="false"/);
   p.fire('pageshow', { persisted:true });
   assert.equal(p.rows().length, 44);
   p.click('[data-view]', { view:'events' });
@@ -368,16 +414,82 @@ test('bad calendar keys, reversed ranges, midnight expiry and blocked storage re
 test('date ranges include overlapping runs and overnight shows, with inclusive date-only ends and DST', () => {
   const p = page(), D = p.WA.Discovery;
   const single = { date:'2026-10-09' };
-  assert.equal(D.matchesDate({ startsAt:'2026-10-08T20:00:00Z', endsAt:'2026-10-08T23:30:00Z' }, single), true);
+  // 23:00–02:30 belongs to the night of the 8th, not to the 9th as well.
+  assert.equal(D.matchesDate({ startsAt:'2026-10-08T20:00:00Z', endsAt:'2026-10-08T23:30:00Z' }, single), false);
+  assert.equal(D.matchesDate({ startsAt:'2026-10-08T20:00:00Z', endsAt:'2026-10-08T23:30:00Z' }, { date:'2026-10-08' }), true);
   // 21:00Z is midnight in Tallinn before the clock change.
   assert.equal(D.matchesDate({ startsAt:'2026-10-08T18:00:00Z', endsAt:'2026-10-08T21:00:00Z' }, single), false);
-  assert.equal(D.matchesDate({ startsAt:'2026-10-01T00:00:00Z', endsAt:'2026-10-09T00:00:00Z' }, single), true);
+  // A date-only run (local midnights) includes its last day; a 03:00 end closes the night before.
+  assert.equal(D.matchesDate({ startsAt:'2026-09-30T21:00:00Z', endsAt:'2026-10-08T21:00:00Z' }, single), true);
+  assert.equal(D.matchesDate({ startsAt:'2026-10-01T00:00:00Z', endsAt:'2026-10-09T00:00:00Z' }, single), false);
   assert.equal(D.matchesDate({ startsAt:'2026-10-07T09:00:00Z', endsAt:'2026-10-12T09:00:00Z' }, { date:'2026-10-08', to:'2026-10-10' }), true);
   assert.equal(D.matchesDate({ startsAt:'2026-10-11T09:00:00Z' }, { date:'2026-10-08', to:'2026-10-10' }), false);
   p.clock('2026-10-24T20:00:00Z');
   assert.equal(Array.from(D.range({ when:'tomorrow' })).join(','), '2026-10-25,2026-10-25');
   assert.equal(D.matchesDate({ startsAt:'2026-10-25T21:30:00Z' }, { when:'tomorrow' }), true);
   assert.equal(D.matchesDate({ startsAt:'2026-10-25T22:00:00Z' }, { when:'tomorrow' }), false);
+});
+
+test('a night runs to 05:00: late starts belong to the evening before and Tomorrow means the coming evening', () => {
+  const p = page(), D = p.WA.Discovery, W = p.WA.when;
+  p.clock('2026-10-09T20:30:00Z'); // Fri 23:30 in Tallinn
+  const club = { startsAt:'2026-10-09T22:00:00Z', kind:'club' }; // Sat 01:00
+  assert.equal(W.nightKey(club), '2026-10-09');
+  assert.equal(D.matchesDate(club, { when:'tonight' }), true);
+  assert.equal(D.matchesDate(club, { when:'tomorrow' }), false);
+  assert.equal(D.matchesDate({ startsAt:'2026-10-10T03:00:00Z', kind:'market' }, { when:'tomorrow' }), true); // Sat 06:00 keeps its day
+  const allNight = { startsAt:'2026-10-09T20:00:00Z', endsAt:'2026-10-10T03:00:00Z', kind:'club' }; // Fri 23:00 – Sat 06:00
+  assert.equal(D.matchesDate(allNight, { date:'2026-10-09' }), true);
+  assert.equal(D.matchesDate(allNight, { date:'2026-10-10' }), false);
+  p.clock('2026-10-09T21:30:00Z'); // Sat 00:30, still Friday night
+  assert.equal(W.nightToday(), '2026-10-09');
+  assert.deepEqual([...D.range({ when:'tonight' })], ['2026-10-09', '2026-10-09']);
+  assert.deepEqual([...D.range({ when:'tomorrow' })], ['2026-10-10', '2026-10-10']);
+  assert.deepEqual([...D.range({ when:'weekend' })], ['2026-10-09', '2026-10-11']);
+  const party = { startsAt:'2026-10-09T20:00:00Z', kind:'club' }; // 23:00, no end listed
+  const gig = { startsAt:'2026-10-09T18:00:00Z', kind:'gig' };    // 21:00, no end listed
+  assert.equal(W.hasEnded(party), false);
+  assert.equal(W.hasEnded(gig), true);
+  assert.equal(D.matchesDate(party, { when:'tonight' }), true);
+  p.clock('2026-10-10T02:30:00Z'); // Sat 05:30: the new day has begun
+  assert.equal(W.nightToday(), '2026-10-10');
+});
+
+test('a stated midnight start is the evening before, a bare date keeps its day, and 01:00–04:00 is one night', () => {
+  const p = page(), D = p.WA.Discovery, W = p.WA.when;
+  p.clock('2026-10-09T20:30:00Z'); // Fri 23:30 in Tallinn
+  const midnight = { startsAt:'2026-10-09T21:00:00Z', time:'00:00', kind:'club' }; // Sat 00:00, stated
+  assert.equal(W.statedMinutes(midnight), 0);
+  assert.equal(D.matchesDate(midnight, { when:'tonight' }), true);
+  assert.equal(D.matchesDate(midnight, { when:'tomorrow' }), false);
+  const dateOnly = { startsAt:'2026-10-09T21:00:00Z', time:null, kind:'market' }; // Saturday, no time
+  assert.equal(W.statedMinutes(dateOnly), null);
+  assert.equal(D.matchesDate(dateOnly, { when:'tonight' }), false);
+  assert.equal(D.matchesDate(dateOnly, { when:'tomorrow' }), true);
+  const early = { startsAt:'2026-10-09T22:00:00Z', endsAt:'2026-10-10T01:00:00Z', kind:'club' }; // Sat 01:00–04:00
+  assert.equal(W.nightEndKey(early), '2026-10-09');
+  assert.equal(D.matchesDate(early, { date:'2026-10-09' }), true);
+  assert.equal(D.matchesDate(early, { date:'2026-10-10' }), false);
+});
+
+test('compact rows say Price not listed when asked, so a capped list keeps its caveat', () => {
+  const p = page();
+  assert.match(p.WA.R.row({ id:'gig', title:'Gig', kind:'gig' }, { unknownPrice:true }), /Price not listed/);
+  assert.doesNotMatch(p.WA.R.row({ id:'gig', title:'Gig', kind:'gig' }), /Price not listed/);
+  assert.match(p.WA.R.row({ id:'free', title:'Free', kind:'gig', isFree:true }, { unknownPrice:true }), /wa-free">Free/);
+});
+
+test('the When key names its preset, applies presets directly and marks a non-default choice', () => {
+  const p = page();
+  p.context.HTMLDialogElement = class {};
+  runInContext(readFileSync(new URL('../../discovery-controls.js', import.meta.url), 'utf8'), p.context);
+  p.WA.Icon = () => '';
+  assert.match(p.WA.DiscoveryControls.dateKey(), /data-when-open[^>]*>[^]*<span>Today<\/span>/);
+  assert.doesNotMatch(p.WA.DiscoveryControls.dateKey(), /is-set/);
+  p.fire('click', { target:{ closest:(s: string) => s === '[data-when-pick]' ? { dataset:{ whenPick:'weekend' } } : null } });
+  assert.equal(p.WA.Discovery.dates().when, 'weekend');
+  assert.match(p.url(), /when=weekend/);
+  assert.match(p.WA.DiscoveryControls.dateKey(), /is-set[^]*<span>Weekend<\/span>/);
 });
 
 test('ticket caps keep unknown prices explicitly, while mood and submood remain authoritative', () => {

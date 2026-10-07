@@ -58,28 +58,26 @@
   };
   const nearOn = () => near && !!window.WA.Geo.currentLoc();
   const pref = () => window.WA.Moods.pref();
+  /* Presets count nights (when.js): before 05:00, Today is still last
+     evening and Tomorrow is the coming evening. Picked dates stay as chosen. */
   const range = (s = dates()) => {
     if (s.date) return [s.date, s.to || s.date];
-    if (s.when === 'tomorrow') return [W().keyPlus(1), W().keyPlus(1)];
+    const day = W().nightPlus;
+    if (s.when === 'tomorrow') return [day(1), day(1)];
     if (s.when === 'weekend') {
-      const today = W().todayKey(), dow = new Date(`${today}T12:00:00Z`).getUTCDay();
+      const dow = new Date(`${day(0)}T12:00:00Z`).getUTCDay();
       const start = dow === 0 || dow === 6 ? 0 : 5 - dow;
-      return [W().keyPlus(start), W().keyPlus(dow === 0 ? 0 : start + (dow === 6 ? 1 : 2))];
+      return [day(start), day(dow === 0 ? 0 : start + (dow === 6 ? 1 : 2))];
     }
-    return [W().todayKey(), W().keyPlus(s.when === 'thisweek' ? 6 : 0)];
+    return [day(0), day(s.when === 'thisweek' ? 6 : 0)];
   };
-  /* Intersect calendar days, including a date-only run's inclusive final day.
-     A stated clock end is exclusive: a show ending at midnight isn't on next day. */
+  /* Intersect nights: a start before 05:00 belongs to the evening before, a
+     date-only run includes its final day and a stated end is exclusive. */
   const matchesDate = (e, s = dates()) => {
-    const [from, to] = range(s), start = W().resolveKey(e);
+    const [from, to] = range(s), start = W().nightKey(e);
     if (!start || start > to) return false;
-    let end = start;
-    if (e.endsAt && !isNaN(Date.parse(e.endsAt))) {
-      const t = Date.parse(e.endsAt);
-      const midnight = W().dayKey(new Date(t)) !== W().dayKey(new Date(t - 1));
-      end = W().dayKey(new Date(midnight && W().statedMinutes(e) == null ? t : t - 1));
-    }
-    return end >= from;
+    const last = W().nightEndKey(e);
+    return (last && last > start ? last : start) >= from;
   };
   const matchesEvent = (e, p = pref()) => window.WA.Moods.wantsEvent(p, e)
     && (p.cap == null || window.WA.R.isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);

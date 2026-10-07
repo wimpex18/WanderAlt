@@ -20,6 +20,7 @@
      .wantsEvent(p,e) / .wantsPlace(p,v)         a choice: any chosen mood, narrowed by its chosen subs
      .pref()             → { moods: [], subs: [], cap }   (no moods = anything, cap null = any price)
      .setPref(p)         → saves, then fires 'wa:mood-changed'
+     .pick(id)           → one mood alone (a row tap); the same again, or '', clears
      .summary()          → "Records, Jazz · up to €20", "Any mood · any price"
      .CAPS               → the price limits offered, [0, 20]
    ============================================================ */
@@ -162,6 +163,13 @@
     try { saved = clean(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (_) { return; }
     document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: { ...pref(), restore:true } }));
   });
+  /* One tap on a mood row: that mood alone, keeping its own subs and the price;
+     the same mood again (or none) means all. */
+  const pick = (id) => {
+    const p = read(), d = id ? get(id) : null;
+    const only = !!d && !(p.moods.length === 1 && p.moods[0] === id);
+    setPref({ moods: only ? [id] : [], subs: only ? p.subs.filter(s => d.subs.some(x => x.id === s)) : [], cap: p.cap });
+  };
   const capText = (c) => (c == null ? 'any price' : c === 0 ? 'free' : `up to €${c}`);
   /* The words for a choice: the narrower picks where there are any, the moods otherwise. */
   const words = (p) => {
@@ -179,5 +187,5 @@
     return `${what} · ${capText(p.cap)}`;
   };
 
-  window.WA.Moods = { available, get, matchesEvent, matchesPlace, wantsEvent, wantsPlace, pref, setPref, summary, capText, words, CAPS };
+  window.WA.Moods = { available, get, matchesEvent, matchesPlace, wantsEvent, wantsPlace, pref, setPref, pick, summary, capText, words, CAPS };
 })();
