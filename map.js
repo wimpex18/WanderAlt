@@ -95,7 +95,9 @@
       $('map-filters').innerHTML = `<div class="map-search-context"><span${searchContext.state.q ? ' data-notranslate' : ''}>${esc(searchContext.state.q || 'All events')}</span>${searchCriteria()}${count ? `<span>${count} without a map location</span>` : ''}<a href="map.html">Clear search</a></div>`;
     } else {
       $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
-      $('map-filters').innerHTML = window.WA.DiscoveryControls.keys();
+      $('map-filters').setAttribute('role', 'group');
+      $('map-filters').setAttribute('aria-label', 'Mood');
+      window.WA.DiscoveryControls.moodRow($('map-filters'), { pill: true, near: true });
     }
     document.querySelector('.map-page > h1').textContent = 'Map of Tallinn';
     if (seg) seg.sync();
@@ -308,7 +310,7 @@
 
     let html = '';
     const dated = searchContext ? !!searchContext.state.day || searchContext.state.when !== 'tonight' : !!D().dates().date || D().dates().when !== 'tonight';
-    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day:dated, noThumb:true })).join('')}</ul>`;
+    if (evs.length) html += `<p class="map-drawer__label">Events</p><ul class="wa-rows">${evs.slice(0, 30).map(e => R().row(e, { day:dated, noThumb:true, unknownPrice:true, started:false })).join('')}</ul>`;
     if (pls.length) html += `<p class="map-drawer__label">Places</p><ul>${pls.slice(0, 30).map(v => R().placeRow(v)).join('')}</ul>`;
     if (!evs.length && !pls.length) {
       html += `<p class="map-legend-note"><span>Zoom out or move the map.</span> <span>${events.length} listings on this map</span> · ${esc(whenWord)}${on.events ? '' : ' · <span>Events layer off</span>'}</p>

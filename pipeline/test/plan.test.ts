@@ -198,3 +198,26 @@ test('after midnight a walk never sends you to a shop, and an unfiled place wait
   const cinema = [place('kino', 'cinema', 59.4362, 24.7448, { openingHours: null }), place('books', 'bookshop', 59.4364, 24.7450)];
   for (const r of plain(world(14 * 60, [], cinema, (p) => (p.openingHours ? 'open' : 'unknown')).Route.plan({}))) assert.ok(!r.stops.some((s: any) => s.id === 'kino'), 'a cinema with no hours is no stop on its own');
 });
+
+test('a walk never spends its visit at a place that shuts soon after you arrive', () => {
+  // 22:00. The bar shuts at 22:20: open on arrival at 22:10, shut long before the visit ends.
+  const places = [place('early', 'bar', 59.4370, 24.7450), place('taps', 'taproom', 59.4374, 24.7460), place('late', 'bar', 59.4378, 24.7470)];
+  const w = world(22 * 60, [], places, (p, minute) => (p.id === 'early' ? (minute < 22 * 60 + 20 ? 'open' : 'shut') : 'open'));
+  const plans = plain(w.Route.plan({}));
+  assert.ok(plans.length >= 1, 'the two late places still make a walk');
+  for (const r of plans) assert.ok(!r.stops.some((s: any) => s.id === 'early'), `no stop at the early bar: ${r.title}`);
+  // After this: a neighbour that shuts within twenty minutes of your arrival is not offered.
+  const next = plain(w.Route.nextFrom(places[1], { limit: 3, max: 10 })).map((r: any) => r.v.id);
+  assert.ok(!next.includes('early'));
+  assert.ok(next.includes('late'));
+});
+
+test('a walk from here skips a next stop that closes during the visit', () => {
+  const home = place('home', 'taproom', 59.4343, 24.7442);
+  const places = [home, place('closing', 'bar', 59.4350, 24.7445), place('open', 'bar', 59.4356, 24.7450)];
+  // 21:40: home's visit ends 22:25; the first bar shuts at 22:45, so a 40-minute visit from ~22:30 would not fit.
+  const w = world(21 * 60 + 40, [], places, (p, minute) => (p.id === 'closing' ? (minute < 22 * 60 + 45 ? 'open' : 'shut') : 'open'));
+  const route = plain(w.Route.fromHere(home));
+  assert.ok(route, 'a route from here still exists');
+  assert.deepEqual(route.stops.map((s: any) => s.id).slice(0, 2), ['home', 'open']);
+});

@@ -276,7 +276,8 @@
   /* ── The event row ───────────────────────────────────────────
      opts.day: the list is not grouped by day, so the rail names it.
      opts.noThumb: skip the picture column.
-     opts.drop: an id for a remove key (Saved). */
+     opts.drop: an id for a remove key (Saved).
+     opts.unknownPrice: say "Price not listed" (a ticket cap keeps such rows). */
   /* A run that began before today and has not ended (an exhibition, a festival pass) is still on: its
      first and last day, else null. It is filed under today, not under the day it started,
      and its rail says from when to when. */
@@ -348,7 +349,7 @@
     const meta = [
       latin(e.venue) ? `<span data-notranslate>${esc(latin(e.venue))}</span>` : '',
       r.areaInRail || !areaOf(e) ? '' : `<span data-notranslate>${esc(areaOf(e))}</span>`,
-      isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || ''),
+      isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || (opts.unknownPrice ? 'Price not listed' : '')),
       r.live && endsAt ? esc(`till ${endsAt}`) : '',
     ].filter(Boolean).join(' · ');
     const fresh = opts.since && isNewSince(e, opts.since);

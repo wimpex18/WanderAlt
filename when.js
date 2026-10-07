@@ -178,7 +178,11 @@
     if (!e) return null;
     const m = window.WA.Geo && window.WA.Geo.startMinutes
       ? window.WA.Geo.startMinutes(e) : null;
-    if (m == null || m === 0) return null;
+    if (m == null) return null;
+    /* The picks view sends time as HH:MM only when the source stated one, so
+       then even 00:00 is a real start (a club night at midnight). */
+    if (/^\d{1,2}[:.]\d{2}$/.test(String(e.time || '').trim())) return m;
+    if (m === 0) return null;
     if (e.startsAt) {
       const d = new Date(e.startsAt);
       if (!isNaN(d) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return null;
@@ -227,8 +231,10 @@
     if (isNaN(t)) return null;
     const midnight = dayKey(new Date(t)) !== dayKey(new Date(t - 1));
     if (midnight && statedMinutes(e) == null) return dayKey(new Date(t));
-    const last = new Date(t - 1), key = dayKey(last), start = resolveKey(e);
-    return start && key > start && minutesOf(last) < 12 * 60 ? keyStep(key, -1) : key;
+    /* Compared with the start's own night: 01:00–04:00 is one night, not two. */
+    const last = new Date(t - 1), key = dayKey(last), start = nightKey(e);
+    const end = minutesOf(last) < 12 * 60 ? keyStep(key, -1) : key;
+    return start && end < start ? start : end;
   };
 
   /* ── Is it over? ─────────────────────────────────────────────

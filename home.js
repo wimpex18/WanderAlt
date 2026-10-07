@@ -35,46 +35,12 @@
     $('home-acts').innerHTML = `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`;
   };
 
-  /* ── Mood rail: one tap for one mood; Filters holds several, subs and price ── */
+  /* ── Mood rail: shared with Map (DiscoveryControls.moodRow) ── */
   const rail = document.createElement('div');
   rail.className = 'home-moods wa-chips--scroll';
   rail.setAttribute('role', 'group');
   rail.setAttribute('aria-label', 'Mood');
-  let railKey = '';
-  const moodsShown = () => {
-    const p = pref(), now = M().available();
-    const extra = M().available({ allHours: true }).filter(m => p.moods.includes(m.id) && !now.some(x => x.id === m.id));
-    return [...now, ...extra];
-  };
-  const filterWord = (p) => p.cap == null ? 'Filters' : p.cap === 0 ? 'Free' : `Up to €${p.cap}`;
-  const syncRail = () => {
-    const p = pref(), moods = moodsShown(), key = moods.map(m => m.id).join();
-    if (key !== railKey) {
-      railKey = key;
-      rail.innerHTML = `<button class="home-mood" type="button" data-mood-pick="">${window.WA.Picto('tallinn')}<span>All</span></button>`
-        + moods.map(m => `<button class="home-mood" type="button" data-mood-pick="${esc(m.id)}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')
-        + `<button class="home-mood home-mood--more" type="button" data-filter-open aria-haspopup="dialog"><span class="home-mood__icon">${I('filter')}</span><span></span></button>`;
-    }
-    rail.querySelectorAll('[data-mood-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.moodPick ? p.moods.includes(b.dataset.moodPick) : !p.moods.length)));
-    const more = rail.querySelector('[data-filter-open]');
-    const narrowed = p.cap != null || p.subs.length > 0 || p.moods.length > 1;
-    more.classList.toggle('is-set', narrowed);
-    more.lastElementChild.textContent = filterWord(p);
-    more.setAttribute('aria-label', narrowed ? `More filters · ${M().summary()}` : 'More filters');
-    /* A mood chosen elsewhere (the folded panel, the sheet) slides into view. */
-    const on = rail.querySelector('[data-mood-pick][aria-pressed="true"]');
-    if (on && rail.isConnected) {
-      const box = rail.getBoundingClientRect(), b = on.getBoundingClientRect();
-      if (b.left < box.left || b.right > box.right) rail.scrollBy({ left: b.left - box.left - 24, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    }
-    if (window.WA.UI.edges) window.WA.UI.edges();
-  };
-  const pickMood = (id) => {
-    const p = pref();
-    const only = id && !(p.moods.length === 1 && p.moods[0] === id);
-    const keep = only ? M().get(id).subs.map(s => s.id).filter(s => p.subs.includes(s)) : [];
-    M().setPref({ moods: only ? [id] : [], subs: keep, cap: p.cap });
-  };
+  const C = () => window.WA.DiscoveryControls;
 
   /* ── A walk for now: the plan itself, not a label for it ── */
   let plans = [], planIdx = 0, planKey = '';
@@ -99,6 +65,7 @@
         ${plans.length > 1 ? `<button class="wa-iconbtn home-walk__again" type="button" data-another aria-label="Another walk">${I('refresh')}</button>` : ''}</div>
       <a class="home-walk__main" href="${esc(Rt.href(route))}">
         <span class="home-walk__title" id="home-walk-title">${esc(route.title || 'Two or three stops on foot')}</span>
+        <span class="home-walk__discs" aria-hidden="true">${route.stops.slice(0, 3).map(s => window.WA.Picto.kind(s.kind)).join('')}</span>
         <span class="home-walk__stops"><time>${esc(window.WA.Hours.clock(first.minute % 1440))}</time>${route.stops.map(s => `<span data-notranslate>${esc(s.name)}</span>`).join(`<span class="home-walk__to" aria-hidden="true">${I('arrow')}</span>`)}</span>
       </a></section>`;
   };
@@ -170,7 +137,7 @@
     const html = groups(list, date).map(g => {
       if (budget <= 0) return '';
       const items = g.items.slice(0, budget); budget -= items.length;
-      return `${head(g)}<ul class="wa-rows home-rows">${items.map(e => R().row(e, { since: visit.prev, heart: true, started: g.id === 'live' })).join('')}</ul>`;
+      return `${head(g)}<ul class="wa-rows home-rows">${items.map(e => R().row(e, { since: visit.prev, heart: true, started: g.id === 'live', unknownPrice: true })).join('')}</ul>`;
     }).join('');
     return `${nearOn() ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}${html}${more(list.length)}
       <p class="home-day__all-link"><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></p>`;
@@ -243,9 +210,9 @@
     panel.className = 'home-quick';
     panel.setAttribute('aria-label', 'Filters');
     const p = pref(), s = D().dates();
-    panel.innerHTML = `<div class="home-quick__moods" role="group" aria-label="Mood">${[{ id: '', label: 'All', picto: 'tallinn' }, ...moodsShown()].map(m => `<button class="home-mood" type="button" data-mood-pick="${esc(m.id)}" aria-pressed="${m.id ? p.moods.includes(m.id) : !p.moods.length}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')}</div>
+    panel.innerHTML = `<div class="home-quick__moods" role="group" aria-label="Mood">${[{ id: '', label: 'All', picto: 'tallinn' }, ...C().moods()].map(m => `<button class="home-mood" type="button" data-mood-pick="${esc(m.id)}" aria-pressed="${m.id ? p.moods.includes(m.id) : !p.moods.length}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')}</div>
       ${view === 'events' ? `<div class="home-quick__when" role="group" aria-label="When">${[['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']].map(([w, l]) => `<button class="wa-chip" type="button" data-when-pick="${w}" aria-pressed="${!s.date && s.when === w}">${esc(l)}</button>`).join('')}</div>` : ''}
-      <div class="home-quick__foot"><button class="wa-chip" type="button" data-near aria-pressed="${nearOn()}">${I('locate')}<span>${esc(G().anchor() ? G().anchor().label : nearOn() ? 'Near you' : 'Near me')}</span></button><button class="wa-chip" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${esc(filterWord(p))}</span></button></div>`;
+      <div class="home-quick__foot"><button class="wa-chip" type="button" data-near aria-pressed="${nearOn()}">${I('locate')}<span>${esc(G().anchor() ? G().anchor().label : nearOn() ? 'Near you' : 'Near me')}</span></button><button class="wa-chip" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${esc(C().filterWord(p))}</span></button></div>`;
     return panel;
   };
   fold.addEventListener('click', () => {
@@ -268,7 +235,7 @@
     writeShown();
     const all = R().live();
     hero(all);
-    syncRail();
+    C().moodRow(rail);
     readPlans();
     const date = D().dates(), p = pref();
     const list = all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, p));
@@ -324,8 +291,6 @@
 
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
-    const mood = hit('[data-mood-pick]');
-    if (mood) { if (mood.closest('.home-quick')) window.WA.UI.genie.close(true); pickMood(mood.dataset.moodPick); return; }
     const vw = hit('[data-view]');
     if (vw) { setView(vw.dataset.view); return; }
     if (hit('[data-day-all]')) {
@@ -386,5 +351,5 @@
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', skeleton, { once: true });
   else skeleton();
-  document.addEventListener('wa:language-changed', () => { railKey = ''; if (window.WA.catalog) render(); });
+  document.addEventListener('wa:language-changed', () => { if (window.WA.catalog) render(); });
 })();

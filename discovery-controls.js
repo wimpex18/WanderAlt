@@ -1,4 +1,5 @@
-/* Shared mood/price and date sheets. Drafts apply only on submit. */
+/* Shared discovery controls for Now and Map: the mood row, the When key and its
+   panel, and the mood/price and date sheets. Sheet drafts apply only on submit. */
 (() => {
   'use strict';
   const D = () => window.WA.Discovery, M = () => window.WA.Moods;
@@ -12,6 +13,47 @@
     return `<button class="wa-chip home-mood__key${set ? ' is-set' : ''}" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${summary}</span></button>
       <button class="wa-chip discovery-near" type="button" data-discovery-near aria-pressed="${D().nearOn()}" aria-haspopup="dialog">${I('locate')}<span${anchor ? ' data-notranslate' : ''}>${esc(anchor ? anchor.label : 'Near me')}</span></button>`;
   };
+  /* A row of moods for this hour, plus any chosen at another hour. One tap picks
+     one mood (Moods.pick); Filters holds several, their subs and the ticket cap.
+     The row is kept and only re-marked, so its sideways scroll survives redraws.
+     opts.pill draws Map's glass pills; opts.near ends the row with Near me. */
+  const shownMoods = () => {
+    const p = D().pref(), now = M().available();
+    return [...now, ...M().available({ allHours: true }).filter(m => p.moods.includes(m.id) && !now.some(x => x.id === m.id))];
+  };
+  const filterWord = (p) => p.cap == null ? 'Filters' : p.cap === 0 ? 'Free' : `Up to €${p.cap}`;
+  const rows = new WeakMap();
+  const moodRow = (host, opts = {}) => {
+    const p = D().pref(), moods = shownMoods(), key = moods.map(m => m.id).join();
+    const cls = opts.pill ? 'wa-chip map-mood' : 'home-mood';
+    if (rows.get(host) !== key) {
+      rows.set(host, key);
+      host.innerHTML = `<button class="${cls}" type="button" data-mood-pick="">${window.WA.Picto('tallinn')}<span>All</span></button>`
+        + moods.map(m => `<button class="${cls}" type="button" data-mood-pick="${esc(m.id)}">${window.WA.Picto(m.picto)}<span>${esc(m.label)}</span></button>`).join('')
+        + `<button class="${cls} ${opts.pill ? 'map-mood--more' : 'home-mood--more'}" type="button" data-filter-open aria-haspopup="dialog">${opts.pill ? I('filter') : `<span class="home-mood__icon">${I('filter')}</span>`}<span></span></button>`
+        + (opts.near ? `<button class="${cls} discovery-near" type="button" data-discovery-near aria-haspopup="dialog">${I('locate')}<span></span></button>` : '');
+    }
+    host.querySelectorAll('[data-mood-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.moodPick ? p.moods.includes(b.dataset.moodPick) : !p.moods.length)));
+    const more = host.querySelector('[data-filter-open]'), narrowed = p.cap != null || p.subs.length > 0 || p.moods.length > 1;
+    more.classList.toggle('is-set', narrowed);
+    more.lastElementChild.textContent = filterWord(p);
+    more.setAttribute('aria-label', narrowed ? `More filters · ${M().summary()}` : 'More filters');
+    const near = host.querySelector('[data-discovery-near]');
+    if (near) {
+      const a = window.WA.Geo.anchor();
+      near.setAttribute('aria-pressed', String(D().nearOn()));
+      near.lastElementChild.textContent = a ? a.label : 'Near me';
+      if (a) near.lastElementChild.setAttribute('data-notranslate', ''); else near.lastElementChild.removeAttribute?.('data-notranslate');
+    }
+    /* A mood chosen elsewhere (a panel, the sheet) slides into view. */
+    const on = host.querySelector('[data-mood-pick][aria-pressed="true"]');
+    if (on && host.isConnected && host.scrollBy) {
+      const box = host.getBoundingClientRect(), b = on.getBoundingClientRect();
+      if (b.left < box.left || b.right > box.right) host.scrollBy({ left: b.left - box.left - 24, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+    if (window.WA.UI.edges) window.WA.UI.edges();
+  };
+
   /* When: one key that pours out Today, Tomorrow, Weekend and Pick dates.
      Each preset names the nights it covers; Pick dates opens the date sheet. */
   const WHEN = [['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']];
@@ -70,6 +112,11 @@
   };
   document.addEventListener('click', e => {
     const hit = s => e.target.closest && e.target.closest(s);
+    if (hit('[data-mood-pick]')) {
+      if (hit('.wa-genie')) window.WA.UI.genie.close(true);
+      M().pick(hit('[data-mood-pick]').dataset.moodPick);
+      return;
+    }
     if (hit('[data-filter-open]')) { window.WA.UI.genie.close(false); openMood(hit('[data-filter-open]')); return; }
     if (hit('[data-pick-dates]')) { openDates(hit('[data-pick-dates]')); return; }
     if (hit('[data-when-open]')) {
@@ -130,5 +177,5 @@
     }
     close(true);
   });
-  window.WA.DiscoveryControls = { keys, dateKey, openDates };
+  window.WA.DiscoveryControls = { keys, dateKey, openDates, moodRow, moods: shownMoods, filterWord };
 })();

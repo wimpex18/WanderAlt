@@ -111,7 +111,7 @@ function home(search = '', setup: (p: ReturnType<typeof page>) => void = () => {
   p.WA.Geo.anchor = () => null;
   p.WA.Route = { plan:() => [], loadStored:() => {} };
   p.WA.StartFrom = { originMarkup:() => '' };
-  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => `<button class="home-when" data-when-open><span>${p.WA.Discovery.label()}</span></button>`, openDates:() => {} };
+  runInContext(readFileSync(new URL('../../discovery-controls.js', import.meta.url), 'utf8'), p.context);
   p.WA.R.row = (e: any, o: any = {}) => `<li data-row="${e.id}" data-started="${!!o.started}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
   p.WA.R.placeRow = (v: any, o: any = {}) => `<li data-row="${v.id}" data-pick-label="${o.pickLabel}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
   const events = (n: number, date: string) => Array.from({ length:n }, (_, i) => ({ id:`${date}-${String(i).padStart(2,'0')}`,
@@ -453,6 +453,30 @@ test('a night runs to 05:00: late starts belong to the evening before and Tomorr
   assert.equal(D.matchesDate(party, { when:'tonight' }), true);
   p.clock('2026-10-10T02:30:00Z'); // Sat 05:30: the new day has begun
   assert.equal(W.nightToday(), '2026-10-10');
+});
+
+test('a stated midnight start is the evening before, a bare date keeps its day, and 01:00–04:00 is one night', () => {
+  const p = page(), D = p.WA.Discovery, W = p.WA.when;
+  p.clock('2026-10-09T20:30:00Z'); // Fri 23:30 in Tallinn
+  const midnight = { startsAt:'2026-10-09T21:00:00Z', time:'00:00', kind:'club' }; // Sat 00:00, stated
+  assert.equal(W.statedMinutes(midnight), 0);
+  assert.equal(D.matchesDate(midnight, { when:'tonight' }), true);
+  assert.equal(D.matchesDate(midnight, { when:'tomorrow' }), false);
+  const dateOnly = { startsAt:'2026-10-09T21:00:00Z', time:null, kind:'market' }; // Saturday, no time
+  assert.equal(W.statedMinutes(dateOnly), null);
+  assert.equal(D.matchesDate(dateOnly, { when:'tonight' }), false);
+  assert.equal(D.matchesDate(dateOnly, { when:'tomorrow' }), true);
+  const early = { startsAt:'2026-10-09T22:00:00Z', endsAt:'2026-10-10T01:00:00Z', kind:'club' }; // Sat 01:00–04:00
+  assert.equal(W.nightEndKey(early), '2026-10-09');
+  assert.equal(D.matchesDate(early, { date:'2026-10-09' }), true);
+  assert.equal(D.matchesDate(early, { date:'2026-10-10' }), false);
+});
+
+test('compact rows say Price not listed when asked, so a capped list keeps its caveat', () => {
+  const p = page();
+  assert.match(p.WA.R.row({ id:'gig', title:'Gig', kind:'gig' }, { unknownPrice:true }), /Price not listed/);
+  assert.doesNotMatch(p.WA.R.row({ id:'gig', title:'Gig', kind:'gig' }), /Price not listed/);
+  assert.match(p.WA.R.row({ id:'free', title:'Free', kind:'gig', isFree:true }, { unknownPrice:true }), /wa-free">Free/);
 });
 
 test('the When key names its preset, applies presets directly and marks a non-default choice', () => {
