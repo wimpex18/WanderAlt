@@ -2,6 +2,8 @@
 
 Plain HTML pages at the repo root, one `.js` renderer each, one stylesheet (`wa.css`). No framework and no build step. The direction, what users said and what is open are in `docs/design-brief.md`.
 
+The current search/navigation audit and a proposed simplification are in [search-navigation-research.md](search-navigation-research.md). The proposal has not changed the page structure described below.
+
 ## Pages
 
 | Page | Script | What it is |

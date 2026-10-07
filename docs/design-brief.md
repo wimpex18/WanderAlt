@@ -56,6 +56,7 @@ The mini uses the same system adapted to its current window: bounded content and
 
 ## Open questions
 
+- Search and the full programme: the header magnifier and Now's field both open Programme, which overlaps Now and keeps its tab selected. The [7 October research](search-navigation-research.md) proposes one adaptive search entry and a clearly labelled All events destination under Now. It compares a compact mobile entry with one visible field; no interface change has shipped and participant validation remains open.
 - Easy alone is live from a rule (`pipeline/easy.ts`), not from organisers: nobody has confirmed any listing with its organiser. Who does, and does a confirmed one get a stronger mark than "our reading"?
 - Craft beer picks are ours from each place's own page; someone who knows the scene should confirm or change them, and say whether board-game cafés belong.
 - Daytime places: three museums are picked (Kumu, Kiek in de Kök, the Architecture Museum). 20 more are held and unpicked; the Applied Art and Design Museum has no coordinates; the Museum of Photography, the City Life Museum and Kiek in de Kök each exist twice under English and Estonian names. Food and drink venues (cafés, restaurants) are out of scope: tallinntastebuds.ee covers them; craft beer bars are in because they are a culture stop.
