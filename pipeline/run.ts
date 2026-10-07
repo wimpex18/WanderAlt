@@ -191,7 +191,7 @@ async function main() {
         log(`lane ${l.name} (${l.model}) answered: ${answer.slice(0, 60)}`);
       } catch (e) { log(`lane ${l.name} (${l.model}) failed: ${(e as Error).message}`); }
     }
-    if (!models.available.length) log('no model lane has a key; see docs/models.md');
+    if (!models.available.length) log('no model lane has a key; see README.md');
     return;
   }
 
@@ -206,7 +206,7 @@ async function main() {
     return;
   }
 
-  // A look at what Facebook gives this token, step by step, nothing written (docs/facebook.md).
+  // A look at what Facebook gives this token, step by step, nothing written (README.md).
   if (flag('--facebook-check')) {
     const cfg = instagramConfig();
     if (!cfg) { log('facebook: INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ID is not set'); return; }
@@ -221,7 +221,8 @@ async function main() {
   // Estonian and Russian copy (localize.ts): its own few calls, after English, from what is left.
   const local = localModels(DRY || flag('--no-local') ? 0 : Number(opt('--local-calls') ?? 8));
   local.neuronBudget = runCap;
-  current.calls = () => models.calls + sorter.calls + english.calls + local.calls;
+  const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4, runCap);
+  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -234,7 +235,7 @@ async function main() {
         .reduce((a, r) => a + Number(r.neurons || 0), 0);
       const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
       const left = Math.max(0, daily - spent);
-      for (const m of [models, sorter, english, local]) m.neuronBudget = Math.min(m.neuronBudget, left);
+      for (const m of [models, sorter, english, local, routesModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
       current.db = db; current.runId = runId;
@@ -692,7 +693,7 @@ async function main() {
   // Evenings for the next few days. The model reads a short brief per day; with no model the same routes are titled by rule.
   if (!flag('--no-routes')) {
     try {
-      const rows = await composeRoutes(db, CITY, new Models(undefined, 4, runCap), {});
+      const rows = await composeRoutes(db, CITY, routesModels, {});
       if (rows.length) log(`routes: ${rows.length} evenings for the next few days`);
     } catch (e) { log(`routes failed: ${(e as Error).message}`); }
   }
@@ -704,10 +705,10 @@ async function main() {
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${models.calls + sorter.calls + english.calls + local.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
-      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: models.calls + sorter.calls + english.calls,
+      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(),
       events_new: fresh.length, events_seen: existing.size, ok: !Object.values(health).some(h => !h.ok),
     });
   }

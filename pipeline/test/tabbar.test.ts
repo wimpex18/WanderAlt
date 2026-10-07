@@ -139,3 +139,27 @@ test('a cancelled touch slide does not swallow the next quick tap', () => {
   p.items[1].fire('click',{preventDefault:()=>{prevented=true;},stopPropagation(){}});
   assert.equal(prevented,false); assert.equal(p.commits.length,0);
 });
+
+test('releasing on the highlighted Now tab opens its parent from a child destination', () => {
+  for (const ariaCurrent of ['location', 'page']) {
+    const bar = new Node(); bar.offsetWidth = bar.clientWidth = 412;
+    const items = Array.from({ length:4 }, (_, i) => Object.assign(new Node(), {
+      offsetLeft:5 + i * 102, href:`https://wanderalt.app/${i ? 'map' : 'index'}.html`,
+      getAttribute:(name: string) => name === 'aria-current' && i === 0 ? ariaCurrent : null,
+    }));
+    Object.assign(bar, { querySelectorAll:() => items });
+    const timers = new Map<number, { fn:Function; delay:number }>(); let next = 0;
+    const location = { href:'https://wanderalt.app/discover.html' };
+    const context = createContext({ window:{ WA:{} }, location,
+      document:{ createElement:() => new Node(), querySelector:(s: string) => s === '.wa-tabbar' ? bar : null, addEventListener() {} },
+      matchMedia:() => ({ matches:true }), navigator:{}, localStorage:{ getItem:() => null },
+      addEventListener() {}, requestAnimationFrame:(fn: Function) => fn(), setInterval:() => 0,
+      setTimeout:(fn: Function, delay: number) => { timers.set(++next, { fn, delay }); return next; },
+      clearTimeout:(id: number) => timers.delete(id) });
+    runInContext(readFileSync(new URL('../../tabbar.js', import.meta.url), 'utf8'), context);
+    bar.fire('pointerdown');
+    for (const [id, timer] of timers) if (timer.delay === 140) { timers.delete(id); timer.fn(); }
+    bar.fire('pointerup');
+    assert.equal(location.href, ariaCurrent === 'location' ? 'https://wanderalt.app/index.html' : 'https://wanderalt.app/discover.html');
+  }
+});

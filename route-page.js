@@ -86,7 +86,7 @@
     $('rt-title').textContent = shared ? 'This walk is no longer available' : 'No route right now';
     $('rt-sub').textContent = '';
     $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: shared ? 'Choose a walk for today.' : 'Nothing fits together right now.',
-      body: shared ? 'Its date or stops have changed. Now has walks for the next few hours.' : 'A route needs a listing with a start time and a picked place close to it. The Guide has the places; Tonight has the listings.',
+      body: shared ? 'Its date or stops have changed. Now has walks for the next few hours.' : 'Try a different time or starting point, or browse the picked places in the Guide.',
       actions: [{ href: 'index.html', label: 'Now' }, { href: 'places.html', label: 'Guide' }] });
   };
 

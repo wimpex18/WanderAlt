@@ -3,7 +3,7 @@
 // also uses), the fallback OpenRouter's :free models. A lane without its key
 // is skipped, and a lane that fails twice in a run is skipped for the rest
 // of that run. With no lane at all, structured sources still flow and prose
-// sources wait in raw_items. See docs/models.md.
+// sources wait in raw_items. See README.md.
 //
 // Model ids disappear without notice: `npm run pipeline:models` probes each
 // pin against the provider.

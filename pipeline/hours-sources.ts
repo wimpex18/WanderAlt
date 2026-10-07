@@ -3,7 +3,7 @@
 //   2. the venue's own site: structured data (siteHours), then hours written out as text on its
 //      homepage or on up to two of its contact or visit pages (textHours)
 //   3. its Facebook Page, through the Graph API, which also fills a missing website and description
-//      (lookupFacebookPage; needs Page Public Metadata Access, docs/facebook.md)
+//      (lookupFacebookPage; needs Page Public Metadata Access, README.md)
 //   4. its Instagram bio, through business_discovery, when a line states days and times (bioHours)
 //   5. a free model reading the lines about hours from that same site or bio (model-hours.ts),
 //      kept only when every time it gives is written there; a few a run

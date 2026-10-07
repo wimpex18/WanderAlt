@@ -85,13 +85,23 @@
     const far = e => R().isOff(e) ? Infinity : G().distanceTo(e) ?? Infinity;
     return ordered.map((e,i) => [e,far(e),i]).sort((a,b) => a[1]-b[1] || a[2]-b[2]).map(x => x[0]);
   };
-  /* The list is short on purpose: the next five, then "Show N more" opens the rest
-     here (up to thirty); All events holds the complete listing. */
-  const SHOWN = 5, MOST = 30;
-  let expanded = false;
+  /* Keep browsing the current selection in batches. The URL restores enough
+     rows for the browser to return to the same spot after opening a listing. */
+  const PAGE_SIZE = 25;
+  const readShown = () => {
+    const n = Number(new URLSearchParams(location.search).get('shown'));
+    return Number.isSafeInteger(n) && n >= PAGE_SIZE && n % PAGE_SIZE === 0 ? n : PAGE_SIZE;
+  };
+  let shown = readShown();
+  const writeShown = () => {
+    const q = new URLSearchParams(location.search);
+    if (shown > PAGE_SIZE) q.set('shown', shown); else q.delete('shown');
+    history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
+  };
+  const more = (total) => total > shown ? `<div class="home-day__foot"><button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(PAGE_SIZE, total - shown)} more</button></div>` : '';
 
-  /* Events and picked places are short previews; the complete catalogues
-     are reached through the visible All events / All places links. */
+  /* Events and picked places browse the current selection; All events and
+     All places open the complete catalogues. */
   let view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
   const centre = () => { const c = (window.WA.CITIES || []).find(x => x.id === window.WA.CITY); return c && c.centre ? c.centre : null; };
   const isOpen = (v) => R().openState(v).open === true;
@@ -102,14 +112,13 @@
       .map(v => [v, isOpen(v) ? 0 : 1, d(v)]).sort((a, b) => (a[1] - b[1]) || (a[2] - b[2])).map(x => x[0]);
   };
   const placesPart = (list) => {
-    const cap = expanded ? MOST : SHOWN;
     const openN = list.filter(isOpen).length;
     const from = (nearOn() ? G().currentLoc() : null) || centre();
     const note = `${openN ? `${openN} open now · ` : ''}${nearOn() ? 'Nearest to here first' : 'Nearest the centre first'}`;
     return `<div class="home-browse-head"><h2 class="wa-sr">Places</h2><a class="wa-linkbtn" href="places.html">All places ${I('arrow')}</a></div>
       <p class="wa-note home-day__note">${esc(note)}</p><p class="wa-note">Hours shown for now</p>
-      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0,cap).map(v => R().placeRow(v,{ from })).join('')}</ul>
-      ${list.length > cap && cap < MOST ? `<div class="home-day__foot"><button class="wa-btn wa-btn--pill" type="button" data-day-all>${I('down')}Show ${Math.min(list.length,MOST) - cap} more</button></div>` : ''}`;
+      ${list.length ? '' : '<p class="wa-note">No places match these choices.</p>'}<ul class="home-places">${list.slice(0,shown).map(v => R().placeRow(v,{ from })).join('')}</ul>
+      ${more(list.length)}`;
   };
   // Keep one segment through redraws, including its gesture listeners.
   const viewSwitch = document.createElement('div');
@@ -117,10 +126,11 @@
   viewSwitch.setAttribute('role','group'); viewSwitch.setAttribute('aria-label','Show');
   viewSwitch.innerHTML = '<button class="map-seg__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span><span class="home-view__n" id="home-events-n"></span></button><button class="map-seg__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span><span class="home-view__n" id="home-places-n"></span></button>';
   const setView = value => {
-    view = value; expanded = false; main();
+    view = value; shown = PAGE_SIZE;
     const q = new URLSearchParams(location.search);
     if (view === 'places') q.set('view', 'places'); else q.delete('view');
     history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
+    main();
   };
   const viewGlass = window.WA.glassDrop(viewSwitch, { name:'map-seg', item:'.map-seg__opt', itemClass:'map-seg__opt',
     current: () => view === 'events' ? 0 : 1, commit: i => setView(i === 0 ? 'events' : 'places') });
@@ -147,6 +157,7 @@
   };
 
   const main = () => {
+    writeShown();
     const all = R().live();
     const tonight = sortSoon(all.filter(e => W().isTonight(e)));
     const liveNow = tonight.filter(e => R().isLive(e));
@@ -157,25 +168,20 @@
     const date = D().dates(), tab = date.date ? 'custom' : date.when;
     const tabs = days();
     if (tab !== 'custom' && !tabs.some(([k]) => k === tab)) tabs.push([tab, D().label()]);
-    const full = dayList(all,date,p);
-    const list = full;
-    const cap = expanded ? MOST : SHOWN;
+    const list = dayList(all,date,p);
     const out = [walkFold(p)];
 
     const places = pickedPlaces();
     if (view === 'places') {
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>${placesPart(places)}</section>`);
     } else {
-      const q = D().params();
-      if (nearOn()) q.set('sort', 'nearest');
       out.push(`<section class="wa-sect home-day"><div id="home-view-slot"></div>
         <div class="home-browse-head"><h2 class="wa-sr">Events</h2><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></div>
         <div class="home-tabs" role="group" aria-label="Day">${tabs.map(([k,label]) => `<button class="home-tab" type="button" data-day="${k}" aria-pressed="${k === tab}">${esc(label)}</button>`).join('')}${window.WA.DiscoveryControls.dateKey('home-calendar')}</div>
 
         ${nearOn() && list.length ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}
-        ${list.length ? `<ul class="wa-feed">${list.slice(0,cap).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
-        <div class="home-day__foot">${list.length > cap && cap < MOST ? `<button class="wa-btn wa-btn--pill home-day__all" type="button" data-day-all>${I('down')}Show ${Math.min(list.length, MOST) - cap} more</button>` : ''}
-        <a class="wa-linkbtn home-day__more" href="discover.html?${esc(q.toString())}">See this selection ${I('arrow')}</a></div>
+        ${list.length ? `<ul class="wa-feed">${list.slice(0,shown).map(e => R().feedItem(e, { day:tab !== 'tonight', since:visit.prev })).join('')}</ul>` : `<div class="home-empty"><p>No listings match these choices.</p><button class="wa-linkbtn" type="button" data-pick-dates>Pick dates</button><button class="wa-linkbtn" type="button" data-filter-open>Change filters</button></div>`}
+        ${more(list.length)}
       </section>`);
     }
     if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
@@ -187,7 +193,7 @@
     const slot = $('home-view-slot');
     if (slot) {
       slot.replaceWith(viewSwitch);
-      $('home-events-n').textContent = String(full.length);
+      $('home-events-n').textContent = String(list.length);
       $('home-places-n').textContent = String(places.length);
       viewSwitch.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',b.dataset.view === view));
       viewGlass.sync();
@@ -212,13 +218,14 @@
   };
 
   /* ── Side (desktop): the map ─────────────────────────────────── */
+  const desktop = matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
   const side = () => {
-    const mapCard = `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
+    $('home-side').innerHTML = desktop.matches ? `<section class="wa-sect"><a class="wa-mapcard" href="map.html">
       <img class="wa-mapcard__art" src="assets/tallinn-overview.svg" alt="" loading="lazy">
       <span class="wa-mapcard__glass"><span class="wa-mapcard__title">${I('map')}Show the map</span>
-      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>`;
-    $('home-side').innerHTML = mapCard;
+      <span class="wa-mapcard__sub">The selected listings and places, by walking time.</span></span></a></section>` : '';
   };
+  desktop.addEventListener('change', side);
 
   /* ── New since the last visit ──────────────────────────────── */
   const since = (all) => {
@@ -239,7 +246,7 @@
   document.addEventListener('click', (e) => {
     const hit = (s) => e.target.closest && e.target.closest(s);
     const dt = hit('[data-day]');
-    if (dt) { expanded = false; D().setDates({ when:dt.dataset.day }); D().writeURL(); return; }
+    if (dt) { D().setDates({ when:dt.dataset.day }); D().writeURL(); return; }
     if (hit('[data-walk-toggle]')) { toggleWalk(); return; }
     const vw = hit('[data-view]');
     if (vw) {
@@ -247,9 +254,10 @@
       return;
     }
     if (hit('[data-day-all]')) {
-      expanded = true; main();
+      const previous = shown;
+      shown += PAGE_SIZE; main();
       const rows = document.querySelectorAll('.home-day .wa-feed > li, .home-places > li');
-      const first = rows[SHOWN] && rows[SHOWN].querySelector('a');
+      const first = rows[previous] && rows[previous].querySelector('a');
       if (first) first.focus({ preventScroll: true });
       return;
     }
@@ -270,12 +278,21 @@
   }, { passive: true });
   document.addEventListener('wa:catalog-ready', () => { boot(); if (window.WA.Route) window.WA.Route.loadStored(); });
   document.addEventListener('wa:routes-ready', () => { if (window.WA.catalog) main(); });
-  document.addEventListener('wa:mood-changed', () => { if (window.WA.catalog) main(); });
+  document.addEventListener('wa:mood-changed', e => {
+    if (!window.WA.catalog) return;
+    shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    main();
+  });
   document.addEventListener('wa:start-state', () => {
     const origin = document.querySelector('.rt-card__origin-wrap');
     if (origin) origin.innerHTML = window.WA.StartFrom.originMarkup(); else render();
   });
-  document.addEventListener('wa:discovery-changed', () => { if (window.WA.catalog) { expanded = false; render(); } });
+  document.addEventListener('wa:discovery-changed', e => {
+    if (!window.WA.catalog) return;
+    shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    if (e.detail?.restore) view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
+    render();
+  });
   document.addEventListener('wa:discovery-applied', () => {
     if (viewSwitch.isConnected) viewSwitch.scrollIntoView({ block:'center', behavior:'auto' });
   });

@@ -160,7 +160,7 @@
   window.addEventListener('pageshow', e => {
     if (!e.persisted) return;
     try { saved = clean(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (_) { return; }
-    document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: pref() }));
+    document.dispatchEvent(new CustomEvent('wa:mood-changed', { detail: { ...pref(), restore:true } }));
   });
   const capText = (c) => (c == null ? 'any price' : c === 0 ? 'free' : `up to €${c}`);
   /* The words for a choice: the narrower picks where there are any, the moods otherwise. */

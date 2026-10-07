@@ -1,7 +1,7 @@
 // What a venue's Facebook Page says about itself, through the Graph API: its `hours`, its
 // `website`, its `about` line and whether it is `is_permanently_closed`. Meta returns these for
 // Pages our app administers and, for other businesses' Pages, only once the app has Page Public
-// Metadata Access (an App Review; docs/facebook.md says what to do). Without it the call answers
+// Metadata Access (an App Review; README.md describes access). Without it the call answers
 // with a permission error (code 10), which stops this source for the run; with it, the same code
 // starts filling hours, a missing website and a missing description, and logs a closure.
 // `facebookCheck` probes each step with the real token and says which one is missing.
@@ -121,6 +121,6 @@ export async function facebookCheck(cfg: InstagramConfig, venues: string[], fetc
     out.push(`venue Page ${v}: ${b.error ? said(b) : `readable as "${String(b.name)}"${b.hours ? ', hours ' + hoursFromGraph(b.hours as Record<string, string>) : ', no hours on the Page'}`}`);
   }
   const blocked = out.some(l => l.startsWith('venue Page') && /code 10\b|code 200\b/.test(l));
-  out.push(blocked ? 'verdict: venue Pages need Page Public Metadata Access (docs/facebook.md, steps 1-6).' : 'verdict: venue Pages are readable; the pipeline fills hours, websites and descriptions from them.');
+  out.push(blocked ? 'verdict: venue Pages need Page Public Metadata Access (README.md).' : 'verdict: venue Pages are readable; the pipeline fills hours, websites and descriptions from them.');
   return out;
 }

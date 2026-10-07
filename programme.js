@@ -261,7 +261,7 @@
         body: 'Try a different day or start a new search.', actions: [{ act: 'clear-all', label: 'Start over' }] });
     }
     return R().empty({ icon: 'calendar', title: `Nothing is listed in ${R().cityName()} for the coming days.`,
-      body: 'The sources are read every six hours. The places are open regardless.', actions: [{ href: 'places.html', label: 'Guide' }] });
+      body: 'The sources are read every six hours. The Guide has picked places.', actions: [{ href: 'places.html', label: 'Guide' }] });
   };
 
   /* ── Reading a sentence ─────────────────────────────────────

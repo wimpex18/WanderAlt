@@ -31,7 +31,7 @@
   };
   try { near = localStorage.getItem('wa:near:v1') === '1'; } catch (_) { /* in memory */ }
   const dates = () => ({ ...read() });
-  const emit = () => document.dispatchEvent(new CustomEvent('wa:discovery-changed'));
+  const emit = (restore = false) => document.dispatchEvent(new CustomEvent('wa:discovery-changed', { detail: { restore } }));
   const setDates = (value, notify = true) => {
     dateState = clean(value);
     stateDay = W().todayKey();
@@ -87,18 +87,8 @@
   const dateLabel = key => `${window.WA.R.dateShort(key)}${key.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + key.slice(0,4)}`;
   const label = (s = dates()) => s.date ? (s.to ? `${dateLabel(s.date)} – ${dateLabel(s.to)}` : dateLabel(s.date))
     : { tonight: 'Today', tomorrow: 'Tomorrow', weekend: 'Weekend', thisweek: 'This week' }[s.when];
-  const params = () => {
-    const s = dates(), q = new URLSearchParams();
-    if (s.date) { q.set('date', s.date); if (s.to) q.set('to', s.to); } else q.set('time', s.when);
-    const p = pref();
-    if (p.cap != null) q.set('price', p.cap);
-    if (p.moods.length) q.set('moods', p.moods.join(','));
-    if (p.subs.length) q.set('subs', p.subs.join(','));
-    if (nearOn()) q.set('sort', 'nearest');
-    return q;
-  };
   window.WA.Discovery = { dates, setDates, fromQuery, writeURL, validDate, range, matchesDate,
-    pref, matchesEvent, matchesPlace, nearOn, setNear, label, params };
+    pref, matchesEvent, matchesPlace, nearOn, setNear, label };
   // Full results use pure predicates; browsing search must not change Now dates.
   const discoveryPage = ['tonight','map'].includes(document.body?.dataset.page) && new URLSearchParams(location.search).get('context') !== 'search';
   if (discoveryPage) {
@@ -108,8 +98,8 @@
     else fromQuery(new URLSearchParams(location.search));
   }
   document.addEventListener('wa:near-changed', e => setNear(e.detail));
-  addEventListener('popstate', () => { if (discoveryPage) { fromQuery(new URLSearchParams(location.search)); emit(); } });
+  addEventListener('popstate', () => { if (discoveryPage) { fromQuery(new URLSearchParams(location.search)); emit(true); } });
   addEventListener('pageshow', e => { if (e.persisted && discoveryPage) { stateDay = ''; read(); writeURL();
     try { near = localStorage.getItem('wa:near:v1') === '1'; } catch (_) {}
-    emit(); } });
+    emit(true); } });
 })();

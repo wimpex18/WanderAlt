@@ -33,16 +33,126 @@ function page(store = new Map<string, string>(), search = '', blocked = false, n
   const window = { WA, addEventListener: on };
   const context = createContext({ window, Date: Clock, Intl, URL, URLSearchParams, location,
     history: { replaceState: (_: unknown, __: string, value: string) => { written = value; } },
-    document: { readyState: 'loading', body: { dataset:{ page:pageName } }, addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type) },
+    document: { readyState: 'loading', body: { dataset:{ page:pageName } }, addEventListener: on, dispatchEvent: (e: { type: string }) => fire(e.type, e) },
     performance: { getEntriesByType: () => [{ type:navigation }] },
     addEventListener: on, localStorage: storage, sessionStorage: storage,
-    CustomEvent: class { type: string; constructor(type: string) { this.type = type; } },
+    CustomEvent: class { type: string; detail: unknown; constructor(type: string, options?: { detail?: unknown }) { this.type = type; this.detail = options?.detail; } },
   });
   for (const file of ['ui-helpers.js', 'when.js', 'render.js', 'moods.js', 'discovery-state.js']) {
     runInContext(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'), context);
   }
-  return { WA, store, fire, location, url: () => written, clock: (value: string) => { now = Date.parse(value); } };
+  return { WA, store, fire, location, context, url: () => written, clock: (value: string) => { now = Date.parse(value); } };
 }
+
+// Load the real Now, date and taste modules; stub only DOM/layout and row markup.
+function home(search = '') {
+  const p = page(new Map(), search);
+  let focus = '', written = '';
+  const elements = new Map<string, any>();
+  const element = () => ({ innerHTML:'', textContent:'', isConnected:true, setAttribute:() => {},
+    replaceWith:() => {}, contains:() => false, querySelectorAll:() => [] });
+  for (const id of ['hero-kicker', 'hero-title', 'hero-clock', 'home-acts', 'home-main', 'home-side', 'since', 'home-view-slot', 'home-events-n', 'home-places-n']) elements.set(id, element());
+  const document = p.context.document;
+  document.documentElement = { lang:'en' };
+  document.createElement = element;
+  document.getElementById = (id: string) => elements.get(id);
+  document.querySelector = () => null;
+  document.querySelectorAll = (selector: string) => selector.includes('.wa-feed > li')
+    ? Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => ({ querySelector:() => ({ focus:() => { focus = m[1]; } }) })) : [];
+  p.context.history.replaceState = (_: unknown, __: string, value: string) => {
+    written = value;
+    const url = new URL(value, p.location.origin);
+    p.location.search = url.search; p.location.hash = url.hash;
+  };
+  p.context.matchMedia = () => ({ matches:false, addEventListener:() => {} });
+  p.context.HTMLDialogElement = class {};
+  p.context.setInterval = () => 0;
+  p.WA.Geo.byDateThenSoonest = () => (a: any, b: any) => a.startsAt.localeCompare(b.startsAt) || a.id.localeCompare(b.id);
+  p.WA.Geo.anchor = () => null;
+  p.WA.Route = { plan:() => [], loadStored:() => {} };
+  p.WA.StartFrom = { originMarkup:() => '' };
+  p.WA.glassDrop = () => ({ sync:() => {} });
+  p.WA.DiscoveryControls = { keys:() => '', dateKey:() => '' };
+  p.WA.R.feedItem = (e: any) => `<li data-row="${e.id}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
+  p.WA.R.placeRow = (v: any) => `<li data-row="${v.id}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
+  const events = (n: number, date: string) => Array.from({ length:n }, (_, i) => ({ id:`${date}-${String(i).padStart(2,'0')}`,
+    title:`Listing ${i}`, kind:'gig', startsAt:`${date}T15:00:00Z`, priceMin:i % 2 ? 15 : 0 }));
+  p.WA.catalog = [...events(81, '2026-10-06'), ...events(37, '2026-10-07')];
+  p.WA.venues = Array.from({ length:44 }, (_, i) => ({ id:`place-${i}`, name:`Place ${i}`, kind:'bookshop', picked:true }));
+  runInContext(readFileSync(new URL('../../home.js', import.meta.url), 'utf8'), p.context);
+  p.fire('wa:catalog-ready');
+  const click = (selector: string, dataset = {}) => p.fire('click', { target: { closest:(s: string) => s === selector ? { dataset } : null } });
+  return { ...p, click, url:() => written, focus:() => focus, html:() => elements.get('home-main').innerHTML,
+    rows:() => Array.from(elements.get('home-main').innerHTML.matchAll(/<li data-row="([^"]+)"/g), (m: any) => m[1]) };
+}
+
+test('Now shows 25 matching events and expands until exhausted, retaining order and focusing the next batch', () => {
+  const p = home();
+  assert.equal(p.rows().length, 25);
+  assert.match(p.html(), /Show 25 more/);
+  assert.doesNotMatch(p.html(), /See this selection/);
+  const first = p.rows();
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 50);
+  assert.deepEqual(p.rows().slice(0,25), first);
+  assert.equal(p.focus(), p.rows()[25]);
+  assert.match(p.url(), /shown=50/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 75);
+  assert.equal(p.focus(), p.rows()[50]);
+  assert.match(p.html(), /Show 6 more/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 81);
+  assert.equal(new Set(p.rows()).size, 81);
+  assert.doesNotMatch(p.html(), /data-day-all/);
+});
+
+test('Now restores expanded events on reload and cached Back navigation; new dates and taste reset expansion', () => {
+  const p = home('?shown=50&when=tonight');
+  assert.equal(p.rows().length, 50);
+  p.fire('pageshow', { persisted:true });
+  assert.equal(p.rows().length, 50);
+  assert.match(p.url(), /shown=50/);
+  p.click('[data-day]', { day:'tomorrow' });
+  assert.equal(p.rows().length, 25);
+  assert.match(p.url(), /when=tomorrow/);
+  assert.match(p.url(), /#list$/);
+  assert.doesNotMatch(p.url(), /shown=/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 37);
+  p.WA.Moods.setPref({ moods:[], subs:[], cap:0 });
+  assert.equal(p.rows().length, 19); // only free events, not the previous day's entries
+  assert.doesNotMatch(p.url(), /shown=/);
+  assert.doesNotMatch(p.html(), /data-day-all/);
+});
+
+test('Now places use the same batches and history contract; switching view resets expansion', () => {
+  const p = home('?view=places&shown=50');
+  assert.equal(p.rows().length, 44);
+  p.fire('pageshow', { persisted:true });
+  assert.equal(p.rows().length, 44);
+  p.click('[data-view]', { view:'events' });
+  assert.equal(p.rows().length, 25);
+  assert.doesNotMatch(p.url(), /shown=|view=places/);
+  p.click('[data-day-all]');
+  p.click('[data-view]', { view:'places' });
+  assert.equal(p.rows().length, 25);
+  assert.match(p.html(), /Show 19 more/);
+  p.click('[data-day-all]');
+  assert.equal(p.rows().length, 44);
+  assert.equal(p.focus(), p.rows()[25]);
+  assert.equal(new URL(p.url(), p.location.origin).searchParams.get('view'), 'places');
+});
+
+test('invalid feed expansion parameters start at 25 and keep unrelated URL context', () => {
+  for (const shown of ['-1', '5', '26', 'Infinity', '9007199254741000', 'bad']) {
+    const p = home(`?shown=${shown}&when=tomorrow&lang=et`);
+    assert.equal(p.rows().length, 25);
+    assert.match(p.url(), /when=tomorrow/);
+    assert.match(p.url(), /lang=et/);
+    assert.doesNotMatch(p.url(), /shown=/);
+  }
+});
 
 test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent; URLs override dates', () => {
   const first = page();
@@ -73,7 +183,7 @@ test('Now → Map → Now preserves range, narrowed mood, cap and nearest intent
   assert.match(linked.url(), /#list$/);
 });
 
-test('history reloads use the latest discovery dates; new links override them and Programme stays independent', () => {
+test('history reloads use the latest discovery dates; new links override them and full results stays independent', () => {
   const start = page();
   start.WA.Discovery.setDates({ when:'tonight' });
   const returned = page(start.store, '?when=tomorrow', false, 'back_forward');
@@ -141,8 +251,6 @@ test('ticket caps keep unknown prices explicitly, while mood and submood remain 
   assert.equal(D.matchesEvent({ kind:'film', priceMin:1 }), false);
   assert.equal(D.matchesEvent({ kind:'film', priceMin:0 }), true);
   assert.equal(D.matchesPlace({ kind:'cinema' }), true);
-  const q = D.params();
-  assert.equal(q.get('moods'), 'look'); assert.equal(q.get('subs'), 'film'); assert.equal(q.get('price'), '0');
 });
 
 test('image-first feed preserves categories, provenance and missing facts; hostile fields remain text', () => {

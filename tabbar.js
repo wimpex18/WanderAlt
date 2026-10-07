@@ -193,10 +193,13 @@
   const bar = document.querySelector('.wa-tabbar');
   if (!bar) return;
   const phone = matchMedia('(max-width: 1023px)');
-  const current = [...bar.querySelectorAll('.wa-tabbar__item')].findIndex(a => ['page','location'].includes(a.getAttribute('aria-current')));
+  const items = [...bar.querySelectorAll('.wa-tabbar__item')];
+  const current = items.findIndex(a => ['page','location'].includes(a.getAttribute('aria-current')));
   const drop = glassDrop(bar, {
     name: 'wa-tabbar', item: '.wa-tabbar__item', itemClass: 'wa-tabbar__item',
     current: () => current, enabled: () => phone.matches,
+    // A child destination highlights its parent; releasing on Now must go home.
+    commitSame: current >= 0 && items[current].getAttribute('aria-current') === 'location',
     /* Settle, then open the tab. */
     commit: (to, a) => {
       a.classList.add('is-to');

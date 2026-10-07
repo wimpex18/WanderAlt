@@ -4,7 +4,7 @@
 //   node pipeline/social.ts tonight --publish threads  post it to Threads
 //   node pipeline/social.ts tonight --publish facebook post it to our Facebook Page
 //   node pipeline/social.ts instagram --image URL.jpg --caption "…" --publish
-// Nothing is posted without --publish. See docs/social.md.
+// Nothing is posted without --publish. See README.md.
 
 import { Db } from './db.ts';
 import { instagramConfig, lookupProfile, recentPosts, hashtagPosts } from './instagram.ts';

@@ -1,4 +1,4 @@
--- Run with Supabase MCP execute_sql after a migration (docs/data.md, "Database checks"). Nothing commits.
+-- Run with Supabase MCP execute_sql after a migration (README.md, "Deployment and data"). Nothing commits.
 begin;
 do $$
 declare pm bigint; pm2 bigint; em bigint;

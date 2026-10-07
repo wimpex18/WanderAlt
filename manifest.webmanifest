@@ -16,8 +16,8 @@
   ],
   "shortcuts": [
     {
-      "name": "Tonight",
-      "short_name": "Tonight",
+      "name": "Now",
+      "short_name": "Now",
       "url": "/",
       "icons": [
         {
@@ -28,8 +28,8 @@
       ]
     },
     {
-      "name": "Programme",
-      "short_name": "Programme",
+      "name": "All events",
+      "short_name": "All events",
       "url": "/discover",
       "icons": [
         {

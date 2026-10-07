@@ -396,7 +396,7 @@
     return `<li${opts.drop ? ' class="wa-saved-row"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
       <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
-        <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
+        <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked && opts.pickLabel !== false ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
         <span class="wa-place__meta">${meta}</span>
         ${v.pickNote ? `<span class="wa-place__why">${esc(v.pickNote)}</span>` : ''}
         ${openBadge(v)}

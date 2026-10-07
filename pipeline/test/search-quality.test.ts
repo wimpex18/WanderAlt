@@ -112,7 +112,7 @@ function programme(search = '', venues: any[] = []) {
   return { query, start, click, finish: (p: any) => release({ ...WA.Ask.empty(), ...p }), elements, location };
 }
 
-test('manual Programme filters keep the same results and selected state after reopening their URL', () => {
+test('manual full results filters keep the same results and selected state after reopening their URL', () => {
   for (const toggle of ['free', 'english', 'hideSeen', 'followed']) {
     const p = programme(); p.query(''); p.click('[data-toggle]', { toggle });
     assert.ok(p.location.search, `${toggle} must have a shareable URL`);
@@ -138,7 +138,7 @@ test('malformed price and start-time URL filters are ignored', () => {
   }
 });
 
-test('impossible shared calendar dates never become Programme selections', () => {
+test('impossible shared calendar dates never become full results selections', () => {
   for (const search of ['?date=2027-02-30', '?date=2026-13-01&to=2026-10-08']) {
     const p = programme(search); p.query('');
     assert.equal(p.elements.get('filter-count').textContent, '');
