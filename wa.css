@@ -45,6 +45,7 @@
   /* Two quiet companions to the vermilion, each with one meaning and used in few places:
      green is "open" and "free"; blue is "you" (where you are, how far you walk). */
   --go:        #19804f;
+  --danger:    #b42318;      /* destructive actions, 6.1:1 on paper */
   --go-soft:   color-mix(in oklab, var(--go) 12%, var(--paper));
   --here:      #2563d9;
   --here-soft: color-mix(in oklab, var(--here) 11%, var(--paper));
@@ -117,6 +118,7 @@
   --accent-ink:  #f0916f;
   --accent-soft: color-mix(in oklab, var(--accent) 20%, var(--paper));
   --go:        #5fd39a;
+  --danger:    #ff8f84;
   --go-soft:   color-mix(in oklab, var(--go) 16%, var(--paper));
   --here:      #7ab4ff;
   --here-soft: color-mix(in oklab, var(--here) 16%, var(--paper));
@@ -1030,8 +1032,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 @media (min-width: 1024px) { .saved-cols { grid-template-columns: 1fr 1fr; gap: var(--s-9); } .saved-cols > .wa-sect { margin-top: var(--s-8); } }
 
 /* ── You / About ───────────────────────────────────────────────── */
-.you-cols { display: grid; margin-top: var(--s-8); }
-@media (min-width: 1024px) { .you-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--s-9); } .you-cols > .wa-sect:nth-child(2) { margin-top: 0; } }
 .wa-feed-url { display: block; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); font: 500 .8125rem/1.5 var(--f-mono); overflow-wrap: anywhere; text-decoration: none; }
 
 .wa-foot { margin-top: var(--s-10); padding-top: var(--s-5); border-top: 1px solid var(--hair); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); align-items: center; font-size: var(--fs-small); color: var(--ink-3); }
@@ -1217,43 +1217,24 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 /* ── You, compact ─────────────────────────────────────────────────
    Mobile first: fewer, shorter blocks. Stats are one low strip, milestones one row of four,
    interests one scrolling row, appearance three icons, and the long lists fold away. */
-.you-cols > .wa-sect { margin-top: var(--s-6); }
-.you-cols { margin-top: var(--s-5); }
-
-.you-app { display: flex; align-items: center; gap: var(--s-3); width: 100%; margin-top: var(--s-3); padding: 10px 14px 10px 10px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--paper); text-align: left; }
-.you-app__ic { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
-.you-app__ic .wa-ic { width: 18px; height: 18px; }
-.you-app__text { flex: 1; min-width: 0; display: grid; gap: 1px; }
-.you-app__text strong { font-size: .9375rem; font-weight: 650; letter-spacing: -.01em; }
-.you-app__text span { font-size: var(--fs-small); color: var(--ink-2); line-height: 1.3; }
-.you-app > .wa-ic { flex: none; width: 16px; height: 16px; color: var(--ink-3); }
 
 
-.you-int .wa-sect__head { margin-bottom: var(--s-1); min-height: 32px; justify-content: space-between; }
-.you-int__n { font-size: var(--fs-small); color: var(--ink-3); }
-.you-int__row { margin-top: 0; }
-@media (min-width: 1024px) { .you-int__row { flex-wrap: wrap; overflow: visible; margin: 0; padding: 4px 0; } }
 
+
+/* About's folds (about.html). */
 .you-folds { margin-top: var(--s-5); }
 .you-fold { border-top: 1px solid var(--hair); }
 .you-folds .you-fold:last-child { border-bottom: 1px solid var(--hair); }
 .you-fold > summary { list-style: none; display: flex; align-items: center; gap: var(--s-2); min-height: 52px; cursor: pointer; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.015em; }
 .you-fold > summary::-webkit-details-marker { display: none; }
-.you-fold__t { flex: 1; }
-.you-fold__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .you-fold > summary .wa-ic { width: 16px; height: 16px; color: var(--ink-3); transition: transform var(--t-med) var(--ease); }
 .you-fold[open] > summary .wa-ic { transform: rotate(90deg); }
+.you-fold__t { flex: 1; }
+.you-fold__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .you-fold__b { padding: 0 0 var(--s-4); }
-.you-cols .wa-sect.you-folds + .wa-sect.you-folds { margin-top: 0; }
 
 
-.you-cols .wa-sect__head { min-height: 32px; margin-bottom: var(--s-1); }
-.you-cols .wa-sect__title { font-size: 1.125rem; }
-.you-cols .wa-sect__sub { margin: 0 0 var(--s-2); font-size: var(--fs-small); }
-.you-cols > .wa-sect:has(> .wa-sect__head:only-child) { margin-top: var(--s-5); }
 
-.you-cols { grid-template-columns: minmax(0, 1fr); }
-.you-cols > * { min-width: 0; }
 
 /* ── The evening (route.js, route-page.js) ───────────────────────
    A route is a spine: a time, a square node, a stop. The event is the
@@ -1424,26 +1405,10 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-day__all .wa-ic { width: 18px; height: 18px; }
 
 /* You: a short page. Signed out it opens on one card; signed in, on who you are. */
-.you-join { display: grid; gap: var(--s-2); padding: var(--s-5); border-radius: var(--r-lg); background: var(--paper-2); }
-.you-join__title { font-size: 1.1875rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
-.you-join__sub { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.45; }
-.you-join__actions { display: grid; gap: var(--s-2); margin-top: var(--s-3); }
-.you-join .wa-btn { width: 100%; justify-content: center; min-height: 48px; }
-@media (min-width: 600px) {
-.you-join { max-width: 32rem; }
-.you-join__actions { display: flex; flex-wrap: wrap; }
-.you-join .wa-btn { width: auto; min-width: 140px; padding-inline: 24px; }
-}
-.you-me { display: flex; align-items: center; gap: var(--s-4); }
-.you-me__mark { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 1.375rem; font-weight: 700; }
-.you-me__text { display: grid; min-width: 0; }
-.you-me__text strong { font-size: 1.25rem; letter-spacing: -.02em; }
-.you-me__text span { font-size: var(--fs-meta); color: var(--ink-2); overflow-wrap: anywhere; }
 .rt-more { margin-top: var(--s-8); max-width: 40rem; }
 .rt-more__item { margin-top: var(--s-3); }
 .prog-more { display: flex; align-items: center; gap: var(--s-3); margin: var(--s-4) 0 var(--s-6); flex-wrap: wrap; }
 .wa-day__all { margin: var(--s-2) 0 var(--s-4); }
-.you-cols { margin-top: 0; }
 
 /* Phones: smaller pictures in lists (DEV-30). Rows, place rows, the venue card on an
    event page and Saved's list tiles give their room to the words: titles, times and
@@ -1775,3 +1740,63 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .map-filters .map-mood[aria-pressed="true"] { background:var(--select-bg), var(--glass-strong); border-color:transparent; box-shadow:inset 0 0 0 1px var(--select-ring), 0 4px 14px rgba(20,16,40,.12); }
 .map-filters .map-mood--more.is-set { background:var(--select-bg), var(--glass-strong); color:var(--accent-ink); }
 @media (min-width:1024px) { .map-filters:not(:has(.map-search-context)) { flex-basis:100%; margin-inline:0; padding-inline:0; scroll-padding-inline:0; } }
+
+
+/* ── You: one short settings list ─────────────────────────────────
+   Inset groups of rows: an icon tile, the label, the current value and a
+   chevron. Quick choices pour out of their row; longer ones open a sheet. */
+.you-join { display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-3); padding:14px 14px 14px 18px; border-radius:var(--r-lg); background:var(--paper-2); }
+.you-join__text { flex:1; min-width:0; display:grid; gap:2px; }
+.you-join__text strong { font-size:1rem; font-weight:650; letter-spacing:-.01em; line-height:1.3; }
+.you-join__text span { font-size:var(--fs-small); color:var(--ink-2); }
+.you-join .wa-btn { flex:none; min-height:44px; padding-inline:22px; }
+.you-join__error { flex-basis:100%; margin:0; font-size:var(--fs-small); color:var(--danger); }
+.you-me { display:flex; align-items:center; gap:var(--s-3); width:100%; padding:12px 14px; border:0; border-radius:var(--r-lg); background:var(--paper-2); color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.you-me__mark { flex:none; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:1.125rem; }
+.you-me__text { flex:1; min-width:0; display:grid; gap:1px; }
+.you-me__text strong { font-size:1rem; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.you-me__text span { font-size:var(--fs-small); color:var(--ink-2); }
+.you-group { margin-top:var(--s-5); border-radius:var(--r-lg); background:var(--paper-2); overflow:hidden; }
+.you-row { position:relative; display:flex; align-items:center; gap:var(--s-3); width:100%; min-height:56px; padding:8px 14px; border:0; background:none; color:var(--ink); font:inherit; text-align:left; cursor:pointer; transition:background var(--t-fast); }
+.you-row + .you-row::before { content:""; position:absolute; top:0; left:60px; right:0; height:1px; background:var(--hair); }
+.you-row__ic { flex:none; width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:var(--paper); color:var(--accent-ink); }
+.you-row__ic .wa-ic { width:18px; height:18px; }
+.you-row__label { flex:1; min-width:0; font-size:1rem; font-weight:500; }
+.you-row__value { flex:0 1 auto; min-width:0; max-width:55%; font-size:.9375rem; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.you-row__go { flex:none; width:16px; height:16px; color:var(--ink-3); }
+.you-row:active, .you-me:active { background:color-mix(in oklab, var(--ink) 7%, var(--paper-2)); }
+@media (hover:hover) { .you-row:hover { background:color-mix(in oklab, var(--ink) 4%, transparent); } }
+.you-row:focus-visible, .you-me:focus-visible { outline:2px solid var(--ink); outline-offset:-2px; }
+.you-row[aria-expanded="true"] .you-row__go { transform:rotate(90deg); }
+.you-badge { display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:11px; background:var(--accent); color:var(--on-accent); font-size:.75rem; font-weight:700; }
+#you-body > .wa-foot { margin-top:var(--s-8); }
+#you-body { max-width:36rem; }
+.you-sheet .wa-sheet__body > * + * { margin-top:var(--s-3); }
+.you-taste { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+.you-taste__opt { display:flex; align-items:center; gap:10px; min-height:56px; padding:6px 12px 6px 6px; border:1px solid var(--hair); border-radius:var(--r-md); background:var(--paper); color:var(--ink); font:500 .9375rem/1.2 var(--f-sans); text-align:left; cursor:pointer; }
+.you-taste__opt .wa-picto { width:40px; height:40px; }
+.you-taste__ic { flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--paper-2); color:var(--accent-ink); }
+.you-taste__opt[aria-pressed="true"] { background:var(--select-bg); border-color:transparent; box-shadow:inset 0 0 0 1px var(--select-ring); font-weight:650; }
+.you-taste__opt[disabled] { opacity:.4; cursor:default; }
+.you-taste__opt:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.you-follows { display:grid; }
+.you-follow { display:flex; align-items:center; gap:var(--s-3); min-height:56px; border-bottom:1px solid var(--hair); }
+.you-follow__name { flex:1; min-width:0; font-weight:600; overflow-wrap:anywhere; }
+.you-follow__name a { color:inherit; text-decoration:none; }
+.you-follow__acts { flex:none; display:flex; gap:6px; }
+.you-links { display:flex; flex-wrap:wrap; gap:var(--s-4); }
+.you-acts { display:flex; flex-wrap:wrap; gap:var(--s-2); }
+.wa-btn.you-danger { color:var(--danger); }
+.wa-btn.you-danger--solid { background:var(--danger); border-color:transparent; color:#fff; }
+:root[data-theme="dusk"] .wa-btn.you-danger--solid { color:#1c1c1e; }
+
+/* ── Saved: lists as chips, a walk through the night's saves, rows as on Now ── */
+.saved-bar .wa-chip { min-height:40px; font-size:.875rem; }
+.saved-bar__new .wa-ic { width:16px; height:16px; }
+.saved-walk { margin-top:var(--s-4); }
+.saved-cols > .saved-events { margin-top:var(--s-2); }
+.saved-rows .wa-row__title { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.wa-place-item > .wa-heart { top:auto; bottom:6px; right:-6px; width:40px; height:40px; color:var(--ink-2); }
+.wa-place-item > .wa-heart .wa-ic { width:22px; height:22px; fill:none; filter:none; }
+.wa-place-item > .wa-heart[aria-pressed="true"] .wa-ic { fill:var(--accent); stroke:var(--accent); }
+.home-walk__stops > span[data-notranslate] { max-width:13em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -861,7 +861,25 @@ window.WA.dict.uk = {
   "Change dates": "Змінити дати",
   "A day or a range": "День або період",
   "Walk and map": "Прогулянка і мапа",
-  "Mood": "Настрій"
+  "Mood": "Настрій",
+  "Keep your saves on every device": "Збережене на всіх пристроях",
+  "Optional. No password.": "За бажанням. Без пароля.",
+  "Saves sync to your account": "Збережене синхронізується з акаунтом",
+  "Not set": "Не вибрано",
+  "Your location": "Ваше розташування",
+  "Recently opened": "Нещодавно відкриті",
+  "Up to three. Walks lean toward them; nothing is hidden.": "До трьох. Прогулянки враховують їх, нічого не приховується.",
+  "Follow a place or a source from its page to hear when it lists something new.": "Підпишіться на місце чи джерело на його сторінці, щоб дізнаватися про нові події.",
+  "Nothing yet. Notes about saved plans arrive here.": "Поки нічого. Сюди надходять нотатки про збережені плани.",
+  "Your saves and history stay in this browser. Signed in, they also live in your account until you delete it.": "Збережене та історія лишаються в цьому браузері. Після входу вони зберігаються й в акаунті, доки ви його не видалите.",
+  "On this device": "На цьому пристрої",
+  "Waiting to sync": "Очікує синхронізації",
+  "Synced": "Синхронізовано",
+  "Walk your saves": "Прогулянка збереженим",
+  "Nothing in this list yet. Add saves to it from their pages.": "У цьому списку поки порожньо. Додавайте збережене зі сторінок подій і місць.",
+  "Needs the app": "Потрібен застосунок",
+  "On": "Увімк.",
+  "Off": "Вимк."
  },
  "patterns": [
   [
@@ -1380,6 +1398,10 @@ window.WA.dict.uk = {
   [
    "{n} without a map location",
    "{n} без адреси на мапі"
+  ],
+  [
+   "Dark from {t}",
+   "Темна з {t}"
   ]
  ]
 };
