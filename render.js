@@ -142,6 +142,9 @@
   };
 
   const isFree = (e) => e && (e.isFree === true || (e.priceMin != null && Number(e.priceMin) === 0));
+  /* Free is a fact; a positive cap can retain an explicitly unknown price. */
+  const withinTicketCap = (e, cap) => cap == null || isFree(e)
+    || (cap > 0 && (e.priceMin == null || Number(e.priceMin) <= cap));
   const price = (e) => (UI().priceLabel ? UI().priceLabel(e) : '');
 
   /* ── Time ────────────────────────────────────────────────── */
@@ -626,7 +629,7 @@
   }, true);
 
   window.WA.R = {
-    esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, price,
+    esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
     DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, feedItem, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,

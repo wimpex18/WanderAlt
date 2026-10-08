@@ -57,7 +57,7 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
   const out: RouteCandidate[] = [];
 
   for (const e of events) {
-    if (!e.has_time || e.flag === 'cancelled' || e.flag === 'postponed' || !ANCHORS.has(e.kind ?? '') || !e.place_id) continue;
+    if (!e.has_time || ['cancelled', 'postponed', 'sold_out'].includes(e.flag ?? '') || !ANCHORS.has(e.kind ?? '') || !e.place_id) continue;
     if (tallinnDay(e.starts_at) !== day) continue;
     const host = hostOf(e.place_id);
     if (!host || host.lat == null || host.lng == null) continue;
@@ -65,7 +65,7 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
     if (start < floor || start >= 24 * 60) continue;
     const here = pos(host);
     const len = e.ends_at ? Math.round((Date.parse(e.ends_at) - Date.parse(e.starts_at)) / 60_000) : 120;
-    const end = start + Math.min(Math.max(Number.isFinite(len) ? len : 120, 45), 180);
+    const end = start + (Number.isFinite(len) && len > 0 ? len : 120);
 
     let before: { p: RoutePlace; w: number; minute: number; s: number } | null = null;
     let after: { p: RoutePlace; w: number; minute: number; s: number } | null = null;

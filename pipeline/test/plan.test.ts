@@ -39,7 +39,10 @@ function world(now: number, events: any[], places: P[], open: (p: P, minute: num
     venueFor: (e: any) => byId.get(e.venueId) || null,
     _venuesAll: places, catalog: events,
   };
-  const context = createContext({ window: { WA, addEventListener: () => {} }, document: { documentElement: { lang: 'en' }, dispatchEvent: () => {} }, localStorage: { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } }, CustomEvent: class { type: string; init?: any; constructor(type: string, init?: any) { this.type = type; this.init = init; } }, Date, Intl, JSON });
+  const context = createContext({ window: { WA, addEventListener: () => {} }, document: { documentElement: { lang: 'en' }, addEventListener: () => {}, dispatchEvent: () => {} }, localStorage: { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } }, CustomEvent: class { type: string; init?: any; constructor(type: string, init?: any) { this.type = type; this.init = init; } }, Date, Intl, JSON });
+  const rendering = WA.R;
+  runInContext(readFileSync(new URL('../../render.js', import.meta.url), 'utf8'), context);
+  WA.R = { ...WA.R, ...rendering }; // real shared price predicate, fixture catalogue and layout
   runInContext(readFileSync(new URL('../../moods.js', import.meta.url), 'utf8'), context);
   runInContext(readFileSync(new URL('../../route.js', import.meta.url), 'utf8'), context);
   return WA;
@@ -93,7 +96,7 @@ test('tickets are the cheapest price of each listing; an unknown price is said, 
   const unknown = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { priceMin: null })], places).Route;
   assert.equal(unknown.costText(plain(unknown.plan({}))[0]), 'price not listed');
   const free = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { isFree: true })], places).Route;
-  assert.equal(free.costText(plain(free.plan({}))[0]), 'free');
+  assert.equal(free.costText(plain(free.plan({}))[0]), 'free tickets');
   const half = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { priceMin: 9.5 })], places).Route;
   assert.equal(half.costText(plain(half.plan({}))[0]), 'tickets from €9.50');
 });
@@ -104,6 +107,7 @@ test('a price limit leaves out a listing above it and keeps one with no price', 
   assert.ok(!plain(world(17 * 60, evs, places).Route.plan({ cap: 10 })).some((r: any) => r.stops.some((s: any) => s.id === 'dear')));
   const unlisted = [ev('maybe', 19 * 60, 59.4400, 24.7340, { priceMin: null })];
   assert.ok(plain(world(17 * 60, unlisted, places).Route.plan({ cap: 10 })).some((r: any) => r.stops.some((s: any) => s.id === 'maybe')));
+  assert.ok(!plain(world(17 * 60, unlisted, places).Route.plan({ cap: 0 })).some((r: any) => r.stops.some((s: any) => s.id === 'maybe')), 'unknown prices cannot anchor a free walk');
 });
 
 test('a mood keeps only routes that hold a stop of it', () => {

@@ -20,7 +20,7 @@ Opens {d}	Avaneb {d}	Откроется {d}	Відчиниться {d}
 closes {t}	sulgub {t}	закроется в {t}	зачиниться о {t}
 {d} to {d2}	{d} kuni {d2}	{d} — {d2}	{d} — {d2}
 from {d}	alates {d}	с {d}	з {d}
-about {h} h {m}	umbes {h} h {m}	около {h} ч {m}	близько {h} год {m}
+about {h} h {m} min	umbes {h} h {m} min	около {h} ч {m} мин	близько {h} год {m} хв
 about {h} h	umbes {h} h	около {h} ч	близько {h} год
 about {m} min	umbes {m} min	около {m} мин	близько {m} хв
 tickets from {x}	piletid alates {x}	билеты от {x}	квитки від {x}
@@ -71,7 +71,7 @@ It was on {d}.	See toimus {d}.	Это было {d}.	Це було {d}.
 {n}.{h} km	{n},{h} km	{n},{h} км	{n},{h} км
 {n} km	{n} km	{n} км	{n} км
 {n} m	{n} m	{n} м	{n} м
-{h} h {m}	{h} t {m} min	{h} ч {m} мин	{h} год {m} хв
+{h} h {m} min	{h} t {m} min	{h} ч {m} мин	{h} год {m} хв
 {h} h	{h} t	{h} ч	{h} год
 About {a}, {b} on foot.	Umbes {a}, jalgsi {b}.	Около {a}, пешком {b}.	Близько {a}, пішки {b}.
 About {a}.	Umbes {a}.	Около {a}.	Близько {a}.

@@ -80,7 +80,7 @@
     return (last && last > start ? last : start) >= from;
   };
   const matchesEvent = (e, p = pref()) => window.WA.Moods.wantsEvent(p, e)
-    && (p.cap == null || window.WA.R.isFree(e) || e.priceMin == null || Number(e.priceMin) <= p.cap);
+    && window.WA.R.withinTicketCap(e, p.cap);
   const matchesPlace = (v, p = pref()) => window.WA.Moods.wantsPlace(p, v);
   const dateLabel = key => `${window.WA.R.dateShort(key)}${key.slice(0,4) === W().todayKey().slice(0,4) ? '' : ' ' + key.slice(0,4)}`;
   const label = (s = dates()) => s.date ? (s.to ? `${dateLabel(s.date)} – ${dateLabel(s.to)}` : dateLabel(s.date))

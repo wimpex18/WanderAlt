@@ -30,7 +30,7 @@ function world(now: number, events: any[], places: P[], open: (p: P, minute: num
       walkMinutes: (m: number) => (m == null ? null : Math.max(1, Math.round(m / 80))),
       currentLoc: () => null, format: (m: number) => `${Math.round(m)} m`,
     },
-    R: { live: () => events, places: () => places, isOff: () => false, isLive: () => false, areaOf: () => 'Kalamaja', kindLabel: (k: string) => k, isFree: () => false, interests: { matches: () => false } },
+    R: { live: () => events, places: () => places, isOff: () => false, isLive: () => false, areaOf: () => 'Kalamaja', kindLabel: (k: string) => k, isFree: () => false, withinTicketCap: () => true, interests: { matches: () => false } },
     venueFor: (e: any) => byId.get(e.venueId) || null,
     _venuesAll: places, catalog: events,
   };
@@ -95,4 +95,22 @@ test('a bar waits until four, a club until nine, and nothing is the same buildin
   eq(lateNight.compose().stops.map((s: any) => s.id), ['e1', 'club']);
   const sameBuilding = world(12 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340)], [place('annex', 'bar', 59.44005, 24.73402)]);
   assert.equal(sameBuilding.compose(), null);
+});
+
+test('a walk never proposes a sold-out show; a stated long event end keeps the following stop after it', () => {
+  const places = [place('shop', 'record store', 59.443, 24.734), place('bar', 'bar', 59.437, 24.734)];
+  assert.equal(world(17 * 60, [ev('full', 19 * 60, 59.44, 24.734, { flag:'sold_out' })], places).compose(), null);
+  const Route = world(17 * 60, [ev('long', 18 * 60, 59.44, 24.734, { endsAt:'2026-10-02T19:00:00Z' })], places);
+  const route = Route.compose();
+  assert.ok(route.stops.find((s: any) => s.id === 'bar').minute >= 22 * 60, 'four-hour event really ends at 22:00');
+  assert.equal(Route.lengthText({ stops:[{minute:0},{minute:185}], metres:0 }), '3 h 5 min');
+});
+
+test('directions include every stop or are unavailable; invalid coordinates never become a partial route', () => {
+  const Route = world(17 * 60, [], []);
+  const stops = [{lat:59.44,lng:24.73},{lat:59.45,lng:24.74},{lat:59.46,lng:24.75}];
+  assert.match(Route.mapsUrl({stops}), /59.440000,24.730000%7C59.450000,24.740000/);
+  for (const bad of [{lat:null,lng:null},{lat:NaN,lng:24},{lat:91,lng:24}]) {
+    assert.equal(Route.mapsUrl({stops:[stops[0],bad,stops[2]]}), '');
+  }
 });

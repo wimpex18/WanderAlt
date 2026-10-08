@@ -59,7 +59,8 @@
     if (!route) return '';
     const Rt = window.WA.Route, first = route.stops[0];
     const from = route.fromYou != null ? (route.fromYou <= 1 ? (G().anchor() ? 'Right by here' : 'Right by you') : `${route.fromYou} min walk from ${G().anchor() ? 'here' : 'you'}`) : '';
-    const meta = [route.area, `about ${Rt.lengthText(route).split(',')[0]}`, from].filter(Boolean).join(' · ');
+    const meta = [route.area, from].filter(Boolean).join(' · ');
+    const facts = [`${route.walkMin} min on foot`, Rt.costText(route) || `${route.stops.length} stops`].join(' · ');
     return `<section class="home-walk" aria-labelledby="home-walk-title">
       <div class="home-walk__head"><span class="home-walk__kicker">${I('walk')}<b>A walk for now</b><span class="home-walk__meta">${esc(meta)}</span></span>
         ${plans.length > 1 ? `<button class="wa-iconbtn home-walk__again" type="button" data-another aria-label="Another walk">${I('refresh')}</button>` : ''}</div>
@@ -67,6 +68,7 @@
         <span class="home-walk__title" id="home-walk-title">${esc(route.title || 'Two or three stops on foot')}</span>
         <span class="home-walk__discs" aria-hidden="true">${route.stops.slice(0, 3).map(s => window.WA.Picto.kind(s.kind)).join('')}</span>
         <span class="home-walk__stops"><time>${esc(window.WA.Hours.clock(first.minute % 1440))}</time>${route.stops.map(s => `<span data-notranslate>${esc(s.name)}</span>`).join(`<span class="home-walk__to" aria-hidden="true">${I('arrow')}</span>`)}</span>
+        <span class="home-walk__foot"><span class="home-walk__cost">${esc(facts)}</span><span class="home-walk__action">View walk ${I('arrow')}</span></span>
       </a></section>`;
   };
 
@@ -128,9 +130,10 @@
     if (!list.length) {
       const tonight = !date.date && date.when === 'tonight', p = pref();
       const narrowed = p.moods.length || p.cap != null;
-      return `<div class="home-empty"><p>${tonight ? (narrowed ? 'Nothing for this mood tonight.' : 'Nothing else listed tonight.') : 'No listings match these choices.'}</p>
+      return `<div class="home-empty"><p>${tonight && !narrowed ? 'Nothing else listed tonight.' : 'No listings match these choices.'}</p>
         ${tonight ? '<button class="wa-btn wa-btn--pill" type="button" data-when-pick="tomorrow">Tomorrow</button>' : ''}
-        ${narrowed ? '<button class="wa-linkbtn" type="button" data-mood-pick="">Any mood</button>' : ''}
+        ${narrowed ? '<button class="wa-linkbtn" type="button" data-discovery-clear>Clear filters</button>' : ''}
+        ${!tonight ? '<button class="wa-linkbtn" type="button" data-pick-dates aria-haspopup="dialog">Change dates</button>' : ''}
         <a class="wa-linkbtn" href="discover.html">All events</a></div>`;
     }
     let budget = shown;
@@ -154,7 +157,7 @@
   };
   const placesPart = (list) => {
     const from = (nearOn() ? G().currentLoc() : null) || centre();
-    if (!list.length) return '<div class="home-empty"><p>No places match these choices.</p><button class="wa-linkbtn" type="button" data-mood-pick="">Any mood</button></div>';
+    if (!list.length) return '<div class="home-empty"><p>No places match these choices.</p><button class="wa-linkbtn" type="button" data-discovery-clear>Clear filters</button><a class="wa-linkbtn" href="places.html">All places</a></div>';
     return `<p class="wa-note home-day__note">${esc(nearOn() ? 'Nearest to here first' : 'Nearest the centre first')}</p>
       <ul class="home-places">${list.slice(0, shown).map(v => R().placeRow(v, { from, pickLabel: false })).join('')}</ul>
       ${more(list.length)}<p class="home-day__all-link"><a class="wa-linkbtn" href="places.html">All places ${I('arrow')}</a></p>`;
@@ -198,7 +201,7 @@
   fold.hidden = true;
   const foldText = () => {
     const p = pref(), words = M().words(p);
-    return [view === 'events' ? D().label() : 'Places', words.length ? (words.length > 1 ? `${words[0]} +${words.length - 1}` : words[0]) : ''].filter(Boolean).join(' · ');
+    return [view === 'events' ? D().label() : 'Places', words.length ? (words.length > 1 ? `${words[0]} +${words.length - 1}` : words[0]) : '', p.cap != null && view === 'events' ? C().filterWord(p) : ''].filter(Boolean).join(' · ');
   };
   const syncFold = () => {
     fold.innerHTML = `${I('filter')}<span>${esc(foldText())}</span>`;
@@ -241,8 +244,10 @@
     const places = pickedPlaces();
     const out = [];
     if (!wide.matches) out.push(walkCard());
-    out.push(`<section class="home-list" id="list" aria-label="${view === 'places' ? 'Places' : 'Events'}"><div id="home-browse-slot"></div>${view === 'places' ? placesPart(places) : eventsPart(list, date)}</section>`);
-    if (!all.length && window.WA.DATA_LIVE === false) out.push(R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] }));
+    const unavailable = window.WA.DATA_LIVE === false && !(view === 'places' ? R().places().length : all.length);
+    const content = unavailable ? R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] })
+      : view === 'places' ? placesPart(places) : eventsPart(list, date);
+    out.push(`<section class="home-list" id="list" aria-label="${view === 'places' ? 'Places' : 'Events'}"><div id="home-browse-slot"></div>${content}</section>`);
     const focused = document.activeElement, keep = browse.contains(focused);
     $('home-main').innerHTML = out.join('');
     $('home-browse-slot').replaceWith(browse);

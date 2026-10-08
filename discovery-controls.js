@@ -94,7 +94,7 @@
       const on = draft.moods.includes(m.id);
       return `<li class="mood-item"><button class="mood-row" type="button" data-mood="${esc(m.id)}" aria-pressed="${on}">${window.WA.Picto(m.picto)}<span class="mood-row__t"><b>${esc(m.label)}</b><small>${esc(m.hint)}</small></span><span class="mood-row__tick">${I('check')}</span></button>
         ${m.subs.length > 1 ? `<div class="mood-subs" data-subs-of="${esc(m.id)}" role="group" aria-label="Narrow it down"${on ? '' : ' hidden'}>${m.subs.map(s => `<button class="wa-chip" type="button" data-sub="${esc(s.id)}" aria-pressed="${draft.subs.includes(s.id)}">${esc(s.label)}</button>`).join('')}</div>` : ''}</li>`;
-    }).join('')}</ul><h3 class="mood-h">Tickets</h3><div class="mood-seg" role="group" aria-label="Ticket price limit">${[[0,'Free'],[20,'Up to €20'],[null,'Any']].map(([cap,label]) => `<button type="button" data-cap="${cap == null ? '' : cap}" aria-pressed="${cap === draft.cap}">${esc(label)}</button>`).join('')}</div><p class="wa-note">Unknown prices included</p>`;
+    }).join('')}</ul><h3 class="mood-h">Tickets</h3><div class="mood-seg" role="group" aria-label="Ticket price limit">${[[0,'Free'],[20,'Up to €20'],[null,'Any']].map(([cap,label]) => `<button type="button" data-cap="${cap == null ? '' : cap}" aria-pressed="${cap === draft.cap}">${esc(label)}</button>`).join('')}</div><p class="wa-note" id="mood-price-note">${draft.cap === 0 ? 'Only confirmed free listings' : 'Unknown prices included'}</p>`;
   };
   const openMood = button => {
     draft = M().pref();
@@ -112,6 +112,12 @@
   };
   document.addEventListener('click', e => {
     const hit = s => e.target.closest && e.target.closest(s);
+    if (hit('[data-discovery-clear]')) {
+      M().setPref({ moods:[], subs:[], cap:null });
+      document.dispatchEvent(new CustomEvent('wa:discovery-applied', { detail:'mood' }));
+      document.querySelector('.home-view [aria-pressed="true"]')?.focus({ preventScroll:true });
+      return;
+    }
     if (hit('[data-mood-pick]')) {
       if (hit('.wa-genie')) window.WA.UI.genie.close(true);
       M().pick(hit('[data-mood-pick]').dataset.moodPick);
@@ -156,6 +162,7 @@
     } else if (cap) {
       draft.cap = cap.dataset.cap === '' ? null : Number(cap.dataset.cap);
       sheet.querySelectorAll('[data-cap]').forEach(b => b.setAttribute('aria-pressed', b === cap));
+      sheet.querySelector('#mood-price-note').textContent = draft.cap === 0 ? 'Only confirmed free listings' : 'Unknown prices included';
     } else if (hit('[data-mood-clear]')) { draft = { moods:[], subs:[], cap:null }; sheet.querySelector('#discovery-body').innerHTML = moodBody(); }
   });
   document.addEventListener('change', e => {

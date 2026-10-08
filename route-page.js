@@ -58,15 +58,18 @@
     if (!new URLSearchParams(location.search).has('d')) history.replaceState(null, '', window.WA.Route.href(route));
     const cost = window.WA.Route.costText(route);
     /* One sentence per span, so each is looked up whole in the interface language. */
-    $('rt-sub').innerHTML = [route.blurb, `About ${window.WA.Route.lengthText(route)}.`, cost ? `${cost.charAt(0).toUpperCase()}${cost.slice(1)}.` : '', 'Check hours before you go.']
+    $('rt-sub').innerHTML = [route.blurb, `About ${window.WA.Route.lengthText(route)}.`, cost ? `${cost.charAt(0).toUpperCase()}${cost.slice(1)}.` : 'Place costs are not included.']
       .filter(Boolean).map(t => `<span>${esc(t)}</span>`).join(' ');
     const maps = window.WA.Route.mapsUrl(route);
+    const unfiledHours = route.stops.some(s => s.type === 'place' && s.hours === 'unknown');
+    const unfiledEnd = route.stops.some((s, i) => s.type === 'event' && i < route.stops.length - 1 && !(window.WA.catalog || []).find(e => e.id === s.id)?.endsAt);
     $('rt-body').innerHTML = `<ol class="rt">${startLine(route.stops[0])}${route.stops.map((s, i) => stopHtml(s, i, route)).join('')}</ol>
+      ${unfiledHours || unfiledEnd || !maps ? `<p class="wa-note rt-check">${[unfiledHours ? 'Some opening hours are not listed. Check before you go.' : '', unfiledEnd ? 'The event end time is not listed. Later stops are flexible.' : '', !maps ? 'Some stops have no map location. Open their pages for address details.' : ''].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join(' ')}</p>` : ''}
       <div class="rt-actions">
         ${maps ? `<a class="wa-btn wa-btn--primary" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">${I('walk')}Open in Maps</a>` : ''}
         <button class="wa-btn" type="button" id="rt-share">${I('share')}Share</button>
       </div>
-      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Walking times are straight-line distances at a normal pace.</span> <span>Each stop's page says where its listing came from.</span></p>
+      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times are straight-line distances at a normal pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
       <div id="rt-more"></div>`;
     more(route);
   };

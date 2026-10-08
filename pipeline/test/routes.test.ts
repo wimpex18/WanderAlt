@@ -23,9 +23,15 @@ test('a picked place before and a bar after make an evening around one listing',
 test('shut places, cancelled listings, undated listings and past starts make nothing', () => {
   assert.equal(find([ev('e1', '19:00')], [{ ...shop, opening_hours: 'Mo-Su 10:00-12:00' }, { ...bar, opening_hours: 'Mo-Su 10:00-12:00' }]).length, 0);
   assert.equal(find([ev('e1', '19:00', { flag: 'cancelled' })], [shop, bar]).length, 0);
+  assert.equal(find([ev('e1', '19:00', { flag: 'sold_out' })], [shop, bar]).length, 0);
   assert.equal(find([ev('e1', '19:00', { has_time: false })], [shop, bar]).length, 0);
   assert.equal(find([ev('e1', '14:10')], [shop, bar]).length, 0);
   assert.equal(find([ev('e1', '19:00', { kind: 'market' })], [shop, bar]).length, 0);
+});
+
+test('pipeline walks honour a stated event end, including events longer than three hours', () => {
+  const [route] = find([ev('long', '18:00', {ends_at:'2026-10-02T22:00:00+03:00'})], [shop,bar]);
+  assert.ok(route.stops.find(s => s.id === 'bar')!.minute >= 22 * 60);
 });
 
 test('unfiled hours keep a place in; the shortlist never leans on one place more than twice', () => {

@@ -530,7 +530,7 @@ window.WA.dict.uk = {
   "No route right now": "Зараз маршруту немає",
   "Nothing fits together right now.": "Зараз нічого не складається докупи.",
   "A walk through Tallinn": "Прогулянка Таллінном",
-  "Walk it": "Пройти пішки",
+  "View walk": "Переглянути прогулянку",
   "A gallery": "Галерея",
   "An arts centre": "Центр мистецтв",
   "A film": "Фільм",
@@ -690,16 +690,21 @@ window.WA.dict.uk = {
   "Another": "Інший",
   "Any": "Будь-яка",
   "Open in Maps": "Відкрити в Картах",
-  "Check hours before you go.": "Перед виходом перевірте години роботи.",
   "Walking times are straight-line distances at a normal pace.": "Час пішки рахується по прямій за звичайного кроку.",
-  "Each stop's page says where its listing came from.": "На сторінці кожної зупинки вказано, звідки взято відомості.",
+  "Place times are suggested.": "Час відвідування місць запропоновано для плану.",
+  "Place costs are not included.": "Витрати в закладах не враховано.",
+  "Some opening hours are not listed. Check before you go.": "Години роботи деяких місць не вказано. Перевірте перед виходом.",
+  "The event end time is not listed. Later stops are flexible.": "Час завершення події не вказано. Наступні зупинки можна змістити.",
+  "Some stops have no map location. Open their pages for address details.": "Деякі зупинки не позначено на мапі. Адреси дивіться на їхніх сторінках.",
+  "Tickets and opening hours can change. Check each stop before you go.": "Наявність квитків і години роботи можуть змінитися. Перевірте кожну зупинку перед виходом.",
   "Was": "Минуло",
   "closed": "зачинено",
   "where you are": "вас",
   "your chosen place": "вибраного місця",
   "your chosen spot": "вибране місце",
   "Price not listed.": "Ціну не вказано.",
-  "Free.": "Безкоштовно.",
+  "Free tickets.": "Безкоштовні квитки.",
+  "free tickets": "безкоштовні квитки",
   "A bar": "Бар",
   "A club": "Клуб",
   "A gig": "Концерт",
@@ -856,7 +861,6 @@ window.WA.dict.uk = {
   "Also today": "Також сьогодні",
   "No set time, or running": "Без часу або триває кілька днів",
   "Cancelled or postponed": "Скасовано або перенесено",
-  "Nothing for this mood tonight.": "Сьогодні ввечері під цей настрій нічого немає.",
   "Nothing else listed tonight.": "На сьогоднішній вечір більше нічого немає.",
   "Change dates": "Змінити дати",
   "A day or a range": "День або період",
@@ -879,7 +883,9 @@ window.WA.dict.uk = {
   "Nothing in this list yet. Add saves to it from their pages.": "У цьому списку поки порожньо. Додавайте збережене зі сторінок подій і місць.",
   "Needs the app": "Потрібен застосунок",
   "On": "Увімк.",
-  "Off": "Вимк."
+  "Off": "Вимк.",
+  "Clear filters": "Скинути фільтри",
+  "Only confirmed free listings": "Лише події з підтвердженим безкоштовним входом"
  },
  "patterns": [
   [
@@ -982,8 +988,8 @@ window.WA.dict.uk = {
    "з {d}"
   ],
   [
-   "about {h} h {m}",
-   "близько {h} год {m}"
+   "about {h} h {m} min",
+   "близько {h} год {m} хв"
   ],
   [
    "about {h} h",
@@ -1186,7 +1192,7 @@ window.WA.dict.uk = {
    "{n} м"
   ],
   [
-   "{h} h {m}",
+   "{h} h {m} min",
    "{h} год {m} хв"
   ],
   [
