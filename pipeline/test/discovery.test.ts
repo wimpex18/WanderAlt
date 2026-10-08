@@ -110,7 +110,6 @@ function home(search = '', setup: (p: ReturnType<typeof page>) => void = () => {
   p.WA.Geo.byDateThenSoonest = () => (a: any, b: any) => a.startsAt.localeCompare(b.startsAt) || a.id.localeCompare(b.id);
   p.WA.Geo.anchor = () => null;
   p.WA.Route = { plan:() => [], loadStored:() => {} };
-  p.WA.StartFrom = { originMarkup:() => '' };
   runInContext(readFileSync(new URL('../../discovery-controls.js', import.meta.url), 'utf8'), p.context);
   p.WA.R.row = (e: any, o: any = {}) => `<li data-row="${e.id}" data-started="${!!o.started}"><a href="detail.html?id=${e.id}">${e.title}</a></li>`;
   p.WA.R.placeRow = (v: any, o: any = {}) => `<li data-row="${v.id}" data-pick-label="${o.pickLabel}"><a href="detail.html?place=${v.id}">${v.name}</a></li>`;
@@ -202,6 +201,27 @@ test('the mood rail picks one mood at a time, keeps price and that mood\'s own s
   p.WA.Moods.setPref({ moods:['browse'], subs:[], cap:null });
   p.click('[data-mood-pick]', { moodPick:'' });
   assert.deepEqual(p.WA.Moods.pref().moods.length, 0);
+});
+
+test('empty results clear the price and mood together while keeping the chosen day', () => {
+  const p = home('?when=tomorrow', p => {
+    p.WA.Moods.setPref({ moods:[], subs:[], cap:0 });
+    p.WA.catalog = [{ id:'paid', title:'Paid tomorrow', kind:'gig', startsAt:'2026-10-07T15:00:00Z', priceMin:10 }];
+  });
+  assert.equal(p.rows().length, 0);
+  assert.match(p.html(), /Clear filters/);
+  assert.doesNotMatch(p.html(), /Nothing for this mood|data-mood-pick/);
+  p.click('[data-discovery-clear]');
+  assert.deepEqual(JSON.parse(JSON.stringify(p.WA.Moods.pref())), { moods:[], subs:[], cap:null });
+  assert.equal(p.WA.Discovery.dates().when,'tomorrow');
+  assert.deepEqual(p.rows(),['paid']);
+});
+
+test('an unavailable catalogue offers retry instead of claiming the night has no events', () => {
+  const p = home('', p => { p.WA.catalog = []; p.WA.DATA_LIVE = false; });
+  assert.match(p.html(), /We can&#39;t reach the listings right now\.|We can’t reach the listings right now\.|We can't reach the listings right now\./);
+  assert.match(p.html(), /Try again/);
+  assert.doesNotMatch(p.html(), /Nothing else listed tonight|No listings match/);
 });
 
 // Real shared date-sheet controller, with native dialog/form behavior stubbed.
@@ -502,6 +522,8 @@ test('ticket caps keep unknown prices explicitly, while mood and submood remain 
   p.WA.Moods.setPref({ moods:['look'], subs:['film'], cap:0 });
   assert.equal(D.matchesEvent({ kind:'film', priceMin:1 }), false);
   assert.equal(D.matchesEvent({ kind:'film', priceMin:0 }), true);
+  assert.equal(D.matchesEvent({ kind:'film', priceMin:null }), false);
+  assert.equal(D.matchesEvent({ kind:'film', isFree:true }), true);
   assert.equal(D.matchesPlace({ kind:'cinema' }), true);
 });
 

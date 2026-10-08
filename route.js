@@ -89,8 +89,8 @@
   const startOf = (e) => G().startMinutes(e);
   const endOf = (e, start) => {
     const t = e.endsAt ? Date.parse(e.endsAt) : NaN, s = e.startsAt ? Date.parse(e.startsAt) : NaN;
-    const len = !isNaN(t) && !isNaN(s) ? Math.round((t - s) / 60000) : 120;
-    return start + Math.min(Math.max(len, 45), 180);
+    const len = Math.round((t - s) / 60000);
+    return start + (Number.isFinite(len) && len > 0 ? len : 120);
   };
 
   /* A listing's own words, cut at a word, never mid-sentence into silence. */
@@ -146,7 +146,7 @@
     if (!c.events) return '';
     const eur = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
     if (c.tickets > 0) return `tickets from ${eur(c.tickets)}${c.unknown ? ` · ${c.unknown} price not listed` : ''}`;
-    return c.unknown ? 'price not listed' : 'free';
+    return c.unknown ? 'price not listed' : 'free tickets';
   };
 
   const build = (stops) => {
@@ -162,7 +162,6 @@
      hold at least one stop of the chosen mood; a listing priced above the limit
      is left out, and one with no price listed stays in and says so. */
   const MOODS = () => window.WA.Moods || null;
-  const underCap = (e, cap) => cap == null || R().isFree(e) || e.priceMin == null || Number(e.priceMin) <= cap;
   /* The choice (Moods.pref() shape); an older single `mood` still reads. */
   const wantOf = (opts) => {
     const w = opts.want || (opts.mood ? { moods: [opts.mood], subs: [] } : null);
@@ -182,8 +181,8 @@
     const places = R().places().filter(v => v.picked && G().coordsFor(v));
     if (!places.length) return [];
     const me = G().currentLoc();
-    const anchors = R().live().filter(e => W().isTonight(e) && !R().isOff(e) && !R().isLive(e) && G().coordsFor(e)
-      && startOf(e) != null && startOf(e) >= now + 20 && startOf(e) < DAY && underCap(e, opts.cap)
+    const anchors = R().live().filter(e => W().isTonight(e) && !R().isOff(e) && e.flag !== 'sold_out' && !R().isLive(e) && G().coordsFor(e)
+      && startOf(e) != null && startOf(e) >= now + 20 && startOf(e) < DAY && R().withinTicketCap(e, opts.cap)
       && !(opts.near && me && (walk(G().distanceTo(e)) || 0) > NEAR));
     const found = [];
     for (const e of anchors) {
@@ -334,6 +333,7 @@
     const day = isEvent ? W().resolveKey?.(entry) : W().todayKey?.();
     const offset = day ? dayOffset(day) : 0;
     if (offset < 0) return null;
+    if (isEvent && (R().isOff(entry) || entry.flag === 'sold_out' || W().hasEnded(entry))) return null;
     const now = nowMin();
     let start = isEvent ? startOf(entry) : round5(now + 5);
     if (start == null) return null;
@@ -390,16 +390,21 @@
     const route = fromParam(str, offset);
     if (!route || (offset === 0 && route.stops[0].minute < nowMin() - 15)) return null;
     if (route.stops.some(s => s.type === 'place' && !fits({ kind: s.kind }, s.hours, s.minute))) return null;
-    for (const stop of route.stops.filter(s => s.type === 'event')) {
+    for (const [i, stop] of route.stops.entries()) {
+      if (stop.type !== 'event') continue;
       const event = (window.WA.catalog || []).find(e => e.id === stop.id);
-      if (!event || R().isOff(event) || W().hasEnded(event) || W().resolveKey(event) !== W().keyPlus(offset + Math.floor(stop.minute / DAY))) return null;
+      if (!event || R().isOff(event) || event.flag === 'sold_out' || W().hasEnded(event)
+        || startOf(event) !== stop.minute % DAY || W().resolveKey(event) !== W().keyPlus(offset + Math.floor(stop.minute / DAY))) return null;
+      const next = route.stops[i + 1];
+      if (next && next.minute < endOf(event, stop.minute) + (next.walk || 0)) return null;
     }
     return route;
   };
 
   /* A walking route in Google Maps; no origin, so it starts where you are. */
   const mapsUrl = (route) => {
-    const pts = route.stops.filter(s => s.lat != null && s.lng != null).map(s => `${Number(s.lat).toFixed(6)},${Number(s.lng).toFixed(6)}`);
+    if (route.stops.some(s => s.lat == null || s.lng == null || !Number.isFinite(Number(s.lat)) || !Number.isFinite(Number(s.lng)) || Math.abs(Number(s.lat)) > 90 || Math.abs(Number(s.lng)) > 180)) return '';
+    const pts = route.stops.map(s => `${Number(s.lat).toFixed(6)},${Number(s.lng).toFixed(6)}`);
     if (pts.length < 2) return '';
     const dest = pts[pts.length - 1], via = pts.slice(0, -1);
     return `https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${dest}&waypoints=${via.join('%7C')}`;
@@ -458,32 +463,23 @@
     const first = route.stops[0].minute, last = route.stops[route.stops.length - 1].minute;
     const span = Math.max(0, last - first);
     const h = Math.floor(span / 60), m = span % 60;
-    const len = h ? `${h} h${m ? ` ${m}` : ''}` : `${m} min`;
+    const len = h ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`;
     const dist = route.metres ? `, ${G().format(route.metres)} on foot` : '';
     return `${len}${dist}`;
   };
 
-  /* A hand-drawn Old Town skyline, inked in once when the card appears. */
-  const SKYLINE = `<svg class="rt-card__sketch" viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <defs><filter id="wa-wobble"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter></defs>
-      <g filter="url(#wa-wobble)"><path pathLength="1" d="M4 54H176"/><path pathLength="1" d="M20 54V30L27 6 34 30V54M23 30h8"/><path pathLength="1" d="M56 54V28q10-12 20 0V54M56 40h20"/><path pathLength="1" d="M96 54V32L108 12 120 32V54M108 12V4l7 3"/><path pathLength="1" d="M134 54V38l8-8 8 8V54M152 54V36l8-8 8 8v18"/></g></svg>`;
-
-  /* The card on Tonight and in lists of evenings: title, stops, walks between. The
-     title and stops open the route; Tonight's own card adds Walk it and Another. */
+  /* The route cards in lists of evenings: title, stops and walks between. */
   const card = (route, o = {}) => {
     const opt = typeof o === 'string' ? { label: o } : o;
     const url = esc(href(route));
     const sub = [opt.label, route.area, `about ${lengthText(route).split(',')[0]}`, costText(route)].filter(Boolean).join(' · ');
     const lead = route.fromYou != null ? `<li class="rt-card__walk rt-card__walk--you" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(G().anchor() ? (route.fromYou <= 1 ? 'Right by here' : `${route.fromYou} min walk from here`) : (route.fromYou <= 1 ? 'Right by you' : `${route.fromYou} min walk from you`))}</span></li>` : '';
-    const stops = lead + route.stops.map((s, i) => `${i && s.walk ? `<li class="rt-card__walk" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(`${s.walk} min walk`)}</span></li>` : ''}<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}" style="--i:${i}">
+    const stops = lead + route.stops.map((s, i) => `${i && s.walk ? `<li class="rt-card__walk" aria-hidden="true"><span></span><span class="rt-card__rail"></span><span>${esc(`${s.walk} min walk`)}</span></li>` : ''}<li class="rt-card__stop${s.type === 'event' ? ' is-event' : ''}">
         <time>${esc(clock(s.minute))}</time><span class="rt-card__dot" aria-hidden="true"></span>
         <span class="rt-card__what"><b>${esc(s.name)}</b><small>${esc(stopSub(s))}</small></span></li>`).join('');
-    return `<section class="rt-card${opt.actions ? ' rt-card--now' : ''}" aria-label="${esc(route.title)}">
-      ${opt.actions ? SKYLINE : ''}
+    return `<section class="rt-card" aria-label="${esc(route.title)}">
       <a class="rt-card__main" href="${url}"><span class="rt-card__title">${esc(route.title)}</span><span class="rt-card__sub">${esc(sub)}</span>
-      ${opt.origin ? `</a><div class="rt-card__origin-wrap">${opt.origin}</div><a class="rt-card__main" href="${url}">` : ''}
-      <ol class="rt-card__stops">${stops}</ol></a>
-      ${opt.actions ? `<div class="rt-card__acts"><a class="wa-btn wa-btn--primary wa-btn--pill" href="${url}">Walk it</a>${opt.more ? `<button class="wa-btn wa-btn--pill" type="button" data-another>${window.WA.Icon('refresh')}Another</button>` : ''}</div>` : ''}</section>`;
+      <ol class="rt-card__stops">${stops}</ol></a></section>`;
   };
 
   window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, lengthText, costText };

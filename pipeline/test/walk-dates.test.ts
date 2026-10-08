@@ -37,6 +37,19 @@ test('event links require their actual day; older event links recover it and can
   assert.equal(a.Route.fromURL(s,null).day,'2026-10-05');
   a.R.isOff=()=>true; assert.equal(a.Route.fromURL(s,'2026-10-05'),null);
 });
+test('shared walks stop working when their show sells out, moves time, or ends after the next stop', () => {
+  const a = world(), stops = 'place:books:1080,event:gig:1140,place:vinyl:1300';
+  assert.ok(a.Route.fromURL(stops,'2026-10-05'));
+  a.catalog[0].flag = 'sold_out';
+  assert.equal(a.Route.fromURL(stops,'2026-10-05'),null);
+  assert.equal(a.Route.fromHere(a.catalog[0]),null);
+  a.catalog[0].flag = null;
+  a.Geo.startMinutes = () => 20 * 60;
+  assert.equal(a.Route.fromURL(stops,'2026-10-05'),null);
+  a.Geo.startMinutes = () => 19 * 60;
+  a.catalog[0].endsAt = '2026-10-05T19:00:00Z'; // 22:00, after the next stop at 21:40
+  assert.equal(a.Route.fromURL(stops,'2026-10-05'),null);
+});
 test('arrival hours use the Tallinn date and clock across autumn DST and after midnight', () => {
   const a=world('2026-10-24T09:00:00Z','Su 10:00-11:00');
   assert.ok(a.Route.fromURL('place:books:600,place:vinyl:610','2026-10-25'));

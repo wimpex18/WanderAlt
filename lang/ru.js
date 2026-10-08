@@ -530,7 +530,7 @@ window.WA.dict.ru = {
   "No route right now": "Сейчас маршрута нет",
   "Nothing fits together right now.": "Сейчас ничего не сочетается.",
   "A walk through Tallinn": "Прогулка по Таллину",
-  "Walk it": "Пройти пешком",
+  "View walk": "Посмотреть прогулку",
   "A gallery": "Галерея",
   "An arts centre": "Центр искусств",
   "A film": "Фильм",
@@ -690,16 +690,21 @@ window.WA.dict.ru = {
   "Another": "Другой",
   "Any": "Любая",
   "Open in Maps": "Открыть в Картах",
-  "Check hours before you go.": "Перед выходом проверьте часы работы.",
   "Walking times are straight-line distances at a normal pace.": "Время пешком считается по прямой при обычном шаге.",
-  "Each stop's page says where its listing came from.": "На странице каждой остановки указано, откуда взяты сведения.",
+  "Place times are suggested.": "Время посещения мест предложено для плана.",
+  "Place costs are not included.": "Расходы в заведениях не учтены.",
+  "Some opening hours are not listed. Check before you go.": "Часы работы некоторых мест не указаны. Проверьте перед выходом.",
+  "The event end time is not listed. Later stops are flexible.": "Время окончания события не указано. Последующие остановки можно сдвинуть.",
+  "Some stops have no map location. Open their pages for address details.": "Некоторые остановки не отмечены на карте. Адреса смотрите на их страницах.",
+  "Tickets and opening hours can change. Check each stop before you go.": "Наличие билетов и часы работы могут измениться. Проверьте каждую остановку перед выходом.",
   "Was": "Прошло",
   "closed": "закрыто",
   "where you are": "вас",
   "your chosen place": "выбранного места",
   "your chosen spot": "выбранное место",
   "Price not listed.": "Цена не указана.",
-  "Free.": "Бесплатно.",
+  "Free tickets.": "Бесплатные билеты.",
+  "free tickets": "бесплатные билеты",
   "A bar": "Бар",
   "A club": "Клуб",
   "A gig": "Концерт",
@@ -856,7 +861,6 @@ window.WA.dict.ru = {
   "Also today": "Также сегодня",
   "No set time, or running": "Без времени или идёт несколько дней",
   "Cancelled or postponed": "Отменено или перенесено",
-  "Nothing for this mood tonight.": "Сегодня вечером под это настроение ничего нет.",
   "Nothing else listed tonight.": "На сегодняшний вечер больше ничего нет.",
   "Change dates": "Изменить даты",
   "A day or a range": "День или период",
@@ -879,7 +883,9 @@ window.WA.dict.ru = {
   "Nothing in this list yet. Add saves to it from their pages.": "В этом списке пока пусто. Добавляйте сохранённое со страниц событий и мест.",
   "Needs the app": "Нужно приложение",
   "On": "Вкл.",
-  "Off": "Выкл."
+  "Off": "Выкл.",
+  "Clear filters": "Сбросить фильтры",
+  "Only confirmed free listings": "Только события с подтверждённым бесплатным входом"
  },
  "patterns": [
   [
@@ -982,8 +988,8 @@ window.WA.dict.ru = {
    "с {d}"
   ],
   [
-   "about {h} h {m}",
-   "около {h} ч {m}"
+   "about {h} h {m} min",
+   "около {h} ч {m} мин"
   ],
   [
    "about {h} h",
@@ -1186,7 +1192,7 @@ window.WA.dict.ru = {
    "{n} м"
   ],
   [
-   "{h} h {m}",
+   "{h} h {m} min",
    "{h} ч {m} мин"
   ],
   [

@@ -10,10 +10,10 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 
 ### Now (`index.html`)
 
-- The state of the night with the starting point (Near), a rail of moods and one walk shown as its stops, then Events/Places with a When key (Today, Tomorrow, Weekend, Pick dates) whose panel opens out of the key.
+- The state of the night with the starting point (Near), a rail of moods and one walk showing its stops, walking time, ticket cost and View walk, then Events/Places with a When key (Today, Tomorrow, Weekend, Pick dates) whose panel opens out of the key.
 - Moods: one tap picks one mood; Filters holds several moods, subs and the ticket cap.
 - Tonight's events read as a timeline: On now (latest start first), Starting soon (two hours), Later tonight, Also today (no set time or a running series), then cancelled or postponed. Other dates group by night.
-- Once the controls scroll away they fold into one key under the top bar that opens a quick panel.
+- Once the controls scroll away they fold into one key showing dates, mood and any ticket cap. Empty results offer Clear filters (moods and price together, keeping dates) or Change dates.
 - Rows are compact with a thumbnail and save. Show up to 25 matching items, then batches of 25 until exhausted; `shown` preserves expansion on refresh and Back. Changing view or filters resets it.
 - All events opens the complete event catalogue; All places opens the picked Guide.
 - From 1024 px the list sits beside a sticky side column (the walk, picked places open now and what is new since the last visit), and Events | Places with When stays pinned under the top bar. Every page shares one 1200 px width with the top bar; `/` opens search.
@@ -30,9 +30,9 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 ### Rules the interface keeps
 
 - **Nights**: a night runs until 05:00. A stated start before 05:00 belongs to the evening before, so Today, Tomorrow and Weekend count nights on Now, Map and search; picked dates do too. Routes and day labels keep calendar days. A club night without a stated end is taken to run six hours, other timed listings three.
-- **Unknown facts stay explicit**: Free requires known free entry, In English a stated performance language, Open now known hours. Unknown prices can pass a cap with a note. Date-only entries say Time not listed. Closed or cancelled records keep their identity without claiming availability.
+- **Unknown facts stay explicit**: Free requires known free entry, In English a stated performance language, Open now known hours. Unknown prices can pass a positive ticket cap with a note. Date-only entries say Time not listed. Closed or cancelled records keep their identity without claiming availability.
 - **Images and notes**: photos require exact identity; picked notes require source-backed facts.
-- **Walks**: distinct picked stops; each place must still be open (or, unfiled, inside its kind's usual hours) five minutes before you would leave it. After this suggests places still open 25 minutes after arrival. Missing hours remain labelled.
+- **Walks**: distinct picked stops; each place must still be open (or, unfiled, inside its kind's usual hours) five minutes before you would leave it. Sold-out events cannot anchor a walk. Stated end times are honoured; without an end, later stops use a two-hour planning allowance and are labelled flexible. Shared walks reject moved starts and overlapping later stops. Ticket totals cover events only; directions require coordinates for every stop. After this suggests places still open 25 minutes after arrival. Missing hours remain labelled.
 
 ## Development
 

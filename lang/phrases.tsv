@@ -525,7 +525,7 @@ More routes	Veel marsruute	Ещё маршруты	Ще маршрути
 No route right now	Praegu marsruuti pole	Сейчас маршрута нет	Зараз маршруту немає
 Nothing fits together right now.	Praegu ei sobi miski kokku.	Сейчас ничего не сочетается.	Зараз нічого не складається докупи.
 A walk through Tallinn	Jalutuskäik läbi Tallinna	Прогулка по Таллину	Прогулянка Таллінном
-Walk it	Jaluta see läbi	Пройти пешком	Пройти пішки
+View walk	Vaata jalutuskäiku	Посмотреть прогулку	Переглянути прогулянку
 A gallery	Galerii	Галерея	Галерея
 An arts centre	Kunstikeskus	Центр искусств	Центр мистецтв
 A film	Film	Фильм	Фільм
@@ -685,16 +685,21 @@ We cannot promise a door will be open.	Me ei saa lubada, et uks on lahti.	Мы �
 Another	Veel üks	Другой	Інший
 Any	Mis tahes	Любая	Будь-яка
 Open in Maps	Ava kaardirakenduses	Открыть в Картах	Відкрити в Картах
-Check hours before you go.	Kontrolli enne minekut lahtiolekuaegu.	Перед выходом проверьте часы работы.	Перед виходом перевірте години роботи.
 Walking times are straight-line distances at a normal pace.	Jalutusajad on arvutatud linnulennult tavalise sammuga.	Время пешком считается по прямой при обычном шаге.	Час пішки рахується по прямій за звичайного кроку.
-Each stop's page says where its listing came from.	Iga peatuse lehel on kirjas, kust selle info pärineb.	На странице каждой остановки указано, откуда взяты сведения.	На сторінці кожної зупинки вказано, звідки взято відомості.
+Place times are suggested.	Kohtade külastusajad on soovituslikud.	Время посещения мест предложено для плана.	Час відвідування місць запропоновано для плану.
+Place costs are not included.	Kohtade külastuskulud ei ole arvestatud.	Расходы в заведениях не учтены.	Витрати в закладах не враховано.
+Some opening hours are not listed. Check before you go.	Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.	Часы работы некоторых мест не указаны. Проверьте перед выходом.	Години роботи деяких місць не вказано. Перевірте перед виходом.
+The event end time is not listed. Later stops are flexible.	Sündmuse lõppaeg on teadmata. Hilisemate peatuste aega saab kohandada.	Время окончания события не указано. Последующие остановки можно сдвинуть.	Час завершення події не вказано. Наступні зупинки можна змістити.
+Some stops have no map location. Open their pages for address details.	Mõne peatuse asukoht kaardil on teadmata. Aadressi vaata peatuse lehelt.	Некоторые остановки не отмечены на карте. Адреса смотрите на их страницах.	Деякі зупинки не позначено на мапі. Адреси дивіться на їхніх сторінках.
+Tickets and opening hours can change. Check each stop before you go.	Piletite saadavus ja lahtiolekuajad võivad muutuda. Kontrolli iga peatust enne minekut.	Наличие билетов и часы работы могут измениться. Проверьте каждую остановку перед выходом.	Наявність квитків і години роботи можуть змінитися. Перевірте кожну зупинку перед виходом.
 Was	Toimus	Прошло	Минуло
 closed	suletud	закрыто	зачинено
 where you are	sinu asukohast	вас	вас
 your chosen place	sinu valitud kohast	выбранного места	вибраного місця
 your chosen spot	sinu valitud koht	выбранное место	вибране місце
 Price not listed.	Hind teadmata.	Цена не указана.	Ціну не вказано.
-Free.	Tasuta.	Бесплатно.	Безкоштовно.
+Free tickets.	Tasuta piletid.	Бесплатные билеты.	Безкоштовні квитки.
+free tickets	tasuta piletid	бесплатные билеты	безкоштовні квитки
 A bar	Baar	Бар	Бар
 A club	Klubi	Клуб	Клуб
 A gig	Kontsert	Концерт	Концерт
@@ -855,7 +860,6 @@ Until 05:00	Kuni 05:00	До 05:00	До 05:00
 Also today	Ka täna	Также сегодня	Також сьогодні
 No set time, or running	Kellaajata või kestev	Без времени или идёт несколько дней	Без часу або триває кілька днів
 Cancelled or postponed	Tühistatud või edasi lükatud	Отменено или перенесено	Скасовано або перенесено
-Nothing for this mood tonight.	Selle meeleolu jaoks pole täna õhtul midagi.	Сегодня вечером под это настроение ничего нет.	Сьогодні ввечері під цей настрій нічого немає.
 Nothing else listed tonight.	Täna õhtuks pole rohkem midagi kirjas.	На сегодняшний вечер больше ничего нет.	На сьогоднішній вечір більше нічого немає.
 Change dates	Muuda kuupäevi	Изменить даты	Змінити дати
 A day or a range	Päev või vahemik	День или период	День або період
@@ -879,3 +883,5 @@ Nothing in this list yet. Add saves to it from their pages.	Selles nimekirjas po
 Needs the app	Vajab rakendust	Нужно приложение	Потрібен застосунок
 On	Sees	Вкл.	Увімк.
 Off	Väljas	Выкл.	Вимк.
+Clear filters	Eemalda filtrid	Сбросить фильтры	Скинути фільтри
+Only confirmed free listings	Ainult kinnitatud tasuta sündmused	Только события с подтверждённым бесплатным входом	Лише події з підтвердженим безкоштовним входом

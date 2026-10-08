@@ -530,7 +530,7 @@ window.WA.dict.et = {
   "No route right now": "Praegu marsruuti pole",
   "Nothing fits together right now.": "Praegu ei sobi miski kokku.",
   "A walk through Tallinn": "Jalutuskäik läbi Tallinna",
-  "Walk it": "Jaluta see läbi",
+  "View walk": "Vaata jalutuskäiku",
   "A gallery": "Galerii",
   "An arts centre": "Kunstikeskus",
   "A film": "Film",
@@ -690,16 +690,21 @@ window.WA.dict.et = {
   "Another": "Veel üks",
   "Any": "Mis tahes",
   "Open in Maps": "Ava kaardirakenduses",
-  "Check hours before you go.": "Kontrolli enne minekut lahtiolekuaegu.",
   "Walking times are straight-line distances at a normal pace.": "Jalutusajad on arvutatud linnulennult tavalise sammuga.",
-  "Each stop's page says where its listing came from.": "Iga peatuse lehel on kirjas, kust selle info pärineb.",
+  "Place times are suggested.": "Kohtade külastusajad on soovituslikud.",
+  "Place costs are not included.": "Kohtade külastuskulud ei ole arvestatud.",
+  "Some opening hours are not listed. Check before you go.": "Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.",
+  "The event end time is not listed. Later stops are flexible.": "Sündmuse lõppaeg on teadmata. Hilisemate peatuste aega saab kohandada.",
+  "Some stops have no map location. Open their pages for address details.": "Mõne peatuse asukoht kaardil on teadmata. Aadressi vaata peatuse lehelt.",
+  "Tickets and opening hours can change. Check each stop before you go.": "Piletite saadavus ja lahtiolekuajad võivad muutuda. Kontrolli iga peatust enne minekut.",
   "Was": "Toimus",
   "closed": "suletud",
   "where you are": "sinu asukohast",
   "your chosen place": "sinu valitud kohast",
   "your chosen spot": "sinu valitud koht",
   "Price not listed.": "Hind teadmata.",
-  "Free.": "Tasuta.",
+  "Free tickets.": "Tasuta piletid.",
+  "free tickets": "tasuta piletid",
   "A bar": "Baar",
   "A club": "Klubi",
   "A gig": "Kontsert",
@@ -856,7 +861,6 @@ window.WA.dict.et = {
   "Also today": "Ka täna",
   "No set time, or running": "Kellaajata või kestev",
   "Cancelled or postponed": "Tühistatud või edasi lükatud",
-  "Nothing for this mood tonight.": "Selle meeleolu jaoks pole täna õhtul midagi.",
   "Nothing else listed tonight.": "Täna õhtuks pole rohkem midagi kirjas.",
   "Change dates": "Muuda kuupäevi",
   "A day or a range": "Päev või vahemik",
@@ -879,7 +883,9 @@ window.WA.dict.et = {
   "Nothing in this list yet. Add saves to it from their pages.": "Selles nimekirjas pole veel midagi. Lisa salvestatu siia nende lehtedelt.",
   "Needs the app": "Vajab rakendust",
   "On": "Sees",
-  "Off": "Väljas"
+  "Off": "Väljas",
+  "Clear filters": "Eemalda filtrid",
+  "Only confirmed free listings": "Ainult kinnitatud tasuta sündmused"
  },
  "patterns": [
   [
@@ -967,8 +973,8 @@ window.WA.dict.et = {
    "alates {d}"
   ],
   [
-   "about {h} h {m}",
-   "umbes {h} h {m}"
+   "about {h} h {m} min",
+   "umbes {h} h {m} min"
   ],
   [
    "about {h} h",
@@ -1171,7 +1177,7 @@ window.WA.dict.et = {
    "{n} m"
   ],
   [
-   "{h} h {m}",
+   "{h} h {m} min",
    "{h} t {m} min"
   ],
   [

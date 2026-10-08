@@ -65,13 +65,6 @@
       </div>
       <p class="wa-note" id="wa-start-note" role="status">${esc(note)}</p>`;
   };
-  const originMarkup = () => {
-    const G = window.WA.Geo, anchor = G.anchor();
-    const label = anchor ? anchor.label : G.currentLoc() ? 'My location' : 'Choose a place';
-    return `<div class="rt-card__origin"><button class="rt-card__from" type="button" data-near aria-haspopup="dialog"><span>From</span><b${anchor ? ' data-notranslate' : ''}>${esc(label)}</b>${I('chevron')}</button>
-      <button class="wa-iconbtn wa-start__locate" type="button" data-start-device aria-label="Use my location" title="Use my location"${locating ? ' disabled aria-busy="true"' : ''}>${I('locate')}</button></div>
-      ${startError ? `<p class="wa-note" role="status">${esc(startError)}</p>` : ''}`;
-  };
   const closeStart = () => {
     const field = $('wa-start-input'), list = $('wa-start-options');
     if (list) list.hidden = true;
@@ -122,7 +115,7 @@
         : 'Could not get your location. Try again or choose a place.';
       refresh();
       document.dispatchEvent(new CustomEvent('wa:start-state'));
-      if (loc && dialog) dismiss(); else { const key = $('wa-start-locate') || document.querySelector('[data-start-device]'); if (key) key.focus(); }
+      if (loc && dialog) dismiss(); else $('wa-start-locate')?.focus();
     });
   };
 
@@ -134,7 +127,7 @@
     if (hit('[data-start-close]')) { dismiss(); return; }
     const option = hit('[data-start-option]');
     if (option) { const s = startMatches[Number(option.dataset.startOption)]; if (s) chooseStart(s); return; }
-    const device = hit('#wa-start-locate, [data-start-device]');
+    const device = hit('#wa-start-locate');
     if (device) { locate(device); return; }
     if (!hit('.wa-start__control')) closeStart();
   });
@@ -182,5 +175,5 @@
 
   document.addEventListener('wa:catalog-ready', refresh);
   document.addEventListener('wa:language-changed', refresh);
-  window.WA.StartFrom = { markup: startField, originMarkup, open, editing, restore };
+  window.WA.StartFrom = { markup: startField, open, editing, restore };
 })();
