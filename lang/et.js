@@ -690,7 +690,7 @@ window.WA.dict.et = {
   "Another": "Veel üks",
   "Any": "Mis tahes",
   "Open in Maps": "Ava kaardirakenduses",
-  "Walking times are straight-line distances at a normal pace.": "Jalutusajad on arvutatud linnulennult tavalise sammuga.",
+  "Walking times follow the streets at an easy pace.": "Jalutusajad arvestavad tänavaid ja rahulikku sammu.",
   "Place times are suggested.": "Kohtade külastusajad on soovituslikud.",
   "Place costs are not included.": "Kohtade külastuskulud ei ole arvestatud.",
   "Some opening hours are not listed. Check before you go.": "Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.",
@@ -853,7 +853,9 @@ window.WA.dict.et = {
   "Near you": "Sinu lähedal",
   "More filters": "Rohkem filtreid",
   "Another walk": "Teine jalutuskäik",
-  "Latest start first": "Värskeimad eespool",
+  "You can still walk in": "Saab veel sisse astuda",
+  "Already under way": "Juba käimas",
+  "Late entry may not be possible": "Hilinejaid ei pruugita sisse lasta",
   "Starting soon": "Algab varsti",
   "In the next two hours": "Järgmise kahe tunni jooksul",
   "Later tonight": "Hiljem täna õhtul",
@@ -1376,6 +1378,10 @@ window.WA.dict.et = {
   [
    "All {n} open",
    "Kõik {n} avatud"
+  ],
+  [
+   "{x} from {t}",
+   "{x} alates {t}"
   ]
  ]
 };

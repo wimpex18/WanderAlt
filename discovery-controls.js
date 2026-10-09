@@ -13,14 +13,12 @@
     return `<button class="wa-chip home-mood__key${set ? ' is-set' : ''}" type="button" data-filter-open aria-haspopup="dialog">${I('filter')}<span>${summary}</span></button>
       <button class="wa-chip discovery-near" type="button" data-discovery-near aria-pressed="${D().nearOn()}" aria-haspopup="dialog">${I('locate')}<span${anchor ? ' data-notranslate' : ''}>${esc(anchor ? anchor.label : 'Near me')}</span></button>`;
   };
-  /* A row of moods for this hour, plus any chosen at another hour. One tap picks
-     one mood (Moods.pick); Filters holds several, their subs and the ticket cap.
-     The row is kept and only re-marked, so its sideways scroll survives redraws.
-     opts.pill draws Map's glass pills; opts.near ends the row with Near me. */
-  const shownMoods = () => {
-    const p = D().pref(), now = M().available();
-    return [...now, ...M().available({ allHours: true }).filter(m => p.moods.includes(m.id) && !now.some(x => x.id === m.id))];
-  };
+  /* The same moods in the same places all day, so a reader finds Club nights at noon where it was
+     at midnight; the hour only shapes the suggested walk. One tap picks one mood (Moods.pick);
+     Filters holds several, their subs and the ticket cap. The row is kept and only re-marked, so
+     its sideways scroll survives redraws. opts.pill draws Map's glass pills; opts.near ends the
+     row with Near me. */
+  const shownMoods = () => M().available({ allHours: true });
   const filterWord = (p) => p.cap == null ? 'Filters' : p.cap === 0 ? 'Free' : `Up to €${p.cap}`;
   const rows = new WeakMap();
   const moodRow = (host, opts = {}) => {

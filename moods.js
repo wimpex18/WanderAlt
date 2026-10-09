@@ -15,6 +15,7 @@
 
    window.WA.Moods:
      .available()        → [{ id, label, hint, picto, count, subs: [{ id, label, count }] }] for this hour
+     .startsLater(id)    → the minute a mood's walks begin when it does not suit this hour, else null
      .get(id)            → the definition, or null
      .matchesEvent(id,e) / .matchesPlace(id,v)   one mood, all of it
      .wantsEvent(p,e) / .wantsPlace(p,v)         a choice: any chosen mood, narrowed by its chosen subs
@@ -114,6 +115,8 @@
   const wantsPlace = (p, v) => wants(p, v, false);
 
   const inHours = (d, m) => d.from == null || (d.from > d.until ? (m >= d.from || m < d.until) : (m >= d.from && m < d.until));
+  /* When a mood's walks begin, for a mood chosen before its hours: the minute, or null when it suits now. */
+  const startsLater = (id) => { const d = get(id); return d && !inHours(d, nowMin()) ? d.from : null; };
 
   const available = (opts = {}) => {
     const R = window.WA.R;
@@ -187,5 +190,5 @@
     return `${what} · ${capText(p.cap)}`;
   };
 
-  window.WA.Moods = { available, get, matchesEvent, matchesPlace, wantsEvent, wantsPlace, pref, setPref, pick, summary, capText, words, CAPS };
+  window.WA.Moods = { available, startsLater, get, matchesEvent, matchesPlace, wantsEvent, wantsPlace, pref, setPref, pick, summary, capText, words, CAPS };
 })();

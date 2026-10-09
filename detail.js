@@ -52,7 +52,7 @@
 
   const walkFact = (x) => {
     const m = G().distanceTo(x);
-    if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(m));
+    if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(G().onFoot(m)));
     const a = R().areaOf(x);
     return a ? fact('Area', a, 'Set a start point to see the walk') : '';
   };

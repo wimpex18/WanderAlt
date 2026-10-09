@@ -690,7 +690,7 @@ window.WA.dict.ru = {
   "Another": "Другой",
   "Any": "Любая",
   "Open in Maps": "Открыть в Картах",
-  "Walking times are straight-line distances at a normal pace.": "Время пешком считается по прямой при обычном шаге.",
+  "Walking times follow the streets at an easy pace.": "Время пешком посчитано по улицам, спокойным шагом.",
   "Place times are suggested.": "Время посещения мест предложено для плана.",
   "Place costs are not included.": "Расходы в заведениях не учтены.",
   "Some opening hours are not listed. Check before you go.": "Часы работы некоторых мест не указаны. Проверьте перед выходом.",
@@ -853,7 +853,9 @@ window.WA.dict.ru = {
   "Near you": "Рядом с вами",
   "More filters": "Ещё фильтры",
   "Another walk": "Другая прогулка",
-  "Latest start first": "Сначала самые свежие",
+  "You can still walk in": "Ещё можно зайти",
+  "Already under way": "Уже идёт",
+  "Late entry may not be possible": "Опоздавших могут не пустить",
   "Starting soon": "Скоро начнётся",
   "In the next two hours": "В ближайшие два часа",
   "Later tonight": "Позже вечером",
@@ -1421,6 +1423,10 @@ window.WA.dict.ru = {
   [
    "All {n} open",
    "Все открытые: {n}"
+  ],
+  [
+   "{x} from {t}",
+   "{x} с {t}"
   ]
  ]
 };

@@ -690,7 +690,7 @@ window.WA.dict.uk = {
   "Another": "Інший",
   "Any": "Будь-яка",
   "Open in Maps": "Відкрити в Картах",
-  "Walking times are straight-line distances at a normal pace.": "Час пішки рахується по прямій за звичайного кроку.",
+  "Walking times follow the streets at an easy pace.": "Час пішки пораховано вулицями, спокійним кроком.",
   "Place times are suggested.": "Час відвідування місць запропоновано для плану.",
   "Place costs are not included.": "Витрати в закладах не враховано.",
   "Some opening hours are not listed. Check before you go.": "Години роботи деяких місць не вказано. Перевірте перед виходом.",
@@ -853,7 +853,9 @@ window.WA.dict.uk = {
   "Near you": "Поруч із вами",
   "More filters": "Більше фільтрів",
   "Another walk": "Інша прогулянка",
-  "Latest start first": "Спершу найсвіжіші",
+  "You can still walk in": "Ще можна зайти",
+  "Already under way": "Уже триває",
+  "Late entry may not be possible": "Запізнілих можуть не пустити",
   "Starting soon": "Незабаром почнеться",
   "In the next two hours": "Протягом двох годин",
   "Later tonight": "Пізніше ввечері",
@@ -1421,6 +1423,10 @@ window.WA.dict.uk = {
   [
    "All {n} open",
    "Усі відчинені: {n}"
+  ],
+  [
+   "{x} from {t}",
+   "{x} з {t}"
   ]
  ]
 };

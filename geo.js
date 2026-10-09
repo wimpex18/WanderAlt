@@ -12,6 +12,12 @@
 
   /* ~4.8 km/h. The only declaration; list, filter sheet and map share it. */
   const WALK_M_PER_MIN = 80;
+  /* Streets are longer than the line between two points. Routed on OpenStreetMap footways (OSRM),
+     1,202 legs from picked places to venues 120–1,600 m apart in Tallinn ran a median 1.32 times
+     the straight line (half of them 1.25–1.41; short hops a little more). Walking times and
+     "on foot" distances use it, so they read like a map app's; plain "how far" stays straight. */
+  const STREET = 1.33;
+  const onFoot = (metres) => (metres == null ? null : metres * STREET);
 
   const haversineM = (aLat, aLng, bLat, bLng) => {
     const R = 6371000, toRad = d => d * Math.PI / 180;
@@ -21,8 +27,12 @@
     return 2 * R * Math.asin(Math.sqrt(s));
   };
 
+  /* Minutes on foot between two points `metres` apart in a straight line. */
   const walkMinutes = (metres) =>
-    (metres == null ? null : Math.max(1, Math.round(metres / WALK_M_PER_MIN)));
+    (metres == null ? null : Math.max(1, Math.round(onFoot(metres) / WALK_M_PER_MIN)));
+  /* Minutes for a distance already measured along streets (a "within" limit). */
+  const minutesFor = (streetMetres) =>
+    (streetMetres == null ? null : Math.max(1, Math.round(streetMetres / WALK_M_PER_MIN)));
 
   /* "550 m" under a kilometre, "1.4 km" over it. Never "0.55 km" and
      never "1400 m" — the unit switch is what keeps the rail one glance
@@ -171,7 +181,8 @@
   };
 
   /* ── The ?within= contract ───────────────────────────────────
-     A bare small integer is minutes; anything >= 100 is metres. */
+     A bare small integer is minutes; anything >= 100 is metres. Either way the
+     limit is a walking distance along streets, and rows are measured the same way. */
   const parseWithin = (raw) => {
     const n = parseInt(raw, 10);
     if (!isFinite(n) || n <= 0) return 0;
@@ -183,13 +194,13 @@
     if (!metres || !a) return list;             /* off, or position unknown */
     return list.filter((e) => {
       const d = distanceTo(e, a);
-      return d == null || d <= metres;          /* unknown distance never hides a row */
+      return d == null || onFoot(d) <= metres;  /* unknown distance never hides a row */
     });
   };
 
   window.WA.Geo = {
-    WALK_M_PER_MIN,
-    walkMinutes, format,
+    WALK_M_PER_MIN, STREET,
+    walkMinutes, minutesFor, onFoot, format,
     coordsFor, userLoc, currentLoc, deviceLoc: () => _loc, anchor, setAnchor, locationError: () => _error,
     distanceTo, distanceLabel,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,

@@ -685,7 +685,7 @@ We cannot promise a door will be open.	Me ei saa lubada, et uks on lahti.	Мы �
 Another	Veel üks	Другой	Інший
 Any	Mis tahes	Любая	Будь-яка
 Open in Maps	Ava kaardirakenduses	Открыть в Картах	Відкрити в Картах
-Walking times are straight-line distances at a normal pace.	Jalutusajad on arvutatud linnulennult tavalise sammuga.	Время пешком считается по прямой при обычном шаге.	Час пішки рахується по прямій за звичайного кроку.
+Walking times follow the streets at an easy pace.	Jalutusajad arvestavad tänavaid ja rahulikku sammu.	Время пешком посчитано по улицам, спокойным шагом.	Час пішки пораховано вулицями, спокійним кроком.
 Place times are suggested.	Kohtade külastusajad on soovituslikud.	Время посещения мест предложено для плана.	Час відвідування місць запропоновано для плану.
 Place costs are not included.	Kohtade külastuskulud ei ole arvestatud.	Расходы в заведениях не учтены.	Витрати в закладах не враховано.
 Some opening hours are not listed. Check before you go.	Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.	Часы работы некоторых мест не указаны. Проверьте перед выходом.	Години роботи деяких місць не вказано. Перевірте перед виходом.
@@ -852,7 +852,9 @@ Keep this search	Hoia see otsing alles	Сохранить этот поиск	З
 Near you	Sinu lähedal	Рядом с вами	Поруч із вами
 More filters	Rohkem filtreid	Ещё фильтры	Більше фільтрів
 Another walk	Teine jalutuskäik	Другая прогулка	Інша прогулянка
-Latest start first	Värskeimad eespool	Сначала самые свежие	Спершу найсвіжіші
+You can still walk in	Saab veel sisse astuda	Ещё можно зайти	Ще можна зайти
+Already under way	Juba käimas	Уже идёт	Уже триває
+Late entry may not be possible	Hilinejaid ei pruugita sisse lasta	Опоздавших могут не пустить	Запізнілих можуть не пустити
 Starting soon	Algab varsti	Скоро начнётся	Незабаром почнеться
 In the next two hours	Järgmise kahe tunni jooksul	В ближайшие два часа	Протягом двох годин
 Later tonight	Hiljem täna õhtul	Позже вечером	Пізніше ввечері

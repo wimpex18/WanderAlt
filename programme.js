@@ -105,7 +105,7 @@
         <span class="wa-field__consequence" data-within-note>${placeWithinNote()}</span></div>
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}<a class="wa-linkbtn" href="places.html">All place types in the Guide</a>`;
   };
-  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().minutesFor(state.within)} min on foot` : 'Anywhere in the city';
   const placeOriginText = () => {
     const label = placeOrigin().label;
     const t = text => window.WA.Lang ? window.WA.Lang.t(text) : text;
@@ -183,7 +183,7 @@
       <div class="wa-field"><button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-clear style="justify-self:start;padding:0">Clear all filters</button></div>`;
   };
   const withinNote = () => !G().currentLoc() && state.within ? 'Choose a starting point' : state.within
-    ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+    ? `${G().format(state.within)} · ${G().minutesFor(state.within)} min on foot` : 'Anywhere in the city';
 
   /* A named spot to measure from, picked from places we hold, so walking
      times work without location permission (a hotel, a friend's street). */

@@ -69,7 +69,7 @@
         ${maps ? `<a class="wa-btn wa-btn--primary" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">${I('walk')}Open in Maps</a>` : ''}
         <button class="wa-btn" type="button" id="rt-share">${I('share')}Share</button>
       </div>
-      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times are straight-line distances at a normal pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
+      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times follow the streets at an easy pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
       <div id="rt-more"></div>`;
     more(route);
   };

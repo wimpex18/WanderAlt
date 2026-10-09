@@ -1622,7 +1622,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-walk[data-again] { animation:home-walk-again 320ms var(--ease) both; }
 @keyframes home-walk-again { from { opacity:.3; transform:translateX(10px); } to { opacity:1; transform:none; } }
 .home-walk__head { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:28px; margin-top:-4px; }
-.home-walk__kicker { display:flex; align-items:center; gap:6px; min-width:0; font-size:.8125rem; }
+.home-walk__kicker { display:flex; align-items:baseline; gap:6px; min-width:0; font-size:.8125rem; line-height:1.35; }
 .home-walk__kicker b { flex:none; font-weight:600; color:var(--accent-ink); }
 .home-walk__kicker .wa-ic { flex:none; width:16px; height:16px; color:var(--accent-ink); }
 .home-walk__again { margin:-8px 0 -8px; color:var(--ink-2); }
@@ -1636,7 +1636,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-walk__stops time { font-weight:650; font-variant-numeric:tabular-nums; color:var(--accent-ink); margin-right:2px; }
 .home-walk__to { display:inline-grid; color:var(--ink-3); }
 .home-walk__to .wa-ic { width:14px; height:14px; }
-.home-walk__meta { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-2); }
+.home-walk__meta { min-width:0; color:var(--ink-2); }   /* wraps: it can carry "Club nights from 20:00" */
 .home-walk__meta::before { content:"·"; margin-right:6px; }
 .home-walk__foot { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 12px; margin-top:4px; min-height:32px; font-size:.8125rem; }
 .home-walk__cost { flex:1 1 160px; color:var(--ink-2); }

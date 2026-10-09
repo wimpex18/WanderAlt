@@ -59,7 +59,11 @@
     if (!route) return '';
     const Rt = window.WA.Route, first = route.stops[0];
     const from = route.fromYou != null ? (route.fromYou <= 1 ? (G().anchor() ? 'Right by here' : 'Right by you') : `${route.fromYou} min walk from ${G().anchor() ? 'here' : 'you'}`) : '';
-    const meta = [route.area, from].filter(Boolean).join(' · ');
+    /* Moods chosen before their hours (Club nights at noon) still filter the list; the walk is for
+       now, and says when theirs begin. */
+    const chosen = pref().moods, later = chosen.length && chosen.every(id => M().startsLater(id) != null)
+      ? chosen.map(id => `${M().get(id).label.en} from ${window.WA.Hours.clock(M().startsLater(id))}`).join(' · ') : '';
+    const meta = [later, route.area, from].filter(Boolean).join(' · ');
     const facts = [`${route.walkMin} min on foot`, Rt.costText(route) || `${route.stops.length} stops`].join(' · ');
     return `<section class="home-walk" aria-labelledby="home-walk-title">
       <div class="home-walk__head"><span class="home-walk__kicker">${I('walk')}<b>A walk for now</b><span class="home-walk__meta">${esc(meta)}</span></span>
@@ -88,12 +92,17 @@
     const off = list.filter(e => R().isOff(e)), on = list.filter(e => !R().isOff(e));
     if (!date.date && date.when === 'tonight') {
       const now = Date.now();
-      const live = on.filter(e => R().isLive(e) && !R().isRun(e)).sort((a, b) => byStart(b, a));
+      /* On now leads with what you can still walk into; a session already under way (a film, a
+         talk, a course of several days) is still listed, last, where it cannot be mistaken for one. */
+      const live = on.filter(e => R().isLive(e) && !R().isRun(e));
+      const open = live.filter(e => R().joinable(e)).sort((a, b) => byStart(b, a));
+      const started = live.filter(e => !open.includes(e)).sort(byStart);
       const ahead = on.filter(e => !live.includes(e) && timed(e) && startMs(e) > now).sort(byStart);
-      add('live', 'On now', 'Latest start first', live);
+      add('live', 'On now', 'You can still walk in', open);
       add('soon', 'Starting soon', 'In the next two hours', ahead.filter(e => startMs(e) <= now + SOON_MS));
       add('later', evening() ? 'Later tonight' : 'Later today', 'Until 05:00', ahead.filter(e => startMs(e) > now + SOON_MS));
       add('also', 'Also today', 'No set time, or running', on.filter(e => !live.includes(e) && !ahead.includes(e)));
+      add('started', 'Already under way', 'Late entry may not be possible', started);
     } else {
       const [from] = D().range(date), days = new Map();
       for (const e of on) {
@@ -140,7 +149,7 @@
     const html = groups(list, date).map(g => {
       if (budget <= 0) return '';
       const items = g.items.slice(0, budget); budget -= items.length;
-      return `${head(g)}<ul class="wa-rows home-rows">${items.map(e => R().row(e, { since: visit.prev, heart: true, started: g.id === 'live', unknownPrice: true })).join('')}</ul>`;
+      return `${head(g)}<ul class="wa-rows home-rows">${items.map(e => R().row(e, { since: visit.prev, heart: true, started: g.id === 'live' || g.id === 'started', unknownPrice: true })).join('')}</ul>`;
     }).join('');
     return `${nearOn() ? `<p class="wa-note home-day__note">${G().anchor() ? 'Nearest to here first' : 'Nearest to you first'}</p>` : ''}${html}${more(list.length)}
       <p class="home-day__all-link"><a class="wa-linkbtn" href="discover.html">All events ${I('arrow')}</a></p>`;

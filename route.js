@@ -483,7 +483,7 @@
     const span = Math.max(0, last - first);
     const h = Math.floor(span / 60), m = span % 60;
     const len = h ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`;
-    const dist = route.metres ? `, ${G().format(route.metres)} on foot` : '';
+    const dist = route.metres ? `, ${G().format(G().onFoot(route.metres))} on foot` : '';
     return `${len}${dist}`;
   };
 

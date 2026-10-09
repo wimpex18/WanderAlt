@@ -170,6 +170,28 @@ test('tonight reads as a timeline: on now (latest first), soon, later until 05:0
   assert.equal(p.elements.get('hero-title').textContent, 'Still going');
 });
 
+test('on now leads with what can still be joined; sessions already under way are listed last', () => {
+  const p = home('?when=tonight', (p) => {
+    p.clock('2026-10-06T17:00:00Z'); // Tue 20:00 in Tallinn
+    p.WA.Hours.cityNow = () => ({ minutes: 20 * 60 });
+    p.WA.catalog = [
+      { id:'film-1930', title:'Film', kind:'film', startsAt:'2026-10-06T16:30:00Z' },
+      { id:'film-1950', title:'Film just begun', kind:'film', startsAt:'2026-10-06T16:50:00Z' },
+      { id:'course', title:'Three-day course', kind:'workshop', startsAt:'2026-10-05T07:00:00Z', endsAt:'2026-10-06T19:00:00Z' },
+      { id:'opening', title:'Opening', kind:'exhibition', startsAt:'2026-10-06T15:00:00Z' },
+      { id:'gig-1900', title:'Gig', kind:'gig', startsAt:'2026-10-06T16:00:00Z' },
+      { id:'later', title:'Later', kind:'gig', startsAt:'2026-10-06T19:00:00Z' },
+    ];
+  });
+  const heads = p.heads();
+  assert.equal(heads[0], 'On now');
+  assert.equal(heads.at(-1), 'Already under way');
+  const rows = p.rows();
+  assert.deepEqual(rows.slice(0, 3), ['film-1950', 'gig-1900', 'opening']);   // latest start first
+  assert.deepEqual(rows.slice(-1), ['film-1930']);
+  assert.ok(rows.indexOf('later') < rows.indexOf('film-1930'));
+});
+
 test('When changes regroup by night, reset expansion and keep one When key', () => {
   const p = home('?shown=50&when=tonight');
   assert.equal(p.rows().length, 50);

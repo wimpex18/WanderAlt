@@ -176,6 +176,18 @@
     const t = startMs(e);
     return isFinite(t) && t <= now && !W().hasEnded(e, now);
   };
+  /* Can a reader still walk in? An exhibition, a market, a festival or a club night takes you in
+     while it is on; a gig for an hour and a half (a listing's time is usually the doors), anything
+     else for its first hour; a film, a play, a talk or a workshop for its first quarter of an hour,
+     and a course of several days not at all once begun.
+     Over a weekend sample, half of what was on could no longer be joined. */
+  const DROP_IN = new Set(['exhibition', 'market', 'festival', 'club']);
+  const JOIN_MIN = { gig: 90, other: 60, film: 15, theatre: 15, talk: 15, workshop: 15 };
+  const joinable = (e, now = Date.now()) => {
+    if (!isLive(e, now)) return false;
+    if (DROP_IN.has(String(e.kind || '').toLowerCase())) return true;
+    return (now - startMs(e)) / 60000 <= (JOIN_MIN[String(e.kind || '').toLowerCase()] ?? 60);
+  };
   let endKeyFmt = null, endClockFmt = null;
   const endClock = (e) => {
     if (!e || !e.endsAt) return '';
@@ -654,7 +666,7 @@
 
   window.WA.R = {
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
-    DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
+    DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, joinable, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, feedItem, titleLang, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,

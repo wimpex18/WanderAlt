@@ -156,7 +156,7 @@
     const places = (skipArea = false) => {
       const from = origin().from, distance = v => G().distanceTo?.(v,from) ?? Infinity;
       return hits.filter(v => (!wantsOpen() || R().openState(v).open === true) &&
-        (skipArea || !state.area || R().areaOf(v) === state.area) && (!state.within || distance(v) <= state.within))
+        (skipArea || !state.area || R().areaOf(v) === state.area) && (!state.within || G().onFoot(distance(v)) <= state.within))
         .sort((a,b) => Number(!!b.picked) - Number(!!a.picked) || distance(a) - distance(b) || String(a.name).localeCompare(String(b.name),'et'));
     };
     const findPlaces = (q,p) => {
