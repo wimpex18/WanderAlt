@@ -148,6 +148,7 @@ export class Places {
   readonly created: Place[] = [];
   readonly updated: Place[] = [];
   private retried = new Set<string>();
+  private tries = { unlocated: 0, unidentified: 0 };
   private lookups = 0;
   private city: string;
   private maxLookups: number;
@@ -222,11 +223,13 @@ export class Places {
     const incoming: Place = { ...literal, name, aliases: [...new Set([nameKey(name), nameKey(raw)])] };
     const hit = this.find(literal) ?? (name !== raw ? this.find(incoming) : undefined);
     if (hit) {
-      // A place an earlier run could not locate or identify gets another try;
-      // ten such places per run.
-      const unfinished = hit.lat == null || (hit.osm_id == null && hit.kind == null);
-      if (geocode && unfinished && !this.retried.has(hit.id) && this.retried.size < 10 && !this.created.includes(hit)) {
-        this.retried.add(hit.id);
+      // A place an earlier run could not locate or identify gets another try. One with no
+      // coordinates comes first, with ten tries a run of its own: a quarter of upcoming listings
+      // had no map position while located-but-unidentified places used up a shared ten.
+      const unlocated = hit.lat == null, unfinished = unlocated || (hit.osm_id == null && hit.kind == null);
+      const bucket = unlocated ? 'unlocated' : 'unidentified';
+      if (geocode && unfinished && !this.retried.has(hit.id) && this.tries[bucket] < (unlocated ? 10 : 5) && !this.created.includes(hit)) {
+        this.retried.add(hit.id); this.tries[bucket]++;
         if (await this.locate(hit, name, c.address ?? hit.address ?? null) && !this.updated.includes(hit)) this.updated.push(hit);
       }
       return hit;
