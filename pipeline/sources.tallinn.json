@@ -81,7 +81,7 @@
       "venue_site": "https://vabalava.ee/",
       "days": 120,
       "venue_map": [
-        ["black box|salme|suur saal|väike saal|stuudiosaal", "Vaba Lava"],
+        ["black box|salme", "Vaba Lava Black Box Salmes"],
         ["sakala", "Sakala 3 Teatrimaja"]
       ]
     }
