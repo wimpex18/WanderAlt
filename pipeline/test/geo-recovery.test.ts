@@ -76,3 +76,18 @@ test('an explicit location tap retries after permission settings changed', async
   const retry = g.api.userLoc(true); assert.equal(g.requests(), 2); g.succeed();
   assert.equal((await retry).lat, 59.437);
 });
+
+test('walking times follow the streets: a third longer than the line, and a "within" limit is a street distance', () => {
+  const g = geo().api;
+  assert.equal(g.STREET, 1.28); assert.equal(g.STREET_ADD, 40);
+  assert.equal(g.walkMinutes(800), 13);          // 800 m apart is about 1,064 m on foot
+  assert.equal(g.walkMinutes(20), 1);            // never 0
+  assert.equal(g.minutesFor(800), 10);           // a street distance is not stretched again
+  assert.equal(Math.round(g.onFoot(300)), 424);   // a short hop detours relatively more
+  assert.equal(g.onFoot(0), 0);
+  assert.equal(g.parseWithin('10'), 800);        // ten minutes on foot, along streets
+  const from = { lat: 59.437, lng: 24.745 };
+  const near = { id: 'near', lat: 59.437 + 550 / 111_195, lng: 24.745 };   // 550 m north: ~744 m on foot
+  const far = { id: 'far', lat: 59.437 + 650 / 111_195, lng: 24.745 };     // 650 m north: ~872 m on foot
+  assert.deepEqual(g.withinFilter([near, far], 800, from).map((x: any) => x.id), ['near']);
+});

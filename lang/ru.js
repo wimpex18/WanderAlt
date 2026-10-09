@@ -150,7 +150,7 @@ window.WA.dict.ru = {
   "Opening hours": "Часы работы",
   "Today": "Сегодня",
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Постоянных часов нет. Зал открывается, когда что-то идёт; время указано в событиях выше.",
-  "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.",
+  "Not listed. Half the places list their hours, and we would rather leave a gap than guess.": "Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.",
   "Your lists": "Ваши списки",
   "Create your first list": "Создайте первый список",
   "New list": "Новый список",
@@ -158,7 +158,7 @@ window.WA.dict.ru = {
   "Kalamaja on Saturday": "Kalamaja в субботу",
   "Walk": "Пешком",
   "Area": "Район",
-  "Location for walking times": "Геолокация для времени пешком",
+  "Set a start point to see the walk": "Укажите точку старта, чтобы увидеть время пешком",
   "Venue logo": "Логотип места",
   "Venue photo": "Фото места",
   "Save": "Сохранить",
@@ -185,7 +185,6 @@ window.WA.dict.ru = {
   "Original description": "Исходное описание",
   "On now": "Идёт сейчас",
   "Ongoing": "Идёт",
-  "Time not filed": "Время не указано",
   "Nothing else listed here yet": "Здесь пока больше ничего нет",
   "Cancelled": "Отменено",
   "Postponed": "Перенесено",
@@ -308,7 +307,7 @@ window.WA.dict.ru = {
   "The Guide": "Гид",
   "What's on": "Что идёт",
   "We can't reach the listings right now.": "Сейчас не удаётся получить события.",
-  "Hours not filed": "Часы не указаны",
+  "Hours not listed": "Часы не указаны",
   "Open for events": "Открыто во время событий",
   "Details from the venue; its own site says it opens for its events.": "Сведения от самого места; его сайт говорит, что оно открыто во время событий.",
   "Address and links from OpenStreetMap; its own site says it opens for its events.": "Адрес и ссылки из OpenStreetMap; сайт места говорит, что оно открыто во время событий.",
@@ -535,6 +534,7 @@ window.WA.dict.ru = {
   "An arts centre": "Центр искусств",
   "A film": "Фильм",
   "A museum": "Музей",
+  "A thrift shop": "Секонд-хенд",
   "A place": "Место",
   "Show everything saved": "Показать всё сохранённое",
   "Nothing dated is saved. Events you save land here, soonest first.": "Сохранённых событий с датой нет. Сохранённые события появятся здесь, ближайшие первыми.",
@@ -599,6 +599,7 @@ window.WA.dict.ru = {
   "Notifications are blocked for this site in your browser settings.": "Уведомления для этого сайта заблокированы в настройках браузера.",
   "On for this device": "Включено на этом устройстве",
   "Just now": "Только что",
+  "Checked just now": "Проверено только что",
   "Inbox": "Входящие",
   "Kept for 30 days": "Хранится 30 дней",
   "Nothing yet.": "Пока ничего.",
@@ -631,8 +632,8 @@ window.WA.dict.ru = {
   "Art": "Искусство",
   "Gig": "Концерт",
   "Bar": "Бар",
-  "hours not filed": "часы не указаны",
-  "open then": "тогда открыто",
+  "hours not listed": "часы не указаны",
+  "open": "открыто",
   "Listed here next": "Дальше здесь",
   "OpenStreetMap": "OpenStreetMap",
   "the venue's own site": "собственного сайта заведения",
@@ -690,7 +691,7 @@ window.WA.dict.ru = {
   "Another": "Другой",
   "Any": "Любая",
   "Open in Maps": "Открыть в Картах",
-  "Walking times are straight-line distances at a normal pace.": "Время пешком считается по прямой при обычном шаге.",
+  "Walking times follow the streets at an easy pace.": "Время пешком посчитано по улицам, спокойным шагом.",
   "Place times are suggested.": "Время посещения мест предложено для плана.",
   "Place costs are not included.": "Расходы в заведениях не учтены.",
   "Some opening hours are not listed. Check before you go.": "Часы работы некоторых мест не указаны. Проверьте перед выходом.",
@@ -703,8 +704,8 @@ window.WA.dict.ru = {
   "your chosen place": "выбранного места",
   "your chosen spot": "выбранное место",
   "Price not listed.": "Цена не указана.",
-  "Free tickets.": "Бесплатные билеты.",
-  "free tickets": "бесплатные билеты",
+  "Free entry.": "Вход свободный.",
+  "free entry": "вход свободный",
   "A bar": "Бар",
   "A club": "Клуб",
   "A gig": "Концерт",
@@ -723,6 +724,7 @@ window.WA.dict.ru = {
   "Another bar": "Ещё один бар",
   "Another film": "Ещё один фильм",
   "Another gallery": "Ещё одна галерея",
+  "Another thrift shop": "Ещё один секонд-хенд",
   "Source:": "Источник:",
   "© OpenStreetMap contributors": "© Участники OpenStreetMap",
   "City or place": "Город или место",
@@ -852,7 +854,9 @@ window.WA.dict.ru = {
   "Near you": "Рядом с вами",
   "More filters": "Ещё фильтры",
   "Another walk": "Другая прогулка",
-  "Latest start first": "Сначала самые свежие",
+  "You can still walk in": "Ещё можно зайти",
+  "Already under way": "Уже идёт",
+  "Late entry may not be possible": "Опоздавших могут не пустить",
   "Starting soon": "Скоро начнётся",
   "In the next two hours": "В ближайшие два часа",
   "Later tonight": "Позже вечером",
@@ -962,6 +966,14 @@ window.WA.dict.ru = {
   [
    "Open till {t}",
    "Открыто до {t}"
+  ],
+  [
+   "open till {t}",
+   "открыто до {t}"
+  ],
+  [
+   "{x} away",
+   "в {x}"
   ],
   [
    "Opens {t}",
@@ -1142,6 +1154,28 @@ window.WA.dict.ru = {
   [
    "{n} days ago",
    "{n} дн. назад"
+  ],
+  [
+   "Checked {n} min ago",
+   {
+    "one": "Проверено {n} минуту назад",
+    "few": "Проверено {n} минуты назад",
+    "many": "Проверено {n} минут назад",
+    "other": "Проверено {n} минуты назад"
+   }
+  ],
+  [
+   "Checked {n} h ago",
+   {
+    "one": "Проверено {n} час назад",
+    "few": "Проверено {n} часа назад",
+    "many": "Проверено {n} часов назад",
+    "other": "Проверено {n} часа назад"
+   }
+  ],
+  [
+   "Checked {d}",
+   "Проверено {d}"
   ],
   [
    "{n} more listed here",
@@ -1412,6 +1446,10 @@ window.WA.dict.ru = {
   [
    "All {n} open",
    "Все открытые: {n}"
+  ],
+  [
+   "{x} from {t}",
+   "{x} с {t}"
   ]
  ]
 };

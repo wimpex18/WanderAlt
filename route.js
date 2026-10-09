@@ -11,6 +11,9 @@
    The pipeline also composes evenings for the next few days with a free
    model (pipeline/routes.ts) and stores them in `routes`; the page reads
    them, checks every stop again, and shows the ones that still hold.
+   Walks are estimated from the straight line (geo.js); a stored evening's
+   legs were routed along the streets, and those minutes stand while its
+   stops still match (`t=` in a link names the stored evening).
 
    window.WA.Route:
      .compose()          → the best evening for tonight, worked out here, or null
@@ -19,11 +22,12 @@
      .best()             → the first of plan(): a stored evening that still holds, else one worked out here
      .loadStored()       → Promise of the stored routes (cached; 'wa:routes-ready' when they arrive)
      .upcoming()         → stored routes that still hold, soonest day first, best first
-     .fromParam(s)       → a route from the URL's stops, or null
+     .fromParam(s, off, legs) → a route from the URL's stops, or null; `legs` are a stored walk's stops
      .param(route)       → the URL's `s` value
      .mapsUrl(route)     → a walking route in Google Maps
-   Route: { title, area, stops[], walkMin, metres, cost }
-   Stop:  { type, id, name, kind, area, minute, walk (min from the stop before), lat, lng, href, note, hours }
+   Route: { title, area, stops[], walkMin, metres (straight line), street (along the streets, when a leg was routed), cost }
+   Stop:  { type, id, name, kind, area, minute, walk (min from the stop before), routed (walk measured on the streets),
+            street (its metres), lat, lng, href, note, hours }
    ============================================================ */
 (() => {
   'use strict';
@@ -56,7 +60,7 @@
   const walk = (m) => (m == null ? null : G().walkMinutes(m));
   const round5 = (m) => Math.round(m / 5) * 5;
 
-  /* Is a place open at this minute: 'open', 'shut' or 'unknown' (hours not filed). */
+  /* Is a place open at this minute: 'open', 'shut' or 'unknown' (hours not listed). */
   const hoursAt = (v, minute, offset = 0) => {
     const s = v && v.openingHours ? H().state(v.openingHours, at(minute, offset)) : null;
     return !s || !s.known ? 'unknown' : s.open ? 'open' : 'shut';
@@ -64,7 +68,7 @@
 
   /* A place with no filed hours is never said to be open, but nobody is sent to
      a record shop at one in the morning either: an unfiled place is tried only
-     inside the hours its kind usually keeps, and still reads "hours not filed".
+     inside the hours its kind usually keeps, and still reads "hours not listed".
      A room that opens for what is on (a cinema, a theatre) is no stop on its own
      without filed hours. */
   const USUAL = {
@@ -101,14 +105,33 @@
     return `${(sp > 60 ? cut.slice(0, sp) : cut).replace(/[\s,;:.-]+$/, '')}…`;
   };
 
-  const placeStop = (v, minute, prevM, hours) => ({
+  /* When an open place shuts after this minute, for "open till 19:00"; null when it keeps no closing
+     hour worth printing or its hours are not filed. */
+  const closesAt = (v, minute, offset = 0) => {
+    const s = v && v.openingHours ? H().state(v.openingHours, at(minute, offset)) : null;
+    return s && s.open && !s.allDay ? s.closesAt : null;
+  };
+  /* "open till 19:00", "open" or "hours not listed": what a stop's line says of its hours. */
+  const hoursNote = (hours, closes) =>
+    hours === 'open' ? (closes != null ? `open till ${H().clock(closes)}` : 'open') : hours === 'unknown' ? 'hours not listed' : '';
+
+  const placeStop = (v, minute, prevM, hours, offset = 0) => ({
     type: 'place', id: v.id, name: v.name, kind: v.kind, area: R().areaOf(v) || '', minute, walk: walk(prevM),
     lat: v.lat, lng: v.lng, href: `detail.html?id=${encodeURIComponent(v.id)}`, note: v.pickNote || '', hours,
+    closes: hours === 'open' ? closesAt(v, minute, offset) : null,
   });
+  /* A note the reader can read: the source's own words when they are in the interface language,
+     otherwise our summary in that language (English when it has no translation yet), as on the
+     listing's page. The source's blurb in another language is never the note. */
+  const noteOf = (e) => {
+    const lang = window.WA.Lang ? window.WA.Lang.current() : 'en';
+    const own = e.originalLanguage === lang ? window.WA.UI.descriptionOr(e.description, e.title) : '';
+    return clip(own || window.WA.UI.descriptionOr(e.quote, e.title));
+  };
   const eventStop = (e, minute, prevM) => {
     const c = G().coordsFor(e) || {};
     return { type: 'event', id: e.id, name: e.title || '', kind: e.kind, area: R().areaOf(e) || '', minute, walk: walk(prevM),
-      lat: c.lat, lng: c.lng, href: `detail.html?id=${encodeURIComponent(e.id)}`, note: clip(e.description), hours: 'event',
+      lat: c.lat, lng: c.lng, href: `detail.html?id=${encodeURIComponent(e.id)}`, note: noteOf(e), hours: 'event',
       venue: e.venue || '', price: R().isFree(e) ? 'Free' : '',
       cost: R().isFree(e) ? 0 : (e.priceMin != null && isFinite(Number(e.priceMin)) ? Number(e.priceMin) : null) };
   };
@@ -116,10 +139,10 @@
   /* Words for the title, in the order of the evening. Each is written capitalised, looked up in the
      interface language (lang/phrases.tsv), and lowered after the first; a word already used becomes
      "another …" ("Craft beer, a late drink, another late drink"). */
-  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
+  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'A thrift shop', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
   const FIRST_WORD = { taproom: 'Craft beer', bar: 'A bar', club: 'A club' };
   const ANCHOR_WORD = { gig: 'A gig', club: 'A club night', film: 'A film', theatre: 'A stage', talk: 'A talk', workshop: 'A workshop', exhibition: 'An opening', festival: 'A festival' };
-  const ANOTHER = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery' };
+  const ANOTHER = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery', 'A thrift shop': 'Another thrift shop' };
   const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const word = (w) => (window.WA.Lang ? window.WA.Lang.t(w) : w);
   const titleFor = (stops) => {
@@ -146,16 +169,18 @@
     if (!c.events) return '';
     const eur = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
     if (c.tickets > 0) return `tickets from ${eur(c.tickets)}${c.unknown ? ` · ${c.unknown} price not listed` : ''}`;
-    return c.unknown ? 'price not listed' : 'free tickets';
+    return c.unknown ? 'price not listed' : 'free entry';
   };
 
   const build = (stops) => {
-    let m = 0;
-    for (let i = 1; i < stops.length; i++) m += metres(stops[i - 1], stops[i]) || 0;
+    const lines = stops.map((s, i) => (i ? metres(stops[i - 1], s) || 0 : 0));
+    const m = lines.reduce((n, d) => n + d, 0);
+    /* Along the streets: a routed leg's own metres, the estimate for the rest. */
+    const street = stops.some(s => s.routed) ? Math.round(stops.reduce((n, s, i) => n + (!i ? 0 : s.routed ? s.street : G().onFoot(lines[i])), 0)) : null;
     const anchor = stops.find(s => s.type === 'event') || stops[0];
     const me = G().currentLoc(), first = stops[0];
     const fromYou = me && first.lat != null ? walk(G().distanceTo(first)) : null;
-    return { day: W().todayKey?.(), title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m), cost: costOf(stops), fromYou };
+    return { day: W().todayKey?.(), title: titleFor(stops), area: anchor.area, stops, walkMin: stops.reduce((n, s) => n + (s.walk || 0), 0), metres: Math.round(m), street, cost: costOf(stops), fromYou };
   };
 
   /* Moods and a price limit narrow what may anchor or fill a route. A route must
@@ -312,6 +337,7 @@
     const rows = R().places().filter(v => v.picked && v.id !== entry.id && v.id !== entry.venueId && G().coordsFor(v))
       .map(v => ({ v, w: walk(metres(entry, v)) })).filter(r => r.w != null && r.w <= max)
       .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w, offset) }))
+      .map(r => Object.assign(r, { closes: r.hours === 'open' ? closesAt(r.v, now + r.w, offset) : null }))
       .filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
       /* Still open half an hour after you arrive. */
       .filter(r => { const later = now + r.w + 25, h = hoursAt(r.v, later, offset); return h !== 'shut' && (h === 'open' || usual(r.v.kind, later) || !USUAL[r.v.kind]); })
@@ -338,7 +364,7 @@
     let start = isEvent ? startOf(entry) : round5(now + 5);
     if (start == null) return null;
     if (isEvent && !G().coordsFor(entry)) return null;
-    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset));
+    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset), offset);
     const stops = [first];
     let prev = entry, at = isEvent ? endOf(entry, start) : start + STAY;
     for (let n = 0; n < 2; n++) {
@@ -348,7 +374,7 @@
       });
       if (!pick) break;
       const minute = round5(at + 10 + pick.w);
-      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset)));
+      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset), offset));
       prev = pick.v; at = minute + STAY;
     }
     return stops.length > 1 ? Object.assign(build(stops), { day, off: offset }) : null;
@@ -356,11 +382,23 @@
 
   /* ── The route as a URL ───────────────────────────────────── */
   const param = (route) => route.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(',');
-  const fromParam = (str, offset = 0) => {
+  /* A stored walk's leg, measured along the streets by the pipeline (pipeline/routes.ts), stands in for the
+     estimate while it still matches: both stops are the ones it was measured between (not redirected to
+     another record since) and the minutes fit where they stand now, no shorter than the straight line and
+     no more than twice the estimate and five minutes. Anything else keeps the estimate. */
+  const streetLeg = (s, leg, line, same) => {
+    if (!same || !leg || leg.routed !== true) return;
+    const w = Number(leg.walk), m = Number(leg.metres);
+    if (!Number.isInteger(w) || w < 1 || w > 90 || !Number.isFinite(m) || m < 0 || m > 15000) return;
+    if (line != null && ((w + 2) * G().WALK_M_PER_MIN < line || (s.walk != null && w > s.walk * 2 + 5))) return;
+    Object.assign(s, { walk: w, routed: true, street: Math.round(m) });
+  };
+  const fromParam = (str, offset = 0, legs = null) => {
     const parts = String(str || '').split(',').map(x => x.split(':'));
     if (parts.length < 2 || parts.length > 6 || parts.some(p => p.length !== 3 || !/^(place|event)$/.test(p[0]) || !/^[\w.-]{1,80}$/.test(p[1]) || !/^\d{1,4}$/.test(p[2]))) return null;
     const stops = [];
     const ids = new Set();
+    const lines = [], same = [];
     for (const [type, id, min] of parts) {
       const minute = Number(min);
       let entry;
@@ -371,13 +409,15 @@
       const prev = stops[stops.length - 1];
       if (prev && minute <= prev.minute) return null;
       const prevM = prev ? (type === 'place' ? metres(entry, prev) : metres(prev, entry)) : null;
-      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset)) : eventStop(entry, minute, prevM));
+      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset), offset) : eventStop(entry, minute, prevM));
+      lines.push(prevM); same.push(entry.id === id);
     }
+    if (Array.isArray(legs) && legs.length === stops.length) stops.forEach((s, i) => { if (i) streetLeg(s, legs[i], lines[i], same[i - 1] && same[i]); });
     return Object.assign(build(stops), { day: W().keyPlus?.(offset), off: offset });
   };
 
   const href = (route) => `route.html?s=${encodeURIComponent(param(route))}&d=${encodeURIComponent(route.day || W().todayKey())}${route.id ? `&t=${encodeURIComponent(route.id)}` : ''}`;
-  const fromURL = (str, day) => {
+  const fromURL = (str, day, legs = null) => {
     /* Older event links can recover their day from the listing. A place-only
        legacy link has no date evidence and keeps the old today behaviour. */
     if (day == null) {
@@ -387,7 +427,7 @@
     }
     const offset = dayOffset(day);
     if (offset < 0) return null;
-    const route = fromParam(str, offset);
+    const route = fromParam(str, offset, legs);
     if (!route || (offset === 0 && route.stops[0].minute < nowMin() - 15)) return null;
     if (route.stops.some(s => s.type === 'place' && !fits({ kind: s.kind }, s.hours, s.minute))) return null;
     for (const [i, stop] of route.stops.entries()) {
@@ -427,7 +467,7 @@
   const fromRow = (row) => {
     const off = dayOffset(row.day);
     if (off < 0 || !Array.isArray(row.stops)) return null;
-    const r = fromURL(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), row.day);
+    const r = fromURL(row.stops.map(s => `${s.type}:${s.id}:${s.minute}`).join(','), row.day, row.stops);
     if (!r) return null;
     if (r.stops.some(s => s.hours === 'shut' || (s.type === 'place' && s.hours === 'unknown' && !usual(s.kind, s.minute)))) return null;
     /* Each place stays open until you would leave it for the next stop. */
@@ -456,15 +496,14 @@
   const clock = (m) => H().clock(m % DAY);
   const stopSub = (s) => {
     if (s.type === 'event') return [s.venue, s.price].filter(Boolean).join(' · ');
-    const hours = s.hours === 'open' ? 'open then' : s.hours === 'unknown' ? 'hours not filed' : '';
-    return [R().kindLabel(s.kind, true), hours].filter(Boolean).join(' · ');
+    return [R().kindLabel(s.kind, true), hoursNote(s.hours, s.closes)].filter(Boolean).join(' · ');
   };
   const lengthText = (route) => {
     const first = route.stops[0].minute, last = route.stops[route.stops.length - 1].minute;
     const span = Math.max(0, last - first);
     const h = Math.floor(span / 60), m = span % 60;
     const len = h ? `${h} h${m ? ` ${m} min` : ''}` : `${m} min`;
-    const dist = route.metres ? `, ${G().format(route.metres)} on foot` : '';
+    const dist = route.street ? `, ${G().format(route.street)} on foot` : route.metres ? `, ${G().format(G().onFoot(route.metres))} on foot` : '';
     return `${len}${dist}`;
   };
 
@@ -482,5 +521,5 @@
       <ol class="rt-card__stops">${stops}</ol></a></section>`;
   };
 
-  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, lengthText, costText };
+  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, hoursNote, lengthText, costText };
 })();

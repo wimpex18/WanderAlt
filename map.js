@@ -150,7 +150,7 @@
       .concat(m != null ? [esc(`${R().walkLabel(m)} walk`)] : []).filter(Boolean).join(' · ');
     return `<div class="map-preview__card${x.id === state.active ? ' is-active' : ''}" data-card="${esc(x.id)}">
         <a class="map-preview__link" href="detail.html?id=${esc(encodeURIComponent(x.id))}" data-row="${esc(x.id)}">
-          <span class="map-preview__art${R().logoCls(logo, tone)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
+          <span class="map-preview__art${R().logoCls(logo, tone)}">${src ? `<img ${window.WA.UI.imgAttrs(src, 200)} alt="" loading="lazy">` : window.WA.Picto.kind(x.kind)}</span>
           <span class="map-preview__body">
             <span class="map-preview__title">${esc(isEvent ? x.title : x.name)}</span>
             <span class="map-preview__meta">${esc(meta1)}</span>
@@ -291,10 +291,18 @@
     ? list.slice().sort((a, b) => (G().distanceTo(a) ?? 1e9) - (G().distanceTo(b) ?? 1e9))
     : list.slice().sort(fallback));
 
+  /* As on Now: a run that began on an earlier day (a month of screenings, an exhibition) files
+     under today, after today's timed listings, instead of leading the list with its first date. */
+  const bySoonest = () => {
+    const within = G().bySoonestThenDistance(), today = W().todayKey();
+    const key = (e) => { const k = W().resolveKey(e) || '\uffff'; return k < today ? today : k; };
+    const run = (e) => (R().isRun(e) ? 1 : 0);
+    return (a, b) => { const ka = key(a), kb = key(b); return ka !== kb ? (ka < kb ? -1 : 1) : run(a) - run(b) || within(a, b); };
+  };
   const openFirst = (a, b) => (R().openState(a).open === true ? 0 : 1) - (R().openState(b).open === true ? 0 : 1) || String(a.name).localeCompare(String(b.name));
   const ordered = () => {
     const { ev, pl } = inView();
-    return { evs: byWalk(ev, G().byDateThenSoonest()), pls: byWalk(pl, openFirst) };
+    return { evs: byWalk(ev, bySoonest()), pls: byWalk(pl, openFirst) };
   };
 
   const placeDrawer = () => {
@@ -322,6 +330,19 @@
     $('drawer-list').innerHTML = html;
   };
 
+  /* The bulk of what is shown, not its stragglers: a few venues in Nõmme or Viimsi would
+     otherwise zoom the whole city out under one count. The farthest fifth from the median
+     point is left to panning, and the drawer's In view count follows what is framed. Search
+     results are framed whole, so none of them starts out of view. */
+  const core = (pts) => {
+    if (pts.length < 8) return pts;
+    const mid = (a) => a.slice().sort((x, y) => x - y)[a.length >> 1];
+    const c = { lat: mid(pts.map(p => p.lat)), lng: mid(pts.map(p => p.lng)) };
+    const k = Math.cos(c.lat * Math.PI / 180);
+    const d = (p) => Math.hypot(p.lat - c.lat, (p.lng - c.lng) * k);
+    const cut = pts.map(d).sort((a, b) => a - b)[Math.floor(pts.length * 0.8)];
+    return pts.filter(p => d(p) <= cut);
+  };
   const fit = (list) => {
     const t = T();
     if (!t) return;
@@ -330,7 +351,7 @@
     const desk = matchMedia('(min-width: 1024px)').matches;
     const pad = desk ? { top: 100, left: 90, right: 90, bottom: 80 } : { top: 180, left: 56, right: 56, bottom: 170 };
     /* No tween: a resize during the opening frames cancels an animated fit. */
-    if (pts.length) t.fitToPicks(pts, { padding: pad, duration: 0 });
+    if (pts.length) t.fitToPicks(searchContext ? pts : core(pts), { padding: pad, duration: 0 });
   };
 
   const draw = () => { placePins(); placeDrawer(); preview(); };

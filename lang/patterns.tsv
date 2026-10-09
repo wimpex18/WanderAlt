@@ -14,6 +14,8 @@ till {d}	kuni {d}	до {d}	до {d}
 Until {t}	Kuni {t}	До {t}	До {t}
 Until {d}	Kuni {d}	До {d}	До {d}
 Open till {t}	Avatud kuni {t}	Открыто до {t}	Відчинено до {t}
+open till {t}	avatud kuni {t}	открыто до {t}	відчинено до {t}
+{x} away	{x} kaugusel	в {x}	за {x}
 Opens {t}	Avaneb {t}	Откроется в {t}	Відчиниться о {t}
 opens {t}	avaneb {t}	откроется в {t}	відчиниться о {t}
 Opens {d}	Avaneb {d}	Откроется {d}	Відчиниться {d}
@@ -59,6 +61,9 @@ Tonight in {x}	Täna õhtul: {x}	Сегодня вечером: {x}	Сьогод
 {n} hours ago	{n} tundi tagasi	{n} ч назад	{n} год тому
 {n} day ago	{n} päev tagasi	{n} дн. назад	{n} дн. тому
 {n} days ago	{n} päeva tagasi	{n} дн. назад	{n} дн. тому
+Checked {n} min ago	Kontrollitud {n} min tagasi	Проверено {n} минуту назад|Проверено {n} минуты назад|Проверено {n} минут назад|Проверено {n} минуты назад	Перевірено {n} хвилину тому|Перевірено {n} хвилини тому|Перевірено {n} хвилин тому|Перевірено {n} хвилини тому
+Checked {n} h ago	Kontrollitud {n} h tagasi	Проверено {n} час назад|Проверено {n} часа назад|Проверено {n} часов назад|Проверено {n} часа назад	Перевірено {n} годину тому|Перевірено {n} години тому|Перевірено {n} годин тому|Перевірено {n} години тому
+Checked {d}	Kontrollitud {d}	Проверено {d}	Перевірено {d}
 {n} more listed here	Siin on veel {n} kuulutust	Здесь ещё {n}	Тут ще {n}
 on {u}	allikas {u}	на {u}	на {u}
 Listed via {rawName}, read {y}.	Kuulutatud allika kaudu {rawName}, loetud {y}.	Объявлено через {rawName}, прочитано {y}.	Оголошено через {rawName}, прочитано {y}.
@@ -120,3 +125,4 @@ Show {n} more places	Näita veel {n} kohta	Ещё {n} место|Ещё {n} ме
 {n} without a map location	{n} kaardi asukohata	{n} без адреса на карте	{n} без адреси на мапі
 Dark from {t}	Tume alates {t}	Тёмная с {t}	Темна з {t}
 All {n} open	Kõik {n} avatud	Все открытые: {n}	Усі відчинені: {n}
+{x} from {t}	{x} alates {t}	{x} с {t}	{x} з {t}

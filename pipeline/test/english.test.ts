@@ -102,3 +102,61 @@ test('long original text ends at a readable boundary and never exceeds the publi
   assert.ok(shortened.length <= 2000); assert.ok(shortened.endsWith('…'));
   assert.equal(excerpt('Short source text.'), 'Short source text.');
 });
+
+import { tidyTitle, untranslatedTitle } from '../english.ts';
+import { tallinnToIso } from '../time.ts';
+
+test("English titles lose this event's own date, time, venue and city, and a repeated half", () => {
+  const at = (local: string, venue_name: string | null = null) => ({ venue_name, starts_at: tallinnToIso(local) });
+  assert.equal(tidyTitle('Telliskivi Comedy Club Comedy Night 19:00', at('2026-10-09 19:00', 'Fonoteek')), 'Telliskivi Comedy Club Comedy Night');
+  assert.equal(tidyTitle('Telliskivi Komöödiaklubi English Comedy Showcase 10.10.2026', at('2026-10-10 18:00', 'Fonoteek')), 'Telliskivi Komöödiaklubi English Comedy Showcase');
+  assert.equal(tidyTitle('DnD – Wednesday 14.10.2026 @The _Workshop', at('2026-10-14 18:30', 'Drink and Draw Tallinn / The Workshop')), 'DnD');
+  assert.equal(tidyTitle('DnD – Wednesday 14 Oct 2026 @ The _Workshop', at('2026-10-14 18:30', 'Drink and Draw Tallinn / The Workshop')), 'DnD');
+  assert.equal(tidyTitle('Rock Friday: ROCKSHOCK + NIGHT FLIES @ The Krypt, Tallinn', at('2026-10-09 21:00', 'The Krypt Spooky Bar & Stage')), 'Rock Friday: ROCKSHOCK + NIGHT FLIES');
+  assert.equal(tidyTitle('10.10 • 𝐃𝐨𝐨𝐦𝐞𝐝 𝐒𝐚𝐭𝐮𝐫𝐝𝐚𝐲: TAAK @ The Krypt, Tallinn 🦇', at('2026-10-10 21:00', 'The Krypt Spooky Bar & Stage')), 'Doomed Saturday: TAAK');
+  assert.equal(tidyTitle('Art Class 10.10', at('2026-10-10 11:00', 'LovePaint.eu')), 'Art Class');
+  assert.equal(tidyTitle('Komöödiaõhtu 09.10.2026 kell 19:00', at('2026-10-09 19:00')), 'Komöödiaõhtu');
+  assert.equal(tidyTitle('“Pie for Grandma” / “Pie for Grandma” - eccentric clowning', at('2026-10-09 19:00')), '“Pie for Grandma” - eccentric clowning');
+  assert.equal(tidyTitle('COSMODROME • 16.10 🚀 | KAI', at('2026-10-16 22:00', 'KAI Estonia')), 'COSMODROME');
+  assert.equal(tidyTitle('EIII (LV) + V4R1 (EE) | 17.10 Uus Laine', at('2026-10-17 19:00', 'Uus Laine')), 'EIII (LV) + V4R1 (EE)');
+  assert.equal(tidyTitle('Antonio Tensuro Trio @ Von Krahl', at('2026-10-24 19:00', 'Von Krahli teater')), 'Antonio Tensuro Trio');
+  assert.equal(tidyTitle('WHOMADEWHO @ TALLINN, ESTONIA', at('2026-10-23 23:00', 'Tallinn Cruise Terminal')), 'WHOMADEWHO');
+  assert.equal(tidyTitle('Jazz Night on October 10th, 2026', at('2026-10-10 20:00')), 'Jazz Night');
+});
+
+test('titles keep dates that belong to them, other venues, other days, and are never cut to nothing', () => {
+  const at = (local: string, venue_name: string | null = 'Kino Sõprus') => ({ venue_name, starts_at: tallinnToIso(local) });
+  for (const title of ['1984', '2001: A Space Odyssey', "Summer of '69", 'Live 2.0', 'Tea with Bach / Tee Bachiga'])
+    assert.equal(tidyTitle(title, at('2026-10-10 19:00')), title);
+  assert.equal(tidyTitle('Remembering 9.11', at('2026-10-09 19:00')), 'Remembering 9.11');        // not this event's date
+  assert.equal(tidyTitle('Comedy Night 18:00', at('2026-10-09 19:00')), 'Comedy Night 18:00');    // not its start
+  assert.equal(tidyTitle('Black Sunday 18.10', at('2026-10-18 19:00')), 'Black Sunday');          // a weekday in the title stays
+  assert.equal(tidyTitle('Pottery Course | ADO Studio at Põhjala Factory', at('2026-10-08 18:00', 'Põhjala tehas')), 'Pottery Course | ADO Studio at Põhjala Factory');
+  assert.equal(tidyTitle('Make Immigrants Great Again | English Comedy in Estonia', at('2026-10-22 19:00')), 'Make Immigrants Great Again | English Comedy in Estonia');
+  assert.equal(tidyTitle('10.10', at('2026-10-10 19:00')), '10.10');
+  assert.equal(tidyTitle('Kino Sõprus @ Tallinn', at('2026-10-10 19:00')), 'Kino Sõprus');
+  assert.equal(tidyTitle('Art Class 10.10'), 'Art Class 10.10');                                   // no start, no date to recognise
+});
+
+test('Estonian format words are caught inside compounds and capitals, and the saved copy is tidied', () => {
+  assert.equal(untranslatedTitle('Telliskivi Komöödiaklubi KOMÖÖDIAÕHTU'), true);
+  assert.equal(untranslatedTitle('Jõulukontsert'), true);
+  assert.equal(untranslatedTitle('Telliskivi Komöödiaklubi English Comedy Showcase'), false);   // an organiser's name stays
+  assert.equal(validatedCopy(event(), { text: '', url: null }, answer({ title_en: 'Telliskivi Komöödiaklubi KOMÖÖDIAÕHTU 10.10.2026' })), null);
+  const timed = event({ venue_name: 'Philly Joe’s', starts_at: tallinnToIso('2026-10-09 19:00') });
+  assert.equal(validatedCopy(timed, { text: '', url: null }, answer({ title_en: 'Jazz 19:00 @ Philly Joe’s' }))?.title_en, 'Jazz');
+  assert.equal(englishHash(timed), englishHash(event({ venue_name: 'Philly Joe’s' })));         // the start is no input to the copy
+});
+
+test('saved English titles are tidied without a model, and an untranslated one is due again', async () => {
+  const done = event({ id: 'done', title_en: 'Art Class 10.10', venue_name: 'LovePaint.eu', starts_at: tallinnToIso('2026-10-10 11:00') });
+  done.english_input_hash = englishHash(done);
+  const estonian = event({ id: 'estonian', title_en: 'Telliskivi Komöödiaklubi KOMÖÖDIAÕHTU', starts_at: tallinnToIso('2026-10-10 20:00') });
+  estonian.english_input_hash = englishHash(estonian);
+  const patches: [string, Record<string, unknown>][] = [];
+  const asked: string[] = [];
+  const db = { all: async <T>() => [done, estonian] as T[], patch: async (path: string, values: unknown) => { patches.push([path, values as Record<string, unknown>]); } };
+  await refreshEnglish(db, model(user => { asked.push(...JSON.parse(user).map((e: { id: string }) => e.id)); return { items: [] }; }));
+  assert.deepEqual(patches, [['events?id=eq.done', { title_en: 'Art Class' }]]);
+  assert.deepEqual(asked, ['estonian']);
+});

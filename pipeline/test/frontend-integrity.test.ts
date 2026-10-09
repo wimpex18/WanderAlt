@@ -10,7 +10,7 @@ function page() {
     canonicalId: (id: string) => redirects.get(id) ?? id,
     Geo: { startMinutes: () => 19 * 60, distanceTo: () => null },
     Hours: { state: () => ({ known: true, open: true }), clock: (n: number) => `${Math.floor(n / 60)}:00` },
-    UI: { esc: (s: unknown) => String(s ?? ''), safeUrl: (s: string) => s },
+    UI: { esc: (s: unknown) => String(s ?? ''), safeUrl: (s: string) => s, keepFocus: (_: unknown, redraw: () => unknown) => redraw() },
   };
   const context = createContext({ window: { WA, addEventListener: () => {} }, localStorage: {
     getItem: (key: string) => values.get(key) ?? null,
@@ -403,4 +403,27 @@ test('compact rows keep small pictures and Saved shows three lists a row; deskto
   assert.match(phone, /\.wa-place__glyph, \.home-places \.wa-place__glyph \{ width: 48px; height: 48px;/);
   assert.match(phone, /\.wa-lists \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.wa-row__thumb \{ width: 120px; height: 90px; \}/, 'desktop rows keep their picture');
+});
+
+test('pictures are asked for at about their drawn size, and keep the original to fall back to', () => {
+  const context = createContext({ window: { WA: {} }, location: { origin: 'https://wanderalt.app' }, URL,
+    document: { documentElement: { style: { setProperty() {}, removeProperty() {} } }, addEventListener: () => {}, querySelectorAll: () => [], readyState: 'complete' } });
+  runInContext(readFileSync(new URL('../../ui-helpers.js', import.meta.url), 'utf8'), context);
+  const UI = (context as any).window.WA.UI;
+  const fienta = 'https://fienta.com/cf/img/?width=1070&format=jpeg&gcs=true&file=/org/9174/QcZSdMwoL8KrWoC.jpg';
+  assert.equal(UI.sized(fienta, 160), 'https://fienta.com/cf/img/?width=160&format=jpeg&gcs=true&file=/org/9174/QcZSdMwoL8KrWoC.jpg');
+  assert.equal(UI.sized('https://fienta.com/cf/img/?width=120&file=/a.jpg', 160), 'https://fienta.com/cf/img/?width=120&file=/a.jpg');   // never larger
+  // Commons serves fixed widths only: the next one up, and SVGs as PNG.
+  assert.equal(UI.sized('https://upload.wikimedia.org/wikipedia/commons/a/a0/Fotografiska_2019.jpg', 160),
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Fotografiska_2019.jpg/250px-Fotografiska_2019.jpg');
+  assert.equal(UI.sized('http://upload.wikimedia.org/wikipedia/commons/b/bd/Logo.svg', 100),
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Logo.svg/120px-Logo.svg.png');
+  assert.equal(UI.sized('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/X.jpg/1280px-X.jpg', 300),
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/X.jpg/330px-X.jpg');
+  assert.equal(UI.sized('https://shop.wordpress.com/wp-content/uploads/logo.png?w=192', 160), 'https://shop.wordpress.com/wp-content/uploads/logo.png?w=160');
+  assert.equal(UI.sized('https://venue.example/photo.jpg', 160), 'https://venue.example/photo.jpg');
+  assert.equal(UI.sized('javascript:alert(1)', 160), '');
+  assert.equal(UI.imgAttrs('https://venue.example/a.jpg', 160), 'src="https://venue.example/a.jpg"');
+  assert.equal(UI.imgAttrs('https://fienta.com/cf/img/?width=1070&file=/a.jpg', 160),
+    'src="https://fienta.com/cf/img/?width=160&amp;file=/a.jpg" data-full="https://fienta.com/cf/img/?width=1070&amp;file=/a.jpg"');
 });

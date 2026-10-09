@@ -70,18 +70,57 @@ const placeLd = (v, id) => ({
   geo: Number.isFinite(v.lat) && Number.isFinite(v.lng) ? { '@type': 'GeoCoordinates', latitude: v.lat, longitude: v.lng } : undefined,
   sameAs: [v.website, v.instagram, v.facebook].map(httpUrl).filter(Boolean),
 });
-const eventLd = (e, id) => ({
-  '@context': 'https://schema.org', '@type': 'Event', name: e.title, url: `${SITE}/detail?id=${encodeURIComponent(id)}`,
-  startDate: e.time && e.starts_at ? e.starts_at : (e.day || undefined),
-  endDate: e.ends_at || undefined,
-  eventStatus: e.flag === 'cancelled' ? 'https://schema.org/EventCancelled' : e.flag === 'postponed' ? 'https://schema.org/EventPostponed' : 'https://schema.org/EventScheduled',
-  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-  location: e.venue ? { '@type': 'Place', name: e.venue, address: e.address ? { '@type': 'PostalAddress', streetAddress: String(e.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined } : undefined,
-  image: httpUrl(e.image_url), description: e.quote || undefined,
-  offers: e.is_free === true || Number.isFinite(e.price_min)
-    ? { '@type': 'Offer', price: e.is_free === true ? 0 : e.price_min, priceCurrency: e.currency || 'EUR', url: httpUrl(e.ticket_url),
-        availability: e.flag === 'sold_out' ? 'https://schema.org/SoldOut' : undefined } : undefined,
-});
+/* Event times as Tallinn wall-clock time with its offset ("2026-10-10T20:00:00+03:00"), or the
+   Tallinn date alone when the source gave no time. Built on first use: a Worker's global scope
+   should do no work. */
+let tallinnFmt = null;
+const tallinnIso = (v, dateOnly) => {
+  const d = new Date(String(v ?? ''));
+  if (v == null || v === '' || Number.isNaN(d.getTime())) return undefined;
+  tallinnFmt = tallinnFmt || new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn', hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const p = Object.fromEntries(tallinnFmt.formatToParts(d).map(x => [x.type, x.value]));
+  const day = `${p.year}-${p.month}-${p.day}`;
+  if (dateOnly) return day;
+  const off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(d.getTime() / 1000) * 1000) / 60000);
+  const two = (n) => String(n).padStart(2, '0');
+  return `${day}T${p.hour}:${p.minute}:${p.second}${off < 0 ? '-' : '+'}${two(Math.floor(Math.abs(off) / 60))}:${two(Math.abs(off) % 60)}`;
+};
+const num = (v) => (v == null || v === '' ? NaN : Number(v));
+/* The picks view names a venue the source printed in Cyrillic, which the page never shows as a place name. */
+const CYRILLIC = /[Ѐ-ӿ]/;
+/* Only what the listing states: a time is given only when the source gave one, a status only when it
+   says cancelled or postponed, a price only when it is stated or the entry is free, a currency and a
+   language only when named. No organiser: we do not hold one. */
+const eventLd = (e, id) => {
+  const timed = !!e.time;
+  const start = tallinnIso(e.starts_at, !timed);
+  const end = tallinnIso(e.ends_at, !timed);
+  const venue = e.venue && !CYRILLIC.test(e.venue) ? String(e.venue) : '';
+  const geo = Number.isFinite(e.lat) && Number.isFinite(e.lng) ? { '@type': 'GeoCoordinates', latitude: e.lat, longitude: e.lng } : undefined;
+  const address = e.address ? { '@type': 'PostalAddress', streetAddress: String(e.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined;
+  const free = e.is_free === true || num(e.price_min) === 0;
+  const low = num(e.price_min), high = num(e.price_max);
+  const currency = /^[A-Z]{3}$/.test(String(e.currency || '')) ? e.currency : undefined;
+  const availability = e.flag === 'sold_out' ? 'https://schema.org/SoldOut' : e.flag === 'few_left' ? 'https://schema.org/LimitedAvailability' : undefined;
+  const ticket = httpUrl(e.ticket_url);
+  const offers = free ? { '@type': 'Offer', price: 0, priceCurrency: currency, url: ticket, availability }
+    : !Number.isFinite(low) ? undefined
+    : Number.isFinite(high) && high > low ? { '@type': 'AggregateOffer', lowPrice: low, highPrice: high, priceCurrency: currency, url: ticket, availability }
+    : { '@type': 'Offer', price: low, priceCurrency: currency, url: ticket, availability };
+  const languages = Array.isArray(e.event_languages) ? e.event_languages.filter(l => /^[a-z]{2}$/.test(String(l))) : [];
+  return {
+    '@context': 'https://schema.org', '@type': 'Event', name: e.title, url: `${SITE}/detail?id=${encodeURIComponent(id)}`,
+    startDate: start, endDate: end && end !== start && Date.parse(e.ends_at) > Date.parse(e.starts_at) ? end : undefined,
+    eventStatus: e.flag === 'cancelled' ? 'https://schema.org/EventCancelled' : e.flag === 'postponed' ? 'https://schema.org/EventPostponed' : undefined,
+    eventAttendanceMode: venue || address || geo ? 'https://schema.org/OfflineEventAttendanceMode' : undefined,
+    location: venue || address || geo ? { '@type': 'Place', name: venue || undefined, address, geo } : undefined,
+    image: httpUrl(e.image_url), description: e.quote || undefined,
+    inLanguage: languages.length > 1 ? languages : languages[0],
+    isAccessibleForFree: free || undefined,
+    offers,
+  };
+};
 
 /* Rewrite the OG/Twitter meta on the streamed HTML. When `photo` is true
    the og:image is a real photo of unknown aspect, so the declared
@@ -159,7 +198,7 @@ async function pageResponse(context) {
   try {
     if (isPick) {
       const rows = await sbGet(
-        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time,day,starts_at,ends_at,address,ticket_url,is_free,price_min,currency,flag${lang ? `,title_${lang},quote_${lang}` : ''}&limit=1`);
+        `picks?id=eq.${encodeURIComponent(id)}&select=title,quote,handle,image_url,city,venue,neighborhood,time,starts_at,ends_at,address,lat,lng,ticket_url,is_free,price_min,price_max,currency,flag,event_languages${lang ? `,title_${lang},quote_${lang}` : ''}&limit=1`);
       const pick = rows[0];
       if (pick && lang) { pick.title = pick[`title_${lang}`] || pick.title; pick.quote = pick[`quote_${lang}`] || pick.quote; }
       if (!pick) {

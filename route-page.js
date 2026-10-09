@@ -4,8 +4,9 @@
    route.html?s=place:<id>:<minute>,event:<id>:<minute>,...
    With no `s`, the best route for the next few hours is composed (route.js). Each stop
    links to its own page and says where its facts come from; the walks
-   between stops are straight-line distance at the site's one walking
-   pace. Hours are shown only when filed.
+   between stops are the street estimate at the site's one walking pace, or,
+   for a stored evening (`t`), the minutes its legs were routed along the
+   streets. Hours are shown only when filed.
    ============================================================ */
 (() => {
   'use strict';
@@ -22,7 +23,7 @@
     const v = venueOf(s);
     const src = v && v.imageUrl ? R().url(v.imageUrl) : '';
     if (!src) return window.WA.Picto.kind(s.kind);
-    return `<span class="rt__logo${R().logoCls(v.imageSource === 'logo', v.imageTone)}"><img src="${esc(src)}" alt="" loading="lazy"></span>`;
+    return `<span class="rt__logo${R().logoCls(v.imageSource === 'logo', v.imageTone)}" data-kind="${esc(s.kind || '')}"><img ${window.WA.UI.imgAttrs(src, 160)} alt="" loading="lazy"></span>`;
   };
 
   const startLine = (first) => {
@@ -69,7 +70,7 @@
         ${maps ? `<a class="wa-btn wa-btn--primary" href="${esc(maps)}" target="_blank" rel="noopener noreferrer">${I('walk')}Open in Maps</a>` : ''}
         <button class="wa-btn" type="button" id="rt-share">${I('share')}Share</button>
       </div>
-      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times are straight-line distances at a normal pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
+      <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times follow the streets at an easy pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
       <div id="rt-more"></div>`;
     more(route);
   };
@@ -98,16 +99,25 @@
     const s = q.get('s');
     const route = s ? window.WA.Route.fromURL(s, q.get('d')) : window.WA.Route.best();
     if (!route) { none(!!s); return; }
-    /* A stored evening keeps its own title and note, once the table has answered. */
+    /* A stored evening keeps its own title, note and walks routed along the streets, once the table has answered. */
     const t = q.get('t');
     const row = t && window.WA.Route.upcoming().find(r => r.id === t);
-    draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine }) : route);
+    draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route)
+      ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine, stops: row.stops, walkMin: row.walkMin, street: row.street }) : route);
   };
 
+  /* The share text goes to the OS sheet, outside the page the translator reads. A copy
+     answers on the button itself, as on a listing's page: toasts here only carry an undo. */
   document.addEventListener('click', async (e) => {
-    if (!e.target.closest || !e.target.closest('#rt-share')) return;
-    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text: 'A walk through Tallinn', url: location.href });
-    if (r === 'copied' && window.WA.Toast) window.WA.Toast.show('Link copied');
+    const sh = e.target.closest && e.target.closest('#rt-share');
+    if (!sh) return;
+    const text = window.WA.Lang ? window.WA.Lang.t('A walk through Tallinn') : 'A walk through Tallinn';
+    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text, url: location.href });
+    if (r !== 'copied' && r !== 'failed') return;
+    const was = sh.innerHTML;
+    sh.setAttribute('aria-label', r === 'copied' ? 'Link copied' : 'Could not copy the link');
+    sh.innerHTML = `${I(r === 'copied' ? 'check' : 'close')}<span>${r === 'copied' ? 'Copied' : 'Failed'}</span>`;
+    setTimeout(() => { sh.innerHTML = was; sh.removeAttribute('aria-label'); }, 2000);
   });
 
   document.addEventListener('wa:catalog-ready', () => { boot(); window.WA.Route.loadStored(); });

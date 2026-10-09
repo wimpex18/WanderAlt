@@ -15,7 +15,7 @@ function world(now: number, events: any[], places: P[], open: (p: P, minute: num
   const store: Record<string, string> = {};
   const WA: any = {
     CITY: 'tallinn',
-    UI: { esc: (s: any) => String(s) },
+    UI: { esc: (s: any) => String(s), descriptionOr: (s: any) => String(s ?? '') },
     Icon: () => '',
     when: { isTonight: () => true },
     Hours: {
@@ -96,7 +96,7 @@ test('tickets are the cheapest price of each listing; an unknown price is said, 
   const unknown = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { priceMin: null })], places).Route;
   assert.equal(unknown.costText(plain(unknown.plan({}))[0]), 'price not listed');
   const free = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { isFree: true })], places).Route;
-  assert.equal(free.costText(plain(free.plan({}))[0]), 'free tickets');
+  assert.equal(free.costText(plain(free.plan({}))[0]), 'free entry');
   const half = world(17 * 60, [ev('e1', 19 * 60, 59.4400, 24.7340, { priceMin: 9.5 })], places).Route;
   assert.equal(half.costText(plain(half.plan({}))[0]), 'tickets from €9.50');
 });

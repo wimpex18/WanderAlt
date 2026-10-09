@@ -145,7 +145,7 @@ Check with the venue before you go.	Küsi enne minekut kohast järele.	Уточ�
 Opening hours	Lahtiolekuajad	Часы работы	Години роботи
 Today	Täna	Сегодня	Сьогодні
 No fixed hours filed. This room opens when something is on; the listings above carry the times.	Kindlaid lahtiolekuaegu pole. See ruum avatakse, kui midagi toimub; ajad on ülal kuulutustes.	Постоянных часов нет. Зал открывается, когда что-то идёт; время указано в событиях выше.	Постійних годин немає. Зал відчиняється, коли щось відбувається; час указано в подіях вище.
-Not filed. Half the places list their hours, and we would rather leave a gap than guess.	Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.	Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.	Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.
+Not listed. Half the places list their hours, and we would rather leave a gap than guess.	Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.	Не указано. Половина мест не публикует часы, и мы лучше оставим пробел, чем будем гадать.	Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.
 Your lists	Sinu nimekirjad	Ваши списки	Ваші списки
 Create your first list	Loo esimene nimekiri	Создайте первый список	Створіть перший список
 New list	Uus nimekiri	Новый список	Новий список
@@ -153,7 +153,7 @@ Create and add	Loo ja lisa	Создать и добавить	Створити �
 Kalamaja on Saturday	Kalamaja laupäeval	Kalamaja в субботу	Kalamaja в суботу
 Walk	Jalutus	Пешком	Пішки
 Area	Piirkond	Район	Район
-Location for walking times	Asukoht jalutusaegade jaoks	Геолокация для времени пешком	Геолокація для часу пішки
+Set a start point to see the walk	Jalutusaja nägemiseks vali alguspunkt	Укажите точку старта, чтобы увидеть время пешком	Вкажіть точку старту, щоб побачити час пішки
 Venue logo	Koha logo	Логотип места	Логотип місця
 Venue photo	Koha foto	Фото места	Фото місця
 Save	Salvesta	Сохранить	Зберегти
@@ -180,7 +180,6 @@ Source description	Allika kirjeldus	Описание источника	Опис
 Original description	Algne kirjeldus	Исходное описание	Оригінальний опис
 On now	Praegu käimas	Идёт сейчас	Триває зараз
 Ongoing	Käimas	Идёт	Триває
-Time not filed	Kellaaeg teadmata	Время не указано	Час не вказано
 Nothing else listed here yet	Siin pole veel muud kuulutatud	Здесь пока больше ничего нет	Тут поки більше нічого немає
 Cancelled	Tühistatud	Отменено	Скасовано
 Postponed	Edasi lükatud	Перенесено	Перенесено
@@ -303,7 +302,7 @@ Picked places	Valitud kohad	Отобранные места	Вибрані мі�
 The Guide	Teejuht	Гид	Гід
 What's on	Mis toimub	Что идёт	Що відбувається
 We can't reach the listings right now.	Kuulutusteni ei pääse praegu ligi.	Сейчас не удаётся получить события.	Зараз не вдається отримати події.
-Hours not filed	Lahtiolekuajad teadmata	Часы не указаны	Години не вказано
+Hours not listed	Lahtiolekuajad pole märgitud	Часы не указаны	Години не вказано
 Open for events	Avatud ürituste ajal	Открыто во время событий	Відчинено під час подій
 Details from the venue; its own site says it opens for its events.	Üksikasjad kohalt; koha enda sait ütleb, et see on avatud ürituste ajal.	Сведения от самого места; его сайт говорит, что оно открыто во время событий.	Відомості від самого місця; його сайт каже, що воно відчинене під час подій.
 Address and links from OpenStreetMap; its own site says it opens for its events.	Aadress ja lingid OpenStreetMapist; koha enda sait ütleb, et see on avatud ürituste ajal.	Адрес и ссылки из OpenStreetMap; сайт места говорит, что оно открыто во время событий.	Адреса й посилання з OpenStreetMap; сайт місця каже, що воно відчинене під час подій.
@@ -530,6 +529,7 @@ A gallery	Galerii	Галерея	Галерея
 An arts centre	Kunstikeskus	Центр искусств	Центр мистецтв
 A film	Film	Фильм	Фільм
 A museum	Muuseum	Музей	Музей
+A thrift shop	Kaltsupood	Секонд-хенд	Секонд-хенд
 A place	Koht	Место	Місце
 Show everything saved	Näita kõike salvestatut	Показать всё сохранённое	Показати все збережене
 Nothing dated is saved. Events you save land here, soonest first.	Kuupäevaga salvestatut pole. Salvestatud sündmused tulevad siia, varaseimad ees.	Сохранённых событий с датой нет. Сохранённые события появятся здесь, ближайшие первыми.	Збережених подій із датою немає. Збережені події зʼявляться тут, найближчі першими.
@@ -594,6 +594,7 @@ Open Settings, then Notifications, then WanderAlt, and allow notifications.	Ava 
 Notifications are blocked for this site in your browser settings.	Teavitused on selle saidi jaoks brauseri seadetes blokeeritud.	Уведомления для этого сайта заблокированы в настройках браузера.	Сповіщення для цього сайту заблоковано в налаштуваннях браузера.
 On for this device	Sellel seadmel sees	Включено на этом устройстве	Увімкнено на цьому пристрої
 Just now	Just praegu	Только что	Щойно
+Checked just now	Kontrollitud äsja	Проверено только что	Перевірено щойно
 Inbox	Postkast	Входящие	Вхідні
 Kept for 30 days	Säilitatakse 30 päeva	Хранится 30 дней	Зберігається 30 днів
 Nothing yet.	Veel pole midagi.	Пока ничего.	Поки нічого.
@@ -626,8 +627,8 @@ Shapes your walks	Mõjutab sinu jalutuskäike	Влияет на ваши про�
 Art	Kunst	Искусство	Мистецтво
 Gig	Kontsert	Концерт	Концерт
 Bar	Baar	Бар	Бар
-hours not filed	lahtiolekuajad teadmata	часы не указаны	години не вказано
-open then	siis avatud	тогда открыто	тоді відчинено
+hours not listed	lahtiolekuajad pole märgitud	часы не указаны	години не вказано
+open	avatud	открыто	відчинено
 Listed here next	Siin järgmisena kuulutatud	Дальше здесь	Далі тут
 OpenStreetMap	OpenStreetMap	OpenStreetMap	OpenStreetMap
 the venue's own site	koha enda saidilt	собственного сайта заведения	власного сайту закладу
@@ -685,7 +686,7 @@ We cannot promise a door will be open.	Me ei saa lubada, et uks on lahti.	Мы �
 Another	Veel üks	Другой	Інший
 Any	Mis tahes	Любая	Будь-яка
 Open in Maps	Ava kaardirakenduses	Открыть в Картах	Відкрити в Картах
-Walking times are straight-line distances at a normal pace.	Jalutusajad on arvutatud linnulennult tavalise sammuga.	Время пешком считается по прямой при обычном шаге.	Час пішки рахується по прямій за звичайного кроку.
+Walking times follow the streets at an easy pace.	Jalutusajad arvestavad tänavaid ja rahulikku sammu.	Время пешком посчитано по улицам, спокойным шагом.	Час пішки пораховано вулицями, спокійним кроком.
 Place times are suggested.	Kohtade külastusajad on soovituslikud.	Время посещения мест предложено для плана.	Час відвідування місць запропоновано для плану.
 Place costs are not included.	Kohtade külastuskulud ei ole arvestatud.	Расходы в заведениях не учтены.	Витрати в закладах не враховано.
 Some opening hours are not listed. Check before you go.	Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.	Часы работы некоторых мест не указаны. Проверьте перед выходом.	Години роботи деяких місць не вказано. Перевірте перед виходом.
@@ -698,8 +699,8 @@ where you are	sinu asukohast	вас	вас
 your chosen place	sinu valitud kohast	выбранного места	вибраного місця
 your chosen spot	sinu valitud koht	выбранное место	вибране місце
 Price not listed.	Hind teadmata.	Цена не указана.	Ціну не вказано.
-Free tickets.	Tasuta piletid.	Бесплатные билеты.	Безкоштовні квитки.
-free tickets	tasuta piletid	бесплатные билеты	безкоштовні квитки
+Free entry.	Tasuta sissepääs.	Вход свободный.	Вхід вільний.
+free entry	tasuta sissepääs	вход свободный	вхід вільний
 A bar	Baar	Бар	Бар
 A club	Klubi	Клуб	Клуб
 A gig	Kontsert	Концерт	Концерт
@@ -718,6 +719,7 @@ Another club	Veel üks klubi	Ещё один клуб	Ще один клуб
 Another bar	Veel üks baar	Ещё один бар	Ще один бар
 Another film	Veel üks film	Ещё один фильм	Ще один фільм
 Another gallery	Veel üks galerii	Ещё одна галерея	Ще одна галерея
+Another thrift shop	Veel üks kaltsupood	Ещё один секонд-хенд	Ще один секонд-хенд
 Source:	Allikas:	Источник:	Джерело:
 © OpenStreetMap contributors	© OpenStreetMapi kaastöölised	© Участники OpenStreetMap	© Учасники OpenStreetMap
 City or place	Linn või koht	Город или место	Місто або місце
@@ -851,7 +853,9 @@ Keep this search	Hoia see otsing alles	Сохранить этот поиск	З
 Near you	Sinu lähedal	Рядом с вами	Поруч із вами
 More filters	Rohkem filtreid	Ещё фильтры	Більше фільтрів
 Another walk	Teine jalutuskäik	Другая прогулка	Інша прогулянка
-Latest start first	Värskeimad eespool	Сначала самые свежие	Спершу найсвіжіші
+You can still walk in	Saab veel sisse astuda	Ещё можно зайти	Ще можна зайти
+Already under way	Juba käimas	Уже идёт	Уже триває
+Late entry may not be possible	Hilinejaid ei pruugita sisse lasta	Опоздавших могут не пустить	Запізнілих можуть не пустити
 Starting soon	Algab varsti	Скоро начнётся	Незабаром почнеться
 In the next two hours	Järgmise kahe tunni jooksul	В ближайшие два часа	Протягом двох годин
 Later tonight	Hiljem täna õhtul	Позже вечером	Пізніше ввечері

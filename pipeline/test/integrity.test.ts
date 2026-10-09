@@ -201,3 +201,14 @@ test('one page listing a show under venue names that disagree is one show; diffe
   assert.equal(seen.matchUrl('Design Street', url, Date.parse('2026-10-03T21:00:00Z')), null);
   assert.equal(seen.matchUrl('Design Street', null, Date.parse('2026-10-02T21:00:00Z')), null);
 });
+
+test('a place with no map position is retried before ones only missing an OSM identity, with its own budget', async () => {
+  const unlocated = Array.from({ length: 12 }, (_, i) => ({ id: `tallinn-u${i}`, city: 'tallinn', name: `Room ${i}`, aliases: [`room ${i}`], address: null, lat: null, lng: null }));
+  const unidentified = Array.from({ length: 12 }, (_, i) => ({ id: `tallinn-k${i}`, city: 'tallinn', name: `Known ${i}`, aliases: [`known ${i}`], address: null, lat: 59.43, lng: 24.74 }));
+  const store = new Places([...unidentified, ...unlocated] as any, 'tallinn', 1000);
+  const asked: string[] = [];
+  (store as any).locate = async (p: any) => { asked.push(p.id); return false; };
+  for (const p of [...unidentified, ...unlocated]) await store.resolve({ venue_name: p.name } as any, true);
+  assert.equal(asked.filter(id => id.startsWith('tallinn-k')).length, 5);
+  assert.equal(asked.filter(id => id.startsWith('tallinn-u')).length, 10);   // not crowded out by the 12 before them
+});

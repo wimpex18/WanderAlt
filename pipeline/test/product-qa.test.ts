@@ -141,7 +141,7 @@ function saved(byId: (id: string) => Promise<any>) {
   const WA: Record<string, any> = {
     _catalogAll: [], _venuesAll: [], DATA_LIVE: true, CITY: 'tallinn', byId,
     Bookmarks: { get: () => ({ retained: true }) },
-    UI: { esc: (s: unknown) => String(s ?? '') }, Icon: () => '', Geo: { byDateThenSoonest: () => () => 0 },
+    UI: { esc: (s: unknown) => String(s ?? ''), keepFocus: (_: unknown, redraw: () => unknown) => redraw() }, Icon: () => '', Geo: { byDateThenSoonest: () => () => 0 },
     when: { hasEnded: () => false },
     R: { empty: ({ title }: any) => title, skelRows: () => '', locateIfGranted: () => {}, sect: ({ title }: any) => title,
       row: (e: any) => e.title, placeRow: (e: any) => `${e.name} ${e.isVerified ? 'verified' : 'Status unverified'}` },

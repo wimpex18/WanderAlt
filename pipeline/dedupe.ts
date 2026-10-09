@@ -8,6 +8,7 @@
 // venue was called.
 
 import { nameKey } from './util.ts';
+import { tallinnDay } from './time.ts';
 
 export interface Known {
   id: string;
@@ -65,17 +66,43 @@ export class Seen {
   }
 }
 
+/** A live event as one source item listed it before (event_sources.raw_item_id). */
+export interface Listed { id: string; title: string; start: number; has_time: boolean }
+
+/** The row a source item listed before, when the item is one occurrence (Fienta, JSON-LD, WordPress)
+ *  and still names the same show: a moved start ("10:00" → "12:30") updates that row instead of
+ *  adding a second, and the event id stays the one saves and lists hold. When an earlier move left
+ *  several rows, the one with the same date-only or timed shape wins, a timed one before a
+ *  date-only one, then the nearest start. */
+export function earlierListing(title: string, start: number, hasTime: boolean, listed: Listed[]): string | null {
+  const same = listed.filter(k => overlap(k.title, title) >= 0.6);
+  same.sort((a, b) => Number(b.has_time === hasTime) - Number(a.has_time === hasTime) || Number(b.has_time) - Number(a.has_time)
+    || Math.abs(a.start - start) - Math.abs(b.start - start) || a.id.localeCompare(b.id));
+  return same[0]?.id ?? null;
+}
+
 export interface StoredEvent {
   id: string; title: string; place_id: string | null; starts_at: string; url?: string | null;
   first_seen_at: string; status: string; has_time: boolean;
 }
 
+export type EventPair = { duplicate: StoredEvent; canonical: StoredEvent };
+
+/** Published rows first, then the oldest: the id that saves, links and lists already hold. */
+const rank = (a: StoredEvent, b: StoredEvent) => Number(b.status === 'published') - Number(a.status === 'published') ||
+  a.first_seen_at.localeCompare(b.first_seen_at) || a.id.localeCompare(b.id);
+/** The same, but merge_events needs a canonical with a place: a placed row is preferred over an older unplaced one. */
+const prefer = (a: StoredEvent, b: StoredEvent) => Number(b.status === 'published') - Number(a.status === 'published') ||
+  Number(!!b.place_id) - Number(!!a.place_id) || rank(a, b);
+const pairOf = (a: string, b: string) => [a, b].sort().join('|');
+
 /** Reconcile old copies after their venue ids become canonical. Same
- *  title/time thresholds as ingestion; published/oldest ids win. */
-export function duplicateEvents(events: StoredEvent[], separate = new Set<string>()): { duplicate: StoredEvent; canonical: StoredEvent }[] {
-  const sorted = events.slice().sort((a, b) => Number(b.status === 'published') - Number(a.status === 'published') ||
-    a.first_seen_at.localeCompare(b.first_seen_at) || a.id.localeCompare(b.id));
-  const seen = new Seen(), byId = new Map<string, StoredEvent>(), out: { duplicate: StoredEvent; canonical: StoredEvent }[] = [];
+ *  title/time thresholds as ingestion; published/oldest ids win. With the
+ *  source items each row was listed from, rows one item left behind join
+ *  too (sameItemEvents), after the pairs above. */
+export function duplicateEvents(events: StoredEvent[], separate = new Set<string>(), listings: ItemListing[] = []): EventPair[] {
+  const sorted = events.slice().sort(rank);
+  const seen = new Seen(), byId = new Map<string, StoredEvent>(), out: EventPair[] = [];
   for (const e of sorted) {
     const same = seen.matchUrl(e.title, e.url, Date.parse(e.starts_at));
     const twin = same ? byId.get(same) : undefined;
@@ -88,6 +115,75 @@ export function duplicateEvents(events: StoredEvent[], separate = new Set<string
     const matched = seen.match(e.title, where, Date.parse(e.starts_at));
     if (matched && !separate.has([matched, e.id].sort().join('|'))) out.push({ duplicate: e, canonical: byId.get(matched)! });
     else { seen.add({ id: e.id, title: e.title, where, start: Date.parse(e.starts_at) }); byId.set(e.id, e); }
+  }
+  if (!listings.length) return out;
+  // merge_events refuses a duplicate that is already another row's canonical.
+  const gone = new Set(out.map(p => p.duplicate.id)), kept = new Set(out.map(p => p.canonical.id));
+  for (const p of sameItemEvents(events.filter(e => !gone.has(e.id)), listings, separate)) if (!kept.has(p.duplicate.id)) out.push(p);
+  return out;
+}
+
+/** A row's listing by one source item (event_sources.raw_item_id). `single` says the source's items are
+ *  one show each (oneShowPerItem). */
+export interface ItemListing { event_id: string; raw_item_id: number; single: boolean }
+
+/** Sources whose every item is one show: a Fienta event, a JSON-LD event node, a WordPress event post
+ *  in the default (Kultuurikatel) shape. A Kai post carries every screening of its film; Vaba Lava's
+ *  items now are one show each, but their id holds the date and time (a moved start is a new item) and
+ *  its first reading made the whole programme page one item; a model reads posts and pages that list
+ *  many shows. */
+export const oneShowPerItem = (kind: string, shape?: unknown) =>
+  kind === 'fienta' || kind === 'jsonld' || (kind === 'wordpress' && !shape);
+
+/** Rows one source item left behind: the pipeline once made a second row when the item came back with
+ *  a moved start (the id hashes the start), and a model's reading of a post can give a date alone and,
+ *  read again, the time. merge_events lets such a pair differ in start and in date-only or timed kind,
+ *  and gives the canonical the occurrence of the newer listing, or of the timed row on a shared day.
+ *  - An item of a one-show source (oneShowPerItem): every row that still names the show (titles share
+ *    0.6 of their words) is that show, wherever its start went.
+ *  - An item of any source: a date-only row and a timed row on the same Tallinn day with that title,
+ *    when the item gives that day one time only; two times on one day are two sessions.
+ *  - Never two timed rows of a source whose item can list several shows (a post's dates, a film's
+ *    screenings), nor rows one reading made together (the same first_seen_at), nor a pair a person
+ *    undid (`separate`), nor two rejected rows (nothing a reader or reviewer sees would change).
+ *  The canonical is the published, then placed, then oldest row, so saves keep their id and a published
+ *  listing is never folded into a rejected one; merge_events needs it to have a place, and the two rows
+ *  to share it or their page. */
+export function sameItemEvents(events: StoredEvent[], listings: ItemListing[], separate = new Set<string>()): EventPair[] {
+  const byId = new Map(events.map(e => [e.id, e]));
+  const items = new Map<number, { single: boolean; rows: StoredEvent[] }>();
+  for (const l of listings) {
+    const e = byId.get(l.event_id);
+    if (!e) continue;
+    const item = items.get(l.raw_item_id) ?? { single: l.single, rows: [] };
+    if (!item.rows.includes(e)) item.rows.push(e);
+    items.set(l.raw_item_id, item);
+  }
+  const out: EventPair[] = [], gone = new Set<string>(), kept = new Set<string>();
+  const join = (a: StoredEvent, b: StoredEvent) => {
+    const [canonical, duplicate] = [a, b].sort(prefer);
+    if (gone.has(canonical.id) || gone.has(duplicate.id) || kept.has(duplicate.id)) return false;
+    if (!canonical.place_id || (canonical.place_id !== duplicate.place_id && (!duplicate.url || duplicate.url !== canonical.url))) return false;
+    if (a.first_seen_at === b.first_seen_at || separate.has(pairOf(a.id, b.id))) return false;
+    if (a.status === 'rejected' && b.status === 'rejected') return false;
+    out.push({ duplicate, canonical });
+    gone.add(duplicate.id); kept.add(canonical.id);
+    return true;
+  };
+  for (const [, item] of [...items].sort((a, b) => a[0] - b[0])) {
+    if (item.rows.length < 2) continue;
+    const rows = item.rows.slice().sort(prefer);
+    if (item.single) {
+      const heads: StoredEvent[] = [];
+      for (const r of rows) if (!gone.has(r.id) && !heads.some(h => overlap(h.title, r.title) >= 0.6 && join(h, r))) heads.push(r);
+    }
+    for (const r of rows) {
+      if (r.has_time || gone.has(r.id)) continue;
+      const day = tallinnDay(r.starts_at);
+      const timed = rows.filter(t => t.has_time && !gone.has(t.id) && tallinnDay(t.starts_at) === day && overlap(t.title, r.title) >= 0.6);
+      if (new Set(timed.map(t => Date.parse(t.starts_at))).size !== 1) continue;
+      for (const t of timed) if (join(t, r)) break;
+    }
   }
   return out;
 }

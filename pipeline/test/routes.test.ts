@@ -76,3 +76,48 @@ test('the rule title reads like the one in the page, and the brief carries only 
   assert.deepEqual(Object.keys(brief), ['day', 'candidates']);
   assert.deepEqual(Object.keys(brief.candidates[0].stops[0]), ['time', 'type', 'name', 'kind', 'note']);
 });
+
+import { listTitle, USUAL } from '../routes.ts';
+import { readFileSync } from 'node:fs';
+
+test('a day of walks does not all end at the one taproom whose hours are filed', () => {
+  const tap = place('tap', 'taproom', 59.4375, { opening_hours: 'Mo-Su 12:00-23:00' });
+  const pub = place('pub', 'bar', 59.437, { opening_hours: null });
+  const [first, second] = find([ev('e1', '18:00'), ev('e2', '18:30')], [shop, tap, pub]);
+  const ends = [first, second].map(c => c.stops.at(-1)!.id);
+  assert.equal(ends[0], 'tap');                                          // the best walk keeps the best after-stop
+  assert.deepEqual(ends.sort(), ['pub', 'tap']);
+  const [alone] = find([ev('e1', '18:00'), ev('e2', '18:30')], [shop, tap]).slice(1);
+  assert.equal(alone.stops.at(-1)!.id, 'tap');                           // with no other place, repeating is still fine
+});
+
+test("an unfiled place is a stop only inside its kind's usual hours, as the page requires", () => {
+  const club = place('club', 'club', 59.437, { opening_hours: null });
+  assert.equal(find([ev('e1', '19:00')], [club]).length, 0);              // 21:20 is before a club's usual eleven
+  const [late] = find([ev('e1', '21:00')], [club]);
+  assert.equal(late.stops.at(-1)!.id, 'club');
+  const cinema = place('cinema', 'cinema', 59.443, { opening_hours: null });
+  assert.equal(find([ev('e1', '19:00')], [cinema]).length, 0);            // a room that opens for what is on
+  const page = readFileSync(new URL('../../route.js', import.meta.url), 'utf8').match(/const USUAL = (\{[\s\S]*?\});/)?.[1];
+  assert.deepEqual(Function(`return ${page}`)(), USUAL);                  // one table for both
+});
+
+test('a model title that only lists kinds or stop names gives way to the rule title', () => {
+  const names = ['Biit Me Record Store', 'Telliskivi Comedy Club Comedy Night', 'Purtse resto'];
+  for (const t of ['Record store comedy taproom', 'Thrift gig taproom', 'Terminal, workshop, taproom', 'Film bar', 'Vinyl Records, film, taproom'])
+    assert.equal(listTitle(t, [...names, 'Terminal', 'Vinyl Records']), true, t);
+  for (const t of ['Records, a stage, a late drink', 'Books before a talk', 'Comedy, then a beer by the sea'])
+    assert.equal(listTitle(t, names), false, t);
+  const c = { id: 'd:e1', day: 'd', area: '', score: 5, walkMin: 5, stops: [{ type: 'place' as const, id: 'p', minute: 1000 }, { type: 'event' as const, id: 'e1', minute: 1100 }] };
+  const [row] = finalise('d', 'tallinn', [c], { routes: [{ id: 'd:e1', title: 'Record store comedy taproom', blurb: 'A short walk.' }] },
+    () => 'Records, a stage', 'model', 3, () => names);
+  assert.equal(row.title, 'Records, a stage');
+  assert.equal(row.blurb, 'A short walk.');
+});
+
+test('the rule title uses the page\'s words, "another" for a repeat', () => {
+  const c = { id: 'd:e1', day: 'd', area: '', score: 5, walkMin: 5, stops: [
+    { type: 'place' as const, id: 'p', minute: 1000 }, { type: 'event' as const, id: 'e1', minute: 1100 }, { type: 'place' as const, id: 'b', minute: 1300 }] };
+  assert.equal(ruleTitle(c, new Map([['place:p', 'cinema'], ['event:e1', 'film'], ['place:b', 'bar']])), 'A film, another film, a late drink');
+  assert.equal(ruleTitle(c, new Map([['place:p', 'thrift'], ['event:e1', 'gig'], ['place:b', 'taproom']])), 'A thrift shop, a gig, a late drink');
+});

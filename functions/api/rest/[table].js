@@ -19,7 +19,9 @@ const SB_BASE = 'https://aqnsmmbrspkbfcvougeh.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbnNtbWJyc3BrYmZjdm91Z2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMTQ0MTAsImV4cCI6MjA5Mjg5MDQxMH0.sWSo43m3u8S395pDb_GvCbkZgzb_1Nz9q3CpnT0PUwA';
 
 /* Seconds a stored answer is served without asking Supabase again. */
-const TTL = { picks: 300, venues: 300, venue_details: 300, routes: 600, catalogue_redirects: 3600 };
+/* event_sources: when a source last listed an event (the event page's "Checked" line); the anon key
+   reads only its public columns, and only for published events. */
+const TTL = { picks: 300, venues: 300, venue_details: 300, routes: 600, catalogue_redirects: 3600, event_sources: 300 };
 
 const json = (body, status, cache) =>
   new Response(body, { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cache } });

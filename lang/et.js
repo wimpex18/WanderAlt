@@ -150,7 +150,7 @@ window.WA.dict.et = {
   "Opening hours": "Lahtiolekuajad",
   "Today": "Täna",
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Kindlaid lahtiolekuaegu pole. See ruum avatakse, kui midagi toimub; ajad on ülal kuulutustes.",
-  "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.",
+  "Not listed. Half the places list their hours, and we would rather leave a gap than guess.": "Pole teada. Pooled kohad ei avalda oma lahtiolekuaegu ja me jätame pigem tühiku kui arvame.",
   "Your lists": "Sinu nimekirjad",
   "Create your first list": "Loo esimene nimekiri",
   "New list": "Uus nimekiri",
@@ -158,7 +158,7 @@ window.WA.dict.et = {
   "Kalamaja on Saturday": "Kalamaja laupäeval",
   "Walk": "Jalutus",
   "Area": "Piirkond",
-  "Location for walking times": "Asukoht jalutusaegade jaoks",
+  "Set a start point to see the walk": "Jalutusaja nägemiseks vali alguspunkt",
   "Venue logo": "Koha logo",
   "Venue photo": "Koha foto",
   "Save": "Salvesta",
@@ -185,7 +185,6 @@ window.WA.dict.et = {
   "Original description": "Algne kirjeldus",
   "On now": "Praegu käimas",
   "Ongoing": "Käimas",
-  "Time not filed": "Kellaaeg teadmata",
   "Nothing else listed here yet": "Siin pole veel muud kuulutatud",
   "Cancelled": "Tühistatud",
   "Postponed": "Edasi lükatud",
@@ -308,7 +307,7 @@ window.WA.dict.et = {
   "The Guide": "Teejuht",
   "What's on": "Mis toimub",
   "We can't reach the listings right now.": "Kuulutusteni ei pääse praegu ligi.",
-  "Hours not filed": "Lahtiolekuajad teadmata",
+  "Hours not listed": "Lahtiolekuajad pole märgitud",
   "Open for events": "Avatud ürituste ajal",
   "Details from the venue; its own site says it opens for its events.": "Üksikasjad kohalt; koha enda sait ütleb, et see on avatud ürituste ajal.",
   "Address and links from OpenStreetMap; its own site says it opens for its events.": "Aadress ja lingid OpenStreetMapist; koha enda sait ütleb, et see on avatud ürituste ajal.",
@@ -535,6 +534,7 @@ window.WA.dict.et = {
   "An arts centre": "Kunstikeskus",
   "A film": "Film",
   "A museum": "Muuseum",
+  "A thrift shop": "Kaltsupood",
   "A place": "Koht",
   "Show everything saved": "Näita kõike salvestatut",
   "Nothing dated is saved. Events you save land here, soonest first.": "Kuupäevaga salvestatut pole. Salvestatud sündmused tulevad siia, varaseimad ees.",
@@ -599,6 +599,7 @@ window.WA.dict.et = {
   "Notifications are blocked for this site in your browser settings.": "Teavitused on selle saidi jaoks brauseri seadetes blokeeritud.",
   "On for this device": "Sellel seadmel sees",
   "Just now": "Just praegu",
+  "Checked just now": "Kontrollitud äsja",
   "Inbox": "Postkast",
   "Kept for 30 days": "Säilitatakse 30 päeva",
   "Nothing yet.": "Veel pole midagi.",
@@ -631,8 +632,8 @@ window.WA.dict.et = {
   "Art": "Kunst",
   "Gig": "Kontsert",
   "Bar": "Baar",
-  "hours not filed": "lahtiolekuajad teadmata",
-  "open then": "siis avatud",
+  "hours not listed": "lahtiolekuajad pole märgitud",
+  "open": "avatud",
   "Listed here next": "Siin järgmisena kuulutatud",
   "OpenStreetMap": "OpenStreetMap",
   "the venue's own site": "koha enda saidilt",
@@ -690,7 +691,7 @@ window.WA.dict.et = {
   "Another": "Veel üks",
   "Any": "Mis tahes",
   "Open in Maps": "Ava kaardirakenduses",
-  "Walking times are straight-line distances at a normal pace.": "Jalutusajad on arvutatud linnulennult tavalise sammuga.",
+  "Walking times follow the streets at an easy pace.": "Jalutusajad arvestavad tänavaid ja rahulikku sammu.",
   "Place times are suggested.": "Kohtade külastusajad on soovituslikud.",
   "Place costs are not included.": "Kohtade külastuskulud ei ole arvestatud.",
   "Some opening hours are not listed. Check before you go.": "Mõne koha lahtiolekuajad on teadmata. Kontrolli enne minekut.",
@@ -703,8 +704,8 @@ window.WA.dict.et = {
   "your chosen place": "sinu valitud kohast",
   "your chosen spot": "sinu valitud koht",
   "Price not listed.": "Hind teadmata.",
-  "Free tickets.": "Tasuta piletid.",
-  "free tickets": "tasuta piletid",
+  "Free entry.": "Tasuta sissepääs.",
+  "free entry": "tasuta sissepääs",
   "A bar": "Baar",
   "A club": "Klubi",
   "A gig": "Kontsert",
@@ -723,6 +724,7 @@ window.WA.dict.et = {
   "Another bar": "Veel üks baar",
   "Another film": "Veel üks film",
   "Another gallery": "Veel üks galerii",
+  "Another thrift shop": "Veel üks kaltsupood",
   "Source:": "Allikas:",
   "© OpenStreetMap contributors": "© OpenStreetMapi kaastöölised",
   "City or place": "Linn või koht",
@@ -852,7 +854,9 @@ window.WA.dict.et = {
   "Near you": "Sinu lähedal",
   "More filters": "Rohkem filtreid",
   "Another walk": "Teine jalutuskäik",
-  "Latest start first": "Värskeimad eespool",
+  "You can still walk in": "Saab veel sisse astuda",
+  "Already under way": "Juba käimas",
+  "Late entry may not be possible": "Hilinejaid ei pruugita sisse lasta",
   "Starting soon": "Algab varsti",
   "In the next two hours": "Järgmise kahe tunni jooksul",
   "Later tonight": "Hiljem täna õhtul",
@@ -947,6 +951,14 @@ window.WA.dict.et = {
   [
    "Open till {t}",
    "Avatud kuni {t}"
+  ],
+  [
+   "open till {t}",
+   "avatud kuni {t}"
+  ],
+  [
+   "{x} away",
+   "{x} kaugusel"
   ],
   [
    "Opens {t}",
@@ -1127,6 +1139,18 @@ window.WA.dict.et = {
   [
    "{n} days ago",
    "{n} päeva tagasi"
+  ],
+  [
+   "Checked {n} min ago",
+   "Kontrollitud {n} min tagasi"
+  ],
+  [
+   "Checked {n} h ago",
+   "Kontrollitud {n} h tagasi"
+  ],
+  [
+   "Checked {d}",
+   "Kontrollitud {d}"
   ],
   [
    "{n} more listed here",
@@ -1367,6 +1391,10 @@ window.WA.dict.et = {
   [
    "All {n} open",
    "Kõik {n} avatud"
+  ],
+  [
+   "{x} from {t}",
+   "{x} alates {t}"
   ]
  ]
 };

@@ -150,7 +150,7 @@ window.WA.dict.uk = {
   "Opening hours": "Години роботи",
   "Today": "Сьогодні",
   "No fixed hours filed. This room opens when something is on; the listings above carry the times.": "Постійних годин немає. Зал відчиняється, коли щось відбувається; час указано в подіях вище.",
-  "Not filed. Half the places list their hours, and we would rather leave a gap than guess.": "Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.",
+  "Not listed. Half the places list their hours, and we would rather leave a gap than guess.": "Не вказано. Половина місць не публікує години, і ми краще залишимо прогалину, ніж будемо вгадувати.",
   "Your lists": "Ваші списки",
   "Create your first list": "Створіть перший список",
   "New list": "Новий список",
@@ -158,7 +158,7 @@ window.WA.dict.uk = {
   "Kalamaja on Saturday": "Kalamaja в суботу",
   "Walk": "Пішки",
   "Area": "Район",
-  "Location for walking times": "Геолокація для часу пішки",
+  "Set a start point to see the walk": "Вкажіть точку старту, щоб побачити час пішки",
   "Venue logo": "Логотип місця",
   "Venue photo": "Фото місця",
   "Save": "Зберегти",
@@ -185,7 +185,6 @@ window.WA.dict.uk = {
   "Original description": "Оригінальний опис",
   "On now": "Триває зараз",
   "Ongoing": "Триває",
-  "Time not filed": "Час не вказано",
   "Nothing else listed here yet": "Тут поки більше нічого немає",
   "Cancelled": "Скасовано",
   "Postponed": "Перенесено",
@@ -308,7 +307,7 @@ window.WA.dict.uk = {
   "The Guide": "Гід",
   "What's on": "Що відбувається",
   "We can't reach the listings right now.": "Зараз не вдається отримати події.",
-  "Hours not filed": "Години не вказано",
+  "Hours not listed": "Години не вказано",
   "Open for events": "Відчинено під час подій",
   "Details from the venue; its own site says it opens for its events.": "Відомості від самого місця; його сайт каже, що воно відчинене під час подій.",
   "Address and links from OpenStreetMap; its own site says it opens for its events.": "Адреса й посилання з OpenStreetMap; сайт місця каже, що воно відчинене під час подій.",
@@ -535,6 +534,7 @@ window.WA.dict.uk = {
   "An arts centre": "Центр мистецтв",
   "A film": "Фільм",
   "A museum": "Музей",
+  "A thrift shop": "Секонд-хенд",
   "A place": "Місце",
   "Show everything saved": "Показати все збережене",
   "Nothing dated is saved. Events you save land here, soonest first.": "Збережених подій із датою немає. Збережені події зʼявляться тут, найближчі першими.",
@@ -599,6 +599,7 @@ window.WA.dict.uk = {
   "Notifications are blocked for this site in your browser settings.": "Сповіщення для цього сайту заблоковано в налаштуваннях браузера.",
   "On for this device": "Увімкнено на цьому пристрої",
   "Just now": "Щойно",
+  "Checked just now": "Перевірено щойно",
   "Inbox": "Вхідні",
   "Kept for 30 days": "Зберігається 30 днів",
   "Nothing yet.": "Поки нічого.",
@@ -631,8 +632,8 @@ window.WA.dict.uk = {
   "Art": "Мистецтво",
   "Gig": "Концерт",
   "Bar": "Бар",
-  "hours not filed": "години не вказано",
-  "open then": "тоді відчинено",
+  "hours not listed": "години не вказано",
+  "open": "відчинено",
   "Listed here next": "Далі тут",
   "OpenStreetMap": "OpenStreetMap",
   "the venue's own site": "власного сайту закладу",
@@ -690,7 +691,7 @@ window.WA.dict.uk = {
   "Another": "Інший",
   "Any": "Будь-яка",
   "Open in Maps": "Відкрити в Картах",
-  "Walking times are straight-line distances at a normal pace.": "Час пішки рахується по прямій за звичайного кроку.",
+  "Walking times follow the streets at an easy pace.": "Час пішки пораховано вулицями, спокійним кроком.",
   "Place times are suggested.": "Час відвідування місць запропоновано для плану.",
   "Place costs are not included.": "Витрати в закладах не враховано.",
   "Some opening hours are not listed. Check before you go.": "Години роботи деяких місць не вказано. Перевірте перед виходом.",
@@ -703,8 +704,8 @@ window.WA.dict.uk = {
   "your chosen place": "вибраного місця",
   "your chosen spot": "вибране місце",
   "Price not listed.": "Ціну не вказано.",
-  "Free tickets.": "Безкоштовні квитки.",
-  "free tickets": "безкоштовні квитки",
+  "Free entry.": "Вхід вільний.",
+  "free entry": "вхід вільний",
   "A bar": "Бар",
   "A club": "Клуб",
   "A gig": "Концерт",
@@ -723,6 +724,7 @@ window.WA.dict.uk = {
   "Another bar": "Ще один бар",
   "Another film": "Ще один фільм",
   "Another gallery": "Ще одна галерея",
+  "Another thrift shop": "Ще один секонд-хенд",
   "Source:": "Джерело:",
   "© OpenStreetMap contributors": "© Учасники OpenStreetMap",
   "City or place": "Місто або місце",
@@ -852,7 +854,9 @@ window.WA.dict.uk = {
   "Near you": "Поруч із вами",
   "More filters": "Більше фільтрів",
   "Another walk": "Інша прогулянка",
-  "Latest start first": "Спершу найсвіжіші",
+  "You can still walk in": "Ще можна зайти",
+  "Already under way": "Уже триває",
+  "Late entry may not be possible": "Запізнілих можуть не пустити",
   "Starting soon": "Незабаром почнеться",
   "In the next two hours": "Протягом двох годин",
   "Later tonight": "Пізніше ввечері",
@@ -962,6 +966,14 @@ window.WA.dict.uk = {
   [
    "Open till {t}",
    "Відчинено до {t}"
+  ],
+  [
+   "open till {t}",
+   "відчинено до {t}"
+  ],
+  [
+   "{x} away",
+   "за {x}"
   ],
   [
    "Opens {t}",
@@ -1142,6 +1154,28 @@ window.WA.dict.uk = {
   [
    "{n} days ago",
    "{n} дн. тому"
+  ],
+  [
+   "Checked {n} min ago",
+   {
+    "one": "Перевірено {n} хвилину тому",
+    "few": "Перевірено {n} хвилини тому",
+    "many": "Перевірено {n} хвилин тому",
+    "other": "Перевірено {n} хвилини тому"
+   }
+  ],
+  [
+   "Checked {n} h ago",
+   {
+    "one": "Перевірено {n} годину тому",
+    "few": "Перевірено {n} години тому",
+    "many": "Перевірено {n} годин тому",
+    "other": "Перевірено {n} години тому"
+   }
+  ],
+  [
+   "Checked {d}",
+   "Перевірено {d}"
   ],
   [
    "{n} more listed here",
@@ -1412,6 +1446,10 @@ window.WA.dict.uk = {
   [
    "All {n} open",
    "Усі відчинені: {n}"
+  ],
+  [
+   "{x} from {t}",
+   "{x} з {t}"
   ]
  ]
 };

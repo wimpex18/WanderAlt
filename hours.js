@@ -7,7 +7,7 @@
    minute pairs.
 
    "Unknown" is a first-class answer: every function returns null rather
-   than guessing, and the UI prints "Hours not filed".
+   than guessing, and the UI prints "Hours not listed".
 
    All reasoning happens in Europe/Tallinn.
    ============================================================ */
@@ -258,7 +258,7 @@
 
   /* ── Public: parse ───────────────────────────────────────────
      Returns the normalised week, or null for absent/unparseable —
-     which callers must render as "not filed", never as "closed". */
+     which callers must render as "not listed", never as "closed". */
   const parse = (raw) => {
     if (!raw) return null;
     const s = String(raw).trim();
@@ -329,7 +329,7 @@
      "Closed today", or the honest gap. */
   const label = (raw, at) => {
     const s = state(raw, at);
-    if (!s.known)  return 'Hours not filed';
+    if (!s.known)  return 'Hours not listed';
     if (s.open)    return s.closesAt == null ? 'Open 24 hours' : `Open now · closes ${clock(s.closesAt)}`;
     if (s.opensAt != null) return `Opens ${clock(s.opensAt)}`;
     return 'Closed for the day';

@@ -6,7 +6,7 @@ import type { Source } from '../types.ts';
 
 const html = readFileSync(new URL('./fixtures/vabalava.html', import.meta.url), 'utf8');
 const source = { id: 'vabalava', city: 'tallinn', kind: 'html', url: 'https://vabalava.ee/mangukava/', handle: '@vabalava', label: 'Vaba Lava', curated: true, active: true,
-  config: { shape: 'vabalava', venue_name: 'Vaba Lava', days: 400, venue_map: [['black box|salme|suur saal|väike saal|stuudiosaal', 'Vaba Lava'], ['sakala', 'Sakala 3 Teatrimaja']] } } as unknown as Source;
+  config: { shape: 'vabalava', venue_name: 'Vaba Lava', days: 400, venue_map: JSON.parse(readFileSync(new URL('../sources.tallinn.json', import.meta.url), 'utf8')).find((s: any) => s.id === 'vabalava').config.venue_map } } as unknown as Source;
 const now = new Date('2026-10-03T09:00:00Z');
 
 test('every block of the programme gives a poster, its own page, a date, a time and a hall', () => {
@@ -30,11 +30,12 @@ test('the year is the one that makes the weekday right', () => {
 
 test('only Tallinn halls are collected, with a real time, an own page and a clean ticket link', async () => {
   const items = await collect(source, now, async () => html);
-  assert.ok(items.length >= 3);
+  assert.equal(items.length, 2);   // the Salme black box and Sakala; the two Narva halls are left out
   const venues = new Set(items.map(i => (i.payload as { venue: string }).venue));
-  assert.deepEqual([...venues].sort(), ['Sakala 3 Teatrimaja', 'Vaba Lava'].filter(v => venues.has(v)));
+  assert.deepEqual([...venues].sort(), ['Sakala 3 Teatrimaja', 'Vaba Lava Black Box Salmes'].filter(v => venues.has(v)));
   const halls = items.map(i => (i.payload as { hall: string }).hall.toLowerCase());
-  for (const h of halls) assert.doesNotMatch(h, /tartu|kuressaare|narva|ugala|endla|erm/);
+  // Suur saal, Väike saal and Stuudiosaal are Vaba Lava Narva's halls (Linda 2, Narva).
+  for (const h of halls) assert.doesNotMatch(h, /tartu|kuressaare|narva|ugala|endla|erm|suur saal|väike saal|stuudiosaal/);
   for (const i of items) {
     assert.match(i.url!, /^https:\/\/vabalava\.ee\/programm\//);
     assert.doesNotMatch(String((i.payload as { ticket: string | null }).ticket ?? ''), /fbclid|utm_|gclid/);

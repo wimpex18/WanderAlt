@@ -1,17 +1,31 @@
 /* ============================================================
    toast.js — WA.Toast.
    ------------------------------------------------------------
-   One toast at a time, above the tab bar, ~4s, always with the reverse
+   One toast at a time, above the tab bar, ~6s, always with the reverse
    action. Enforced here: the undo action is a required argument.
+   It waits while a pointer or focus is on it. Screen readers hear it
+   through one status region that is already in the page, so the message
+   is announced as a change rather than missed as new markup.
    ============================================================ */
 window.WA = window.WA || {};
 
 window.WA.Toast = (() => {
   'use strict';
 
-  const LIFE = 4000;
+  const LIFE = 6000;
   let node = null;
   let timer = null;
+  let region = null;
+  const say = (text) => {
+    if (!region) {
+      region = document.createElement('div');
+      region.className = 'wa-sr';
+      region.setAttribute('role', 'status');
+      document.body.appendChild(region);
+    }
+    region.textContent = '';
+    requestAnimationFrame(() => { region.textContent = text; });
+  };
 
   const dismiss = () => {
     clearTimeout(timer);
@@ -30,8 +44,6 @@ window.WA.Toast = (() => {
 
     node = document.createElement('div');
     node.className = 'wa-toast';
-    node.setAttribute('role', 'status');
-    node.setAttribute('aria-live', 'polite');
 
     const text = document.createElement('span');
     text.className = 'wa-toast__text';
@@ -47,7 +59,14 @@ window.WA.Toast = (() => {
 
     node.append(text, btn);
     document.body.appendChild(node);
-    timer = setTimeout(dismiss, LIFE);
+    say(text.textContent);
+    const wait = () => clearTimeout(timer);
+    const go = () => { clearTimeout(timer); timer = setTimeout(dismiss, LIFE); };
+    node.addEventListener('pointerenter', wait);
+    node.addEventListener('pointerleave', go);
+    node.addEventListener('focusin', wait);
+    node.addEventListener('focusout', go);
+    go();
   };
 
   return { show, dismiss };

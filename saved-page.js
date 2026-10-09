@@ -118,7 +118,7 @@
       <ul class="wa-rows home-rows saved-rows">${list.map(e => R().row(e, { heart: true, unknownPrice: true, started: false })).join('')}</ul>`).join('');
   };
 
-  const render = () => {
+  const draw = () => {
     const all = gather();
     const total = all.dated.length + all.places.length + all.gone.length + all.unavailable.length;
     const L = window.WA.Lists;
@@ -161,6 +161,9 @@
       ${all.gone.map(g => `<div class="wa-gone"><span><span${g.title ? ' class="wa-gone__title"' : ''}>${esc(g.title || 'A listing')}</span>, <span>${esc(g.why)}</span>.</span>
         <button class="wa-btn wa-btn--sm" type="button" data-unsave="${esc(g.id)}">Remove</button></div>`).join('')}</section>` : ''}`;
   };
+  /* Removing a save or switching lists redraws the body; focus stays where it was, or in the body. */
+  const render = () => window.WA.UI.keepFocus($('saved-body'), draw);
+
 
   /* ── The new-list sheet ───────────────────────────────────── */
   const openNew = () => {

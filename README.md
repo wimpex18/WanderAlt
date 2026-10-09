@@ -11,8 +11,8 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 ### Now (`index.html`)
 
 - The state of the night with the starting point (Near), a rail of moods and one walk showing its stops, walking time, ticket cost and View walk, then Events/Places with a When key (Today, Tomorrow, Weekend, Pick dates) whose panel opens out of the key.
-- Moods: one tap picks one mood; Filters holds several moods, subs and the ticket cap.
-- Tonight's events read as a timeline: On now (latest start first), Starting soon (two hours), Later tonight, Also today (no set time or a running series), then cancelled or postponed. Other dates group by night.
+- Moods: one tap picks one mood; Filters holds several moods, subs and the ticket cap. The row is the same all day; a mood's hours shape only the suggested walk, which says when a chosen mood's walks begin ("Club nights from 20:00").
+- Tonight's events read as a timeline: On now (what you can still walk into, latest start first: exhibitions, markets, festivals and club nights while they are on, gigs for 90 minutes, anything else for an hour, films, plays, talks and workshops for 15 minutes), Starting soon (two hours), Later tonight, Also today (no set time or a running series), Already under way (sessions you may no longer join), then cancelled or postponed. Other dates group by night.
 - Once the controls scroll away they fold into one key showing dates, mood and any ticket cap. Empty results offer Clear filters (moods and price together, keeping dates) or Change dates.
 - Rows are compact with a thumbnail and save. Show up to 25 matching items, then batches of 25 until exhausted; `shown` preserves expansion on refresh and Back. Changing view or filters resets it.
 - All events opens the complete event catalogue; All places opens the picked Guide.
@@ -20,19 +20,20 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 
 ### Other pages
 
-- **Search**: one header trigger opens a native dialog; phone/tablet uses the available viewport, desktop a bounded modal. Focus enters the input and returns to the trigger on close. Local previews separate event and place matches; explicit submission opens full results. Search starts at All dates without Now's taste filters.
+- **Search**: one header trigger opens a native dialog; phone/tablet uses the available viewport, desktop a bounded modal. Focus enters the input and returns to the trigger on close. Local previews separate event and place matches, soonest date first; past 45 minutes on foot a row gives the distance instead. Explicit submission opens full results. Search starts at All dates without Now's taste filters.
 - **All events / Search results** (`discover.html`): query, dates, Refine and removable active filters, with Map these results; it belongs under Now. Now, Map and results share one compact date sheet with a native date input and optional range; Cancel keeps the current selection. Results starts at All dates, keeps its date state independent and can clear dates through its selected filter. Precise filters are revealed on demand; results page in batches of 30. Accepted sentence interpretations and manual overrides travel in the URL.
 - **All places** (`places.html`): active, verified picked places; type, known Open now and a stated walking origin. Counts reflect current live listings. Named search and event details can also show other verified venues.
-- **Map**: ordinary browsing shares Now's dates and taste, the same When key and the same mood row, drawn as glass pills over the map with Filters and Near me at its end. `context=search` keeps independent results and a Back to results link. Missing coordinates are counted, never guessed.
+- **Map**: ordinary browsing shares Now's dates and taste, the same When key and the same mood row, drawn as glass pills over the map with Filters and Near me at its end. It opens on the bulk of what is shown (outlying venues are a pan away), and its list leads with tonight's timed listings, runs after them. `context=search` keeps independent results, framed whole, and a Back to results link. Missing coordinates are counted, never guessed.
 - **Saved**: local saves and lists with account-scoped retryable sync. Lists are a row of chips (All, each list, New list). Saved shows group by night with the same hearted rows as Now (a heart unsaves in place, with Undo); two or more timed shows on one night also offer "Walk your saves" through the route page.
 - **You**: one short settings list. Sign-in (Google or email link, through one Sign in key), then rows that name their value: Your taste (up to three moods plus In English; it leans walks, never filters), Start from, Language and Appearance (panels out of the row), Following, Recently opened, Add to Home screen and Data and privacy (sheets). Signed in, the account row, Inbox and Notifications join. Routes, details and sources are supporting destinations.
 
 ### Rules the interface keeps
 
 - **Nights**: a night runs until 05:00. A stated start before 05:00 belongs to the evening before, so Today, Tomorrow and Weekend count nights on Now, Map and search; picked dates do too. Routes and day labels keep calendar days. A club night without a stated end is taken to run six hours, other timed listings three.
+- **Freshness**: an event page says when a source last listed it ("Checked 2 h ago": the newest `event_sources.last_seen_at`, read through the edge cache); an old time is shown as it is, never called outdated.
 - **Unknown facts stay explicit**: Free requires known free entry, In English a stated performance language, Open now known hours. Unknown prices can pass a positive ticket cap with a note. Date-only entries say Time not listed. Closed or cancelled records keep their identity without claiming availability.
-- **Images and notes**: photos require exact identity; picked notes require source-backed facts.
-- **Walks**: distinct picked stops; each place must still be open (or, unfiled, inside its kind's usual hours) five minutes before you would leave it. Sold-out events cannot anchor a walk. Stated end times are honoured; without an end, later stops use a two-hour planning allowance and are labelled flexible. Shared walks reject moved starts and overlapping later stops. Ticket totals cover events only; directions require coordinates for every stop. After this suggests places still open 25 minutes after arrival. Missing hours remain labelled.
+- **Images and notes**: photos require exact identity; picked notes require source-backed facts. Pictures are requested near their drawn size from hosts that resize (Fienta, Wikimedia Commons, WordPress.com), with the original as the fallback; a wordmark more than three times wider than tall shows the kind's Label in small tiles. A walk's stop note is in the reader's language, never a source blurb in another one.
+- **Walks**: distinct picked stops; each place must still be open (or, unfiled, inside its kind's usual hours) five minutes before you would leave it. Sold-out events cannot anchor a walk. Stated end times are honoured; without an end, later stops use a two-hour planning allowance and are labelled flexible. Shared walks reject moved starts and overlapping later stops. Walking times follow the streets: 1.28 times the straight line plus 40 m, fitted to OpenStreetMap footway routes between Tallinn venues, at 80 m/min (about 4.8 km/h, as map apps assume); a plain "how far" stays straight-line. The walks the pipeline stores are routed leg by leg on OpenStreetMap footways (FOSSGIS OSRM foot server: one request a second, at most 40 a run) and show those minutes while their stops match; shared links, walks composed in the page and any router failure keep the estimate. Ticket totals cover events only; directions require coordinates for every stop. After this suggests places still open 25 minutes after arrival. Stops say how long a place stays open; missing hours read "hours not listed". Walks composed for one day avoid ending at the same place or kind of place.
 
 ## Development
 
@@ -60,7 +61,7 @@ npm run build:inline-icons
 |---|---|
 | Pages and shared markup | Root HTML; `home.js`, `programme.js`, `places.js`, `map.js`, `render.js`; `wa.css` |
 | Search and discovery | `search.js`, `search-data.js`, `ask.js`, `discovery-state.js`, `discovery-controls.js`, `moods.js` |
-| Time, walking and routes | `when.js`, `hours.js`, `geo.js`, `start-from.js`, `route.js`, `route-page.js` |
+| Time, walking and routes | `when.js`, `hours.js`, `geo.js`, `start-from.js`, `route.js`, `route-page.js`; `pipeline/walking.ts` |
 | Data and personal state | `supabase.js`, `ui-helpers.js`, `auth.js`, `save-store.js`, `bookmark.js`, `lists.js`, `follow.js`, `inbox.js` |
 | Collection and enrichment | `pipeline/run.ts`, `pipeline/sources.tallinn.json`, `pipeline/sources/`; `venues.ts`, `places.ts`, `dedupe.ts`, `hours-sources.ts`, `drift.ts` |
 | Editorial and composed routes | `pipeline/llm.ts`, `english.ts`, `localize.ts`, `place-notes.ts`, `routes.ts` |
@@ -68,7 +69,7 @@ npm run build:inline-icons
 | Hosting/API and scheduled jobs | `functions/`, `supabase/functions/`, `.github/workflows/`; `pipeline/backup.ts`, `watch.ts`, `digest.ts`, `social.ts` |
 | Interface/brand assets | `lang/phrases.tsv`, `lang/patterns.tsv`, `i18n.js`, `icons.js`, `brand/`, `.scripts/`, self-hosted `vendor/` |
 
-- **Pipeline**: runs every six hours, reading configured Tallinn sources and verified venue identities, deduplicating shows and retaining provenance. Raw prose and poster readings await validation rather than manufacturing facts. Facts that appear to have changed enter a review queue. Localised copy is generated from the original source with English fallback; source, artist and venue names remain literal.
+- **Pipeline**: runs every six hours, reading configured Tallinn sources and verified venue identities, deduplicating shows and retaining provenance. The guide is alternative, independent and underground culture, contemporary art and social movements: wellness, hobby classes, self-help, mainstream series, dining, children's events and restaurant or hotel venues are held for review by rule, whether newly read or already published, and a person's manual decision stands. A Fienta listing takes the lower trusted bar only for an organiser its source names. Raw prose and poster readings await validation rather than manufacturing facts. Facts that appear to have changed enter a review queue. Localised copy is generated from the original source with English fallback; source, artist and venue names remain literal. A source item read again with a moved start updates its row rather than adding one; rows one item left before that are merged by maintenance (one-show sources, or a date-only and a timed row on one day), the kept id taking the item's latest time and venue. English titles drop the event's own date, time and venue; new places get a name without descriptions, floor notes or legal forms, and `npm run places:audit` lists the same tidy for stored names, which only `places:maintain` applies.
 - **Assets**: Geologica and Geist Mono are self-hosted; retain licences and SVG/font masters. `build:brand`, `build:icons` and `build:map-styles` regenerate their assets. MapLibre GL is self-hosted with OpenFreeMap tiles.
 - **Styles**: `wa.css` holds the Day and Dusk themes, reduced-motion/transparency fallbacks and keyboard focus. Layout follows viewport width; desktop navigation begins at 1024 px.
 
@@ -76,14 +77,14 @@ npm run build:inline-icons
 
 ### Hosting
 - The static site at [wanderalt.app](https://wanderalt.app) deploys on pushes to `main` through Cloudflare Pages: output `/`, no build command. Pull requests get previews.
-- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
+- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. The middleware also writes event pages' schema.org Event JSON-LD from the listing, with only facts we hold: Tallinn times with their offset or a date alone, a status only when cancelled or postponed, offers only for a stated price or free entry, currency and language only when stated. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
 - The service worker caches assets aggressively; bump its shell version for asset changes.
 
 ### Supabase
 - Project `aqnsmmbrspkbfcvougeh` holds the schema, catalogue and private account data.
 - Public REST reads go through allowlisted edge caches in `functions/api/rest/`, with a direct anon-key fallback. RLS protects private records; signed-in requests bypass public caches.
 - Failed or partial reads keep the last confirmed snapshot and its age; they never prove that records disappeared.
-- Apply migrations separately from Git pushes and keep their history. After schema changes, run the relevant `pipeline/test/integrity.sql`, `place-verification.sql` and `picked-places.sql` through Supabase MCP; each rolls back.
+- Apply migrations separately from Git pushes and keep their history. After schema changes, run the relevant `pipeline/test/integrity.sql`, `place-verification.sql`, `picked-places.sql` and `merge-same-item.sql` through Supabase MCP; each rolls back.
 - Edge functions: `og-image`, `calendar-feed`, `unsubscribe`, `delete-account`. Deploy separately with the current `verify_jwt`; the account-deletion function validates the caller's access token itself.
 
 ### Search inference

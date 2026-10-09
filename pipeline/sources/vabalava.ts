@@ -5,7 +5,9 @@
 // time the page changed. This reads the blocks directly. Structure as seen on 3 October 2026.
 //
 // config.venue_map: [[regex on the hall text, our venue name], …]. A hall that matches none is a tour
-// date outside Tallinn and is not listed. config.days: how far ahead (default 120).
+// date outside Tallinn and is not listed. config.days: how far ahead (default 120). "Suur saal", "Väike
+// saal" and "Stuudiosaal" are Vaba Lava Narva's halls (Linda 2, Narva; checked 9 October 2026), so
+// they map to nothing; the Tallinn stage is the black box at Salme Kultuurikeskus.
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { getHtml, decodeEntities, httpUrl, clip } from '../util.ts';
 import { tallinnToIso } from '../time.ts';

@@ -89,7 +89,7 @@ function programme(search = '', venues: any[] = []) {
       kindLabel: (s: string) => s, dayName: () => '', dateShort: (s:string) => s, dow: () => '', dom: () => '', isFollowed: () => false,
       openState: (v: any) => ({ open: v.open }) },
     when: { matches: () => true, isOnDate: () => true, todayKey: () => '2026-09-30', keyPlus: () => '2026-10-02' },
-    Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0, startMinutes: () => 22 * 60 },
+    Geo: { currentLoc: () => null, bySoonestThenDistance: () => () => 0, byDateThenSoonest: () => () => 0, startMinutes: () => 22 * 60 },
     Hours: { cityNow: () => ({ minutes: 12 * 60 }) }, Seen: { count: () => 0, filter: (rows: any[]) => rows }, venues,
   };
   WA.Discovery = { matchesDate: (e: any, s: any) => s.date ? WA.when.isOnDate(e, s.date) : WA.when.matches(e, s.when),

@@ -362,3 +362,115 @@ test('lastBy keeps one row per id, the last, in first-seen order', async () => {
   const { lastBy } = await import('../util.ts');
   assert.deepEqual(lastBy([{ id: 'a', n: 1 }, { id: 'b', n: 2 }, { id: 'a', n: 3 }], r => r.id), [{ id: 'a', n: 3 }, { id: 'b', n: 2 }]);
 });
+
+import { classify, KIND_MEANING } from '../llm.ts';
+import { earlierListing } from '../dedupe.ts';
+import { itemListings } from '../run.ts';
+import { venueName } from '../places.ts';
+import { tidyPlaceNames } from '../maintenance.ts';
+import { EVENT_KINDS } from '../types.ts';
+
+test('without a model, only DJ and dance-music words make a club night; a bare club or party does not', () => {
+  const kind = (title: string, kind_hint: string | null = null) => fallbackEnrichment({ title, kind_hint, starts_at: '', has_time: true, engine: 't' }).kind;
+  assert.equal(kind('COMICS CLUB with Aiste at Kristiine Youth Center'), 'other');
+  assert.equal(kind('Loop: Yarn Society knitting club in Sept/Oct', 'art, other, grete rattasepp'), 'exhibition');   // its "art" category, not "club"
+  assert.equal(kind('queer play party series "Pride and Pain" (18+)', 'other'), 'other');
+  assert.equal(kind('Telliskivi Komöödiaklubi KOMÖÖDIAÕHTU', 'theatre, Komöödiaklubi OÜ'), 'theatre');
+  assert.equal(kind('🟢 NEON TECHNO BEATS'), 'club');
+  assert.equal(kind('AFRO HOUSE & MELODIC NIGHT'), 'club');
+  assert.equal(kind('Laine Klubiöö: Yung Singh (UK)'), 'club');
+  assert.equal(kind('Friday club night with DJ Ruby'), 'club');
+  assert.equal(kind('Drum & Bass Tallinn'), 'club');
+});
+
+test('the classifier is told what each kind means, so hobby clubs and comedy stop reading as club nights', async () => {
+  let system = '';
+  const models = new Models([{ name: 'fixture', model: 'm', key: 'k', call: async (s) => { system = s; return '{"items":[]}'; } }], 5);
+  await classify(models, [{ title: 'Comics Club', starts_at: '', has_time: true, engine: 't' }]);
+  for (const k of EVENT_KINDS) assert.ok(system.includes(`${k}: ${KIND_MEANING[k]}`), k);
+  assert.match(KIND_MEANING.club, /never a hobby or social "club"/);
+  assert.match(KIND_MEANING.talk, /comedy is not a talk/);
+  assert.match(KIND_MEANING.theatre, /contemporary dance.*comedy/);
+});
+
+test('a source item read again with a moved start keeps its row and id; a date-only twin yields to the timed one', () => {
+  const ten = Date.parse('2026-10-14T07:00:00Z'), half12 = Date.parse('2026-10-14T09:30:00Z');
+  const c = { title: "Bush Hartshorn's workshop", starts_at: '2026-10-14T09:30:00.000Z', has_time: true, venue_name: 'Kai', engine: 'fienta' };
+  // The id hashes the start, which is why a moved show needs its earlier row found another way.
+  assert.notEqual(eventId('tallinn', c, 'tallinn-kai'), eventId('tallinn', { ...c, starts_at: '2026-10-14T07:00:00.000Z' }, 'tallinn-kai'));
+  const before = { id: 'ev_ten', title: "Bush Hartshorn's workshop", start: ten, has_time: true };
+  assert.equal(earlierListing(c.title, half12, true, [before]), 'ev_ten');
+  assert.equal(earlierListing('Another show entirely', half12, true, [before]), null);        // the item now lists something else
+  assert.equal(earlierListing(c.title, half12, true, []), null);
+  const dateOnly = { id: 'ev_day', title: c.title, start: Date.parse('2026-10-13T21:00:00Z'), has_time: false };
+  assert.equal(earlierListing(c.title, half12, true, [dateOnly, before]), 'ev_ten');
+  assert.equal(earlierListing(c.title, half12, true, [{ ...before, id: 'ev_late', start: half12 + 3600_000 }, before]), 'ev_late');
+  assert.equal(earlierListing(c.title, half12, true, [dateOnly]), 'ev_day');                  // a time added to a date-only row
+});
+
+test('only one-occurrence source items look up the rows they listed, and only live rows count', async () => {
+  const fienta = { id: 'fienta', kind: 'fienta' } as Source, telegram = { id: 'tg', kind: 'telegram' } as Source;
+  const found = [{ p: { rawId: 1, source: fienta } }, { p: { rawId: 2, source: fienta } }, { p: { rawId: 2, source: fienta } },
+    { p: { rawId: 3, source: telegram } }, { p: { rawId: null, source: fienta } }];
+  const asked: string[] = [];
+  const db = { select: async <T>(path: string) => {
+    asked.push(path);
+    return [{ event_id: 'ev_live', raw_item_id: 1 }, { event_id: 'ev_archived', raw_item_id: 1 }] as T[];
+  } };
+  const live = [{ id: 'ev_live', title: 'Workshop', starts_at: '2026-10-14T07:00:00Z', has_time: true }];
+  const listed = await itemListings(db, found, live);
+  assert.deepEqual(asked, ['event_sources?raw_item_id=in.(1)&select=event_id,raw_item_id']);   // not 2 (two shows), not 3 (a post)
+  assert.deepEqual(listed.get(1), [{ id: 'ev_live', title: 'Workshop', start: Date.parse('2026-10-14T07:00:00Z'), has_time: true }]);
+  assert.equal((await itemListings(db, [], live)).size, 0);
+});
+
+test('venue names lose descriptions, floor notes, legal forms and taglines, never the whole name', () => {
+  assert.equal(venueName('Gin Spot Bar (One of Tallinn’s most unique gin-focused cocktail bars)'), 'Gin Spot Bar');
+  assert.equal(venueName('Salme Kultuurikeskuse Vaba Lava black box (3. korrusel)'), 'Salme Kultuurikeskuse Vaba Lava black box');
+  assert.equal(venueName('Sinu Ruum (Mayeri Ärikvartal A-korpuse 2. korrus)'), 'Sinu Ruum');
+  assert.equal(venueName('Nukuteater Draakonipesa MTÜ'), 'Nukuteater Draakonipesa');
+  assert.equal(venueName('TeFo Stuudio OÜ'), 'TeFo Stuudio');
+  assert.equal(venueName('MTÜ Spilno library'), 'Spilno library');
+  assert.equal(venueName('Joelle Marcelle Antson | Transformation Embodied OÜ'), 'Joelle Marcelle Antson');
+  assert.equal(venueName('Möku (Tallinn)'), 'Möku');
+  assert.equal(venueName('Sõltumatu Tantsu Lava (STL)'), 'Sõltumatu Tantsu Lava (STL)');             // a short bracket may name it
+  assert.equal(venueName('Kino Sõprus (Hall 2)'), 'Kino Sõprus (Hall 2)');                           // or tell two halls apart
+  assert.equal(venueName('Heldeke! - Theatre and Bar'), 'Heldeke! - Theatre and Bar');
+  assert.equal(venueName('Kassa OÜ'), 'Kassa');
+  assert.equal(venueName('(OÜ)'), '(OÜ)');                                                          // never empty
+});
+
+test('a new venue gets a clean display name, an id from the source spelling, and finds its earlier row', async () => {
+  const places = new Places([{ id: 'tallinn-tefo-stuudio-ou', city: 'tallinn', name: 'TeFo Stuudio OÜ', aliases: ['tefo stuudio ou'] }], 'tallinn', 0);
+  const c = (venue_name: string) => ({ title: 't', starts_at: '', has_time: true, engine: 'x', venue_name });
+  assert.equal((await places.resolve(c('TeFo Stuudio OÜ'), false))?.id, 'tallinn-tefo-stuudio-ou');
+  const gin = await places.resolve(c('Gin Spot Bar (One of Tallinn’s most unique gin-focused cocktail bars)'), false);
+  assert.equal(gin?.name, 'Gin Spot Bar');
+  assert.equal(gin?.id, 'tallinn-gin-spot-bar-one-of-tallinn-s-most-unique-gin-focused-cockta');
+  assert.deepEqual(gin?.aliases, ['gin spot bar', 'gin spot bar one of tallinns most unique gin focused cocktail bars']);
+  assert.equal(await places.resolve(c('Gin Spot Bar (One of Tallinn’s most unique gin-focused cocktail bars)'), false), gin);
+  assert.equal(await places.resolve(c('Gin Spot Bar'), false), gin);
+  assert.equal(places.created.length, 1);
+  const hall = new Places([{ id: 'tallinn-kino-saal-1', city: 'tallinn', name: 'Kino Saal (one of the best)', aliases: ['kino saal one of the best'] },
+    { id: 'tallinn-kino', city: 'tallinn', name: 'Kino Saal', aliases: ['kino saal'] }], 'tallinn', 0);
+  assert.equal((await hall.resolve(c('Kino Saal (one of the best)'), false))?.id, 'tallinn-kino-saal-1');   // its own spelling first
+});
+
+test('stored venue names are tidied in place: the id stays and the old spelling becomes an alias', async () => {
+  const rows = () => [
+    { id: 'tallinn-gin', city: 'tallinn', name: 'Gin Spot Bar (One of Tallinn’s most unique bars)', aliases: ['gin spot bar one of tallinns most unique bars'] },
+    { id: 'tallinn-kai', city: 'tallinn', name: 'Kai', aliases: ['kai'] },
+    { id: 'tallinn-old', city: 'tallinn', name: 'Old OÜ', aliases: [], merged_into: 'tallinn-kai' },
+  ];
+  const patches: [string, unknown][] = [];
+  const db = { patch: async (path: string, values: unknown) => { patches.push([path, values]); } };
+  const dry = rows();
+  assert.deepEqual(await tidyPlaceNames(db, dry, true), [{ id: 'tallinn-gin', from: 'Gin Spot Bar (One of Tallinn’s most unique bars)', to: 'Gin Spot Bar' }]);
+  assert.equal(patches.length, 0);
+  assert.equal(dry[0].name, 'Gin Spot Bar (One of Tallinn’s most unique bars)');
+  const live = rows();
+  await tidyPlaceNames(db, live);
+  assert.deepEqual(patches, [['places?id=eq.tallinn-gin', { name: 'Gin Spot Bar', aliases: ['gin spot bar one of tallinns most unique bars', 'gin spot bar'] }]]);
+  assert.equal(live[0].id, 'tallinn-gin');
+  assert.equal(live[0].name, 'Gin Spot Bar');                     // a later bulk upsert in the run writes the new name
+});

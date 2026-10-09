@@ -94,6 +94,24 @@ export const isDistrict = (n: string | null | undefined) => !n || DISTRICT.test(
 
 const ONLINE = /\b(online|zoom|veebis|онлайн)\b/i;
 
+// A bracket that describes rather than names: a floor ("3. korrusel"), the city, or a sentence of four
+// words or more. A short one stays, since it can tell two halls of one building apart ("(Hall 2)",
+// "(black box)"), and two places with one name at one address are merged (place-match.ts).
+const NOTE = /^(?:.*\b(?:korrus\w*|korpus\w*|floor)\b.*|tallinn(?:as)?|estonia|(?:\S+\s+){3,}\S+)$/iu;
+
+/** A venue's name as sources write it, without what is not its name: a description or floor note in
+ *  brackets ("Gin Spot Bar (One of Tallinn's most unique …)", "… black box (3. korrusel)"), a company's
+ *  legal form (OÜ, MTÜ, AS, SA, FIE) and a tagline after " | ". Never empty: a name that is all of
+ *  these stays as written. */
+export function venueName(raw: string): string {
+  const name = raw
+    .replace(/\s*\|.*$/u, '')
+    .replace(/\s*\(([^()]*)\)/gu, (m, inner: string) => (NOTE.test(inner.trim()) ? '' : m))
+    .replace(/^(?:OÜ|MTÜ|AS|SA)\s+|\s+(?:OÜ|MTÜ|AS|SA|FIE)$/gu, '')
+    .replace(/\s+/g, ' ').trim();
+  return /\p{L}/u.test(name) ? name : raw.replace(/\s+/g, ' ').trim();
+}
+
 /** Estonian addresses as Nominatim matches them (checked against it):
  *  "Kentmanni tänav 28, 10116 Tallinn" → "Kentmanni 28, Tallinn",
  *  "Narva maantee 13" → "Narva mnt 13", "L.Koidula 21c" → "Koidula 21c".
@@ -130,6 +148,7 @@ export class Places {
   readonly created: Place[] = [];
   readonly updated: Place[] = [];
   private retried = new Set<string>();
+  private tries = { unlocated: 0, unidentified: 0 };
   private lookups = 0;
   private city: string;
   private maxLookups: number;
@@ -194,24 +213,31 @@ export class Places {
 
   /** The place a candidate happens at, creating it on first sight. */
   async resolve(c: Candidate, geocode = true): Promise<Place | null> {
-    const name = c.venue_name?.split(',')[0]?.trim();
-    if (!name || ONLINE.test(name) || /[\u0400-\u04ff]/.test(name)) return null;
-    const incoming: Place = { id: '', city: this.city, name, aliases: [nameKey(name)],
+    const raw = c.venue_name?.split(',')[0]?.trim();
+    if (!raw || ONLINE.test(raw) || /[\u0400-\u04ff]/.test(raw)) return null;
+    // The display name is cleaned; the source's own spelling stays an alias. A place is found by that
+    // spelling first, as before, and by the cleaned name only when the spelling knows none.
+    const name = venueName(raw);
+    const literal: Place = { id: '', city: this.city, name: raw, aliases: [nameKey(raw)],
       address: c.address ?? null, lat: c.lat ?? null, lng: c.lng ?? null };
-    const hit = this.find(incoming);
+    const incoming: Place = { ...literal, name, aliases: [...new Set([nameKey(name), nameKey(raw)])] };
+    const hit = this.find(literal) ?? (name !== raw ? this.find(incoming) : undefined);
     if (hit) {
-      // A place an earlier run could not locate or identify gets another try;
-      // ten such places per run.
-      const unfinished = hit.lat == null || (hit.osm_id == null && hit.kind == null);
-      if (geocode && unfinished && !this.retried.has(hit.id) && this.retried.size < 10 && !this.created.includes(hit)) {
-        this.retried.add(hit.id);
+      // A place an earlier run could not locate or identify gets another try. One with no
+      // coordinates comes first, with ten tries a run of its own: a quarter of upcoming listings
+      // had no map position while located-but-unidentified places used up a shared ten.
+      const unlocated = hit.lat == null, unfinished = unlocated || (hit.osm_id == null && hit.kind == null);
+      const bucket = unlocated ? 'unlocated' : 'unidentified';
+      if (geocode && unfinished && !this.retried.has(hit.id) && this.tries[bucket] < (unlocated ? 10 : 5) && !this.created.includes(hit)) {
+        this.retried.add(hit.id); this.tries[bucket]++;
         if (await this.locate(hit, name, c.address ?? hit.address ?? null) && !this.updated.includes(hit)) this.updated.push(hit);
       }
       return hit;
     }
 
-    let id = `${this.city}-${slug(name)}`;
-    for (let n = 2; this.byId.has(id); n++) id = `${this.city}-${slug(name)}-${n}`;
+    // A new id still comes from the source's spelling, as every stored id did.
+    let id = `${this.city}-${slug(raw)}`;
+    for (let n = 2; this.byId.has(id); n++) id = `${this.city}-${slug(raw)}-${n}`;
     const place: Place = { ...incoming, id };
 
     if (geocode) await this.locate(place, name, c.address ?? null);

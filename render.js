@@ -176,6 +176,18 @@
     const t = startMs(e);
     return isFinite(t) && t <= now && !W().hasEnded(e, now);
   };
+  /* Can a reader still walk in? An exhibition, a market, a festival or a club night takes you in
+     while it is on; a gig for an hour and a half (a listing's time is usually the doors), anything
+     else for its first hour; a film, a play, a talk or a workshop for its first quarter of an hour,
+     and a course of several days not at all once begun.
+     Over a weekend sample, half of what was on could no longer be joined. */
+  const DROP_IN = new Set(['exhibition', 'market', 'festival', 'club']);
+  const JOIN_MIN = { gig: 90, other: 60, film: 15, theatre: 15, talk: 15, workshop: 15 };
+  const joinable = (e, now = Date.now()) => {
+    if (!isLive(e, now)) return false;
+    if (DROP_IN.has(String(e.kind || '').toLowerCase())) return true;
+    return (now - startMs(e)) / 60000 <= (JOIN_MIN[String(e.kind || '').toLowerCase()] ?? 60);
+  };
   let endKeyFmt = null, endClockFmt = null;
   const endClock = (e) => {
     if (!e || !e.endsAt) return '';
@@ -190,6 +202,18 @@
     } catch (_) { return ''; }
   };
 
+  /* When a listing was last found at its source, as the event page says it: just now (under five
+     minutes), whole minutes, whole hours, then the date. A time ahead of this device's clock by more
+     than five minutes gets the date too, never a span. Nothing when the time is unknown. */
+  const checkedLabel = (iso, now = Date.now()) => {
+    const t = Date.parse(iso || '');
+    if (!isFinite(t)) return '';
+    const min = Math.floor((now - t) / 60000);
+    if (min >= 24 * 60 || min < -5) return `Checked ${dateShort(W().dayKey(new Date(t)))}`;
+    if (min < 5) return 'Checked just now';
+    return min < 60 ? `Checked ${min} min ago` : `Checked ${Math.floor(min / 60)} h ago`;
+  };
+
   /* The catalogue as lists read it: nothing that has ended. */
   const live = () => (window.WA.catalog || []).filter(e => !e.isClosed && !W().hasEnded(e));
   const places = () => (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
@@ -199,7 +223,7 @@
     const m = G().distanceTo(e);
     return m == null ? null : G().walkMinutes(m);
   };
-  const walkLabel = (min) => (min == null ? '' : min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, '0')}` : `${min} min`);
+  const walkLabel = (min) => (min == null ? '' : min >= 60 ? `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ''}` : `${min} min`);
 
   /* ── Search ──────────────────────────────────────────────── */
   const matches = (e, q) => {
@@ -267,7 +291,7 @@
     /* A room that opens for what is on (a cinema, a theatre, or a bar whose own site says it opens
        only on event nights) has no weekly hours: say that instead of the gap. */
     if (!s.known && (v?.hoursSource === 'events' || EVENT_ROOMS.test(String(v?.kind || '')))) return { cls: 'unknown', text: 'Open for events', open: null, s };
-    if (!s.known) return { cls: 'unknown', text: 'Hours not filed', open: null, s };
+    if (!s.known) return { cls: 'unknown', text: 'Hours not listed', open: null, s };
     if (s.open) return { cls: 'yes', text: s.closesAt == null ? 'Open, 24 hours' : `Open till ${H().clock(s.closesAt)}`, open: true, s };
     if (s.opensAt != null) return { cls: 'no', text: `Opens ${H().clock(s.opensAt)}`, open: false, s };
     return { cls: 'no', text: 'Shut today', open: false, s };
@@ -325,10 +349,18 @@
   /* The classes a logo's box wears: is-logo, and its tone (wa.css draws each on light and dark paper). */
   const logoCls = (logo, tone) => (logo ? ` is-logo${tone ? ` tone-${String(tone).replace(/[^a-z-]/g, '')}` : ''}` : '');
 
+  /* A title shown as its source filed it (no translation) carries that language, so a screen
+     reader says "Kontsert" in Estonian. Returns the attribute, or ''. */
+  const titleLang = (e) => {
+    const l = e && e.titleLanguage, ui = window.WA.Lang ? window.WA.Lang.current() : 'en';
+    if (!l || !/^[a-z]{2}$/.test(l) || l === ui || !e.originalTitle || fold(e.originalTitle) !== fold(e.title)) return '';
+    return ` lang="${l}"`;
+  };
+
   const thumb = (e) => {
     const { src, logo, tone } = art(e);
     return `<span class="wa-row__thumb${logoCls(logo, tone)}">${src
-      ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
+      ? `<img ${UI().imgAttrs(src, 160)} alt="" loading="lazy" decoding="async">`
       : window.WA.Picto.kind(e.kind)}</span>`;
   };
 
@@ -364,7 +396,7 @@
           ${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}
           ${fresh ? '<span class="wa-new">New</span>' : ''}
         </span>
-        <span class="wa-row__title">${esc(e.title || '')}</span>
+        <span class="wa-row__title"${titleLang(e)}>${esc(e.title || '')}</span>
         ${meta ? `<span class="wa-row__meta">${meta}</span>` : ''}
       </span>
       ${opts.drop ? '<span class="wa-row__side wa-saved-row__space" aria-hidden="true"></span>'
@@ -383,10 +415,10 @@
     if (source && !source.startsWith('@')) source = `@${source}`;
     if (!source && url(e.permalink)) { try { source = new URL(url(e.permalink)).hostname.replace(/^www\./, ''); } catch (_) {} }
     return `<li class="wa-feed__item${isOff(e) ? ' is-off' : ''}"><a class="wa-feed__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
-      <span class="wa-feed__art${src ? '' : ' is-missing'}${logoCls(logo,tone)}">${src ? `<img src="${esc(src)}" alt="" width="640" height="360" loading="lazy" decoding="async">` : window.WA.Picto.kind(e.kind)}</span>
+      <span class="wa-feed__art${src ? '' : ' is-missing'}${logoCls(logo,tone)}">${src ? `<img ${UI().imgAttrs(src, 720)} alt="" width="640" height="360" loading="lazy" decoding="async">` : window.WA.Picto.kind(e.kind)}</span>
       ${venue && src ? '<span class="wa-feed__image-note">Venue image</span>' : ''}
       <span class="wa-feed__body"><span class="wa-feed__kinds">${flagTag(e)}${kind ? `<span>${esc(kind)}</span>` : ''}${why ? `<span>${esc(why)}</span>` : ''}</span>
-        <span class="wa-feed__title">${esc(e.title || '')}</span>
+        <span class="wa-feed__title"${titleLang(e)}>${esc(e.title || '')}</span>
         <span class="wa-feed__when">${r.html}${r.live && clockOf(e) ? `<span class="wa-row__time">${esc(clockOf(e))}</span>` : ''}${opts.day && W().statedMinutes(e) == null ? '<span class="wa-feed__meta">Time not listed</span>' : ''}</span>
         ${facts ? `<span class="wa-feed__meta">${facts}</span>` : ''}
         <span class="wa-feed__price">${isFree(e) ? '<span class="wa-free">Free</span>' : esc(price(e) || 'Price not listed')}</span>
@@ -400,7 +432,7 @@
     const photo = v.imageUrl ? url(v.imageUrl) : '';   /* a venue's own logo counts: it identifies the place */
     const meta = [esc(kindLabel(v.kind, true)), areaOf(v) ? `<span data-notranslate>${esc(areaOf(v))}</span>` : '', esc(opts.extra || '')].filter(Boolean).join(' · ');
     return `<li${opts.drop ? ' class="wa-saved-row"' : opts.heart ? ' class="wa-row-item wa-place-item"' : ''}><a class="wa-place" href="detail.html?id=${esc(encodeURIComponent(v.id))}" data-place="${esc(v.id)}">
-      <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
+      <span class="wa-place__glyph${photo ? logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${photo ? `<img ${UI().imgAttrs(photo, 160)} alt="" loading="lazy">` : window.WA.Picto.kind(v.kind)}</span>
       <span class="wa-place__body">
         <span><span class="wa-place__name">${esc(v.name || '')}</span>${v.picked && opts.pickLabel !== false ? ' <span class="wa-place__pick">Picked</span>' : ''}</span>
         <span class="wa-place__meta">${meta}</span>
@@ -438,12 +470,12 @@
       .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
     return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
       <span class="wa-poster__art${logoCls(logo, tone)}">
-        ${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`
+        ${src ? `<img ${UI().imgAttrs(src, 640)} alt="" loading="lazy" decoding="async">`
               : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
         <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(opts.compact && b.now ? 'On now' : b.text)}</span>
         ${flagTag(e, ' wa-poster__flag')}
       </span>
-      <span class="wa-poster__title">${esc(e.title || '')}</span>
+      <span class="wa-poster__title"${titleLang(e)}>${esc(e.title || '')}</span>
       ${opts.compact && b.now && endClock(e) ? `<span class="wa-poster__meta">Until ${esc(endClock(e))}</span>` : ''}
       ${line1 ? `<span class="wa-poster__meta" data-notranslate>${esc(line1)}</span>` : ''}
       ${line2 ? `<span class="wa-poster__meta">${line2}</span>` : ''}
@@ -610,29 +642,45 @@
   /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
      dead image for the row's own pictogram (no inline handler: `error`
      does not bubble, so listen in the capture phase). */
-  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art, .wa-search-match__art';
-  document.addEventListener('error', (e) => {
-    const img = e.target;
-    if (!img || img.tagName !== 'IMG') return;
-    const box = img.closest(ART);
-    if (!box) return;
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art, .wa-search-match__art, .det-next__glyph, .rt__logo';
+  const toPicto = (img, box) => {
     const host = img.closest('[data-place], [data-row], [data-card]');
     const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
     const found = id && [...(window.WA._catalogAll || []), ...(window.WA._venuesAll || [])].find(p => p.id === id);
+    const kind = (found && found.kind) || (box.dataset && box.dataset.kind);
     box.classList.remove('is-logo');
     // Keep the reserved photo height after a late failure, so the feed doesn't jump.
     if (box.matches('.wa-feed__art')) box.classList.add('is-failed');
     [...box.classList].filter(c => c.startsWith('tone-')).forEach(c => box.classList.remove(c));
     img.outerHTML = box.matches('.wa-poster__art')
-      ? `<span class="wa-poster__type">${window.WA.Picto.kind(found && found.kind)}</span>`
-      : window.WA.Picto.kind(found && found.kind);
+      ? `<span class="wa-poster__type">${window.WA.Picto.kind(kind)}</span>`
+      : window.WA.Picto.kind(kind);
+  };
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    /* A resized copy that failed: the original once, before giving up on the picture. */
+    const full = img.dataset && img.dataset.full;
+    if (full) { delete img.dataset.full; img.src = full; return; }
+    const box = img.closest(ART);
+    if (box) toPicto(img, box);
+  }, true);
+
+  /* A wordmark more than three times wider than tall shrinks to a sliver in a small
+     tile and reads as an empty one, so small tiles show the kind's Label instead. */
+  const SMALL_ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .map-preview__art, .wa-search-match__art, .det-next__glyph, .rt__logo';
+  document.addEventListener('load', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG' || !(img.naturalWidth > 3 * img.naturalHeight)) return;
+    const box = img.closest(SMALL_ART);
+    if (box && box.classList.contains('is-logo')) toPicto(img, box);
   }, true);
 
   window.WA.R = {
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
-    DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, live, places,
+    DOW, dow, dom, dateShort, dayName, clockOf, endClock, checkedLabel, isLive, joinable, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, feedItem, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
+    openState, openBadge, row, feedItem, titleLang, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
   };
 })();

@@ -6,7 +6,7 @@ function world(now = '2026-10-04T08:00:00Z', hours = '24/7') {
   class Clock extends Date { constructor(value?: string | number) { super(value ?? now); } static now() { return Date.parse(now); } }
   const places = ['books','vinyl'].map((id, i) => ({id, name: id, kind: i ? 'record store' : 'bookshop', openingHours: hours, lat:59.44, lng:24.74, picked:true}));
   const event = {id:'gig', title:'Gig', kind:'gig', startsAt:'2026-10-05T16:00:00Z', lat:59.44, lng:24.74};
-  const WA: any = {UI:{esc:(x: any) => String(x)}, Icon:()=>'', catalog:[event], _venuesAll:places, Geo:{
+  const WA: any = {UI:{esc:(x: any) => String(x), descriptionOr:(x: any) => String(x ?? '')}, Icon:()=>'', catalog:[event], _venuesAll:places, Geo:{
     currentLoc:()=>null, coordsFor:(x: any)=>x, distanceTo:()=>0, walkMinutes:()=>0, format:()=>'', startMinutes:()=>19*60},
     R:{kindLabel:(x: any)=>x, areaOf:()=>'', isFree:()=>false, isOff:()=>false},
   };

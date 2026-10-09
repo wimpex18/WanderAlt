@@ -105,7 +105,7 @@
         <span class="wa-field__consequence" data-within-note>${placeWithinNote()}</span></div>
       ${anchorField(scope === 'sheet' ? 'sheet-anchor' : 'anchor')}<a class="wa-linkbtn" href="places.html">All place types in the Guide</a>`;
   };
-  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+  const placeWithinNote = () => state.within ? `${G().format(state.within)} · ${G().minutesFor(state.within)} min on foot` : 'Anywhere in the city';
   const placeOriginText = () => {
     const label = placeOrigin().label;
     const t = text => window.WA.Lang ? window.WA.Lang.t(text) : text;
@@ -183,7 +183,7 @@
       <div class="wa-field"><button class="wa-btn wa-btn--quiet wa-btn--sm" type="button" data-clear style="justify-self:start;padding:0">Clear all filters</button></div>`;
   };
   const withinNote = () => !G().currentLoc() && state.within ? 'Choose a starting point' : state.within
-    ? `${G().format(state.within)} · ${G().walkMinutes(state.within)} min on foot` : 'Anywhere in the city';
+    ? `${G().format(state.within)} · ${G().minutesFor(state.within)} min on foot` : 'Anywhere in the city';
 
   /* A named spot to measure from, picked from places we hold, so walking
      times work without location permission (a hotel, a friend's street). */
@@ -349,11 +349,17 @@
   /* A tap answers in the same frame with what is small (the chips, the
      count, the summary). The list and the panel, which are large, follow
      in the next task; taps that arrive meanwhile are drawn once. */
-  let bigFrame = 0, latest = [];
+  let bigFrame = 0, latest = [], moreFrom = -1;
   const drawBig = () => {
     bigFrame = 0;
     const list = latest;
-    put($('list'), listHtml(list));
+    window.WA.UI.keepFocus($('list'), () => put($('list'), listHtml(list)));
+    /* Show more: focus moves to the first of the new rows, as on Now. */
+    if (moreFrom >= 0) {
+      const first = $('list').querySelectorAll('a[data-row]')[moreFrom];
+      moreFrom = -1;
+      if (first) first.focus({ preventScroll: true });
+    }
     const sheet = $('sheet');
     if (sheet && sheet.open) {
       const active = document.activeElement;
@@ -476,7 +482,7 @@
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
       if (x === 'undo-read') engine.undo();
-      if (x === 'more' || x === 'more-places') limit += PAGE;
+      if (x === 'more' || x === 'more-places') { moreFrom = $('list').querySelectorAll('a[data-row]').length; limit += PAGE; }
       if (x === 'more-running') runsOpen = true;
       if (x === 'clear-open') state.placeOpen = false;
       if (x === 'clear-sort') state.sort = 'soonest';
