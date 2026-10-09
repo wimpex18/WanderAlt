@@ -16,6 +16,7 @@ import type { Candidate, Enrichment, EventKind, Flag } from './types.ts';
 import { EVENT_KINDS } from './types.ts';
 import { clip, httpUrl, nameKey, sleep } from './util.ts';
 import { tallinnToIso } from './time.ts';
+import { stillOn, STARTED_MS } from './sources/still-on.ts';
 
 const FLAGS = new Set<string>(['cancelled', 'postponed', 'sold_out', 'few_left']);
 
@@ -397,7 +398,11 @@ export async function extractEvents(
   const out: Candidate[] = [];
   for (const e of events) {
     const starts = e.start ? tallinnToIso(e.start) : null;
-    if (!e.title || !starts || Date.parse(starts) < Date.now() - 6 * 3600_000) continue;
+    // A closing date without a time means that whole day, as in wordpress.ts, so the row is not archived on its last morning.
+    const ends = e.end ? tallinnToIso(/\d{1,2}:\d{2}/.test(e.end) ? e.end : `${e.end} 23:59`) : null;
+    if (!e.title || !starts) continue;
+    // A run that opened earlier and is still on (an exhibition) is kept here; run.ts keeps only exhibitions.
+    if (Date.parse(starts) < Date.now() - STARTED_MS && !stillOn(starts, ends)) continue;
     const price = e.price ?? '';
     const free = /\b(free|tasuta|бесплатн|vabaksp)/i.test(price);
     const nums = [...price.matchAll(/(\d+(?:[.,]\d+)?)/g)].map(m => Number(m[1].replace(',', '.')));
@@ -405,7 +410,7 @@ export async function extractEvents(
       title: e.title.trim(),
       description: clip(e.excerpt ?? null, 2000),
       starts_at: starts,
-      ends_at: e.end ? tallinnToIso(e.end) : null,
+      ends_at: ends,
       has_time: /\d{1,2}:\d{2}/.test(e.start ?? ''),
       venue_name: latinOnly(e.venue),
       address: latinOnly(e.address),

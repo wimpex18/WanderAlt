@@ -18,6 +18,10 @@ import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import * as vabalava from './sources/vabalava.ts';
+import * as nextflight from './sources/nextflight.ts';
+import * as saal from './sources/saal.ts';
+import * as stl from './sources/stl.ts';
+import { keepStarted } from './sources/still-on.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile, lookupPosts, fillInstagramDetails, type PostLookup } from './instagram.ts';
 import { collectInstagram, collectHashtags, instagramPostUrl } from './sources/instagram.ts';
@@ -77,6 +81,11 @@ export function loadSources(city = CITY): Source[] {
   return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).filter(s => s.config.enabled !== false).map(s => ({ ...s, active: true } as Source));
 }
 
+/** Venue programme pages read by their own parser, named by config.shape: no model reads them. */
+const SHAPES = new Map<string, { collect: (s: Source) => Promise<RawItem[]>; extract: (i: RawItem, s: Source) => Candidate[] }>(
+  Object.entries({ vabalava, nextflight, saal, stl }));
+export const pageShape = (s: Source) => (s.kind === 'html' && typeof s.config.shape === 'string' ? SHAPES.get(s.config.shape) : undefined);
+
 async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
   switch (source.kind) {
     case 'fienta': return fienta.collect(source);
@@ -84,7 +93,7 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
     case 'wordpress': return wordpress.collect(source);
     case 'osm': return [];            // places, not events: step 5
     case 'telegram': return collectTelegram(source);
-    case 'html': return source.config.shape === 'vabalava' ? vabalava.collect(source) : collectPage(source);
+    case 'html': return pageShape(source)?.collect(source) ?? collectPage(source);
     case 'rss': return collectRss(source);
     case 'instagram': return source.config.hashtags ? collectHashtags(source) : collectInstagram(source, db);
   }
@@ -95,7 +104,7 @@ const posters = { left: Number(opt('--max-posters') ?? 30) };
 const instagramPosters = { left: 5 };
 const postCache = new Map<string, Promise<PostLookup>>();
 
-const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && s.config.shape !== 'vabalava') || s.kind === 'rss' || s.kind === 'instagram';
+const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && !pageShape(s)) || s.kind === 'rss' || s.kind === 'instagram';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
 export async function read(item: RawItem, source: Source, models: Models,
@@ -104,7 +113,8 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (source.kind === 'fienta') return fienta.extract(item);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
-  if (source.kind === 'html' && source.config.shape === 'vabalava') return vabalava.extract(item, source);
+  const shape = pageShape(source);
+  if (shape) return shape.extract(item, source);
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string; poster_available?: boolean };
   const isInstagram = source.kind === 'instagram';
@@ -663,6 +673,8 @@ async function main() {
   for (let i = 0; i < found.length; i++) {
     const { c, p } = found[i];
     const e = enrich[i];
+    // A model-read listing that has started stays only as an exhibition still on (sources/still-on.ts).
+    if (needsModel(p.source) && !keepStarted(c, e.kind)) continue;
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
