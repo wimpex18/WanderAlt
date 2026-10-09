@@ -1,4 +1,4 @@
--- Run with Supabase MCP execute_sql after 20261009150000_merge_same_item (README.md, "Deployment and data").
+-- Run with Supabase MCP execute_sql after 20261009140415_merge_same_item (README.md, "Deployment and data").
 -- Nothing commits.
 begin;
 do $$
