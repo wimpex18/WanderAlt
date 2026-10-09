@@ -119,26 +119,84 @@
     } catch { return ''; }
   };
 
+  /* Why a listing waits, in the reviewer's words: the rule that held it (pipeline/run.ts offPromise), a date
+     read from a poster, or the model's doubt. A group keeps one reason together so it can be settled at once;
+     the rows of one show on several dates are one decision. */
+  const RULE = { wellness: 'Wellness and spiritual', 'hobby class': 'Hobby classes', 'self-help': 'Self-help and social',
+    mainstream: 'Mainstream and commercial', children: "Children's events", 'restaurant venue': 'At a restaurant',
+    'hotel venue': 'At a hotel', 'wellness venue': 'At a yoga or wellness studio', 'children venue': 'At a puppet theatre or youth centre',
+    'mainstream venue': 'At an arena' };
+  const reasonOf = (note) => {
+    const n = String(note || '');
+    const rule = n.match(/^rule: ([a-z' -]+?) \(/);
+    if (rule) return { key: `rule:${rule[1]}`, label: RULE[rule[1]] || rule[1], order: 0 };
+    if (/poster/i.test(n)) return { key: 'poster', label: 'Dates read from a poster', order: 1 };
+    if (/^trusted source, low fit/.test(n)) return { key: 'trusted-low', label: 'Trusted source, low fit', order: 2 };
+    if (/^borderline fit/.test(n)) return { key: 'borderline', label: 'Borderline fit', order: 3 };
+    return { key: 'other', label: 'Other reasons', order: 4 };
+  };
+  const showKey = (e) => `${String(e.title_en || e.title || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()}|${String(e.venue_name || '').toLowerCase()}`;
+  const groupsOf = (rows) => {
+    const groups = new Map();
+    for (const e of rows) {
+      const r = reasonOf(e.status_note);
+      if (!groups.has(r.key)) groups.set(r.key, { ...r, shows: new Map() });
+      const g = groups.get(r.key), k = showKey(e);
+      if (!g.shows.has(k)) g.shows.set(k, []);
+      g.shows.get(k).push(e);
+    }
+    return [...groups.values()].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+  };
+  const showItem = (list) => {
+    const e = list[0], ids = list.map(x => x.id).join(','), many = list.length > 1;
+    const source = url(e.url || e.ticket_url);
+    return `<li class="review__item" data-ids="${esc(ids)}">
+      <p class="wa-note">${[esc(when(e.starts_at)), many ? esc(`${list.length} dates`) : '', esc(e.kind ? e.kind[0].toUpperCase() + e.kind.slice(1) : ''), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', e.status_note ? `<span data-notranslate>${esc(e.status_note)}</span>` : ''].filter(Boolean).join(' · ')}</p>
+      <p class="review__title" data-notranslate>${esc(e.title_en || e.title)}</p>
+      ${e.title_en && e.title_en !== e.title ? `<p class="wa-note" data-notranslate>${esc(e.title)}</p>` : ''}
+      ${e.summary_en ? `<p class="review__desc" data-notranslate>${esc(e.summary_en)}</p>` : ''}
+      ${many ? `<p class="review__desc">${list.slice(1).map(x => `<span class="review__date">${esc(when(x.starts_at))}</span>`).join(' ')}</p>` : ''}
+      <div class="review__actions">
+        <button class="wa-btn wa-btn--primary" type="button" data-set="published">${esc(many ? `Publish all ${list.length}` : 'Publish')}</button>
+        <button class="wa-btn" type="button" data-set="rejected">${esc(many ? `Reject all ${list.length}` : 'Reject')}</button>
+        ${source ? `<a class="wa-btn wa-btn--quiet" href="${esc(source)}" target="_blank" rel="noopener noreferrer"><span>Source</span> &nearr;</a>` : ''}
+      </div>
+    </li>`;
+  };
+  const groupHtml = (g) => {
+    const shows = [...g.shows.values()], n = shows.reduce((t, l) => t + l.length, 0);
+    return `<section class="review__group" data-group="${esc(g.key)}">
+      <div class="review__group-head">
+        <h2 class="wa-h2">${esc(g.label)}</h2>
+        <span class="wa-note review__group-n">${esc(n === 1 ? '1 listing' : `${n} listings`)}</span>
+        <div class="review__bulk">
+          <button class="wa-btn" type="button" data-bulk="rejected">Reject this group</button>
+          <button class="wa-btn wa-btn--quiet" type="button" data-bulk="published">Publish this group</button>
+        </div>
+      </div>
+      <ul class="review__list">${shows.map(showItem).join('')}</ul>
+    </section>`;
+  };
+  /* What is left in a group after a decision: its count, or the group itself when empty. */
+  const recount = (group) => {
+    if (!group) return;
+    const n = [...group.querySelectorAll('[data-ids]')].reduce((t, li) => t + li.dataset.ids.split(',').length, 0);
+    if (!n) { group.remove(); return; }
+    group.querySelector('.review__group-n').textContent = n === 1 ? '1 listing' : `${n} listings`;
+  };
+  const setStatus = (ids, status) => api('PATCH', `events?id=in.${encodeURIComponent(inList(ids))}`,
+    { status, status_note: `manual ${status === 'published' ? 'publish' : 'reject'}` });
+
   const render = async () => {
     const host = $('queue');
     if (!key()) { host.innerHTML = ''; return; }
     host.innerHTML = '<p class="wa-detail__note">Loading…</p>';
     try {
-      const rows = await api('GET', 'events?status=eq.review&archived_at=is.null&order=starts_at.asc&limit=200' +
+      const rows = await api('GET', 'events?status=eq.review&archived_at=is.null&merged_into=is.null&order=starts_at.asc&limit=500' +
         '&select=id,title,title_en,summary_en,venue_name,starts_at,kind,relevance,status_note,url,ticket_url,engine');
       $('key-form').hidden = true;
       host.innerHTML = `<p class="wa-note review__count">${esc(`${rows.length} waiting · soonest first`)}</p>
-        <ul class="review__list">${rows.map(e => `<li class="review__item" data-id="${esc(e.id)}">
-          <p class="wa-note">${[esc(when(e.starts_at)), esc(e.kind ? e.kind[0].toUpperCase() + e.kind.slice(1) : ''), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', e.status_note ? `<span data-notranslate>${esc(e.status_note)}</span>` : ''].filter(Boolean).join(' · ')}</p>
-          <p class="review__title" data-notranslate>${esc(e.title_en || e.title)}</p>
-          ${e.title_en && e.title_en !== e.title ? `<p class="wa-note" data-notranslate>${esc(e.title)}</p>` : ''}
-          ${e.summary_en ? `<p class="review__desc" data-notranslate>${esc(e.summary_en)}</p>` : ''}
-          <div class="review__actions">
-            <button class="wa-btn wa-btn--primary" type="button" data-set="published">Publish</button>
-            <button class="wa-btn" type="button" data-set="rejected">Reject</button>
-            ${url(e.url || e.ticket_url) ? `<a class="wa-btn wa-btn--quiet" href="${esc(url(e.url || e.ticket_url))}" target="_blank" rel="noopener noreferrer"><span>Source</span> &nearr;</a>` : ''}
-          </div>
-        </li>`).join('')}</ul>${await flags()}${await dupes()}${await reports()}`;
+        ${groupsOf(rows).map(groupHtml).join('')}${await flags()}${await dupes()}${await reports()}`;
     } catch (err) {
       try { sessionStorage.removeItem(KEY); } catch { /* nothing kept */ }
       $('key-form').hidden = false;
@@ -200,14 +258,38 @@
       } catch (err) { rb.disabled = false; alert(window.WA.Lang.t(`Not saved: ${err.message}`)); }
       return;
     }
+    /* A whole group: the first click asks, in place, how many listings it settles; the second does it. */
+    const bulk = e.target.closest && e.target.closest('[data-bulk]');
+    if (bulk) {
+      const group = bulk.closest('[data-group]'), box = bulk.closest('.review__bulk');
+      const ids = [...group.querySelectorAll('[data-ids]')].flatMap(li => li.dataset.ids.split(','));
+      const verb = bulk.dataset.bulk === 'published' ? 'Publish' : 'Reject';
+      box.dataset.was = box.innerHTML;
+      box.innerHTML = `<span class="wa-note" role="status">${esc(`${verb} ${ids.length === 1 ? '1 listing' : `${ids.length} listings`}?`)}</span>
+        <button class="wa-btn ${verb === 'Reject' ? '' : 'wa-btn--primary'}" type="button" data-bulk-yes="${esc(bulk.dataset.bulk)}">${esc(`Yes, ${verb.toLowerCase()}`)}</button>
+        <button class="wa-btn wa-btn--quiet" type="button" data-bulk-no>Cancel</button>`;
+      box.querySelector('[data-bulk-no]').focus();
+      return;
+    }
+    const no = e.target.closest && e.target.closest('[data-bulk-no]');
+    if (no) { const box = no.closest('.review__bulk'); box.innerHTML = box.dataset.was; box.querySelector('[data-bulk]').focus(); return; }
+    const yes = e.target.closest && e.target.closest('[data-bulk-yes]');
+    if (yes) {
+      const group = yes.closest('[data-group]');
+      const ids = [...group.querySelectorAll('[data-ids]')].flatMap(li => li.dataset.ids.split(','));
+      yes.disabled = true;
+      try { await setStatus(ids, yes.dataset.bulkYes); group.remove(); }
+      catch (err) { yes.disabled = false; alert(window.WA.Lang.t(`Not saved: ${err.message}`)); }
+      return;
+    }
     const b = e.target.closest && e.target.closest('[data-set]');
     if (!b) return;
-    const row = b.closest('[data-id]');
+    const row = b.closest('[data-ids]'), group = row.closest('[data-group]');
     b.disabled = true;
     try {
-      await api('PATCH', `events?id=eq.${encodeURIComponent(row.dataset.id)}`,
-        { status: b.dataset.set, status_note: `manual ${b.dataset.set === 'published' ? 'publish' : 'reject'}` });
+      await setStatus(row.dataset.ids.split(','), b.dataset.set);
       row.remove();
+      recount(group);
     } catch (err) {
       b.disabled = false;
       alert(window.WA.Lang.t(`Not saved: ${err.message}`));
@@ -215,4 +297,5 @@
   });
 
   document.addEventListener('DOMContentLoaded', render);
+  window.WA.ReviewQueue = { reasonOf, groupsOf };
 })();

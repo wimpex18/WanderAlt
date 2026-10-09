@@ -136,3 +136,31 @@ test('Event structured data: hostile listing text cannot leave the script, and o
   assert.equal(data.location.address.streetAddress, 'Telliskivi 60a');
   assert.equal(data.inLanguage, 'en');
 });
+
+test('a shared walk previews as its stops, named from the database, with the link\'s times and day', async () => {
+  const { set, run } = load({
+    picks: [{ id: 'ev_laine', title: 'Laine Club Night: Yung Singh (UK)', image_url: 'https://img.example/laine.jpg' }],
+    venues: [{ id: 'tallinn-terminal', name: 'Terminal' }, { id: 'tallinn-pudel', name: 'Pudel' }],
+  });
+  await run('/route.html?s=place%3Atallinn-terminal%3A1190%2Cevent%3Aev_laine%3A1260%2Cplace%3Atallinn-pudel%3A1405&d=2026-10-09');
+  assert.equal(set['meta[property="og:title"]'], 'A walk: Terminal, Laine Club Night: Yung Singh (UK), Pudel · WanderAlt');
+  assert.equal(set['meta[property="og:description"]'], 'Fri 9 Oct. 19:50 Terminal, 21:00 Laine Club Night: Yung Singh (UK), 23:25 Pudel. 3 stops on foot in Tallinn.');
+  assert.equal(set['meta[property="og:image"]'], 'https://img.example/laine.jpg');
+});
+
+test('a walk link with an unknown stop or a malformed part keeps the default preview', async () => {
+  const missing = load({ picks: [], venues: [{ id: 'tallinn-terminal', name: 'Terminal' }] });
+  await missing.run('/route?s=place%3Atallinn-terminal%3A1190%2Cevent%3Aev_gone%3A1260');
+  assert.equal(missing.set['meta[property="og:title"]'], undefined);
+  const odd = load({ picks: [], venues: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }] });
+  await odd.run('/route?s=place%3Aa%3A600%2Cplace%3Ab%3A660%2C%3Cscript%3E');
+  assert.equal(odd.set['meta[property="og:title"]'], undefined);
+});
+
+test('a plus code is no street address: structured data leaves it out', async () => {
+  const { appended, run } = load({ picks: [{ title: 'TAB tour', city: 'tallinn', venue: 'Tallinna Linnahall', time: '18:00', starts_at: '2026-10-09T15:00:00Z', address: 'CQW3+JC Tallinn, 10415 Tallinn', lat: null, lng: null }], venues: [] });
+  await run('/detail?id=ev_tab');
+  const { data } = ld(appended);
+  assert.equal(data.location.name, 'Tallinna Linnahall');
+  assert.equal(data.location.address, undefined);
+});

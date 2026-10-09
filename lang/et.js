@@ -889,7 +889,26 @@ window.WA.dict.et = {
   "On": "Sees",
   "Off": "Väljas",
   "Clear filters": "Eemalda filtrid",
-  "Only confirmed free listings": "Ainult kinnitatud tasuta sündmused"
+  "Only confirmed free listings": "Ainult kinnitatud tasuta sündmused",
+  "Wellness and spiritual": "Heaolu ja vaimsus",
+  "Hobby classes": "Hobitunnid",
+  "Self-help and social": "Eneseabi ja suhtlus",
+  "Mainstream and commercial": "Peavoolu ja kommerts",
+  "Children's events": "Lasteüritused",
+  "At a restaurant": "Restoranis",
+  "At a hotel": "Hotellis",
+  "At a yoga or wellness studio": "Jooga- või heaolustuudios",
+  "At a puppet theatre or youth centre": "Nukuteatris või noortekeskuses",
+  "At an arena": "Areenil",
+  "Dates read from a poster": "Kuupäevad loetud plakatilt",
+  "Trusted source, low fit": "Usaldusväärne allikas, nõrk sobivus",
+  "Borderline fit": "Piiripealne sobivus",
+  "Other reasons": "Muud põhjused",
+  "Reject this group": "Lükka see rühm tagasi",
+  "Publish this group": "Avalda see rühm",
+  "Yes, reject": "Jah, lükka tagasi",
+  "Yes, publish": "Jah, avalda",
+  "The next eight days also come as a feed for readers and newsletters:": "Järgmised kaheksa päeva on ka voona lugejatele ja uudiskirjadele:"
  },
  "patterns": [
   [
@@ -1395,6 +1414,26 @@ window.WA.dict.et = {
   [
    "{x} from {t}",
    "{x} alates {t}"
+  ],
+  [
+   "{n} dates",
+   "{n} kuupäeva"
+  ],
+  [
+   "Publish all {n}",
+   "Avalda kõik {n}"
+  ],
+  [
+   "Reject all {n}",
+   "Lükka tagasi kõik {n}"
+  ],
+  [
+   "Publish {x}?",
+   "Avaldada {x}?"
+  ],
+  [
+   "Reject {x}?",
+   "Lükata tagasi {x}?"
   ]
  ]
 };

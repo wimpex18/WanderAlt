@@ -889,7 +889,26 @@ window.WA.dict.ru = {
   "On": "Вкл.",
   "Off": "Выкл.",
   "Clear filters": "Сбросить фильтры",
-  "Only confirmed free listings": "Только события с подтверждённым бесплатным входом"
+  "Only confirmed free listings": "Только события с подтверждённым бесплатным входом",
+  "Wellness and spiritual": "Велнес и духовные практики",
+  "Hobby classes": "Хобби-занятия",
+  "Self-help and social": "Саморазвитие и общение",
+  "Mainstream and commercial": "Мейнстрим и коммерция",
+  "Children's events": "Детские события",
+  "At a restaurant": "В ресторане",
+  "At a hotel": "В отеле",
+  "At a yoga or wellness studio": "В студии йоги или велнеса",
+  "At a puppet theatre or youth centre": "В кукольном театре или молодёжном центре",
+  "At an arena": "На арене",
+  "Dates read from a poster": "Даты прочитаны с афиши",
+  "Trusted source, low fit": "Надёжный источник, слабое соответствие",
+  "Borderline fit": "Пограничное соответствие",
+  "Other reasons": "Другие причины",
+  "Reject this group": "Отклонить эту группу",
+  "Publish this group": "Опубликовать эту группу",
+  "Yes, reject": "Да, отклонить",
+  "Yes, publish": "Да, опубликовать",
+  "The next eight days also come as a feed for readers and newsletters:": "Ближайшие восемь дней есть и в виде ленты для читалок и рассылок:"
  },
  "patterns": [
   [
@@ -1450,6 +1469,31 @@ window.WA.dict.ru = {
   [
    "{x} from {t}",
    "{x} с {t}"
+  ],
+  [
+   "{n} dates",
+   {
+    "one": "{n} дата",
+    "few": "{n} даты",
+    "many": "{n} дат",
+    "other": "{n} даты"
+   }
+  ],
+  [
+   "Publish all {n}",
+   "Опубликовать все: {n}"
+  ],
+  [
+   "Reject all {n}",
+   "Отклонить все: {n}"
+  ],
+  [
+   "Publish {x}?",
+   "Опубликовать {x}?"
+  ],
+  [
+   "Reject {x}?",
+   "Отклонить {x}?"
   ]
  ]
 };

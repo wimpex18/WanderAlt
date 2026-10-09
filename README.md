@@ -30,6 +30,7 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 ### Rules the interface keeps
 
 - **Nights**: a night runs until 05:00. A stated start before 05:00 belongs to the evening before, so Today, Tomorrow and Weekend count nights on Now, Map and search; picked dates do too. Routes and day labels keep calendar days. A club night without a stated end is taken to run six hours, other timed listings three.
+- **Addresses**: a Google plus code is dropped, and an address that would be only a postcode and the city is not shown.
 - **Freshness**: an event page says when a source last listed it ("Checked 2 h ago": the newest `event_sources.last_seen_at`, read through the edge cache); an old time is shown as it is, never called outdated.
 - **Unknown facts stay explicit**: Free requires known free entry, In English a stated performance language, Open now known hours. Unknown prices can pass a positive ticket cap with a note. Date-only entries say Time not listed. Closed or cancelled records keep their identity without claiming availability.
 - **Images and notes**: photos require exact identity; picked notes require source-backed facts. Pictures are requested near their drawn size from hosts that resize (Fienta, Wikimedia Commons, WordPress.com), with the original as the fallback; a wordmark more than three times wider than tall shows the kind's Label in small tiles. A walk's stop note is in the reader's language, never a source blurb in another one.
@@ -65,7 +66,7 @@ npm run build:inline-icons
 | Data and personal state | `supabase.js`, `ui-helpers.js`, `auth.js`, `save-store.js`, `bookmark.js`, `lists.js`, `follow.js`, `inbox.js` |
 | Collection and enrichment | `pipeline/run.ts`, `pipeline/sources.tallinn.json`, `pipeline/sources/`; `venues.ts`, `places.ts`, `dedupe.ts`, `hours-sources.ts`, `drift.ts` |
 | Editorial and composed routes | `pipeline/llm.ts`, `english.ts`, `localize.ts`, `place-notes.ts`, `routes.ts` |
-| Schema and private moderation | `supabase/migrations/`, `pipeline/test/*.sql`, unlinked/noindex `review.html` |
+| Schema and private moderation | `supabase/migrations/`, `pipeline/test/*.sql`, unlinked/noindex `review.html` (held listings grouped by reason, a show's dates as one decision, a group settled at once after an in-page check) |
 | Hosting/API and scheduled jobs | `functions/`, `supabase/functions/`, `.github/workflows/`; `pipeline/backup.ts`, `watch.ts`, `digest.ts`, `social.ts` |
 | Interface/brand assets | `lang/phrases.tsv`, `lang/patterns.tsv`, `i18n.js`, `icons.js`, `brand/`, `.scripts/`, self-hosted `vendor/` |
 
@@ -77,7 +78,7 @@ npm run build:inline-icons
 
 ### Hosting
 - The static site at [wanderalt.app](https://wanderalt.app) deploys on pushes to `main` through Cloudflare Pages: output `/`, no build command. Pull requests get previews.
-- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. The middleware also writes event pages' schema.org Event JSON-LD from the listing, with only facts we hold: Tallinn times with their offset or a date alone, a status only when cancelled or postponed, offers only for a stated price or free entry, currency and language only when stated. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
+- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. `/feed.xml` (a Pages Function, an hour of edge cache) is RSS of the next eight days for readers and newsletters, linked from About. A shared walk link previews its stops, named from the database, with the link's times and day. The middleware also writes event pages' schema.org Event JSON-LD from the listing, with only facts we hold: Tallinn times with their offset or a date alone, a status only when cancelled or postponed, offers only for a stated price or free entry, currency and language only when stated. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
 - The service worker caches assets aggressively; bump its shell version for asset changes.
 
 ### Supabase

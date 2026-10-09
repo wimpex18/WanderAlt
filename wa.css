@@ -1061,6 +1061,10 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .review__title { font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .review__desc { color: var(--ink-2); font-size: var(--fs-small); overflow-wrap: anywhere; }
 .review__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); }
+.review__group { margin-top: var(--s-7); }
+.review__group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2) var(--s-4); padding-bottom: var(--s-2); border-bottom: 1px solid var(--line); }
+.review__bulk { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.review__date { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: var(--r-pill); background: var(--paper-2); font-variant-numeric: tabular-nums; }
 
 /* A venue's logo, wherever a photo would sit: whole, centred, on white.
    Logos are drawn for light grounds, so the tile stays light in dark mode. */
@@ -1599,6 +1603,12 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-origin span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .home-origin[aria-pressed="true"] { color:var(--here); }
 .home-origin .wa-ic { color:var(--here); }
+/* Under 380 px a long label ("Рядом со мной", a chosen street) would push the headline under the key:
+   the key keeps its icon, and its words stay for screen readers. */
+@media (max-width:379px) {
+  .home-origin { width:40px; padding:0; justify-content:center; }
+  .home-origin span { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+}
 
 .home-moods { display:flex; gap:2px; padding-top:2px; padding-bottom:6px; }
 .home-mood { flex:none; display:grid; justify-items:center; align-content:start; gap:5px; min-width:62px; min-height:var(--tap); padding:4px 8px 8px; border:0; border-radius:var(--r-md); background:none; color:var(--ink-2); font:500 .75rem/1.2 var(--f-sans); text-align:center; scroll-snap-align:start; position:relative; cursor:pointer; }
@@ -1864,6 +1874,14 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 @media (min-width:1024px) { .saved-side .home-places { grid-template-columns:minmax(0, 1fr); } }
 @media (min-width:1024px) { main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); } }
 
+/* Windows High Contrast drops backgrounds and shadows, which carry every chosen state here: an outline in the
+   system's text colour marks what is chosen, and the primary button keeps an edge. */
+@media (forced-colors: active) {
+  :is(.wa-chip, .wa-btn, .map-mood, .home-when)[aria-pressed="true"], .wa-chip[aria-selected="true"], .home-mood[aria-pressed="true"],
+  .home-view__opt[aria-pressed="true"], :is(.wa-tabbar__item, .wa-nav a)[aria-current="page"], .wa-when__opt[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:2px; }
+  .wa-btn--primary { border:1px solid ButtonText; }
+  .wa-heart[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:-4px; border-radius:50%; }
+}
 /* Reduce Transparency: every glass surface becomes solid paper, not only the drops and Now's keys. */
 @media (prefers-reduced-transparency: reduce) {
   .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .wa-topbar, .wa-sheet__panel, .wa-offline, .wa-toast, .prog-controls, .rt-card, .home-mood__key, .home-day__all, .wa-lang__menu, .map-filters .map-mood {

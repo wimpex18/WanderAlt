@@ -889,7 +889,26 @@ window.WA.dict.uk = {
   "On": "Увімк.",
   "Off": "Вимк.",
   "Clear filters": "Скинути фільтри",
-  "Only confirmed free listings": "Лише події з підтвердженим безкоштовним входом"
+  "Only confirmed free listings": "Лише події з підтвердженим безкоштовним входом",
+  "Wellness and spiritual": "Велнес і духовні практики",
+  "Hobby classes": "Хобі-заняття",
+  "Self-help and social": "Саморозвиток і спілкування",
+  "Mainstream and commercial": "Мейнстрим і комерція",
+  "Children's events": "Дитячі події",
+  "At a restaurant": "У ресторані",
+  "At a hotel": "У готелі",
+  "At a yoga or wellness studio": "У студії йоги чи велнесу",
+  "At a puppet theatre or youth centre": "У ляльковому театрі чи молодіжному центрі",
+  "At an arena": "На арені",
+  "Dates read from a poster": "Дати прочитано з афіші",
+  "Trusted source, low fit": "Надійне джерело, слабка відповідність",
+  "Borderline fit": "Прикордонна відповідність",
+  "Other reasons": "Інші причини",
+  "Reject this group": "Відхилити цю групу",
+  "Publish this group": "Опублікувати цю групу",
+  "Yes, reject": "Так, відхилити",
+  "Yes, publish": "Так, опублікувати",
+  "The next eight days also come as a feed for readers and newsletters:": "Найближчі вісім днів є й у вигляді стрічки для читалок і розсилок:"
  },
  "patterns": [
   [
@@ -1450,6 +1469,31 @@ window.WA.dict.uk = {
   [
    "{x} from {t}",
    "{x} з {t}"
+  ],
+  [
+   "{n} dates",
+   {
+    "one": "{n} дата",
+    "few": "{n} дати",
+    "many": "{n} дат",
+    "other": "{n} дати"
+   }
+  ],
+  [
+   "Publish all {n}",
+   "Опублікувати всі: {n}"
+  ],
+  [
+   "Reject all {n}",
+   "Відхилити всі: {n}"
+  ],
+  [
+   "Publish {x}?",
+   "Опублікувати {x}?"
+  ],
+  [
+   "Reject {x}?",
+   "Відхилити {x}?"
   ]
  ]
 };

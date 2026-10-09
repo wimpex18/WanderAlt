@@ -48,6 +48,14 @@ const saysSomething = (text, title) => {
   return contentWords(s.slice(0, 300)).some(w => !t.has(w)) ? s : '';
 };
 
+/* A street address without a Google plus code; null when only a postcode and the city would remain
+   (supabase.js cleanAddress, the same rule). */
+const PLUS_CODE = /\b[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}\b,?\s*/gi;
+const streetOf = (a) => {
+  if (!a) return null;
+  const s = String(a).replace(PLUS_CODE, '').replace(/^[\s,]+|[\s,]+$/g, '').replace(/\s{2,}/g, ' ');
+  return /\p{L}{3,}[^,]*\d|\d+\s*\p{L}*\s+\p{L}{3,}/u.test(s.replace(/\b\d{5}\b/g, '')) ? s.replace(/,\s*Tallinn$/i, '') : null;
+};
 const sbGet = async (path) => {
   const r = await fetch(`${SB_BASE}/rest/v1/${path}`, {
     headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
@@ -66,7 +74,7 @@ const placeLd = (v, id) => ({
   '@context': 'https://schema.org', '@type': PLACE_TYPE[String(v.kind || '').toLowerCase()] || 'LocalBusiness',
   name: v.name, url: `${SITE}/detail?id=${encodeURIComponent(id)}`,
   description: v.pick_note || undefined, image: httpUrl(v.image_url),
-  address: v.address ? { '@type': 'PostalAddress', streetAddress: String(v.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined,
+  address: streetOf(v.address) ? { '@type': 'PostalAddress', streetAddress: streetOf(v.address), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined,
   geo: Number.isFinite(v.lat) && Number.isFinite(v.lng) ? { '@type': 'GeoCoordinates', latitude: v.lat, longitude: v.lng } : undefined,
   sameAs: [v.website, v.instagram, v.facebook].map(httpUrl).filter(Boolean),
 });
@@ -98,7 +106,7 @@ const eventLd = (e, id) => {
   const end = tallinnIso(e.ends_at, !timed);
   const venue = e.venue && !CYRILLIC.test(e.venue) ? String(e.venue) : '';
   const geo = Number.isFinite(e.lat) && Number.isFinite(e.lng) ? { '@type': 'GeoCoordinates', latitude: e.lat, longitude: e.lng } : undefined;
-  const address = e.address ? { '@type': 'PostalAddress', streetAddress: String(e.address).replace(/,\s*Tallinn$/i, ''), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined;
+  const address = streetOf(e.address) ? { '@type': 'PostalAddress', streetAddress: streetOf(e.address), addressLocality: 'Tallinn', addressCountry: 'EE' } : undefined;
   const free = e.is_free === true || num(e.price_min) === 0;
   const low = num(e.price_min), high = num(e.price_max);
   const currency = /^[A-Z]{3}$/.test(String(e.currency || '')) ? e.currency : undefined;
@@ -173,6 +181,44 @@ export async function onRequest(context) {
   return secured;
 }
 
+/* A shared walk (route.html?s=place:<id>:<minute>,event:<id>:<minute>…&d=YYYY-MM-DD) previews as its own
+   stops in a group chat: their names from the database, the times from the link, the day from d. Only ids
+   that look like ids are looked up, nothing from the query string is echoed, and a stop we cannot find
+   leaves the default card. The picture is the first listing's own photo, if it has one. */
+const STOP = /^(place|event):([\w.-]{1,80}):(\d{1,4})$/;
+const walkDay = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const hhmm = (m) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+function walkCard(stops, names, day) {
+  const named = stops.map(s => ({ ...s, name: names.get(`${s.type}:${s.id}`) }));
+  if (named.some(s => !s.name)) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(day || '') && !Number.isNaN(Date.parse(`${day}T12:00:00Z`)) ? walkDay.format(new Date(`${day}T12:00:00Z`)) : '';
+  return {
+    title: `A walk: ${named.map(s => s.name).join(', ')} · WanderAlt`,
+    description: `${date ? `${date}. ` : ''}${named.map(s => `${hhmm(s.minute)} ${s.name}`).join(', ')}. ${named.length} stops on foot in Tallinn.`,
+  };
+}
+async function walkPreview({ next }, url) {
+  const res = await next();
+  if (!(res.headers.get('content-type') || '').includes('text/html')) return res;
+  const parts = String(url.searchParams.get('s') || '').split(',');
+  const stops = parts.map(x => STOP.exec(x)).filter(Boolean).map(m => ({ type: m[1], id: m[2], minute: Number(m[3]) }));
+  if (stops.length < 2 || stops.length > 6 || stops.length !== parts.length) return res;
+  try {
+    const list = (type) => stops.filter(s => s.type === type).map(s => `"${s.id}"`).join(',');
+    const [events, places] = await Promise.all([
+      list('event') ? sbGet(`picks?id=in.(${encodeURIComponent(list('event'))})&select=id,title,image_url`) : [],
+      list('place') ? sbGet(`venues?id=in.(${encodeURIComponent(list('place'))})&status=eq.active&select=id,name`) : [],
+    ]);
+    const names = new Map([...events.map(e => [`event:${e.id}`, e.title]), ...places.map(v => [`place:${v.id}`, v.name])]);
+    const card = walkCard(stops, names, url.searchParams.get('d'));
+    if (!card) return res;
+    const firstPhoto = stops.filter(s => s.type === 'event').map(s => events.find(e => e.id === s.id)).find(e => e && e.image_url);
+    return rewrite(res, { ...card, image: firstPhoto ? firstPhoto.image_url : '', photo: !!firstPhoto });
+  } catch (_) {
+    return res;                                          // fail-open
+  }
+}
+
 async function pageResponse(context) {
   const { request, next } = context;
   const url = new URL(request.url);
@@ -180,6 +226,8 @@ async function pageResponse(context) {
 
   const isPick   = p === '/detail' || p === '/detail.html';
   const isSource = p === '/source' || p === '/source.html';
+  const isWalk   = p === '/route' || p === '/route.html';
+  if (isWalk) return walkPreview(context, url);
   if (!isPick && !isSource) return next();             // pass through everything else
 
   const id     = url.searchParams.get('id');

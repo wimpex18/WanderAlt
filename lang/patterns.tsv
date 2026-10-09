@@ -126,3 +126,8 @@ Show {n} more places	Näita veel {n} kohta	Ещё {n} место|Ещё {n} ме
 Dark from {t}	Tume alates {t}	Тёмная с {t}	Темна з {t}
 All {n} open	Kõik {n} avatud	Все открытые: {n}	Усі відчинені: {n}
 {x} from {t}	{x} alates {t}	{x} с {t}	{x} з {t}
+{n} dates	{n} kuupäeva	{n} дата|{n} даты|{n} дат|{n} даты	{n} дата|{n} дати|{n} дат|{n} дати
+Publish all {n}	Avalda kõik {n}	Опубликовать все: {n}	Опублікувати всі: {n}
+Reject all {n}	Lükka tagasi kõik {n}	Отклонить все: {n}	Відхилити всі: {n}
+Publish {x}?	Avaldada {x}?	Опубликовать {x}?	Опублікувати {x}?
+Reject {x}?	Lükata tagasi {x}?	Отклонить {x}?	Відхилити {x}?
