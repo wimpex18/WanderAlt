@@ -909,7 +909,8 @@ window.WA.dict.ru = {
   "Yes, reject": "Да, отклонить",
   "Yes, publish": "Да, опубликовать",
   "The next eight days also come as a feed for readers and newsletters:": "Ближайшие восемь дней есть и в виде ленты для читалок и рассылок:",
-  "Map of the walk": "Карта прогулки"
+  "Map of the walk": "Карта прогулки",
+  "A sentence instead of a name": "Фраза вместо названия"
  },
  "patterns": [
   [

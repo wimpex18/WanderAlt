@@ -909,7 +909,8 @@ window.WA.dict.uk = {
   "Yes, reject": "Так, відхилити",
   "Yes, publish": "Так, опублікувати",
   "The next eight days also come as a feed for readers and newsletters:": "Найближчі вісім днів є й у вигляді стрічки для читалок і розсилок:",
-  "Map of the walk": "Мапа прогулянки"
+  "Map of the walk": "Мапа прогулянки",
+  "A sentence instead of a name": "Фраза замість назви"
  },
  "patterns": [
   [

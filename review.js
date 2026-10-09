@@ -125,7 +125,7 @@
   const RULE = { wellness: 'Wellness and spiritual', 'hobby class': 'Hobby classes', 'self-help': 'Self-help and social',
     mainstream: 'Mainstream and commercial', children: "Children's events", 'restaurant venue': 'At a restaurant',
     'hotel venue': 'At a hotel', 'wellness venue': 'At a yoga or wellness studio', 'children venue': 'At a puppet theatre or youth centre',
-    'mainstream venue': 'At an arena' };
+    'mainstream venue': 'At an arena', 'not a title': 'A sentence instead of a name' };
   const reasonOf = (note) => {
     const n = String(note || '');
     const rule = n.match(/^rule: ([a-z' -]+?) \(/);

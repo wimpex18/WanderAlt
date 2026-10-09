@@ -26,6 +26,7 @@ Tallinn culture, a walk at a time: a static PWA (no framework or build step) on 
 - The Guide uses `places.picked` with a one-line English `pick_note` grounded in the venue's own words or a checked fact. Search can also find other verified event venues.
 - Never invent hours, prices, reviews, dates or times. A Free, In English or Open now filter requires a known fact. Missing prices can pass a cap with an explicit note; unlocated events stay in lists and are counted as omitted on Map.
 - Never guess a venue or event photo from its name. Check identity and attribution; missing artwork uses its Label.
+- Place locations and merges come from `pipeline/place-checks.ts` (two independent witnesses, logged in `place_checks`). Improve its evidence rather than editing places by hand; a manual fix is for reversing a wrong answer.
 - Voice: handles start with `@`; no exclamation marks or marketing register; never "discover" as a verb.
 
 ## Security and services

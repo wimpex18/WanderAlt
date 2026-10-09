@@ -65,7 +65,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://telliskivi.cc/en/events/",
-    "handle": "@telliskivi",
+    "handle": "@loomelinnak",
     "label": "Telliskivi Creative City",
     "curated": false,
     "config": {}
@@ -75,7 +75,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://vabalava.ee/mangukava/",
-    "handle": "@vabalava",
+    "handle": "@vaba_lava",
     "label": "Vaba Lava",
     "curated": true,
     "config": {
@@ -128,7 +128,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://www.kultuurivabrik.ee/en/events",
-    "handle": "@paavlikultuurivabrik",
+    "handle": "@kultuurivabrik",
     "label": "Paavli Kultuurivabrik",
     "curated": true,
     "config": {
@@ -136,6 +136,7 @@
       "venue_id": "tallinn-paavli-kultuurivabrik",
       "venue_name": "Paavli Kultuurivabrik",
       "venue_site": "https://www.kultuurivabrik.ee/",
+      "venue_instagram": "https://www.instagram.com/kultuurivabrik/",
       "address": "Paavli 7, Tallinn",
       "skip_titles": "\\b(tartu|pärnu|narva|viljandi|kuressaare|haapsalu|rakvere|helsinki|riga)\\b",
       "records": [
@@ -149,7 +150,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://saal.ee/en/program/",
-    "handle": "@kanutigildisaal",
+    "handle": "@kanutigildisaal_",
     "label": "Kanuti Gildi SAAL",
     "curated": true,
     "config": {

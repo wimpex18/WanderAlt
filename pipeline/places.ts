@@ -7,6 +7,7 @@
 import type { Candidate } from './types.ts';
 import { UA, nameKey, slug, sleep } from './util.ts';
 import { comparePlaces, metres, osmIds, placeNames, canonicalOrder, addressKey } from './place-match.ts';
+import { CITIES } from './cities.ts';
 
 export interface Place {
   id: string;
@@ -254,7 +255,7 @@ export class Places {
   private async locate(place: Place, name: string, address: string | null): Promise<boolean> {
     const street = address ? normaliseAddress(address) : '';
     const byAddress = street && this.lookups < this.maxLookups ? await this.geocode(street) : null;
-    const byName = this.lookups < this.maxLookups ? await this.geocode(`${name}, Tallinn`) : null;
+    const byName = this.lookups < this.maxLookups ? await this.geocode(`${name}, ${(CITIES[this.city] ?? CITIES.tallinn).name}`) : null;
     const osmName = nameKey(byName?.name ?? '');
     const sameName = !!osmName && (osmName.includes(nameKey(name)) || nameKey(name).includes(osmName));
     const at = (h: NominatimHit) => ({ lat: Number(h.lat), lng: Number(h.lon) });
@@ -298,7 +299,7 @@ export class Places {
   private async geocode(q: string): Promise<NominatimHit | null> {
     this.lookups++;
     const url = new URL('https://nominatim.openstreetmap.org/search');
-    url.search = new URLSearchParams({ q, format: 'jsonv2', addressdetails: '1', limit: '1', countrycodes: 'ee' }).toString();
+    url.search = new URLSearchParams({ q, format: 'jsonv2', addressdetails: '1', limit: '1', countrycodes: (CITIES[this.city] ?? CITIES.tallinn).country }).toString();
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
       if (!r.ok) return null;

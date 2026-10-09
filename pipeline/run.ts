@@ -40,6 +40,7 @@ import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
+import { checkPlaces } from './place-checks.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
 import { facebookCheck } from './facebook-hours.ts';
@@ -226,10 +227,17 @@ const OFF_PROMISE_VENUE: [string, RegExp][] = [
   ['mainstream', words(String.raw`saku suurhall|unibet arena`)],
 ];
 const plain = (s: string) => s.normalize('NFKC').replace(/\s+/g, ' ').trim();
+const CREDIT = words(String.raw`koostööprojekt\p{L}*|kaasprodukts\p{L}*|co-?production|in (?:co-?operation|collaboration) with|совместн\p{L}* (?:проект|постановк)\p{L}*`);
+/** Three or more words ending in a full stop after a word: a sentence, not a name ("Mr. X" and "…" are names). */
+const SENTENCE = /^(?:\S+\s+){2,}\S*\p{L}{3,}\.$/u;
 
 /** Off the guide's promise by rule: held for a person, with the rule and the words it matched. */
 export function offPromise(title: string, venue?: string | null): { status: string; note: string } | null {
   const t = plain(title), v = plain(venue ?? '');
+  // A sentence or a production credit where the show's name should be ("VAT Teatri ja Vaba Lava
+  // koostööprojekt."): a reader took the wrong line, and the show's real name is not known.
+  const credit = CREDIT.exec(t);
+  if (credit || SENTENCE.test(t)) return { status: 'review', note: `rule: not a title (${credit ? credit[0].toLowerCase() : 'a sentence'})` };
   for (const [label, re] of OFF_PROMISE_TITLE) {
     const m = re.exec(t);
     if (m) return { status: 'review', note: `rule: ${label} (${m[0].toLowerCase()})` };
@@ -320,7 +328,7 @@ async function main() {
   if (flag('--instagram-check')) {
     const cfg = instagramConfig();
     if (!cfg) { log('instagram: INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ID is not set'); return; }
-    for (const handle of ['kanutigildisaal', 'laine.bar']) {
+    for (const handle of ['kanutigildisaal_', 'laine.bar']) {
       const r = await lookupProfile(handle, cfg);
       log(`instagram check @${handle}: ${r.kind}${r.kind === 'found' ? ` (username ${r.username}, picture address received)` : ` (${r.reason})`}`);
     }
@@ -343,7 +351,9 @@ async function main() {
   const local = localModels(DRY || flag('--no-local') ? 0 : Number(opt('--local-calls') ?? 8));
   local.neuronBudget = runCap;
   const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4, runCap);
-  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls;
+  // Place checks read a few pages a run (place-checks.ts); their own small budget.
+  const placeModels = new Models(undefined, DRY || flag('--no-place-checks') ? 0 : 8, runCap);
+  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls + placeModels.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -356,7 +366,7 @@ async function main() {
         .reduce((a, r) => a + Number(r.neurons || 0), 0);
       const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
       const left = Math.max(0, daily - spent);
-      for (const m of [models, sorter, english, local, routesModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
+      for (const m of [models, sorter, english, local, routesModels, placeModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
       current.db = db; current.runId = runId;
@@ -822,6 +832,14 @@ async function main() {
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
   if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 30));
+  // Questions about places answered from evidence: where an unlocated place is, and whether two
+  // places are one. A few each run, after every place write, so nothing written here is overwritten.
+  if (!flag('--no-place-checks')) {
+    try {
+      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8) });
+      if (answers.length) log(`place checks: ${answers.filter(a => a.answer).length} answered, ${answers.filter(a => !a.answer).length} waiting for more evidence`);
+    } catch (e) { log(`place checks failed: ${(e as Error).message}`); }
+  }
   // Evenings for the next few days. The model reads a short brief per day; with no model the same routes are titled by rule.
   if (!flag('--no-routes')) {
     try {

@@ -40,3 +40,6 @@ jobs:
         continue-on-error: true
       - run: node pipeline/run.ts --dry-run --source uuslaine --show 5
         continue-on-error: true
+      # Each venue source's accounts against what the venue's own site links; findings are warnings.
+      - run: node pipeline/source-check.ts --github
+        continue-on-error: true

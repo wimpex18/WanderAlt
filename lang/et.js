@@ -909,7 +909,8 @@ window.WA.dict.et = {
   "Yes, reject": "Jah, lükka tagasi",
   "Yes, publish": "Jah, avalda",
   "The next eight days also come as a feed for readers and newsletters:": "Järgmised kaheksa päeva on ka voona lugejatele ja uudiskirjadele:",
-  "Map of the walk": "Jalutuskäigu kaart"
+  "Map of the walk": "Jalutuskäigu kaart",
+  "A sentence instead of a name": "Lause nime asemel"
  },
  "patterns": [
   [
