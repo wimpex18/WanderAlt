@@ -28,7 +28,7 @@ import { localModels, refreshLocal } from './localize.ts';
 import { attachPosters } from './posters.ts';
 import { fetchOverture, matchPlace } from './overture.ts';
 import { Places, isDistrict, type Place } from './places.ts';
-import { Seen } from './dedupe.ts';
+import { Seen, earlierListing, type Listed } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl, lastBy } from './util.ts';
@@ -137,6 +137,26 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (isInstagram) return found.map(c => ({ ...c, image_url: null, venue_name: c.venue_name || p.venue_name,
     ...(poster ? { review_note: 'manual review: date and time read from Instagram poster' } : {}) }));
   return venue ? found.map(c => ({ ...c, venue_name: venue })) : found;
+}
+
+export interface LiveEvent { id: string; title: string; starts_at: string; has_time: boolean }
+
+/** The live events each source item read this run listed before, for items that are one occurrence:
+ *  a structured source's item (models read posts and pages that list many shows) that gave one
+ *  candidate. The event id hashes the start, so without this a moved start made a second row. */
+export async function itemListings(db: Pick<Db, 'select'>, found: { p: { rawId: number | null; source: Source } }[], live: LiveEvent[]): Promise<Map<number, Listed[]>> {
+  const per = new Map<number, number>();
+  for (const { p } of found) if (p.rawId != null && !needsModel(p.source)) per.set(p.rawId, (per.get(p.rawId) ?? 0) + 1);
+  const single = [...per].filter(([, n]) => n === 1).map(([id]) => id);
+  const byId = new Map(live.map(k => [k.id, { id: k.id, title: k.title, start: Date.parse(k.starts_at), has_time: k.has_time }]));
+  const out = new Map<number, Listed[]>();
+  for (const part of chunks(single, 150)) {
+    for (const r of await db.select<{ event_id: string; raw_item_id: number }>(`event_sources?raw_item_id=in.(${part.join(',')})&select=event_id,raw_item_id`)) {
+      const k = byId.get(r.event_id);
+      if (k) out.set(r.raw_item_id, [...(out.get(r.raw_item_id) ?? []), k]);
+    }
+  }
+  return out;
 }
 
 export function eventId(city: string, c: Candidate, placeId: string | null): string {
@@ -539,11 +559,13 @@ async function main() {
 
   // Upcoming events already stored, so a second source's copy of a show joins it.
   const since = new Date(Date.now() - 86_400_000).toISOString();
-  const seen = new Seen(db
-    ? (await db.all<{ id: string; title: string; place_id: string | null; venue_name: string | null; starts_at: string; url: string | null }>(
-        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at,url&order=id.asc`))
-        .map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at), url: k.url }))
-    : []);
+  const upcoming = db
+    ? await db.all<LiveEvent & { place_id: string | null; venue_name: string | null; url: string | null }>(
+        `events?city=eq.${CITY}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}&select=id,title,place_id,venue_name,starts_at,has_time,url&order=id.asc`)
+    : [];
+  const seen = new Seen(upcoming.map(k => ({ id: k.id, title: k.title, where: k.place_id ?? nameKey(k.venue_name ?? ''), start: Date.parse(k.starts_at), url: k.url })));
+  // A source item read again with a moved start keeps the row it listed before.
+  const listedBy = db ? await itemListings(db, found, upcoming) : new Map<number, Listed[]>();
 
   const events = new Map<string, Record<string, unknown>>();
   const provenance: Record<string, unknown>[] = [];
@@ -553,7 +575,8 @@ async function main() {
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
-    const id = seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
+    const earlier = p.rawId != null ? earlierListing(c.title, start, c.has_time, listedBy.get(p.rawId) ?? []) : null;
+    const id = earlier ?? seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
     seen.add({ id, title: c.title, where, start, url: c.url });
     const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
     const { status, note } = offTopic(c.title) ?? (c.review_note ? { status: 'review', note: c.review_note } : decide(e, trusted));

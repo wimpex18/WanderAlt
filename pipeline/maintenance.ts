@@ -1,8 +1,10 @@
 // Also usable on its own: npm run places:audit / npm run places:maintain.
-// All writes use atomic service-only RPCs; --dry-run is read-only.
+// All writes use atomic service-only RPCs, except a display-name tidy (one row's
+// name and aliases, its id untouched); --dry-run is read-only.
 import { writeFileSync } from 'node:fs';
 import { Db } from './db.ts';
-import type { Place } from './places.ts';
+import { venueName, type Place } from './places.ts';
+import { nameKey } from './util.ts';
 import { duplicatePlaces, pairKey } from './place-match.ts';
 import { checkPlaces } from './place-liveness.ts';
 import { duplicateEvents, type StoredEvent } from './dedupe.ts';
@@ -53,6 +55,26 @@ export async function retireForeignScriptPlaces(db: Db, places: Place[], dry = f
     }
   }
   return places.filter(p => !junk.includes(p));
+}
+
+/** Names stored before venueName (places.ts) cleaned the same way: "Gin Spot Bar (One of Tallinn's
+ *  most unique …)" reads "Gin Spot Bar". The id stays, so saves, links and lists are unchanged, and the
+ *  old spelling becomes an alias, so the source that wrote it still finds the place. Only this script
+ *  applies it, never the scheduled run: a picked place's name is read before it changes
+ *  (places:audit lists every rename). */
+export async function tidyPlaceNames(db: Pick<Db, 'patch'>, places: Place[], dry = false): Promise<{ id: string; from: string; to: string }[]> {
+  const out: { id: string; from: string; to: string }[] = [];
+  for (const p of places) {
+    const name = venueName(p.name);
+    if (p.merged_into || name === p.name) continue;
+    const aliases = [...new Set([...(p.aliases ?? []), nameKey(p.name), nameKey(name)])];
+    if (!dry) await db.patch(`places?id=eq.${encodeURIComponent(p.id)}`, { name, aliases });
+    console.log(`[places] name ${p.id}: "${p.name}" → "${name}"${dry ? ' (dry run)' : ''}`);
+    out.push({ id: p.id, from: p.name, to: name });
+    // A later bulk upsert in the same run writes these objects back; it must carry the new name.
+    if (!dry) Object.assign(p, { name, aliases });
+  }
+  return out;
 }
 
 export async function refreshLiveness(db: Db, places: Place[], dry = false, limit = 50) {
@@ -126,12 +148,13 @@ if (import.meta.main) {
       const id = await db.req('POST', 'rpc/merge_places', { p_duplicate: value('--merge'), p_canonical: value('--into'), p_reason: value('--reason') });
       console.log(`[places] manual merge recorded; undo id ${id}`);
     }
+    const names = await tidyPlaceNames(db, places, dry);
     const plan = await reconcilePlaces(db, value('--merge') || value('--verify') ? await loadPlaces(db, city) : places, dry);
     console.log(`[places] ${places.filter(p => !p.merged_into).length} canonical places; ${plan.filter(p => p.match.action === 'merge').length} merges, ${plan.filter(p => p.match.action === 'review').length} reviews${dry ? ' (dry run)' : ''}`);
     const checks = args.includes('--check-osm') ? await refreshLiveness(db, dry ? places : await loadPlaces(db, city), dry) : [];
     const events = await reconcileEvents(db, city, dry);
     if (!dry && args.includes('--verify-websites')) await verifyPlaces(db, city, Number(value('--max-website-checks') ?? 10));
     const out = value('--out');
-    if (out) writeFileSync(out, JSON.stringify({ plan, checks, events }, null, 2));
+    if (out) writeFileSync(out, JSON.stringify({ names, plan, checks, events }, null, 2));
   } catch (e) { console.error('[places]', (e as Error).message); process.exitCode = 1; }
 }

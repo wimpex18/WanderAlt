@@ -65,6 +65,21 @@ export class Seen {
   }
 }
 
+/** A live event as one source item listed it before (event_sources.raw_item_id). */
+export interface Listed { id: string; title: string; start: number; has_time: boolean }
+
+/** The row a source item listed before, when the item is one occurrence (Fienta, JSON-LD, WordPress)
+ *  and still names the same show: a moved start ("10:00" → "12:30") updates that row instead of
+ *  adding a second, and the event id stays the one saves and lists hold. When an earlier move left
+ *  several rows, the one with the same date-only or timed shape wins, a timed one before a
+ *  date-only one, then the nearest start. */
+export function earlierListing(title: string, start: number, hasTime: boolean, listed: Listed[]): string | null {
+  const same = listed.filter(k => overlap(k.title, title) >= 0.6);
+  same.sort((a, b) => Number(b.has_time === hasTime) - Number(a.has_time === hasTime) || Number(b.has_time) - Number(a.has_time)
+    || Math.abs(a.start - start) - Math.abs(b.start - start) || a.id.localeCompare(b.id));
+  return same[0]?.id ?? null;
+}
+
 export interface StoredEvent {
   id: string; title: string; place_id: string | null; starts_at: string; url?: string | null;
   first_seen_at: string; status: string; has_time: boolean;

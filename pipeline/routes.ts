@@ -14,9 +14,11 @@
 
 import { writeFileSync } from 'node:fs';
 import { Db, chunks, inList } from './db.ts';
-import { Models } from './llm.ts';
+import { Models, PLACE_KINDS } from './llm.ts';
 import { hoursAt } from './hours.ts';
 import { TZ, tallinnDay, tallinnToIso } from './time.ts';
+import { EVENT_KINDS } from './types.ts';
+import { nameKey } from './util.ts';
 
 export interface RouteEvent { id: string; title: string; title_en: string | null; kind: string | null; starts_at: string; ends_at: string | null; has_time: boolean | null; place_id: string | null; flag: string | null }
 export interface RoutePlace { id: string; name: string; kind: string | null; lat: number | null; lng: number | null; opening_hours: string | null; pick_note: string | null; neighborhood: string | null }
@@ -28,7 +30,22 @@ const ANCHORS = new Set(['gig', 'club', 'film', 'theatre', 'talk', 'workshop', '
 const BEFORE = new Set(['record store', 'bookshop', 'gallery', 'thrift', 'arts centre', 'cinema']);
 const AFTER = new Set(['bar', 'club', 'taproom']);
 // Keep these in step with route.js and geo.js: one walking pace, the same walks and rules.
-const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80;
+const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80, STAY = 40;
+// The hours a kind usually keeps (route.js USUAL). A place with none filed is a stop only inside them,
+// as the page checks every stored walk the same way and drops one that breaks this.
+export const USUAL: Record<string, [number, number]> = {
+  'record store': [11 * 60, 19 * 60], bookshop: [10 * 60, 19 * 60], thrift: [10 * 60, 19 * 60],
+  gallery: [11 * 60, 18 * 60], museum: [10 * 60, 18 * 60], 'arts centre': [11 * 60, 19 * 60],
+  bar: [17 * 60, 60], taproom: [15 * 60, 23 * 60], club: [23 * 60, 4 * 60],
+};
+const usual = (kind: string | null, minute: number): boolean => {
+  const w = USUAL[kind ?? ''];
+  if (!w) return false;
+  const m = ((minute % 1440) + 1440) % 1440;
+  return w[0] < w[1] ? m >= w[0] && m < w[1] : m >= w[0] || m < w[1];
+};
+// What a later walk the same day loses for ending where, or at the kind of place where, a better one ends.
+const REPEAT_END = 1;
 
 const clockFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const minuteOf = (iso: string): number => {
@@ -54,7 +71,15 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
   const at = (minute: number) => new Date(dayStart + minute * 60_000);
   const spots = picked.filter(p => p.lat != null && p.lng != null);
   const pos = (p: RoutePlace) => ({ lat: p.lat as number, lng: p.lng as number });
-  const out: RouteCandidate[] = [];
+  // Open by its filed hours, or unfiled and inside its kind's usual ones, when you arrive and five
+  // minutes before you leave (route.js fitsStay).
+  const fits = (p: RoutePlace, minute: number) => {
+    const h = hoursAt(p.opening_hours, at(minute));
+    return h === 'open' || (h === 'unknown' && usual(p.kind, minute));
+  };
+  const stays = (p: RoutePlace, minute: number, leave: number) => fits(p, minute) && fits(p, Math.max(leave, minute + 10) - 5);
+  type Stop = { p: RoutePlace; w: number; minute: number; s: number };
+  const drafts: { e: RouteEvent; host: RoutePlace; start: number; before: Stop | null; afters: Stop[]; base: number }[] = [];
 
   for (const e of events) {
     if (!e.has_time || ['cancelled', 'postponed', 'sold_out'].includes(e.flag ?? '') || !ANCHORS.has(e.kind ?? '') || !e.place_id) continue;
@@ -67,8 +92,8 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
     const len = e.ends_at ? Math.round((Date.parse(e.ends_at) - Date.parse(e.starts_at)) / 60_000) : 120;
     const end = start + (Number.isFinite(len) && len > 0 ? len : 120);
 
-    let before: { p: RoutePlace; w: number; minute: number; s: number } | null = null;
-    let after: { p: RoutePlace; w: number; minute: number; s: number } | null = null;
+    let before: Stop | null = null;
+    const afters: Stop[] = [];
     for (const p of spots) {
       if (p.id === host.id) continue;
       const w = walkMin(metres(pos(p), here));
@@ -76,28 +101,45 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
       if (BEFORE.has(p.kind ?? '') && w <= MAX_BEFORE) {
         const minute = Math.max(round5(floor - 10), round5(start - w - 60));
         if (minute + 30 + w > start) continue;                              // half an hour there, at least
-        const h = hoursAt(p.opening_hours, at(minute));
-        if (h === 'shut' || (h === 'open' && hoursAt(p.opening_hours, at(Math.min(start - w - 10, minute + 30))) === 'shut')) continue;
-        const s = (h === 'open' ? 2 : 1) - w / 30 + (p.pick_note ? .2 : 0);
+        if (!stays(p, minute, start - w)) continue;
+        const s = (hoursAt(p.opening_hours, at(minute)) === 'open' ? 2 : 1) - w / 30 + (p.pick_note ? .2 : 0);
         if (!before || s > before.s) before = { p, w, minute, s };
       }
       if (AFTER.has(p.kind ?? '') && w <= MAX_AFTER) {
         const minute = round5(end + 15 + w);
         if (minute > 23 * 60 + 30 || minute < (p.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   // a club after nine, a bar after four, nothing past half eleven
-        const h = hoursAt(p.opening_hours, at(minute));
-        if (h === 'shut') continue;
-        const s = (h === 'open' ? 1.5 : .8) - w / 30;
-        if (!after || s > after.s) after = { p, w, minute, s };
+        if (!stays(p, minute, minute + STAY)) continue;
+        afters.push({ p, w, minute, s: (hoursAt(p.opening_hours, at(minute)) === 'open' ? 1.5 : .8) - w / 30 });
       }
     }
-    if (!before && !after) continue;
+    if (!before && !afters.length) continue;
+    afters.sort((a, b) => b.s - a.s || a.p.id.localeCompare(b.p.id));
+    let base = 1;                                                          // the host is a picked place or a listed one; both are fine
+    base -= Math.max(0, start - floor - 360) / 120;                        // prefer the next few hours
+    if (before) base += 3 + before.s;
+    drafts.push({ e, host, start, before, afters, base });
+  }
+
+  // Filed hours score higher than unfiled ones, and taprooms are the after-stops that always have
+  // them, so six of seven walks once ended at one. The best walk keeps its best after-stop; each
+  // walk below it weighs the places, and kinds of place, the walks above already end at.
+  const rank = (d: typeof drafts[number]) => d.base + (d.afters[0] ? 2 + d.afters[0].s : 0);
+  drafts.sort((a, b) => rank(b) - rank(a) || a.e.id.localeCompare(b.e.id));
+  const endKinds = new Map<string, number>(), endPlaces = new Map<string, number>();
+  const out: RouteCandidate[] = [];
+  for (const { e, host, start, before, afters, base } of drafts) {
+    const after = afters
+      .map(o => ({ o, v: o.s - REPEAT_END * ((endKinds.get(o.p.kind ?? '') ?? 0) + (endPlaces.get(o.p.id) ?? 0)) }))
+      .sort((a, b) => b.v - a.v || a.o.p.id.localeCompare(b.o.p.id))[0]?.o ?? null;
     const stops: RouteStop[] = [];
-    let score = 0, walk = 0;
-    if (before) { stops.push({ type: 'place', id: before.p.id, minute: before.minute }); score += 3 + before.s; walk += before.w; }
+    let score = base, walk = 0;
+    if (before) { stops.push({ type: 'place', id: before.p.id, minute: before.minute }); walk += before.w; }
     stops.push({ type: 'event', id: e.id, minute: start });
-    if (after) { stops.push({ type: 'place', id: after.p.id, minute: after.minute }); score += 2 + after.s; walk += after.w; }
-    score += 1;                                                            // the host is a picked place or a listed one; both are fine
-    score -= Math.max(0, start - floor - 360) / 120;                       // prefer the next few hours
+    if (after) {
+      stops.push({ type: 'place', id: after.p.id, minute: after.minute }); score += 2 + after.s; walk += after.w;
+      endKinds.set(after.p.kind ?? '', (endKinds.get(after.p.kind ?? '') ?? 0) + 1);
+      endPlaces.set(after.p.id, (endPlaces.get(after.p.id) ?? 0) + 1);
+    }
     out.push({ id: `${day}:${e.id}`, day, area: host.neighborhood ?? '', score: Math.round(score * 100) / 100, stops, walkMin: walk });
   }
   return out.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
@@ -119,19 +161,34 @@ export function shortlist(cands: RouteCandidate[], n = 6): RouteCandidate[] {
 
 // ── Words ───────────────────────────────────────────────────
 
-const BEFORE_WORD: Record<string, string> = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film' };
-const ANCHOR_WORD: Record<string, string> = { gig: 'a gig', club: 'a club night', film: 'a film', theatre: 'a stage', talk: 'a talk', workshop: 'a workshop', exhibition: 'an opening', festival: 'a festival' };
+// The words of route.js titleFor, so a walk reads the same whether this run or the page composed it.
+const BEFORE_WORD: Record<string, string> = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'A thrift shop', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
+const FIRST_WORD: Record<string, string> = { taproom: 'Craft beer', bar: 'A bar', club: 'A club' };
+const ANCHOR_WORD: Record<string, string> = { gig: 'A gig', club: 'A club night', film: 'A film', theatre: 'A stage', talk: 'A talk', workshop: 'A workshop', exhibition: 'An opening', festival: 'A festival' };
+const ANOTHER: Record<string, string> = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery', 'A thrift shop': 'Another thrift shop' };
 
-/** The title when no model has written one. */
+/** The title when no model has written one, or when what it wrote is only a list. */
 export function ruleTitle(c: RouteCandidate, kinds: Map<string, string | null>): string {
-  const words = c.stops.map((s, i) => {
+  const used = new Set<string>();
+  return c.stops.map((s, i) => {
     const k = kinds.get(`${s.type}:${s.id}`) ?? '';
-    if (s.type === 'event') return ANCHOR_WORD[k] ?? 'a show';
-    if (i === 0) return BEFORE_WORD[k] ?? 'A place';
-    return s.minute >= 21 * 60 ? 'a late drink' : k === 'club' ? 'a club' : 'a drink';
-  });
-  const t = words.join(', ');
-  return t.charAt(0).toUpperCase() + t.slice(1);
+    let w = s.type === 'event' ? ANCHOR_WORD[k] ?? 'A show'
+      : BEFORE_WORD[k] ?? (i === 0 ? FIRST_WORD[k] ?? 'A place' : s.minute >= 21 * 60 ? 'A late drink' : k === 'club' ? 'A club' : 'A drink');
+    if (used.has(w) && ANOTHER[w]) w = ANOTHER[w];
+    used.add(w);
+    return i === 0 ? w : w.charAt(0).toLowerCase() + w.slice(1);
+  }).join(', ');
+}
+
+// Kind words and stop names with nothing between them ("Thrift gig taproom", "Terminal, workshop,
+// taproom", "Film bar") list the stops; they are not a title. "Records, a stage, a late drink" is one.
+const KIND_WORDS = new Set([...PLACE_KINDS, ...EVENT_KINDS, 'taproom', 'museum', 'records', 'books', 'vinyl', 'beer', 'craft',
+  'drink', 'drinks', 'stage', 'show', 'comedy', 'opening', 'screening', 'concert', 'dj'].flatMap(k => k.split(' ')));
+const LINKS = new Set(['and', 'then', 'plus']);
+export function listTitle(title: string, stopNames: string[]): boolean {
+  const own = new Set(stopNames.flatMap(n => nameKey(n).split(' ')));
+  const words = nameKey(title).split(' ').filter(Boolean);
+  return words.length > 0 && words.every(w => LINKS.has(w) || own.has(w) || KIND_WORDS.has(w) || KIND_WORDS.has(w.replace(/s$/, '')));
 }
 
 /** A model's words, or null when they break the house voice. */
@@ -152,7 +209,7 @@ const SCHEMA = {
 };
 const SYSTEM = `You choose and name evening routes for visitors to Tallinn who like independent and alternative culture.
 Each candidate is a short walk through two to four stops: a place, then one dated listing, then maybe a bar. Choose the best up to three, best first, preferring routes that differ in area and in kind of evening.
-For each, give a plain title of two to six words (for example "Records, a stage, a late drink") and one plain sentence of at most 140 characters on why the stops go together.
+For each, give a plain title of two to six words that reads as a phrase (for example "Records, a stage, a late drink"), not a list of kinds or names such as "Thrift gig taproom", and one plain sentence of at most 140 characters on why the stops go together.
 Use only the facts given. Do not invent details, hours, prices or opinions, and add no adjectives that are not in the facts. No exclamation marks, no marketing words, never the word "discover". Plain English, present tense.
 Answer with JSON only.`;
 
@@ -167,7 +224,8 @@ export function modelBrief(day: string, cands: RouteCandidate[], names: Names): 
 }
 
 /** The routes to keep: the model's choices that are real, then the best of the rest. */
-export function finalise(day: string, city: string, cands: RouteCandidate[], answer: unknown, ruleTitleOf: (c: RouteCandidate) => string, engine: string, want = 3): RouteRow[] {
+export function finalise(day: string, city: string, cands: RouteCandidate[], answer: unknown, ruleTitleOf: (c: RouteCandidate) => string, engine: string, want = 3,
+  stopNamesOf: (c: RouteCandidate) => string[] = () => []): RouteRow[] {
   const byId = new Map(cands.map(c => [c.id, c]));
   const rows: RouteRow[] = [];
   const seen = new Set<string>();
@@ -180,7 +238,8 @@ export function finalise(day: string, city: string, cands: RouteCandidate[], ans
     // "Late" has to be true: nothing is late before nine.
     const named = cleanText(x.title, 60);
     const lateOk = !named || !/\blate\b/i.test(named) || c.stops[c.stops.length - 1].minute >= 21 * 60;
-    rows.push({ id: `${city}:${c.id}`, city, day, area: c.area, title: named && lateOk ? named : ruleTitleOf(c), blurb: cleanText(x.blurb, 160), stops: c.stops, score: c.score, engine });
+    const title = named && lateOk && !listTitle(named, stopNamesOf(c)) ? named : ruleTitleOf(c);
+    rows.push({ id: `${city}:${c.id}`, city, day, area: c.area, title, blurb: cleanText(x.blurb, 160), stops: c.stops, score: c.score, engine });
   }
   for (const c of cands) {
     if (rows.length >= want) break;
@@ -228,7 +287,7 @@ export async function composeRoutes(db: Db, city: string, models: Models | null,
         answer = r.data; engine = r.engine;
       } catch (e) { console.warn(`[routes] ${day}: no model answer (${(e as Error).message}); titled by rule`); }
     }
-    all.push(...finalise(day, city, real, answer, c => ruleTitle(c, kinds), engine));
+    all.push(...finalise(day, city, real, answer, c => ruleTitle(c, kinds), engine, 3, c => c.stops.map(names.label)));
   }
 
   if (!opts.dry) {
