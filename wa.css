@@ -1466,7 +1466,9 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-feed__art { display:grid; place-items:center; width:100%; aspect-ratio:16/9; border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
 .wa-feed__art img { width:100%; height:100%; object-fit:cover; }
 .wa-feed__art.is-logo img { object-fit:contain; padding:20px; box-sizing:border-box; }
-.wa-feed__art.is-missing { aspect-ratio:auto; height:88px; background:color-mix(in oklab, var(--accent) 4%, var(--paper-2)); }
+/* No artwork: the kind's Label sits beside the text instead of an empty band, so a phone shows more than one listing. */
+.wa-feed__art.is-missing { float:right; aspect-ratio:auto; width:56px; height:56px; margin:0 0 8px 12px; border-radius:50%; background:none; }
+.wa-feed__art.is-missing .wa-picto { width:56px; height:56px; }
 .wa-feed__art .wa-picto { width:68px; height:68px; }
 .wa-feed__body { display:grid; gap:6px; padding-top:14px; padding-right:44px; }
 .wa-feed__title { font-size:1.375rem; font-weight:650; line-height:1.25; letter-spacing:-.025em; overflow-wrap:anywhere; text-wrap:pretty; }
