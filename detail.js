@@ -110,6 +110,24 @@
 
   const host = (u) => String(u || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
 
+  /* Beside the source: when a source last listed this event (WA.checkedAt). Until that answer
+     arrives, or when it cannot be had, nothing is said. An old time is shown as it is; no claim
+     that the listing is out of date. */
+  const checkedHtml = (e) => {
+    const label = e && e.checkedAt ? R().checkedLabel(e.checkedAt) : '';
+    return label ? `<time datetime="${esc(e.checkedAt)}">${esc(label)}</time>` : '';
+  };
+  const fillChecked = (e) => {
+    if (!window.WA.checkedAt || e.checkedAt !== undefined) return;
+    window.WA.checkedAt(e).then(() => {
+      const slot = document.getElementById('det-checked');
+      const hit = resolve();
+      if (!slot || !hit || hit.e !== e) return;
+      slot.innerHTML = checkedHtml(e);
+      slot.hidden = !slot.innerHTML;
+    });
+  };
+
   const key = (s) => String(s || '').toLowerCase().trim();
   const picksAt = (place) => (window.WA._catalogAll || [])
     .filter(p => !p.isClosed && !W().hasEnded(p) && ((place.id && p.venueId === place.id) || (place.name && key(p.venue) === key(place.name))))
@@ -346,6 +364,7 @@
         <footer class="det-footer">
           <button class="wa-linkbtn" type="button" data-share>Share</button>
           ${link ? `<a class="det-footer__source" href="${esc(link)}" target="_blank" rel="noopener noreferrer"><span>Source:</span> <span translate="no">${esc(via || host(link))}</span> ${I('out', 'wa-ic--sm')}</a>` : ''}
+          <span class="det-footer__checked" id="det-checked"${checkedHtml(e) ? '' : ' hidden'}>${checkedHtml(e)}</span>
           ${window.WA.Report ? `<details class="det-flag" id="flag-box">
             <summary>Flag a problem</summary>
             <form id="flag-form" data-id="${esc(e.id)}">
@@ -503,6 +522,7 @@
     main().innerHTML = isEvent ? eventPage(e) : placePage(e);
     window.scrollTo(0, y);
     mountMini();
+    if (isEvent) fillChecked(e);
   };
 
   /* ── The add-to-list sheet ─────────────────────────────────── */

@@ -836,6 +836,7 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 /* One compact attribution row, with a collapsed report form on events. */
 .det-footer { display: flex; flex-wrap: wrap; align-items: start; gap: 0 var(--s-4); color: var(--ink-3); font-size: var(--fs-meta); }
 .det-footer__source { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; text-underline-offset: 3px; }
+.det-footer__checked { display: inline-flex; align-items: center; min-height: 44px; font-variant-numeric: tabular-nums; }
 .det-footer .det-flag[open] { flex-basis: 100%; }
 
 @media (min-width: 600px) and (max-width: 1023px) {

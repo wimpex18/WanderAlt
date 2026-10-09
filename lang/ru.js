@@ -599,6 +599,7 @@ window.WA.dict.ru = {
   "Notifications are blocked for this site in your browser settings.": "Уведомления для этого сайта заблокированы в настройках браузера.",
   "On for this device": "Включено на этом устройстве",
   "Just now": "Только что",
+  "Checked just now": "Проверено только что",
   "Inbox": "Входящие",
   "Kept for 30 days": "Хранится 30 дней",
   "Nothing yet.": "Пока ничего.",
@@ -1153,6 +1154,28 @@ window.WA.dict.ru = {
   [
    "{n} days ago",
    "{n} дн. назад"
+  ],
+  [
+   "Checked {n} min ago",
+   {
+    "one": "Проверено {n} минуту назад",
+    "few": "Проверено {n} минуты назад",
+    "many": "Проверено {n} минут назад",
+    "other": "Проверено {n} минуты назад"
+   }
+  ],
+  [
+   "Checked {n} h ago",
+   {
+    "one": "Проверено {n} час назад",
+    "few": "Проверено {n} часа назад",
+    "many": "Проверено {n} часов назад",
+    "other": "Проверено {n} часа назад"
+   }
+  ],
+  [
+   "Checked {d}",
+   "Проверено {d}"
   ],
   [
    "{n} more listed here",

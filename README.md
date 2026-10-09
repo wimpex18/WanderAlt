@@ -30,6 +30,7 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 ### Rules the interface keeps
 
 - **Nights**: a night runs until 05:00. A stated start before 05:00 belongs to the evening before, so Today, Tomorrow and Weekend count nights on Now, Map and search; picked dates do too. Routes and day labels keep calendar days. A club night without a stated end is taken to run six hours, other timed listings three.
+- **Freshness**: an event page says when a source last listed it ("Checked 2 h ago": the newest `event_sources.last_seen_at`, read through the edge cache); an old time is shown as it is, never called outdated.
 - **Unknown facts stay explicit**: Free requires known free entry, In English a stated performance language, Open now known hours. Unknown prices can pass a positive ticket cap with a note. Date-only entries say Time not listed. Closed or cancelled records keep their identity without claiming availability.
 - **Images and notes**: photos require exact identity; picked notes require source-backed facts. Pictures are requested near their drawn size from hosts that resize (Fienta, Wikimedia Commons, WordPress.com), with the original as the fallback; a wordmark more than three times wider than tall shows the kind's Label in small tiles. A walk's stop note is in the reader's language, never a source blurb in another one.
 - **Walks**: distinct picked stops; each place must still be open (or, unfiled, inside its kind's usual hours) five minutes before you would leave it. Sold-out events cannot anchor a walk. Stated end times are honoured; without an end, later stops use a two-hour planning allowance and are labelled flexible. Shared walks reject moved starts and overlapping later stops. Walking times follow the streets: 1.28 times the straight line plus 40 m, fitted to OpenStreetMap footway routes between Tallinn venues, at 80 m/min (about 4.8 km/h, as map apps assume); a plain "how far" stays straight-line. Ticket totals cover events only; directions require coordinates for every stop. After this suggests places still open 25 minutes after arrival. Stops say how long a place stays open; missing hours read "hours not listed". Walks composed for one day avoid ending at the same place or kind of place.
@@ -76,7 +77,7 @@ npm run build:inline-icons
 
 ### Hosting
 - The static site at [wanderalt.app](https://wanderalt.app) deploys on pushes to `main` through Cloudflare Pages: output `/`, no build command. Pull requests get previews.
-- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
+- Apex/www redirects and security headers also live in Pages middleware, because Functions bypass static redirect rules. The middleware also writes event pages' schema.org Event JSON-LD from the listing, with only facts we hold: Tallinn times with their offset or a date alone, a status only when cancelled or postponed, offers only for a stated price or free entry, currency and language only when stated. Inspect Functions and CSP on a preview; `npm start` cannot validate them.
 - The service worker caches assets aggressively; bump its shell version for asset changes.
 
 ### Supabase

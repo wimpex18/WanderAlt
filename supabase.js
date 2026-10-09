@@ -36,7 +36,7 @@
   /* Public reads go through our own edge cache (functions/api/rest/[table].js) so Supabase is asked
      once per few minutes per query, not once per visitor. A local server has no Functions, and a
      failing Function must not take the page down: both read Supabase directly. */
-  const EDGE = new Set(['picks', 'venues', 'venue_details', 'routes', 'catalogue_redirects']);
+  const EDGE = new Set(['picks', 'venues', 'venue_details', 'routes', 'catalogue_redirects', 'event_sources']);
   const local = () => ['localhost', '127.0.0.1', ''].includes(location.hostname);
   const read = (table, qs, signal) => {
     const direct = () => fetch(`${BASE}/rest/v1/${table}?${qs}`, { headers, ...(signal ? { signal } : {}) });
@@ -326,7 +326,7 @@
                 /* Lists read a 300-character teaser; originalDescription
                    fetches the bounded original only when opened. */
                 `teaser,original_title,original_language,title_language,event_languages,tags,flag,starts_at,ends_at,ticket_url,is_free,price_min,price_max,currency,links,entities,` +
-                /* Provenance freshness for the detail page's "read N ago". */
+                /* When the item last changed at its source; WA.checkedAt adds the later re-reads. */
                 `last_seen_at,created_at${PICK_LANG}` +
         `&order=starts_at.asc,id.asc`,
         abort.signal
@@ -442,6 +442,32 @@
       pick.originalLoadFailed = true;
       return false;                 /* reopening can retry */
     }
+  };
+
+  /* When a source last listed this event: the newest event_sources.last_seen_at, which every
+     pipeline run that still finds the item moves forward, changed or not. picks.last_seen_at moves
+     only when the item's content changed, so it can be days older; the later of the two stands.
+     Asked once per listing; on failure nothing is kept, so the next render asks again. */
+  const checking = new Map();
+  const askChecked = async (pick) => {
+    try {
+      const rows = await get('event_sources', `event_id=eq.${encodeURIComponent(pick.id)}&select=last_seen_at&order=last_seen_at.desc.nullslast&limit=1`, undefined, true);
+      const times = [rows && rows[0] && rows[0].last_seen_at, pick.lastSeenAt].map(t => Date.parse(t || '')).filter(t => isFinite(t));
+      pick.checkedAt = times.length ? new Date(Math.max(...times)).toISOString() : null;
+      return pick.checkedAt;
+    } catch (_) {
+      return null;
+    }
+  };
+  window.WA.checkedAt = (pick) => {
+    if (!pick || !pick.id) return Promise.resolve(null);
+    if (pick.checkedAt !== undefined) return Promise.resolve(pick.checkedAt);
+    if (!checking.has(pick)) {
+      const asked = askChecked(pick);
+      checking.set(pick, asked);
+      asked.then(() => checking.delete(pick));
+    }
+    return checking.get(pick);
   };
 
   let loading = null;

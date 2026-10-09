@@ -599,6 +599,7 @@ window.WA.dict.uk = {
   "Notifications are blocked for this site in your browser settings.": "Сповіщення для цього сайту заблоковано в налаштуваннях браузера.",
   "On for this device": "Увімкнено на цьому пристрої",
   "Just now": "Щойно",
+  "Checked just now": "Перевірено щойно",
   "Inbox": "Вхідні",
   "Kept for 30 days": "Зберігається 30 днів",
   "Nothing yet.": "Поки нічого.",
@@ -1153,6 +1154,28 @@ window.WA.dict.uk = {
   [
    "{n} days ago",
    "{n} дн. тому"
+  ],
+  [
+   "Checked {n} min ago",
+   {
+    "one": "Перевірено {n} хвилину тому",
+    "few": "Перевірено {n} хвилини тому",
+    "many": "Перевірено {n} хвилин тому",
+    "other": "Перевірено {n} хвилини тому"
+   }
+  ],
+  [
+   "Checked {n} h ago",
+   {
+    "one": "Перевірено {n} годину тому",
+    "few": "Перевірено {n} години тому",
+    "many": "Перевірено {n} годин тому",
+    "other": "Перевірено {n} години тому"
+   }
+  ],
+  [
+   "Checked {d}",
+   "Перевірено {d}"
   ],
   [
    "{n} more listed here",

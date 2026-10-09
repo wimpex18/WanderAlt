@@ -599,6 +599,7 @@ window.WA.dict.et = {
   "Notifications are blocked for this site in your browser settings.": "Teavitused on selle saidi jaoks brauseri seadetes blokeeritud.",
   "On for this device": "Sellel seadmel sees",
   "Just now": "Just praegu",
+  "Checked just now": "Kontrollitud äsja",
   "Inbox": "Postkast",
   "Kept for 30 days": "Säilitatakse 30 päeva",
   "Nothing yet.": "Veel pole midagi.",
@@ -1138,6 +1139,18 @@ window.WA.dict.et = {
   [
    "{n} days ago",
    "{n} päeva tagasi"
+  ],
+  [
+   "Checked {n} min ago",
+   "Kontrollitud {n} min tagasi"
+  ],
+  [
+   "Checked {n} h ago",
+   "Kontrollitud {n} h tagasi"
+  ],
+  [
+   "Checked {d}",
+   "Kontrollitud {d}"
   ],
   [
    "{n} more listed here",

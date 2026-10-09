@@ -202,6 +202,18 @@
     } catch (_) { return ''; }
   };
 
+  /* When a listing was last found at its source, as the event page says it: just now (under five
+     minutes), whole minutes, whole hours, then the date. A time ahead of this device's clock by more
+     than five minutes gets the date too, never a span. Nothing when the time is unknown. */
+  const checkedLabel = (iso, now = Date.now()) => {
+    const t = Date.parse(iso || '');
+    if (!isFinite(t)) return '';
+    const min = Math.floor((now - t) / 60000);
+    if (min >= 24 * 60 || min < -5) return `Checked ${dateShort(W().dayKey(new Date(t)))}`;
+    if (min < 5) return 'Checked just now';
+    return min < 60 ? `Checked ${min} min ago` : `Checked ${Math.floor(min / 60)} h ago`;
+  };
+
   /* The catalogue as lists read it: nothing that has ended. */
   const live = () => (window.WA.catalog || []).filter(e => !e.isClosed && !W().hasEnded(e));
   const places = () => (window.WA.venues || []).filter(v => !v.isClosed && v.isVerified !== false);
@@ -666,7 +678,7 @@
 
   window.WA.R = {
     esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
-    DOW, dow, dom, dateShort, dayName, clockOf, endClock, isLive, joinable, live, places,
+    DOW, dow, dom, dateShort, dayName, clockOf, endClock, checkedLabel, isLive, joinable, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
     openState, openBadge, row, feedItem, titleLang, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
     skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
