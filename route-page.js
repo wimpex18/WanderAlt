@@ -4,8 +4,9 @@
    route.html?s=place:<id>:<minute>,event:<id>:<minute>,...
    With no `s`, the best route for the next few hours is composed (route.js). Each stop
    links to its own page and says where its facts come from; the walks
-   between stops are straight-line distance at the site's one walking
-   pace. Hours are shown only when filed.
+   between stops are the street estimate at the site's one walking pace, or,
+   for a stored evening (`t`), the minutes its legs were routed along the
+   streets. Hours are shown only when filed.
    ============================================================ */
 (() => {
   'use strict';
@@ -98,10 +99,11 @@
     const s = q.get('s');
     const route = s ? window.WA.Route.fromURL(s, q.get('d')) : window.WA.Route.best();
     if (!route) { none(!!s); return; }
-    /* A stored evening keeps its own title and note, once the table has answered. */
+    /* A stored evening keeps its own title, note and walks routed along the streets, once the table has answered. */
     const t = q.get('t');
     const row = t && window.WA.Route.upcoming().find(r => r.id === t);
-    draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine }) : route);
+    draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route)
+      ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine, stops: row.stops, walkMin: row.walkMin, street: row.street }) : route);
   };
 
   /* The share text goes to the OS sheet, outside the page the translator reads. A copy

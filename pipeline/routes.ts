@@ -6,6 +6,10 @@
 // routes code built; anything else it says is dropped. With no model lane
 // the same routes are titled by rule. The site reads the `routes` table and
 // checks every stop again in the page, so a stale route is never shown.
+// Walking times start as the estimate (walking.ts); the legs of the walks
+// worth keeping are then routed along the streets and the day composed again
+// with those minutes, so every rule holds on the routed times. A routed leg
+// keeps its minutes and street metres on the stop it leads to.
 //
 //   node pipeline/routes.ts             compose and write
 //   node pipeline/routes.ts --dry-run   compose and print
@@ -19,19 +23,21 @@ import { hoursAt } from './hours.ts';
 import { TZ, tallinnDay, tallinnToIso } from './time.ts';
 import { EVENT_KINDS } from './types.ts';
 import { nameKey } from './util.ts';
+import { FootRouter, estimateMinutes, lineMetres, streetMinutes } from './walking.ts';
 
 export interface RouteEvent { id: string; title: string; title_en: string | null; kind: string | null; starts_at: string; ends_at: string | null; has_time: boolean | null; place_id: string | null; flag: string | null }
 export interface RoutePlace { id: string; name: string; kind: string | null; lat: number | null; lng: number | null; opening_hours: string | null; pick_note: string | null; neighborhood: string | null }
-export interface RouteStop { type: 'place' | 'event'; id: string; minute: number }
+/** `walk` (minutes from the stop before), `metres` (along the streets) and `routed` are set only on a leg
+ *  the foot router measured; the page prefers them to its own estimate when the stored walk still matches. */
+export interface RouteStop { type: 'place' | 'event'; id: string; minute: number; walk?: number; metres?: number; routed?: true }
 export interface RouteCandidate { id: string; day: string; area: string; score: number; stops: RouteStop[]; walkMin: number }
 export interface RouteRow { id: string; city: string; day: string; area: string; title: string; blurb: string | null; stops: RouteStop[]; score: number; engine: string }
 
 const ANCHORS = new Set(['gig', 'club', 'film', 'theatre', 'talk', 'workshop', 'festival', 'exhibition']);
 const BEFORE = new Set(['record store', 'bookshop', 'gallery', 'thrift', 'arts centre', 'cinema']);
 const AFTER = new Set(['bar', 'club', 'taproom']);
-// Keep these in step with route.js and geo.js: one walking pace, the same walks and rules.
-// STREET, STREET_ADD: the walk along streets for a straight line (geo.js measured it on OSM footways).
-const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80, STREET = 1.28, STREET_ADD = 40, STAY = 40;
+// Keep these in step with route.js: the same walks and rules (the pace and estimate are walking.ts's).
+const MAX_BEFORE = 15, MAX_AFTER = 12, STAY = 40;
 // The hours a kind usually keeps (route.js USUAL). A place with none filed is a stop only inside them,
 // as the page checks every stored walk the same way and drops one that breaks this.
 export const USUAL: Record<string, [number, number]> = {
@@ -55,16 +61,12 @@ const minuteOf = (iso: string): number => {
 };
 export const clockText = (m: number): string => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
-const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }): number => {
-  const r = 6371000, k = Math.PI / 180, dLat = (b.lat - a.lat) * k, dLng = (b.lng - a.lng) * k;
-  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * k) * Math.cos(b.lat * k) * Math.sin(dLng / 2) ** 2;
-  return 2 * r * Math.asin(Math.sqrt(x));
-};
-const walkMin = (m: number): number => Math.max(1, Math.round((m * STREET + STREET_ADD) / WALK_M_PER_MIN));
 const round5 = (m: number): number => Math.round(m / 5) * 5;
 
-/** Every working evening for one day, the best one around each listing. */
-export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id: string) => RoutePlace | undefined, picked: RoutePlace[], nowMs: number): RouteCandidate[] {
+/** Every working evening for one day, the best one around each listing. `streets` gives the metres along
+ *  the streets between two places where a foot router measured them; any other leg is the estimate. */
+export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id: string) => RoutePlace | undefined, picked: RoutePlace[], nowMs: number,
+  streets?: (from: RoutePlace, to: RoutePlace) => number | null): RouteCandidate[] {
   const dayStart = Date.parse(tallinnToIso(`${day} 00:00`) ?? '');
   if (Number.isNaN(dayStart)) return [];
   const today = tallinnDay(new Date(nowMs).toISOString()) === day;
@@ -79,7 +81,11 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
     return h === 'open' || (h === 'unknown' && usual(p.kind, minute));
   };
   const stays = (p: RoutePlace, minute: number, leave: number) => fits(p, minute) && fits(p, Math.max(leave, minute + 10) - 5);
-  type Stop = { p: RoutePlace; w: number; minute: number; s: number };
+  const leg = (a: RoutePlace, b: RoutePlace): { w: number; m: number | null } => {
+    const m = streets?.(a, b) ?? null;
+    return m != null ? { w: streetMinutes(m), m: Math.round(m) } : { w: estimateMinutes(lineMetres(pos(a), pos(b))), m: null };
+  };
+  type Stop = { p: RoutePlace; w: number; m: number | null; minute: number; s: number };
   const drafts: { e: RouteEvent; host: RoutePlace; start: number; before: Stop | null; afters: Stop[]; base: number }[] = [];
 
   for (const e of events) {
@@ -97,20 +103,20 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
     const afters: Stop[] = [];
     for (const p of spots) {
       if (p.id === host.id) continue;
-      const w = walkMin(metres(pos(p), here));
-      if (w < 2) continue;                                                  // the same building is not a walk
+      if (estimateMinutes(lineMetres(pos(p), here)) < 2) continue;          // the same building is not a walk
+      const { w, m } = BEFORE.has(p.kind ?? '') ? leg(p, host) : leg(host, p);
       if (BEFORE.has(p.kind ?? '') && w <= MAX_BEFORE) {
         const minute = Math.max(round5(floor - 10), round5(start - w - 60));
         if (minute + 30 + w > start) continue;                              // half an hour there, at least
         if (!stays(p, minute, start - w)) continue;
         const s = (hoursAt(p.opening_hours, at(minute)) === 'open' ? 2 : 1) - w / 30 + (p.pick_note ? .2 : 0);
-        if (!before || s > before.s) before = { p, w, minute, s };
+        if (!before || s > before.s) before = { p, w, m, minute, s };
       }
       if (AFTER.has(p.kind ?? '') && w <= MAX_AFTER) {
         const minute = round5(end + 15 + w);
         if (minute > 23 * 60 + 30 || minute < (p.kind === 'club' ? 21 * 60 : 16 * 60)) continue;   // a club after nine, a bar after four, nothing past half eleven
         if (!stays(p, minute, minute + STAY)) continue;
-        afters.push({ p, w, minute, s: (hoursAt(p.opening_hours, at(minute)) === 'open' ? 1.5 : .8) - w / 30 });
+        afters.push({ p, w, m, minute, s: (hoursAt(p.opening_hours, at(minute)) === 'open' ? 1.5 : .8) - w / 30 });
       }
     }
     if (!before && !afters.length) continue;
@@ -133,11 +139,12 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
       .map(o => ({ o, v: o.s - REPEAT_END * ((endKinds.get(o.p.kind ?? '') ?? 0) + (endPlaces.get(o.p.id) ?? 0)) }))
       .sort((a, b) => b.v - a.v || a.o.p.id.localeCompare(b.o.p.id))[0]?.o ?? null;
     const stops: RouteStop[] = [];
+    const walked = (x: Stop) => (x.m != null ? { walk: x.w, metres: x.m, routed: true as const } : {});
     let score = base, walk = 0;
     if (before) { stops.push({ type: 'place', id: before.p.id, minute: before.minute }); walk += before.w; }
-    stops.push({ type: 'event', id: e.id, minute: start });
+    stops.push({ type: 'event', id: e.id, minute: start, ...(before ? walked(before) : {}) });
     if (after) {
-      stops.push({ type: 'place', id: after.p.id, minute: after.minute }); score += 2 + after.s; walk += after.w;
+      stops.push({ type: 'place', id: after.p.id, minute: after.minute, ...walked(after) }); score += 2 + after.s; walk += after.w;
       endKinds.set(after.p.kind ?? '', (endKinds.get(after.p.kind ?? '') ?? 0) + 1);
       endPlaces.set(after.p.id, (endPlaces.get(after.p.id) ?? 0) + 1);
     }
@@ -251,11 +258,40 @@ export function finalise(day: string, city: string, cands: RouteCandidate[], ans
   return rows;
 }
 
+// ── Along the streets ───────────────────────────────────────
+
+/** Measure the legs of the shortlisted walks on foot, then compose the days again on those minutes, so a
+ *  walk the streets make too long for its limits, its times or a stop's hours gives way to another. A new
+ *  walk brings new legs, so this goes round up to three times; a leg the router cannot measure keeps the
+ *  estimate. `streets` gathers the street metres between two places ("from>to"). */
+export async function routeLegs(lists: Map<string, RouteCandidate[]>, placeOf: (s: RouteStop) => RoutePlace | undefined,
+  router: FootRouter, streets: Map<string, number>, recompose: () => void): Promise<void> {
+  const tried = new Set<string>();
+  for (let round = 0; round < 3; round++) {
+    let asked = false;
+    for (const c of [...lists.values()].flat()) {
+      const at = c.stops.map(placeOf);
+      if (at.some(p => !p || p.lat == null || p.lng == null)) continue;
+      const ps = at as RoutePlace[];
+      const key = ps.map(p => p.id).join('>');
+      if (tried.has(key) || ps.every((p, i) => !i || streets.has(`${ps[i - 1].id}>${p.id}`) || streets.has(`${p.id}>${ps[i - 1].id}`))) continue;
+      if (!router.open) break;
+      tried.add(key);
+      asked = true;
+      const legs = await router.legs(ps.map(p => ({ lat: p.lat as number, lng: p.lng as number })));
+      legs?.forEach((m, i) => { if (m != null) streets.set(`${ps[i].id}>${ps[i + 1].id}`, m); });
+    }
+    if (asked) recompose();
+    if (!asked || !router.open) return;
+  }
+}
+
 // ── The run ─────────────────────────────────────────────────
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
-export async function composeRoutes(db: Db, city: string, models: Models | null, opts: { dry?: boolean; days?: number; now?: number } = {}): Promise<RouteRow[]> {
+/** The walks for the next few days. `router` measures legs along the streets (null: the estimate only). */
+export async function composeRoutes(db: Db, city: string, models: Models | null, opts: { dry?: boolean; days?: number; now?: number; router?: FootRouter | null } = {}): Promise<RouteRow[]> {
   const now = opts.now ?? Date.now();
   const startedAt = iso(now);
   const days = Array.from({ length: opts.days ?? 3 }, (_, i) => tallinnDay(iso(now + i * 86_400_000)));
@@ -276,10 +312,23 @@ export async function composeRoutes(db: Db, city: string, models: Models | null,
   };
   const kinds = new Map<string, string | null>([...events.map(e => [`event:${e.id}`, e.kind] as const), ...[...placeById.values()].map(p => [`place:${p.id}`, p.kind] as const)]);
 
+  // Only picked places may come before or after; a listing's own venue is its anchor, never a stop.
+  const streets = new Map<string, number>();
+  const along = (a: RoutePlace, b: RoutePlace) => streets.get(`${a.id}>${b.id}`) ?? streets.get(`${b.id}>${a.id}`) ?? null;
+  const compose = (day: string) => shortlist(candidatesForDay(day, events, id => placeById.get(id), places, now, along));
+  const lists = new Map(days.map(day => [day, compose(day)] as const));
+  const router = opts.router === undefined ? new FootRouter() : opts.router;
+  if (router) {
+    await routeLegs(lists, s => placeById.get(s.type === 'place' ? s.id : eventById.get(s.id)?.place_id ?? ''), router, streets, () => {
+      for (const day of days) lists.set(day, compose(day));
+    });
+    const legs = [...lists.values()].flat().flatMap(c => c.stops.slice(1));
+    console.log(`[routes] ${legs.filter(s => s.routed).length} of ${legs.length} legs along the streets (${router.requests} foot routes asked, ${router.failures} failed)`);
+  }
+
   const all: RouteRow[] = [];
   for (const day of days) {
-    // Only picked places may come before or after; a listing's own venue is its anchor, never a stop.
-    const real = shortlist(candidatesForDay(day, events, id => placeById.get(id), places, now));
+    const real = lists.get(day) ?? [];
     if (!real.length) continue;
     let answer: unknown = null, engine = 'rules';
     if (models?.ready) {
@@ -305,7 +354,7 @@ if (import.meta.main) {
   const db = new Db(dry && process.argv.includes('--public') ? process.env.SUPABASE_ANON_KEY?.trim() : undefined);
   const models = new Models(undefined, 6, Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 2400));
   composeRoutes(db, city, models, { dry }).then(rows => {
-    for (const r of rows) console.log(`${r.day} ${r.area.padEnd(12)} ${r.title}  [${r.engine}]${r.blurb ? `\n    ${r.blurb}` : ''}\n    ${r.stops.map(s => `${s.type}:${s.id}@${clockText(s.minute)}`).join(' → ')}`);
+    for (const r of rows) console.log(`${r.day} ${r.area.padEnd(12)} ${r.title}  [${r.engine}]${r.blurb ? `\n    ${r.blurb}` : ''}\n    ${r.stops.map(s => `${s.type}:${s.id}@${clockText(s.minute)}${s.routed ? ` (${s.walk} min on foot)` : ''}`).join(' → ')}`);
     const out = process.argv.find(a => a.startsWith('--out='))?.slice(6);
     if (out) writeFileSync(out, JSON.stringify(rows, null, 1));
     console.log(`${rows.length} routes${dry ? ' (dry run, nothing written)' : ' written'}`);
