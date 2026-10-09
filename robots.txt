@@ -1,11 +1,14 @@
 # WanderAlt — robots.txt
-# Allow all well-behaved crawlers.
+# Search engines and the answer engines that fetch a page when someone asks about it may read
+# everything but the review queue: they link back to the listing. That covers Google, Bing,
+# OAI-SearchBot and ChatGPT-User, Claude-SearchBot and Claude-User, PerplexityBot and
+# Perplexity-User, all through the first group. Crawlers that collect text to train models are
+# turned away; each named group below replaces the first one for that crawler.
 
 User-agent: *
 Allow: /
 Disallow: /review
-# Block AI crawlers that respect a Disallow.
-# bots that show up most often and respect a Disallow.
+
 User-agent: GPTBot
 Disallow: /
 
@@ -15,10 +18,16 @@ Disallow: /
 User-agent: Google-Extended
 Disallow: /
 
+User-agent: Applebot-Extended
+Disallow: /
+
 User-agent: CCBot
 Disallow: /
 
-User-agent: PerplexityBot
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: Bytespider
 Disallow: /
 
 Sitemap: https://wanderalt.app/sitemap.xml
