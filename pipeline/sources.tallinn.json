@@ -201,6 +201,7 @@
     "curated": true,
     "config": {
       "days": 45,
+      "trusted_organizer_ids": [825],
       "venue_id": "tallinn-heldeke",
       "venue_name": "Heldeke!",
       "venue_site": "https://heldeke.ee/",

@@ -99,7 +99,9 @@ export function extract(item: RawItem): Candidate[] {
   }];
 }
 
-/** Organisers whose whole programme belongs on WanderAlt. */
+/** Organisers whose whole programme belongs on WanderAlt: independent venues and collectives listed by
+ *  hand in the source's `trusted_organizer_ids`. Fienta sells for anyone, so this, not the source being
+ *  curated or a venue filter, is what trusts a Fienta listing (run.ts trustedListing). */
 export function trustedOrganiser(item: RawItem, source: Source): boolean {
   const ids = (source.config.trusted_organizer_ids as number[] | undefined) ?? [];
   return ids.includes(Number((item.payload as { organizer_id?: number }).organizer_id));

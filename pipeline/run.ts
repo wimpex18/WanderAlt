@@ -174,6 +174,97 @@ export function offTopic(title: string): { status: string; note: string } | null
   return m ? { status: 'rejected', note: `rule: ${m[1].toLowerCase()}` } : null;
 }
 
+/** A phrase standing on its own. \b sees only ASCII letters, so Estonian and Russian words need letter
+ *  lookarounds; `\p{L}*` extends a stem. */
+const words = (src: string) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${src})(?![\\p{L}\\p{N}])`, 'iu');
+
+/** What WanderAlt is not for, whoever lists it and whatever a model scored it: the guide is alternative,
+ *  independent and underground culture, contemporary art and social movements, never the mainstream
+ *  or dining. Each match goes to the private review queue, never rejected, so a false match costs one
+ *  look; the phrases stay specific enough that "Ritual", "Dinner Party" or "Cocktails & Conversation"
+ *  do not match. */
+const OFF_PROMISE_TITLE: [string, RegExp][] = [
+  ['wellness', words(String.raw`sound ?baths?|helivann\p{L}*|helirännak\p{L}*|helikümblus\p{L}*|sound (?:journey|healing|meditation)s?|gong ?baths?|gongivann\p{L}*|singing bowls?|laulvad kausid|crystal (?:bowls?|healing|sound)|kristallkaus\p{L}*|kristallidega|звуков\p{L}* (?:ванн|путешестви|медитаци|терапи)\p{L}*|звукотерапи\p{L}*|поющи\p{L}* чаш\p{L}*`
+    + String.raw`|kirtan\p{L}*|киртан\p{L}*|mantra (?:concert|singing|circle)s?|мантр\p{L}*|cacao (?:ceremony|circle)|kakaotseremoonia\p{L}*|какао[- ]церемони\p{L}*|церемони\p{L}* какао|tea ceremony|teetseremoonia\p{L}*|чайн\p{L}* церемони\p{L}*|cha dao`
+    + String.raw`|breath ?work|vabastav hingamine|hingamis(?:töötuba|praktika|tehnika|sessioon|harjutus)\p{L}*|дыхательн\p{L}* (?:практик|сесси)\p{L}*|ecstatic dance|ekstaatiline tants|экстатическ\p{L}* танц\p{L}*|biodanza|tantra|тантр\p{L}*|reiki|рейки|chakras?|tšakra\p{L}*|чакр\p{L}*`
+    + String.raw`|shaman\p{L}*|šamaan\p{L}*|шаман\p{L}*|retreat|\p{L}*retriit\p{L}*|ретрит\p{L}*|meditation\p{L}*|meditatsioon\p{L}*|медитаци\p{L}*|yoga|jooga\p{L}*|йога|йоги|йогой|pilates|пилатес\p{L}*|qigong|цигун|tai ?chi|taiji|holisti\p{L}*|холистич\p{L}*`
+    + String.raw`|music is medicine|medicine (?:music|songs?|circle)|wellness|well-?being|heaolu(?:tund|hommik|päev|õhtu)\p{L}*|велнес\p{L}*|women['’]?s circle|naiste ring\p{L}*|женск\p{L}* круг\p{L}*|moon circle|family constellations?|perekonnaseade\p{L}*|astrolog\p{L}*|астролог\p{L}*|tarot|numerolo\p{L}*|нумеролог\p{L}*`)],
+  ['hobby class', words(String.raw`sip (?:&|and|n|'n'|\+) (?:paint|pour)|paint (?:&|and|n|'n') sip|wine (?:&|and) (?:paint|canvas)|candle[- ]?making|candles? (?:workshop|class|painting)|(?:cocktail|scented|soy|aroma) candles?|küünla(?:valmistamis|töötuba|tegemis|maalimis)\p{L}*|küünalde valmistami\p{L}*|свеч\p{L}* своими руками|мастер-класс\p{L}* по (?:изготовлению )?свеч\p{L}*`
+    + String.raw`|key ?chains?|võtmehoidja\p{L}*|брелок\p{L}*|(?:bling|charm) bar|keraamika ?(?:töötuba|kursus|tund)\p{L}*|savitöötuba\p{L}*|pottery (?:class|workshop|course|taster)\p{L}*|ceramics? (?:class|workshop|course)\p{L}*|potikedr?a? ?(?:kursus|töötuba)\p{L}*|potikeder|гончарн\p{L}*|мастер-класс\p{L}* по керамик\p{L}*`
+    + String.raw`|art class(?:es)?|арт-класс\p{L}*|арт класс\p{L}*|kunstitund\p{L}*|maalitund\p{L}*|painting class(?:es)?|ikebana|икебан\p{L}*|floristi\p{L}*|флористи\p{L}*|lilleseade\p{L}*|\p{L}*kimbu töötuba|bouquet (?:workshop|class)`
+    + String.raw`|cocktail (?:class|workshop|masterclass|making)|kokteili(?:töötuba|kursus|koolitus)\p{L}*|wine tasting|vein(?:i)?(?:neljapäev|degustatsioon|koolitus)\p{L}*|vahuvein\p{L}*|дегустаци\p{L}* вин\p{L}*|винн\p{L}* дегустаци\p{L}*`)],
+  ['self-help', words(String.raw`coaching|life ?coach\p{L}*|коучинг\p{L}*|коуч|self[- ]help|personal growth|eneseareng\p{L}*|саморазвити\p{L}*|личностн\p{L}* рост\p{L}*|inspiratsioonipäev\p{L}*|inspiration day|motivational|мотивационн\p{L}*`
+    + String.raw`|kõik suhetest|all about relationships|kuidas armastada|how to love|как любить|relationship (?:seminar|workshop|coaching|course)s?|suhte(?:seminar|koolitus|töötuba)\p{L}*|paarisuh\p{L}*`
+    + String.raw`|sauna (?:social|night|evening|session|party)|saunaõhtu\p{L}*|saunapidu\p{L}*|speed ?dating|kiirkohting\p{L}*|быстр\p{L}* свидани\p{L}*|singles? (?:night|party|evening)`)],
+  ['mainstream', words(String.raw`candlelight|candle-?lit concerts?|küünlavalgel|при свечах|tribute|трибьют\p{L}*|трибут\p{L}*|cover ?band|coverbänd\p{L}*|кавер[- ]?(?:групп|бэнд)\p{L}*`
+    + String.raw`|best of|greatest hits|the best (?:opera|arias|hits|songs)|opera arias|ooperiaaria\p{L}*|ooperigala\p{L}*|оперн\p{L}* ари\p{L}*|лучш\p{L}* хит\p{L}*`
+    + String.raw`|retro ?dis[ck]o|ретро[- ]?дискотек\p{L}*|(?:disco|disko|дискотек\p{L}*|party|pidu|вечеринк\p{L}*)\s*[«"„“]?\s*[3-6]0\s*\+|[3-6]0\s*\+\s*(?:disco|disko|party|pidu|дискотек\p{L}*|вечеринк\p{L}*)`
+    + String.raw`|latin nights?|salsa (?:night|party|social)s?|bachata|kizomba|латино[- ]?вечеринк\p{L}*`
+    + String.raw`|dinner[- ]show|dinner (?:&|and|\+) (?:show|concert|music)|(?:show|concert) (?:&|and|\+|with) dinner|\p{L}*õhtusöögiga|\p{L}*õhtusöök (?:ja|\+|&) (?:etendus|kontsert|show)|(?:etendus|kontsert|show)[- ](?:ja |\+ |& )?õhtusöök\p{L}*|\p{L}*gurmee\p{L}*|\d+[- ]?käigulise\p{L}*|\d+[- ]course (?:dinner|menu)|ужин[- ]шоу|шоу[- ]ужин|(?:шоу|концерт) с ужином|gala ?dinner`
+    + String.raw`|immersive (?:\p{L}+ ){0,2}experience|cat (?:show|exhibition)|kassinäitus\p{L}*|выставк\p{L}* кошек|dog show|koertenäitus\p{L}*|выставк\p{L}* собак|pet (?:show|expo)`
+    + String.raw`|vegan (?:fair|festival)|veganlaat\p{L}*|veganmess\p{L}*|food fair|toidumess\p{L}*|toidulaat\p{L}*|веганск\p{L}* ярмарк\p{L}*`
+    + String.raw`|walking tour|old town tour|sightseeing|ghost tour|pub crawl|bar crawl|vanalinna ekskursioon\p{L}*|экскурси\p{L}* по (?:старому )?(?:город|таллин)\p{L}*|seikluspar\p{L}*|adventure park`)],
+  ['children', words(String.raw`for (?:kids|children|toddlers|families|teens)|kids['’]? (?:workshop|party|disco|show|club)|lastele|lasteetendus\p{L}*|lastelavastus\p{L}*|lastekontsert\p{L}*|lastehommik\p{L}*|kogupere\p{L}*|perepäev\p{L}*|family day|teismelistele|для детей|для подростков|детск\p{L}* (?:спектакл|праздник|мастер|концерт)\p{L}*`)],
+];
+/** Where an event is held can say the same: a restaurant or hotel, a yoga studio, a puppet theatre or
+ *  youth centre, an arena. Checked on the venue only, since a title naming a hotel is often a film. */
+const OFF_PROMISE_VENUE: [string, RegExp][] = [
+  ['restaurant', words(String.raw`restaurant|restoran\p{L}*|resto(?:baar|bar)?|ресторан\p{L}*`)],
+  ['hotel', words(String.raw`hotel\p{L}*|radisson|hilton|sokos|swiss[oô]tel|park inn|отел\p{L}*|гостиниц\p{L}*`)],
+  ['wellness', words(String.raw`yoga|jooga\p{L}*|йога|taiji|tai chi`)],
+  ['children', words(String.raw`nukuteat\p{L}*|puppet theat\p{L}*|кукольн\p{L}* театр\p{L}*|noortekeskus\p{L}*|youth cent(?:er|re)|молод[её]жн\p{L}* центр\p{L}*`)],
+  ['mainstream', words(String.raw`saku suurhall|unibet arena`)],
+];
+const plain = (s: string) => s.normalize('NFKC').replace(/\s+/g, ' ').trim();
+
+/** Off the guide's promise by rule: held for a person, with the rule and the words it matched. */
+export function offPromise(title: string, venue?: string | null): { status: string; note: string } | null {
+  const t = plain(title), v = plain(venue ?? '');
+  for (const [label, re] of OFF_PROMISE_TITLE) {
+    const m = re.exec(t);
+    if (m) return { status: 'review', note: `rule: ${label} (${m[0].toLowerCase()})` };
+  }
+  for (const [label, re] of OFF_PROMISE_VENUE) {
+    const m = v ? re.exec(v) : null;
+    if (m) return { status: 'review', note: `rule: ${label} venue (${m[0].toLowerCase()})` };
+  }
+  return null;
+}
+
+/** Who publishes on the lower bar. A curated source is a venue's or collective's own programme. Fienta
+ *  is a ticket marketplace that sells for anyone, and a venue filter on it also returns whoever rents
+ *  the hall, so a Fienta listing is trusted only for an organiser its source names
+ *  (`trusted_organizer_ids`: venues and collectives checked by hand), whether or not the source is curated. */
+export function trustedListing(source: Source, item: RawItem): boolean {
+  return source.kind === 'fienta' ? fienta.trustedOrganiser(item, source) : source.curated;
+}
+
+/** A newly read listing's status. The rules come before trust and fit, so neither a trusted organiser nor
+ *  a generous score publishes what they hold. A poster-read date keeps its own review note, which
+ *  eventRefreshFacts protects the row by. */
+export function listingStatus(c: Candidate, e: Enrichment, source: Source, item: RawItem): { status: string; note: string } {
+  return offTopic(c.title) ?? (c.review_note ? { status: 'review', note: c.review_note } : null)
+    ?? offPromise(c.title, c.venue_name) ?? decide(e, trustedListing(source, item));
+}
+
+/** Upcoming published listings the rules above now hold: an item is not read again unless its source
+ *  changes it, and a refresh keeps the earlier status, so without this a row published before a rule
+ *  existed stays published. Moves matches to review with the rule as the note; a person's decision
+ *  (a note starting "manual") is never overridden and nothing is deleted. */
+export async function recheckPublished(db: Pick<Db, 'all' | 'patch'>, city: string): Promise<{ id: string; title: string; note: string }[]> {
+  const notManual = 'or=(status_note.is.null,status_note.not.like.manual*)';
+  const rows = await db.all<{ id: string; title: string; venue_name: string | null }>(
+    `events?city=eq.${city}&status=eq.published&archived_at=is.null&merged_into=is.null&${notManual}&select=id,title,venue_name&order=id.asc`);
+  const moved: { id: string; title: string; note: string }[] = [];
+  for (const r of rows) {
+    const hit = offPromise(r.title, r.venue_name);
+    if (!hit) continue;
+    await db.patch(`events?id=eq.${encodeURIComponent(r.id)}&status=eq.published&${notManual}`, { status: hit.status, status_note: hit.note });
+    moved.push({ id: r.id, title: r.title, note: hit.note });
+  }
+  return moved;
+}
+
 /** Publish, hold for review, or reject. Trusted sources need a lower bar. */
 export function decide(e: Enrichment, trusted: boolean): { status: string; note: string } {
   const r = e.relevance;
@@ -578,8 +669,7 @@ async function main() {
     const earlier = p.rawId != null ? earlierListing(c.title, start, c.has_time, listedBy.get(p.rawId) ?? []) : null;
     const id = earlier ?? seen.match(c.title, where, start) ?? seen.matchUrl(c.title, c.url, start) ?? eventId(CITY, c, place?.id ?? null);
     seen.add({ id, title: c.title, where, start, url: c.url });
-    const trusted = p.source.curated || (p.source.kind === 'fienta' && fienta.trustedOrganiser(p.item, p.source));
-    const { status, note } = offTopic(c.title) ?? (c.review_note ? { status: 'review', note: c.review_note } : decide(e, trusted));
+    const { status, note } = listingStatus(c, e, p.source, p.item);
     // Any source saying a show is off or sold out wins over one that doesn't.
     const state = worse(c.flag, textFlag(c.title, c.description));
     const imagePage = httpUrl(c.url ?? p.item.url);
@@ -687,7 +777,9 @@ async function main() {
     for (let i = 0; i < waiting.length; i++) {
       const e = late[i];
       if (Number.isNaN(e.relevance)) continue;
-      const { status, note } = decide(e, (waiting[i].status_note ?? '').startsWith('trusted'));
+      // A row the rules hold stays held once a model has scored it.
+      const { status, note } = offTopic(waiting[i].title) ?? offPromise(waiting[i].title, waiting[i].venue_name)
+        ?? decide(e, (waiting[i].status_note ?? '').startsWith('trusted'));
       await db.patch(`events?id=eq.${encodeURIComponent(waiting[i].id)}`, {
         kind: e.kind, tags: withEasyAlone(e.tags, waiting[i].title, waiting[i].venue_name), relevance: e.relevance, status, status_note: note,
       });
@@ -695,6 +787,11 @@ async function main() {
     }
     if (waiting.length) log(`classified ${n} of ${waiting.length} earlier events`);
   }
+  // Published rows written before a rule existed: held for review by the same rules (before routes compose).
+  try {
+    const moved = await recheckPublished(db, CITY);
+    for (const m of moved) log(`held for review: ${m.title} (${m.note})`);
+  } catch (e) { log(`published re-check failed: ${(e as Error).message}`); }
 
   // ── 6. archive and health ──
   await refreshEnglish(db, english, CITY, 40);
