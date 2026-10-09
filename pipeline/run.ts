@@ -826,6 +826,8 @@ async function main() {
   }
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  const c = usage.claude;
+  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
       finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(),

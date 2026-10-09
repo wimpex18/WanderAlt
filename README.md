@@ -38,7 +38,7 @@ Four tabs: **Now, Map, Saved, You**. Selecting Now from All events or the Guide 
 
 ## Development
 
-Node 24 (`.nvmrc`). No framework or production build step. `npm install` brings development tools only.
+Node 24 (`.nvmrc`). No framework or production build step. `npm install` brings development tools and the pipeline's one runtime package, the Anthropic SDK.
 
 ```bash
 npm start                 # http://localhost:5173; static files, no Pages Functions/CSP
@@ -52,7 +52,7 @@ npm run build:lang        # phrases/patterns -> interface translations
 npm run build:inline-icons
 ```
 
-- A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`. Prose/model work uses `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (Workers AI Read); `OPENROUTER_API_KEY` enables a free fallback.
+- A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`. Prose/model work goes to Claude Haiku 5.5 when `ANTHROPIC_API_KEY` is set, then to Workers AI (`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` with Workers AI Read), then to OpenRouter's free models (`OPENROUTER_API_KEY`). Haiku reads a whole programme page per request, at most 120,000 characters so the prompt stays under 100,000 tokens, where it costs a tenth of Haiku 4.5; each run stops using it at `CLAUDE_LANE_RUN_USD` dollars (default 0.30, four runs a day) and logs what it spent.
 - Store local keys in git-ignored `.env`, scheduled keys in GitHub repository secrets.
 - Missing model capacity leaves prose/copy pending; trusted structured sources can still publish. Pins, overrides, retry behaviour and daily budgets are defined in `pipeline/llm.ts` and `pipeline/run.ts`, not duplicated here.
 
