@@ -44,9 +44,9 @@ test('Russian: exact phrases, patterns with plural forms, typed placeholders and
 
 test('short helpers cover all interface languages; geographic and source names stay literal', () => {
   const helpers = ['New since last visit', 'Choose a nearby venue', 'Walks start here', 'Using your location',
-    'Choose a starting point', 'Starting point', 'Clear for device location', 'Show walking times',
+    'Choose a starting point', 'Starting point', 'Clear for device location',
     'Unknown prices included', 'Apply', 'Hours shown for now', 'Your saves carry over',
-    'No selection means all', 'Continue with Google', 'Shapes your walks', 'Follow from venue pages', 'Within 10 minutes’ walk', '3 opened or saved'];
+    'No selection means all', 'Continue with Google', 'Within 10 minutes’ walk', '3 opened or saved'];
   for (const lang of ['en', 'et', 'ru', 'uk']) {
     const { Lang } = load(lang);
     for (const helper of helpers) {

@@ -61,7 +61,6 @@ test('guest saves and list names/items upload once; the next account and signed-
   a.login(null); assert.equal(a.WA.Bookmarks.ids().length, 0); assert.equal(a.WA.Lists.all().length, 0);
   a.login('bob'); await a.sync(); assert.equal(a.WA.Bookmarks.ids().length, 0); assert.equal(a.WA.Lists.all().length, 0);
   a.login('alice'); await a.sync(); assert.equal(a.WA.Lists.byId(id).name, 'Saturday');
-  a.WA.Lists.rename(id, 'Sunday'); await a.sync(); assert.equal(a.clouds.get('alice')!.lists.get(id).name, 'Sunday');
 });
 
 test('failed unsaves survive reload and do not return from cloud; online retries removes them and list items', async () => {

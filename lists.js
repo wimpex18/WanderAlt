@@ -69,8 +69,7 @@ window.WA.Lists = (() => {
     const clean = String(name || '').trim().slice(0, 60);
     if (!clean) return null;
     const store = get();
-    /* Same name in the same city is the same list. Two "Kalamaja day
-       off"s would be indistinguishable in the mosaic. */
+    /* Same name in the same city is the same list: two "Kalamaja day off" chips could not be told apart. */
     const existing = Object.values(store)
       .find(l => l.city === city() && l.name.toLowerCase() === clean.toLowerCase());
     if (existing) return existing.id;
@@ -79,14 +78,6 @@ window.WA.Lists = (() => {
     store[l.id] = l;
     _save(store);
     return l.id;
-  };
-
-  const rename = (id, name) => {
-    const clean = String(name || '').trim().slice(0, 60);
-    const store = get();
-    if (!store[id] || !clean) return;
-    store[id].name = clean;
-    _save(store);
   };
 
   const remove = (id) => {
@@ -154,7 +145,7 @@ window.WA.Lists = (() => {
   return {
     suggestions,
     all, forCity, byId, items, listsFor,
-    create, rename, remove, add, removeItem, purge,
+    create, remove, add, removeItem, purge,
     pendingSync: store.pending, syncFromCloud: store.sync,
   };
 })();

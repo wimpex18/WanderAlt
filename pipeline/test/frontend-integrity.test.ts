@@ -396,12 +396,11 @@ test('the tab bar has four tabs on every page and no empty slot', () => {
   }
 });
 
-test('compact rows keep small pictures and Saved shows three lists a row; desktop sizes stay', () => {
+test('compact rows keep small pictures; desktop sizes stay', () => {
   const css = readFileSync(new URL('../../wa.css', import.meta.url), 'utf8');
   const phone = css.slice(css.lastIndexOf('@media (max-width: 767px)'));
   assert.match(phone, /\.wa-row__thumb \{ width: 56px; height: 56px;/);
   assert.match(phone, /\.wa-place__glyph, \.home-places \.wa-place__glyph \{ width: 48px; height: 48px;/);
-  assert.match(phone, /\.wa-lists \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.wa-row__thumb \{ width: 120px; height: 90px; \}/, 'desktop rows keep their picture');
 });
 

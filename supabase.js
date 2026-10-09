@@ -179,12 +179,11 @@
      shops, arts centres, cinemas, clubs, community centres and theatres,
      plus the bars that host listed events, and the museums we have picked.
      Libraries and the like still surface as event venues on picks. Only
-     picked or freshly verified places show. Exposed as WA.VENUE_KINDS. */
+     picked or freshly verified places show. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club', 'thrift',
     'arts centre', 'cinema', 'community', 'theatre', 'bar', 'museum', 'taproom',
   ]);
-  window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
   /* The venue behind a pick: picks.venue_id when it is set, otherwise the
      same city and case-insensitive name. */
@@ -280,8 +279,6 @@
   /* Turn rows into the catalogue the pages read. */
   const apply = (picks, venues, redirectRows) => {
     if (redirectRows) redirects = new Map(redirectRows.map(r => [r.id, r.canonical_id]));
-    /* No venue blurbs yet: places carry no description of their own. */
-    window.WA.venueBlurb = () => '';
     if (picks) {
       const all = picks.filter(isPublicPick).map(toPick);
       /* All-cities snapshot for cross-city lookups (e.g. a saved pick from

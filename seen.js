@@ -41,8 +41,6 @@ window.WA.Seen = (() => {
     document.dispatchEvent(new CustomEvent('wa:seen-changed', { detail: { id: key } }));
   };
 
-  const has = (id) => read().includes(String(id || '').trim());
-
   /* Saving something counts as seeing it — the two signals mean the same
      thing for this filter, and bookmark.js already records the save. */
   document.addEventListener('wa:bookmarks-synced', () => {
@@ -57,7 +55,7 @@ window.WA.Seen = (() => {
   });
 
   return {
-    mark, has,
+    mark,
     ids:    () => read(),
     count:  () => read().length,
     clear:  () => { write([]); document.dispatchEvent(new CustomEvent('wa:seen-changed', { detail: { cleared: true } })); },
