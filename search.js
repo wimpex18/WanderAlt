@@ -50,8 +50,8 @@
     }
     const events = engine.events(), places = engine.places(), origin = window.WA.SearchData.origin();
     host.innerHTML = `${events.length || places.length ? `<p class="wa-note"><span>Walking from</span> <span${['where you are','the city centre'].includes(origin.label) ? '' : ' data-notranslate'}>${esc(origin.label)}</span></p>` : ''}
-      ${events.length ? `<section><h2 class="wa-search-group"><span>Events</span><span>${events.length}</span></h2><ul class="wa-search-preview">${events.slice(0,4).map(eventRow).join('')}</ul></section>` : ''}
-      ${places.length ? `<section><h2 class="wa-search-group"><span>Places</span><span>${places.length}</span></h2><ul class="wa-search-preview">${places.slice(0,3).map(v => R().placeRow(v,{ from:origin.from })).join('')}</ul></section>` : ''}
+      <div class="wa-search-cols">${events.length ? `<section><h2 class="wa-search-group"><span>Events</span><span>${events.length}</span></h2><ul class="wa-search-preview">${events.slice(0,4).map(eventRow).join('')}</ul></section>` : ''}
+      ${places.length ? `<section><h2 class="wa-search-group"><span>Places</span><span>${places.length}</span></h2><ul class="wa-search-preview">${places.slice(0,3).map(v => R().placeRow(v,{ from:origin.from })).join('')}</ul></section>` : ''}</div>
       ${events.length || places.length ? '' : '<p class="wa-note">No matches. Try another name or browse all events and places.</p><div class="wa-search-browse"><a href="discover.html">All events</a><a href="places.html">All places</a></div>'}
       ${s.maxPrice != null && !s.free && events.some(e => !R().isFree(e) && e.priceMin == null) ? '<p class="wa-note">Unknown prices included</p>' : ''}`;
     const button = dialog.querySelector('[data-search-all]');
@@ -66,12 +66,12 @@
       dialog.className = 'wa-search-dialog';
       dialog.setAttribute('aria-labelledby','global-search-title');
       dialog.innerHTML = `<form class="wa-search-dialog__top" role="search"><h2 class="wa-sr" id="global-search-title">Search events or places</h2>
-        <button class="wa-iconbtn" type="button" data-search-close aria-label="Close search">${I('back')}</button>
+        <button class="wa-iconbtn" type="button" data-search-close aria-label="Close search"><span class="wa-search-close--back">${I('back')}</span><span class="wa-search-close--x">${I('close')}</span></button>
         <div class="wa-ask"><span class="wa-ask__mark">${I('search')}</span><label class="wa-sr" for="global-search-q">Search events or places</label>
           <input class="wa-ask__input" id="global-search-q" name="q" type="search" maxlength="140" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search events or places">
           <button class="wa-iconbtn" type="button" data-search-clear aria-label="Clear search" hidden>${I('close')}</button></div></form>
         <div class="wa-search-dialog__body"><p class="wa-search-scope"><span>Tallinn</span> · <span>All dates</span></p><div data-search-matches aria-live="polite"></div></div>
-        <div class="wa-search-dialog__foot"><button class="wa-btn wa-btn--primary wa-btn--wide" type="button" data-search-all hidden>View all results</button></div>`;
+        <div class="wa-search-dialog__foot"><button class="wa-btn wa-btn--primary wa-btn--wide wa-search-all" type="button" data-search-all hidden>View all results</button></div>`;
       document.body.append(dialog);
       dialog.addEventListener('input', e => { if (e.target.name === 'q') { engine.query(e.target.value); previews(); } });
       dialog.addEventListener('submit', e => { e.preventDefault(); submit(); });

@@ -26,7 +26,7 @@
 
     /* The card is the anchor, so the photo is inside the link itself.
        Rows and photoless cards return null and cross-fade instead. */
-    const source = link.querySelector('.wa-poster__art img, .wa-row__thumb img, .wa-place__glyph img, .wa-feed__art img');
+    const source = link.querySelector('.wa-row__thumb img, .wa-place__glyph img, .wa-feed__art img');
     if (!source) return;
 
     clearAll();

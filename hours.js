@@ -312,29 +312,6 @@
   const pad = (n) => String(n).padStart(2, '0');
   const clock = (mins) => (mins == null ? '' : `${pad(Math.floor((mins % 1440) / 60))}:${pad(mins % 60)}`);
 
-  /* The place rail. The arrow carries the CLOSING hour. Returns:
-       →HH  open now, closing at HH
-       24H  open with no closing time worth printing
-       SHUT hours are known and it is closed
-       ''   hours not filed, so the caller says something honest instead */
-  const rail = (raw, at) => {
-    const s = state(raw, at);
-    if (!s.known) return '';
-    if (!s.open)  return 'SHUT';
-    if (s.allDay || s.closesAt == null) return '24H';
-    return `→${pad(Math.floor(s.closesAt / 60))}`;
-  };
-
-  /* The human line: "Open now · closes 02:00", "Opens 18:00",
-     "Closed today", or the honest gap. */
-  const label = (raw, at) => {
-    const s = state(raw, at);
-    if (!s.known)  return 'Hours not listed';
-    if (s.open)    return s.closesAt == null ? 'Open 24 hours' : `Open now · closes ${clock(s.closesAt)}`;
-    if (s.opensAt != null) return `Opens ${clock(s.opensAt)}`;
-    return 'Closed for the day';
-  };
-
   /* Seven rows for the detail page's week strip: {day, text, isToday}.
      Same object the density strip renders, so the two stay in sync. */
   const week = (raw, at) => {
@@ -352,5 +329,5 @@
     }));
   };
 
-  window.WA.Hours = { parse, state, rail, label, week, clock, cityNow };
+  window.WA.Hours = { parse, state, week, clock, cityNow };
 })();

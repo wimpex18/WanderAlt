@@ -1,8 +1,8 @@
 /* ============================================================
    render.js — WA.R, every shared piece of markup.
    ------------------------------------------------------------
-   One implementation per pattern: the event row, the place row, the
-   poster card, section heads, skeletons and empty states all live here,
+   One implementation per pattern: the event row, the feed card, the
+   place row, section heads, skeletons and empty states all live here,
    and every page builds from them. Also the shared readings of the
    catalogue that more than one page needs: areas, kinds, the one
    "why it's listed" tag, what is on right now, interests and the
@@ -65,11 +65,6 @@
      Tonight list; anything else is reachable by search or the programme. */
   const AREA_LIST = ['Old Town', 'City centre', 'Kalamaja', 'Telliskivi', 'Noblessner', 'Kopli', 'Põhja-Tallinn', 'Kristiine',
     'Pirita', 'Lasnamäe', 'Mustamäe', 'Õismäe', 'Nõmme'];
-  const AREA_SUB = {
-    'Põhja-Tallinn': 'Pelgulinn, Paljassaare, Karjamaa',
-    'City centre': 'Rotermann, Kadriorg, Uus Maailm',
-    'Old Town': 'Inside the walls',
-  };
   const area = (raw) => {
     const s = real(raw);
     if (!s) return '';
@@ -153,7 +148,7 @@
   let DOW = LANG ? LANG.days() : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   let DAYFULL = LANG ? LANG.daysFull() : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   let MON = LANG ? LANG.months() : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  document.addEventListener('wa:language-changed', () => { if (LANG) { DOW = LANG.days(); DAYFULL = LANG.daysFull(); MON = LANG.months(); window.WA.R.DOW = DOW; } });
+  document.addEventListener('wa:language-changed', () => { if (LANG) { DOW = LANG.days(); DAYFULL = LANG.daysFull(); MON = LANG.months(); } });
   const keyDate = (key) => new Date(`${key}T12:00:00Z`);
   const dow = (key) => DOW[keyDate(key).getUTCDay()];
   const dom = (key) => keyDate(key).getUTCDate();
@@ -461,46 +456,6 @@
     return { now: false, text: [day, clock].filter(Boolean).join(' · ') || 'Ongoing' };
   };
 
-  const poster = (e, opts = {}) => {
-    const { src, logo, tone } = art(e);
-    const b = badgeFor(e);
-    const m = walk(e);
-    const line1 = [latin(e.venue), areaOf(e)].filter(Boolean).join(' · ');
-    const line2 = [m != null ? `<span class="wa-poster__walk">${I('walk')}${esc(walkLabel(m))} walk</span>` : '', price(e) ? `<strong${isFree(e) ? ' class="wa-free"' : ''}>${esc(price(e))}</strong>` : '', whyTag(e)]
-      .filter(Boolean).map(x => (x.startsWith('<') ? x : esc(x))).join(' · ');
-    return `<div class="wa-poster${isOff(e) ? ' wa-poster--off' : ''}"><a class="wa-poster__link" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
-      <span class="wa-poster__art${logoCls(logo, tone)}">
-        ${src ? `<img ${UI().imgAttrs(src, 640)} alt="" loading="lazy" decoding="async">`
-              : `<span class="wa-poster__type">${window.WA.Picto.kind(e.kind)}</span>`}
-        <span class="wa-poster__badge${b.now ? ' wa-poster__badge--now' : ''}">${esc(opts.compact && b.now ? 'On now' : b.text)}</span>
-        ${flagTag(e, ' wa-poster__flag')}
-      </span>
-      <span class="wa-poster__title"${titleLang(e)}>${esc(e.title || '')}</span>
-      ${opts.compact && b.now && endClock(e) ? `<span class="wa-poster__meta">Until ${esc(endClock(e))}</span>` : ''}
-      ${line1 ? `<span class="wa-poster__meta" data-notranslate>${esc(line1)}</span>` : ''}
-      ${line2 ? `<span class="wa-poster__meta">${line2}</span>` : ''}
-    </a>${opts.noHeart ? '' : heart(e.id, e.title)}</div>`;
-  };
-
-  /* A shelf: a heading, arrow keys on desktop, and a row of cards. */
-  let shelfN = 0;
-  const shelf = (head, cards) => {
-    const id = `shelf-${++shelfN}`;
-    return `<section class="wa-sect">
-      <div class="wa-sect__head">
-        <h2 class="wa-sect__title">${esc(head.title)}</h2>
-        ${head.n != null ? `<span class="wa-sect__count">${esc(String(head.n))}</span>` : ''}
-        ${head.href ? `<a class="wa-sect__more" href="${esc(head.href)}" aria-label="${esc(`${head.more || 'All'}: ${head.title}`)}">${I('arrow')}</a>` : '<span style="margin-left:auto"></span>'}
-        <span class="wa-shelfnav"><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="-1" aria-label="Previous">${I('back')}</button><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="1" aria-label="Next">${I('chevron')}</button></span>
-      </div>
-      ${head.sub ? `<p class="wa-sect__sub">${esc(head.sub)}</p>` : ''}
-      <div class="wa-shelf${head.compact ? ' wa-shelf--compact' : ''}" id="${id}">${cards}</div>
-    </section>`;
-  };
-
-  const skelCards = (n = 4) => `<div class="wa-shelf" aria-hidden="true">${Array.from({ length: n }, () =>
-    '<div><span class="wa-skel wa-skel--card"></span><span class="wa-skel wa-skel--title"></span><span class="wa-skel wa-skel--meta"></span></div>').join('')}</div>`;
-
   /* Hearts save from anywhere a card is shown, with the undo toast. */
   document.addEventListener('click', (ev) => {
     const h = ev.target.closest && ev.target.closest('[data-heart]');
@@ -517,12 +472,6 @@
         window.WA.Bookmarks.set(id, !on);
         document.querySelectorAll(`[data-heart="${CSS.escape(id)}"]`).forEach(x => x.setAttribute('aria-pressed', String(!on)));
       });
-      return;
-    }
-    const nav = ev.target.closest && ev.target.closest('[data-shelf]');
-    if (nav) {
-      const el = document.getElementById(nav.dataset.shelf);
-      if (el) el.scrollBy({ left: Number(nav.dataset.dir) * el.clientWidth * .9, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }
   }, true);
 
@@ -581,7 +530,7 @@
         : k === 'running'
           ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Running</span><span class="wa-day__date">Started earlier, still on</span><span class="wa-day__n">${all.length}</span></div>`
           : dayHead(k, all.length, opts);
-      out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : 'wa-rows'}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
+      out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : `wa-rows${opts.rowsClass ? ` ${opts.rowsClass}` : ''}`}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
     }
     return out.join('');
   };
@@ -620,18 +569,6 @@
         .catch(() => {});
     } catch (_) { /* no Permissions API: wait for a tap */ }
   };
-  const locPrompt = (text) => (G().currentLoc() ? '' :
-    `<button class="wa-since" type="button" data-locate>${I('walk')}<span>${esc(text || 'Show walking times')}</span>${I('arrow')}</button>`);
-  document.addEventListener('click', (e) => {
-    const b = e.target.closest && e.target.closest('[data-locate]');
-    if (!b) return;
-    b.disabled = true;
-    G().userLoc().then((loc) => {
-      if (loc) return;
-      b.disabled = false;
-      b.querySelector('span').textContent = 'Location is off in this browser, so rows show the area instead';
-    });
-  });
 
   /* Marks the page's account key when signed in. */
   document.addEventListener('wa:signed-in', () => {
@@ -642,7 +579,7 @@
   /* A hotlinked picture that no longer loads leaves a blank tile. Swap the
      dead image for the row's own pictogram (no inline handler: `error`
      does not bubble, so listen in the capture phase). */
-  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .wa-poster__art, .map-preview__art, .wa-listcard__tile, .wa-feed__art, .wa-search-match__art, .det-next__glyph, .rt__logo';
+  const ART = '.wa-place__glyph, .vcard__art, .wa-row__thumb, .map-preview__art, .wa-feed__art, .wa-search-match__art, .det-next__glyph, .rt__logo';
   const toPicto = (img, box) => {
     const host = img.closest('[data-place], [data-row], [data-card]');
     const id = host && (host.dataset.place || host.dataset.row || host.dataset.card);
@@ -652,9 +589,7 @@
     // Keep the reserved photo height after a late failure, so the feed doesn't jump.
     if (box.matches('.wa-feed__art')) box.classList.add('is-failed');
     [...box.classList].filter(c => c.startsWith('tone-')).forEach(c => box.classList.remove(c));
-    img.outerHTML = box.matches('.wa-poster__art')
-      ? `<span class="wa-poster__type">${window.WA.Picto.kind(kind)}</span>`
-      : window.WA.Picto.kind(kind);
+    img.outerHTML = window.WA.Picto.kind(kind);
   };
   document.addEventListener('error', (e) => {
     const img = e.target;
@@ -677,10 +612,10 @@
   }, true);
 
   window.WA.R = {
-    esc, url, real, latin, fold, area, areaOf, AREA_SUB, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
-    DOW, dow, dom, dateShort, dayName, clockOf, endClock, checkedLabel, isLive, joinable, live, places,
+    esc, url, real, latin, fold, area, areaOf, AREA_LIST, kindLabel, whyTag, isFree, withinTicketCap, price,
+    dow, dom, dateShort, dayName, clockOf, endClock, checkedLabel, isLive, joinable, live, places,
     art, walk, walkLabel, matches, isFollowed, interests, visit, previousVisit, isNewSince,
-    openState, openBadge, row, feedItem, titleLang, placeRow, logoCls, poster, flagLabel, flagTag, isOff, shelf, skelCards, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
-    skelRows, empty, cityName, locateIfGranted, locPrompt, placeGroups,
+    openState, openBadge, row, feedItem, titleLang, placeRow, logoCls, flagLabel, flagTag, isOff, heart, badgeFor, sect, dayHead, byDay, grouped, isRun,
+    skelRows, empty, cityName, locateIfGranted, placeGroups,
   };
 })();

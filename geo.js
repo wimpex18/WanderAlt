@@ -124,9 +124,6 @@
     return haversineM(a.lat, a.lng, b.lat, b.lng);
   };
 
-  /* The rail string: "1.4 km", or '' when we can't say. */
-  const distanceLabel = (entry, from) => format(distanceTo(entry, from));
-
   /* ── The shared sort: starts-soonest, then distance ──────────
      Undated entries sort after dated ones; unknown distances after known
      ones. */
@@ -203,7 +200,7 @@
     WALK_M_PER_MIN, STREET, STREET_ADD,
     walkMinutes, minutesFor, onFoot, format,
     coordsFor, userLoc, currentLoc, deviceLoc: () => _loc, anchor, setAnchor, locationError: () => _error,
-    distanceTo, distanceLabel,
+    distanceTo,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,
   };

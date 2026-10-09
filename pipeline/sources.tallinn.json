@@ -42,7 +42,9 @@
         5063,
         35562,
         39271,
-        1088
+        1088,
+        16395,
+        38194
       ]
     }
   },
@@ -63,7 +65,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://telliskivi.cc/en/events/",
-    "handle": "@telliskivi",
+    "handle": "@loomelinnak",
     "label": "Telliskivi Creative City",
     "curated": false,
     "config": {}
@@ -73,7 +75,7 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://vabalava.ee/mangukava/",
-    "handle": "@vabalava",
+    "handle": "@vaba_lava",
     "label": "Vaba Lava",
     "curated": true,
     "config": {
@@ -126,12 +128,21 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://www.kultuurivabrik.ee/en/events",
-    "handle": "@paavlikultuurivabrik",
+    "handle": "@kultuurivabrik",
     "label": "Paavli Kultuurivabrik",
     "curated": true,
     "config": {
+      "shape": "nextflight",
+      "venue_id": "tallinn-paavli-kultuurivabrik",
       "venue_name": "Paavli Kultuurivabrik",
-      "venue_site": "https://www.kultuurivabrik.ee/"
+      "venue_site": "https://www.kultuurivabrik.ee/",
+      "venue_instagram": "https://www.instagram.com/kultuurivabrik/",
+      "address": "Paavli 7, Tallinn",
+      "skip_titles": "\\b(tartu|pärnu|narva|viljandi|kuressaare|haapsalu|rakvere|helsinki|riga)\\b",
+      "records": [
+        { "list": "data", "id": "id", "title": "title", "start": "date", "end": "end_time", "ticket": "ticketUrl",
+          "description": "content", "page": "https://www.kultuurivabrik.ee/en/events#{id}" }
+      ]
     }
   },
   {
@@ -139,10 +150,82 @@
     "city": "tallinn",
     "kind": "html",
     "url": "https://saal.ee/en/program/",
-    "handle": "@kanutigildisaal",
+    "handle": "@kanutigildisaal_",
     "label": "Kanuti Gildi SAAL",
     "curated": true,
-    "config": { "venue_name": "Kanuti Gildi Saal", "venue_site": "https://saal.ee/" }
+    "config": {
+      "shape": "saal",
+      "venue_id": "tallinn-kanuti-gildi-saal",
+      "venue_name": "Kanuti Gildi Saal",
+      "venue_site": "https://saal.ee/",
+      "venue_instagram": "https://www.instagram.com/kanutigildisaal_",
+      "address": "Pikk 20, Tallinn",
+      "venue_map": [
+        ["^(kanuti gildi saal|püha vaimu saal|keldrisaal|studio|stuudio)$", "Kanuti Gildi Saal"],
+        ["^von krahli teater", "Von Krahli Teater"],
+        ["^sõltumatu tantsu lava", "Sõltumatu Tantsu Lava"],
+        ["^(urban space|linnaruum), tallinn$", null]
+      ]
+    }
+  },
+  {
+    "id": "vonkrahl",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://vonkrahl.ee/",
+    "handle": "@vonkrahliteater",
+    "label": "Von Krahl",
+    "curated": true,
+    "config": {
+      "shape": "nextflight",
+      "venue_id": "tallinn-von-krahli-teater",
+      "venue_name": "Von Krahli Teater",
+      "venue_site": "https://vonkrahl.ee/",
+      "venue_instagram": "https://www.instagram.com/vonkrahliteater/",
+      "venue_facebook": "https://www.facebook.com/vonkrahliteater",
+      "address": "Telliskivi 60a/9, Tallinn",
+      "venue_map": [
+        ["^von krahli (teater|baar|kohvik)", "Von Krahli Teater"]
+      ],
+      "records": [
+        { "list": "strapiEvents", "id": "id", "title": "title", "start": "start", "end": "end", "where": "location",
+          "ticket": "buyTicketsUrl", "page": "https://vonkrahl.ee/sundmused/{slug}", "status": "saleStatus", "kind": "eventType" },
+        { "list": "fientaEvents", "id": "buyTicketsUrl", "title": "title", "start": "start", "end": "end", "where": "location",
+          "ticket": "buyTicketsUrl", "page": "https://vonkrahl.ee/lavastused/{slug}", "status": "saleStatus", "series": "slug",
+          "image": ["project.poster.formats.large.url", "project.poster.url"], "image_base": "https://strapi.vonkrahl.ee/",
+          "description": "project.description" }
+      ]
+    }
+  },
+  {
+    "id": "stl",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://www.stl.ee/ajakava",
+    "handle": "@soltumatutantsulava",
+    "label": "Sõltumatu Tantsu Lava",
+    "curated": true,
+    "config": {
+      "shape": "stl",
+      "venue_id": "tallinn-soltumatu-tantsu-lava-stl",
+      "venue_name": "Sõltumatu Tantsu Lava",
+      "venue_site": "https://www.stl.ee/",
+      "venue_instagram": "https://www.instagram.com/soltumatutantsulava/",
+      "venue_facebook": "https://www.facebook.com/soltumatutantsulava",
+      "address": "Telliskivi 60a/9, Tallinn",
+      "skip_places": "kooligrupp",
+      "skip_categories": ["publikatsioonid"],
+      "venue_map": [
+        ["^(sõltumatu tantsu lava|stl\\b)", "Sõltumatu Tantsu Lava"],
+        ["^von krahli (teater|baar|kohvik)", "Von Krahli Teater"],
+        ["^paavli kultuurivabrik", "Paavli Kultuurivabrik"],
+        ["^kai kunstikeskus|^kai art cent", "Kai Art Center"],
+        ["^kanuti gildi saal", "Kanuti Gildi Saal"],
+        ["^tallinna linnahall", "Tallinna Linnahall"],
+        ["^südalinna teater", "Südalinna Teater"],
+        ["^meriton", null]
+      ]
+    }
   },
   {
     "id": "uuslaine",
@@ -155,6 +238,20 @@
     "config": {
       "venue_name": "Uus Laine",
       "venue_site": "https://uuslaine.com/"
+    }
+  },
+  {
+    "id": "tapper",
+    "city": "tallinn",
+    "kind": "html",
+    "url": "https://www.tapper.ee/kava/",
+    "handle": "@tapper.ee",
+    "label": "Klubi Tapper",
+    "curated": false,
+    "config": {
+      "venue_id": "tallinn-tapper",
+      "venue_name": "Tapper",
+      "venue_site": "https://www.tapper.ee/"
     }
   },
   {

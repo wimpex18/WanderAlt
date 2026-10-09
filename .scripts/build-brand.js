@@ -33,7 +33,6 @@ write('pwa/icon-192.svg', rounded);
 write('pwa/icon-512.svg', rounded);
 write('pwa/icon-maskable.svg', svg(tile() + inset(0.6), NOTE));
 write('pwa/icon-mono.svg', svg(`<g transform="translate(1.6 1.6) scale(.9)">${glyph('#000')}</g>`, NOTE));
-write('favicon/safari-pinned-tab.svg', svg(glyph('#000'), NOTE));
 
 /* Social cards keep their outlined wordmark; only the tile changes. */
 for (const f of ['social/og-default.svg', 'social/twitter-default.svg']) {

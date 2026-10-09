@@ -87,11 +87,6 @@ export async function lookupFacebookPage(page: string, cfg: InstagramConfig, fet
   } catch (e) { return { kind: 'stop', reason: `request failed: ${(e as Error).message}` }; }
 }
 
-/** Hours alone, for callers that want only them. */
-export async function lookupFacebookHours(page: string, cfg: InstagramConfig, fetcher: typeof fetch = fetch): Promise<FbHours> {
-  const r = await lookupFacebookPage(page, cfg, fetcher);
-  return r.kind === 'found' && !r.hours ? { kind: 'none', reason: 'no hours on the page' } : r;
-}
 
 /** Each step Facebook needs, tried with the real token, one line each; nothing is written.
  *  Our own Page answers with the token alone; another venue's Page answers only after review. */

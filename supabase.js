@@ -111,6 +111,14 @@
      All three translations travel with the catalogue once; switching needs no new request. */
   const PICK_LANG = ',title_et,quote_et,title_ru,quote_ru,title_uk,quote_uk';
   const VENUE_LANG = ',pick_note_et,pick_note_ru,pick_note_uk';
+  /* A source's address as a reader can use it: without a Google plus code ("CQW3+JC Tallinn, 10415 Tallinn"),
+     and none at all when only a postcode and the city would remain. */
+  const PLUS_CODE = /\b[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}\b,?\s*/gi;
+  const cleanAddress = (a) => {
+    if (!a) return null;
+    const s = String(a).replace(PLUS_CODE, '').replace(/^[\s,]+|[\s,]+$/g, '').replace(/\s{2,}/g, ' ');
+    return /\p{L}{3,}[^,]*\d|\d+\s*\p{L}*\s+\p{L}{3,}/u.test(s.replace(/\b\d{5}\b/g, '')) ? s : null;
+  };
   const own = (row, field) => {
     const lang = window.WA.Lang ? window.WA.Lang.current() : 'en';
     return (lang !== 'en' && row[`${field}_${lang}`]) || row[field];
@@ -138,7 +146,7 @@
     thisWeek:      r.this_week,
     lat:       r.lat       ?? null,
     lng:       r.lng       ?? null,
-    address:   r.address   ?? null,
+    address:   cleanAddress(r.address),
     permalink: r.source_url || null,   /* the listing's own event or ticket page */
     /* Source-authored facts. description is the venue's own blurb. */
     /* Lists and direct lookups carry a teaser. Originals load on disclosure. */
@@ -171,12 +179,11 @@
      shops, arts centres, cinemas, clubs, community centres and theatres,
      plus the bars that host listed events, and the museums we have picked.
      Libraries and the like still surface as event venues on picks. Only
-     picked or freshly verified places show. Exposed as WA.VENUE_KINDS. */
+     picked or freshly verified places show. */
   const VENUE_KINDS = new Set([
     'record store', 'bookshop', 'gallery', 'club', 'thrift',
     'arts centre', 'cinema', 'community', 'theatre', 'bar', 'museum', 'taproom',
   ]);
-  window.WA.VENUE_KINDS = [...VENUE_KINDS];
 
   /* The venue behind a pick: picks.venue_id when it is set, otherwise the
      same city and case-insensitive name. */
@@ -208,7 +215,7 @@
     imageSource:  r.image_source || null,
     /* How a logo looks (pipeline/logo-tone.ts), so it can sit on either paper. */
     imageTone:    r.image_tone || null,
-    address:      r.address || null,
+    address:      cleanAddress(r.address),
     description:  r.description || null,
     website:      r.website || null,
     facebook:     r.facebook || null,
@@ -272,8 +279,6 @@
   /* Turn rows into the catalogue the pages read. */
   const apply = (picks, venues, redirectRows) => {
     if (redirectRows) redirects = new Map(redirectRows.map(r => [r.id, r.canonical_id]));
-    /* No venue blurbs yet: places carry no description of their own. */
-    window.WA.venueBlurb = () => '';
     if (picks) {
       const all = picks.filter(isPublicPick).map(toPick);
       /* All-cities snapshot for cross-city lookups (e.g. a saved pick from

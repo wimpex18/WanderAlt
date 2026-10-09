@@ -4,7 +4,7 @@ Tallinn culture, a walk at a time: a static PWA (no framework or build step) on 
 
 ## Commands
 
-- Node 24 (`.nvmrc`); `npm install` supplies development tools only.
+- Node 24 (`.nvmrc`); `npm install` supplies development tools and the Anthropic SDK the pipeline's Claude lane uses.
 - `npm start`: http://localhost:5173, static files only (no Pages Functions or CSP; check those on a PR preview).
 - `npm test` and `npm run typecheck`: run both before every push. `npm test` never queries Supabase.
 - `npm run build:lang` after editing `lang/phrases.tsv` or `lang/patterns.tsv`; `npm run build:inline-icons` after icon sources change.
@@ -26,6 +26,7 @@ Tallinn culture, a walk at a time: a static PWA (no framework or build step) on 
 - The Guide uses `places.picked` with a one-line English `pick_note` grounded in the venue's own words or a checked fact. Search can also find other verified event venues.
 - Never invent hours, prices, reviews, dates or times. A Free, In English or Open now filter requires a known fact. Missing prices can pass a cap with an explicit note; unlocated events stay in lists and are counted as omitted on Map.
 - Never guess a venue or event photo from its name. Check identity and attribution; missing artwork uses its Label.
+- Place locations and merges come from `pipeline/place-checks.ts` (two independent witnesses, logged in `place_checks`). Improve its evidence rather than editing places by hand; a manual fix is for reversing a wrong answer.
 - Voice: handles start with `@`; no exclamation marks or marketing register; never "discover" as a verb.
 
 ## Security and services
@@ -36,6 +37,6 @@ Tallinn culture, a walk at a time: a static PWA (no framework or build step) on 
 - Enable RLS on exposed tables. Own-row policies use `(select auth.uid())`. Revoke EXECUTE from `anon, authenticated, public` on every SECURITY DEFINER function in the same migration. Keep `pg_net` uninstalled.
 - Keep SQL migration history. After schema changes, run the relevant rollback-only database assertions (README lists them).
 - A commit neither applies migrations nor deploys edge functions. Deploy functions only through Supabase MCP `deploy_edge_function`, passing the function's current `verify_jwt`.
-- Free services and models only: Workers AI, then OpenRouter `:free`; no Gemini or paid plans. Verify live model catalogues before changing pins.
+- Models: Claude Haiku 5.5 on the owner's Anthropic key (prompts under 100,000 tokens, a dollar cap per run), then Workers AI, then OpenRouter `:free`. No Gemini and no other paid model or plan. Verify live model catalogues and prices before changing pins; call Claude through the official SDK.
 - IMPORTANT: publish to social accounts only with the owner's explicit authorization for that post. Public discovery scopes are not provider approval; keep the Instagram hashtag collector disabled until approved.
 - Never add a bare-path-to-`.html` rule to `_redirects`; Pages pretty URLs would loop.

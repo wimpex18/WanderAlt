@@ -18,6 +18,10 @@ import * as fienta from './sources/fienta.ts';
 import * as jsonld from './sources/jsonld.ts';
 import * as wordpress from './sources/wordpress.ts';
 import * as vabalava from './sources/vabalava.ts';
+import * as nextflight from './sources/nextflight.ts';
+import * as saal from './sources/saal.ts';
+import * as stl from './sources/stl.ts';
+import { keepStarted } from './sources/still-on.ts';
 import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile, lookupPosts, fillInstagramDetails, type PostLookup } from './instagram.ts';
 import { collectInstagram, collectHashtags, instagramPostUrl } from './sources/instagram.ts';
@@ -36,6 +40,7 @@ import { tallinnDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
+import { checkPlaces } from './place-checks.ts';
 import { composeRoutes } from './routes.ts';
 import { fillHours } from './hours-sources.ts';
 import { facebookCheck } from './facebook-hours.ts';
@@ -77,6 +82,11 @@ export function loadSources(city = CITY): Source[] {
   return (JSON.parse(readFileSync(url, 'utf8')) as Source[]).filter(s => s.config.enabled !== false).map(s => ({ ...s, active: true } as Source));
 }
 
+/** Venue programme pages read by their own parser, named by config.shape: no model reads them. */
+const SHAPES = new Map<string, { collect: (s: Source) => Promise<RawItem[]>; extract: (i: RawItem, s: Source) => Candidate[] }>(
+  Object.entries({ vabalava, nextflight, saal, stl }));
+export const pageShape = (s: Source) => (s.kind === 'html' && typeof s.config.shape === 'string' ? SHAPES.get(s.config.shape) : undefined);
+
 async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
   switch (source.kind) {
     case 'fienta': return fienta.collect(source);
@@ -84,7 +94,7 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
     case 'wordpress': return wordpress.collect(source);
     case 'osm': return [];            // places, not events: step 5
     case 'telegram': return collectTelegram(source);
-    case 'html': return source.config.shape === 'vabalava' ? vabalava.collect(source) : collectPage(source);
+    case 'html': return pageShape(source)?.collect(source) ?? collectPage(source);
     case 'rss': return collectRss(source);
     case 'instagram': return source.config.hashtags ? collectHashtags(source) : collectInstagram(source, db);
   }
@@ -95,7 +105,7 @@ const posters = { left: Number(opt('--max-posters') ?? 30) };
 const instagramPosters = { left: 5 };
 const postCache = new Map<string, Promise<PostLookup>>();
 
-const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && s.config.shape !== 'vabalava') || s.kind === 'rss' || s.kind === 'instagram';
+const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' && !pageShape(s)) || s.kind === 'rss' || s.kind === 'instagram';
 
 /** Raw item → candidates. Null means "not now" (no model available). */
 export async function read(item: RawItem, source: Source, models: Models,
@@ -104,7 +114,8 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (source.kind === 'fienta') return fienta.extract(item);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
-  if (source.kind === 'html' && source.config.shape === 'vabalava') return vabalava.extract(item, source);
+  const shape = pageShape(source);
+  if (shape) return shape.extract(item, source);
   if (!models.ready) return null;
   const p = item.payload as { text?: string; title?: string; posted_at?: string; photos?: string[]; venue_name?: string; handle?: string; poster_available?: boolean };
   const isInstagram = source.kind === 'instagram';
@@ -216,10 +227,17 @@ const OFF_PROMISE_VENUE: [string, RegExp][] = [
   ['mainstream', words(String.raw`saku suurhall|unibet arena`)],
 ];
 const plain = (s: string) => s.normalize('NFKC').replace(/\s+/g, ' ').trim();
+const CREDIT = words(String.raw`koostööprojekt\p{L}*|kaasprodukts\p{L}*|co-?production|in (?:co-?operation|collaboration) with|совместн\p{L}* (?:проект|постановк)\p{L}*`);
+/** Three or more words ending in a full stop after a word: a sentence, not a name ("Mr. X" and "…" are names). */
+const SENTENCE = /^(?:\S+\s+){2,}\S*\p{L}{3,}\.$/u;
 
 /** Off the guide's promise by rule: held for a person, with the rule and the words it matched. */
 export function offPromise(title: string, venue?: string | null): { status: string; note: string } | null {
   const t = plain(title), v = plain(venue ?? '');
+  // A sentence or a production credit where the show's name should be ("VAT Teatri ja Vaba Lava
+  // koostööprojekt."): a reader took the wrong line, and the show's real name is not known.
+  const credit = CREDIT.exec(t);
+  if (credit || SENTENCE.test(t)) return { status: 'review', note: `rule: not a title (${credit ? credit[0].toLowerCase() : 'a sentence'})` };
   for (const [label, re] of OFF_PROMISE_TITLE) {
     const m = re.exec(t);
     if (m) return { status: 'review', note: `rule: ${label} (${m[0].toLowerCase()})` };
@@ -310,7 +328,7 @@ async function main() {
   if (flag('--instagram-check')) {
     const cfg = instagramConfig();
     if (!cfg) { log('instagram: INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_BUSINESS_ID is not set'); return; }
-    for (const handle of ['kanutigildisaal', 'laine.bar']) {
+    for (const handle of ['kanutigildisaal_', 'laine.bar']) {
       const r = await lookupProfile(handle, cfg);
       log(`instagram check @${handle}: ${r.kind}${r.kind === 'found' ? ` (username ${r.username}, picture address received)` : ` (${r.reason})`}`);
     }
@@ -333,7 +351,9 @@ async function main() {
   const local = localModels(DRY || flag('--no-local') ? 0 : Number(opt('--local-calls') ?? 8));
   local.neuronBudget = runCap;
   const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4, runCap);
-  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls;
+  // Place checks read a few pages a run (place-checks.ts); their own small budget.
+  const placeModels = new Models(undefined, DRY || flag('--no-place-checks') ? 0 : 8, runCap);
+  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls + placeModels.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -346,7 +366,7 @@ async function main() {
         .reduce((a, r) => a + Number(r.neurons || 0), 0);
       const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
       const left = Math.max(0, daily - spent);
-      for (const m of [models, sorter, english, local, routesModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
+      for (const m of [models, sorter, english, local, routesModels, placeModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
       current.db = db; current.runId = runId;
@@ -663,6 +683,8 @@ async function main() {
   for (let i = 0; i < found.length; i++) {
     const { c, p } = found[i];
     const e = enrich[i];
+    // A model-read listing that has started stays only as an exhibition still on (sources/still-on.ts).
+    if (needsModel(p.source) && !keepStarted(c, e.kind)) continue;
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
@@ -810,6 +832,14 @@ async function main() {
   const stale = new Date(Date.now() - KEEP_RAW_DAYS * 86_400_000).toISOString();
   await db.req('DELETE', `raw_items?status=in.(done,skipped,error)&fetched_at=lt.${stale}`);
   if (!flag('--no-verification')) await verifyPlaces(db, CITY, Number(opt('--max-website-checks') ?? 30));
+  // Questions about places answered from evidence: where an unlocated place is, and whether two
+  // places are one. A few each run, after every place write, so nothing written here is overwritten.
+  if (!flag('--no-place-checks')) {
+    try {
+      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8) });
+      if (answers.length) log(`place checks: ${answers.filter(a => a.answer).length} answered, ${answers.filter(a => !a.answer).length} waiting for more evidence`);
+    } catch (e) { log(`place checks failed: ${(e as Error).message}`); }
+  }
   // Evenings for the next few days. The model reads a short brief per day; with no model the same routes are titled by rule.
   if (!flag('--no-routes')) {
     try {
@@ -826,6 +856,8 @@ async function main() {
   }
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  const c = usage.claude;
+  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
       finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(),

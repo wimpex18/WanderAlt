@@ -1,0 +1,46 @@
+{
+  "events": [
+    {
+      "id": 301,
+      "title": "16.10 • Kurjam + Mai Skizo @ The Krypt",
+      "starts_at": "2026-10-16 21:00:00",
+      "ends_at": "2026-10-17 02:00:00",
+      "event_status": "scheduled",
+      "attendance_mode": "offline",
+      "venue": "The Krypt Spooky Bar & Stage",
+      "address": "Pärnu maantee 19, 10141 Tallinn, Harju maakond",
+      "url": "https://fienta.com/kurjam-maiskizo-oktoober-thekrypt",
+      "organizer_id": 38194,
+      "organizer_name": "Sügis Productions",
+      "categories": ["music"]
+    },
+    {
+      "id": 302,
+      "title": "25.10 • Halloween Flea Market vol. 3 @ The Krypt Spooky Bar, Tallinn",
+      "starts_at": "2026-10-25 15:00:00",
+      "ends_at": "2026-10-25 19:00:00",
+      "event_status": "scheduled",
+      "attendance_mode": "offline",
+      "venue": "The Krypt Spooky Bar & Stage",
+      "address": "Pärnu maantee 19, 10141 Tallinn, Harju maakond",
+      "url": "https://fienta.com/halloween-market-thekrypt",
+      "organizer_id": 16395,
+      "organizer_name": "The Krypt / Sügis Productions",
+      "categories": ["art", "food"]
+    },
+    {
+      "id": 303,
+      "title": "A night by someone renting the stage",
+      "starts_at": "2026-10-23 20:00:00",
+      "ends_at": null,
+      "event_status": "scheduled",
+      "attendance_mode": "offline",
+      "venue": "The Krypt Spooky Bar & Stage",
+      "address": "Pärnu maantee 19, 10141 Tallinn, Harju maakond",
+      "url": "https://fienta.com/a-night-at-the-krypt",
+      "organizer_id": 99999,
+      "organizer_name": "Another organiser",
+      "categories": ["music"]
+    }
+  ]
+}

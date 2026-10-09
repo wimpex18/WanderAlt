@@ -168,10 +168,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wa-ic .t { fill: currentColor; stroke: none; opacity: .16; }
 :root[data-theme="dusk"] .wa-ic .t { opacity: .26; }
 /* Selected (the current tab, a pressed key) the icon's body fills and its inner lines are cut out of it. */
-.wa-ic--solid .t, .wa-tabbar__item:is([aria-current="page"], [aria-current="location"]) .wa-ic .t, [aria-pressed="true"] > .wa-ic .t { opacity: 1; }
-.wa-ic--solid .k, .wa-tabbar__item:is([aria-current="page"], [aria-current="location"]) .wa-ic .k, [aria-pressed="true"] > .wa-ic .k { stroke: var(--ic-knock, var(--paper)); }
+.wa-tabbar__item:is([aria-current="page"], [aria-current="location"]) .wa-ic .t, [aria-pressed="true"] > .wa-ic .t { opacity: 1; }
+.wa-tabbar__item:is([aria-current="page"], [aria-current="location"]) .wa-ic .k, [aria-pressed="true"] > .wa-ic .k { stroke: var(--ic-knock, var(--paper)); }
 .wa-ic--sm { width: 16px; height: 16px; }
-.wa-ic--lg { width: 28px; height: 28px; stroke-width: 1.6; }
 
 .wa-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .wa-sr:focus { position: fixed !important; top: 8px; left: 8px; width: auto; height: auto; clip: auto; margin: 0; padding: 10px 16px; background: var(--ink); color: var(--paper); z-index: 100; border-radius: var(--r-pill); }
@@ -388,7 +387,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 @media (min-width: 1024px) { .wa-pagehead { padding: var(--s-8) 0 var(--s-6); } }
 .wa-pagehead__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
 
-/* Section head: title, count, and a round arrow key, as on a shelf. */
+/* Section head: title, count, and a round arrow key. */
 .wa-sect { margin-top: var(--s-8); }
 .wa-sect:first-child { margin-top: 0; }
 .wa-sect__head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); min-height: var(--tap); }
@@ -540,54 +539,15 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-tag__why { padding: 3px 9px; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink); font-weight: 600; font-size: .75rem; }
 .wa-new { font-size: .75rem; font-weight: 700; color: var(--accent-ink); }
 
-/* ── The event card ───────────────────────────────────────────────
-   Photo first, rounded, a glass badge for when and a heart to save;
-   then the title and quiet lines. */
-.wa-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: min(66vw, 250px); gap: var(--s-4); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter) var(--s-2); scroll-padding: 0 var(--gutter); overscroll-behavior-x: contain; scroll-behavior: smooth; }
-.wa-shelf::-webkit-scrollbar { display: none; }
-.wa-shelf > * { scroll-snap-align: start; }
-@media (min-width: 768px) { .wa-shelf { grid-auto-columns: calc((100% - 3 * var(--s-5)) / 3.3); gap: var(--s-5); } }
-@media (min-width: 1024px) { .wa-shelf { grid-auto-columns: calc((100% - 2 * var(--s-5)) / 3); margin: 0; padding: 2px 0 var(--s-2); scroll-padding: 0; } }
-@media (min-width: 1280px) { .wa-shelf { grid-auto-columns: calc((100% - 3 * var(--s-5)) / 4); } }
-.wa-shelfnav { display: none; gap: var(--s-2); margin-left: var(--s-2); }
-@media (min-width: 1024px) and (hover: hover) { .wa-shelfnav { display: flex; } }
-.wa-shelfnav .wa-iconbtn { width: 32px; height: 32px; border: 1px solid var(--line); background: var(--paper); }
-.wa-shelfnav .wa-iconbtn .wa-ic { width: 14px; height: 14px; stroke-width: 2.4; }
-.wa-shelfnav .wa-iconbtn[disabled] { opacity: .3; pointer-events: none; }
-.wa-sect__head .wa-sect__more + .wa-shelfnav { margin-left: var(--s-2); }
+/* ── Flags and the save heart ── */
 
-.wa-poster { position: relative; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: inherit; min-width: 0; }
-.wa-poster__link { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; color: inherit; text-decoration: none; border-radius: var(--r-lg); }
-.wa-poster__art { position: relative; aspect-ratio: 1 / 1; border-radius: var(--r-lg); overflow: hidden; background: var(--paper-2); margin-bottom: var(--s-2); }
-.wa-poster__art img { width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--ease); }
-.wa-poster__badge { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 64px); padding: 6px 12px; border-radius: var(--r-pill); font-size: .8125rem; font-weight: 600; color: #24222c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255,255,255,.93); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px rgba(0,0,0,.12); }
-.wa-poster__badge--now { background: var(--accent); color: var(--on-accent); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 /* Flags: what the source says about the show. Off (cancelled, postponed)
    is a tinted pill with a strong edge; sold out and few left are outlined. No accent: that is "now". */
 .wa-flag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--r-pill); font-size: .75rem; font-weight: 700; line-height: 1.4; white-space: nowrap; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
 .wa-flag--cancelled, .wa-flag--postponed { background: color-mix(in oklab, var(--ink) 14%, var(--paper)); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
-.wa-poster__flag { position: absolute; left: 10px; bottom: 10px; padding: 5px 10px; background: rgba(255,255,255,.94); color: #24222c; box-shadow: 0 2px 8px rgba(0,0,0,.14); }
-.wa-poster__flag.wa-flag--cancelled, .wa-poster__flag.wa-flag--postponed { background: rgba(255,255,255,.94); color: #24222c; box-shadow: inset 0 0 0 1.5px #24222c, 0 2px 8px rgba(0,0,0,.14); }
-.wa-poster--off .wa-poster__art img, .wa-poster--off .wa-poster__type { opacity: .45; filter: grayscale(1); }
 .wa-row--off .wa-row__thumb { opacity: .45; filter: grayscale(1); }
 .wa-row--off .wa-row__meta { color: var(--ink-3); }
-.wa-poster--off .wa-poster__title, .wa-row--off .wa-row__title { text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: var(--ink-3); }
-.wa-poster__type { position: absolute; inset: 0; display: grid; place-items: center; }
-.wa-poster__type { background: var(--paper-2); }
-.wa-poster__type .wa-picto { position: absolute; left: 50%; top: 50%; width: 58%; height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); }
-.wa-poster__title { font-size: var(--fs-title); font-weight: 600; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.wa-poster__meta { font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-.wa-poster__meta strong { color: var(--ink); font-weight: 600; }
-.wa-poster__walk { display: inline-flex; align-items: center; gap: 2px; color: var(--ink); font-weight: 600; vertical-align: bottom; }
-.wa-poster__walk .wa-ic { color: var(--here);  width: 15px; height: 15px; margin-left: -2px; }
-@media (max-width: 767px) {
-  .wa-shelf--compact { grid-auto-columns: min(43vw, 162.5px); gap: var(--s-3); }
-  .wa-shelf--compact .wa-poster__art { margin-bottom: var(--s-1); }
-  .wa-shelf--compact .wa-poster__badge { left: 8px; top: 12px; padding: 5px 9px; font-size: .75rem; }
-  .wa-shelf--compact .wa-poster__title { font-size: .875rem; min-height: 2.6em; }
-  .wa-shelf--compact .wa-poster__meta { font-size: .75rem; }
-}
-@media (hover: hover) { .wa-poster:hover .wa-poster__art img { transform: scale(1.04); } }
+.wa-row--off .wa-row__title { text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: var(--ink-3); }
 
 .wa-heart { position: absolute; right: 6px; top: 6px; z-index: 2; display: grid; place-items: center; width: var(--tap); height: var(--tap); border: 0; border-radius: 50%; background: none; color: #fff; transition: transform var(--t-med) var(--spring); }
 .wa-heart .wa-ic { width: 26px; height: 26px; stroke-width: 2; fill: rgba(0,0,0,.4); filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
@@ -1020,18 +980,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 @media (min-width: 1024px) { body[data-page="detail"] .wa-toast { bottom: var(--s-6); } }
 
 /* ── Saved ─────────────────────────────────────────────────────── */
-.wa-lists { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-4); }
-.wa-listcard { display: grid; align-content: start; gap: 6px; padding: 0; border: 0; background: none; text-align: left; }
-.wa-listcard__mosaic { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; aspect-ratio: 1; border-radius: var(--r-lg); overflow: hidden; background: var(--paper-2); box-shadow: var(--shadow-1); transition: transform var(--t-med) var(--spring); }
-.wa-listcard:hover .wa-listcard__mosaic { transform: translateY(-2px); }
-.wa-listcard[aria-pressed="true"] .wa-listcard__mosaic { box-shadow: 0 0 0 2px var(--ink); }
-.wa-listcard__tile { display: grid; place-items: center; color: var(--ink-3); overflow: hidden; }
-.wa-listcard__tile img { width: 100%; height: 100%; object-fit: cover; }
-.wa-listcard__tile .wa-picto { width: 84%; height: 84%; }
-.wa-listcard__mosaic--one { grid-template-columns: 1fr; }
-.wa-listcard__name { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-.wa-listcard__sub { font-size: var(--fs-small); color: var(--ink-3); }
-.wa-listcard--new .wa-listcard__mosaic { border: 1.5px dashed var(--line); background: none; box-shadow: none; display: grid; place-items: center; grid-template-columns: 1fr; }
 .wa-gone { display: flex; align-items: center; gap: var(--s-3); justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); }
 .wa-gone__title { text-decoration: line-through; overflow-wrap: anywhere; }
 .saved-cols { display: grid; }
@@ -1061,25 +1009,29 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .review__title { font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .review__desc { color: var(--ink-2); font-size: var(--fs-small); overflow-wrap: anywhere; }
 .review__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); }
+.review__group { margin-top: var(--s-7); }
+.review__group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2) var(--s-4); padding-bottom: var(--s-2); border-bottom: 1px solid var(--line); }
+.review__bulk { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.review__date { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: var(--r-pill); background: var(--paper-2); font-variant-numeric: tabular-nums; }
 
 /* A venue's logo, wherever a photo would sit: whole, centred, on white.
    Logos are drawn for light grounds, so the tile stays light in dark mode. */
-.wa-place__glyph.is-logo, .vcard__art.is-logo, .map-preview__art.is-logo, .wa-listcard__tile.is-logo, .wa-poster__art.is-logo, .wa-row__thumb.is-logo, .det-media--logo { background: #fff; }
-.wa-place__glyph.is-logo img, .vcard__art.is-logo img, .wa-listcard__tile.is-logo img, .wa-poster__art.is-logo img, .wa-row__thumb.is-logo img { object-fit: contain; padding: 8px; box-sizing: border-box; }
+.wa-place__glyph.is-logo, .vcard__art.is-logo, .map-preview__art.is-logo, .wa-row__thumb.is-logo, .det-media--logo { background: #fff; }
+.wa-place__glyph.is-logo img, .vcard__art.is-logo img, .wa-row__thumb.is-logo img { object-fit: contain; padding: 8px; box-sizing: border-box; }
 /* How a logo sits on each paper, from its measured tone (pipeline/logo-tone.ts; render.js logoCls).
    A logo with its own dark or coloured ground fills its box. In the light theme a white logo gets a
    dark tile. In the dark theme no logo gets a white square: black or grey ink on nothing or on white
    is turned light (the white ground drops out with it), dark colourful ink is brightened, light ink
    is shown as it is; only a colourful logo printed on white keeps a softened tile. An unmeasured
    logo keeps the white tile. */
-:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) { background: transparent; }
-:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) img { object-fit: cover; padding: 0; }
-:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-light { background: #2b2a27; }
-:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-clear-dark-colour, .tone-clear-light, .tone-clear-mid, .tone-light-mono) { background: transparent; }
-:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-light-mono) img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
-:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-dark-colour img { filter: brightness(1.8) saturate(1.1); }
-:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour { background: #e6e4dc; }
-:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-listcard__tile, .wa-poster__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour img { filter: brightness(.92); }
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) { background: transparent; }
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-dark, .tone-colour) img { object-fit: cover; padding: 0; }
+:is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-light { background: #2b2a27; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-clear-dark-colour, .tone-clear-light, .tone-clear-mid, .tone-light-mono) { background: transparent; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo:is(.tone-clear-dark-mono, .tone-light-mono) img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-clear-dark-colour img { filter: brightness(1.8) saturate(1.1); }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour { background: #e6e4dc; }
+:root[data-theme="dusk"] :is(.wa-place__glyph, .vcard__art, .map-preview__art, .wa-row__thumb, .det-next__glyph, .rt__logo).is-logo.tone-light-colour img { filter: brightness(.92); }
 .map-preview__art.is-logo img { object-fit: contain; padding: 12px; box-sizing: border-box; }
 /* The white logo tile needs an edge on a white page. */
 .det-media--logo { box-shadow: inset 0 0 0 1px var(--line); }
@@ -1178,9 +1130,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-ideas__chip { min-height: var(--tap); padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: .875rem; font-weight: 500; }
 .wa-ideas__chip:active { transform: scale(.97); background: var(--paper-3); }
 
-.wa-lists:empty { display: none; }
-.wa-lists + .wa-btn { margin-top: var(--s-1); }
-.wa-sect:has(> .wa-lists) { margin-bottom: var(--s-6); }
 
 
 /* ── Light motion ────────────────────────────────────────────────────
@@ -1190,20 +1139,18 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
    things you press answer the finger. All of it is off for reduced motion. The
    entrance only runs while html[data-enter] is set (view-transition.js). */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-enter] .wa-rows > li:nth-child(-n+5),
-  html[data-enter] .wa-shelf > :nth-child(-n+4),
-  html[data-enter] .wa-lists > * {
+  html[data-enter] .wa-rows > li:nth-child(-n+5) {
     animation: wa-settle 260ms var(--ease) both;
     animation-delay: calc(var(--n, 0) * 30ms);
   }
-  html[data-enter] .wa-rows > li:nth-child(2), html[data-enter] .wa-shelf > :nth-child(2) { --n: 1; }
-  html[data-enter] .wa-rows > li:nth-child(3), html[data-enter] .wa-shelf > :nth-child(3) { --n: 2; }
-  html[data-enter] .wa-rows > li:nth-child(4), html[data-enter] .wa-shelf > :nth-child(4) { --n: 3; }
+  html[data-enter] .wa-rows > li:nth-child(2) { --n: 1; }
+  html[data-enter] .wa-rows > li:nth-child(3) { --n: 2; }
+  html[data-enter] .wa-rows > li:nth-child(4) { --n: 3; }
   html[data-enter] .wa-rows > li:nth-child(5) { --n: 4; }
 
   /* Press: rows and cards sink a hair under the finger. */
-  .wa-row, .wa-poster__link, .wa-place { transition: transform 160ms var(--ease); }
-  .wa-row:active, .wa-poster__link:active, .wa-place:active { transform: scale(.985); }
+  .wa-row, .wa-place { transition: transform 160ms var(--ease); }
+  .wa-row:active, .wa-place:active { transform: scale(.985); }
 
   /* Open now: the dot breathes three times, then rests. */
   .wa-open--yes { position: relative; }
@@ -1236,7 +1183,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-fold > summary .wa-ic { width: 16px; height: 16px; color: var(--ink-3); transition: transform var(--t-med) var(--ease); }
 .you-fold[open] > summary .wa-ic { transform: rotate(90deg); }
 .you-fold__t { flex: 1; }
-.you-fold__n { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .you-fold__b { padding: 0 0 var(--s-4); }
 
 
@@ -1271,12 +1217,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-card__walk--you .rt-card__rail::before { top: 12px; }
 .rt-card__walk--you > :last-child { color: var(--here); font-weight: 600; }
 
-/* The mood key under Now's headline, and its sheet. */
-.home-mood__key { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
-.home-mood__key .wa-ic { color: var(--accent-ink); }
-/* Long translated choices wrap onto another line rather than crowding Near me. */
-.home-mood__key { flex: 0 1 auto; min-width: 0; }
-.home-mood__key > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The mood sheet. */
 .mood-lead { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.45; margin: 0 0 var(--s-4); }
 .mood-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .mood-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 26px; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 9px 14px 9px 10px; text-align: left; border: 1px solid var(--glass-edge); border-radius: var(--r-lg); background: var(--glass-bg); color: var(--ink); box-shadow: var(--glass-shine); transition: transform var(--t-fast) var(--spring), background var(--t-fast), box-shadow var(--t-fast); }
@@ -1295,7 +1236,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .mood-subs .wa-chip[aria-pressed="true"] { background: var(--select-bg); }
 @keyframes mood-open { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .mood-subs { animation: none; } }
-.home-mood__key.is-set { background: var(--select-bg); box-shadow: inset 0 0 0 1px var(--select-ring); border-color: transparent; }
 /* Free is good news, said in green. */
 .wa-free { color: var(--go); font-weight: 600; }
 .home-view__n.is-open { color: var(--go); }
@@ -1407,11 +1347,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   .wa-place__why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .vcard { grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--s-3); }
   .vcard__art { width: 56px; height: 56px; }
-  .wa-lists { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
-  .wa-listcard__mosaic { border-radius: var(--r-md); }
-  .wa-listcard__name { font-size: .9375rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .wa-listcard__sub { font-size: .8125rem; }
-  .wa-listcard .wa-ic--lg { width: 24px; height: 24px; }
 }
 
 .det-footer > .wa-linkbtn { min-height: 44px; }
@@ -1599,6 +1534,12 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-origin span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .home-origin[aria-pressed="true"] { color:var(--here); }
 .home-origin .wa-ic { color:var(--here); }
+/* Under 380 px a long label ("Рядом со мной", a chosen street) would push the headline under the key:
+   the key keeps its icon, and its words stay for screen readers. */
+@media (max-width:379px) {
+  .home-origin { width:40px; padding:0; justify-content:center; }
+  .home-origin span { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+}
 
 .home-moods { display:flex; gap:2px; padding-top:2px; padding-bottom:6px; }
 .home-mood { flex:none; display:grid; justify-items:center; align-content:start; gap:5px; min-width:62px; min-height:var(--tap); padding:4px 8px 8px; border:0; border-radius:var(--r-md); background:none; color:var(--ink-2); font:500 .75rem/1.2 var(--f-sans); text-align:center; scroll-snap-align:start; position:relative; cursor:pointer; }
@@ -1833,10 +1774,8 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .home-rows .wa-row__thumb { width:88px; height:88px; }
   .home-rows .wa-row__thumb img { transition:transform 420ms var(--ease); }
 
-  /* All events: the posters as a grid under one main-width search line. */
+  /* All events: the controls in the main column. */
   body[data-page="programme"] :is(.prog-back, .wa-pagehead, .prog-controls) { max-width:var(--main); }
-  .prog-list .wa-feed { max-width:none; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:var(--s-7); }
-  .prog-list .wa-feed__title { font-size:1.25rem; }
 
   /* Saved: shows in the main column, places beside them. */
   .saved-cols { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); align-items:start; }
@@ -1850,9 +1789,6 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   #you-body > .you-join .wa-btn { width:100%; justify-content:center; }
   #you-body > :is(.you-group, .wa-foot) { grid-column:1; }
   #you-body > .you-group:first-of-type { margin-top:0; }
-}
-@media (min-width:1280px) {
-  .prog-list .wa-feed { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width:1024px) and (hover:hover) {
   .home-rows .wa-row:hover { background-color:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); }
@@ -1893,7 +1829,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .det-head .wa-h1, #rt-title { font-size:3rem; }
   .wa-pagehead { gap:var(--s-3); }
   .wa-day__name, .home-day__head .wa-day__name, .det-block__title, .wa-empty__title, .wa-sheet__title, .wa-sheet--discovery[data-kind="dates"] .wa-sheet__title { font-size:var(--fs-h2); }
-  .wa-row__title, .wa-place__name, .det-next__name, .rt__name, .vcard__name, .wa-feed__title, .prog-list .wa-feed__title, .rt-card__title, .you-fold > summary, .wa-bar__price, .home-aside__title, .home-walk__title { font-size:var(--fs-title); }
+  .wa-row__title, .wa-place__name, .det-next__name, .rt__name, .vcard__name, .wa-feed__title, .rt-card__title, .you-fold > summary, .wa-bar__price, .home-aside__title, .home-walk__title { font-size:var(--fs-title); }
   .wa-lede, .det-summary { font-size:var(--fs-lead); }
   .wa-prose, .det-orig, .det-fact__value, .wa-field__label, .wa-search-group, .wa-search-match__body b, .home-aside__name { font-size:var(--fs-body); }
   .wa-btn, .wa-btn--sm, .wa-linkbtn, #to-map, .wa-chip, .prog-quick .wa-chip, .places-kinds .wa-chip, .mood-subs .wa-chip, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip,
@@ -1966,7 +1902,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   /* Icon keys: 40 px circles; in the top bar each wears the line. */
   .wa-iconbtn, .wa-sheet__close, .map-preview__close, .wa-saved-row__space, .map-ctrl { width:40px; height:40px; }
   .wa-start__locate { flex-basis:40px; }
-  .wa-topbar .wa-iconbtn, .wa-topbar .wa-theme, .wa-shelfnav .wa-iconbtn, .wa-lang__key { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
+  .wa-topbar .wa-iconbtn, .wa-topbar .wa-theme, .wa-lang__key { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
   .wa-topbar .wa-iconbtn:hover, .wa-topbar .wa-theme:hover, .wa-lang__key:hover, .wa-lang__key[aria-expanded="true"] { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
   .wa-lang__key { height:40px; }
   .wa-search-entry { min-height:40px; border-color:var(--line); background:transparent; color:var(--ink-2); }
@@ -1982,7 +1918,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .wa-chip .wa-ic, .home-when .wa-ic { width:16px; height:16px; }
   .wa-chip .wa-picto, .places-kinds .wa-chip .wa-picto { width:22px; height:22px; margin-left:-8px; }
   .wa-chip:hover { border-color:var(--ink-3); }
-  .home-origin, .home-mood__key { background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .home-origin { background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
   .map-filters .map-mood { min-height:32px; padding:0 14px 0 4px; }
   .map-filters .map-mood .wa-picto { width:24px; height:24px; }
   .map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
@@ -2020,9 +1956,139 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .wa-search-entry { width:auto; max-width:320px; }
 }
 
+/* ── Desktop layouts: the choosing on the left, the list, the walk on the right ─────
+   Now from 1280 px: a rail of plain options with their counts replaces the mood
+   pictograms, the Near me chip and the When key, so the list starts under the title.
+   Save shows on a row's hover or focus, and always once saved. The walk card draws its
+   stops where they are. Phones and tablets keep everything above. */
+.home-walk__plot { display:none; }
+@media (min-width:1024px) {
+  .home-side .home-walk__plot { display:block; grid-column:1 / -1; grid-row:2; width:100%; height:auto; aspect-ratio:300 / 120; margin-block:var(--s-1) var(--s-2); border-radius:var(--r-sm); background:var(--paper-2); }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__discs { display:none; }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__title { grid-column:1 / -1; }
+  .home-walk__plot polyline { fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; stroke-linecap:round; }
+  .home-walk__plot circle { fill:var(--paper); stroke:var(--accent); stroke-width:2; }
+  .home-walk__plot .is-event circle { fill:var(--accent); }
+  .home-walk__plot text { font:600 11px/1 var(--f-sans); fill:var(--accent-ink); text-anchor:middle; dominant-baseline:central; }
+  .home-walk__plot .is-event text { fill:#fff; }
+}
+@media (min-width:1024px) and (hover:hover) {
+  .wa-row-item > .wa-heart[aria-pressed="false"] { opacity:0; transition:opacity var(--t-fast); }
+  .wa-row-item:is(:hover, :focus-within) > .wa-heart, .wa-row-item > .wa-heart:focus-visible { opacity:1; }
+}
+@media (min-width:1280px) {
+  main.wa-shell:has(> .home-rail:not([hidden])) { display:grid; grid-template-columns:200px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  main.wa-shell:has(> .home-rail:not([hidden])) > :is(.home-hero, .home-grid) { grid-column:2; }
+  main.wa-shell:has(> .home-rail:not([hidden])) .home-grid { gap:var(--s-8); --side:300px; }
+  .home-rail { grid-column:1; grid-row:1 / span 2; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); display:grid; gap:var(--s-6); padding-top:var(--s-8); max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; }
+  main:has(> .home-rail:not([hidden])) :is(.home-moods, .home-acts, .home-browse__end), body:has(.home-rail:not([hidden])) .home-fold { display:none !important; }
+  .home-rail__group { display:grid; gap:2px; }
+  .home-rail__h { margin:0 0 var(--s-1); font-size:var(--fs-small); font-weight:600; color:var(--ink-3); }
+  .home-rail__opt { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:36px; margin-inline:-10px; padding:0 10px; border:0; border-radius:var(--r-xs); background:none; color:var(--ink-2); font:400 var(--fs-meta)/1.3 var(--f-sans); text-align:left; cursor:pointer; }
+  .home-rail__opt:hover { background:var(--paper-2); color:var(--ink); }
+  .home-rail__opt[aria-pressed="true"] { background:var(--paper-2); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
+  .home-rail__opt:focus-visible { outline:2px solid var(--ink); outline-offset:1px; }
+  .home-rail__n { font-size:var(--fs-small); font-weight:400; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+  .home-rail__n.is-none { opacity:.6; }
+  .home-rail__seg { box-shadow:inset 0 0 0 1px var(--line); background:none; padding:3px; }
+  .home-rail__seg button { min-height:30px; padding-inline:4px; font-size:var(--fs-small); font-weight:400; white-space:nowrap; }
+  .home-rail__seg button[aria-pressed="true"] { background:var(--ink); color:var(--paper); box-shadow:none; font-weight:600; }
+  .home-rail__note { margin:var(--s-1) 0 0; font-size:var(--fs-small); }
+  .home-rail__foot { display:grid; justify-items:start; gap:var(--s-1); }
+  .home-rail__near { min-height:40px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
+  .home-rail__near[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+  .home-rail__foot .wa-linkbtn { margin-inline-start:-12px; }
+}
+
+/* Event page from 1024 px: the facts beside the ticket panel, each in its own cell, so the panel
+   never covers what follows; the facts carry plain line icons rather than grey tiles. */
+@media (min-width:1024px) {
+  .det-grid__main:has(> .det-facts + .wa-bar) { grid-template-columns:minmax(0, 1fr) minmax(240px, 288px); column-gap:var(--s-7); }
+  .det-grid__main:has(> .det-facts + .wa-bar) > * { grid-column:1 / -1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .det-facts { grid-column:1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .wa-bar { grid-column:2; align-self:start; flex-direction:column; align-items:stretch; gap:var(--s-3); }
+  .det-grid__main > .wa-bar .wa-bar__sub { white-space:normal; }
+  .det-grid__main > .wa-bar .wa-btn--primary { flex:none; }
+  .det-fact { grid-template-columns:20px minmax(0, 1fr); gap:var(--s-3); align-items:start; padding:var(--s-2) 0; }
+  .det-fact__icon { width:20px; height:20px; margin-top:1px; border-radius:0; background:none; color:var(--ink-3); }
+  .det-fact__icon .wa-ic { width:20px; height:20px; }
+}
+
+/* Walk page from 1024 px: the stops on the left, their map on the right, sticky while the list scrolls. */
+.rt-map { display:none; }
+@media (min-width:1024px) {
+  main.wa-shell:has(> .rt-map:not([hidden])) { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:var(--s-9); align-items:start; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > :is(.rt-back, .wa-pagehead, #rt-body) { grid-column:1; max-width:none; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > .rt-back { justify-self:start; }
+  .rt-map:not([hidden]) { display:block; grid-column:2; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); height:calc(100vh - var(--topbar-h) - var(--s-8)); min-height:420px; margin-top:var(--s-7); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
+  .rt-map__canvas { width:100%; height:100%; }
+  .rt-map__pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--paper); box-shadow:0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.25); color:var(--accent-ink); font:700 var(--fs-meta)/1 var(--f-sans); text-decoration:none; cursor:pointer; }
+  .rt-map__pin.is-event { background:var(--accent); color:#fff; }
+  .rt-map__pin:hover { transform:scale(1.08); }
+  .rt-map__pin:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+}
+
+/* About from 1024 px: the counts as one line under the lede, not three big numbers. */
+.about-counted { display:none; }
+@media (min-width:1024px) {
+  .about-counted:not(:empty) { display:block; font-variant-numeric:tabular-nums; }
+  body:has(.about-counted:not(:empty)) .wa-stats { display:none; }
+}
+
+/* Search from 1024 px: a 760 px dialog with events and places side by side, two lines a match
+   (the source stays on the listing's own page), a close key rather than a back arrow, and
+   "View all results" as a secondary button. */
+.wa-search-close--back { display:contents; }
+.wa-search-close--x { display:none; }
+@media (min-width:1024px) {
+  .wa-search-dialog { width:min(760px, calc(100% - 48px)); }
+  .wa-search-close--back { display:none; }
+  .wa-search-close--x { display:contents; }
+  .wa-search-cols:has(> section + section) { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(0, 1fr); gap:var(--s-7); align-items:start; }
+  .wa-search-cols > section > .wa-search-group { margin-top:0; }
+  .wa-search-match__body small { display:none; }
+  .wa-search-dialog__foot { display:flex; justify-content:flex-end; }
+  .wa-search-dialog__foot .wa-search-all { width:auto; background:var(--paper); color:var(--ink); border:1px solid var(--line); box-shadow:none; }
+  .wa-search-dialog__foot .wa-search-all:hover { background:var(--paper-2); border-color:var(--ink-3); }
+}
+
+/* Map from 1024 px: Events/Places, the date and the moods head the list column; the map keeps
+   only its pins and the locate key. Plain chips here, glass only where something moves beneath. */
+@media (min-width:1024px) {
+  .map-drawer > .map-top { position:static; inset:auto; z-index:auto; flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-2); padding:0 var(--s-5) var(--s-4); border-bottom:1px solid var(--hair); pointer-events:auto; }
+  .map-drawer > .map-top .map-seg { -webkit-backdrop-filter:none; backdrop-filter:none; background:var(--paper-2); box-shadow:none; }
+  .map-drawer > .map-top .map-dates { margin-inline-start:auto; }
+  .map-drawer > .map-top .map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:var(--s-2); overflow:visible; padding:0; margin:0; mask:none; -webkit-mask:none; }
+  .map-drawer > .map-top :is(.map-mood, .discovery-date, .wa-chip) { background:var(--paper); border:1px solid var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .map-drawer > .map-top .map-mood[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+}
+
+/* All events from 1024 px: Now's rows instead of posters, in the main column; from 1280 px the
+   search and its filters are a sticky rail on the left, as on Now. */
+@media (min-width:1024px) {
+  .prog-list { max-width:var(--main); }
+}
+@media (min-width:1280px) {
+  body[data-page="programme"] main.wa-shell { display:grid; grid-template-columns:248px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  body[data-page="programme"] main.wa-shell > :is(.prog-back, .wa-pagehead, .prog-layout) { grid-column:2; }
+  body[data-page="programme"] main.wa-shell > .prog-back { justify-self:start; }
+  body[data-page="programme"] .prog-controls { grid-column:1; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); max-width:none; padding:var(--s-9) 0 0; align-content:start; }
+  body[data-page="programme"] .prog-toolbar, body[data-page="programme"] .prog-quick { flex-wrap:wrap; }
+  body[data-page="programme"] .prog-list { max-width:none; }
+}
+
+/* Windows High Contrast drops backgrounds and shadows, which carry every chosen state here: an outline in the
+   system's text colour marks what is chosen, and the primary button keeps an edge. */
+@media (forced-colors: active) {
+  :is(.wa-chip, .wa-btn, .map-mood, .home-when)[aria-pressed="true"], .wa-chip[aria-selected="true"], .home-mood[aria-pressed="true"],
+  .home-view__opt[aria-pressed="true"], .wa-tabbar__item[aria-current="page"], .wa-when__opt[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:2px; }
+  .wa-btn--primary { border:1px solid ButtonText; }
+  .wa-heart[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:-4px; border-radius:50%; }
+}
+
 /* Reduce Transparency: every glass surface becomes solid paper, not only the drops and Now's keys. */
 @media (prefers-reduced-transparency: reduce) {
-  .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .wa-topbar, .wa-sheet__panel, .wa-offline, .wa-toast, .prog-controls, .rt-card, .home-mood__key, .home-day__all, .wa-lang__menu, .map-filters .map-mood {
+  .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .wa-topbar, .wa-sheet__panel, .wa-offline, .wa-toast, .prog-controls, .rt-card, .home-day__all, .wa-lang__menu, .map-filters .map-mood {
     background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none;
   }
 }

@@ -276,7 +276,7 @@
 
   /* canOffer: a quiet entry (Tonight, You) is worth showing: a browser that can add the app, not yet added. */
   const canOffer = () => ['ios', 'chromium', 'menu'].includes(kind()) && !webview() && !read().done;
-  window.WA.Install = { kind, open, standalone, webview, benefit, label, canOffer, canOpen: canOffer };
+  window.WA.Install = { kind, open, standalone, webview, benefit, label, canOffer };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true }); else start();
 })();

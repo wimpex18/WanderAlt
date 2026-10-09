@@ -329,6 +329,9 @@
     return `<section class="prog-places" aria-label="Places"><h2 class="wa-kicker">Places</h2><ul class="places-grid">${shown.map(v => R().placeRow(v, { from: placeOrigin().from })).join('')}</ul>${all}</section>` +
       (listLen ? '<h2 class="wa-kicker">Listings</h2>' : '');
   };
+  const media = (q) => (typeof matchMedia === 'function' ? matchMedia(q) : { matches: false, addEventListener() {} });
+  const asRows = media('(min-width: 1024px)');
+  asRows.addEventListener('change', () => { if (window.WA.catalog) render(); });
   const listHtml = (list) => {
     if (state.q && placeOnly) return placeView().length ? placesBlock(0) : emptyState();
     if (!list.length) return state.q && (placeHits.length || evenings.length)
@@ -336,8 +339,10 @@
     const days = list.filter(e => !R().isRun(e));
     const rest = days.length - limit;
     const more = rest > 0 ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, rest)} more</button><span class="wa-note">${rest} more after these</span></div>` : '';
-    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="wa-feed">${list.slice(0, limit).map(e => R().feedItem(e, { day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
-    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { feed:true, since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
+    /* Desktop reads the same rows as Now, time first; phones and tablets keep the posters. */
+    const rows = asRows.matches, opts = rows ? { rowsClass: 'home-rows', heart: true, unknownPrice: true } : { feed: true };
+    if (state.sort === 'nearest' && G().currentLoc()) return `${eveningsBlock()}${placesBlock(list.length)}<ul class="${rows ? 'wa-rows home-rows' : 'wa-feed'}">${list.slice(0, limit).map(e => R().row(e, { ...opts, day: true, since })).join('')}</ul>${list.length > limit ? `<div class="prog-more"><button class="wa-btn wa-btn--quiet" type="button" data-act="more">Show ${Math.min(PAGE, list.length - limit)} more</button></div>` : ''}`;
+    return eveningsBlock() + placesBlock(list.length) + R().grouped(list, { ...opts, since, limit, runningLimit: runsOpen ? undefined : 5 }) + more;
   };
 
   /* Write markup only when it changed, so an unchanged list keeps its
@@ -405,7 +410,8 @@
   /* Day headings stick under the controls, which stick under the top bar. */
   const stickyOffset = () => {
     const c = $('prog-controls');
-    const h = c && getComputedStyle(c).position === 'sticky' ? c.getBoundingClientRect().height : 0;
+    /* From 1280 px the controls are a rail beside the list, so headings stick under the top bar only. */
+    const h = c && !media('(min-width: 1280px)').matches && getComputedStyle(c).position === 'sticky' ? c.getBoundingClientRect().height : 0;
     document.documentElement.style.setProperty('--sticky-extra', `${Math.round(h)}px`);
   };
   window.addEventListener('resize', stickyOffset);
