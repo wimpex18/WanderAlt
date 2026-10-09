@@ -491,7 +491,7 @@
         <h2 class="wa-sect__title">${esc(head.title)}</h2>
         ${head.n != null ? `<span class="wa-sect__count">${esc(String(head.n))}</span>` : ''}
         ${head.href ? `<a class="wa-sect__more" href="${esc(head.href)}" aria-label="${esc(`${head.more || 'All'}: ${head.title}`)}">${I('arrow')}</a>` : '<span style="margin-left:auto"></span>'}
-        <span class="wa-shelfnav"><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="-1" aria-label="Previous">${I('back')}</button><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="1" aria-label="Next">${I('chevron')}</button></span>
+        <span class="wa-shelfnav"><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="-1" aria-label="Previous">${I('left')}</button><button class="wa-iconbtn" type="button" data-shelf="${id}" data-dir="1" aria-label="Next">${I('chevron')}</button></span>
       </div>
       ${head.sub ? `<p class="wa-sect__sub">${esc(head.sub)}</p>` : ''}
       <div class="wa-shelf${head.compact ? ' wa-shelf--compact' : ''}" id="${id}">${cards}</div>
@@ -581,7 +581,7 @@
         : k === 'running'
           ? `<div class="wa-day" role="heading" aria-level="2"><span class="wa-day__name">Running</span><span class="wa-day__date">Started earlier, still on</span><span class="wa-day__n">${all.length}</span></div>`
           : dayHead(k, all.length, opts);
-      out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : 'wa-rows'}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
+      out.push(`${head}<ul class="${opts.feed ? 'wa-feed' : `wa-rows${opts.rowsClass ? ` ${opts.rowsClass}` : ''}`}">${items.map(e => row(e, opts)).join('')}</ul>${more}`);
     }
     return out.join('');
   };

@@ -73,7 +73,64 @@
       <p class="wa-note">${route.engine && route.engine !== 'rules' ? '<span>The title and note were written by an AI model from our own listings; the stops, times and walks are worked out and checked from the same data.</span> ' : ''}<span>Place times are suggested.</span> <span>Walking times follow the streets at an easy pace.</span> <span>Tickets and opening hours can change. Check each stop before you go.</span></p>
       <div id="rt-more"></div>`;
     more(route);
+    mapOf(route);
   };
+
+  /* ── The walk on the street map, beside its stops (1024 px and wider) ──
+     Numbered like the list; each number opens its stop. A dashed line joins the stops in walking
+     order: it shows the order, not the path. MapLibre is fetched only here, so phones never load it. */
+  const wide = typeof matchMedia === 'function' ? matchMedia('(min-width: 1024px)') : { matches: false, addEventListener() {} };
+  let walkMap = null;
+  const located = (s) => s.lat != null && s.lng != null && isFinite(s.lat) && isFinite(s.lng);
+  const mapOf = (route) => {
+    const host = $('rt-map');
+    if (!host) return;
+    const show = wide.matches && route.stops.length > 1 && route.stops.every(located);
+    host.hidden = !show;
+    if (!show) return;
+    const dusk = document.documentElement.dataset.theme === 'dusk';
+    const key = `${route.stops.map(s => `${s.id}@${s.lat},${s.lng}`).join('|')}|${dusk}`;
+    if (walkMap && walkMap.key === key) return;
+    const gl = window.maplibregl;
+    if (!gl) {
+      host.dataset.mapState = 'loading';
+      document.addEventListener('wa:maplibre-ready', () => mapOf(route), { once: true });
+      if (!document.querySelector('script[src$="maplibre-loader.js"]')) {
+        const s = document.createElement('script');
+        s.src = './maplibre-loader.js';
+        document.head.append(s);
+      } else document.dispatchEvent(new CustomEvent('wa:maplibre-request'));
+      return;
+    }
+    if (walkMap) { walkMap.map.remove(); walkMap = null; }
+    host.innerHTML = '<div class="rt-map__canvas"></div>';
+    const lngs = route.stops.map(s => Number(s.lng)), lats = route.stops.map(s => Number(s.lat));
+    try {
+      const map = new gl.Map({ container: host.firstChild, style: dusk ? './map-style-dusk.json' : './map-style.json',
+        bounds: [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], fitBoundsOptions: { padding: 64, maxZoom: 16 },
+        scrollZoom: false, attributionControl: { compact: true } });
+      map.addControl(new gl.NavigationControl({ showCompass: false }), 'top-right');
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d83a14';
+      const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
+      const fit = () => { map.resize(); map.fitBounds(bounds, { padding: 64, maxZoom: 16, animate: false }); };
+      new ResizeObserver(fit).observe(host);
+      map.on('load', () => {
+        fit();
+        map.addSource('walk', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: route.stops.map(s => [Number(s.lng), Number(s.lat)]) } } });
+        map.addLayer({ id: 'walk', type: 'line', source: 'walk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': accent, 'line-width': 3, 'line-dasharray': [1.2, 1.8] } });
+        host.dataset.mapState = 'ready';
+      });
+      route.stops.forEach((s, i) => {
+        const pin = document.createElement('a');
+        pin.className = `rt-map__pin${s.type === 'event' ? ' is-event' : ''}`;
+        pin.href = s.href;
+        pin.innerHTML = `<span aria-hidden="true">${i + 1}</span><span class="wa-sr" data-notranslate>${esc(`${i + 1}. ${s.name}`)}</span>`;
+        new gl.Marker({ element: pin }).setLngLat([Number(s.lng), Number(s.lat)]).addTo(map);
+      });
+      walkMap = { map, key };
+    } catch { host.hidden = true; console.warn('[route] the walk map could not start'); }
+  };
+  wide.addEventListener('change', () => { if (window.WA.catalog) boot(); });
 
   /* Other evenings put together for today and the next days. */
   const more = (route) => {
@@ -87,6 +144,7 @@
   };
 
   const none = (shared = false) => {
+    if ($('rt-map')) $('rt-map').hidden = true;
     $('rt-title').textContent = shared ? 'This walk is no longer available' : 'No route right now';
     $('rt-sub').textContent = '';
     $('rt-body').innerHTML = R().empty({ icon: 'calendar', title: shared ? 'Choose a walk for today.' : 'Nothing fits together right now.',

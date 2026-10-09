@@ -908,7 +908,8 @@ window.WA.dict.ru = {
   "Publish this group": "Опубликовать эту группу",
   "Yes, reject": "Да, отклонить",
   "Yes, publish": "Да, опубликовать",
-  "The next eight days also come as a feed for readers and newsletters:": "Ближайшие восемь дней есть и в виде ленты для читалок и рассылок:"
+  "The next eight days also come as a feed for readers and newsletters:": "Ближайшие восемь дней есть и в виде ленты для читалок и рассылок:",
+  "Map of the walk": "Карта прогулки"
  },
  "patterns": [
   [
@@ -1494,6 +1495,15 @@ window.WA.dict.ru = {
   [
    "Reject {x}?",
    "Отклонить {x}?"
+  ],
+  [
+   "{n} sources",
+   {
+    "one": "{n} источник",
+    "few": "{n} источника",
+    "many": "{n} источников",
+    "other": "{n} источника"
+   }
   ]
  ]
 };

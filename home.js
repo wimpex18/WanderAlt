@@ -54,7 +54,20 @@
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
   };
-  const walkCard = () => {
+  /* The stops where they are, joined in order. No streets are drawn, so none are invented. North is
+     up, and a degree of longitude is drawn at its true width at the walk's latitude. */
+  const walkPlot = (route) => {
+    const pts = route.stops.map(s => (s.lat != null && s.lng != null && isFinite(s.lat) && isFinite(s.lng) ? [Number(s.lng), Number(s.lat)] : null));
+    if (pts.length < 2 || pts.some(p => !p)) return '';
+    const k = Math.cos(pts[0][1] * Math.PI / 180), W = 300, H = 120, pad = 20;
+    const xs = pts.map(p => p[0] * k), ys = pts.map(p => p[1]);
+    const left = Math.min(...xs), bottom = Math.min(...ys), w = Math.max(...xs) - left, h = Math.max(...ys) - bottom;
+    const s = Math.min((W - 2 * pad) / (w || 1e-9), (H - 2 * pad) / (h || 1e-9));
+    const xy = pts.map((p, i) => [((W - w * s) / 2 + (xs[i] - left) * s).toFixed(1), ((H + h * s) / 2 - (p[1] - bottom) * s).toFixed(1)]);
+    return `<svg class="home-walk__plot" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><polyline points="${xy.map(p => p.join(',')).join(' ')}"/>${xy.map((p, i) =>
+      `<g${route.stops[i].type === 'event' ? ' class="is-event"' : ''}><circle cx="${p[0]}" cy="${p[1]}" r="10"/><text x="${p[0]}" y="${p[1]}">${i + 1}</text></g>`).join('')}</svg>`;
+  };
+  const walkCard = (plot = false) => {
     const route = plans[planIdx];
     if (!route) return '';
     const Rt = window.WA.Route, first = route.stops[0];
@@ -70,6 +83,7 @@
         ${plans.length > 1 ? `<button class="wa-iconbtn home-walk__again" type="button" data-another aria-label="Another walk">${I('refresh')}</button>` : ''}</div>
       <a class="home-walk__main" href="${esc(Rt.href(route))}">
         <span class="home-walk__title" id="home-walk-title">${esc(route.title || 'Two or three stops on foot')}</span>
+        ${plot ? walkPlot(route) : ''}
         <span class="home-walk__discs" aria-hidden="true">${route.stops.slice(0, 3).map(s => window.WA.Picto.kind(s.kind)).join('')}</span>
         <span class="home-walk__stops"><time>${esc(window.WA.Hours.clock(first.minute % 1440))}</time>${route.stops.map(s => `<span data-notranslate>${esc(s.name)}</span>`).join(`<span class="home-walk__to" aria-hidden="true">${I('arrow')}</span>`)}</span>
         <span class="home-walk__foot"><span class="home-walk__cost">${esc(facts)}</span><span class="home-walk__action">View walk ${I('arrow')}</span></span>
@@ -268,6 +282,7 @@
     if (foldWatch) foldWatch.observe(browse);
     syncBrowse(list.length, { all: places.length, open: places.filter(isOpen).length });
     side(all);
+    railSync(all);
     syncFold();
     if (window.WA.UI.edges) window.WA.UI.edges();
     return all;
@@ -280,7 +295,7 @@
     const card = document.querySelector('.home-walk');
     if (!card) return;
     const focused = !!document.activeElement?.matches('[data-another]');
-    card.outerHTML = walkCard();
+    card.outerHTML = walkCard(wide.matches);
     const next = document.querySelector('.home-walk');
     if (next) { next.dataset.again = '1'; if (focused) next.querySelector('[data-another]')?.focus({ preventScroll: true }); }
   };
@@ -307,9 +322,44 @@
     return n ? `<a class="wa-since" href="discover.html?new=1&time=all"><span class="wa-since__n">${n}</span><span>New since last visit</span>${I('arrow')}</a>` : '';
   };
   const side = (all = R().live()) => {
-    $('home-side').innerHTML = wide.matches ? `${walkCard()}${openNow()}${newSince(all)}` : '';
+    $('home-side').innerHTML = wide.matches ? `${walkCard(true)}${openNow()}${newSince(all)}` : '';
   };
   wide.addEventListener('change', () => { if (window.WA.catalog) render(); });
+
+  /* ── Filters rail (1280 px and wider): the choosing on the left, the list to read, the walk on the
+     right. Plain options with how many each would show; the same handlers as the mood row, the When
+     key and the Filters sheet, so the choice is the same one wherever it was made. ── */
+  const railWide = matchMedia('(min-width: 1280px)');
+  const railOpt = (attrs, on, label, n) => `<button class="home-rail__opt" type="button" ${attrs} aria-pressed="${on}"><span>${esc(label)}</span>${n == null ? '' : `<span class="home-rail__n${n ? '' : ' is-none'}">${n}</span>`}</button>`;
+  const filtersRail = (all) => {
+    if (!railWide.matches) return '';
+    const p = pref(), s = D().dates(), places = view === 'places';
+    const events = (date, prefs) => all.filter(e => D().matchesDate(e, date) && D().matchesEvent(e, prefs)).length;
+    const picked = R().places().filter(v => v.picked);
+    const count = (prefs) => places ? picked.filter(v => D().matchesPlace(v, prefs)).length : events(s, prefs);
+    const one = (id) => ({ moods: id ? [id] : [], subs: id && p.moods.length === 1 && p.moods[0] === id ? p.subs : [], cap: p.cap });
+    const when = places ? '' : `<div class="home-rail__group" role="group" aria-labelledby="rail-when"><p class="home-rail__h" id="rail-when">When</p>
+      ${[['tonight', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'Weekend']].map(([w, l]) => railOpt(`data-when-pick="${w}"`, !s.date && s.when === w, l, events({ when: w }, p))).join('')}
+      ${railOpt('data-rail-dates aria-haspopup="dialog"', !!s.date, s.date ? D().label() : 'Pick dates', s.date ? events(s, p) : null)}</div>`;
+    const moods = `<div class="home-rail__group" role="group" aria-labelledby="rail-mood"><p class="home-rail__h" id="rail-mood">Mood</p>
+      ${railOpt('data-mood-pick=""', !p.moods.length, 'All', count(one('')))}
+      ${C().moods().map(m => railOpt(`data-mood-pick="${esc(m.id)}"`, p.moods.includes(m.id), m.label, count(one(m.id)))).join('')}
+      ${p.moods.length > 1 || p.subs.length ? `<p class="wa-note home-rail__note">${esc(M().summary())}</p>` : ''}</div>`;
+    const tickets = places ? '' : `<div class="home-rail__group" role="group" aria-labelledby="rail-cap"><p class="home-rail__h" id="rail-cap">Tickets</p>
+      <div class="mood-seg home-rail__seg">${[[0, 'Free'], [20, 'Up to €20'], [null, 'Any']].map(([cap, l]) => `<button type="button" data-cap-pick="${cap == null ? '' : cap}" aria-pressed="${cap === p.cap}">${esc(l)}</button>`).join('')}</div>
+      <p class="wa-note home-rail__note">${p.cap === 0 ? 'Only confirmed free listings' : 'Unknown prices included'}</p></div>`;
+    const a = G().anchor(), on = nearOn();
+    const foot = `<div class="home-rail__foot"><button class="wa-btn home-rail__near" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>
+      <button class="wa-linkbtn" type="button" data-filter-open aria-haspopup="dialog">More filters</button></div>`;
+    return when + moods + tickets + foot;
+  };
+  const railSync = (all) => {
+    const host = $('home-rail');
+    if (!host) return;
+    host.hidden = !railWide.matches;
+    window.WA.UI.keepFocus(host, () => { host.innerHTML = filtersRail(all); });
+  };
+  railWide.addEventListener('change', () => { if (window.WA.catalog) render(); });
 
   /* ── New since the last visit (phones and tablets; wide windows show it beside the list) ── */
   const since = (all) => { $('since').innerHTML = wide.matches ? '' : newSince(all); };
@@ -329,6 +379,9 @@
       return;
     }
     if (hit('[data-near]')) { window.WA.UI.genie.close(false); window.WA.StartFrom.open(hit('[data-near]')); return; }
+    if (hit('[data-rail-dates]')) { C().openDates(hit('[data-rail-dates]')); return; }
+    const cap = hit('[data-cap-pick]');
+    if (cap) { M().setPref({ ...pref(), cap: cap.dataset.capPick === '' ? null : Number(cap.dataset.capPick) }); return; }
     if (hit('[data-another]')) { another(); return; }
     if (hit('[data-act="reload"]')) { location.reload(); return; }
     const r = hit('[data-row]');

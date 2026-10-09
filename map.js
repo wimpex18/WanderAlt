@@ -91,7 +91,7 @@
     document.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer)));
     if (searchContext) {
       const q = searchContext.params(), count = matching.length - events.length + candidates.length - places.length;
-      $('map-dates').innerHTML = `<a class="wa-chip" href="discover.html${q.size ? '?' + esc(q.toString()) : ''}">${window.WA.Icon('back')}<span>Back to results</span></a>`;
+      $('map-dates').innerHTML = `<a class="wa-chip" href="discover.html${q.size ? '?' + esc(q.toString()) : ''}">${window.WA.Icon('left')}<span>Back to results</span></a>`;
       $('map-filters').innerHTML = `<div class="map-search-context"><span${searchContext.state.q ? ' data-notranslate' : ''}>${esc(searchContext.state.q || 'All events')}</span>${searchCriteria()}${count ? `<span>${count} without a map location</span>` : ''}<a href="map.html">Clear search</a></div>`;
     } else {
       $('map-dates').innerHTML = window.WA.DiscoveryControls.dateKey();
@@ -349,12 +349,24 @@
     const base = list || (on.events && events.length ? events : shown().map(i => i.x));
     const pts = base.map(x => ({ lat: x._c.lat, lng: x._c.lng }));
     const desk = matchMedia('(min-width: 1024px)').matches;
-    const pad = desk ? { top: 100, left: 90, right: 90, bottom: 80 } : { top: 180, left: 56, right: 56, bottom: 170 };
+    const pad = desk ? { top: 56, left: 72, right: 72, bottom: 64 } : { top: 180, left: 56, right: 56, bottom: 170 };
     /* No tween: a resize during the opening frames cancels an animated fit. */
     if (pts.length) t.fitToPicks(searchContext ? pts : core(pts), { padding: pad, duration: 0 });
   };
 
   const draw = () => { placePins(); placeDrawer(); preview(); };
+
+  /* Wide windows: the controls head the list rather than float over the pins, so the map shows
+     only pins and the locate key. Moved, not copied: the click handlers are delegated. */
+  const deskTop = matchMedia('(min-width: 1024px)');
+  const mapTop = document.querySelector('.map-top'), topHome = mapTop && mapTop.previousElementSibling;
+  const placeTop = () => {
+    if (!mapTop) return;
+    if (deskTop.matches) $('drawer-grip').after(mapTop);
+    else if (topHome) topHome.after(mapTop);
+  };
+  deskTop.addEventListener('change', placeTop);
+  placeTop();
 
   /* ── Sheet: peek, half, full on phones ─────────────────────── */
   const SNAPS = ['peek', 'half', 'full'];

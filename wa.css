@@ -2030,6 +2030,127 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
   .wa-search-entry { width:auto; max-width:320px; }
 }
 
+/* ── Desktop layouts: the choosing on the left, the list, the walk on the right ─────
+   Now from 1280 px: a rail of plain options with their counts replaces the mood
+   pictograms, the Near me chip and the When key, so the list starts under the title.
+   Save shows on a row's hover or focus, and always once saved. The walk card draws its
+   stops where they are. Phones and tablets keep everything above. */
+.home-walk__plot { display:none; }
+@media (min-width:1024px) {
+  .home-side .home-walk__plot { display:block; grid-column:1 / -1; grid-row:2; width:100%; height:auto; aspect-ratio:300 / 120; margin-block:var(--s-1) var(--s-2); border-radius:var(--r-sm); background:var(--paper-2); }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__discs { display:none; }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__title { grid-column:1 / -1; }
+  .home-walk__plot polyline { fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; stroke-linecap:round; }
+  .home-walk__plot circle { fill:var(--paper); stroke:var(--accent); stroke-width:2; }
+  .home-walk__plot .is-event circle { fill:var(--accent); }
+  .home-walk__plot text { font:600 11px/1 var(--f-sans); fill:var(--accent-ink); text-anchor:middle; dominant-baseline:central; }
+  .home-walk__plot .is-event text { fill:#fff; }
+}
+@media (min-width:1024px) and (hover:hover) {
+  .wa-row-item > .wa-heart[aria-pressed="false"] { opacity:0; transition:opacity var(--t-fast); }
+  .wa-row-item:is(:hover, :focus-within) > .wa-heart, .wa-row-item > .wa-heart:focus-visible { opacity:1; }
+}
+@media (min-width:1280px) {
+  main.wa-shell:has(> .home-rail:not([hidden])) { display:grid; grid-template-columns:200px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  main.wa-shell:has(> .home-rail:not([hidden])) > :is(.home-hero, .home-grid) { grid-column:2; }
+  main.wa-shell:has(> .home-rail:not([hidden])) .home-grid { gap:var(--s-8); --side:300px; }
+  .home-rail { grid-column:1; grid-row:1 / span 2; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); display:grid; gap:var(--s-6); padding-top:var(--s-8); max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; }
+  main:has(> .home-rail:not([hidden])) :is(.home-moods, .home-acts, .home-browse__end), body:has(.home-rail:not([hidden])) .home-fold { display:none !important; }
+  .home-rail__group { display:grid; gap:2px; }
+  .home-rail__h { margin:0 0 var(--s-1); font-size:var(--fs-small); font-weight:600; color:var(--ink-3); }
+  .home-rail__opt { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:36px; margin-inline:-10px; padding:0 10px; border:0; border-radius:var(--r-xs); background:none; color:var(--ink-2); font:400 var(--fs-meta)/1.3 var(--f-sans); text-align:left; cursor:pointer; }
+  .home-rail__opt:hover { background:var(--paper-2); color:var(--ink); }
+  .home-rail__opt[aria-pressed="true"] { background:var(--paper-2); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
+  .home-rail__opt:focus-visible { outline:2px solid var(--ink); outline-offset:1px; }
+  .home-rail__n { font-size:var(--fs-small); font-weight:400; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+  .home-rail__n.is-none { opacity:.6; }
+  .home-rail__seg { box-shadow:inset 0 0 0 1px var(--line); background:none; padding:3px; }
+  .home-rail__seg button { min-height:30px; padding-inline:4px; font-size:var(--fs-small); font-weight:400; white-space:nowrap; }
+  .home-rail__seg button[aria-pressed="true"] { background:var(--ink); color:var(--paper); box-shadow:none; font-weight:600; }
+  .home-rail__note { margin:var(--s-1) 0 0; font-size:var(--fs-small); }
+  .home-rail__foot { display:grid; justify-items:start; gap:var(--s-1); }
+  .home-rail__near { min-height:40px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
+  .home-rail__near[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+  .home-rail__foot .wa-linkbtn { margin-inline-start:-12px; }
+}
+
+/* Event page from 1024 px: the facts beside the ticket panel, each in its own cell, so the panel
+   never covers what follows; the facts carry plain line icons rather than grey tiles. */
+@media (min-width:1024px) {
+  .det-grid__main:has(> .det-facts + .wa-bar) { grid-template-columns:minmax(0, 1fr) minmax(240px, 288px); column-gap:var(--s-7); }
+  .det-grid__main:has(> .det-facts + .wa-bar) > * { grid-column:1 / -1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .det-facts { grid-column:1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .wa-bar { grid-column:2; align-self:start; flex-direction:column; align-items:stretch; gap:var(--s-3); }
+  .det-grid__main > .wa-bar .wa-bar__sub { white-space:normal; }
+  .det-grid__main > .wa-bar .wa-btn--primary { flex:none; }
+  .det-fact { grid-template-columns:20px minmax(0, 1fr); gap:var(--s-3); align-items:start; padding:var(--s-2) 0; }
+  .det-fact__icon { width:20px; height:20px; margin-top:1px; border-radius:0; background:none; color:var(--ink-3); }
+  .det-fact__icon .wa-ic { width:20px; height:20px; }
+}
+
+/* Walk page from 1024 px: the stops on the left, their map on the right, sticky while the list scrolls. */
+.rt-map { display:none; }
+@media (min-width:1024px) {
+  main.wa-shell:has(> .rt-map:not([hidden])) { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:var(--s-9); align-items:start; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > :is(.rt-back, .wa-pagehead, #rt-body) { grid-column:1; max-width:none; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > .rt-back { justify-self:start; }
+  .rt-map:not([hidden]) { display:block; grid-column:2; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); height:calc(100vh - var(--topbar-h) - var(--s-8)); min-height:420px; margin-top:var(--s-7); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
+  .rt-map__canvas { width:100%; height:100%; }
+  .rt-map__pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--paper); box-shadow:0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.25); color:var(--accent-ink); font:700 var(--fs-meta)/1 var(--f-sans); text-decoration:none; cursor:pointer; }
+  .rt-map__pin.is-event { background:var(--accent); color:#fff; }
+  .rt-map__pin:hover { transform:scale(1.08); }
+  .rt-map__pin:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+}
+
+/* About from 1024 px: the counts as one line under the lede, not three big numbers. */
+.about-counted { display:none; }
+@media (min-width:1024px) {
+  .about-counted:not(:empty) { display:block; font-variant-numeric:tabular-nums; }
+  body:has(.about-counted:not(:empty)) .wa-stats { display:none; }
+}
+
+/* Search from 1024 px: a 760 px dialog with events and places side by side, two lines a match
+   (the source stays on the listing's own page), a close key rather than a back arrow, and
+   "View all results" as a secondary button. */
+.wa-search-close--back { display:contents; }
+.wa-search-close--x { display:none; }
+@media (min-width:1024px) {
+  .wa-search-dialog { width:min(760px, calc(100% - 48px)); }
+  .wa-search-close--back { display:none; }
+  .wa-search-close--x { display:contents; }
+  .wa-search-cols:has(> section + section) { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(0, 1fr); gap:var(--s-7); align-items:start; }
+  .wa-search-cols > section > .wa-search-group { margin-top:0; }
+  .wa-search-match__body small { display:none; }
+  .wa-search-dialog__foot { display:flex; justify-content:flex-end; }
+  .wa-search-dialog__foot .wa-search-all { width:auto; background:var(--paper); color:var(--ink); border:1px solid var(--line); box-shadow:none; }
+  .wa-search-dialog__foot .wa-search-all:hover { background:var(--paper-2); border-color:var(--ink-3); }
+}
+
+/* Map from 1024 px: Events/Places, the date and the moods head the list column; the map keeps
+   only its pins and the locate key. Plain chips here, glass only where something moves beneath. */
+@media (min-width:1024px) {
+  .map-drawer > .map-top { position:static; inset:auto; z-index:auto; flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-2); padding:0 var(--s-5) var(--s-4); border-bottom:1px solid var(--hair); pointer-events:auto; }
+  .map-drawer > .map-top .map-seg { -webkit-backdrop-filter:none; backdrop-filter:none; background:var(--paper-2); box-shadow:none; }
+  .map-drawer > .map-top .map-dates { margin-inline-start:auto; }
+  .map-drawer > .map-top .map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:var(--s-2); overflow:visible; padding:0; margin:0; mask:none; -webkit-mask:none; }
+  .map-drawer > .map-top :is(.map-mood, .discovery-date, .wa-chip) { background:var(--paper); border:1px solid var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .map-drawer > .map-top .map-mood[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+}
+
+/* All events from 1024 px: Now's rows instead of posters, in the main column; from 1280 px the
+   search and its filters are a sticky rail on the left, as on Now. */
+@media (min-width:1024px) {
+  .prog-list { max-width:var(--main); }
+}
+@media (min-width:1280px) {
+  body[data-page="programme"] main.wa-shell { display:grid; grid-template-columns:248px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  body[data-page="programme"] main.wa-shell > :is(.prog-back, .wa-pagehead, .prog-layout) { grid-column:2; }
+  body[data-page="programme"] main.wa-shell > .prog-back { justify-self:start; }
+  body[data-page="programme"] .prog-controls { grid-column:1; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); max-width:none; padding:var(--s-9) 0 0; align-content:start; }
+  body[data-page="programme"] .prog-toolbar, body[data-page="programme"] .prog-quick { flex-wrap:wrap; }
+  body[data-page="programme"] .prog-list { max-width:none; }
+}
+
 /* Windows High Contrast drops backgrounds and shadows, which carry every chosen state here: an outline in the
    system's text colour marks what is chosen, and the primary button keeps an edge. */
 @media (forced-colors: active) {

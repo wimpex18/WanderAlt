@@ -13,6 +13,9 @@
     if (counts) counts.innerHTML = [
       ['Listings', picks.length], ['Places', venues.length], ['Sources', sources],
     ].map(([l, n]) => `<div class="wa-stat"><span class="wa-stat__n">${n || '·'}</span><span class="wa-stat__label">${esc(l)}</span></div>`).join('');
+    /* On a desktop the same counts are one quiet line under the lede rather than three big numbers. */
+    const line = document.getElementById('about-counted');
+    if (line) line.innerHTML = picks.length ? [`${picks.length} listings`, `${venues.length} places`, `${sources} sources`].map(t => `<span>${esc(t)}</span>`).join(' · ') : '';
 
     const feeds = document.getElementById('about-feeds');
     if (feeds) {

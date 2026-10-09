@@ -908,7 +908,8 @@ window.WA.dict.uk = {
   "Publish this group": "Опублікувати цю групу",
   "Yes, reject": "Так, відхилити",
   "Yes, publish": "Так, опублікувати",
-  "The next eight days also come as a feed for readers and newsletters:": "Найближчі вісім днів є й у вигляді стрічки для читалок і розсилок:"
+  "The next eight days also come as a feed for readers and newsletters:": "Найближчі вісім днів є й у вигляді стрічки для читалок і розсилок:",
+  "Map of the walk": "Мапа прогулянки"
  },
  "patterns": [
   [
@@ -1494,6 +1495,15 @@ window.WA.dict.uk = {
   [
    "Reject {x}?",
    "Відхилити {x}?"
+  ],
+  [
+   "{n} sources",
+   {
+    "one": "{n} джерело",
+    "few": "{n} джерела",
+    "many": "{n} джерел",
+    "other": "{n} джерела"
+   }
   ]
  ]
 };
