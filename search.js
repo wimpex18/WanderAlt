@@ -9,7 +9,10 @@
   const walking = x => {
     const from = window.WA.SearchData.origin().from;
     const m = from ? G().distanceTo(x,from) : null;
-    return m == null ? '<span>Walking distance unavailable</span>' : `${I('walk')}<span>${esc(R().walkLabel(G().walkMinutes(m)))} walk</span>`;
+    if (m == null) return '';
+    /* Past three quarters of an hour on foot a walking time is no plan; the distance says how far. */
+    const min = G().walkMinutes(m);
+    return `${I('walk')}<span>${esc(min > 45 ? `${G().format(m)} away` : `${R().walkLabel(min)} walk`)}</span>`;
   };
   const dateLabel = key => R().dateShort(key) + (key && key.slice(0,4) !== window.WA.when.todayKey().slice(0,4) ? ' ' + key.slice(0,4) : '');
   const eventRow = e => {
@@ -22,11 +25,11 @@
     }
     const time = window.WA.when.statedMinutes(e) == null ? 'Time not listed' : R().clockOf(e);
     return `<li><a class="wa-search-match" href="detail.html?id=${esc(encodeURIComponent(e.id))}" data-row="${esc(e.id)}">
-      <span class="wa-search-match__art${R().logoCls(logo,tone)}">${src ? `<img src="${esc(window.WA.UI.safeUrl(src))}" alt="" loading="lazy" width="56" height="56">` : window.WA.Picto.kind(e.kind)}</span>
-      <span class="wa-search-match__body"><b data-notranslate>${esc(e.title)}</b>
+      <span class="wa-search-match__art${R().logoCls(logo,tone)}">${src ? `<img ${window.WA.UI.imgAttrs(src, 160)} alt="" loading="lazy" width="56" height="56">` : window.WA.Picto.kind(e.kind)}</span>
+      <span class="wa-search-match__body"><b data-notranslate${R().titleLang(e)}>${esc(e.title)}</b>
         <span><span>${esc(dateLabel(window.WA.when.resolveKey(e)))}</span> · <span>${esc(time)}</span> · <span${R().isFree(e) ? ' class="wa-free"' : ''}>${esc(R().price(e) || 'Price not listed')}</span></span>
         <span data-notranslate>${esc([e.venue,R().areaOf(e)].filter(Boolean).join(' · '))}</span>
-        <span class="wa-search-match__walk">${walking(e)}</span>
+        ${walking(e) ? `<span class="wa-search-match__walk">${walking(e)}</span>` : ''}
         ${source ? `<small><span>Source</span> · <span data-notranslate>${esc(source)}</span></small>` : ''}
       </span></a></li>`;
   };

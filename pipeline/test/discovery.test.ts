@@ -296,6 +296,7 @@ test('date-sheet apply rejects past/reversed ranges; turning range off applies o
 test('the same date picker applies independent search dates and preserves manual overrides on the Map round trip', () => {
   const p = dateSheet();
   p.WA.Geo.bySoonestThenDistance = () => () => 0;
+  p.WA.Geo.byDateThenSoonest = () => () => 0;
   for (const file of ['ask.js','search-data.js']) runInContext(readFileSync(new URL(`../../${file}`,import.meta.url),'utf8'),p.context);
   const engine = p.WA.SearchData.create('?q=jazz%20tomorrow'); engine.query(engine.state.q);
   p.WA.Discovery.setDates({when:'weekend'});

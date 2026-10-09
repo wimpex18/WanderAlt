@@ -22,7 +22,7 @@
     const v = venueOf(s);
     const src = v && v.imageUrl ? R().url(v.imageUrl) : '';
     if (!src) return window.WA.Picto.kind(s.kind);
-    return `<span class="rt__logo${R().logoCls(v.imageSource === 'logo', v.imageTone)}"><img src="${esc(src)}" alt="" loading="lazy"></span>`;
+    return `<span class="rt__logo${R().logoCls(v.imageSource === 'logo', v.imageTone)}" data-kind="${esc(s.kind || '')}"><img ${window.WA.UI.imgAttrs(src, 160)} alt="" loading="lazy"></span>`;
   };
 
   const startLine = (first) => {
@@ -104,10 +104,18 @@
     draw(row && row.day === route.day && window.WA.Route.param(row) === window.WA.Route.param(route) ? Object.assign(route, { id: row.id, title: row.title, blurb: row.blurb, engine: row.engine }) : route);
   };
 
+  /* The share text goes to the OS sheet, outside the page the translator reads. A copy
+     answers on the button itself, as on a listing's page: toasts here only carry an undo. */
   document.addEventListener('click', async (e) => {
-    if (!e.target.closest || !e.target.closest('#rt-share')) return;
-    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text: 'A walk through Tallinn', url: location.href });
-    if (r === 'copied' && window.WA.Toast) window.WA.Toast.show('Link copied');
+    const sh = e.target.closest && e.target.closest('#rt-share');
+    if (!sh) return;
+    const text = window.WA.Lang ? window.WA.Lang.t('A walk through Tallinn') : 'A walk through Tallinn';
+    const r = await window.WA.Share.url({ title: $('rt-title').textContent, text, url: location.href });
+    if (r !== 'copied' && r !== 'failed') return;
+    const was = sh.innerHTML;
+    sh.setAttribute('aria-label', r === 'copied' ? 'Link copied' : 'Could not copy the link');
+    sh.innerHTML = `${I(r === 'copied' ? 'check' : 'close')}<span>${r === 'copied' ? 'Copied' : 'Failed'}</span>`;
+    setTimeout(() => { sh.innerHTML = was; sh.removeAttribute('aria-label'); }, 2000);
   });
 
   document.addEventListener('wa:catalog-ready', () => { boot(); window.WA.Route.loadStored(); });

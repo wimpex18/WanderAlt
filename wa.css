@@ -54,8 +54,9 @@
      thing is tinted glass with a vermilion ring, the primary action is a
      vermilion gradient. Text on both stays the ink colour (white on the gradient). */
   --select-bg:   linear-gradient(135deg, color-mix(in oklab, var(--accent) 20%, transparent), color-mix(in oklab, #ffb08c 24%, transparent));
-  --select-ring: color-mix(in oklab, var(--accent) 50%, transparent);
-  --primary-bg:  linear-gradient(135deg, #df4623, var(--accent) 55%, #c2310f);
+  /* A solid ring, so a chosen chip differs from the rest by more than a tint (3:1 against paper). */
+  --select-ring: var(--accent);
+  --primary-bg:  linear-gradient(135deg, #d6411d, var(--accent) 55%, #c2310f);
   --primary-glow: 0 8px 20px color-mix(in oklab, var(--accent) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, .4);
   /* Daybreak: soft colour behind the page, so glass has something to bend. */
   --daybreak: radial-gradient(60vmax 44vmax at 100% -6%, rgba(255, 138, 96, .20), transparent 62%), radial-gradient(52vmax 40vmax at -10% 24%, rgba(184, 160, 255, .16), transparent 62%), radial-gradient(60vmax 44vmax at 72% 108%, rgba(255, 200, 140, .22), transparent 60%);
@@ -114,8 +115,10 @@
   --ink-3:   #a8a69c;
   --hair:    rgba(250, 249, 245, .09);
   --line:    rgba(250, 249, 245, .18);
-  --accent:      #e0421b;
+  /* Deep enough for white type on fills (4.6:1); text in the accent uses accent-ink. */
+  --accent:      #d63c17;
   --accent-ink:  #f0916f;
+  --select-ring: var(--accent-ink);
   --accent-soft: color-mix(in oklab, var(--accent) 20%, var(--paper));
   --go:        #5fd39a;
   --danger:    #ff8f84;
@@ -201,6 +204,10 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .wa-tabbar, .wa-bar, .map-ctrl, .map-seg { background: var(--glass-strong); }
 }
+/* Bars that carry small type over scrolling photos keep the glass mostly paper: at .6 the
+   tab labels fell near 2.3:1 over a dark or bright picture. Safari has no Reduce
+   Transparency query, so the contrast has to hold here. */
+.wa-tabbar, .wa-bar { --glass-bg: color-mix(in oklab, var(--paper) 86%, transparent); }
 
 /* ── Chrome ──────────────────────────────────────────────────── */
 .wa-topbar {
@@ -774,11 +781,11 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-block__title { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; }
 .det-original { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
 .det-original > summary { min-height: 48px; padding: var(--s-3) 0; cursor: pointer; font-weight: 600; }
-.det-original > summary:hover { color: var(--accent); }
+.det-original > summary:hover { color: var(--accent-ink); }
 /* Flag a problem: a quiet disclosure beside the source link. */
 .det-flag { margin: 0; }
 .det-flag > summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; color: var(--muted); font-size: var(--t-sm, .875rem); }
-.det-flag > summary:hover { color: var(--accent); }
+.det-flag > summary:hover { color: var(--accent-ink); }
 .det-flag form { display: grid; gap: var(--s-3); max-width: 420px; padding-bottom: var(--s-3); }
 .det-flag__reasons { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
 .det-flag__reason { display: flex; align-items: center; gap: var(--s-2); min-height: 40px; }
@@ -866,7 +873,7 @@ body[data-page="map"] { padding-bottom: 0; overflow: hidden; height: 100dvh; }
 body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 .map-page { position: fixed; inset: 0; }
 .map-canvas, .map-canvas.maplibregl-map { position: absolute; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 12px 0; border-radius: var(--r-lg); background: var(--paper-2); }
-.map-pins { position: absolute; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 12px 0; border-radius: var(--r-lg); pointer-events: none; overflow: hidden; overflow: clip; }
+.map-pins { position: absolute; z-index: 1; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 12px 0; border-radius: var(--r-lg); pointer-events: none; overflow: hidden; overflow: clip; }
 .map-top { flex-wrap: wrap; position: absolute; left: var(--s-3); right: var(--s-3); top: calc(var(--topbar-h) + env(safe-area-inset-top) + var(--s-3)); z-index: 3; display: flex; gap: var(--s-2); align-items: center; pointer-events: none; }
 .map-top > * { pointer-events: auto; }
 /* What to show: the tab bar's glass slider in small (tabbar.js): a tinted
@@ -1381,7 +1388,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-day__all .wa-ic { width: 18px; height: 18px; }
 
 /* You: a short page. Signed out it opens on one card; signed in, on who you are. */
-.rt-more { margin-top: var(--s-8); max-width: 40rem; }
+.wa-sect.rt-more { margin-top: var(--s-8); max-width: 40rem; }   /* outranks .wa-sect:first-child: it is the first child of #rt-more */
 .rt-more__item { margin-top: var(--s-3); }
 .prog-more { display: flex; align-items: center; gap: var(--s-3); margin: var(--s-4) 0 var(--s-6); flex-wrap: wrap; }
 .wa-day__all { margin: var(--s-2) 0 var(--s-4); }
@@ -1623,7 +1630,8 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-walk__discs { grid-column:2; grid-row:1 / span 2; align-self:center; display:flex; padding-left:10px; }
 .home-walk__discs .wa-picto { width:36px; height:36px; margin-left:-10px; box-shadow:0 0 0 2px var(--paper), 0 2px 6px rgba(20,16,40,.16); }
 :root[data-theme="dusk"] .home-walk__discs .wa-picto { box-shadow:0 0 0 2px var(--paper-2), 0 2px 6px rgba(0,0,0,.4); }
-.home-walk__title { grid-column:1; font-size:1.0625rem; font-weight:650; letter-spacing:-.015em; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* The walk is the page's unit: its name wraps rather than losing its last word. */
+.home-walk__title { grid-column:1; font-size:1.0625rem; font-weight:650; letter-spacing:-.015em; line-height:1.25; text-wrap:balance; overflow-wrap:anywhere; }
 .home-walk__stops { grid-column:1; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; font-size:.9375rem; line-height:1.35; }
 .home-walk__stops time { font-weight:650; font-variant-numeric:tabular-nums; color:var(--accent-ink); margin-right:2px; }
 .home-walk__to { display:inline-grid; color:var(--ink-3); }
@@ -1647,6 +1655,11 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-view__opt:focus-visible { outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
 .home-browse__end { flex:none; min-width:0; margin-inline-start:auto; padding-block:6px; }
 .home-when { min-height:36px; padding:0 10px 0 12px; gap:6px; font-size:.875rem; }
+/* Compact keys keep their drawn size but take a 44 px touch: the hit area reaches past the edge. */
+:where(.home-when, .home-origin, .map-filters .map-mood, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip) { position:relative; }
+:where(.home-when, .home-origin, .map-filters .map-mood, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip)::after { content:""; position:absolute; inset:-2px 0; }
+.home-when::after { inset:-4px 0; }
+:is(.wa-row-item, .wa-place-item) > .wa-heart::after { content:""; position:absolute; inset:-2px; border-radius:50%; }
 .home-when .wa-ic { width:16px; height:16px; }
 .discovery-date.is-set { background:var(--select-bg); border-color:transparent; box-shadow:inset 0 0 0 1px var(--select-ring); }
 .discovery-date[aria-expanded="true"] .wa-ic:last-child { transform:rotate(180deg); }
@@ -1778,7 +1791,7 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .wa-place-item > .wa-heart { top:auto; bottom:6px; right:-6px; width:40px; height:40px; color:var(--ink-2); }
 .wa-place-item > .wa-heart .wa-ic { width:22px; height:22px; fill:none; filter:none; }
 .wa-place-item > .wa-heart[aria-pressed="true"] .wa-ic { fill:var(--accent); stroke:var(--accent); }
-.home-walk__stops > span[data-notranslate] { max-width:13em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-walk__stops > span[data-notranslate] { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 
 /* ── Desktop ──────────────────────────────────────────────────────
@@ -1847,3 +1860,11 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 @media (min-width:1024px) and (max-width:1199px) { :root { --side:300px; } .home-grid { gap:var(--s-7); } }
 @media (min-width:1024px) { .saved-side .home-places { grid-template-columns:minmax(0, 1fr); } }
 @media (min-width:1024px) { main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); } }
+
+/* Reduce Transparency: every glass surface becomes solid paper, not only the drops and Now's keys. */
+@media (prefers-reduced-transparency: reduce) {
+  .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .wa-topbar, .wa-sheet__panel, .wa-offline, .wa-toast, .prog-controls, .rt-card, .home-mood__key, .home-day__all, .wa-lang__menu, .map-filters .map-mood {
+    background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) and (min-width: 1024px) { .wa-tabbar, .prog-controls { background: none; } }

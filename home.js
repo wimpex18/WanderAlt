@@ -32,7 +32,7 @@
     else if (tonight.length || nowMin() < 21 * 60) t.textContent = 'The next few hours';
     else t.textContent = all.some(e => W().nightKey(e) > W().nightToday()) ? 'Quiet tonight' : "What's on";
     const a = G().anchor(), on = nearOn();
-    $('home-acts').innerHTML = `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`;
+    window.WA.UI.keepFocus($('home-acts'), () => { $('home-acts').innerHTML = `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`; });
   };
 
   /* ── Mood rail: shared with Map (DiscoveryControls.moodRow) ── */
@@ -167,8 +167,12 @@
   let view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
   const browse = document.createElement('div');
   browse.className = 'home-browse';
-  browse.innerHTML = `<div class="home-view" role="group" aria-label="Show"><button class="home-view__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span> <span class="home-view__n" id="home-events-n"></span></button><button class="home-view__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span> <span class="home-view__n" id="home-places-n"></span></button></div><div class="home-browse__end"></div>`;
+  browse.innerHTML = `<div class="home-view" role="group" aria-label="Show"><button class="home-view__opt" type="button" data-view="events" aria-pressed="true"><span>Events</span> <span class="home-view__n" id="home-events-n"></span></button><button class="home-view__opt" type="button" data-view="places" aria-pressed="false"><span>Places</span> <span class="home-view__n" id="home-places-n"></span></button></div><div class="home-browse__end"></div><p class="wa-sr" role="status" id="home-status"></p>`;
+  /* A reader's own change (a mood, dates, Events or Places) is announced with its count; the
+     five-minute refresh and arriving data stay quiet. */
+  let announce = false;
   const syncBrowse = (events, places) => {
+    if (announce) { announce = false; browse.querySelector('#home-status').textContent = view === 'places' ? `${places.all} places` : `${events} listings`; }
     browse.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
     browse.querySelector('#home-events-n').textContent = String(events);
     const n = browse.querySelector('#home-places-n');
@@ -185,7 +189,7 @@
     }
   };
   const setView = value => {
-    view = value; shown = PAGE_SIZE;
+    view = value; shown = PAGE_SIZE; announce = true;
     const q = new URLSearchParams(location.search);
     if (view === 'places') q.set('view', 'places'); else q.delete('view');
     history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q : ''}${location.hash}`);
@@ -248,12 +252,12 @@
     const content = unavailable ? R().empty({ icon:'offline', title:"We can't reach the listings right now.", body:'Your saves still work. Try again in a moment.', actions:[{ act:'reload', label:'Try again' },{ href:'saved.html', label:'Saved' }] })
       : view === 'places' ? placesPart(places) : eventsPart(list, date);
     out.push(`<section class="home-list" id="list" aria-label="${view === 'places' ? 'Places' : 'Events'}"><div id="home-browse-slot"></div>${content}</section>`);
-    const focused = document.activeElement, keep = browse.contains(focused);
-    $('home-main').innerHTML = out.join('');
-    $('home-browse-slot').replaceWith(browse);
+    window.WA.UI.keepFocus($('home-main'), () => {
+      $('home-main').innerHTML = out.join('');
+      $('home-browse-slot').replaceWith(browse);
+    });
     if (foldWatch) foldWatch.observe(browse);
     syncBrowse(list.length, { all: places.length, open: places.filter(isOpen).length });
-    if (keep && focused.isConnected) focused.focus({ preventScroll: true });
     side(all);
     syncFold();
     if (window.WA.UI.edges) window.WA.UI.edges();
@@ -335,12 +339,14 @@
   document.addEventListener('wa:mood-changed', e => {
     if (!window.WA.catalog) return;
     shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    announce = !e.detail?.restore;
     main();
   });
   document.addEventListener('wa:start-state', () => { if (window.WA.catalog) render(); });
   document.addEventListener('wa:discovery-changed', e => {
     if (!window.WA.catalog) return;
     shown = e.detail?.restore ? readShown() : PAGE_SIZE;
+    announce = !e.detail?.restore;
     if (e.detail?.restore) view = new URLSearchParams(location.search).get('view') === 'places' ? 'places' : 'events';
     render();
   });

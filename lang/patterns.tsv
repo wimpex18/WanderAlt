@@ -14,6 +14,8 @@ till {d}	kuni {d}	до {d}	до {d}
 Until {t}	Kuni {t}	До {t}	До {t}
 Until {d}	Kuni {d}	До {d}	До {d}
 Open till {t}	Avatud kuni {t}	Открыто до {t}	Відчинено до {t}
+open till {t}	avatud kuni {t}	открыто до {t}	відчинено до {t}
+{x} away	{x} kaugusel	в {x}	за {x}
 Opens {t}	Avaneb {t}	Откроется в {t}	Відчиниться о {t}
 opens {t}	avaneb {t}	откроется в {t}	відчиниться о {t}
 Opens {d}	Avaneb {d}	Откроется {d}	Відчиниться {d}

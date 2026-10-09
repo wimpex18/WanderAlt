@@ -12,7 +12,7 @@ function search() {
   const WA:any = { CITY:'tallinn', MOOD_RULES:{},
     Geo:{ currentLoc:() => null, distanceTo:(e:any) => e.distance ?? null, parseWithin:(x:any) => Number(x) || 0,
       withinFilter:(rows:any[],max:number) => rows.filter(e => e.distance != null && e.distance <= max),
-      bySoonestThenDistance:() => (a:any,b:any) => String(a.startsAt).localeCompare(String(b.startsAt)), startMinutes:() => 18 * 60 },
+      bySoonestThenDistance:() => (a:any,b:any) => String(a.startsAt).localeCompare(String(b.startsAt)), byDateThenSoonest:() => (a:any,b:any) => String(a.startsAt).localeCompare(String(b.startsAt)), startMinutes:() => 18 * 60 },
     Hours:{ cityNow:() => ({minutes:15 * 60}), state:(v:any) => ({open:v?.open,known:v?.open != null}) },
     Icon:() => '', Picto:{kind:() => ''}, Seen:{filter:(rows:any[]) => rows,count:() => 0},
   };

@@ -215,7 +215,7 @@
     instagram:    r.instagram || null,
     osmId:        r.osm_id || null,
     /* opening_hours in OSM syntax. WA.Hours parses it; a null must render as
-       "hours not filed", never as "closed". */
+       "hours not listed", never as "closed". */
     openingHours: r.opening_hours || null,
     hoursSource:  r.hours_source || '',
     isClosed:     r.status === 'closed',

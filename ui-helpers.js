@@ -1,7 +1,7 @@
 /* ============================================================
    ui-helpers.js — WA.UI.
    ------------------------------------------------------------
-   The two escapers every page routes database text through, the price
+   The two escapers every page routes database text through, picture sizing, the price
    formatter, the description guard, and the password field auth.js
    builds.
 
@@ -38,6 +38,65 @@
       const proto = new URL(raw, location.origin).protocol;
       return (proto === 'http:' || proto === 'https:') ? raw : '';
     } catch (_) { return ''; }
+  };
+
+  /* ── Pictures at the size they are drawn ─────────────────────
+     Sources hand over full-size artwork: a 1,070 px poster or a 3,800 px
+     Commons photo for a 56 px circle. Hosts that resize on request are asked
+     for about the drawn width in device pixels; the original stays in
+     data-full, which render.js falls back to once if the smaller one fails.
+     Other hosts are left as they are. Query strings are edited as text, so
+     their other parameters keep their exact encoding. */
+  const WIKI_STEPS = [120, 250, 330, 500, 960, 1280, 1920];   /* the only widths Commons serves */
+  const setParam = (raw, key, px) => {
+    const m = raw.match(new RegExp(`([?&]${key}=)(\\d+)`));
+    if (m) return Number(m[2]) > px ? raw.replace(m[0], `${m[1]}${px}`) : raw;
+    return `${raw}${raw.includes('?') ? '&' : '?'}${key}=${px}`;
+  };
+  const sized = (u, px) => {
+    const raw = safeUrl(u);
+    if (!raw || !px) return raw;
+    let x;
+    try { x = new URL(raw, location.origin); } catch (_) { return raw; }
+    if (x.hostname === 'fienta.com' && x.pathname.startsWith('/cf/img')) return setParam(raw, 'width', px);
+    if (/(^|\.)wordpress\.com$|^i\d\.wp\.com$/.test(x.hostname)) return setParam(raw, 'w', px);
+    if (x.hostname === 'upload.wikimedia.org') {
+      const step = WIKI_STEPS.find(s => s >= px) || WIKI_STEPS[WIKI_STEPS.length - 1];
+      const thumb = x.pathname.match(/^(\/wikipedia\/[^/]+)\/thumb\/(\w\/\w\w\/[^/]+)\/(\d+)px-([^/]+)$/);
+      if (thumb) return Number(thumb[3]) > step ? `https://upload.wikimedia.org${thumb[1]}/thumb/${thumb[2]}/${step}px-${thumb[4]}` : raw;
+      const full = x.pathname.match(/^(\/wikipedia\/[^/]+)\/(\w\/\w\w)\/([^/]+\.(jpe?g|png|gif|webp|svg))$/i);
+      if (full) return `https://upload.wikimedia.org${full[1]}/thumb/${full[2]}/${full[3]}/${step}px-${full[3]}${/svg$/i.test(full[4]) ? '.png' : ''}`;
+    }
+    return raw;
+  };
+  /* An <img>'s src (and data-full, when it was resized) for a picture drawn about px device pixels wide. */
+  const imgAttrs = (u, px) => {
+    const full = safeUrl(u), src = sized(full, px);
+    return `src="${esc(src)}"${src !== full ? ` data-full="${esc(full)}"` : ''}`;
+  };
+
+  /* ── Focus that survives a redraw ───────────────────────────
+     Lists are rebuilt as markup (a filter, an unsave, the five-minute
+     refresh). The focused control is found again by its id or data-*
+     attributes and focused without scrolling; when it is gone, focus stays
+     in the container instead of falling back to the top of the page. */
+  const focusKey = (el) => {
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    const attrs = [...el.attributes].filter(a => a.name.startsWith('data-') || a.name === 'href')
+      .map(a => `[${a.name}="${CSS.escape(a.value)}"]`).join('');
+    return attrs ? `${el.tagName.toLowerCase()}${attrs}` : '';
+  };
+  const keepFocus = (box, redraw) => {
+    const was = document.activeElement;
+    if (!box || !was || was === document.body || !box.contains(was)) return redraw();
+    const key = focusKey(was);
+    const out = redraw();
+    if (was.isConnected && box.contains(was)) { if (document.activeElement !== was) was.focus({ preventScroll: true }); return out; }
+    let next = null;
+    try { next = key ? box.querySelector(key) : null; } catch (_) { /* an odd attribute value */ }
+    if (!next) { if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '-1'); next = box; }
+    next.focus({ preventScroll: true });
+    return out;
   };
 
   /* "Free" / "€12" / "€24–75". Only ever from a stated source value —
@@ -194,7 +253,7 @@
   };
   genie.close = (refocus) => { if (genieOpen) genieOpen.close(refocus); };
 
-  window.WA.UI = { esc, safeUrl, priceLabel, descriptionOr, passwordField, edges: scan, genie };
+  window.WA.UI = { esc, safeUrl, sized, imgAttrs, keepFocus, priceLabel, descriptionOr, passwordField, edges: scan, genie };
 
   /* Every bottom sheet follows the finger. On a phone the grip, the head and,
      when its list is at the top, the body drag the panel down; let go past a

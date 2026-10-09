@@ -56,7 +56,7 @@
   const walk = (m) => (m == null ? null : G().walkMinutes(m));
   const round5 = (m) => Math.round(m / 5) * 5;
 
-  /* Is a place open at this minute: 'open', 'shut' or 'unknown' (hours not filed). */
+  /* Is a place open at this minute: 'open', 'shut' or 'unknown' (hours not listed). */
   const hoursAt = (v, minute, offset = 0) => {
     const s = v && v.openingHours ? H().state(v.openingHours, at(minute, offset)) : null;
     return !s || !s.known ? 'unknown' : s.open ? 'open' : 'shut';
@@ -64,7 +64,7 @@
 
   /* A place with no filed hours is never said to be open, but nobody is sent to
      a record shop at one in the morning either: an unfiled place is tried only
-     inside the hours its kind usually keeps, and still reads "hours not filed".
+     inside the hours its kind usually keeps, and still reads "hours not listed".
      A room that opens for what is on (a cinema, a theatre) is no stop on its own
      without filed hours. */
   const USUAL = {
@@ -101,14 +101,33 @@
     return `${(sp > 60 ? cut.slice(0, sp) : cut).replace(/[\s,;:.-]+$/, '')}…`;
   };
 
-  const placeStop = (v, minute, prevM, hours) => ({
+  /* When an open place shuts after this minute, for "open till 19:00"; null when it keeps no closing
+     hour worth printing or its hours are not filed. */
+  const closesAt = (v, minute, offset = 0) => {
+    const s = v && v.openingHours ? H().state(v.openingHours, at(minute, offset)) : null;
+    return s && s.open && !s.allDay ? s.closesAt : null;
+  };
+  /* "open till 19:00", "open" or "hours not listed": what a stop's line says of its hours. */
+  const hoursNote = (hours, closes) =>
+    hours === 'open' ? (closes != null ? `open till ${H().clock(closes)}` : 'open') : hours === 'unknown' ? 'hours not listed' : '';
+
+  const placeStop = (v, minute, prevM, hours, offset = 0) => ({
     type: 'place', id: v.id, name: v.name, kind: v.kind, area: R().areaOf(v) || '', minute, walk: walk(prevM),
     lat: v.lat, lng: v.lng, href: `detail.html?id=${encodeURIComponent(v.id)}`, note: v.pickNote || '', hours,
+    closes: hours === 'open' ? closesAt(v, minute, offset) : null,
   });
+  /* A note the reader can read: the source's own words when they are in the interface language,
+     otherwise our summary in that language (English when it has no translation yet), as on the
+     listing's page. The source's blurb in another language is never the note. */
+  const noteOf = (e) => {
+    const lang = window.WA.Lang ? window.WA.Lang.current() : 'en';
+    const own = e.originalLanguage === lang ? window.WA.UI.descriptionOr(e.description, e.title) : '';
+    return clip(own || window.WA.UI.descriptionOr(e.quote, e.title));
+  };
   const eventStop = (e, minute, prevM) => {
     const c = G().coordsFor(e) || {};
     return { type: 'event', id: e.id, name: e.title || '', kind: e.kind, area: R().areaOf(e) || '', minute, walk: walk(prevM),
-      lat: c.lat, lng: c.lng, href: `detail.html?id=${encodeURIComponent(e.id)}`, note: clip(e.description), hours: 'event',
+      lat: c.lat, lng: c.lng, href: `detail.html?id=${encodeURIComponent(e.id)}`, note: noteOf(e), hours: 'event',
       venue: e.venue || '', price: R().isFree(e) ? 'Free' : '',
       cost: R().isFree(e) ? 0 : (e.priceMin != null && isFinite(Number(e.priceMin)) ? Number(e.priceMin) : null) };
   };
@@ -116,10 +135,10 @@
   /* Words for the title, in the order of the evening. Each is written capitalised, looked up in the
      interface language (lang/phrases.tsv), and lowered after the first; a word already used becomes
      "another …" ("Craft beer, a late drink, another late drink"). */
-  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'Thrift', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
+  const BEFORE_WORD = { 'record store': 'Records', bookshop: 'Books', gallery: 'A gallery', thrift: 'A thrift shop', 'arts centre': 'An arts centre', cinema: 'A film', museum: 'A museum' };
   const FIRST_WORD = { taproom: 'Craft beer', bar: 'A bar', club: 'A club' };
   const ANCHOR_WORD = { gig: 'A gig', club: 'A club night', film: 'A film', theatre: 'A stage', talk: 'A talk', workshop: 'A workshop', exhibition: 'An opening', festival: 'A festival' };
-  const ANOTHER = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery' };
+  const ANOTHER = { 'A late drink': 'Another late drink', 'A drink': 'Another drink', 'A club': 'Another club', 'A bar': 'Another bar', 'A film': 'Another film', 'A gallery': 'Another gallery', 'A thrift shop': 'Another thrift shop' };
   const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const word = (w) => (window.WA.Lang ? window.WA.Lang.t(w) : w);
   const titleFor = (stops) => {
@@ -146,7 +165,7 @@
     if (!c.events) return '';
     const eur = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
     if (c.tickets > 0) return `tickets from ${eur(c.tickets)}${c.unknown ? ` · ${c.unknown} price not listed` : ''}`;
-    return c.unknown ? 'price not listed' : 'free tickets';
+    return c.unknown ? 'price not listed' : 'free entry';
   };
 
   const build = (stops) => {
@@ -312,6 +331,7 @@
     const rows = R().places().filter(v => v.picked && v.id !== entry.id && v.id !== entry.venueId && G().coordsFor(v))
       .map(v => ({ v, w: walk(metres(entry, v)) })).filter(r => r.w != null && r.w <= max)
       .map(r => Object.assign(r, { hours: hoursAt(r.v, now + r.w, offset) }))
+      .map(r => Object.assign(r, { closes: r.hours === 'open' ? closesAt(r.v, now + r.w, offset) : null }))
       .filter(r => r.hours !== 'shut' && (r.hours === 'open' || usual(r.v.kind, now + r.w) || !USUAL[r.v.kind]))
       /* Still open half an hour after you arrive. */
       .filter(r => { const later = now + r.w + 25, h = hoursAt(r.v, later, offset); return h !== 'shut' && (h === 'open' || usual(r.v.kind, later) || !USUAL[r.v.kind]); })
@@ -338,7 +358,7 @@
     let start = isEvent ? startOf(entry) : round5(now + 5);
     if (start == null) return null;
     if (isEvent && !G().coordsFor(entry)) return null;
-    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset));
+    const first = isEvent ? eventStop(entry, start, null) : placeStop(entry, start, null, hoursAt(entry, start, offset), offset);
     const stops = [first];
     let prev = entry, at = isEvent ? endOf(entry, start) : start + STAY;
     for (let n = 0; n < 2; n++) {
@@ -348,7 +368,7 @@
       });
       if (!pick) break;
       const minute = round5(at + 10 + pick.w);
-      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset)));
+      stops.push(placeStop(pick.v, minute, metres(prev, pick.v), hoursAt(pick.v, minute, offset), offset));
       prev = pick.v; at = minute + STAY;
     }
     return stops.length > 1 ? Object.assign(build(stops), { day, off: offset }) : null;
@@ -371,7 +391,7 @@
       const prev = stops[stops.length - 1];
       if (prev && minute <= prev.minute) return null;
       const prevM = prev ? (type === 'place' ? metres(entry, prev) : metres(prev, entry)) : null;
-      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset)) : eventStop(entry, minute, prevM));
+      stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset), offset) : eventStop(entry, minute, prevM));
     }
     return Object.assign(build(stops), { day: W().keyPlus?.(offset), off: offset });
   };
@@ -456,8 +476,7 @@
   const clock = (m) => H().clock(m % DAY);
   const stopSub = (s) => {
     if (s.type === 'event') return [s.venue, s.price].filter(Boolean).join(' · ');
-    const hours = s.hours === 'open' ? 'open then' : s.hours === 'unknown' ? 'hours not filed' : '';
-    return [R().kindLabel(s.kind, true), hours].filter(Boolean).join(' · ');
+    return [R().kindLabel(s.kind, true), hoursNote(s.hours, s.closes)].filter(Boolean).join(' · ');
   };
   const lengthText = (route) => {
     const first = route.stops[0].minute, last = route.stops[route.stops.length - 1].minute;
@@ -482,5 +501,5 @@
       <ol class="rt-card__stops">${stops}</ol></a></section>`;
   };
 
-  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, lengthText, costText };
+  window.WA.Route = { compose, plan, best, nextFrom, fromHere, loadStored, upcoming, fromParam, fromURL, param, href, mapsUrl, titleFor, card, stopSub, hoursNote, lengthText, costText };
 })();

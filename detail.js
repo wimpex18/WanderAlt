@@ -54,7 +54,7 @@
     const m = G().distanceTo(x);
     if (m != null) return fact('Walk', `${R().walkLabel(G().walkMinutes(m))} on foot`, G().format(m));
     const a = R().areaOf(x);
-    return a ? fact('Area', a, 'Location for walking times') : '';
+    return a ? fact('Area', a, 'Set a start point to see the walk') : '';
   };
 
   /* A wide poster is shown whole: the square hero would crop the title. */
@@ -81,7 +81,7 @@
       const credit = venue ? `${logo ? 'Venue logo' : 'Venue photo'}${own ? `. ${own}` : ''}`
         : own ? (logo ? `${own}, their logo` : own) : '';
       return `<figure class="det-media${logo ? ' det-media--logo' : ''}">
-        <img src="${esc(src)}" alt="" decoding="async" fetchpriority="high">
+        <img ${UI().imgAttrs(src, 1280)} alt="" decoding="async" fetchpriority="high">
         ${credit ? `<figcaption class="det-credit">${esc(credit)}</figcaption>` : ''}
       </figure>`;
     }
@@ -252,7 +252,7 @@
     const k = W().resolveKey(e);
     const clock = R().clockOf(e);
     const whenValue = liveNow ? 'On now' : k ? (k === W().todayKey() ? 'Tonight' : R().dateShort(k)) : 'Ongoing';
-    const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not filed' : ''));
+    const whenSub = liveNow ? (R().endClock(e) ? `till ${R().endClock(e)}` : `since ${clock}`) : (clock || (k ? 'Time not listed' : ''));
     const off = R().isOff(e);
     const tickets = ended || off ? '' : ticketsFor(e);
     const cal = !ended && !off && e.startsAt ? ics(e) : '';
@@ -281,7 +281,7 @@
       const meta = [esc(v ? R().kindLabel(v.kind, true) : ''), R().areaOf(v || e) ? `<span data-notranslate>${esc(R().areaOf(v || e))}</span>` : ''].filter(Boolean).join(' · ');
       return `<section class="det-block"><h2 class="det-block__title">The venue</h2>
         <a class="vcard" href="${esc(href)}">
-          <span class="vcard__art${img ? R().logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
+          <span class="vcard__art${img ? R().logoCls(v.imageSource === 'logo', v.imageTone) : ''}">${img ? `<img ${UI().imgAttrs(img, 200)} alt="" loading="lazy">` : window.WA.Picto.kind(v ? v.kind : e.kind)}</span>
           <span class="vcard__body">
             <span class="vcard__name">${esc(venueName)}</span>
             ${meta ? `<span class="vcard__meta">${meta}</span>` : ''}
@@ -302,7 +302,7 @@
         ${!ended && off ? `<div class="det-notice det-notice--off" role="status">${I('info')}<span><strong>${esc(e.flag === 'cancelled' ? 'Cancelled' : 'Postponed')}</strong>${esc(e.flag === 'cancelled' ? 'The source says this will not go ahead.' : 'The source says this is moving to a new date. Check there before you go.')}${link ? ` <a class="wa-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open the listing</a>` : ''}</span></div>` : ''}
         <header class="det-head">
           <p class="wa-kicker">${off ? '' : R().flagTag(e)}${liveNow && !off ? '<span class="wa-now">Now</span>' : ''}${kind ? `<span class="wa-tag">${window.WA.Icon.kind(e.kind, 'wa-ic--sm')}${esc(kind)}</span>` : ''}${why ? `<span class="wa-tag wa-tag__why">${esc(why)}</span>` : ''}</p>
-          <h1 class="wa-h1" translate="no">${esc(title)}</h1>
+          <h1 class="wa-h1" translate="no"${R().titleLang(e)}>${esc(title)}</h1>
           ${summary ? `<p class="det-summary">${esc(summary)}</p>` : ''}
           ${spoken ? `<p class="wa-note">${I('globe', 'wa-ic--sm')} In ${esc(spoken)}</p>` : ''}
         </header>
@@ -372,9 +372,9 @@
     const route = Rt.fromHere ? Rt.fromHere(x) : null;
     const rows = next.map(n => {
       const photo = n.v.imageUrl ? url(n.v.imageUrl) : '';
-      const hours = n.hours === 'open' ? 'open then' : n.hours === 'unknown' ? 'hours not filed' : '';
+      const hours = Rt.hoursNote ? Rt.hoursNote(n.hours, n.closes) : '';
       return `<li><a class="det-next" href="detail.html?id=${esc(encodeURIComponent(n.v.id))}">
-        <span class="det-next__glyph${photo ? R().logoCls(n.v.imageSource === 'logo', n.v.imageTone) : ''}">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
+        <span class="det-next__glyph${photo ? R().logoCls(n.v.imageSource === 'logo', n.v.imageTone) : ''}" data-kind="${esc(n.v.kind || '')}">${photo ? `<img ${UI().imgAttrs(photo, 160)} alt="" loading="lazy">` : window.WA.Picto.kind(n.v.kind)}</span>
         <span class="det-next__body">${n.mood ? `<span class="det-next__mood">${esc(n.mood)}</span>` : ''}<span class="det-next__name">${esc(n.v.name || '')}</span>
           <span class="det-next__meta">${esc([R().kindLabel(n.v.kind, true), `${n.w} min walk`, hours].filter(Boolean).join(' · '))}</span>
           ${n.v.pickNote ? `<span class="det-next__why">${esc(n.v.pickNote)}</span>` : ''}</span></a></li>`;
@@ -443,7 +443,7 @@
             </div>`).join('')}</div>`
             : v.hoursSource === 'events' || (/^(theatre|club|bar|arts centre|cinema)$/.test(String(v.kind || '')) && list.length)
               ? '<p class="wa-note">No fixed hours filed. This room opens when something is on; the listings above carry the times.</p>'
-              : '<p class="wa-note">Not filed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
+              : '<p class="wa-note">Not listed. Half the places list their hours, and we would rather leave a gap than guess.</p>'}
         </section>
 
         ${R().real(v.address) || G().coordsFor(v) ? `<section class="det-block"><h2 class="det-block__title">Address</h2>

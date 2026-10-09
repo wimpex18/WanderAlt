@@ -150,7 +150,7 @@
       if (only) return [];
       const list = apply(base());
       return state.sort === 'nearest' && G().currentLoc() ? list.sort((a,b) => (G().distanceTo(a) ?? Infinity) - (G().distanceTo(b) ?? Infinity))
-        : list.sort(G().bySoonestThenDistance());
+        : list.sort(G().byDateThenSoonest());
     };
     const wantsOpen = () => state.placeOpen ?? A().places(state.q).openNow;
     const places = (skipArea = false) => {

@@ -349,11 +349,17 @@
   /* A tap answers in the same frame with what is small (the chips, the
      count, the summary). The list and the panel, which are large, follow
      in the next task; taps that arrive meanwhile are drawn once. */
-  let bigFrame = 0, latest = [];
+  let bigFrame = 0, latest = [], moreFrom = -1;
   const drawBig = () => {
     bigFrame = 0;
     const list = latest;
-    put($('list'), listHtml(list));
+    window.WA.UI.keepFocus($('list'), () => put($('list'), listHtml(list)));
+    /* Show more: focus moves to the first of the new rows, as on Now. */
+    if (moreFrom >= 0) {
+      const first = $('list').querySelectorAll('a[data-row]')[moreFrom];
+      moreFrom = -1;
+      if (first) first.focus({ preventScroll: true });
+    }
     const sheet = $('sheet');
     if (sheet && sheet.open) {
       const active = document.activeElement;
@@ -476,7 +482,7 @@
       if (x === 'clear-price') state.maxPrice = null;
       if (x === 'clear-english') state.english = false;
       if (x === 'undo-read') engine.undo();
-      if (x === 'more' || x === 'more-places') limit += PAGE;
+      if (x === 'more' || x === 'more-places') { moreFrom = $('list').querySelectorAll('a[data-row]').length; limit += PAGE; }
       if (x === 'more-running') runsOpen = true;
       if (x === 'clear-open') state.placeOpen = false;
       if (x === 'clear-sort') state.sort = 'soonest';

@@ -14,7 +14,7 @@ function world(now: number, events: any[], places: P[], open: (p: P, minute: num
   const byId = new Map<string, P>(places.map(p => [p.id, p]));
   let askedMinute = 0;
   const WA: any = {
-    UI: { esc: (s: any) => String(s) },
+    UI: { esc: (s: any) => String(s), descriptionOr: (s: any) => String(s ?? '') },
     Icon: () => '',
     when: { isTonight: () => true },
     Hours: {
@@ -113,4 +113,17 @@ test('directions include every stop or are unavailable; invalid coordinates neve
   for (const bad of [{lat:null,lng:null},{lat:NaN,lng:24},{lat:91,lng:24}]) {
     assert.equal(Route.mapsUrl({stops:[stops[0],bad,stops[2]]}), '');
   }
+});
+
+test('a stop note is in the reader\'s language, and a stop says how long a place stays open', () => {
+  const event = ev('e1', 19 * 60, 59.4400, 24.7340, { quote: 'A pottery evening for beginners.', description: 'Tule proovi potikedral keerutamist!', originalLanguage: 'et' });
+  const shop = place('shop', 'record store', 59.4430, 24.7340);
+  const Route = world(17 * 60, [event], [shop]);
+  const r = Route.compose();
+  const note = r.stops.find((s: any) => s.type === 'event').note;
+  assert.equal(note, 'A pottery evening for beginners.');   // never the Estonian blurb in English
+  assert.equal(Route.hoursNote('open', 19 * 60), 'open till 19:00');
+  assert.equal(Route.hoursNote('open', null), 'open');
+  assert.equal(Route.hoursNote('unknown', null), 'hours not listed');
+  assert.equal(Route.costText({ stops: [], cost: { events: 1, tickets: 0, unknown: 0 } }), 'free entry');
 });
