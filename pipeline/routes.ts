@@ -30,8 +30,8 @@ const ANCHORS = new Set(['gig', 'club', 'film', 'theatre', 'talk', 'workshop', '
 const BEFORE = new Set(['record store', 'bookshop', 'gallery', 'thrift', 'arts centre', 'cinema']);
 const AFTER = new Set(['bar', 'club', 'taproom']);
 // Keep these in step with route.js and geo.js: one walking pace, the same walks and rules.
-// STREET: streets run about a third longer than the straight line (geo.js measured it on OSM footways).
-const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80, STREET = 1.33, STAY = 40;
+// STREET, STREET_ADD: the walk along streets for a straight line (geo.js measured it on OSM footways).
+const MAX_BEFORE = 15, MAX_AFTER = 12, WALK_M_PER_MIN = 80, STREET = 1.28, STREET_ADD = 40, STAY = 40;
 // The hours a kind usually keeps (route.js USUAL). A place with none filed is a stop only inside them,
 // as the page checks every stored walk the same way and drops one that breaks this.
 export const USUAL: Record<string, [number, number]> = {
@@ -60,7 +60,7 @@ const metres = (a: { lat: number; lng: number }, b: { lat: number; lng: number }
   const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * k) * Math.cos(b.lat * k) * Math.sin(dLng / 2) ** 2;
   return 2 * r * Math.asin(Math.sqrt(x));
 };
-const walkMin = (m: number): number => Math.max(1, Math.round(m * STREET / WALK_M_PER_MIN));
+const walkMin = (m: number): number => Math.max(1, Math.round((m * STREET + STREET_ADD) / WALK_M_PER_MIN));
 const round5 = (m: number): number => Math.round(m / 5) * 5;
 
 /** Every working evening for one day, the best one around each listing. */

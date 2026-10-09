@@ -12,12 +12,13 @@
 
   /* ~4.8 km/h. The only declaration; list, filter sheet and map share it. */
   const WALK_M_PER_MIN = 80;
-  /* Streets are longer than the line between two points. Routed on OpenStreetMap footways (OSRM),
-     1,202 legs from picked places to venues 120–1,600 m apart in Tallinn ran a median 1.32 times
-     the straight line (half of them 1.25–1.41; short hops a little more). Walking times and
-     "on foot" distances use it, so they read like a map app's; plain "how far" stays straight. */
-  const STREET = 1.33;
-  const onFoot = (metres) => (metres == null ? null : metres * STREET);
+  /* Streets are longer than the line between two points, relatively more so on a short hop. Routed on
+     OpenStreetMap footways (OSRM), 1,202 legs from picked places to venues 120–1,600 m apart in
+     Tallinn ran a median 1.44 times the straight line under 400 m and 1.31 over 1,200 m; 1.28 times
+     plus 40 m fits every band within 2%. Walking times and "on foot" distances use it, so they read
+     like a map app's (which also walks at about 4.8 km/h); plain "how far" stays straight. */
+  const STREET = 1.28, STREET_ADD = 40;
+  const onFoot = (metres) => (metres == null ? null : metres > 0 ? metres * STREET + STREET_ADD : 0);
 
   const haversineM = (aLat, aLng, bLat, bLng) => {
     const R = 6371000, toRad = d => d * Math.PI / 180;
@@ -199,7 +200,7 @@
   };
 
   window.WA.Geo = {
-    WALK_M_PER_MIN, STREET,
+    WALK_M_PER_MIN, STREET, STREET_ADD,
     walkMinutes, minutesFor, onFoot, format,
     coordsFor, userLoc, currentLoc, deviceLoc: () => _loc, anchor, setAnchor, locationError: () => _error,
     distanceTo, distanceLabel,
