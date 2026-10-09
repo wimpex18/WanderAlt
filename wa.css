@@ -1864,6 +1864,162 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 @media (min-width:1024px) { .saved-side .home-places { grid-template-columns:minmax(0, 1fr); } }
 @media (min-width:1024px) { main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); } }
 
+/* ── Desktop: one type scale, three kinds of button, one surface ─────
+   From 1024 px the page is read at arm's length on a wider canvas, so the
+   phone's parts are set again rather than stretched. Type: 13 captions,
+   14 meta, 16 body, 19 row titles and ledes, 24 section heads, 28 start
+   times, 48–56 page titles; weights 400, 600 and 700. Buttons are 40 px:
+   primary (solid vermilion, one per view), secondary (a 1 px line) and
+   quiet (text). Chips are 32 px, icon keys 40 px circles. The page is flat:
+   no wash, gradient or glow. Glass stays where content moves under it (the
+   top bar, map controls, menus, sheets); the one raised element is the
+   sticky side panel, a 1 px line with 20 px corners. Phones and tablets
+   keep everything above. */
+.prog-back .wa-ic, .rt-back__label { display:none; }   /* the desktop back key's parts */
+@media (min-width:1024px) {
+  :root {
+    --fs-meta:.875rem;                                /* 14 */
+    --fs-title:1.1875rem;                             /* 19: row titles */
+    --fs-lead:1.1875rem;                              /* 19: ledes */
+    --fs-h2:1.5rem;                                   /* 24: section heads */
+    --fs-time:1.75rem;                                /* 28: start times */
+    --fs-h1:clamp(3rem, 1.5rem + 2.35vw, 3.5rem);     /* 48 at 1024 to 56 at 1440 */
+    --fs-hero:var(--fs-h1);
+  }
+  :root, :root[data-theme="dusk"] { --daybreak:none; --primary-bg:var(--accent); --primary-glow:none; --select-bg:var(--accent-soft); }
+
+  /* Type. Event, place and walk names are page titles too, at the small end so long names keep to two or three lines. */
+  .wa-hero, .wa-h1 { font-weight:700; letter-spacing:-.035em; line-height:1.04; }
+  .det-head .wa-h1, #rt-title { font-size:3rem; }
+  .wa-pagehead { gap:var(--s-3); }
+  .wa-day__name, .home-day__head .wa-day__name, .det-block__title, .wa-empty__title, .wa-sheet__title, .wa-sheet--discovery[data-kind="dates"] .wa-sheet__title { font-size:var(--fs-h2); }
+  .wa-row__title, .wa-place__name, .det-next__name, .rt__name, .vcard__name, .wa-feed__title, .prog-list .wa-feed__title, .rt-card__title, .you-fold > summary, .wa-bar__price, .home-aside__title, .home-walk__title { font-size:var(--fs-title); }
+  .wa-lede, .det-summary { font-size:var(--fs-lead); }
+  .wa-prose, .det-orig, .det-fact__value, .wa-field__label, .wa-search-group, .wa-search-match__body b, .home-aside__name { font-size:var(--fs-body); }
+  .wa-btn, .wa-btn--sm, .wa-linkbtn, #to-map, .wa-chip, .prog-quick .wa-chip, .places-kinds .wa-chip, .mood-subs .wa-chip, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip,
+  .map-filters .wa-chip, .map-filters .map-mood, .home-when, .home-origin, .wa-ideas__chip, .wa-sheet__foot .wa-btn, .det-actions__row .wa-btn, .det-link, .wa-search-entry,
+  .wa-seg__opt, .mood-seg button, .hours__row, .wa-toast, .wa-install__title, .wa-since, button.wa-since, .wa-splash__line, .you-row__value, .you-taste__opt,
+  .wa-row__walk, .wa-row__time--word, .wa-feed__when .wa-row__time, .wa-feed__when .wa-row__walk, .wa-feed__meta, .wa-feed__price,
+  .home-walk__stops, .home-walk__foot, .home-aside__meta, .home-aside__walk, .home-aside__more, .det-fact__sub, .wa-bar__sub, .rt__walk > :last-child { font-size:var(--fs-meta); }
+  .wa-row__area, .det-credit, .wa-now, .wa-tag__why, .wa-new, .wa-flag, .hours__today, .home-mood, .wa-search-match__body small, .you-badge, .prog-badge, .wa-search-entry__key { font-size:var(--fs-small); }
+  .maplibregl-ctrl-attrib, .det-minimap .maplibregl-ctrl-attrib { font-size:var(--fs-small) !important; }
+  .wa-stat__n { font-size:var(--fs-time); }
+  .wa-tabbar__item { font-size:var(--fs-body); }
+
+  /* Weights: 400, 600 and 700 only. */
+  .wa-tabbar__item, .wa-kicker, .wa-sect__count, .wa-chip, .wa-chip__n, .wa-tag, .wa-open, .wa-switch__title, .wa-ask__input, .map-seg__n, .wa-foot a, .wa-ideas__chip, .mood-seg button,
+  .home-view__n, .home-mood, .wa-search-entry, .wa-search-group > :last-child, .you-row__label, .you-taste__opt, .wa-splash__line { font-weight:400; }
+  .wa-open--yes, .wa-tag__why, .wa-day__name, .wa-bar__price, .wa-sheet__title, .wa-empty__title, .wa-pin__tag, .wa-pin__count, .map-preview__title, .map-drawer__title, .vcard__name,
+  .wa-install__title, .wa-install__go, .wa-howto__copy strong, .you-fold > summary, .home-mood[aria-pressed="true"], .home-mood--more.is-set, .home-walk__title, .home-walk__stops time,
+  .home-walk__action, .home-aside__title, .wa-feed__title, .you-join__text strong, .you-me__text strong, .you-taste__opt[aria-pressed="true"], .wa-since { font-weight:600; }
+  .det-type__word, .nf-num { font-weight:700; }
+
+  /* Start times lead the row: 28 px figures in a wider rail, vermilion while you can still walk in. */
+  .home-rows .wa-row { grid-template-columns:96px minmax(0, 1fr) auto; }
+  .home-rows .wa-row__rail { align-items:flex-start; gap:8px; padding-top:4px; }
+  .home-rows .wa-row__time, .rt__time { font-size:var(--fs-time); font-weight:700; letter-spacing:-.03em; line-height:1; }
+  .home-rows .wa-row__time--word { font-size:var(--fs-meta); font-weight:600; letter-spacing:0; line-height:1.3; }
+  .rt__stop, .rt__walk { grid-template-columns:5.75rem 1.6rem 1fr; }
+  .rt__time { padding-top:10px; }
+  .home-day__head { padding:var(--s-5) 0 var(--s-3); }
+  /* Lines between rows sit between the items, so a row's rounded hover never bends them. */
+  .home-rows .wa-row { border-bottom:0; }
+  .home-rows > li + li { border-top:1px solid var(--hair); }
+
+  /* Buttons: one height. Primary is the solid accent, secondary a line, quiet plain text. */
+  .wa-btn, .wa-btn--sm { min-height:40px; padding:0 18px; border-radius:var(--r-pill); }
+  .wa-btn .wa-ic { width:18px; height:18px; }
+  .wa-btn--quiet, .wa-sheet__foot .wa-btn--quiet { padding:0 12px; text-decoration-color:var(--line); text-underline-offset:4px; }
+  .wa-btn--quiet:hover { text-decoration-color:var(--ink-3); }
+  .wa-sheet__foot .wa-btn, .you-join .wa-btn, .wa-bar .wa-btn--primary, .wa-install__go, .wa-toast__undo { min-height:40px; border-radius:var(--r-pill); }
+  .wa-linkbtn, .det-footer > .wa-linkbtn { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 12px; border-radius:var(--r-pill); text-decoration-color:var(--line); text-underline-offset:4px; transition:background var(--t-fast), text-decoration-color var(--t-fast); }
+  .wa-linkbtn:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
+  .wa-linkbtn .wa-ic { width:16px; height:16px; }
+  /* A quiet button that starts a line keeps its words on the column's edge. */
+  .prog-back, .rt-back, .home-day__all-link .wa-linkbtn, .home-aside__more, .wa-day__all, .det-footer > .wa-linkbtn { margin-inline-start:-12px; }
+  /* Inside a sentence it stays a link. */
+  .wa-note .wa-linkbtn { display:inline; min-height:0; padding:0; border-radius:0; font-size:inherit; }
+  .wa-note .wa-linkbtn:hover { background:none; }
+  /* Links that do a button's job wear the secondary button. */
+  a#to-map.wa-linkbtn, .places-from .wa-linkbtn, .home-empty .wa-linkbtn, .home-side .wa-since { min-height:40px; margin:0; padding:0 18px; border:1px solid var(--line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-weight:600; text-decoration:none; }
+  :is(a#to-map.wa-linkbtn, .places-from .wa-linkbtn, .home-empty .wa-linkbtn, .home-side .wa-since):hover { background:var(--paper-2); border-color:var(--ink-3); }
+  #to-map { gap:8px; }
+  .home-side .wa-since { justify-self:start; gap:8px; padding-inline:8px 16px; }
+  .home-day__all { min-height:40px; background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  /* One back key on every page: a quiet button with a chevron. */
+  .prog-back .wa-ic { display:block; }
+  .wa-iconbtn.rt-back { display:inline-flex; gap:6px; width:auto; height:auto; min-height:40px; padding:0 12px; border-radius:var(--r-pill); background:none; color:var(--ink); font-size:var(--fs-meta); font-weight:600; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:4px; }
+  .wa-iconbtn.rt-back:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
+  .rt-back .wa-ic { width:16px; height:16px; }
+  .rt-back__label { display:inline; }
+  /* The event page's actions: one row of secondary buttons instead of tiles. */
+  .det-actions__row { display:flex; flex-wrap:wrap; gap:var(--s-2); }
+  .det-actions__row .wa-btn { flex-direction:row; gap:8px; min-height:40px; padding:0 18px; border-radius:var(--r-pill); border-color:var(--line); background:var(--paper); }
+  .det-actions__row .wa-btn:hover { background:var(--paper-2); border-color:var(--ink-3); }
+  .det-actions__row .wa-btn[aria-pressed="true"] { border-color:transparent; }
+  .det-actions__row .wa-btn .wa-ic { width:18px; height:18px; }
+  .det-after > .wa-btn { justify-self:start; }
+  .det-link { min-height:40px; padding:0 16px 0 14px; background:var(--paper); box-shadow:inset 0 0 0 1px var(--line); }
+  .det-link:hover { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
+  .det-link .wa-ic { width:18px; height:18px; }
+
+  /* Icon keys: 40 px circles; in the top bar each wears the line. */
+  .wa-iconbtn, .wa-sheet__close, .map-preview__close, .wa-saved-row__space, .map-ctrl { width:40px; height:40px; }
+  .wa-start__locate { flex-basis:40px; }
+  .wa-topbar .wa-iconbtn, .wa-topbar .wa-theme, .wa-shelfnav .wa-iconbtn, .wa-lang__key { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
+  .wa-topbar .wa-iconbtn:hover, .wa-topbar .wa-theme:hover, .wa-lang__key:hover, .wa-lang__key[aria-expanded="true"] { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
+  .wa-lang__key { height:40px; }
+  .wa-search-entry { min-height:40px; border-color:var(--line); background:transparent; color:var(--ink-2); }
+  .wa-search-entry:hover { background:var(--paper-2); border-color:var(--ink-3); }
+  .wa-search-entry__key { border-color:var(--line); }
+  /* The nav follows the wordmark instead of centring on the window, so a longer translation never runs into the
+     keys at the end and search has room for its whole label (it was cut to "Search events or pl…" at 1280). */
+  .wa-tabbar { left:calc(max(var(--gutter), (100% - var(--page)) / 2) + 177px); transform:none; }
+
+  /* Chips: 32 px, for choosing. */
+  .wa-chip, .prog-quick .wa-chip, .places-kinds .wa-chip, .mood-subs .wa-chip, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip, .map-dates .wa-chip,
+  .discovery-near, .home-when, .home-origin, .wa-ideas__chip { min-height:32px; padding-inline:14px; gap:6px; }
+  .wa-chip .wa-ic, .home-when .wa-ic { width:16px; height:16px; }
+  .wa-chip .wa-picto, .places-kinds .wa-chip .wa-picto { width:22px; height:22px; margin-left:-8px; }
+  .wa-chip:hover { border-color:var(--ink-3); }
+  .home-origin, .home-mood__key { background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .map-filters .map-mood { min-height:32px; padding:0 14px 0 4px; }
+  .map-filters .map-mood .wa-picto { width:24px; height:24px; }
+  .map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
+  .map-seg { height:40px; }
+  /* Map: every mood shows; the row wraps instead of running under the edge. */
+  .map-filters:not(:has(.map-search-context)) { flex-wrap:wrap; overflow:visible; }
+  .map-dates a.wa-chip { min-height:40px; font-weight:600; }
+
+  /* One surface. The walk is the sticky side panel; what sits beside it is flat. */
+  .home-side { gap:var(--s-7); }
+  .home-walk, :root[data-theme="dusk"] .home-walk { padding:var(--s-5); background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .home-walk__discs .wa-picto, :root[data-theme="dusk"] .home-walk__discs .wa-picto { box-shadow:0 0 0 2px var(--paper); }
+  .home-walk__head { margin-top:-6px; }
+  .home-walk__main { row-gap:8px; padding-right:0; }
+  .home-walk__foot { flex-direction:column; align-items:stretch; gap:var(--s-3); margin-top:var(--s-2); }
+  .home-walk__cost { flex:none; }
+  .home-walk__action { justify-content:center; min-height:40px; margin-left:0; padding:0 18px; border-radius:var(--r-pill); background:var(--primary-bg); color:var(--on-accent); }
+  @media (hover:hover) { .home-walk__main:hover .home-walk__action { filter:brightness(.94); } }
+  .home-aside { padding:0; background:none; border-radius:0; }
+  .home-aside__title { margin-bottom:var(--s-2); }
+  .wa-bar { position:static; padding:var(--s-5); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; }   /* in the text column it never covers what follows */
+  .vcard { padding:0; border:0; border-radius:0; box-shadow:none; }
+  .vcard:hover { transform:none; box-shadow:none; }
+  @media (hover:hover) { .vcard:hover .vcard__name { text-decoration:underline; text-underline-offset:3px; } }
+  .rt-card, :root[data-theme="dusk"] .rt-card { background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  /* You: settings are rows on the page; the account is the sticky side panel. */
+  #you-body > :is(.you-join, .you-me) { background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); }
+  .you-group { background:none; border-radius:0; border-block:1px solid var(--hair); overflow:visible; }
+  .you-row { padding-inline:0; border-radius:var(--r-sm); }
+  .you-row + .you-row::before { left:44px; }
+  .you-row__ic { background:none; }
+  @media (hover:hover) { .you-row:hover { background:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); } }
+}
+@media (min-width:1280px) {
+  .wa-search-entry { width:auto; max-width:320px; }
+}
+
 /* Reduce Transparency: every glass surface becomes solid paper, not only the drops and Now's keys. */
 @media (prefers-reduced-transparency: reduce) {
   .wa-tabbar, .wa-bar, .wa-install, .map-ctrl, .map-seg, .wa-topbar, .wa-sheet__panel, .wa-offline, .wa-toast, .prog-controls, .rt-card, .home-mood__key, .home-day__all, .wa-lang__menu, .map-filters .map-mood {

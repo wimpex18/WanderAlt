@@ -300,7 +300,7 @@
           <span class="home-aside__text"><span class="home-aside__name">${esc(v.name || '')}</span><span class="home-aside__meta">${esc([R().kindLabel(v.kind, true), R().openState(v).text].filter(Boolean).join(' · '))}</span></span>
           ${m != null ? `<span class="home-aside__walk">${I('walk')}${esc(R().walkLabel(m))}</span>` : ''}</a></li>`;
       }).join('')}</ul>
-      ${open.length > 4 ? `<button class="wa-linkbtn home-aside__more" type="button" data-view="places">All ${open.length} open</button>` : ''}</section>`;
+      ${open.length > 4 ? `<button class="wa-linkbtn home-aside__more" type="button" data-view="places">All ${open.length} open ${I('arrow')}</button>` : ''}</section>`;
   };
   const newSince = (all) => {
     const n = visit.prev ? all.filter(e => R().isNewSince(e, visit.prev)).length : 0;
