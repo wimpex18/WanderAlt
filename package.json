@@ -19,6 +19,8 @@
     "typecheck": "tsc -p pipeline",
     "e2e": "playwright test",
     "e2e:record": "node tests/e2e/record.ts",
+    "shots": "node tests/e2e/shots.ts",
+    "shots:compare": "node tests/e2e/compare.ts",
     "build:brand": "node .scripts/build-brand.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "build:map-styles": "node .scripts/build-map-styles.js",
