@@ -132,5 +132,5 @@ npm run build:inline-icons
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) is the one instruction file for coding agents. Claude Code and Codex both read it natively, so the repo has no CLAUDE.md; a CLAUDE.md or CLAUDE.local.md anywhere above the working directory would make Claude Code stop reading AGENTS.md.
-- In Claude Code, `.claude/settings.json` runs `.claude/hooks/check-before-push.sh` before any `git push`: the push is blocked unless `npm test` and `npm run typecheck` pass. Codex follows the same rule from AGENTS.md.
+- In Claude Code, `.claude/settings.json` runs `.claude/hooks/check-before-push.sh` before any `git push`: the push is blocked unless `npm test` and `npm run typecheck` pass. Codex follows the same rule from AGENTS.md. The same file links `node_modules` into the worktrees Claude Code creates under `.claude/worktrees/`.
 - This README owns current product and operational context. Read code for implementation and connectors for live state; keep audit and research history in Git and PRs rather than extra Markdown files.

@@ -3,8 +3,8 @@
 .claude/settings.local.json
 CLAUDE.local.md
 
-# Node / npx caches
-node_modules/
+# Node / npx caches (no trailing slash: a worktree links it)
+node_modules
 
 # macOS
 .DS_Store
@@ -21,3 +21,6 @@ supabase/.temp/
 # Playwright output (npm run e2e)
 test-results/
 playwright-report/
+
+# Session worktrees (AGENTS.md, Workflow)
+.claude/worktrees/
