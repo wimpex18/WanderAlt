@@ -8,7 +8,9 @@
 //   Paavli Kultuurivabrik, https://www.kultuurivabrik.ee/en/events: `data`, the venue's Facebook
 //     events: id, title, content (a text row), date "2026-10-09T20:00:00+0300", end_time, ticketUrl,
 //     eventUrl, cover.source. The cover is a signed Facebook CDN address that expires, so it is never
-//     artwork; the venue's page has no page per event, only an anchor (/en/events#<id>).
+//     artwork as such: with config.copy_covers it is kept in the raw item (map.cover) and copied once
+//     into our own storage (event-art.ts). The venue's page has no page per event, only an anchor
+//     (/en/events#<id>).
 //   Von Krahl, https://vonkrahl.ee/: the layout's EventsProvider carries `strapiEvents` (the theatre's
 //     own events: id, title, start and end in UTC, location, slug of /sundmused/<slug>, eventType,
 //     saleStatus, buyTicketsUrl) and `fientaEvents` (its Fienta ticket calendar: start and end as
@@ -17,7 +19,7 @@
 //     image links point). One show can be in both lists; the first wins.
 //
 // config.records: one mapping per record list, in order of preference:
-//   { list, id, title, start, end?, where?, ticket?, page?, image?, image_base?, description?, status?, kind?, series? }
+//   { list, id, title, start, end?, where?, ticket?, page?, image?, image_base?, cover?, description?, status?, kind?, series? }
 //   A value is a path in the record ("project.poster.url"); an array tries each path in turn. page is a
 //   template filled from the record ("https://vonkrahl.ee/sundmused/{slug}"); a record without that
 //   field links to the programme page. image_base resolves a relative image path. status words
@@ -119,7 +121,7 @@ export function records(rows: Rows, list: string): Record<string, unknown>[] {
 export interface FlightMap {
   list: string; id: string | string[]; title: string | string[]; start: string | string[];
   end?: string | string[]; where?: string | string[]; ticket?: string | string[]; page?: string;
-  image?: string | string[]; image_base?: string; description?: string | string[]; status?: string | string[];
+  image?: string | string[]; image_base?: string; cover?: string | string[]; description?: string | string[]; status?: string | string[];
   kind?: string | string[]; series?: string | string[];
 }
 
@@ -127,6 +129,8 @@ export interface FlightMap {
 export interface Show {
   title: string; start: string; end: string | null; has_time: boolean; venue: string | null;
   address: string | null; hall: string | null; ticket: string | null; image: string | null;
+  /** The record's own picture at an address that expires (a signed Facebook CDN link): for event-art.ts to copy. */
+  cover?: string | null;
   description: string | null; status: string | null; kind: string | null; series: string | null;
 }
 
@@ -151,6 +155,12 @@ const artwork = (v: unknown, base: string): string | null => {
   return u && !/(^|\.)(fbcdn\.net|cdninstagram\.com)$/.test(new URL(u).hostname) ? u : null;
 };
 
+/** A signed social-media CDN address: kept only to be copied, never shown. */
+const expiring = (v: unknown): string | null => {
+  const u = cleanLink(v);
+  return u && /(^|\.)(fbcdn\.net|cdninstagram\.com)$/.test(new URL(u).hostname) ? u : null;
+};
+
 export function shows(html: string, source: Source): { key: string; url: string | null; show: Show }[] {
   const rows = flightRows(flightText(html));
   const skip = source.config.skip_titles ? new RegExp(String(source.config.skip_titles), 'iu') : null;
@@ -173,6 +183,7 @@ export function shows(html: string, source: Source): { key: string; url: string 
           has_time: /\d{1,2}:\d{2}/.test(rawStart ?? ''), venue: where.venue, address: where.address,
           hall: where.hall && !samePlace(where.hall, where.venue) ? where.hall : null,
           ticket: cleanLink(pick(r, map.ticket, rows)), image: artwork(pick(r, map.image, rows), map.image_base ?? source.url),
+          ...(map.cover && source.config.copy_covers ? { cover: expiring(pick(r, map.cover, rows)) } : {}),
           // Styled letters (𝑨𝒀𝑨𝑵𝑶, a common Facebook flourish) read as plain ones: AYANO.
           description: clip(scrubContacts(text ? htmlToText(text).normalize('NFKC') : null), 2000),
           status: str(pick(r, map.status, rows)), kind: str(pick(r, map.kind, rows)), series: str(pick(r, map.series, rows)),

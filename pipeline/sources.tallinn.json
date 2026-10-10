@@ -141,8 +141,9 @@
       "skip_titles": "\\b(tartu|pärnu|narva|viljandi|kuressaare|haapsalu|rakvere|helsinki|riga)\\b",
       "records": [
         { "list": "data", "id": "id", "title": "title", "start": "date", "end": "end_time", "ticket": "ticketUrl",
-          "description": "content", "page": "https://www.kultuurivabrik.ee/en/events#{id}" }
-      ]
+          "description": "content", "page": "https://www.kultuurivabrik.ee/en/events#{id}", "cover": "cover.source" }
+      ],
+      "copy_covers": true
     }
   },
   {

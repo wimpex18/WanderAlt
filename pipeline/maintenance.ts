@@ -2,6 +2,7 @@
 // All writes use atomic service-only RPCs, except a display-name tidy (one row's
 // name and aliases, its id untouched); --dry-run is read-only.
 import { writeFileSync } from 'node:fs';
+import { CITIES } from './cities.ts';
 import { Db } from './db.ts';
 import { venueName, type Place } from './places.ts';
 import { nameKey } from './util.ts';
@@ -65,7 +66,7 @@ export async function retireForeignScriptPlaces(db: Db, places: Place[], dry = f
 export async function tidyPlaceNames(db: Pick<Db, 'patch'>, places: Place[], dry = false): Promise<{ id: string; from: string; to: string }[]> {
   const out: { id: string; from: string; to: string }[] = [];
   for (const p of places) {
-    const name = venueName(p.name);
+    const name = venueName(p.name, CITIES[p.city] ?? CITIES.tallinn);
     if (p.merged_into || name === p.name) continue;
     const aliases = [...new Set([...(p.aliases ?? []), nameKey(p.name), nameKey(name)])];
     if (!dry) await db.patch(`places?id=eq.${encodeURIComponent(p.id)}`, { name, aliases });

@@ -168,7 +168,7 @@ export class Geocoder {
           .map(v => (v ?? '').trim()).filter(Boolean))],
         lat: Number(h.lat), lng: Number(h.lon), osm_id: `${h.osm_type}/${h.osm_id}`, kind: `${h.category}/${h.type}`,
         address: h.address?.road ? [h.address.road, h.address.house_number].filter(Boolean).join(' ') : null,
-        area: h.address ? areaName(h.address) : null,
+        area: h.address ? areaName(h.address, this.city) : null,
       })).filter(h => inCity(this.city, h.lat, h.lng));
     } catch { return []; } finally { await sleep(1100); }
   }

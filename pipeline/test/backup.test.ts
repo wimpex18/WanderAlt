@@ -30,7 +30,7 @@ test('a backup reads every table in key order, packs, unpacks and restores by ke
 
 test('secrets and collectable data are not in the backup set', () => {
   for (const t of ['social_tokens', 'raw_items', 'going_counts']) assert.equal(t in BACKUP_TABLES, false, t);
-  for (const t of ['places', 'follows', 'saved_lists', 'place_fact_flags', 'event_merge_log']) assert.ok(t in BACKUP_TABLES, t);
+  for (const t of ['places', 'follows', 'saved_lists', 'place_fact_flags', 'event_merge_log', 'review_decisions', 'place_checks']) assert.ok(t in BACKUP_TABLES, t);
 });
 
 test('the freshness check wants a successful run in the last 14 hours', () => {

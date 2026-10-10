@@ -145,11 +145,11 @@ test('a listing\'s status: rules first, then a poster note, then trust and fit',
   assert.equal(listingStatus(cand('Late Night Cabaret', 'Heldeke!'), fit('x', 0.7), venueFilter, item(30164)).status, 'published');
   // Business formats are still rejected, and a poster-read date keeps the note its row is protected by.
   assert.equal(listingStatus(cand('Health promotion conference'), fit('x', 0.9), marketplace, item(15)).status, 'rejected');
-  const poster = 'manual review: date and time read from Instagram poster';
+  const poster = 'poster: date and time read from Instagram poster';
   assert.deepEqual(listingStatus(cand('Sound bath', null, { review_note: poster }), fit('x', 0.9), source(), item()), { status: 'review', note: poster });
 });
 
-test('published rows the rules now hold move to review; manual decisions and other rows are untouched', async () => {
+test('published rows the rules now hold move to review; manual and automatic decisions and other rows are untouched', async () => {
   const reads: string[] = [], patches: { path: string; body: unknown }[] = [];
   const db = {
     all: async <T,>(path: string) => { reads.push(path); return [
@@ -164,11 +164,12 @@ test('published rows the rules now hold move to review; manual decisions and oth
   assert.match(reads[0], /status=eq\.published/);
   assert.match(reads[0], /archived_at=is\.null/);
   assert.match(reads[0], /status_note\.not\.like\.manual\*/);
+  assert.match(reads[0], /status_note\.not\.like\.auto\*/);
   assert.equal(patches.length, 2);
   assert.deepEqual(patches[0].body, { status: 'review', status_note: 'rule: mainstream (при свечах)' });
   // The write itself re-checks the state, so a person's decision made meanwhile is kept.
   for (const p of patches) {
-    assert.match(p.path, /^events\?id=eq\.ev_\d&status=eq\.published&or=\(status_note\.is\.null,status_note\.not\.like\.manual\*\)$/);
+    assert.match(p.path, /^events\?id=eq\.ev_\d&status=eq\.published&or=\(status_note\.is\.null,and\(status_note\.not\.like\.manual\*,status_note\.not\.like\.auto\*\)\)$/);
     assert.notEqual((p.body as { status: string }).status, 'rejected');
   }
 });

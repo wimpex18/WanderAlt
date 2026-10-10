@@ -17,3 +17,7 @@ supabase/.temp/
 
 # Local preview logs
 *.log
+
+# Playwright output (npm run e2e)
+test-results/
+playwright-report/

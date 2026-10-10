@@ -30,6 +30,7 @@ import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoste
 import { englishModels, refreshEnglish } from './english.ts';
 import { localModels, refreshLocal } from './localize.ts';
 import { attachPosters } from './posters.ts';
+import { copyCovers } from './event-art.ts';
 import { fetchOverture, matchPlace } from './overture.ts';
 import { Places, isDistrict, type Place } from './places.ts';
 import { Seen, earlierListing, type Listed } from './dedupe.ts';
@@ -48,10 +49,12 @@ import { wikidataNear } from './wikidata-near.ts';
 import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
 import { fillSourceLinks } from './venue-source-facts.ts';
+import { POSTER_NOTE, decideHeld, deciderModels } from './review-decider.ts';
+import { CITIES, cityProfile } from './cities.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
-  if (String(row.status_note).startsWith('manual review: date and time read from Instagram poster')) {
+  if (row.status_note === POSTER_NOTE) {
     return { id: row.id, last_seen_at: row.last_seen_at };
   }
   const { status: _s, status_note: _n, relevance: _r, ...facts } = row;
@@ -139,14 +142,14 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (!text.trim() && !p.photos?.length) return [];
   const found = await (deps.extract ?? extractEvents)(models, {
     text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
-    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null,
+    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: CITIES[source.city] ?? CITIES.tallinn,
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
   const venue = source.config.venue_name as string | undefined;
   // A venue's own Instagram post names no other place: it is at that venue.
   if (isInstagram) return found.map(c => ({ ...c, image_url: null, venue_name: c.venue_name || p.venue_name,
-    ...(poster ? { review_note: 'manual review: date and time read from Instagram poster' } : {}) }));
+    ...(poster ? { review_note: POSTER_NOTE } : {}) }));
   return venue ? found.map(c => ({ ...c, venue_name: venue })) : found;
 }
 
@@ -268,9 +271,10 @@ export function listingStatus(c: Candidate, e: Enrichment, source: Source, item:
 /** Upcoming published listings the rules above now hold: an item is not read again unless its source
  *  changes it, and a refresh keeps the earlier status, so without this a row published before a rule
  *  existed stays published. Moves matches to review with the rule as the note; a person's decision
- *  (a note starting "manual") is never overridden and nothing is deleted. */
+ *  (a note starting "manual") and the decider's (review-decider.ts, "auto"), which already weighed the
+ *  rule, are never overridden, and nothing is deleted. */
 export async function recheckPublished(db: Pick<Db, 'all' | 'patch'>, city: string): Promise<{ id: string; title: string; note: string }[]> {
-  const notManual = 'or=(status_note.is.null,status_note.not.like.manual*)';
+  const notManual = 'or=(status_note.is.null,and(status_note.not.like.manual*,status_note.not.like.auto*))';
   const rows = await db.all<{ id: string; title: string; venue_name: string | null }>(
     `events?city=eq.${city}&status=eq.published&archived_at=is.null&merged_into=is.null&${notManual}&select=id,title,venue_name&order=id.asc`);
   const moved: { id: string; title: string; note: string }[] = [];
@@ -296,6 +300,9 @@ export function decide(e: Enrichment, trusted: boolean): { status: string; note:
 }
 
 interface Pending { rawId: number | null; item: RawItem; source: Source }
+
+/** For reading a structured source's item again without asking any model. */
+const noModels = { ready: false, neuronBudget: 0 } as unknown as Models;
 
 /** What a crashed run can still record: the neurons it spent. A run that dies writes nothing at its end,
  *  and the daily allowance sums these rows, so an unrecorded crash let the next run spend the same neurons again. */
@@ -353,7 +360,9 @@ async function main() {
   const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4, runCap);
   // Place checks read a few pages a run (place-checks.ts); their own small budget.
   const placeModels = new Models(undefined, DRY || flag('--no-place-checks') ? 0 : 8, runCap);
-  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls + placeModels.calls;
+  // Held listings are judged by the Claude lane alone (review-decider.ts): a dozen to a request, two or three times.
+  const decider = deciderModels(DRY ? 0 : 40);
+  current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls + placeModels.calls + decider.calls;
 
   // The run's row, and what today's earlier runs already spent: the free
   // Workers AI allocation is per day (reset 00:00 UTC) and per account.
@@ -466,7 +475,7 @@ async function main() {
   }
 
   // ── 4. classify ──
-  const enrich = await classify(sorter, found.map(f => f.c));
+  const enrich = await classify(sorter, found.map(f => f.c), undefined, cityProfile(CITY));
 
   // ── 5. places and events ──
   let existingPlaces = db ? await loadPlaces(db, CITY) : [];
@@ -494,7 +503,7 @@ async function main() {
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
   if (osm && !skipCatalogue) {
     try {
-      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
+      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? cityProfile(CITY).osm.area), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
       for (const p of catalogue) places.merge(p);
       if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
@@ -516,7 +525,7 @@ async function main() {
   // carry a district or nothing; 40 a run, one Nominatim lookup each.
   if (!(DRY && !flag('--geocode'))) {
     let n = 0;
-    for (const p of places.all().filter(p => (p.status ?? 'active') === 'active' && p.lat != null && isDistrict(p.neighborhood)).slice(0, 40)) {
+    for (const p of places.all().filter(p => (p.status ?? 'active') === 'active' && p.lat != null && isDistrict(p.neighborhood, cityProfile(CITY))).slice(0, 40)) {
       if (await places.area(p)) {
         n++;
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -715,7 +724,7 @@ async function main() {
   const unnamed = places.all().filter(p => !p.kind).slice(0, 90);
   if (unnamed.length && sorter.ready) {
     const held = (id: string) => [...events.values()].filter(e => e.place_id === id).map(e => String(e.title));
-    const kinds = await classifyPlaces(sorter, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })));
+    const kinds = await classifyPlaces(sorter, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })), undefined, cityProfile(CITY));
     kinds.forEach((k, i) => {
       const p = unnamed[i];
       if (!k) return;
@@ -792,9 +801,9 @@ async function main() {
   // Events written before any model was available get classified now.
   if (sorter.ready) {
     const waiting = await db.select<{ id: string; title: string; venue_name: string | null; description: string | null; starts_at: string; status_note: string | null }>(
-      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,status_note.not.like.manual*)&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
+      `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,and(status_note.not.like.manual*,status_note.not.like.auto*))&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
     const cands = waiting.map(w => ({ title: w.title, venue_name: w.venue_name, description: w.description, starts_at: w.starts_at, has_time: true, engine: 'db' }) as Candidate);
-    const late = await classify(sorter, cands);
+    const late = await classify(sorter, cands, undefined, cityProfile(CITY));
     let n = 0;
     for (let i = 0; i < waiting.length; i++) {
       const e = late[i];
@@ -814,6 +823,14 @@ async function main() {
     const moved = await recheckPublished(db, CITY);
     for (const m of moved) log(`held for review: ${m.title} (${m.note})`);
   } catch (e) { log(`published re-check failed: ${(e as Error).message}`); }
+  // Every held listing settled from evidence, with no person in the loop (review-decider.ts).
+  if (!flag('--no-decide')) {
+    try {
+      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels) });
+      const n = (s: string) => out.filter(d => d.status === s && d.quote).length;
+      if (out.length) log(`held listings: ${n('published')} published, ${n('rejected')} rejected, ${out.filter(d => !d.quote).length} waiting for a checked answer`);
+    } catch (e) { log(`review decisions failed: ${(e as Error).message}`); }
+  }
 
   // ── 6. archive and health ──
   await refreshEnglish(db, english, CITY, 40);
@@ -825,6 +842,10 @@ async function main() {
       const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 30));
       if (n) log(`posters: ${n} events got the picture their own page attaches to them`);
     } catch (e) { log(`posters failed: ${(e as Error).message}`); }
+  }
+  // Covers a venue's own records attach at an address that expires, copied once (event-art.ts).
+  if (!flag('--no-covers')) {
+    try { await copyCovers(db, sources, Number(opt('--max-covers') ?? 30)); } catch (e) { log(`covers failed: ${(e as Error).message}`); }
   }
   const now = new Date().toISOString();
   const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();
