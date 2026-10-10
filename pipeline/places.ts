@@ -7,7 +7,7 @@
 import type { Candidate } from './types.ts';
 import { UA, nameKey, slug, sleep } from './util.ts';
 import { comparePlaces, metres, osmIds, placeNames, canonicalOrder, addressKey } from './place-match.ts';
-import { CITIES } from './cities.ts';
+import { CITIES, type CityProfile, wordsOf } from './cities.ts';
 
 export interface Place {
   id: string;
@@ -84,27 +84,26 @@ interface NominatimHit {
 /** The area a visitor knows: the asum (Kalamaja, Vanalinn, Telliskivi's
  *  Pelgulinn), which Nominatim returns as `quarter`, not the district
  *  (Põhja-Tallinna linnaosa). The Old Town gets its English name. */
-const DISTRICT = /^(kesklinna|põhja-tallinna|kristiine|haabersti|lasnamäe|mustamäe|nõmme|pirita)( linnaosa)?$|^(tallinn|all-linn)$/i;
-const ENGLISH: Record<string, string> = { Vanalinn: 'Old Town' };
-export function areaName(a: Record<string, string>): string | null {
-  const name = a.quarter ?? a.neighbourhood ?? a.suburb?.replace(/ linnaosa$/, '') ?? a.city_district?.replace(/ linnaosa$/, '') ?? null;
-  return name ? ENGLISH[name] ?? name : null;
+export function areaName(a: Record<string, string>, city: CityProfile = CITIES.tallinn): string | null {
+  const name = a.quarter ?? a.neighbourhood ?? a.suburb?.replace(city.districtSuffix, '') ?? a.city_district?.replace(city.districtSuffix, '') ?? null;
+  return name ? city.areaNames[name] ?? name : null;
 }
 /** True for an area label that names a district rather than an asum. */
-export const isDistrict = (n: string | null | undefined) => !n || DISTRICT.test(n.trim());
+export const isDistrict = (n: string | null | undefined, city: CityProfile = CITIES.tallinn) => !n || city.districts.test(n.trim());
 
 const ONLINE = /\b(online|zoom|veebis|онлайн)\b/i;
 
 // A bracket that describes rather than names: a floor ("3. korrusel"), the city, or a sentence of four
 // words or more. A short one stays, since it can tell two halls of one building apart ("(Hall 2)",
 // "(black box)"), and two places with one name at one address are merged (place-match.ts).
-const NOTE = /^(?:.*\b(?:korrus\w*|korpus\w*|floor)\b.*|tallinn(?:as)?|estonia|(?:\S+\s+){3,}\S+)$/iu;
+const note = (city: CityProfile) => new RegExp(`^(?:.*\\b(?:${wordsOf(city, 'floors').join('|')})\\b.*|${city.bracketPlaces.join('|')}|(?:\\S+\\s+){3,}\\S+)$`, 'iu');
 
 /** A venue's name as sources write it, without what is not its name: a description or floor note in
  *  brackets ("Gin Spot Bar (One of Tallinn's most unique …)", "… black box (3. korrusel)"), a company's
  *  legal form (OÜ, MTÜ, AS, SA, FIE) and a tagline after " | ". Never empty: a name that is all of
  *  these stays as written. */
-export function venueName(raw: string): string {
+export function venueName(raw: string, city: CityProfile = CITIES.tallinn): string {
+  const NOTE = note(city);
   const name = raw
     .replace(/\s*\|.*$/u, '')
     .replace(/\s*\(([^()]*)\)/gu, (m, inner: string) => (NOTE.test(inner.trim()) ? '' : m))
@@ -117,21 +116,21 @@ export function venueName(raw: string): string {
  *  "Kentmanni tänav 28, 10116 Tallinn" → "Kentmanni 28, Tallinn",
  *  "Narva maantee 13" → "Narva mnt 13", "L.Koidula 21c" → "Koidula 21c".
  *  No postcodes, unit numbers, parentheses or plus codes. */
-export function normaliseAddress(a: string): string {
-  const street = a
+export function normaliseAddress(a: string, city: CityProfile = CITIES.tallinn): string {
+  let street = a
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\b[23456789CFGHJMPQRVWX]{4}\+[23456789CFGHJMPQRVWX]{2,3}\b/g, '')
-    .replace(/,?\s*Harju ?(maakond|maa)\b/gi, '')
-    .replace(/\b\d{5}\b/g, '')
+    .replace(city.region, '')
+    .replace(city.postcode, '')
     .replace(/\s*\/\s*\d+\w?\b/g, '')
-    .replace(/\b(tänav|tn)\.?(?=\s|,|$)/gi, '')
-    .replace(/\bmaantee\b|\bmnt\b\.?/gi, 'mnt')
-    .replace(/\bpuiestee\b|\bpst\b\.?/gi, 'pst')
+    .replace(new RegExp(`\\b(${city.streets.drop.join('|')})\\.?(?=\\s|,|$)`, 'gi'), '');
+  for (const [long, short] of Object.entries(city.streets.short)) street = street.replace(new RegExp(`\\b${long}\\b|\\b${short}\\b\\.?`, 'gi'), short);
+  street = street
     .replace(/^\s*\p{Lu}\.\s*/u, '')
     .split(',')[0]
     .replace(/\s+/g, ' ')
     .trim();
-  return /\d/.test(street) ? `${street}, Tallinn` : '';
+  return /\d/.test(street) ? `${street}, ${city.name}` : '';
 }
 
 /** OSM tags → the place kinds the site lists (supabase.js VENUE_KINDS). */
@@ -152,10 +151,12 @@ export class Places {
   private tries = { unlocated: 0, unidentified: 0 };
   private lookups = 0;
   private city: string;
+  private profile: CityProfile;
   private maxLookups: number;
 
   constructor(existing: Place[], city = 'tallinn', maxLookups = 25) {
     this.city = city;
+    this.profile = CITIES[city] ?? CITIES.tallinn;
     this.maxLookups = maxLookups;
     for (const p of existing) this.remember(p);
   }
@@ -218,7 +219,7 @@ export class Places {
     if (!raw || ONLINE.test(raw) || /[\u0400-\u04ff]/.test(raw)) return null;
     // The display name is cleaned; the source's own spelling stays an alias. A place is found by that
     // spelling first, as before, and by the cleaned name only when the spelling knows none.
-    const name = venueName(raw);
+    const name = venueName(raw, this.profile);
     const literal: Place = { id: '', city: this.city, name: raw, aliases: [nameKey(raw)],
       address: c.address ?? null, lat: c.lat ?? null, lng: c.lng ?? null };
     const incoming: Place = { ...literal, name, aliases: [...new Set([nameKey(name), nameKey(raw)])] };
@@ -253,9 +254,9 @@ export class Places {
   /** Coordinates from the address, then identity and kind from OSM's own
    *  record of the venue when one with the same name is close by. */
   private async locate(place: Place, name: string, address: string | null): Promise<boolean> {
-    const street = address ? normaliseAddress(address) : '';
+    const street = address ? normaliseAddress(address, this.profile) : '';
     const byAddress = street && this.lookups < this.maxLookups ? await this.geocode(street) : null;
-    const byName = this.lookups < this.maxLookups ? await this.geocode(`${name}, ${(CITIES[this.city] ?? CITIES.tallinn).name}`) : null;
+    const byName = this.lookups < this.maxLookups ? await this.geocode(`${name}, ${this.profile.name}`) : null;
     const osmName = nameKey(byName?.name ?? '');
     const sameName = !!osmName && (osmName.includes(nameKey(name)) || nameKey(name).includes(osmName));
     const at = (h: NominatimHit) => ({ lat: Number(h.lat), lng: Number(h.lon) });
@@ -271,7 +272,7 @@ export class Places {
       place.kind = place.kind ?? OSM_KIND[`${venue.category}/${venue.type}`] ?? null;
     }
     const a = hit.address ?? {};
-    place.neighborhood = areaName(a);
+    place.neighborhood = areaName(a, this.profile);
     if (!place.address && a.road) place.address = [a.road, a.house_number].filter(Boolean).join(' ');
     return true;
   }
@@ -287,7 +288,7 @@ export class Places {
       const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
       await sleep(1100);
       if (!r.ok) return false;
-      const name = areaName((await r.json() as { address?: Record<string, string> }).address ?? {});
+      const name = areaName((await r.json() as { address?: Record<string, string> }).address ?? {}, this.profile);
       if (!name || name === place.neighborhood) return false;
       place.neighborhood = name;
       return true;
@@ -299,7 +300,7 @@ export class Places {
   private async geocode(q: string): Promise<NominatimHit | null> {
     this.lookups++;
     const url = new URL('https://nominatim.openstreetmap.org/search');
-    url.search = new URLSearchParams({ q, format: 'jsonv2', addressdetails: '1', limit: '1', countrycodes: (CITIES[this.city] ?? CITIES.tallinn).country }).toString();
+    url.search = new URLSearchParams({ q, format: 'jsonv2', addressdetails: '1', limit: '1', countrycodes: this.profile.country }).toString();
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15_000) });
       if (!r.ok) return null;

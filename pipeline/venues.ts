@@ -13,6 +13,7 @@ import type { Place } from './places.ts';
 import { UA, get, getHtml, httpUrl, decodeEntities, clip, nameKey, slug } from './util.ts';
 import { closureReason, overpass, type OsmElement } from './osm.ts';
 import { probeImage, usableSize } from './imageprobe.ts';
+import { CITIES, type CityProfile } from './cities.ts';
 
 export interface VenueDetails {
   website?: string | null;
@@ -61,8 +62,8 @@ const byRef = (refs: readonly string[]) => ['node', 'way', 'relation']
   .map(type => ({ type, ids: refs.filter(r => r.startsWith(`${type}/`)).map(r => r.slice(type.length + 1)).filter(i => /^\d+$/.test(i)) }))
   .filter(g => g.ids.length).map(g => `  ${g.type}(id:${g.ids.join(',')});`).join('\n');
 
-const QUERY = (area: string, craft: readonly string[] = []) => `[out:json][timeout:45];
-area["name"="${area}"]["admin_level"="7"]->.t;
+const QUERY = (area: string, craft: readonly string[] = [], adminLevel = 7) => `[out:json][timeout:45];
+area["name"="${area}"]["admin_level"="${adminLevel}"]->.t;
 (
   nwr(area.t)["shop"~"^(music|books|second_hand|charity|art)$"]["name"];
   nwr(area.t)["amenity"~"^(arts_centre|cinema|nightclub|community_centre|social_centre|theatre)$"]["name"];
@@ -74,8 +75,8 @@ out center tags;`;
 /** `craft`: OSM references ("node/123") of the craft beer bars, taprooms and bottle shops we chose for
  *  a city (the `craft_beer` list of its osm source). They are kind 'taproom'; nothing else is, so no
  *  pub or off-licence is added by accident. */
-export async function osmCatalogue(city = 'tallinn', area = 'Tallinn', craft: readonly string[] = []): Promise<RichPlace[]> {
-  const elements = await overpass(QUERY(area, craft));
+export async function osmCatalogue(city = 'tallinn', area = (CITIES[city] ?? CITIES.tallinn).osm.area, craft: readonly string[] = []): Promise<RichPlace[]> {
+  const elements = await overpass(QUERY(area, craft, (CITIES[city] ?? CITIES.tallinn).osm.adminLevel));
   const taprooms = new Set(craft);
   return elements.map(el => placeFromOsm(el, city, taprooms)).filter((p): p is RichPlace => !!p);
 }
@@ -93,7 +94,7 @@ export function placeFromOsm(el: OsmElement, city: string, taprooms: ReadonlySet
     name,
     aliases: [...new Set([name, t.name, t['name:en'], ...(t.alt_name ?? '').split(';'), t['short_name']].filter(Boolean).map(n => nameKey(n!)))],
     kind,
-    address: street ? `${street}, Tallinn` : null,
+    address: street ? `${street}, ${(CITIES[city] ?? CITIES.tallinn).name}` : null,
     lat: lat ?? null,
     lng: lng ?? null,
     osm_id: `${el.type}/${el.id}`,
@@ -179,12 +180,12 @@ export const parkedHomepage = (html: string) => PARKED.test(html);
 /** A profile belongs to the venue when its handle shares a word with the
  *  venue's name or its website's domain. Homepages also link partners,
  *  sponsors and share buttons, which this keeps out. */
-export function handleFits(profile: string, name: string, site: string): boolean {
+export function handleFits(profile: string, name: string, site: string, city: CityProfile = CITIES.tallinn): boolean {
   const handle = nameKey(profile.split('/').filter(Boolean).pop() ?? '').replace(/ /g, '');
   const stem = new URL(site).hostname.replace(/^www\./, '').split('.')[0].replace(/-/g, '');
-  // Words every venue in town shares prove nothing.
-  const GENERIC = /^(tallinn|tallinna|eesti|estonia|club|klubi|galerii|gallery|teater|theatre|kino|cinema|baar|raamat)$/;
-  const words = [...nameKey(name).split(' '), stem].filter(w => w.length >= 4 && !GENERIC.test(w));
+  // Words every venue in town shares prove nothing: the city's and country's names, and kinds of place.
+  const generic = new Set([...city.cityWords, 'club', 'klubi', 'galerii', 'gallery', 'teater', 'theatre', 'kino', 'cinema', 'baar', 'raamat']);
+  const words = [...nameKey(name).split(' '), stem].filter(w => w.length >= 4 && !generic.has(w));
   return words.some(w => handle.includes(w.replace(/ /g, '')) || (handle.length >= 4 && w.includes(handle)));
 }
 
@@ -287,12 +288,12 @@ export function declaredIcons(html: string, base: string): string[] {
  *  og:image often shows a current show, an advert or a placeholder. Only
  *  recognisable logo filenames are imported automatically; venue photos
  *  come from Wikidata P18 or an individually reviewed image. */
-export function fromHomepage(html: string, base: string, name = ''): VenueDetails {
+export function fromHomepage(html: string, base: string, name = '', city: CityProfile = CITIES.tallinn): VenueDetails {
   if (PARKED.test(html)) return {};
   const hrefs = [...html.matchAll(/href=["']([^"']+)["']/gi)].map(m => decodeEntities(m[1]));
   const first = (host: 'instagram.com' | 'facebook.com') =>
     hrefs.map(h => (h.includes(host) ? socialUrl(host, h) : null))
-      .find(u => u && (!name || handleFits(u, name, base))) ?? null;
+      .find(u => u && (!name || handleFits(u, name, base, city))) ?? null;
   const meta = (prop: string) =>
     new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, 'i').exec(html)?.[1]
     ?? new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, 'i').exec(html)?.[1];
@@ -320,10 +321,10 @@ export function fromHomepage(html: string, base: string, name = ''): VenueDetail
 /** The first candidate that is a real mark: a strong one (named logo, JSON-LD)
  *  unless it is tiny, a weak one (header link, declared icon) only after its
  *  size was read: 48 px for a header logo, 128 px and square for an icon. */
-export async function pickLogo(candidates: { url: string; weak: boolean; icon?: boolean }[], probe: typeof probeImage = probeImage): Promise<string | null> {
+export async function pickLogo(candidates: { url: string; weak: boolean; icon?: boolean }[], probe: typeof probeImage = probeImage, city: CityProfile = CITIES.tallinn): Promise<string | null> {
   // The city portal's mark on a school's or a youth centre's page is the
   // city's, not the venue's.
-  for (const c of candidates.filter(x => !PORTAL_LOGO.test(bareHost(x.url))).slice(0, 5)) {
+  for (const c of candidates.filter(x => !city.portalHosts.test(bareHost(x.url))).slice(0, 5)) {
     const size = await probe(c.url);
     // A wordmark may be wide; an icon must be square-ish and 128 px or more.
     if (size ? (c.icon ? usableSize(size, 128, 2) : usableSize(size, 48)) : !c.weak) return c.url;
@@ -331,8 +332,6 @@ export async function pickLogo(candidates: { url: string; weak: boolean; icon?: 
   return null;
 }
 
-/** Hosts whose logo says who runs the site, not what the venue is. */
-const PORTAL_LOGO = /(^|\.)tallinn\.ee$/i;
 const FB_RESERVED = /^(pages|people|profile\.php|groups|events|public|share|sharer|p|watch|marketplace|login|policies|tr)$/i;
 /** The page name of a Facebook page link, when it names a page (not a group,
  *  an event or a numeric profile). */
@@ -381,10 +380,10 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
       // hands, a parent organisation) is another identity: nothing is taken.
       const same = bareHost(page.url) === bareHost(site);
       if (!same) console.warn(`[venues] ${p.name}: ${site} now redirects to ${bareHost(page.url)}; nothing taken`);
-      const d = same ? fromHomepage(page.html.slice(0, 400_000), site, p.name) : {};
+      const d = same ? fromHomepage(page.html.slice(0, 400_000), site, p.name, CITIES[p.city] ?? CITIES.tallinn) : {};
       // Which of the site's candidate marks is big enough to be one.
       if (!p.image_url && !patch.image_url && d.image_candidates?.length) {
-        const url = await pickLogo(d.image_candidates);
+        const url = await pickLogo(d.image_candidates, probeImage, CITIES[p.city] ?? CITIES.tallinn);
         d.image_url = url;
         if (!url) { d.image_attr = null; d.image_source = null; }
       }
@@ -402,7 +401,7 @@ export async function enrichPlace(p: RichPlace, opts: { facebook?: boolean } = {
     // A named page must share a distinctive word with the venue (a numeric
     // page id carries no name to test and is taken from the record as is).
     const named = page && !/^\d+$/.test(page);
-    const fits = !named || handleFits(link!, p.name, p.website ?? 'https://invalid.example/');
+    const fits = !named || handleFits(link!, p.name, p.website ?? 'https://invalid.example/', CITIES[p.city] ?? CITIES.tallinn);
     const url = page && fits ? await facebookPicture(page) : null;
     if (url) { patch.image_url = url; patch.image_attr = "Profile picture of the venue's Facebook page"; patch.image_source = 'logo'; }
   }

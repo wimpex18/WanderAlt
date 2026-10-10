@@ -4,6 +4,7 @@ import type { Place } from './places.ts';
 import { placeNames } from './place-match.ts';
 import { parkedHomepage } from './venues.ts';
 import { UA, getHtml, htmlToText, httpUrl, nameKey } from './util.ts';
+import { CITIES, type CityProfile, wordsOf } from './cities.ts';
 
 const WEEK = 7 * 86_400_000;
 const DAY = 86_400_000;
@@ -18,6 +19,9 @@ export interface Verification {
 const sameName = (p: Place, value: unknown) => typeof value === 'string' && placeNames(p).includes(nameKey(value));
 const host = (url: string) => new URL(url).hostname.toLowerCase().replace(/^www\./, '');
 
+/** An explicit closure notice in a city's languages, on text compared as nameKey. */
+const closure = (city: CityProfile) => new RegExp(`(?:^|\\s)(${wordsOf(city, 'closure').join('|')})(?:\\s|$)`, 'u');
+
 export function homepageEvidence(p: Place, html: string, finalUrl: string, now = new Date().toISOString()): Verification {
   const result = (state: Verification['state'], note: string): Verification => ({ state, source: 'website', url: finalUrl, note, observed_at: now });
   if (!p.website || host(p.website) !== host(finalUrl)) return result('review', 'Website redirects to another identity; review.');
@@ -27,7 +31,7 @@ export function homepageEvidence(p: Place, html: string, finalUrl: string, now =
   if (!identified) return result('review', 'Website identity could not be confirmed; review.');
   // Only an explicit statement from an identified own website is a closure
   // signal. It goes to review; no regex permanently closes a business.
-  if (/(?:^|\s)(permanently closed|closed permanently|suletud loplikult|loplikult suletud|jaadavalt suletud|навсегда закрыт[ао]?|закрыт[ао]? навсегда)(?:\s|$)/u.test(text)) {
+  if (closure(CITIES[p.city] ?? CITIES.tallinn).test(text)) {
     return result('review', 'Own website mentions permanent closure; confirm manually.');
   }
   const objects: Record<string, unknown>[] = [];
@@ -93,11 +97,13 @@ async function fetchHtml(url: string): Promise<{ html: string; url: string }> {
   return { html: Buffer.concat(chunks).subarray(0, MAX_BYTES).toString('utf8'), url: response.url || url };
 }
 
-const PROGRAMME = /(?:^|[/\s_-])(events?|programm?e?|program|kava|kalender|calendar|schedule|repertuaar|repertoire|whats-on|upcoming|sündmused|syndmused|üritused|uritused|afisha|kontserdid|etendused|näitused)(?:$|[/\s_.-])/i;
+/** A link or address that leads to a programme, in a city's languages. */
+export const programmeWords = (city: CityProfile) => new RegExp(`(?:^|[/\\s_-])(${wordsOf(city, 'programme').join('|')})(?:$|[/\\s_.-])`, 'i');
 
 /** The venue's own events page, linked from its homepage: the same site, a
  *  link or link text that says events or programme. One page only. */
-export function programmeLink(html: string, pageUrl: string): string | null {
+export function programmeLink(html: string, pageUrl: string, city: CityProfile = CITIES.tallinn): string | null {
+  const PROGRAMME = programmeWords(city);
   const own = host(pageUrl);
   let best: { url: string; score: number } | null = null;
   for (const m of html.matchAll(/<a\b[^>]*\bhref=["']([^"'#][^"']*)["'][^>]*>([\s\S]{0,200}?)<\/a>/gi)) {
@@ -118,7 +124,7 @@ export async function checkWebsite(p: Place, now = new Date().toISOString()): Pr
   if (result.state !== 'unverified') return result;
   // Identity matched but the homepage carries no dated event: the venue's own
   // events page, one link away, is read under the same rules.
-  const next = programmeLink(home.html, home.url);
+  const next = programmeLink(home.html, home.url, CITIES[p.city] ?? CITIES.tallinn);
   if (!next) return result;
   try {
     const page = await fetchHtml(next);

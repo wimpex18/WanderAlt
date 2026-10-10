@@ -2,6 +2,7 @@
 // neighbouring galleries and separate halls are common in Tallinn.
 import type { Place } from './places.ts';
 import { nameKey } from './util.ts';
+import { CITIES, type CityProfile, wordsOf } from './cities.ts';
 
 export const osmIds = (p: Place): string[] => [...new Set([p.osm_id, ...(p.osm_ids ?? [])].filter((s): s is string => !!s))];
 export const placeNames = (p: Place): string[] => [...new Set([p.name, ...p.aliases].map(nameKey).filter(Boolean))];
@@ -13,16 +14,24 @@ export function metres(a: Pick<Place, 'lat' | 'lng'>, b: Pick<Place, 'lat' | 'ln
 }
 
 // Keep house/unit numbers: two branches at 60a/1 and 60a/8 are distinct.
-export const addressKey = (s: string | null | undefined) => nameKey((s ?? '').split(',')[0]
-  .replace(/\b(tänav|tn)\.?\s*/gi, ' ').replace(/\bmaantee\b/gi, 'mnt').replace(/\bpuiestee\b/gi, 'pst'));
+export const addressKey = (s: string | null | undefined, city: CityProfile = CITIES.tallinn) => {
+  let a = (s ?? '').split(',')[0].replace(new RegExp(`\\b(${city.streets.drop.join('|')})\\.?\\s*`, 'gi'), ' ');
+  for (const [long, short] of Object.entries(city.streets.short)) a = a.replace(new RegExp(`\\b${long}\\b`, 'gi'), short);
+  return nameKey(a);
+};
 
-const GENERIC = new Set(('tallinn tallinna eesti estonia sa ou mtu as club klubi kino cinema galerii gallery ' +
-  'theatre teater baar bar pub cafe kohvik shop store raamatupood raamatukauplus jazz').split(' '));
+/** Words that tell no venue from another in a city: its own and its country's names, legal forms, and
+ *  kinds of place in its languages. */
+const genericWords = new Map<string, Set<string>>();
+const generic = (city: CityProfile) => {
+  if (!genericWords.has(city.id)) genericWords.set(city.id, new Set([...city.cityWords, ...city.legalForms, ...wordsOf(city, 'kinds')]));
+  return genericWords.get(city.id)!;
+};
 // OpenStreetMap files one room as a bar, a club or a pub depending on who tagged it: the same
 // kind of place, so two such rows at one address are compatible. Other kinds stay distinct.
 const NIGHT = new Set(['bar', 'club', 'pub', 'taproom']);
 const sameKind = (a?: string | null, b?: string | null) => !a || !b || a === b || (NIGHT.has(a) && NIGHT.has(b));
-export const core = (s: string) => nameKey(s).split(' ').filter(w => !GENERIC.has(w)).join(' ');
+export const core = (s: string, city: CityProfile = CITIES.tallinn) => nameKey(s).split(' ').filter(w => !generic(city).has(w)).join(' ');
 const roomNumbers = (s: string) => nameKey(s).match(/\b\d+\b/g)?.join(' ') ?? '';
 
 /** Normalised edit similarity, independent of input order. */
@@ -50,12 +59,13 @@ export function comparePlaces(a: Place, b: Place): PlaceMatch | null {
   const sameOsm = osmIds(a).some(id => osmIds(b).includes(id));
   const namesA = placeNames(a), namesB = placeNames(b);
   const exact = namesA.some(n => namesB.includes(n));
-  const ca = core(a.name), cb = core(b.name);
+  const city = CITIES[a.city] ?? CITIES.tallinn;
+  const ca = core(a.name, city), cb = core(b.name, city);
   const similarity = Math.max(nameSimilarity(nameKey(a.name), nameKey(b.name)), nameSimilarity(ca, cb));
   const evidence = { distance, similarity };
   const closureConflict = (a.status === 'closed') !== (b.status === 'closed');
   if (sameOsm) return { ...evidence, action: (distance != null && distance > 250) || a.status === 'hidden' || b.status === 'hidden' || closureConflict ? 'review' : 'merge', reason: closureConflict ? 'closure status needs review' : 'same OSM identity' };
-  const aa = addressKey(a.address), ab = addressKey(b.address);
+  const aa = addressKey(a.address, city), ab = addressKey(b.address, city);
   const sameAddress = !!aa && aa === ab;
   const near = distance != null && distance <= 100;
   if (!near && !sameAddress) return null;

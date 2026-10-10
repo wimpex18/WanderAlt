@@ -83,9 +83,9 @@ npm run build:inline-icons
 
 ### Adding a city
 
-- A profile in `pipeline/cities.ts`: name, country, bounding box, centre, the city-name prefixes venues use, time zone, languages and room words. Geocoding and place checks stay inside the box.
+- A profile in `pipeline/cities.ts`: name, country, bounding box, centre, the city-name prefixes venues use, time zone, languages, room words, districts and area names, street types, region and postcode, the words venue names share (city, country, legal forms), the OpenStreetMap area, the city portal's hosts and how prompts ask for venue names. Geocoding and place checks stay inside the box. Words that belong to a language (kinds of place, floors, closure notices, programme links) are in its `WORDS` entry; a city in a new language adds one.
 - `pipeline/sources.<city>.json`, and the city in `city.js` (`CITIES`); `run.ts --city <id>` and a workflow entry run it.
-- Still Tallinn-specific and to be generalised for a second city: Estonian address normalising and districts in `places.ts`, generic name words in `place-match.ts`, the OpenStreetMap catalogue area in `venues.ts`, the et/en/ru closure and programme words in `place-verification.ts`, and the city named in model prompts (`llm.ts`, `model-hours.ts`).
+- Still Tallinn-only: wall-clock times are read in Europe/Tallinn (`time.ts`), and the English copy, translation and walk prompts name Tallinn (`english.ts`, `localize.ts`, `routes.ts`).
 
 ### Hosting
 - The static site at [wanderalt.app](https://wanderalt.app) deploys on pushes to `main` through Cloudflare Pages: output `/`, no build command. Pull requests get previews.

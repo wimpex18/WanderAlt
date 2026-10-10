@@ -17,6 +17,7 @@ import { EVENT_KINDS } from './types.ts';
 import { clip, httpUrl, nameKey, sleep } from './util.ts';
 import { tallinnToIso } from './time.ts';
 import { stillOn, STARTED_MS } from './sources/still-on.ts';
+import { CITIES, type CityProfile } from './cities.ts';
 
 const FLAGS = new Set<string>(['cancelled', 'postponed', 'sold_out', 'few_left']);
 
@@ -345,12 +346,12 @@ const EXTRACT_SCHEMA = {
   required: ['events'],
 };
 
-const EXTRACT_SYSTEM = `You read event announcements for WanderAlt, a guide to going out in Tallinn.
-Return every event the text announces that takes place in Tallinn on a stated date.
+const extractSystem = (city: CityProfile) => `You read event announcements for WanderAlt, a guide to going out in ${city.name}.
+Return every event the text announces that takes place in ${city.name} on a stated date.
 Rules:
 - Copy facts; never invent a date, time, venue, price or link. Use null when the text does not say.
 - venue is the place where it happens (a club, gallery, hall, street address). Never the event's own name or the festival's name; null if no place is given.
-- venue and address are written in Latin script, as the place is named in Tallinn (Estonian or English): for a Russian text give "Estonia Theatre", not "театр «Эстония»", in the nominative case, without prepositions. If you cannot tell the Latin-script name, use null.
+- venue and address are written in Latin script, ${city.venueNaming}, in the nominative case, without prepositions. If you cannot tell the Latin-script name, use null.
 - Resolve dates like "28.09" or "this Friday" against the posting date you are given. Include past dated announcements too; the caller filters dates after checking whether the post covers several events.
 - A multi-day run with separate dated shows is one entry per date; an exhibition open over a span is one entry with start and end dates.
 - state is "scheduled" unless the text says this event is "cancelled", "postponed", "sold_out", or "few_left" (last tickets, 80% sold). A cancelled event is still returned.
@@ -392,17 +393,17 @@ export const latinise = (s: string) => s.toLowerCase().replace(/[\u0400-\u04ff]/
 /** Words that say what kind of place it is in any language, not which one. */
 const PLACE_WORDS = new Set(['theatre', 'theater', 'teater', 'teatr', 'club', 'klubi', 'klub', 'hall', 'saal', 'house', 'maja', 'centre', 'center',
   'keskus', 'gallery', 'galerii', 'cinema', 'kino', 'museum', 'muuseum', 'church', 'kirik', 'studio', 'stuudio', 'stage', 'lava', 'scene', 'bar', 'baar',
-  'cafe', 'kohvik', 'jazz', 'tallinn', 'tallinna', 'street', 'tanav', 'mnt', 'tee']);
+  'cafe', 'kohvik', 'jazz', 'street', 'tanav', 'mnt', 'tee']);
 
 /** Is a venue or address the model gave in the source text? As written, or (the prompt asks for Latin script)
  *  by at least half its distinctive words, each found as the start of a word in the text read in Latin
  *  letters ("Estonia Theatre" in "театр «Эстония»"). A name with no distinctive word must appear whole. A
  *  name the text does not hold is the model's, and is dropped. */
-export function inSource(name: string | null, text: string): string | null {
+export function inSource(name: string | null, text: string, city: CityProfile = CITIES.tallinn): string | null {
   if (!name) return null;
   const hay = ` ${nameKey(latinise(text))} `, key = nameKey(name);
   if (!key || hay.includes(` ${key} `)) return key ? name : null;
-  const words = key.split(' ').filter(w => w.length >= 4 && !PLACE_WORDS.has(w) && !/^\d+$/.test(w));
+  const words = key.split(' ').filter(w => w.length >= 4 && !PLACE_WORDS.has(w) && !city.prefixes.includes(w) && !/^\d+$/.test(w));
   if (!words.length) return null;
   const stem = (w: string) => w.slice(0, Math.min(w.length, 5));
   const found = words.filter(w => hay.includes(` ${stem(latinise(w))}`)).length;
@@ -414,10 +415,10 @@ export function inSource(name: string | null, text: string): string | null {
 
 export async function extractEvents(
   models: Models,
-  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },
+  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null; city?: CityProfile },
 ): Promise<Candidate[]> {
   const posted = args.postedAt ? new Date(args.postedAt) : new Date();
-  const head = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/Tallinn' })})\n\n`;
+  const head = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: (args.city ?? CITIES.tallinn).tz })})\n\n`;
   // A long programme page in one answer is cut off at a small model's output
   // limit, so it is read in parts of what the answering lane can take: the
   // whole page on Claude, 5,000 characters on the free lanes. A whole-page
@@ -425,7 +426,7 @@ export async function extractEvents(
   const events: Record<string, string | null>[] = [];
   let engine = '';
   const read = async (part: string) => {
-    const answer = await models.ask(EXTRACT_SYSTEM, head + part, EXTRACT_SCHEMA, part.length);
+    const answer = await models.ask(extractSystem(args.city ?? CITIES.tallinn), head + part, EXTRACT_SCHEMA, part.length);
     engine = answer.engine;
     events.push(...(((answer.data as { events?: unknown[] }).events ?? []) as Record<string, string | null>[]));
   };
@@ -459,8 +460,8 @@ export async function extractEvents(
       starts_at: starts,
       ends_at: ends,
       has_time: /\d{1,2}:\d{2}/.test(e.start ?? ''),
-      venue_name: inSource(latinOnly(e.venue), said),
-      address: inSource(latinOnly(e.address), said),
+      venue_name: inSource(latinOnly(e.venue), said, args.city),
+      address: inSource(latinOnly(e.address), said, args.city),
       is_free: free ? true : nums.length ? false : null,
       price_min: free ? 0 : nums.length ? Math.min(...nums) : null,
       price_max: nums.length > 1 ? Math.max(...nums) : null,
@@ -517,7 +518,7 @@ export const KIND_MEANING: Record<EventKind, string> = {
 
 /** Relevance is the guide's curation rule. The bands line up with run.ts decide(): 0.6 and up publishes,
  *  0.35 to 0.6 waits for a person, below that is rejected. */
-const CLASSIFY_SYSTEM = `You sort Tallinn listings for WanderAlt, a guide for travellers, expats and locals.
+const classifySystem = (city: CityProfile) => `You sort ${city.name} listings for WanderAlt, a guide for travellers, expats and locals.
 WanderAlt does not show everything that is on, only what is interesting and not mainstream: alternative,
 independent, underground and DIY culture, contemporary art and social movements. That focus is what sets it
 apart, so a listing outside it scores low however well made, popular or expensive it is.
@@ -569,7 +570,7 @@ export function fallbackEnrichment(c: Candidate): Enrichment {
 
 /** English copy is written by its own step (english.ts) from the full text,
  *  so a classification answer stays short: kind, tags and fit per item. */
-export async function classify(models: Models, items: Candidate[], batch = models.room > SMALL_ROOM ? 50 : 10): Promise<Enrichment[]> {
+export async function classify(models: Models, items: Candidate[], batch = models.room > SMALL_ROOM ? 50 : 10, city: CityProfile = CITIES.tallinn): Promise<Enrichment[]> {
   const out: Enrichment[] = items.map(fallbackEnrichment);
   const run = async (start: number, end: number): Promise<void> => {
     if (!models.ready) return;
@@ -581,7 +582,7 @@ export async function classify(models: Models, items: Candidate[], batch = model
       text: clip(c.description ?? '', 400),
     })));
     try {
-      const { data, engine } = await models.ask(CLASSIFY_SYSTEM, user, CLASSIFY_SCHEMA, end - start > 10 ? user.length : undefined);
+      const { data, engine } = await models.ask(classifySystem(city), user, CLASSIFY_SCHEMA, end - start > 10 ? user.length : undefined);
       for (const r of ((data as { items?: Record<string, unknown>[] }).items ?? [])) {
         const i = Number(r.i);
         if (!(i >= start && i < end)) continue;
@@ -633,7 +634,7 @@ const PLACE_SCHEMA = {
   required: ['items'],
 };
 
-const PLACE_SYSTEM = `You label Tallinn venues for an events guide. For each venue, pick the kind
+const placeSystem = (city: CityProfile) => `You label ${city.name} venues for an events guide. For each venue, pick the kind
 that best describes the place itself (not one event): ${PLACE_KINDS.join(', ')}.
 Use the venue name, its address and the events held there. "arts centre" is a multi-use cultural
 venue; "community" is a community or social centre; "studio" is a dance, yoga or art studio.
@@ -644,13 +645,14 @@ export async function classifyPlaces(
   models: Models,
   places: { name: string; address?: string | null; events: string[] }[],
   batch = 30,
+  city: CityProfile = CITIES.tallinn,
 ): Promise<(string | null)[]> {
   const out: (string | null)[] = places.map(() => null);
   for (let start = 0; start < places.length && models.ready; start += batch) {
     const slice = places.slice(start, start + batch);
     const user = JSON.stringify(slice.map((p, k) => ({ i: start + k, name: p.name, address: p.address, events: p.events.slice(0, 4) })));
     try {
-      const { data } = await models.ask(PLACE_SYSTEM, user, PLACE_SCHEMA);
+      const { data } = await models.ask(placeSystem(city), user, PLACE_SCHEMA);
       for (const r of ((data as { items?: { i: number; kind: string }[] }).items ?? [])) {
         if (r.i >= start && r.i < start + slice.length && (PLACE_KINDS as readonly string[]).includes(r.kind) && r.kind !== 'other') out[r.i] = r.kind;
       }

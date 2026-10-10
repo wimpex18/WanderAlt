@@ -18,6 +18,7 @@ import { getHtml } from './util.ts';
 import { siteHours } from './site-hours.ts';
 import { textHours, hoursPages, eventNights } from './site-text-hours.ts';
 import { hoursWindow, modelHours } from './model-hours.ts';
+import { CITIES } from './cities.ts';
 import type { Models } from './llm.ts';
 import { bioHours } from './bio-hours.ts';
 import { facebookPage, lookupFacebookPage } from './facebook-hours.ts';
@@ -115,7 +116,7 @@ export async function fillHours(places: Place[], cfg: InstagramConfig | null, li
     if (!found && said.length && modelLeft > 0 && deps.models?.ready) {
       modelLeft--;
       for (const w of said) {
-        const h = await ask(deps.models, p.name, w.text);
+        const h = await ask(deps.models, p.name, w.text, CITIES[p.city] ?? CITIES.tallinn);
         if (h) { found = { hours: h, source: w.source }; log(`[hours] ${p.name}: read by the model from its ${w.source === 'site' ? 'site' : 'Instagram bio'}`); break; }
       }
     }

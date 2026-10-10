@@ -20,9 +20,11 @@ import type { Db } from './db.ts';
 import type { Models } from './llm.ts';
 import { type Place } from './places.ts';
 import { addressKey, canonicalOrder, metres, pairKey, placeNames } from './place-match.ts';
-import { type CityProfile, cityProfile, inCity } from './cities.ts';
+import { CITIES, type CityProfile, cityProfile, inCity } from './cities.ts';
 import { type Evidence, Geocoder, Pages, PLUS_CODE, hostOf, jsonLdLocations, mentions, plain, plusCode, quoteIn, sitePages, windowsAround } from './place-evidence.ts';
 import { nameKey, clip, sha } from './util.ts';
+
+const cityOf = (p: Pick<Place, 'city'>) => CITIES[p.city] ?? CITIES.tallinn;
 
 /** Two findings this close are the same spot; a finding this far from the answer contradicts it. */
 export const NEAR = 150, FAR = 400;
@@ -85,12 +87,12 @@ const KIND_WORDS = new Set(['theatre', 'theater', 'teater', 'bar', 'baar', 'club
  *  and the other plus words that only say what kind of place it is or name its street ("Apollo kino",
  *  "RM Lounge & event venue", "Studio Gallery K28 - Kentmanni galerii"), a kind of place glued on
  *  ("Legendaarne Raadiobaar"), or one side of a slash ("Tallinna Lauluväljak/Klaassaal"). The reason, or null. */
-export function nameVariant(a: Pick<Place, 'name' | 'address'>, b: Pick<Place, 'name' | 'address'>): string | null {
+export function nameVariant(a: Pick<Place, 'name' | 'address' | 'city'>, b: Pick<Place, 'name' | 'address' | 'city'>): string | null {
   const ka = nameKey(a.name), kb = nameKey(b.name);
   if (!ka || !kb) return null;
   const wa = ka.split(' '), wb = kb.split(' ');
   if (ka === kb || (wa.length === wb.length && [...wa].sort().join(' ') === [...wb].sort().join(' '))) return 'the same words';
-  const streets = new Set(`${addressKey(a.address)} ${addressKey(b.address)}`.split(' ').filter(w => w.length >= 4 && !/^\d/.test(w)));
+  const streets = new Set(`${addressKey(a.address, cityOf(a))} ${addressKey(b.address, cityOf(a))}`.split(' ').filter(w => w.length >= 4 && !/^\d/.test(w)));
   const [short, long] = ka.length <= kb.length ? [ka, kb] : [kb, ka];
   if (long.startsWith(`${short} `)) {
     const tail = long.slice(short.length + 1).split(' ');
@@ -136,7 +138,7 @@ export function pairDecision(a: Place & { website?: string | null }, b: Place & 
   if (d != null && d > FAR) return { answer: 'separate', rule: `${Math.round(d)} m apart`, evidence };
   // The two records: each place's address came from its own source. Two businesses under one roof keep
   // their own websites, so different websites never merge.
-  const [sa, sb] = [addressKey(a.address), addressKey(b.address)];
+  const [sa, sb] = [addressKey(a.address, cityOf(a)), addressKey(b.address, cityOf(a))];
   const sites = host(a.website) && host(b.website) && host(a.website) !== host(b.website);
   const variant = nameVariant(a, b);
   if (variant && sa && sa === sb && (d == null || d <= NEAR) && !sites) {

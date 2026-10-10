@@ -50,6 +50,7 @@ import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
 import { fillSourceLinks } from './venue-source-facts.ts';
 import { POSTER_NOTE, decideHeld, deciderModels } from './review-decider.ts';
+import { CITIES, cityProfile } from './cities.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -141,7 +142,7 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (!text.trim() && !p.photos?.length) return [];
   const found = await (deps.extract ?? extractEvents)(models, {
     text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
-    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null,
+    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: CITIES[source.city] ?? CITIES.tallinn,
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
@@ -474,7 +475,7 @@ async function main() {
   }
 
   // ── 4. classify ──
-  const enrich = await classify(sorter, found.map(f => f.c));
+  const enrich = await classify(sorter, found.map(f => f.c), undefined, cityProfile(CITY));
 
   // ── 5. places and events ──
   let existingPlaces = db ? await loadPlaces(db, CITY) : [];
@@ -502,7 +503,7 @@ async function main() {
   const places = new Places(existingPlaces, CITY, DRY && !flag('--geocode') ? 0 : Number(opt('--max-geocode') ?? 100));
   if (osm && !skipCatalogue) {
     try {
-      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? 'Tallinn'), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
+      const catalogue = await osmCatalogue(CITY, String(osm.config.area ?? cityProfile(CITY).osm.area), Array.isArray(osm.config.craft_beer) ? osm.config.craft_beer.map(String) : []);
       for (const p of catalogue) places.merge(p);
       if (health[osm.id]?.ok !== false) health[osm.id] = { ok: true, yield: catalogue.length };
       log(`${osm.id}: ${catalogue.length} venues; ${places.created.length} new, ${places.updated.length} updated`);
@@ -524,7 +525,7 @@ async function main() {
   // carry a district or nothing; 40 a run, one Nominatim lookup each.
   if (!(DRY && !flag('--geocode'))) {
     let n = 0;
-    for (const p of places.all().filter(p => (p.status ?? 'active') === 'active' && p.lat != null && isDistrict(p.neighborhood)).slice(0, 40)) {
+    for (const p of places.all().filter(p => (p.status ?? 'active') === 'active' && p.lat != null && isDistrict(p.neighborhood, cityProfile(CITY))).slice(0, 40)) {
       if (await places.area(p)) {
         n++;
         if (!places.created.includes(p) && !places.updated.includes(p)) places.updated.push(p);
@@ -723,7 +724,7 @@ async function main() {
   const unnamed = places.all().filter(p => !p.kind).slice(0, 90);
   if (unnamed.length && sorter.ready) {
     const held = (id: string) => [...events.values()].filter(e => e.place_id === id).map(e => String(e.title));
-    const kinds = await classifyPlaces(sorter, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })));
+    const kinds = await classifyPlaces(sorter, unnamed.map(p => ({ name: p.name, address: p.address, events: held(p.id) })), undefined, cityProfile(CITY));
     kinds.forEach((k, i) => {
       const p = unnamed[i];
       if (!k) return;
@@ -802,7 +803,7 @@ async function main() {
     const waiting = await db.select<{ id: string; title: string; venue_name: string | null; description: string | null; starts_at: string; status_note: string | null }>(
       `events?city=eq.${CITY}&relevance=is.null&status=in.(review,published)&archived_at=is.null&or=(status_note.is.null,and(status_note.not.like.manual*,status_note.not.like.auto*))&order=starts_at.asc&limit=200&select=id,title,venue_name,description,starts_at,status_note`);
     const cands = waiting.map(w => ({ title: w.title, venue_name: w.venue_name, description: w.description, starts_at: w.starts_at, has_time: true, engine: 'db' }) as Candidate);
-    const late = await classify(sorter, cands);
+    const late = await classify(sorter, cands, undefined, cityProfile(CITY));
     let n = 0;
     for (let i = 0; i < waiting.length; i++) {
       const e = late[i];
