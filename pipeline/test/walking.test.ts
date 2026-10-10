@@ -86,7 +86,7 @@ const ev = (id: string, hh: string): RouteEvent =>
   ({ id, title: id, title_en: null, kind: 'theatre', starts_at: `2026-10-02T${hh}:00+03:00`, ends_at: null, has_time: true, place_id: 'host', flag: null });
 const on = (m: Record<string, number>) => (a: RoutePlace, b: RoutePlace) => m[`${a.id}>${b.id}`] ?? null;
 const find = (streets?: (a: RoutePlace, b: RoutePlace) => number | null) =>
-  candidatesForDay('2026-10-02', [ev('e1', '19:00')], id => (id === 'host' ? host : undefined), [shop, bar], NOW, streets);
+  candidatesForDay('2026-10-02', 'Europe/Tallinn', [ev('e1', '19:00')], id => (id === 'host' ? host : undefined), [shop, bar], NOW, streets);
 
 test('a routed leg sets its walk, the walk total and the times after it; an unrouted one keeps the estimate', () => {
   const [model] = find();

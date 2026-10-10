@@ -2,8 +2,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { CITIES } from '../cities.ts';
 import { readFileSync } from 'node:fs';
-import { tallinnToIso, toIso, tallinnDay } from '../time.ts';
+import { localToIso, toIso as toIsoIn, localDay } from '../time.ts';
+const TZ = CITIES.tallinn.tz;
+const tallinnToIso = (s: string) => localToIso(s, TZ), toIso = (s: string) => toIsoIn(s, TZ), tallinnDay = (iso: string) => localDay(iso, TZ);
 import * as fienta from '../sources/fienta.ts';
 import * as jsonld from '../sources/jsonld.ts';
 import { parseTelegram, parseRss } from '../sources/text.ts';
@@ -43,7 +46,7 @@ test('Fienta prices and events parse, and organiser contact details are never ke
       new Date('2026-09-27T08:00:00Z'));
     assert.deepEqual(items.map(i => i.external_id), ['101']);      // online, family-only and year-long ones dropped
     assert.equal('organizer_email' in items[0].payload, false);
-    const [c] = fienta.extract(items[0]);
+    const [c] = fienta.extract(items[0], source({ kind: 'fienta' }));
     assert.equal(c.starts_at, '2026-10-02T17:00:00.000Z');
     assert.equal(c.has_time, true);
     assert.equal(c.address, 'Telliskivi 60a, 10412 Tallinn');
@@ -109,7 +112,7 @@ test('post artwork belongs to a single show, never every event in a roundup', as
   const event = (title: string, start = '2099-10-01 19:00') => ({ title, start, excerpt: title });
   const read = (events: object[], image = 'https://cdn.example/poster.jpg') => extractEvents(new Models([
     { name: 'fixture', model: 'fixture', key: 'fixture', call: async () => JSON.stringify({ events }) },
-  ]), { text: 'fixture announcement', source: '@fixture', images: [image] });
+  ]), { text: 'fixture announcement', source: '@fixture', images: [image], city: CITIES.tallinn });
   const [single] = await read([event('BRUNO')]);
   assert.equal(single.image_url, 'https://cdn.example/poster.jpg');
   const roundup = await read([event('BRUNO'), event('Estonia, Elsewhere'), event('Design Street')]);

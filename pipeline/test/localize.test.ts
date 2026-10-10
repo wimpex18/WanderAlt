@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkLocal, checkNote, localizeEvents, localHash, type LocalInput } from '../localize.ts';
+import { cityProfile } from '../cities.ts';
 import type { Models } from '../llm.ts';
 
 const et: LocalInput = { id: 'e1', title: 'Hommikutund – Tiina Mölder', title_en: 'Morning Class – Tiina Mölder', summary_en: 'A morning movement class led by Tiina Mölder.',
@@ -44,7 +45,7 @@ test('a translated note keeps every number and its script', () => {
 
 test('one call per batch; answers matched by id, unknown ids ignored', async () => {
   const models = { ready: true, ask: async () => ({ data: { items: [{ id: 'e1', ...answer }, { id: 'zz', ...answer }] }, engine: 'x' }) } as unknown as Models;
-  const out = await localizeEvents(models, [et]);
+  const out = await localizeEvents(models, [et], cityProfile('tallinn'));
   assert.deepEqual([...out.keys()], ['e1']);
 });
 
@@ -59,6 +60,6 @@ test('a batch cut off is split and tried again, not lost', async () => {
   } } as unknown as Models;
   const patched: string[] = [];
   const db = { all: async (q: string) => (q.startsWith('places') ? [] : evs), patch: async (q: string) => { patched.push(q); } };
-  const n = await refreshLocal(db as never, models);
+  const n = await refreshLocal(db as never, models, 'tallinn');
   assert.equal(n, 4); assert.deepEqual(sizes, [4, 2, 2]);
 });

@@ -153,12 +153,12 @@ test('pipeline reads past PostgREST row ceilings and refuses unordered paginatio
 
 test('stored copies join after venue canonicalisation; different screenings, dates and unlocated events remain separate', () => {
   const a = event('a'), b = event('b');
-  assert.equal(duplicateEvents([b, a])[0].canonical.id, 'a');
-  assert.equal(duplicateEvents([a, b], new Set(['a|b'])).length, 0);
-  assert.equal(duplicateEvents([a, event('b', { starts_at: '2026-09-29T19:00:00Z' })]).length, 0);
-  assert.equal(duplicateEvents([a, event('b', { starts_at: '2026-09-30T16:00:00Z' })]).length, 0);
-  assert.equal(duplicateEvents([a, event('b', { has_time: false })]).length, 0);
-  assert.equal(duplicateEvents([a, event('b', { place_id: null })]).length, 0);
+  assert.equal(duplicateEvents('Europe/Tallinn', [b, a])[0].canonical.id, 'a');
+  assert.equal(duplicateEvents('Europe/Tallinn', [a, b], new Set(['a|b'])).length, 0);
+  assert.equal(duplicateEvents('Europe/Tallinn', [a, event('b', { starts_at: '2026-09-29T19:00:00Z' })]).length, 0);
+  assert.equal(duplicateEvents('Europe/Tallinn', [a, event('b', { starts_at: '2026-09-30T16:00:00Z' })]).length, 0);
+  assert.equal(duplicateEvents('Europe/Tallinn', [a, event('b', { has_time: false })]).length, 0);
+  assert.equal(duplicateEvents('Europe/Tallinn', [a, event('b', { place_id: null })]).length, 0);
   const seen = new Seen([{ id: 'later', title: 'Murdja', where: 'salme', start: 20_000 }, { id: 'near', title: 'Murdja', where: 'salme', start: 10_000 }]);
   assert.equal(seen.match('Murdja', 'salme', 11_000), 'near');
 });
@@ -194,7 +194,7 @@ test('one page listing a show under venue names that disagree is one show; diffe
     event('e4', { title: 'Design Street', place_id: 'other', url, has_time: false, starts_at: '2026-10-03T21:00:00Z', first_seen_at: '2026-09-28T12:00:00Z' }),
     event('e5', { title: 'A different talk', place_id: 'x', url, has_time: false, starts_at: '2026-10-02T21:00:00Z', first_seen_at: '2026-09-28T12:00:00Z' }),
   ];
-  const plan = duplicateEvents(rows).map(p => `${p.duplicate.id}>${p.canonical.id}`).sort();
+  const plan = duplicateEvents('Europe/Tallinn', rows).map(p => `${p.duplicate.id}>${p.canonical.id}`).sort();
   assert.deepEqual(plan, ['e2>e1', 'e3>e1']);
   const seen = new Seen([{ id: 'e1', title: 'Design Street', where: 'a', start: Date.parse('2026-10-02T21:00:00Z'), url }]);
   assert.equal(seen.matchUrl('Design Street', url, Date.parse('2026-10-02T21:00:00Z')), 'e1');

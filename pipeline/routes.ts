@@ -20,7 +20,8 @@ import { writeFileSync } from 'node:fs';
 import { Db, chunks, inList } from './db.ts';
 import { Models, PLACE_KINDS } from './llm.ts';
 import { hoursAt } from './hours.ts';
-import { TZ, tallinnDay, tallinnToIso } from './time.ts';
+import { localClock, localDay, localToIso } from './time.ts';
+import { type CityProfile, cityProfile } from './cities.ts';
 import { EVENT_KINDS } from './types.ts';
 import { nameKey } from './util.ts';
 import { FootRouter, decodePolyline, encodePolyline, estimateMinutes, lineMetres, streetMinutes } from './walking.ts';
@@ -55,10 +56,10 @@ const usual = (kind: string | null, minute: number): boolean => {
 // What a later walk the same day loses for ending where, or at the kind of place where, a better one ends.
 const REPEAT_END = 1;
 
-const clockFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-const minuteOf = (iso: string): number => {
-  const p = Object.fromEntries(clockFmt.formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-  return +p.hour * 60 + +p.minute;
+/** Minutes past midnight on the city's clock. */
+const minuteOf = (iso: string, tz: string): number => {
+  const [h, m] = localClock(iso, tz).split(':').map(Number);
+  return h * 60 + m;
 };
 export const clockText = (m: number): string => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
@@ -66,12 +67,12 @@ const round5 = (m: number): number => Math.round(m / 5) * 5;
 
 /** Every working evening for one day, the best one around each listing. `streets` gives the metres along
  *  the streets between two places where a foot router measured them; any other leg is the estimate. */
-export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id: string) => RoutePlace | undefined, picked: RoutePlace[], nowMs: number,
+export function candidatesForDay(day: string, tz: string, events: RouteEvent[], hostOf: (id: string) => RoutePlace | undefined, picked: RoutePlace[], nowMs: number,
   streets?: (from: RoutePlace, to: RoutePlace) => number | null): RouteCandidate[] {
-  const dayStart = Date.parse(tallinnToIso(`${day} 00:00`) ?? '');
+  const dayStart = Date.parse(localToIso(`${day} 00:00`, tz) ?? '');
   if (Number.isNaN(dayStart)) return [];
-  const today = tallinnDay(new Date(nowMs).toISOString()) === day;
-  const floor = today ? minuteOf(new Date(nowMs).toISOString()) + 20 : 11 * 60;
+  const today = localDay(new Date(nowMs).toISOString(), tz) === day;
+  const floor = today ? minuteOf(new Date(nowMs).toISOString(), tz) + 20 : 11 * 60;
   const at = (minute: number) => new Date(dayStart + minute * 60_000);
   const spots = picked.filter(p => p.lat != null && p.lng != null);
   const pos = (p: RoutePlace) => ({ lat: p.lat as number, lng: p.lng as number });
@@ -91,10 +92,10 @@ export function candidatesForDay(day: string, events: RouteEvent[], hostOf: (id:
 
   for (const e of events) {
     if (!e.has_time || ['cancelled', 'postponed', 'sold_out'].includes(e.flag ?? '') || !ANCHORS.has(e.kind ?? '') || !e.place_id) continue;
-    if (tallinnDay(e.starts_at) !== day) continue;
+    if (localDay(e.starts_at, tz) !== day) continue;
     const host = hostOf(e.place_id);
     if (!host || host.lat == null || host.lng == null) continue;
-    const start = minuteOf(e.starts_at);
+    const start = minuteOf(e.starts_at, tz);
     if (start < floor || start >= 24 * 60) continue;
     const here = pos(host);
     const len = e.ends_at ? Math.round((Date.parse(e.ends_at) - Date.parse(e.starts_at)) / 60_000) : 120;
@@ -216,7 +217,7 @@ const SCHEMA = {
   }, required: ['id', 'title', 'blurb'] } } },
   required: ['routes'],
 };
-const SYSTEM = `You choose and name evening routes for visitors to Tallinn who like independent and alternative culture.
+const routesSystem = (city: CityProfile) => `You choose and name evening routes for visitors to ${city.name} who like independent and alternative culture.
 Each candidate is a short walk through two to four stops: a place, then one dated listing, then maybe a bar. Choose the best up to three, best first, preferring routes that differ in area and in kind of evening.
 For each, give a plain title of two to six words that reads as a phrase (for example "Records, a stage, a late drink"), not a list of kinds or names such as "Thrift gig taproom", and one plain sentence of at most 140 characters on why the stops go together.
 Use only the facts given. Do not invent details, hours, prices or opinions, and add no adjectives that are not in the facts. No exclamation marks, no marketing words, never the word "discover". Plain English, present tense.
@@ -299,7 +300,8 @@ const iso = (ms: number) => new Date(ms).toISOString();
 export async function composeRoutes(db: Db, city: string, models: Models | null, opts: { dry?: boolean; days?: number; now?: number; router?: FootRouter | null } = {}): Promise<RouteRow[]> {
   const now = opts.now ?? Date.now();
   const startedAt = iso(now);
-  const days = Array.from({ length: opts.days ?? 3 }, (_, i) => tallinnDay(iso(now + i * 86_400_000)));
+  const profile = cityProfile(city), tz = profile.tz;
+  const days = Array.from({ length: opts.days ?? 3 }, (_, i) => localDay(iso(now + i * 86_400_000), tz));
   const to = iso(now + ((opts.days ?? 3) + 1) * 86_400_000);
   const events = await db.all<RouteEvent>(`events?city=eq.${city}&status=eq.published&archived_at=is.null&merged_into=is.null&has_time=eq.true&starts_at=gte.${encodeURIComponent(iso(now))}&starts_at=lt.${encodeURIComponent(to)}&order=starts_at.asc,id.asc&select=id,title,title_en,kind,starts_at,ends_at,has_time,place_id,flag`);
   const places = await db.all<RoutePlace>(`places?city=eq.${city}&picked=eq.true&status=eq.active&merged_into=is.null&order=id.asc&select=id,name,kind,lat,lng,opening_hours,pick_note,neighborhood`);
@@ -320,7 +322,7 @@ export async function composeRoutes(db: Db, city: string, models: Models | null,
   // Only picked places may come before or after; a listing's own venue is its anchor, never a stop.
   const streets = new Map<string, number>();
   const along = (a: RoutePlace, b: RoutePlace) => streets.get(`${a.id}>${b.id}`) ?? streets.get(`${b.id}>${a.id}`) ?? null;
-  const compose = (day: string) => shortlist(candidatesForDay(day, events, id => placeById.get(id), places, now, along));
+  const compose = (day: string) => shortlist(candidatesForDay(day, tz, events, id => placeById.get(id), places, now, along));
   const lists = new Map(days.map(day => [day, compose(day)] as const));
   const router = opts.router === undefined ? new FootRouter() : opts.router;
   const placeOf = (s: RouteStop) => placeById.get(s.type === 'place' ? s.id : eventById.get(s.id)?.place_id ?? '');
@@ -348,7 +350,7 @@ export async function composeRoutes(db: Db, city: string, models: Models | null,
     let answer: unknown = null, engine = 'rules';
     if (models?.ready) {
       try {
-        const r = await models.ask(SYSTEM, modelBrief(day, real, names), SCHEMA);
+        const r = await models.ask(routesSystem(profile), modelBrief(day, real, names), SCHEMA);
         answer = r.data; engine = r.engine;
       } catch (e) { console.warn(`[routes] ${day}: no model answer (${(e as Error).message}); titled by rule`); }
     }
@@ -367,7 +369,7 @@ if (import.meta.main) {
   const city = process.argv.find(a => a.startsWith('--city='))?.slice(7) ?? 'tallinn';
   // A dry run only reads published events and places, which the public key may do.
   const db = new Db(dry && process.argv.includes('--public') ? process.env.SUPABASE_ANON_KEY?.trim() : undefined);
-  const models = new Models(undefined, 6, Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 2400));
+  const models = new Models(undefined, 6);
   composeRoutes(db, city, models, { dry }).then(rows => {
     for (const r of rows) console.log(`${r.day} ${r.area.padEnd(12)} ${r.title}  [${r.engine}]${r.blurb ? `\n    ${r.blurb}` : ''}\n    ${r.stops.map(s => `${s.type}:${s.id}@${clockText(s.minute)}${s.routed ? ` (${s.walk} min on foot)` : ''}`).join(' → ')}`);
     const out = process.argv.find(a => a.startsWith('--out='))?.slice(6);

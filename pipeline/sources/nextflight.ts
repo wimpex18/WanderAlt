@@ -30,6 +30,7 @@
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { getHtml, decodeEntities, htmlToText, clip, nameKey, scrubContacts } from '../util.ts';
 import { toIso } from '../time.ts';
+import { tzOf } from '../cities.ts';
 import { textFlag } from '../flags.ts';
 import { whereOf, cleanLink, samePlace } from './programme.ts';
 
@@ -164,16 +165,17 @@ const expiring = (v: unknown): string | null => {
 export function shows(html: string, source: Source): { key: string; url: string | null; show: Show }[] {
   const rows = flightRows(flightText(html));
   const skip = source.config.skip_titles ? new RegExp(String(source.config.skip_titles), 'iu') : null;
+  const tz = tzOf(source.city);
   const out: { key: string; url: string | null; show: Show }[] = [];
   for (const map of (source.config.records as FlightMap[] | undefined) ?? []) {
     for (const r of records(rows, map.list)) {
       const title = str(pick(r, map.title, rows));
       const rawStart = str(pick(r, map.start, rows));
-      const start = toIso(rawStart);
+      const start = toIso(rawStart, tz);
       if (!title || !start || skip?.test(title)) continue;
       const where = whereOf(str(pick(r, map.where, rows)), source);
       if (!where) continue;
-      const end = toIso(str(pick(r, map.end, rows)));
+      const end = toIso(str(pick(r, map.end, rows)), tz);
       const text = str(pick(r, map.description, rows));
       out.push({
         key: `${map.list}:${str(pick(r, map.id, rows)) ?? `${nameKey(title)}|${start}`}`,

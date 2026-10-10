@@ -4,7 +4,8 @@
 
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, htmlToText, httpUrl, clip } from '../util.ts';
-import { tallinnToIso } from '../time.ts';
+import { localToIso } from '../time.ts';
+import { tzOf } from '../cities.ts';
 
 interface FientaEvent {
   id: number;
@@ -34,7 +35,7 @@ const KEEP = [
 ] as const;
 
 export async function collect(source: Source, now = new Date()): Promise<RawItem[]> {
-  const days = Number(source.config.days ?? 21);
+  const days = Number(source.config.days ?? 21), tz = tzOf(source.city);
   const skip = new Set((source.config.skip_categories as string[] | undefined) ?? []);
   const url = new URL(source.url);
   url.searchParams.set('starts_from', now.toISOString().slice(0, 10));
@@ -44,8 +45,8 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
   return (body.events ?? [])
     .filter(e => e.attendance_mode !== 'online')
     .filter(e => {
-      const start = Date.parse(tallinnToIso(e.starts_at) ?? '');
-      const end = Date.parse(tallinnToIso(e.ends_at ?? '') ?? '') || start;
+      const start = Date.parse(localToIso(e.starts_at, tz) ?? '');
+      const end = Date.parse(localToIso(e.ends_at ?? '', tz) ?? '') || start;
       // Long-running listings (a museum ticket valid for years) are not events.
       return start <= horizon && end >= now.getTime() && end - start < 45 * 86_400_000;
     })
@@ -73,11 +74,12 @@ export function parsePrice(s: string | undefined): Pick<Candidate, 'is_free' | '
   };
 }
 
-export function extract(item: RawItem): Candidate[] {
+export function extract(item: RawItem, source: Source): Candidate[] {
+  const tz = tzOf(source.city);
   const e = item.payload as unknown as FientaEvent;
-  const starts = tallinnToIso(e.starts_at);
+  const starts = localToIso(e.starts_at, tz);
   if (!starts) return [];
-  const ends = e.ends_at ? tallinnToIso(e.ends_at) : null;
+  const ends = e.ends_at ? localToIso(e.ends_at, tz) : null;
   const hasTime = !/ 00:00:00$/.test(e.starts_at);
   const address = e.address?.replace(/,?\s*Harju ?(maakond|maa)$/i, '').trim() || null;
   return [{

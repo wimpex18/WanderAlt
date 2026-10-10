@@ -8,7 +8,8 @@
 
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, decodeEntities, htmlToText, httpUrl, clip } from '../util.ts';
-import { tallinnToIso, tallinnDay } from '../time.ts';
+import { localToIso, localDay } from '../time.ts';
+import { tzOf } from '../cities.ts';
 import * as kai from './kai.ts';
 
 interface WpEvent {
@@ -31,8 +32,8 @@ const hhmm = (v: unknown): string | null => {
 export async function collect(source: Source, now = new Date()): Promise<RawItem[]> {
   if (source.config.shape === 'kai') return kai.collect(source, now);
   const pages = Number(source.config.pages ?? 2);
-  const today = tallinnDay(now.toISOString());
-  const horizon = tallinnDay(new Date(now.getTime() + Number(source.config.days ?? 45) * 86_400_000).toISOString());
+  const tz = tzOf(source.city), today = localDay(now.toISOString(), tz);
+  const horizon = localDay(new Date(now.getTime() + Number(source.config.days ?? 45) * 86_400_000).toISOString(), tz);
   const out: RawItem[] = [];
   for (let page = 1; page <= pages; page++) {
     const url = new URL(source.url);
@@ -65,10 +66,10 @@ export function extract(item: RawItem, source: Source): Candidate[] {
   const start = a.add_time ? hhmm(a.event_start_time) : null;
   const endDay = ymd(a.end_date);
   const endTime = a.add_time ? hhmm(a.event_end_time) : null;
-  const starts = tallinnToIso(start ? `${day} ${start}` : day);
+  const tz = tzOf(source.city), starts = localToIso(start ? `${day} ${start}` : day, tz);
   if (!starts) return [];
-  const ends = endDay && endDay !== day ? tallinnToIso(`${endDay} ${endTime ?? '23:59'}`)
-    : endTime ? tallinnToIso(`${day} ${endTime}`) : null;
+  const ends = endDay && endDay !== day ? localToIso(`${endDay} ${endTime ?? '23:59'}`, tz)
+    : endTime ? localToIso(`${day} ${endTime}`, tz) : null;
   const price = String(a.event_price ?? '').trim();
   const nums = [...price.matchAll(/(\d+(?:[.,]\d+)?)/g)].map(m => Number(m[1].replace(',', '.')));
   const free = /tasuta|free|vaba/i.test(price);

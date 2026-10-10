@@ -2,7 +2,7 @@
 // All writes use atomic service-only RPCs, except a display-name tidy (one row's
 // name and aliases, its id untouched); --dry-run is read-only.
 import { writeFileSync } from 'node:fs';
-import { CITIES } from './cities.ts';
+import { CITIES, tzOf } from './cities.ts';
 import { Db } from './db.ts';
 import { venueName, type Place } from './places.ts';
 import { nameKey } from './util.ts';
@@ -125,10 +125,10 @@ export async function reconcileEvents(db: Db, city: string, dry = false) {
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
   const listings = await sourceItems(db, new Set(rows.map(r => r.id)));
   const separate = new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id)));
-  const plan = duplicateEvents(rows, separate, listings);
+  const tz = tzOf(city), plan = duplicateEvents(tz, rows, separate, listings);
   // Then date-only copies of a show another source lists with its time, among the rows still standing.
   const gone = new Set(plan.map(p => p.duplicate.id));
-  plan.push(...dateOnlyJoins(rows.filter(r => !gone.has(r.id)), separate));
+  plan.push(...dateOnlyJoins(tz, rows.filter(r => !gone.has(r.id)), separate));
   if (!dry) for (const { duplicate, canonical } of plan) {
     // One pair the database refuses (a rule the planner did not foresee) is logged and left alone;
     // it must not stop the run that collects every other source.

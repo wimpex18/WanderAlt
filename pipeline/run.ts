@@ -26,7 +26,7 @@ import { osmCatalogue, enrichPlace, wikidataByOsm } from './venues.ts';
 import { instagramConfig, attachInstagramPictures, lookupProfile, lookupPosts, fillInstagramDetails, type PostLookup } from './instagram.ts';
 import { collectInstagram, collectHashtags, instagramPostUrl } from './sources/instagram.ts';
 import { collectTelegram, collectPage, collectRss } from './sources/text.ts';
-import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
+import { Models, claudeBudget, extractEvents, classify, classifyPlaces, transcribePoster, usage } from './llm.ts';
 import { englishModels, refreshEnglish } from './english.ts';
 import { localModels, refreshLocal } from './localize.ts';
 import { attachPosters } from './posters.ts';
@@ -37,7 +37,7 @@ import { Seen, earlierListing, type Listed } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl, lastBy } from './util.ts';
-import { tallinnDay } from './time.ts';
+import { localClock, localDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
@@ -50,7 +50,7 @@ import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
 import { fillSourceLinks } from './venue-source-facts.ts';
 import { POSTER_NOTE, decideHeld, deciderModels } from './review-decider.ts';
-import { CITIES, cityProfile } from './cities.ts';
+import { cityProfile, tzOf } from './cities.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -103,7 +103,7 @@ async function collect(source: Source, db: Db | null): Promise<RawItem[]> {
   }
 }
 
-/** Posters read per run; each costs about 35 Workers AI neurons. */
+/** Posters read per run; each is one Claude request with the image, a fraction of a cent. */
 const posters = { left: Number(opt('--max-posters') ?? 30) };
 const instagramPosters = { left: 5 };
 const postCache = new Map<string, Promise<PostLookup>>();
@@ -114,7 +114,7 @@ const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' &&
 export async function read(item: RawItem, source: Source, models: Models,
   deps: { posts?: typeof lookupPosts; transcribe?: typeof transcribePoster; extract?: typeof extractEvents; canTranscribe?: boolean } = {},
 ): Promise<Candidate[] | null> {
-  if (source.kind === 'fienta') return fienta.extract(item);
+  if (source.kind === 'fienta') return fienta.extract(item, source);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
   const shape = pageShape(source);
@@ -126,8 +126,8 @@ export async function read(item: RawItem, source: Source, models: Models,
   // Resolve signed media URLs when reading, not when queuing: expiry must not change content hashes.
   if (isInstagram && p.poster_available && p.handle && !/\b\d{1,2}[:.]\d{2}\b/.test(p.text ?? '')) {
     const cfg = instagramConfig();
-    const vision = deps.canTranscribe ?? !!(process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID);
-    if (!cfg || !vision || instagramPosters.left <= 0 || posters.left <= 0 || usage.neurons >= models.neuronBudget - 50) return null;
+    const vision = deps.canTranscribe ?? !!process.env.ANTHROPIC_API_KEY?.trim();
+    if (!cfg || !vision || instagramPosters.left <= 0 || posters.left <= 0) return null;
     if (!postCache.has(p.handle)) postCache.set(p.handle, (deps.posts ?? lookupPosts)(p.handle, cfg, 25));
     const lookup = await postCache.get(p.handle)!;
     if (lookup.kind !== 'found') throw new Error(`Instagram poster unavailable: ${lookup.reason}`);
@@ -136,13 +136,13 @@ export async function read(item: RawItem, source: Source, models: Models,
     instagramPosters.left--;
   }
   // A post's poster often carries the date, time and venue its text leaves out.
-  const poster = image && posters.left > 0 && usage.neurons < models.neuronBudget - 50 ? (posters.left--, await (deps.transcribe ?? transcribePoster)(image)) : null;
+  const poster = image && posters.left > 0 ? (posters.left--, await (deps.transcribe ?? transcribePoster)(image)) : null;
   if (isInstagram && image && !poster) throw new Error('Instagram poster transcription unavailable; retry or check the source manually');
   const text = [p.title, p.text, poster ? `Text on the attached poster:\n${poster}` : ''].filter(Boolean).join('\n\n');
   if (!text.trim() && !p.photos?.length) return [];
   const found = await (deps.extract ?? extractEvents)(models, {
     text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
-    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: CITIES[source.city] ?? CITIES.tallinn,
+    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: cityProfile(source.city),
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
@@ -174,9 +174,9 @@ export async function itemListings(db: Pick<Db, 'select'>, found: { p: { rawId: 
 }
 
 export function eventId(city: string, c: Candidate, placeId: string | null): string {
-  const local = new Date(c.starts_at).toLocaleTimeString('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' });
+  const tz = tzOf(city), local = localClock(c.starts_at, tz);
   const where = placeId ?? nameKey(c.venue_name ?? '');
-  return `ev_${sha([city, nameKey(c.title), tallinnDay(c.starts_at), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
+  return `ev_${sha([city, nameKey(c.title), localDay(c.starts_at, tz), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
 }
 
 /** Formats that are never WanderAlt, whoever lists them: a venue that
@@ -302,24 +302,19 @@ export function decide(e: Enrichment, trusted: boolean): { status: string; note:
 interface Pending { rawId: number | null; item: RawItem; source: Source }
 
 /** For reading a structured source's item again without asking any model. */
-const noModels = { ready: false, neuronBudget: 0 } as unknown as Models;
+const noModels = { ready: false } as unknown as Models;
 
-/** What a crashed run can still record: the neurons it spent. A run that dies writes nothing at its end,
- *  and the daily allowance sums these rows, so an unrecorded crash let the next run spend the same neurons again. */
+/** What a crashed run can still record: the dollars it spent on Claude. A run that dies writes nothing at its
+ *  end, and the daily cap sums these rows, so an unrecorded crash would let the next run spend them again. */
 const current: { db: Db | null; runId: number | null; calls: () => number } = { db: null, runId: null, calls: () => 0 };
 const perSource = new Map<string, number>();
 
 async function main() {
-  // Keep some Workers AI allocation for new events' English copy after writes.
+  // Keep a few calls for new events' English copy after writes. Every reader shares the run's Claude dollars.
   const callBudget = Number(process.env.LLM_CALL_BUDGET ?? 60);
   const englishBudget = DRY ? 0 : Math.min(10, Math.max(0, callBudget));
-  // Three readers share one neuron counter, each with a ceiling inside the
-  // run's allowance R: prose extraction up to R/2, classification (a smaller,
-  // cheaper Workers AI model) up to 3R/4, English copy up to R.
-  const runCap = Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 2400);
-  const models = new Models(undefined, Math.max(0, callBudget - englishBudget), DRY ? runCap : Math.round(runCap / 2));
-  const sorter = new Models(lanes(process.env.WORKERS_AI_CLASSIFY_MODEL?.trim() || '@cf/openai/gpt-oss-20b'),
-    Math.max(0, callBudget - englishBudget), DRY ? runCap : Math.round(runCap * .75));
+  const models = new Models(undefined, Math.max(0, callBudget - englishBudget));
+  const sorter = new Models(undefined, Math.max(0, callBudget - englishBudget));
   if (flag('--models')) {
     for (const l of models.available) {
       try {
@@ -353,39 +348,33 @@ async function main() {
   const sources = loadSources().filter(s => !ONLY || s.id === ONLY);
   const db = DRY ? null : new Db();
   const english = englishModels(englishBudget);
-  english.neuronBudget = runCap;
   // Estonian and Russian copy (localize.ts): its own few calls, after English, from what is left.
   const local = localModels(DRY || flag('--no-local') ? 0 : Number(opt('--local-calls') ?? 8));
-  local.neuronBudget = runCap;
-  const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4, runCap);
+  const routesModels = new Models(undefined, DRY || flag('--no-routes') ? 0 : 4);
   // Place checks read a few pages a run (place-checks.ts); their own small budget.
-  const placeModels = new Models(undefined, DRY || flag('--no-place-checks') ? 0 : 8, runCap);
+  const placeModels = new Models(undefined, DRY || flag('--no-place-checks') ? 0 : 8);
   // Held listings are judged by the Claude lane alone (review-decider.ts): a dozen to a request, two or three times.
   const decider = deciderModels(DRY ? 0 : 40);
   current.calls = () => models.calls + sorter.calls + english.calls + local.calls + routesModels.calls + placeModels.calls + decider.calls;
 
-  // The run's row, and what today's earlier runs already spent: the free
-  // Workers AI allocation is per day (reset 00:00 UTC) and per account.
-  // A missing table (migration not applied yet) leaves the per-run cap alone.
+  // The run's row, and what today's earlier runs already spent on Claude (UTC day): a run may spend its
+  // own cap, and never more than is left of the day's. A missing table leaves the per-run cap alone.
   let runId: number | null = null;
   if (db) {
     try {
       const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
-      const spent = (await db.select<{ neurons: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=neurons`))
-        .reduce((a, r) => a + Number(r.neurons || 0), 0);
-      const daily = Number(process.env.WORKERS_AI_DAILY_NEURONS || 6000);
-      const left = Math.max(0, daily - spent);
-      for (const m of [models, sorter, english, local, routesModels, placeModels]) m.neuronBudget = Math.min(m.neuronBudget, left);
+      const spent = (await db.select<{ claude_usd: number }>(`pipeline_runs?started_at=gte.${dayStart.toISOString()}&select=claude_usd`))
+        .reduce((a, r) => a + Number(r.claude_usd || 0), 0);
+      const daily = Number(process.env.CLAUDE_DAILY_USD?.trim() || 1.2);
+      claudeBudget.usd = Math.max(0, Math.min(claudeBudget.usd, daily - spent));
       const [row] = await db.req<{ id: number }[]>('POST', 'pipeline_runs', [{}], 'return=representation');
       runId = row?.id ?? null;
       current.db = db; current.runId = runId;
-      log(`Workers AI: ${Math.round(spent)} neurons spent today, ${Math.round(Math.min(runCap, left))} allowed this run`);
+      log(`Claude: $${spent.toFixed(4)} spent today, $${claudeBudget.usd.toFixed(2)} allowed this run`);
     } catch (e) {
-      log(`pipeline_runs unavailable, daily budget not applied: ${(e as Error).message}`);
+      log(`pipeline_runs unavailable, daily cap not applied: ${(e as Error).message}`);
     }
   }
-  const account = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
-  if (account) log(`Workers AI account ending …${account.slice(-4)} (compare with the account that owns the daily allocation)`);
   log(`${DRY ? 'dry run' : 'run'} for ${CITY}: ${sources.length} sources, model lanes: ${models.available.map(l => `${l.name}:${l.model}`).join(', ') || 'none'}`);
 
   if (db) {
@@ -693,7 +682,7 @@ async function main() {
     const { c, p } = found[i];
     const e = enrich[i];
     // A model-read listing that has started stays only as an exhibition still on (sources/still-on.ts).
-    if (needsModel(p.source) && !keepStarted(c, e.kind)) continue;
+    if (needsModel(p.source) && !keepStarted(c, e.kind, tzOf(CITY))) continue;
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
@@ -741,9 +730,9 @@ async function main() {
     const out = opt('--out');
     const rows = [...events.values()].sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
     if (out) writeFileSync(out, JSON.stringify({ events: rows, places: places.created, health }, null, 2));
-    log(`${models.calls + sorter.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+    log(`${models.calls + sorter.calls} model calls, $${usage.claude.usd.toFixed(4)} on Claude`);
     for (const e of rows.slice(0, Number(opt('--show') ?? 15))) {
-      log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
+      log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: tzOf(CITY), dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
     }
     return;
   }
@@ -793,7 +782,7 @@ async function main() {
   for (const part of chunks(ids, 200)) await db.req('POST', 'rpc/refresh_event_flags', { p_ids: part });
 
   for (const part of chunks(done, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'done', note: null });
-  for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: 'no dated Tallinn event' });
+  for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: `no dated ${cityProfile(CITY).name} event` });
   for (const f of failed) {
     await db.patch(`raw_items?id=eq.${f.id}`, { status: f.attempts >= MAX_ATTEMPTS ? 'error' : 'new', attempts: f.attempts, note: f.note });
   }
@@ -827,7 +816,7 @@ async function main() {
   if (!flag('--no-decide')) {
     try {
       // ...and a second look at listings published on a model's fit score alone, a few dozen a run.
-      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels), audit: Number(opt('--audit') ?? 40) });
+      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels), audit: Number(opt('--audit') ?? 40), search: flag('--no-web-search') ? null : undefined });
       const n = (s: string) => out.filter(d => d.status === s && d.quote).length;
       if (out.length) log(`held listings: ${n('published')} published, ${n('rejected')} rejected, ${out.filter(d => !d.quote).length} waiting for a checked answer`);
     } catch (e) { log(`review decisions failed: ${(e as Error).message}`); }
@@ -858,7 +847,7 @@ async function main() {
   // places are one. A few each run, after every place write, so nothing written here is overwritten.
   if (!flag('--no-place-checks')) {
     try {
-      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8) });
+      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8), search: flag('--no-web-search') ? null : undefined });
       if (answers.length) log(`place checks: ${answers.filter(a => a.answer).length} answered, ${answers.filter(a => !a.answer).length} waiting for more evidence`);
     } catch (e) { log(`place checks failed: ${(e as Error).message}`); }
   }
@@ -877,12 +866,12 @@ async function main() {
       : { last_run_at: now, last_yield: 0, consecutive_failures: (prev?.consecutive_failures ?? 0) + 1, last_error: h.error ?? null });
   }
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
-  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
+  log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls`);
   const c = usage.claude;
-  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
+  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output${c.searches ? `, ${c.searches} web searches` : ''}, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
-      finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(),
+      finished_at: new Date().toISOString(), claude_usd: usage.claude.usd, model_calls: current.calls(),
       events_new: fresh.length, events_seen: existing.size, ok: !Object.values(health).some(h => !h.ok),
     });
   }
@@ -901,7 +890,7 @@ if (import.meta.main) {
     console.error('[pipeline] failed:', e);
     if (current.db && current.runId != null) {
       try {
-        await current.db.patch(`pipeline_runs?id=eq.${current.runId}`, { finished_at: new Date().toISOString(), neurons: usage.neurons, model_calls: current.calls(), ok: false });
+        await current.db.patch(`pipeline_runs?id=eq.${current.runId}`, { finished_at: new Date().toISOString(), claude_usd: usage.claude.usd, model_calls: current.calls(), ok: false });
       } catch { /* the failure above is the one that matters */ }
     }
     process.exit(1);

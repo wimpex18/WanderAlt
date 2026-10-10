@@ -122,5 +122,8 @@ export function cityProfile(id: string): CityProfile {
   return c;
 }
 
+/** The city's time zone, for reading the wall-clock times its sources print (time.ts). */
+export const tzOf = (id: string) => cityProfile(id).tz;
+
 export const inCity = (c: CityProfile, lat: number, lng: number) =>
   lng >= c.bbox[0] && lng <= c.bbox[2] && lat >= c.bbox[1] && lat <= c.bbox[3];

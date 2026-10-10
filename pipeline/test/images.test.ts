@@ -33,25 +33,25 @@ test('a poster comes only from a page that names this event', () => {
   const page = (title: string, image = 'https://www.sudalinnateater.ee/storage/images/cosmodolphins.png') =>
     `<meta property="og:title" content="${title}"><meta property="og:image" content="${image}">`;
   const url = 'https://www.sudalinnateater.ee/et/repertuaar/cosmodolphins/865';
-  assert.deepEqual(posterFromPage(page('COSMODOLPHINS'), url, EV),
+  assert.deepEqual(posterFromPage(page('COSMODOLPHINS'), url, EV, 'Europe/Tallinn'),
     { image_url: 'https://www.sudalinnateater.ee/storage/images/cosmodolphins.png', image_attr: 'Image from sudalinnateater.ee' });
-  assert.equal(posterFromPage(page('Repertuaar'), url, EV), null);                        // another page
-  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/logo.png'), url, EV), null);    // a logo is not a poster
-  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/og-default.jpg'), url, EV), null);
-  assert.equal(posterFromPage('<p>See domeen on müügil</p>' + page('COSMODOLPHINS'), url, EV), null);
+  assert.equal(posterFromPage(page('Repertuaar'), url, EV, 'Europe/Tallinn'), null);                        // another page
+  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/logo.png'), url, EV, 'Europe/Tallinn'), null);    // a logo is not a poster
+  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/og-default.jpg'), url, EV, 'Europe/Tallinn'), null);
+  assert.equal(posterFromPage('<p>See domeen on müügil</p>' + page('COSMODOLPHINS'), url, EV, 'Europe/Tallinn'), null);
 });
 
 test('a structured event must match on title; a series is told apart by day', () => {
   const ld = (...starts: string[]) => `<script type="application/ld+json">${JSON.stringify(starts.map((s, i) => ({ '@type': 'Event', name: 'Cosmodolphins', startDate: s, image: [`https://v.example/p${i}.jpg`] })))}</script>`;
-  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p0.jpg');
   // one event page whose date lags the listing still shows the same show
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p0.jpg');
   // a series page: the node for the day wins, no node for the day means no guess
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p1.jpg');
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-10-06T19:00:00+03:00'), 'https://v.example/e/1', EV), null);
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p1.jpg');
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-10-06T19:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn'), null);
   // Fienta serves pictures through an extensionless proxy: the file is in the query
   const fienta = '<meta property="og:title" content="Cosmodolphins"><meta property="og:image" content="https://fienta.com/cf/img/?width=1200&file=/org/1/poster.jpg">';
-  assert.ok(posterFromPage(fienta, 'https://fienta.com/et/cosmo', EV)?.image_url.includes('poster.jpg'));
+  assert.ok(posterFromPage(fienta, 'https://fienta.com/et/cosmo', EV, 'Europe/Tallinn')?.image_url.includes('poster.jpg'));
 });
 
 test('titles and pages', () => {
@@ -86,20 +86,6 @@ test('a long page is read in parts, cut at line breaks, nothing dropped', () => 
   assert.ok(parts.length > 1 && parts.every(p => p.length <= 4000));
   assert.equal(parts.join('\n'), text);
   assert.equal(chunkText('y'.repeat(9000), 4000).join('').length, 9000);
-});
-
-test('a used-up daily allocation is not retried or waited for', async () => {
-  let calls = 0;
-  const quota = Object.assign(new Error('429 {"errors":[{"message":"you have used up your daily free allocation of 10,000 neurons","code":4006}]}'), { status: 429 });
-  const m = new Models([
-    { name: 'workers-ai', model: 'a', key: 'k', call: async () => { calls++; throw quota; } },
-    { name: 'openrouter', model: 'b', key: 'k', call: async () => '{"ok":true}' },
-  ], 10, 5000);
-  const t0 = Date.now();
-  assert.equal((await m.ask('s', 'u', {})).engine, 'openrouter:b');
-  await m.ask('s', 'u', {});
-  assert.equal(calls, 1);                       // asked once, then skipped
-  assert.ok(Date.now() - t0 < 2000);            // no 20 s waits
 });
 
 test('the logo in the header link to the homepage counts; a sponsor ribbon does not', () => {

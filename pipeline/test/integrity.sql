@@ -11,6 +11,11 @@ begin
   assert not has_table_privilege('anon','public.place_fact_flags','SELECT');
   assert not has_table_privilege('authenticated','public.place_fact_flags','SELECT');
   assert not has_table_privilege('anon','public.social_tokens','SELECT');
+  -- A run's Claude spend: service-only, and zero until the run records it.
+  assert not has_table_privilege('anon','public.pipeline_runs','SELECT');
+  assert not has_table_privilege('authenticated','public.pipeline_runs','SELECT');
+  assert (select column_default = '0' and is_nullable = 'NO' from information_schema.columns
+    where table_schema = 'public' and table_name = 'pipeline_runs' and column_name = 'claude_usd');
 
   insert into public.places(id,city,name,aliases,kind,status,osm_id,osm_ids,website)
     values('qa-integrity-a','tallinn','CatHouse',array['cathouse'],'club','active','node/1',array['node/1'],'https://a.example'),

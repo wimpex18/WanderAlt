@@ -5,14 +5,15 @@
 // time the page changed. This reads the blocks directly. Structure as seen on 10 October 2026.
 //
 // The page has one tab per town (Tallinn, Narva, Tartu, Kuressaare, Viljandi, Pärnu), each holding its
-// shows. Every show under the tab named config.tab (default "Tallinn") is listed at its own hall: the
+// shows. Every show under the tab named config.tab (default: the city's name) is listed at its own hall: the
 // black box at Salme Kultuurikeskus, and co-productions elsewhere in Tallinn (Sakala 3 Teatrimaja).
 // config.venue_map: [[regex on the hall text, our venue name], …] gives a hall our name for it. A page
 // without tabs falls back to venue_map alone, a hall it does not name being a tour date elsewhere.
 // config.days: how far ahead (default 120).
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { getHtml, decodeEntities, httpUrl, clip } from '../util.ts';
-import { tallinnToIso } from '../time.ts';
+import { localToIso } from '../time.ts';
+import { cityProfile, tzOf } from '../cities.ts';
 
 export interface Block {
   slug: string; url: string; title: string; date: string; time: string | null; hall: string; company: string | null;
@@ -87,13 +88,13 @@ const venueFor = (hall: string, source: Source): string | null => {
 export async function collect(source: Source, now = new Date(), fetchPage: (u: string) => Promise<string> = async (u) => (await getHtml(u)).html): Promise<RawItem[]> {
   const horizon = now.getTime() + Number(source.config.days ?? 120) * 86_400_000;
   const seen = new Set<string>(), out: RawItem[] = [];
-  const home = String(source.config.tab ?? 'Tallinn').toLowerCase();
+  const home = String(source.config.tab ?? cityProfile(source.city).name).toLowerCase();
   for (const b of blocks(await fetchPage(source.url))) {
     // Under a town tab: that town's shows only, each at its own hall. Without tabs: the halls venue_map names.
     if (b.town != null && b.town.toLowerCase() !== home) continue;
     const day = dateOf(b.date, now), venue = venueFor(b.hall, source) ?? (b.town != null && b.hall ? b.hall : null);
     if (!day || !venue) continue;
-    const start = Date.parse(tallinnToIso(`${day} ${b.time ?? '00:00'}`) ?? '');
+    const start = Date.parse(localToIso(`${day} ${b.time ?? '00:00'}`, tzOf(source.city)) ?? '');
     if (!Number.isFinite(start) || start > horizon || start < now.getTime() - 6 * 3600_000) continue;
     const id = `${b.slug}|${day}|${b.time ?? ''}`;
     if (seen.has(id)) continue;
@@ -105,7 +106,7 @@ export async function collect(source: Source, now = new Date(), fetchPage: (u: s
 
 export function extract(item: RawItem, source: Source): Candidate[] {
   const p = item.payload as unknown as Block & { day: string; venue: string };
-  const starts = tallinnToIso(`${p.day} ${p.time ?? '00:00'}`);
+  const starts = localToIso(`${p.day} ${p.time ?? '00:00'}`, tzOf(source.city));
   if (!starts || !p.title) return [];
   return [{
     title: p.title,

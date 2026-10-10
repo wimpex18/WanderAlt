@@ -19,13 +19,16 @@
 import { Db, SUPABASE_URL, chunks } from './db.ts';
 import { pushPayload, composeChanges, composeWeekly, inboxChanges, inboxWeek, type InboxItem, pushChanges, pushTonight, tonightEvents, unsubscribeUrl, weeklyEvents, type EventRow, type Mail, type PushMessage } from './digest-core.ts';
 import { sendPush, type PushSubscription, type Vapid } from './webpush.ts';
-import { tallinnToIso } from './time.ts';
+import { localToIso } from './time.ts';
+import { cityProfile } from './cities.ts';
 
 const args = new Set(process.argv.slice(2));
 const dry = args.has('--dry-run');
 const FROM = process.env.DIGEST_FROM?.trim() || 'WanderAlt <digest@wanderalt.app>';
 const CAP = Math.max(1, Number(process.env.DIGEST_DAILY_CAP) || 90);
-const WEEKDAY = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Tallinn', weekday: 'short' }).format(new Date());
+// Readers have no city yet: every digest runs on Tallinn's clock (README, Adding a city).
+const TZ = cityProfile('tallinn').tz;
+const WEEKDAY = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short' }).format(new Date());
 const weeklyDay = args.has('--weekly') || ['Thu', 'Fri', 'Sat'].includes(WEEKDAY);
 
 interface Prefs {
@@ -157,10 +160,10 @@ async function weekEvents() {
 /** One notification at about 16:00 Tallinn time: what starts today at followed places, sources and searches. */
 async function tonight() {
   if (!vapid) return;
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Tallinn' }).format(now);
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(now);
   const prefs = (await db.select<Prefs>(`digest_prefs?tonight=eq.true&push=eq.true&select=${PREFS}`)).filter(p => p.last_tonight_on !== today);
   if (!prefs.length) return;
-  const endOfDay = new Date(tallinnToIso(`${today} 23:59:59`)!);
+  const endOfDay = new Date(localToIso(`${today} 23:59:59`, TZ)!);
   const events = await db.all<EventRow>(`picks?archived_at=is.null&starts_at=gte.${now.toISOString()}&starts_at=lte.${endOfDay.toISOString()}&select=${COLS}&order=starts_at.asc`);
   if (!events.length) return;
   const rows = await db.select<{ user_id: string; follow_id: string }>(`follows?user_id=${inList(prefs.map(p => p.user_id))}&select=user_id,follow_id&limit=5000`);

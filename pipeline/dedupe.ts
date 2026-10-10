@@ -8,7 +8,7 @@
 // venue was called.
 
 import { nameKey } from './util.ts';
-import { tallinnDay } from './time.ts';
+import { localDay } from './time.ts';
 
 export interface Known {
   id: string;
@@ -110,18 +110,18 @@ const prefer = (a: StoredEvent, b: StoredEvent) => Number(b.status === 'publishe
   Number(!!b.place_id) - Number(!!a.place_id) || rank(a, b);
 const pairOf = (a: string, b: string) => [a, b].sort().join('|');
 
-/** A date-only row of a show another source lists with its time, at the same place on the same Tallinn day:
+/** A date-only row of a show another source lists with its time, at the same place on the same local day:
  *  "Pantheon" (12.10, no time) from a roundup and "Pantheon / Viimast korda!" at 19:00 from the theatre. The
  *  timed row carries the show, so the date-only one joins it (merge_events keeps the canonical's time).
  *  Only when exactly one start of the show is listed that day (two timed rows are two sessions), never a
  *  published row into an unpublished one, never two unpublished rows, and never a pair a person undid. */
-export function dateOnlyJoins(events: StoredEvent[], separate = new Set<string>()): EventPair[] {
+export function dateOnlyJoins(tz: string, events: StoredEvent[], separate = new Set<string>()): EventPair[] {
   const out: EventPair[] = [];
   const timed = events.filter(e => e.has_time && e.place_id);
   for (const d of events) {
     if (d.has_time || !d.place_id) continue;
-    const day = tallinnDay(d.starts_at);
-    const same = timed.filter(t => t.place_id === d.place_id && tallinnDay(t.starts_at) === day && sameTitle(t.title, d.title));
+    const day = localDay(d.starts_at, tz);
+    const same = timed.filter(t => t.place_id === d.place_id && localDay(t.starts_at, tz) === day && sameTitle(t.title, d.title));
     if (new Set(same.map(t => Date.parse(t.starts_at))).size !== 1) continue;
     const canonical = [...same].sort(prefer)[0];
     if (canonical.status !== 'published' || separate.has(pairOf(d.id, canonical.id))) continue;
@@ -134,7 +134,7 @@ export function dateOnlyJoins(events: StoredEvent[], separate = new Set<string>(
  *  title/time thresholds as ingestion; published/oldest ids win. With the
  *  source items each row was listed from, rows one item left behind join
  *  too (sameItemEvents), after the pairs above. */
-export function duplicateEvents(events: StoredEvent[], separate = new Set<string>(), listings: ItemListing[] = []): EventPair[] {
+export function duplicateEvents(tz: string, events: StoredEvent[], separate = new Set<string>(), listings: ItemListing[] = []): EventPair[] {
   const sorted = events.slice().sort(rank);
   const seen = new Seen(), byId = new Map<string, StoredEvent>(), out: EventPair[] = [];
   for (const e of sorted) {
@@ -153,7 +153,7 @@ export function duplicateEvents(events: StoredEvent[], separate = new Set<string
   if (!listings.length) return out;
   // merge_events refuses a duplicate that is already another row's canonical.
   const gone = new Set(out.map(p => p.duplicate.id)), kept = new Set(out.map(p => p.canonical.id));
-  for (const p of sameItemEvents(events.filter(e => !gone.has(e.id)), listings, separate)) if (!kept.has(p.duplicate.id)) out.push(p);
+  for (const p of sameItemEvents(tz, events.filter(e => !gone.has(e.id)), listings, separate)) if (!kept.has(p.duplicate.id)) out.push(p);
   return out;
 }
 
@@ -183,7 +183,7 @@ export const oneShowPerItem = (kind: string, shape?: unknown) =>
  *  The canonical is the published, then placed, then oldest row, so saves keep their id and a published
  *  listing is never folded into a rejected one; merge_events needs it to have a place, and the two rows
  *  to share it or their page. */
-export function sameItemEvents(events: StoredEvent[], listings: ItemListing[], separate = new Set<string>()): EventPair[] {
+export function sameItemEvents(tz: string, events: StoredEvent[], listings: ItemListing[], separate = new Set<string>()): EventPair[] {
   const byId = new Map(events.map(e => [e.id, e]));
   const items = new Map<number, { single: boolean; rows: StoredEvent[] }>();
   for (const l of listings) {
@@ -213,8 +213,8 @@ export function sameItemEvents(events: StoredEvent[], listings: ItemListing[], s
     }
     for (const r of rows) {
       if (r.has_time || gone.has(r.id)) continue;
-      const day = tallinnDay(r.starts_at);
-      const timed = rows.filter(t => t.has_time && !gone.has(t.id) && tallinnDay(t.starts_at) === day && overlap(t.title, r.title) >= 0.6);
+      const day = localDay(r.starts_at, tz);
+      const timed = rows.filter(t => t.has_time && !gone.has(t.id) && localDay(t.starts_at, tz) === day && overlap(t.title, r.title) >= 0.6);
       if (new Set(timed.map(t => Date.parse(t.starts_at))).size !== 1) continue;
       for (const t of timed) if (join(t, r)) break;
     }

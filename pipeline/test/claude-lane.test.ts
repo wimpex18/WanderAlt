@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Models, lanes, claudeCost, strictSchema, chunkText, extractEvents, usage, CLAUDE_ROOM, SMALL_ROOM, type Lane } from '../llm.ts';
+import { CITIES } from '../cities.ts';
+import { Models, claudeLane, claudeCost, strictSchema, chunkText, extractEvents, transcribePoster, usage, CLAUDE_ROOM, SMALL_ROOM, type Lane } from '../llm.ts';
 
 test('Haiku 5.5 is billed on the cheap card up to 100,000 prompt tokens, cache included, and five times over it', () => {
   const under = claudeCost({ input_tokens: 60_000, output_tokens: 4_000, cache_read_input_tokens: 2_000, cache_creation_input_tokens: 0 });
@@ -59,13 +60,13 @@ async function withClaude<T>(reply: (body: any) => string, run: (lane: Lane, sen
     return new Response(reply(body), { headers: { 'content-type': 'text/event-stream' } });
   }) as typeof fetch;
   const before = structuredClone(usage.claude);
-  try { return await run(lanes().find(l => l.name === 'claude')!, sent); }
+  try { return await run(claudeLane(), sent); }
   finally { globalThis.fetch = real; delete process.env.ANTHROPIC_API_KEY; Object.assign(usage.claude, before); }
 }
 
-test('the Claude lane comes first, asks Haiku 5.5 for structured JSON at low effort with the instructions cached, and counts its cost', async () => {
+test('the Claude lane asks Haiku 5.5 for structured JSON at low effort with the instructions cached, and counts its cost', async () => {
   await withClaude(() => sse('{"ok":true}'), async (lane, sent) => {
-    assert.equal(lanes()[0].name, 'claude');
+    assert.equal(new Models().available[0].name, 'claude');
     assert.equal(lane.model, 'claude-haiku-5-5');
     assert.equal(lane.room, CLAUDE_ROOM);
     const before = usage.claude.usd;
@@ -85,40 +86,105 @@ test('the Claude lane comes first, asks Haiku 5.5 for structured JSON at low eff
   });
 });
 
-test('a declined request goes to the next lane without counting against Claude; a spent cap skips Claude', async () => {
+test('a declined request leaves that text unread without counting against the lane; a spent cap stops it', async () => {
   await withClaude(() => sse('', 'refusal'), async (claude) => {
-    const asked: string[] = [];
-    const free: Lane = { name: 'workers-ai', model: 'w', key: 'k', call: async () => { asked.push('workers-ai'); return '{"ok":true}'; } };
-    const m = new Models([claude, free], 10, 1_000_000);
-    for (let i = 0; i < 3; i++) assert.equal((await m.ask('s', 'u', {})).engine, 'workers-ai:w');
-    assert.equal(asked.length, 3);
-    // Three declines in a row, and Claude is still asked first: a refusal is about the text, not the lane.
+    const m = new Models([claude], 10);
+    for (let i = 0; i < 3; i++) await assert.rejects(m.ask('s', 'u', {}), /declined/);
+    // Three declines in a row, and Claude is still asked: a refusal is about the text, not the lane.
+    assert.equal(m.ready, true);
     assert.equal(m.room, CLAUDE_ROOM);
   });
   const spent: Lane = { name: 'claude', model: 'c', key: 'k', room: CLAUDE_ROOM, spent: () => true, call: async () => { throw new Error('must not be asked'); } };
-  const free: Lane = { name: 'workers-ai', model: 'w', key: 'k', call: async () => '{"ok":true}' };
-  const m = new Models([spent, free], 10, 1_000_000);
-  assert.equal(m.room, SMALL_ROOM);
-  assert.equal((await m.ask('s', 'u', {})).engine, 'workers-ai:w');
+  const m = new Models([spent], 10);
+  assert.equal(m.ready, false);
+  await assert.rejects(m.ask('s', 'u', {}));
 });
 
-test('a programme page is read whole on Claude and in 5,000-character parts on the free lanes, and again in parts when the whole read fails', async () => {
+test('a programme page is read whole, and again in 5,000-character parts when the whole read fails', async () => {
   const page = Array.from({ length: 60 }, (_, i) => `Line ${i}: ${'x'.repeat(200)}`).join('\n');   // about 12,600 characters
   assert.equal(chunkText(page, CLAUDE_ROOM).length, 1);
   assert.equal(chunkText(page).length, 3);
-  const seen: { lane: string; length: number }[] = [];
+  const seen: number[] = [];
   const event = '{"events":[{"title":"Show","start":"2099-01-01 19:00","end":null,"venue":"Uus Laine","address":null,"price":null,"url":null,"language":"en","excerpt":"A show.","state":"scheduled"}]}';
-  const whole: Lane = { name: 'claude', model: 'c', key: 'k', room: CLAUDE_ROOM, call: async (_s, u) => { seen.push({ lane: 'claude', length: u.length }); return event; } };
-  await extractEvents(new Models([whole], 10, 0), { text: page, source: 'test' });
+  const whole: Lane = { name: 'claude', model: 'c', key: 'k', room: CLAUDE_ROOM, call: async (_s, u) => { seen.push(u.length); return event; } };
+  await extractEvents(new Models([whole], 10), { text: page, source: 'test', city: CITIES.tallinn });
   assert.equal(seen.length, 1);
 
   seen.length = 0;
-  const failing: Lane = { ...whole, call: async (_s, u) => { seen.push({ lane: 'claude', length: u.length }); throw new Error('answer cut off at max_tokens'); } };
-  const free: Lane = { name: 'workers-ai', model: 'w', key: 'k', call: async (_s, u) => { seen.push({ lane: 'workers-ai', length: u.length }); return event; } };
-  const out = await extractEvents(new Models([failing, free], 20, 1_000_000), { text: page, source: 'test' });
-  assert.equal(seen[0].lane, 'claude');
-  // Claude's whole-page read fails; the free lane reads it once whole (it is next in line), then the
-  // retry in small parts goes to whoever is left.
-  assert.ok(seen.filter(s => s.lane === 'workers-ai').some(s => s.length < SMALL_ROOM + 200));
+  // A whole-page answer cut off at max_tokens: the page is read again in small parts.
+  const cut: Lane = { ...whole, call: async (_s, u) => { seen.push(u.length); if (u.length > SMALL_ROOM + 200) throw new Error('answer cut off at max_tokens'); return event; } };
+  const out = await extractEvents(new Models([cut], 20), { text: page, source: 'test', city: CITIES.tallinn });
+  assert.ok(seen[0] > SMALL_ROOM + 200);
+  assert.ok(seen.slice(1).length >= 3 && seen.slice(1).every(n => n < SMALL_ROOM + 200));
   assert.ok(out.length >= 1);
+});
+
+test('a poster is read by Haiku 5.5 from the image, at low effort, on the run\'s Claude budget', async () => {
+  const saved = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = 'test-key';
+  const sent: any[] = [];
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: unknown, init?: { body?: string }) => {
+    if (String(url).startsWith('https://cdn.example/')) return new Response(png, { headers: { 'content-type': 'image/png' } });
+    assert.match(String(url), /^https:\/\/api\.anthropic\.com\/v1\/messages/);
+    sent.push(JSON.parse(init!.body!));
+    return new Response(JSON.stringify({ id: 'msg_2', type: 'message', role: 'assistant', model: 'claude-haiku-5-5', stop_reason: 'end_turn', stop_sequence: null,
+      content: [{ type: 'text', text: 'BRUNO\nL 24.10 kell 20\nUus Laine' }], usage: { input_tokens: 1_600, output_tokens: 30 } }), { headers: { 'content-type': 'application/json' } });
+  }) as typeof fetch;
+  const before = structuredClone(usage.claude);
+  try {
+    assert.equal(await transcribePoster('https://cdn.example/poster.png'), 'BRUNO\nL 24.10 kell 20\nUus Laine');
+    const body = sent[0];
+    assert.equal(body.model, 'claude-haiku-5-5');
+    assert.equal(body.output_config.effort, 'low');
+    assert.equal(body.messages[0].content[0].type, 'image');
+    assert.equal(body.messages[0].content[0].source.media_type, 'image/png');
+    assert.equal(body.messages[0].content[0].source.data, png.toString('base64'));
+    assert.equal(usage.claude.requests, before.requests + 1);
+    assert.equal(await transcribePoster('https://cdn.example/not-an-image.txt'.replace('cdn.example', 'elsewhere.example')), null);
+  } finally {
+    globalThis.fetch = real; Object.assign(usage.claude, before);
+    if (saved) process.env.ANTHROPIC_API_KEY = saved; else delete process.env.ANTHROPIC_API_KEY;
+  }
+});
+
+test('web search finds pages, cited ones first, never the guide itself, and each search counts against the budget', async () => {
+  const { searchWeb, HAIKU } = await import('../llm.ts');
+  const saved = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = 'test-key';
+  const sent: any[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: unknown, init?: { body?: string }) => {
+    assert.match(String(url), /^https:\/\/api\.anthropic\.com\/v1\/messages/);
+    sent.push(JSON.parse(init!.body!));
+    return new Response(JSON.stringify({ id: 'msg_3', type: 'message', role: 'assistant', model: 'claude-haiku-5-5', stop_reason: 'end_turn', stop_sequence: null,
+      content: [
+        { type: 'server_tool_use', id: 'srvtoolu_1', name: 'web_search', input: { query: 'Jazzliit Philly Joe 16 October' } },
+        { type: 'web_search_tool_result', tool_use_id: 'srvtoolu_1', content: [
+          { type: 'web_search_result', url: 'https://piletikeskus.ee/et/e/vt9s8h', title: 'Liina Tralla', encrypted_content: 'x', page_age: null },
+          { type: 'web_search_result', url: 'https://www.phillyjoes.com/programme', title: 'Programme', encrypted_content: 'y', page_age: null },
+        ] },
+        { type: 'text', text: 'It is on 16 October at 20:00.', citations: [{ type: 'web_search_result_location', url: 'https://www.phillyjoes.com/programme', title: 'Programme', encrypted_index: 'z', cited_text: 'Oct 16 8:00 PM 20:00' }] },
+      ],
+      usage: { input_tokens: 20_000, output_tokens: 900, server_tool_use: { web_search_requests: 2 } } }), { headers: { 'content-type': 'application/json' } });
+  }) as typeof fetch;
+  const before = structuredClone(usage.claude);
+  try {
+    const found = await searchWeb('Find the show', { city: CITIES.tallinn, maxUses: 2, blocked: ['instagram.com'] });
+    assert.deepEqual(found.map(f => f.url), ['https://www.phillyjoes.com/programme', 'https://piletikeskus.ee/et/e/vt9s8h']);
+    assert.equal(found[0].cited, 'Oct 16 8:00 PM 20:00');
+    const tool = sent[0].tools[0];
+    assert.equal(tool.type, 'web_search_20250305');
+    assert.equal(tool.max_uses, 2);
+    assert.deepEqual(tool.blocked_domains, ['wanderalt.app', 'instagram.com']);
+    assert.equal(tool.user_location.country, undefined, 'the search tool refuses EE');
+    assert.match(sent[0].system, /The current date is \d{4}-\d{2}-\d{2}/);
+    assert.equal(usage.claude.searches - before.searches, 2);
+    const tokens = (20_000 * HAIKU.input + 900 * HAIKU.output) / 1e6;
+    assert.ok(Math.abs(usage.claude.usd - before.usd - (tokens + 2 * HAIKU.search)) < 1e-9);
+  } finally {
+    globalThis.fetch = real; Object.assign(usage.claude, before);
+    if (saved) process.env.ANTHROPIC_API_KEY = saved; else delete process.env.ANTHROPIC_API_KEY;
+  }
 });
