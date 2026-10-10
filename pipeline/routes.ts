@@ -369,7 +369,7 @@ if (import.meta.main) {
   const city = process.argv.find(a => a.startsWith('--city='))?.slice(7) ?? 'tallinn';
   // A dry run only reads published events and places, which the public key may do.
   const db = new Db(dry && process.argv.includes('--public') ? process.env.SUPABASE_ANON_KEY?.trim() : undefined);
-  const models = new Models(undefined, 6, Number(process.env.WORKERS_AI_NEURON_BUDGET ?? 2400));
+  const models = new Models(undefined, 6);
   composeRoutes(db, city, models, { dry }).then(rows => {
     for (const r of rows) console.log(`${r.day} ${r.area.padEnd(12)} ${r.title}  [${r.engine}]${r.blurb ? `\n    ${r.blurb}` : ''}\n    ${r.stops.map(s => `${s.type}:${s.id}@${clockText(s.minute)}${s.routed ? ` (${s.walk} min on foot)` : ''}`).join(' → ')}`);
     const out = process.argv.find(a => a.startsWith('--out='))?.slice(6);

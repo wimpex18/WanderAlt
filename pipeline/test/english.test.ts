@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { editEnglish, englishHash, eventText, excerpt, refreshEnglish, validatedCopy, workSource, type EnglishInput } from '../english.ts';
-import { Models, usage } from '../llm.ts';
+import { Models } from '../llm.ts';
 import { eventRefreshFacts } from '../run.ts';
 import { cityProfile } from '../cities.ts';
 
@@ -45,13 +45,9 @@ test('invalid English output and duplicate/missing event answers stay pending, w
   assert.equal(copies.size, 0);
 });
 
-test('an exhausted Workers allocation and no usable fallback stop the editorial queue', () => {
-  const before = usage.neurons;
-  try {
-    usage.neurons = 10;
-    const m = new Models([{ name: 'workers-ai', model: 'fixture', key: 'test', call: async () => '{}' }], 10, 5);
-    assert.equal(m.ready, false); assert.equal(m.calls, 0);
-  } finally { usage.neurons = before; }
+test('a spent Claude budget stops the editorial queue', () => {
+  const m = new Models([{ name: 'claude', model: 'fixture', key: 'test', spent: () => true, call: async () => '{}' }], 10);
+  assert.equal(m.ready, false); assert.equal(m.calls, 0);
 });
 
 test('event source fetching identifies the exact event, rejects programmes and leaves contact details out', () => {

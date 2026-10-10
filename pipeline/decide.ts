@@ -12,7 +12,7 @@ import { REASONS, decideHeld, deciderModels } from './review-decider.ts';
 const args = process.argv.slice(2);
 const value = (k: string) => { const i = args.indexOf(k); return i < 0 ? undefined : args[i + 1]; };
 const list = (k: string) => value(k)?.split(',').map(s => s.trim()).filter(Boolean);
-const noModels = { ready: false, neuronBudget: 0 } as unknown as Models;
+const noModels = { ready: false } as unknown as Models;
 
 try {
   const out = await decideHeld(new Db(), value('--city') ?? 'tallinn', deciderModels(Number(value('--calls') ?? 60)), {

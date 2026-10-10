@@ -15,7 +15,7 @@
 // a failed batch is simply due next run. Soonest events first, a few batches a run; a backlog
 // clears over a few runs. Free model lanes only (llm.ts).
 import { Db } from './db.ts';
-import { Models, lanes, usage } from './llm.ts';
+import { Models, usage } from './llm.ts';
 import { clip, scrubContacts, sha } from './util.ts';
 import { type CityProfile, cityProfile } from './cities.ts';
 
@@ -29,7 +29,7 @@ export interface LocalCopy {
   title_uk: string; summary_uk: string | null; local_input_hash: string;
 }
 
-export const localModels = (budget = 8) => new Models(lanes(process.env.ENGLISH_MODEL?.trim() || '@cf/openai/gpt-oss-120b'), budget);
+export const localModels = (budget = 8) => new Models(undefined, budget);
 export const localHash = (e: LocalInput) => sha(JSON.stringify(['local-v2', e.title, e.title_en, e.summary_en, e.original_excerpt ?? e.description]));
 
 const CYR = /[Ѐ-ӿ]/u;
@@ -151,7 +151,7 @@ export async function refreshLocal(db: Pick<Db, 'all' | 'patch'>, models: Models
     }
   };
   for (let i = 0; i < due.length && models.ready; i += 5) await run(due.slice(i, i + 5));
-  console.log(`[local] ${count} written (${due.length} events due); ${models.calls} calls, ${Math.round(usage.neurons)} neurons`);
+  console.log(`[local] ${count} written (${due.length} events due); ${models.calls} calls, $${usage.claude.usd.toFixed(4)} on Claude this run`);
   return count;
 }
 

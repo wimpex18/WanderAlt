@@ -53,7 +53,7 @@ test('a model-read gallery page keeps a show that opened earlier and runs on, wi
     row('Last week talk', `${day(-7)} 18:00`, null),
     row('Closed show', day(-30), day(-2)),
   ] }) };
-  const out = await extractEvents(new Models([lane], 5, 0), { text: 'programme', source: 'test', city: CITIES.tallinn });
+  const out = await extractEvents(new Models([lane], 5), { text: 'programme', source: 'test', city: CITIES.tallinn });
   assert.deepEqual(out.map(c => c.title), ['Running show']);
   // "Until <day>" is that whole day: stored at 23:59 in Tallinn, not at its first minute.
   assert.equal(out[0].ends_at, tallinnToIso(`${day(30)} 23:59`));

@@ -10,7 +10,7 @@ test('poster extraction remains pending without vision, then uses fresh artwork 
   try {
     const source = { kind: 'instagram', city: 'tallinn', config: {}, label: 'Instagram' } as Source;
     const item = { external_id: 'ig:poster:ABC', url: 'https://www.instagram.com/p/ABC/', payload: { handle: 'poster', venue_name: 'Venue', text: '', poster_available: true } };
-    const models = { ready: true, neuronBudget: 2400 } as Models;
+    const models = { ready: true } as Models;
     assert.equal(await read(item, source, models, { canTranscribe: false }), null);
     const found = await read(item, source, models, { canTranscribe: true,
       posts: async () => ({ kind: 'found', posts: [{ caption: null, timestamp: '', permalink: item.url, mediaType: 'IMAGE', imageUrl: 'https://s.cdninstagram.com/fresh.jpg' }] }),

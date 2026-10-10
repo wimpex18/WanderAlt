@@ -57,9 +57,9 @@ npm run build:lang        # phrases/patterns -> interface translations
 npm run build:inline-icons
 ```
 
-- A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`. Prose/model work goes to Claude Haiku 5.5 when `ANTHROPIC_API_KEY` is set, then to Workers AI (`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` with Workers AI Read), then to OpenRouter's free models (`OPENROUTER_API_KEY`). Haiku reads a whole programme page per request, at most 120,000 characters, so the prompt stays under 100,000 tokens and on Haiku 5.5's lower price tier; each run stops using it at `CLAUDE_LANE_RUN_USD` dollars (default 0.30, four runs a day) and logs what it spent. Held listings are judged on this lane alone, at medium effort.
+- A full pipeline run needs `SUPABASE_SERVICE_ROLE_KEY`. All model work (reading prose and posters, sorting, English and translated copy, held listings, place readings, walk titles) goes to Claude Haiku 5.5 on `ANTHROPIC_API_KEY`, the only model lane. Haiku reads a whole programme page per request, at most 120,000 characters, so the prompt stays under 100,000 tokens and on Haiku 5.5's lower price tier, and posters from the image. A run stops using it at `CLAUDE_LANE_RUN_USD` dollars (default 0.30) or at what is left of the UTC day's `CLAUDE_DAILY_USD` (default 1.20) after earlier runs (`pipeline_runs.claude_usd`), and logs what it spent. Held listings are judged at medium effort, everything else at low.
 - Store local keys in git-ignored `.env`, scheduled keys in GitHub repository secrets.
-- Missing model capacity leaves prose/copy pending; trusted structured sources can still publish. Pins, overrides, retry behaviour and daily budgets are defined in `pipeline/llm.ts` and `pipeline/run.ts`, not duplicated here.
+- Without the key or once the cap is spent, prose sources wait in `raw_items` and copy stays pending; trusted structured sources still publish. Pins, overrides, retry behaviour and budgets are defined in `pipeline/llm.ts` and `pipeline/run.ts`, not duplicated here. Search inference on the site (`functions/api/ask.js`) still uses the Pages `AI` binding.
 
 ## Code map
 

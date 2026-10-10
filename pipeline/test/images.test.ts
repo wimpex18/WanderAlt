@@ -88,20 +88,6 @@ test('a long page is read in parts, cut at line breaks, nothing dropped', () => 
   assert.equal(chunkText('y'.repeat(9000), 4000).join('').length, 9000);
 });
 
-test('a used-up daily allocation is not retried or waited for', async () => {
-  let calls = 0;
-  const quota = Object.assign(new Error('429 {"errors":[{"message":"you have used up your daily free allocation of 10,000 neurons","code":4006}]}'), { status: 429 });
-  const m = new Models([
-    { name: 'workers-ai', model: 'a', key: 'k', call: async () => { calls++; throw quota; } },
-    { name: 'openrouter', model: 'b', key: 'k', call: async () => '{"ok":true}' },
-  ], 10, 5000);
-  const t0 = Date.now();
-  assert.equal((await m.ask('s', 'u', {})).engine, 'openrouter:b');
-  await m.ask('s', 'u', {});
-  assert.equal(calls, 1);                       // asked once, then skipped
-  assert.ok(Date.now() - t0 < 2000);            // no 20 s waits
-});
-
 test('the logo in the header link to the homepage counts; a sponsor ribbon does not', () => {
   const site = 'https://venue.example/';
   const header = '<header><a href="/" class="brand"><img src="/media/mark.png" alt="Venue"></a></header><footer><a href="https://sponsor.example/"><img src="/media/sponsor.png"></a></footer>';

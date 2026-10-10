@@ -1,7 +1,7 @@
 // Stored English copy, independent of classification and its exhausted budget.
 // No browser translation calls: every surface reads the same edited title.
 import { Db } from './db.ts';
-import { Models, lanes, usage } from './llm.ts';
+import { Models, usage } from './llm.ts';
 import { parseJsonLd } from './sources/jsonld.ts';
 import { clip, htmlToText, httpUrl, nameKey, scrubContacts, sha, UA } from './util.ts';
 import { type CityProfile, cityProfile } from './cities.ts';
@@ -16,7 +16,7 @@ export interface EnglishInput {
 export interface SourceText { text: string; url: string | null; language?: string | null }
 export const LANGUAGE_CODES = ['en', 'et', 'ru', 'uk', 'fi', 'sv', 'de', 'fr', 'es', 'it', 'lv', 'lt', 'pl', 'ja', 'zh', 'ko'] as const;
 const languages = new Set<string>(LANGUAGE_CODES);
-export const englishModels = (budget = 6) => new Models(lanes(process.env.ENGLISH_MODEL?.trim() || '@cf/openai/gpt-oss-120b'), budget);
+export const englishModels = (budget = 6) => new Models(undefined, budget);
 export const englishHash = (e: EnglishInput) => sha(JSON.stringify(['english-v1', e.title, e.description, e.venue_name, e.kind, e.url]));
 
 // ── Titles ─────────────────────────────────────────────────
@@ -318,7 +318,7 @@ export async function refreshEnglish(db: Pick<Db, 'all' | 'patch'>, models: Mode
         await db.patch(`events?id=eq.${encodeURIComponent(id)}`, copy);
         count++;
       }
-      console.log(`[english] saved ${count}/${due.length}; ${models.calls} calls, ${Math.round(usage.neurons)} neurons`);
+      console.log(`[english] saved ${count}/${due.length}; ${models.calls} calls, $${usage.claude.usd.toFixed(4)} on Claude this run`);
     } catch (e) { console.warn(`[english] batch deferred: ${(e as Error).message}`); }
   }
   return count;
