@@ -25,7 +25,7 @@ import { chunks, inList } from './db.ts';
 import { Models, claudeLane } from './llm.ts';
 import type { Candidate, RawItem, Source } from './types.ts';
 import { Pages, plain, quoteIn, windowsAround } from './place-evidence.ts';
-import { overlap } from './dedupe.ts';
+import { overlap, sameTitle } from './dedupe.ts';
 import { clip, decodeEntities, httpUrl, nameKey } from './util.ts';
 import { type CityProfile, cityProfile } from './cities.ts';
 
@@ -347,21 +347,13 @@ export async function venueShowPages(pages: Pages, website: string | null | unde
 
 // ── One show, one listing ─────────────────────────────────────────
 
-/** Words that say what kind of event it is, not which one: two titles sharing only these are two shows. */
-const GENERIC = new Set(['kontsert', 'concert', 'festival', 'jazz', 'live', 'session', 'sessions', 'party', 'night', 'club', 'klubi', 'show',
-  'tour', 'band', 'trio', 'quartet', 'quiz', 'open', 'esitleb', 'presents', 'project', 'projekt', 'проект', 'концерт', 'вечеринка', 'джаз',
-  'международный', 'tallinn', 'tallinna', 'with', 'from', 'feat', 'plus', 'koos', 'ning', 'the', 'and']);
-const marks = (title: string) => new Set(nameKey(title).split(' ').filter(w => w.length >= 4 && !GENERIC.has(w)));
-
 /** Two rows of one show: the same place on the same day, at starts within half an hour unless one of them
  *  gives no time (two timed screenings of a film are two sessions), and titles that mostly agree or share two
  *  distinctive words ("Toms Rudzinskis" in a Telegram roundup's Russian title and the club's own). */
 export function sameShow(a: Pick<Held, 'title' | 'place_id' | 'starts_at' | 'has_time'>, b: Pick<Held, 'title' | 'place_id' | 'starts_at' | 'has_time'>, tz: string): boolean {
   if (!a.place_id || a.place_id !== b.place_id || !sameDay(a.starts_at, b.starts_at, tz)) return false;
   if (a.has_time && b.has_time && Math.abs(Date.parse(a.starts_at) - Date.parse(b.starts_at)) > 30 * 60_000) return false;
-  if (overlap(a.title, b.title) >= 0.6) return true;
-  const x = marks(a.title), y = marks(b.title);
-  return [...x].filter(w => y.has(w)).length >= 2;
+  return sameTitle(a.title, b.title);
 }
 
 // ── Putting it together ───────────────────────────────────────────

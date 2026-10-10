@@ -34,6 +34,20 @@ export function overlap(a: string, b: string): number {
   return shared / x.size;
 }
 
+/** Words that say what kind of event it is, not which one: two titles sharing only these are two shows. */
+const KIND_WORDS = new Set(['kontsert', 'concert', 'festival', 'jazz', 'live', 'session', 'sessions', 'party', 'night', 'club', 'klubi', 'show',
+  'tour', 'band', 'trio', 'quartet', 'quiz', 'open', 'esitleb', 'presents', 'project', 'projekt', 'проект', 'концерт', 'вечеринка', 'джаз',
+  'международный', 'tallinn', 'tallinna', 'with', 'from', 'feat', 'plus', 'koos', 'ning', 'the', 'and']);
+const marks = (title: string) => new Set(nameKey(title).split(' ').filter(w => w.length >= 4 && !KIND_WORDS.has(w)));
+
+/** Titles of one show: most of the words agree, or two distinctive words are shared ("Toms Rudzinskis" in a
+ *  Telegram roundup's Russian title and in the club's own). */
+export function sameTitle(a: string, b: string): boolean {
+  if (overlap(a, b) >= 0.6) return true;
+  const x = marks(a), y = marks(b);
+  return [...x].filter(w => y.has(w)).length >= 2;
+}
+
 export class Seen {
   private byWhere = new Map<string, Known[]>();
   private byUrl = new Map<string, Known[]>();
@@ -95,6 +109,26 @@ const rank = (a: StoredEvent, b: StoredEvent) => Number(b.status === 'published'
 const prefer = (a: StoredEvent, b: StoredEvent) => Number(b.status === 'published') - Number(a.status === 'published') ||
   Number(!!b.place_id) - Number(!!a.place_id) || rank(a, b);
 const pairOf = (a: string, b: string) => [a, b].sort().join('|');
+
+/** A date-only row of a show another source lists with its time, at the same place on the same Tallinn day:
+ *  "Pantheon" (12.10, no time) from a roundup and "Pantheon / Viimast korda!" at 19:00 from the theatre. The
+ *  timed row carries the show, so the date-only one joins it (merge_events keeps the canonical's time).
+ *  Only when exactly one start of the show is listed that day (two timed rows are two sessions), never a
+ *  published row into an unpublished one, never two unpublished rows, and never a pair a person undid. */
+export function dateOnlyJoins(events: StoredEvent[], separate = new Set<string>()): EventPair[] {
+  const out: EventPair[] = [];
+  const timed = events.filter(e => e.has_time && e.place_id);
+  for (const d of events) {
+    if (d.has_time || !d.place_id) continue;
+    const day = tallinnDay(d.starts_at);
+    const same = timed.filter(t => t.place_id === d.place_id && tallinnDay(t.starts_at) === day && sameTitle(t.title, d.title));
+    if (new Set(same.map(t => Date.parse(t.starts_at))).size !== 1) continue;
+    const canonical = [...same].sort(prefer)[0];
+    if (canonical.status !== 'published' || separate.has(pairOf(d.id, canonical.id))) continue;
+    out.push({ duplicate: d, canonical });
+  }
+  return out;
+}
 
 /** Reconcile old copies after their venue ids become canonical. Same
  *  title/time thresholds as ingestion; published/oldest ids win. With the
