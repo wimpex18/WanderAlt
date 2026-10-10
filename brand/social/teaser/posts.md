@@ -4,7 +4,9 @@ Three posts, no date and no product detail. Images are 1080×1350 (4:5), which I
 
 The owner approved publishing these three on 2026-10-10; publishing rules are in AGENTS.md and README (Social access). Each image also has a `.jpg` export, which is what Instagram takes; Instagram and Threads fetch the image from a public URL.
 
-Location: tag Tallinn, Estonia where the platform allows it. Facebook Places ID `106039436102339` comes from Wikidata (P1997 on Tallinn, Q1770) and is not confirmed by Meta's API, so open facebook.com/106039436102339 and check it is Tallinn before the first use. The Threads token lacks `threads_location_tagging`, so Threads posts go out untagged until the token is re-authorised with it.
+The captions below are sent from the `.json` files beside the pictures (`npm run social -- post brand/social/teaser/1-soon.json`); edit both together.
+
+Location: Instagram and Facebook tag Tallinn, Estonia with Facebook Places ID `106039436102339` (from Wikidata P1997 on Tallinn; the owner opened facebook.com/106039436102339 and confirmed it is Tallinn). The Threads token lacks `threads_location_tagging`, so Threads posts go out untagged.
 
 Voice: handles start with `@`, no exclamation marks, no marketing register, never "discover" as a verb. Instagram does not link from captions, so those say "link in bio" (the profile link is https://wanderalt.app).
 
@@ -61,7 +63,7 @@ Image: `teaser-3-walk.png`
 >
 > Soon. Link in bio.
 >
-> #tallinn #walkingtour #eesti
+> #tallinn #eesti #walking
 
 **Facebook**
 

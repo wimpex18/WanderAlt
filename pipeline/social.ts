@@ -4,13 +4,17 @@
 //   node pipeline/social.ts tonight --publish threads  post it to Threads
 //   node pipeline/social.ts tonight --publish facebook post it to our Facebook Page
 //   node pipeline/social.ts instagram --image URL.jpg --caption "…" --publish
+//   node pipeline/social.ts post FILE.json             preview one picture post for all three platforms
+//   node pipeline/social.ts post FILE.json --to instagram,facebook --publish [--no-location]
 // Nothing is posted without --publish. See README.md.
 
+import { readFile } from 'node:fs/promises';
 import { Db } from './db.ts';
 import { instagramConfig, lookupProfile, recentPosts, hashtagPosts } from './instagram.ts';
 import * as threads from './social/threads.ts';
 import * as instagram from './social/instagram.ts';
 import * as facebook from './social/facebook.ts';
+import { PLATFORMS, loadPost, checkImage, type Platform } from './social/post.ts';
 import { socialCoverage } from './social-coverage.ts';
 
 const args = process.argv.slice(2);
@@ -118,6 +122,50 @@ async function main() {
     log(`posted to Threads as @${who.username}: ${await threads.publish(token, who.id, { text })}`);
     return;
   }
+  if (cmd === 'post') {
+    const file = args[1];
+    if (!file || file.startsWith('--')) throw new Error('post needs a post file, for example brand/social/teaser/1-soon.json');
+    const post = loadPost(JSON.parse(await readFile(file, 'utf8')));
+    const to = (opt('--to') ?? PLATFORMS.join(',')).split(',').map(s => s.trim()).filter(Boolean);
+    for (const p of to) {
+      if (!(PLATFORMS as readonly string[]).includes(p)) throw new Error(`--to takes ${PLATFORMS.join(', ')}`);
+      if (!post[p as Platform]) throw new Error(`the post file has no ${p} text`);
+    }
+    await checkImage(post.image);
+    const noLocation = flag('--no-location');
+    console.log(`\n${post.image}${post.alt ? `\nalt: ${post.alt}` : ''}`);
+    for (const p of to as Platform[]) {
+      const where = noLocation ? null : p === 'threads' ? post.threadsLocation : post.location;
+      console.log(`\n--- ${p}${where ? ` (location ${where})` : ''} ---\n${post[p]}`);
+    }
+    if (!flag('--publish')) { log('preview only; add --publish to post'); return; }
+    let failed = false;
+    for (const p of to as Platform[]) {
+      try {
+        const text = post[p]!;
+        if (p === 'facebook') {
+          const cfg = instagramConfig();
+          if (!cfg) throw new Error('Facebook needs Instagram secrets');
+          const page = await facebook.ownPage(cfg, process.env.FACEBOOK_PAGE_ID ?? '');
+          log(`posted to Facebook Page ${page.name}: ${await facebook.publishPhoto(page, { imageUrl: post.image, caption: text, placeId: noLocation ? undefined : post.location })}`);
+        } else if (p === 'instagram') {
+          const cfg = instagramConfig();
+          if (!cfg) throw new Error('Instagram needs its secrets');
+          log(`posted to Instagram: ${await instagram.publishImage(cfg, { imageUrl: post.image, caption: text, altText: post.alt, locationId: noLocation ? undefined : post.location })}`);
+        } else {
+          const token = await threadsToken(new Db());
+          if (!token) throw new Error('no Threads token');
+          const who = await threads.me(token);
+          log(`posted to Threads as @${who.username}: ${await threads.publish(token, who.id, { text, imageUrl: post.image, locationId: noLocation ? undefined : post.threadsLocation })}`);
+        }
+      } catch (e) {
+        failed = true;
+        log(`${p}: not posted (${(e as Error).message}). Check the platform before trying again.`);
+      }
+    }
+    if (failed) process.exitCode = 1;
+    return;
+  }
   if (cmd === 'instagram') {
     const cfg = instagramConfig(), image = opt('--image'), caption = opt('--caption');
     if (!cfg || !image || !caption) throw new Error('instagram needs the secrets, --image (a public .jpg address) and --caption');
@@ -126,7 +174,7 @@ async function main() {
     log(`posted to Instagram: ${await instagram.publishImage(cfg, { imageUrl: image, caption, altText: opt('--alt') })}`);
     return;
   }
-  log('usage: node pipeline/social.ts check | search-instagram --hashtag tallinn | tonight [--publish threads|facebook] | instagram --image URL.jpg --caption "…" [--publish]');
+  log('usage: node pipeline/social.ts check | search-instagram --hashtag tallinn | tonight [--publish threads|facebook] | instagram --image URL.jpg --caption "…" [--publish] | post FILE.json [--to facebook,instagram,threads] [--no-location] [--publish]');
 }
 
 if (import.meta.main) main().catch(e => { console.error('[social]', (e as Error).message); process.exitCode = 1; });

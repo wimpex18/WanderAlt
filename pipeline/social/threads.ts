@@ -101,10 +101,11 @@ export async function profileLookup(token: string, username: string, fetcher: ty
 export const fitsThreads = (text: string) => text.length > 0 && text.length <= 500 && (text.match(/https?:\/\/\S+/g) ?? []).length <= 5;
 
 /** Create the container, wait, publish. Returns the post id. */
-export async function publish(token: string, userId: string, post: { text: string; imageUrl?: string }, fetcher: typeof fetch = fetch, wait = 30_000): Promise<string> {
+export async function publish(token: string, userId: string, post: { text: string; imageUrl?: string; locationId?: string }, fetcher: typeof fetch = fetch, wait = 30_000): Promise<string> {
   if (!fitsThreads(post.text)) throw new Error('Threads post must be 1–500 characters with at most 5 links');
   const container = await call<{ id: string }>('POST', `${VERSION}/${userId}/threads`, {
-    media_type: post.imageUrl ? 'IMAGE' : 'TEXT', text: post.text, ...(post.imageUrl ? { image_url: post.imageUrl } : {}), access_token: token }, fetcher);
+    media_type: post.imageUrl ? 'IMAGE' : 'TEXT', text: post.text, ...(post.imageUrl ? { image_url: post.imageUrl } : {}),
+    ...(post.locationId ? { location_id: post.locationId } : {}), access_token: token }, fetcher);
   await sleep(wait);
   const out = await call<{ id: string }>('POST', `${VERSION}/${userId}/threads_publish`, { creation_id: container.id, access_token: token }, fetcher);
   return out.id;
