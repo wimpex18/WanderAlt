@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
-import { FootRouter, estimateMinutes, lineMetres, streetMinutes } from '../walking.ts';
+import { FootRouter, estimateMinutes, lineMetres, streetMinutes, encodePolyline, decodePolyline, simplify } from '../walking.ts';
 import type { RouterOptions } from '../walking.ts';
 import { candidatesForDay, composeRoutes } from '../routes.ts';
 import type { RouteEvent, RoutePlace } from '../routes.ts';
@@ -31,7 +31,7 @@ const quiet = async <T>(f: () => Promise<T>): Promise<T> => {
 test('a walk comes back leg by leg along the streets, asked with our name and no faster than once a second', async () => {
   const { r, calls, waits } = router([() => answer([450, 610]), () => answer([700])]);
   assert.deepEqual(await r.legs([A, B, C]), [450, 610]);
-  assert.match(calls[0].url, /^https:\/\/routing\.openstreetmap\.de\/routed-foot\/route\/v1\/foot\/24\.740000,59\.440000;24\.740000,59\.443000;24\.746000,59\.440000\?overview=false&steps=false$/);
+  assert.match(calls[0].url, /^https:\/\/routing\.openstreetmap\.de\/routed-foot\/route\/v1\/foot\/24\.740000,59\.440000;24\.740000,59\.443000;24\.746000,59\.440000\?overview=false&steps=true&geometries=polyline6$/);
   assert.equal((calls[0].init.headers as Record<string, string>)['user-agent'], UA);
   assert.ok(calls[0].init.signal, 'every request has a timeout');
   assert.deepEqual(await r.legs([B, C]), [700]);
@@ -219,4 +219,35 @@ test('the route page uses the stored walk named by t= when its stops match, and 
   const other = page(`?s=${encodeURIComponent(STOPS.replace('pub:1320', 'pub:1325'))}&d=2026-10-05&t=${encodeURIComponent(ROW_ID)}`);
   await other.open();
   assert.match(other.els['rt-body'].innerHTML, /6 min walk[\s\S]*8 min walk/);
+});
+
+test('a path survives encoding at six decimals, and simplifying keeps its ends and its turns', () => {
+  const line = [{ lat: 59.44, lng: 24.734 }, { lat: 59.4405, lng: 24.73401 }, { lat: 59.441, lng: 24.734 }, { lat: 59.441, lng: 24.736 }];
+  const back = decodePolyline(encodePolyline(line));
+  assert.deepEqual(back.map(p => [p.lat.toFixed(6), p.lng.toFixed(6)]), line.map(p => [p.lat.toFixed(6), p.lng.toFixed(6)]));
+  const s = simplify(line, 4);
+  assert.deepEqual(s, [line[0], line[2], line[3]], 'a point under a metre off the line goes; the corner stays');
+});
+
+test('each routed leg carries the path the router walked, from one stop to the next', async () => {
+  // shop (59.443) → host (59.440) → bar (59.437), all on 24.734: each leg one step with a kink.
+  const step = (from: number, to: number) => ({ geometry: encodePolyline([{ lat: from, lng: 24.734 }, { lat: (from + to) / 2, lng: 24.7345 }, { lat: to, lng: 24.734 }]) });
+  const reply = () => new Response(JSON.stringify({ code: 'Ok', routes: [{ legs: [{ distance: 500, steps: [step(59.443, 59.44)] }, { distance: 450, steps: [step(59.44, 59.437)] }] }] }), { status: 200 });
+  const { r } = router([reply]);
+  const rows = await quiet(() => composeRoutes(fakeDb(), 'tallinn', null, { dry: true, days: 1, now: NOW, router: r }));
+  const [, event, after] = rows[0].stops;
+  for (const [stop, from, to] of [[event, 59.443, 59.44], [after, 59.44, 59.437]] as const) {
+    const path = decodePolyline(stop.path!);
+    assert.equal(path.length, 3);
+    assert.ok(Math.abs(path[0].lat - from) < 1e-6 && Math.abs(path[2].lat - to) < 1e-6);
+  }
+  assert.equal(rows[0].stops[0].path, undefined, 'the first stop has no leg before it');
+});
+
+test('a router answer without steps, or a path that starts far from its stop, keeps the minutes and no path', async () => {
+  const far = { geometry: encodePolyline([{ lat: 59.5, lng: 24.9 }, { lat: 59.44, lng: 24.734 }]) };
+  const reply = () => new Response(JSON.stringify({ code: 'Ok', routes: [{ legs: [{ distance: 500 }, { distance: 450, steps: [far] }] }] }), { status: 200 });
+  const { r } = router([reply]);
+  const rows = await quiet(() => composeRoutes(fakeDb(), 'tallinn', null, { dry: true, days: 1, now: NOW, router: r }));
+  assert.ok(rows[0].stops.slice(1).every(st => st.routed && st.path === undefined));
 });

@@ -332,6 +332,24 @@
   const media = (q) => (typeof matchMedia === 'function' ? matchMedia(q) : { matches: false, addEventListener() {} });
   const asRows = media('(min-width: 1024px)');
   asRows.addEventListener('change', () => { if (window.WA.catalog) render(); });
+  /* From 1280 px the choosing sits in a rail beside the list, as on Now: plain options with how many each
+     would show. Kind and the toggles use the Refine sheet's own handlers; Refine keeps the rest. */
+  const railWide = media('(min-width: 1280px)');
+  railWide.addEventListener('change', () => { if (window.WA.catalog) render(); });
+  const progRail = () => {
+    if (!railWide.matches || placeOnly) return '';
+    const opt = (attrs, on, label, n) => `<button class="home-rail__opt" type="button" ${attrs} aria-pressed="${on}"><span>${esc(label)}</span>${n == null ? '' : `<span class="home-rail__n${n ? '' : ' is-none'}">${n}</span>`}</button>`;
+    const group = (id, title, body) => `<div class="home-rail__group" role="group" aria-labelledby="${id}"><p class="home-rail__h" id="${id}">${esc(title)}</p>${body}</div>`;
+    const dated = apply(base(), 'when');
+    const nWhen = (w) => (w === 'all' ? dated.length : dated.filter(e => window.WA.Discovery.matchesDate(e, { when: w })).length);
+    const when = ['all', 'tonight', 'tomorrow', 'weekend'].map(w => opt(`data-rail-when="${w}"`, !state.day && state.when === w, WHEN[w], nWhen(w))).join('')
+      + opt('data-rail-dates aria-haspopup="dialog"', !!state.day, state.day ? daysLabel() : 'Pick dates', state.day ? results().length : null);
+    const kinds = opt('data-kind=""', !state.kinds.size, 'All', apply(base(), 'kind').length)
+      + kindCounts().filter(([k, n]) => n || state.kinds.has(k)).map(([k, n]) => opt(`data-kind="${esc(k)}"`, state.kinds.has(k), R().kindLabel(k), n)).join('');
+    const only = opt('data-toggle="free"', state.free, 'Free', apply(base(), 'free').filter(R().isFree).length) + opt('data-toggle="english"', state.english, 'In English', null);
+    return group('prog-rail-when', 'When', when) + group('prog-rail-kind', 'Kind', kinds) + group('prog-rail-only', 'Filters', only);
+  };
+
   const listHtml = (list) => {
     if (state.q && placeOnly) return placeView().length ? placesBlock(0) : emptyState();
     if (!list.length) return state.q && (placeHits.length || evenings.length)
@@ -401,6 +419,8 @@
     const mapContext = engine.params();
     mapContext.set('context','search');
     $('to-map').href = `map.html?${mapContext}`;
+    const railHost = $('prog-rail');
+    if (railHost) window.WA.UI.keepFocus(railHost, () => put(railHost, progRail()));
     stickyOffset();
     write();
   };
@@ -428,9 +448,11 @@
       if (window.WA.Toast) window.WA.Toast.show(on ? 'Following this search' : 'Stopped following this search');
       return;
     }
-    if (hit('#result-date')) {
+    const rw = hit('[data-rail-when]');
+    if (rw) { cancelAsk(); state.when = rw.dataset.railWhen; state.day = ''; state.dayTo = ''; engine.override('when'); render(); return; }
+    if (hit('#result-date') || hit('[data-rail-dates]')) {
       cancelAsk();
-      window.WA.DiscoveryControls.openDates(hit('#result-date'), {
+      window.WA.DiscoveryControls.openDates(hit('#result-date') || hit('[data-rail-dates]'), {
         dates:{ when:state.when, date:state.day, to:state.dayTo },
         apply: value => {
           state.when = value.when || 'all'; state.day = value.date || ''; state.dayTo = value.to || '';

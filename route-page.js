@@ -77,8 +77,9 @@
   };
 
   /* ── The walk on the street map, beside its stops (1024 px and wider) ──
-     Numbered like the list; each number opens its stop. A dashed line joins the stops in walking
-     order: it shows the order, not the path. MapLibre is fetched only here, so phones never load it. */
+     Numbered like the list; each number opens its stop. A leg routed along the streets is drawn as the
+     way it goes; any other leg is a dashed line that shows the order, not the path. MapLibre is fetched
+     only here, so phones never load it. */
   const wide = typeof matchMedia === 'function' ? matchMedia('(min-width: 1024px)') : { matches: false, addEventListener() {} };
   let walkMap = null;
   const located = (s) => s.lat != null && s.lng != null && isFinite(s.lat) && isFinite(s.lng);
@@ -89,7 +90,7 @@
     host.hidden = !show;
     if (!show) return;
     const dusk = document.documentElement.dataset.theme === 'dusk';
-    const key = `${route.stops.map(s => `${s.id}@${s.lat},${s.lng}`).join('|')}|${dusk}`;
+    const key = `${route.stops.map(s => `${s.id}@${s.lat},${s.lng}${s.path ? `~${s.path.length}` : ''}`).join('|')}|${dusk}`;
     if (walkMap && walkMap.key === key) return;
     const gl = window.maplibregl;
     if (!gl) {
@@ -104,7 +105,10 @@
     }
     if (walkMap) { walkMap.map.remove(); walkMap = null; }
     host.innerHTML = '<div class="rt-map__canvas"></div>';
-    const lngs = route.stops.map(s => Number(s.lng)), lats = route.stops.map(s => Number(s.lat));
+    const at = (p) => [Number(p.lng), Number(p.lat)];
+    const legs = route.stops.slice(1).map((s, i) => ({ routed: !!s.path, line: s.path ? s.path.map(at) : [at(route.stops[i]), at(s)] }));
+    const every = [...route.stops.map(at), ...legs.flatMap(l => l.line)];
+    const lngs = every.map(c => c[0]), lats = every.map(c => c[1]);
     try {
       const map = new gl.Map({ container: host.firstChild, style: dusk ? './map-style-dusk.json' : './map-style.json',
         bounds: [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], fitBoundsOptions: { padding: 64, maxZoom: 16 },
@@ -116,8 +120,11 @@
       new ResizeObserver(fit).observe(host);
       map.on('load', () => {
         fit();
-        map.addSource('walk', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: route.stops.map(s => [Number(s.lng), Number(s.lat)]) } } });
-        map.addLayer({ id: 'walk', type: 'line', source: 'walk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': accent, 'line-width': 3, 'line-dasharray': [1.2, 1.8] } });
+        const lines = (routed) => ({ type: 'FeatureCollection', features: legs.filter(l => l.routed === routed).map(l => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: l.line } })) });
+        map.addSource('walk-routed', { type: 'geojson', data: lines(true) });
+        map.addSource('walk-order', { type: 'geojson', data: lines(false) });
+        map.addLayer({ id: 'walk-routed', type: 'line', source: 'walk-routed', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': accent, 'line-width': 4, 'line-opacity': .9 } });
+        map.addLayer({ id: 'walk-order', type: 'line', source: 'walk-order', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': accent, 'line-width': 3, 'line-dasharray': [1.2, 1.8] } });
         host.dataset.mapState = 'ready';
       });
       route.stops.forEach((s, i) => {

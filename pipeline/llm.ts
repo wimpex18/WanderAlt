@@ -79,15 +79,28 @@ export function claudeCost(u: ClaudeUsage): { usd: number; prompt: number } {
   return { prompt, usd: k * (u.input_tokens * HAIKU.input + read * HAIKU.cacheRead + write * HAIKU.cacheWrite + u.output_tokens * HAIKU.output) / 1e6 };
 }
 
-/** Our schemas in the form structured outputs accept: every object closed, "string or null" as anyOf. */
+/** JSON Schema keywords Claude's structured outputs accept; anything else (maxItems, minimum,
+ *  maxLength…) is a 400 for the whole request, so it is left out and checked by our own code. */
+const SCHEMA_KEYS = new Set(['type', 'properties', 'required', 'items', 'enum', 'const', 'anyOf', 'allOf', '$ref', '$defs', 'description', 'title', 'format', 'additionalProperties']);
+
+/** Our schemas in the form structured outputs accept: only the keywords it knows, every object
+ *  closed, "string or null" as anyOf with each branch's enum holding only values of its type. */
 export function strictSchema(s: unknown): unknown {
   if (Array.isArray(s)) return s.map(strictSchema);
   if (!s || typeof s !== 'object') return s;
   const o: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(s)) o[k] = k === 'properties' ? Object.fromEntries(Object.entries(v as object).map(([p, d]) => [p, strictSchema(d)])) : strictSchema(v);
+  for (const [k, v] of Object.entries(s)) {
+    if (!SCHEMA_KEYS.has(k)) continue;
+    o[k] = k === 'properties' || k === '$defs' ? Object.fromEntries(Object.entries(v as object).map(([p, d]) => [p, strictSchema(d)])) : strictSchema(v);
+  }
   if (Array.isArray(o.type)) {
-    const { type, description, ...rest } = o;
-    return { ...(description ? { description } : {}), anyOf: (type as string[]).map(t => (t === 'null' ? { type: t } : { type: t, ...rest })) };
+    const { type, description, enum: values, ...rest } = o;
+    const branch = (t: string) => {
+      if (t === 'null') return { type: t };
+      const own = Array.isArray(values) ? values.filter(v => v !== null && (t === 'string' ? typeof v === 'string' : t === 'integer' || t === 'number' ? typeof v === 'number' : true)) : null;
+      return { type: t, ...rest, ...(own ? { enum: own } : {}) };
+    };
+    return { ...(description ? { description } : {}), anyOf: (type as string[]).map(branch) };
   }
   if (o.type === 'object') o.additionalProperties = false;
   return o;

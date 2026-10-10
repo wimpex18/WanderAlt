@@ -11,6 +11,24 @@ test('Haiku 5.5 is billed on the cheap card up to 100,000 prompt tokens, cache i
   assert.ok(Math.abs(over.usd - 5 * (99_000 * 0.10 + 2_000 * 0.01 + 4_000 * 0.50) / 1e6) < 1e-12);
 });
 
+test('only keywords structured outputs accept reach Claude, and a nullable enum keeps its values in its own branch', () => {
+  // The two shapes the API refused on 9 October: an enum with null under ["string","null"] (english.ts)
+  // and maxItems on an array (routes.ts).
+  const out = strictSchema({ type: 'object', properties: {
+    language: { type: ['string', 'null'], enum: ['et', 'en', null], description: 'ISO 639-1' },
+    routes: { type: 'array', maxItems: 3, minItems: 1, items: { type: 'object', properties: { title: { type: 'string', maxLength: 80, pattern: '^.+$' }, n: { type: 'integer', minimum: 1, maximum: 9 } }, required: ['title', 'n'] } },
+  }, required: ['language', 'routes'] }) as any;
+  assert.deepEqual(out.properties.language, { description: 'ISO 639-1', anyOf: [{ type: 'string', enum: ['et', 'en'] }, { type: 'null' }] });
+  assert.equal(out.properties.routes.maxItems, undefined);
+  assert.equal(out.properties.routes.minItems, undefined);
+  assert.deepEqual(out.properties.routes.items.properties.title, { type: 'string' });
+  assert.deepEqual(out.properties.routes.items.properties.n, { type: 'integer' });
+  assert.equal(out.properties.routes.items.additionalProperties, false);
+  const keys = (x: any): string[] => !x || typeof x !== 'object' ? [] : Array.isArray(x) ? x.flatMap(keys)
+    : Object.entries(x).flatMap(([k, v]) => [...(['properties', '$defs'].includes(k) ? [] : [k]), ...(k === 'properties' ? Object.values(v as object).flatMap(keys) : keys(v))]);
+  assert.deepEqual([...new Set(keys(out))].filter(k => !['type', 'properties', 'required', 'items', 'enum', 'anyOf', 'description', 'additionalProperties'].includes(k)), []);
+});
+
 test('schemas reach structured outputs closed, with "string or null" as anyOf', () => {
   const out = strictSchema({ type: 'object', properties: {
     items: { type: 'array', items: { type: 'object', properties: { end: { type: ['string', 'null'], description: 'when it ends' }, kind: { type: 'string', enum: ['gig'] } }, required: ['end', 'kind'] } },

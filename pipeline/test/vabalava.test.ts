@@ -53,3 +53,20 @@ test('a block becomes a theatre candidate in Tallinn time with its own image and
   assert.equal(c.url, item.url);
   assert.ok(c.series_key?.startsWith('vabalava:'));
 });
+
+test('under town tabs, every Tallinn show is kept at its own hall and other towns are left out', async () => {
+  const tabs = readFileSync(new URL('./fixtures/vabalava-tabs.html', import.meta.url), 'utf8');   // the live page, 10 October 2026
+  const at = new Date('2026-10-10T06:00:00Z');
+  const items = await collect(source, at, async () => tabs);
+  const shows = items.map(i => i.payload as { venue: string; title: string; town: string });
+  assert.ok(shows.length >= 3);
+  assert.ok(shows.every(s => s.town === 'Tallinn'));
+  // The co-production at Sakala 3 Teatrimaja is a Tallinn show at its own hall, under its own title.
+  const sakala = shows.find(s => s.venue === 'Sakala 3 Teatrimaja');
+  assert.equal(sakala?.title, 'KUI JUURI RAIUTAKSE…');
+  assert.ok(shows.some(s => s.venue === 'Vaba Lava Black Box Salmes'));
+  for (const s of shows) assert.doesNotMatch(s.venue, /suur saal|tartu|kuressaare|ugala|endla/i);
+  const [c] = extract(items.find(i => (i.payload as { venue: string }).venue === 'Sakala 3 Teatrimaja')!, source);
+  assert.equal(c.venue_name, 'Sakala 3 Teatrimaja');
+  assert.equal(c.address, null, 'no other hall\'s address is stamped on it');
+});

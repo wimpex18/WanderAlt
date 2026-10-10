@@ -9,7 +9,7 @@
 // Walking times start as the estimate (walking.ts); the legs of the walks
 // worth keeping are then routed along the streets and the day composed again
 // with those minutes, so every rule holds on the routed times. A routed leg
-// keeps its minutes and street metres on the stop it leads to.
+// keeps its minutes, street metres and path (an encoded polyline) on the stop it leads to.
 //
 //   node pipeline/routes.ts             compose and write
 //   node pipeline/routes.ts --dry-run   compose and print
@@ -23,13 +23,14 @@ import { hoursAt } from './hours.ts';
 import { TZ, tallinnDay, tallinnToIso } from './time.ts';
 import { EVENT_KINDS } from './types.ts';
 import { nameKey } from './util.ts';
-import { FootRouter, estimateMinutes, lineMetres, streetMinutes } from './walking.ts';
+import { FootRouter, decodePolyline, encodePolyline, estimateMinutes, lineMetres, streetMinutes } from './walking.ts';
 
 export interface RouteEvent { id: string; title: string; title_en: string | null; kind: string | null; starts_at: string; ends_at: string | null; has_time: boolean | null; place_id: string | null; flag: string | null }
 export interface RoutePlace { id: string; name: string; kind: string | null; lat: number | null; lng: number | null; opening_hours: string | null; pick_note: string | null; neighborhood: string | null }
-/** `walk` (minutes from the stop before), `metres` (along the streets) and `routed` are set only on a leg
- *  the foot router measured; the page prefers them to its own estimate when the stored walk still matches. */
-export interface RouteStop { type: 'place' | 'event'; id: string; minute: number; walk?: number; metres?: number; routed?: true }
+/** `walk` (minutes from the stop before), `metres` (along the streets), `path` (the way it goes, an encoded
+ *  polyline) and `routed` are set only on a leg the foot router measured; the page prefers them to its own
+ *  estimate, and draws the path, when the stored walk still matches. */
+export interface RouteStop { type: 'place' | 'event'; id: string; minute: number; walk?: number; metres?: number; path?: string; routed?: true }
 export interface RouteCandidate { id: string; day: string; area: string; score: number; stops: RouteStop[]; walkMin: number }
 export interface RouteRow { id: string; city: string; day: string; area: string; title: string; blurb: string | null; stops: RouteStop[]; score: number; engine: string }
 
@@ -263,9 +264,9 @@ export function finalise(day: string, city: string, cands: RouteCandidate[], ans
 /** Measure the legs of the shortlisted walks on foot, then compose the days again on those minutes, so a
  *  walk the streets make too long for its limits, its times or a stop's hours gives way to another. A new
  *  walk brings new legs, so this goes round up to three times; a leg the router cannot measure keeps the
- *  estimate. `streets` gathers the street metres between two places ("from>to"). */
+ *  estimate. `streets` gathers the street metres between two places ("from>to"), `paths` their paths. */
 export async function routeLegs(lists: Map<string, RouteCandidate[]>, placeOf: (s: RouteStop) => RoutePlace | undefined,
-  router: FootRouter, streets: Map<string, number>, recompose: () => void): Promise<void> {
+  router: FootRouter, streets: Map<string, number>, recompose: () => void, paths = new Map<string, string>()): Promise<void> {
   const tried = new Set<string>();
   for (let round = 0; round < 3; round++) {
     let asked = false;
@@ -278,8 +279,12 @@ export async function routeLegs(lists: Map<string, RouteCandidate[]>, placeOf: (
       if (!router.open) break;
       tried.add(key);
       asked = true;
-      const legs = await router.legs(ps.map(p => ({ lat: p.lat as number, lng: p.lng as number })));
-      legs?.forEach((m, i) => { if (m != null) streets.set(`${ps[i].id}>${ps[i + 1].id}`, m); });
+      const legs = await router.route(ps.map(p => ({ lat: p.lat as number, lng: p.lng as number })));
+      legs?.forEach((l, i) => {
+        if (l.metres == null) return;
+        streets.set(`${ps[i].id}>${ps[i + 1].id}`, l.metres);
+        if (l.path) paths.set(`${ps[i].id}>${ps[i + 1].id}`, l.path);
+      });
     }
     if (asked) recompose();
     if (!asked || !router.open) return;
@@ -318,9 +323,19 @@ export async function composeRoutes(db: Db, city: string, models: Models | null,
   const compose = (day: string) => shortlist(candidatesForDay(day, events, id => placeById.get(id), places, now, along));
   const lists = new Map(days.map(day => [day, compose(day)] as const));
   const router = opts.router === undefined ? new FootRouter() : opts.router;
+  const placeOf = (s: RouteStop) => placeById.get(s.type === 'place' ? s.id : eventById.get(s.id)?.place_id ?? '');
   if (router) {
-    await routeLegs(lists, s => placeById.get(s.type === 'place' ? s.id : eventById.get(s.id)?.place_id ?? ''), router, streets, () => {
+    const paths = new Map<string, string>();
+    await routeLegs(lists, placeOf, router, streets, () => {
       for (const day of days) lists.set(day, compose(day));
+    }, paths);
+    // Each routed leg carries its path, read backwards when it was measured the other way.
+    for (const c of [...lists.values()].flat()) c.stops.forEach((s, i) => {
+      const a = i && s.routed ? placeOf(c.stops[i - 1]) : undefined, b = a ? placeOf(s) : undefined;
+      if (!a || !b) return;
+      const there = paths.get(`${a.id}>${b.id}`), back = paths.get(`${b.id}>${a.id}`);
+      const path = there ?? (back ? encodePolyline(decodePolyline(back).reverse()) : undefined);
+      if (path) s.path = path;
     });
     const legs = [...lists.values()].flat().flatMap(c => c.stops.slice(1));
     console.log(`[routes] ${legs.filter(s => s.routed).length} of ${legs.length} legs along the streets (${router.requests} foot routes asked, ${router.failures} failed)`);
