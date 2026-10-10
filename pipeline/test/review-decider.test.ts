@@ -51,10 +51,17 @@ test('a date and time count as stated only together, next to the show\'s name', 
   assert.equal(statesStart('Altairea Takeover 25.10 kell 20:00', 'Altairea Takeover', start, true, tz), null, 'another day');
   assert.equal(statesStart('24.10 kell 20:00 Funk Jam', 'Altairea Takeover', start, true, tz), null, 'another show');
   assert.equal(statesStart('Altairea Takeover 24.10 kell 21:00', 'Altairea Takeover', start, true, tz), null, 'another time');
+  assert.equal(statesStart('Altairea Takeover 24.10.2025 kell 20:00', 'Altairea Takeover', start, true, tz), null, 'last year');
+  assert.equal(statesStart('Altairea Takeover, October 24, 2025 at 8 PM', 'Altairea Takeover', start, true, tz), null, 'last year, in words');
+  assert.ok(statesStart('Altairea Takeover 24.10.2026 kell 20:00', 'Altairea Takeover', start, true, tz), 'this year');
+  assert.ok(statesStart('Altairea Takeover 24.10.26 kell 20:00', 'Altairea Takeover', start, true, tz), 'this year, two digits');
   assert.ok(statesStart('Juba 22. oktoobril algab Üle Heli festival', 'ÜLE HELI FESTIVAL 2026', '2026-10-21T21:00:00.000Z', false, tz), 'a date-only listing needs only its date');
   assert.equal(statesStart('5 марта Üle Heli festival', 'ÜLE HELI FESTIVAL 2026', '2026-05-04T21:00:00.000Z', false, tz), null, 'March is not May');
   assert.equal(statesStart('Juba 5. detsembril kohtume Põhjalas jõuluturul', 'JÕULUD & TURG', '2026-12-04T22:00:00.000Z', false, tz), null, 'a passage that does not name the show');
   assert.equal(statesStart('Kokandus 20.10 15:00', 'Kokandus', '2026-10-20T12:00:00.000Z', true, tz)?.includes('15:00'), true);
+  // A venue's own typography: "FUNK 'N'SOUL JAM" (Philly Joe's programme) is "Funk ‘n’ Soul Jam".
+  assert.ok(statesStart("FUNK 'N'SOUL JAM\nTuesday, October 13, 2026\n8:00 PM\n11:00 PM\n20:00\n23:00", 'Funk ‘n’ Soul Jam', '2026-10-13T17:00:00.000Z', true, tz));
+  assert.equal(statesStart("FUNK 'N'SOUL JAM\nTuesday, November 14, 2023\n20:00", 'Funk ‘n’ Soul Jam', '2026-10-13T17:00:00.000Z', true, tz), null, 'another year\'s date');
 });
 
 test('a poster\'s date is confirmed by the caption, another source\'s own record or the venue\'s site, and a show listed already is not listed twice', () => {
@@ -208,4 +215,38 @@ test('a second look takes a listing down only on a clear reject; a split or "unc
   const unclear = fit('reject', { reason: 'unclear', votes: ['reject:unclear', 'reject:unclear'] });
   assert.equal(audited(r, settle(r, unclear, null, 0), unclear).status, 'published');
   assert.equal(noteFor(kept), 'auto publish: kept after a second look');
+});
+
+test('a poster listing is searched for every few days, at most three times, and only pages that are not social or ours count', async () => {
+  const { searchDue, foundPages, posterTask, SEARCHES } = await import('../review-decider.ts');
+  const now = Date.parse('2026-10-11T06:00:00Z');
+  const at = (days: number) => ({ evidence: { date: { web: { searched_at: new Date(now - days * 86_400_000).toISOString() } } } });
+  assert.equal(searchDue([], now), true);
+  assert.equal(searchDue([at(1)], now), false, 'searched yesterday');
+  assert.equal(searchDue([at(4)], now), true);
+  assert.equal(searchDue(Array.from({ length: SEARCHES }, (_, i) => at(10 + i * 4)), now), false, 'searched enough');
+  assert.equal(searchDue([{ evidence: {} }], now), true, 'a decision without a search');
+
+  const got: string[] = [];
+  const pages = { get: async (u: string) => { got.push(u); return { url: u, host: new URL(u).hostname, html: '', text: `page ${u}` }; } } as any;
+  const out = await foundPages(pages, [
+    { url: 'https://www.instagram.com/p/x/', title: null, cited: null },
+    { url: 'https://wanderalt.app/detail.html?id=ev_1', title: null, cited: null },
+    { url: 'https://m.facebook.com/events/1', title: null, cited: null },
+    { url: 'https://www.phillyjoes.com/programme', title: null, cited: null },
+  ]);
+  assert.deepEqual(got, ['https://www.phillyjoes.com/programme']);
+  assert.equal(out[0].by, 'a page web search found (phillyjoes.com)');
+
+  const task = posterTask({ title: 'Funk ‘n’ Soul Jam', venue_name: "Philly Joe's Jazz Club", starts_at: '2026-10-13T17:00:00.000Z', has_time: true }, tallinn);
+  assert.match(task, /Funk ‘n’ Soul Jam" at Philly Joe's Jazz Club, Tallinn, believed to be on Tuesday,? 13 October 2026( at)?,? 20:00/);
+});
+
+test('a page a web search found confirms a poster\'s date like the venue\'s own site, and says so', () => {
+  const r = row({ title: 'Funk ‘n’ Soul Jam', starts_at: '2026-10-13T17:00:00.000Z', status_note: POSTER_NOTE });
+  const check = checkPosterDate(r, tz, { caption: null, others: [], twins: [], site: [{ url: 'https://www.phillyjoes.com/programme', by: 'a page web search found (phillyjoes.com)',
+    text: "FUNK 'N'SOUL JAM (/programme/funknsouljam-131026)\nTuesday, October 13, 2026\n8:00 PM\n11:00 PM\n20:00\n23:00" }] });
+  assert.equal(check.confirmed, true);
+  assert.equal(check.by, 'a page web search found (phillyjoes.com)');
+  assert.equal(settle(r, fit('publish', { quote: 'Funk ‘n’ Soul Jam' }), check, 0).why.endsWith('Date and time confirmed by a page web search found (phillyjoes.com).'), true);
 });

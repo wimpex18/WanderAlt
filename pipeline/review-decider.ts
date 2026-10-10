@@ -8,10 +8,12 @@
 //     A listing a rule held that has no checked answer after three runs is rejected on the rule's own
 //     match, which is in its title or venue by construction.
 //   - A date and time read from a poster are published only when the post's own text, another source's
-//     record of the same show, or a separate listing of it states the same date and time. Until then the
-//     listing stays out ('auto reject: date only on a poster') and is looked at again each run while it is
-//     upcoming; a vision model's reading of a poster is one witness, and a wrong time sends readers to a
-//     closed door. A show the guide already lists under another row is not listed twice.
+//     record of the same show, the venue's own programme, or a page web search finds (the show's ticket
+//     page, a programme) states the same date and time next to the show's name, checked on the page we
+//     fetch ourselves. Until then the listing stays out ('auto reject: date only on a poster') and is looked
+//     at again each run while it is upcoming, with a web search at most every few days; a model's reading
+//     of a poster is one witness, and a wrong time sends readers to a closed door. A show the guide
+//     already lists under another row is not listed twice.
 //
 // Notes start "auto publish:" or "auto reject:". A person's decision (a note starting "manual") is never
 // read here, and apply_review_decision refuses to change one, so review.html always wins. Nothing is
@@ -22,7 +24,7 @@
 
 import type { Db } from './db.ts';
 import { chunks, inList } from './db.ts';
-import { Models, claudeLane } from './llm.ts';
+import { Models, claudeLane, searchWeb, type Found } from './llm.ts';
 import type { Candidate, RawItem, Source } from './types.ts';
 import { Pages, plain, quoteIn, windowsAround } from './place-evidence.ts';
 import { overlap, sameTitle } from './dedupe.ts';
@@ -134,7 +136,16 @@ function dateSpans(text: string, w: { y: number; m: number; d: number }): [numbe
     new RegExp(`${L}(?:${names})\\.?\\s+${dd}${R}`, 'giu'),
     new RegExp(`${L}${w.y}-${String(w.m).padStart(2, '0')}-${String(w.d).padStart(2, '0')}${R}`, 'gu'),
   ];
-  return res.flatMap(re => [...text.matchAll(re)].map(x => [x.index!, x.index! + x[0].length] as [number, number]));
+  return res.flatMap(re => [...text.matchAll(re)].map(x => [x.index!, x.index! + x[0].length] as [number, number]))
+    .filter(([a, z]) => (statedYear(text, a, z) ?? w.y) === w.y);
+}
+
+/** The year written with a date ("24.10.2025", "October 24, 2025", "24. oktoober 2025"), or null: a page
+ *  found later can be last year's programme. */
+function statedYear(text: string, a: number, z: number): number | null {
+  const span = text.slice(a, z);
+  const m = /^\d{1,2}[./]\d{1,2}[./](\d{4}|\d{2})$/.exec(span) ?? /^(\d{4})-/.exec(span) ?? /^,?\s*(\d{4})(?![\d:.])/.exec(text.slice(z, z + 8));
+  return m ? (m[1].length === 2 ? 2000 + Number(m[1]) : Number(m[1])) : null;
 }
 
 /** Spans that state this time of day: "20:00", "20.00", "kell 20", "kl 20", "at 8pm", "8 PM", "20h", "в 20:00". */
@@ -162,7 +173,8 @@ export function statesStart(text: string | null | undefined, title: string, iso:
     const near = text.slice(from, to);
     const times = hasTime ? timeSpans(near, w).filter(([x, y]) => x + from >= b || y + from <= a) : [];
     if (hasTime && !times.length) continue;
-    const words = new Set(nameKey(near).split(' '));
+    // Apostrophes join a word ("Joe's") or part two ("FUNK 'N'SOUL JAM"): the passage is read both ways.
+    const words = new Set([...nameKey(near).split(' '), ...nameKey(near.replace(/['’‘`]/g, ' ')).split(' ')]);
     if (want.filter(x => words.has(x)).length < Math.max(1, need)) continue;
     const ends = [a, b, ...times.flatMap(([x, y]) => [x + from, y + from])];
     return text.slice(Math.max(from, Math.min(...ends) - 60), Math.min(to, Math.max(...ends) + 60)).trim();
@@ -280,7 +292,11 @@ const remap = (m: Map<number, Fit>, to: number[]) => new Map([...m].map(([k, v])
 
 // ── Dates read from posters ───────────────────────────────────────
 
-export interface DateCheck { confirmed: boolean; by: string | null; quote: string | null; quote_in: Field | null; url?: string | null; twin?: { id: string; status: string } | null }
+export interface DateCheck {
+  confirmed: boolean; by: string | null; quote: string | null; quote_in: Field | null; url?: string | null; twin?: { id: string; status: string } | null;
+  /** A web search this run: when, and the pages it offered. */
+  web?: { searched_at: string; urls: string[] } | null;
+}
 
 interface SourceRow { id: string; label: string; kind: Source['kind']; curated: boolean; config: Record<string, unknown>; url: string; handle: string; city: string }
 interface Link { event_id: string; source_id: string; raw_item_id: number | null; url: string | null }
@@ -294,7 +310,7 @@ const sameDay = (a: string, b: string, tz: string) => { const x = wall(a, tz), y
  *  on that day, from another item and not itself a poster reading, carries the show instead: listed already. */
 export function checkPosterDate(row: Held, tz: string, ev: {
   caption: string | null; others: { source: SourceRow; raw: Raw | null; candidates: Candidate[] | null }[]; twins: Other[];
-  site?: { url: string; text: string }[];
+  site?: { url: string; text: string; by?: string }[];
 }): DateCheck {
   const caption = statesStart(ev.caption, row.title, row.starts_at, row.has_time, tz);
   const twinOf = (o: Other) => o.id !== row.id && sameDay(o.starts_at, row.starts_at, tz) && overlap(o.title, row.title) >= 0.5 && !String(o.status_note ?? '').startsWith('poster');
@@ -311,7 +327,7 @@ export function checkPosterDate(row: Held, tz: string, ev: {
   }
   for (const p of ev.site ?? []) {
     const text = statesStart(p.text, row.title, row.starts_at, row.has_time, tz);
-    if (text) return { confirmed: true, by: `the venue's own site (${hostName(p.url)})`, quote: text, quote_in: 'source', url: p.url };
+    if (text) return { confirmed: true, by: p.by ?? `the venue's own site (${hostName(p.url)})`, quote: text, quote_in: 'source', url: p.url };
   }
   return { confirmed: false, by: null, quote: null, quote_in: null };
 }
@@ -343,6 +359,36 @@ export async function venueShowPages(pages: Pages, website: string | null | unde
   const own = [...found].sort((a, b) => b[1] - a[1]).slice(0, 2);
   const out: { url: string; text: string }[] = [];
   for (const [u] of own) { const p = await pages.get(u); if (p && hostName(p.url) === hostName(home.url)) out.push({ url: p.url, text: p.text }); }
+  return out;
+}
+
+/** Social sites a search for a poster's date leaves out: the post's own platform is not a second witness. */
+export const SOCIAL_DOMAINS = ['instagram.com', 'facebook.com', 'threads.net', 'threads.com'];
+/** Days between web searches for one listing, and searches in all. */
+export const SEARCH_EVERY_DAYS = 3, SEARCHES = 3;
+
+/** A web search is due for a poster listing when none ran in the last few days and it has had fewer than
+ *  SEARCHES: a ticket page can appear later, but a show nobody else lists is not searched for ever. */
+export function searchDue(past: { evidence: Record<string, unknown> }[], now: number): boolean {
+  const runs = past.map(d => (d.evidence?.date as DateCheck | undefined)?.web?.searched_at).filter((t): t is string => !!t);
+  return runs.length < SEARCHES && runs.every(t => now - Date.parse(t) >= SEARCH_EVERY_DAYS * 86_400_000);
+}
+
+/** What the search is asked: the show, its place and the start the poster gave. */
+export function posterTask(r: Pick<Held, 'title' | 'venue_name' | 'starts_at' | 'has_time'>, city: CityProfile): string {
+  const when = new Intl.DateTimeFormat('en-GB', { timeZone: city.tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    ...(r.has_time ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } : {}) }).format(new Date(r.starts_at));
+  return `Find a page, other than social media, that states the date${r.has_time ? ' and start time' : ''} of this show: "${r.title}"${r.venue_name ? ` at ${r.venue_name}` : ''}, ${city.name}, believed to be on ${when}. The venue's own programme or a ticket page is best.`;
+}
+
+/** The pages a search offered, fetched by us, cited ones first: never a social site or the guide itself. */
+export async function foundPages(pages: Pages, found: Found[], max = 5): Promise<{ url: string; text: string; by: string }[]> {
+  const ok = (u: string) => ![...SOCIAL_DOMAINS, 'wanderalt.app'].some(d => hostName(u) === d || hostName(u).endsWith(`.${d}`));
+  const out: { url: string; text: string; by: string }[] = [];
+  for (const f of found.filter(f => ok(f.url)).slice(0, max)) {
+    const p = await pages.get(f.url);
+    if (p && ok(p.url)) out.push({ url: p.url, text: p.text, by: `a page web search found (${hostName(p.url)})` });
+  }
   return out;
 }
 
@@ -385,7 +431,7 @@ export function settle(row: Held, fit: Fit | null, date: DateCheck | null, tries
   if (fit?.decision === 'publish') {
     if (held.kind === 'poster' && !date?.confirmed) {
       return { ...base, status: 'rejected', reason: 'poster-date', quote: fit.quote, quote_in: fit.quote_in,
-        why: `It fits, but its ${row.has_time ? 'date and time are' : 'date is'} stated only on a poster; it is published once its own text or another source states them.`, evidence: { date, ...fitEvidence } };
+        why: `It fits, but its ${row.has_time ? 'date and time are' : 'date is'} stated only on a poster; it is published once its own text or another source states them.${date?.web ? ` No page a web search found states ${row.has_time ? 'them' : 'it'} yet.` : ''}`, evidence: { date, ...fitEvidence } };
     }
     return { ...base, status: 'published', reason: 'fits', quote: fit.quote, quote_in: fit.quote_in,
       why: date?.confirmed ? `${fit.why} Date and time confirmed by ${date.by}.` : fit.why, evidence: { ...fitEvidence, ...(date ? { date } : {}) } };
@@ -440,6 +486,10 @@ export interface DecideOptions {
   reread?: (item: RawItem, source: Source) => Promise<Candidate[] | null>;
   pages?: Pages;
   now?: number;
+  /** Web search for a second witness of a poster's date; null turns it off (an evaluation never searches). */
+  search?: typeof searchWeb | null;
+  /** Poster listings searched for per run, one search each (default 5; $0.01 a search plus its tokens). */
+  searches?: number;
 }
 
 const notManual = 'or=(status_note.is.null,status_note.not.like.manual*)';
@@ -540,6 +590,10 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
   // Poster dates: the caption, the other sources, and other rows of the show at the same place.
   const posterRows = rows.filter(r => heldBy(r.status_note).kind === 'poster' || r.status_note === `auto reject: ${REASONS['poster-date']}`);
   const dates = new Map<string, DateCheck>();
+  const search = opts.search === undefined ? (opts.evaluate ? null : searchWeb) : opts.search;
+  let searchesLeft = opts.searches ?? 5;
+  const foundAt = new Map<string, { url: string; text: string; by: string }[]>();
+  const searchedShows = new Map<string, NonNullable<DateCheck['web']>>();
   for (const r of posterRows) {
     const own = linksOf(r.id), ig = own.find(l => sources.get(l.source_id)?.kind === 'instagram');
     const post = ig?.raw_item_id != null ? raws.get(ig.raw_item_id) : undefined;
@@ -559,7 +613,27 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
     const sameItem = new Set(ig?.raw_item_id != null ? links.filter(l => l.raw_item_id === ig.raw_item_id).map(l => l.event_id) : []);
     const sites = [...new Set([r.place_id, typeof post?.payload.place_id === 'string' ? post.payload.place_id : null].map(id => (id ? places.get(id)?.website : null)).filter((u): u is string => !!u))];
     const site = (await Promise.all(sites.map(u => venueShowPages(pages, u, r.title)))).flat();
-    dates.set(r.id, checkPosterDate(r, tz, { caption, others, twins: twins.filter(o => !sameItem.has(o.id)), site }));
+    const ev = { caption, others, twins: twins.filter(o => !sameItem.has(o.id)), site };
+    // Pages a search found this run for another listing at this place (a venue's programme lists many
+    // shows) are read first: they cost nothing more.
+    const at = r.place_id ?? nameKey(r.venue_name ?? '');
+    ev.site = [...site, ...(foundAt.get(at) ?? [])];
+    let check = checkPosterDate(r, tz, ev);
+    // Nothing we read states it: pages a web search finds, fetched and checked like the venue's own. One
+    // search a show: its other dates were checked on the same pages, and the search is recorded for them.
+    const show = `${nameKey(r.title)}|${at}`;
+    if (!check.confirmed && !check.twin && searchedShows.has(show) && searchDue(past.get(r.id) ?? [], now)) check = { ...check, web: searchedShows.get(show) };
+    else if (!check.confirmed && !check.twin && search && searchesLeft > 0 && searchDue(past.get(r.id) ?? [], now)) {
+      searchesLeft--;
+      const found = await search(posterTask(r, city), { city, maxUses: 1, blocked: SOCIAL_DOMAINS });
+      const fresh = await foundPages(pages, found);
+      foundAt.set(at, [...(foundAt.get(at) ?? []), ...fresh]);
+      ev.site = [...ev.site, ...fresh];
+      const web = { searched_at: new Date(now).toISOString(), urls: found.map(f => f.url).slice(0, 8) };
+      searchedShows.set(show, web);
+      check = { ...checkPosterDate(r, tz, ev), web };
+    }
+    dates.set(r.id, check);
   }
 
   // Fit: one question per show (its title, venue and what held it), with the own words of all its dates; a
@@ -629,9 +703,9 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
   const decisions: Decision[] = [];
   for (const { r, d } of planned.sort((a, b) => a.r.starts_at.localeCompare(b.r.starts_at) || a.r.id.localeCompare(b.r.id))) {
     const decided = !!d.quote, note = decided ? noteFor(d) : r.status_note;
-    // A revisit that found nothing new writes nothing; a held or audited row that waits is recorded, which
-    // counts its tries.
-    if (r.status === 'rejected' && (!decided || (d.status === r.status && note === r.status_note))) continue;
+    // A revisit that found nothing new writes nothing, unless it searched the web (the record spaces the
+    // searches out); a held or audited row that waits is recorded, which counts its tries.
+    if (r.status === 'rejected' && !dates.get(r.id)?.web && (!decided || (d.status === r.status && note === r.status_note))) continue;
     const ask = asks.find(a => a.ids.includes(r.id));
     if (ask?.page_url) d.evidence.page = ask.page_url;
     decisions.push(d);

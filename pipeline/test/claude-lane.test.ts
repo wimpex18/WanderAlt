@@ -148,3 +148,43 @@ test('a poster is read by Haiku 5.5 from the image, at low effort, on the run\'s
     if (saved) process.env.ANTHROPIC_API_KEY = saved; else delete process.env.ANTHROPIC_API_KEY;
   }
 });
+
+test('web search finds pages, cited ones first, never the guide itself, and each search counts against the budget', async () => {
+  const { searchWeb, HAIKU } = await import('../llm.ts');
+  const saved = process.env.ANTHROPIC_API_KEY;
+  process.env.ANTHROPIC_API_KEY = 'test-key';
+  const sent: any[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: unknown, init?: { body?: string }) => {
+    assert.match(String(url), /^https:\/\/api\.anthropic\.com\/v1\/messages/);
+    sent.push(JSON.parse(init!.body!));
+    return new Response(JSON.stringify({ id: 'msg_3', type: 'message', role: 'assistant', model: 'claude-haiku-5-5', stop_reason: 'end_turn', stop_sequence: null,
+      content: [
+        { type: 'server_tool_use', id: 'srvtoolu_1', name: 'web_search', input: { query: 'Jazzliit Philly Joe 16 October' } },
+        { type: 'web_search_tool_result', tool_use_id: 'srvtoolu_1', content: [
+          { type: 'web_search_result', url: 'https://piletikeskus.ee/et/e/vt9s8h', title: 'Liina Tralla', encrypted_content: 'x', page_age: null },
+          { type: 'web_search_result', url: 'https://www.phillyjoes.com/programme', title: 'Programme', encrypted_content: 'y', page_age: null },
+        ] },
+        { type: 'text', text: 'It is on 16 October at 20:00.', citations: [{ type: 'web_search_result_location', url: 'https://www.phillyjoes.com/programme', title: 'Programme', encrypted_index: 'z', cited_text: 'Oct 16 8:00 PM 20:00' }] },
+      ],
+      usage: { input_tokens: 20_000, output_tokens: 900, server_tool_use: { web_search_requests: 2 } } }), { headers: { 'content-type': 'application/json' } });
+  }) as typeof fetch;
+  const before = structuredClone(usage.claude);
+  try {
+    const found = await searchWeb('Find the show', { city: CITIES.tallinn, maxUses: 2, blocked: ['instagram.com'] });
+    assert.deepEqual(found.map(f => f.url), ['https://www.phillyjoes.com/programme', 'https://piletikeskus.ee/et/e/vt9s8h']);
+    assert.equal(found[0].cited, 'Oct 16 8:00 PM 20:00');
+    const tool = sent[0].tools[0];
+    assert.equal(tool.type, 'web_search_20250305');
+    assert.equal(tool.max_uses, 2);
+    assert.deepEqual(tool.blocked_domains, ['wanderalt.app', 'instagram.com']);
+    assert.equal(tool.user_location.country, undefined, 'the search tool refuses EE');
+    assert.match(sent[0].system, /The current date is \d{4}-\d{2}-\d{2}/);
+    assert.equal(usage.claude.searches - before.searches, 2);
+    const tokens = (20_000 * HAIKU.input + 900 * HAIKU.output) / 1e6;
+    assert.ok(Math.abs(usage.claude.usd - before.usd - (tokens + 2 * HAIKU.search)) < 1e-9);
+  } finally {
+    globalThis.fetch = real; Object.assign(usage.claude, before);
+    if (saved) process.env.ANTHROPIC_API_KEY = saved; else delete process.env.ANTHROPIC_API_KEY;
+  }
+});

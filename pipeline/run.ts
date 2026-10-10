@@ -816,7 +816,7 @@ async function main() {
   if (!flag('--no-decide')) {
     try {
       // ...and a second look at listings published on a model's fit score alone, a few dozen a run.
-      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels), audit: Number(opt('--audit') ?? 40) });
+      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels), audit: Number(opt('--audit') ?? 40), search: flag('--no-web-search') ? null : undefined });
       const n = (s: string) => out.filter(d => d.status === s && d.quote).length;
       if (out.length) log(`held listings: ${n('published')} published, ${n('rejected')} rejected, ${out.filter(d => !d.quote).length} waiting for a checked answer`);
     } catch (e) { log(`review decisions failed: ${(e as Error).message}`); }
@@ -847,7 +847,7 @@ async function main() {
   // places are one. A few each run, after every place write, so nothing written here is overwritten.
   if (!flag('--no-place-checks')) {
     try {
-      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8) });
+      const answers = await checkPlaces(db, CITY, placeModels, { max: Number(opt('--place-checks') ?? 8), search: flag('--no-web-search') ? null : undefined });
       if (answers.length) log(`place checks: ${answers.filter(a => a.answer).length} answered, ${answers.filter(a => !a.answer).length} waiting for more evidence`);
     } catch (e) { log(`place checks failed: ${(e as Error).message}`); }
   }
@@ -868,7 +868,7 @@ async function main() {
   if (perSource.size) log(`model calls by source: ${[...perSource].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(', ')}`);
   log(`wrote ${fresh.length} new events, refreshed ${existing.size}; ${current.calls()} model calls`);
   const c = usage.claude;
-  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
+  if (c.requests) log(`Claude: ${c.requests} requests, ${c.input} input tokens (${c.cacheRead} read from cache), ${c.output} output${c.searches ? `, ${c.searches} web searches` : ''}, $${c.usd.toFixed(4)}${c.overLimit ? `; ${c.overLimit} over 100,000 prompt tokens` : ''}`);
   if (runId != null) {
     await db.patch(`pipeline_runs?id=eq.${runId}`, {
       finished_at: new Date().toISOString(), claude_usd: usage.claude.usd, model_calls: current.calls(),
