@@ -84,7 +84,7 @@ function programme(search = '', venues: any[] = []) {
   const listeners = new Map<string, any>(), elements = new Map<string, any>(), timers = new Map<number, () => void>();
   let timerId = 0, release!: (p: any) => void;
   const list = [{ kind: 'film', free: true, eventLanguages: ['en'], priceMin: 0 }, { kind: 'gig', free: false, eventLanguages: [], priceMin: 20 }];
-  const WA: any = { UI: { esc: (s: any) => String(s ?? '') }, Icon: () => '', Picto: { kind: () => '' },
+  const WA: any = { UI: { esc: (s: any) => String(s ?? ''), keepFocus: (_host: any, draw: () => void) => draw() }, Icon: () => '', Picto: { kind: () => '' },
     R: { previousVisit: () => null, live: () => list, real: () => true, matches: (_: any, word: string) => word === 'jazz', areaOf: (v: any) => v.area || '', AREA_LIST: ['Kalamaja','Old Town'], isFree: (e: any) => e.free,
       kindLabel: (s: string) => s, dayName: () => '', dateShort: (s:string) => s, dow: () => '', dom: () => '', isFollowed: () => false,
       openState: (v: any) => ({ open: v.open }) },

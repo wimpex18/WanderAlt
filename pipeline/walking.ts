@@ -3,7 +3,8 @@
 // footways by the FOSSGIS OSRM server (routing.openstreetmap.de, foot profile), so a stored walk
 // reads like a map app's. Its usage policy asks for an identified client, at most one request a
 // second and no bulk use: this asks once per walk, a few dozen times a run at most, and any
-// failure leaves the estimate.
+// failure leaves the estimate. Each leg also keeps the path it found, simplified to a few metres and
+// encoded as a polyline (precision 6), so a page can draw the walk along the streets.
 
 import { UA, sleep } from './util.ts';
 
@@ -36,6 +37,53 @@ export interface RouterOptions {
   clock?: () => number;
 }
 
+// ── Paths ─────────────────────────────────────────────────────
+
+/** Google's encoded polyline at precision 6, as OSRM writes it with geometries=polyline6. */
+export function decodePolyline(s: string, precision = 6): Point[] {
+  const f = 10 ** precision, out: Point[] = [];
+  let i = 0, lat = 0, lng = 0;
+  const next = () => {
+    let shift = 0, result = 0, b: number;
+    do { b = s.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20 && i < s.length + 1);
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+  while (i < s.length) { lat += next(); lng += next(); out.push({ lat: lat / f, lng: lng / f }); }
+  return out;
+}
+export function encodePolyline(points: Point[], precision = 6): string {
+  const f = 10 ** precision;
+  let out = '', pLat = 0, pLng = 0;
+  const put = (v: number) => { let x = v < 0 ? ~(v << 1) : v << 1; while (x >= 0x20) { out += String.fromCharCode((0x20 | (x & 0x1f)) + 63); x >>= 5; } out += String.fromCharCode(x + 63); };
+  for (const p of points) {
+    const lat = Math.round(p.lat * f), lng = Math.round(p.lng * f);
+    put(lat - pLat); put(lng - pLng); pLat = lat; pLng = lng;
+  }
+  return out;
+}
+/** Fewer points along the same line: Douglas–Peucker within `tolerance` metres, ends kept. */
+export function simplify(points: Point[], tolerance = 4): Point[] {
+  if (points.length < 3) return points;
+  const k = Math.cos(points[0].lat * Math.PI / 180), m = 111_320;
+  const off = (p: Point, a: Point, b: Point) => {
+    const ax = a.lng * k * m, ay = a.lat * m, bx = b.lng * k * m - ax, by = b.lat * m - ay, px = p.lng * k * m - ax, py = p.lat * m - ay;
+    const len = bx * bx + by * by, t = len ? Math.max(0, Math.min(1, (px * bx + py * by) / len)) : 0;
+    return Math.hypot(px - t * bx, py - t * by);
+  };
+  const keep = new Array(points.length).fill(false);
+  keep[0] = keep[points.length - 1] = true;
+  const stack: [number, number][] = [[0, points.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop()!;
+    let far = -1, at = -1;
+    for (let i = a + 1; i < b; i++) { const d = off(points[i], points[a], points[b]); if (d > far) { far = d; at = i; } }
+    if (far > tolerance) { keep[at] = true; stack.push([a, at], [at, b]); }
+  }
+  return points.filter((_, i) => keep[i]);
+}
+
+export interface Leg { metres: number | null; path: string | null }
+
 /** Street metres for each leg of a walk, from a foot router, or null where it cannot say. */
 export class FootRouter {
   requests = 0;
@@ -49,7 +97,7 @@ export class FootRouter {
   private readonly clock: () => number;
   private last = -Infinity;
   private failedInARow = 0;
-  private readonly seen = new Map<string, (number | null)[] | null>();
+  private readonly seen = new Map<string, Leg[] | null>();
 
   constructor(o: RouterOptions = {}) {
     this.cap = o.cap ?? 40;
@@ -68,6 +116,11 @@ export class FootRouter {
    *  is not asked or does not answer, and null for one leg whose answer is not believable (shorter than
    *  the straight line allows, or a detour of several times it: a point snapped to the wrong street). */
   async legs(points: Point[]): Promise<(number | null)[] | null> {
+    return (await this.route(points))?.map(l => l.metres) ?? null;
+  }
+
+  /** Each leg's street metres and simplified path; a leg whose metres are not believable has neither. */
+  async route(points: Point[]): Promise<Leg[] | null> {
     if (points.length < 2 || points.some(p => !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) return null;
     const coords = points.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
     if (this.seen.has(coords)) return this.seen.get(coords) ?? null;
@@ -76,19 +129,20 @@ export class FootRouter {
     if (pause > 0) await this.wait(pause);
     this.last = this.clock();
     this.requests++;
-    let out: (number | null)[] | null = null;
+    let out: Leg[] | null = null;
     try {
-      const r = await this.fetchFn(`${this.base}/route/v1/foot/${coords}?overview=false&steps=false`, {
+      const r = await this.fetchFn(`${this.base}/route/v1/foot/${coords}?overview=false&steps=true&geometries=polyline6`, {
         headers: { 'user-agent': UA, accept: 'application/json' },
         signal: AbortSignal.timeout(this.timeoutMs),
       });
       if (!r.ok) throw new Error(`${r.status}`);
-      const body = await r.json() as { code?: unknown; routes?: { legs?: { distance?: unknown }[] }[] };
+      const body = await r.json() as { code?: unknown; routes?: { legs?: { distance?: unknown; steps?: { geometry?: unknown }[] }[] }[] };
       const legs = body?.code === 'Ok' ? body.routes?.[0]?.legs : undefined;
       if (!Array.isArray(legs) || legs.length !== points.length - 1) throw new Error(`no route (${String(body?.code ?? 'no answer')})`);
       out = legs.map((leg, i) => {
         const d = Number(leg?.distance), line = lineMetres(points[i], points[i + 1]);
-        return Number.isFinite(d) && d >= line - 100 && d <= line * 4 + 500 ? d : null;
+        if (!(Number.isFinite(d) && d >= line - 100 && d <= line * 4 + 500)) return { metres: null, path: null };
+        return { metres: d, path: legPath(leg?.steps, points[i], points[i + 1]) };
       });
       this.failedInARow = 0;
     } catch (e) {
@@ -99,4 +153,21 @@ export class FootRouter {
     this.seen.set(coords, out);
     return out;
   }
+}
+
+/** A leg's steps joined into one simplified line, or null when it does not run from one stop to the next
+ *  (each end within 150 m of its stop: the router snaps a stop to the nearest footway). */
+function legPath(steps: { geometry?: unknown }[] | undefined, from: Point, to: Point): string | null {
+  if (!Array.isArray(steps)) return null;
+  const points: Point[] = [];
+  for (const st of steps) {
+    if (typeof st?.geometry !== 'string') return null;
+    for (const p of decodePolyline(st.geometry)) {
+      const last = points[points.length - 1];
+      if (!last || last.lat !== p.lat || last.lng !== p.lng) points.push(p);
+    }
+  }
+  if (points.length < 2 || lineMetres(points[0], from) > 150 || lineMetres(points[points.length - 1], to) > 150) return null;
+  const line = simplify(points, 4);
+  return line.length <= 400 ? encodePolyline(line) : null;
 }

@@ -23,6 +23,7 @@
   const pref = () => D().pref();
   const nearOn = () => D().nearOn();
   const TONIGHT = { when: 'tonight' };
+  const midWide = typeof matchMedia === 'function' ? matchMedia('(min-width: 1024px) and (max-width: 1279px)') : { matches: false, addEventListener() {} };
 
   /* ── Hero: the state of the night, and where walking times start ── */
   const hero = (all) => {
@@ -32,7 +33,13 @@
     else if (tonight.length || nowMin() < 21 * 60) t.textContent = 'The next few hours';
     else t.textContent = all.some(e => W().nightKey(e) > W().nightToday()) ? 'Quiet tonight' : "What's on";
     const a = G().anchor(), on = nearOn();
-    window.WA.UI.keepFocus($('home-acts'), () => { $('home-acts').innerHTML = `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`; });
+    /* From 1024 to 1279 px one Filters key stands for the mood row, Near me and the When key: it opens the
+       same panel the folded key does, and says what is chosen. */
+    window.WA.UI.keepFocus($('home-acts'), () => {
+      $('home-acts').innerHTML = midWide.matches
+        ? `<button class="wa-chip home-filters" type="button" data-filters-panel aria-haspopup="dialog" aria-expanded="false" aria-label="${esc(`Filters · ${foldText()}`)}">${I('filter')}<span>${esc(foldText())}</span></button>`
+        : `<button class="wa-chip home-origin" type="button" data-near aria-haspopup="dialog" aria-pressed="${on}">${I('locate')}<span${a ? ' data-notranslate' : ''}>${esc(a ? a.label : on ? 'Near you' : 'Near me')}</span></button>`;
+    });
   };
 
   /* ── Mood rail: shared with Map (DiscoveryControls.moodRow) ── */
@@ -54,18 +61,24 @@
     planKey = key; plans = next;
     if (planIdx >= plans.length) planIdx = 0;
   };
-  /* The stops where they are, joined in order. No streets are drawn, so none are invented. North is
-     up, and a degree of longitude is drawn at its true width at the walk's latitude. */
+  /* The stops where they are. A leg routed along the streets is drawn as the way it goes; any other is a
+     dashed line for the order, so no street is invented. North is up, and a degree of longitude is drawn at
+     its true width at the walk's latitude. */
   const walkPlot = (route) => {
-    const pts = route.stops.map(s => (s.lat != null && s.lng != null && isFinite(s.lat) && isFinite(s.lng) ? [Number(s.lng), Number(s.lat)] : null));
+    const pts = route.stops.map(s => (s.lat != null && s.lng != null && isFinite(s.lat) && isFinite(s.lng) ? { lat: Number(s.lat), lng: Number(s.lng) } : null));
     if (pts.length < 2 || pts.some(p => !p)) return '';
-    const k = Math.cos(pts[0][1] * Math.PI / 180), W = 300, H = 120, pad = 20;
-    const xs = pts.map(p => p[0] * k), ys = pts.map(p => p[1]);
-    const left = Math.min(...xs), bottom = Math.min(...ys), w = Math.max(...xs) - left, h = Math.max(...ys) - bottom;
+    const legs = pts.slice(1).map((p, i) => ({ routed: !!route.stops[i + 1].path, line: route.stops[i + 1].path || [pts[i], p] }));
+    const all = [...pts, ...legs.flatMap(l => l.line)];
+    const k = Math.cos(pts[0].lat * Math.PI / 180), W = 300, H = 120, pad = 20;
+    const left = Math.min(...all.map(p => p.lng * k)), bottom = Math.min(...all.map(p => p.lat));
+    const w = Math.max(...all.map(p => p.lng * k)) - left, h = Math.max(...all.map(p => p.lat)) - bottom;
     const s = Math.min((W - 2 * pad) / (w || 1e-9), (H - 2 * pad) / (h || 1e-9));
-    const xy = pts.map((p, i) => [((W - w * s) / 2 + (xs[i] - left) * s).toFixed(1), ((H + h * s) / 2 - (p[1] - bottom) * s).toFixed(1)]);
-    return `<svg class="home-walk__plot" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><polyline points="${xy.map(p => p.join(',')).join(' ')}"/>${xy.map((p, i) =>
-      `<g${route.stops[i].type === 'event' ? ' class="is-event"' : ''}><circle cx="${p[0]}" cy="${p[1]}" r="10"/><text x="${p[0]}" y="${p[1]}">${i + 1}</text></g>`).join('')}</svg>`;
+    const xy = (p) => [((W - w * s) / 2 + (p.lng * k - left) * s).toFixed(1), ((H + h * s) / 2 - (p.lat - bottom) * s).toFixed(1)];
+    return `<svg class="home-walk__plot" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false">${legs.map(l =>
+      `<polyline${l.routed ? ' class="is-routed"' : ''} points="${l.line.map(p => xy(p).join(',')).join(' ')}"/>`).join('')}${pts.map((p, i) => {
+      const [x, y] = xy(p);
+      return `<g${route.stops[i].type === 'event' ? ' class="is-event"' : ''}><circle cx="${x}" cy="${y}" r="10"/><text x="${x}" y="${y}">${i + 1}</text></g>`;
+    }).join('')}</svg>`;
   };
   const walkCard = (plot = false) => {
     const route = plans[planIdx];
@@ -360,6 +373,7 @@
     window.WA.UI.keepFocus(host, () => { host.innerHTML = filtersRail(all); });
   };
   railWide.addEventListener('change', () => { if (window.WA.catalog) render(); });
+  midWide.addEventListener('change', () => { if (window.WA.catalog) render(); });
 
   /* ── New since the last visit (phones and tablets; wide windows show it beside the list) ── */
   const since = (all) => { $('since').innerHTML = wide.matches ? '' : newSince(all); };
@@ -379,6 +393,12 @@
       return;
     }
     if (hit('[data-near]')) { window.WA.UI.genie.close(false); window.WA.StartFrom.open(hit('[data-near]')); return; }
+    const panelKey = hit('[data-filters-panel]');
+    if (panelKey) {
+      if (panelKey.getAttribute('aria-expanded') === 'true') window.WA.UI.genie.close(true);
+      else window.WA.UI.genie(panelKey, quickPanel());
+      return;
+    }
     if (hit('[data-rail-dates]')) { C().openDates(hit('[data-rail-dates]')); return; }
     const cap = hit('[data-cap-pick]');
     if (cap) { M().setPref({ ...pref(), cap: cap.dataset.capPick === '' ? null : Number(cap.dataset.capPick) }); return; }

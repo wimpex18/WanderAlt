@@ -91,3 +91,11 @@ test('walking times follow the streets: a third longer than the line, and a "wit
   const far = { id: 'far', lat: 59.437 + 650 / 111_195, lng: 24.745 };     // 650 m north: ~872 m on foot
   assert.deepEqual(g.withinFilter([near, far], 800, from).map((x: any) => x.id), ['near']);
 });
+
+test('the page reads a stored path exactly as the pipeline wrote it, and nothing that is not one', async () => {
+  const { encodePolyline } = await import('../walking.ts');
+  const line = [{ lat: 59.443, lng: 24.734 }, { lat: 59.4415, lng: 24.7345 }, { lat: 59.44, lng: 24.734 }];
+  const read = geo().api.decodePath(encodePolyline(line));
+  assert.deepEqual(JSON.parse(JSON.stringify(read.map((p: any) => [p.lat.toFixed(6), p.lng.toFixed(6)]))), line.map(p => [p.lat.toFixed(6), p.lng.toFixed(6)]));
+  for (const bad of ['', 'not a path', '<script>', 'x'.repeat(5000), null, 42]) assert.equal(geo().api.decodePath(bad), null, String(bad).slice(0, 20));
+});

@@ -196,11 +196,31 @@
     });
   };
 
+  /* A stored leg's path (an encoded polyline at six decimals, from the pipeline's foot router) as
+     points, or null for anything that is not one. */
+  const decodePath = (str) => {
+    if (typeof str !== 'string' || !str || str.length > 4000 || !/^[\x3f-\x7e]+$/.test(str)) return null;
+    const out = [];
+    let i = 0, lat = 0, lng = 0;
+    const next = () => {
+      let shift = 0, result = 0, b;
+      do { if (i >= str.length) return null; b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      return result & 1 ? ~(result >> 1) : result >> 1;
+    };
+    while (i < str.length) {
+      const a = next(), b = next();
+      if (a == null || b == null) return null;
+      lat += a; lng += b;
+      out.push({ lat: lat / 1e6, lng: lng / 1e6 });
+    }
+    return out.length > 1 ? out : null;
+  };
+
   window.WA.Geo = {
     WALK_M_PER_MIN, STREET, STREET_ADD,
     walkMinutes, minutesFor, onFoot, format,
     coordsFor, userLoc, currentLoc, deviceLoc: () => _loc, anchor, setAnchor, locationError: () => _error,
-    distanceTo,
+    distanceTo, decodePath,
     startMinutes, bySoonestThenDistance, byDateThenSoonest,
     parseWithin, withinFilter,
   };

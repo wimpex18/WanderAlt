@@ -385,13 +385,17 @@
   /* A stored walk's leg, measured along the streets by the pipeline (pipeline/routes.ts), stands in for the
      estimate while it still matches: both stops are the ones it was measured between (not redirected to
      another record since) and the minutes fit where they stand now, no shorter than the straight line and
-     no more than twice the estimate and five minutes. Anything else keeps the estimate. */
-  const streetLeg = (s, leg, line, same) => {
+     no more than twice the estimate and five minutes. Anything else keeps the estimate. Its path comes with
+     it when both ends lie within 150 m of the two stops. */
+  const streetLeg = (s, leg, line, same, prev) => {
     if (!same || !leg || leg.routed !== true) return;
     const w = Number(leg.walk), m = Number(leg.metres);
     if (!Number.isInteger(w) || w < 1 || w > 90 || !Number.isFinite(m) || m < 0 || m > 15000) return;
     if (line != null && ((w + 2) * G().WALK_M_PER_MIN < line || (s.walk != null && w > s.walk * 2 + 5))) return;
     Object.assign(s, { walk: w, routed: true, street: Math.round(m) });
+    const path = G().decodePath(leg.path);
+    const near = (a, b) => b && b.lat != null && G().distanceTo(a, b) <= 150;
+    if (path && near(path[path.length - 1], s) && (!prev || near(path[0], prev))) s.path = path;
   };
   const fromParam = (str, offset = 0, legs = null) => {
     const parts = String(str || '').split(',').map(x => x.split(':'));
@@ -412,7 +416,7 @@
       stops.push(type === 'place' ? placeStop(entry, minute, prevM, hoursAt(entry, minute, offset), offset) : eventStop(entry, minute, prevM));
       lines.push(prevM); same.push(entry.id === id);
     }
-    if (Array.isArray(legs) && legs.length === stops.length) stops.forEach((s, i) => { if (i) streetLeg(s, legs[i], lines[i], same[i - 1] && same[i]); });
+    if (Array.isArray(legs) && legs.length === stops.length) stops.forEach((s, i) => { if (i) streetLeg(s, legs[i], lines[i], same[i - 1] && same[i], stops[i - 1]); });
     return Object.assign(build(stops), { day: W().keyPlus?.(offset), off: offset });
   };
 
