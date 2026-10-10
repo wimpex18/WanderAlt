@@ -1,5 +1,5 @@
 // A weekly logical backup of what the database holds that cannot be collected again: the picked
-// places and their notes, manual hours, reviews, fact flags, merge logs (the undo records), and
+// places and their notes, manual hours, reviews, the review decisions and place checks with their evidence, fact flags, merge logs (the undo records), and
 // everything people made (follows, saved lists, going, notifications, push subscriptions, digest
 // settings, problem reports). The free Supabase plan keeps no backups of its own.
 //
@@ -23,7 +23,7 @@ export const KEEP = 12;
 export const BACKUP_TABLES: Record<string, string[]> = {
   places: ['id'], place_redirects: ['id'], place_match_reviews: ['place_a', 'place_b'], place_merge_log: ['id'], place_fact_flags: ['id'], place_liveness_log: ['id'],
   events: ['id'], event_sources: ['event_id', 'source_id'], event_redirects: ['id'], event_merge_log: ['id'],
-  sources: ['id'], routes: ['id'], pipeline_runs: ['id'],
+  sources: ['id'], routes: ['id'], pipeline_runs: ['id'], review_decisions: ['id'], place_checks: ['question', 'subject'],
   bookmarks: ['user_id', 'pick_id'], follows: ['user_id', 'follow_id'], going: ['user_id', 'pick_id'], notifications: ['id'], change_notices: ['user_id', 'pick_id', 'flag'],
   saved_lists: ['user_id', 'id'], saved_list_items: ['user_id', 'list_id', 'pick_id'], push_subscriptions: ['user_id', 'endpoint'], digest_prefs: ['user_id'], problem_reports: ['id'],
 };
