@@ -454,12 +454,12 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-lang__menu.is-lifted { scale: 1.035; }
 .wa-lang__menu.is-lifted .wa-lang__opt { color: var(--ink-2); }
 .wa-lang__menu .wa-lang__copy .wa-lang__opt { color: var(--accent-ink); }
-/* Phones: the key is a round code like its neighbours, and with four keys the word mark gives way
-   to the logo so nothing is pushed off the edge. */
+/* Phones: the key is a round code like its neighbours, and with four keys (a Back key counts) the
+   word mark gives way to the logo so nothing is pushed off the edge. */
 @media (max-width: 440px) {
   .wa-lang__key { width: var(--tap); padding: 0; justify-content: center; }
   .wa-lang__key .wa-ic { display: none; }
-  .wa-topbar:has(.wa-topbar__end > :nth-child(4)) .wa-brand span { display: none; }
+  .wa-topbar:is(:has(.wa-topbar__end > :nth-child(4)), :has(> .wa-back)) .wa-brand span { display: none; }
 }
 .wa-topbar .wa-iconbtn:is([aria-current="page"], [aria-current="location"]) { background: var(--select-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--select-ring); }
 
