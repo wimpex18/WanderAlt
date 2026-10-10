@@ -148,6 +148,24 @@ test('two records settle a pair: one venue\'s names at the address both give, or
   assert.equal(pairDecision(at('a', 'Raamatukaru', 'Kuninga 2, Tallinn'), at('b', 'Raamatukoi', 'Harju 1, Tallinn'), null, null, []).answer, 'separate');
   // A room keeps its own place.
   assert.equal(pairDecision(at('a', 'Mustpeade Maja', 'Pikk 26'), at('b', 'Mustpeade Maja Valge saal', 'Pikk 26'), null, null, []).answer, 'separate');
+  assert.equal(pairDecision(at('a', 'Telliskivi Creative City', 'Telliskivi 60a'), at('b', "Telliskivi Creative City's Gallery", null), null, null, []).answer, 'separate');
+  assert.equal(hallOf("Telliskivi Creative City's Gallery", 'Telliskivi Creative City'), true);
+  assert.equal(hallOf('Kinos saal', 'Kino'), false, 'a possessive needs its apostrophe');
+  // Different sites under names that are not one venue's: two businesses under one roof.
+  const t1 = pairDecision(at('a', 'T1 Venue', 'Peterburi tee 2', 'https://t1venue.ee/'), at('b', 'T1 Venue & Cinamon Cinema', 'Peterburi tee 2', 'https://cinamonkino.com/'), null, null, []);
+  assert.equal(t1.answer, 'separate');
+  assert.equal(pairDecision(at('a', 'T1 Venue', 'Peterburi tee 2', 'https://t1venue.ee/'), at('b', 'T1 Venue & Cinamon Cinema', 'Peterburi tee 2', null), null, null, []).answer, null, 'one site says nothing');
+  // Each record's own OpenStreetMap object: two objects under two names are two venues, one name is one venue drawn twice.
+  const osmAt = (id: string, name: string, osm: string) => ({ ...at(id, name, 'Estonia pst 9'), osm_id: osm });
+  assert.equal(pairDecision(osmAt('a', 'Apollo', 'way/777840782'), osmAt('b', 'Apollo Kids', 'way/777840783'), null, null, []).answer, 'separate');
+  assert.notEqual(pairDecision(osmAt('a', 'Apollo', 'way/1'), osmAt('b', 'Apollo', 'way/2'), null, null, []).answer, 'separate');
+  assert.equal(pairDecision(osmAt('a', 'Apollo', 'way/1'), osmAt('b', 'Apollo Kids', 'way/1'), null, null, []).answer, null);
+
+  // A site's "same" counts only from a passage naming both, the shorter name on its own too.
+  const { namesBoth } = await import('../place-checks.ts');
+  assert.equal(namesBoth('Sakala 3 Teatrimaja on etenduskunstide keskus. Teatrimaja rendib ruume.', 'Teatrimaja', 'Sakala 3 Teatrimaja'), true);
+  assert.equal(namesBoth('Sakala 3 Teatrimaja on etenduskunstide keskus.', 'Teatrimaja', 'Sakala 3 Teatrimaja'), false);
+  assert.equal(namesBoth('Apollo kino (https://www.apollokino.ee/) Vapiano', 'Apollo', 'Apollo Kino'), false);
 
   assert.equal(addressInName('Sakala 3 Teatrimaja'), 'Sakala 3');
   assert.equal(addressInName('Manufaktuuri 7/2'), 'Manufaktuuri 7/2');

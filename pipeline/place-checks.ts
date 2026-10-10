@@ -114,6 +114,13 @@ export function addressInName(name: string): string | null {
 
 const host = (u: string | null | undefined) => (u ? hostOf(u).replace(/^www\./, '') : '');
 
+/** Does a passage name both places, the shorter name also on its own and not only inside the longer one
+ *  ("Sakala 3 Teatrimaja on … Teatrimaja rendib ruume" names "Teatrimaja" twice)? */
+export function namesBoth(quote: string, a: string, b: string): boolean {
+  const [long, short] = nameKey(a).length >= nameKey(b).length ? [a, b] : [b, a];
+  return mentions(quote, long) && mentions(plain(quote).split(plain(long)).join(' '), short);
+}
+
 /** One venue or two: OpenStreetMap's own identity first (one object answering to both names, or
  *  two objects), then what a venue's own site says, verified by its quote and by the places being
  *  close; then the two records themselves: names that are one venue's names (nameVariant) at the
@@ -136,11 +143,18 @@ export function pairDecision(a: Place & { website?: string | null }, b: Place & 
   if (said.has('part')) return { answer: 'separate', rule: `${claims[0].host} names one as a room of the other`, evidence };
   if (said.has('other')) return { answer: 'separate', rule: `${claims[0].host} names them as different venues`, evidence };
   if (d != null && d > FAR) return { answer: 'separate', rule: `${Math.round(d)} m apart`, evidence };
+  // Each record's own OpenStreetMap object: two objects under two names are two venues (one venue drawn
+  // twice carries one name), as two objects found by name are above.
+  if (a.osm_id && b.osm_id && a.osm_id !== b.osm_id && nameKey(a.name) !== nameKey(b.name)) {
+    return { answer: 'separate', rule: `OpenStreetMap has two venues: ${a.osm_id} (${a.name}) and ${b.osm_id} (${b.name})`, evidence };
+  }
   // The two records: each place's address came from its own source. Two businesses under one roof keep
-  // their own websites, so different websites never merge.
+  // their own websites, so different websites never merge, and under names that are not one venue's
+  // names they are two businesses ("T1 Venue" and "T1 Venue & Cinamon Cinema").
   const [sa, sb] = [addressKey(a.address, cityOf(a)), addressKey(b.address, cityOf(a))];
   const sites = host(a.website) && host(b.website) && host(a.website) !== host(b.website);
   const variant = nameVariant(a, b);
+  if (sites && !variant) return { answer: 'separate', rule: `two businesses with their own sites (${host(a.website)}, ${host(b.website)}) and names that are not one venue's`, evidence };
   if (variant && sa && sa === sb && (d == null || d <= NEAR) && !sites) {
     return { answer: 'merged', rule: `"${a.name}" and "${b.name}" are one venue's names (${variant}), and both records give ${a.address}`, evidence };
   }
@@ -155,11 +169,14 @@ export function pairDecision(a: Place & { website?: string | null }, b: Place & 
 /** Words that name a hall or a door and nothing else; "bar", "club" or "cinema" can end a venue's
  *  own name ("Heldeke Theatre and Bar"), so they never make a pair two places. */
 const HALL = /^(hall|stage|room|foyer|entrance|studio|gallery|saal|lava|ruum|fuajee|sissepääs|peasissepääs|galerii|stuudio|black box|зал|сцена|фойе)$/;
-/** Is `name` the other name followed by a hall: "Mustpeade maja Valge saal" of "Mustpeade maja"? */
+/** Is `name` the other name followed by a hall: "Mustpeade maja Valge saal" of "Mustpeade maja", or
+ *  "Telliskivi Creative City's Gallery" of "Telliskivi Creative City"? */
 export function hallOf(name: string, parent: string): boolean {
   const n = nameKey(name), p = nameKey(parent);
-  if (!p || !n.startsWith(`${p} `)) return false;
-  const rest = n.slice(p.length + 1).split(' ');
+  // nameKey drops the apostrophe of an English possessive: "city's" is "citys".
+  const from = !p ? -1 : n.startsWith(`${p} `) ? p.length + 1 : /['’]s\b/.test(name) && n.startsWith(`${p}s `) ? p.length + 2 : -1;
+  if (from < 0) return false;
+  const rest = n.slice(from).split(' ');
   return rest.length <= 3 && (HALL.test(rest[rest.length - 1]) || HALL.test(rest.slice(-2).join(' ')));
 }
 
@@ -438,7 +455,9 @@ async function pair(a: Place & { website?: string | null }, b: Place & { website
         const { data, engine } = await models.ask(sameSystem(city), user, SAME_SCHEMA, user.length);
         const r = data as { relation?: string; quote?: string | null; url?: string | null };
         const doc = docs.find(d => d.url === r.url) ?? docs.find(d => quoteIn(d.text, r.quote));
-        if (doc && r.relation && r.relation !== 'unknown' && quoteIn(doc.text, r.quote) && (mentions(r.quote!, a.name) || mentions(r.quote!, b.name))) {
+        // A merge rests on a passage that names both: one name alone cannot say it is the other's.
+        const named = r.relation === 'same' ? namesBoth(r.quote ?? '', a.name, b.name) : mentions(r.quote ?? '', a.name) || mentions(r.quote ?? '', b.name);
+        if (doc && r.relation && r.relation !== 'unknown' && quoteIn(doc.text, r.quote) && named) {
           claims.push({ source: 'site', host: doc.host, url: doc.url, relation: r.relation as Evidence['relation'], quote: r.quote, note: `read by ${engine}` });
         }
       } catch (e) { console.warn(`[places] reading pages for ${a.id} / ${b.id}: ${(e as Error).message}`); }
