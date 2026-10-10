@@ -302,13 +302,18 @@ export async function checkPlaces(db: Db, cityId: string, models: Models | null,
   // Pairs left behind by a merge take their canonical pair's answer.
   const mergedInto = new Map((await db.all<{ id: string; merged_into: string }>(`places?city=eq.${city.id}&merged_into=not.is.null&select=id,merged_into&order=id.asc`)).map(p => [p.id, p.merged_into]));
   const superseded = supersededPairs(pending, await db.all('place_match_reviews?select=place_a,place_b,state&order=place_a.asc,place_b.asc'), mergedInto);
-  for (const r of superseded) {
-    console.log(`[places] pair ${r.place_a}|${r.place_b}: ${r.state} (${r.reason})${opts.dry ? ' (dry run)' : ''}`);
-    if (!opts.dry) await db.patch(`place_match_reviews?place_a=eq.${encodeURIComponent(r.place_a)}&place_b=eq.${encodeURIComponent(r.place_b)}&state=eq.pending`, { state: r.state, reason: r.reason, updated_at: new Date().toISOString() });
-  }
-  pending = pending.filter(r => !superseded.some(x => x.place_a === r.place_a && x.place_b === r.place_b));
   const rows = await db.all<CheckRow>(`place_checks?city=eq.${city.id}&select=subject,question,state,tries,next_at&order=subject.asc`);
   const row = new Map(rows.map(r => [`${r.question}:${r.subject}`, r]));
+  for (const r of superseded) {
+    console.log(`[places] pair ${r.place_a}|${r.place_b}: ${r.state} (${r.reason})${opts.dry ? ' (dry run)' : ''}`);
+    if (opts.dry) continue;
+    const at = new Date().toISOString(), subject = pairKey(r.place_a, r.place_b);
+    await db.patch(`place_match_reviews?place_a=eq.${encodeURIComponent(r.place_a)}&place_b=eq.${encodeURIComponent(r.place_b)}&state=eq.pending`, { state: r.state, reason: r.reason, updated_at: at });
+    // Every answer is a row in place_checks, an inherited one too.
+    await db.upsert('place_checks', [{ city: city.id, subject, question: 'pair', state: 'answered', answer: r.state, note: clip(r.reason, 500),
+      evidence: [{ source: 'catalogue', host: 'wanderalt', note: r.reason }], tries: (row.get(`pair:${subject}`)?.tries ?? 0) + 1, checked_at: at, next_at: at }], 'question,subject');
+  }
+  pending = pending.filter(r => !superseded.some(x => x.place_a === r.place_a && x.place_b === r.place_b));
   // --only asks about one place now, whenever it is next due.
   const due = (q: string, s: string) => { const r = row.get(`${q}:${s}`); return !r || (r.state !== 'answered' && (!!opts.only || Date.parse(r.next_at) <= now)); };
 
