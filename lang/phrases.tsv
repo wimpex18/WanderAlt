@@ -720,8 +720,8 @@ Dismiss	Jäta kõrvale	Отклонить	Відхилити
 Publish	Avalda	Опубликовать	Опублікувати
 Reject	Lükka tagasi	Отклонить	Відхилити
 Possible duplicate places	Võimalikud topeltkohad	Возможные дубликаты мест	Можливі дублікати місць
-Review queue	Ülevaatuse ootel	Очередь проверки	Черга перевірки
-Events the pipeline held back. Publish what belongs, reject what does not; the pipeline never changes a decision made here.	Kogumisel ootele jäetud sündmused. Avalda sobivad, lükka ülejäänud tagasi; siin tehtud otsust kogumisprotsess ei muuda.	События, отложенные сборщиком. Публикуйте подходящие, отклоняйте остальные; сборщик не меняет принятые здесь решения.	Події, відкладені збирачем. Публікуйте відповідні, відхиляйте решту; збирач не змінює ухвалених тут рішень.
+Review	Ülevaatus	Проверка	Перевірка
+The pipeline settles every listing it holds back, from evidence. This page shows what it decided and why; Publish or Reject overrides a decision, and the pipeline never changes a decision made here.	Kogumisprotsess otsustab iga ootele jäetud kuulutuse ise, tõendite põhjal. Siin on näha, mida ta otsustas ja miks; Avalda või Lükka tagasi muudab otsust ning siin tehtud otsust kogumisprotsess ei muuda.	Сборщик сам решает судьбу каждого отложенного события на основе фактов. Здесь видно, что он решил и почему; «Опубликовать» или «Отклонить» меняет решение, а принятые здесь решения сборщик не меняет.	Збирач сам вирішує долю кожної відкладеної події на основі фактів. Тут видно, що він вирішив і чому; «Опублікувати» або «Відхилити» змінює рішення, а ухвалених тут рішень збирач не змінює.
 Supabase secret key	Supabase’i salajane võti	Секретный ключ Supabase	Секретний ключ Supabase
 Kept in this tab only (sessionStorage) and sent only to Supabase.	Hoitud ainult selles vahekaardis (sessionStorage) ja saadetud ainult Supabase’i.	Хранится только в этой вкладке (sessionStorage) и отправляется только в Supabase.	Зберігається лише в цій вкладці (sessionStorage) і надсилається лише до Supabase.
 Open the queue	Ava järjekord	Открыть очередь	Відкрити чергу
@@ -821,6 +821,33 @@ Reject this group	Lükka see rühm tagasi	Отклонить эту группу
 Publish this group	Avalda see rühm	Опубликовать эту группу	Опублікувати цю групу
 Yes, reject	Jah, lükka tagasi	Да, отклонить	Так, відхилити
 Yes, publish	Jah, avalda	Да, опубликовать	Так, опублікувати
+Still waiting	Veel ootel	Ещё ждут решения	Ще чекають на рішення
+Nothing is waiting: the pipeline settled every held listing.	Midagi pole ootel: kogumisprotsess otsustas kõik ootele jäetud kuulutused.	Ничего не ждёт: сборщик решил судьбу всех отложенных событий.	Нічого не чекає: збирач вирішив долю всіх відкладених подій.
+Decided automatically	Otsustatud automaatselt	Решено автоматически	Вирішено автоматично
+No decisions on upcoming listings yet.	Tulevaste kuulutuste kohta otsuseid veel pole.	Решений по предстоящим событиям пока нет.	Рішень щодо майбутніх подій поки немає.
+Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.	Kogumisprotsessi otsustatud tulevased kuulutused koos kuulutuse enda sõnadega, millel iga otsus põhineb. Avalda või Lükka tagasi muudab otsust.	Предстоящие события, решённые сборщиком, со словами самого объявления, на которых основано каждое решение. «Опубликовать» или «Отклонить» меняет решение.	Майбутні події, вирішені збирачем, зі словами самого оголошення, на яких ґрунтується кожне рішення. «Опублікувати» або «Відхилити» змінює рішення.
+Published automatically	Avaldatud automaatselt	Опубликовано автоматически	Опубліковано автоматично
+Fits the guide	Sobib valikusse	Подходит для подборки	Пасує до добірки
+Outside the city	Väljaspool linna	За пределами города	За межами міста
+A restaurant, hotel or dining	Restoran, hotell või söömine	Ресторан, отель или ужин	Ресторан, готель або вечеря
+Mainstream or commercial	Peavoolu või kommertslik	Мейнстрим или коммерция	Мейнстрим або комерція
+Wellness or spiritual	Heaolu või vaimsus	Велнес или духовные практики	Велнес або духовні практики
+A hobby class	Hobitund	Хобби-занятие	Хобі-заняття
+Self-help	Eneseabi	Самопомощь	Самодопомога
+Children's or family	Lastele või perele	Детям или семьям	Дітям або родинам
+Not culture	Pole kultuur	Не культура	Не культура
+No show's name	Etenduse nimi puudub	Нет названия события	Немає назви події
+Nothing shows it fits	Miski ei näita, et see sobib	Ничто не показывает, что подходит	Ніщо не показує, що пасує
+Date only on a poster	Kuupäev ainult plakatil	Дата только на афише	Дата лише на афіші
+Listed already	Juba kirjas	Уже есть в списке	Уже є в списку
+In the title	Pealkirjas	В названии	У назві
+In the venue	Toimumiskoha nimes	В названии места	У назві місця
+In the address	Aadressis	В адресе	В адресі
+In the text	Tekstis	В тексте	У тексті
+On its own page	Oma lehel	На собственной странице	На власній сторінці
+In the caption	Postituse tekstis	В подписи к посту	У підписі до допису
+In another source	Teises allikas	В другом источнике	В іншому джерелі
+From the rule	Reeglist	Из правила	З правила
 The next eight days also come as a feed for readers and newsletters:	Järgmised kaheksa päeva on ka voona lugejatele ja uudiskirjadele:	Ближайшие восемь дней есть и в виде ленты для читалок и рассылок:	Найближчі вісім днів є й у вигляді стрічки для читалок і розсилок:
 Map of the walk	Jalutuskäigu kaart	Карта прогулки	Мапа прогулянки
 A sentence instead of a name	Lause nime asemel	Фраза вместо названия	Фраза замість назви

@@ -1,6 +1,9 @@
 /* ============================================================
-   review.js — the review queue: events with status 'review', facts about places that may have
-   changed (place_fact_flags), possible duplicate places (place_match_reviews), reader reports.
+   review.js — the audit and override page. The pipeline settles every held listing itself
+   (pipeline/review-decider.ts); this shows what it decided for upcoming listings and why: the
+   listing's own words each decision rests on and where they were found. Also listings still
+   waiting, facts about places that may have changed (place_fact_flags), possible duplicate places
+   (place_match_reviews), reader reports.
    ------------------------------------------------------------
    Reads and writes with the Supabase secret key the reviewer types in,
    held in sessionStorage for this tab only. Publish or reject sets the
@@ -187,6 +190,68 @@
   const setStatus = (ids, status) => api('PATCH', `events?id=in.${encodeURIComponent(inList(ids))}`,
     { status, status_note: `manual ${status === 'published' ? 'publish' : 'reject'}` });
 
+  /* What the decider decided (review_decisions), for upcoming listings it still holds that way: the
+     latest decision per listing whose note is still the automatic one. A person's override replaces the
+     note with "manual …", and the listing leaves this list. */
+  const REASON = { fits: 'Fits the guide', elsewhere: 'Outside the city', dining: 'A restaurant, hotel or dining', mainstream: 'Mainstream or commercial',
+    wellness: 'Wellness or spiritual', hobby: 'A hobby class', 'self-help': 'Self-help', children: "Children's or family", 'not-culture': 'Not culture',
+    'not-a-title': "No show's name", unclear: 'Nothing shows it fits', 'poster-date': 'Date only on a poster', duplicate: 'Listed already' };
+  const WHERE = { title: 'In the title', venue: 'In the venue', address: 'In the address', text: 'In the text', page: 'On its own page',
+    caption: 'In the caption', source: 'In another source', rule: 'From the rule' };
+  const decided = (decisions, events) => {
+    const byId = new Map(events.map(e => [e.id, e])), seen = new Set(), out = [];
+    for (const d of decisions) {
+      if (seen.has(d.event_id)) continue;
+      seen.add(d.event_id);
+      const e = byId.get(d.event_id);
+      if (e && String(e.status_note || '').startsWith('auto ') && e.status === d.outcome) out.push({ d, e });
+    }
+    const groups = new Map();
+    for (const x of out) {
+      const key = `${x.d.outcome}:${x.d.outcome === 'published' ? 'fits' : x.d.reason}`;
+      if (!groups.has(key)) groups.set(key, { key, outcome: x.d.outcome, reason: x.d.reason, items: [] });
+      groups.get(key).items.push(x);
+    }
+    for (const g of groups.values()) g.items.sort((a, b) => a.e.starts_at.localeCompare(b.e.starts_at));
+    return [...groups.values()].sort((a, b) => Number(b.outcome === 'published') - Number(a.outcome === 'published') || b.items.length - a.items.length);
+  };
+  const decidedItem = ({ d, e }) => {
+    const source = url(e.url || e.ticket_url), flip = d.outcome === 'published' ? 'rejected' : 'published';
+    const votes = d.evidence && d.evidence.fit && Array.isArray(d.evidence.fit.votes) ? d.evidence.fit.votes.join(' ') : '';
+    return `<li class="review__item" data-ids="${esc(e.id)}">
+      <p class="wa-note">${[esc(when(e.starts_at)), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', d.held_by ? `<span data-notranslate>${esc(`held: ${d.held_by}`)}</span>` : ''].filter(Boolean).join(' · ')}</p>
+      <p class="review__title" data-notranslate>${esc(e.title_en || e.title)}</p>
+      ${d.quote ? `<blockquote class="review__quote" data-notranslate>${esc(d.quote)}</blockquote>` : ''}
+      <p class="wa-note">${[d.quote_in && WHERE[d.quote_in] ? esc(WHERE[d.quote_in]) : '', d.engine ? `<span data-notranslate>${esc(d.engine)}</span>` : '', votes ? `<span data-notranslate>${esc(votes)}</span>` : ''].filter(Boolean).join(' · ')}</p>
+      ${d.why ? `<p class="review__desc" data-notranslate>${esc(d.why)}</p>` : ''}
+      <div class="review__actions">
+        <button class="wa-btn" type="button" data-set="${flip}">${esc(flip === 'published' ? 'Publish' : 'Reject')}</button>
+        ${source ? `<a class="wa-btn wa-btn--quiet" href="${esc(source)}" target="_blank" rel="noopener noreferrer"><span>Source</span> &nearr;</a>` : ''}
+      </div>
+    </li>`;
+  };
+  const decidedHtml = async () => {
+    try {
+      const since = new Date(Date.now() - 12 * 3600_000).toISOString();
+      const decisions = await api('GET', 'review_decisions?outcome=neq.waits&order=decided_at.desc&limit=1000&select=event_id,decided_at,outcome,reason,why,quote,quote_in,held_by,evidence,engine');
+      const ids = [...new Set(decisions.map(d => d.event_id))];
+      const events = [];
+      for (let i = 0; i < ids.length; i += 150) {
+        events.push(...await api('GET', `events?id=in.${encodeURIComponent(inList(ids.slice(i, i + 150)))}&archived_at=is.null&merged_into=is.null&starts_at=gte.${since}`
+          + '&select=id,title,title_en,venue_name,starts_at,status,status_note,url,ticket_url'));
+      }
+      const groups = decided(decisions, events);
+      if (!groups.length) return '<h2 class="wa-h2 review__section">Decided automatically</h2><p class="wa-note">No decisions on upcoming listings yet.</p>';
+      return `<h2 class="wa-h2 review__section">Decided automatically</h2>
+        <p class="wa-note">Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.</p>
+        ${groups.map(g => `<details class="review__group"${g.outcome === 'published' ? ' open' : ''} data-group="${esc(g.key)}">
+          <summary class="review__group-head"><span class="review__group-title">${esc(g.outcome === 'published' ? 'Published automatically' : REASON[g.reason] || g.reason)}</span>
+            <span class="wa-note review__group-n">${esc(g.items.length === 1 ? '1 listing' : `${g.items.length} listings`)}</span></summary>
+          <ul class="review__list">${g.items.map(decidedItem).join('')}</ul>
+        </details>`).join('')}`;
+    } catch { return ''; }
+  };
+
   const render = async () => {
     const host = $('queue');
     if (!key()) { host.innerHTML = ''; return; }
@@ -195,8 +260,10 @@
       const rows = await api('GET', 'events?status=eq.review&archived_at=is.null&merged_into=is.null&order=starts_at.asc&limit=500' +
         '&select=id,title,title_en,summary_en,venue_name,starts_at,kind,relevance,status_note,url,ticket_url,engine');
       $('key-form').hidden = true;
-      host.innerHTML = `<p class="wa-note review__count">${esc(`${rows.length} waiting · soonest first`)}</p>
-        ${groupsOf(rows).map(groupHtml).join('')}${await flags()}${await dupes()}${await reports()}`;
+      host.innerHTML = `<h2 class="wa-h2 review__section">Still waiting</h2>
+        ${rows.length ? `<p class="wa-note review__count">${esc(rows.length === 1 ? '1 listing' : `${rows.length} listings`)}</p>${groupsOf(rows).map(groupHtml).join('')}`
+          : '<p class="wa-note">Nothing is waiting: the pipeline settled every held listing.</p>'}
+        ${await decidedHtml()}${await flags()}${await dupes()}${await reports()}`;
     } catch (err) {
       try { sessionStorage.removeItem(KEY); } catch { /* nothing kept */ }
       $('key-form').hidden = false;
@@ -297,5 +364,5 @@
   });
 
   document.addEventListener('DOMContentLoaded', render);
-  window.WA.ReviewQueue = { reasonOf, groupsOf };
+  window.WA.ReviewQueue = { reasonOf, groupsOf, decided };
 })();
