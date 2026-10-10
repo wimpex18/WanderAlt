@@ -1,6 +1,7 @@
 // Settle the held listings by hand, as each pipeline run does (review-decider.ts):
-//   npm run review:decide -- [--dry-run] [--only ev_a,ev_b] [--eval ev_a,ev_b] [--out decisions.json] [--city tallinn]
-// --eval judges any rows as if they were held and writes nothing: how the decider is measured.
+//   npm run review:decide -- [--dry-run] [--audit 40] [--only ev_a,ev_b] [--eval ev_a,ev_b [--as-is]] [--out decisions.json] [--city tallinn]
+// --audit also takes a second look at that many listings published on a fit score alone. --eval judges any rows
+// and writes nothing: as if they were held, or with --as-is as a second look at published ones.
 
 import { writeFileSync } from 'node:fs';
 import { Db } from './db.ts';
@@ -15,7 +16,8 @@ const noModels = { ready: false, neuronBudget: 0 } as unknown as Models;
 
 try {
   const out = await decideHeld(new Db(), value('--city') ?? 'tallinn', deciderModels(Number(value('--calls') ?? 60)), {
-    dry: args.includes('--dry-run'), only: list('--only'), evaluate: list('--eval'),
+    dry: args.includes('--dry-run'), only: list('--only'), evaluate: list('--eval'), evaluateAsIs: args.includes('--as-is'),
+    audit: value('--audit') ? Number(value('--audit')) : undefined,
     reread: (item, source) => read(item, source, noModels),
   });
   const key = (d: (typeof out)[number]) => (d.quote ? `${d.status} (${REASONS[d.reason]})` : 'waiting');

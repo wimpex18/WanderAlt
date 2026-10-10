@@ -826,7 +826,8 @@ async function main() {
   // Every held listing settled from evidence, with no person in the loop (review-decider.ts).
   if (!flag('--no-decide')) {
     try {
-      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels) });
+      // ...and a second look at listings published on a model's fit score alone, a few dozen a run.
+      const out = await decideHeld(db, CITY, decider, { reread: (item, source) => read(item, source, noModels), audit: Number(opt('--audit') ?? 40) });
       const n = (s: string) => out.filter(d => d.status === s && d.quote).length;
       if (out.length) log(`held listings: ${n('published')} published, ${n('rejected')} rejected, ${out.filter(d => !d.quote).length} waiting for a checked answer`);
     } catch (e) { log(`review decisions failed: ${(e as Error).message}`); }
