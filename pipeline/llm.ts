@@ -381,6 +381,37 @@ export const latinOnly = (v: string | null | undefined): string | null => {
   return t && !/[\u0400-\u04ff]/.test(t) ? t : null;
 };
 
+const CYRILLIC: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', ґ: 'g', д: 'd', е: 'e', ё: 'e', є: 'je', ж: 'zh', з: 'z', и: 'i', і: 'i', ї: 'ji', й: 'j', к: 'k', л: 'l',
+  м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '',
+  э: 'e', ю: 'ju', я: 'ja',
+};
+/** Russian and Ukrainian letters read as Latin ones, so "театр «Эстония»" can be compared with "Estonia Theatre". */
+export const latinise = (s: string) => s.toLowerCase().replace(/[\u0400-\u04ff]/g, c => CYRILLIC[c] ?? c);
+
+/** Words that say what kind of place it is in any language, not which one. */
+const PLACE_WORDS = new Set(['theatre', 'theater', 'teater', 'teatr', 'club', 'klubi', 'klub', 'hall', 'saal', 'house', 'maja', 'centre', 'center',
+  'keskus', 'gallery', 'galerii', 'cinema', 'kino', 'museum', 'muuseum', 'church', 'kirik', 'studio', 'stuudio', 'stage', 'lava', 'scene', 'bar', 'baar',
+  'cafe', 'kohvik', 'jazz', 'tallinn', 'tallinna', 'street', 'tanav', 'mnt', 'tee']);
+
+/** Is a venue or address the model gave in the source text? As written, or (the prompt asks for Latin script)
+ *  by at least half its distinctive words, each found as the start of a word in the text read in Latin
+ *  letters ("Estonia Theatre" in "театр «Эстония»"). A name with no distinctive word must appear whole. A
+ *  name the text does not hold is the model's, and is dropped. */
+export function inSource(name: string | null, text: string): string | null {
+  if (!name) return null;
+  const hay = ` ${nameKey(latinise(text))} `, key = nameKey(name);
+  if (!key || hay.includes(` ${key} `)) return key ? name : null;
+  const words = key.split(' ').filter(w => w.length >= 4 && !PLACE_WORDS.has(w) && !/^\d+$/.test(w));
+  if (!words.length) return null;
+  const stem = (w: string) => w.slice(0, Math.min(w.length, 5));
+  const found = words.filter(w => hay.includes(` ${stem(latinise(w))}`)).length;
+  // A house number the model wrote must be the source's too.
+  const numbers = key.split(' ').filter(w => /^\d+[a-z]?$/.test(w));
+  if (numbers.some(n => !hay.includes(` ${n} `))) return null;
+  return found >= Math.ceil(words.length / 2) ? name : null;
+}
+
 export async function extractEvents(
   models: Models,
   args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null },
@@ -410,6 +441,8 @@ export async function extractEvents(
   const titles = new Set(events.map(e => nameKey(e.title ?? '')).filter(Boolean));
   const image = titles.size === 1 ? httpUrl(args.images?.[0]) : null;
   const out: Candidate[] = [];
+  // The model's venue and address must come from the text it read (or the source line, which may name the venue).
+  const said = `${args.source}\n${args.text}`;
   for (const e of events) {
     const starts = e.start ? tallinnToIso(e.start) : null;
     // A closing date without a time means that whole day, as in wordpress.ts, so the row is not archived on its last morning.
@@ -426,8 +459,8 @@ export async function extractEvents(
       starts_at: starts,
       ends_at: ends,
       has_time: /\d{1,2}:\d{2}/.test(e.start ?? ''),
-      venue_name: latinOnly(e.venue),
-      address: latinOnly(e.address),
+      venue_name: inSource(latinOnly(e.venue), said),
+      address: inSource(latinOnly(e.address), said),
       is_free: free ? true : nums.length ? false : null,
       price_min: free ? 0 : nums.length ? Math.min(...nums) : null,
       price_max: nums.length > 1 ? Math.max(...nums) : null,
