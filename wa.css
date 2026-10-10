@@ -141,6 +141,28 @@
 @media (min-width: 768px)  { :root { --gutter: 32px; } }
 @media (min-width: 1024px) { :root { --gutter: 48px; --topbar-h: 80px; --tabbar-h: 0px; } }
 @media (min-width: 1440px) { :root { --gutter: 80px; } }
+/* Desktop tokens. From 1024 px the page is read at arm's length on a wider canvas, so the phone's
+   parts are set again rather than stretched; each component's desktop rules follow its own. One page
+   width (a main column and, where a page has one, a 360 px side column), one type scale (13 captions,
+   14 meta, 16 body, 19 row titles and ledes, 24 section heads, 28 start times, 48–56 page titles;
+   weights 400, 600 and 700) and a flat page: no wash, gradient or glow. Glass stays where content
+   moves under it (the top bar, map controls, menus, sheets); the one raised element is the sticky
+   side panel, a 1 px line with 20 px corners. */
+:root { --row-hover:color-mix(in oklab, var(--ink) 4%, transparent); }
+@media (min-width:1024px) {
+  :root {
+    --page:1200px; --side:360px; --main:calc(var(--page) - var(--side) - var(--s-9));
+    --fs-meta:.875rem;                                /* 14 */
+    --fs-title:1.1875rem;                             /* 19: row titles */
+    --fs-lead:1.1875rem;                              /* 19: ledes */
+    --fs-h2:1.5rem;                                   /* 24: section heads */
+    --fs-time:1.75rem;                                /* 28: start times */
+    --fs-h1:clamp(3rem, 1.5rem + 2.35vw, 3.5rem);     /* 48 at 1024 to 56 at 1440 */
+    --fs-hero:var(--fs-h1);
+  }
+  :root, :root[data-theme="dusk"] { --daybreak:none; --primary-bg:var(--accent); --primary-glow:none; --select-bg:var(--accent-soft); }
+}
+@media (min-width:1024px) and (max-width:1199px) { :root { --side:300px; } }
 
 /* ── Base ────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -271,6 +293,7 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
   .wa-splash__mark { width: 128px; height: 128px; }
   .wa-splash__word { font-size: 2.75rem; }
 }
+@media (min-width: 1024px) { .wa-splash__line { font-size: var(--fs-meta); font-weight: 400; } }
 @media (prefers-reduced-motion: reduce) { .wa-splash { display: none; } }
 
 /* The tab bar: a floating glass capsule on phones, the masthead nav
@@ -347,15 +370,21 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 :root[data-theme="dusk"] :is(.wa-tabbar__drop, .map-seg__drop, .wa-lang__drop) { background: rgba(40,40,44,.55); box-shadow: 0 10px 28px rgba(0,0,0,.55), inset 0 1.5px 1px rgba(255,255,255,.35), inset 0 0 12px rgba(255,255,255,.08); }
 @media (prefers-reduced-transparency: reduce) { .wa-tabbar__drop, .map-seg__drop, .wa-lang__drop { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 
+.wa-shell { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter) var(--s-9); }
+
+/* The top bar from 1024 px: its brand and keys line up with the page column at any window width. The
+   tab bar is the masthead nav. It follows the wordmark instead of centring on the window, so a longer
+   translation never runs into the keys at the end and search has room for its whole label (it was
+   cut to "Search events or pl…" at 1280). */
 @media (min-width: 1024px) {
-  .wa-topbar { padding-top: 0; }
+  .wa-topbar { padding-top: 0; padding-inline: max(var(--gutter), calc((100% - var(--page)) / 2)); }
   .wa-tabbar {
-    top: 0; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: auto; margin: 0;
+    top: 0; bottom: auto; left: calc(max(var(--gutter), (100% - var(--page)) / 2) + 177px); right: auto; width: auto; margin: 0;
     height: var(--topbar-h); padding: 0; display: flex; gap: var(--s-2);
     background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0;
-    z-index: 41;
+    z-index: 41; touch-action: auto; -webkit-user-select: auto; user-select: auto;
   }
-  .wa-tabbar__item { flex-direction: row; gap: 8px; padding: 0 14px; font-size: 1rem; font-weight: 500; color: var(--ink-2); border-radius: 0; }
+  .wa-tabbar__item { flex-direction: row; gap: 8px; padding: 0 14px; font-size: var(--fs-body); font-weight: 400; color: var(--ink-2); border-radius: 0; }
   .wa-tabbar__item .wa-ic { width: 22px; height: 22px; }
   .wa-tabbar__item:hover { color: var(--ink); }
   .wa-tabbar__item:is([aria-current="page"], [aria-current="location"]) { color: var(--ink); background: none; font-weight: 600; }
@@ -363,14 +392,17 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
   .wa-tabbar__item:is([aria-current="page"], [aria-current="location"])::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 14px; height: 2px; border-radius: 2px; background: var(--ink); }
   .wa-tabbar__item:active { transform: none; }
   .wa-tabbar__pill, .wa-tabbar__drop { display: none; }
-  .wa-tabbar { touch-action: auto; -webkit-user-select: auto; user-select: auto; }
+  .wa-shell { max-width: calc(var(--page) + 2 * var(--gutter)); }
 }
 @media (min-width:1024px) and (max-width:1279px) {
   .wa-tabbar { gap:0; }
-  .wa-tabbar__item { padding-inline:10px; gap:6px; font-size:.9375rem; }
+  .wa-tabbar__item { padding-inline:10px; gap:6px; }
 }
-
-.wa-shell { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter) var(--s-9); }
+/* The phone tab bar gets its own compositing layer. On an iPhone Home Screen app it has been
+   seen floating mid-screen during momentum scrolling; a fixed layer WebKit has to re-pin on
+   its own is the likeliest cause, so it is pinned from the start. Phones only: from 1024 the
+   bar is the masthead nav and stays an ordinary fixed element. */
+@media (max-width: 1023px) { .wa-tabbar { transform: translateZ(0); will-change: transform; } }
 
 /* ── Type ────────────────────────────────────────────────────── */
 .wa-kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: var(--fs-small); font-weight: 500; color: var(--ink-2); }
@@ -384,7 +416,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-note a { color: var(--ink); font-weight: 600; }
 
 .wa-pagehead { padding: var(--s-6) 0 var(--s-4); display: grid; gap: var(--s-2); }
-@media (min-width: 1024px) { .wa-pagehead { padding: var(--s-8) 0 var(--s-6); } }
 .wa-pagehead__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
 
 /* Section head: title, count, and a round arrow key. */
@@ -397,6 +428,15 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-sect__more .wa-ic { width: 32px; height: 32px; padding: 8px; border-radius: 50%; background: var(--paper-2); stroke-width: 2.2; transition: background var(--t-fast); }
 .wa-sect__more:hover .wa-ic { background: var(--paper-3); }
 .wa-sect__sub { font-size: var(--fs-meta); color: var(--ink-3); margin: calc(-1 * var(--s-3)) 0 var(--s-3); }
+
+/* Type from 1024 px: page titles at the large end of the scale, bolder and tighter. */
+@media (min-width: 1024px) {
+  .wa-pagehead { padding: var(--s-8) 0 var(--s-6); gap: var(--s-3); }
+  .wa-h1 { font-weight:700; letter-spacing:-.035em; line-height:1.04; }   /* Now's .wa-hero takes the same, after its own title rule */
+  .wa-lede { font-size:var(--fs-lead); }
+  .wa-prose { font-size:var(--fs-body); }
+  .wa-kicker, .wa-sect__count { font-weight:400; }
+}
 
 /* ── Controls ────────────────────────────────────────────────── */
 .wa-btn {
@@ -502,7 +542,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-chips--scroll.is-more-start { --fade-l: 44px; }
 .wa-chips--scroll.is-more-end { --fade-r: 44px; }
 
-
 .wa-field { display: grid; gap: var(--s-3); padding: var(--s-5) 0; border-top: 1px solid var(--hair); }
 .wa-field:first-child { border-top: 0; padding-top: 0; }
 .wa-field__label { font-size: 1.0625rem; font-weight: 600; letter-spacing: -.01em; }
@@ -531,6 +570,48 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-switch[disabled] { opacity: .45; }
 .wa-range { width: 100%; accent-color: var(--ink); height: var(--tap); }
 
+/* The ask field: one pill for search and for a sentence. The glyph says
+   it can read a sentence; the list stays our own listings either way. */
+.wa-ask { position: relative; display: flex; align-items: center; height: 52px; padding: 0 4px 0 16px; gap: 6px; border-radius: var(--r-pill); background: var(--paper-2); transition: box-shadow var(--t-fast), background var(--t-fast); }
+.wa-ask:focus-within { background: var(--paper); box-shadow: 0 0 0 1.5px var(--ink), var(--shadow-1); }
+.wa-ask__mark { display: grid; color: var(--accent-ink); flex: none; }
+.wa-ask__mark .wa-ic { width: 20px; height: 20px; }
+.wa-ask__input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; color: var(--ink); font-size: 1rem; font-weight: 500; -webkit-appearance: none; appearance: none; }
+.wa-ask__input::placeholder { color: var(--ink-3); font-weight: 400; }
+.wa-ask__input:focus { outline: none; }
+.wa-ask__input::-webkit-search-cancel-button { display: none; }
+.wa-ask__clear { width: 44px; height: 44px; flex: none; position: relative; }
+
+/* Controls from 1024 px. Buttons have one height (40 px) and three kinds: primary (solid vermilion, one
+   per view), secondary (a 1 px line) and quiet (text). A link-shaped button is a quiet one; one that
+   starts a line is pulled back by its padding (-12 px) so its words keep to the column's edge, which each
+   part sets where it has one. Icon keys are 40 px circles; in the top bar each wears the line. Chips are
+   32 px, for choosing; their hover follows the date key's set state, under Now. */
+@media (min-width: 1024px) {
+  .wa-btn, .wa-btn--sm { font-size:var(--fs-meta); min-height:40px; padding:0 18px; border-radius:var(--r-pill); }
+  .wa-btn .wa-ic { width:18px; height:18px; }
+  .wa-btn--quiet, .wa-sheet__foot .wa-btn--quiet { padding:0 12px; text-decoration-color:var(--line); text-underline-offset:4px; }
+  .wa-btn--quiet:hover { text-decoration-color:var(--ink-3); }
+  .wa-linkbtn { font-size:var(--fs-meta); display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 12px; border-radius:var(--r-pill); text-decoration-color:var(--line); text-underline-offset:4px; transition:background var(--t-fast), text-decoration-color var(--t-fast); }
+  .wa-linkbtn:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
+  .wa-linkbtn .wa-ic { width:16px; height:16px; }
+  /* Inside a sentence it stays a link. */
+  .wa-note .wa-linkbtn { display:inline; min-height:0; padding:0; border-radius:0; font-size:inherit; }
+  .wa-note .wa-linkbtn:hover { background:none; }
+  .wa-iconbtn { width:40px; height:40px; }
+  .wa-topbar .wa-iconbtn, .wa-topbar .wa-theme, .wa-lang__key { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
+  .wa-topbar .wa-iconbtn:hover, .wa-topbar .wa-theme:hover, .wa-lang__key:hover, .wa-lang__key[aria-expanded="true"] { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
+  .wa-lang__key { height:40px; }
+  .wa-chip { font-size:var(--fs-meta); font-weight:400; min-height:32px; padding-inline:14px; gap:6px; }
+  .wa-chip .wa-ic { width:16px; height:16px; }
+  .wa-chip .wa-picto { width:22px; height:22px; margin-left:-8px; }
+  .wa-chip__n { font-weight:400; }
+  .wa-field__label { font-size:var(--fs-body); }
+  .wa-ask__input { font-weight:400; }
+  .wa-seg__opt { font-size:var(--fs-meta); }
+  .wa-switch__title { font-weight:400; }
+}
+
 /* ── Small facts ───────────────────────────────────────────────── */
 .wa-now { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent); font: 600 .75rem/1 var(--f-sans); letter-spacing: .02em; }
 .wa-now::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -555,6 +636,11 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-heart:active { transform: scale(.85); }
 .wa-heart.is-popped { animation: wa-pop 420ms var(--spring); }
 @keyframes wa-pop { 40% { transform: scale(1.3); } }
+@media (min-width: 1024px) {
+  .wa-now, .wa-tag__why, .wa-new, .wa-flag { font-size:var(--fs-small); }
+  .wa-tag { font-weight:400; }
+  .wa-tag__why { font-weight:600; }
+}
 
 /* ── The event row (full results, venue listings, Saved) ─────────── */
 .wa-rows { display: grid; }
@@ -589,6 +675,15 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-day__name { font-size: 1.25rem; font-weight: 650; letter-spacing: -.02em; }
 .wa-day__date { font-size: var(--fs-meta); color: var(--ink-3); }
 .wa-day__n { margin-left: auto; font-size: var(--fs-small); color: var(--ink-3); }
+.wa-day__all { margin: var(--s-2) 0 var(--s-4); }
+@media (min-width: 1024px) {
+  .wa-row__title { font-size:var(--fs-title); }
+  .wa-row__walk, .wa-row__time--word { font-size:var(--fs-meta); }
+  .wa-row__area { font-size:var(--fs-small); }
+  .wa-saved-row__space { width:40px; height:40px; }
+  .wa-day__name { font-size:var(--fs-h2); font-weight:600; }
+  .wa-day__all { margin-inline-start:-12px; }
+}
 
 /* ── Places ─────────────────────────────────────────────────────── */
 .wa-place { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: var(--s-4); align-items: center; padding: 12px 0; text-decoration: none; color: inherit; border-bottom: 1px solid var(--hair); }
@@ -607,7 +702,6 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-place__walk .wa-ic { color: var(--here);  width: 15px; height: 15px; }
 @media (hover: hover) { .wa-place:hover .wa-place__name { text-decoration: underline; text-underline-offset: 3px; } }
 .places-grid { display: grid; margin-top: var(--s-3); }
-@media (min-width: 1024px) { .places-grid { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); } }
 
 .wa-open { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); font-weight: 500; white-space: nowrap; color: var(--ink-2); }
 .wa-open::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
@@ -617,15 +711,22 @@ a, button, summary, label, select, [role="button"] { touch-action: manipulation;
 .wa-open--unknown { color: var(--ink-3); }
 .wa-open--unknown::before { border-style: dashed; }
 
-
 .wa-since { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); padding: 12px 16px; min-height: 52px; border-radius: var(--r-md); background: var(--paper-2); border: 0; text-decoration: none; font-weight: 500; }
 .wa-since .wa-ic:last-child { margin-left: auto; }
 button.wa-since { width: 100%; color: inherit; text-align: left; font-size: .9375rem; }
 button.wa-since[disabled] { opacity: .6; }
 .wa-since__n { font-size: .8125rem; font-weight: 700; background: var(--accent); color: var(--on-accent); padding: 3px 9px; border-radius: var(--r-pill); }
+@media (min-width: 1024px) {
+  .places-grid { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); }
+  .wa-place__name { font-size:var(--fs-title); }
+  .wa-open { font-weight:400; }
+  .wa-open--yes { font-weight:600; }
+  .wa-since, button.wa-since { font-size:var(--fs-meta); }
+  .wa-since { font-weight:600; }
+}
 
 /* ── Home ──────────────────────────────────────────────────────── */
-/* Now keeps its mood and location actions together above the shortlist. */
+/* Now keeps its mood and location actions together above the shortlist. Its desktop rules close the Now section. */
 .home-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); min-width: 0; }
 .home-hero__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
 .home-acts:empty { display: none; }
@@ -637,14 +738,6 @@ button.wa-since[disabled] { opacity: .6; }
 .home-main { max-width:42rem; }
 .home-side { display: none; gap: var(--s-8); align-content: start; }
 .home-side .wa-sect { margin-top: 0; }
-@media (min-width: 1024px) {
-  body[data-page="tonight"] .wa-topbar { border-bottom: 0; }
-  .home-hero { padding: var(--s-8) 0 var(--s-6); }
-}
-@media (min-width: 1024px) {
-  .home-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: var(--s-9); align-items: start; }
-  .home-side { display: grid; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); }
-}
 
 /* ── All events and search results ─────────────────────────────────────────────────── */
 .prog-controls { position: sticky; top: var(--topbar-h); z-index: 20; margin: 0 calc(-1 * var(--gutter)); padding: var(--s-3) var(--gutter); display: grid; gap: var(--s-3); background: color-mix(in oklab, var(--paper) 90%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); border-bottom: 1px solid var(--hair); }
@@ -653,23 +746,6 @@ button.wa-since[disabled] { opacity: .6; }
 .prog-summary__text { min-width: 0; overflow-wrap: anywhere; font-size: var(--fs-meta); color: var(--ink-2); }
 .prog-summary__text strong { color: var(--ink); font-weight: 600; }
 .prog-badge { font-size: .75rem; font-weight: 700; background: var(--primary-bg); color: var(--on-accent); border-radius: var(--r-pill); min-width: 20px; height: 20px; display: inline-grid; place-items: center; padding: 0 6px; }
-@media (min-width: 1024px) {
-  .prog-controls { position: static; margin: 0; padding: 0 0 var(--s-5); border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .prog-layout { display: block; }
-}
-
-
-/* The ask field: one pill for search and for a sentence. The glyph says
-   it can read a sentence; the list stays our own listings either way. */
-.wa-ask { position: relative; display: flex; align-items: center; height: 52px; padding: 0 4px 0 16px; gap: 6px; border-radius: var(--r-pill); background: var(--paper-2); transition: box-shadow var(--t-fast), background var(--t-fast); }
-.wa-ask:focus-within { background: var(--paper); box-shadow: 0 0 0 1.5px var(--ink), var(--shadow-1); }
-.wa-ask__mark { display: grid; color: var(--accent-ink); flex: none; }
-.wa-ask__mark .wa-ic { width: 20px; height: 20px; }
-.wa-ask__input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; color: var(--ink); font-size: 1rem; font-weight: 500; -webkit-appearance: none; appearance: none; }
-.wa-ask__input::placeholder { color: var(--ink-3); font-weight: 400; }
-.wa-ask__input:focus { outline: none; }
-.wa-ask__input::-webkit-search-cancel-button { display: none; }
-.wa-ask__clear { width: 44px; height: 44px; flex: none; position: relative; }
 .prog-quick { padding-top: 0; padding-bottom: 0; }
 .prog-quick .wa-chip { min-height: var(--tap); padding: 0 14px; font-size: .875rem; }
 .prog-quick .wa-chip--on .wa-ic { width: 14px; height: 14px; margin-right: -4px; }
@@ -677,6 +753,55 @@ button.wa-since[disabled] { opacity: .6; }
 .prog-ask[hidden] { display: none; }
 .prog-ask .wa-ic { width: 16px; height: 16px; color: var(--accent-ink); flex: none; }
 .prog-ask button { margin-left: auto; border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; flex: none; }
+.prog-back { display:inline-flex; margin-top:12px; }
+.prog-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.prog-toolbar .wa-chip .wa-ic { width:18px; height:18px; }
+.prog-quick { flex-wrap:wrap; }
+.prog-quick[hidden] { display:none; }
+.prog-ask { flex-wrap:wrap; }
+.prog-ask button { min-height:44px; }
+.prog-list { min-width:0; }
+.prog-controls .wa-ask { max-width:none; }
+body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
+#to-map { display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-small); white-space:nowrap; }
+#to-map .wa-ic { width:18px; height:18px; }
+.prog-options { border-top:1px solid var(--hair); }
+.prog-options > summary { min-height:52px; display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; list-style:none; }
+.prog-options > summary::before { content:'+'; font-size:1.25rem; color:var(--ink-3); }
+.prog-options[open] > summary::before { content:'−'; }
+.prog-options > summary::-webkit-details-marker { display:none; }
+.prog-back .wa-ic, .prog-rail { display:none; }   /* the desktop back key's chevron; the desktop rail */
+
+/* All events on a tablet (600 to 1023 px): the posters two to a row, so a picture is not the width of the screen. */
+@media (min-width:600px) and (max-width:1023px) {
+  .prog-list .wa-feed { max-width:none; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:var(--s-6); }
+}
+/* All events from 1024 px: Now's rows instead of posters, the controls and the list in the main column. */
+@media (min-width: 1024px) {
+  .prog-controls { position: static; margin: 0; padding: 0 0 var(--s-5); border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .prog-layout { display: block; }
+  body[data-page="programme"] :is(.prog-back, .wa-pagehead, .prog-controls) { max-width:var(--main); }
+  .prog-list { max-width:var(--main); }
+  .prog-badge { font-size:var(--fs-small); }
+  .prog-quick .wa-chip { font-size:var(--fs-meta); min-height:32px; padding-inline:14px; gap:6px; }
+  .prog-back { margin-inline-start:-12px; }
+  .prog-back .wa-ic { display:block; }
+  /* The map link does a button's job, so it wears the secondary button. */
+  #to-map { font-size:var(--fs-meta); gap:8px; }
+  a#to-map.wa-linkbtn { min-height:40px; margin:0; padding:0 18px; border:1px solid var(--line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-weight:600; text-decoration:none; }
+  a#to-map.wa-linkbtn:hover { background:var(--paper-2); border-color:var(--ink-3); }
+}
+/* From 1280 px the search and its filters are a sticky rail on the left, as on Now. */
+@media (min-width:1280px) {
+  body[data-page="programme"] main.wa-shell { display:grid; grid-template-columns:248px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  body[data-page="programme"] main.wa-shell > :is(.prog-back, .wa-pagehead, .prog-layout) { grid-column:2; }
+  body[data-page="programme"] main.wa-shell > .prog-back { justify-self:start; }
+  body[data-page="programme"] .prog-controls { grid-column:1; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); max-width:none; max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; padding:var(--s-9) 4px var(--s-4); margin-inline:-4px; align-content:start; }
+  body[data-page="programme"] .prog-toolbar, body[data-page="programme"] .prog-quick { flex-wrap:wrap; }
+  body[data-page="programme"] .prog-list { max-width:none; }
+  body[data-page="programme"] .prog-rail { display:grid; gap:var(--s-6); margin-top:var(--s-4); }
+  body[data-page="programme"] .prog-controls:has(.prog-rail:not(:empty)) #result-date { display:none; }
+}
 
 /* ── Detail ────────────────────────────────────────────────────── */
 .det { padding-top: var(--s-3); }
@@ -714,7 +839,7 @@ button.wa-since[disabled] { opacity: .6; }
 .det-actions__row .wa-btn .wa-ic { width: 22px; height: 22px; }
 
 /* The ticket bar: glass, floating above the tab bar on phones, a
-   sticky card beside the text on desktop. */
+   panel beside the facts on desktop. */
 .wa-bar { position: fixed; z-index: 44; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--s-3); padding: 8px 8px 8px 20px; border-radius: var(--r-pill); }
 .wa-bar__text { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
 .wa-bar__price { font-weight: 650; font-size: 1.0625rem; }
@@ -730,12 +855,6 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
   body[data-page="detail"] .wa-toast { bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 .wa-back { margin-left: -6px; }
-@media (min-width: 1024px) { .wa-back { display: none; } }
-@media (min-width: 1024px) {
-  .wa-bar { position: sticky; left: auto; right: auto; bottom: auto; top: calc(var(--topbar-h) + var(--s-5)); padding: var(--s-5); border-radius: var(--r-xl); background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; border: 1px solid var(--hair); box-shadow: var(--shadow-2); flex-wrap: wrap; }
-  .wa-bar .wa-btn--primary { flex: 1 1 100%; border-radius: var(--r-sm); min-height: 52px; }
-  body[data-page="detail"] .wa-shell { padding-bottom: var(--s-9); }
-}
 
 .det-block { display: grid; gap: var(--s-3); padding-top: var(--s-6); border-top: 1px solid var(--hair); }
 .det-block__title { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; }
@@ -799,16 +918,56 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
 .det-footer__checked { display: inline-flex; align-items: center; min-height: 44px; font-variant-numeric: tabular-nums; }
 .det-footer .det-flag[open] { flex-basis: 100%; }
 
+.det-grid__main { display: grid; gap: var(--s-6); }
 @media (min-width: 600px) and (max-width: 1023px) {
   .det-grid__media { width: 65%; }
 }
+
+/* Event page from 1024 px: the picture sticky on the left; the facts beside the ticket panel, each in
+   its own cell, so the panel never covers what follows. The facts carry plain line icons rather than
+   grey tiles, the actions are one row of secondary buttons instead of tiles, and the venue card is flat. */
 @media (min-width: 1024px) {
+  .wa-back { display: none; }
+  .wa-bar { position: static; left: auto; right: auto; bottom: auto; top: calc(var(--topbar-h) + var(--s-5)); padding: var(--s-5); border-radius: var(--r-lg); background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; border: 1px solid var(--line); box-shadow: none; flex-wrap: wrap; }
+  .wa-bar .wa-btn--primary { flex: 1 1 100%; border-radius: var(--r-pill); min-height: 40px; }
+  body[data-page="detail"] .wa-shell { padding-bottom: var(--s-9); }
+  body[data-page="detail"] .wa-toast { bottom: var(--s-6); }
   .det { padding-top: var(--s-7); }
-  .det-grid { grid-template-columns: minmax(0, 4.55fr) minmax(0, 7.45fr); gap: var(--s-9); align-items: start; }
+  .det-grid { grid-template-columns:minmax(0, 5fr) minmax(0, 7fr); gap:var(--s-8); align-items: start; }
   .det-grid__media { position: sticky; top: calc(var(--topbar-h) + var(--s-6)); display: grid; gap: var(--s-4); }
   .det-media, .det-type { aspect-ratio: 5 / 4; max-height: min(72vh, 680px); }
+  .det-head .wa-h1 { font-size:3rem; }
+  .det-block__title { font-size:var(--fs-h2); }
+  .vcard__name, .wa-bar__price { font-size:var(--fs-title); font-weight:600; }
+  .det-summary { font-size:var(--fs-lead); }
+  .det-orig, .det-fact__value { font-size:var(--fs-body); }
+  .det-actions__row .wa-btn, .det-link, .hours__row, .det-fact__sub, .wa-bar__sub { font-size:var(--fs-meta); }
+  .det-credit, .hours__today { font-size:var(--fs-small); }
+  .det-minimap .maplibregl-ctrl-attrib { font-size:var(--fs-small) !important; }
+  .det-type__word { font-weight:700; }
+  .det-actions__row { display:flex; flex-wrap:wrap; gap:var(--s-2); }
+  .det-actions__row .wa-btn { flex-direction:row; gap:8px; min-height:40px; padding:0 18px; border-radius:var(--r-pill); border-color:var(--line); background:var(--paper); }
+  .det-actions__row .wa-btn:hover { background:var(--paper-2); border-color:var(--ink-3); }
+  .det-actions__row .wa-btn[aria-pressed="true"] { border-color:transparent; }
+  .det-actions__row .wa-btn .wa-ic { width:18px; height:18px; }
+  .det-after > .wa-btn { justify-self:start; }
+  .det-link { min-height:40px; padding:0 16px 0 14px; background:var(--paper); box-shadow:inset 0 0 0 1px var(--line); }
+  .det-link:hover { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
+  .det-link .wa-ic { width:18px; height:18px; }
+  .det-footer > .wa-linkbtn { margin-inline-start:-12px; }
+  .vcard { padding:0; border:0; border-radius:0; box-shadow:none; }
+  .vcard:hover { transform:none; box-shadow:none; }
+  @media (hover:hover) { .vcard:hover .vcard__name { text-decoration:underline; text-underline-offset:3px; } }
+  .det-grid__main:has(> .det-facts + .wa-bar) { grid-template-columns:minmax(0, 1fr) minmax(240px, 288px); column-gap:var(--s-7); }
+  .det-grid__main:has(> .det-facts + .wa-bar) > * { grid-column:1 / -1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .det-facts { grid-column:1; }
+  .det-grid__main:has(> .det-facts + .wa-bar) > .wa-bar { grid-column:2; align-self:start; flex-direction:column; align-items:stretch; gap:var(--s-3); }
+  .det-grid__main > .wa-bar .wa-bar__sub { white-space:normal; }
+  .det-grid__main > .wa-bar .wa-btn--primary { flex:none; }
+  .det-fact { grid-template-columns:20px minmax(0, 1fr); gap:var(--s-3); align-items:start; padding:var(--s-2) 0; }
+  .det-fact__icon { width:20px; height:20px; margin-top:1px; border-radius:0; background:none; color:var(--ink-3); }
+  .det-fact__icon .wa-ic { width:20px; height:20px; }
 }
-.det-grid__main { display: grid; gap: var(--s-6); }
 
 /* ── Sheet: the one modal ───────────────────────────────────────── */
 .wa-sheet { position: fixed; inset: 0; top: var(--vv-top, 0px); margin: 0; padding: 0; border: 0; width: 100%; height: var(--vv-h, 100%); max-width: none; max-height: none; background: transparent; color: var(--ink); overflow: hidden; }
@@ -827,6 +986,23 @@ body[data-page="detail"] .wa-shell { padding-bottom: 120px; }
   .wa-sheet[open] { align-items: center; }
   .wa-sheet__panel { width: min(600px, calc(100% - 48px)); border-radius: var(--r-xl); max-height: min(86vh, 860px); }
   .wa-sheet__head::before { display: none; }
+}
+
+/* Calm footers and name ideas: a sheet's own button is the vermilion gradient, a pill
+   right-aligned beside a quiet Cancel. */
+.wa-sheet__foot { justify-content: flex-end; }
+.wa-sheet__foot .wa-btn { min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); font-size: .9375rem; }
+.wa-sheet__foot .wa-btn--primary, .wa-sheet__foot .wa-btn--ink { background: var(--primary-bg); color: var(--on-accent); border-color: transparent; }
+.wa-sheet__foot .wa-btn--quiet { padding: 0 12px; }
+.wa-sheet .wa-input { height: 48px; border-radius: var(--r-md); }
+.wa-ideas { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.wa-ideas__chip { min-height: var(--tap); padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: .875rem; font-weight: 500; }
+.wa-ideas__chip:active { transform: scale(.97); background: var(--paper-3); }
+@media (min-width: 1024px) {
+  .wa-sheet__title { font-size:var(--fs-h2); font-weight:600; }
+  .wa-sheet__close { width:40px; height:40px; }
+  .wa-sheet__foot .wa-btn { font-size:var(--fs-meta); min-height:40px; border-radius:var(--r-pill); }
+  .wa-ideas__chip { font-size:var(--fs-meta); font-weight:400; min-height:32px; padding-inline:14px; gap:6px; }
 }
 
 /* ── Map ───────────────────────────────────────────────────────── */
@@ -922,6 +1098,32 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
 .map-drawer__list { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--s-5) var(--s-4); overscroll-behavior: contain; }
 .map-drawer__label { font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); padding: var(--s-4) 0 var(--s-1); }
 .map-legend-note { font-size: var(--fs-small); color: var(--ink-3); padding: var(--s-3) 0; }
+.map-dates { margin-left:auto; min-width:0; }
+.map-dates .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); max-width:100%; height:auto; min-height:44px; }
+.map-dates .wa-chip span { max-width:15rem; white-space:normal; }
+.map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; pointer-events:auto; }
+.map-filters .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); font-size:.8125rem; padding-inline:10px; }
+.map-search-context { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; max-width:100%; padding:10px 14px; border-radius:var(--r-md); background:var(--glass-strong); border:1px solid var(--glass-edge); box-shadow:var(--shadow-1); font-size:var(--fs-small); overflow-wrap:anywhere; }
+.map-search-context > :first-child { font-weight:600; }
+.map-search-context a { display:inline-flex; align-items:center; min-height:44px; color:var(--ink-2); text-underline-offset:3px; }
+
+/* Map: one row of glass pills over the map, as on Now: a tap picks one mood,
+   Filters holds the rest, Near me ends the row. It scrolls sideways. */
+.map-filters:not(:has(.map-search-context)) { flex:0 0 calc(100% + 2 * var(--s-3)); flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; scroll-snap-type:x proximity; min-width:0; margin-inline:calc(-1 * var(--s-3)); padding:2px var(--s-3) 6px; scroll-padding-inline:var(--s-3); }
+.map-filters::-webkit-scrollbar { display:none; }
+.map-filters .map-mood { flex:none; min-height:40px; padding:0 14px 0 5px; gap:7px; font-size:.8125rem; font-weight:600; background:var(--glass-strong); border-color:var(--glass-edge); box-shadow:0 4px 14px rgba(20,16,40,.12); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); scroll-snap-align:start; }
+.map-filters .map-mood .wa-picto { width:30px; height:30px; margin:0; }
+.map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
+.map-filters .map-mood .wa-ic { width:17px; height:17px; }
+.map-filters .map-mood[aria-pressed="true"] { background:var(--select-bg), var(--glass-strong); border-color:transparent; box-shadow:inset 0 0 0 1px var(--select-ring), 0 4px 14px rgba(20,16,40,.12); }
+.map-filters .map-mood--more.is-set { background:var(--select-bg), var(--glass-strong); color:var(--accent-ink); }
+.maplibregl-ctrl-attrib { font: 11px var(--f-sans) !important; background: color-mix(in oklab, var(--paper) 80%, transparent) !important; color: var(--ink-2) !important; border-radius: 8px 0 0 0; }
+.maplibregl-ctrl-attrib a { color: inherit !important; }
+.map-page .maplibregl-ctrl-bottom-right { bottom: var(--sheet-h, 150px); }
+
+/* Map from 1024 px: the list is a column on the left, headed by Events/Places, the date and the moods
+   (every mood shows; the row wraps instead of running under the edge). The map keeps only its pins
+   and the locate key. Plain chips here, glass only where something moves beneath. */
 @media (min-width: 1024px) {
   .map-page { top: var(--topbar-h); }
   .map-canvas, .map-canvas.maplibregl-map, .map-pins { inset: 16px 16px 16px 456px; }
@@ -939,11 +1141,34 @@ body[data-page="map"] .wa-topbar { position: fixed; left: 0; right: 0; }
   .map-preview__body { padding: 14px 16px 16px; }
   .map-preview .wa-heart { color: #fff; top: 6px; bottom: auto; right: 48px; }
   .map-preview .wa-heart .wa-ic { fill: rgba(0,0,0,.4); filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+  .map-page .maplibregl-ctrl-bottom-right { bottom: 0; }
+  .maplibregl-ctrl-attrib { font-size:var(--fs-small) !important; }
+  .map-filters .wa-chip, .map-filters .map-mood { font-size:var(--fs-meta); }
+  .map-seg__n { font-weight:400; }
+  .wa-pin__tag, .wa-pin__count, .map-preview__title, .map-drawer__title { font-weight:600; }
+  .map-preview__close, .map-ctrl { width:40px; height:40px; }
+  .map-dates .wa-chip { min-height:32px; padding-inline:14px; gap:6px; }
+  .map-filters .map-mood { min-height:32px; padding:0 14px 0 4px; }
+  .map-filters .map-mood .wa-picto { width:24px; height:24px; }
+  .map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
+  .map-seg { height:40px; }
+  .map-filters:not(:has(.map-search-context)) { flex-basis:100%; margin-inline:0; padding-inline:0; scroll-padding-inline:0; flex-wrap:wrap; overflow:visible; }
+  .map-dates a.wa-chip { min-height:40px; font-weight:600; }
+  .map-top { align-items:flex-start; }
+  .map-drawer > .map-top { position:static; inset:auto; z-index:auto; flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-2); padding:0 var(--s-5) var(--s-4); border-bottom:1px solid var(--hair); pointer-events:auto; }
+  .map-drawer > .map-top .map-seg { -webkit-backdrop-filter:none; backdrop-filter:none; background:var(--paper-2); box-shadow:none; }
+  .map-drawer > .map-top .map-dates { margin-inline-start:auto; }
+  .map-drawer > .map-top .map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:var(--s-2); overflow:visible; padding:0; margin:0; mask:none; -webkit-mask:none; }
+  .map-drawer > .map-top :is(.map-mood, .discovery-date, .wa-chip) { background:var(--paper); border:1px solid var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .map-drawer > .map-top .map-mood[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
 }
-.maplibregl-ctrl-attrib { font: 11px var(--f-sans) !important; background: color-mix(in oklab, var(--paper) 80%, transparent) !important; color: var(--ink-2) !important; border-radius: 8px 0 0 0; }
-.maplibregl-ctrl-attrib a { color: inherit !important; }
-.map-page .maplibregl-ctrl-bottom-right { bottom: var(--sheet-h, 150px); }
-@media (min-width: 1024px) { .map-page .maplibregl-ctrl-bottom-right { bottom: 0; } }
+/* Compact desktop windows: a narrower list column. */
+@media (min-width:1024px) and (max-width:1199px) {
+  .map-canvas, .map-canvas.maplibregl-map, .map-pins { left:340px; }
+  .map-drawer { width:324px; }
+  .map-top { left:calc(340px + var(--s-4)); }
+  .map-preview { left:calc(324px + var(--s-5) - 8px); width:300px; }
+}
 
 /* ── States ────────────────────────────────────────────────────── */
 .wa-empty { display: grid; justify-items: start; gap: var(--s-3); padding: var(--s-7) 0; max-width: 560px; }
@@ -976,14 +1201,16 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s-2)); transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: var(--s-4); width: max-content; max-width: calc(100% - 2 * var(--gutter)); padding: 8px 8px 8px 18px; border-radius: var(--r-pill); font-weight: 600; font-size: .9375rem; animation: wa-toast-in 420ms var(--spring); background: var(--glass-strong); color: var(--ink); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shade), var(--glass-shine); }
 @keyframes wa-toast-in { from { transform: translate(-50%, 16px) scale(.96); opacity: 0; } }
 .wa-toast__undo { min-height: var(--tap); padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--select-bg); box-shadow: inset 0 0 0 1px var(--select-ring); color: inherit; font-weight: 700; }
-@media (min-width: 1024px) { .wa-toast { bottom: var(--s-6); } }
-@media (min-width: 1024px) { body[data-page="detail"] .wa-toast { bottom: var(--s-6); } }
+@media (min-width: 1024px) {
+  .wa-empty__title { font-size:var(--fs-h2); font-weight:600; }
+  .wa-toast { bottom: var(--s-6); font-size:var(--fs-meta); }
+  .wa-toast__undo { min-height:40px; border-radius:var(--r-pill); }
+}
 
 /* ── Saved ─────────────────────────────────────────────────────── */
 .wa-gone { display: flex; align-items: center; gap: var(--s-3); justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); }
 .wa-gone__title { text-decoration: line-through; overflow-wrap: anywhere; }
 .saved-cols { display: grid; }
-
 
 /* ── You / About ───────────────────────────────────────────────── */
 .wa-feed-url { display: block; padding: 14px 16px; border-radius: var(--r-md); background: var(--paper-2); font: 500 .8125rem/1.5 var(--f-mono); overflow-wrap: anywhere; text-decoration: none; }
@@ -994,6 +1221,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 
 .nf-num { font-size: clamp(6rem, 3rem + 20vw, 13rem); font-weight: 750; letter-spacing: -.07em; line-height: .85; }
 .nf-num span { color: var(--accent); }
+@media (min-width: 1024px) { .wa-foot a { font-weight:400; } .nf-num { font-weight:700; } }
 
 @media print {
   .wa-topbar, .wa-tabbar, .prog-controls, .wa-row__thumb, .home-side, .wa-bar { display: none !important; }
@@ -1051,7 +1279,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-inbox__body { font-size: var(--fs-meta); color: var(--ink-2); white-space: pre-line; line-height: 1.5; }
 .wa-inbox__when { font-size: var(--fs-small); color: var(--ink-3); }
 
-
 /* ── Home Screen invitation (install.js) ──────────────────────────
    The nudge is the glass recipe, sitting where the toast sits, so it
    reads as part of the tab bar's family. It rises on the spring and
@@ -1067,7 +1294,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-install__sub { font-size: var(--fs-small); color: var(--ink-2); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wa-install__go { flex: none; min-height: var(--tap); padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--primary-bg); box-shadow: var(--primary-glow); color: var(--on-accent); font-weight: 650; font-size: .875rem; }
 .wa-install__x { flex: none; width: var(--tap); height: var(--tap); border: 0; border-radius: 50%; background: none; color: var(--ink-3); display: grid; place-items: center; }
-@media (min-width: 1024px) { .wa-install { left: auto; right: var(--s-6); bottom: var(--s-6); width: 400px; } }
 @keyframes wa-install-in { from { opacity: 0; transform: translateY(28px) scale(.94); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
 @keyframes wa-install-out { to { opacity: 0; transform: translateY(14px) scale(.97); filter: blur(4px); } }
 @keyframes wa-install-icon { 0% { transform: scale(.6) rotate(-10deg); } 60% { transform: scale(1.08) rotate(3deg); } 100% { transform: none; } }
@@ -1092,45 +1318,22 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   .wa-howto__tile { animation: none; opacity: 1; }
   .wa-howto__chip.is-ping::after { animation: none; opacity: .9; transform: none; }
 }
-
-/* Notifications and App rows on You. */
-
+@media (min-width: 1024px) {
+  .wa-install { left: auto; right: var(--s-6); bottom: var(--s-6); width: 400px; }
+  .wa-install__title { font-size:var(--fs-meta); font-weight:600; }
+  .wa-install__go { font-weight:600; min-height:40px; border-radius:var(--r-pill); }
+  .wa-howto__copy strong { font-weight:600; }
+}
 
 /* Bar diagnostics readout (tabbar.js). Hidden unless switched on by holding the wordmark. */
 .wa-brand { -webkit-touch-callout: none; }
 .wa-hud { position: fixed; z-index: 200; right: 8px; top: calc(var(--topbar-h) + env(safe-area-inset-top) + 6px); margin: 0; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.72); color: #fff; font: 11px/1.35 var(--f-mono); white-space: pre; pointer-events: none; }
 .wa-hud[data-bad="1"] { background: rgba(190,30,10,.88); }
 
-/* The phone tab bar gets its own compositing layer. On an iPhone Home Screen app it has been
-   seen floating mid-screen during momentum scrolling; a fixed layer WebKit has to re-pin on
-   its own is the likeliest cause, so it is pinned from the start. Phones only: from 1024 the
-   bar is the masthead nav and stays an ordinary fixed element. */
-@media (max-width: 1023px) {
-  .wa-tabbar { transform: translateZ(0); will-change: transform; }
-}
-
 /* A short viewport (an iPhone in a Safari tab) keeps the steps and the sign-in note on one screen. */
 @media (max-height: 780px) { .wa-howto__stage { display: none; } }
 
-
-/* ── You: sign-in card and milestones ─────────────────────────────
-   Quiet surfaces on the page's own paper. The card is a soft vermilion
-   wash, never a dark block; its buttons are small pills. */
-
 @keyframes you-pop { from { transform: scale(.7); } to { transform: none; } }
-
-/* ── Sheets: calm footers and name ideas ──────────────────────────
-   A sheet's own button is the vermilion gradient, a pill right-aligned beside a quiet Cancel. */
-.wa-sheet__foot { justify-content: flex-end; }
-.wa-sheet__foot .wa-btn { min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); font-size: .9375rem; }
-.wa-sheet__foot .wa-btn--primary, .wa-sheet__foot .wa-btn--ink { background: var(--primary-bg); color: var(--on-accent); border-color: transparent; }
-.wa-sheet__foot .wa-btn--quiet { padding: 0 12px; }
-.wa-sheet .wa-input { height: 48px; border-radius: var(--r-md); }
-.wa-ideas { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-.wa-ideas__chip { min-height: var(--tap); padding: 0 14px; border: 0; border-radius: var(--r-pill); background: var(--paper-2); color: var(--ink-2); font-size: .875rem; font-weight: 500; }
-.wa-ideas__chip:active { transform: scale(.97); background: var(--paper-3); }
-
-
 
 /* ── Light motion ────────────────────────────────────────────────────
    Compositor-only (transform and opacity), short, and bounded: a handful of
@@ -1166,14 +1369,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 @keyframes wa-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes wa-live { from { opacity: .55; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
 
-
-/* ── You, compact ─────────────────────────────────────────────────
-   Mobile first: fewer, shorter blocks. Stats are one low strip, milestones one row of four,
-   interests one scrolling row, appearance three icons, and the long lists fold away. */
-
-
-
-
 /* About's folds (about.html). */
 .you-folds { margin-top: var(--s-5); }
 .you-fold { border-top: 1px solid var(--hair); }
@@ -1185,8 +1380,20 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .you-fold__t { flex: 1; }
 .you-fold__b { padding: 0 0 var(--s-4); }
 
+/* About: the counts. */
+.wa-stats { display: flex; flex-wrap: wrap; gap: var(--s-5) var(--s-8); margin-top: var(--s-5); }
+.wa-stat { display: grid; gap: 2px; }
+.wa-stat__n { font-size: var(--fs-h1); font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.wa-stat__label { font-size: var(--fs-small); color: var(--ink-2); }
 
-
+/* About from 1024 px: the counts as one line under the lede, not three big numbers. */
+.about-counted { display:none; }
+@media (min-width: 1024px) {
+  .you-fold > summary { font-size:var(--fs-title); font-weight:600; }
+  .wa-stat__n { font-size:var(--fs-time); }
+  .about-counted:not(:empty) { display:block; font-variant-numeric:tabular-nums; }
+  body:has(.about-counted:not(:empty)) .wa-stats { display:none; }
+}
 
 /* ── The evening (route.js, route-page.js) ───────────────────────
    A route is a spine: a time, a square node, a stop. The event is the
@@ -1216,6 +1423,10 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt-card__walk--you .rt-card__rail::after { content: ""; position: absolute; left: 3px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--here); box-shadow: 0 0 0 3px color-mix(in oklab, var(--here) 24%, transparent); }
 .rt-card__walk--you .rt-card__rail::before { top: 12px; }
 .rt-card__walk--you > :last-child { color: var(--here); font-weight: 600; }
+@media (min-width: 1024px) {
+  .rt-card__title { font-size:var(--fs-title); }
+  .rt-card, :root[data-theme="dusk"] .rt-card { background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+}
 
 /* The mood sheet. */
 .mood-lead { font-size: var(--fs-meta); color: var(--ink-2); line-height: 1.45; margin: 0 0 var(--s-4); }
@@ -1244,6 +1455,10 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .mood-seg button { flex: 1 1 0; min-height: var(--tap); border: 0; border-radius: var(--r-pill); background: transparent; font-weight: 500; font-size: .9375rem; color: var(--ink); }
 .mood-seg button[aria-pressed="true"] { background: var(--glass-strong); color: var(--accent-ink); font-weight: 600; box-shadow: 0 4px 12px rgba(150, 70, 50, .18), inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 1px color-mix(in oklab, var(--accent) 18%, transparent); }
 .mood-seg + .wa-note { margin-top: var(--s-2); }
+@media (min-width: 1024px) {
+  .mood-subs .wa-chip { font-size:var(--fs-meta); min-height:32px; padding-inline:14px; gap:6px; }
+  .mood-seg button { font-size:var(--fs-meta); font-weight:400; }
+}
 
 /* The Guide's row of place types. */
 .places-lens-host { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); }
@@ -1251,6 +1466,10 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .places-kinds { flex: 1 1 100%; min-width: 0; }
 .places-kinds .wa-chip { min-height: var(--tap); padding: 0 14px; font-size: .875rem; flex: none; }
 .places-kinds .wa-chip .wa-picto { width: 22px; height: 22px; }
+@media (min-width: 1024px) {
+  .places-kinds .wa-chip { font-size:var(--fs-meta); min-height:32px; padding-inline:14px; gap:6px; }
+  .places-kinds .wa-chip .wa-picto { width:22px; height:22px; margin-left:-8px; }
+}
 
 /* Easy to join alone, on an event page. */
 .det-easy .det-block__title { display: flex; align-items: center; gap: var(--s-2); }
@@ -1270,6 +1489,7 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .det-next__meta { font-size: var(--fs-meta); color: var(--ink-2); }
 .det-next__why { font-size: var(--fs-meta); line-height: 1.4; color: var(--ink); margin-top: 2px; }
 @media (hover: hover) { .det-next:hover .det-next__name { text-decoration: underline; text-underline-offset: 3px; } }
+@media (min-width: 1024px) { .det-next__name { font-size:var(--fs-title); } }
 
 /* The Guide says where its walking times start, and offers the one change that matters. */
 .places-from { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-4); margin: 0 0 var(--s-3); font-size: var(--fs-meta); color: var(--ink-2); }
@@ -1278,12 +1498,11 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .places-from__line .wa-ic { width: 18px; height: 18px; color: var(--here); }
 .places-from b { color: var(--ink); font-weight: 600; }
 .places-from .wa-linkbtn { padding: 0; }
-
-/* About: the counts. */
-.wa-stats { display: flex; flex-wrap: wrap; gap: var(--s-5) var(--s-8); margin-top: var(--s-5); }
-.wa-stat { display: grid; gap: 2px; }
-.wa-stat__n { font-size: var(--fs-h1); font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
-.wa-stat__label { font-size: var(--fs-small); color: var(--ink-2); }
+@media (min-width: 1024px) {
+  /* The start point's link does a button's job, so it wears the secondary button. */
+  .places-from .wa-linkbtn { min-height:40px; margin:0; padding:0 18px; border:1px solid var(--line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-weight:600; text-decoration:none; }
+  .places-from .wa-linkbtn:hover { background:var(--paper-2); border-color:var(--ink-3); }
+}
 .rt-back { display: inline-flex; margin-bottom: var(--s-2); }
 .rt { list-style: none; margin: var(--s-6) 0 0; padding: 0; display: grid; max-width: 40rem; }
 .rt__stop, .rt__walk { display: grid; grid-template-columns: 3.6rem 1.6rem 1fr; }
@@ -1310,6 +1529,33 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .rt__walk .wa-ic { width: 15px; height: 15px; }
 .rt__walk--start > :last-child { color: var(--here); }
 .rt-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-6) 0 var(--s-3); }
+.rt-back__label, .rt-map { display:none; }   /* the desktop back key's label; the walk's map */
+
+/* Walk page from 1024 px: one back key, a quiet button with a chevron; start times lead the stops; the
+   stops on the left, their map on the right, sticky while the list scrolls. */
+@media (min-width: 1024px) {
+  #rt-title { font-size:3rem; }
+  .rt__name { font-size:var(--fs-title); }
+  .rt__walk > :last-child { font-size:var(--fs-meta); }
+  .rt__time { font-size:var(--fs-time); font-weight:700; letter-spacing:-.03em; line-height:1; }
+  .rt__stop, .rt__walk { grid-template-columns:5.75rem 1.6rem 1fr; }
+  .rt__time { padding-top:10px; }
+  .rt-back { margin-inline-start:-12px; }
+  .wa-iconbtn.rt-back { display:inline-flex; gap:6px; width:auto; height:auto; min-height:40px; padding:0 12px; border-radius:var(--r-pill); background:none; color:var(--ink); font-size:var(--fs-meta); font-weight:600; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:4px; }
+  .wa-iconbtn.rt-back:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
+  .rt-back .wa-ic { width:16px; height:16px; }
+  .rt-back__label { display:inline; }
+  main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); }
+  main.wa-shell:has(> .rt-map:not([hidden])) { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:var(--s-9); align-items:start; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > :is(.rt-back, .wa-pagehead, #rt-body) { grid-column:1; max-width:none; }
+  main.wa-shell:has(> .rt-map:not([hidden])) > .rt-back { justify-self:start; }
+  .rt-map:not([hidden]) { display:block; grid-column:2; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); height:calc(100vh - var(--topbar-h) - var(--s-8)); min-height:420px; margin-top:var(--s-7); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
+  .rt-map__canvas { width:100%; height:100%; }
+  .rt-map__pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--paper); box-shadow:0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.25); color:var(--accent-ink); font:700 var(--fs-meta)/1 var(--f-sans); text-decoration:none; cursor:pointer; }
+  .rt-map__pin.is-event { background:var(--accent); color:#fff; }
+  .rt-map__pin:hover { transform:scale(1.08); }
+  .rt-map__pin:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+}
 
 /* Tonight's list: day tabs, then rows in time order. */
 .home-day__note { margin: 0 0 var(--s-1); }
@@ -1320,19 +1566,13 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .home-places .wa-place__glyph { width: 56px; height: 56px; }
 .home-places .wa-place__glyph .wa-picto { width: 56px; height: 56px; }
 .home-places .wa-place__why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (min-width: 1024px) {
-  .home-places { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); }
-  /* Beside the map card the row keeps to its column. */
-}
 .home-day__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); }
 .home-day__all { min-height: var(--tap); background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shine); border-color: var(--glass-edge); }
 .home-day__all .wa-ic { width: 18px; height: 18px; }
 
-/* You: a short page. Signed out it opens on one card; signed in, on who you are. */
 .wa-sect.rt-more { margin-top: var(--s-8); max-width: 40rem; }   /* outranks .wa-sect:first-child: it is the first child of #rt-more */
 .rt-more__item { margin-top: var(--s-3); }
 .prog-more { display: flex; align-items: center; gap: var(--s-3); margin: var(--s-4) 0 var(--s-6); flex-wrap: wrap; }
-.wa-day__all { margin: var(--s-2) 0 var(--s-4); }
 
 /* Phones: smaller pictures in lists (DEV-30). Rows, place rows, the venue card on an
    event page and Saved's list tiles give their room to the words: titles, times and
@@ -1349,8 +1589,6 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   .vcard__art { width: 56px; height: 56px; }
 }
 
-.det-footer > .wa-linkbtn { min-height: 44px; }
-
 /* Start from: a compact location key and a local combobox. */
 .wa-start__control { display: flex; align-items: center; gap: var(--s-2); }
 .wa-start__search { position: relative; flex: 1; min-width: 0; }
@@ -1363,17 +1601,13 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-sheet--start .wa-start__options { position: static; margin-top: 4px; }
 
 .wa-sheet--start .wa-start__control { align-items: flex-start; }
+@media (min-width: 1024px) { .wa-start__locate { flex-basis:40px; } }
 
 /* Direct search at every width. The sticky surface is the control layer;
    the field itself is quiet paper, with one 44px submit target. */
 .home-empty { padding-block:24px; }
 .home-empty .wa-linkbtn { margin-right:16px; }
 .discovery-near[aria-pressed="true"] { color:var(--here); }
-.map-dates { margin-left:auto; min-width:0; }
-.map-dates .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); max-width:100%; height:auto; min-height:44px; }
-.map-dates .wa-chip span { max-width:15rem; white-space:normal; }
-.map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; pointer-events:auto; }
-.map-filters .wa-chip { background:var(--glass-strong); border-color:var(--glass-edge); font-size:.8125rem; padding-inline:10px; }
 .wa-sheet--discovery form { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .wa-sheet--discovery .wa-sheet__body { overflow-y:auto; }
 .wa-sheet--discovery .wa-field { display:grid; gap:8px; }
@@ -1396,6 +1630,12 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
   .wa-sheet--discovery[data-kind="dates"][open] { align-items:center; }
   .wa-sheet--discovery[data-kind="dates"] .wa-sheet__head::before { display:none; }
 }
+@media (min-width:600px) and (max-width:1023px) {
+  .wa-sheet--discovery[open] { align-items:center; }
+  .wa-sheet--discovery .wa-sheet__panel { width:min(560px, calc(100% - 48px)); max-height:min(86dvh, 860px); border-radius:var(--r-xl); border-bottom:1px solid var(--glass-edge); }
+  .wa-sheet--discovery .wa-sheet__head::before { display:none; }
+}
+@media (min-width:1024px) { .wa-sheet--discovery[data-kind="dates"] .wa-sheet__title { font-size:var(--fs-h2); } }
 .wa-feed { max-width:42rem; display:grid; list-style:none; margin:0; padding:0; }
 .wa-feed__item { position:relative; padding:20px 0 24px; border-bottom:1px solid var(--hair); }
 .wa-feed__link { display:block; text-decoration:none; color:inherit; }
@@ -1420,29 +1660,11 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-feed__item.is-off .wa-feed__art { opacity:.5; filter:grayscale(1); }
 .wa-feed__item.is-off .wa-feed__title { text-decoration:line-through; }
 @media (min-width:1024px) {
-  .wa-feed__title { font-size:1.625rem; }
-  .map-top { align-items:flex-start; }
+  .wa-feed__title { font-size:var(--fs-title); font-weight:600; }
+  .wa-feed__when .wa-row__time, .wa-feed__when .wa-row__walk, .wa-feed__meta, .wa-feed__price { font-size:var(--fs-meta); }
 }
 @media (prefers-reduced-motion:reduce) {
   .home-view *, .home-mood * { transition:none !important; }
-}
-
-/* Intermediate windows keep a readable feed and the touch navigation.
-   Compact desktop windows use a narrower sidebar and Map drawer. */
-@media (min-width:600px) and (max-width:1023px) {
-  body[data-page="tonight"] .wa-shell { max-width:720px; }
-  .wa-sheet--discovery[open] { align-items:center; }
-  .wa-sheet--discovery .wa-sheet__panel { width:min(560px, calc(100% - 48px)); max-height:min(86dvh, 860px); border-radius:var(--r-xl); border-bottom:1px solid var(--glass-edge); }
-  .wa-sheet--discovery .wa-sheet__head::before { display:none; }
-}
-@media (min-width:1024px) and (max-width:1199px) {
-  .map-canvas, .map-canvas.maplibregl-map, .map-pins { left:340px; }
-  .map-drawer { width:324px; }
-  .map-top { left:calc(340px + var(--s-4)); }
-  .map-preview { left:calc(324px + var(--s-5) - 8px); width:300px; }
-}
-@media (min-width:1024px) and (max-width:1199px) {
-  .home-grid { grid-template-columns:minmax(0, 1fr) 300px; gap:var(--s-6); }
 }
 
 /* One labelled search entry. Mobile uses a full-height search dialog;
@@ -1485,40 +1707,38 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .wa-search-match__walk { display:flex; align-items:center; gap:5px; }
 .wa-search-match__walk .wa-ic { width:14px; height:14px; }
 .wa-search-preview .wa-place__why { display:none; }
-.prog-back { display:inline-flex; margin-top:12px; }
-.prog-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-.prog-toolbar .wa-chip .wa-ic { width:18px; height:18px; }
-.prog-quick { flex-wrap:wrap; }
-.prog-quick[hidden] { display:none; }
-.prog-ask { flex-wrap:wrap; }
-.prog-ask button { min-height:44px; }
-.prog-list { min-width:0; }
-.prog-controls .wa-ask { max-width:none; }
-body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
-#to-map { display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-small); white-space:nowrap; }
-#to-map .wa-ic { width:18px; height:18px; }
-.map-search-context { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; max-width:100%; padding:10px 14px; border-radius:var(--r-md); background:var(--glass-strong); border:1px solid var(--glass-edge); box-shadow:var(--shadow-1); font-size:var(--fs-small); overflow-wrap:anywhere; }
-.map-search-context > :first-child { font-weight:600; }
-.map-search-context a { display:inline-flex; align-items:center; min-height:44px; color:var(--ink-2); text-underline-offset:3px; }
 @media (max-width:359px) { .wa-topbar:has(.wa-search-entry) .wa-brand span { display:none; } }
-@media (min-width:1024px) {
-  .wa-search-dialog { inset:0; margin:auto; width:min(680px,calc(100% - 48px)); height:fit-content; max-height:min(82dvh,var(--vv-h,82dvh)); border:1px solid var(--hair); border-radius:var(--r-xl); box-shadow:var(--shadow-2); }
-  .wa-search-dialog__top { padding:20px; }
-  .wa-search-dialog__body { flex:0 1 auto; max-height:60dvh; padding:20px 28px 28px; }
-  .wa-search-dialog__foot { padding:16px 28px 20px; }
-}
+.wa-search-close--back { display:contents; }
+.wa-search-close--x { display:none; }
+
+/* Search from 1280 px: the masthead entry shows its whole label and the "/" key (sized with the 1024 rules after it). */
 @media (min-width:1280px) {
-  .wa-search-entry { width:clamp(180px,18vw,260px); }
+  .wa-search-entry { width:auto; max-width:320px; }
   .wa-search-entry__short { display:none; }
   .wa-search-entry__long { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .wa-search-entry__key { display:inline-grid; place-items:center; flex:none; margin-left:auto; min-width:22px; height:22px; padding:0 6px; border-radius:7px; border:1px solid var(--hair); font:600 .75rem/1 var(--f-sans); color:var(--ink-3); }
 }
-
-.prog-options { border-top:1px solid var(--hair); }
-.prog-options > summary { min-height:52px; display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; list-style:none; }
-.prog-options > summary::before { content:'+'; font-size:1.25rem; color:var(--ink-3); }
-.prog-options[open] > summary::before { content:'−'; }
-.prog-options > summary::-webkit-details-marker { display:none; }
+/* Search from 1024 px: the entry wears the line; a bounded 760 px dialog with events and places side by
+   side, two lines a match (the source stays on the listing's own page), a close key rather than a back
+   arrow, and "View all results" as a secondary button. */
+@media (min-width:1024px) {
+  .wa-search-entry { font-size:var(--fs-meta); font-weight:400; min-height:40px; border-color:var(--line); background:transparent; color:var(--ink-2); }
+  .wa-search-entry:hover { background:var(--paper-2); border-color:var(--ink-3); }
+  .wa-search-entry__key { font-size:var(--fs-small); border-color:var(--line); }
+  .wa-search-dialog { inset:0; margin:auto; width:min(760px, calc(100% - 48px)); height:fit-content; max-height:min(82dvh,var(--vv-h,82dvh)); border:1px solid var(--hair); border-radius:var(--r-xl); box-shadow:var(--shadow-2); }
+  .wa-search-dialog__top { padding:20px; }
+  .wa-search-dialog__body { flex:0 1 auto; max-height:60dvh; padding:20px 28px 28px; }
+  .wa-search-dialog__foot { padding:16px 28px 20px; display:flex; justify-content:flex-end; }
+  .wa-search-group, .wa-search-match__body b { font-size:var(--fs-body); }
+  .wa-search-group > :last-child { font-weight:400; }
+  .wa-search-match__body small { font-size:var(--fs-small); display:none; }
+  .wa-search-close--back { display:none; }
+  .wa-search-close--x { display:contents; }
+  .wa-search-cols:has(> section + section) { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(0, 1fr); gap:var(--s-7); align-items:start; }
+  .wa-search-cols > section > .wa-search-group { margin-top:0; }
+  .wa-search-dialog__foot .wa-search-all { width:auto; background:var(--paper); color:var(--ink); border:1px solid var(--line); box-shadow:none; }
+  .wa-search-dialog__foot .wa-search-all:hover { background:var(--paper-2); border-color:var(--ink-3); }
+}
 
 /* ── Now ──────────────────────────────────────────────────────────
    The state of the night and its starting point on one line, a rail of
@@ -1651,32 +1871,138 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .home-quick__when .wa-chip { flex:1; justify-content:center; min-height:40px; padding:0 10px; font-size:.875rem; }
 .home-quick__foot .wa-chip { min-height:40px; font-size:.875rem; max-width:100%; }
 .home-quick__foot .wa-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-@media (min-width:1024px) { .home-fold { display:none; } }
 @media (prefers-reduced-motion:reduce) { .home-fold, .home-walk[data-again] { animation:none; } }
 @media (prefers-reduced-transparency:reduce) { .wa-when, .home-quick, .home-fold, .home-walk { background:var(--paper); -webkit-backdrop-filter:none; backdrop-filter:none; } }
 
+/* The side column on a desktop: places open now, under the walk. */
+.home-aside { padding:14px 16px 8px; border-radius:var(--r-lg); background:var(--paper-2); }
+.home-aside__title { display:flex; align-items:baseline; gap:8px; margin:0 0 4px; font-size:1rem; font-weight:650; letter-spacing:-.01em; }
+.home-aside__n { font-size:var(--fs-small); font-weight:600; color:var(--go); }
+.home-aside__list { display:grid; margin:0; padding:0; list-style:none; }
+.home-aside__row { display:flex; align-items:center; gap:10px; min-height:52px; padding:6px 0; border-top:1px solid var(--hair); color:inherit; text-decoration:none; }
+.home-aside__list > li:first-child .home-aside__row { border-top:0; }
+.home-aside__row .wa-picto { flex:none; width:36px; height:36px; }
+.home-aside__text { flex:1; min-width:0; display:grid; gap:1px; }
+.home-aside__name { font-size:.9375rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-aside__meta { font-size:var(--fs-small); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-aside__walk { flex:none; display:inline-flex; align-items:center; gap:2px; font-size:var(--fs-small); font-weight:600; }
+.home-aside__walk .wa-ic { width:14px; height:14px; color:var(--here); }
+@media (hover:hover) { .home-aside__row:hover .home-aside__name { text-decoration:underline; text-underline-offset:3px; } }
+.home-side .wa-since { margin-top:0; }
+.home-walk__plot { display:none; }
 @media (min-width:768px) {
   .home-hero { padding-top:var(--s-6); }
   .home-mood { min-width:76px; }
 }
-@media (min-width:1024px) {
-  .home-hero { padding:var(--s-8) 0 var(--s-2); }
-  .home-hero__row { max-width:none; }
-  .home-moods { margin-inline:0; padding-inline:0; scroll-padding:0; }
+/* Tablets keep a readable column and the touch navigation. */
+@media (min-width:600px) and (max-width:1023px) {
+  body[data-page="tonight"] .wa-shell { max-width:720px; }
 }
 
-/* Map: one row of glass pills over the map, as on Now: a tap picks one mood,
-   Filters holds the rest, Near me ends the row. It scrolls sideways. */
-.map-filters:not(:has(.map-search-context)) { flex:0 0 calc(100% + 2 * var(--s-3)); flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; scroll-snap-type:x proximity; min-width:0; margin-inline:calc(-1 * var(--s-3)); padding:2px var(--s-3) 6px; scroll-padding-inline:var(--s-3); }
-.map-filters::-webkit-scrollbar { display:none; }
-.map-filters .map-mood { flex:none; min-height:40px; padding:0 14px 0 5px; gap:7px; font-size:.8125rem; font-weight:600; background:var(--glass-strong); border-color:var(--glass-edge); box-shadow:0 4px 14px rgba(20,16,40,.12); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); scroll-snap-align:start; }
-.map-filters .map-mood .wa-picto { width:30px; height:30px; margin:0; }
-.map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
-.map-filters .map-mood .wa-ic { width:17px; height:17px; }
-.map-filters .map-mood[aria-pressed="true"] { background:var(--select-bg), var(--glass-strong); border-color:transparent; box-shadow:inset 0 0 0 1px var(--select-ring), 0 4px 14px rgba(20,16,40,.12); }
-.map-filters .map-mood--more.is-set { background:var(--select-bg), var(--glass-strong); color:var(--accent-ink); }
-@media (min-width:1024px) { .map-filters:not(:has(.map-search-context)) { flex-basis:100%; margin-inline:0; padding-inline:0; scroll-padding-inline:0; } }
-
+/* Now from 1024 px: the list beside a sticky side column; Events | Places and When stay in reach. Start
+   times lead the rows: 28 px figures in a wider rail. Save shows on a row's hover or focus, and always
+   once saved. The walk is the sticky side panel, drawing its stops where they are; what sits beside it is flat. */
+@media (min-width:1024px) {
+  body[data-page="tonight"] .wa-topbar { border-bottom: 0; }
+  .wa-hero { font-weight:700; letter-spacing:-.035em; line-height:1.04; }
+  .home-hero { padding:var(--s-8) 0 var(--s-3); }
+  .home-hero__row { max-width:none; }
+  .home-moods { margin-inline:0; padding-inline:0; scroll-padding:0; }
+  .home-fold { display:none; }
+  .home-grid { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); align-items: start; }
+  .home-main { max-width:none; }
+  .home-side { display: grid; position: sticky; top: calc(var(--topbar-h) + var(--s-5)); gap:var(--s-7); }
+  .home-browse { position:sticky; top:var(--topbar-h); z-index:7; background-color:var(--paper); background-image:var(--daybreak); background-attachment:fixed; }
+  .home-list { --sticky-extra:49px; }
+  .home-places { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); }
+  .home-day__head .wa-day__name { font-size:var(--fs-h2); }
+  .home-aside__title, .home-walk__title { font-size:var(--fs-title); }
+  .home-aside__name { font-size:var(--fs-body); }
+  .home-quick__when .wa-chip, .home-quick__foot .wa-chip, .home-when, .home-origin { font-size:var(--fs-meta); }
+  .home-walk__stops, .home-walk__foot, .home-aside__meta, .home-aside__walk, .home-aside__more { font-size:var(--fs-meta); }
+  .home-mood { font-size:var(--fs-small); }
+  .home-view__n, .home-mood { font-weight:400; }
+  .home-mood[aria-pressed="true"], .home-mood--more.is-set, .home-walk__title, .home-walk__stops time, .home-walk__action, .home-aside__title { font-weight:600; }
+  .home-rows .wa-row { border-radius:14px; transition:background-color var(--t-fast), box-shadow var(--t-fast); grid-template-columns:96px minmax(0, 1fr) auto; border-bottom:0; }
+  .home-rows .wa-row__thumb { width:88px; height:88px; }
+  .home-rows .wa-row__thumb img { transition:transform 420ms var(--ease); }
+  .home-rows .wa-row__rail { align-items:flex-start; gap:8px; padding-top:4px; }
+  .home-rows .wa-row__time { font-size:var(--fs-time); font-weight:700; letter-spacing:-.03em; line-height:1; }
+  .home-rows .wa-row__time--word { font-size:var(--fs-meta); font-weight:600; letter-spacing:0; line-height:1.3; }
+  .home-day__head { padding:var(--s-5) 0 var(--s-3); }
+  /* Lines between rows sit between the items, so a row's rounded hover never bends them. */
+  .home-rows > li + li { border-top:1px solid var(--hair); }
+  .home-day__all-link .wa-linkbtn, .home-aside__more { margin-inline-start:-12px; }
+  /* Links that do a button's job wear the secondary button. */
+  .home-empty .wa-linkbtn, .home-side .wa-since { min-height:40px; margin:0; padding:0 18px; border:1px solid var(--line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-weight:600; text-decoration:none; }
+  :is(.home-empty .wa-linkbtn, .home-side .wa-since):hover { background:var(--paper-2); border-color:var(--ink-3); }
+  .home-side .wa-since { justify-self:start; gap:8px; padding-inline:8px 16px; }
+  .home-day__all { min-height:40px; background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .discovery-near, .home-when, .home-origin, .home-quick__when .wa-chip, .home-quick__foot .wa-chip { min-height:32px; padding-inline:14px; gap:6px; }
+  .home-when .wa-ic { width:16px; height:16px; }
+  .home-origin { background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .home-walk, :root[data-theme="dusk"] .home-walk { padding:var(--s-5); background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .home-walk__discs .wa-picto, :root[data-theme="dusk"] .home-walk__discs .wa-picto { box-shadow:0 0 0 2px var(--paper); }
+  .home-walk__head { margin-top:-6px; }
+  .home-walk__main { row-gap:8px; padding-right:0; }
+  .home-walk__foot { flex-direction:column; align-items:stretch; gap:var(--s-3); margin-top:var(--s-2); }
+  .home-walk__cost { flex:none; }
+  .home-walk__action { justify-content:center; min-height:40px; margin-left:0; padding:0 18px; border-radius:var(--r-pill); background:var(--primary-bg); color:var(--on-accent); }
+  @media (hover:hover) { .home-walk__main:hover .home-walk__action { filter:brightness(.94); } }
+  .home-aside { padding:0; background:none; border-radius:0; }
+  .home-aside__title { margin-bottom:var(--s-2); }
+  .home-side .home-walk__plot { display:block; grid-column:1 / -1; grid-row:2; width:100%; height:auto; aspect-ratio:300 / 120; margin-block:var(--s-1) var(--s-2); border-radius:var(--r-sm); background:var(--paper-2); }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__discs { display:none; }
+  .home-walk__main:has(> .home-walk__plot) > .home-walk__title { grid-column:1 / -1; }
+  .home-walk__plot polyline { fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; stroke-linecap:round; }
+  .home-walk__plot polyline.is-routed { stroke-width:2.5; stroke-dasharray:none; stroke-linejoin:round; }
+  .home-walk__plot circle { fill:var(--paper); stroke:var(--accent); stroke-width:2; }
+  .home-walk__plot .is-event circle { fill:var(--accent); }
+  .home-walk__plot text { font:600 11px/1 var(--f-sans); fill:var(--accent-ink); text-anchor:middle; dominant-baseline:central; }
+  .home-walk__plot .is-event text { fill:#fff; }
+  /* Chips (all pages): the hover outranks the date key's set state above and the Map's glass chips. */
+  .wa-chip:hover { border-color:var(--ink-3); }
+}
+@media (min-width:1024px) and (max-width:1199px) { .home-grid { gap:var(--s-7); } }
+@media (min-width:1024px) and (hover:hover) {
+  .home-rows .wa-row:hover { background-color:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); }
+  .home-rows .wa-row:hover .wa-row__thumb img { transform:scale(1.05); }
+  .wa-row-item > .wa-heart[aria-pressed="false"] { opacity:0; transition:opacity var(--t-fast); }
+  .wa-row-item:is(:hover, :focus-within) > .wa-heart, .wa-row-item > .wa-heart:focus-visible { opacity:1; }
+}
+@media (prefers-reduced-motion:reduce) { .home-rows .wa-row__thumb img { transition:none; } }
+/* Now from 1024 to 1279 px: one Filters key in the headline row opens the panel with the moods, the
+   dates, Near me and Filters; the mood row and the When key make way for it. */
+@media (min-width:1024px) and (max-width:1279px) {
+  body:has(.home-filters) :is(.home-moods, .home-browse__end) { display:none; }
+  .home-filters { max-width:100%; background:var(--paper); border-color:var(--line); }
+  .home-filters > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+}
+/* Now from 1280 px: a rail of plain options with their counts replaces the mood pictograms, the Near me
+   chip and the When key, so the list starts under the title. */
+@media (min-width:1280px) {
+  main.wa-shell:has(> .home-rail:not([hidden])) { display:grid; grid-template-columns:200px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
+  main.wa-shell:has(> .home-rail:not([hidden])) > :is(.home-hero, .home-grid) { grid-column:2; }
+  main.wa-shell:has(> .home-rail:not([hidden])) .home-grid { gap:var(--s-8); --side:300px; }
+  .home-rail { grid-column:1; grid-row:1 / span 2; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); display:grid; gap:var(--s-6); padding-top:var(--s-8); max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; }
+  main:has(> .home-rail:not([hidden])) :is(.home-moods, .home-acts, .home-browse__end), body:has(.home-rail:not([hidden])) .home-fold { display:none !important; }
+  .home-rail__group { display:grid; gap:2px; }
+  .home-rail__h { margin:0 0 var(--s-1); font-size:var(--fs-small); font-weight:600; color:var(--ink-3); }
+  .home-rail__opt { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:36px; margin-inline:-10px; padding:0 10px; border:0; border-radius:var(--r-xs); background:none; color:var(--ink-2); font:400 var(--fs-meta)/1.3 var(--f-sans); text-align:left; cursor:pointer; }
+  .home-rail__opt:hover { background:var(--paper-2); color:var(--ink); }
+  .home-rail__opt[aria-pressed="true"] { background:var(--paper-2); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
+  .home-rail__opt:focus-visible { outline:2px solid var(--ink); outline-offset:1px; }
+  .home-rail__n { font-size:var(--fs-small); font-weight:400; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+  .home-rail__n.is-none { opacity:.6; }
+  .home-rail__seg { box-shadow:inset 0 0 0 1px var(--line); background:none; padding:3px; }
+  .home-rail__seg button { min-height:30px; padding-inline:4px; font-size:var(--fs-small); font-weight:400; white-space:nowrap; }
+  .home-rail__seg button[aria-pressed="true"] { background:var(--ink); color:var(--paper); box-shadow:none; font-weight:600; }
+  .home-rail__note { margin:var(--s-1) 0 0; font-size:var(--fs-small); }
+  .home-rail__foot { display:grid; justify-items:start; gap:var(--s-1); }
+  .home-rail__near { min-height:40px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
+  .home-rail__near[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+  .home-rail__foot .wa-linkbtn { margin-inline-start:-12px; }
+}
 
 /* ── You: one short settings list ─────────────────────────────────
    Inset groups of rows: an icon tile, the label, the current value and a
@@ -1726,6 +2052,26 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .wa-btn.you-danger--solid { background:var(--danger); border-color:transparent; color:#fff; }
 :root[data-theme="dusk"] .wa-btn.you-danger--solid { color:#1c1c1e; }
 
+/* You from 1024 px: the settings are rows on the page in the main column; the account beside them is the sticky side panel. */
+@media (min-width:1024px) {
+  #you-body { max-width:none; display:grid; grid-template-columns:minmax(0, 1fr) var(--side); column-gap:var(--s-9); align-items:start; }
+  #you-body > :is(.you-join, .you-me) { grid-column:2; grid-row:1 / span 8; align-self:start; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); }
+  #you-body > .you-join { flex-direction:column; align-items:stretch; padding:20px; }
+  #you-body > .you-join .wa-btn { width:100%; justify-content:center; }
+  #you-body > :is(.you-group, .wa-foot) { grid-column:1; }
+  #you-body > .you-group:first-of-type { margin-top:0; }
+  .you-join .wa-btn { min-height:40px; border-radius:var(--r-pill); }
+  .you-row__value, .you-taste__opt { font-size:var(--fs-meta); }
+  .you-badge { font-size:var(--fs-small); }
+  .you-row__label, .you-taste__opt { font-weight:400; }
+  .you-join__text strong, .you-me__text strong, .you-taste__opt[aria-pressed="true"] { font-weight:600; }
+  .you-group { background:none; border-radius:0; border-block:1px solid var(--hair); overflow:visible; }
+  .you-row { padding-inline:0; border-radius:var(--r-sm); }
+  .you-row + .you-row::before { left:44px; }
+  .you-row__ic { background:none; }
+  @media (hover:hover) { .you-row:hover { background:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); } }
+}
+
 /* ── Saved: lists as chips, a walk through the night's saves, rows as on Now ── */
 .saved-bar .wa-chip { min-height:40px; font-size:.875rem; }
 .saved-bar__new .wa-ic { width:16px; height:16px; }
@@ -1736,362 +2082,12 @@ body[data-page="programme"] .wa-pagehead__row { flex-wrap:wrap; gap:4px 16px; }
 .wa-place-item > .wa-heart .wa-ic { width:22px; height:22px; fill:none; filter:none; }
 .wa-place-item > .wa-heart[aria-pressed="true"] .wa-ic { fill:var(--accent); stroke:var(--accent); }
 .home-walk__stops > span[data-notranslate] { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-
-/* ── Desktop ──────────────────────────────────────────────────────
-   One page width for the top bar and every page: a main column and, where
-   a page has one, a 360px side column. The top bar's brand and keys line
-   up with the content at any window width. */
-.home-aside { padding:14px 16px 8px; border-radius:var(--r-lg); background:var(--paper-2); }
-.home-aside__title { display:flex; align-items:baseline; gap:8px; margin:0 0 4px; font-size:1rem; font-weight:650; letter-spacing:-.01em; }
-.home-aside__n { font-size:var(--fs-small); font-weight:600; color:var(--go); }
-.home-aside__list { display:grid; margin:0; padding:0; list-style:none; }
-.home-aside__row { display:flex; align-items:center; gap:10px; min-height:52px; padding:6px 0; border-top:1px solid var(--hair); color:inherit; text-decoration:none; }
-.home-aside__list > li:first-child .home-aside__row { border-top:0; }
-.home-aside__row .wa-picto { flex:none; width:36px; height:36px; }
-.home-aside__text { flex:1; min-width:0; display:grid; gap:1px; }
-.home-aside__name { font-size:.9375rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.home-aside__meta { font-size:var(--fs-small); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.home-aside__walk { flex:none; display:inline-flex; align-items:center; gap:2px; font-size:var(--fs-small); font-weight:600; }
-.home-aside__walk .wa-ic { width:14px; height:14px; color:var(--here); }
-.home-aside__more { min-height:40px; padding:6px 0; font-size:var(--fs-small); }
-@media (hover:hover) { .home-aside__row:hover .home-aside__name { text-decoration:underline; text-underline-offset:3px; } }
-.home-side .wa-since { margin-top:0; }
-
 @media (min-width:1024px) {
-  :root { --page:1200px; --side:360px; --main:calc(var(--page) - var(--side) - var(--s-9)); }
-  .wa-shell { max-width:calc(var(--page) + 2 * var(--gutter)); }
-  .wa-topbar { padding-inline:max(var(--gutter), calc((100% - var(--page)) / 2)); }
-
-  /* Now: the list beside a sticky side column; Events | Places and When stay in reach. */
-  .home-grid { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); }
-  .home-main { max-width:none; }
-  .home-side { gap:var(--s-4); }
-  .home-hero { padding-bottom:var(--s-3); }
-  .home-browse { position:sticky; top:var(--topbar-h); z-index:7; background-color:var(--paper); background-image:var(--daybreak); background-attachment:fixed; }
-  .home-list { --sticky-extra:49px; }
-  .home-rows .wa-row { grid-template-columns:60px minmax(0, 1fr) auto; border-radius:14px; transition:background-color var(--t-fast), box-shadow var(--t-fast); }
-  .home-rows .wa-row__thumb { width:88px; height:88px; }
-  .home-rows .wa-row__thumb img { transition:transform 420ms var(--ease); }
-
-  /* All events: the controls in the main column. */
-  body[data-page="programme"] :is(.prog-back, .wa-pagehead, .prog-controls) { max-width:var(--main); }
-
-  /* Saved: shows in the main column, places beside them. */
   .saved-cols { grid-template-columns:minmax(0, 1fr) var(--side); gap:var(--s-9); align-items:start; }
   .saved-side { position:sticky; top:calc(var(--topbar-h) + var(--s-5)); }
   .saved-side > .wa-sect { margin-top:0; }
-
-  /* You: the settings in the main column, the account beside them. */
-  #you-body { max-width:none; display:grid; grid-template-columns:minmax(0, 1fr) var(--side); column-gap:var(--s-9); align-items:start; }
-  #you-body > :is(.you-join, .you-me) { grid-column:2; grid-row:1 / span 8; align-self:start; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); }
-  #you-body > .you-join { flex-direction:column; align-items:stretch; padding:20px; }
-  #you-body > .you-join .wa-btn { width:100%; justify-content:center; }
-  #you-body > :is(.you-group, .wa-foot) { grid-column:1; }
-  #you-body > .you-group:first-of-type { margin-top:0; }
-}
-@media (min-width:1024px) and (hover:hover) {
-  .home-rows .wa-row:hover { background-color:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); }
-  .home-rows .wa-row:hover .wa-row__thumb img { transform:scale(1.05); }
-}
-:root { --row-hover:color-mix(in oklab, var(--ink) 4%, transparent); }
-@media (prefers-reduced-motion:reduce) { .home-rows .wa-row__thumb img { transition:none; } }
-@media (min-width:1024px) and (max-width:1199px) { :root { --side:300px; } .home-grid { gap:var(--s-7); } }
-@media (min-width:1024px) { .saved-side .home-places { grid-template-columns:minmax(0, 1fr); } }
-@media (min-width:1024px) { main:has(#rt-body) > :is(.wa-pagehead, #rt-body) { max-width:var(--main); } }
-
-/* ── Desktop: one type scale, three kinds of button, one surface ─────
-   From 1024 px the page is read at arm's length on a wider canvas, so the
-   phone's parts are set again rather than stretched. Type: 13 captions,
-   14 meta, 16 body, 19 row titles and ledes, 24 section heads, 28 start
-   times, 48–56 page titles; weights 400, 600 and 700. Buttons are 40 px:
-   primary (solid vermilion, one per view), secondary (a 1 px line) and
-   quiet (text). Chips are 32 px, icon keys 40 px circles. The page is flat:
-   no wash, gradient or glow. Glass stays where content moves under it (the
-   top bar, map controls, menus, sheets); the one raised element is the
-   sticky side panel, a 1 px line with 20 px corners. Phones and tablets
-   keep everything above. */
-.prog-back .wa-ic, .rt-back__label { display:none; }   /* the desktop back key's parts */
-@media (min-width:1024px) {
-  :root {
-    --fs-meta:.875rem;                                /* 14 */
-    --fs-title:1.1875rem;                             /* 19: row titles */
-    --fs-lead:1.1875rem;                              /* 19: ledes */
-    --fs-h2:1.5rem;                                   /* 24: section heads */
-    --fs-time:1.75rem;                                /* 28: start times */
-    --fs-h1:clamp(3rem, 1.5rem + 2.35vw, 3.5rem);     /* 48 at 1024 to 56 at 1440 */
-    --fs-hero:var(--fs-h1);
-  }
-  :root, :root[data-theme="dusk"] { --daybreak:none; --primary-bg:var(--accent); --primary-glow:none; --select-bg:var(--accent-soft); }
-
-  /* Type. Event, place and walk names are page titles too, at the small end so long names keep to two or three lines. */
-  .wa-hero, .wa-h1 { font-weight:700; letter-spacing:-.035em; line-height:1.04; }
-  .det-head .wa-h1, #rt-title { font-size:3rem; }
-  .wa-pagehead { gap:var(--s-3); }
-  .wa-day__name, .home-day__head .wa-day__name, .det-block__title, .wa-empty__title, .wa-sheet__title, .wa-sheet--discovery[data-kind="dates"] .wa-sheet__title { font-size:var(--fs-h2); }
-  .wa-row__title, .wa-place__name, .det-next__name, .rt__name, .vcard__name, .wa-feed__title, .rt-card__title, .you-fold > summary, .wa-bar__price, .home-aside__title, .home-walk__title { font-size:var(--fs-title); }
-  .wa-lede, .det-summary { font-size:var(--fs-lead); }
-  .wa-prose, .det-orig, .det-fact__value, .wa-field__label, .wa-search-group, .wa-search-match__body b, .home-aside__name { font-size:var(--fs-body); }
-  .wa-btn, .wa-btn--sm, .wa-linkbtn, #to-map, .wa-chip, .prog-quick .wa-chip, .places-kinds .wa-chip, .mood-subs .wa-chip, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip,
-  .map-filters .wa-chip, .map-filters .map-mood, .home-when, .home-origin, .wa-ideas__chip, .wa-sheet__foot .wa-btn, .det-actions__row .wa-btn, .det-link, .wa-search-entry,
-  .wa-seg__opt, .mood-seg button, .hours__row, .wa-toast, .wa-install__title, .wa-since, button.wa-since, .wa-splash__line, .you-row__value, .you-taste__opt,
-  .wa-row__walk, .wa-row__time--word, .wa-feed__when .wa-row__time, .wa-feed__when .wa-row__walk, .wa-feed__meta, .wa-feed__price,
-  .home-walk__stops, .home-walk__foot, .home-aside__meta, .home-aside__walk, .home-aside__more, .det-fact__sub, .wa-bar__sub, .rt__walk > :last-child { font-size:var(--fs-meta); }
-  .wa-row__area, .det-credit, .wa-now, .wa-tag__why, .wa-new, .wa-flag, .hours__today, .home-mood, .wa-search-match__body small, .you-badge, .prog-badge, .wa-search-entry__key { font-size:var(--fs-small); }
-  .maplibregl-ctrl-attrib, .det-minimap .maplibregl-ctrl-attrib { font-size:var(--fs-small) !important; }
-  .wa-stat__n { font-size:var(--fs-time); }
-  .wa-tabbar__item { font-size:var(--fs-body); }
-
-  /* Weights: 400, 600 and 700 only. */
-  .wa-tabbar__item, .wa-kicker, .wa-sect__count, .wa-chip, .wa-chip__n, .wa-tag, .wa-open, .wa-switch__title, .wa-ask__input, .map-seg__n, .wa-foot a, .wa-ideas__chip, .mood-seg button,
-  .home-view__n, .home-mood, .wa-search-entry, .wa-search-group > :last-child, .you-row__label, .you-taste__opt, .wa-splash__line { font-weight:400; }
-  .wa-open--yes, .wa-tag__why, .wa-day__name, .wa-bar__price, .wa-sheet__title, .wa-empty__title, .wa-pin__tag, .wa-pin__count, .map-preview__title, .map-drawer__title, .vcard__name,
-  .wa-install__title, .wa-install__go, .wa-howto__copy strong, .you-fold > summary, .home-mood[aria-pressed="true"], .home-mood--more.is-set, .home-walk__title, .home-walk__stops time,
-  .home-walk__action, .home-aside__title, .wa-feed__title, .you-join__text strong, .you-me__text strong, .you-taste__opt[aria-pressed="true"], .wa-since { font-weight:600; }
-  .det-type__word, .nf-num { font-weight:700; }
-
-  /* Start times lead the row: 28 px figures in a wider rail, vermilion while you can still walk in. */
-  .home-rows .wa-row { grid-template-columns:96px minmax(0, 1fr) auto; }
-  .home-rows .wa-row__rail { align-items:flex-start; gap:8px; padding-top:4px; }
-  .home-rows .wa-row__time, .rt__time { font-size:var(--fs-time); font-weight:700; letter-spacing:-.03em; line-height:1; }
-  .home-rows .wa-row__time--word { font-size:var(--fs-meta); font-weight:600; letter-spacing:0; line-height:1.3; }
-  .rt__stop, .rt__walk { grid-template-columns:5.75rem 1.6rem 1fr; }
-  .rt__time { padding-top:10px; }
-  .home-day__head { padding:var(--s-5) 0 var(--s-3); }
-  /* Lines between rows sit between the items, so a row's rounded hover never bends them. */
-  .home-rows .wa-row { border-bottom:0; }
-  .home-rows > li + li { border-top:1px solid var(--hair); }
-
-  /* Buttons: one height. Primary is the solid accent, secondary a line, quiet plain text. */
-  .wa-btn, .wa-btn--sm { min-height:40px; padding:0 18px; border-radius:var(--r-pill); }
-  .wa-btn .wa-ic { width:18px; height:18px; }
-  .wa-btn--quiet, .wa-sheet__foot .wa-btn--quiet { padding:0 12px; text-decoration-color:var(--line); text-underline-offset:4px; }
-  .wa-btn--quiet:hover { text-decoration-color:var(--ink-3); }
-  .wa-sheet__foot .wa-btn, .you-join .wa-btn, .wa-bar .wa-btn--primary, .wa-install__go, .wa-toast__undo { min-height:40px; border-radius:var(--r-pill); }
-  .wa-linkbtn, .det-footer > .wa-linkbtn { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 12px; border-radius:var(--r-pill); text-decoration-color:var(--line); text-underline-offset:4px; transition:background var(--t-fast), text-decoration-color var(--t-fast); }
-  .wa-linkbtn:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
-  .wa-linkbtn .wa-ic { width:16px; height:16px; }
-  /* A quiet button that starts a line keeps its words on the column's edge. */
-  .prog-back, .rt-back, .home-day__all-link .wa-linkbtn, .home-aside__more, .wa-day__all, .det-footer > .wa-linkbtn { margin-inline-start:-12px; }
-  /* Inside a sentence it stays a link. */
-  .wa-note .wa-linkbtn { display:inline; min-height:0; padding:0; border-radius:0; font-size:inherit; }
-  .wa-note .wa-linkbtn:hover { background:none; }
-  /* Links that do a button's job wear the secondary button. */
-  a#to-map.wa-linkbtn, .places-from .wa-linkbtn, .home-empty .wa-linkbtn, .home-side .wa-since { min-height:40px; margin:0; padding:0 18px; border:1px solid var(--line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-weight:600; text-decoration:none; }
-  :is(a#to-map.wa-linkbtn, .places-from .wa-linkbtn, .home-empty .wa-linkbtn, .home-side .wa-since):hover { background:var(--paper-2); border-color:var(--ink-3); }
-  #to-map { gap:8px; }
-  .home-side .wa-since { justify-self:start; gap:8px; padding-inline:8px 16px; }
-  .home-day__all { min-height:40px; background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  /* One back key on every page: a quiet button with a chevron. */
-  .prog-back .wa-ic { display:block; }
-  .wa-iconbtn.rt-back { display:inline-flex; gap:6px; width:auto; height:auto; min-height:40px; padding:0 12px; border-radius:var(--r-pill); background:none; color:var(--ink); font-size:var(--fs-meta); font-weight:600; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:4px; }
-  .wa-iconbtn.rt-back:hover { background:var(--paper-2); text-decoration-color:var(--ink-3); }
-  .rt-back .wa-ic { width:16px; height:16px; }
-  .rt-back__label { display:inline; }
-  /* The event page's actions: one row of secondary buttons instead of tiles. */
-  .det-actions__row { display:flex; flex-wrap:wrap; gap:var(--s-2); }
-  .det-actions__row .wa-btn { flex-direction:row; gap:8px; min-height:40px; padding:0 18px; border-radius:var(--r-pill); border-color:var(--line); background:var(--paper); }
-  .det-actions__row .wa-btn:hover { background:var(--paper-2); border-color:var(--ink-3); }
-  .det-actions__row .wa-btn[aria-pressed="true"] { border-color:transparent; }
-  .det-actions__row .wa-btn .wa-ic { width:18px; height:18px; }
-  .det-after > .wa-btn { justify-self:start; }
-  .det-link { min-height:40px; padding:0 16px 0 14px; background:var(--paper); box-shadow:inset 0 0 0 1px var(--line); }
-  .det-link:hover { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
-  .det-link .wa-ic { width:18px; height:18px; }
-
-  /* Icon keys: 40 px circles; in the top bar each wears the line. */
-  .wa-iconbtn, .wa-sheet__close, .map-preview__close, .wa-saved-row__space, .map-ctrl { width:40px; height:40px; }
-  .wa-start__locate { flex-basis:40px; }
-  .wa-topbar .wa-iconbtn, .wa-topbar .wa-theme, .wa-lang__key { background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
-  .wa-topbar .wa-iconbtn:hover, .wa-topbar .wa-theme:hover, .wa-lang__key:hover, .wa-lang__key[aria-expanded="true"] { background:var(--paper-2); box-shadow:inset 0 0 0 1px var(--ink-3); }
-  .wa-lang__key { height:40px; }
-  .wa-search-entry { min-height:40px; border-color:var(--line); background:transparent; color:var(--ink-2); }
-  .wa-search-entry:hover { background:var(--paper-2); border-color:var(--ink-3); }
-  .wa-search-entry__key { border-color:var(--line); }
-  /* The nav follows the wordmark instead of centring on the window, so a longer translation never runs into the
-     keys at the end and search has room for its whole label (it was cut to "Search events or pl…" at 1280). */
-  .wa-tabbar { left:calc(max(var(--gutter), (100% - var(--page)) / 2) + 177px); transform:none; }
-
-  /* Chips: 32 px, for choosing. */
-  .wa-chip, .prog-quick .wa-chip, .places-kinds .wa-chip, .mood-subs .wa-chip, .saved-bar .wa-chip, .home-quick__when .wa-chip, .home-quick__foot .wa-chip, .map-dates .wa-chip,
-  .discovery-near, .home-when, .home-origin, .wa-ideas__chip { min-height:32px; padding-inline:14px; gap:6px; }
-  .wa-chip .wa-ic, .home-when .wa-ic { width:16px; height:16px; }
-  .wa-chip .wa-picto, .places-kinds .wa-chip .wa-picto { width:22px; height:22px; margin-left:-8px; }
-  .wa-chip:hover { border-color:var(--ink-3); }
-  .home-origin { background:var(--paper); border-color:var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .map-filters .map-mood { min-height:32px; padding:0 14px 0 4px; }
-  .map-filters .map-mood .wa-picto { width:24px; height:24px; }
-  .map-filters :is(.map-mood--more, .discovery-near) { padding-left:12px; }
-  .map-seg { height:40px; }
-  /* Map: every mood shows; the row wraps instead of running under the edge. */
-  .map-filters:not(:has(.map-search-context)) { flex-wrap:wrap; overflow:visible; }
-  .map-dates a.wa-chip { min-height:40px; font-weight:600; }
-
-  /* One surface. The walk is the sticky side panel; what sits beside it is flat. */
-  .home-side { gap:var(--s-7); }
-  .home-walk, :root[data-theme="dusk"] .home-walk { padding:var(--s-5); background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .home-walk__discs .wa-picto, :root[data-theme="dusk"] .home-walk__discs .wa-picto { box-shadow:0 0 0 2px var(--paper); }
-  .home-walk__head { margin-top:-6px; }
-  .home-walk__main { row-gap:8px; padding-right:0; }
-  .home-walk__foot { flex-direction:column; align-items:stretch; gap:var(--s-3); margin-top:var(--s-2); }
-  .home-walk__cost { flex:none; }
-  .home-walk__action { justify-content:center; min-height:40px; margin-left:0; padding:0 18px; border-radius:var(--r-pill); background:var(--primary-bg); color:var(--on-accent); }
-  @media (hover:hover) { .home-walk__main:hover .home-walk__action { filter:brightness(.94); } }
-  .home-aside { padding:0; background:none; border-radius:0; }
-  .home-aside__title { margin-bottom:var(--s-2); }
-  .wa-bar { position:static; padding:var(--s-5); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; }   /* in the text column it never covers what follows */
-  .vcard { padding:0; border:0; border-radius:0; box-shadow:none; }
-  .vcard:hover { transform:none; box-shadow:none; }
-  @media (hover:hover) { .vcard:hover .vcard__name { text-decoration:underline; text-underline-offset:3px; } }
-  .rt-card, :root[data-theme="dusk"] .rt-card { background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  /* You: settings are rows on the page; the account is the sticky side panel. */
-  #you-body > :is(.you-join, .you-me) { background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg); }
-  .you-group { background:none; border-radius:0; border-block:1px solid var(--hair); overflow:visible; }
-  .you-row { padding-inline:0; border-radius:var(--r-sm); }
-  .you-row + .you-row::before { left:44px; }
-  .you-row__ic { background:none; }
-  @media (hover:hover) { .you-row:hover { background:var(--row-hover); box-shadow:-12px 0 0 var(--row-hover), 12px 0 0 var(--row-hover); } }
-}
-@media (min-width:1280px) {
-  .wa-search-entry { width:auto; max-width:320px; }
-}
-
-/* ── Desktop layouts: the choosing on the left, the list, the walk on the right ─────
-   Now from 1280 px: a rail of plain options with their counts replaces the mood
-   pictograms, the Near me chip and the When key, so the list starts under the title.
-   Save shows on a row's hover or focus, and always once saved. The walk card draws its
-   stops where they are. Phones and tablets keep everything above. */
-.home-walk__plot { display:none; }
-@media (min-width:1024px) {
-  .home-side .home-walk__plot { display:block; grid-column:1 / -1; grid-row:2; width:100%; height:auto; aspect-ratio:300 / 120; margin-block:var(--s-1) var(--s-2); border-radius:var(--r-sm); background:var(--paper-2); }
-  .home-walk__main:has(> .home-walk__plot) > .home-walk__discs { display:none; }
-  .home-walk__main:has(> .home-walk__plot) > .home-walk__title { grid-column:1 / -1; }
-  .home-walk__plot polyline { fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:5 5; stroke-linecap:round; }
-  .home-walk__plot polyline.is-routed { stroke-width:2.5; stroke-dasharray:none; stroke-linejoin:round; }
-  .home-walk__plot circle { fill:var(--paper); stroke:var(--accent); stroke-width:2; }
-  .home-walk__plot .is-event circle { fill:var(--accent); }
-  .home-walk__plot text { font:600 11px/1 var(--f-sans); fill:var(--accent-ink); text-anchor:middle; dominant-baseline:central; }
-  .home-walk__plot .is-event text { fill:#fff; }
-}
-@media (min-width:1024px) and (hover:hover) {
-  .wa-row-item > .wa-heart[aria-pressed="false"] { opacity:0; transition:opacity var(--t-fast); }
-  .wa-row-item:is(:hover, :focus-within) > .wa-heart, .wa-row-item > .wa-heart:focus-visible { opacity:1; }
-}
-@media (min-width:1280px) {
-  main.wa-shell:has(> .home-rail:not([hidden])) { display:grid; grid-template-columns:200px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
-  main.wa-shell:has(> .home-rail:not([hidden])) > :is(.home-hero, .home-grid) { grid-column:2; }
-  main.wa-shell:has(> .home-rail:not([hidden])) .home-grid { gap:var(--s-8); --side:300px; }
-  .home-rail { grid-column:1; grid-row:1 / span 2; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); display:grid; gap:var(--s-6); padding-top:var(--s-8); max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; }
-  main:has(> .home-rail:not([hidden])) :is(.home-moods, .home-acts, .home-browse__end), body:has(.home-rail:not([hidden])) .home-fold { display:none !important; }
-  .home-rail__group { display:grid; gap:2px; }
-  .home-rail__h { margin:0 0 var(--s-1); font-size:var(--fs-small); font-weight:600; color:var(--ink-3); }
-  .home-rail__opt { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:36px; margin-inline:-10px; padding:0 10px; border:0; border-radius:var(--r-xs); background:none; color:var(--ink-2); font:400 var(--fs-meta)/1.3 var(--f-sans); text-align:left; cursor:pointer; }
-  .home-rail__opt:hover { background:var(--paper-2); color:var(--ink); }
-  .home-rail__opt[aria-pressed="true"] { background:var(--paper-2); color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
-  .home-rail__opt:focus-visible { outline:2px solid var(--ink); outline-offset:1px; }
-  .home-rail__n { font-size:var(--fs-small); font-weight:400; color:var(--ink-3); font-variant-numeric:tabular-nums; }
-  .home-rail__n.is-none { opacity:.6; }
-  .home-rail__seg { box-shadow:inset 0 0 0 1px var(--line); background:none; padding:3px; }
-  .home-rail__seg button { min-height:30px; padding-inline:4px; font-size:var(--fs-small); font-weight:400; white-space:nowrap; }
-  .home-rail__seg button[aria-pressed="true"] { background:var(--ink); color:var(--paper); box-shadow:none; font-weight:600; }
-  .home-rail__note { margin:var(--s-1) 0 0; font-size:var(--fs-small); }
-  .home-rail__foot { display:grid; justify-items:start; gap:var(--s-1); }
-  .home-rail__near { min-height:40px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
-  .home-rail__near[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
-  .home-rail__foot .wa-linkbtn { margin-inline-start:-12px; }
-}
-
-/* Now from 1024 to 1279 px: one Filters key in the headline row opens the panel with the moods, the
-   dates, Near me and Filters; the mood row and the When key make way for it. */
-@media (min-width:1024px) and (max-width:1279px) {
-  body:has(.home-filters) :is(.home-moods, .home-browse__end) { display:none; }
-  .home-filters { max-width:100%; background:var(--paper); border-color:var(--line); }
-  .home-filters > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-}
-
-/* Event page from 1024 px: a larger picture, and the facts beside the ticket panel, each in its own
-   cell, so the panel never covers what follows; the facts carry plain line icons rather than grey tiles. */
-@media (min-width:1024px) {
-  .det-grid { grid-template-columns:minmax(0, 5fr) minmax(0, 7fr); gap:var(--s-8); }
-  .det-grid__main:has(> .det-facts + .wa-bar) { grid-template-columns:minmax(0, 1fr) minmax(240px, 288px); column-gap:var(--s-7); }
-  .det-grid__main:has(> .det-facts + .wa-bar) > * { grid-column:1 / -1; }
-  .det-grid__main:has(> .det-facts + .wa-bar) > .det-facts { grid-column:1; }
-  .det-grid__main:has(> .det-facts + .wa-bar) > .wa-bar { grid-column:2; align-self:start; flex-direction:column; align-items:stretch; gap:var(--s-3); }
-  .det-grid__main > .wa-bar .wa-bar__sub { white-space:normal; }
-  .det-grid__main > .wa-bar .wa-btn--primary { flex:none; }
-  .det-fact { grid-template-columns:20px minmax(0, 1fr); gap:var(--s-3); align-items:start; padding:var(--s-2) 0; }
-  .det-fact__icon { width:20px; height:20px; margin-top:1px; border-radius:0; background:none; color:var(--ink-3); }
-  .det-fact__icon .wa-ic { width:20px; height:20px; }
-}
-
-/* Walk page from 1024 px: the stops on the left, their map on the right, sticky while the list scrolls. */
-.rt-map { display:none; }
-@media (min-width:1024px) {
-  main.wa-shell:has(> .rt-map:not([hidden])) { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:var(--s-9); align-items:start; }
-  main.wa-shell:has(> .rt-map:not([hidden])) > :is(.rt-back, .wa-pagehead, #rt-body) { grid-column:1; max-width:none; }
-  main.wa-shell:has(> .rt-map:not([hidden])) > .rt-back { justify-self:start; }
-  .rt-map:not([hidden]) { display:block; grid-column:2; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); height:calc(100vh - var(--topbar-h) - var(--s-8)); min-height:420px; margin-top:var(--s-7); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
-  .rt-map__canvas { width:100%; height:100%; }
-  .rt-map__pin { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--paper); box-shadow:0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.25); color:var(--accent-ink); font:700 var(--fs-meta)/1 var(--f-sans); text-decoration:none; cursor:pointer; }
-  .rt-map__pin.is-event { background:var(--accent); color:#fff; }
-  .rt-map__pin:hover { transform:scale(1.08); }
-  .rt-map__pin:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
-}
-
-/* About from 1024 px: the counts as one line under the lede, not three big numbers. */
-.about-counted { display:none; }
-@media (min-width:1024px) {
-  .about-counted:not(:empty) { display:block; font-variant-numeric:tabular-nums; }
-  body:has(.about-counted:not(:empty)) .wa-stats { display:none; }
-}
-
-/* Search from 1024 px: a 760 px dialog with events and places side by side, two lines a match
-   (the source stays on the listing's own page), a close key rather than a back arrow, and
-   "View all results" as a secondary button. */
-.wa-search-close--back { display:contents; }
-.wa-search-close--x { display:none; }
-@media (min-width:1024px) {
-  .wa-search-dialog { width:min(760px, calc(100% - 48px)); }
-  .wa-search-close--back { display:none; }
-  .wa-search-close--x { display:contents; }
-  .wa-search-cols:has(> section + section) { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(0, 1fr); gap:var(--s-7); align-items:start; }
-  .wa-search-cols > section > .wa-search-group { margin-top:0; }
-  .wa-search-match__body small { display:none; }
-  .wa-search-dialog__foot { display:flex; justify-content:flex-end; }
-  .wa-search-dialog__foot .wa-search-all { width:auto; background:var(--paper); color:var(--ink); border:1px solid var(--line); box-shadow:none; }
-  .wa-search-dialog__foot .wa-search-all:hover { background:var(--paper-2); border-color:var(--ink-3); }
-}
-
-/* Map from 1024 px: Events/Places, the date and the moods head the list column; the map keeps
-   only its pins and the locate key. Plain chips here, glass only where something moves beneath. */
-@media (min-width:1024px) {
-  .map-drawer > .map-top { position:static; inset:auto; z-index:auto; flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-2); padding:0 var(--s-5) var(--s-4); border-bottom:1px solid var(--hair); pointer-events:auto; }
-  .map-drawer > .map-top .map-seg { -webkit-backdrop-filter:none; backdrop-filter:none; background:var(--paper-2); box-shadow:none; }
-  .map-drawer > .map-top .map-dates { margin-inline-start:auto; }
-  .map-drawer > .map-top .map-filters { flex-basis:100%; display:flex; flex-wrap:wrap; gap:var(--s-2); overflow:visible; padding:0; margin:0; mask:none; -webkit-mask:none; }
-  .map-drawer > .map-top :is(.map-mood, .discovery-date, .wa-chip) { background:var(--paper); border:1px solid var(--line); box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
-  .map-drawer > .map-top .map-mood[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
-}
-
-/* All events on a tablet (600 to 1023 px): the posters two to a row, so a picture is not the width of the screen. */
-@media (min-width:600px) and (max-width:1023px) {
-  .prog-list .wa-feed { max-width:none; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:var(--s-6); }
-}
-.prog-rail { display:none; }
-/* All events from 1024 px: Now's rows instead of posters, in the main column; from 1280 px the
-   search and its filters are a sticky rail on the left, as on Now. */
-@media (min-width:1024px) {
-  .prog-list { max-width:var(--main); }
-}
-@media (min-width:1280px) {
-  body[data-page="programme"] main.wa-shell { display:grid; grid-template-columns:248px minmax(0, 1fr); column-gap:var(--s-8); align-items:start; }
-  body[data-page="programme"] main.wa-shell > :is(.prog-back, .wa-pagehead, .prog-layout) { grid-column:2; }
-  body[data-page="programme"] main.wa-shell > .prog-back { justify-self:start; }
-  body[data-page="programme"] .prog-controls { grid-column:1; grid-row:1 / span 3; position:sticky; top:calc(var(--topbar-h) + var(--s-5)); max-width:none; max-height:calc(100vh - var(--topbar-h) - var(--s-7)); overflow-y:auto; scrollbar-width:thin; padding:var(--s-9) 4px var(--s-4); margin-inline:-4px; align-content:start; }
-  body[data-page="programme"] .prog-toolbar, body[data-page="programme"] .prog-quick { flex-wrap:wrap; }
-  body[data-page="programme"] .prog-list { max-width:none; }
-  body[data-page="programme"] .prog-rail { display:grid; gap:var(--s-6); margin-top:var(--s-4); }
-  body[data-page="programme"] .prog-controls:has(.prog-rail:not(:empty)) #result-date { display:none; }
+  .saved-side .home-places { grid-template-columns:minmax(0, 1fr); }
+  .saved-bar .wa-chip { font-size:var(--fs-meta); min-height:32px; padding-inline:14px; gap:6px; }
 }
 
 /* Windows High Contrast drops backgrounds and shadows, which carry every chosen state here: an outline in the
