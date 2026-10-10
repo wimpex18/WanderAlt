@@ -20,6 +20,27 @@ jobs:
       # lang/et.js and lang/ru.js are generated from lang/*.tsv: a hand edit or a forgotten rebuild fails here.
       - run: python3 .scripts/build-lang.py && git diff --exit-code -- lang
 
+  # The pages in Chromium at 390 and 1440 px, on the recorded catalogue in
+  # tests/e2e/fixtures and without the network. The report is kept when it fails.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
   # The newest sources, collected without keys: the log shows each one's
   # item count. Informational; never fails the check.
   probe-sources:
