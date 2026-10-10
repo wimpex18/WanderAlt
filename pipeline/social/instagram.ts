@@ -28,7 +28,7 @@ export async function publishingLimit(cfg: InstagramConfig, fetcher: typeof fetc
 }
 
 /** Publish one JPEG with a caption (at most 2,200 characters). Returns the media id. */
-export async function publishImage(cfg: InstagramConfig, post: { imageUrl: string; caption: string; altText?: string }, fetcher: typeof fetch = fetch, pollMs = 20_000): Promise<string> {
+export async function publishImage(cfg: InstagramConfig, post: { imageUrl: string; caption: string; altText?: string; locationId?: string }, fetcher: typeof fetch = fetch, pollMs = 20_000): Promise<string> {
   const image = new URL(post.imageUrl);
   if (!['http:', 'https:'].includes(image.protocol) || !/\.jpe?g$/i.test(image.pathname)) throw new Error('Instagram takes JPEG only: use a public HTTP(S) .jpg or .jpeg address');
   if (!post.caption.trim()) throw new Error('Instagram post needs a caption');
@@ -36,7 +36,8 @@ export async function publishImage(cfg: InstagramConfig, post: { imageUrl: strin
   const { used, total } = await publishingLimit(cfg, fetcher);
   if (used >= total) throw new Error(`Instagram publishing quota used (${used}/${total} in 24 hours)`);
   const container = await call<{ id: string }>('POST', `${cfg.businessId}/media`, {
-    image_url: post.imageUrl, caption: post.caption, ...(post.altText ? { alt_text: post.altText } : {}), access_token: cfg.token }, fetcher);
+    image_url: post.imageUrl, caption: post.caption, ...(post.altText ? { alt_text: post.altText } : {}),
+    ...(post.locationId ? { location_id: post.locationId } : {}), access_token: cfg.token }, fetcher);
   let ready = false;
   for (let i = 0; i < 15; i++) {
     const s = await call<{ status_code: string }>('GET', container.id, { fields: 'status_code', access_token: cfg.token }, fetcher);

@@ -39,3 +39,13 @@ export async function publishText(page: FacebookPage, text: string, fetcher: typ
   if (!body.id) throw new Error('Facebook did not return a post ID');
   return body.id;
 }
+
+/** One photo post. Facebook fetches the picture from a public address; `placeId` is a Facebook Places ID. */
+export async function publishPhoto(page: FacebookPage, post: { imageUrl: string; caption: string; placeId?: string }, fetcher: typeof fetch = fetch): Promise<string> {
+  if (!post.caption.trim()) throw new Error('Facebook post needs a caption');
+  const body = await call<{ id?: string; post_id?: string }>(page.token, `${page.id}/photos`, {
+    url: post.imageUrl, caption: post.caption, published: 'true', ...(post.placeId ? { place: post.placeId } : {}) }, 'POST', fetcher);
+  const id = body.post_id ?? body.id;
+  if (!id) throw new Error('Facebook did not return a post ID');
+  return id;
+}
