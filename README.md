@@ -44,6 +44,10 @@ Node 24 (`.nvmrc`). No framework or production build step. `npm install` brings 
 npm start                 # http://localhost:5173; static files, no Pages Functions/CSP
 npm test                  # offline pipeline fixtures and browser-script contracts
 npm run typecheck
+npm run e2e               # Playwright, Chromium at 390 and 1440 px, recorded catalogue, no network
+npm run e2e:record        # re-record tests/e2e/fixtures from the public catalogue (anon reads only)
+npm run shots -- <dir>    # full-page screenshots: 9 pages, 4 widths, Day and Dusk, recorded data
+npm run shots:compare -- <dirA> <dirB>   # pixel diff of two shot sets; exits 1 on any difference
 npm run pipeline:dry      # collect/read sources; write nothing
 npm run pipeline          # collect, classify, enrich and write
 npm run pipeline:models   # probe configured model lanes
