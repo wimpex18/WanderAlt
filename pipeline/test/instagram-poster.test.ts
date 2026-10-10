@@ -17,7 +17,7 @@ test('poster extraction remains pending without vision, then uses fresh artwork 
       transcribe: async url => { assert.match(url, /fresh.jpg/); return 'Live band 6 October 2026 20:00 Venue'; },
       extract: async (_m, p) => { assert.deepEqual(p.images, []); assert.match(p.text, /20:00/); return [{ title: 'Live band', starts_at: '2026-10-06T20:00:00+03:00', has_time: true, engine: 'test', image_url: 'https://wrong.test/' } as Candidate]; },
     });
-    assert.match(found![0].review_note!, /manual review/); assert.equal(found![0].image_url, null); assert.equal(found![0].venue_name, 'Venue');
+    assert.match(found![0].review_note!, /^poster: /); assert.equal(found![0].image_url, null); assert.equal(found![0].venue_name, 'Venue');
     assert.deepEqual(eventRefreshFacts({ id: 'existing', starts_at: 'possibly-wrong', title: 'Possibly wrong', status_note: found![0].review_note, last_seen_at: 'now' }), { id: 'existing', last_seen_at: 'now' });
   } finally {
     if (old.token === undefined) delete process.env.INSTAGRAM_ACCESS_TOKEN; else process.env.INSTAGRAM_ACCESS_TOKEN = old.token;

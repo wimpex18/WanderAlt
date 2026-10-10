@@ -15,7 +15,7 @@ test('the review queue groups held listings by why they wait, rules first', () =
   const { reasonOf } = queue();
   assert.equal(reasonOf('rule: wellness (helirännak)').label, 'Wellness and spiritual');
   assert.equal(reasonOf('rule: restaurant venue (restoran)').label, 'At a restaurant');
-  assert.equal(reasonOf('manual review: date and time read from Instagram poster').key, 'poster');
+  assert.equal(reasonOf('poster: date and time read from Instagram poster').key, 'poster');
   assert.equal(reasonOf('borderline fit 0.45').key, 'borderline');
   assert.equal(reasonOf('trusted source, low fit 0.31').key, 'trusted-low');
   assert.equal(reasonOf(null).key, 'other');

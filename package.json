@@ -14,6 +14,7 @@
     "places:audit": "node --env-file-if-exists=.env pipeline/maintenance.ts --dry-run",
     "places:maintain": "node --env-file-if-exists=.env pipeline/maintenance.ts --check-osm --verify-websites",
     "places:check": "node --env-file-if-exists=.env pipeline/place-checks.ts",
+    "review:decide": "node --env-file-if-exists=.env pipeline/decide.ts",
     "test": "node --test \"pipeline/test/*.test.ts\"",
     "typecheck": "tsc -p pipeline",
     "build:brand": "node .scripts/build-brand.js",

@@ -106,13 +106,14 @@ export function strictSchema(s: unknown): unknown {
   return o;
 }
 
-/** The Claude lane: Messages API through the official SDK, structured JSON output, low effort, the
- *  instructions cached between requests (they are the same all run), and a dollar cap per run. */
-function claudeLane(): Lane {
+/** The Claude lane: Messages API through the official SDK, structured JSON output, low effort unless a
+ *  caller asks for more (the review decider judges at medium), the instructions cached between requests
+ *  (they are the same all run), and a dollar cap per run shared by every Claude lane. */
+export function claudeLane(effortFor?: 'low' | 'medium' | 'high'): Lane {
   const key = env('ANTHROPIC_API_KEY');
   const model = env('CLAUDE_LANE_MODEL') ?? 'claude-haiku-5-5';
   const cap = Number(env('CLAUDE_LANE_RUN_USD') ?? 0.3);
-  const effort = (env('CLAUDE_LANE_EFFORT') ?? 'low') as 'low' | 'medium' | 'high';
+  const effort = effortFor ?? (env('CLAUDE_LANE_EFFORT') ?? 'low') as 'low' | 'medium' | 'high';
   let client: Anthropic | null = null;
   return {
     name: 'claude', model, key, room: CLAUDE_ROOM,
