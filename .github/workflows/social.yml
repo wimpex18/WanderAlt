@@ -1,6 +1,9 @@
-# Posts to Threads and Facebook, or checks the social tokens. Only `check` runs on a
-# schedule (twice a month, which keeps the 60-day Threads token refreshed) and it
-# posts nothing; posting requires an explicitly selected manual action.
+# Posts to Threads, Facebook and Instagram, or checks the social tokens. Only `check`
+# runs on a schedule (twice a month, which keeps the 60-day Threads token refreshed)
+# and it posts nothing; posting requires an explicitly selected manual action. The
+# tokens live in this repository's secrets, so nobody needs them on a laptop:
+#   gh workflow run social.yml -f action=post-preview -f file=brand/social/teaser/1-soon.json
+#   gh workflow run social.yml -f action=post-publish -f file=brand/social/teaser/1-soon.json
 name: social
 
 on:
@@ -11,8 +14,20 @@ on:
       action:
         description: 'What to run'
         type: choice
-        options: [check, tonight-preview, tonight-threads, tonight-facebook]
+        options: [check, tonight-preview, tonight-threads, tonight-facebook, post-preview, post-publish]
         default: check
+      file:
+        description: 'post-*: the post file, for example brand/social/teaser/1-soon.json (its picture must be live)'
+        type: string
+        default: ''
+      to:
+        description: 'post-*: platforms, comma separated'
+        type: string
+        default: 'facebook,instagram,threads'
+      no_location:
+        description: 'post-*: send without the location tag'
+        type: boolean
+        default: false
 
 concurrency:
   group: social
@@ -35,10 +50,25 @@ jobs:
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           ACTION: ${{ inputs.action || 'check' }}
+          POST_FILE: ${{ inputs.file }}
+          POST_TO: ${{ inputs.to }}
+          NO_LOCATION: ${{ inputs.no_location }}
         run: |
+          post() {
+            case "$POST_FILE" in
+              brand/social/*.json) ;;
+              *) echo "file must be a brand/social/…json post file"; exit 1 ;;
+            esac
+            case "$POST_FILE" in *..*) echo "file must not contain .."; exit 1 ;; esac
+            extra=""
+            [ "$NO_LOCATION" = "true" ] && extra="--no-location"
+            node pipeline/social.ts post "$POST_FILE" --to "$POST_TO" $extra "$@"
+          }
           case "$ACTION" in
             check) node pipeline/social.ts check ;;
             tonight-preview) node pipeline/social.ts tonight ;;
             tonight-threads) node pipeline/social.ts tonight --publish threads ;;
             tonight-facebook) node pipeline/social.ts tonight --publish facebook ;;
+            post-preview) post ;;
+            post-publish) post --publish ;;
           esac
