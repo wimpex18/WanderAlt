@@ -30,6 +30,7 @@ import { Models, lanes, extractEvents, classify, classifyPlaces, transcribePoste
 import { englishModels, refreshEnglish } from './english.ts';
 import { localModels, refreshLocal } from './localize.ts';
 import { attachPosters } from './posters.ts';
+import { copyCovers } from './event-art.ts';
 import { fetchOverture, matchPlace } from './overture.ts';
 import { Places, isDistrict, type Place } from './places.ts';
 import { Seen, earlierListing, type Listed } from './dedupe.ts';
@@ -840,6 +841,10 @@ async function main() {
       const n = await attachPosters(db, CITY, Number(opt('--max-event-pages') ?? 30));
       if (n) log(`posters: ${n} events got the picture their own page attaches to them`);
     } catch (e) { log(`posters failed: ${(e as Error).message}`); }
+  }
+  // Covers a venue's own records attach at an address that expires, copied once (event-art.ts).
+  if (!flag('--no-covers')) {
+    try { await copyCovers(db, sources, Number(opt('--max-covers') ?? 30)); } catch (e) { log(`covers failed: ${(e as Error).message}`); }
   }
   const now = new Date().toISOString();
   const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();

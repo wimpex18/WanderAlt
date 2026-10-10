@@ -47,6 +47,9 @@ test('Paavli: the venue\'s own events with Tallinn times, its own anchor and tic
   assert.equal(stf.url, 'https://www.kultuurivabrik.ee/en/events#923802290770315');
   assert.equal(stf.ticket_url, 'https://fienta.com/et/s/stf-2026-inklingroom-paavli-takeover-aisha-deivi-ayano-yokoyama-34423-tab');
   for (const i of items) assert.equal(extract(i, paavli)[0].image_url, null);   // covers are expiring fbcdn.net addresses
+  // ...kept in the raw item only to be copied (event-art.ts), since the source asks for it.
+  assert.equal(paavli.config.copy_covers, true);
+  assert.ok(items.some(i => /(^|\.)fbcdn\.net$/.test(new URL(String(i.payload.cover)).hostname)));
   assert.match(stf.description ?? '', /^AYANO YOKOYAMA & 34423 LIVE/);   // styled letters read as plain ones
   assert.equal(stf.engine, 'nextflight');
 });
