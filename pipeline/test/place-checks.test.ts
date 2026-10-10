@@ -121,3 +121,36 @@ test('a venue source\'s accounts are checked against what the venue\'s own site 
   assert.deepEqual(compareAccounts({ ...saal, kind: 'fienta', handle: '@fienta' }, { instagram: ['x'], facebook: [] }, ''), []);
   assert.equal(siteOf({ ...saal, config: {} }), 'https://saal.ee/');
 });
+
+test('one page is one witness: its JSON-LD and a model reading of its text do not agree with each other', () => {
+  const url = 'https://fienta.com/et/sarabande-immersive-musical-roleplay-experience';
+  const same = locateDecision([ev('fienta.com (organiser 9400c8d8)', linnahall, { url }), ev('fienta.com', east(20), { source: 'site', url })]);
+  assert.equal(same.answer, null);
+  assert.equal(locateDecision([ev('fienta.com (organiser 9400c8d8)', linnahall, { url }), ev('openstreetmap.org', east(20), { source: 'osm' })]).answer, 'located');
+});
+
+test('two records settle a pair: one venue\'s names at the address both give, or different names on different streets', async () => {
+  const { nameVariant, addressInName } = await import('../place-checks.ts');
+  const at = (id: string, name: string, address: string | null, website: string | null = null) => ({ ...place(id, name, linnahall), address, website });
+  assert.match(nameVariant(at('a', 'Heldeke!', null), at('b', 'Heldeke! - Theatre and Bar', null)) ?? '', /kind of place/);
+  assert.match(nameVariant(at('a', 'Legendaarne Raadio', null), at('b', 'Legendaarne Raadiobaar', null)) ?? '', /glued/);
+  assert.match(nameVariant(at('a', 'Hipodroomi Ratas&Kohv', null), at('b', 'Ratas&Kohv Hipodroomi', null)) ?? '', /same words/);
+  assert.match(nameVariant(at('a', 'Klaassaal', null), at('b', 'Tallinna Lauluväljak/Klaassaal', null)) ?? '', /slash/);
+  assert.equal(nameVariant(at('a', 'T1 Venue', null), at('b', 'T1 Venue & Cinamon Cinema', null)), null, 'another business under one roof');
+  assert.equal(nameVariant(at('a', 'Apollo', null), at('b', 'Apollo Kids', null)), null);
+
+  const merged = pairDecision(at('a', 'RM Lounge', 'Parda 8, 10151 Tallinn'), at('b', 'RM Lounge & event venue', 'Parda tänav 8, 10151 Tallinn'), null, null, []);
+  assert.equal(merged.answer, 'merged');
+  // Different websites are two businesses, whatever the names.
+  assert.equal(pairDecision(at('a', 'Apollo', 'Hobujaama 5', 'https://www.apollo.ee/'), at('b', 'Apollo kino', 'Hobujaama 5', 'https://www.apollokino.ee/'), null, null, []).answer, null);
+  // Another address is not one venue.
+  assert.equal(pairDecision(at('a', 'RM Lounge', 'Parda 8'), at('b', 'RM Lounge & event venue', 'Parda 10'), null, null, []).answer, null);
+  assert.equal(pairDecision(at('a', 'Raamatukaru', 'Kuninga 2, Tallinn'), at('b', 'Raamatukoi', 'Harju 1, Tallinn'), null, null, []).answer, 'separate');
+  // A room keeps its own place.
+  assert.equal(pairDecision(at('a', 'Mustpeade Maja', 'Pikk 26'), at('b', 'Mustpeade Maja Valge saal', 'Pikk 26'), null, null, []).answer, 'separate');
+
+  assert.equal(addressInName('Sakala 3 Teatrimaja'), 'Sakala 3');
+  assert.equal(addressInName('Manufaktuuri 7/2'), 'Manufaktuuri 7/2');
+  assert.equal(addressInName('Hall 2'), null);
+  assert.equal(addressInName('Studio Gallery K28'), null);
+});
