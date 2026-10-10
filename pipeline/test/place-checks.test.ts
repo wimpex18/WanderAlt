@@ -172,3 +172,16 @@ test('two records settle a pair: one venue\'s names at the address both give, or
   assert.equal(addressInName('Hall 2'), null);
   assert.equal(addressInName('Studio Gallery K28'), null);
 });
+
+test('a pair left behind by a merge takes its canonical pair\'s answer, or waits with it', async () => {
+  const { supersededPairs } = await import('../place-checks.ts');
+  const merged = new Map([['apollo-kino-3', 'apollo-kino-solaris'], ['loomelinnak', 'telliskivi'], ['old-a', 'new-a']]);
+  const reviews = [{ place_a: 'apollo-4', place_b: 'apollo-kino-solaris', state: 'separate' }, { place_a: 'telliskivi', place_b: 'vivistop', state: 'pending' }];
+  const out = supersededPairs([
+    { place_a: 'apollo-4', place_b: 'apollo-kino-3' },     // its canonical pair was settled: separate
+    { place_a: 'loomelinnak', place_b: 'vivistop' },       // its canonical pair is still open: waits
+    { place_a: 'new-a', place_b: 'old-a' },                // both sides are one place now
+    { place_a: 'x', place_b: 'y' },                        // nothing merged: untouched
+  ], reviews, merged);
+  assert.deepEqual(out.map(r => [r.place_a, r.place_b, r.state]), [['apollo-4', 'apollo-kino-3', 'separate'], ['new-a', 'old-a', 'merged']]);
+});

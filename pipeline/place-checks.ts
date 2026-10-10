@@ -191,6 +191,24 @@ export function withoutRoom(name: string, city: CityProfile): string | null {
   return changed && n.length >= 3 ? n : null;
 }
 
+/** Pending pairs one of whose places has since been merged into another: they are the canonical places'
+ *  pair now, so they take that pair's answer, or "merged" when both sides are one place. A pair whose
+ *  canonical pair is still open waits for it. */
+export function supersededPairs(pending: { place_a: string; place_b: string }[], reviews: { place_a: string; place_b: string; state: string }[],
+  mergedInto: Map<string, string>): { place_a: string; place_b: string; state: 'merged' | 'separate'; reason: string }[] {
+  const canon = (id: string) => { let x = id; for (let i = 0; i < 10 && mergedInto.has(x); i++) x = mergedInto.get(x)!; return x; };
+  const stateOf = new Map(reviews.map(r => [pairKey(r.place_a, r.place_b), r.state]));
+  const out: { place_a: string; place_b: string; state: 'merged' | 'separate'; reason: string }[] = [];
+  for (const r of pending) {
+    if (!mergedInto.has(r.place_a) && !mergedInto.has(r.place_b)) continue;
+    const [a, b] = [canon(r.place_a), canon(r.place_b)];
+    const now = a === b ? 'merged' : stateOf.get(pairKey(a, b));
+    if (now !== 'merged' && now !== 'separate') continue;
+    out.push({ ...r, state: now, reason: a === b ? `checked: both are ${a} now` : `checked: these are ${a} and ${b} now, settled as ${now}` });
+  }
+  return out;
+}
+
 // ── Model readings, each checked against the page ─────────────────
 
 const WHERE_SCHEMA = {
@@ -264,7 +282,15 @@ export async function checkPlaces(db: Db, cityId: string, models: Models | null,
     }
     for (const e of posted) e.account_site = byId.get(accountOf.get(e.id) ?? '')?.website ?? null;
   } catch (e) { console.warn(`[places] account sites unavailable: ${(e as Error).message}`); }
-  const pending = await db.all<{ place_a: string; place_b: string }>('place_match_reviews?state=eq.pending&select=place_a,place_b&order=place_a.asc,place_b.asc');
+  let pending = await db.all<{ place_a: string; place_b: string }>('place_match_reviews?state=eq.pending&select=place_a,place_b&order=place_a.asc,place_b.asc');
+  // Pairs left behind by a merge take their canonical pair's answer.
+  const mergedInto = new Map((await db.all<{ id: string; merged_into: string }>(`places?city=eq.${city.id}&merged_into=not.is.null&select=id,merged_into&order=id.asc`)).map(p => [p.id, p.merged_into]));
+  const superseded = supersededPairs(pending, await db.all('place_match_reviews?select=place_a,place_b,state&order=place_a.asc,place_b.asc'), mergedInto);
+  for (const r of superseded) {
+    console.log(`[places] pair ${r.place_a}|${r.place_b}: ${r.state} (${r.reason})${opts.dry ? ' (dry run)' : ''}`);
+    if (!opts.dry) await db.patch(`place_match_reviews?place_a=eq.${encodeURIComponent(r.place_a)}&place_b=eq.${encodeURIComponent(r.place_b)}&state=eq.pending`, { state: r.state, reason: r.reason, updated_at: new Date().toISOString() });
+  }
+  pending = pending.filter(r => !superseded.some(x => x.place_a === r.place_a && x.place_b === r.place_b));
   const rows = await db.all<CheckRow>(`place_checks?city=eq.${city.id}&select=subject,question,state,tries,next_at&order=subject.asc`);
   const row = new Map(rows.map(r => [`${r.question}:${r.subject}`, r]));
   // --only asks about one place now, whenever it is next due.
