@@ -185,3 +185,29 @@ test('a pair left behind by a merge takes its canonical pair\'s answer, or waits
   ], reviews, merged);
   assert.deepEqual(out.map(r => [r.place_a, r.place_b, r.state]), [['apollo-4', 'apollo-kino-3', 'separate'], ['new-a', 'old-a', 'merged']]);
 });
+
+test('a pair left behind by a merge is answered in place_checks too, with the canonical pair\'s answer', async () => {
+  const { checkPlaces } = await import('../place-checks.ts');
+  const patches: string[] = [], upserts: { table: string; rows: Record<string, unknown>[] }[] = [];
+  const data: Record<string, unknown[]> = {
+    'place_match_reviews?state=eq.pending': [{ place_a: 'tallinn-apollo-4', place_b: 'tallinn-apollo-kino-3' }],
+    'places?city=eq.tallinn&merged_into=not.is.null': [{ id: 'tallinn-apollo-kino-3', merged_into: 'tallinn-apollo-kino-solaris' }],
+    'place_match_reviews?select': [{ place_a: 'tallinn-apollo-4', place_b: 'tallinn-apollo-kino-3', state: 'pending' }, { place_a: 'tallinn-apollo-4', place_b: 'tallinn-apollo-kino-solaris', state: 'separate' }],
+  };
+  const db = {
+    all: async (path: string) => Object.entries(data).find(([k]) => path.startsWith(k))?.[1] ?? [],
+    select: async () => [],
+    patch: async (path: string) => { patches.push(path); },
+    upsert: async (table: string, rows: Record<string, unknown>[]) => { upserts.push({ table, rows }); },
+    req: async () => null,
+  } as any;
+  await checkPlaces(db, 'tallinn', null, { max: 0, pairs: 0, search: null });
+  assert.equal(patches.length, 1);
+  assert.match(patches[0], /^place_match_reviews\?place_a=eq\.tallinn-apollo-4&place_b=eq\.tallinn-apollo-kino-3/);
+  const [check] = upserts.filter(u => u.table === 'place_checks').flatMap(u => u.rows);
+  assert.equal(check.subject, 'tallinn-apollo-4|tallinn-apollo-kino-3');
+  assert.equal(check.question, 'pair');
+  assert.equal(check.state, 'answered');
+  assert.equal(check.answer, 'separate');
+  assert.match(String(check.note), /tallinn-apollo-kino-solaris/);
+});
