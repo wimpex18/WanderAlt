@@ -2,12 +2,17 @@
 # PreToolUse hook (Bash): before any command that runs `git push`, run the
 # test suite and the typecheck. Exit 2 blocks the push and hands the failure
 # back to Claude; every other command passes straight through.
-cmd=$(jq -r '.tool_input.command // ""')
+input=$(cat)
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 case "$cmd" in
   *"git push"*) ;;
   *) exit 0 ;;
 esac
-cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
+# Test the checkout being pushed: from a worktree under .claude/worktrees that is the worktree, not the
+# project folder the session started in.
+dir=$(printf '%s' "$input" | jq -r '.cwd // ""')
+top=$(git -C "${dir:-${CLAUDE_PROJECT_DIR:-.}}" rev-parse --show-toplevel 2>/dev/null) || top=${CLAUDE_PROJECT_DIR:-.}
+cd "$top" || exit 0
 if ! out=$(npm test 2>&1); then
   printf '%s\n' "$out" | tail -40 >&2
   echo "Push blocked: npm test failed. Fix the failures, then push again." >&2
