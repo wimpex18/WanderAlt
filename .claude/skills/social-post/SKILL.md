@@ -13,9 +13,10 @@ The accounts are `@wanderalt` on Instagram and Threads and the WanderAlt Faceboo
 2. **Voice.** Handles start with `@`. No exclamation marks, no marketing register, never "discover" as a verb. Threads is at most 500 characters. Instagram says "link in bio", not a URL. See `brand/social/teaser/posts.md` for examples.
 3. **Picture.** A 1080×1350 JPEG, made from the brand type and colours (see `brand/social/teaser/*.svg`, Geologica 700, vermilion `#d83a14`). Commit it under `brand/social/<campaign>/`. It must be live at `https://wanderalt.app/brand/social/…` before sending, which means merged and deployed.
 4. **Post file.** One JSON file per post next to its picture (`brand/social/teaser/1-soon.json` is the model): `image`, `alt`, `location`, and the text for `facebook`, `instagram`, `threads`. Tallinn's Facebook Places ID is `106039436102339` (confirmed by the owner). Threads uses its own IDs and the token lacks the location scope, so leave `threadsLocation` out.
-5. **Preview.** `npm run social -- post FILE.json` prints each platform's text and checks that the picture is public. It sends nothing.
-6. **Show, then send.** Show the user the final text and picture. Send only after they ask for that post: `npm run social -- post FILE.json --publish`. Use `--to instagram,facebook` for a subset.
-7. **Failures.** Each platform reports on its own. If a location is refused, nothing was posted on that platform: tell the user, and rerun with `--no-location` only if they agree. Never rerun a platform that may have posted; check it first.
+5. **Preview.** It prints each platform's text and checks that the picture is public. It sends nothing. The tokens live in the repository secrets, so run it through GitHub, from any machine, once the file is on `main`:
+   `gh workflow run social.yml -f action=post-preview -f file=brand/social/teaser/1-soon.json`, then `gh run watch` and `gh run view --log`. Where a git-ignored `.env` holds the tokens, `npm run social -- post FILE.json` does the same locally.
+6. **Show, then send.** Show the user the final text and picture. Send only after they ask for that post: `-f action=post-publish` instead of `post-preview` (locally, add `--publish`). Add `-f to=instagram,facebook` for a subset and `-f no_location=true` to drop the tag.
+7. **Failures.** Each platform reports on its own. If a location is refused, nothing was posted on that platform: rerun just that platform without the tag and tell the user. Never rerun a platform that may have posted; check it first.
 
 ## Never
 
