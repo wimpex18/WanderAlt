@@ -1241,6 +1241,14 @@ body[data-page="map"] .wa-offline { position: fixed; left: 0; right: 0; top: cal
 .review__group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2) var(--s-4); padding-bottom: var(--s-2); border-bottom: 1px solid var(--line); }
 .review__bulk { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
 .review__date { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: var(--r-pill); background: var(--paper-2); font-variant-numeric: tabular-nums; }
+.review__section { margin-top: var(--s-8); }
+.review__section:first-child { margin-top: var(--s-5); }
+details.review__group > summary { cursor: pointer; list-style: none; }
+details.review__group > summary::-webkit-details-marker { display: none; }
+details.review__group > summary::before { content: "▸"; color: var(--ink-2); transition: transform var(--t-fast) var(--ease); }
+details.review__group[open] > summary::before { transform: rotate(90deg); }
+.review__group-title { font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; }
+.review__quote { margin: 0; padding: var(--s-2) var(--s-3); border-left: 3px solid var(--line); background: var(--paper-2); border-radius: 0 var(--r-xs) var(--r-xs) 0; font-size: var(--fs-small); white-space: pre-line; overflow-wrap: anywhere; }
 
 /* A venue's logo, wherever a photo would sit: whole, centred, on white.
    Logos are drawn for light grounds, so the tile stays light in dark mode. */
