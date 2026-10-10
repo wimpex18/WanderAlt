@@ -828,6 +828,8 @@ window.WA.dict.uk = {
   "No decisions on upcoming listings yet.": "Рішень щодо майбутніх подій поки немає.",
   "Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.": "Майбутні події, вирішені збирачем, зі словами самого оголошення, на яких ґрунтується кожне рішення. «Опублікувати» або «Відхилити» змінює рішення.",
   "Published automatically": "Опубліковано автоматично",
+  "Taken down after a second look": "Знято після повторної перевірки",
+  "Kept after a second look": "Залишено після повторної перевірки",
   "Fits the guide": "Пасує до добірки",
   "Outside the city": "За межами міста",
   "A restaurant, hotel or dining": "Ресторан, готель або вечеря",

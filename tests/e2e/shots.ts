@@ -1,6 +1,6 @@
 /* npm run shots -- <outdir> [--only now,map,...]
-   Full-page screenshots of the main pages at 390, 768, 1100 and 1440 px in Day and
-   Dusk, on the recorded catalogue at the recording time with the network stubbed
+   Full-page screenshots of the main pages (review and 404 when named in --only) at
+   390, 768, 1100 and 1440 px in Day and Dusk, on the recorded catalogue at the recording time with the network stubbed
    (tests/e2e/support/env.ts), for proving a style change leaves every pixel alone:
    take a set before and after, then npm run shots:compare -- <before> <after>.
 
@@ -24,7 +24,7 @@ for (let i = 0; i < args.length; i++) {
   else if (!outdir) outdir = args[i];
 }
 if (!outdir) {
-  console.error('Usage: npm run shots -- <outdir> [--only now,map,event,walk,events,places,saved,you,about]');
+  console.error('Usage: npm run shots -- <outdir> [--only now,map,event,walk,events,places,saved,you,about,review,notfound]');
   process.exit(2);
 }
 
@@ -40,14 +40,17 @@ const PAGES: Record<string, string> = {
   you: 'profile.html',
   about: 'about.html',
 };
+/* Pages outside the default set, shot only when named with --only. */
+const EXTRA: Record<string, string> = { review: 'review.html', notfound: '404.html' };
+const ALL: Record<string, string> = { ...PAGES, ...EXTRA };
 const WIDTHS: Record<number, number> = { 390: 844, 768: 1024, 1100: 900, 1440: 900 };
 const THEMES = ['day', 'dusk'] as const;
 const PORT = Number(process.env.E2E_PORT) || 5392;
 const CONCURRENCY = 4;
 
-const names = Object.keys(PAGES).filter(n => !only || only.includes(n));
+const names = only ? Object.keys(ALL).filter(n => only.includes(n)) : Object.keys(PAGES);
 if (only && names.length !== only.length) {
-  console.error(`Unknown page in --only; choose from ${Object.keys(PAGES).join(', ')}`);
+  console.error(`Unknown page in --only; choose from ${Object.keys(ALL).join(', ')}`);
   process.exit(2);
 }
 
@@ -128,7 +131,7 @@ const shoot = async (browser: Browser, base: string, name: string, width: number
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', e => errors.push(e.message));
   try {
-    await page.goto(`${base}/${PAGES[name]}`);
+    await page.goto(`${base}/${ALL[name]}`);
     await settle(page);
     if (!await still(page)) errors.push('the page kept changing for 10 s');
     const file = path.join(outdir, `${name}-${width}-${theme}.png`);

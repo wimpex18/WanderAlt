@@ -828,6 +828,8 @@ window.WA.dict.ru = {
   "No decisions on upcoming listings yet.": "Решений по предстоящим событиям пока нет.",
   "Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.": "Предстоящие события, решённые сборщиком, со словами самого объявления, на которых основано каждое решение. «Опубликовать» или «Отклонить» меняет решение.",
   "Published automatically": "Опубликовано автоматически",
+  "Taken down after a second look": "Снято после повторной проверки",
+  "Kept after a second look": "Оставлено после повторной проверки",
   "Fits the guide": "Подходит для подборки",
   "Outside the city": "За пределами города",
   "A restaurant, hotel or dining": "Ресторан, отель или ужин",

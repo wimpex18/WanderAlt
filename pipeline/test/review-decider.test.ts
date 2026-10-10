@@ -164,3 +164,48 @@ test('the decider reads only held rows nobody decided, and applies each decision
   await decideHeld(db, 'tallinn', models, { dry: true, pages: { get: async () => null } as never });
   assert.deepEqual([rpcs.length, patches.length], [0, 0]);
 });
+
+test('a second look at listings published on a fit score: once each, a reject takes it down, a publish is noted', async () => {
+  const rpcs: Record<string, unknown>[] = [];
+  const out = (id: string, title: string, note = 'fit 0.80') => row({ id, title, venue_name: 'Somewhere', place_id: null, status: 'published', status_note: note });
+  const audited = [out('ev_a', 'Viva Verdi'), out('ev_b', 'Laine Live: Human Natures'), out('ev_c', 'Asked before'), out('ev_d', 'Gave up on'), out('ev_e', 'Over the cap')];
+  const db = {
+    all: async (path: string) => (path.includes('status=eq.published') && path.includes('status_note=like.fit') ? audited : []),
+    select: async (path: string) => (path.startsWith('review_decisions') ? [
+      { event_id: 'ev_c', outcome: 'published', reason: 'fits', evidence: {} },
+      ...['1', '2', '3'].map(() => ({ event_id: 'ev_d', outcome: 'waits', reason: 'unclear', evidence: {} })),
+    ] : []),
+    patch: async () => null,
+    req: async (_m: string, path: string, body: Record<string, unknown>) => { if (path === 'rpc/apply_review_decision') rpcs.push(body); return 1; },
+  } as unknown as Db;
+  const asked: string[] = [];
+  const models = new Models([lane(user => {
+    const items = JSON.parse(user) as { i: number; title: string }[];
+    asked.push(...items.map(x => x.title));
+    return { items: items.map(x => (x.title === 'Viva Verdi'
+      ? { i: x.i, decision: 'reject', reason: 'hobby', quote: 'Viva Verdi', why: 'A class.' }
+      : { i: x.i, decision: 'publish', reason: 'fits', quote: x.title, why: 'An indie gig.' })) };
+  })], 20);
+  await decideHeld(db, 'tallinn', models, { audit: 2, pages: { get: async () => null } as never });
+  assert.deepEqual([...new Set(asked)].sort(), ['Laine Live: Human Natures', 'Viva Verdi'], 'once each, three waits are enough, and the cap holds');
+  assert.deepEqual(rpcs.map(b => [b.p_event, b.p_before_status, b.p_status, b.p_note]).sort(),
+    [['ev_a', 'published', 'rejected', 'auto reject: a hobby class'], ['ev_b', 'published', 'published', 'auto publish: kept after a second look']]);
+});
+
+test('a second look takes a listing down only on a clear reject; a split or "unclear" keeps it', async () => {
+  const { audited } = await import('../review-decider.ts');
+  const r = row({ id: 'ev_k', title: 'Doctor Zhivago, part three', status: 'published', status_note: 'fit 0.70' });
+  const hobby = fit('reject', { reason: 'hobby', votes: ['reject:hobby', 'reject:hobby'] });
+  assert.equal(audited(r, settle(r, hobby, null, 0), hobby).status, 'rejected');
+  // Taste does not take a published listing down, however sure.
+  const taste = fit('reject', { reason: 'mainstream', votes: ['reject:mainstream', 'reject:mainstream'] });
+  assert.equal(audited(r, settle(r, taste, null, 0), taste).status, 'published');
+  assert.equal(settle(row(), taste, null, 0).status, 'rejected', 'a held listing is still rejected for it');
+  const split = fit('reject', { reason: 'hobby', votes: ['publish:fits', 'reject:hobby', 'reject:hobby'] });
+  const kept = audited(r, settle(r, split, null, 0), split);
+  assert.deepEqual([kept.status, kept.reason, kept.quote], ['published', 'kept', 'Doctor Zhivago, part three']);
+  assert.match(kept.why, /did not agree/);
+  const unclear = fit('reject', { reason: 'unclear', votes: ['reject:unclear', 'reject:unclear'] });
+  assert.equal(audited(r, settle(r, unclear, null, 0), unclear).status, 'published');
+  assert.equal(noteFor(kept), 'auto publish: kept after a second look');
+});

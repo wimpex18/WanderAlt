@@ -195,7 +195,8 @@
      note with "manual …", and the listing leaves this list. */
   const REASON = { fits: 'Fits the guide', elsewhere: 'Outside the city', dining: 'A restaurant, hotel or dining', mainstream: 'Mainstream or commercial',
     wellness: 'Wellness or spiritual', hobby: 'A hobby class', 'self-help': 'Self-help', children: "Children's or family", 'not-culture': 'Not culture',
-    'not-a-title': "No show's name", unclear: 'Nothing shows it fits', 'poster-date': 'Date only on a poster', duplicate: 'Listed already' };
+    'not-a-title': "No show's name", unclear: 'Nothing shows it fits', 'poster-date': 'Date only on a poster', duplicate: 'Listed already',
+    kept: 'Kept after a second look' };
   const WHERE = { title: 'In the title', venue: 'In the venue', address: 'In the address', text: 'In the text', page: 'On its own page',
     caption: 'In the caption', source: 'In another source', rule: 'From the rule' };
   const decided = (decisions, events) => {
@@ -208,18 +209,22 @@
     }
     const groups = new Map();
     for (const x of out) {
-      const key = `${x.d.outcome}:${x.d.outcome === 'published' ? 'fits' : x.d.reason}`;
-      if (!groups.has(key)) groups.set(key, { key, outcome: x.d.outcome, reason: x.d.reason, items: [] });
+      /* A second look at a listing that was already out: taken down, or kept. */
+      const audit = x.d.before_status === 'published';
+      const key = audit ? (x.d.outcome === 'published' ? 'kept' : 'taken-down') : `${x.d.outcome}:${x.d.outcome === 'published' ? 'fits' : x.d.reason}`;
+      if (!groups.has(key)) groups.set(key, { key, outcome: x.d.outcome, reason: x.d.reason, audit, items: [] });
       groups.get(key).items.push(x);
     }
     for (const g of groups.values()) g.items.sort((a, b) => a.e.starts_at.localeCompare(b.e.starts_at));
-    return [...groups.values()].sort((a, b) => Number(b.outcome === 'published') - Number(a.outcome === 'published') || b.items.length - a.items.length);
+    const order = (g) => (g.key === 'taken-down' ? 0 : g.outcome === 'published' && !g.audit ? 1 : g.key === 'kept' ? 3 : 2);
+    return [...groups.values()].sort((a, b) => order(a) - order(b) || b.items.length - a.items.length);
   };
   const decidedItem = ({ d, e }) => {
     const source = url(e.url || e.ticket_url), flip = d.outcome === 'published' ? 'rejected' : 'published';
     const votes = d.evidence && d.evidence.fit && Array.isArray(d.evidence.fit.votes) ? d.evidence.fit.votes.join(' ') : '';
     return `<li class="review__item" data-ids="${esc(e.id)}">
-      <p class="wa-note">${[esc(when(e.starts_at)), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', d.held_by ? `<span data-notranslate>${esc(`held: ${d.held_by}`)}</span>` : ''].filter(Boolean).join(' · ')}</p>
+      <p class="wa-note">${[esc(when(e.starts_at)), e.venue_name ? `<span data-notranslate>${esc(e.venue_name)}</span>` : '', d.before_status === 'published' && d.outcome === 'rejected' && REASON[d.reason] ? esc(REASON[d.reason]) : '',
+        d.held_by ? `<span data-notranslate>${esc(`${d.before_status === 'published' ? 'was' : 'held'}: ${d.held_by}`)}</span>` : ''].filter(Boolean).join(' · ')}</p>
       <p class="review__title" data-notranslate>${esc(e.title_en || e.title)}</p>
       ${d.quote ? `<blockquote class="review__quote" data-notranslate>${esc(d.quote)}</blockquote>` : ''}
       <p class="wa-note">${[d.quote_in && WHERE[d.quote_in] ? esc(WHERE[d.quote_in]) : '', d.engine ? `<span data-notranslate>${esc(d.engine)}</span>` : '', votes ? `<span data-notranslate>${esc(votes)}</span>` : ''].filter(Boolean).join(' · ')}</p>
@@ -233,7 +238,7 @@
   const decidedHtml = async () => {
     try {
       const since = new Date(Date.now() - 12 * 3600_000).toISOString();
-      const decisions = await api('GET', 'review_decisions?outcome=neq.waits&order=decided_at.desc&limit=1000&select=event_id,decided_at,outcome,reason,why,quote,quote_in,held_by,evidence,engine');
+      const decisions = await api('GET', 'review_decisions?outcome=neq.waits&order=decided_at.desc&limit=2000&select=event_id,decided_at,outcome,reason,why,quote,quote_in,held_by,before_status,evidence,engine');
       const ids = [...new Set(decisions.map(d => d.event_id))];
       const events = [];
       for (let i = 0; i < ids.length; i += 150) {
@@ -244,8 +249,9 @@
       if (!groups.length) return '<h2 class="wa-h2 review__section">Decided automatically</h2><p class="wa-note">No decisions on upcoming listings yet.</p>';
       return `<h2 class="wa-h2 review__section">Decided automatically</h2>
         <p class="wa-note">Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.</p>
-        ${groups.map(g => `<details class="review__group"${g.outcome === 'published' ? ' open' : ''} data-group="${esc(g.key)}">
-          <summary class="review__group-head"><span class="review__group-title">${esc(g.outcome === 'published' ? 'Published automatically' : REASON[g.reason] || g.reason)}</span>
+        ${groups.map(g => `<details class="review__group"${g.key === 'taken-down' || (g.outcome === 'published' && !g.audit) ? ' open' : ''} data-group="${esc(g.key)}">
+          <summary class="review__group-head"><span class="review__group-title">${esc(g.key === 'taken-down' ? 'Taken down after a second look' : g.key === 'kept' ? 'Kept after a second look'
+            : g.outcome === 'published' ? 'Published automatically' : REASON[g.reason] || g.reason)}</span>
             <span class="wa-note review__group-n">${esc(g.items.length === 1 ? '1 listing' : `${g.items.length} listings`)}</span></summary>
           <ul class="review__list">${g.items.map(decidedItem).join('')}</ul>
         </details>`).join('')}`;

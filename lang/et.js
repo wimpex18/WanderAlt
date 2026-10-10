@@ -828,6 +828,8 @@ window.WA.dict.et = {
   "No decisions on upcoming listings yet.": "Tulevaste kuulutuste kohta otsuseid veel pole.",
   "Upcoming listings the pipeline settled, with the listing's own words each decision rests on. Publish or Reject overrides it.": "Kogumisprotsessi otsustatud tulevased kuulutused koos kuulutuse enda sõnadega, millel iga otsus põhineb. Avalda või Lükka tagasi muudab otsust.",
   "Published automatically": "Avaldatud automaatselt",
+  "Taken down after a second look": "Teisel vaatamisel eemaldatud",
+  "Kept after a second look": "Teisel vaatamisel jäetud",
   "Fits the guide": "Sobib valikusse",
   "Outside the city": "Väljaspool linna",
   "A restaurant, hotel or dining": "Restoran, hotell või söömine",

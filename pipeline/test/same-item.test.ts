@@ -115,3 +115,25 @@ test('maintenance reads each live row\'s source item and leaves out undone pairs
   assert.deepEqual(plan(await reconcileEvents(db, 'tallinn', true)), ['ev_half12>ev_ten']);
   assert.ok(asked.includes('event_sources?raw_item_id=not.is.null&select=event_id,raw_item_id,source_id&order=event_id.asc,source_id.asc'));
 });
+
+test('a date-only copy of a show another source lists with its time joins the timed row, only when that is one start', async () => {
+  const { dateOnlyJoins } = await import('../dedupe.ts');
+  const ev = (id: string, title: string, starts_at: string, has_time: boolean, status = 'published', place_id: string | null = 'p-vonkrahl') =>
+    ({ id, title, place_id, starts_at, url: null, first_seen_at: '2026-10-01T00:00:00Z', status, has_time });
+  const pantheon = ev('ev_d', 'Pantheon', '2026-10-11T21:00:00Z', false);          // 12.10 in Tallinn, no time
+  const timed = ev('ev_t', 'Pantheon / Viimast korda!', '2026-10-12T16:00:00Z', true);
+  assert.deepEqual(dateOnlyJoins([pantheon, timed]).map(p => [p.duplicate.id, p.canonical.id]), [['ev_d', 'ev_t']]);
+  // Two timed starts that day are two sessions: the date-only row could be either.
+  assert.equal(dateOnlyJoins([pantheon, timed, ev('ev_t2', 'Pantheon', '2026-10-12T13:00:00Z', true)]).length, 0);
+  // Another day, another place, another show, or a pair a person undid: nothing.
+  assert.equal(dateOnlyJoins([pantheon, { ...timed, starts_at: '2026-10-13T16:00:00Z' }]).length, 0);
+  assert.equal(dateOnlyJoins([pantheon, { ...timed, place_id: 'p-other' }]).length, 0);
+  assert.equal(dateOnlyJoins([pantheon, { ...timed, title: 'Meedium' }]).length, 0);
+  assert.equal(dateOnlyJoins([pantheon, timed], new Set(['ev_d|ev_t'])).length, 0);
+  // A published listing never joins an unpublished one.
+  assert.equal(dateOnlyJoins([pantheon, { ...timed, status: 'review' }]).length, 0);
+  // Two distinctive words are enough across languages.
+  const tg = ev('ev_ru', 'Международный джаз-проект Toms Rudzinskis', '2026-10-21T21:00:00Z', false, 'rejected', 'p-philly');
+  const club = ev('ev_club', 'Toms Rudzinskis “ABYSS” (LV-DK-DE-UA)', '2026-10-22T17:00:00Z', true, 'published', 'p-philly');
+  assert.deepEqual(dateOnlyJoins([tg, club]).map(p => p.canonical.id), ['ev_club']);
+});

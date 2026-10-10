@@ -8,7 +8,7 @@ import { venueName, type Place } from './places.ts';
 import { nameKey } from './util.ts';
 import { duplicatePlaces, pairKey } from './place-match.ts';
 import { checkPlaces } from './place-liveness.ts';
-import { duplicateEvents, oneShowPerItem, type ItemListing, type StoredEvent } from './dedupe.ts';
+import { dateOnlyJoins, duplicateEvents, oneShowPerItem, type ItemListing, type StoredEvent } from './dedupe.ts';
 import { checkWebsite, dueWebsites } from './place-verification.ts';
 
 export const PLACE_COLUMNS = ['id', 'city', 'name', 'aliases', 'kind', 'neighborhood', 'address', 'lat', 'lng', 'osm_id', 'osm_ids',
@@ -124,7 +124,11 @@ export async function reconcileEvents(db: Db, city: string, dry = false) {
   const rows = await db.all<StoredEvent>(`events?city=eq.${encodeURIComponent(city)}&archived_at=is.null&merged_into=is.null&select=id,title,place_id,starts_at,url,first_seen_at,status,has_time&order=id.asc`);
   const undone = await db.all<{ duplicate_id: string; canonical_id: string }>('event_merge_log?reverted_at=not.is.null&select=duplicate_id,canonical_id&order=id.asc');
   const listings = await sourceItems(db, new Set(rows.map(r => r.id)));
-  const plan = duplicateEvents(rows, new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id))), listings);
+  const separate = new Set(undone.map(r => pairKey(r.duplicate_id, r.canonical_id)));
+  const plan = duplicateEvents(rows, separate, listings);
+  // Then date-only copies of a show another source lists with its time, among the rows still standing.
+  const gone = new Set(plan.map(p => p.duplicate.id));
+  plan.push(...dateOnlyJoins(rows.filter(r => !gone.has(r.id)), separate));
   if (!dry) for (const { duplicate, canonical } of plan) {
     // One pair the database refuses (a rule the planner did not foresee) is logged and left alone;
     // it must not stop the run that collects every other source.

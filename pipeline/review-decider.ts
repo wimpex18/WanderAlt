@@ -25,7 +25,7 @@ import { chunks, inList } from './db.ts';
 import { Models, claudeLane } from './llm.ts';
 import type { Candidate, RawItem, Source } from './types.ts';
 import { Pages, plain, quoteIn, windowsAround } from './place-evidence.ts';
-import { overlap } from './dedupe.ts';
+import { overlap, sameTitle } from './dedupe.ts';
 import { clip, decodeEntities, httpUrl, nameKey } from './util.ts';
 import { type CityProfile, cityProfile } from './cities.ts';
 
@@ -50,6 +50,7 @@ export const REASONS = {
   unclear: 'nothing shows it fits',
   'poster-date': 'date only on a poster',
   duplicate: 'listed already',
+  kept: 'kept after a second look',
 } as const;
 export type Reason = keyof typeof REASONS;
 const MODEL_REASONS: Reason[] = ['fits', 'elsewhere', 'dining', 'mainstream', 'wellness', 'hobby', 'self-help', 'children', 'not-culture', 'not-a-title', 'unclear'];
@@ -200,8 +201,8 @@ Decide in this order:
 2. Otherwise publish it when its format is one that belongs, or when its setting vouches for it: the venue is a guide pick, or the source is a venue's or collective's own programme, and it is an ordinary concert, jam, screening, performance, exhibition, reading, talk, residency showing or festival there. A bare title is enough there; "kind" says what a classifier read it as.
 3. Otherwise reject it with the closest reason, or "unclear".
 Does not belong:
-- dining: restaurants, cafés and hotels as such: a dinner, a menu, a tasting, a wine or food evening, music as a restaurant's background, a party where you book a table. A few real event venues that also pour drinks are fine (Burger Box: events and craft beer; Terminal: a vinyl store, bar and live music): judge the event, not the bar.
-- mainstream: mainstream series and commercial shows: tribute and cover acts, pop and rock hits arranged for other instruments, candlelight and "best of" classics, classical recitals, choirs and orchestras playing the repertoire (new or experimental music belongs), opera galas, touring pop and rock stars, boulevard comedies, nostalgia and "30+" discos, Latin nights, roasts, immersive "experiences", cat and pet shows, product and food fairs.
+- dining: restaurants, cafés and hotels as such: a dinner, a menu, a tasting, a wine or food evening, music as a restaurant's background, a party whose draw is the table. A few real event venues that also pour drinks are fine (Burger Box: events and craft beer; Terminal: a vinyl store, bar and live music): judge the event, not the bar, and judge a performance (a burlesque, cabaret or comedy show, a gig) as a performance, whatever the bar's table bookings.
+- mainstream: mainstream series and commercial shows: tribute and cover acts, pop and rock hits arranged for other instruments, candlelight and "best of" classics, classical recitals, choirs and orchestras playing the repertoire (new or experimental music belongs), opera galas, touring pop and rock stars, boulevard comedies, dating and game shows, nostalgia and "30+" discos, Latin nights, roasts, immersive "experiences", cat and pet shows, product and food fairs.
 - wellness: wellness and spiritual sessions: sound baths and journeys, breathwork, yoga, pilates, ecstatic dance, biodanza, drum circles, cacao and tea ceremonies, retreats, numerology, whoever performs at them. An event at a yoga or wellness studio is one of these.
 - hobby: hobby classes and beginners' craft workshops sold as a product: sip and paint, art classes for friends, candle or key-chain making, batik, floristry, pottery and ceramics classes, cocktail or wine classes.
 - self-help: self-help, coaching, relationship and motivational talks.
@@ -347,21 +348,13 @@ export async function venueShowPages(pages: Pages, website: string | null | unde
 
 // ── One show, one listing ─────────────────────────────────────────
 
-/** Words that say what kind of event it is, not which one: two titles sharing only these are two shows. */
-const GENERIC = new Set(['kontsert', 'concert', 'festival', 'jazz', 'live', 'session', 'sessions', 'party', 'night', 'club', 'klubi', 'show',
-  'tour', 'band', 'trio', 'quartet', 'quiz', 'open', 'esitleb', 'presents', 'project', 'projekt', 'проект', 'концерт', 'вечеринка', 'джаз',
-  'международный', 'tallinn', 'tallinna', 'with', 'from', 'feat', 'plus', 'koos', 'ning', 'the', 'and']);
-const marks = (title: string) => new Set(nameKey(title).split(' ').filter(w => w.length >= 4 && !GENERIC.has(w)));
-
 /** Two rows of one show: the same place on the same day, at starts within half an hour unless one of them
  *  gives no time (two timed screenings of a film are two sessions), and titles that mostly agree or share two
  *  distinctive words ("Toms Rudzinskis" in a Telegram roundup's Russian title and the club's own). */
 export function sameShow(a: Pick<Held, 'title' | 'place_id' | 'starts_at' | 'has_time'>, b: Pick<Held, 'title' | 'place_id' | 'starts_at' | 'has_time'>, tz: string): boolean {
   if (!a.place_id || a.place_id !== b.place_id || !sameDay(a.starts_at, b.starts_at, tz)) return false;
   if (a.has_time && b.has_time && Math.abs(Date.parse(a.starts_at) - Date.parse(b.starts_at)) > 30 * 60_000) return false;
-  if (overlap(a.title, b.title) >= 0.6) return true;
-  const x = marks(a.title), y = marks(b.title);
-  return [...x].filter(w => y.has(w)).length >= 2;
+  return sameTitle(a.title, b.title);
 }
 
 // ── Putting it together ───────────────────────────────────────────
@@ -434,6 +427,11 @@ export function pageWindows(text: string, title: string, iso: string, tz: string
 
 export interface DecideOptions {
   dry?: boolean;
+  /** With evaluate: judge the rows as a second look at what they are now, published ones included. */
+  evaluateAsIs?: boolean;
+  /** Also judge up to this many upcoming listings published on a model's fit score alone (notes "fit …":
+   *  open sources, never a curated programme or a trusted organiser), soonest first, each once. */
+  audit?: number;
   /** Only these event ids. */
   only?: string[];
   /** Judge these rows whatever their status, as if they were held (precision checks); implies dry. */
@@ -446,6 +444,29 @@ export interface DecideOptions {
 
 const notManual = 'or=(status_note.is.null,status_note.not.like.manual*)';
 
+/** A listing a second look may take down: published on a model's fit score alone ("fit …"), from an open
+ *  source. A curated programme's or a trusted organiser's listing is never audited. */
+export const isAudit = (r: Pick<Held, 'status' | 'status_note'>) => r.status === 'published' && /^fit /.test(r.status_note ?? '');
+
+/** Reasons a second look may take a published listing down on: what a listing plainly is (a hobby class, a
+ *  wellness session, a children's event, dining, not culture, another town, no show's name). "Mainstream" is
+ *  a judgement of taste, and measured on published listings it took good ones down (an independent Russian
+ *  theatre's premiere, a composer's own chamber music), so it keeps a listing that is already out; so does
+ *  "unclear". A held listing is still rejected for either. */
+const TAKE_DOWN: Reason[] = ['elsewhere', 'dining', 'wellness', 'hobby', 'self-help', 'children', 'not-culture', 'not-a-title'];
+
+/** A second look takes a published listing down only on a clear reject: the first two checked answers agree,
+ *  on a reason in TAKE_DOWN. Anything less keeps it, and says so. */
+export function audited(r: Held, d: Decision, fit: Fit | null): Decision {
+  if (!fit) return d;
+  const clear = fit.decision === 'reject' && TAKE_DOWN.includes(fit.reason) && (fit.votes?.length ?? 2) <= 2;
+  if (clear) return d;
+  return { ...d, status: 'published', reason: 'kept', quote: fit.decision === 'publish' ? fit.quote : r.title, quote_in: fit.decision === 'publish' ? fit.quote_in : 'title',
+    why: fit.decision === 'publish' ? fit.why : fit.reason === 'mainstream' || fit.reason === 'unclear'
+      ? `A second look read it as ${REASONS[fit.reason]} (${(fit.votes ?? []).join(', ')}), which does not take a published listing down; it stays.`
+      : `A second look did not agree on taking it down (${(fit.votes ?? []).join(', ')}); it stays.` };
+}
+
 /** Settle every held listing of a city. Returns the decisions (applied unless dry). */
 export async function decideHeld(db: Db, cityId: string, models: Models, opts: DecideOptions = {}): Promise<Decision[]> {
   const city = cityProfile(cityId), tz = city.tz, now = opts.now ?? Date.now(), dry = !!opts.dry || !!opts.evaluate;
@@ -455,7 +476,8 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
     rows = [];
     for (const part of chunks(opts.evaluate, 100)) rows.push(...await db.select<Held>(`events?id=in.${encodeURIComponent(inList(part))}&select=${cols}`));
     // A row under evaluation shows the model only what held it then, never a person's or an earlier decision.
-    rows = rows.map(r => ({ ...r, status: 'review', status_note: /^(manual|auto)/.test(String(r.status_note ?? '')) || !r.status_note ? 'trusted source' : r.status_note }));
+    rows = rows.map(r => (opts.evaluateAsIs && isAudit(r) ? r
+      : { ...r, status: 'review', status_note: /^(manual|auto)/.test(String(r.status_note ?? '')) || !r.status_note ? 'trusted source' : r.status_note }));
   } else {
     // Code before review-decider wrote its poster hold as "manual review: …", a label review.html never writes.
     // It is the pipeline's own hold, renamed exactly (migration 20261010104014 did the same once).
@@ -466,10 +488,13 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
       // A poster's date may be confirmed later: those are looked at again while upcoming.
       ...await db.all<Held>(`events?${live}&status=eq.rejected&status_note=in.${encodeURIComponent(inList(REVISIT.map(r => `auto reject: ${REASONS[r]}`)))}&starts_at=gte.${new Date(now).toISOString()}&select=${cols}&order=starts_at.asc,id.asc`),
     ];
+    if (opts.audit) {
+      rows.push(...await db.all<Held>(`events?${live}&status=eq.published&status_note=like.${encodeURIComponent('fit *')}&starts_at=gte.${new Date(now).toISOString()}&select=${cols}&order=starts_at.asc,id.asc`));
+    }
     if (opts.only) rows = rows.filter(r => opts.only!.includes(r.id));
   }
   if (!rows.length) return [];
-  const ids = rows.map(r => r.id);
+  let ids = rows.map(r => r.id);
 
   // What each row rests on: its sources and their items, its place, earlier decisions.
   const links: Link[] = [], raws = new Map<number, Raw>(), past = new Map<string, { outcome: string; reason: string; evidence: Record<string, unknown> }[]>();
@@ -482,6 +507,19 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
       }
     }
   }
+  // An audit asks about a published listing once: not again after a decision, nor after three runs without one.
+  if (opts.audit && !opts.evaluate) {
+    let left = opts.audit;
+    rows = rows.filter(r => {
+      if (!isAudit(r)) return true;
+      const seen = past.get(r.id) ?? [];
+      if (seen.some(d => d.outcome !== 'waits') || seen.length >= TRIES || left <= 0) return false;
+      left--;
+      return true;
+    });
+    ids = rows.map(r => r.id);
+    if (!rows.length) return [];
+  }
   for (const part of chunks([...new Set(links.map(l => l.raw_item_id).filter((x): x is number => x != null))], 100)) {
     for (const r of await db.select<Raw>(`raw_items?id=in.(${part.join(',')})&select=id,source_id,external_id,url,payload`)) raws.set(r.id, r);
   }
@@ -493,6 +531,9 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
   for (const part of chunks([...new Set([...placeIds, ...accounts])], 100)) {
     for (const p of await db.select<{ id: string; name: string; kind: string | null; picked: boolean | null; website: string | null }>(`places?id=in.${encodeURIComponent(inList(part))}&select=id,name,kind,picked,website`)) places.set(p.id, p);
   }
+  // A guide pick vouches for its own listings: a second look leaves them alone.
+  rows = rows.filter(r => !(isAudit(r) && r.place_id && places.get(r.place_id)?.picked));
+  if (!rows.length) return [];
   const pages = opts.pages ?? new Pages();
   const linksOf = (id: string) => links.filter(l => l.event_id === id);
 
@@ -575,7 +616,10 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
     const earlier = (past.get(r.id) ?? []).find(d => d.outcome !== 'waits')?.evidence?.fit as Fit | undefined;
     const fit = fitOf.get(r.id) ?? (earlier && r.status === 'rejected' ? { ...earlier, engine: 'earlier decision' } : null);
     let d = settle(r, fit, dates.get(r.id) ?? null, waited);
-    if (d.status === 'published') {
+    if (isAudit(r)) d = audited(r, d, fit);
+    // One show, one listing: a held row is not published beside a published copy. (Copies that are both
+    // published already are maintenance's to merge, not the audit's to reject.)
+    if (d.status === 'published' && r.status !== 'published') {
       const twin = [...listed, ...planned.filter(p => p.d.status === 'published').map(p => p.r)].find(o => o.id !== r.id && sameShow(o, r, tz));
       if (twin) d = { ...d, status: 'rejected', reason: 'duplicate', quote: r.title, quote_in: 'title', why: `The same show is listed already (${twin.id}).`, evidence: { ...d.evidence, twin: twin.id } };
     }
@@ -585,8 +629,9 @@ export async function decideHeld(db: Db, cityId: string, models: Models, opts: D
   const decisions: Decision[] = [];
   for (const { r, d } of planned.sort((a, b) => a.r.starts_at.localeCompare(b.r.starts_at) || a.r.id.localeCompare(b.r.id))) {
     const decided = !!d.quote, note = decided ? noteFor(d) : r.status_note;
-    // A revisit that found nothing new writes nothing; a held row that waits is recorded, which counts its tries.
-    if (r.status !== 'review' && (!decided || (d.status === r.status && note === r.status_note))) continue;
+    // A revisit that found nothing new writes nothing; a held or audited row that waits is recorded, which
+    // counts its tries.
+    if (r.status === 'rejected' && (!decided || (d.status === r.status && note === r.status_note))) continue;
     const ask = asks.find(a => a.ids.includes(r.id));
     if (ask?.page_url) d.evidence.page = ask.page_url;
     decisions.push(d);

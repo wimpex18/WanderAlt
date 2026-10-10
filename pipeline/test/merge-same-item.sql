@@ -1,4 +1,4 @@
--- Run with Supabase MCP execute_sql after 20261009140415_merge_same_item (README.md, "Deployment and data").
+-- Run with Supabase MCP execute_sql after 20261009140415_merge_same_item and 20261010120134_merge_date_only (README.md, "Deployment and data").
 -- Nothing commits.
 begin;
 do $$
@@ -97,9 +97,24 @@ begin
   exception when others then
     assert sqlerrm like 'Events need the same canonical venue and occurrence%';
   end;
+  -- A date-only row from another item joins the timed row of its show that day (20261010120134); the time stays.
+  em := public.merge_events('qa-same-item-o3','qa-same-item-o1');
+  assert (select has_time and starts_at='2026-10-23 16:00Z' from public.events where id='qa-same-item-o1');
+  assert (select merged_into='qa-same-item-o1' from public.events where id='qa-same-item-o3');
+  perform public.undo_event_merge(em);
+  assert (select merged_into is null and not has_time from public.events where id='qa-same-item-o3');
+  -- Never a date-only row of another day, and never a timed row into a date-only one.
+  update public.events set starts_at='2026-10-21 21:00Z' where id='qa-same-item-o3';
   begin
     perform public.merge_events('qa-same-item-o3','qa-same-item-o1');
-    raise exception 'a date-only row from another item must be refused';
+    raise exception 'a date-only row of another day must be refused';
+  exception when others then
+    assert sqlerrm like 'Events need the same canonical venue and occurrence%';
+  end;
+  update public.events set starts_at='2026-10-22 21:00Z' where id='qa-same-item-o3';
+  begin
+    perform public.merge_events('qa-same-item-o1','qa-same-item-o3');
+    raise exception 'a timed row into a date-only one must be refused';
   exception when others then
     assert sqlerrm like 'Events need the same canonical venue and occurrence%';
   end;

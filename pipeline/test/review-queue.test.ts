@@ -49,3 +49,15 @@ test('the audit lists each upcoming listing once, by its latest automatic decisi
   // Published first; a person's override (c) leaves the list; a listing appears once, by its latest decision (a).
   assert.deepEqual(shape, [['published:fits', ['b']], ['rejected:hobby', ['a']], ['rejected:poster-date', ['e']]]);
 });
+
+test('a second look shows what was taken down first, and keeps what stayed out of the way', () => {
+  const { decided } = queue();
+  const ev = (id: string, status: string, note: string) => ({ id, title: id, status, status_note: note, starts_at: '2026-10-20T16:00:00Z' });
+  const d = (event_id: string, outcome: string, reason: string, before_status: string) => ({ event_id, outcome, reason, before_status, decided_at: '1' });
+  const groups = decided(
+    [d('a', 'rejected', 'mainstream', 'published'), d('b', 'published', 'fits', 'published'), d('c', 'published', 'fits', 'review'), d('e', 'rejected', 'hobby', 'review')],
+    [ev('a', 'rejected', 'auto reject: mainstream or commercial'), ev('b', 'published', 'auto publish: fits the guide'),
+      ev('c', 'published', 'auto publish: fits the guide'), ev('e', 'rejected', 'auto reject: a hobby class')],
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(groups.map((g: any) => g.key))), ['taken-down', 'published:fits', 'rejected:hobby', 'kept']);
+});
