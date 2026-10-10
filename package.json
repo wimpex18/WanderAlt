@@ -17,6 +17,8 @@
     "review:decide": "node --env-file-if-exists=.env pipeline/decide.ts",
     "test": "node --test \"pipeline/test/*.test.ts\"",
     "typecheck": "tsc -p pipeline",
+    "e2e": "playwright test",
+    "e2e:record": "node tests/e2e/record.ts",
     "build:brand": "node .scripts/build-brand.js",
     "build:icons": "node .scripts/rasterize-favicons.js",
     "build:map-styles": "node .scripts/build-map-styles.js",
@@ -30,6 +32,7 @@
     "build:lang": "python3 .scripts/build-lang.py"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^24.19.0",
     "http-server": "^14.1.1",
     "png-to-ico": "^3.0.2",
