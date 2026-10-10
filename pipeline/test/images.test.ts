@@ -33,25 +33,25 @@ test('a poster comes only from a page that names this event', () => {
   const page = (title: string, image = 'https://www.sudalinnateater.ee/storage/images/cosmodolphins.png') =>
     `<meta property="og:title" content="${title}"><meta property="og:image" content="${image}">`;
   const url = 'https://www.sudalinnateater.ee/et/repertuaar/cosmodolphins/865';
-  assert.deepEqual(posterFromPage(page('COSMODOLPHINS'), url, EV),
+  assert.deepEqual(posterFromPage(page('COSMODOLPHINS'), url, EV, 'Europe/Tallinn'),
     { image_url: 'https://www.sudalinnateater.ee/storage/images/cosmodolphins.png', image_attr: 'Image from sudalinnateater.ee' });
-  assert.equal(posterFromPage(page('Repertuaar'), url, EV), null);                        // another page
-  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/logo.png'), url, EV), null);    // a logo is not a poster
-  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/og-default.jpg'), url, EV), null);
-  assert.equal(posterFromPage('<p>See domeen on müügil</p>' + page('COSMODOLPHINS'), url, EV), null);
+  assert.equal(posterFromPage(page('Repertuaar'), url, EV, 'Europe/Tallinn'), null);                        // another page
+  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/logo.png'), url, EV, 'Europe/Tallinn'), null);    // a logo is not a poster
+  assert.equal(posterFromPage(page('COSMODOLPHINS', '/img/og-default.jpg'), url, EV, 'Europe/Tallinn'), null);
+  assert.equal(posterFromPage('<p>See domeen on müügil</p>' + page('COSMODOLPHINS'), url, EV, 'Europe/Tallinn'), null);
 });
 
 test('a structured event must match on title; a series is told apart by day', () => {
   const ld = (...starts: string[]) => `<script type="application/ld+json">${JSON.stringify(starts.map((s, i) => ({ '@type': 'Event', name: 'Cosmodolphins', startDate: s, image: [`https://v.example/p${i}.jpg`] })))}</script>`;
-  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  assert.equal(posterFromPage(ld('2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p0.jpg');
   // one event page whose date lags the listing still shows the same show
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p0.jpg');
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p0.jpg');
   // a series page: the node for the day wins, no node for the day means no guess
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV)?.image_url, 'https://v.example/p1.jpg');
-  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-10-06T19:00:00+03:00'), 'https://v.example/e/1', EV), null);
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-09-29T00:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn')?.image_url, 'https://v.example/p1.jpg');
+  assert.equal(posterFromPage(ld('2026-10-05T19:00:00+03:00', '2026-10-06T19:00:00+03:00'), 'https://v.example/e/1', EV, 'Europe/Tallinn'), null);
   // Fienta serves pictures through an extensionless proxy: the file is in the query
   const fienta = '<meta property="og:title" content="Cosmodolphins"><meta property="og:image" content="https://fienta.com/cf/img/?width=1200&file=/org/1/poster.jpg">';
-  assert.ok(posterFromPage(fienta, 'https://fienta.com/et/cosmo', EV)?.image_url.includes('poster.jpg'));
+  assert.ok(posterFromPage(fienta, 'https://fienta.com/et/cosmo', EV, 'Europe/Tallinn')?.image_url.includes('poster.jpg'));
 });
 
 test('titles and pages', () => {

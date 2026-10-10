@@ -55,7 +55,7 @@ test('The Krypt\'s own Fienta accounts are trusted; someone renting its stage is
   assert.deepEqual(items.map(i => i.external_id), ['301', '302', '303']);
   const trusted = Object.fromEntries(items.map(i => [i.external_id, trustedListing(market, i)]));
   assert.deepEqual(trusted, { 301: true, 302: true, 303: false });   // Sügis Productions, The Krypt / Sügis Productions, anyone else
-  const [c] = fienta.extract(items[0]);
+  const [c] = fienta.extract(items[0], market);
   assert.equal(c.venue_name, 'The Krypt Spooky Bar & Stage');
   assert.equal(c.starts_at, '2026-10-16T18:00:00.000Z');              // 21:00 in Tallinn, summer time
   assert.equal(c.address, 'Pärnu maantee 19, 10141 Tallinn');

@@ -37,7 +37,7 @@ import { Seen, earlierListing, type Listed } from './dedupe.ts';
 import { textFlag, worse } from './flags.ts';
 import { Db, inList, chunks } from './db.ts';
 import { sha, nameKey, scrubContacts, httpUrl, lastBy } from './util.ts';
-import { tallinnDay } from './time.ts';
+import { localClock, localDay } from './time.ts';
 import { withEasyAlone } from './easy.ts';
 import { fillLogoTones } from './logo-tone.ts';
 import { PLACE_COLUMNS, loadPlaces, reconcilePlaces, reconcileEvents, refreshLiveness, retireForeignScriptPlaces, verifyPlaces } from './maintenance.ts';
@@ -50,7 +50,7 @@ import { draftNotes } from './place-notes.ts';
 import { checkDrift } from './drift.ts';
 import { fillSourceLinks } from './venue-source-facts.ts';
 import { POSTER_NOTE, decideHeld, deciderModels } from './review-decider.ts';
-import { CITIES, cityProfile } from './cities.ts';
+import { cityProfile, tzOf } from './cities.ts';
 
 /** Refresh source facts without erasing reviewed artwork or classification. */
 export function eventRefreshFacts(row: Record<string, unknown>): Record<string, unknown> {
@@ -114,7 +114,7 @@ const needsModel = (s: Source) => s.kind === 'telegram' || (s.kind === 'html' &&
 export async function read(item: RawItem, source: Source, models: Models,
   deps: { posts?: typeof lookupPosts; transcribe?: typeof transcribePoster; extract?: typeof extractEvents; canTranscribe?: boolean } = {},
 ): Promise<Candidate[] | null> {
-  if (source.kind === 'fienta') return fienta.extract(item);
+  if (source.kind === 'fienta') return fienta.extract(item, source);
   if (source.kind === 'jsonld') return jsonld.extract(item, source);
   if (source.kind === 'wordpress') return wordpress.extract(item, source);
   const shape = pageShape(source);
@@ -142,7 +142,7 @@ export async function read(item: RawItem, source: Source, models: Models,
   if (!text.trim() && !p.photos?.length) return [];
   const found = await (deps.extract ?? extractEvents)(models, {
     text, source: source.kind === 'instagram' && p.venue_name ? `Instagram account @${p.handle} of ${p.venue_name}` : `${source.label} (${source.handle})`, postedAt: p.posted_at ?? null,
-    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: CITIES[source.city] ?? CITIES.tallinn,
+    images: isInstagram ? [] : p.photos ?? [], pageUrl: item.url ?? null, city: cityProfile(source.city),
   });
   // A single venue's own programme page: every event is at that venue,
   // whatever hall name the page uses.
@@ -174,9 +174,9 @@ export async function itemListings(db: Pick<Db, 'select'>, found: { p: { rawId: 
 }
 
 export function eventId(city: string, c: Candidate, placeId: string | null): string {
-  const local = new Date(c.starts_at).toLocaleTimeString('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' });
+  const tz = tzOf(city), local = localClock(c.starts_at, tz);
   const where = placeId ?? nameKey(c.venue_name ?? '');
-  return `ev_${sha([city, nameKey(c.title), tallinnDay(c.starts_at), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
+  return `ev_${sha([city, nameKey(c.title), localDay(c.starts_at, tz), c.has_time ? local : '', where].join('|')).slice(0, 16)}`;
 }
 
 /** Formats that are never WanderAlt, whoever lists them: a venue that
@@ -693,7 +693,7 @@ async function main() {
     const { c, p } = found[i];
     const e = enrich[i];
     // A model-read listing that has started stays only as an exhibition still on (sources/still-on.ts).
-    if (needsModel(p.source) && !keepStarted(c, e.kind)) continue;
+    if (needsModel(p.source) && !keepStarted(c, e.kind, tzOf(CITY))) continue;
     const place = await places.resolve(c, !(DRY && !flag('--geocode')));
     const where = place?.id ?? nameKey(c.venue_name ?? '');
     const start = Date.parse(c.starts_at);
@@ -743,7 +743,7 @@ async function main() {
     if (out) writeFileSync(out, JSON.stringify({ events: rows, places: places.created, health }, null, 2));
     log(`${models.calls + sorter.calls} model calls, ${Math.round(usage.neurons)} Workers AI neurons`);
     for (const e of rows.slice(0, Number(opt('--show') ?? 15))) {
-      log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: 'Europe/Tallinn', dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
+      log(`  ${e.status} ${new Date(String(e.starts_at)).toLocaleString('en-GB', { timeZone: tzOf(CITY), dateStyle: 'short', timeStyle: 'short' })} · ${e.kind} · ${e.title_en ?? e.title} @ ${e.venue_name ?? '?'}`);
     }
     return;
   }
@@ -793,7 +793,7 @@ async function main() {
   for (const part of chunks(ids, 200)) await db.req('POST', 'rpc/refresh_event_flags', { p_ids: part });
 
   for (const part of chunks(done, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'done', note: null });
-  for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: 'no dated Tallinn event' });
+  for (const part of chunks(skipped, 200)) await db.patch(`raw_items?id=in.(${part.join(',')})`, { status: 'skipped', note: `no dated ${cityProfile(CITY).name} event` });
   for (const f of failed) {
     await db.patch(`raw_items?id=eq.${f.id}`, { status: f.attempts >= MAX_ATTEMPTS ? 'error' : 'new', attempts: f.attempts, note: f.note });
   }

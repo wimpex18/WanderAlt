@@ -4,7 +4,7 @@ import { Db } from './db.ts';
 import { Models, lanes, usage } from './llm.ts';
 import { parseJsonLd } from './sources/jsonld.ts';
 import { clip, htmlToText, httpUrl, nameKey, scrubContacts, sha, UA } from './util.ts';
-import { TZ } from './time.ts';
+import { type CityProfile, cityProfile } from './cities.ts';
 
 export interface EnglishInput {
   id: string; title: string; description: string | null; venue_name: string | null;
@@ -28,10 +28,10 @@ export const englishHash = (e: EnglishInput) => sha(JSON.stringify(['english-v1'
 interface When { y: number; m: number; d: number; wd: number; hm: string }
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const WEEKDAYS_ET = ['pühapäev', 'esmaspäev', 'teisipäev', 'kolmapäev', 'neljapäev', 'reede', 'laupäev'];
-const whenOf = (iso: string | null | undefined): When | null => {
+const whenOf = (iso: string | null | undefined, tz: string): When | null => {
   const t = Date.parse(iso ?? '');
   if (!Number.isFinite(t)) return null;
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric',
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric',
     weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(t)).map(x => [x.type, x.value]));
   return { y: +p.year, m: +p.month, d: +p.day, wd: WEEKDAYS.indexOf(p.weekday.toLowerCase()), hm: `${p.hour}:${p.minute}` };
 };
@@ -69,8 +69,14 @@ const onlyWhen = (s: string, w: When | null, weekday = true): boolean => {
   return hit && !/[\p{L}\p{N}]/u.test(rest);
 };
 
-const CITY = /(?<!\p{L})(?:tallinn|tallinnas|tallinna|estonia|eesti)(?!\p{L})/gu;
-const placeWords = (s: string) => nameKey(s).replace(CITY, ' ').split(' ').filter(Boolean).filter((x, i) => i > 0 || x !== 'the');
+/** The city's and country's names as titles carry them ("@ Tallinn, Estonia", "Tallinnas"): never a venue's own word. */
+const cityNames = new Map<string, RegExp>();
+const cityName = (c: CityProfile) => {
+  let re = cityNames.get(c.id);
+  if (!re) { re = new RegExp(`(?<!\\p{L})(?:${[...c.cityWords, ...c.bracketPlaces].join('|')})(?!\\p{L})`, 'gu'); cityNames.set(c.id, re); }
+  return re;
+};
+const placeWords = (s: string, c: CityProfile) => nameKey(s).replace(cityName(c), ' ').split(' ').filter(Boolean).filter((x, i) => i > 0 || x !== 'the');
 /** One name inside the other, word by word; an Estonian case ending may follow ("Von Krahl" in "Von Krahli teater"). */
 const within = (a: string[], b: string[]) => a.length > 0 && b.some((_, i) => a.every((x, j) => {
   const y = b[i + j];
@@ -81,13 +87,13 @@ const EDGE_EMOJI = /^[\s\p{Extended_Pictographic}\u{FE0F}\u{200D}]+|[\s\p{Extend
 
 /** A title without this event's own date, start time, venue or city, and said once ("X / X - more"
  *  is "X - more"). The source title stays literal; this is for the English one. */
-export function tidyTitle(title: string, e: { venue_name?: string | null; starts_at?: string | null } = {}): string {
+export function tidyTitle(title: string, e: { venue_name?: string | null; starts_at?: string | null }, city: CityProfile): string {
   const original = title.replace(/\s+/g, ' ').trim();
-  const w = whenOf(e.starts_at);
-  const venue = e.venue_name ? placeWords(e.venue_name) : [];
+  const w = whenOf(e.starts_at, city.tz);
+  const venue = e.venue_name ? placeWords(e.venue_name, city) : [];
   // After a separator: the event's own date, its venue, the city, or nothing at all.
   const placeOrWhen = (s: string) => {
-    const words = placeWords(w ? withoutWhen(s, w).rest : s);
+    const words = placeWords(w ? withoutWhen(s, w).rest : s, city);
     return !words.length || (words.join('').length >= 3 && (within(words, venue) || within(venue, words)));
   };
   // Mathematical letters (𝑹𝒐𝒄𝒌 𝑭𝒓𝒊𝒅𝒂𝒚) are styling; NFKC gives the plain ones.
@@ -215,10 +221,10 @@ const SCHEMA = { type: 'object', properties: { items: { type: 'array', items: {
     }, required: ['code', 'evidence'] } },
   }, required: ['id', 'title_en', 'summary_en', 'original_language', 'event_languages'],
 } } }, required: ['items'] };
-const SYSTEM = `Edit event listings for WanderAlt, an English field guide to independent culture in Tallinn.
+const englishSystem = (city: CityProfile) => `Edit event listings for WanderAlt, an English field guide to independent culture in ${city.name}.
 Return every supplied id, once:
 - title_en: a concise natural English title, including titles already in English. Translate descriptive words and production titles, using an official English title when the supplied text gives one. Preserve artist, band, festival and venue names; do not leave Estonian descriptive words untranslated. Transliterate Cyrillic names when no supplied English spelling exists. Never invent a title.
-- Leave the date, time, weekday, venue and city out of title_en, even when the original title carries them ('Kunstitund 10.10' -> 'Art Class', 'Jazz @ Philly Joe’s, Tallinn' -> 'Jazz'): they are filed separately. Give a title repeated in two languages once.
+- Leave the date, time, weekday, venue and city out of title_en, even when the original title carries them ('Kunstitund 10.10' -> 'Art Class', 'Jazz @ Philly Joe’s, ${city.name}' -> 'Jazz'): they are filed separately. Give a title repeated in two languages once.
 - Translate the creative titles of plays/films too, preferring an official title in the supplied source or its linked work. 'Linastus' -> 'Screening', 'Hommikutund' -> 'Morning Class'. Do not treat every capitalised Estonian word as an artist name.
 - summary_en: 1–2 complete English sentences, at most 360 characters. State the format, subject/performers and useful highlights from this event's own text. Prioritise access requirements, duration or a practical notice over a biography. Ignore promotional claims, contacts, unrelated events and historical dates. Do not repeat dates, prices or venue unless nothing else was filed. With only a title, say what it is, without inventing details. No praise, exclamation marks or 'discover'.
 - Never include a premiere date or a calendar date/time in the summary. These belong to the separately filed event facts. Durations such as 'Kestus: 1.40' mean 1 hour 40 minutes, not 1 minute 40 seconds.
@@ -238,8 +244,8 @@ export interface EnglishCopy {
   event_languages: string[]; english_input_hash: string;
 }
 
-export function validatedCopy(e: EnglishInput, source: SourceText, answer: Record<string, unknown>): EnglishCopy | null {
-  const title = typeof answer.title_en === 'string' ? tidyTitle(answer.title_en, e) : '';
+export function validatedCopy(e: EnglishInput, source: SourceText, answer: Record<string, unknown>, city: CityProfile): EnglishCopy | null {
+  const title = typeof answer.title_en === 'string' ? tidyTitle(answer.title_en, e, city) : '';
   const summary = typeof answer.summary_en === 'string' ? answer.summary_en.trim() : '';
   const cleanSummary = scrubContacts(summary);
   // Reject malformed/partial answers and untranslated Cyrillic prose or common
@@ -273,30 +279,31 @@ export function validatedCopy(e: EnglishInput, source: SourceText, answer: Recor
     original_language: code, original_url: httpUrl(source.url), event_languages: [...new Set(spoken)], english_input_hash: englishHash(e) };
 }
 
-export async function editEnglish(models: Models, items: EnglishInput[], read = sourceText): Promise<Map<string, EnglishCopy>> {
+export async function editEnglish(models: Models, items: EnglishInput[], city: CityProfile, read = sourceText): Promise<Map<string, EnglishCopy>> {
   const result = new Map<string, EnglishCopy>();
   if (!models.ready || !items.length) return result;
   const texts = await Promise.all(items.map(read));
-  const { data } = await models.ask(SYSTEM, JSON.stringify(items.map((e, i) => ({ id: e.id,
+  const { data } = await models.ask(englishSystem(city), JSON.stringify(items.map((e, i) => ({ id: e.id,
     title: e.title, venue: e.venue_name, kind: e.kind, text: clip(texts[i].text, 8000) }))), SCHEMA);
   const answers = (data as { items?: unknown }).items;
   if (!Array.isArray(answers)) return result;
   for (let i = 0; i < items.length; i++) {
     const found = answers.filter(r => r && typeof r === 'object' && r.id === items[i].id);
     if (found.length !== 1) continue;
-    const copy = validatedCopy(items[i], texts[i], found[0]);
+    const copy = validatedCopy(items[i], texts[i], found[0], city);
     if (copy) result.set(items[i].id, copy);
   }
   return result;
 }
 
 /** Hashes make failures resumable and source edits due again. Prioritise today. */
-export async function refreshEnglish(db: Pick<Db, 'all' | 'patch'>, models: Models, city = 'tallinn', limit = 60): Promise<number> {
+export async function refreshEnglish(db: Pick<Db, 'all' | 'patch'>, models: Models, city: string, limit = 60): Promise<number> {
+  const profile = cityProfile(city);
   const rows = await db.all<EnglishInput>(`events?city=eq.${encodeURIComponent(city)}&status=eq.published&archived_at=is.null&merged_into=is.null&select=id,title,description,venue_name,kind,url,original_url,title_en,language,english_input_hash,starts_at&order=starts_at.asc,id.asc`);
   // Saved titles written before tidyTitle lose their own date, time and venue without a model call;
   // one still holding an Estonian format word is due again.
   for (const e of rows) {
-    const tidy = e.title_en ? tidyTitle(e.title_en, e) : null;
+    const tidy = e.title_en ? tidyTitle(e.title_en, e, profile) : null;
     if (!tidy || tidy === e.title_en) continue;
     await db.patch(`events?id=eq.${encodeURIComponent(e.id)}`, { title_en: tidy });
     e.title_en = tidy;
@@ -305,7 +312,7 @@ export async function refreshEnglish(db: Pick<Db, 'all' | 'patch'>, models: Mode
   let count = 0;
   for (let offset = 0; offset < due.length && models.ready; offset += 5) {
     try {
-      const copies = await editEnglish(models, due.slice(offset, offset + 5));
+      const copies = await editEnglish(models, due.slice(offset, offset + 5), profile);
       for (const [id, copy] of copies) {
         // Only editorial fields: times, images, publication decisions stay intact.
         await db.patch(`events?id=eq.${encodeURIComponent(id)}`, copy);

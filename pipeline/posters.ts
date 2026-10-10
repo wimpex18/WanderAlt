@@ -6,7 +6,8 @@
 import type { Db } from './db.ts';
 import { decodeEntities, get, httpUrl, nameKey, sleep } from './util.ts';
 import { parkedHomepage } from './venues.ts';
-import { tallinnDay } from './time.ts';
+import { localDay } from './time.ts';
+import { tzOf } from './cities.ts';
 
 export interface PosterEvent { id: string; title: string; starts_at: string; url?: string | null; ticket_url?: string | null }
 export interface Poster { image_url: string; image_attr: string }
@@ -65,17 +66,17 @@ const goodImage = (u: string | null) => {
 };
 
 /** The one image this page attaches to this event, or null. */
-export function posterFromPage(html: string, pageUrl: string, ev: PosterEvent): Poster | null {
+export function posterFromPage(html: string, pageUrl: string, ev: PosterEvent, tz: string): Poster | null {
   if (parkedHomepage(html)) return null;
   const host = new URL(pageUrl).hostname.replace(/^www\./, '');
   const attr = `Image from ${host}`;
-  const day = tallinnDay(ev.starts_at);
+  const day = localDay(ev.starts_at, tz);
 
   // A structured Event with this title. On a page that lists a series, the
   // node for this day; on a page for one event, that event (a page's date
   // can lag the listing, the show is still the show).
   const named = jsonLdEvents(html).filter(n => typeof n.name === 'string' && sameTitle(decodeEntities(n.name), ev.title));
-  const onDay = (n: Node) => typeof n.startDate === 'string' && !Number.isNaN(Date.parse(n.startDate)) && tallinnDay(new Date(n.startDate).toISOString()) === day;
+  const onDay = (n: Node) => typeof n.startDate === 'string' && !Number.isNaN(Date.parse(n.startDate)) && localDay(new Date(n.startDate).toISOString(), tz) === day;
   const node = named.find(onDay) ?? (named.length === 1 ? named[0] : undefined);
   if (node) {
     const img = node.image;
@@ -127,7 +128,7 @@ export async function attachPosters(db: Db, city: string, limit = 30): Promise<n
       let poster: Poster | null = null;
       try {
         const html = (await (await get(page, { accept: 'text/html', timeoutMs: 10_000 })).text()).slice(0, 400_000);
-        poster = posterFromPage(html, page, ev);
+        poster = posterFromPage(html, page, ev, tzOf(city));
       } catch { continue; }
       if (!poster) continue;
       // A picture the site puts on several events is a default, not a poster.

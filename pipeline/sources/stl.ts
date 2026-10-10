@@ -13,7 +13,8 @@
 
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { getHtml, decodeEntities, httpUrl, clip } from '../util.ts';
-import { tallinnToIso } from '../time.ts';
+import { localToIso } from '../time.ts';
+import { tzOf } from '../cities.ts';
 import { whereOf, cleanLink, samePlace } from './programme.ts';
 
 interface Occurrence { date?: string | null; time?: string | null; endDate?: string | null; endTime?: string | null; location?: string | null; soldOut?: boolean | null; ticket?: string | null; register?: string | null }
@@ -51,6 +52,7 @@ export function shows(html: string, source: Source): { url: string | null; show:
   const events = ((nextData(html)?.props as Record<string, unknown> | undefined)?.pageProps as Record<string, unknown> | undefined)?.events as Record<string, { nodes?: Node[] }> | undefined;
   if (!events || typeof events !== 'object') return [];
   const skip = new Set(((source.config.skip_categories as string[] | undefined) ?? []).map(s => s.toLowerCase()));
+  const tz = tzOf(source.city);
   const out: { url: string | null; show: Show }[] = [];
   for (const [list, hint] of LISTS) {
     for (const n of events[list]?.nodes ?? []) {
@@ -62,8 +64,8 @@ export function shows(html: string, source: Source): { url: string | null; show:
         if (!at || !where) continue;
         // An end time before the start is after midnight ("21:00" to "04:00").
         const until = wall(o.endDate ?? o.date, o.endTime);
-        let end = until?.time ? tallinnToIso(`${until.day} ${until.time}`) : null;
-        const start = tallinnToIso(at.time ? `${at.day} ${at.time}` : at.day)!;
+        let end = until?.time ? localToIso(`${until.day} ${until.time}`, tz) : null;
+        const start = localToIso(at.time ? `${at.day} ${at.time}` : at.day, tz)!;
         if (end && Date.parse(end) <= Date.parse(start) && !o.endDate) end = new Date(Date.parse(end) + 86_400_000).toISOString();
         out.push({
           url: httpUrl(n.uri, 'https://www.stl.ee/'),
@@ -85,7 +87,7 @@ export async function collect(source: Source, now = new Date(), fetchPage: (u: s
   const horizon = now.getTime() + Number(source.config.days ?? 120) * 86_400_000;
   const seen = new Set<string>(), out: RawItem[] = [];
   for (const { url, show } of shows(await fetchPage(source.url), source)) {
-    const start = Date.parse(tallinnToIso(show.time ? `${show.day} ${show.time}` : show.day) ?? '');
+    const start = Date.parse(localToIso(show.time ? `${show.day} ${show.time}` : show.day, tzOf(source.city)) ?? '');
     const last = show.end ? Date.parse(show.end) : start + (show.time ? 0 : 86_400_000);
     if (!Number.isFinite(start) || start > horizon || last < now.getTime() - 6 * 3600_000) continue;
     const id = `${show.slug}|${show.day}|${show.time ?? ''}`;
@@ -99,7 +101,7 @@ export async function collect(source: Source, now = new Date(), fetchPage: (u: s
 export function extract(item: RawItem, source: Source): Candidate[] {
   const p = item.payload as unknown as Show;
   if (!p.title || typeof p.day !== 'string') return [];
-  const starts = tallinnToIso(p.time ? `${p.day} ${p.time}` : p.day);
+  const starts = localToIso(p.time ? `${p.day} ${p.time}` : p.day, tzOf(source.city));
   if (!starts) return [];
   return [{
     title: p.title,

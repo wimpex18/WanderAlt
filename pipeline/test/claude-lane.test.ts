@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { CITIES } from '../cities.ts';
 import { Models, lanes, claudeCost, strictSchema, chunkText, extractEvents, usage, CLAUDE_ROOM, SMALL_ROOM, type Lane } from '../llm.ts';
 
 test('Haiku 5.5 is billed on the cheap card up to 100,000 prompt tokens, cache included, and five times over it', () => {
@@ -109,13 +110,13 @@ test('a programme page is read whole on Claude and in 5,000-character parts on t
   const seen: { lane: string; length: number }[] = [];
   const event = '{"events":[{"title":"Show","start":"2099-01-01 19:00","end":null,"venue":"Uus Laine","address":null,"price":null,"url":null,"language":"en","excerpt":"A show.","state":"scheduled"}]}';
   const whole: Lane = { name: 'claude', model: 'c', key: 'k', room: CLAUDE_ROOM, call: async (_s, u) => { seen.push({ lane: 'claude', length: u.length }); return event; } };
-  await extractEvents(new Models([whole], 10, 0), { text: page, source: 'test' });
+  await extractEvents(new Models([whole], 10, 0), { text: page, source: 'test', city: CITIES.tallinn });
   assert.equal(seen.length, 1);
 
   seen.length = 0;
   const failing: Lane = { ...whole, call: async (_s, u) => { seen.push({ lane: 'claude', length: u.length }); throw new Error('answer cut off at max_tokens'); } };
   const free: Lane = { name: 'workers-ai', model: 'w', key: 'k', call: async (_s, u) => { seen.push({ lane: 'workers-ai', length: u.length }); return event; } };
-  const out = await extractEvents(new Models([failing, free], 20, 1_000_000), { text: page, source: 'test' });
+  const out = await extractEvents(new Models([failing, free], 20, 1_000_000), { text: page, source: 'test', city: CITIES.tallinn });
   assert.equal(seen[0].lane, 'claude');
   // Claude's whole-page read fails; the free lane reads it once whole (it is next in line), then the
   // retry in small parts goes to whoever is left.

@@ -12,7 +12,8 @@
 
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, decodeEntities, htmlToText, httpUrl, clip } from '../util.ts';
-import { tallinnToIso } from '../time.ts';
+import { localToIso } from '../time.ts';
+import { tzOf } from '../cities.ts';
 
 type Row = Record<string, unknown>;
 
@@ -60,6 +61,7 @@ export function pageUrl(r: Row): string | null {
 
 export async function collect(source: Source, now = new Date()): Promise<RawItem[]> {
   const urls = [source.url, ...((source.config.extra_urls as string[] | undefined) ?? [])];
+  const tz = tzOf(source.city);
   const horizon = now.getTime() + Number(source.config.days ?? 60) * 86_400_000;
   const skip = source.config.skip_titles ? new RegExp(String(source.config.skip_titles), 'i') : null;
   const rows: Row[] = [];
@@ -75,8 +77,8 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
     seen.add(id);
     if (skip?.test(decodeEntities(r.title))) continue;
     const live = occurrences(r).some(o => {
-      const s = Date.parse(tallinnToIso(o.start) ?? '');
-      const e = Date.parse(tallinnToIso(o.end ?? o.start) ?? '');
+      const s = Date.parse(localToIso(o.start, tz) ?? '');
+      const e = Date.parse(localToIso(o.end ?? o.start, tz) ?? '');
       return s <= horizon && e >= now.getTime();
     });
     if (!live) continue;
@@ -97,18 +99,18 @@ export function extract(item: RawItem, source: Source): Candidate[] {
   const p = item.payload as { id?: string; post_type?: string; title?: string; excerpt?: string | null; image?: string | null; occurrences?: { start: string; end: string | null }[] };
   if (!p.title) return [];
   const many = (p.occurrences ?? []).length > 1;
-  const gone = Date.now() - 6 * 3600_000;
+  const gone = Date.now() - 6 * 3600_000, tz = tzOf(source.city);
   return (p.occurrences ?? []).flatMap(o => {
-    const starts = tallinnToIso(o.start);
+    const starts = localToIso(o.start, tz);
     if (!starts) return [];
     /* A run of screenings keeps its past dates; only what is ahead is listed. */
-    if (Date.parse(tallinnToIso(o.end ?? o.start) ?? starts) < gone) return [];
+    if (Date.parse(localToIso(o.end ?? o.start, tz) ?? starts) < gone) return [];
     const timed = / (?!00:00)\d{2}:\d{2}$/.test(o.start);
     return [{
       title: decodeEntities(p.title!).trim(),
       description: clip(p.excerpt ? htmlToText(p.excerpt) : null, 2000),
       starts_at: starts,
-      ends_at: o.end && o.end !== o.start ? tallinnToIso(o.end) : null,
+      ends_at: o.end && o.end !== o.start ? localToIso(o.end, tz) : null,
       has_time: timed,
       venue_name: (source.config.venue_name as string | undefined) ?? 'Kai',
       address: (source.config.address as string | undefined) ?? null,

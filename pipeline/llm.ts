@@ -15,7 +15,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { Candidate, Enrichment, EventKind, Flag } from './types.ts';
 import { EVENT_KINDS } from './types.ts';
 import { clip, httpUrl, nameKey, sleep } from './util.ts';
-import { tallinnToIso } from './time.ts';
+import { localToIso } from './time.ts';
 import { stillOn, STARTED_MS } from './sources/still-on.ts';
 import { CITIES, type CityProfile } from './cities.ts';
 
@@ -415,10 +415,10 @@ export function inSource(name: string | null, text: string, city: CityProfile = 
 
 export async function extractEvents(
   models: Models,
-  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null; city?: CityProfile },
+  args: { text: string; source: string; postedAt?: string | null; images?: string[]; pageUrl?: string | null; city: CityProfile },
 ): Promise<Candidate[]> {
   const posted = args.postedAt ? new Date(args.postedAt) : new Date();
-  const head = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: (args.city ?? CITIES.tallinn).tz })})\n\n`;
+  const head = `Source: ${args.source}\nPosted: ${posted.toISOString().slice(0, 10)} (${posted.toLocaleDateString('en-GB', { weekday: 'long', timeZone: args.city.tz })})\n\n`;
   // A long programme page in one answer is cut off at a small model's output
   // limit, so it is read in parts of what the answering lane can take: the
   // whole page on Claude, 5,000 characters on the free lanes. A whole-page
@@ -426,7 +426,7 @@ export async function extractEvents(
   const events: Record<string, string | null>[] = [];
   let engine = '';
   const read = async (part: string) => {
-    const answer = await models.ask(extractSystem(args.city ?? CITIES.tallinn), head + part, EXTRACT_SCHEMA, part.length);
+    const answer = await models.ask(extractSystem(args.city), head + part, EXTRACT_SCHEMA, part.length);
     engine = answer.engine;
     events.push(...(((answer.data as { events?: unknown[] }).events ?? []) as Record<string, string | null>[]));
   };
@@ -445,12 +445,12 @@ export async function extractEvents(
   // The model's venue and address must come from the text it read (or the source line, which may name the venue).
   const said = `${args.source}\n${args.text}`;
   for (const e of events) {
-    const starts = e.start ? tallinnToIso(e.start) : null;
+    const tz = args.city.tz, starts = e.start ? localToIso(e.start, tz) : null;
     // A closing date without a time means that whole day, as in wordpress.ts, so the row is not archived on its last morning.
-    const ends = e.end ? tallinnToIso(/\d{1,2}:\d{2}/.test(e.end) ? e.end : `${e.end} 23:59`) : null;
+    const ends = e.end ? localToIso(/\d{1,2}:\d{2}/.test(e.end) ? e.end : `${e.end} 23:59`, tz) : null;
     if (!e.title || !starts) continue;
     // A run that opened earlier and is still on (an exhibition) is kept here; run.ts keeps only exhibitions.
-    if (Date.parse(starts) < Date.now() - STARTED_MS && !stillOn(starts, ends)) continue;
+    if (Date.parse(starts) < Date.now() - STARTED_MS && !stillOn(starts, ends, tz)) continue;
     const price = e.price ?? '';
     const free = /\b(free|tasuta|бесплатн|vabaksp)/i.test(price);
     const nums = [...price.matchAll(/(\d+(?:[.,]\d+)?)/g)].map(m => Number(m[1].replace(',', '.')));

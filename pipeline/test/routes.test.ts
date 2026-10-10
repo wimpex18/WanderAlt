@@ -11,7 +11,7 @@ const shop = place('shop', 'record store', 59.443);
 const bar = place('bar', 'bar', 59.437);
 const ev = (id: string, hh: string, extra: Partial<RouteEvent> = {}): RouteEvent =>
   ({ id, title: id, title_en: null, kind: 'theatre', starts_at: `2026-10-02T${hh}:00+03:00`, ends_at: null, has_time: true, place_id: 'host', flag: null, ...extra });
-const find = (events: RouteEvent[], picked: RoutePlace[]) => candidatesForDay('2026-10-02', events, id => (id === 'host' ? host : undefined), picked, NOW);
+const find = (events: RouteEvent[], picked: RoutePlace[]) => candidatesForDay('2026-10-02', 'Europe/Tallinn', events, id => (id === 'host' ? host : undefined), picked, NOW);
 
 test('a picked place before and a bar after make an evening around one listing', () => {
   const [c] = find([ev('e1', '19:00')], [shop, bar]);

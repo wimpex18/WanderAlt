@@ -11,6 +11,7 @@
 
 import type { Source } from '../types.ts';
 import { httpUrl } from '../util.ts';
+import { cityProfile } from '../cities.ts';
 
 export interface Where { venue: string | null; address: string | null; hall: string | null }
 
@@ -23,10 +24,12 @@ export function whereOf(text: string | null | undefined, source: Source): Where 
   for (const [re, name] of (source.config.venue_map as [string, string | null][] | undefined) ?? []) {
     if (new RegExp(re, 'iu').test(t)) return { venue: name, address: name && name === own ? ownAddress : null, hall: t };
   }
-  if (/\bTallinn\b/i.test(t)) {
+  // A place in the city by name ("Kultuurikatel, Tallinn", "Kai (Peetri 12, Tallinn)"); anywhere else is a tour date.
+  const city = cityProfile(source.city).name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (new RegExp(`\\b${city}\\b`, 'i').test(t)) {
     const name = t.split(/\s*[,(]\s*/)[0].trim();
-    const address = /\(([^()]*\bTallinn\b[^()]*)\)/i.exec(t)?.[1].trim() ?? null;
-    return { venue: name && !/^tallinn\b/i.test(name) ? name : null, address, hall: t };
+    const address = new RegExp(`\\(([^()]*\\b${city}\\b[^()]*)\\)`, 'i').exec(t)?.[1].trim() ?? null;
+    return { venue: name && !new RegExp(`^${city}\\b`, 'i').test(name) ? name : null, address, hall: t };
   }
   return null;
 }

@@ -12,24 +12,25 @@
 //   keepStarted: after classification, for model-read sources only: of those runs, an exhibition stays;
 //     a film season, a festival or anything else that has started is dropped as before.
 
-import { tallinnDay } from '../time.ts';
+import { localDay } from '../time.ts';
 
 /** How long after its start a listing still counts as ahead (llm.ts and the structured readers). */
 export const STARTED_MS = 6 * 3600_000;
 
 /** A listing that started more than STARTED_MS ago: is it a run that is still on? A stated end on a later
- *  Tallinn day than the start, not yet over; an end at local midnight is a date and means that whole day. */
-export function stillOn(startsAt: string, endsAt: string | null | undefined, now = Date.now()): boolean {
+ *  local day (in the city's zone `tz`) than the start, not yet over; an end at local midnight is a date and means that whole day. */
+export function stillOn(startsAt: string, endsAt: string | null | undefined, tz: string, now = Date.now()): boolean {
   const start = Date.parse(startsAt), end = Date.parse(endsAt ?? '');
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false;
-  if (tallinnDay(new Date(end).toISOString()) <= tallinnDay(new Date(start).toISOString())) return false;
-  const dateOnly = tallinnDay(new Date(end).toISOString()) !== tallinnDay(new Date(end - 1).toISOString());
+  const day = (ms: number) => localDay(new Date(ms).toISOString(), tz);
+  if (day(end) <= day(start)) return false;
+  const dateOnly = day(end) !== day(end - 1);
   return (dateOnly ? end + 86_400_000 : end) > now;
 }
 
 /** After classification: a listing whose start has passed stays only as an exhibition that is still on. */
-export function keepStarted(c: { starts_at: string; ends_at?: string | null }, kind: string, now = Date.now()): boolean {
+export function keepStarted(c: { starts_at: string; ends_at?: string | null }, kind: string, tz: string, now = Date.now()): boolean {
   const start = Date.parse(c.starts_at);
   if (!Number.isFinite(start) || start >= now - STARTED_MS) return true;
-  return kind === 'exhibition' && stillOn(c.starts_at, c.ends_at, now);
+  return kind === 'exhibition' && stillOn(c.starts_at, c.ends_at, tz, now);
 }

@@ -1,6 +1,8 @@
 // The pure half of the email alerts: who matches what, and the words. No
 // network here, so the rules that keep the mail from becoming spam are tested.
 
+import { cityProfile } from './cities.ts';
+
 export interface EventRow {
   id: string; title: string; venue: string | null; venue_id: string | null;
   handle: string | null; starts_at: string; time: string | null; flag: string | null;
@@ -8,6 +10,8 @@ export interface EventRow {
 }
 
 const ORIGIN = 'https://wanderalt.app';
+// Readers have no city yet: their mail and pushes read Tallinn's clock (README, Adding a city).
+const TZ = cityProfile('tallinn').tz;
 const fold = (s: unknown) => String(s ?? '').toLowerCase().trim();
 
 /** A follow id is place:<places.id> or src:<handle without @>. */
@@ -41,8 +45,8 @@ export function weeklyEvents(follows: ReadonlySet<string>, events: readonly Even
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
 }
 
-const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(iso));
-const clock = (e: EventRow) => e.time || new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(e.starts_at));
+const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(iso));
+const clock = (e: EventRow) => e.time || new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(e.starts_at));
 const link = (e: EventRow) => `${ORIGIN}/detail.html?id=${encodeURIComponent(e.id)}`;
 const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const unsubscribeUrl = (token: string) => `${ORIGIN}/api/unsubscribe?t=${encodeURIComponent(token)}`;
@@ -120,7 +124,7 @@ export function tonightEvents(follows: ReadonlySet<string>, events: readonly Eve
 
 export interface InboxItem { kind: 'change' | 'week'; title: string; body: string; url: string; dedupe: string }
 
-const shortDay = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Tallinn', weekday: 'short' }).format(new Date(iso));
+const shortDay = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'short' }).format(new Date(iso));
 const detailUrl = (e: EventRow) => `/detail.html?id=${encodeURIComponent(e.id)}`;
 
 /** One inbox row per cancelled or postponed event, told once per (event, flag). */

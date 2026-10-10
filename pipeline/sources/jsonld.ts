@@ -5,6 +5,7 @@
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { get, htmlToText, httpUrl, clip } from '../util.ts';
 import { toIso } from '../time.ts';
+import { tzOf } from '../cities.ts';
 import { schemaFlag } from '../flags.ts';
 
 type Node = Record<string, unknown>;
@@ -45,7 +46,7 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
     const nodes = parseJsonLd(html);
     const byId = new Map(nodes.filter(n => typeof n['@id'] === 'string').map(n => [n['@id'] as string, n]));
     for (const n of nodes.filter(isEvent)) {
-      const start = Date.parse(toIso(n.startDate as string | undefined) ?? '');
+      const start = Date.parse(toIso(n.startDate as string | undefined, tzOf(source.city)) ?? '');
       if (!(start <= horizon)) continue;
       const work = n.workPresented as Node | undefined;
       const film = work && typeof work['@id'] === 'string' ? byId.get(work['@id'] as string) ?? work : work;
@@ -62,7 +63,7 @@ export async function collect(source: Source, now = new Date()): Promise<RawItem
 export function extract(item: RawItem, source: Source): Candidate[] {
   const n = item.payload as Node;
   const work = (n._work as Node | null) ?? null;
-  const starts = toIso(n.startDate as string | undefined);
+  const tz = tzOf(source.city), starts = toIso(n.startDate as string | undefined, tz);
   if (!starts) return [];
   const loc = n.location as Node | undefined;
   const addr = loc?.address;
@@ -81,7 +82,7 @@ export function extract(item: RawItem, source: Source): Candidate[] {
     title: title.trim(),
     description: clip(desc ? htmlToText(desc) : null, 4000),
     starts_at: starts,
-    ends_at: toIso(n.endDate as string | undefined),
+    ends_at: toIso(n.endDate as string | undefined, tz),
     has_time: /T\d{2}:\d{2}/.test(String(n.startDate)),
     venue_name: (source.config.venue_name as string | undefined) ?? text(loc) ?? null,   // a one-venue site names its halls
     address: address || null,

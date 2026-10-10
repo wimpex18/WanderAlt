@@ -16,6 +16,8 @@
 import type { Candidate, RawItem, Source } from '../types.ts';
 import { getHtml, decodeEntities, clip } from '../util.ts';
 import { whereOf, cleanLink, samePlace } from './programme.ts';
+import { tzOf } from '../cities.ts';
+import { localClock } from '../time.ts';
 
 export interface Row {
   id: string; start: string; end: string | null; title: string; artist: string | null; subtitle: string | null;
@@ -95,10 +97,10 @@ function prices(lines: string[]): { min: number | null; max: number | null; curr
   };
 }
 
-export function extract(item: RawItem, _source?: Source): Candidate[] {
+export function extract(item: RawItem, source: Source): Candidate[] {
   const p = item.payload as unknown as Row & { venue: string | null; address: string | null; hall: string | null };
   if (!p.title || !p.start) return [];
-  const local = new Date(p.start).toLocaleTimeString('en-GB', { timeZone: 'Europe/Tallinn', hour: '2-digit', minute: '2-digit' });
+  const local = localClock(p.start, tzOf(source.city));
   const timed = local !== '00:00';
   const price = prices(p.prices);
   const slug = /\/performance\/([a-z0-9-]+)/.exec(p.page ?? '')?.[1];
@@ -106,7 +108,7 @@ export function extract(item: RawItem, _source?: Source): Candidate[] {
     title: p.title,
     description: clip([p.artist, p.subtitle, p.hall && !samePlace(p.hall, p.venue) ? p.hall : null, ...p.labels]
       .filter(Boolean).join(' · ') || null, 2000),
-    starts_at: p.start,                      // a row at 00:00 in Tallinn is a date without a time
+    starts_at: p.start,                      // a row at local midnight is a date without a time
     ends_at: p.end,
     has_time: timed,
     venue_name: p.venue,

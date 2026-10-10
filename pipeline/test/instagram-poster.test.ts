@@ -8,7 +8,7 @@ test('poster extraction remains pending without vision, then uses fresh artwork 
   const old = { token: process.env.INSTAGRAM_ACCESS_TOKEN, id: process.env.INSTAGRAM_BUSINESS_ID };
   process.env.INSTAGRAM_ACCESS_TOKEN = 'test'; process.env.INSTAGRAM_BUSINESS_ID = '1';
   try {
-    const source = { kind: 'instagram', config: {}, label: 'Instagram' } as Source;
+    const source = { kind: 'instagram', city: 'tallinn', config: {}, label: 'Instagram' } as Source;
     const item = { external_id: 'ig:poster:ABC', url: 'https://www.instagram.com/p/ABC/', payload: { handle: 'poster', venue_name: 'Venue', text: '', poster_available: true } };
     const models = { ready: true, neuronBudget: 2400 } as Models;
     assert.equal(await read(item, source, models, { canTranscribe: false }), null);
