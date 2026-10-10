@@ -13,6 +13,7 @@ Tallinn culture, a walk at a time: a static PWA (no framework or build step) on 
 
 - Read `git log -10` and the relevant code before changing an area.
 - One branch and one PR per session, follow-ups included; the owner merges. Prefix branches with your tool: `claude/` for Claude Code, `codex/` for Codex. Keep an originating Linear ID in the branch or PR.
+- Parallel sessions each work in a worktree inside this folder at `.claude/worktrees/<name>` (git-ignored; Claude Code keeps its own worktrees there), never in a sibling folder: `git worktree add .claude/worktrees/<name> -b <branch> origin/main`, then link the main checkout's `node_modules` into it. Move or remove a worktree only with `git worktree move` or `git worktree remove`, never by hand, and remove yours once its PR is merged or its work has moved to another branch.
 - Every new interface string goes into `lang/phrases.tsv` with Estonian, Russian and Ukrainian, then rebuild.
 - Bump `VERSION` in `sw.js` when a deployed asset changes. If local edits do not appear, clear the old service-worker registration.
 - Check page changes at 390 and 1440 px and affected tablet widths, in both themes, including keyboard focus and empty/error states.
